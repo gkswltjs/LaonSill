@@ -73,7 +73,7 @@ void network_test() {
 		dataSet.load();
 		int sizes[] = {784, 30, 10};
 		Network network(sizes, 3, &dataSet, &cost, networkListener);
-		network.sgd(30, 10, 3.0, lambda);
+		network.sgd(30, 10, 0.5, lambda);
 	} else {
 		Util::setPrint(true);
 		MockDataSet dataSet;

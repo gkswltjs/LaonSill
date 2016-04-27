@@ -30,8 +30,8 @@ public:
 	virtual void shuffleTrainDataSet();
 
 private:
-	//int loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet, int offset, int size);
-	int loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet);
+	int loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet, int offset, int size);
+	//int loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet);
 
 	double validationSetRatio;
 };

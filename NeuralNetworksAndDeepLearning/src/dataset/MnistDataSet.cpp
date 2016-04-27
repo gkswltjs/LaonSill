@@ -30,20 +30,21 @@ void MnistDataSet::load() {
 			{"./data/t10k-images.idx3-ubyte", "./data/t10k-labels.idx1-ubyte"}
 	};
 
-	//trainDataSize = loadDataSetFromResource(filenames[0], trainDataSet, 0, 50000);
+	trainDataSize = loadDataSetFromResource(filenames[0], trainDataSet, 0, 50000);
 	//validationDataSize = loadDataSetFromResource(filenames[0], validationDataSet, 50000, 10000);
-	//testDataSize = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);
+	testDataSize = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);
 
-	trainDataSize = loadDataSetFromResource(filenames[0], trainDataSet);
-	testDataSize = loadDataSetFromResource(filenames[1], testDataSet);
+	//trainDataSize = loadDataSetFromResource(filenames[0], trainDataSet);
+	//testDataSize = loadDataSetFromResource(filenames[1], testDataSet);
 
 }
 
 
+
+/*
 int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet) {
-	/*
-	 * LOAD IMAGE DATA
-	 */
+
+	// LOAD IMAGE DATA
 	ImageInfo dataInfo(resources[0]);
 	dataInfo.load();
 
@@ -60,9 +61,7 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 	dataPtr += 4;
 
 
-	/*
-	 * LOAD LABEL DATA
-	 */
+	// LOAD LABEL DATA
 	ImageInfo targetInfo(resources[1]);
 	targetInfo.load();
 
@@ -88,9 +87,10 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 	}
 	return dataSize;
 }
+*/
 
 
-/*
+
 int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet, int offset, int size) {
 
 	// LOAD IMAGE DATA
@@ -140,7 +140,6 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 	}
 	return stop-offset;
 }
-*/
 
 
 void MnistDataSet::shuffleTrainDataSet() {

@@ -52,7 +52,7 @@ void Network::defaultWeightInitializer(vector<mat *> &weights, vector<vec *> &bi
 				pBias->randn();
 				pWeight->randn();
 				// initial point scaling
-				//(*pWeight) *= 1/sqrt(sizes[i-1]);
+				(*pWeight) *= 1/sqrt(sizes[i-1]);
 			} else {
 				pBias->fill(0.0);
 				pWeight->fill(0.0);
@@ -98,27 +98,25 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 				nabla_b[k]->fill(0.0);
 			}
 			updateMiniBatch(j, miniBatchSize, eta, lambda, nabla_w, nabla_b);
-
-
-			if(dataSet->getTestDataSize() > 0) {
-				cout << "Epoch " << i+1 << " " << evaluate() << " / " << dataSet->getTestDataSize() << endl;
-			} else {
-				cout << "Epoch " << i+1 << " complete." << endl;
-			}
-
-
-			/*
-			cout << "Epoch " << j << " training complete" << endl;
-			if(networkListener) {
-				double validationCost = totalCost(dataSet->getValidationDataSet(), lambda);
-				double validationAccuracy = accuracy(dataSet->getValidationDataSet());
-				double trainCost = totalCost(dataSet->getTrainDataSet(), lambda);
-				double trainAccuracy = accuracy(dataSet->getTrainDataSet());
-
-				networkListener->epochComplete(validationCost, validationAccuracy, trainCost, trainAccuracy);
-			}
-			*/
 		}
+
+		if(dataSet->getTestDataSize() > 0) {
+			cout << "Epoch " << i+1 << " " << evaluate() << " / " << dataSet->getTestDataSize() << endl;
+		} else {
+			cout << "Epoch " << i+1 << " complete." << endl;
+		}
+
+		/*
+		cout << "Epoch " << j << " training complete" << endl;
+		if(networkListener) {
+			double validationCost = totalCost(dataSet->getValidationDataSet(), lambda);
+			double validationAccuracy = accuracy(dataSet->getValidationDataSet());
+			double trainCost = totalCost(dataSet->getTrainDataSet(), lambda);
+			double trainAccuracy = accuracy(dataSet->getTrainDataSet());
+
+			networkListener->epochComplete(validationCost, validationAccuracy, trainCost, trainAccuracy);
+		}
+		*/
 	}
 
 	deallocParameters(nabla_w, nabla_b);
@@ -136,8 +134,8 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, d
 	int n = dataSet->getTrainDataSize();
 	for(int i = 1; i < numLayers; i++) {
 		// weight update에 L2 Regularization, Weight Decay 적용
-		//(*weights[i]) = (1-eta*lambda/n)*(*weights[i]) - (eta/miniBatchSize)*(*nabla_w[i]);
-		(*weights[i]) -= eta/miniBatchSize*(*nabla_w[i]);
+		(*weights[i]) = (1-eta*lambda/n)*(*weights[i]) - (eta/miniBatchSize)*(*nabla_w[i]);
+		//(*weights[i]) -= eta/miniBatchSize*(*nabla_w[i]);
 		(*biases[i]) -= eta/miniBatchSize*(*nabla_b[i]);
 	}
 }
@@ -177,8 +175,8 @@ void Network::backprop(const DataSample *dataSample, vector<mat *> &nabla_w, vec
 	// backward pass
 	int lastLayerIndex = numLayers-1;
 	// δL = (aL−y) ⊙ σ′(zL)
-	vec delta = costDerivative(activations[lastLayerIndex], dataSample->getTarget()) % sigmoidPrime(activations[lastLayerIndex]);
-	//vec delta = cost->delta(zs[lastLayerIndex], activations[lastLayerIndex], dataSample->getTarget());
+	//vec delta = costDerivative(activations[lastLayerIndex], dataSample->getTarget()) % sigmoidPrime(activations[lastLayerIndex]);
+	vec delta = cost->delta(zs[lastLayerIndex], activations[lastLayerIndex], dataSample->getTarget());
 	Util::printVec(&delta, "delta");
 
 	// ∂C / ∂b = δ
