@@ -11,11 +11,7 @@
 #include "DataSample.h"
 
 
-
-DataSet::DataSet() {
-
-}
-
+DataSet::DataSet() {}
 DataSet::~DataSet() {}
 
 

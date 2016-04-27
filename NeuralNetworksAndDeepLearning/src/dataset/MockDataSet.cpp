@@ -22,6 +22,7 @@ MockDataSet::~MockDataSet() {
 void MockDataSet::load() {
 
 	trainDataSize = 10;
+	validationDataSize = 10;
 	testDataSize = 10;
 
 	double trainData[9*trainDataSize] = {
@@ -48,12 +49,14 @@ void MockDataSet::load() {
 		Util::printVec(trainDataSet[i]->getTarget(), "target");
 	}
 
+
+	for(int i = 0; i < validationDataSize; i++) {
+		validationDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
+	}
+
 	for(int i = 0; i < testDataSize; i++) {
 		testDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
 	}
-
-
-
 }
 
 void MockDataSet::shuffleTrainDataSet() {

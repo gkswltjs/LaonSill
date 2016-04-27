@@ -17,6 +17,8 @@ public:
 
 	virtual void load();
 	virtual void shuffleTrainDataSet();
+
+
 };
 
 #endif /* DATASET_MOCKDATASET_H_ */

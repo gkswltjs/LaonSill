@@ -23,17 +23,17 @@ using namespace arma;
 
 class MnistDataSet : public DataSet {
 public:
-	MnistDataSet();
+	MnistDataSet(double validationSetRatio);
 	virtual ~MnistDataSet();
 
 	virtual void load();
 	virtual void shuffleTrainDataSet();
 
 private:
+	//int loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet, int offset, int size);
 	int loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet);
 
-protected:
-
+	double validationSetRatio;
 };
 
 #endif /* MNISTDATASET_DATASET_H_ */

@@ -19,13 +19,15 @@
 
 
 
-Network::Network(int sizes[], int sizeCount, DataSet *dataSet) {
+Network::Network(int sizes[], int sizeCount, DataSet *dataSet, Cost *cost, NetworkListener *networkListener) {
 	this->numLayers = sizeCount;
 	this->sizes = sizes;
 
-	initializeParameters(weights, biases, true);
+	defaultWeightInitializer(weights, biases, true);
 
 	this->dataSet = dataSet;
+	this->cost = cost;
+	this->networkListener = networkListener;
 }
 
 Network::~Network() {
@@ -33,30 +35,30 @@ Network::~Network() {
 }
 
 
-void Network::initializeParameters(vector<mat *> &weights, vector<vec *> &biases, bool init) {
+void Network::defaultWeightInitializer(vector<mat *> &weights, vector<vec *> &biases, bool init) {
 	for(int i = 0; i < numLayers; i++) {
 		// index를 맞추기 위해 0번에 dummy bias, weight 추가
 		if(i == 0) {
 			biases.push_back(new vec());
 			weights.push_back((new mat()));
 		} else {
-			vec *bias = new vec(sizes[i]);
-			biases.push_back(bias);
+			vec *pBias = new vec(sizes[i]);
+			biases.push_back(pBias);
 
-			mat *weight = new mat(sizes[i], sizes[i-1]);
-			weights.push_back(weight);
+			mat *pWeight = new mat(sizes[i], sizes[i-1]);
+			weights.push_back(pWeight);
 
 			if(init) {
-				bias->randn();
-				weight->randn();
-				//bias->fill(0.1);
-				//weight->fill(0.01);
+				pBias->randn();
+				pWeight->randn();
+				// initial point scaling
+				//(*pWeight) *= 1/sqrt(sizes[i-1]);
 			} else {
-				bias->fill(0.0);
-				weight->fill(0.0);
+				pBias->fill(0.0);
+				pWeight->fill(0.0);
 			}
-			Util::printMat(weight, "weight");
-			Util::printVec(bias, "bias");
+			Util::printMat(pWeight, "weight");
+			Util::printVec(pBias, "bias");
 		}
 	}
 }
@@ -79,13 +81,13 @@ void Network::deallocParameters(vector<mat *> weights, vector<vec *> biases) {
 
 
 
-void Network::sgd(int epochs, int miniBatchSize, double eta) {
+void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 	int trainDataSize = dataSet->getTrainDataSize();
 	int miniBatchesSize = trainDataSize / miniBatchSize;
 
 	vector<mat *> nabla_w;
 	vector<vec *> nabla_b;
-	initializeParameters(nabla_w, nabla_b, false);
+	defaultWeightInitializer(nabla_w, nabla_b, false);
 
 	for(int i = 0; i < epochs; i++) {
 		dataSet->shuffleTrainDataSet();
@@ -95,13 +97,27 @@ void Network::sgd(int epochs, int miniBatchSize, double eta) {
 				nabla_w[k]->fill(0.0);
 				nabla_b[k]->fill(0.0);
 			}
-			updateMiniBatch(j, miniBatchSize, eta, nabla_w, nabla_b);
-		}
+			updateMiniBatch(j, miniBatchSize, eta, lambda, nabla_w, nabla_b);
 
-		if(dataSet->getTestDataSize() > 0) {
-			cout << "Epoch " << i+1 << " " << evaluate() << " / " << dataSet->getTestDataSize() << endl;
-		} else {
-			cout << "Epoch " << i+1 << " complete." << endl;
+
+			if(dataSet->getTestDataSize() > 0) {
+				cout << "Epoch " << i+1 << " " << evaluate() << " / " << dataSet->getTestDataSize() << endl;
+			} else {
+				cout << "Epoch " << i+1 << " complete." << endl;
+			}
+
+
+			/*
+			cout << "Epoch " << j << " training complete" << endl;
+			if(networkListener) {
+				double validationCost = totalCost(dataSet->getValidationDataSet(), lambda);
+				double validationAccuracy = accuracy(dataSet->getValidationDataSet());
+				double trainCost = totalCost(dataSet->getTrainDataSet(), lambda);
+				double trainAccuracy = accuracy(dataSet->getTrainDataSet());
+
+				networkListener->epochComplete(validationCost, validationAccuracy, trainCost, trainAccuracy);
+			}
+			*/
 		}
 	}
 
@@ -110,14 +126,17 @@ void Network::sgd(int epochs, int miniBatchSize, double eta) {
 
 
 
-void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, vector<mat *> &nabla_w, vector<vec *> &nabla_b) {
+void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, double lambda, vector<mat *> &nabla_w, vector<vec *> &nabla_b) {
 
 	int baseIndex = nthMiniBatch*miniBatchSize;
 	for(int i = 0; i < miniBatchSize; i++) {
 		backprop(dataSet->getTrainDataAt(baseIndex+i), nabla_w, nabla_b);
 	}
 
+	int n = dataSet->getTrainDataSize();
 	for(int i = 1; i < numLayers; i++) {
+		// weight update에 L2 Regularization, Weight Decay 적용
+		//(*weights[i]) = (1-eta*lambda/n)*(*weights[i]) - (eta/miniBatchSize)*(*nabla_w[i]);
 		(*weights[i]) -= eta/miniBatchSize*(*nabla_w[i]);
 		(*biases[i]) -= eta/miniBatchSize*(*nabla_b[i]);
 	}
@@ -159,6 +178,7 @@ void Network::backprop(const DataSample *dataSample, vector<mat *> &nabla_w, vec
 	int lastLayerIndex = numLayers-1;
 	// δL = (aL−y) ⊙ σ′(zL)
 	vec delta = costDerivative(activations[lastLayerIndex], dataSample->getTarget()) % sigmoidPrime(activations[lastLayerIndex]);
+	//vec delta = cost->delta(zs[lastLayerIndex], activations[lastLayerIndex], dataSample->getTarget());
 	Util::printVec(&delta, "delta");
 
 	// ∂C / ∂b = δ
@@ -218,30 +238,6 @@ vec Network::sigmoidPrime(const vec *activation) {
 
 
 
-int Network::evaluate() {
-	int testResult = 0;
-	//bool printBak = Util::getPrint();
-	//Util::setPrint(true);
-
-
-	int testDataSize = dataSet->getTestDataSize();
-	for(int i = 0; i < testDataSize; i++) {
-		const DataSample *testData = dataSet->getTestDataAt(i);
-
-
-		Util::printVec(testData->getData(), "data");
-		Util::printVec(testData->getTarget(), "target");
-
-
-
-		testResult += testEvaluateResult(feedforward(testData->getData()), testData->getTarget());
-	}
-
-
-	//Util::setPrint(printBak);
-
-	return testResult;
-}
 
 
 vec Network::feedforward(const vec *x) {
@@ -264,16 +260,105 @@ vec Network::feedforward(const vec *x) {
 
 
 
+
+
+
+
+double Network::totalCost(const vector<const DataSample *> &dataSet, double lambda) {
+	double cost = 0.0;
+	int dataSize = dataSet.size();
+
+	for(int i = 0; i < dataSize; i++) {
+		vec activation = feedforward(dataSet[i]->getData());
+		cost += this->cost->fn(&activation, dataSet[i]->getTarget());
+	}
+	cost /= dataSize;
+
+	// add weight decay term of cost
+	for(int i = 1; i < numLayers; i++) {
+		cost += 0.5*(lambda/dataSize)*accu(square(*weights[i]));
+	}
+	return cost;
+}
+
+
+
+double Network::accuracy(const vector<const DataSample *> &dataSet) {
+	int total = 0;
+	int dataSize = dataSet.size();
+	for(int i = 0; i < dataSize; i++) {
+		const DataSample *dataSample = dataSet[i];
+		Util::printVec(dataSample->getData(), "data");
+		Util::printVec(dataSample->getTarget(), "target");
+		total += testEvaluateResult(feedforward(dataSample->getData()), dataSample->getTarget());
+	}
+	return total/(double)dataSize;
+}
+
 int Network::testEvaluateResult(const vec &evaluateResult, const vec *y) {
+	Util::printVec(&evaluateResult, "result");
+	Util::printVec(y, "y");
+
 	uword rrow, yrow;
 	evaluateResult.max(rrow);
 	(*y).max(yrow);
 
-	//cout << "rrow: " << rrow << ", yrow: " << yrow << endl;
-
 	if(rrow == yrow) return 1;
 	else return 0;
 }
+
+
+
+
+void Network::save(string filename) {
+
+}
+
+void Network::load(string filename) {
+}
+
+
+
+
+int Network::evaluate() {
+	int testResult = 0;
+	//bool printBak = Util::getPrint();
+	//Util::setPrint(true);
+	int testDataSize = dataSet->getTestDataSize();
+	for(int i = 0; i < testDataSize; i++) {
+		const DataSample *testData = dataSet->getTestDataAt(i);
+		Util::printVec(testData->getData(), "data");
+		Util::printVec(testData->getTarget(), "target");
+		testResult += testEvaluateResult(feedforward(testData->getData()), testData->getTarget());
+	}
+	//Util::setPrint(printBak);
+
+	return testResult;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

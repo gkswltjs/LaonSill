@@ -6,6 +6,8 @@
 #include "dataset/MockDataSet.h"
 #include "activation.h"
 #include "Util.h"
+#include "cost/CrossEntropyCost.h"
+#include "monitor/NetworkMonitor.h"
 
 using namespace std;
 using namespace arma;
@@ -27,46 +29,61 @@ int main(int argc, char** argv) {
 	network_test();
 
 	//custom_armadillo_test();
-
-
 	return 0;
 }
 
 
 void custom_armadillo_test() {
-	vec v1;
-	v1 << 0.14333 << 0.59478 << 0.14481 << 0.58558 << 0.60809;
+	vec *pY = new vec(2), *pA = new vec(2);
+	(*pY) << 1 << 0;
+	(*pA) << 0.0872 << 0.2008;
 
-	v1 = exp(-1*v1 + 1);
-	v1.print("v1");
+
+	vec temp1 = (-1 * (*pY));
+	vec temp2 = log(*pA);
+	vec temp3 = temp1 % temp2;
+	Util::printVec(&temp1, "temp1");
+	Util::printVec(&temp2, "temp2");
+	Util::printVec(&temp3, "temp3");
+
+
+	vec left = (-1 * (*pY)) % log(*pA);
+	vec right = (1 - (*pY)) % log(1 - (*pA));
+	vec result = left - right;
+	Util::printVec(&left, "left");
+	Util::printVec(&right, "right");
+	Util::printVec(&result, "result");
+
 }
 
 
-void network_test()
-{
+void network_test() {
 
 	bool debug = false;
+	double validationSetRatio = 1.0/6.0;
+
+	CrossEntropyCost cost;
+	NetworkListener *networkListener = new NetworkMonitor();
+
+	double lambda = 5.0;
 
 	if(!debug) {
 		Util::setPrint(false);
-
-		MnistDataSet dataSet;
+		MnistDataSet dataSet(validationSetRatio);
 		dataSet.load();
-
 		int sizes[] = {784, 30, 10};
-		Network network(sizes, 3, &dataSet);
-		network.sgd(30, 10, 3.0);
+		Network network(sizes, 3, &dataSet, &cost, networkListener);
+		network.sgd(30, 10, 3.0, lambda);
 	} else {
 		Util::setPrint(true);
-
 		MockDataSet dataSet;
 		dataSet.load();
-
 		int sizes[] = {9, 5, 10};
-		Network network(sizes, 3, &dataSet);
-		network.sgd(5, 2, 3.0);
+		Network network(sizes, 3, &dataSet, &cost, networkListener);
+		network.sgd(5, 2, 3.0, lambda);
 	}
 
+	delete networkListener;
 }
 
 

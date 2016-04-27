@@ -36,6 +36,10 @@ public:
 	const DataSample *getValidationDataAt(int index);
 	const DataSample *getTestDataAt(int index);
 
+	const vector<const DataSample *> &getTrainDataSet() const { return this->trainDataSet; }
+	const vector<const DataSample *> &getValidationDataSet() const { return this->validationDataSet; }
+	const vector<const DataSample *> &getTestDataSet() const { return this->testDataSet; }
+
 	virtual void load() = 0;
 	virtual void shuffleTrainDataSet() = 0;
 
@@ -45,12 +49,6 @@ private:
 
 
 protected:
-	int trainDataSeq;
-	int validationDataSeq;
-	int testDataSeq;
-
-	int inputSize;
-	int outputSize;
 	int trainDataSize;
 	int validationDataSize;
 	int testDataSize;
