@@ -9,7 +9,8 @@
 #define LAYER_SOFTMAXLAYER_H_
 
 #include "OutputLayer.h"
-#include "../cost/Cost.h"
+#include "../cost/LogLikelihoodCost.h"
+#include "../activation/Softmax.h"
 #include <armadillo>
 
 using namespace arma;
@@ -17,12 +18,13 @@ using namespace arma;
 
 class SoftmaxLayer : public OutputLayer {
 public:
-	SoftmaxLayer(int n_in, int n_out, Cost *cost_fn)
+	SoftmaxLayer(int n_in, int n_out)
 		: OutputLayer(n_in, n_out) {
-		this->cost_fn = cost_fn;
-		this->activation_fn = new Sigmoid();
+		this->cost_fn = new LogLikelihoodCost();
+		this->activation_fn = new Softmax();
 	}
 	virtual ~SoftmaxLayer() {
+		if(cost_fn) delete cost_fn;
 		if(activation_fn) delete activation_fn;
 	}
 

@@ -7,12 +7,14 @@
 #include "activation.h"
 #include "Util.h"
 #include "cost/CrossEntropyCost.h"
+#include "cost/LogLikelihoodCost.h"
 #include "monitor/NetworkMonitor.h"
 
 #include "layer/Layer.h"
 #include "layer/InputLayer.h"
 #include "layer/FullyConnectedLayer.h"
 #include "layer/SigmoidLayer.h"
+#include "layer/SoftmaxLayer.h"
 #include "activation/Activation.h"
 #include "activation/Sigmoid.h"
 
@@ -103,7 +105,7 @@ void network_test2() {
 	double validationSetRatio = 1.0/6.0;
 
 	Activation *sigmoid = new Sigmoid();
-	Cost *crossEntropyCost = new CrossEntropyCost();
+	// Cost *crossEntropyCost = new CrossEntropyCost();
 	NetworkListener *networkListener = new NetworkMonitor();
 
 	double lambda = 5.0;
@@ -119,7 +121,8 @@ void network_test2() {
 		Layer *layers[] = {
 			new InputLayer(9),
 			new FullyConnectedLayer(784, 30, sigmoid),
-			new SigmoidLayer(30, 10, crossEntropyCost)
+			new SoftmaxLayer(30, 10)
+			//new SigmoidLayer(30, 10, crossEntropyCost)
 			//new FullyConnectedLayer(30, 10, sigmoid)
 		};
 
@@ -136,7 +139,8 @@ void network_test2() {
 		Layer *layers[] = {
 			new InputLayer(9),
 			new FullyConnectedLayer(9, 5, sigmoid),
-			new SigmoidLayer(5, 10, crossEntropyCost)
+			new SoftmaxLayer(30, 10)
+			//new SigmoidLayer(5, 10, crossEntropyCost)
 			//new FullyConnectedLayer(5, 10, sigmoid)
 		};
 

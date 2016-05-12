@@ -15,8 +15,8 @@ using namespace arma;
 
 class Sigmoid : public Activation {
 public:
-	Sigmoid() {};
-	virtual ~Sigmoid() {};
+	Sigmoid() {}
+	virtual ~Sigmoid() {}
 
 	void activate(const vec &z, vec &activation) {
 		vec temp = ones<vec>(z.n_rows);
