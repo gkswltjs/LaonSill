@@ -8,15 +8,21 @@
 #ifndef LAYER_OUTPUTLAYER_H_
 #define LAYER_OUTPUTLAYER_H_
 
-#include "HiddenLayer.h"
+#include "FullyConnectedLayer.h"
 #include <armadillo>
 
 using namespace arma;
 
 
-class OutputLayer : public HiddenLayer {
+class OutputLayer : public FullyConnectedLayer {
 public:
-	OutputLayer() {};
+	OutputLayer(int n_in, int n_out)
+		:FullyConnectedLayer(n_in, n_out) {}
+	OutputLayer(int n_in, int n_out, Activation *activation_fn, Cost *cost_fn)
+		:FullyConnectedLayer(n_in, n_out) {
+		this->activation_fn = activation_fn;
+		this->cost_fn = cost_fn;
+	};
 	virtual ~OutputLayer() {};
 
 	/**
@@ -25,6 +31,9 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	virtual void cost(const vec &target, const vec &input)=0;
+
+protected:
+	Cost *cost_fn;
 
 };
 

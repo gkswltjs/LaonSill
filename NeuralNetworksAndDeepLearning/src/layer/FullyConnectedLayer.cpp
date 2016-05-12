@@ -8,7 +8,9 @@
 #include "FullyConnectedLayer.h"
 
 
-FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn, Cost *cost_fn) {
+
+FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn) {
+
 	this->n_in = n_in;
 	this->n_out = n_out;
 
@@ -28,13 +30,13 @@ FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, Activation *activa
 	this->delta.set_size(n_out, 1);
 
 	this->activation_fn = activation_fn;
-	this->cost_fn = cost_fn;
 }
 
 
 FullyConnectedLayer::~FullyConnectedLayer() {
 
 }
+
 
 
 void FullyConnectedLayer::feedforward(const vec &input) {
@@ -53,13 +55,14 @@ void FullyConnectedLayer::backpropagation(const mat &next_w, const vec &next_del
 }
 
 
-
+/*
 void FullyConnectedLayer::cost(const vec &target, const vec &input) {
 	cost_fn->d_cost(z, activation, target, delta);
 
 	nabla_b += delta;
 	nabla_w += delta*input.t();
 }
+*/
 
 
 void FullyConnectedLayer::reset_nabla() {

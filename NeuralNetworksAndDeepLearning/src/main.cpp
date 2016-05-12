@@ -12,6 +12,7 @@
 #include "layer/Layer.h"
 #include "layer/InputLayer.h"
 #include "layer/FullyConnectedLayer.h"
+#include "layer/SigmoidLayer.h"
 #include "activation/Activation.h"
 #include "activation/Sigmoid.h"
 
@@ -117,12 +118,14 @@ void network_test2() {
 
 		Layer *layers[] = {
 			new InputLayer(9),
-			new FullyConnectedLayer(784, 30, sigmoid, crossEntropyCost),
-			new FullyConnectedLayer(30, 10, sigmoid, crossEntropyCost)
+			new FullyConnectedLayer(784, 30, sigmoid),
+			new SigmoidLayer(30, 10, crossEntropyCost)
+			//new FullyConnectedLayer(30, 10, sigmoid)
 		};
 
 		Network network(sizes, 3, layers, mnistDataSet, networkListener);
-		network.sgd(30, 10, 0.1, lambda);
+		//network.sgd(30, 10, 0.1, lambda);
+		network.sgd(500, 10, 0.1, lambda);
 
 	} else {
 		Util::setPrint(true);
@@ -132,8 +135,9 @@ void network_test2() {
 		int sizes[] = {9, 5, 10};
 		Layer *layers[] = {
 			new InputLayer(9),
-			new FullyConnectedLayer(9, 5, sigmoid, crossEntropyCost),
-			new FullyConnectedLayer(5, 10, sigmoid, crossEntropyCost)
+			new FullyConnectedLayer(9, 5, sigmoid),
+			new SigmoidLayer(5, 10, crossEntropyCost)
+			//new FullyConnectedLayer(5, 10, sigmoid)
 		};
 
 		Network network(sizes, 3, layers, dataSet, networkListener);

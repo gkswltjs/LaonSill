@@ -8,14 +8,17 @@
 #ifndef LAYER_FULLYCONNECTEDLAYER_H_
 #define LAYER_FULLYCONNECTEDLAYER_H_
 
-#include "OutputLayer.h"
+#include "HiddenLayer.h"
 #include "../activation/Activation.h"
 #include "../cost/Cost.h"
 
-class FullyConnectedLayer : public OutputLayer {
+class FullyConnectedLayer : public HiddenLayer {
 public:
-	FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn, Cost *cost_fn);
+	FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn = 0);
 	virtual ~FullyConnectedLayer();
+
+	void setActivation(Activation *activation_fn) { this->activation_fn = activation_fn; }
+
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
@@ -35,7 +38,7 @@ public:
 	 * @param target: 현재 데이터에 대한 목적값
 	 * @param output: 레이어 출력
 	 */
-	void cost(const vec &target, const vec &input);
+	//void cost(const vec &target, const vec &input);
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
@@ -51,21 +54,17 @@ public:
 	 */
 	void update(double eta, double lambda, int n, int miniBatchSize);
 
-private:
+protected:
 	int n_in;
 	int n_out;
 
 	vec bias;
 
-
 	vec nabla_b;
 	mat nabla_w;
 
 	vec z;
-
-
 	Activation *activation_fn;
-	Cost *cost_fn;
 };
 
 #endif /* LAYER_FULLYCONNECTEDLAYER_H_ */
