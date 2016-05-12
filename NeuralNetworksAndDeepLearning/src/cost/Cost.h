@@ -19,7 +19,7 @@ public:
 	virtual ~Cost() {}
 
 	virtual double fn(const vec *pA, const vec *pY) = 0;
-	virtual vec delta(const vec *pZ, const vec *pA, const vec *pY) = 0;
+	virtual void d_cost(const vec &z, const vec &activation, const vec &target, vec &delta) = 0;
 };
 
 #endif /* COST_COST_H_ */

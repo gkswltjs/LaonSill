@@ -22,8 +22,8 @@ public:
 
 	static int random(int min, int max);
 	static int pack4BytesToInt(unsigned char *buffer);
-	static void printVec(const vec *vector, string name);
-	static void printMat(const mat *matrix, string name);
+	static void printVec(const vec &vector, string name);
+	static void printMat(const mat &matrix, string name);
 
 	static int getPrint() { return Util::print; }
 	static void setPrint(bool print) { Util::print = print; };

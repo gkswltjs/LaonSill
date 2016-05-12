@@ -10,21 +10,20 @@
 #include "../Util.h"
 
 MockDataSet::MockDataSet() {
-	// TODO Auto-generated constructor stub
-
-}
-
-MockDataSet::~MockDataSet() {
-	// TODO Auto-generated destructor stub
-}
-
-
-void MockDataSet::load() {
-
 	trainDataSize = 10;
 	validationDataSize = 10;
 	testDataSize = 10;
 
+	trainDataSet = new DataSample[trainDataSize];
+	validationDataSet = new DataSample[validationDataSize];
+	testDataSet = new DataSample[testDataSize];
+}
+
+MockDataSet::~MockDataSet() {
+}
+
+
+void MockDataSet::load() {
 	double trainData[9*trainDataSize] = {
 			0.0, 0.3, 0.4, 0.5, 0.6, 0.7, 0.6, 0.5, 0.4,
 			0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
@@ -43,19 +42,20 @@ void MockDataSet::load() {
 
 
 	for(int i = 0; i < trainDataSize; i++) {
-		trainDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
-
-		Util::printVec(trainDataSet[i]->getData(), "data");
-		Util::printVec(trainDataSet[i]->getTarget(), "target");
+		trainDataSet[i].readData(&trainData[i*9], trainTarget[i]);
+		//trainDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
+		//Util::printVec(trainDataSet[i]->getData(), "data");
+		//Util::printVec(trainDataSet[i]->getTarget(), "target");
 	}
 
-
 	for(int i = 0; i < validationDataSize; i++) {
-		validationDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
+		validationDataSet[i].readData(&trainData[i*9], trainTarget[i]);
+		//validationDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
 	}
 
 	for(int i = 0; i < testDataSize; i++) {
-		testDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
+		testDataSet[i].readData(&trainData[i*9], trainTarget[i]);
+		//testDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
 	}
 }
 

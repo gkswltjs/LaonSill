@@ -91,8 +91,7 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 
 
 
-int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet, int offset, int size) {
-
+int MnistDataSet::loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size) {
 	// LOAD IMAGE DATA
 
 	ImageInfo dataInfo(resources[0]);
@@ -110,8 +109,6 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 	int dataNumCols = Util::pack4BytesToInt(dataPtr);
 	dataPtr += 4;
 
-
-
 	// LOAD LABEL DATA
 	ImageInfo targetInfo(resources[1]);
 	targetInfo.load();
@@ -124,7 +121,6 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 	//int labelSize = Util::pack4BytesToInt(targetPtr);
 	targetPtr += 4;
 
-
 	if(offset >= dataSize) return 0;
 
 	dataPtr += offset;
@@ -134,16 +130,28 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 	if(size > 0) stop = min(dataSize, offset+size);
 
 	int dataArea = dataNumRows * dataNumCols;
+	if(dataSet) delete dataSet;
+	dataSet = new DataSample[stop-offset];
+
 	for(int i = offset; i < stop; i++) {
-		const DataSample *dataSample = new DataSample(dataPtr, dataArea, targetPtr, 10);
-		dataSet.push_back(dataSample);
+		//const DataSample *dataSample = new DataSample(dataPtr, dataArea, targetPtr, 10);
+		//dataSet.push_back(dataSample);
+		dataSet[i-offset].readData(dataPtr, dataArea, targetPtr, 10);
 	}
 	return stop-offset;
 }
 
 
 void MnistDataSet::shuffleTrainDataSet() {
-	random_shuffle(trainDataSet.begin(), trainDataSet.end());
+	random_shuffle(&trainDataSet[0], &trainDataSet[trainDataSize]);
+}
+
+void MnistDataSet::shuffleValidationDataSet() {
+	random_shuffle(&validationDataSet[0], &validationDataSet[validationDataSize]);
+}
+
+void MnistDataSet::shuffleTestDataSet() {
+	random_shuffle(&testDataSet[0], &testDataSet[testDataSize]);
 }
 
 

@@ -11,7 +11,9 @@
 #include <armadillo>
 
 #include "cost/Cost.h"
+#include "activation/Activation.h"
 #include "monitor/NetworkListener.h"
+#include "layer/Layer.h"
 
 class DataSample;
 
@@ -24,7 +26,7 @@ using namespace arma;
 
 class Network {
 public:
-	Network(int sizes[], int sizeCount, DataSet *dataSet, Cost *cost, NetworkListener *networkListener);
+	Network(int sizes[], int sizeCount, Layer **layers, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
 	void sgd(int epochs, int miniBatchSize, double eta, double lambda);
@@ -33,15 +35,15 @@ public:
 	void load(string filename);
 
 private:
-	void updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, double lambda, vector<mat *> &nabla_w, vector<vec *> &nabla_b);
-	void backprop(const DataSample *dataSample, vector<mat *> &nabla_w, vector<vec *> &nabla_b);
+	void updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, double lambda);
+	void backprop(const DataSample &dataSample);
 
-	void feedforward();
-	vec feedforward(const vec *x);
-	int testEvaluateResult(const vec &evaluateResult, const vec *y);
+	//void feedforward();
+	void feedforward(const vec &input);
+	int testEvaluateResult(const vec &output, const vec &y);
 
-	void defaultWeightInitializer(vector<mat *> &weights, vector<vec *> &biases, bool init);
-	void deallocParameters(vector<mat *> weights, vector<vec *> biases);
+	//void defaultWeightInitializer(vector<mat *> &weights, vector<vec *> &biases, bool init);
+	//void deallocParameters(vector<mat *> weights, vector<vec *> biases);
 	vec costDerivative(const vec *outputActivation, const vec *y);
 	vec sigmoid(const vec *activation);
 	vec sigmoidPrime(const vec *z);
@@ -50,14 +52,16 @@ private:
 	int evaluate();
 
 
-	Cost *cost;
+	Cost *cost_fn;
+	Activation *activation_fn;
 	DataSet *dataSet;
 	NetworkListener *networkListener;
+	Layer **layers;
 
 	int numLayers;
 	int *sizes;
-	vector<vec *> biases;
-	vector<mat *> weights;
+	//vector<vec *> biases;
+	//vector<mat *> weights;
 };
 
 #endif /* NETWORK_H_ */

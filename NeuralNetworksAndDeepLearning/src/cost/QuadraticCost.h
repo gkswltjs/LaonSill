@@ -26,8 +26,8 @@ public:
 		return 0.5*sum(square(*pA - *pY));
 	}
 
-	vec delta(const vec *pZ, const vec *pA, const vec *pY) {
-		return (*pA - *pY);
+	void d_cost(const vec &z, const vec &activation, const vec &target, vec &delta) {
+		delta = activation - target;
 	}
 };
 

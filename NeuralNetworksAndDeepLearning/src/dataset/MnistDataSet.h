@@ -27,10 +27,13 @@ public:
 	virtual ~MnistDataSet();
 
 	virtual void load();
-	virtual void shuffleTrainDataSet();
+	void shuffleTrainDataSet();
+	void shuffleValidationDataSet();
+	void shuffleTestDataSet();
+
 
 private:
-	int loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet, int offset, int size);
+	int loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size);
 	//int loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet);
 
 	double validationSetRatio;

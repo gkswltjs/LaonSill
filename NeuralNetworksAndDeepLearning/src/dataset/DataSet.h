@@ -32,17 +32,18 @@ public:
 	int getValidationDataSize() const { return this->validationDataSize; }
 	int getTestDataSize() const { return this->testDataSize; }
 
-	const DataSample *getTrainDataAt(int index);
-	const DataSample *getValidationDataAt(int index);
-	const DataSample *getTestDataAt(int index);
+	const DataSample &getTrainDataAt(int index);
+	const DataSample &getValidationDataAt(int index);
+	const DataSample &getTestDataAt(int index);
 
-	const vector<const DataSample *> &getTrainDataSet() const { return this->trainDataSet; }
-	const vector<const DataSample *> &getValidationDataSet() const { return this->validationDataSet; }
-	const vector<const DataSample *> &getTestDataSet() const { return this->testDataSet; }
+	const DataSample *getTrainDataSet() const { return this->trainDataSet; }
+	const DataSample *getValidationDataSet() const { return this->validationDataSet; }
+	const DataSample *getTestDataSet() const { return this->testDataSet; }
 
 	virtual void load() = 0;
 	virtual void shuffleTrainDataSet() = 0;
-
+	virtual void shuffleValidationDataSet() = 0;
+	virtual void shuffleTestDataSet() = 0;
 
 private:
 
@@ -53,9 +54,13 @@ protected:
 	int validationDataSize;
 	int testDataSize;
 
-	vector<const DataSample *> trainDataSet;
-	vector<const DataSample *> validationDataSet;
-	vector<const DataSample *> testDataSet;
+	DataSample *trainDataSet;
+	DataSample *validationDataSet;
+	DataSample *testDataSet;
+
+	//vector<const DataSample *> trainDataSet;
+	//vector<const DataSample *> validationDataSet;
+	//vector<const DataSample *> testDataSet;
 
 };
 

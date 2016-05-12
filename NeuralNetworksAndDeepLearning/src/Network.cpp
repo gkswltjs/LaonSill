@@ -13,28 +13,33 @@
 
 #include "dataset/DataSample.h"
 #include "dataset/DataSet.h"
+#include "layer/HiddenLayer.h"
+#include "layer/OutputLayer.h"
 #include "Util.h"
 
 
 
 
 
-Network::Network(int sizes[], int sizeCount, DataSet *dataSet, Cost *cost, NetworkListener *networkListener) {
+Network::Network(int sizes[], int sizeCount, Layer **layers, DataSet *dataSet, NetworkListener *networkListener) {
 	this->numLayers = sizeCount;
 	this->sizes = sizes;
 
-	defaultWeightInitializer(weights, biases, true);
+	//defaultWeightInitializer(weights, biases, true);
 
+	this->layers = layers;
 	this->dataSet = dataSet;
-	this->cost = cost;
+	//this->cost_fn = cost_fn;
+	//this->activation_fn = activation_fn;
 	this->networkListener = networkListener;
 }
 
 Network::~Network() {
-	deallocParameters(weights, biases);
+	//deallocParameters(weights, biases);
 }
 
 
+/*
 void Network::defaultWeightInitializer(vector<mat *> &weights, vector<vec *> &biases, bool init) {
 	for(int i = 0; i < numLayers; i++) {
 		// index를 맞추기 위해 0번에 dummy bias, weight 추가
@@ -63,6 +68,7 @@ void Network::defaultWeightInitializer(vector<mat *> &weights, vector<vec *> &bi
 	}
 }
 
+
 void Network::deallocParameters(vector<mat *> weights, vector<vec *> biases) {
 	int size = weights.size();
 	for(int i = 0; i < size; i++) {
@@ -70,7 +76,7 @@ void Network::deallocParameters(vector<mat *> weights, vector<vec *> biases) {
 		delete biases[i];
 	}
 }
-
+*/
 
 
 
@@ -85,67 +91,90 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 	int trainDataSize = dataSet->getTrainDataSize();
 	int miniBatchesSize = trainDataSize / miniBatchSize;
 
-	vector<mat *> nabla_w;
-	vector<vec *> nabla_b;
-	defaultWeightInitializer(nabla_w, nabla_b, false);
+	//vector<mat *> nabla_w;
+	//vector<vec *> nabla_b;
+	//defaultWeightInitializer(nabla_w, nabla_b, false);
 
 	for(int i = 0; i < epochs; i++) {
 		dataSet->shuffleTrainDataSet();
 
 		for(int j = 0; j < miniBatchesSize; j++) {
+			//for(int k = 1; k < numLayers; k++) {
+			//	nabla_w[k]->fill(0.0);
+			//	nabla_b[k]->fill(0.0);
+			//}
 			for(int k = 1; k < numLayers; k++) {
-				nabla_w[k]->fill(0.0);
-				nabla_b[k]->fill(0.0);
+				(dynamic_cast<HiddenLayer *>(layers[k]))->reset_nabla();
 			}
-			updateMiniBatch(j, miniBatchSize, eta, lambda, nabla_w, nabla_b);
+			updateMiniBatch(j, miniBatchSize, eta, lambda);
 		}
 
+
+		//dataSet->shuffleTestDataSet();
 		if(dataSet->getTestDataSize() > 0) {
 			cout << "Epoch " << i+1 << " " << evaluate() << " / " << dataSet->getTestDataSize() << endl;
 		} else {
 			cout << "Epoch " << i+1 << " complete." << endl;
 		}
 
-		/*
-		cout << "Epoch " << j << " training complete" << endl;
-		if(networkListener) {
-			double validationCost = totalCost(dataSet->getValidationDataSet(), lambda);
-			double validationAccuracy = accuracy(dataSet->getValidationDataSet());
-			double trainCost = totalCost(dataSet->getTrainDataSet(), lambda);
-			double trainAccuracy = accuracy(dataSet->getTrainDataSet());
 
+		/*
+		cout << "Epoch " << i+1 << " training complete" << endl;
+		if(networkListener) {
+			//double validationCost = totalCost(dataSet->getValidationDataSet(), lambda);
+			//double validationAccuracy = accuracy(dataSet->getValidationDataSet());
+			//double trainCost = totalCost(dataSet->getTrainDataSet(), lambda);
+			//double trainAccuracy = accuracy(dataSet->getTrainDataSet());
+			double validationCost = 0;
+			double validationAccuracy = accuracy(dataSet->getValidationDataSet());
+			double trainCost = 0;
+			double trainAccuracy = 0;
 			networkListener->epochComplete(validationCost, validationAccuracy, trainCost, trainAccuracy);
 		}
 		*/
 	}
-
-	deallocParameters(nabla_w, nabla_b);
+	//deallocParameters(nabla_w, nabla_b);
 }
 
 
 
-void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, double lambda, vector<mat *> &nabla_w, vector<vec *> &nabla_b) {
+void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, double lambda) {
 
 	int baseIndex = nthMiniBatch*miniBatchSize;
 	for(int i = 0; i < miniBatchSize; i++) {
-		backprop(dataSet->getTrainDataAt(baseIndex+i), nabla_w, nabla_b);
+		backprop(dataSet->getTrainDataAt(baseIndex+i));
 	}
 
 	int n = dataSet->getTrainDataSize();
 	for(int i = 1; i < numLayers; i++) {
+		(dynamic_cast<HiddenLayer *>(layers[i]))->update(eta, lambda, n, miniBatchSize);
 		// weight update에 L2 Regularization, Weight Decay 적용
-		(*weights[i]) = (1-eta*lambda/n)*(*weights[i]) - (eta/miniBatchSize)*(*nabla_w[i]);
+		//(*weights[i]) = (1-eta*lambda/n)*(*weights[i]) - (eta/miniBatchSize)*(*nabla_w[i]);
 		//(*weights[i]) -= eta/miniBatchSize*(*nabla_w[i]);
-		(*biases[i]) -= eta/miniBatchSize*(*nabla_b[i]);
+		//(*biases[i]) -= eta/miniBatchSize*(*nabla_b[i]);
 	}
 }
 
 
 
-void Network::backprop(const DataSample *dataSample, vector<mat *> &nabla_w, vector<vec *> &nabla_b) {
+void Network::backprop(const DataSample &dataSample) {
+
+	int lastLayerIndex = numLayers-1;
 
 	// feedforward
-	const vec *activation = dataSample->getData();
+	feedforward(dataSample.getData());
+
+
+	// backward pass
+	(dynamic_cast<OutputLayer *>(layers[lastLayerIndex]))->cost(dataSample.getTarget(), layers[lastLayerIndex-1]->getActivation());
+
+	for(int i = lastLayerIndex-1; i > 0; i--) {
+		(dynamic_cast<HiddenLayer *>(layers[i]))->backpropagation((dynamic_cast<HiddenLayer *>(layers[i+1]))->getWeight(),
+				(dynamic_cast<HiddenLayer *>(layers[i+1]))->getDelta(), layers[i-1]->getActivation());
+	}
+
+
+	/*
 	vector<const vec *> activations;
 	activations.push_back(activation);
 
@@ -205,9 +234,10 @@ void Network::backprop(const DataSample *dataSample, vector<mat *> &nabla_w, vec
 		delete activations[i+1];
 		delete zs[i];
 	}
+	*/
 }
 
-
+/*
 vec Network::costDerivative(const vec *outputActivation, const vec *y) {
 	Util::printVec(outputActivation, "outputActivation");
 	Util::printVec(y, "y");
@@ -231,21 +261,22 @@ vec Network::sigmoidPrime(const vec *activation) {
 	Util::printVec(&result, "result");
 	return result;
 }
+*/
 
 
 
 
 
 
-
-vec Network::feedforward(const vec *x) {
+void Network::feedforward(const vec &input) {
+	/*
 	Util::printVec(x, "x");
 	vec activation(*x);
 	Util::printVec(&activation, "activation");
 
 	for(int i = 1; i < numLayers; i++) {
-		Util::printMat(weights[i], "weight");
-		Util::printVec(biases[i], "bias");
+		//Util::printMat(weights[i], "weight");
+		//Util::printVec(biases[i], "bias");
 
 		vec z = (*weights[i])*activation+(*biases[i]);
 		Util::printVec(&z, "z");
@@ -254,6 +285,13 @@ vec Network::feedforward(const vec *x) {
 		Util::printVec(&activation, "activation");
 	}
 	return activation;
+	*/
+
+	layers[0]->feedforward(input);
+	for(int i = 1; i < numLayers; i++) {
+		layers[i]->feedforward(layers[i-1]->getActivation());
+	}
+
 }
 
 
@@ -261,7 +299,7 @@ vec Network::feedforward(const vec *x) {
 
 
 
-
+/*
 double Network::totalCost(const vector<const DataSample *> &dataSet, double lambda) {
 	double cost = 0.0;
 	int dataSize = dataSet.size();
@@ -292,14 +330,18 @@ double Network::accuracy(const vector<const DataSample *> &dataSet) {
 	}
 	return total/(double)dataSize;
 }
+*/
 
-int Network::testEvaluateResult(const vec &evaluateResult, const vec *y) {
-	Util::printVec(&evaluateResult, "result");
-	Util::printVec(y, "y");
+
+
+
+int Network::testEvaluateResult(const vec &output, const vec &y) {
+	//Util::printVec(&evaluateResult, "result");
+	//Util::printVec(y, "y");
 
 	uword rrow, yrow;
-	evaluateResult.max(rrow);
-	(*y).max(yrow);
+	output.max(rrow);
+	y.max(yrow);
 
 	if(rrow == yrow) return 1;
 	else return 0;
@@ -307,14 +349,14 @@ int Network::testEvaluateResult(const vec &evaluateResult, const vec *y) {
 
 
 
-
+/*
 void Network::save(string filename) {
 
 }
 
 void Network::load(string filename) {
 }
-
+*/
 
 
 
@@ -324,10 +366,13 @@ int Network::evaluate() {
 	//Util::setPrint(true);
 	int testDataSize = dataSet->getTestDataSize();
 	for(int i = 0; i < testDataSize; i++) {
-		const DataSample *testData = dataSet->getTestDataAt(i);
-		Util::printVec(testData->getData(), "data");
-		Util::printVec(testData->getTarget(), "target");
-		testResult += testEvaluateResult(feedforward(testData->getData()), testData->getTarget());
+		//const DataSample *testData = dataSet->getTestDataAt(i);
+		const DataSample &testData = dataSet->getTestDataAt(i);
+		//Util::printVec(testData->getData(), "data");
+		//Util::printVec(testData->getTarget(), "target");
+
+		feedforward(testData.getData());
+		testResult += testEvaluateResult(layers[numLayers-1]->getActivation(), testData.getTarget());
 	}
 	//Util::setPrint(printBak);
 

@@ -9,6 +9,12 @@
 #include "cost/CrossEntropyCost.h"
 #include "monitor/NetworkMonitor.h"
 
+#include "layer/Layer.h"
+#include "layer/InputLayer.h"
+#include "layer/FullyConnectedLayer.h"
+#include "activation/Activation.h"
+#include "activation/Sigmoid.h"
+
 using namespace std;
 using namespace arma;
 
@@ -18,15 +24,16 @@ using namespace arma;
 
 void armadillo_test();
 void network_test();
+void network_test2();
 void custom_armadillo_test();
 
 
 int main(int argc, char** argv) {
 
-	//cout << "main" << endl;
+	cout << "main" << endl;
 
 	//armadillo_test();
-	network_test();
+	network_test2();
 
 	//custom_armadillo_test();
 	return 0;
@@ -42,23 +49,25 @@ void custom_armadillo_test() {
 	vec temp1 = (-1 * (*pY));
 	vec temp2 = log(*pA);
 	vec temp3 = temp1 % temp2;
-	Util::printVec(&temp1, "temp1");
-	Util::printVec(&temp2, "temp2");
-	Util::printVec(&temp3, "temp3");
+	Util::printVec(temp1, "temp1");
+	Util::printVec(temp2, "temp2");
+	Util::printVec(temp3, "temp3");
 
 
 	vec left = (-1 * (*pY)) % log(*pA);
 	vec right = (1 - (*pY)) % log(1 - (*pA));
 	vec result = left - right;
-	Util::printVec(&left, "left");
-	Util::printVec(&right, "right");
-	Util::printVec(&result, "result");
+	Util::printVec(left, "left");
+	Util::printVec(right, "right");
+	Util::printVec(result, "result");
 
 }
 
 
+
 void network_test() {
 
+	/*
 	bool debug = false;
 	double validationSetRatio = 1.0/6.0;
 
@@ -73,7 +82,7 @@ void network_test() {
 		dataSet.load();
 		int sizes[] = {784, 30, 10};
 		Network network(sizes, 3, &dataSet, &cost, networkListener);
-		network.sgd(30, 10, 0.5, lambda);
+		network.sgd(30, 10, 0.1, lambda);
 	} else {
 		Util::setPrint(true);
 		MockDataSet dataSet;
@@ -84,7 +93,55 @@ void network_test() {
 	}
 
 	delete networkListener;
+	*/
 }
+
+
+void network_test2() {
+	bool debug = false;
+	double validationSetRatio = 1.0/6.0;
+
+	Activation *sigmoid = new Sigmoid();
+	Cost *crossEntropyCost = new CrossEntropyCost();
+	NetworkListener *networkListener = new NetworkMonitor();
+
+	double lambda = 5.0;
+
+	if(!debug) {
+		Util::setPrint(false);
+
+		// DataSet은 memory를 크게 차지할 수 있으므로 heap에 생성
+		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
+		mnistDataSet->load();
+		int sizes[] = {784, 30, 10};
+
+		Layer *layers[] = {
+			new InputLayer(9),
+			new FullyConnectedLayer(784, 30, sigmoid, crossEntropyCost),
+			new FullyConnectedLayer(30, 10, sigmoid, crossEntropyCost)
+		};
+
+		Network network(sizes, 3, layers, mnistDataSet, networkListener);
+		network.sgd(30, 10, 0.1, lambda);
+
+	} else {
+		Util::setPrint(true);
+		MockDataSet *dataSet = new MockDataSet();
+		dataSet->load();
+
+		int sizes[] = {9, 5, 10};
+		Layer *layers[] = {
+			new InputLayer(9),
+			new FullyConnectedLayer(9, 5, sigmoid, crossEntropyCost),
+			new FullyConnectedLayer(5, 10, sigmoid, crossEntropyCost)
+		};
+
+		Network network(sizes, 3, layers, dataSet, networkListener);
+		network.sgd(5, 2, 3.0, lambda);
+	}
+	delete networkListener;
+}
+
 
 
 

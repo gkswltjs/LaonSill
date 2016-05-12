@@ -23,6 +23,7 @@ public:
 	virtual ~CrossEntropyCost() {}
 
 	double fn(const vec *pA, const vec *pY) {
+		/*
 		Util::printVec(pA, "activation");
 		Util::printVec(pY, "y");
 
@@ -33,15 +34,15 @@ public:
 		Util::printVec(&right, "right");
 		Util::printVec(&result, "result");
 		return sum(left - right);
+		*/
+		return 0.0;
 	}
 
-	vec delta(const vec *pZ, const vec *pA, const vec *pY) {
-		Util::printVec(pA, "activation");
-		Util::printVec(pY, "y");
-		vec result = *pA - *pY;
-		Util::printVec(&result, "result");
-
-		return (*pA - *pY);
+	void d_cost(const vec &z, const vec &activation, const vec &target, vec &delta) {
+		//Util::printVec(z, "activation");
+		//Util::printVec(activation, "y");
+		delta = activation - target;
+		//Util::printVec(delta, "result");
 	}
 };
 
