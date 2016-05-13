@@ -165,11 +165,11 @@ void Network::backprop(const DataSample &dataSample) {
 
 
 	// backward pass
-	(dynamic_cast<OutputLayer *>(layers[lastLayerIndex]))->cost(dataSample.getTarget(), layers[lastLayerIndex-1]->getActivation());
+	(dynamic_cast<OutputLayer *>(layers[lastLayerIndex]))->cost(dataSample.getTarget(), layers[lastLayerIndex-1]->getOutput());
 
 	for(int i = lastLayerIndex-1; i > 0; i--) {
 		(dynamic_cast<HiddenLayer *>(layers[i]))->backpropagation((dynamic_cast<HiddenLayer *>(layers[i+1]))->getWeight(),
-				(dynamic_cast<HiddenLayer *>(layers[i+1]))->getDelta(), layers[i-1]->getActivation());
+				(dynamic_cast<HiddenLayer *>(layers[i+1]))->getDelta(), layers[i-1]->getOutput());
 	}
 
 
@@ -288,7 +288,7 @@ void Network::feedforward(const vec &input) {
 
 	layers[0]->feedforward(input);
 	for(int i = 1; i < numLayers; i++) {
-		layers[i]->feedforward(layers[i-1]->getActivation());
+		layers[i]->feedforward(layers[i-1]->getOutput());
 	}
 
 }
@@ -371,7 +371,7 @@ int Network::evaluate() {
 		//Util::printVec(testData->getTarget(), "target");
 
 		feedforward(testData.getData());
-		testResult += testEvaluateResult(layers[numLayers-1]->getActivation(), testData.getTarget());
+		testResult += testEvaluateResult(layers[numLayers-1]->getOutput(), testData.getTarget());
 	}
 	//Util::setPrint(printBak);
 

@@ -23,7 +23,7 @@ public:
 
 	int getNIn() const { return this->n_in; }
 	int getNOut() const { return this->n_out; }
-	vec &getActivation() { return this->activation; }
+	vec &getOutput() { return this->output; }
 
 
 
@@ -43,7 +43,7 @@ protected:
 	/**
 	 * activation이자 레이어의 output
 	 */
-	vec activation;
+	vec output;
 
 };
 

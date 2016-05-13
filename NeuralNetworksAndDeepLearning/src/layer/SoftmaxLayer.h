@@ -30,7 +30,7 @@ public:
 	}
 
 	void cost(const vec &target, const vec &input) {
-		cost_fn->d_cost(z, activation, target, delta);
+		cost_fn->d_cost(z, output, target, delta);
 
 		nabla_b += delta;
 		nabla_w += delta*input.t();

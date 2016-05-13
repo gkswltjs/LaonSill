@@ -28,7 +28,7 @@ FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, Activation *activa
 	this->nabla_w.fill(0.0);
 
 	this->z.set_size(n_out, 1);
-	this->activation.set_size(n_out, 1);
+	this->output.set_size(n_out, 1);
 	this->delta.set_size(n_out, 1);
 
 	/**
@@ -49,13 +49,13 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 
 void FullyConnectedLayer::feedforward(const vec &input) {
 	z = weight*input + bias;
-	activation_fn->activate(z, activation);
+	activation_fn->activate(z, output);
 }
 
 
 void FullyConnectedLayer::backpropagation(const mat &next_w, const vec &next_delta, const vec &input) {
 	vec sp;
-	activation_fn->d_activate(activation, sp);
+	activation_fn->d_activate(output, sp);
 	delta = next_w.t()*next_delta % sp;
 
 	nabla_b += delta;

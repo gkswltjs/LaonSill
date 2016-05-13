@@ -18,12 +18,12 @@ class InputLayer : public Layer {
 public:
 	InputLayer(int n_in)
 		: Layer(n_in, n_in) {
-		this->activation.set_size(n_in, 1);
+		this->output.set_size(n_in, 1);
 	}
 	virtual ~InputLayer() {}
 
 	virtual void feedforward(const vec &input) {
-		this->activation = input;
+		this->output = input;
 	}
 };
 
