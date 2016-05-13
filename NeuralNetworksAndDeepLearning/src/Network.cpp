@@ -21,13 +21,12 @@
 
 
 
-Network::Network(int sizes[], int sizeCount, Layer **layers, DataSet *dataSet, NetworkListener *networkListener) {
-	this->numLayers = sizeCount;
-	this->sizes = sizes;
+Network::Network(Layer **layers, int numLayers, DataSet *dataSet, NetworkListener *networkListener) {
+	this->layers = layers;
+	this->numLayers = numLayers;
 
 	//defaultWeightInitializer(weights, biases, true);
 
-	this->layers = layers;
 	this->dataSet = dataSet;
 	//this->cost_fn = cost_fn;
 	//this->activation_fn = activation_fn;

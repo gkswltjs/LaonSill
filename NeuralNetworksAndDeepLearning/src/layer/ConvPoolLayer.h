@@ -1,21 +1,23 @@
 /*
- * FullyConnectedLayer.h
+ * ConvPoolLayer.h
  *
- *  Created on: 2016. 5. 10.
+ *  Created on: 2016. 5. 12.
  *      Author: jhkim
  */
 
-#ifndef LAYER_FULLYCONNECTEDLAYER_H_
-#define LAYER_FULLYCONNECTEDLAYER_H_
+#ifndef LAYER_CONVPOOLLAYER_H_
+#define LAYER_CONVPOOLLAYER_H_
 
 #include "HiddenLayer.h"
-#include "../activation/Activation.h"
-#include "../cost/Cost.h"
+#include <armadillo>
 
-class FullyConnectedLayer : public HiddenLayer {
+using namespace arma;
+
+
+class ConvPoolLayer : public HiddenLayer {
 public:
-	FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn = 0);
-	virtual ~FullyConnectedLayer();
+	ConvPoolLayer(int n_in, int n_out);
+	virtual ~ConvPoolLayer();
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
@@ -50,15 +52,6 @@ public:
 	 * @param miniBatchSize:
 	 */
 	void update(double eta, double lambda, int n, int miniBatchSize);
-
-protected:
-	vec bias;
-
-	vec nabla_b;
-	mat nabla_w;
-
-	vec z;
-	Activation *activation_fn;
 };
 
-#endif /* LAYER_FULLYCONNECTEDLAYER_H_ */
+#endif /* LAYER_CONVPOOLLAYER_H_ */

@@ -21,6 +21,7 @@ public:
 	OutputLayer(int n_in, int n_out, Activation *activation_fn, Cost *cost_fn)
 		:FullyConnectedLayer(n_in, n_out) {
 		this->activation_fn = activation_fn;
+		this->activation_fn->initialize_weight(n_in, weight);
 		this->cost_fn = cost_fn;
 	};
 	virtual ~OutputLayer() {};

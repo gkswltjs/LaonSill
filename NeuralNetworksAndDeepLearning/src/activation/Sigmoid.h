@@ -8,7 +8,7 @@
 #ifndef ACTIVATION_SIGMOID_H_
 #define ACTIVATION_SIGMOID_H_
 
-#include <Activation.h>
+#include "Activation.h"
 
 using namespace arma;
 
@@ -18,6 +18,10 @@ public:
 	Sigmoid() {}
 	virtual ~Sigmoid() {}
 
+	void initialize_weight(int n_in, mat &weight) {
+		weight.randn();
+		weight *= 1/sqrt(n_in);				// initial point scaling
+	}
 	void activate(const vec &z, vec &activation) {
 		vec temp = ones<vec>(z.n_rows);
 		activation = temp / (1.0+exp(-1*z));

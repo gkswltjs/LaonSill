@@ -105,7 +105,7 @@ void network_test2() {
 	double validationSetRatio = 1.0/6.0;
 
 	Activation *sigmoid = new Sigmoid();
-	// Cost *crossEntropyCost = new CrossEntropyCost();
+	Cost *crossEntropyCost = new CrossEntropyCost();
 	NetworkListener *networkListener = new NetworkMonitor();
 
 	double lambda = 5.0;
@@ -116,17 +116,17 @@ void network_test2() {
 		// DataSet은 memory를 크게 차지할 수 있으므로 heap에 생성
 		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
 		mnistDataSet->load();
-		int sizes[] = {784, 30, 10};
+		//int sizes[] = {784, 30, 10};
 
 		Layer *layers[] = {
-			new InputLayer(9),
+			new InputLayer(784),
 			new FullyConnectedLayer(784, 30, sigmoid),
 			new SoftmaxLayer(30, 10)
 			//new SigmoidLayer(30, 10, crossEntropyCost)
 			//new FullyConnectedLayer(30, 10, sigmoid)
 		};
 
-		Network network(sizes, 3, layers, mnistDataSet, networkListener);
+		Network network(layers, 3, mnistDataSet, networkListener);
 		//network.sgd(30, 10, 0.1, lambda);
 		network.sgd(500, 10, 0.1, lambda);
 
@@ -135,7 +135,7 @@ void network_test2() {
 		MockDataSet *dataSet = new MockDataSet();
 		dataSet->load();
 
-		int sizes[] = {9, 5, 10};
+		//int sizes[] = {9, 5, 10};
 		Layer *layers[] = {
 			new InputLayer(9),
 			new FullyConnectedLayer(9, 5, sigmoid),
@@ -144,7 +144,7 @@ void network_test2() {
 			//new FullyConnectedLayer(5, 10, sigmoid)
 		};
 
-		Network network(sizes, 3, layers, dataSet, networkListener);
+		Network network(layers, 3, dataSet, networkListener);
 		network.sgd(5, 2, 3.0, lambda);
 	}
 	delete networkListener;

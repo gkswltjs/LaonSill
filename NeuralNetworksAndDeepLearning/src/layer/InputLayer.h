@@ -16,8 +16,8 @@ using namespace arma;
 
 class InputLayer : public Layer {
 public:
-	InputLayer(int n_in) {
-		this->n_in = n_in;
+	InputLayer(int n_in)
+		: Layer(n_in, n_in) {
 		this->activation.set_size(n_in, 1);
 	}
 	virtual ~InputLayer() {}
@@ -25,10 +25,6 @@ public:
 	virtual void feedforward(const vec &input) {
 		this->activation = input;
 	}
-
-private:
-	int n_in;
-
 };
 
 #endif /* LAYER_INPUTLAYER_H_ */

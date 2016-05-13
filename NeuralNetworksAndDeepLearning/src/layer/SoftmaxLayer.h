@@ -22,6 +22,7 @@ public:
 		: OutputLayer(n_in, n_out) {
 		this->cost_fn = new LogLikelihoodCost();
 		this->activation_fn = new Softmax();
+		this->activation_fn->initialize_weight(n_in, weight);
 	}
 	virtual ~SoftmaxLayer() {
 		if(cost_fn) delete cost_fn;

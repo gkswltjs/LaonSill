@@ -26,7 +26,7 @@ using namespace arma;
 
 class Network {
 public:
-	Network(int sizes[], int sizeCount, Layer **layers, DataSet *dataSet, NetworkListener *networkListener);
+	Network(Layer **layers, int numLayers, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
 	void sgd(int epochs, int miniBatchSize, double eta, double lambda);
@@ -56,10 +56,13 @@ private:
 	Activation *activation_fn;
 	DataSet *dataSet;
 	NetworkListener *networkListener;
+
 	Layer **layers;
+	//InputLayer *inputLayer;
+	//HiddenLayer **hiddenLayers;
+	//OutputLayer *outputLayer;
 
 	int numLayers;
-	int *sizes;
 	//vector<vec *> biases;
 	//vector<mat *> weights;
 };

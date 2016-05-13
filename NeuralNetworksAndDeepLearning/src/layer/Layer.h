@@ -15,9 +15,14 @@ using namespace arma;
 
 class Layer {
 public:
-	Layer() {}
+	Layer(int n_in, int n_out) {
+		this->n_in = n_in;
+		this->n_out = n_out;
+	}
 	virtual ~Layer() {}
 
+	int getNIn() const { return this->n_in; }
+	int getNOut() const { return this->n_out; }
 	vec &getActivation() { return this->activation; }
 
 
@@ -31,6 +36,10 @@ public:
 
 
 protected:
+
+	int n_in;
+	int n_out;
+
 	/**
 	 * activation이자 레이어의 output
 	 */

@@ -9,16 +9,18 @@
 
 
 
-FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn) {
+FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn)
+	: HiddenLayer(n_in, n_out) {
 
-	this->n_in = n_in;
-	this->n_out = n_out;
+	//this->n_in = n_in;
+	//this->n_out = n_out;
 
 	this->bias.set_size(n_out, 1);
 	this->weight.set_size(n_out, n_in);
 	this->bias.randn();
-	this->weight.randn();
-	this->weight *= 1/sqrt(n_in);				// initial point scaling
+
+	//this->weight.randn();
+	//this->weight *= 1/sqrt(n_in);				// initial point scaling
 
 	this->nabla_b.set_size(n_out, 1);
 	this->nabla_w.set_size(n_out, n_in);
@@ -29,13 +31,19 @@ FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, Activation *activa
 	this->activation.set_size(n_out, 1);
 	this->delta.set_size(n_out, 1);
 
+	/**
+	 * HiddenLayer에서 activation_fn이 할당되는 곳에서 weight initialize 필요
+	 * 잊어버리기 쉬울 것 같으니 대책이 필요
+	 */
 	this->activation_fn = activation_fn;
+	if(activation_fn) activation_fn->initialize_weight(this->n_in, this->weight);
 }
 
 
 FullyConnectedLayer::~FullyConnectedLayer() {
 
 }
+
 
 
 

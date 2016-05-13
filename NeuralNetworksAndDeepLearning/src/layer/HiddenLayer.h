@@ -16,8 +16,9 @@ using namespace arma;
 
 class HiddenLayer : public Layer {
 public:
-	HiddenLayer();
-	virtual ~HiddenLayer();
+	HiddenLayer(int n_in, int n_out)
+		: Layer(n_in, n_in) {}
+	virtual ~HiddenLayer() {}
 
 
 	mat &getWeight() { return this->weight; }
@@ -48,7 +49,6 @@ public:
 protected:
 	mat weight;
 	vec delta;
-
 };
 
 #endif /* LAYER_HIDDENLAYER_H_ */

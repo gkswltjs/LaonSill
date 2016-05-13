@@ -8,7 +8,7 @@
 #ifndef ACTIVATION_SOFTMAX_H_
 #define ACTIVATION_SOFTMAX_H_
 
-#include <Activation.h>
+#include "Activation.h"
 #include "../Util.h"
 
 using namespace arma;
@@ -18,6 +18,9 @@ public:
 	Softmax() {}
 	virtual ~Softmax() {}
 
+	void initialize_weight(int n_in, mat &weight) {
+		weight.fill(0.0);
+	}
 	void activate(const vec &z, vec &activation) {
 		vec temp = exp(z);
 		activation = temp/accu(temp);

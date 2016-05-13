@@ -19,6 +19,7 @@ public:
 		: OutputLayer(n_in, n_out) {
 		this->cost_fn = cost_fn;
 		this->activation_fn = new Sigmoid();
+		this->activation_fn->initialize_weight(n_in, weight);
 	}
 	virtual ~SigmoidLayer() {
 		if(activation_fn) delete activation_fn;
