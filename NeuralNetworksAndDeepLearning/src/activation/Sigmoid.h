@@ -20,14 +20,13 @@ public:
 
 	void initialize_weight(int n_in, mat &weight) {
 		weight.randn();
-		weight *= 1/sqrt(n_in);				// initial point scaling
+		weight *= 1 / sqrt(n_in);				// initial point scaling
 	}
-	void activate(const vec &z, vec &activation) {
-		vec temp = ones<vec>(z.n_rows);
-		activation = temp / (1.0+exp(-1*z));
+	void activate(const cube &z, cube &activation) {
+		activation = 1 / (1.0 + exp(-1 * z));
 	}
-	void d_activate(const vec &activation, vec &da) {
-		da = activation%(1.0-activation);
+	void d_activate(const cube &activation, cube &da) {
+		da = activation % (1.0 - activation);
 	}
 };
 

@@ -105,7 +105,7 @@ void network_test2() {
 	double validationSetRatio = 1.0/6.0;
 
 	Activation *sigmoid = new Sigmoid();
-	Cost *crossEntropyCost = new CrossEntropyCost();
+	//Cost *crossEntropyCost = new CrossEntropyCost();
 	NetworkListener *networkListener = new NetworkMonitor();
 
 	double lambda = 5.0;
@@ -137,8 +137,8 @@ void network_test2() {
 
 		//int sizes[] = {9, 5, 10};
 		Layer *layers[] = {
-			new InputLayer(9),
-			new FullyConnectedLayer(9, 5, sigmoid),
+			new InputLayer(784),
+			new FullyConnectedLayer(784, 30, sigmoid),
 			new SoftmaxLayer(30, 10)
 			//new SigmoidLayer(5, 10, crossEntropyCost)
 			//new FullyConnectedLayer(5, 10, sigmoid)

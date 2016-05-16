@@ -16,13 +16,13 @@ using namespace arma;
 
 class HiddenLayer : public Layer {
 public:
-	HiddenLayer(int n_in, int n_out)
-		: Layer(n_in, n_in) {}
+	HiddenLayer(int n_in, int n_out) : Layer(n_in, n_out) {}
+	HiddenLayer(io_dim in_dim, io_dim out_dim) : Layer(in_dim, out_dim) {}
 	virtual ~HiddenLayer() {}
 
 
 	mat &getWeight() { return this->weight; }
-	vec &getDelta() { return this->delta; }
+	cube &getDelta() { return this->delta; }
 
 
 	/**
@@ -30,7 +30,7 @@ public:
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void backpropagation(const mat &next_w, const vec &next_delta, const vec &input)=0;
+	virtual void backpropagation(const mat &next_w, const cube &next_delta, const cube &input)=0;
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
@@ -48,7 +48,7 @@ public:
 
 protected:
 	mat weight;
-	vec delta;
+	cube delta;
 };
 
 #endif /* LAYER_HIDDENLAYER_H_ */

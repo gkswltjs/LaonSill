@@ -65,6 +65,20 @@ void Util::printMat(const mat &matrix, string name) {
 }
 
 
+void Util::convertCubeToVec(const io_dim &cube_dim, const cube &c, vec &v) {
+	if(cube_dim.channels == 1) {
+		if(cube_dim.cols == 1) v = c.slice(0);
+		else v = vectorise(c.slice(0).t());
+	} else if(cube_dim.channels > 1) {
+		mat temp;
+		temp = join_cols(c.slice(0), c.slice(1));
+		for(unsigned int i = 2; i < c.n_slices; i++) {
+			temp = join_cols(temp, c.slice(i));
+		}
+		v = vectorise(temp.t());
+	}
+}
+
 
 
 

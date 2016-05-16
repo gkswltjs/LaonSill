@@ -38,10 +38,10 @@ public:
 		return 0.0;
 	}
 
-	void d_cost(const vec &z, const vec &activation, const vec &target, vec &delta) {
+	void d_cost(const cube &z, const cube &activation, const vec &target, cube &delta) {
 		//Util::printVec(z, "activation");
 		//Util::printVec(activation, "y");
-		delta = activation - target;
+		delta.slice(0) = activation.slice(0) - target;
 		//Util::printVec(delta, "result");
 	}
 };

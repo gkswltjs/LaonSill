@@ -39,7 +39,7 @@ private:
 	void backprop(const DataSample &dataSample);
 
 	//void feedforward();
-	void feedforward(const vec &input);
+	void feedforward(const cube &input);
 	int testEvaluateResult(const vec &output, const vec &y);
 
 	//void defaultWeightInitializer(vector<mat *> &weights, vector<vec *> &biases, bool init);

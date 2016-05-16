@@ -8,6 +8,7 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
+#include "layer/LayerConfig.h"
 #include <string>
 #include <armadillo>
 
@@ -27,6 +28,8 @@ public:
 
 	static int getPrint() { return Util::print; }
 	static void setPrint(bool print) { Util::print = print; };
+
+	static void convertCubeToVec(const io_dim &cube_dim, const cube &c, vec &v);
 
 private:
 	static bool print;

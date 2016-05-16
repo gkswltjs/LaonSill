@@ -9,33 +9,28 @@
 #define LAYER_FULLYCONNECTEDLAYER_H_
 
 #include "HiddenLayer.h"
+#include "LayerConfig.h"
 #include "../activation/Activation.h"
 #include "../cost/Cost.h"
 
 class FullyConnectedLayer : public HiddenLayer {
 public:
 	FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn = 0);
+	FullyConnectedLayer(io_dim in_dim, io_dim out_dim, Activation *activation_fn = 0);
 	virtual ~FullyConnectedLayer();
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(const vec &input);
+	void feedforward(const cube &input);
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void backpropagation(const mat &next_w, const vec &next_delta, const vec &input);
-
-	/**
-	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
-	 * @param target: 현재 데이터에 대한 목적값
-	 * @param output: 레이어 출력
-	 */
-	//void cost(const vec &target, const vec &input);
+	void backpropagation(const mat &next_w, const cube &next_delta, const cube &input);
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
@@ -51,13 +46,18 @@ public:
 	 */
 	void update(double eta, double lambda, int n, int miniBatchSize);
 
+private:
+	void initialize(Activation *activation_fn);
+
 protected:
+
+
 	vec bias;
 
 	vec nabla_b;
 	mat nabla_w;
 
-	vec z;
+	cube z;
 	Activation *activation_fn;
 };
 

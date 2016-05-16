@@ -267,7 +267,7 @@ vec Network::sigmoidPrime(const vec *activation) {
 
 
 
-void Network::feedforward(const vec &input) {
+void Network::feedforward(const cube &input) {
 	/*
 	Util::printVec(x, "x");
 	vec activation(*x);

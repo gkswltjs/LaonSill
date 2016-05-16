@@ -21,12 +21,12 @@ public:
 	void initialize_weight(int n_in, mat &weight) {
 		weight.fill(0.0);
 	}
-	void activate(const vec &z, vec &activation) {
-		vec temp = exp(z);
-		activation = temp/accu(temp);
+	void activate(const cube &z, cube &activation) {
+		cube temp = exp(z);
+		activation = temp / accu(temp);
 	}
-	void d_activate(const vec &activation, vec &da) {
-		da = activation%(1.0-activation);
+	void d_activate(const cube &activation, cube &da) {
+		da = activation % (1.0 - activation);
 	}
 };
 

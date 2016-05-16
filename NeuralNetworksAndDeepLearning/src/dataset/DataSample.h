@@ -18,7 +18,7 @@ using namespace arma;
 
 class DataSample {
 public:
-	DataSample() {};
+	DataSample() {}
 
 	/*
 	DataSample(const double *trainData, const int trainTarget) {
@@ -28,30 +28,34 @@ public:
 		readData(dataPtr, dataBytes, targetPtr, targetBytes);
 	}
 	*/
-	virtual ~DataSample() {};
+	virtual ~DataSample() {}
 
-	const vec &getData() const { return this->data; }
+	const cube &getData() const { return this->data; }
 	const vec &getTarget() const { return this->target; }
 	//void setData(vec *data) { this->data = data; }
 	//void setTarget(vec *target) { this->target = target; }
 
 	void readData(const double *trainData, const int trainTarget) {
-		this->data.set_size(9, 1);
+		this->data.set_size(9, 1, 1);
 		this->target.set_size(10, 1);
 
-		for(int i = 0; i < 9; i++) data.row(i) = trainData[i];
+		for(int i = 0; i < 9; i++) data.slice(0)(i, 0) = trainData[i];
 
 		this->target.fill(0.0);
 		this->target.row(trainTarget) = 1.0;
 	}
 
-	void readData(unsigned char *&dataPtr, int dataBytes, unsigned char *&targetPtr, int targetBytes) {
-		this->data.set_size(dataBytes, 1);
+	void readData(unsigned char *&dataPtr, int rows, int cols, int channels, unsigned char *&targetPtr, int targetBytes) {
+		this->data.set_size(rows, cols, channels);
 		Util::printVec(this->data, "data");
 
-		for(int j = 0; j < dataBytes; j++) {
-			this->data.row(j) = (*dataPtr)/255.0;
-			dataPtr++;
+		for(int i = 0; i < channels; i++) {
+			for(int j = 0; j < rows; j++) {
+				for(int k = 0; k < cols; k++) {
+					this->data.slice(i)(j, k) = (*dataPtr)/255.0;
+					dataPtr++;
+				}
+			}
 		}
 
 		this->target.set_size(targetBytes, 1);
@@ -66,7 +70,7 @@ private:
 	int inputSize;
 	int outputSize;
 
-	vec data;
+	cube data;
 	vec target;
 };
 

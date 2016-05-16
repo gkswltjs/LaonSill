@@ -26,7 +26,7 @@ public:
 	/**
 	 * activation function
 	 */
-	virtual void activate(const vec &z, vec &activation)=0;
+	virtual void activate(const cube &z, cube &activation)=0;
 
 	/**
 	 * activation derivation
@@ -34,7 +34,7 @@ public:
 	 * 현재까지 activation으로도 계산이 가능하여 파라미터를 activation으로 지정
 	 * weighted sum값이 필요한 케이스에 수정이 필요
 	 */
-	virtual void d_activate(const vec &activation, vec &da)=0;
+	virtual void d_activate(const cube &activation, cube &da)=0;
 };
 
 #endif /* ACTIVATION_ACTIVATION_H_ */

@@ -12,8 +12,10 @@
 #include <vector>
 #include <string>
 #include "ImageInfo.h"
+#include "DataSample.h"
+#include "../exception/Exception.h"
 
-class DataSample;
+
 
 using namespace std;
 using namespace arma;
@@ -25,16 +27,29 @@ using namespace arma;
 
 class DataSet {
 public:
-	DataSet();
-	virtual ~DataSet();
+	DataSet() {
+		trainDataSet = 0;
+		validationDataSet = 0;
+		testDataSet = 0;
+	}
+	virtual ~DataSet() {}
 
 	int getTrainDataSize() const { return this->trainDataSize; }
 	int getValidationDataSize() const { return this->validationDataSize; }
 	int getTestDataSize() const { return this->testDataSize; }
 
-	const DataSample &getTrainDataAt(int index);
-	const DataSample &getValidationDataAt(int index);
-	const DataSample &getTestDataAt(int index);
+	const DataSample &getTrainDataAt(int index) {
+		if(index >= trainDataSize) throw Exception();
+		return trainDataSet[index];
+	}
+	const DataSample &getValidationDataAt(int index) {
+		if(index >= validationDataSize) throw Exception();
+		return validationDataSet[index];
+	}
+	const DataSample &getTestDataAt(int index) {
+		if(index >= testDataSize) throw Exception();
+		return testDataSet[index];
+	}
 
 	const DataSample *getTrainDataSet() const { return this->trainDataSet; }
 	const DataSample *getValidationDataSet() const { return this->validationDataSet; }

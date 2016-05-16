@@ -16,13 +16,15 @@ using namespace arma;
 
 class OutputLayer : public FullyConnectedLayer {
 public:
-	OutputLayer(int n_in, int n_out)
-		:FullyConnectedLayer(n_in, n_out) {}
+	OutputLayer(int n_in, int n_out) : FullyConnectedLayer(n_in, n_out) {}
 	OutputLayer(int n_in, int n_out, Activation *activation_fn, Cost *cost_fn)
-		:FullyConnectedLayer(n_in, n_out) {
-		this->activation_fn = activation_fn;
-		this->activation_fn->initialize_weight(n_in, weight);
-		this->cost_fn = cost_fn;
+		: FullyConnectedLayer(n_in, n_out) {
+		initialize(activation_fn, cost_fn);
+	}
+	OutputLayer(io_dim in_dim, io_dim out_dim) : FullyConnectedLayer(in_dim, out_dim) {}
+	OutputLayer(io_dim in_dim, io_dim out_dim, Activation *activation_fn, Cost *cost_fn)
+		:FullyConnectedLayer(in_dim, out_dim) {
+		initialize(activation_fn, cost_fn);
 	};
 	virtual ~OutputLayer() {};
 
@@ -31,7 +33,15 @@ public:
 	 * @param target: 현재 데이터에 대한 목적값
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void cost(const vec &target, const vec &input)=0;
+	virtual void cost(const vec &target, const cube &input)=0;
+
+private:
+	void initialize(Activation *activation_fn, Cost *cost_fn) {
+		this->activation_fn = activation_fn;
+		this->activation_fn->initialize_weight(in_dim.rows, weight);
+		this->cost_fn = cost_fn;
+	}
+
 
 protected:
 	Cost *cost_fn;

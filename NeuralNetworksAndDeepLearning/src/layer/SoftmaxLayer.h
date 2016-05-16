@@ -20,20 +20,29 @@ class SoftmaxLayer : public OutputLayer {
 public:
 	SoftmaxLayer(int n_in, int n_out)
 		: OutputLayer(n_in, n_out) {
-		this->cost_fn = new LogLikelihoodCost();
-		this->activation_fn = new Softmax();
-		this->activation_fn->initialize_weight(n_in, weight);
+		initialize();
+	}
+	SoftmaxLayer(io_dim in_dim, io_dim out_dim)
+		: OutputLayer(in_dim, out_dim) {
+		initialize();
 	}
 	virtual ~SoftmaxLayer() {
 		if(cost_fn) delete cost_fn;
 		if(activation_fn) delete activation_fn;
 	}
 
-	void cost(const vec &target, const vec &input) {
+	void cost(const vec &target, const cube &input) {
 		cost_fn->d_cost(z, output, target, delta);
 
-		nabla_b += delta;
-		nabla_w += delta*input.t();
+		nabla_b += delta.slice(0);
+		nabla_w += delta.slice(0)*input.slice(0).t();
+	}
+
+private:
+	void initialize() {
+		this->cost_fn = new LogLikelihoodCost();
+		this->activation_fn = new Softmax();
+		this->activation_fn->initialize_weight(in_dim.rows, weight);
 	}
 };
 

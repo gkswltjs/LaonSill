@@ -21,7 +21,11 @@ MnistDataSet::MnistDataSet(double validationSetRatio = 0.0) {
 	this->validationSetRatio = validationSetRatio;
 }
 
-MnistDataSet::~MnistDataSet() {}
+MnistDataSet::~MnistDataSet() {
+	if(trainDataSet) delete trainDataSet;
+	if(validationDataSet) delete validationDataSet;
+	if(testDataSet) delete testDataSet;
+}
 
 void MnistDataSet::load() {
 
@@ -129,14 +133,15 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], DataSample *&data
 	int stop = dataSize;
 	if(size > 0) stop = min(dataSize, offset+size);
 
-	int dataArea = dataNumRows * dataNumCols;
+	//int dataArea = dataNumRows * dataNumCols;
 	if(dataSet) delete dataSet;
 	dataSet = new DataSample[stop-offset];
 
 	for(int i = offset; i < stop; i++) {
 		//const DataSample *dataSample = new DataSample(dataPtr, dataArea, targetPtr, 10);
 		//dataSet.push_back(dataSample);
-		dataSet[i-offset].readData(dataPtr, dataArea, targetPtr, 10);
+		//dataSet[i-offset].readData(dataPtr, dataNumRows, dataNumCols, 1, targetPtr, 10);
+		dataSet[i-offset].readData(dataPtr, dataNumRows*dataNumCols, 1, 1, targetPtr, 10);
 	}
 	return stop-offset;
 }

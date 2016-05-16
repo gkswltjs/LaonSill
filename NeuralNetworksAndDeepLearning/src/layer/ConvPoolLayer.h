@@ -9,6 +9,8 @@
 #define LAYER_CONVPOOLLAYER_H_
 
 #include "HiddenLayer.h"
+#include "LayerConfig.h"
+#include "../activation/activation.h"
 #include <armadillo>
 
 using namespace arma;
@@ -16,14 +18,14 @@ using namespace arma;
 
 class ConvPoolLayer : public HiddenLayer {
 public:
-	ConvPoolLayer(int n_in, int n_out);
+	ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d, Activation *activation_fn);
 	virtual ~ConvPoolLayer();
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(const vec &input);
+	void feedforward(const cube &input);
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
@@ -52,6 +54,56 @@ public:
 	 * @param miniBatchSize:
 	 */
 	void update(double eta, double lambda, int n, int miniBatchSize);
+
+protected:
+	io_dim in_dim;
+	filter_dim filter_d;
+	pool_dim pool_d;
+
+	cube *filters;		// weights
+	vec biases;
+
+	cube *nabla_w;
+	vec nabla_b;
+
+	cube z;
+	cube activated;
+	cube poold;
+
+	Activation *activation_fn;
 };
 
 #endif /* LAYER_CONVPOOLLAYER_H_ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

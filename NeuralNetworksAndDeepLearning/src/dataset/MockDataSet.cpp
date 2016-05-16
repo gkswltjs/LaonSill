@@ -20,6 +20,9 @@ MockDataSet::MockDataSet() {
 }
 
 MockDataSet::~MockDataSet() {
+	if(trainDataSet) delete trainDataSet;
+	if(validationDataSet) delete validationDataSet;
+	if(testDataSet) delete testDataSet;
 }
 
 
