@@ -48,25 +48,37 @@ void FullyConnectedLayer::initialize(Activation *activation_fn) {
 	 * 잊어버리기 쉬울 것 같으니 대책이 필요
 	 */
 	this->activation_fn = activation_fn;
-	if(activation_fn) activation_fn->initialize_weight(n_in, this->weight);
+	if(this->activation_fn) activation_fn->initialize_weight(n_in, this->weight);
 }
+
 
 
 
 
 void FullyConnectedLayer::feedforward(const cube &input) {
-	cube converted;
-	convertInputDim(input, converted);
-	//Util::convertCubeToVec(in_dim, input, v);
-	z.slice(0) = weight*converted.slice(0) + bias;
+
+	Util::printCube(input, "input:");
+	Util::convertCube(input, this->input);
+	Util::printCube(this->input, "converted input:");
+
+	z.slice(0) = weight*this->input.slice(0) + bias;
 	activation_fn->activate(z, output);
 }
 
-
-void FullyConnectedLayer::backpropagation(const mat &next_w, const cube &next_delta, const cube &input) {
+void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
 	cube sp;
 	activation_fn->d_activate(output, sp);
-	delta.slice(0) = next_w.t()*next_delta.slice(0) % sp.slice(0);
+
+	FullyConnectedLayer *fc_layer = dynamic_cast<FullyConnectedLayer *>(next_layer);
+	if(fc_layer) delta.slice(0) = fc_layer->getWeight().t()*fc_layer->getDelta().slice(0) % sp.slice(0);
+	else {
+		// TODO fc 다음으로 CONV가 온 경우 처리
+		//delta.slice(0) = next_delta.slice(0) % sp.slice(0);
+	}
+
+	//Util::printMat(delta.slice(0), "delta");
+	//Util::printMat(next_w->t(), "next_w");
+	//Util::printMat(next_delta.slice(0), "next_delta");
 
 	nabla_b += delta.slice(0);
 	nabla_w += delta.slice(0)*input.slice(0).t();

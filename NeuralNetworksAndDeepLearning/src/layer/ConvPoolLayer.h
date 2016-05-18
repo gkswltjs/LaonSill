@@ -10,7 +10,8 @@
 
 #include "HiddenLayer.h"
 #include "LayerConfig.h"
-#include "../activation/activation.h"
+#include "../activation/Activation.h"
+#include "../pooling/Pooling.h"
 #include <armadillo>
 
 using namespace arma;
@@ -18,8 +19,12 @@ using namespace arma;
 
 class ConvPoolLayer : public HiddenLayer {
 public:
-	ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d, Activation *activation_fn);
+	ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d, Activation *activation_fn, Pooling *pooling_fn);
 	virtual ~ConvPoolLayer();
+
+	mat *getWeight() { return 0; }
+	cube &getDelta() { return this->delta; }
+
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
@@ -32,7 +37,7 @@ public:
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void backpropagation(const mat &next_w, const vec &next_delta, const vec &input);
+	void backpropagation(HiddenLayer *next_layer);
 
 	/**
 	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
@@ -55,7 +60,12 @@ public:
 	 */
 	void update(double eta, double lambda, int n, int miniBatchSize);
 
+
+
 protected:
+	void convolution(const mat &image, const mat &filter, mat &result);
+	void d_convolution(const mat &conv, const mat &filter, mat &result);
+
 	io_dim in_dim;
 	filter_dim filter_d;
 	pool_dim pool_d;
@@ -68,9 +78,11 @@ protected:
 
 	cube z;
 	cube activated;
-	cube poold;
+	ucube pool_map;
+	cube delta;
 
 	Activation *activation_fn;
+	Pooling *pooling_fn;
 };
 
 #endif /* LAYER_CONVPOOLLAYER_H_ */

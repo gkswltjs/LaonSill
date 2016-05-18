@@ -24,7 +24,11 @@ public:
 	}
 
 	void d_cost(const cube &z, const cube &activation, const vec &target, cube &delta) {
+		Util::printCube(activation, "activation:");
+		Util::printVec(target, "target:");
+
 		delta.slice(0) = activation.slice(0) - target;
+		Util::printCube(delta, "delta:");
 	}
 };
 

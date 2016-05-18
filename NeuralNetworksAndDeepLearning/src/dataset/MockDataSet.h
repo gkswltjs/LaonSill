@@ -16,7 +16,7 @@ public:
 	virtual ~MockDataSet();
 
 	virtual void load();
-	void shuffleTrainDataSet();
+	void shuffleTrainDataSet() {}
 	void shuffleValidationDataSet() {}
 	void shuffleTestDataSet() {}
 

@@ -33,7 +33,7 @@ public:
 	 * @param target: 현재 데이터에 대한 목적값
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void cost(const vec &target, const cube &input)=0;
+	virtual void cost(const vec &target)=0;
 
 private:
 	void initialize(Activation *activation_fn, Cost *cost_fn) {

@@ -27,7 +27,7 @@ public:
 		if(activation_fn) delete activation_fn;
 	}
 
-	void cost(const vec &target, const cube &input) {
+	void cost(const vec &target) {
 		cost_fn->d_cost(z, output, target, delta);
 
 		nabla_b += delta.slice(0);

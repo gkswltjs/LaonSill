@@ -25,11 +25,20 @@ public:
 	static int pack4BytesToInt(unsigned char *buffer);
 	static void printVec(const vec &vector, string name);
 	static void printMat(const mat &matrix, string name);
+	static void printCube(const cube &c, string name);
 
 	static int getPrint() { return Util::print; }
 	static void setPrint(bool print) { Util::print = print; };
 
-	static void convertCubeToVec(const io_dim &cube_dim, const cube &c, vec &v);
+	//static void convertCubeToVec(const io_dim &cube_dim, const cube &c, vec &v);
+
+	/**
+	 * input cube를 output_dim을 따르는 cube output으로 변환
+	 * @param output_dim
+	 * @param input
+	 * @param output
+	 */
+	static void convertCube(const cube &input, cube &output);
 
 private:
 	static bool print;

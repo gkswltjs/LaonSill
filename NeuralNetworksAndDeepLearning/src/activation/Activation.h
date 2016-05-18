@@ -8,6 +8,7 @@
 #ifndef ACTIVATION_ACTIVATION_H_
 #define ACTIVATION_ACTIVATION_H_
 
+#include "../layer/LayerConfig.h"
 #include <armadillo>
 
 using namespace arma;
@@ -22,6 +23,7 @@ public:
 	 * activation function에 따라 layer weight의 초기화하는 방법이 다름
 	 */
 	virtual void initialize_weight(int n_in, mat &weight)=0;
+	//virtual void initialize_weight(int filters, void *weight, int type)=0;
 
 	/**
 	 * activation function
@@ -35,6 +37,17 @@ public:
 	 * weighted sum값이 필요한 케이스에 수정이 필요
 	 */
 	virtual void d_activate(const cube &activation, cube &da)=0;
+
+	/**
+	 * activation type에 따라 activation 객체 생성 factory
+	 * not a good idea
+	 */
+	Activation *create_activation(string activation_type) {
+		if(activation_type.compare("sigmoid") == 0) return new Sigmoid();
+		if(activation_type.compare("softmax") == 0) return new Softmax();
+		if(activation_type.compare("relu") == 0) return new ReLU();
+		return 0;
+	}
 };
 
 #endif /* ACTIVATION_ACTIVATION_H_ */

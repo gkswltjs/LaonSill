@@ -19,6 +19,9 @@ public:
 	FullyConnectedLayer(io_dim in_dim, io_dim out_dim, Activation *activation_fn = 0);
 	virtual ~FullyConnectedLayer();
 
+	mat &getWeight() { return this->weight; }
+	cube &getDelta() { return this->delta; }
+
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
@@ -30,7 +33,7 @@ public:
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void backpropagation(const mat &next_w, const cube &next_delta, const cube &input);
+	void backpropagation(HiddenLayer *next_layer);
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
@@ -51,13 +54,14 @@ private:
 
 protected:
 
-
+	mat weight;
 	vec bias;
 
 	vec nabla_b;
 	mat nabla_w;
 
 	cube z;
+	cube delta;
 	Activation *activation_fn;
 };
 

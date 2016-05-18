@@ -6,6 +6,8 @@
 #include "dataset/MockDataSet.h"
 #include "activation.h"
 #include "Util.h"
+#include "pooling/Pooling.h"
+#include "pooling/MaxPooling.h"
 #include "cost/CrossEntropyCost.h"
 #include "cost/LogLikelihoodCost.h"
 #include "monitor/NetworkMonitor.h"
@@ -13,6 +15,7 @@
 #include "layer/Layer.h"
 #include "layer/InputLayer.h"
 #include "layer/FullyConnectedLayer.h"
+#include "layer/ConvPoolLayer.h"
 #include "layer/SigmoidLayer.h"
 #include "layer/SoftmaxLayer.h"
 #include "activation/Activation.h"
@@ -106,6 +109,7 @@ void network_test2() {
 
 	Activation *sigmoid = new Sigmoid();
 	//Cost *crossEntropyCost = new CrossEntropyCost();
+	Pooling *maxPooling = new MaxPooling();
 	NetworkListener *networkListener = new NetworkMonitor();
 
 	double lambda = 5.0;
@@ -119,16 +123,18 @@ void network_test2() {
 		//int sizes[] = {784, 30, 10};
 
 		Layer *layers[] = {
-			new InputLayer(784),
-			new FullyConnectedLayer(784, 30, sigmoid),
-			new SoftmaxLayer(30, 10)
+			new InputLayer(io_dim(28, 28, 1)),
+			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), sigmoid, maxPooling),
+			new FullyConnectedLayer(12*12*20, 100, sigmoid),
+			new SoftmaxLayer(100, 10)
 			//new SigmoidLayer(30, 10, crossEntropyCost)
 			//new FullyConnectedLayer(30, 10, sigmoid)
 		};
 
-		Network network(layers, 3, mnistDataSet, networkListener);
+		int numLayers = sizeof(layers)/sizeof(layers[0]);
+		Network network(layers, numLayers, mnistDataSet, networkListener);
 		//network.sgd(30, 10, 0.1, lambda);
-		network.sgd(500, 10, 0.1, lambda);
+		network.sgd(30, 10, 0.1, lambda);
 
 	} else {
 		Util::setPrint(true);
@@ -137,14 +143,16 @@ void network_test2() {
 
 		//int sizes[] = {9, 5, 10};
 		Layer *layers[] = {
-			new InputLayer(784),
-			new FullyConnectedLayer(784, 30, sigmoid),
-			new SoftmaxLayer(30, 10)
+			new InputLayer(io_dim(10, 10, 1)),
+			new ConvPoolLayer(io_dim(10, 10, 1), filter_dim(3, 3, 1, 1), pool_dim(2, 2), sigmoid, maxPooling),
+			new FullyConnectedLayer(16, 10, sigmoid),
+			new SoftmaxLayer(10, 10)
 			//new SigmoidLayer(5, 10, crossEntropyCost)
 			//new FullyConnectedLayer(5, 10, sigmoid)
 		};
 
-		Network network(layers, 3, dataSet, networkListener);
+		int numLayers = sizeof(layers)/sizeof(layers[0]);
+		Network network(layers, numLayers, dataSet, networkListener);
 		network.sgd(5, 2, 3.0, lambda);
 	}
 	delete networkListener;

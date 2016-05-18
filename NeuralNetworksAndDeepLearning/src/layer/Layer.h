@@ -9,6 +9,7 @@
 #define LAYER_LAYER_H_
 
 #include "LayerConfig.h"
+#include "../Util.h"
 #include <armadillo>
 
 using namespace arma;
@@ -19,18 +20,21 @@ public:
 	Layer(int n_in, int n_out) {
 		this->in_dim.rows = n_in;
 		this->out_dim.rows = n_out;
+		this->input.set_size(n_in, 1, 1);
+		this->output.set_size(n_out, 1, 1);
 	}
 	Layer(io_dim in_dim, io_dim out_dim) {
 		this->in_dim = in_dim;
 		this->out_dim = out_dim;
+		this->input.set_size(in_dim.rows, in_dim.cols, in_dim.channels);
+		this->output.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
 	}
 	virtual ~Layer() {}
 
 	//int getNIn() const { return this->n_in; }
 	//int getNOut() const { return this->n_out; }
+	cube &getInput() { return this->input; }
 	cube &getOutput() { return this->output; }
-
-
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
@@ -42,19 +46,44 @@ public:
 
 
 protected:
-	void convertInputDim(const cube &input, cube &converted) {
-		converted = reshape(input, in_dim.rows, in_dim.cols, in_dim.channels, 1);
-		//cube C = reshape(A, 5*4*3, 1, 1, 1);
-	}
-
 	io_dim in_dim;
 	io_dim out_dim;
 
 	/**
 	 * activation이자 레이어의 output
 	 */
+	cube input;
 	cube output;
 
 };
 
 #endif /* LAYER_LAYER_H_ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

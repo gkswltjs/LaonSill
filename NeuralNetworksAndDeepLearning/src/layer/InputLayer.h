@@ -10,6 +10,7 @@
 
 #include "Layer.h"
 #include "LayerConfig.h"
+#include "../Util.h"
 #include <armadillo>
 
 using namespace arma;
@@ -22,7 +23,10 @@ public:
 	virtual ~InputLayer() {}
 
 	virtual void feedforward(const cube &input) {
-		convertInputDim(input, this->output);
+		Util::printCube(input, "input:");
+		Util::convertCube(input, this->input);
+		Util::convertCube(this->input, this->output);
+		Util::printCube(this->output, "output:");
 	}
 protected:
 };
