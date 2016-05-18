@@ -20,6 +20,7 @@
 #include "layer/SoftmaxLayer.h"
 #include "activation/Activation.h"
 #include "activation/Sigmoid.h"
+#include "activation/ReLU.h"
 
 using namespace std;
 using namespace arma;
@@ -107,7 +108,8 @@ void network_test2() {
 	bool debug = false;
 	double validationSetRatio = 1.0/6.0;
 
-	Activation *sigmoid = new Sigmoid();
+	//Activation *sigmoid = new Sigmoid();
+
 	//Cost *crossEntropyCost = new CrossEntropyCost();
 	Pooling *maxPooling = new MaxPooling();
 	NetworkListener *networkListener = new NetworkMonitor();
@@ -117,6 +119,9 @@ void network_test2() {
 	if(!debug) {
 		Util::setPrint(false);
 
+		Activation *relu1 = new ReLU(io_dim(24, 24, 20));
+		Activation *relu2 = new ReLU(io_dim(100, 1, 1));
+
 		// DataSet은 memory를 크게 차지할 수 있으므로 heap에 생성
 		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
 		mnistDataSet->load();
@@ -124,8 +129,8 @@ void network_test2() {
 
 		Layer *layers[] = {
 			new InputLayer(io_dim(28, 28, 1)),
-			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), sigmoid, maxPooling),
-			new FullyConnectedLayer(12*12*20, 100, sigmoid),
+			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), relu1, maxPooling),
+			new FullyConnectedLayer(12*12*20, 100, relu2),
 			new SoftmaxLayer(100, 10)
 			//new SigmoidLayer(30, 10, crossEntropyCost)
 			//new FullyConnectedLayer(30, 10, sigmoid)
@@ -138,14 +143,18 @@ void network_test2() {
 
 	} else {
 		Util::setPrint(true);
+
+		Activation *relu1 = new ReLU(io_dim(8, 8, 1));
+		Activation *relu2 = new ReLU(io_dim(10, 1, 1));
+
 		MockDataSet *dataSet = new MockDataSet();
 		dataSet->load();
 
 		//int sizes[] = {9, 5, 10};
 		Layer *layers[] = {
 			new InputLayer(io_dim(10, 10, 1)),
-			new ConvPoolLayer(io_dim(10, 10, 1), filter_dim(3, 3, 1, 1), pool_dim(2, 2), sigmoid, maxPooling),
-			new FullyConnectedLayer(16, 10, sigmoid),
+			new ConvPoolLayer(io_dim(10, 10, 1), filter_dim(3, 3, 1, 1), pool_dim(2, 2), relu1, maxPooling),
+			new FullyConnectedLayer(16, 10, relu2),
 			new SoftmaxLayer(10, 10)
 			//new SigmoidLayer(5, 10, crossEntropyCost)
 			//new FullyConnectedLayer(5, 10, sigmoid)

@@ -103,7 +103,7 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 			//	nabla_b[k]->fill(0.0);
 			//}
 
-			//cout << "Minibatch " << j+1 << " started." << endl;
+			cout << "Minibatch " << j+1 << " started." << endl;
 
 			for(int k = 1; k < numLayers; k++) {
 				(dynamic_cast<HiddenLayer *>(layers[k]))->reset_nabla();

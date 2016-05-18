@@ -38,16 +38,6 @@ public:
 	 */
 	virtual void d_activate(const cube &activation, cube &da)=0;
 
-	/**
-	 * activation type에 따라 activation 객체 생성 factory
-	 * not a good idea
-	 */
-	Activation *create_activation(string activation_type) {
-		if(activation_type.compare("sigmoid") == 0) return new Sigmoid();
-		if(activation_type.compare("softmax") == 0) return new Softmax();
-		if(activation_type.compare("relu") == 0) return new ReLU();
-		return 0;
-	}
 };
 
 #endif /* ACTIVATION_ACTIVATION_H_ */
