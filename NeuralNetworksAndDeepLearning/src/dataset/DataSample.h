@@ -36,12 +36,14 @@ public:
 	//void setTarget(vec *target) { this->target = target; }
 
 	void readData(const double *trainData, const int trainTarget) {
-		this->data.set_size(10, 10, 1);
+		this->data.set_size(10, 10, 3);
 		this->target.set_size(10, 1);
 
-		for(int i = 0; i < 10; i++) {
-			for(int j = 0; j < 10; j++) {
-				data.slice(0)(i, j) = trainData[i*10+j];
+		for(int k = 0; k < 3; k++) {
+			for(int i = 0; i < 10; i++) {
+				for(int j = 0; j < 10; j++) {
+					data.slice(k)(i, j) = trainData[i*10+j];
+				}
 			}
 		}
 		this->target.fill(0.0);

@@ -108,7 +108,7 @@ void network_test2() {
 	bool debug = false;
 	double validationSetRatio = 1.0/6.0;
 
-	//Activation *sigmoid = new Sigmoid();
+	Activation *sigmoid = new Sigmoid();
 
 	//Cost *crossEntropyCost = new CrossEntropyCost();
 	Pooling *maxPooling = new MaxPooling();
@@ -119,8 +119,8 @@ void network_test2() {
 	if(!debug) {
 		Util::setPrint(false);
 
-		Activation *relu1 = new ReLU(io_dim(24, 24, 20));
-		Activation *relu2 = new ReLU(io_dim(100, 1, 1));
+		//Activation *relu1 = new ReLU(io_dim(24, 24, 20));
+		//Activation *relu2 = new ReLU(io_dim(100, 1, 1));
 
 		// DataSet은 memory를 크게 차지할 수 있으므로 heap에 생성
 		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
@@ -129,9 +129,11 @@ void network_test2() {
 
 		Layer *layers[] = {
 			new InputLayer(io_dim(28, 28, 1)),
-			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), relu1, maxPooling),
-			new FullyConnectedLayer(12*12*20, 100, relu2),
-			new SoftmaxLayer(100, 10)
+			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), sigmoid, maxPooling),
+			new ConvPoolLayer(io_dim(12, 12, 20), filter_dim(5, 5, 20, 40), pool_dim(2, 2), sigmoid, maxPooling),
+			new FullyConnectedLayer(4*4*40, 100, 0.0, sigmoid),
+			//new FullyConnectedLayer(12*12*20, 100, 0.0, sigmoid),
+			new SoftmaxLayer(100, 10, 0.0)
 			//new SigmoidLayer(30, 10, crossEntropyCost)
 			//new FullyConnectedLayer(30, 10, sigmoid)
 		};
@@ -139,12 +141,12 @@ void network_test2() {
 		int numLayers = sizeof(layers)/sizeof(layers[0]);
 		Network network(layers, numLayers, mnistDataSet, networkListener);
 		//network.sgd(30, 10, 0.1, lambda);
-		network.sgd(30, 10, 0.1, lambda);
+		network.sgd(500, 10, 0.1, lambda);
 
 	} else {
 		Util::setPrint(true);
 
-		Activation *relu1 = new ReLU(io_dim(8, 8, 1));
+		Activation *relu1 = new ReLU(io_dim(8, 8, 5));
 		Activation *relu2 = new ReLU(io_dim(10, 1, 1));
 
 		MockDataSet *dataSet = new MockDataSet();
@@ -152,12 +154,16 @@ void network_test2() {
 
 		//int sizes[] = {9, 5, 10};
 		Layer *layers[] = {
+			/*
 			new InputLayer(io_dim(10, 10, 1)),
 			new ConvPoolLayer(io_dim(10, 10, 1), filter_dim(3, 3, 1, 1), pool_dim(2, 2), relu1, maxPooling),
-			new FullyConnectedLayer(16, 10, relu2),
-			new SoftmaxLayer(10, 10)
-			//new SigmoidLayer(5, 10, crossEntropyCost)
-			//new FullyConnectedLayer(5, 10, sigmoid)
+			new FullyConnectedLayer(16, 10, 0.5, relu2),
+			new SoftmaxLayer(10, 10, 0.5)
+			*/
+			new InputLayer(io_dim(10, 10, 3)),
+			new ConvPoolLayer(io_dim(10, 10, 3), filter_dim(3, 3, 3, 5), pool_dim(2, 2), relu1, maxPooling),
+			new FullyConnectedLayer(4*4*5, 10, 0.0, relu2),
+			new SoftmaxLayer(10, 10, 0.0)
 		};
 
 		int numLayers = sizeof(layers)/sizeof(layers[0]);

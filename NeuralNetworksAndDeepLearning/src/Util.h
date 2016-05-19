@@ -40,6 +40,8 @@ public:
 	 */
 	static void convertCube(const cube &input, cube &output);
 
+	static void dropoutLayer(cube &input, double p_dropout);
+
 private:
 	static bool print;
 

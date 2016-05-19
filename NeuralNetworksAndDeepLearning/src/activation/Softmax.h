@@ -39,7 +39,9 @@ public:
 	}
 	*/
 	void activate(const cube &z, cube &activation) {
-		cube temp = exp(z);
+		// TODO softmax는 output layer only,
+		// vector형태의 output을 전제
+		cube temp = exp(z-max(max(z.slice(0))));
 		activation = temp / accu(temp);
 	}
 	void d_activate(const cube &activation, cube &da) {

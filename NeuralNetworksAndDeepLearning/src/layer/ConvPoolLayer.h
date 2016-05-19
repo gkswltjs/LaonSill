@@ -22,7 +22,8 @@ public:
 	ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d, Activation *activation_fn, Pooling *pooling_fn);
 	virtual ~ConvPoolLayer();
 
-	mat *getWeight() { return 0; }
+	filter_dim &get_filter_dim() { return this->filter_d; }
+	cube *getWeight() { return this->filters; }
 	cube &getDelta() { return this->delta; }
 
 

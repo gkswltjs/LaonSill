@@ -16,14 +16,14 @@ using namespace arma;
 
 class OutputLayer : public FullyConnectedLayer {
 public:
-	OutputLayer(int n_in, int n_out) : FullyConnectedLayer(n_in, n_out) {}
-	OutputLayer(int n_in, int n_out, Activation *activation_fn, Cost *cost_fn)
-		: FullyConnectedLayer(n_in, n_out) {
+	OutputLayer(int n_in, int n_out, double p_dropout) : FullyConnectedLayer(n_in, n_out, p_dropout) {}
+	OutputLayer(int n_in, int n_out, double p_dropout, Activation *activation_fn, Cost *cost_fn)
+		: FullyConnectedLayer(n_in, n_out, p_dropout) {
 		initialize(activation_fn, cost_fn);
 	}
-	OutputLayer(io_dim in_dim, io_dim out_dim) : FullyConnectedLayer(in_dim, out_dim) {}
-	OutputLayer(io_dim in_dim, io_dim out_dim, Activation *activation_fn, Cost *cost_fn)
-		:FullyConnectedLayer(in_dim, out_dim) {
+	OutputLayer(io_dim in_dim, io_dim out_dim, double p_dropout) : FullyConnectedLayer(in_dim, out_dim, p_dropout) {}
+	OutputLayer(io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn, Cost *cost_fn)
+		:FullyConnectedLayer(in_dim, out_dim, p_dropout) {
 		initialize(activation_fn, cost_fn);
 	};
 	virtual ~OutputLayer() {};

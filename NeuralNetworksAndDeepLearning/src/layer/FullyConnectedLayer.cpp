@@ -8,14 +8,14 @@
 #include "FullyConnectedLayer.h"
 #include "../Util.h"
 
-FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn)
+FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, double p_dropout, Activation *activation_fn)
 	: HiddenLayer(n_in, n_out) {
-	initialize(activation_fn);
+	initialize(p_dropout, activation_fn);
 }
 
-FullyConnectedLayer::FullyConnectedLayer(io_dim in_dim, io_dim out_dim, Activation *activation_fn)
+FullyConnectedLayer::FullyConnectedLayer(io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn)
 	: HiddenLayer(in_dim, out_dim) {
-	initialize(activation_fn);
+	initialize(p_dropout, activation_fn);
 }
 
 FullyConnectedLayer::~FullyConnectedLayer() {
@@ -23,7 +23,9 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 }
 
 
-void FullyConnectedLayer::initialize(Activation *activation_fn) {
+void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn) {
+	this->p_dropout = p_dropout;
+
 	int n_in = in_dim.size();
 	int n_out = out_dim.size();
 
@@ -60,9 +62,15 @@ void FullyConnectedLayer::feedforward(const cube &input) {
 	Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);
 	Util::printCube(this->input, "converted input:");
+	//Util::dropoutLayer(this->input, this->p_dropout);
+	Util::printMat(weight, "weight:");
+	Util::printVec(bias, "bias:");
 
 	z.slice(0) = weight*this->input.slice(0) + bias;
+	Util::printCube(z, "z:");
+
 	activation_fn->activate(z, output);
+	Util::printCube(output, "output:");
 }
 
 void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {

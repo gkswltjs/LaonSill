@@ -131,11 +131,13 @@ void ConvPoolLayer::backpropagation(HiddenLayer *next_layer) {
 	}
 	// 두 레이어를 연결하는 Weight가 없는 경우 (현재 다음 레이어가 CONV인 케이스)
 	else {
-		mat dconv(size(input.slice(0)));
+		ConvPoolLayer *conv_layer = dynamic_cast<ConvPoolLayer *>(next_layer);
+
+		mat dconv(size(output.slice(0)));
 		w_next_delta.fill(0.0);
-		for(int i = 0; i < filter_d.channels; i++) {
-			for(int j = 0; j < filter_d.filters; j++) {
-				d_convolution(delta.slice(j), filters[j].slice(i), dconv);
+		for(int i = 0; i < conv_layer->get_filter_dim().channels; i++) {
+			for(int j = 0; j < conv_layer->get_filter_dim().filters; j++) {
+				d_convolution(conv_layer->getDelta().slice(j), conv_layer->getWeight()[j].slice(i), dconv);
 				w_next_delta.slice(i) += dconv;
 			}
 		}
@@ -205,7 +207,7 @@ void ConvPoolLayer::d_convolution(const mat &conv, const mat &filter, mat &resul
 					}
 				}
 			}
-			result(i+filter_slide_min_row_index, j+filter_slide_min_col_index) = dconv;
+			result(i-filter_slide_min_row_index, j-filter_slide_min_col_index) = dconv;
 		}
 	}
 }

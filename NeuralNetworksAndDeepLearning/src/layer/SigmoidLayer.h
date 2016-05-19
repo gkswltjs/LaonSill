@@ -15,12 +15,12 @@
 
 class SigmoidLayer : public OutputLayer {
 public:
-	SigmoidLayer(int n_in, int n_out, Cost *cost_fn)
-		: OutputLayer(n_in, n_out) {
+	SigmoidLayer(int n_in, int n_out, double p_dropout, Cost *cost_fn)
+		: OutputLayer(n_in, n_out, p_dropout) {
 		initialize(cost_fn);
 	}
-	SigmoidLayer(io_dim in_dim, io_dim out_dim, Cost *cost_fn)
-		: OutputLayer(in_dim, out_dim) {
+	SigmoidLayer(io_dim in_dim, io_dim out_dim, double p_dropout, Cost *cost_fn)
+		: OutputLayer(in_dim, out_dim, p_dropout) {
 		initialize(cost_fn);
 	}
 	virtual ~SigmoidLayer() {

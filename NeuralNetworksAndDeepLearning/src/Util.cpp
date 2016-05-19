@@ -126,6 +126,23 @@ void Util::convertCube(const cube &input, cube &output) {
 }
 
 
+void Util::dropoutLayer(cube &input, double p_dropout) {
+	cube p = randu<cube>(size(input));
+	Util::printCube(p, "p:");
+	Util::printCube(input, "input:");
+
+	int slice, row, col;
+	for(slice = 0; slice < input.n_slices; slice++) {
+		for(row = 0; row < input.n_rows; row++) {
+			for(col = 0; col < input.n_cols; col++) {
+				if(p.slice(slice)(row, col) < p_dropout) input.slice(slice)(row, col) = 0;
+			}
+		}
+	}
+	Util::printCube(input, "input:");
+}
+
+
 
 
 

@@ -15,8 +15,8 @@
 
 class FullyConnectedLayer : public HiddenLayer {
 public:
-	FullyConnectedLayer(int n_in, int n_out, Activation *activation_fn = 0);
-	FullyConnectedLayer(io_dim in_dim, io_dim out_dim, Activation *activation_fn = 0);
+	FullyConnectedLayer(int n_in, int n_out, double p_dropout, Activation *activation_fn=0);
+	FullyConnectedLayer(io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn=0);
 	virtual ~FullyConnectedLayer();
 
 	mat &getWeight() { return this->weight; }
@@ -50,9 +50,10 @@ public:
 	void update(double eta, double lambda, int n, int miniBatchSize);
 
 private:
-	void initialize(Activation *activation_fn);
+	void initialize(double p_dropout, Activation *activation_fn);
 
 protected:
+	double p_dropout;
 
 	mat weight;
 	vec bias;

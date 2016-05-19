@@ -18,12 +18,12 @@ using namespace arma;
 
 class SoftmaxLayer : public OutputLayer {
 public:
-	SoftmaxLayer(int n_in, int n_out)
-		: OutputLayer(n_in, n_out) {
+	SoftmaxLayer(int n_in, int n_out, double p_dropout)
+		: OutputLayer(n_in, n_out, p_dropout) {
 		initialize();
 	}
-	SoftmaxLayer(io_dim in_dim, io_dim out_dim)
-		: OutputLayer(in_dim, out_dim) {
+	SoftmaxLayer(io_dim in_dim, io_dim out_dim, double p_dropout)
+		: OutputLayer(in_dim, out_dim, p_dropout) {
 		initialize();
 	}
 	virtual ~SoftmaxLayer() {
