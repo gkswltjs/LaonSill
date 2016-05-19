@@ -36,13 +36,13 @@ public:
 	//void setTarget(vec *target) { this->target = target; }
 
 	void readData(const double *trainData, const int trainTarget) {
-		this->data.set_size(10, 10, 3);
+		this->data.set_size(12, 12, 3);
 		this->target.set_size(10, 1);
 
 		for(int k = 0; k < 3; k++) {
-			for(int i = 0; i < 10; i++) {
-				for(int j = 0; j < 10; j++) {
-					data.slice(k)(i, j) = trainData[i*10+j];
+			for(int i = 0; i < 12; i++) {
+				for(int j = 0; j < 12; j++) {
+					data.slice(k)(i, j) = trainData[i*12+j];
 				}
 			}
 		}
@@ -70,11 +70,6 @@ public:
 	}
 
 private:
-	int trainDataSize;
-	int testDataSize;
-	int inputSize;
-	int outputSize;
-
 	cube data;
 	vec target;
 };

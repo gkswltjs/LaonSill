@@ -9,20 +9,43 @@
 #include "exception/Exception.h"
 
 #include <cstdlib>
+#include <stdarg.h>
 
 
 bool Util::print = true;
 
 
+static const char *LEVEL_LABEL[4] = {"DEBUG","INFO ", "WARN ", "ERROR"};
 
-Util::Util() {
-	// TODO Auto-generated constructor stub
 
+void log_print(FILE *fp, int log_level, const char* filename, const int line, const char *func, char *fmt, ...) {
+	if(fp != NULL) {
+		char log[1024];
+		int log_index = 0;
+		time_t t;
+		va_list list;
+
+		time(&t);
+
+		sprintf(log, "[%s", ctime(&t));
+		log_index = strlen(log)-1;
+
+		sprintf(&log[log_index], "] (%s) %s:%d %s(): ", LEVEL_LABEL[log_level], filename, line, func);
+		log_index = strlen(log);
+
+		va_start(list, fmt);
+		vsprintf(&log[log_index], fmt, list );
+		va_end(list);
+
+		fprintf(fp, log);
+		fputc('\n', fp);
+
+		fflush(fp);
+	}
 }
 
-Util::~Util() {
-	// TODO Auto-generated destructor stub
-}
+
+
 
 
 int Util::random(int min, int max)

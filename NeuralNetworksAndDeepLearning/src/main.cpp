@@ -146,8 +146,8 @@ void network_test2() {
 	} else {
 		Util::setPrint(true);
 
-		Activation *relu1 = new ReLU(io_dim(8, 8, 5));
-		Activation *relu2 = new ReLU(io_dim(10, 1, 1));
+		//Activation *relu1 = new ReLU(io_dim(8, 8, 5));
+		//Activation *relu2 = new ReLU(io_dim(10, 1, 1));
 
 		MockDataSet *dataSet = new MockDataSet();
 		dataSet->load();
@@ -160,9 +160,10 @@ void network_test2() {
 			new FullyConnectedLayer(16, 10, 0.5, relu2),
 			new SoftmaxLayer(10, 10, 0.5)
 			*/
-			new InputLayer(io_dim(10, 10, 3)),
-			new ConvPoolLayer(io_dim(10, 10, 3), filter_dim(3, 3, 3, 5), pool_dim(2, 2), relu1, maxPooling),
-			new FullyConnectedLayer(4*4*5, 10, 0.0, relu2),
+			new InputLayer(io_dim(12, 12, 3)),
+			new ConvPoolLayer(io_dim(12, 12, 3), filter_dim(3, 3, 3, 2), pool_dim(2, 2), sigmoid, maxPooling),
+			new ConvPoolLayer(io_dim(5, 5, 2), filter_dim(2, 2, 2, 3), pool_dim(2, 2), sigmoid, maxPooling),
+			new FullyConnectedLayer(2*2*3, 10, 0.0, sigmoid),
 			new SoftmaxLayer(10, 10, 0.0)
 		};
 

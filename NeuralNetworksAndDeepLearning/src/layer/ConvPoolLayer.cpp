@@ -34,14 +34,12 @@ ConvPoolLayer::ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d
 	nabla_b.set_size(filter_d.filters);
 	nabla_b.randn();
 
-	// TODO z 크기 conv2 결과에 맞춰 조정해야 함
+
 	z.set_size(in_dim.rows-filter_d.rows+1, in_dim.cols-filter_d.cols+1, filter_d.filters);
-	activated.set_size(in_dim.rows-filter_d.rows+1, in_dim.cols-filter_d.cols+1, filter_d.filters);
-	pool_map.set_size(in_dim.rows-filter_d.rows+1, in_dim.cols-filter_d.cols+1, filter_d.filters);
+	activated.set_size(size(z));
+	pool_map.set_size(size(z));
 	//poold.set_size(activated.n_rows/pool_d.rows, activated.n_cols/pool_d.cols, filter_d.filters);
 	output.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
-
-
 
 
 	// TODO activation에 따라 weight 초기화 하도록 해야 함.
@@ -50,7 +48,9 @@ ConvPoolLayer::ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d
 	int n_out = filter_d.filters*filter_d.rows*filter_d.cols/(pool_d.rows*pool_d.cols);
 	for(int i = 0; i < filter_d.filters; i++) {
 		//filters[i].randn();
+		Util::printCube(filters[i], "filter:");
 		filters[i] *= 1 / sqrt(n_out);
+		Util::printCube(filters[i], "filter:");
 	}
 
 	this->pooling_fn = pooling_fn;
@@ -67,9 +67,7 @@ void ConvPoolLayer::feedforward(const cube &input) {
 	Util::convertCube(input, this->input);
 
 	z.fill(0.0);
-
-
-	mat conv(this->input.n_rows-filter_d.rows+1, this->input.n_cols-filter_d.cols+1);
+	mat conv(size(z.slice(0)));
 
 
 
@@ -78,27 +76,30 @@ void ConvPoolLayer::feedforward(const cube &input) {
 	for(int i = 0; i < filter_d.filters; i++) {
 		// for j, channels (about input)
 		for(int j = 0; j < filter_d.channels; j++) {
-			//z.slice(i) += conv2(input.slice(j), filters[i].slice(j), "same");
+			Util::printMat(this->input.slice(j), "input:");
+			Util::printMat(filters[i].slice(j), "filter:");
 			convolution(this->input.slice(j), filters[i].slice(j), conv);
+			Util::printMat(conv, "conv:");
 			z.slice(i) += conv;
+			Util::printCube(z, "z:");
 		}
 		//z.slice(i) += biases(i, 0);
 		//z(i) += biases.row(i);
 		//z.slice(i) = z.slice(i).submat(0, 0, z.slice(i).n_rows-2, z.slice(i).n_cols-2);
 		//z(i) = z(i).submat(0, 0, z(i).n_rows-2, z(i).n_cols-2);
 	}
-
 	Util::printCube(z, "z:");
+
 
 
 	// 2. ACTIVATION
 	activation_fn->activate(z, activated);
-	Util::printCube(activated, "activated:");
+	//Util::printCube(activated, "activated:");
 
 	// 3. MAX-POOLING
 	pooling_fn->pool(pool_d, activated, pool_map, output);
-	Util::printCube(output, "output:");
-	//pool_map.print("pool_map:");
+	//Util::printCube(output, "output:");
+
 
 }
 
@@ -188,28 +189,33 @@ void ConvPoolLayer::convolution(const mat &image, const mat &filter, mat &result
 void ConvPoolLayer::d_convolution(const mat &conv, const mat &filter, mat &result) {
 	int i, j, k, m;
 
-	mat filter_filp = flipud(fliplr(filter));
+	Util::printMat(filter, "filter:");
+	mat filter_flip = flipud(fliplr(filter));
+	Util::printMat(filter_flip, "filter_flip:");
 
-	int filter_slide_min_row_index = -filter_filp.n_rows+1;		// inclusive
-	int filter_slide_min_col_index = -filter_filp.n_cols+1;		// inclusive
+	int filter_slide_min_row_index = -filter_flip.n_rows+1;		// inclusive
+	int filter_slide_min_col_index = -filter_flip.n_cols+1;		// inclusive
 	int filter_slide_max_row_index = conv.n_rows;				// exclusive
 	int filter_slide_max_col_index = conv.n_cols;				// exclusive
 	double dconv;
+
+	Util::printMat(conv, "conv:");
 
 	// filter slide 범위
 	for(i = filter_slide_min_row_index; i < filter_slide_max_row_index; i++) {
 		for(j = filter_slide_min_col_index; j < filter_slide_max_col_index; j++) {
 			dconv = 0;
-			for(k = 0; k < filter_filp.n_rows; k++) {
-				for(m = 0; m < filter_filp.n_cols; m++) {
+			for(k = 0; k < filter_flip.n_rows; k++) {
+				for(m = 0; m < filter_flip.n_cols; m++) {
 					if((i+k >= 0 && i+k < conv.n_rows) && (j+m >=0 && j+m < conv.n_cols)) {
-						 dconv += conv(i+k, j+m)*filter_filp(k, m);
+						 dconv += conv(i+k, j+m)*filter_flip(k, m);
 					}
 				}
 			}
 			result(i-filter_slide_min_row_index, j-filter_slide_min_col_index) = dconv;
 		}
 	}
+	Util::printMat(result, "result:");
 }
 
 

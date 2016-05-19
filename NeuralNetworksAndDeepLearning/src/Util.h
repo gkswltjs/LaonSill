@@ -11,15 +11,25 @@
 #include "layer/LayerConfig.h"
 #include <string>
 #include <armadillo>
+#include <iostream>
 
 using namespace std;
 using namespace arma;
 
 
+#define	LOG_DEBUG	0
+#define	LOG_INFO	1
+#define	LOG_WARN	2
+#define	LOG_ERROR	3
+
+#define LOG(fp, log_level, ...) log_print(fp, log_level, __FILE__, __LINE__, __func__, __VA_ARGS__ )
+void log_print(FILE *fp, int log_level, const char* filename, const int line, const char *func, char *fmt, ...);
+
+
 class Util {
 public:
-	Util();
-	virtual ~Util();
+	Util() {}
+	virtual ~Util() {}
 
 	static int random(int min, int max);
 	static int pack4BytesToInt(unsigned char *buffer);

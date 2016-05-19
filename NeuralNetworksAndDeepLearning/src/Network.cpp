@@ -16,6 +16,7 @@
 #include "layer/HiddenLayer.h"
 #include "layer/OutputLayer.h"
 #include "Util.h"
+#include "Timer.h"
 
 
 
@@ -94,7 +95,13 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 	//vector<vec *> nabla_b;
 	//defaultWeightInitializer(nabla_w, nabla_b, false);
 
+	Timer timer;
+
 	for(int i = 0; i < epochs; i++) {
+		timer.start();
+
+
+
 		dataSet->shuffleTrainDataSet();
 
 		for(int j = 0; j < miniBatchesSize; j++) {
@@ -103,13 +110,15 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 			//	nabla_b[k]->fill(0.0);
 			//}
 
-			cout << "Minibatch " << j+1 << " started." << endl;
+			if((j+1)%100 == 0) cout << "Minibatch " << j+1 << " started." << endl;
 
 			for(int k = 1; k < numLayers; k++) {
 				(dynamic_cast<HiddenLayer *>(layers[k]))->reset_nabla();
 			}
 			updateMiniBatch(j, miniBatchSize, eta, lambda);
 		}
+
+		timer.stop();
 
 
 		//dataSet->shuffleTestDataSet();
