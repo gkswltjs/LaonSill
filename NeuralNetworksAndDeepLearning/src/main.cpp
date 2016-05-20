@@ -4,7 +4,7 @@
 #include "Network.h"
 #include "dataset/MnistDataSet.h"
 #include "dataset/MockDataSet.h"
-#include "activation.h"
+#include "dataset/Cifar10DataSet.h"
 #include "Util.h"
 #include "pooling/Pooling.h"
 #include "pooling/MaxPooling.h"
@@ -123,23 +123,40 @@ void network_test2() {
 		//Activation *relu2 = new ReLU(io_dim(100, 1, 1));
 
 		// DataSet은 memory를 크게 차지할 수 있으므로 heap에 생성
-		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
-		mnistDataSet->load();
+		//DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
+		//mnistDataSet->load();
+		DataSet *cifar10DataSet = new Cifar10DataSet();
+		cifar10DataSet->load();
+
+
 		//int sizes[] = {784, 30, 10};
 
+		/*
 		Layer *layers[] = {
 			new InputLayer(io_dim(28, 28, 1)),
 			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), sigmoid, maxPooling),
 			new ConvPoolLayer(io_dim(12, 12, 20), filter_dim(5, 5, 20, 40), pool_dim(2, 2), sigmoid, maxPooling),
-			new FullyConnectedLayer(4*4*40, 100, 0.0, sigmoid),
+			new FullyConnectedLayer(4*4*40, 100, 0.5, sigmoid),
 			//new FullyConnectedLayer(12*12*20, 100, 0.0, sigmoid),
-			new SoftmaxLayer(100, 10, 0.0)
+			new SoftmaxLayer(100, 10, 0.5)
+			//new SigmoidLayer(30, 10, crossEntropyCost)
+			//new FullyConnectedLayer(30, 10, sigmoid)
+		};
+		*/
+
+		Layer *layers[] = {
+			new InputLayer(io_dim(32, 32, 3)),
+			new ConvPoolLayer(io_dim(32, 32, 3), filter_dim(5, 5, 3, 20), pool_dim(2, 2), sigmoid, maxPooling),
+			new ConvPoolLayer(io_dim(14, 14, 20), filter_dim(5, 5, 20, 40), pool_dim(2, 2), sigmoid, maxPooling),
+			new FullyConnectedLayer(5*5*40, 100, 0.5, sigmoid),
+			//new FullyConnectedLayer(12*12*20, 100, 0.0, sigmoid),
+			new SoftmaxLayer(100, 10, 0.5)
 			//new SigmoidLayer(30, 10, crossEntropyCost)
 			//new FullyConnectedLayer(30, 10, sigmoid)
 		};
 
 		int numLayers = sizeof(layers)/sizeof(layers[0]);
-		Network network(layers, numLayers, mnistDataSet, networkListener);
+		Network network(layers, numLayers, cifar10DataSet, networkListener);
 		//network.sgd(30, 10, 0.1, lambda);
 		network.sgd(500, 10, 0.1, lambda);
 

@@ -69,6 +69,27 @@ public:
 		targetPtr++;
 	}
 
+	void readData(unsigned char *&dataPtr, int rows, int cols, int channels) {
+			this->data.set_size(rows, cols, channels);
+
+			this->target.set_size(10, 1);
+			this->target.fill(0.0f);
+			this->target.row(*dataPtr) = 1.0;
+			//Util::printVec(target, "target:");
+
+			dataPtr++;
+
+			for(int i = 0; i < channels; i++) {
+				for(int j = 0; j < rows; j++) {
+					for(int k = 0; k < cols; k++) {
+						this->data.slice(i)(j, k) = (*dataPtr)/255.0;
+						dataPtr++;
+					}
+				}
+			}
+			//Util::printCube(data, "data:");
+		}
+
 private:
 	cube data;
 	vec target;

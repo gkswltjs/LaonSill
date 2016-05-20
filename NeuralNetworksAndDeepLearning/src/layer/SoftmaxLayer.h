@@ -1,6 +1,20 @@
 /*
  * SoftmaxLayer.h
  *
+ * C = -ln ay
+ * dai/dzj =
+ * 			ai*(1-ai) 	: when i = j
+ * 			-ai*aj		: when i != j
+ *
+ * dC/dz = dC/da * da/dz
+ * dC/da = -1/a
+ *
+ * dC/dz = -1/a *
+ * 			ai*(1-ai) = ai-1	: when i = j
+ * 			-ai*aj = aj-0		: when i != j
+ *
+ * dC/dz = a - y
+ *
  *  Created on: 2016. 5. 12.
  *      Author: jhkim
  */
@@ -14,6 +28,7 @@
 #include <armadillo>
 
 using namespace arma;
+
 
 
 class SoftmaxLayer : public OutputLayer {
