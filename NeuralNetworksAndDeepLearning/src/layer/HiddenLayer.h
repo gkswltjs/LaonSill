@@ -20,7 +20,7 @@ public:
 	HiddenLayer(io_dim in_dim, io_dim out_dim) : Layer(in_dim, out_dim) {}
 	virtual ~HiddenLayer() {}
 
-	virtual cube &getDelta()=0;
+	virtual cube &getDeltaInput()=0;
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산

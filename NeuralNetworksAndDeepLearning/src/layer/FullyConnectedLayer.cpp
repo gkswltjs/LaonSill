@@ -44,6 +44,7 @@ void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn
 	this->z.set_size(n_out, 1, 1);
 	this->output.set_size(n_out, 1, 1);
 	this->delta.set_size(n_out, 1, 1);
+	this->delta_input.set_size(n_in, 1, 1);
 
 	/**
 	 * HiddenLayer에서 activation_fn이 할당되는 곳에서 weight initialize 필요
@@ -77,19 +78,42 @@ void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
 	cube sp;
 	activation_fn->d_activate(output, sp);
 
+	/*
 	FullyConnectedLayer *fc_layer = dynamic_cast<FullyConnectedLayer *>(next_layer);
-	if(fc_layer) delta.slice(0) = fc_layer->getWeight().t()*fc_layer->getDelta().slice(0) % sp.slice(0);
+	if(fc_layer) {
+		delta.slice(0) = fc_layer->getDelta().slice(0);
+	}
 	else {
+		throw Exception();
 		// TODO fc 다음으로 CONV가 온 경우 처리
 		//delta.slice(0) = next_delta.slice(0) % sp.slice(0);
 	}
+	*/
+
+	Util::convertCube(next_layer->getDeltaInput(), delta);
 
 	//Util::printMat(delta.slice(0), "delta");
 	//Util::printMat(next_w->t(), "next_w");
 	//Util::printMat(next_delta.slice(0), "next_delta");
 
+
+	// delta l = dC/dz
+	delta.slice(0) %= sp.slice(0);
+
 	nabla_b += delta.slice(0);
+	// delta lw = dC/dw
 	nabla_w += delta.slice(0)*input.slice(0).t();
+
+
+
+
+
+
+	// delta lx = dC/dx
+	delta_input.slice(0) = weight.t()*delta.slice(0);
+	//fc_layer->getWeight().t()*fc_layer->getDelta().slice(0)
+
+
 }
 
 

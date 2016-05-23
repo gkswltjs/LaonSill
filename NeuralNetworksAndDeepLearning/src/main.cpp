@@ -16,6 +16,8 @@
 #include "layer/InputLayer.h"
 #include "layer/FullyConnectedLayer.h"
 #include "layer/ConvPoolLayer.h"
+#include "layer/ConvLayer.h"
+#include "layer/PoolingLayer.h"
 #include "layer/SigmoidLayer.h"
 #include "layer/SoftmaxLayer.h"
 #include "activation/Activation.h"
@@ -75,9 +77,12 @@ void network_test() {
 
 		Layer *layers[] = {
 			new InputLayer(io_dim(28, 28, 1)),
-			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), sigmoid, maxPooling),
-			new ConvPoolLayer(io_dim(14, 14, 20), filter_dim(5, 5, 20, 40), pool_dim(2, 2), sigmoid, maxPooling),
-			new FullyConnectedLayer(7*7*40, 100, 0.5, sigmoid),
+			//new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), pool_dim(2, 2, 1), sigmoid, maxPooling),
+			new ConvLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid),
+			new PoolingLayer(io_dim(28, 28, 20), pool_dim(2, 2, 1), maxPooling),
+
+			//new ConvPoolLayer(io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), pool_dim(2, 2, 1), sigmoid, maxPooling),
+			new FullyConnectedLayer(14*14*20, 100, 0.5, sigmoid),
 			//new FullyConnectedLayer(12*12*20, 100, 0.0, sigmoid),
 			new SoftmaxLayer(100, 10, 0.5)
 			//new SigmoidLayer(30, 10, crossEntropyCost)
@@ -88,8 +93,8 @@ void network_test() {
 		/*
 		Layer *layers[] = {
 			new InputLayer(io_dim(32, 32, 3)),
-			new ConvPoolLayer(io_dim(32, 32, 3), filter_dim(5, 5, 3, 20), pool_dim(2, 2), sigmoid, maxPooling),
-			new ConvPoolLayer(io_dim(14, 14, 20), filter_dim(5, 5, 20, 40), pool_dim(2, 2), sigmoid, maxPooling),
+			new ConvPoolLayer(io_dim(32, 32, 3), filter_dim(5, 5, 3, 20, 1), pool_dim(2, 2, 1), sigmoid, maxPooling),
+			new ConvPoolLayer(io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), pool_dim(2, 2, 1), sigmoid, maxPooling),
 			new FullyConnectedLayer(5*5*40, 100, 0.5, sigmoid),
 			//new FullyConnectedLayer(12*12*20, 100, 0.0, sigmoid),
 			new SoftmaxLayer(100, 10, 0.5)
@@ -116,13 +121,13 @@ void network_test() {
 		Layer *layers[] = {
 			/*
 			new InputLayer(io_dim(10, 10, 1)),
-			new ConvPoolLayer(io_dim(10, 10, 1), filter_dim(3, 3, 1, 1), pool_dim(2, 2), relu1, maxPooling),
+			new ConvPoolLayer(io_dim(10, 10, 1), filter_dim(3, 3, 1, 1, 1), pool_dim(2, 2, 1), relu1, maxPooling),
 			new FullyConnectedLayer(16, 10, 0.5, relu2),
 			new SoftmaxLayer(10, 10, 0.5)
 			*/
 			new InputLayer(io_dim(12, 12, 3)),
-			new ConvPoolLayer(io_dim(12, 12, 3), filter_dim(3, 3, 3, 2), pool_dim(2, 2), sigmoid, maxPooling),
-			new ConvPoolLayer(io_dim(5, 5, 2), filter_dim(2, 2, 2, 3), pool_dim(2, 2), sigmoid, maxPooling),
+			new ConvPoolLayer(io_dim(12, 12, 3), filter_dim(3, 3, 3, 2, 1), pool_dim(2, 2, 1), sigmoid, maxPooling),
+			new ConvPoolLayer(io_dim(5, 5, 2), filter_dim(2, 2, 2, 3, 1), pool_dim(2, 2, 1), sigmoid, maxPooling),
 			new FullyConnectedLayer(2*2*3, 10, 0.0, sigmoid),
 			new SoftmaxLayer(10, 10, 0.0)
 		};

@@ -1,29 +1,28 @@
 /*
- * ConvPoolLayer.cpp
+ * ConvLayer.cpp
  *
- *  Created on: 2016. 5. 12.
+ *  Created on: 2016. 5. 23.
  *      Author: jhkim
  */
 
-#include "ConvPoolLayer.h"
+
+#include "ConvLayer.h"
 #include "FullyConnectedLayer.h"
 #include "../Util.h"
 
-ConvPoolLayer::ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d, Activation *activation_fn, Pooling *pooling_fn)
+ConvLayer::ConvLayer(io_dim in_dim, filter_dim filter_d, Activation *activation_fn)
 	: HiddenLayer(in_dim, in_dim) {
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;
-	this->pool_d = pool_d;
 
 	// determine output dimension by in_dim, filter_dim, pool_dim
 	//this->out_dim.rows = (in_dim.rows-filter_d.rows+1)/pool_d.rows;
 	//this->out_dim.cols = (in_dim.cols-filter_d.cols+1)/pool_d.cols;
-	this->out_dim.rows = in_dim.rows/pool_d.rows;
-	this->out_dim.cols = in_dim.cols/pool_d.cols;
+	this->out_dim.rows = in_dim.rows/filter_d.stride;
+	this->out_dim.cols = in_dim.cols/filter_d.stride;
 	this->out_dim.channels = filter_d.filters;
 
 	this->delta_input.set_size(in_dim.rows, in_dim.cols, in_dim.channels);
-
 
 
 	filters = new cube[filter_d.filters];
@@ -42,34 +41,28 @@ ConvPoolLayer::ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d
 
 
 	//z.set_size(in_dim.rows-filter_d.rows+1, in_dim.cols-filter_d.cols+1, filter_d.filters);
-	z.set_size(in_dim.rows, in_dim.cols, filter_d.filters);
-	activated.set_size(size(z));
-	pool_map.set_size(size(z));
-	//poold.set_size(activated.n_rows/pool_d.rows, activated.n_cols/pool_d.cols, filter_d.filters);
-	output.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
-
+	z.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
+	output.set_size(size(z));
 
 	// TODO activation에 따라 weight 초기화 하도록 해야 함.
 	this->activation_fn = activation_fn;
 	//if(this->activation_fn) this->activation_fn->initialize_weight();
-	int n_out = filter_d.filters*filter_d.rows*filter_d.cols/(pool_d.rows*pool_d.cols);
+	int n_out = filter_d.filters*filter_d.rows*filter_d.cols/10;
 	for(int i = 0; i < filter_d.filters; i++) {
 		//filters[i].randn();
 		//Util::printCube(filters[i], "filter:");
 		filters[i] *= 1 / sqrt(n_out);
 		//Util::printCube(filters[i], "filter:");
 	}
-
-	this->pooling_fn = pooling_fn;
 }
 
-ConvPoolLayer::~ConvPoolLayer() {
+ConvLayer::~ConvLayer() {
 	if(filters) delete filters;
 	if(nabla_w) delete nabla_w;
 }
 
 
-void ConvPoolLayer::feedforward(const cube &input) {
+void ConvLayer::feedforward(const cube &input) {
 	//Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);
 
@@ -92,60 +85,27 @@ void ConvPoolLayer::feedforward(const cube &input) {
 	//Util::printCube(z, "z:");
 
 	// 2. ACTIVATION
-	activation_fn->activate(z, activated);
+	activation_fn->activate(z, output);
 	//Util::printCube(activated, "activated:");
 
-	// 3. MAX-POOLING
-	pooling_fn->pool(pool_d, activated, pool_map, output);
-	//Util::printCube(output, "output:");
 }
 
 
 
 
 
-void ConvPoolLayer::backpropagation(HiddenLayer *next_layer) {
+void ConvLayer::backpropagation(HiddenLayer *next_layer) {
 	cube da;
-	activation_fn->d_activate(activated, da);
+	activation_fn->d_activate(output, da);
 
 	cube dp;
 	// 두 레이어를 연결하는 Weight가 있는 경우 (현재 다음 레이어가 FC인 케이스 only)
 	// next_w->()*next_delta: 다음 FC의 delta를 현재 CONV max pool의 delta로 dimension 변환
 	// max pool의 delta를 d_pool을 통해 upsample
 	cube w_next_delta(size(output));
-
-
-	/*
-	FullyConnectedLayer *fc_layer = dynamic_cast<FullyConnectedLayer *>(next_layer);
-	if(fc_layer) {
-		cube temp(output.size(), 1, 1);
-		//temp.slice(0) = fc_layer->getWeight().t()*fc_layer->getDelta().slice(0);
-		temp.slice(0) = fc_layer->getDelta().slice(0);
-
-		// output dim 기준으로 w_next_delta를 변환
-		Util::convertCube(temp, w_next_delta);
-	}
-	// 두 레이어를 연결하는 Weight가 없는 경우 (현재 다음 레이어가 CONV인 케이스)
-	else {
-		ConvPoolLayer *conv_layer = dynamic_cast<ConvPoolLayer *>(next_layer);
-
-		w_next_delta = conv_layer->getDelta();
-
-		//mat dconv(size(output.slice(0)));
-		//w_next_delta.fill(0.0);
-		//for(int i = 0; i < conv_layer->get_filter_dim().channels; i++) {
-		//	for(int j = 0; j < conv_layer->get_filter_dim().filters; j++) {
-		//		convolution(conv_layer->getDelta().slice(j), flipud(fliplr(conv_layer->getWeight()[j].slice(i))), dconv);
-		//		//d_convolution(conv_layer->getDelta().slice(j), conv_layer->getWeight()[j].slice(i), dconv);
-		//		w_next_delta.slice(i) += dconv;
-		//	}
-		//}
-	}
-	*/
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 
-	pooling_fn->d_pool(pool_d, w_next_delta, pool_map, dp);
-	delta =  dp % da;		//delta conv
+	delta = w_next_delta % da;		//delta conv
 	Util::printCube(delta, "delta:");
 
 	// dC/dw
@@ -161,8 +121,6 @@ void ConvPoolLayer::backpropagation(HiddenLayer *next_layer) {
 		}
 		nabla_b(i) += accu(delta.slice(i));
 	}
-
-
 
 	// dC/dx
 	mat dconv(size(input.slice(0)));
@@ -181,7 +139,7 @@ void ConvPoolLayer::backpropagation(HiddenLayer *next_layer) {
 
 
 
-void ConvPoolLayer::convolution(const mat &image, const mat &filter, mat &result) {
+void ConvLayer::convolution(const mat &image, const mat &filter, mat &result) {
 	int i, j, k, m;
 
 	int top_pad = (filter.n_cols-1)/2;
@@ -210,7 +168,7 @@ void ConvPoolLayer::convolution(const mat &image, const mat &filter, mat &result
 
 
 
-void ConvPoolLayer::d_convolution(const mat &conv, const mat &filter, mat &result) {
+void ConvLayer::d_convolution(const mat &conv, const mat &filter, mat &result) {
 
 	int i, j, k, m;
 	double dconv;
@@ -285,39 +243,18 @@ void ConvPoolLayer::d_convolution(const mat &conv, const mat &filter, mat &resul
 
 
 
-void ConvPoolLayer::reset_nabla() {
+void ConvLayer::reset_nabla() {
 	for(int i = 0; i < filter_d.filters; i++) nabla_w[i].fill(0.0);
 	nabla_b.fill(0.0);
 }
 
 
-void ConvPoolLayer::update(double eta, double lambda, int n, int miniBatchSize) {
+void ConvLayer::update(double eta, double lambda, int n, int miniBatchSize) {
 	for(int i = 0; i < filter_d.filters; i++) {
 		filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
 	}
 	biases -= eta/miniBatchSize*nabla_b;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

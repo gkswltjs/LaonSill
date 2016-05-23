@@ -20,7 +20,7 @@ public:
 	virtual ~FullyConnectedLayer();
 
 	mat &getWeight() { return this->weight; }
-	cube &getDelta() { return this->delta; }
+	cube &getDeltaInput() { return this->delta_input; }
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
@@ -63,6 +63,7 @@ protected:
 
 	cube z;
 	cube delta;
+	cube delta_input;
 	Activation *activation_fn;
 };
 

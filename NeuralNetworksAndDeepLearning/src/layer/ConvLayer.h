@@ -1,26 +1,22 @@
 /*
- * ConvPoolLayer.h
+ * ConvLayer.h
  *
- *  Created on: 2016. 5. 12.
+ *  Created on: 2016. 5. 23.
  *      Author: jhkim
  */
 
-#ifndef LAYER_CONVPOOLLAYER_H_
-#define LAYER_CONVPOOLLAYER_H_
+#ifndef LAYER_CONVLAYER_H_
+#define LAYER_CONVLAYER_H_
 
 #include "HiddenLayer.h"
 #include "LayerConfig.h"
 #include "../activation/Activation.h"
-#include "../pooling/Pooling.h"
-#include <armadillo>
-
-using namespace arma;
 
 
-class ConvPoolLayer : public HiddenLayer {
+class ConvLayer : public HiddenLayer {
 public:
-	ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d, Activation *activation_fn, Pooling *pooling_fn);
-	virtual ~ConvPoolLayer();
+	ConvLayer(io_dim in_dim, filter_dim filter_d, Activation *activation_fn);
+	virtual ~ConvLayer();
 
 	filter_dim &get_filter_dim() { return this->filter_d; }
 	cube *getWeight() { return this->filters; }
@@ -68,7 +64,6 @@ protected:
 	void d_convolution(const mat &conv, const mat &filter, mat &result);
 
 	filter_dim filter_d;
-	pool_dim pool_d;
 
 	cube *filters;		// weights
 	vec biases;
@@ -77,46 +72,10 @@ protected:
 	vec nabla_b;
 
 	cube z;
-	cube activated;
-	ucube pool_map;
 	cube delta;
 	cube delta_input;
 
 	Activation *activation_fn;
-	Pooling *pooling_fn;
 };
 
-#endif /* LAYER_CONVPOOLLAYER_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif /* LAYER_CONVLAYER_H_ */

@@ -47,15 +47,24 @@ public:
 	}
 
 	void cost(const vec &target) {
+		// delta
 		cost_fn->d_cost(z, output, target, delta);
 
-		Util::printVec(nabla_b, "bias:");
-		Util::printMat(nabla_w, "weight");
-		Util::printCube(delta, "delta:");
-		Util::printCube(input, "input:");
+		//Util::printVec(nabla_b, "bias:");
+		//Util::printMat(nabla_w, "weight");
+		//Util::printCube(delta, "delta:");
+		//Util::printCube(input, "input:");
 
 		nabla_b += delta.slice(0);
+		// delta weight
 		nabla_w += delta.slice(0)*input.slice(0).t();
+
+
+
+
+		// delta input
+		delta_input.slice(0) = weight.t()*delta.slice(0);
+
 	}
 
 private:

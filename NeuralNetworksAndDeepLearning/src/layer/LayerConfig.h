@@ -29,26 +29,32 @@ typedef struct io_dim {
 
 typedef struct filter_dim : public io_dim {
 	int filters;
+	int stride;
 
 	filter_dim() {
 		this->filters = 1;
+		this->stride = 1;
 	}
-	filter_dim(int rows, int cols, int channels, int filters) : io_dim(rows, cols, channels) {
+	filter_dim(int rows, int cols, int channels, int filters, int stride) : io_dim(rows, cols, channels) {
 		this->filters = filters;
+		this->stride = stride;
 	}
 } filter_dim;
 
 typedef struct pool_dim {
 	int rows;
 	int cols;
+	int stride;
 
 	pool_dim() {
 		this->rows = 1;
 		this->cols = 1;
+		this->stride = 1;
 	}
-	pool_dim(int rows, int cols) {
+	pool_dim(int rows, int cols, int stride) {
 		this->rows = rows;
 		this->cols = cols;
+		this->stride = stride;
 	}
 } pool_dim;
 
