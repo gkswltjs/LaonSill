@@ -60,8 +60,8 @@ void network_test() {
 	if(!debug) {
 		Util::setPrint(false);
 
-		Activation *conv1Relu = new ReLU(io_dim(24, 24, 20));
-		Activation *conv2Relu = new ReLU(io_dim(8, 8, 40));
+		Activation *conv1Relu = new ReLU(io_dim(28, 28, 20));
+		Activation *conv2Relu = new ReLU(io_dim(14, 14, 40));
 		Activation *fc1Relu = new ReLU(io_dim(100,1,1));
 
 		// DataSet은 memory를 크게 차지할 수 있으므로 heap에 생성
@@ -75,9 +75,9 @@ void network_test() {
 
 		Layer *layers[] = {
 			new InputLayer(io_dim(28, 28, 1)),
-			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), conv1Relu, maxPooling),
-			new ConvPoolLayer(io_dim(12, 12, 20), filter_dim(5, 5, 20, 40), pool_dim(2, 2), conv2Relu, maxPooling),
-			new FullyConnectedLayer(4*4*40, 100, 0.5, fc1Relu),
+			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), sigmoid, maxPooling),
+			new ConvPoolLayer(io_dim(14, 14, 20), filter_dim(5, 5, 20, 40), pool_dim(2, 2), sigmoid, maxPooling),
+			new FullyConnectedLayer(7*7*40, 100, 0.5, sigmoid),
 			//new FullyConnectedLayer(12*12*20, 100, 0.0, sigmoid),
 			new SoftmaxLayer(100, 10, 0.5)
 			//new SigmoidLayer(30, 10, crossEntropyCost)

@@ -59,7 +59,8 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 		dataSet->shuffleTrainDataSet();
 
 		for(int j = 0; j < miniBatchesSize; j++) {
-			if((j+1)%100 == 0) cout << "Minibatch " << j+1 << " started." << endl;
+			//if((j+1)%100 == 0) cout << "Minibatch " << j+1 << " started." << endl;
+			cout << "Minibatch " << j+1 << " started." << endl;
 
 			for(int k = 1; k < numLayers; k++) {
 				(dynamic_cast<HiddenLayer *>(layers[k]))->reset_nabla();
