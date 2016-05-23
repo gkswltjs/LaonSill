@@ -63,34 +63,26 @@ ConvPoolLayer::~ConvPoolLayer() {
 
 
 void ConvPoolLayer::feedforward(const cube &input) {
-	Util::printCube(input, "input:");
+	//Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);
 
 	z.fill(0.0);
 	mat conv(size(z.slice(0)));
-
-
 
 	// 1. CONVOLUTION
 	// for i, features (about output)
 	for(int i = 0; i < filter_d.filters; i++) {
 		// for j, channels (about input)
 		for(int j = 0; j < filter_d.channels; j++) {
-			Util::printMat(this->input.slice(j), "input:");
-			Util::printMat(filters[i].slice(j), "filter:");
+			//Util::printMat(this->input.slice(j), "input:");
+			//Util::printMat(filters[i].slice(j), "filter:");
 			convolution(this->input.slice(j), filters[i].slice(j), conv);
-			Util::printMat(conv, "conv:");
+			//Util::printMat(conv, "conv:");
 			z.slice(i) += conv;
-			Util::printCube(z, "z:");
+			//Util::printCube(z, "z:");
 		}
-		//z.slice(i) += biases(i, 0);
-		//z(i) += biases.row(i);
-		//z.slice(i) = z.slice(i).submat(0, 0, z.slice(i).n_rows-2, z.slice(i).n_cols-2);
-		//z(i) = z(i).submat(0, 0, z(i).n_rows-2, z(i).n_cols-2);
 	}
-	Util::printCube(z, "z:");
-
-
+	//Util::printCube(z, "z:");
 
 	// 2. ACTIVATION
 	activation_fn->activate(z, activated);
@@ -99,8 +91,6 @@ void ConvPoolLayer::feedforward(const cube &input) {
 	// 3. MAX-POOLING
 	pooling_fn->pool(pool_d, activated, pool_map, output);
 	//Util::printCube(output, "output:");
-
-
 }
 
 
@@ -159,9 +149,6 @@ void ConvPoolLayer::backpropagation(HiddenLayer *next_layer) {
 		}
 		nabla_b(i) += accu(delta.slice(i));
 	}
-
-
-
 }
 
 
@@ -169,23 +156,6 @@ void ConvPoolLayer::backpropagation(HiddenLayer *next_layer) {
 
 
 void ConvPoolLayer::convolution(const mat &image, const mat &filter, mat &result) {
-	/*
-	unsigned int i, j, k, m;
-	unsigned int image_max_row_index = image.n_rows-filter.n_rows+1;
-	unsigned int image_max_col_index = image.n_cols-filter.n_cols+1;
-	double conv;
-	for(i = 0; i < image_max_row_index; i++) {
-		for(j = 0; j < image_max_col_index; j++) {
-			conv = 0;
-			for(k = 0; k < filter.n_rows; k++) {
-				for(m = 0; m < filter.n_cols; m++) {
-					conv += image(i+k, j+m)*filter(k, m);
-				}
-			}
-			result(i, j) = conv;
-		}
-	}
-	*/
 	unsigned int i, j, k, m;
 	unsigned int image_max_row_index = image.n_rows-filter.n_rows+1;
 	unsigned int image_max_col_index = image.n_cols-filter.n_cols+1;
@@ -205,41 +175,8 @@ void ConvPoolLayer::convolution(const mat &image, const mat &filter, mat &result
 }
 
 void ConvPoolLayer::d_convolution(const mat &conv, const mat &filter, mat &result) {
-	/*
-	int i, j, k, m;
-
-	Util::printMat(filter, "filter:");
-	mat filter_flip = flipud(fliplr(filter));
-	Util::printMat(filter_flip, "filter_flip:");
-
-	int filter_slide_min_row_index = -filter_flip.n_rows+1;		// inclusive
-	int filter_slide_min_col_index = -filter_flip.n_cols+1;		// inclusive
-	int filter_slide_max_row_index = conv.n_rows;				// exclusive
-	int filter_slide_max_col_index = conv.n_cols;				// exclusive
-	double dconv;
-
-	Util::printMat(conv, "conv:");
-
-	// filter slide 범위
-	for(i = filter_slide_min_row_index; i < filter_slide_max_row_index; i++) {
-		for(j = filter_slide_min_col_index; j < filter_slide_max_col_index; j++) {
-			dconv = 0;
-			for(k = 0; k < filter_flip.n_rows; k++) {
-				for(m = 0; m < filter_flip.n_cols; m++) {
-					if((i+k >= 0 && i+k < conv.n_rows) && (j+m >=0 && j+m < conv.n_cols)) {
-						 dconv += conv(i+k, j+m)*filter_flip(k, m);
-					}
-				}
-			}
-			result(i-filter_slide_min_row_index, j-filter_slide_min_col_index) = dconv;
-		}
-	}
-	Util::printMat(result, "result:");
-	*/
-
 	int i, j, k, m;
 	mat filter_flip = flipud(fliplr(filter));
-
 
 	int filter_slide_min_row_index = -filter_flip.n_rows+1;		// inclusive
 	int filter_slide_min_col_index = -filter_flip.n_cols+1;		// inclusive
@@ -254,6 +191,7 @@ void ConvPoolLayer::d_convolution(const mat &conv, const mat &filter, mat &resul
 			for(k = 0; k < filter_flip.n_rows; k++) {
 				for(m = 0; m < filter_flip.n_cols; m++) {
 					if((i+k >= 0 && i+k < conv.n_rows) && (j+m >=0 && j+m < conv.n_cols)) {
+						//dconv += conv(i+k, j+m)*filter_flip(k, m);
 						dconv += conv.mem[i+k+(j+m)*conv.n_cols]*filter_flip(k+m*filter.n_cols);
 					}
 				}

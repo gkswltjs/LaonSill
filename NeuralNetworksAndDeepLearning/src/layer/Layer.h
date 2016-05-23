@@ -31,8 +31,6 @@ public:
 	}
 	virtual ~Layer() {}
 
-	//int getNIn() const { return this->n_in; }
-	//int getNOut() const { return this->n_out; }
 	cube &getInput() { return this->input; }
 	cube &getOutput() { return this->output; }
 

@@ -31,80 +31,21 @@ using namespace arma;
 
 void armadillo_test();
 void network_test();
-void network_test2();
 void custom_armadillo_test();
 
 
 int main(int argc, char** argv) {
-
 	cout << "main" << endl;
 
-	//armadillo_test();
-	network_test2();
+	network_test();
 
-	//custom_armadillo_test();
 	return 0;
 }
 
 
-void custom_armadillo_test() {
-	vec *pY = new vec(2), *pA = new vec(2);
-	(*pY) << 1 << 0;
-	(*pA) << 0.0872 << 0.2008;
-
-
-	vec temp1 = (-1 * (*pY));
-	vec temp2 = log(*pA);
-	vec temp3 = temp1 % temp2;
-	Util::printVec(temp1, "temp1");
-	Util::printVec(temp2, "temp2");
-	Util::printVec(temp3, "temp3");
-
-
-	vec left = (-1 * (*pY)) % log(*pA);
-	vec right = (1 - (*pY)) % log(1 - (*pA));
-	vec result = left - right;
-	Util::printVec(left, "left");
-	Util::printVec(right, "right");
-	Util::printVec(result, "result");
-
-}
-
 
 
 void network_test() {
-
-	/*
-	bool debug = false;
-	double validationSetRatio = 1.0/6.0;
-
-	CrossEntropyCost cost;
-	NetworkListener *networkListener = new NetworkMonitor();
-
-	double lambda = 5.0;
-
-	if(!debug) {
-		Util::setPrint(false);
-		MnistDataSet dataSet(validationSetRatio);
-		dataSet.load();
-		int sizes[] = {784, 30, 10};
-		Network network(sizes, 3, &dataSet, &cost, networkListener);
-		network.sgd(30, 10, 0.1, lambda);
-	} else {
-		Util::setPrint(true);
-		MockDataSet dataSet;
-		dataSet.load();
-		int sizes[] = {9, 5, 10};
-		Network network(sizes, 3, &dataSet, &cost, networkListener);
-		network.sgd(5, 2, 3.0, lambda);
-	}
-
-	delete networkListener;
-	*/
-}
-
-
-void network_test2() {
 	bool debug = false;
 	double validationSetRatio = 1.0/6.0;
 
@@ -119,31 +60,32 @@ void network_test2() {
 	if(!debug) {
 		Util::setPrint(false);
 
-		//Activation *relu1 = new ReLU(io_dim(24, 24, 20));
-		//Activation *relu2 = new ReLU(io_dim(100, 1, 1));
+		Activation *conv1Relu = new ReLU(io_dim(24, 24, 20));
+		Activation *conv2Relu = new ReLU(io_dim(8, 8, 40));
+		Activation *fc1Relu = new ReLU(io_dim(100,1,1));
 
 		// DataSet은 memory를 크게 차지할 수 있으므로 heap에 생성
-		//DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
-		//mnistDataSet->load();
-		DataSet *cifar10DataSet = new Cifar10DataSet();
-		cifar10DataSet->load();
+		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
+		mnistDataSet->load();
+		//DataSet *cifar10DataSet = new Cifar10DataSet();
+		//cifar10DataSet->load();
 
 
 		//int sizes[] = {784, 30, 10};
 
-		/*
 		Layer *layers[] = {
 			new InputLayer(io_dim(28, 28, 1)),
-			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), sigmoid, maxPooling),
-			new ConvPoolLayer(io_dim(12, 12, 20), filter_dim(5, 5, 20, 40), pool_dim(2, 2), sigmoid, maxPooling),
-			new FullyConnectedLayer(4*4*40, 100, 0.5, sigmoid),
+			new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20), pool_dim(2, 2), conv1Relu, maxPooling),
+			new ConvPoolLayer(io_dim(12, 12, 20), filter_dim(5, 5, 20, 40), pool_dim(2, 2), conv2Relu, maxPooling),
+			new FullyConnectedLayer(4*4*40, 100, 0.5, fc1Relu),
 			//new FullyConnectedLayer(12*12*20, 100, 0.0, sigmoid),
 			new SoftmaxLayer(100, 10, 0.5)
 			//new SigmoidLayer(30, 10, crossEntropyCost)
 			//new FullyConnectedLayer(30, 10, sigmoid)
 		};
-		*/
 
+
+		/*
 		Layer *layers[] = {
 			new InputLayer(io_dim(32, 32, 3)),
 			new ConvPoolLayer(io_dim(32, 32, 3), filter_dim(5, 5, 3, 20), pool_dim(2, 2), sigmoid, maxPooling),
@@ -154,9 +96,10 @@ void network_test2() {
 			//new SigmoidLayer(30, 10, crossEntropyCost)
 			//new FullyConnectedLayer(30, 10, sigmoid)
 		};
+		*/
 
 		int numLayers = sizeof(layers)/sizeof(layers[0]);
-		Network network(layers, numLayers, cifar10DataSet, networkListener);
+		Network network(layers, numLayers, mnistDataSet, networkListener);
 		//network.sgd(30, 10, 0.1, lambda);
 		network.sgd(500, 10, 0.1, lambda);
 
@@ -192,6 +135,30 @@ void network_test2() {
 }
 
 
+
+
+void custom_armadillo_test() {
+	vec *pY = new vec(2), *pA = new vec(2);
+	(*pY) << 1 << 0;
+	(*pA) << 0.0872 << 0.2008;
+
+
+	vec temp1 = (-1 * (*pY));
+	vec temp2 = log(*pA);
+	vec temp3 = temp1 % temp2;
+	Util::printVec(temp1, "temp1");
+	Util::printVec(temp2, "temp2");
+	Util::printVec(temp3, "temp3");
+
+
+	vec left = (-1 * (*pY)) % log(*pA);
+	vec right = (1 - (*pY)) % log(1 - (*pA));
+	vec result = left - right;
+	Util::printVec(left, "left");
+	Util::printVec(right, "right");
+	Util::printVec(result, "result");
+
+}
 
 
 

@@ -34,49 +34,9 @@ Network::Network(Layer **layers, int numLayers, DataSet *dataSet, NetworkListene
 	this->networkListener = networkListener;
 }
 
-Network::~Network() {
-	//deallocParameters(weights, biases);
-}
+Network::~Network() {}
 
 
-/*
-void Network::defaultWeightInitializer(vector<mat *> &weights, vector<vec *> &biases, bool init) {
-	for(int i = 0; i < numLayers; i++) {
-		// index를 맞추기 위해 0번에 dummy bias, weight 추가
-		if(i == 0) {
-			biases.push_back(new vec());
-			weights.push_back((new mat()));
-		} else {
-			vec *pBias = new vec(sizes[i]);
-			biases.push_back(pBias);
-
-			mat *pWeight = new mat(sizes[i], sizes[i-1]);
-			weights.push_back(pWeight);
-
-			if(init) {
-				pBias->randn();
-				pWeight->randn();
-				// initial point scaling
-				(*pWeight) *= 1/sqrt(sizes[i-1]);
-			} else {
-				pBias->fill(0.0);
-				pWeight->fill(0.0);
-			}
-			Util::printMat(pWeight, "weight");
-			Util::printVec(pBias, "bias");
-		}
-	}
-}
-
-
-void Network::deallocParameters(vector<mat *> weights, vector<vec *> biases) {
-	int size = weights.size();
-	for(int i = 0; i < size; i++) {
-		delete weights[i];
-		delete biases[i];
-	}
-}
-*/
 
 
 
@@ -91,25 +51,14 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 	int trainDataSize = dataSet->getTrainDataSize();
 	int miniBatchesSize = trainDataSize / miniBatchSize;
 
-	//vector<mat *> nabla_w;
-	//vector<vec *> nabla_b;
-	//defaultWeightInitializer(nabla_w, nabla_b, false);
-
 	Timer timer;
 
 	for(int i = 0; i < epochs; i++) {
 		timer.start();
 
-
-
 		dataSet->shuffleTrainDataSet();
 
 		for(int j = 0; j < miniBatchesSize; j++) {
-			//for(int k = 1; k < numLayers; k++) {
-			//	nabla_w[k]->fill(0.0);
-			//	nabla_b[k]->fill(0.0);
-			//}
-
 			if((j+1)%100 == 0) cout << "Minibatch " << j+1 << " started." << endl;
 
 			for(int k = 1; k < numLayers; k++) {
@@ -144,7 +93,7 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 		}
 		*/
 	}
-	//deallocParameters(nabla_w, nabla_b);
+
 }
 
 
@@ -159,25 +108,19 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, d
 	int n = dataSet->getTrainDataSize();
 	for(int i = 1; i < numLayers; i++) {
 		(dynamic_cast<HiddenLayer *>(layers[i]))->update(eta, lambda, n, miniBatchSize);
-		// weight update에 L2 Regularization, Weight Decay 적용
-		//(*weights[i]) = (1-eta*lambda/n)*(*weights[i]) - (eta/miniBatchSize)*(*nabla_w[i]);
-		//(*weights[i]) -= eta/miniBatchSize*(*nabla_w[i]);
-		//(*biases[i]) -= eta/miniBatchSize*(*nabla_b[i]);
 	}
 }
 
 
 
 void Network::backprop(const DataSample &dataSample) {
-
 	int lastLayerIndex = numLayers-1;
 
 	// feedforward
 	feedforward(dataSample.getData());
 
-
-	Util::printVec(dataSample.getTarget(), "target:");
-	Util::printCube(layers[lastLayerIndex]->getInput(), "input:");
+	//Util::printVec(dataSample.getTarget(), "target:");
+	//Util::printCube(layers[lastLayerIndex]->getInput(), "input:");
 
 	// backward pass
 	(dynamic_cast<OutputLayer *>(layers[lastLayerIndex]))->cost(dataSample.getTarget());
@@ -185,122 +128,15 @@ void Network::backprop(const DataSample &dataSample) {
 	for(int i = lastLayerIndex-1; i > 0; i--) {
 		(dynamic_cast<HiddenLayer *>(layers[i]))->backpropagation(dynamic_cast<HiddenLayer *>(layers[i+1]));
 	}
-
-
-	/*
-	vector<const vec *> activations;
-	activations.push_back(activation);
-
-	vector<const vec *> zs;
-	// index를 맞추기 위해 dummy z를 0번에 추가
-	zs.push_back(new vec());
-
-	// z[i] = weight[i]*activation[i-1]+b[i]
-	// activation[i] = sigmoid(z[i])
-	for(int i = 1; i < numLayers; i++) {
-		vec *b = biases[i];
-		mat *w = weights[i];
-
-		Util::printVec(activation, "activation");
-		Util::printVec(b, "bias");
-		Util::printMat(w, "weight");
-
-		vec *z = new vec((*w)*(*activation) + (*b));
-		Util::printVec(z, "z");
-		zs.push_back(z);
-
-		activation = new vec(sigmoid(z));
-		Util::printVec(activation, "activation");
-		activations.push_back(activation);
-	}
-
-	// backward pass
-	int lastLayerIndex = numLayers-1;
-	// δL = (aL−y) ⊙ σ′(zL)
-	//vec delta = costDerivative(activations[lastLayerIndex], dataSample->getTarget()) % sigmoidPrime(activations[lastLayerIndex]);
-	vec delta = cost->delta(zs[lastLayerIndex], activations[lastLayerIndex], dataSample->getTarget());
-	Util::printVec(&delta, "delta");
-
-	// ∂C / ∂b = δ
-	// ∂C / ∂w = ain * δout
-	Util::printVec(nabla_b[lastLayerIndex], "bias");
-	Util::printMat(nabla_w[lastLayerIndex], "weight");
-	Util::printVec(activations[lastLayerIndex-1], "activation");
-	(*nabla_b[lastLayerIndex]) += delta;
-	(*nabla_w[lastLayerIndex]) += delta*activations[lastLayerIndex-1]->t();
-	Util::printVec(nabla_b[lastLayerIndex], "bias");
-	Util::printMat(nabla_w[lastLayerIndex], "weight");
-
-	for(int l = lastLayerIndex-1; l >= 1; l--) {
-		// δl = ((wl+1)T * δl+1) ⊙ σ′(zl)
-		vec sp = sigmoidPrime(activations[l]);
-		delta = weights[l+1]->t()*delta % sp;
-		Util::printVec(&delta, "delta");
-		(*nabla_b[l]) += delta;
-		(*nabla_w[l]) += delta*activations[l-1]->t();
-		Util::printVec(nabla_b[l], "bias");
-		Util::printMat(nabla_w[l], "weight");
-	}
-
-	// dealloc
-	for(int i = 0; i < numLayers-1; i++) {
-		delete activations[i+1];
-		delete zs[i];
-	}
-	*/
 }
-
-/*
-vec Network::costDerivative(const vec *outputActivation, const vec *y) {
-	Util::printVec(outputActivation, "outputActivation");
-	Util::printVec(y, "y");
-
-	vec costDerivative = (*outputActivation) - (*y);
-	Util::printVec(&costDerivative, "costDerivative");
-
-	return costDerivative;
-}
-
-
-vec Network::sigmoid(const vec *z) {
-	vec temp = ones<vec>(z->n_rows);
-	return temp / (1.0+exp(-1*(*z)));
-}
-
-// activation이 이미 계산된 상태이므로 z가 아닌 activation을 통해 simoid prime을 계산
-vec Network::sigmoidPrime(const vec *activation) {
-	Util::printVec(activation, "activation");
-	vec result = (*activation)%(1.0-*activation);
-	Util::printVec(&result, "result");
-	return result;
-}
-*/
-
 
 
 
 
 
 void Network::feedforward(const cube &input) {
-	/*
-	Util::printVec(x, "x");
-	vec activation(*x);
-	Util::printVec(&activation, "activation");
 
-	for(int i = 1; i < numLayers; i++) {
-		//Util::printMat(weights[i], "weight");
-		//Util::printVec(biases[i], "bias");
-
-		vec z = (*weights[i])*activation+(*biases[i]);
-		Util::printVec(&z, "z");
-
-		activation = sigmoid(&z);
-		Util::printVec(&activation, "activation");
-	}
-	return activation;
-	*/
-
-	Util::printCube(input, "input:");
+	//Util::printCube(input, "input:");
 	layers[0]->feedforward(input);
 
 
