@@ -60,8 +60,10 @@ public:
 
 
 protected:
-	void convolution(const mat &image, const mat &filter, mat &result);
-	void d_convolution(const mat &conv, const mat &filter, mat &result);
+	void convolution(const mat &x, const mat &w, mat &result, int stride);
+	void dw_convolution(const mat &d, const mat &x, mat &result);
+	void dx_convolution(const mat &d, const mat &w, mat &result);
+
 
 	filter_dim filter_d;
 

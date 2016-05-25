@@ -20,7 +20,10 @@ PoolingLayer::PoolingLayer(io_dim in_dim, pool_dim pool_d, Pooling *pooling_fn)
 
 	this->pooling_fn = pooling_fn;
 
-	this->pool_map.set_size(size(input));
+	this->pool_map.set_size(in_dim.rows/pool_d.stride, in_dim.cols/pool_d.stride, in_dim.channels);
+	this->output.set_size(size(pool_map));
+	this->delta_input.set_size(size(input));
+
 }
 
 PoolingLayer::~PoolingLayer() {
@@ -40,8 +43,11 @@ void PoolingLayer::backpropagation(HiddenLayer *next_layer) {
 	cube w_next_delta(size(output));
 
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
+	Util::printCube(next_layer->getDeltaInput(), "delta input:");
+	Util::printCube(w_next_delta, "w_next_delta:");
 
 	pooling_fn->d_pool(pool_d, w_next_delta, pool_map, delta_input);
+	Util::printCube(delta_input, "delta_input:");
 }
 
 

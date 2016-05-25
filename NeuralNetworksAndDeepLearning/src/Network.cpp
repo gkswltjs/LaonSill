@@ -67,9 +67,7 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 			}
 			updateMiniBatch(j, miniBatchSize, eta, lambda);
 		}
-
 		timer.stop();
-
 
 		//dataSet->shuffleTestDataSet();
 		if(dataSet->getTestDataSize() > 0) {

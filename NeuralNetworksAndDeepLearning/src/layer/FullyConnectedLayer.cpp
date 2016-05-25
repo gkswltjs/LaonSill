@@ -75,8 +75,7 @@ void FullyConnectedLayer::feedforward(const cube &input) {
 }
 
 void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
-	cube sp;
-	activation_fn->d_activate(output, sp);
+
 
 	/*
 	FullyConnectedLayer *fc_layer = dynamic_cast<FullyConnectedLayer *>(next_layer);
@@ -92,13 +91,17 @@ void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
 
 	Util::convertCube(next_layer->getDeltaInput(), delta);
 
-	//Util::printMat(delta.slice(0), "delta");
+	Util::printMat(delta.slice(0), "delta");
 	//Util::printMat(next_w->t(), "next_w");
 	//Util::printMat(next_delta.slice(0), "next_delta");
 
+	cube sp;
+	activation_fn->d_activate(output, sp);
 
 	// delta l = dC/dz
 	delta.slice(0) %= sp.slice(0);
+	Util::printMat(delta.slice(0), "delta:");
+
 
 	nabla_b += delta.slice(0);
 	// delta lw = dC/dw

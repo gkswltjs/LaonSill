@@ -52,6 +52,9 @@ public:
 
 	static void dropoutLayer(cube &input, double p_dropout);
 
+
+
+
 private:
 	static bool print;
 

@@ -183,4 +183,3 @@ void Util::dropoutLayer(cube &input, double p_dropout) {
 
 
 
-

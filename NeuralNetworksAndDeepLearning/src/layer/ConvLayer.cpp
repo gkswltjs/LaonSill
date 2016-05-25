@@ -31,7 +31,7 @@ ConvLayer::ConvLayer(io_dim in_dim, filter_dim filter_d, Activation *activation_
 		filters[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
 		filters[i].randn();
 		nabla_w[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
-		nabla_w[i].fill(0.0);
+		nabla_w[i].zeros();
 	}
 
 	biases.set_size(filter_d.filters);
@@ -47,7 +47,7 @@ ConvLayer::ConvLayer(io_dim in_dim, filter_dim filter_d, Activation *activation_
 	// TODO activation에 따라 weight 초기화 하도록 해야 함.
 	this->activation_fn = activation_fn;
 	//if(this->activation_fn) this->activation_fn->initialize_weight();
-	int n_out = filter_d.filters*filter_d.rows*filter_d.cols/10;
+	int n_out = filter_d.filters*filter_d.rows*filter_d.cols/9;
 	for(int i = 0; i < filter_d.filters; i++) {
 		//filters[i].randn();
 		//Util::printCube(filters[i], "filter:");
@@ -66,7 +66,7 @@ void ConvLayer::feedforward(const cube &input) {
 	//Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);
 
-	z.fill(0.0);
+	z.zeros();
 	mat conv(size(z.slice(0)));
 
 	// 1. CONVOLUTION
@@ -74,19 +74,19 @@ void ConvLayer::feedforward(const cube &input) {
 	for(int i = 0; i < filter_d.filters; i++) {
 		// for j, channels (about input)
 		for(int j = 0; j < filter_d.channels; j++) {
-			//Util::printMat(this->input.slice(j), "input:");
-			//Util::printMat(filters[i].slice(j), "filter:");
-			convolution(this->input.slice(j), filters[i].slice(j), conv);
-			//Util::printMat(conv, "conv:");
+			Util::printMat(this->input.slice(j), "input:");
+			Util::printMat(filters[i].slice(j), "filter:");
+			convolution(this->input.slice(j), filters[i].slice(j), conv, filter_d.stride);
+			Util::printMat(conv, "conv:");
 			z.slice(i) += conv;
 			//Util::printCube(z, "z:");
 		}
 	}
-	//Util::printCube(z, "z:");
+	Util::printCube(z, "z:");
 
 	// 2. ACTIVATION
 	activation_fn->activate(z, output);
-	//Util::printCube(activated, "activated:");
+	Util::printCube(output, "output:");
 
 }
 
@@ -106,13 +106,16 @@ void ConvLayer::backpropagation(HiddenLayer *next_layer) {
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 
 	delta = w_next_delta % da;		//delta conv
+
+	Util::printCube(da, "da:");
+	Util::printCube(w_next_delta, "w_next_delta:");
 	Util::printCube(delta, "delta:");
 
-	// dC/dw
+	// dw
 	mat conv(filter_d.rows, filter_d.cols);
 	for(int i = 0; i < filter_d.filters; i++) {
 		for(int j = 0; j < filter_d.channels; j++) {
-			d_convolution(input.slice(j), delta.slice(i), conv);
+			dw_convolution(delta.slice(i), input.slice(j), conv);
 			Util::printMat(conv, "conv:");
 
 			Util::printMat(nabla_w[i].slice(j), "nabla_w:");
@@ -122,12 +125,15 @@ void ConvLayer::backpropagation(HiddenLayer *next_layer) {
 		nabla_b(i) += accu(delta.slice(i));
 	}
 
-	// dC/dx
+
+	// dx
 	mat dconv(size(input.slice(0)));
 	delta_input.fill(0.0);
 	for(int i = 0; i < filter_d.channels; i++) {
 		for(int j = 0; j < filter_d.filters; j++) {
-			convolution(delta.slice(j), flipud(fliplr(filters[j].slice(i))), dconv);
+			Util::printMat(filters[j].slice(i), "filter:");
+			Util::printMat(flipud(fliplr(filters[j].slice(i))), "filp:");
+			dx_convolution(delta.slice(j), flipud(fliplr(filters[j].slice(i))), dconv);
 			//d_convolution(conv_layer->getDelta().slice(j), conv_layer->getWeight()[j].slice(i), dconv);
 			delta_input.slice(i) += dconv;
 		}
@@ -136,28 +142,26 @@ void ConvLayer::backpropagation(HiddenLayer *next_layer) {
 }
 
 
-
-
-
-void ConvLayer::convolution(const mat &image, const mat &filter, mat &result) {
+void ConvLayer::convolution(const mat &x, const mat &w, mat &result, int stride) {
 	int i, j, k, m;
 
-	int top_pad = (filter.n_cols-1)/2;
-	int left_pad = (filter.n_rows-1)/2;
+	int top_pad = (w.n_cols-1)/2;
+	int left_pad = (w.n_rows-1)/2;
 	int in_image_row_idx;
 	int in_image_col_idx;
 	double conv;
 
-	for(i = 0; i < image.n_rows; i++) {
-		for(j = 0; j < image.n_cols; j++) {
+	for(i = 0; i < x.n_rows; i+=stride) {
+		for(j = 0; j < x.n_cols; j+=stride) {
 			conv = 0;
-			for(k = 0; k < filter.n_rows; k++) {
-				for(m = 0; m < filter.n_cols; m++) {
+			for(k = 0; k < w.n_rows; k++) {
+				for(m = 0; m < w.n_cols; m++) {
 					in_image_row_idx = i-left_pad+k;
 					in_image_col_idx = j-top_pad+m;
-					if((in_image_row_idx >= 0 && in_image_row_idx < image.n_rows)
-							&& (in_image_col_idx >=0 && in_image_col_idx < image.n_cols)) {
-						conv += image.mem[in_image_row_idx+(in_image_col_idx)*image.n_cols]*filter.mem[k+m*filter.n_cols];
+
+					if((in_image_row_idx >= 0 && in_image_row_idx < x.n_rows)
+							&& (in_image_col_idx >=0 && in_image_col_idx < x.n_cols)) {
+						conv += x.mem[in_image_row_idx+(in_image_col_idx)*x.n_cols]*w.mem[k+m*w.n_cols];
 					}
 				}
 			}
@@ -168,77 +172,77 @@ void ConvLayer::convolution(const mat &image, const mat &filter, mat &result) {
 
 
 
-void ConvLayer::d_convolution(const mat &conv, const mat &filter, mat &result) {
 
-	int i, j, k, m;
-	double dconv;
+// Yn,m = Sigma(i for 0~filter_size-1)Sigma(j for 0~filter_size-1) Wi,j * Xstride*n-filter_size/2+i, stride*m-filter_size/2+j
+// dC/dWi,j	= dC/dY * dY/dWi,j
+// 			= Sigma(n)Sigma(m) delta n,m * Xstride*n-filter_size/2+i, stride*m-filter_size/2+j)
 
-	int top_pad = (result.n_rows-1)/2;
-	int left_pad = (result.n_cols-1)/2;
-	int x_row_start_idx, x_col_start_idx;
-	int y_row_start_idx, y_col_start_idx;
-	int row_overlapped;
-	int col_overlapped;
+void ConvLayer::dw_convolution(const mat &d, const mat &x, mat &result) {
 
-	for(i = -left_pad; i < (int)result.n_rows-left_pad; i++) {
-		for(j = -top_pad; j < (int)result.n_cols-top_pad; j++) {
-			x_row_start_idx = max(i, 0);
-			x_col_start_idx = max(j, 0);
-			y_row_start_idx = max(-i, 0);
-			y_col_start_idx = max(-j, 0);
+	int i, j, k, l;
 
-			row_overlapped = min(conv.n_rows, conv.n_rows+i)-x_row_start_idx;
-			col_overlapped = min(conv.n_cols, conv.n_cols+j)-x_col_start_idx;
+	int top_pad = (filter_d.cols-1)/2;
+	int left_pad = (filter_d.rows-1)/2;
+	int in_image_row_idx;
+	int in_image_col_idx;
+	double dconv = 0.0;
 
-			dconv = 0;
+	result.zeros();
 
-			//cout << "(" << i << ", " << j << "): " << endl;
+	for(i = 0; i < filter_d.rows; i++) {
+		for(j = 0; j < filter_d.cols; j++) {
 
-			for(k = 0; k < row_overlapped; k++) {
-				for(m = 0; m < col_overlapped; m++) {
-					//cout << "(" << x_row_start_idx+k << ", " << x_col_start_idx+m << ") * (" << y_row_start_idx+k << ", " << y_col_start_idx+m << ")" << endl;
-					dconv += conv.mem[x_row_start_idx+k+(x_col_start_idx+m)*conv.n_cols]
-									  *filter((y_row_start_idx+k)+(y_col_start_idx+m)*filter.n_cols);
-				}
-			}
-			result(left_pad+i, top_pad+j) = dconv;
-		}
-	}
+			dconv = 0.0;
+			for(k = 0; k < d.n_rows; k++) {
+				for(l = 0; l < d.n_cols; l++) {
+					in_image_row_idx = filter_d.stride*k-left_pad+i;
+					in_image_col_idx = filter_d.stride*l-top_pad+j;
 
-
-
-
-
-
-
-
-	/*
-	int i, j, k, m;
-	mat filter_flip = flipud(fliplr(filter));
-
-	int filter_slide_min_row_index = -filter_flip.n_rows+1;		// inclusive
-	int filter_slide_min_col_index = -filter_flip.n_cols+1;		// inclusive
-	int filter_slide_max_row_index = conv.n_rows;				// exclusive
-	int filter_slide_max_col_index = conv.n_cols;				// exclusive
-	double dconv;
-
-	// filter slide 범위
-	for(i = filter_slide_min_row_index; i < filter_slide_max_row_index; i++) {
-		for(j = filter_slide_min_col_index; j < filter_slide_max_col_index; j++) {
-			dconv = 0;
-			for(k = 0; k < filter_flip.n_rows; k++) {
-				for(m = 0; m < filter_flip.n_cols; m++) {
-					if((i+k >= 0 && i+k < conv.n_rows) && (j+m >=0 && j+m < conv.n_cols)) {
-						//dconv += conv(i+k, j+m)*filter_flip(k, m);
-						dconv += conv.mem[i+k+(j+m)*conv.n_cols]*filter_flip(k+m*filter.n_cols);
+					if((in_image_row_idx >= 0 && in_image_row_idx < x.n_rows)
+							&& (in_image_col_idx >= 0 && in_image_col_idx < x.n_cols)) {
+						dconv += d(k, l)*x(in_image_row_idx, in_image_col_idx);
+						//dconv += d.mem[in_image_row_idx+in_image_col_idx*d.n_cols]*x.mem[k+l*x.n_cols];
 					}
 				}
 			}
-			result(i-filter_slide_min_row_index, j-filter_slide_min_col_index) = dconv;
+			result(i, j) = dconv;
 		}
 	}
-	*/
+
+	Util::printMat(d, "d:");
+	Util::printMat(x, "x:");
+	Util::printMat(result, "result:");
+
 }
+
+
+void ConvLayer::dx_convolution(const mat &d, const mat &w, mat &result) {
+	int i, j;
+
+	mat d_ex(filter_d.stride*d.n_rows, filter_d.stride*d.n_cols);
+	d_ex.zeros();
+
+	for(i = 0; i < d.n_rows; i++) {
+		for(j = 0; j < d.n_cols; j++) {
+			//d_ex.mem[filter_d.stride*i+filter_d.stride*j*d_ex.n_cols] = d.mem[i+j*d.n_cols];
+			d_ex(filter_d.stride*i, filter_d.stride*j) = d.mem[i+j*d.n_cols];
+		}
+	}
+
+	Util::printMat(d, "d:");
+	Util::printMat(d_ex, "d_ex:");
+
+
+	convolution(d_ex, w, result, 1);
+
+	Util::printMat(d, "d:");
+	Util::printMat(d_ex, "d_ex:");
+	Util::printMat(w, "w:");
+	Util::printMat(result, "result:");
+
+}
+
+
 
 
 
