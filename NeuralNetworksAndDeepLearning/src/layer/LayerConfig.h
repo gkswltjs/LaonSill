@@ -59,6 +59,24 @@ typedef struct pool_dim {
 } pool_dim;
 
 
+typedef struct lrn_dim {
+	int local_size;
+	double alpha;
+	double beta;
+
+	lrn_dim() {
+		this->local_size = 5;
+		this->alpha = 1;
+		this->beta = 5;
+	}
+	lrn_dim(int local_size, double alpha, double beta) {
+		this->local_size = local_size;
+		this->alpha = alpha;
+		this->beta = beta;
+	}
+} lrn_dim;
+
+
 
 
 #endif /* LAYERCONFIG_H_ */

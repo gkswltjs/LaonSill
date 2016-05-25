@@ -19,6 +19,7 @@
 #include "layer/PoolingLayer.h"
 #include "layer/SigmoidLayer.h"
 #include "layer/SoftmaxLayer.h"
+#include "layer/LRNLayer.h"
 #include "activation/Activation.h"
 #include "activation/Sigmoid.h"
 #include "activation/ReLU.h"
@@ -37,7 +38,22 @@ void network_test();
 int main(int argc, char** argv) {
 	cout << "main" << endl;
 
-	network_test();
+
+
+	cout.precision(11);
+	cout.setf(ios::fixed);
+
+
+
+	//cube input = randu<cube>(5, 5, 5);
+	//LRNLayer lrn(io_dim(5, 5, 5), lrn_dim(3, 1, 5));
+	//lrn.feedforward(input);
+	//lrn.backpropagation(&lrn);
+
+
+
+	//network_test();
+
 
 	return 0;
 }
@@ -75,9 +91,9 @@ void network_test() {
 			//new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), pool_dim(2, 2, 1), sigmoid, maxPooling),
 			new ConvLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid),
 			new PoolingLayer(io_dim(28, 28, 20), pool_dim(3, 3, 2), maxPooling),
-			//new ConvLayer(io_dim(14, 14, 20), filter_dim(5, 5, 1, 40, 1), sigmoid),
-			//new PoolingLayer(io_dim(14, 14, 40), pool_dim(3, 3, 2), maxPooling),
-			new FullyConnectedLayer(14*14*20, 100, 0.5, sigmoid),
+			new ConvLayer(io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), sigmoid),
+			new PoolingLayer(io_dim(14, 14, 40), pool_dim(3, 3, 2), maxPooling),
+			new FullyConnectedLayer(7*7*40, 100, 0.5, sigmoid),
 			//new FullyConnectedLayer(12*12*20, 100, 0.0, sigmoid),
 			new SoftmaxLayer(100, 10, 0.5)
 			//new SigmoidLayer(30, 10, crossEntropyCost)

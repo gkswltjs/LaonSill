@@ -81,7 +81,7 @@ void Util::printMat(const mat &matrix, string name) {
 		cout << "name: " << name << endl;
 		cout << "address: " << &matrix << endl;
 		cout << "rows x cols: " << matrix.n_rows << " x " << matrix.n_cols << endl;
-		matrix.print("mat values: ");
+		matrix.raw_print(cout, "mat values: ");
 		cout << endl;
 		cout << "-------------------------------------" << endl;
 	}
@@ -93,7 +93,7 @@ void Util::printCube(const cube &c, string name) {
 		cout << "name: " << name << endl;
 		cout << "address: " << &c << endl;
 		cout << "rows x cols x slices: " << c.n_rows << " x " << c.n_cols << " x " << c.n_slices << endl;
-		c.print("cube values: ");
+		c.raw_print(cout, "cube values: ");
 		cout << endl;
 		cout << "-------------------------------------" << endl;
 	}

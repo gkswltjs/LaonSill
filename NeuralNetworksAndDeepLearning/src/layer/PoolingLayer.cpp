@@ -52,12 +52,6 @@ void PoolingLayer::backpropagation(HiddenLayer *next_layer) {
 
 
 
-void PoolingLayer::reset_nabla() {}
-
-
-void PoolingLayer::update(double eta, double lambda, int n, int miniBatchSize) {}
-
-
 
 
 
