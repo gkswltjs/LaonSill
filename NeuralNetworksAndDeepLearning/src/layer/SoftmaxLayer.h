@@ -59,12 +59,11 @@ public:
 		// delta weight
 		nabla_w += delta.slice(0)*input.slice(0).t();
 
-
-
-
 		// delta input
 		delta_input.slice(0) = weight.t()*delta.slice(0);
 
+
+		HiddenLayer::backpropagation(this);
 	}
 
 private:

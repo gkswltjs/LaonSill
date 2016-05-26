@@ -20,14 +20,23 @@ public:
 	HiddenLayer(io_dim in_dim, io_dim out_dim) : Layer(in_dim, out_dim) {}
 	virtual ~HiddenLayer() {}
 
+
 	virtual cube &getDeltaInput()=0;
+	vector<HiddenLayer *> &getPrevLayers() { return this->prevLayers; }
+
+
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void backpropagation(HiddenLayer *next_layer)=0;
+	//virtual void backpropagation(HiddenLayer *next_layer)=0;
+	virtual void backpropagation(HiddenLayer *next_layer) {
+		for(vector<HiddenLayer *>::const_iterator iter = prevLayers.begin(); iter != prevLayers.end(); iter++) {
+			(*iter)->backpropagation(next_layer);
+		}
+	}
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
@@ -43,8 +52,37 @@ public:
 	 */
 	virtual void update(double eta, double lambda, int n, int miniBatchSize)=0;
 
+	void addPrevLayer(HiddenLayer *prevLayer) { prevLayers.push_back(prevLayer); }
 
+
+
+
+
+
+
+protected:
+	vector<HiddenLayer *> prevLayers;
+	vector<bool> backwardFlags;
 
 };
 
 #endif /* LAYER_HIDDENLAYER_H_ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

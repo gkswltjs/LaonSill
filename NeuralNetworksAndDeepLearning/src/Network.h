@@ -14,6 +14,9 @@
 #include "activation/Activation.h"
 #include "monitor/NetworkListener.h"
 #include "layer/Layer.h"
+#include "layer/InputLayer.h"
+#include "layer/HiddenLayer.h"
+#include "layer/OutputLayer.h"
 
 class DataSample;
 
@@ -26,10 +29,37 @@ using namespace arma;
 
 class Network {
 public:
-	Network(Layer **layers, int numLayers, DataSet *dataSet, NetworkListener *networkListener);
+	Network(InputLayer *inputLayer,
+			//int numLayers,
+			DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
 	void sgd(int epochs, int miniBatchSize, double eta, double lambda);
+
+
+	//void setInputLayer(InputLayer *inputLayer) { this->inputLayer = inputLayer; }
+	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
+
+
+
+
+
+
+
+	/**
+	 * 어디로 옮기면 좋을까
+	 */
+	static void addLayerRelation(Layer *prevLayer, HiddenLayer *nextLayer) {
+		prevLayer->addNextLayer(nextLayer);
+
+		// prev layer가 hidden layer가 아닌 경우 prev layers에 추가할 필요 없음
+		HiddenLayer *pLayer = dynamic_cast<HiddenLayer *>(prevLayer);
+		if(pLayer) { nextLayer->addPrevLayer(pLayer); }
+	}
+
+
+
+
 
 	void save(string filename);
 	void load(string filename);
@@ -57,7 +87,15 @@ private:
 	DataSet *dataSet;
 	NetworkListener *networkListener;
 
-	Layer **layers;
+	//Layer **layers;
+
+
+
+	InputLayer *inputLayer;
+	vector<OutputLayer *> outputLayers;
+
+
+
 	//InputLayer *inputLayer;
 	//HiddenLayer **hiddenLayers;
 	//OutputLayer *outputLayer;
@@ -68,3 +106,47 @@ private:
 };
 
 #endif /* NETWORK_H_ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

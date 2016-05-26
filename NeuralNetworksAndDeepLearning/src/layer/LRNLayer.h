@@ -24,8 +24,10 @@ public:
 	void backpropagation(HiddenLayer *next_layer);
 
 	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
-	void reset_nabla() {}
-	void update(double eta, double lambda, int n, int miniBatchSize) {}
+	void reset_nabla() { Layer::reset_nabla(); }
+	void update(double eta, double lambda, int n, int miniBatchSize) {
+		Layer::update(eta, lambda, n, miniBatchSize);
+	}
 
 private:
 	lrn_dim lrn_d;

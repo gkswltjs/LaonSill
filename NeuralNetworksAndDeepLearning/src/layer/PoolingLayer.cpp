@@ -35,6 +35,7 @@ void PoolingLayer::feedforward(const cube &input) {
 	Util::convertCube(input, this->input);
 	pooling_fn->pool(pool_d, this->input, pool_map, output);
 
+	Layer::feedforward(this->output);
 }
 
 
@@ -48,6 +49,9 @@ void PoolingLayer::backpropagation(HiddenLayer *next_layer) {
 
 	pooling_fn->d_pool(pool_d, w_next_delta, pool_map, delta_input);
 	Util::printCube(delta_input, "delta_input:");
+
+
+	HiddenLayer::backpropagation(this);
 }
 
 

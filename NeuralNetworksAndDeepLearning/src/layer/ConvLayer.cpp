@@ -88,6 +88,8 @@ void ConvLayer::feedforward(const cube &input) {
 	activation_fn->activate(z, output);
 	Util::printCube(output, "output:");
 
+	Layer::feedforward(this->output);
+
 }
 
 
@@ -138,6 +140,9 @@ void ConvLayer::backpropagation(HiddenLayer *next_layer) {
 			delta_input.slice(i) += dconv;
 		}
 	}
+
+
+	HiddenLayer::backpropagation(this);
 
 }
 
@@ -250,6 +255,8 @@ void ConvLayer::dx_convolution(const mat &d, const mat &w, mat &result) {
 void ConvLayer::reset_nabla() {
 	for(int i = 0; i < filter_d.filters; i++) nabla_w[i].fill(0.0);
 	nabla_b.fill(0.0);
+
+	Layer::reset_nabla();
 }
 
 
@@ -258,6 +265,8 @@ void ConvLayer::update(double eta, double lambda, int n, int miniBatchSize) {
 		filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
 	}
 	biases -= eta/miniBatchSize*nabla_b;
+
+	Layer::update(eta, lambda, n, miniBatchSize);
 }
 
 

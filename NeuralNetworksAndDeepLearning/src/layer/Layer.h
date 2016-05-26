@@ -15,6 +15,9 @@
 using namespace arma;
 
 
+class HiddenLayer;
+
+
 class Layer {
 public:
 	Layer(int n_in, int n_out) {
@@ -33,12 +36,32 @@ public:
 
 	cube &getInput() { return this->input; }
 	cube &getOutput() { return this->output; }
+	vector<Layer *> &getNextLayers() { return this->nextLayers; }
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void feedforward(const cube &input)=0;
+	virtual void feedforward(const cube &input) {
+		for(vector<Layer *>::const_iterator iter = nextLayers.begin(); iter != nextLayers.end(); iter++) {
+			(*iter)->feedforward(input);
+		}
+	}
+
+	void addNextLayer(Layer *nextLayer) { nextLayers.push_back(nextLayer); }
+
+
+	virtual void reset_nabla() {
+		for(vector<Layer *>::const_iterator iter = nextLayers.begin(); iter != nextLayers.end(); iter++) {
+			(*iter)->reset_nabla();
+		}
+	}
+
+	virtual void update(double eta, double lambda, int n, int miniBatchSize) {
+		for(vector<Layer *>::const_iterator iter = nextLayers.begin(); iter != nextLayers.end(); iter++) {
+			(*iter)->update(eta, lambda, n, miniBatchSize);
+		}
+	}
 
 
 
@@ -53,6 +76,8 @@ protected:
 	cube input;
 	cube output;
 
+	vector<Layer *> nextLayers;
+	vector<bool> forwardFlags;
 };
 
 #endif /* LAYER_LAYER_H_ */

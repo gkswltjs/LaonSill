@@ -22,11 +22,13 @@ public:
 	InputLayer(io_dim in_dim) : Layer(in_dim, in_dim) {}
 	virtual ~InputLayer() {}
 
-	virtual void feedforward(const cube &input) {
+	void feedforward(const cube &input) {
 		Util::printCube(input, "input:");
 		Util::convertCube(input, this->input);
 		Util::convertCube(this->input, this->output);
 		Util::printCube(this->output, "output:");
+
+		Layer::feedforward(this->output);
 	}
 protected:
 };

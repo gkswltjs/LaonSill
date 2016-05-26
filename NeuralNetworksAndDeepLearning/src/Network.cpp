@@ -22,25 +22,18 @@
 
 
 
-Network::Network(Layer **layers, int numLayers, DataSet *dataSet, NetworkListener *networkListener) {
-	this->layers = layers;
+Network::Network(InputLayer *inputLayer,
+		//int numLayers,
+		DataSet *dataSet, NetworkListener *networkListener) {
+
+	//this->layers = layers;
+	this->inputLayer = inputLayer;
 	this->numLayers = numLayers;
-
-	//defaultWeightInitializer(weights, biases, true);
-
 	this->dataSet = dataSet;
-	//this->cost_fn = cost_fn;
-	//this->activation_fn = activation_fn;
 	this->networkListener = networkListener;
 }
 
 Network::~Network() {}
-
-
-
-
-
-
 
 
 
@@ -62,9 +55,10 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 			if((j+1)%100 == 0) cout << "Minibatch " << j+1 << " started." << endl;
 			//cout << "Minibatch " << j+1 << " started." << endl;
 
-			for(int k = 1; k < numLayers; k++) {
-				(dynamic_cast<HiddenLayer *>(layers[k]))->reset_nabla();
-			}
+			//for(int k = 1; k < numLayers; k++) {
+				//(dynamic_cast<HiddenLayer *>(layers[k]))->reset_nabla();
+			//}
+			inputLayer->reset_nabla();
 			updateMiniBatch(j, miniBatchSize, eta, lambda);
 		}
 		timer.stop();
@@ -105,15 +99,16 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, d
 	}
 
 	int n = dataSet->getTrainDataSize();
-	for(int i = 1; i < numLayers; i++) {
-		(dynamic_cast<HiddenLayer *>(layers[i]))->update(eta, lambda, n, miniBatchSize);
-	}
+	//for(int i = 1; i < numLayers; i++) {
+		//(dynamic_cast<HiddenLayer *>(layers[i]))->update(eta, lambda, n, miniBatchSize);
+	//}
+	inputLayer->update(eta, lambda, n, miniBatchSize);
 }
 
 
 
 void Network::backprop(const DataSample &dataSample) {
-	int lastLayerIndex = numLayers-1;
+	//int lastLayerIndex = numLayers-1;
 
 	// feedforward
 	feedforward(dataSample.getData());
@@ -121,12 +116,17 @@ void Network::backprop(const DataSample &dataSample) {
 	//Util::printVec(dataSample.getTarget(), "target:");
 	//Util::printCube(layers[lastLayerIndex]->getInput(), "input:");
 
-	// backward pass
-	(dynamic_cast<OutputLayer *>(layers[lastLayerIndex]))->cost(dataSample.getTarget());
 
-	for(int i = lastLayerIndex-1; i > 0; i--) {
-		(dynamic_cast<HiddenLayer *>(layers[i]))->backpropagation(dynamic_cast<HiddenLayer *>(layers[i+1]));
+
+	// backward pass
+	//(dynamic_cast<OutputLayer *>(layers[lastLayerIndex]))->cost(dataSample.getTarget());
+	//for(int i = lastLayerIndex-1; i > 0; i--) {
+	//	//(dynamic_cast<HiddenLayer *>(layers[i]))->backpropagation(dynamic_cast<HiddenLayer *>(layers[i+1]));
+	//}
+	for(int i = 0; i < outputLayers.size(); i++) {
+		outputLayers[i]->cost(dataSample.getTarget());
 	}
+
 }
 
 
@@ -135,6 +135,9 @@ void Network::backprop(const DataSample &dataSample) {
 
 void Network::feedforward(const cube &input) {
 
+	inputLayer->feedforward(input);
+
+	/*
 	//Util::printCube(input, "input:");
 	layers[0]->feedforward(input);
 
@@ -142,6 +145,7 @@ void Network::feedforward(const cube &input) {
 	for(int i = 1; i < numLayers; i++) {
 		layers[i]->feedforward(layers[i-1]->getOutput());
 	}
+	*/
 
 }
 
@@ -223,49 +227,12 @@ int Network::evaluate() {
 		//Util::printVec(testData->getTarget(), "target");
 
 		feedforward(testData.getData());
-		testResult += testEvaluateResult(layers[numLayers-1]->getOutput(), testData.getTarget());
+		testResult += testEvaluateResult(outputLayers[0]->getOutput(), testData.getTarget());
 	}
 	//Util::setPrint(printBak);
 
 	return testResult;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

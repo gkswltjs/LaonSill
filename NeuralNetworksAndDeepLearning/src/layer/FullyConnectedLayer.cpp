@@ -72,6 +72,8 @@ void FullyConnectedLayer::feedforward(const cube &input) {
 
 	activation_fn->activate(z, output);
 	Util::printCube(output, "output:");
+
+	Layer::feedforward(this->output);
 }
 
 void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
@@ -117,20 +119,29 @@ void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
 	//fc_layer->getWeight().t()*fc_layer->getDelta().slice(0)
 
 
+
+
+	HiddenLayer::backpropagation(this);
+
+
 }
 
 
 
 
 void FullyConnectedLayer::reset_nabla() {
-	nabla_b.fill(0.0);
-	nabla_w.fill(0.0);
+	nabla_b.zeros();
+	nabla_w.zeros();
+
+	Layer::reset_nabla();
 }
 
 
 void FullyConnectedLayer::update(double eta, double lambda, int n, int miniBatchSize) {
 	weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;
 	bias -= eta/miniBatchSize*nabla_b;
+
+	Layer::update(eta, lambda, n, miniBatchSize);
 }
 
 
