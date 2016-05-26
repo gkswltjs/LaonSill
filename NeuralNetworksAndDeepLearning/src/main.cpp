@@ -8,6 +8,7 @@
 #include "Util.h"
 #include "pooling/Pooling.h"
 #include "pooling/MaxPooling.h"
+#include "pooling/AvgPooling.h"
 #include "cost/CrossEntropyCost.h"
 #include "cost/LogLikelihoodCost.h"
 #include "monitor/NetworkMonitor.h"
@@ -43,6 +44,15 @@ int main(int argc, char** argv) {
 	cout.precision(11);
 	cout.setf(ios::fixed);
 
+
+	cube upsample = randu<cube>(14, 14, 2);
+	cube downsample = randu<cube>(2, 2, 2);
+	ucube pool_map(14, 14, 2);
+	pool_dim pool_d(7, 7, 1);
+
+	AvgPooling p;
+	p.pool(pool_d, upsample, pool_map, downsample);
+	p.d_pool(pool_d, downsample, pool_map, upsample);
 
 
 	//cube input = randu<cube>(5, 5, 5);
