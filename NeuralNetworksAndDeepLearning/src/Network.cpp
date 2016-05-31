@@ -22,11 +22,7 @@
 
 
 
-Network::Network(InputLayer *inputLayer,
-		//int numLayers,
-		DataSet *dataSet, NetworkListener *networkListener) {
-
-	//this->layers = layers;
+Network::Network(InputLayer *inputLayer, DataSet *dataSet, NetworkListener *networkListener) {
 	this->inputLayer = inputLayer;
 	this->numLayers = numLayers;
 	this->dataSet = dataSet;
@@ -44,24 +40,38 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 	int trainDataSize = dataSet->getTrainDataSize();
 	int miniBatchesSize = trainDataSize / miniBatchSize;
 
-	Timer timer;
+	Timer timer1, timer2;
 
 	for(int i = 0; i < epochs; i++) {
-		timer.start();
+
+
+		timer1.start();
 
 		dataSet->shuffleTrainDataSet();
 
+		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			if((j+1)%100 == 0) cout << "Minibatch " << j+1 << " started." << endl;
+			if((j+1)%100 == 0) {
+				cout << "Minibatch " << j+1 << " started." << endl;
+				timer2.stop();
+				timer2.start();
+			}
 			//cout << "Minibatch " << j+1 << " started." << endl;
 
 			//for(int k = 1; k < numLayers; k++) {
 				//(dynamic_cast<HiddenLayer *>(layers[k]))->reset_nabla();
 			//}
-			inputLayer->reset_nabla();
+
+			//cout << "reset_nabla()" << endl;
+			inputLayer->reset_nabla(0);
 			updateMiniBatch(j, miniBatchSize, eta, lambda);
 		}
-		timer.stop();
+		timer1.stop();
+
+
+
+
+
 
 		//dataSet->shuffleTestDataSet();
 		if(dataSet->getTestDataSize() > 0) {
@@ -102,13 +112,16 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, d
 	//for(int i = 1; i < numLayers; i++) {
 		//(dynamic_cast<HiddenLayer *>(layers[i]))->update(eta, lambda, n, miniBatchSize);
 	//}
-	inputLayer->update(eta, lambda, n, miniBatchSize);
+
+	//cout << "update()" << endl;
+	inputLayer->update(0, eta, lambda, n, miniBatchSize);
 }
 
 
 
 void Network::backprop(const DataSample &dataSample) {
 	//int lastLayerIndex = numLayers-1;
+
 
 	// feedforward
 	feedforward(dataSample.getData());
@@ -123,6 +136,8 @@ void Network::backprop(const DataSample &dataSample) {
 	//for(int i = lastLayerIndex-1; i > 0; i--) {
 	//	//(dynamic_cast<HiddenLayer *>(layers[i]))->backpropagation(dynamic_cast<HiddenLayer *>(layers[i+1]));
 	//}
+
+	//cout << "backpropagation()" << endl;
 	for(int i = 0; i < outputLayers.size(); i++) {
 		outputLayers[i]->cost(dataSample.getTarget());
 	}
@@ -135,7 +150,8 @@ void Network::backprop(const DataSample &dataSample) {
 
 void Network::feedforward(const cube &input) {
 
-	inputLayer->feedforward(input);
+	//cout << "feedforward()" << endl;
+	inputLayer->feedforward(0, input);
 
 	/*
 	//Util::printCube(input, "input:");

@@ -26,6 +26,15 @@ using namespace arma;
 void log_print(FILE *fp, int log_level, const char* filename, const int line, const char *func, char *fmt, ...);
 
 
+#define C_MEM(cb, r, c, s) cb.mem[r + c*cb.n_rows + s*cb.n_elem_slice]
+#define C_MEMPTR(cb, r, c, s) cb.memptr()[r + c*cb.n_rows + s*cb.n_elem_slice]
+#define M_MEM(m, r, c) m.mem[r + c*m.n_rows]
+#define M_MEMPTR(m, r, c) m.memptr()[r + c*m.n_rows]
+
+
+
+
+
 class Util {
 public:
 	Util() {}
@@ -36,6 +45,7 @@ public:
 	static void printVec(const vec &vector, string name);
 	static void printMat(const mat &matrix, string name);
 	static void printCube(const cube &c, string name);
+	static void printUCube(const ucube &c, string name);
 
 	static int getPrint() { return Util::print; }
 	static void setPrint(bool print) { Util::print = print; };

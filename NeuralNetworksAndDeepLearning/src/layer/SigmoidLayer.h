@@ -15,12 +15,12 @@
 
 class SigmoidLayer : public OutputLayer {
 public:
-	SigmoidLayer(int n_in, int n_out, double p_dropout, Cost *cost_fn)
-		: OutputLayer(n_in, n_out, p_dropout) {
+	SigmoidLayer(string name, int n_in, int n_out, double p_dropout, Cost *cost_fn)
+		: OutputLayer(name, n_in, n_out, p_dropout) {
 		initialize(cost_fn);
 	}
-	SigmoidLayer(io_dim in_dim, io_dim out_dim, double p_dropout, Cost *cost_fn)
-		: OutputLayer(in_dim, out_dim, p_dropout) {
+	SigmoidLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, Cost *cost_fn)
+		: OutputLayer(name, in_dim, out_dim, p_dropout) {
 		initialize(cost_fn);
 	}
 	virtual ~SigmoidLayer() {
@@ -33,7 +33,7 @@ public:
 		nabla_b += delta.slice(0);
 		nabla_w += delta.slice(0)*input.slice(0).t();
 
-		HiddenLayer::backpropagation(this);
+		HiddenLayer::backpropagation(0, this);
 	}
 
 private:

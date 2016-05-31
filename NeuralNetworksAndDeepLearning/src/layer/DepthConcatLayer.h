@@ -1,30 +1,34 @@
 /*
- * PoolingLayer.h
+ * DepthConcatLayer.h
  *
- *  Created on: 2016. 5. 23.
+ *  Created on: 2016. 5. 25.
  *      Author: jhkim
  */
 
-#ifndef LAYER_POOLINGLAYER_H_
-#define LAYER_POOLINGLAYER_H_
+#ifndef LAYER_DEPTHCONCATLAYER_H_
+#define LAYER_DEPTHCONCATLAYER_H_
 
 #include "HiddenLayer.h"
-#include "../pooling/Pooling.h"
 #include "../exception/Exception.h"
 
 
-class PoolingLayer : public HiddenLayer {
+class DepthConcatLayer : public HiddenLayer {
 public:
-	PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, Pooling *pooling_fn);
-	virtual ~PoolingLayer();
+	DepthConcatLayer(string name, int n_in);
+	DepthConcatLayer(string name, io_dim in_dim);
+	virtual ~DepthConcatLayer() {}
 
-	cube &getDeltaInput() { return this->delta_input; }
+	cube &getDeltaInput();
+
 
 
 	void feedforward(int idx, const cube &input);
+
 	void backpropagation(int idx, HiddenLayer *next_layer);
 
-	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
+
+
+
 	void reset_nabla(int idx) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		Layer::reset_nabla(idx);
@@ -34,13 +38,13 @@ public:
 		Layer::update(idx, eta, lambda, n, miniBatchSize);
 	}
 
-private:
-	ucube pool_map;
-	cube delta;
+protected:
 	cube delta_input;
+	cube delta_input_sub;
 
-	pool_dim pool_d;
-	Pooling *pooling_fn;
+	vector<int> offsets;
+	int offsetIndex;
+
 };
 
-#endif /* LAYER_POOLINGLAYER_H_ */
+#endif /* LAYER_DEPTHCONCATLAYER_H_ */

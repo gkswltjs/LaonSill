@@ -7,14 +7,15 @@
 
 #include "FullyConnectedLayer.h"
 #include "../Util.h"
+#include "../exception/Exception.h"
 
-FullyConnectedLayer::FullyConnectedLayer(int n_in, int n_out, double p_dropout, Activation *activation_fn)
-	: HiddenLayer(n_in, n_out) {
+FullyConnectedLayer::FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, Activation *activation_fn)
+	: HiddenLayer(name, n_in, n_out) {
 	initialize(p_dropout, activation_fn);
 }
 
-FullyConnectedLayer::FullyConnectedLayer(io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn)
-	: HiddenLayer(in_dim, out_dim) {
+FullyConnectedLayer::FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn)
+	: HiddenLayer(name, in_dim, out_dim) {
 	initialize(p_dropout, activation_fn);
 }
 
@@ -38,13 +39,17 @@ void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn
 
 	this->nabla_b.set_size(n_out, 1);
 	this->nabla_w.set_size(n_out, n_in);
-	this->nabla_b.fill(0.0);
-	this->nabla_w.fill(0.0);
+	this->nabla_b.zeros();
+	this->nabla_w.zeros();
 
 	this->z.set_size(n_out, 1, 1);
 	this->output.set_size(n_out, 1, 1);
 	this->delta.set_size(n_out, 1, 1);
+	this->delta.zeros();
 	this->delta_input.set_size(n_in, 1, 1);
+	this->delta_input.zeros();
+
+
 
 	/**
 	 * HiddenLayer에서 activation_fn이 할당되는 곳에서 weight initialize 필요
@@ -58,7 +63,8 @@ void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn
 
 
 
-void FullyConnectedLayer::feedforward(const cube &input) {
+void FullyConnectedLayer::feedforward(int idx, const cube &input) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);
@@ -73,10 +79,11 @@ void FullyConnectedLayer::feedforward(const cube &input) {
 	activation_fn->activate(z, output);
 	Util::printCube(output, "output:");
 
-	Layer::feedforward(this->output);
+	Layer::feedforward(idx, this->output);
 }
 
-void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
+void FullyConnectedLayer::backpropagation(int idx, HiddenLayer *next_layer) {
+	if(!isLastNextLayerRequest(idx)) throw Exception();
 
 
 	/*
@@ -91,9 +98,10 @@ void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
 	}
 	*/
 
-	Util::convertCube(next_layer->getDeltaInput(), delta);
+	cube w_next_delta(size(output));
+	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 
-	Util::printMat(delta.slice(0), "delta");
+	Util::printMat(w_next_delta.slice(0), "w_next_delta");
 	//Util::printMat(next_w->t(), "next_w");
 	//Util::printMat(next_delta.slice(0), "next_delta");
 
@@ -101,9 +109,8 @@ void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
 	activation_fn->d_activate(output, sp);
 
 	// delta l = dC/dz
-	delta.slice(0) %= sp.slice(0);
+	delta.slice(0) = w_next_delta.slice(0) % sp.slice(0);
 	Util::printMat(delta.slice(0), "delta:");
-
 
 	nabla_b += delta.slice(0);
 	// delta lw = dC/dw
@@ -111,37 +118,36 @@ void FullyConnectedLayer::backpropagation(HiddenLayer *next_layer) {
 
 
 
-
-
-
 	// delta lx = dC/dx
 	delta_input.slice(0) = weight.t()*delta.slice(0);
 	//fc_layer->getWeight().t()*fc_layer->getDelta().slice(0)
 
-
-
-
-	HiddenLayer::backpropagation(this);
-
+	HiddenLayer::backpropagation(idx, this);
+	delta.zeros();
+	delta_input.zeros();
 
 }
 
 
 
 
-void FullyConnectedLayer::reset_nabla() {
+void FullyConnectedLayer::reset_nabla(int idx) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+
 	nabla_b.zeros();
 	nabla_w.zeros();
 
-	Layer::reset_nabla();
+	Layer::reset_nabla(idx);
 }
 
 
-void FullyConnectedLayer::update(double eta, double lambda, int n, int miniBatchSize) {
+void FullyConnectedLayer::update(int idx, double eta, double lambda, int n, int miniBatchSize) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+
 	weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;
 	bias -= eta/miniBatchSize*nabla_b;
 
-	Layer::update(eta, lambda, n, miniBatchSize);
+	Layer::update(idx, eta, lambda, n, miniBatchSize);
 }
 
 

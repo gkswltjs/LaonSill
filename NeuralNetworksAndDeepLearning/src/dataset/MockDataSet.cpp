@@ -27,20 +27,21 @@ MockDataSet::~MockDataSet() {
 
 
 void MockDataSet::load() {
+
+	for(int i = 0; i < trainDataSize; i++) {
+		trainDataSet[i].init(10, 10, 3, 10);
+	}
+
+	for(int i = 0; i < validationDataSize; i++) {
+		validationDataSet[i].init(10, 10, 3, 10);
+	}
+
+	for(int i = 0; i < testDataSize; i++) {
+		testDataSet[i].init(10, 10, 3, 10);
+	}
+
+
 	/*
-	double trainData[9*trainDataSize] = {
-			0.0, 0.3, 0.4, 0.5, 0.6, 0.7, 0.6, 0.5, 0.4,
-			0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
-			0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
-			0.2, 0.4, 0.6, 0.8, 0.9, 0.7, 0.5, 0.3, 0.1,
-			0.1, 0.3, 0.5, 0.7, 0.9, 0.8, 0.6, 0.4, 0.2,
-			0.0, 0.3, 0.4, 0.5, 0.6, 0.7, 0.6, 0.5, 0.4,
-			0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
-			0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
-			0.2, 0.4, 0.6, 0.8, 0.9, 0.7, 0.5, 0.3, 0.1,
-			0.1, 0.3, 0.5, 0.7, 0.9, 0.8, 0.6, 0.4, 0.2,
-	};
-	*/
 	double trainData[100] = {
 			0.0, 0.3, 0.4, 0.5, 0.6, 0.7, 0.6, 0.5, 0.4, 0.3,
 			0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
@@ -74,6 +75,7 @@ void MockDataSet::load() {
 		testDataSet[i].readData(trainData, trainTarget[i]);
 		//testDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
 	}
+	*/
 }
 
 

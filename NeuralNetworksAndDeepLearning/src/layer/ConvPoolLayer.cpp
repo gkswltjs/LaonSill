@@ -9,8 +9,8 @@
 #include "FullyConnectedLayer.h"
 #include "../Util.h"
 
-ConvPoolLayer::ConvPoolLayer(io_dim in_dim, filter_dim filter_d, pool_dim pool_d, Activation *activation_fn, Pooling *pooling_fn)
-	: HiddenLayer(in_dim, in_dim) {
+ConvPoolLayer::ConvPoolLayer(string name, io_dim in_dim, filter_dim filter_d, pool_dim pool_d, Activation *activation_fn, Pooling *pooling_fn)
+	: HiddenLayer(name, in_dim, in_dim) {
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;
 	this->pool_d = pool_d;
@@ -69,7 +69,7 @@ ConvPoolLayer::~ConvPoolLayer() {
 }
 
 
-void ConvPoolLayer::feedforward(const cube &input) {
+void ConvPoolLayer::feedforward(int idx, const cube &input) {
 	//Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);
 
@@ -104,7 +104,7 @@ void ConvPoolLayer::feedforward(const cube &input) {
 
 
 
-void ConvPoolLayer::backpropagation(HiddenLayer *next_layer) {
+void ConvPoolLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	cube da;
 	activation_fn->d_activate(activated, da);
 
@@ -199,7 +199,8 @@ void ConvPoolLayer::convolution(const mat &image, const mat &filter, mat &result
 					in_image_col_idx = j-top_pad+m;
 					if((in_image_row_idx >= 0 && in_image_row_idx < image.n_rows)
 							&& (in_image_col_idx >=0 && in_image_col_idx < image.n_cols)) {
-						conv += image.mem[in_image_row_idx+(in_image_col_idx)*image.n_cols]*filter.mem[k+m*filter.n_cols];
+						//conv += image.mem[in_image_row_idx+(in_image_col_idx)*image.n_cols]*filter.mem[k+m*filter.n_cols];
+						conv += M_MEM(image, in_image_row_idx, in_image_col_idx)*M_MEM(filter, k, m);
 					}
 				}
 			}
@@ -239,8 +240,9 @@ void ConvPoolLayer::d_convolution(const mat &conv, const mat &filter, mat &resul
 			for(k = 0; k < row_overlapped; k++) {
 				for(m = 0; m < col_overlapped; m++) {
 					//cout << "(" << x_row_start_idx+k << ", " << x_col_start_idx+m << ") * (" << y_row_start_idx+k << ", " << y_col_start_idx+m << ")" << endl;
-					dconv += conv.mem[x_row_start_idx+k+(x_col_start_idx+m)*conv.n_cols]
-									  *filter((y_row_start_idx+k)+(y_col_start_idx+m)*filter.n_cols);
+					//dconv += conv.mem[x_row_start_idx+k+(x_col_start_idx+m)*conv.n_cols]
+					//				  *filter((y_row_start_idx+k)+(y_col_start_idx+m)*filter.n_cols);
+					dconv += M_MEM(conv, x_row_start_idx+k, x_col_start_idx+m)*M_MEM(filter, y_row_start_idx+k, y_col_start_idx+m);
 				}
 			}
 			result(left_pad+i, top_pad+j) = dconv;
@@ -285,13 +287,13 @@ void ConvPoolLayer::d_convolution(const mat &conv, const mat &filter, mat &resul
 
 
 
-void ConvPoolLayer::reset_nabla() {
+void ConvPoolLayer::reset_nabla(int idx) {
 	for(int i = 0; i < filter_d.filters; i++) nabla_w[i].fill(0.0);
 	nabla_b.fill(0.0);
 }
 
 
-void ConvPoolLayer::update(double eta, double lambda, int n, int miniBatchSize) {
+void ConvPoolLayer::update(int idx, double eta, double lambda, int n, int miniBatchSize) {
 	for(int i = 0; i < filter_d.filters; i++) {
 		filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
 	}

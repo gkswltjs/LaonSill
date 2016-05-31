@@ -16,14 +16,14 @@ using namespace arma;
 
 class OutputLayer : public FullyConnectedLayer {
 public:
-	OutputLayer(int n_in, int n_out, double p_dropout) : FullyConnectedLayer(n_in, n_out, p_dropout) {}
-	OutputLayer(int n_in, int n_out, double p_dropout, Activation *activation_fn, Cost *cost_fn)
-		: FullyConnectedLayer(n_in, n_out, p_dropout) {
+	OutputLayer(string name, int n_in, int n_out, double p_dropout) : FullyConnectedLayer(name, n_in, n_out, p_dropout) {}
+	OutputLayer(string name, int n_in, int n_out, double p_dropout, Activation *activation_fn, Cost *cost_fn)
+		: FullyConnectedLayer(name, n_in, n_out, p_dropout) {
 		initialize(activation_fn, cost_fn);
 	}
-	OutputLayer(io_dim in_dim, io_dim out_dim, double p_dropout) : FullyConnectedLayer(in_dim, out_dim, p_dropout) {}
-	OutputLayer(io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn, Cost *cost_fn)
-		:FullyConnectedLayer(in_dim, out_dim, p_dropout) {
+	OutputLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout) : FullyConnectedLayer(name, in_dim, out_dim, p_dropout) {}
+	OutputLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn, Cost *cost_fn)
+		:FullyConnectedLayer(name, in_dim, out_dim, p_dropout) {
 		initialize(activation_fn, cost_fn);
 	};
 	virtual ~OutputLayer() {};

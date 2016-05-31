@@ -20,13 +20,15 @@ class HiddenLayer;
 
 class Layer {
 public:
-	Layer(int n_in, int n_out) {
+	Layer(string name, int n_in, int n_out) {
+		this->name = name;
 		this->in_dim.rows = n_in;
 		this->out_dim.rows = n_out;
 		this->input.set_size(n_in, 1, 1);
 		this->output.set_size(n_out, 1, 1);
 	}
-	Layer(io_dim in_dim, io_dim out_dim) {
+	Layer(string name, io_dim in_dim, io_dim out_dim) {
+		this->name = name;
 		this->in_dim = in_dim;
 		this->out_dim = out_dim;
 		this->input.set_size(in_dim.rows, in_dim.cols, in_dim.channels);
@@ -36,37 +38,51 @@ public:
 
 	cube &getInput() { return this->input; }
 	cube &getOutput() { return this->output; }
-	vector<Layer *> &getNextLayers() { return this->nextLayers; }
+	vector<next_layer_relation> &getNextLayers() { return this->nextLayers; }
+	int getNextLayerSize() { return this->nextLayers.size(); }
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void feedforward(const cube &input) {
-		for(vector<Layer *>::const_iterator iter = nextLayers.begin(); iter != nextLayers.end(); iter++) {
-			(*iter)->feedforward(input);
+	virtual void feedforward(int idx, const cube &input) {
+		for(int i = 0; i < nextLayers.size(); i++) {
+			nextLayers[i].next_layer->feedforward(nextLayers[i].idx, input);
 		}
 	}
 
-	void addNextLayer(Layer *nextLayer) { nextLayers.push_back(nextLayer); }
+	virtual void addNextLayer(next_layer_relation nextLayer) { nextLayers.push_back(nextLayer); }
 
 
-	virtual void reset_nabla() {
-		for(vector<Layer *>::const_iterator iter = nextLayers.begin(); iter != nextLayers.end(); iter++) {
-			(*iter)->reset_nabla();
+	virtual void reset_nabla(int idx) {
+		for(unsigned int i = 0; i < nextLayers.size(); i++) {
+			nextLayers[i].next_layer->reset_nabla(nextLayers[i].idx);
 		}
 	}
 
-	virtual void update(double eta, double lambda, int n, int miniBatchSize) {
-		for(vector<Layer *>::const_iterator iter = nextLayers.begin(); iter != nextLayers.end(); iter++) {
-			(*iter)->update(eta, lambda, n, miniBatchSize);
+	virtual void update(int idx, double eta, double lambda, int n, int miniBatchSize) {
+		for(unsigned int i = 0; i < nextLayers.size(); i++) {
+			nextLayers[i].next_layer->update(nextLayers[i].idx, eta, lambda, n, miniBatchSize);
 		}
 	}
-
-
-
 
 protected:
+
+	bool isLastPrevLayerRequest(int idx) {
+		//cout << name << " received request from " << idx << "th prev layer ... " << endl;
+		if(prevLayers.size() > idx+1) {
+			//cout << name << " is not from last prev layer... " << endl;
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+
+
+	string name;
+
+
 	io_dim in_dim;
 	io_dim out_dim;
 
@@ -76,7 +92,8 @@ protected:
 	cube input;
 	cube output;
 
-	vector<Layer *> nextLayers;
+	vector<prev_layer_relation> prevLayers;
+	vector<next_layer_relation> nextLayers;
 	vector<bool> forwardFlags;
 };
 

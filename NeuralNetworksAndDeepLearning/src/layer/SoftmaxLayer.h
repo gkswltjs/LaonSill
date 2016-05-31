@@ -33,12 +33,12 @@ using namespace arma;
 
 class SoftmaxLayer : public OutputLayer {
 public:
-	SoftmaxLayer(int n_in, int n_out, double p_dropout)
-		: OutputLayer(n_in, n_out, p_dropout) {
+	SoftmaxLayer(string name, int n_in, int n_out, double p_dropout)
+		: OutputLayer(name, n_in, n_out, p_dropout) {
 		initialize();
 	}
-	SoftmaxLayer(io_dim in_dim, io_dim out_dim, double p_dropout)
-		: OutputLayer(in_dim, out_dim, p_dropout) {
+	SoftmaxLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout)
+		: OutputLayer(name, in_dim, out_dim, p_dropout) {
 		initialize();
 	}
 	virtual ~SoftmaxLayer() {
@@ -63,7 +63,7 @@ public:
 		delta_input.slice(0) = weight.t()*delta.slice(0);
 
 
-		HiddenLayer::backpropagation(this);
+		HiddenLayer::backpropagation(0, this);
 	}
 
 private:

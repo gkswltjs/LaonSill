@@ -36,7 +36,7 @@ public:
 		double sum;
 
 		//output.set_size(input.n_rows/pool_d.stride, input.n_cols/pool_d.stride, input.n_slices);
-		int num_output_channel_elem = output.n_rows*output.n_cols;
+
 
 		//pool_map.zeros();
 		Util::printCube(input, "input:");
@@ -61,12 +61,14 @@ public:
 
 							if((in_input_row_idx >= 0 && in_input_row_idx < input.n_rows)
 								&&(in_input_col_idx >= 0 && in_input_col_idx < input.n_cols)) {
-								sum += input.slice(i)(in_input_row_idx, in_input_col_idx);
+								//sum += input.slice(i)(in_input_row_idx, in_input_col_idx);
+								sum += C_MEM(input, in_input_row_idx, in_input_col_idx, i);
 							}
 						}
 					}
 					sum /= num_pool_elem;
-					output.slice(i)(j/pool_d.rows, k/pool_d.cols) = sum;
+					//output.slice(i)(j/pool_d.rows, k/pool_d.cols) = sum;
+					C_MEMPTR(output, j/pool_d.rows, k/pool_d.cols, i) = sum;
 				}
 			}
 			Util::printMat(output.slice(i), "output:");
@@ -92,7 +94,8 @@ public:
 					// for up-sample map
 					for(l = j*pool_d.rows; l < (j+1)*pool_d.rows; l++) {
 						for(m = k*pool_d.cols; m < (k+1)*pool_d.cols; m++) {
-							output.slice(i)(l, m) = num_pool_elem_factor*input.slice(i)(j, k);
+							//output.slice(i)(l, m) = num_pool_elem_factor*input.slice(i)(j, k);
+							C_MEMPTR(output, l, m, i) = num_pool_elem_factor*C_MEM(input, j, k, i);
 						}
 					}
 				}

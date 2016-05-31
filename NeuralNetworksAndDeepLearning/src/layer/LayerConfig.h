@@ -8,6 +8,9 @@
 #ifndef LAYERCONFIG_H_
 #define LAYERCONFIG_H_
 
+class Layer;
+class HiddenLayer;
+
 
 typedef struct io_dim {
     int rows;
@@ -75,6 +78,33 @@ typedef struct lrn_dim {
 		this->beta = beta;
 	}
 } lrn_dim;
+
+
+
+
+typedef struct next_layer_relation {
+	Layer *next_layer;
+	int idx;
+
+	next_layer_relation() {}
+	next_layer_relation(Layer *next_layer, int idx) {
+		this->next_layer = next_layer;
+		this->idx = idx;
+	}
+} next_layer_relation;
+
+typedef struct prev_layer_relation {
+	HiddenLayer *prev_layer;
+	int idx;
+
+	prev_layer_relation() {}
+	prev_layer_relation(HiddenLayer *prev_layer, int idx) {
+		this->prev_layer = prev_layer;
+		this->idx = idx;
+	}
+} prev_layer_relation;
+
+
 
 
 

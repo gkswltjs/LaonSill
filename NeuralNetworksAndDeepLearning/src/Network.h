@@ -17,6 +17,7 @@
 #include "layer/InputLayer.h"
 #include "layer/HiddenLayer.h"
 #include "layer/OutputLayer.h"
+#include "layer/LayerConfig.h"
 
 class DataSample;
 
@@ -29,9 +30,7 @@ using namespace arma;
 
 class Network {
 public:
-	Network(InputLayer *inputLayer,
-			//int numLayers,
-			DataSet *dataSet, NetworkListener *networkListener);
+	Network(InputLayer *inputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
 	void sgd(int epochs, int miniBatchSize, double eta, double lambda);
@@ -50,11 +49,14 @@ public:
 	 * 어디로 옮기면 좋을까
 	 */
 	static void addLayerRelation(Layer *prevLayer, HiddenLayer *nextLayer) {
-		prevLayer->addNextLayer(nextLayer);
+		int nextLayerIdx = nextLayer->getPrevLayerSize();
+		int prevLayerIdx = prevLayer->getNextLayerSize();
+
+		prevLayer->addNextLayer(next_layer_relation(nextLayer, nextLayerIdx));
 
 		// prev layer가 hidden layer가 아닌 경우 prev layers에 추가할 필요 없음
 		HiddenLayer *pLayer = dynamic_cast<HiddenLayer *>(prevLayer);
-		if(pLayer) { nextLayer->addPrevLayer(pLayer); }
+		if(pLayer) nextLayer->addPrevLayer(prev_layer_relation(pLayer, prevLayerIdx));
 	}
 
 

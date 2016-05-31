@@ -15,7 +15,7 @@
 
 class ConvLayer : public HiddenLayer {
 public:
-	ConvLayer(io_dim in_dim, filter_dim filter_d, Activation *activation_fn);
+	ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation *activation_fn);
 	virtual ~ConvLayer();
 
 	filter_dim &get_filter_dim() { return this->filter_d; }
@@ -27,14 +27,14 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(const cube &input);
+	void feedforward(int idx, const cube &input);
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void backpropagation(HiddenLayer *next_layer);
+	void backpropagation(int idx, HiddenLayer *next_layer);
 
 	/**
 	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
@@ -46,7 +46,7 @@ public:
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
 	 */
-	void reset_nabla();
+	void reset_nabla(int idx);
 
 	/**
 	 * 한 번의 batch 종료 후 w, b 누적 업데이트를 레이어 w, b에 적용
@@ -55,7 +55,7 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	void update(double eta, double lambda, int n, int miniBatchSize);
+	void update(int idx, double eta, double lambda, int n, int miniBatchSize);
 
 
 

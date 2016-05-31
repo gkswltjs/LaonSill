@@ -12,6 +12,7 @@
 #include "cost/CrossEntropyCost.h"
 #include "cost/LogLikelihoodCost.h"
 #include "monitor/NetworkMonitor.h"
+#include "exception/Exception.h"
 
 #include "layer/Layer.h"
 #include "layer/InputLayer.h"
@@ -21,6 +22,7 @@
 #include "layer/SigmoidLayer.h"
 #include "layer/SoftmaxLayer.h"
 #include "layer/LRNLayer.h"
+#include "layer/InceptionLayer.h"
 #include "activation/Activation.h"
 #include "activation/Sigmoid.h"
 #include "activation/ReLU.h"
@@ -38,9 +40,6 @@ void network_test();
 
 int main(int argc, char** argv) {
 	cout << "main" << endl;
-
-
-
 
 	cout.precision(11);
 	cout.setf(ios::fixed);
@@ -65,6 +64,8 @@ int main(int argc, char** argv) {
 
 
 	network_test();
+
+	//throw Exception();
 
 
 	return 0;
@@ -98,13 +99,24 @@ void network_test() {
 		//DataSet *cifar10DataSet = new Cifar10DataSet();
 		//cifar10DataSet->load();
 
-		InputLayer *inputLayer = new InputLayer(io_dim(28, 28, 1));
-		ConvLayer *conv1Layer = new ConvLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid);
-		PoolingLayer *pool1Layer = new PoolingLayer(io_dim(28, 28, 20), pool_dim(3, 3, 2), maxPooling);
-		ConvLayer *conv2Layer = new ConvLayer(io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), sigmoid);
-		PoolingLayer *pool2Layer = new PoolingLayer(io_dim(14, 14, 40), pool_dim(3, 3, 2), maxPooling);
-		FullyConnectedLayer *fc1Layer = new FullyConnectedLayer(7*7*40, 100, 0.5, sigmoid);
-		SoftmaxLayer *softmaxLayer = new SoftmaxLayer(100, 10, 0.5);
+		/*
+		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 28*28*1, 1000, 0.5, sigmoid);
+		HiddenLayer *fc2Layer = new FullyConnectedLayer("fc1", 1000, 100, 0.5, sigmoid);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
+
+		Network::addLayerRelation(inputLayer, fc1Layer);
+		Network::addLayerRelation(fc1Layer, fc2Layer);
+		Network::addLayerRelation(fc2Layer, softmaxLayer);
+		*/
+
+		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
+		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid);
+		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(28, 28, 20), pool_dim(3, 3, 2), maxPooling);
+		HiddenLayer *conv2Layer = new ConvLayer("conv2", io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), sigmoid);
+		HiddenLayer *pool2Layer = new PoolingLayer("pool2", io_dim(14, 14, 40), pool_dim(3, 3, 2), maxPooling);
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 7*7*40, 100, 0.5, sigmoid);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
 
 		Network::addLayerRelation(inputLayer, conv1Layer);
 		Network::addLayerRelation(conv1Layer, pool1Layer);
@@ -113,20 +125,20 @@ void network_test() {
 		Network::addLayerRelation(pool2Layer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
 
+
 		/*
-		Layer *layers[] = {
-			new InputLayer(io_dim(28, 28, 1)),
-			//new ConvPoolLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), pool_dim(2, 2, 1), sigmoid, maxPooling),
-			new ConvLayer(io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid),
-			new PoolingLayer(io_dim(28, 28, 20), pool_dim(3, 3, 2), maxPooling),
-			new ConvLayer(io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), sigmoid),
-			new PoolingLayer(io_dim(14, 14, 40), pool_dim(3, 3, 2), maxPooling),
-			new FullyConnectedLayer(7*7*40, 100, 0.5, sigmoid),
-			//new FullyConnectedLayer(12*12*20, 100, 0.0, sigmoid),
-			new SoftmaxLayer(100, 10, 0.5)
-			//new SigmoidLayer(30, 10, crossEntropyCost)
-			//new FullyConnectedLayer(30, 10, sigmoid)
-		};
+		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
+		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 40, 1), sigmoid);
+		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(28, 28, 40), pool_dim(3, 3, 2), maxPooling);
+		HiddenLayer *incept1Layer = new InceptionLayer("incept1", io_dim(14, 14, 40), io_dim(14, 14, 60), 10, 15, 30, 5, 10, 1, 10);
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 14*14*60, 100, 0.5, sigmoid);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
+
+		Network::addLayerRelation(inputLayer, conv1Layer);
+		Network::addLayerRelation(conv1Layer, pool1Layer);
+		Network::addLayerRelation(pool1Layer, incept1Layer);
+		Network::addLayerRelation(incept1Layer, fc1Layer);
+		Network::addLayerRelation(fc1Layer, softmaxLayer);
 		*/
 
 		//int numLayers = sizeof(layers)/sizeof(layers[0]);
@@ -145,30 +157,68 @@ void network_test() {
 		MockDataSet *dataSet = new MockDataSet();
 		dataSet->load();
 
+		/*
+		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 192));
+		HiddenLayer *inceptionLayer = new InceptionLayer("inception", io_dim(28, 28, 192), io_dim(28, 28, 256), 64, 96, 128, 16, 32, 1, 32);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 28*28*256, 10, 0.5);
+		*/
 
+		InputLayer *inputLayer = new InputLayer("input", io_dim(10, 10, 3));
+		//HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid);
+		//HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(28, 28, 20), pool_dim(3, 3, 2), maxPooling);
+		HiddenLayer *inceptionLayer = new InceptionLayer("inception", io_dim(10, 10, 3), io_dim(10, 10, 12), 3, 2, 3, 2, 3, 1, 3);
+		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(10, 10, 12), pool_dim(3, 3, 2), maxPooling);
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 5*5*12, 100, 0.5, sigmoid);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
 
-		InputLayer *inputLayer = new InputLayer(io_dim(10, 10, 1));
-		ConvLayer *conv1Layer = new ConvLayer(io_dim(10, 10, 1), filter_dim(3, 3, 1, 2, 1), sigmoid);
-		PoolingLayer *pool1Layer = new PoolingLayer(io_dim(10, 10, 2), pool_dim(3, 3, 2), maxPooling);
-		FullyConnectedLayer *fc1Layer = new FullyConnectedLayer(5*5*2, 20, 0.5, sigmoid);
-		SoftmaxLayer *softmaxLayer = new SoftmaxLayer(20, 10, 0.5);
+		Network::addLayerRelation(inputLayer, inceptionLayer);
+		Network::addLayerRelation(inceptionLayer, pool1Layer);
+		Network::addLayerRelation(pool1Layer, fc1Layer);
+		Network::addLayerRelation(fc1Layer, softmaxLayer);
 
 
 
 		/*
-		//int sizes[] = {9, 5, 10};
-		Layer *layers[] = {
-			new InputLayer(io_dim(10, 10, 1)),
-			new ConvLayer(io_dim(10, 10, 1), filter_dim(3, 3, 1, 2, 1), sigmoid),
-			new PoolingLayer(io_dim(10, 10, 2), pool_dim(3, 3, 2), maxPooling),
-			new FullyConnectedLayer(5*5*2, 20, 0.5, sigmoid),
-			new SoftmaxLayer(20, 10, 0.5)
-		};
+		InputLayer *inputLayer = new InputLayer("input", io_dim(10, 10, 1));
+		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(10, 10, 1), filter_dim(3, 3, 1, 2, 1), sigmoid);
+		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(10, 10, 2), pool_dim(3, 3, 2), maxPooling);
+		HiddenLayer *conv2Layer = new ConvLayer("conv2", io_dim(5, 5, 2), filter_dim(3, 3, 2, 4, 1), sigmoid);
+		HiddenLayer *pool2Layer = new PoolingLayer("pool2", io_dim(5, 5, 4), pool_dim(3, 3, 2), maxPooling);
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 2*2*4, 10, 0.5, sigmoid);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 10, 10, 0.5);
+
+		Network::addLayerRelation(inputLayer, conv1Layer);
+		Network::addLayerRelation(conv1Layer, pool1Layer);
+		Network::addLayerRelation(pool1Layer, conv2Layer);
+		Network::addLayerRelation(conv2Layer, pool2Layer);
+		Network::addLayerRelation(pool2Layer, fc1Layer);
+		Network::addLayerRelation(fc1Layer, softmaxLayer);
 		*/
 
-		//int numLayers = sizeof(layers)/sizeof(layers[0]);
+		/*
+		InputLayer *inputLayer = new InputLayer("input", io_dim(10, 10, 1));
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 100, 10, 0.5, sigmoid);
+		HiddenLayer *fc21Layer = new FullyConnectedLayer("fc21", 10, 10, 0.5, sigmoid);
+		HiddenLayer *fc22Layer = new FullyConnectedLayer("fc22", 10, 10, 0.5, sigmoid);
+		HiddenLayer *fc23Layer = new FullyConnectedLayer("fc23", 10, 10, 0.5, sigmoid);
+		HiddenLayer *fc3Layer = new FullyConnectedLayer("fc3", 10, 10, 0.5, sigmoid);
+		OutputLayer *softmax1Layer = new SoftmaxLayer("softmax1", 10, 10, 0.5);
+		OutputLayer *softmax2Layer = new SoftmaxLayer("softmax2", 10, 10, 0.5);
+
+		Network::addLayerRelation(inputLayer, fc1Layer);
+		Network::addLayerRelation(fc1Layer, fc21Layer);
+		Network::addLayerRelation(fc1Layer, fc22Layer);
+		Network::addLayerRelation(fc1Layer, fc23Layer);
+		Network::addLayerRelation(fc21Layer, fc3Layer);
+		Network::addLayerRelation(fc22Layer, fc3Layer);
+		Network::addLayerRelation(fc23Layer, fc3Layer);
+		Network::addLayerRelation(fc3Layer, softmax1Layer);
+		Network::addLayerRelation(fc1Layer, softmax2Layer);
+		*/
+
 		Network network(inputLayer, dataSet, networkListener);
 		network.addOutputLayer(softmaxLayer);
+		//network.addOutputLayer(softmax2Layer);
 
 		network.sgd(5, 2, 3.0, lambda);
 	}

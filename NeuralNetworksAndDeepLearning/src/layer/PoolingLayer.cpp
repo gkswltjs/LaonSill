@@ -7,8 +7,8 @@
 
 #include "PoolingLayer.h"
 
-PoolingLayer::PoolingLayer(io_dim in_dim, pool_dim pool_d, Pooling *pooling_fn)
-	: HiddenLayer(in_dim, in_dim) {
+PoolingLayer::PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, Pooling *pooling_fn)
+	: HiddenLayer(name, in_dim, in_dim) {
 
 	this->out_dim.rows = in_dim.rows / pool_d.rows;
 	this->out_dim.cols = in_dim.rows / pool_d.cols;
@@ -23,7 +23,7 @@ PoolingLayer::PoolingLayer(io_dim in_dim, pool_dim pool_d, Pooling *pooling_fn)
 	this->pool_map.set_size(in_dim.rows/pool_d.stride, in_dim.cols/pool_d.stride, in_dim.channels);
 	this->output.set_size(size(pool_map));
 	this->delta_input.set_size(size(input));
-
+	this->delta_input.zeros();
 }
 
 PoolingLayer::~PoolingLayer() {
@@ -31,27 +31,40 @@ PoolingLayer::~PoolingLayer() {
 }
 
 
-void PoolingLayer::feedforward(const cube &input) {
+void PoolingLayer::feedforward(int idx, const cube &input) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+
+
+
+
+
 	Util::convertCube(input, this->input);
 	pooling_fn->pool(pool_d, this->input, pool_map, output);
 
-	Layer::feedforward(this->output);
+	Layer::feedforward(idx, this->output);
 }
 
 
 
-void PoolingLayer::backpropagation(HiddenLayer *next_layer) {
+void PoolingLayer::backpropagation(int idx, HiddenLayer *next_layer) {
+	// TODO w_next_delta를 모두 합하여 한 번에 d_pool하는 것이 연산적으로 유리, 수정 필요
 	cube w_next_delta(size(output));
 
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 	Util::printCube(next_layer->getDeltaInput(), "delta input:");
 	Util::printCube(w_next_delta, "w_next_delta:");
 
-	pooling_fn->d_pool(pool_d, w_next_delta, pool_map, delta_input);
+	cube temp(size(delta_input));
+	pooling_fn->d_pool(pool_d, w_next_delta, pool_map, temp);
+	delta_input += temp;
 	Util::printCube(delta_input, "delta_input:");
 
 
-	HiddenLayer::backpropagation(this);
+	// dx가 모두 aggregate된 후 이전 레이어로 back propagate한다.
+	if(!isLastNextLayerRequest(idx)) return;
+
+	HiddenLayer::backpropagation(idx, this);
+	delta_input.zeros();
 }
 
 

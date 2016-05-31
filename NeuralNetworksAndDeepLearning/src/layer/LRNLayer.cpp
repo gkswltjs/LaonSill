@@ -8,17 +8,21 @@
 #include "LRNLayer.h"
 #include "../Util.h"
 
-LRNLayer::LRNLayer(io_dim in_dim, lrn_dim lrn_d) : HiddenLayer(in_dim, in_dim) {
+
+LRNLayer::LRNLayer(string name, io_dim in_dim, lrn_dim lrn_d) : HiddenLayer(name, in_dim, in_dim) {
 	this->lrn_d = lrn_d;
 	this->z.set_size(size(input));
 	this->delta_input.set_size(size(output));
+	this->delta_input.zeros();
 }
 
 LRNLayer::~LRNLayer() {}
 
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::feedforward(const cube &input) {
+void LRNLayer::feedforward(int idx, const cube &input) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+
 	int i, j;
 	int top_pad = (lrn_d.local_size-1)/2;
 	int in_channel_idx;
@@ -48,18 +52,19 @@ void LRNLayer::feedforward(const cube &input) {
 		Util::printMat(this->output.slice(i), "output:");
 	}
 
-	Layer::feedforward(this->output);
+	Layer::feedforward(idx, this->output);
+
 }
 
 
 
-void LRNLayer::backpropagation(HiddenLayer *next_layer) {
+void LRNLayer::backpropagation(int idx, HiddenLayer *next_layer) {
+	if(!isLastNextLayerRequest(idx)) throw Exception();
 
-	int i, j, k, l, m;
+	int i, j;
 	int top_pad = (lrn_d.local_size-1)/2;
 	int in_channel_idx;
 	double c = -2*lrn_d.alpha*lrn_d.beta/lrn_d.local_size;
-	double sum;
 	mat temp(input.n_rows, input.n_cols);
 
 	cube w_next_delta(size(output));
@@ -77,16 +82,15 @@ void LRNLayer::backpropagation(HiddenLayer *next_layer) {
 		for(j = 0; j < lrn_d.local_size; j++) {
 			in_channel_idx = i - top_pad + j;
 			if(in_channel_idx >= 0 && in_channel_idx < input.n_slices) {
-				temp += pow(z.slice(in_channel_idx), -lrn_d.beta-1)%input.slice(in_channel_idx);
+				temp += pow(z.slice(in_channel_idx), -lrn_d.beta-1) % input.slice(in_channel_idx) % w_next_delta.slice(in_channel_idx);
 			}
 		}
-		delta_input.slice(i) = c * temp % input.slice(i) + pow(z.slice(i), -lrn_d.beta);
+		delta_input.slice(i) += c * temp % input.slice(i) + pow(z.slice(i), -lrn_d.beta) % w_next_delta.slice(i);
 	}
 	Util::printCube(delta_input, "delta_input:");
 
-
-
-	HiddenLayer::backpropagation(this);
+	HiddenLayer::backpropagation(idx, this);
+	delta_input.zeros();
 }
 
 

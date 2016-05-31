@@ -142,7 +142,7 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], DataSample *&data
 		//const DataSample *dataSample = new DataSample(dataPtr, dataArea, targetPtr, 10);
 		//dataSet.push_back(dataSample);
 		//dataSet[i-offset].readData(dataPtr, dataNumRows, dataNumCols, 1, targetPtr, 10);
-		dataSet[i-offset].readData(dataPtr, dataNumRows*dataNumCols, 1, 1, targetPtr, 10);
+		dataSet[i-offset].readData(dataPtr, dataNumRows, dataNumCols, 1, targetPtr, 10);
 	}
 	return stop-offset;
 }

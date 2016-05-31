@@ -20,6 +20,12 @@ class DataSample {
 public:
 	DataSample() {}
 
+	void init(int rows, int cols, int channels, int classes) {
+		data = randu<cube>(rows, cols, channels);
+		target = vec(classes, 1);
+		target(0, 0) = 1.0;
+	}
+
 	/*
 	DataSample(const double *trainData, const int trainTarget) {
 		readDAta(trainData, trainTarget);
@@ -42,7 +48,8 @@ public:
 		for(int k = 0; k < 1; k++) {
 			for(int i = 0; i < 10; i++) {
 				for(int j = 0; j < 10; j++) {
-					data.slice(k)(i, j) = trainData[i*10+j];
+					//data.slice(k)(i, j) = trainData[i*10+j];
+					C_MEMPTR(data, i, j, k) = trainData[i*10+j];
 				}
 			}
 		}
@@ -52,12 +59,13 @@ public:
 
 	void readData(unsigned char *&dataPtr, int rows, int cols, int channels, unsigned char *&targetPtr, int targetBytes) {
 		this->data.set_size(rows, cols, channels);
-		Util::printVec(this->data, "data");
+		//Util::printVec(this->data, "data");
 
 		for(int i = 0; i < channels; i++) {
 			for(int j = 0; j < rows; j++) {
 				for(int k = 0; k < cols; k++) {
-					this->data.slice(i)(j, k) = (*dataPtr)/255.0;
+					//this->data.slice(i)(j, k) = (*dataPtr)/255.0;
+					C_MEMPTR(this->data, j, k, i) = (*dataPtr)/255.0;
 					dataPtr++;
 				}
 			}
@@ -82,7 +90,8 @@ public:
 			for(int i = 0; i < channels; i++) {
 				for(int j = 0; j < rows; j++) {
 					for(int k = 0; k < cols; k++) {
-						this->data.slice(i)(j, k) = (*dataPtr)/255.0;
+						//this->data.slice(i)(j, k) = (*dataPtr)/255.0;
+						C_MEMPTR(this->data, j, k, i) = (*dataPtr)/255.0;
 						dataPtr++;
 					}
 				}

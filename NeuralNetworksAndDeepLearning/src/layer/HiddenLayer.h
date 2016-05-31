@@ -16,13 +16,14 @@ using namespace arma;
 
 class HiddenLayer : public Layer {
 public:
-	HiddenLayer(int n_in, int n_out) : Layer(n_in, n_out) {}
-	HiddenLayer(io_dim in_dim, io_dim out_dim) : Layer(in_dim, out_dim) {}
+	HiddenLayer(string name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
+	HiddenLayer(string name, io_dim in_dim, io_dim out_dim) : Layer(name, in_dim, out_dim) {}
 	virtual ~HiddenLayer() {}
 
 
 	virtual cube &getDeltaInput()=0;
-	vector<HiddenLayer *> &getPrevLayers() { return this->prevLayers; }
+	vector<prev_layer_relation> &getPrevLayers() { return this->prevLayers; }
+	int getPrevLayerSize() { return this->prevLayers.size(); }
 
 
 
@@ -32,16 +33,16 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	//virtual void backpropagation(HiddenLayer *next_layer)=0;
-	virtual void backpropagation(HiddenLayer *next_layer) {
-		for(vector<HiddenLayer *>::const_iterator iter = prevLayers.begin(); iter != prevLayers.end(); iter++) {
-			(*iter)->backpropagation(next_layer);
+	virtual void backpropagation(int idx, HiddenLayer *next_layer) {
+		for(int i = 0; i < prevLayers.size(); i++) {
+			prevLayers[i].prev_layer->backpropagation(prevLayers[i].idx, this);
 		}
 	}
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
 	 */
-	virtual void reset_nabla()=0;
+	virtual void reset_nabla(int idx)=0;
 
 	/**
 	 * 한 번의 batch 종료 후 w, b 누적 업데이트를 레이어 w, b에 적용
@@ -50,9 +51,9 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	virtual void update(double eta, double lambda, int n, int miniBatchSize)=0;
+	virtual void update(int idx, double eta, double lambda, int n, int miniBatchSize)=0;
 
-	void addPrevLayer(HiddenLayer *prevLayer) { prevLayers.push_back(prevLayer); }
+	void addPrevLayer(prev_layer_relation prevLayer) { prevLayers.push_back(prevLayer); }
 
 
 
@@ -61,7 +62,17 @@ public:
 
 
 protected:
-	vector<HiddenLayer *> prevLayers;
+	bool isLastNextLayerRequest(int idx) {
+		//cout << name << " received request from " << idx << "th next layer ... " << endl;
+		if(nextLayers.size() > idx+1) {
+			//cout << name << " is not from last next layer... " << endl;
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+
 	vector<bool> backwardFlags;
 
 };

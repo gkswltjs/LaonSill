@@ -10,23 +10,28 @@
 
 #include "HiddenLayer.h"
 #include "LayerConfig.h"
+#include "../exception/Exception.h"
 
 
 class LRNLayer : public HiddenLayer {
 public:
-	LRNLayer(io_dim in_dim, lrn_dim lrn_d);
+	LRNLayer(string name, io_dim in_dim, lrn_dim lrn_d);
 	virtual ~LRNLayer();
 
 
 	cube &getDeltaInput() { return delta_input; }
 
-	void feedforward(const cube &input);
-	void backpropagation(HiddenLayer *next_layer);
+	void feedforward(int idx, const cube &input);
+	void backpropagation(int idx, HiddenLayer *next_layer);
 
 	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
-	void reset_nabla() { Layer::reset_nabla(); }
-	void update(double eta, double lambda, int n, int miniBatchSize) {
-		Layer::update(eta, lambda, n, miniBatchSize);
+	void reset_nabla(int idx) {
+		if(!isLastPrevLayerRequest(idx)) throw Exception();
+		Layer::reset_nabla(idx);
+	}
+	void update(int idx, double eta, double lambda, int n, int miniBatchSize) {
+		if(!isLastPrevLayerRequest(idx)) throw Exception();
+		Layer::update(idx, eta, lambda, n, miniBatchSize);
 	}
 
 private:

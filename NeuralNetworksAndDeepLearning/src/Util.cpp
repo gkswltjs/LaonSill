@@ -99,6 +99,20 @@ void Util::printCube(const cube &c, string name) {
 	}
 }
 
+void Util::printUCube(const ucube &c, string name) {
+	if(Util::print) {
+		cout << "-------------------------------------" << endl;
+		cout << "name: " << name << endl;
+		cout << "address: " << &c << endl;
+		cout << "rows x cols x slices: " << c.n_rows << " x " << c.n_cols << " x " << c.n_slices << endl;
+		c.raw_print(cout, "cube values: ");
+		cout << endl;
+		cout << "-------------------------------------" << endl;
+	}
+}
+
+
+
 /*
 void Util::convertCubeToVec(const io_dim &cube_dim, const cube &c, vec &v) {
 	if(cube_dim.channels == 1) {
@@ -158,7 +172,8 @@ void Util::dropoutLayer(cube &input, double p_dropout) {
 	for(slice = 0; slice < input.n_slices; slice++) {
 		for(row = 0; row < input.n_rows; row++) {
 			for(col = 0; col < input.n_cols; col++) {
-				if(p.slice(slice)(row, col) < p_dropout) input.slice(slice)(row, col) = 0;
+				//if(p.slice(slice)(row, col) < p_dropout) input.slice(slice)(row, col) = 0;
+				if(C_MEM(p, row, col, slice) < p_dropout) C_MEMPTR(input, row, col, slice) = 0;
 			}
 		}
 	}

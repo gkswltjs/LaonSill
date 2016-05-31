@@ -20,8 +20,8 @@ public:
 
 	void initialize_weight(int n_in, mat &weight) {
 		// TODO for debug
-		//weight.randn();
-		weight.fill(0.0);
+		weight.randn();
+		//weight.fill(0.0);
 	}
 	/*
 	void initialize_weight(int filters, void *weight, int type) {

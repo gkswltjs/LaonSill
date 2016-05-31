@@ -11,6 +11,7 @@
 #include "Layer.h"
 #include "LayerConfig.h"
 #include "../Util.h"
+#include "../exception/Exception.h"
 #include <armadillo>
 
 using namespace arma;
@@ -18,17 +19,23 @@ using namespace arma;
 
 class InputLayer : public Layer {
 public:
-	InputLayer(int n_in) : Layer(n_in, n_in) {}
-	InputLayer(io_dim in_dim) : Layer(in_dim, in_dim) {}
+	InputLayer(string name, int n_in) : Layer(name, n_in, n_in) {}
+	InputLayer(string name, io_dim in_dim) : Layer(name, in_dim, in_dim) {}
 	virtual ~InputLayer() {}
 
-	void feedforward(const cube &input) {
-		Util::printCube(input, "input:");
+	/**
+	 * Input 무조건 첫번째 layer,
+	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
+	 */
+	void feedforward(int idx, const cube &input) {
+		if(!isLastPrevLayerRequest(idx)) throw Exception();
+
 		Util::convertCube(input, this->input);
 		Util::convertCube(this->input, this->output);
+		Util::printCube(input, "input:");
 		Util::printCube(this->output, "output:");
 
-		Layer::feedforward(this->output);
+		Layer::feedforward(idx, this->output);
 	}
 protected:
 };
