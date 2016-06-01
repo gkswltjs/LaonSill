@@ -16,7 +16,7 @@ class ReLU : public Activation {
 public:
 	ReLU(io_dim activation_dim) {
 		zero.set_size(activation_dim.rows, activation_dim.cols, activation_dim.channels);
-		zero.fill(0.0);
+		zero.zeros();
 	}
 	virtual ~ReLU() {}
 

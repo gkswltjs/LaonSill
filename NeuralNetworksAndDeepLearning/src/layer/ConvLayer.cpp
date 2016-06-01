@@ -284,8 +284,8 @@ void ConvLayer::reset_nabla(int idx) {
 	// next layer들에 대해서도 초기화 요청한다.
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	for(int i = 0; i < filter_d.filters; i++) nabla_w[i].fill(0.0);
-	nabla_b.fill(0.0);
+	for(int i = 0; i < filter_d.filters; i++) nabla_w[i].zeros();
+	nabla_b.zeros();
 
 	Layer::reset_nabla(idx);
 }

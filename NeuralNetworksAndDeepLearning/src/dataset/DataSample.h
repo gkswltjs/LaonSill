@@ -53,7 +53,7 @@ public:
 				}
 			}
 		}
-		this->target.fill(0.0);
+		this->target.zeros();
 		this->target.row(trainTarget) = 1.0;
 	}
 
@@ -72,7 +72,7 @@ public:
 		}
 
 		this->target.set_size(targetBytes, 1);
-		this->target.fill(0.0f);
+		this->target.zeros();
 		this->target.row(*targetPtr) = 1.0;
 		targetPtr++;
 	}
@@ -81,7 +81,7 @@ public:
 			this->data.set_size(rows, cols, channels);
 
 			this->target.set_size(10, 1);
-			this->target.fill(0.0f);
+			this->target.zeros();
 			this->target.row(*dataPtr) = 1.0;
 			//Util::printVec(target, "target:");
 

@@ -32,7 +32,7 @@ ConvPoolLayer::ConvPoolLayer(string name, io_dim in_dim, filter_dim filter_d, po
 		filters[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
 		filters[i].randn();
 		nabla_w[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
-		nabla_w[i].fill(0.0);
+		nabla_w[i].zeros();
 	}
 
 	biases.set_size(filter_d.filters);
@@ -73,7 +73,7 @@ void ConvPoolLayer::feedforward(int idx, const rcube &input) {
 	//Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);
 
-	z.fill(0.0);
+	z.zeros();
 	rmat conv(size(z.slice(0)));
 
 	// 1. CONVOLUTION
@@ -132,7 +132,7 @@ void ConvPoolLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 		w_next_delta = conv_layer->getDelta();
 
 		//rmat dconv(size(output.slice(0)));
-		//w_next_delta.fill(0.0);
+		//w_next_delta.zeros();
 		//for(int i = 0; i < conv_layer->get_filter_dim().channels; i++) {
 		//	for(int j = 0; j < conv_layer->get_filter_dim().filters; j++) {
 		//		convolution(conv_layer->getDelta().slice(j), flipud(fliplr(conv_layer->getWeight()[j].slice(i))), dconv);
@@ -166,7 +166,7 @@ void ConvPoolLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 
 	// dC/dx
 	rmat dconv(size(input.slice(0)));
-	delta_input.fill(0.0);
+	delta_input.zeros();
 	for(int i = 0; i < filter_d.channels; i++) {
 		for(int j = 0; j < filter_d.filters; j++) {
 			convolution(delta.slice(j), flipud(fliplr(filters[j].slice(i))), dconv);
@@ -288,8 +288,8 @@ void ConvPoolLayer::d_convolution(const rmat &conv, const rmat &filter, rmat &re
 
 
 void ConvPoolLayer::reset_nabla(int idx) {
-	for(int i = 0; i < filter_d.filters; i++) nabla_w[i].fill(0.0);
-	nabla_b.fill(0.0);
+	for(int i = 0; i < filter_d.filters; i++) nabla_w[i].zeros();
+	nabla_b.zeros();
 }
 
 
