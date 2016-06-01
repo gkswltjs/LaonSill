@@ -22,11 +22,11 @@ public:
 
 	void initialize_weight(int n_in, rmat &weight) {
 		weight.randn();
-		weight *= 1.0 / n_in;				// initial point scaling
+		weight *= sqrt(2.0/n_in);				// initial point scaling
 	}
 	void initialize_weight(int n_in, rcube &weight) {
 		weight.randn();
-		weight *= 1.0 / n_in;				// initial point scaling
+		weight *= sqrt(2.0/n_in);				// initial point scaling
 	}
 	void activate(const rcube &z, rcube &activation) {
 		activation = arma::max(z, zero);

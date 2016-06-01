@@ -31,8 +31,10 @@ void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn
 	int n_out = out_dim.size();
 
 	this->bias.set_size(n_out, 1);
+	this->bias.zeros();
+
 	this->weight.set_size(n_out, n_in);
-	this->bias.randn();
+
 
 	//this->weight.randn();
 	//this->weight *= 1/sqrt(n_in);				// initial point scaling
@@ -48,8 +50,6 @@ void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn
 	this->delta.zeros();
 	this->delta_input.set_size(n_in, 1, 1);
 	this->delta_input.zeros();
-
-
 
 	/**
 	 * HiddenLayer에서 activation_fn이 할당되는 곳에서 weight initialize 필요

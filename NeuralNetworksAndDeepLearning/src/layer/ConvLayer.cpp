@@ -36,9 +36,9 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation
 	}
 
 	biases.set_size(filter_d.filters);
-	biases.randn();
+	biases.zeros();
 	nabla_b.set_size(filter_d.filters);
-	nabla_b.randn();
+	nabla_b.zeros();
 
 
 	//z.set_size(in_dim.rows-filter_d.rows+1, in_dim.cols-filter_d.cols+1, filter_d.filters);

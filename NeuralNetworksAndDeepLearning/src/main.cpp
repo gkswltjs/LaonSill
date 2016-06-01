@@ -3,6 +3,7 @@
 
 #include "network/Network.h"
 #include "network/GoogLeNet.h"
+#include "network/GoogLeNetMnist.h"
 #include "dataset/MnistDataSet.h"
 #include "dataset/MockDataSet.h"
 #include "dataset/Cifar10DataSet.h"
@@ -48,6 +49,8 @@ int main(int argc, char** argv) {
 	cout.precision(11);
 	cout.setf(ios::fixed);
 
+
+	//OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 28*28*12, 10, 0.5);
 
 
 	/*
@@ -121,6 +124,7 @@ void network_test() {
 		Network::addLayerRelation(fc2Layer, softmaxLayer);
 		*/
 
+
 		/*
 		cout << "convolutional network double ... " << endl;
 
@@ -144,9 +148,7 @@ void network_test() {
 		*/
 
 
-
-
-
+		/*
 		cout << "convolutional network single ... " << endl;
 
 		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
@@ -159,11 +161,7 @@ void network_test() {
 		Network::addLayerRelation(conv1Layer, pool1Layer);
 		Network::addLayerRelation(pool1Layer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
-
-
-
-
-
+		*/
 
 		/*
 		cout << "inception net with aux ... " << endl;
@@ -183,17 +181,18 @@ void network_test() {
 		*/
 
 
-
-		/*
-		cout << "inception net single ... " << endl;
+		cout << "inception net single ... with zero softmax layer weight " << endl;
 
 		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
-		HiddenLayer *incept1Layer = new InceptionLayer("incept1", io_dim(28, 28, 1), io_dim(28, 28, 64), 16, 24, 32, 4, 8, 8);
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 28*28*64, 10, 0.5);
+		HiddenLayer *incept1Layer = new InceptionLayer("incept1", io_dim(28, 28, 1), io_dim(28, 28, 12), 3, 2, 3, 2, 3, 3);
+		HiddenLayer *incept2Layer = new InceptionLayer("incept2", io_dim(28, 28, 12), io_dim(28, 28, 24), 6, 4, 6, 4, 6, 6);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 28*28*24, 10, 0.5);
 
 		Network::addLayerRelation(inputLayer, incept1Layer);
-		Network::addLayerRelation(incept1Layer, softmaxLayer);
-		*/
+		Network::addLayerRelation(incept1Layer, incept2Layer);
+		Network::addLayerRelation(incept2Layer, softmaxLayer);
+
+
 
 
 		/*
@@ -233,12 +232,19 @@ void network_test() {
 		Network::addLayerRelation(depthConcatLayer, softmaxLayer);
 		*/
 
-		//int numLayers = sizeof(layers)/sizeof(layers[0]);
+
 		Network network(inputLayer, mnistDataSet, networkListener);
 		network.addOutputLayer(softmaxLayer);
 
-		//network.sgd(30, 10, 0.1, lambda);
 		network.sgd(30, 10, 0.1, lambda);
+		//network.sgd(30, 10, 0.05, lambda);
+
+		/*
+		Network *googlenet = new GoogLeNetMnist(0);
+		googlenet->setDataSet(mnistDataSet);
+		googlenet->sgd(1, 10, 0.1, lambda);
+		*/
+
 
 	} else {
 		Util::setPrint(true);

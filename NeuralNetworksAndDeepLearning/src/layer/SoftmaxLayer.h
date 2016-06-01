@@ -70,8 +70,7 @@ private:
 	void initialize() {
 		this->cost_fn = new LogLikelihoodCost();
 		this->activation_fn = new Softmax();
-		this->activation_fn->initialize_weight(in_dim.rows, weight);
-
+		this->activation_fn->initialize_weight(in_dim.size(), weight);
 
 	}
 };

@@ -18,11 +18,11 @@ public:
 
 	void initialize_weight(int n_in, rmat &weight) {
 		weight.randn();
-		weight *= 1.0 / sqrt(n_in);				// initial point scaling
+		weight *= 1.0/sqrt(n_in);				// initial point scaling
 	}
 	void initialize_weight(int n_in, rcube &weight) {
 		weight.randn();
-		weight *= 1.0 / sqrt(n_in);				// initial point scaling
+		weight *= 1.0/sqrt(n_in);				// initial point scaling
 	}
 
 	/*

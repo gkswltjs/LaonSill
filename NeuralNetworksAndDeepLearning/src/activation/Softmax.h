@@ -20,13 +20,13 @@ public:
 	void initialize_weight(int n_in, rmat &weight) {
 		// TODO for debug
 		//weight.randn();
-		//weight *= 1.0 / n_in;
+		//weight *= sqrt(1.0/n_in);
 		weight.zeros();
 	}
 	void initialize_weight(int n_in, rcube &weight) {
 		// TODO for debug
 		//weight.randn();
-		//weight *= 1.0 / n_in;
+		//weight *= sqrt(1.0/n_in);
 		weight.zeros();
 	}
 
