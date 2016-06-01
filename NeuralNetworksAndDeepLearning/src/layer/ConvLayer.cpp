@@ -50,11 +50,7 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation
 	//if(this->activation_fn) this->activation_fn->initialize_weight();
 	//int n_out = filter_d.filters*filter_d.rows*filter_d.cols/9;
 	for(int i = 0; i < filter_d.filters; i++) {
-		//filters[i].randn();
-		//Util::printCube(filters[i], "filter:");
-		//filters[i] *= 1 / sqrt(n_out);
-		filters[i] *= 0.1;
-		//Util::printCube(filters[i], "filter:");
+		if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.size(), filters[i]);
 	}
 
 	delta.set_size(size(z));
@@ -89,11 +85,18 @@ void ConvLayer::feedforward(int idx, const cube &input) {
 			Util::printMat(filters[i].slice(j), "filter:");
 			convolution(this->input.slice(j), filters[i].slice(j), conv, filter_d.stride);
 			Util::printMat(conv, "conv:");
+			Util::printCube(z, "z:");
 			z.slice(i) += conv;
-			//Util::printCube(z, "z:");
+			Util::printCube(z, "z:");
 		}
+		//Util::printCube(z, "z:");
+		//Util::printVec(biases, "biases:");
+		z.slice(i) += biases(i, 0);
+		//Util::printCube(z, "z:");
 	}
+
 	Util::printCube(z, "z:");
+
 
 	// 2. ACTIVATION
 	activation_fn->activate(z, output);
@@ -143,7 +146,7 @@ void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 
 	// dx
 	mat dconv(size(input.slice(0)));
-	delta_input.fill(0.0);
+	delta_input.zeros();
 	for(int i = 0; i < filter_d.channels; i++) {
 		for(int j = 0; j < filter_d.filters; j++) {
 			Util::printMat(filters[j].slice(i), "filter:");
@@ -180,11 +183,19 @@ void ConvLayer::convolution(const mat &x, const mat &w, mat &result, int stride)
 					if((in_image_row_idx >= 0 && in_image_row_idx < x.n_rows)
 							&& (in_image_col_idx >=0 && in_image_col_idx < x.n_cols)) {
 						//conv += x.mem[in_image_row_idx+(in_image_col_idx)*x.n_cols]*w.mem[k+m*w.n_cols];
+						//try {
 						conv += M_MEM(x, in_image_row_idx, in_image_col_idx)*M_MEM(w, k, m);
+						//} catch (...) {
+						//	cout << "i:" << i << ", j:" << j << ", k:" << k << ", m:" << m << endl;
+						//}
 					}
 				}
 			}
-			result(i, j) = conv;
+			//try {
+			result(i/stride, j/stride) = conv;
+			//} catch (...) {
+			//	cout << "i:" << i << ", j:" << j << endl;
+			//}
 		}
 	}
 }

@@ -1,7 +1,8 @@
 #include <iostream>
 #include <armadillo>
 
-#include "Network.h"
+#include "network/Network.h"
+#include "network/GoogLeNet.h"
 #include "dataset/MnistDataSet.h"
 #include "dataset/MockDataSet.h"
 #include "dataset/Cifar10DataSet.h"
@@ -23,9 +24,12 @@
 #include "layer/SoftmaxLayer.h"
 #include "layer/LRNLayer.h"
 #include "layer/InceptionLayer.h"
+#include "layer/DepthConcatLayer.h"
 #include "activation/Activation.h"
 #include "activation/Sigmoid.h"
 #include "activation/ReLU.h"
+
+#include "Timer.h"
 
 using namespace std;
 using namespace arma;
@@ -45,28 +49,33 @@ int main(int argc, char** argv) {
 	cout.setf(ios::fixed);
 
 
-	/*
-	cube upsample = randu<cube>(14, 14, 2);
-	cube downsample = randu<cube>(2, 2, 2);
-	ucube pool_map(14, 14, 2);
-	pool_dim pool_d(7, 7, 1);
 
-	AvgPooling p;
-	p.pool(pool_d, upsample, pool_map, downsample);
-	p.d_pool(pool_d, downsample, pool_map, upsample);
+	/*
+
+	Util::setPrint(false);
+	cube z(224, 224, 100);
+	cube output(224, 224, 100);
+
+	Sigmoid *sigmoid = new Sigmoid();
+	ReLU *relu = new ReLU(io_dim(224, 224, 100));
+	Timer timer;
+
+	timer.start();
+	for(int i = 0; i < 100; i++) {
+		sigmoid->activate(z, output);
+		sigmoid->d_activate(output, z);
+	}
+	timer.stop();
+
+	timer.start();
+	for(int i = 0; i < 100; i++) {
+		relu->activate(z, output);
+		relu->d_activate(output, z);
+	}
+	timer.stop();
 	*/
 
-	//cube input = randu<cube>(5, 5, 5);
-	//LRNLayer lrn(io_dim(5, 5, 5), lrn_dim(3, 1, 5));
-	//lrn.feedforward(input);
-	//lrn.backpropagation(&lrn);
-
-
-
 	network_test();
-
-	//throw Exception();
-
 
 	return 0;
 }
@@ -110,12 +119,18 @@ void network_test() {
 		Network::addLayerRelation(fc2Layer, softmaxLayer);
 		*/
 
+		/*
+		cout << "convolutional network double ... " << endl;
+
 		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
-		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid);
+		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), new ReLU(io_dim(28, 28, 20)));
+		//HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid);
 		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(28, 28, 20), pool_dim(3, 3, 2), maxPooling);
-		HiddenLayer *conv2Layer = new ConvLayer("conv2", io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), sigmoid);
+		HiddenLayer *conv2Layer = new ConvLayer("conv2", io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), new ReLU(io_dim(14, 14, 40)));
+		//HiddenLayer *conv2Layer = new ConvLayer("conv2", io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), sigmoid);
 		HiddenLayer *pool2Layer = new PoolingLayer("pool2", io_dim(14, 14, 40), pool_dim(3, 3, 2), maxPooling);
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 7*7*40, 100, 0.5, sigmoid);
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 7*7*40, 100, 0.5, new ReLU(io_dim(100, 1, 1)));
+		//HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 7*7*40, 100, 0.5, sigmoid);
 		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
 
 		Network::addLayerRelation(inputLayer, conv1Layer);
@@ -124,14 +139,38 @@ void network_test() {
 		Network::addLayerRelation(conv2Layer, pool2Layer);
 		Network::addLayerRelation(pool2Layer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
+		*/
+
+
 
 
 		/*
+		cout << "convolutional network single ... " << endl;
+
 		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
-		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 40, 1), sigmoid);
+		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid);
+		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(28, 28, 20), pool_dim(3, 3, 2), maxPooling);
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 14*14*20, 100, 0.5, sigmoid);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
+
+		Network::addLayerRelation(inputLayer, conv1Layer);
+		Network::addLayerRelation(conv1Layer, pool1Layer);
+		Network::addLayerRelation(pool1Layer, fc1Layer);
+		Network::addLayerRelation(fc1Layer, softmaxLayer);
+		*/
+
+
+
+
+
+		/*
+		cout << "inception net with aux ... " << endl;
+
+		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
+		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 40, 1), new ReLU(io_dim(28, 28, 40)));
 		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(28, 28, 40), pool_dim(3, 3, 2), maxPooling);
-		HiddenLayer *incept1Layer = new InceptionLayer("incept1", io_dim(14, 14, 40), io_dim(14, 14, 60), 10, 15, 30, 5, 10, 1, 10);
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 14*14*60, 100, 0.5, sigmoid);
+		HiddenLayer *incept1Layer = new InceptionLayer("incept1", io_dim(14, 14, 40), io_dim(14, 14, 60), 10, 15, 30, 5, 10, 10);
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 14*14*60, 100, 0.5, new ReLU(io_dim(100, 1, 1)));
 		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
 
 		Network::addLayerRelation(inputLayer, conv1Layer);
@@ -139,6 +178,56 @@ void network_test() {
 		Network::addLayerRelation(pool1Layer, incept1Layer);
 		Network::addLayerRelation(incept1Layer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
+		*/
+
+
+
+
+		cout << "inception net single ... " << endl;
+
+		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
+		HiddenLayer *incept1Layer = new InceptionLayer("incept1", io_dim(28, 28, 1), io_dim(28, 28, 64), 16, 24, 32, 4, 8, 8);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 28*28*64, 10, 0.5);
+
+		Network::addLayerRelation(inputLayer, incept1Layer);
+		Network::addLayerRelation(incept1Layer, softmaxLayer);
+
+
+		/*
+		io_dim in_dim(28, 28, 1);
+		int cv1x1 = 2;
+		int cv3x3reduce = 3;
+		int cv3x3 = 6;
+		int cv5x5reduce = 1;
+		int cv5x5 = 2;
+		int cp = 2;
+
+		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
+		ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv1x1)));
+		ConvLayer *conv3x3reduceLayer = new ConvLayer("conv3x3reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv3x3reduce)));
+		ConvLayer *conv3x3Layer = new ConvLayer("conv3x3", io_dim(in_dim.rows, in_dim.cols, cv3x3reduce), filter_dim(3, 3, cv3x3reduce, cv3x3, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv3x3)));
+		ConvLayer *conv5x5recudeLayer = new ConvLayer("conv5x5reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv5x5reduce)));
+		ConvLayer *conv5x5Layer = new ConvLayer("conv5x5", io_dim(in_dim.rows, in_dim.cols, cv5x5reduce), filter_dim(5, 5, cv5x5reduce, cv5x5, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv5x5)));
+		PoolingLayer *pool3x3Layer = new PoolingLayer("pool3x3", in_dim, pool_dim(3, 3, 1), new MaxPooling());
+		ConvLayer *convProjectionLayer = new ConvLayer("convProjection", in_dim, filter_dim(1, 1, in_dim.channels, cp, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cp)));
+		DepthConcatLayer *depthConcatLayer = new DepthConcatLayer("depthConcat", io_dim(in_dim.rows, in_dim.cols, cv1x1+cv3x3+cv5x5+cp));
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 28*28*12, 10, 0.5);
+
+		Network::addLayerRelation(inputLayer, conv1x1Layer);
+		Network::addLayerRelation(inputLayer, conv3x3reduceLayer);
+		Network::addLayerRelation(inputLayer, conv5x5Layer);
+		Network::addLayerRelation(inputLayer, pool3x3Layer);
+
+		Network::addLayerRelation(conv3x3reduceLayer, conv3x3Layer);
+		Network::addLayerRelation(conv5x5recudeLayer, conv5x5Layer);
+		Network::addLayerRelation(pool3x3Layer, convProjectionLayer);
+
+		Network::addLayerRelation(conv1x1Layer, depthConcatLayer);
+		Network::addLayerRelation(conv3x3Layer, depthConcatLayer);
+		Network::addLayerRelation(conv5x5Layer, depthConcatLayer);
+		Network::addLayerRelation(convProjectionLayer, depthConcatLayer);
+
+		Network::addLayerRelation(depthConcatLayer, softmaxLayer);
 		*/
 
 		//int numLayers = sizeof(layers)/sizeof(layers[0]);
@@ -158,15 +247,16 @@ void network_test() {
 		dataSet->load();
 
 		/*
-		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 192));
-		HiddenLayer *inceptionLayer = new InceptionLayer("inception", io_dim(28, 28, 192), io_dim(28, 28, 256), 64, 96, 128, 16, 32, 1, 32);
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 28*28*256, 10, 0.5);
-		*/
+		Network *googlenet = new GoogLeNet(0);
+		googlenet->setDataSet(dataSet);
+		googlenet->sgd(1, 10, 0.1, lambda);
+		//googlenet.sgd(5, 2, 3.0, lambda);
+		 */
 
+
+		/*
 		InputLayer *inputLayer = new InputLayer("input", io_dim(10, 10, 3));
-		//HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), sigmoid);
-		//HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(28, 28, 20), pool_dim(3, 3, 2), maxPooling);
-		HiddenLayer *inceptionLayer = new InceptionLayer("inception", io_dim(10, 10, 3), io_dim(10, 10, 12), 3, 2, 3, 2, 3, 1, 3);
+		HiddenLayer *inceptionLayer = new InceptionLayer("inception", io_dim(10, 10, 3), io_dim(10, 10, 12), 3, 2, 3, 2, 3, 3);
 		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(10, 10, 12), pool_dim(3, 3, 2), maxPooling);
 		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 5*5*12, 100, 0.5, sigmoid);
 		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
@@ -175,6 +265,16 @@ void network_test() {
 		Network::addLayerRelation(inceptionLayer, pool1Layer);
 		Network::addLayerRelation(pool1Layer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
+		*/
+
+
+		InputLayer *inputLayer = new InputLayer("input", io_dim(10, 10, 3));
+		HiddenLayer *inceptionLayer = new InceptionLayer("inception", io_dim(10, 10, 3), io_dim(10, 10, 12), 3, 2, 3, 2, 3, 3);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 10*10*12, 10, 0.5);
+
+		Network::addLayerRelation(inputLayer, inceptionLayer);
+		Network::addLayerRelation(inceptionLayer, softmaxLayer);
+
 
 
 

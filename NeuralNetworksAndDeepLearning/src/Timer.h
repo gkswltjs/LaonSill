@@ -24,9 +24,11 @@ public:
 		t1 = clock();
 	}
 
-	void stop() {
+	long stop(bool print=true) {
 		t2 = clock();
-		cout << "total " << t2-t1 << "ms elapsed ... " << endl;
+		long elapsed = t2 - t1;
+		if(print) cout << "total " << elapsed << "ms elapsed ... " << endl;
+		return elapsed;
 	}
 
 private:

@@ -30,11 +30,11 @@ public:
 
 
 	void reset_nabla(int idx) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
+		if(!isLastPrevLayerRequest(idx)) return;
 		Layer::reset_nabla(idx);
 	}
 	void update(int idx, double eta, double lambda, int n, int miniBatchSize) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
+		if(!isLastPrevLayerRequest(idx)) return;
 		Layer::update(idx, eta, lambda, n, miniBatchSize);
 	}
 

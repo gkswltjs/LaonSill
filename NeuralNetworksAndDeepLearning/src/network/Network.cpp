@@ -11,12 +11,12 @@
 #include <iostream>
 #include <vector>
 
-#include "dataset/DataSample.h"
-#include "dataset/DataSet.h"
-#include "layer/HiddenLayer.h"
-#include "layer/OutputLayer.h"
-#include "Util.h"
-#include "Timer.h"
+#include "../dataset/DataSample.h"
+#include "../dataset/DataSet.h"
+#include "../layer/HiddenLayer.h"
+#include "../layer/OutputLayer.h"
+#include "../Util.h"
+#include "../Timer.h"
 
 
 
@@ -24,7 +24,6 @@
 
 Network::Network(InputLayer *inputLayer, DataSet *dataSet, NetworkListener *networkListener) {
 	this->inputLayer = inputLayer;
-	this->numLayers = numLayers;
 	this->dataSet = dataSet;
 	this->networkListener = networkListener;
 }
@@ -52,11 +51,11 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
 			if((j+1)%100 == 0) {
-				cout << "Minibatch " << j+1 << " started." << endl;
-				timer2.stop();
+				cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 				timer2.start();
 			}
-			//cout << "Minibatch " << j+1 << " started." << endl;
+			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+			//timer2.start();
 
 			//for(int k = 1; k < numLayers; k++) {
 				//(dynamic_cast<HiddenLayer *>(layers[k]))->reset_nabla();
@@ -122,9 +121,15 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, d
 void Network::backprop(const DataSample &dataSample) {
 	//int lastLayerIndex = numLayers-1;
 
+	//Timer timer;
 
+	//timer.start();
 	// feedforward
 	feedforward(dataSample.getData());
+
+	//cout << "time for feed forward: ";
+	//timer.stop();
+
 
 	//Util::printVec(dataSample.getTarget(), "target:");
 	//Util::printCube(layers[lastLayerIndex]->getInput(), "input:");
@@ -137,10 +142,14 @@ void Network::backprop(const DataSample &dataSample) {
 	//	//(dynamic_cast<HiddenLayer *>(layers[i]))->backpropagation(dynamic_cast<HiddenLayer *>(layers[i+1]));
 	//}
 
+
+	//timer.start();
 	//cout << "backpropagation()" << endl;
 	for(int i = 0; i < outputLayers.size(); i++) {
 		outputLayers[i]->cost(dataSample.getTarget());
 	}
+	//cout << "time for backward: ";
+	//timer.stop();
 
 }
 

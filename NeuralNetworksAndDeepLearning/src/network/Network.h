@@ -10,14 +10,14 @@
 
 #include <armadillo>
 
-#include "cost/Cost.h"
-#include "activation/Activation.h"
-#include "monitor/NetworkListener.h"
-#include "layer/Layer.h"
-#include "layer/InputLayer.h"
-#include "layer/HiddenLayer.h"
-#include "layer/OutputLayer.h"
-#include "layer/LayerConfig.h"
+#include "../cost/Cost.h"
+#include "../activation/Activation.h"
+#include "../monitor/NetworkListener.h"
+#include "../layer/Layer.h"
+#include "../layer/InputLayer.h"
+#include "../layer/HiddenLayer.h"
+#include "../layer/OutputLayer.h"
+#include "../layer/LayerConfig.h"
 
 class DataSample;
 
@@ -32,6 +32,10 @@ class Network {
 public:
 	Network(InputLayer *inputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
+
+	void setDataSet(DataSet *dataSet) { this->dataSet = dataSet; }
+
+
 
 	void sgd(int epochs, int miniBatchSize, double eta, double lambda);
 
@@ -66,7 +70,7 @@ public:
 	void save(string filename);
 	void load(string filename);
 
-private:
+protected:
 	void updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, double lambda);
 	void backprop(const DataSample &dataSample);
 

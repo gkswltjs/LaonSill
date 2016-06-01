@@ -20,7 +20,11 @@ public:
 
 	void initialize_weight(int n_in, mat &weight) {
 		weight.randn();
-		weight *= 1 / sqrt(n_in);				// initial point scaling
+		weight *= 1.0 / sqrt(n_in);				// initial point scaling
+	}
+	void initialize_weight(int n_in, cube &weight) {
+		weight.randn();
+		weight *= 1.0 / sqrt(n_in);				// initial point scaling
 	}
 
 	/*
@@ -40,7 +44,7 @@ public:
 	}
 	*/
 	void activate(const cube &z, cube &activation) {
-		activation = 1 / (1.0 + exp(-1 * z));
+		activation = 1.0 / (1.0 + exp(-1 * z));
 	}
 	void d_activate(const cube &activation, cube &da) {
 		Util::printCube(activation, "d_activate-activation:");

@@ -72,7 +72,7 @@ private:
 		this->activation_fn = new Softmax();
 		this->activation_fn->initialize_weight(in_dim.rows, weight);
 
-		Util::printMat(weight, "weight:");
+
 	}
 };
 

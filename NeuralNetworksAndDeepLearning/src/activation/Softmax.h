@@ -20,23 +20,17 @@ public:
 
 	void initialize_weight(int n_in, mat &weight) {
 		// TODO for debug
-		weight.randn();
-		//weight.fill(0.0);
+		//weight.randn();
+		//weight *= 1.0 / n_in;
+		weight.zeros();
 	}
-	/*
-	void initialize_weight(int filters, void *weight, int type) {
-		if(type) {
-			mat *w = (mat *)weight;
-			w->fill(0.0);
-		}
-		else {
-			cube *w = (cube *)weight;
-			for(int i = 0; i < filters; i++) {
-				w[i].fill(0.0);
-			}
-		}
+	void initialize_weight(int n_in, cube &weight) {
+		// TODO for debug
+		//weight.randn();
+		//weight *= 1.0 / n_in;
+		weight.zeros();
 	}
-	*/
+
 	void activate(const cube &z, cube &activation) {
 		// TODO softmax는 output layer only,
 		// vector형태의 output을 전제

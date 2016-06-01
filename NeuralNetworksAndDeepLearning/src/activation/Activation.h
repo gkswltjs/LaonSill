@@ -23,6 +23,7 @@ public:
 	 * activation function에 따라 layer weight의 초기화하는 방법이 다름
 	 */
 	virtual void initialize_weight(int n_in, mat &weight)=0;
+	virtual void initialize_weight(int n_in, cube &weight)=0;
 	//virtual void initialize_weight(int filters, void *weight, int type)=0;
 
 	/**

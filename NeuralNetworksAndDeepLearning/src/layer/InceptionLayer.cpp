@@ -13,25 +13,25 @@
 #include "../activation/ReLU.h"
 #include "../activation/Sigmoid.h"
 #include "../pooling/MaxPooling.h"
-#include "../Network.h"
+#include "../network/Network.h"
 
 InceptionLayer::InceptionLayer(string name, int n_in, int n_out,
-		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int p3x3, int cp)
+		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp)
 	: HiddenLayer(name, n_in, n_out) {
-	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, p3x3, cp);
+	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, cp);
 }
 
 InceptionLayer::InceptionLayer(string name, io_dim in_dim, io_dim out_dim,
-		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int p3x3, int cp)
+		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp)
 	: HiddenLayer(name, in_dim, out_dim) {
-	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, p3x3, cp);
+	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, cp);
 }
 
 InceptionLayer::~InceptionLayer() {}
 
 
 
-void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int p3x3, int cp) {
+void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp) {
 
 	//inputLayer = new InputLayer("inputLayer", in_dim);
 	ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv1x1)));
@@ -92,6 +92,8 @@ void InceptionLayer::feedforward(int idx, const cube &input) {
 void InceptionLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	cube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
+	Util::printCube(w_next_delta, "w_next_delta:");
+	Util::printCube(delta_input, "delta_input:");
 	delta_input += w_next_delta;
 
 	if(!isLastNextLayerRequest(idx)) return;
@@ -125,8 +127,7 @@ void InceptionLayer::update(int idx, double eta, double lambda, int n, int miniB
 	for(int i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->update(0, eta, lambda, n, miniBatchSize);
 	}
-
-	Layer::reset_nabla(idx);
+	Layer::update(idx, eta, lambda, n, miniBatchSize);
 }
 
 
