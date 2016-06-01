@@ -19,14 +19,14 @@ public:
 	FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn=0);
 	virtual ~FullyConnectedLayer();
 
-	mat &getWeight() { return this->weight; }
-	cube &getDeltaInput() { return this->delta_input; }
+	rmat &getWeight() { return this->weight; }
+	rcube &getDeltaInput() { return this->delta_input; }
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(int idx, const cube &input);
+	void feedforward(int idx, const rcube &input);
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
@@ -55,15 +55,15 @@ private:
 protected:
 	double p_dropout;
 
-	mat weight;
-	vec bias;
+	rmat weight;
+	rvec bias;
 
-	vec nabla_b;
-	mat nabla_w;
+	rvec nabla_b;
+	rmat nabla_w;
 
-	cube z;
-	cube delta;
-	cube delta_input;
+	rcube z;
+	rcube delta;
+	rcube delta_input;
 	Activation *activation_fn;
 };
 

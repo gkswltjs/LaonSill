@@ -18,10 +18,10 @@ public:
 	PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, Pooling *pooling_fn);
 	virtual ~PoolingLayer();
 
-	cube &getDeltaInput() { return this->delta_input; }
+	rcube &getDeltaInput() { return this->delta_input; }
 
 
-	void feedforward(int idx, const cube &input);
+	void feedforward(int idx, const rcube &input);
 	void backpropagation(int idx, HiddenLayer *next_layer);
 
 	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
@@ -36,8 +36,8 @@ public:
 
 private:
 	ucube pool_map;
-	cube delta;
-	cube delta_input;
+	rcube delta;
+	rcube delta_input;
 
 	pool_dim pool_d;
 	Pooling *pooling_fn;

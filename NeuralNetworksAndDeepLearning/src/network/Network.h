@@ -75,14 +75,14 @@ protected:
 	void backprop(const DataSample &dataSample);
 
 	//void feedforward();
-	void feedforward(const cube &input);
-	int testEvaluateResult(const vec &output, const vec &y);
+	void feedforward(const rcube &input);
+	int testEvaluateResult(const rvec &output, const rvec &y);
 
-	//void defaultWeightInitializer(vector<mat *> &weights, vector<vec *> &biases, bool init);
-	//void deallocParameters(vector<mat *> weights, vector<vec *> biases);
-	vec costDerivative(const vec *outputActivation, const vec *y);
-	vec sigmoid(const vec *activation);
-	vec sigmoidPrime(const vec *z);
+	//void defaultWeightInitializer(vector<rmat *> &weights, vector<vec *> &biases, bool init);
+	//void deallocParameters(vector<rmat *> weights, vector<vec *> biases);
+	rvec costDerivative(const rvec *outputActivation, const rvec *y);
+	rvec sigmoid(const rvec *activation);
+	rvec sigmoidPrime(const rvec *z);
 	double totalCost(const vector<const DataSample *> &dataSet, double lambda);
 	double accuracy(const vector<const DataSample *> &dataSet);
 	int evaluate();
@@ -107,8 +107,8 @@ protected:
 	//OutputLayer *outputLayer;
 
 	int numLayers;
-	//vector<vec *> biases;
-	//vector<mat *> weights;
+	//vector<rvec *> biases;
+	//vector<rmat *> weights;
 };
 
 #endif /* NETWORK_H_ */

@@ -19,9 +19,9 @@ public:
 	virtual ~LRNLayer();
 
 
-	cube &getDeltaInput() { return delta_input; }
+	rcube &getDeltaInput() { return delta_input; }
 
-	void feedforward(int idx, const cube &input);
+	void feedforward(int idx, const rcube &input);
 	void backpropagation(int idx, HiddenLayer *next_layer);
 
 	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
@@ -36,8 +36,8 @@ public:
 
 private:
 	lrn_dim lrn_d;
-	cube delta_input;
-	cube z;	// beta powered 전의 weighted sum 상태의 norm term
+	rcube delta_input;
+	rcube z;	// beta powered 전의 weighted sum 상태의 norm term
 
 };
 

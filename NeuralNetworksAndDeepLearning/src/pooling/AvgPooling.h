@@ -25,7 +25,7 @@ public:
 	AvgPooling() {}
 	virtual ~AvgPooling() {}
 
-	void pool(const pool_dim &pool_d, const cube &input, ucube &pool_map, cube &output) {
+	void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
 		int i, j, k, l, m;
 
 		int left_pad = (pool_d.rows-1)/2;
@@ -75,7 +75,7 @@ public:
 		}
 	}
 
-	void d_pool(const pool_dim &pool_d, const cube &input, ucube &pool_map, cube &output) {
+	void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
 		int i, j, k, l, m;
 		double num_pool_elem_factor = 1.0/(pool_d.rows*pool_d.cols);
 

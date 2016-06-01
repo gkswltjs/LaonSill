@@ -18,9 +18,9 @@ public:
 	InceptionLayer(string name, io_dim in_dim, io_dim out_dim, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 	virtual ~InceptionLayer();
 
-	cube &getDeltaInput() { return this->delta_input; }
+	rcube &getDeltaInput() { return this->delta_input; }
 
-	void feedforward(int idx, const cube &input);
+	void feedforward(int idx, const rcube &input);
 	void backpropagation(int idx, HiddenLayer *next_layer);
 	void reset_nabla(int idx);
 	void update(int idx, double eta, double lambda, int n, int miniBatchSize);
@@ -30,7 +30,7 @@ public:
 private:
 	void initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 
-	cube delta_input;
+	rcube delta_input;
 
 	//InputLayer *inputLayer;
 	vector<HiddenLayer *> firstLayers;

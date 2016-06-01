@@ -26,8 +26,8 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation
 	this->delta_input.set_size(in_dim.rows, in_dim.cols, in_dim.channels);
 
 
-	filters = new cube[filter_d.filters];
-	nabla_w = new cube[filter_d.filters];
+	filters = new rcube[filter_d.filters];
+	nabla_w = new rcube[filter_d.filters];
 	for(int i = 0; i < filter_d.filters; i++) {
 		filters[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
 		filters[i].randn();
@@ -63,7 +63,7 @@ ConvLayer::~ConvLayer() {
 }
 
 
-void ConvLayer::feedforward(int idx, const cube &input) {
+void ConvLayer::feedforward(int idx, const rcube &input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	// 현재 CONV 레이어의 경우 여러 레이어로 값이 전달되지 않기 때문에 무의미하다.
@@ -74,7 +74,7 @@ void ConvLayer::feedforward(int idx, const cube &input) {
 	Util::convertCube(input, this->input);
 
 	z.zeros();
-	mat conv(size(z.slice(0)));
+	rmat conv(size(z.slice(0)));
 
 	// 1. CONVOLUTION
 	// for i, features (about output)
@@ -113,14 +113,14 @@ void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
-	cube da;
+	rcube da;
 	activation_fn->d_activate(output, da);
 
-	cube dp;
+	rcube dp;
 	// 두 레이어를 연결하는 Weight가 있는 경우 (현재 다음 레이어가 FC인 케이스 only)
 	// next_w->()*next_delta: 다음 FC의 delta를 현재 CONV max pool의 delta로 dimension 변환
 	// max pool의 delta를 d_pool을 통해 upsample
-	cube w_next_delta(size(output));
+	rcube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 
 
@@ -131,7 +131,7 @@ void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	Util::printCube(delta, "delta:");
 
 	// dw
-	mat conv(filter_d.rows, filter_d.cols);
+	rmat conv(filter_d.rows, filter_d.cols);
 	for(int i = 0; i < filter_d.filters; i++) {
 		for(int j = 0; j < filter_d.channels; j++) {
 			dw_convolution(delta.slice(i), input.slice(j), conv);
@@ -145,7 +145,7 @@ void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	}
 
 	// dx
-	mat dconv(size(input.slice(0)));
+	rmat dconv(size(input.slice(0)));
 	delta_input.zeros();
 	for(int i = 0; i < filter_d.channels; i++) {
 		for(int j = 0; j < filter_d.filters; j++) {
@@ -163,7 +163,7 @@ void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 }
 
 
-void ConvLayer::convolution(const mat &x, const mat &w, mat &result, int stride) {
+void ConvLayer::convolution(const rmat &x, const rmat &w, rmat &result, int stride) {
 	int i, j, k, m;
 
 	int top_pad = (w.n_cols-1)/2;
@@ -207,7 +207,7 @@ void ConvLayer::convolution(const mat &x, const mat &w, mat &result, int stride)
 // dC/dWi,j	= dC/dY * dY/dWi,j
 // 			= Sigma(n)Sigma(m) delta n,m * Xstride*n-filter_size/2+i, stride*m-filter_size/2+j)
 
-void ConvLayer::dw_convolution(const mat &d, const mat &x, mat &result) {
+void ConvLayer::dw_convolution(const rmat &d, const rmat &x, rmat &result) {
 
 	int i, j, k, l;
 
@@ -247,10 +247,10 @@ void ConvLayer::dw_convolution(const mat &d, const mat &x, mat &result) {
 }
 
 
-void ConvLayer::dx_convolution(const mat &d, const mat &w, mat &result) {
+void ConvLayer::dx_convolution(const rmat &d, const rmat &w, rmat &result) {
 	int i, j;
 
-	mat d_ex(filter_d.stride*d.n_rows, filter_d.stride*d.n_cols);
+	rmat d_ex(filter_d.stride*d.n_rows, filter_d.stride*d.n_cols);
 	d_ex.zeros();
 
 	for(i = 0; i < d.n_rows; i++) {

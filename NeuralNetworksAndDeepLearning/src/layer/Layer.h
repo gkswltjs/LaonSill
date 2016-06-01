@@ -36,8 +36,8 @@ public:
 	}
 	virtual ~Layer() {}
 
-	cube &getInput() { return this->input; }
-	cube &getOutput() { return this->output; }
+	rcube &getInput() { return this->input; }
+	rcube &getOutput() { return this->output; }
 	vector<next_layer_relation> &getNextLayers() { return this->nextLayers; }
 	int getNextLayerSize() { return this->nextLayers.size(); }
 
@@ -45,7 +45,7 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void feedforward(int idx, const cube &input) {
+	virtual void feedforward(int idx, const rcube &input) {
 		for(int i = 0; i < nextLayers.size(); i++) {
 			nextLayers[i].next_layer->feedforward(nextLayers[i].idx, input);
 		}
@@ -89,8 +89,8 @@ protected:
 	/**
 	 * activation이자 레이어의 output
 	 */
-	cube input;
-	cube output;
+	rcube input;
+	rcube output;
 
 	vector<prev_layer_relation> prevLayers;
 	vector<next_layer_relation> nextLayers;

@@ -10,19 +10,17 @@
 
 #include "Activation.h"
 
-using namespace arma;
-
 
 class Sigmoid : public Activation {
 public:
 	Sigmoid() {}
 	virtual ~Sigmoid() {}
 
-	void initialize_weight(int n_in, mat &weight) {
+	void initialize_weight(int n_in, rmat &weight) {
 		weight.randn();
 		weight *= 1.0 / sqrt(n_in);				// initial point scaling
 	}
-	void initialize_weight(int n_in, cube &weight) {
+	void initialize_weight(int n_in, rcube &weight) {
 		weight.randn();
 		weight *= 1.0 / sqrt(n_in);				// initial point scaling
 	}
@@ -43,10 +41,10 @@ public:
 		}
 	}
 	*/
-	void activate(const cube &z, cube &activation) {
+	void activate(const rcube &z, rcube &activation) {
 		activation = 1.0 / (1.0 + exp(-1 * z));
 	}
-	void d_activate(const cube &activation, cube &da) {
+	void d_activate(const rcube &activation, rcube &da) {
 		Util::printCube(activation, "d_activate-activation:");
 		da = activation % (1.0 - activation);
 		Util::printCube(da, "d_activate-da:");

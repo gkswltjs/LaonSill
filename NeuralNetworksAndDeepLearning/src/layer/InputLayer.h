@@ -27,7 +27,7 @@ public:
 	 * Input 무조건 첫번째 layer,
 	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
 	 */
-	void feedforward(int idx, const cube &input) {
+	void feedforward(int idx, const rcube &input) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 		Util::convertCube(input, this->input);

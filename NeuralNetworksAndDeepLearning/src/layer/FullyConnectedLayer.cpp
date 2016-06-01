@@ -63,7 +63,7 @@ void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn
 
 
 
-void FullyConnectedLayer::feedforward(int idx, const cube &input) {
+void FullyConnectedLayer::feedforward(int idx, const rcube &input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::printCube(input, "input:");
@@ -98,14 +98,14 @@ void FullyConnectedLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	}
 	*/
 
-	cube w_next_delta(size(output));
+	rcube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 
 	Util::printMat(w_next_delta.slice(0), "w_next_delta");
 	//Util::printMat(next_w->t(), "next_w");
 	//Util::printMat(next_delta.slice(0), "next_delta");
 
-	cube sp;
+	rcube sp;
 	activation_fn->d_activate(output, sp);
 
 	// delta l = dC/dz

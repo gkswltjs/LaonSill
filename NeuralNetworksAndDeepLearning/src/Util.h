@@ -33,6 +33,13 @@ void log_print(FILE *fp, int log_level, const char* filename, const int line, co
 
 
 
+typedef fvec rvec;
+typedef fmat rmat;
+typedef fcube rcube;
+
+
+
+
 
 
 
@@ -43,9 +50,9 @@ public:
 
 	static int random(int min, int max);
 	static int pack4BytesToInt(unsigned char *buffer);
-	static void printVec(const vec &vector, string name);
-	static void printMat(const mat &matrix, string name);
-	static void printCube(const cube &c, string name);
+	static void printVec(const rvec &vector, string name);
+	static void printMat(const rmat &matrix, string name);
+	static void printCube(const rcube &c, string name);
 	static void printUCube(const ucube &c, string name);
 
 	static int getPrint() { return Util::print; }
@@ -59,9 +66,9 @@ public:
 	 * @param input
 	 * @param output
 	 */
-	static void convertCube(const cube &input, cube &output);
+	static void convertCube(const rcube &input, rcube &output);
 
-	static void dropoutLayer(cube &input, double p_dropout);
+	static void dropoutLayer(rcube &input, double p_dropout);
 
 
 

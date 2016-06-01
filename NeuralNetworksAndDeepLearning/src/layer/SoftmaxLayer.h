@@ -46,7 +46,7 @@ public:
 		if(activation_fn) delete activation_fn;
 	}
 
-	void cost(const vec &target) {
+	void cost(const rvec &target) {
 		// delta
 		cost_fn->d_cost(z, output, target, delta);
 

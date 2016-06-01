@@ -26,7 +26,7 @@ DepthConcatLayer::DepthConcatLayer(string name, io_dim in_dim)
 
 
 
-void DepthConcatLayer::feedforward(int idx, const cube &input) {
+void DepthConcatLayer::feedforward(int idx, const rcube &input) {
 	this->input = join_slices(this->input, input);
 	Util::printCube(this->input, "input:");
 
@@ -46,7 +46,7 @@ void DepthConcatLayer::feedforward(int idx, const cube &input) {
 void DepthConcatLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	// TODO 그냥 더하면 되지않나? 왜 join_slices??
 	Util::printCube(delta_input, "delta_input:");
-	cube w_next_delta(size(delta_input));
+	rcube w_next_delta(size(delta_input));
 	Util::convertCube(next_layer->getDeltaInput(), delta_input);
 	delta_input += w_next_delta;
 	// delta_input = join_slices(this->delta_input, next_layer->getDeltaInput());
@@ -57,7 +57,7 @@ void DepthConcatLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 }
 
 
-cube &DepthConcatLayer::getDeltaInput() {
+rcube &DepthConcatLayer::getDeltaInput() {
 	int startIndex = (offsetIndex>0)?offsets[offsetIndex-1]:0;
 	delta_input_sub = delta_input.subcube(0, 0, startIndex, delta_input.n_rows-1, delta_input.n_cols-1, offsets[offsetIndex]-1);
 	offsetIndex++;

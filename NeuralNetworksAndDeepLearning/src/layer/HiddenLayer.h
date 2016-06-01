@@ -21,7 +21,7 @@ public:
 	virtual ~HiddenLayer() {}
 
 
-	virtual cube &getDeltaInput()=0;
+	virtual rcube &getDeltaInput()=0;
 	vector<prev_layer_relation> &getPrevLayers() { return this->prevLayers; }
 	int getPrevLayerSize() { return this->prevLayers.size(); }
 

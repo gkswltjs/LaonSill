@@ -9,9 +9,7 @@
 #define ACTIVATION_ACTIVATION_H_
 
 #include "../layer/LayerConfig.h"
-#include <armadillo>
-
-using namespace arma;
+#include "../Util.h"
 
 
 class Activation {
@@ -22,14 +20,14 @@ public:
 	/**
 	 * activation function에 따라 layer weight의 초기화하는 방법이 다름
 	 */
-	virtual void initialize_weight(int n_in, mat &weight)=0;
-	virtual void initialize_weight(int n_in, cube &weight)=0;
+	virtual void initialize_weight(int n_in, rmat &weight)=0;
+	virtual void initialize_weight(int n_in, rcube &weight)=0;
 	//virtual void initialize_weight(int filters, void *weight, int type)=0;
 
 	/**
 	 * activation function
 	 */
-	virtual void activate(const cube &z, cube &activation)=0;
+	virtual void activate(const rcube &z, rcube &activation)=0;
 
 	/**
 	 * activation derivation
@@ -37,7 +35,7 @@ public:
 	 * 현재까지 activation으로도 계산이 가능하여 파라미터를 activation으로 지정
 	 * weighted sum값이 필요한 케이스에 수정이 필요
 	 */
-	virtual void d_activate(const cube &activation, cube &da)=0;
+	virtual void d_activate(const rcube &activation, rcube &da)=0;
 
 };
 

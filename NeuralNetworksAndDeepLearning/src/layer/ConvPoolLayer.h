@@ -23,15 +23,15 @@ public:
 	virtual ~ConvPoolLayer();
 
 	filter_dim &get_filter_dim() { return this->filter_d; }
-	cube *getWeight() { return this->filters; }
-	cube &getDeltaInput() { return this->delta_input; }
+	rcube *getWeight() { return this->filters; }
+	rcube &getDeltaInput() { return this->delta_input; }
 
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(int idx, const cube &input);
+	void feedforward(int idx, const rcube &input);
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
@@ -64,23 +64,23 @@ public:
 
 
 protected:
-	void convolution(const mat &image, const mat &filter, mat &result);
-	void d_convolution(const mat &conv, const mat &filter, mat &result);
+	void convolution(const rmat &image, const rmat &filter, rmat &result);
+	void d_convolution(const rmat &conv, const rmat &filter, rmat &result);
 
 	filter_dim filter_d;
 	pool_dim pool_d;
 
-	cube *filters;		// weights
+	rcube *filters;		// weights
 	vec biases;
 
-	cube *nabla_w;
+	rcube *nabla_w;
 	vec nabla_b;
 
-	cube z;
-	cube activated;
+	rcube z;
+	rcube activated;
 	ucube pool_map;
-	cube delta;
-	cube delta_input;
+	rcube delta;
+	rcube delta_input;
 
 	Activation *activation_fn;
 	Pooling *pooling_fn;

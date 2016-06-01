@@ -20,7 +20,7 @@ LRNLayer::~LRNLayer() {}
 
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::feedforward(int idx, const cube &input) {
+void LRNLayer::feedforward(int idx, const rcube &input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	int i, j;
@@ -28,8 +28,8 @@ void LRNLayer::feedforward(int idx, const cube &input) {
 	int in_channel_idx;
 
 	Util::convertCube(input, this->input);
-	cube sq = square(this->input);
-	mat temp(this->input.n_rows, this->input.n_cols);
+	rcube sq = square(this->input);
+	rmat temp(this->input.n_rows, this->input.n_cols);
 
 	Util::printCube(this->input, "input:");
 	Util::printCube(sq, "sq:");
@@ -65,9 +65,9 @@ void LRNLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	int top_pad = (lrn_d.local_size-1)/2;
 	int in_channel_idx;
 	double c = -2*lrn_d.alpha*lrn_d.beta/lrn_d.local_size;
-	mat temp(input.n_rows, input.n_cols);
+	rmat temp(input.n_rows, input.n_cols);
 
-	cube w_next_delta(size(output));
+	rcube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 
 	Util::printCube(input, "input:");

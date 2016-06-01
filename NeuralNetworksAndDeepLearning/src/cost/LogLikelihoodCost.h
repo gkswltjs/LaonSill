@@ -9,9 +9,6 @@
 #define COST_LOGLIKELIHOODCOST_H_
 
 #include "Cost.h"
-#include <armadillo>
-
-using namespace arma;
 
 
 class LogLikelihoodCost : public Cost {
@@ -19,11 +16,11 @@ public:
 	LogLikelihoodCost() {}
 	virtual ~LogLikelihoodCost() {}
 
-	double fn(const vec *pA, const vec *pY) {
+	double fn(const rvec *pA, const rvec *pY) {
 		return 0.0;
 	}
 
-	void d_cost(const cube &z, const cube &activation, const vec &target, cube &delta) {
+	void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta) {
 		Util::printCube(activation, "activation:");
 		Util::printVec(target, "target:");
 

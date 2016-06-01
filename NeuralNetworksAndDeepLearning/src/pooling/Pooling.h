@@ -19,8 +19,8 @@ public:
 	Pooling() {}
 	virtual ~Pooling() {}
 
-	virtual void pool(const pool_dim &pool_d, const cube &input, ucube &pool_map, cube &output)=0;
-	virtual void d_pool(const pool_dim &pool_d, const cube &input, ucube &pool_map, cube &output)=0;
+	virtual void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
+	virtual void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
 
 };
 

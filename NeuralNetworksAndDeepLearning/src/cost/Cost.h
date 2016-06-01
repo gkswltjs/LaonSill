@@ -8,9 +8,7 @@
 #ifndef COST_COST_H_
 #define COST_COST_H_
 
-#include <armadillo>
-
-using namespace arma;
+#include "../Util.h"
 
 
 class Cost {
@@ -18,8 +16,8 @@ public:
 	Cost() {}
 	virtual ~Cost() {}
 
-	virtual double fn(const vec *pA, const vec *pY) = 0;
-	virtual void d_cost(const cube &z, const cube &activation, const vec &target, cube &delta) = 0;
+	virtual double fn(const rvec *pA, const rvec *pY) = 0;
+	virtual void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta) = 0;
 };
 
 #endif /* COST_COST_H_ */

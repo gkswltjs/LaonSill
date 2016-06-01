@@ -84,6 +84,8 @@ int main(int argc, char** argv) {
 
 
 void network_test() {
+	arma_rng::set_seed_random();
+
 	bool debug = false;
 	double validationSetRatio = 1.0/6.0;
 
@@ -144,7 +146,7 @@ void network_test() {
 
 
 
-		/*
+
 		cout << "convolutional network single ... " << endl;
 
 		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
@@ -157,7 +159,7 @@ void network_test() {
 		Network::addLayerRelation(conv1Layer, pool1Layer);
 		Network::addLayerRelation(pool1Layer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
-		*/
+
 
 
 
@@ -182,7 +184,7 @@ void network_test() {
 
 
 
-
+		/*
 		cout << "inception net single ... " << endl;
 
 		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
@@ -191,6 +193,7 @@ void network_test() {
 
 		Network::addLayerRelation(inputLayer, incept1Layer);
 		Network::addLayerRelation(incept1Layer, softmaxLayer);
+		*/
 
 
 		/*

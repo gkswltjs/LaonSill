@@ -80,7 +80,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 
 
-void InceptionLayer::feedforward(int idx, const cube &input) {
+void InceptionLayer::feedforward(int idx, const rcube &input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	for(int i = 0; i < firstLayers.size(); i++) {
@@ -90,7 +90,7 @@ void InceptionLayer::feedforward(int idx, const cube &input) {
 }
 
 void InceptionLayer::backpropagation(int idx, HiddenLayer *next_layer) {
-	cube w_next_delta(size(output));
+	rcube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 	Util::printCube(w_next_delta, "w_next_delta:");
 	Util::printCube(delta_input, "delta_input:");

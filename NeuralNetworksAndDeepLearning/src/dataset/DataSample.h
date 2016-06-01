@@ -21,8 +21,8 @@ public:
 	DataSample() {}
 
 	void init(int rows, int cols, int channels, int classes) {
-		data = randu<cube>(rows, cols, channels);
-		target = vec(classes, 1);
+		data = randu<rcube>(rows, cols, channels);
+		target = rvec(classes, 1);
 		target(0, 0) = 1.0;
 	}
 
@@ -36,8 +36,8 @@ public:
 	*/
 	virtual ~DataSample() {}
 
-	const cube &getData() const { return this->data; }
-	const vec &getTarget() const { return this->target; }
+	const rcube &getData() const { return this->data; }
+	const rvec &getTarget() const { return this->target; }
 	//void setData(vec *data) { this->data = data; }
 	//void setTarget(vec *target) { this->target = target; }
 
@@ -100,8 +100,8 @@ public:
 		}
 
 private:
-	cube data;
-	vec target;
+	rcube data;
+	rvec target;
 };
 
 #endif /* DATASET_DATASAMPLE_H_ */

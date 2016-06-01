@@ -15,14 +15,8 @@
 #include "DataSample.h"
 #include "../exception/Exception.h"
 
-
-
 using namespace std;
 using namespace arma;
-
-
-
-
 
 
 class DataSet {

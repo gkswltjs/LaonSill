@@ -8,13 +8,9 @@
 #ifndef COST_QUADRATICCOST_H_
 #define COST_QUADRATICCOST_H_
 
-#include <armadillo>
+
 
 #include "Cost.h"
-
-
-using namespace arma;
-
 
 
 class QuadraticCost : public Cost {
@@ -22,11 +18,11 @@ public:
 	QuadraticCost() {}
 	virtual ~QuadraticCost() {}
 
-	double fn(const vec *pA, const vec *pY) {
+	double fn(const rvec *pA, const rvec *pY) {
 		return 0.5*sum(square(*pA - *pY));
 	}
 
-	void d_cost(const cube &z, const cube &activation, const vec &target, cube &delta) {
+	void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta) {
 		delta.slice(0) = activation.slice(0) - target;
 	}
 };

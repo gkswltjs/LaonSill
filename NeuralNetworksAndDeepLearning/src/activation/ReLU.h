@@ -9,9 +9,8 @@
 #define ACTIVATION_RELU_H_
 
 #include "Activation.h"
-#include "../layer/LayerConfig.h"
 
-using namespace arma;
+
 
 class ReLU : public Activation {
 public:
@@ -21,25 +20,25 @@ public:
 	}
 	virtual ~ReLU() {}
 
-	void initialize_weight(int n_in, mat &weight) {
+	void initialize_weight(int n_in, rmat &weight) {
 		weight.randn();
 		weight *= 1.0 / n_in;				// initial point scaling
 	}
-	void initialize_weight(int n_in, cube &weight) {
+	void initialize_weight(int n_in, rcube &weight) {
 		weight.randn();
 		weight *= 1.0 / n_in;				// initial point scaling
 	}
-	void activate(const cube &z, cube &activation) {
+	void activate(const rcube &z, rcube &activation) {
 		activation = arma::max(z, zero);
 	}
-	void d_activate(const cube &activation, cube &da) {
+	void d_activate(const rcube &activation, rcube &da) {
 		Util::printCube(activation, "d_activate-activation:");
-		da = conv_to<cube>::from(activation > zero);
+		da = conv_to<rcube>::from(activation > zero);
 		Util::printCube(da, "d_activate-da:");
 	}
 
 private:
-	cube zero;
+	rcube zero;
 };
 
 #endif /* ACTIVATION_RELU_H_ */

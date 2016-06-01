@@ -63,7 +63,7 @@ int Util::pack4BytesToInt(unsigned char *buffer)
 	return result;
 }
 
-void Util::printVec(const vec &vector, string name) {
+void Util::printVec(const rvec &vector, string name) {
 	if(Util::print) {
 		cout << "-------------------------------------" << endl;
 		cout << "name: " << name << endl;
@@ -75,7 +75,7 @@ void Util::printVec(const vec &vector, string name) {
 	}
 }
 
-void Util::printMat(const mat &matrix, string name) {
+void Util::printMat(const rmat &matrix, string name) {
 	if(Util::print) {
 		cout << "-------------------------------------" << endl;
 		cout << "name: " << name << endl;
@@ -87,7 +87,7 @@ void Util::printMat(const mat &matrix, string name) {
 	}
 }
 
-void Util::printCube(const cube &c, string name) {
+void Util::printCube(const rcube &c, string name) {
 	if(Util::print) {
 		cout << "-------------------------------------" << endl;
 		cout << "name: " << name << endl;
@@ -130,7 +130,7 @@ void Util::convertCubeToVec(const io_dim &cube_dim, const cube &c, vec &v) {
 */
 
 
-void Util::convertCube(const cube &input, cube &output) {
+void Util::convertCube(const rcube &input, rcube &output) {
 	// input, output의 dim이 동일한 경우, 변환이 필요없음, input을 output으로 그대로 전달
 	if(size(input) == size(output)) {
 		output = input;
@@ -154,7 +154,7 @@ void Util::convertCube(const cube &input, cube &output) {
 
 	// input이 vector인 경우
 	if(input.n_cols==1&&input.n_slices==1) {
-		cube temp = reshape(input, output.n_cols, output.n_rows, output.n_slices);
+		rcube temp = reshape(input, output.n_cols, output.n_rows, output.n_slices);
 		for(unsigned int i = 0; i < output.n_slices; i++) {
 			output.slice(i) = temp.slice(i).t();
 		}
@@ -163,10 +163,10 @@ void Util::convertCube(const cube &input, cube &output) {
 }
 
 
-void Util::dropoutLayer(cube &input, double p_dropout) {
-	cube p = randu<cube>(size(input));
-	Util::printCube(p, "p:");
-	Util::printCube(input, "input:");
+void Util::dropoutLayer(rcube &input, double p_dropout) {
+	rcube p = randu<rcube>(size(input));
+	//Util::printCube(p, "p:");
+	//Util::printCube(input, "input:");
 
 	int slice, row, col;
 	for(slice = 0; slice < input.n_slices; slice++) {
@@ -177,7 +177,7 @@ void Util::dropoutLayer(cube &input, double p_dropout) {
 			}
 		}
 	}
-	Util::printCube(input, "input:");
+	//Util::printCube(input, "input:");
 }
 
 

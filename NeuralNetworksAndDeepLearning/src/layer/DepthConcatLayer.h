@@ -18,11 +18,11 @@ public:
 	DepthConcatLayer(string name, io_dim in_dim);
 	virtual ~DepthConcatLayer() {}
 
-	cube &getDeltaInput();
+	rcube &getDeltaInput();
 
 
 
-	void feedforward(int idx, const cube &input);
+	void feedforward(int idx, const rcube &input);
 
 	void backpropagation(int idx, HiddenLayer *next_layer);
 
@@ -39,8 +39,8 @@ public:
 	}
 
 protected:
-	cube delta_input;
-	cube delta_input_sub;
+	rcube delta_input;
+	rcube delta_input_sub;
 
 	vector<int> offsets;
 	int offsetIndex;

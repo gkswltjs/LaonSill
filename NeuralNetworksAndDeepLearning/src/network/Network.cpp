@@ -157,7 +157,7 @@ void Network::backprop(const DataSample &dataSample) {
 
 
 
-void Network::feedforward(const cube &input) {
+void Network::feedforward(const rcube &input) {
 
 	//cout << "feedforward()" << endl;
 	inputLayer->feedforward(0, input);
@@ -215,7 +215,7 @@ double Network::accuracy(const vector<const DataSample *> &dataSet) {
 
 
 
-int Network::testEvaluateResult(const vec &output, const vec &y) {
+int Network::testEvaluateResult(const rvec &output, const rvec &y) {
 	//Util::printVec(&evaluateResult, "result");
 	//Util::printVec(y, "y");
 

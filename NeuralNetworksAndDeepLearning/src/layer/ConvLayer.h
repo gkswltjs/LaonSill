@@ -19,15 +19,15 @@ public:
 	virtual ~ConvLayer();
 
 	filter_dim &get_filter_dim() { return this->filter_d; }
-	cube *getWeight() { return this->filters; }
-	cube &getDeltaInput() { return this->delta_input; }
+	rcube *getWeight() { return this->filters; }
+	rcube &getDeltaInput() { return this->delta_input; }
 
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(int idx, const cube &input);
+	void feedforward(int idx, const rcube &input);
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
@@ -60,22 +60,22 @@ public:
 
 
 protected:
-	void convolution(const mat &x, const mat &w, mat &result, int stride);
-	void dw_convolution(const mat &d, const mat &x, mat &result);
-	void dx_convolution(const mat &d, const mat &w, mat &result);
+	void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
+	void dw_convolution(const rmat &d, const rmat &x, rmat &result);
+	void dx_convolution(const rmat &d, const rmat &w, rmat &result);
 
 
 	filter_dim filter_d;
 
-	cube *filters;		// weights
-	vec biases;
+	rcube *filters;		// weights
+	rvec biases;
 
-	cube *nabla_w;
-	vec nabla_b;
+	rcube *nabla_w;
+	rvec nabla_b;
 
-	cube z;
-	cube delta;
-	cube delta_input;
+	rcube z;
+	rcube delta;
+	rcube delta_input;
 
 	Activation *activation_fn;
 };
