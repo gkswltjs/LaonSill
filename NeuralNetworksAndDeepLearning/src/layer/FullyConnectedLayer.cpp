@@ -69,7 +69,10 @@ void FullyConnectedLayer::feedforward(int idx, const rcube &input) {
 	Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);
 	Util::printCube(this->input, "converted input:");
+
 	//Util::dropoutLayer(this->input, this->p_dropout);
+	//Util::printCube(this->input, "dropped out:");
+
 	Util::printMat(weight, "weight:");
 	Util::printVec(bias, "bias:");
 

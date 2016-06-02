@@ -26,7 +26,7 @@ public:
 	virtual ~AvgPooling() {}
 
 	void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
-		int i, j, k, l, m;
+		unsigned int i, j, k, l, m;
 
 		int left_pad = (pool_d.rows-1)/2;
 		int top_pad = (pool_d.cols-1)/2;
@@ -36,8 +36,6 @@ public:
 		double sum;
 
 		//output.set_size(input.n_rows/pool_d.stride, input.n_cols/pool_d.stride, input.n_slices);
-
-
 		//pool_map.zeros();
 		Util::printCube(input, "input:");
 
@@ -49,8 +47,8 @@ public:
 
 		// input image에 대해
 		for(i = 0; i < input.n_slices; i++) {
-			for(j = left_pad; j < input.n_rows; j+=pool_d.rows) {
-				for(k = top_pad; k < input.n_cols; k+=pool_d.cols) {
+			for(j = left_pad; j < input.n_rows; j+=pool_d.stride) {
+				for(k = top_pad; k < input.n_cols; k+=pool_d.stride) {
 					sum = 0.0;
 
 					// input image의 i, j를 center로 pool 영역만큼 최대값과 위치 찾기
@@ -68,41 +66,41 @@ public:
 					}
 					sum /= num_pool_elem;
 					//output.slice(i)(j/pool_d.rows, k/pool_d.cols) = sum;
-					C_MEMPTR(output, j/pool_d.rows, k/pool_d.cols, i) = sum;
+					C_MEMPTR(output, j/pool_d.stride, k/pool_d.stride, i) = sum;
 				}
 			}
-			Util::printMat(output.slice(i), "output:");
 		}
 	}
 
 	void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
-		int i, j, k, l, m;
+		unsigned int i, j, k, l, m;
+		int in_output_base_row_idx, in_output_base_col_idx;
 		double num_pool_elem_factor = 1.0/(pool_d.rows*pool_d.cols);
+		int row, col;
 
-		output.set_size(input.n_rows*pool_d.rows, input.n_cols*pool_d.cols, input.n_slices);
-		//output.zeros();
+		output.set_size(input.n_rows*pool_d.stride+(pool_d.rows-1)/2, input.n_cols*pool_d.stride+(pool_d.cols-1)/2, input.n_slices);
+		output.zeros();
 
 		Util::printCube(input, "input:");
 
-
+		// j*stride+[0:pool_d.rows-1]
 		for(i = 0; i < input.n_slices; i++) {
-
-			// for down-sampled delta map
 			for(j = 0; j < input.n_rows; j++) {
 				for(k = 0; k < input.n_cols; k++) {
+					in_output_base_row_idx = j*pool_d.stride;
+					in_output_base_col_idx = k*pool_d.stride;
 
-					// for up-sample map
-					for(l = j*pool_d.rows; l < (j+1)*pool_d.rows; l++) {
-						for(m = k*pool_d.cols; m < (k+1)*pool_d.cols; m++) {
-							//output.slice(i)(l, m) = num_pool_elem_factor*input.slice(i)(j, k);
-							C_MEMPTR(output, l, m, i) = num_pool_elem_factor*C_MEM(input, j, k, i);
+					for(l = 0; l < pool_d.rows; l++) {
+						for(m = 0; m < pool_d.cols; m++) {
+							row = in_output_base_row_idx+l;
+							col = in_output_base_col_idx+m;
+							C_MEMPTR(output, row, col, i) = C_MEM(output, row, col, i) + C_MEM(input, j, k, i);
 						}
 					}
 				}
 			}
 		}
-
-		Util::printCube(output, "output:");
+		output = num_pool_elem_factor*output;
 	}
 };
 

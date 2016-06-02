@@ -50,10 +50,10 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 
 		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			if((j+1)%100 == 0) {
-				cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
-				timer2.start();
-			}
+			//if((j+1)%100 == 0) {
+			//	cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+			//	timer2.start();
+			//}
 			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 
