@@ -31,8 +31,8 @@ void LRNLayer::feedforward(int idx, const rcube &input) {
 	rcube sq = square(this->input);
 	rmat temp(this->input.n_rows, this->input.n_cols);
 
-	Util::printCube(this->input, "input:");
-	Util::printCube(sq, "sq:");
+	//Util::printCube(this->input, "input:");
+	//Util::printCube(sq, "sq:");
 
 	for(i = 0; i < this->input.n_slices; i++) {
 		temp.zeros();
@@ -42,14 +42,14 @@ void LRNLayer::feedforward(int idx, const rcube &input) {
 				temp += sq.slice(in_channel_idx);
 			}
 		}
-		Util::printMat(temp, "temp:");
+		//Util::printMat(temp, "temp:");
 		z.slice(i) = 1+(lrn_d.alpha/lrn_d.local_size)*temp;
-		Util::printMat(z.slice(i), "z:");
+		//Util::printMat(z.slice(i), "z:");
 		temp = pow(z.slice(i), -lrn_d.beta);
-		Util::printMat(temp, "pow temp:");
+		//Util::printMat(temp, "pow temp:");
 
 		this->output.slice(i) = this->input.slice(i) % temp;
-		Util::printMat(this->output.slice(i), "output:");
+		//Util::printMat(this->output.slice(i), "output:");
 	}
 
 	Layer::feedforward(idx, this->output);
@@ -70,25 +70,25 @@ void LRNLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	rcube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 
-	Util::printCube(input, "input:");
-
-	// TODO for debug 삭제해야 함
-	// w_next_delta = randu<cube>(size(output));
-	Util::printCube(w_next_delta, "w_next_delta:");
-	Util::printCube(z, "z:");
+	//Util::printCube(input, "input:");
+	//Util::printCube(w_next_delta, "w_next_delta:");
+	//Util::printCube(z, "z:");
 
 	for(i = 0; i < input.n_slices; i++) {
 		temp.zeros();
 		for(j = 0; j < lrn_d.local_size; j++) {
 			in_channel_idx = i - top_pad + j;
 			if(in_channel_idx >= 0 && in_channel_idx < input.n_slices) {
+				//Util::printMat(pow(z.slice(in_channel_idx), -lrn_d.beta-1), "pow");
+				//Util::printMat(input.slice(in_channel_idx), "input:");
+				//Util::printMat(w_next_delta.slice(in_channel_idx), "w_next_delta:");
 				temp += pow(z.slice(in_channel_idx), -lrn_d.beta-1) % input.slice(in_channel_idx) % w_next_delta.slice(in_channel_idx);
 			}
 		}
-		delta_input.slice(i) += c * temp % input.slice(i) + pow(z.slice(i), -lrn_d.beta) % w_next_delta.slice(i);
+		//Util::printMat(temp, "temp:");
+		delta_input.slice(i) = c * temp % input.slice(i) + pow(z.slice(i), -lrn_d.beta) % w_next_delta.slice(i);
 	}
-	Util::printCube(delta_input, "delta_input:");
-
+	//Util::printCube(delta_input, "delta_input:");
 	HiddenLayer::backpropagation(idx, this);
 	delta_input.zeros();
 }

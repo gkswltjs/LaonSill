@@ -51,72 +51,10 @@ int main(int argc, char** argv) {
 	cout.setf(ios::fixed);
 
 	//network_test();
+	rcube input = randn<rcube>(8, 8, 1);
 
-
-	/*
-	rcube c = randn<rcube>(4, 6, 2);
-	c.print("c:");
-
-	for(int k = 0; k < c.n_slices; k++) {
-	for(int i = 0; i < c.n_rows; i++) {
-		for(int j = 0; j < c.n_cols; j++) {
-			cout << C_MEM(c, i, j, k) << ", ";
-		}
-		cout << endl;
-	}
-	}
-	cout << endl;
-	for(int k = 0; k < c.n_slices; k++) {
-	for(int i = 0; i < c.n_rows; i++) {
-		for(int j = 0; j < c.n_cols; j++) {
-			cout << C_MEMPTR(c, i, j, k) << ", ";
-		}
-		cout << endl;
-	}
-	}
-	cout << endl;
-
-	double temp;
-	for(int k = 0; k < c.n_slices; k++) {
-	for(int i = 0; i < c.n_rows; i++) {
-		for(int j = 0; j < c.n_cols; j++) {
-			temp = C_MEM(c, i, j, k) * 10;
-			C_MEMPTR(c, i, j, k) = temp;
-			//cout << C_MEMPTR(c, i, j, 0) << ", ";
-		}
-		//cout << endl;
-	}
-	}
-
-	c.print("c:");
-
-	cout << endl;
-
-	//rcube input = randn<rcube>(14, 14, 2);
-	//input.memptr()[0]
-	 */
-
-
-
-
-
-
-	rcube input = randn<rcube>(7, 7, 1);
-	ucube pool_map = zeros<ucube>(size(input));
-	rcube output = zeros<rcube>(1, 1, 1);
-
-
-
-	Util::printCube(input, "input:");
-
-	AvgPooling ap;
-	ap.pool(pool_dim(7, 7, 4), input, pool_map, output);
-
-	Util::printCube(output, "output:");
-
-	ap.d_pool(pool_dim(7, 7, 4), output, pool_map, input);
-
-	Util::printCube(input, "input:");
+	ConvLayer *convLayer = new ConvLayer("conv", io_dim(8, 8, 1), filter_dim(7, 7, 1, 1, 2), new Sigmoid());
+	convLayer->feedforward(0, input);
 
 	return 0;
 }
@@ -127,7 +65,7 @@ int main(int argc, char** argv) {
 void network_test() {
 	arma_rng::set_seed_random();
 
-	bool debug = true;
+	bool debug = false;
 	double validationSetRatio = 1.0/6.0;
 
 	if(!debug) {
@@ -139,13 +77,23 @@ void network_test() {
 		//DataSet *cifar10DataSet = new Cifar10DataSet();
 		//cifar10DataSet->load();
 
+		/*
 		Network *network = new NeuralNetSingle();
 		network->setDataSet(mnistDataSet);
 		network->sgd(10, 10, 0.1, 5.0);
+		*/
 
-		//Network *googlenet = new GoogLeNetMnist(0);
-		//googlenet->setDataSet(mnistDataSet);
-		//googlenet->sgd(10, 10, 0.01, 5.0);
+		/*
+		cout << "googlenet with mnist ... " << endl;
+		Network *googlenet = new GoogLeNetMnist(0);
+		googlenet->setDataSet(mnistDataSet);
+		googlenet->sgd(10, 10, 0.01, 5.0);
+		*/
+
+
+
+
+
 
 	} else {
 		Util::setPrint(true);
