@@ -80,16 +80,16 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 
 
-void InceptionLayer::feedforward(int idx, const rcube &input) {
+void InceptionLayer::feedforward(UINT idx, const rcube &input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	for(int i = 0; i < firstLayers.size(); i++) {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->feedforward(0, input);
 	}
 	Layer::feedforward(idx, lastLayer->getOutput());
 }
 
-void InceptionLayer::backpropagation(int idx, HiddenLayer *next_layer) {
+void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	rcube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 	Util::printCube(w_next_delta, "w_next_delta:");
@@ -101,7 +101,7 @@ void InceptionLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 
 	delta_input.set_size(size(input));
 	delta_input.zeros();
-	for(int i = 0; i < firstLayers.size(); i++) {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
 		delta_input += firstLayers[i]->getDeltaInput();
 	}
 
@@ -111,20 +111,20 @@ void InceptionLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	delta_input.zeros();
 }
 
-void InceptionLayer::reset_nabla(int idx) {
+void InceptionLayer::reset_nabla(UINT idx) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	for(int i = 0; i < firstLayers.size(); i++) {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->reset_nabla(0);
 	}
 
 	Layer::reset_nabla(idx);
 }
 
-void InceptionLayer::update(int idx, double eta, double lambda, int n, int miniBatchSize) {
+void InceptionLayer::update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	for(int i = 0; i < firstLayers.size(); i++) {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->update(0, eta, lambda, n, miniBatchSize);
 	}
 	Layer::update(idx, eta, lambda, n, miniBatchSize);

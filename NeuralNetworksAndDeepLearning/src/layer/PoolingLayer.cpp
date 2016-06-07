@@ -31,7 +31,7 @@ PoolingLayer::~PoolingLayer() {
 }
 
 
-void PoolingLayer::feedforward(int idx, const rcube &input) {
+void PoolingLayer::feedforward(UINT idx, const rcube &input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 
@@ -46,7 +46,7 @@ void PoolingLayer::feedforward(int idx, const rcube &input) {
 
 
 
-void PoolingLayer::backpropagation(int idx, HiddenLayer *next_layer) {
+void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// TODO w_next_delta를 모두 합하여 한 번에 d_pool하는 것이 연산적으로 유리, 수정 필요
 	rcube w_next_delta(size(output));
 

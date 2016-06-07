@@ -21,15 +21,15 @@ public:
 
 	rcube &getDeltaInput() { return delta_input; }
 
-	void feedforward(int idx, const rcube &input);
-	void backpropagation(int idx, HiddenLayer *next_layer);
+	void feedforward(UINT idx, const rcube &input);
+	void backpropagation(UINT idx, HiddenLayer *next_layer);
 
 	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
-	void reset_nabla(int idx) {
+	void reset_nabla(UINT idx) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		Layer::reset_nabla(idx);
 	}
-	void update(int idx, double eta, double lambda, int n, int miniBatchSize) {
+	void update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		Layer::update(idx, eta, lambda, n, miniBatchSize);
 	}

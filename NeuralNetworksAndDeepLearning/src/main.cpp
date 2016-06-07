@@ -50,11 +50,19 @@ int main(int argc, char** argv) {
 	cout.precision(11);
 	cout.setf(ios::fixed);
 
-	//network_test();
+	network_test();
+
+
+	/*
 	rcube input = randn<rcube>(8, 8, 1);
 
 	ConvLayer *convLayer = new ConvLayer("conv", io_dim(8, 8, 1), filter_dim(7, 7, 1, 1, 2), new Sigmoid());
 	convLayer->feedforward(0, input);
+	convLayer->backpropagation(0, 0);
+	*/
+
+	cout << "end" << endl;
+
 
 	return 0;
 }
@@ -77,11 +85,9 @@ void network_test() {
 		//DataSet *cifar10DataSet = new Cifar10DataSet();
 		//cifar10DataSet->load();
 
-		/*
-		Network *network = new NeuralNetSingle();
-		network->setDataSet(mnistDataSet);
-		network->sgd(10, 10, 0.1, 5.0);
-		*/
+		//Network *network = new NeuralNetSingle();
+		//network->setDataSet(mnistDataSet);
+		//network->sgd(10, 10, 0.1, 5.0);
 
 		/*
 		cout << "googlenet with mnist ... " << endl;
@@ -93,6 +99,38 @@ void network_test() {
 
 
 
+		double lambda[5] = { 0.001, 0.01, 0.1, 1.0, 10.0 };
+
+		for(int i = 0; i < 5; i++) {
+			Network *googlenet = new GoogLeNetMnist(0);
+			googlenet->setDataSet(mnistDataSet);
+			googlenet->sgd(1, 10, lambda[i], 5.0);
+
+
+			/*
+			InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
+			ConvLayer *conv1_7x7_s2 = new ConvLayer("conv1_7x7_s2", io_dim(28, 28, 1), filter_dim(5, 5, 1, 8, 1), new ReLU(io_dim(28, 28, 8)));
+			PoolingLayer *pool1_3x3_s2 = new PoolingLayer("pool1_3x3_s2", io_dim(28, 28, 8), pool_dim(3, 3, 1), new MaxPooling());
+			LRNLayer *pool1_norm1 = new LRNLayer("lrn1", io_dim(28, 28, 8), lrn_dim(5, 0.0001, 0.75));
+			ConvLayer *conv2_3x3_reduce = new ConvLayer("conv2_3x3_reduce", io_dim(28, 28, 8), filter_dim(1, 1, 8, 12, 1), new ReLU(io_dim(28, 28, 12)));
+			ConvLayer *conv2_3x3 = new ConvLayer("conv2_3x3", io_dim(28, 28, 12), filter_dim(3, 3, 12, 16, 1), new ReLU(io_dim(28, 28, 16)));
+			FullyConnectedLayer *fc1 = new FullyConnectedLayer("fc1", 28*28*16, 100, 0.4, new ReLU(io_dim(100, 1, 1)));
+			SoftmaxLayer *outputLayer = new SoftmaxLayer("output", 100, 10, 0.0);
+
+			Network::addLayerRelation(inputLayer, conv1_7x7_s2);
+			Network::addLayerRelation(conv1_7x7_s2, pool1_3x3_s2);
+			Network::addLayerRelation(pool1_3x3_s2, pool1_norm1);
+			Network::addLayerRelation(pool1_norm1, conv2_3x3_reduce);
+			Network::addLayerRelation(conv2_3x3_reduce, conv2_3x3);
+			Network::addLayerRelation(conv2_3x3, fc1);
+			Network::addLayerRelation(fc1, outputLayer);
+
+			Network network(inputLayer, mnistDataSet, 0);
+			network.addOutputLayer(outputLayer);
+
+			network.sgd(1, 10, lambda[i], 5.0);
+			*/
+		}
 
 
 	} else {

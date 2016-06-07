@@ -63,7 +63,7 @@ void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn
 
 
 
-void FullyConnectedLayer::feedforward(int idx, const rcube &input) {
+void FullyConnectedLayer::feedforward(UINT idx, const rcube &input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::printCube(input, "input:");
@@ -85,7 +85,7 @@ void FullyConnectedLayer::feedforward(int idx, const rcube &input) {
 	Layer::feedforward(idx, this->output);
 }
 
-void FullyConnectedLayer::backpropagation(int idx, HiddenLayer *next_layer) {
+void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
 
@@ -134,7 +134,7 @@ void FullyConnectedLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 
 
 
-void FullyConnectedLayer::reset_nabla(int idx) {
+void FullyConnectedLayer::reset_nabla(UINT idx) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	nabla_b.zeros();
@@ -144,7 +144,7 @@ void FullyConnectedLayer::reset_nabla(int idx) {
 }
 
 
-void FullyConnectedLayer::update(int idx, double eta, double lambda, int n, int miniBatchSize) {
+void FullyConnectedLayer::update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;

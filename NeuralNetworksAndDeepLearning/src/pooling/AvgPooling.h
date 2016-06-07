@@ -57,8 +57,8 @@ public:
 							in_input_row_idx = j-left_pad+l;
 							in_input_col_idx = k-top_pad+m;
 
-							if((in_input_row_idx >= 0 && in_input_row_idx < input.n_rows)
-								&&(in_input_col_idx >= 0 && in_input_col_idx < input.n_cols)) {
+							if((in_input_row_idx >= 0 && (UINT)in_input_row_idx < input.n_rows)
+								&&(in_input_col_idx >= 0 && (UINT)in_input_col_idx < input.n_cols)) {
 								//sum += input.slice(i)(in_input_row_idx, in_input_col_idx);
 								sum += C_MEM(input, in_input_row_idx, in_input_col_idx, i);
 							}

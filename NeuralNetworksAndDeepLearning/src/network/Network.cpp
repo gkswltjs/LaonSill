@@ -44,16 +44,16 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 	for(int i = 0; i < epochs; i++) {
 
 
-		timer1.start();
+		//timer1.start();
 
 		dataSet->shuffleTrainDataSet();
 
-		//timer2.start();
+		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			//if((j+1)%100 == 0) {
-			//	cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
-			//	timer2.start();
-			//}
+			if((j+1)%100 == 0) {
+				cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+				timer2.start();
+			}
 			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 
@@ -145,7 +145,7 @@ void Network::backprop(const DataSample &dataSample) {
 
 	//timer.start();
 	//cout << "backpropagation()" << endl;
-	for(int i = 0; i < outputLayers.size(); i++) {
+	for(UINT i = 0; i < outputLayers.size(); i++) {
 		outputLayers[i]->cost(dataSample.getTarget());
 	}
 	//cout << "time for backward: ";

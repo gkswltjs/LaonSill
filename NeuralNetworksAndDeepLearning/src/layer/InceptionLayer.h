@@ -20,10 +20,10 @@ public:
 
 	rcube &getDeltaInput() { return this->delta_input; }
 
-	void feedforward(int idx, const rcube &input);
-	void backpropagation(int idx, HiddenLayer *next_layer);
-	void reset_nabla(int idx);
-	void update(int idx, double eta, double lambda, int n, int miniBatchSize);
+	void feedforward(UINT idx, const rcube &input);
+	void backpropagation(UINT idx, HiddenLayer *next_layer);
+	void reset_nabla(UINT idx);
+	void update(UINT idx, double eta, double lambda, int n, int miniBatchSize);
 
 
 

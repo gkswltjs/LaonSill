@@ -28,7 +28,7 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation
 
 	filters = new rcube[filter_d.filters];
 	nabla_w = new rcube[filter_d.filters];
-	for(int i = 0; i < filter_d.filters; i++) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
 		filters[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
 		filters[i].randn();
 		nabla_w[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
@@ -49,7 +49,7 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation
 	this->activation_fn = activation_fn;
 	//if(this->activation_fn) this->activation_fn->initialize_weight();
 	//int n_out = filter_d.filters*filter_d.rows*filter_d.cols/9;
-	for(int i = 0; i < filter_d.filters; i++) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
 		if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.size(), filters[i]);
 	}
 
@@ -63,7 +63,7 @@ ConvLayer::~ConvLayer() {
 }
 
 
-void ConvLayer::feedforward(int idx, const rcube &input) {
+void ConvLayer::feedforward(UINT idx, const rcube &input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	// 현재 CONV 레이어의 경우 여러 레이어로 값이 전달되지 않기 때문에 무의미하다.
@@ -78,9 +78,9 @@ void ConvLayer::feedforward(int idx, const rcube &input) {
 
 	// 1. CONVOLUTION
 	// for i, features (about output)
-	for(int i = 0; i < filter_d.filters; i++) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
 		// for j, channels (about input)
-		for(int j = 0; j < filter_d.channels; j++) {
+		for(UINT j = 0; j < filter_d.channels; j++) {
 			Util::printMat(this->input.slice(j), "input:");
 			Util::printMat(filters[i].slice(j), "filter:");
 			convolution(this->input.slice(j), filters[i].slice(j), conv, filter_d.stride);
@@ -109,9 +109,16 @@ void ConvLayer::feedforward(int idx, const rcube &input) {
 
 
 
-void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
+void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
 	if(!isLastNextLayerRequest(idx)) throw Exception();
+
+	// TODO FOR DEBUG
+	//output = randn<rcube>(4, 4, 1);
+	//rcube w_next_delta = randn<rcube>(4, 4, 1);
+	//Util::printCube(output, "output:");
+	//Util::printCube(w_next_delta, "w_next_delta:");
+
 
 	rcube da;
 	activation_fn->d_activate(output, da);
@@ -120,6 +127,7 @@ void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	// 두 레이어를 연결하는 Weight가 있는 경우 (현재 다음 레이어가 FC인 케이스 only)
 	// next_w->()*next_delta: 다음 FC의 delta를 현재 CONV max pool의 delta로 dimension 변환
 	// max pool의 delta를 d_pool을 통해 upsample
+	// TODO FOR DEBUG
 	rcube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 
@@ -132,8 +140,8 @@ void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 
 	// dw
 	rmat conv(filter_d.rows, filter_d.cols);
-	for(int i = 0; i < filter_d.filters; i++) {
-		for(int j = 0; j < filter_d.channels; j++) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
+		for(UINT j = 0; j < filter_d.channels; j++) {
 			dw_convolution(delta.slice(i), input.slice(j), conv);
 			Util::printMat(conv, "conv:");
 
@@ -147,8 +155,8 @@ void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	// dx
 	rmat dconv(size(input.slice(0)));
 	delta_input.zeros();
-	for(int i = 0; i < filter_d.channels; i++) {
-		for(int j = 0; j < filter_d.filters; j++) {
+	for(UINT i = 0; i < filter_d.channels; i++) {
+		for(UINT j = 0; j < filter_d.filters; j++) {
 			Util::printMat(filters[j].slice(i), "filter:");
 			Util::printMat(flipud(fliplr(filters[j].slice(i))), "filp:");
 			dx_convolution(delta.slice(j), flipud(fliplr(filters[j].slice(i))), dconv);
@@ -164,7 +172,7 @@ void ConvLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 
 
 void ConvLayer::convolution(const rmat &x, const rmat &w, rmat &result, int stride) {
-	int i, j, k, m;
+	UINT i, j, k, m;
 
 	int top_pad = (w.n_cols-1)/2;
 	int left_pad = (w.n_rows-1)/2;
@@ -180,8 +188,8 @@ void ConvLayer::convolution(const rmat &x, const rmat &w, rmat &result, int stri
 					in_image_row_idx = i-left_pad+k;
 					in_image_col_idx = j-top_pad+m;
 
-					if((in_image_row_idx >= 0 && in_image_row_idx < x.n_rows)
-							&& (in_image_col_idx >=0 && in_image_col_idx < x.n_cols)) {
+					if((in_image_row_idx >= 0 && (UINT)in_image_row_idx < x.n_rows)
+							&& (in_image_col_idx >=0 && (UINT)in_image_col_idx < x.n_cols)) {
 						//conv += x.mem[in_image_row_idx+(in_image_col_idx)*x.n_cols]*w.mem[k+m*w.n_cols];
 						//try {
 						conv += M_MEM(x, in_image_row_idx, in_image_col_idx)*M_MEM(w, k, m);
@@ -209,7 +217,7 @@ void ConvLayer::convolution(const rmat &x, const rmat &w, rmat &result, int stri
 
 void ConvLayer::dw_convolution(const rmat &d, const rmat &x, rmat &result) {
 
-	int i, j, k, l;
+	UINT i, j, k, l;
 
 	int top_pad = (filter_d.cols-1)/2;
 	int left_pad = (filter_d.rows-1)/2;
@@ -228,8 +236,8 @@ void ConvLayer::dw_convolution(const rmat &d, const rmat &x, rmat &result) {
 					in_image_row_idx = filter_d.stride*k-left_pad+i;
 					in_image_col_idx = filter_d.stride*l-top_pad+j;
 
-					if((in_image_row_idx >= 0 && in_image_row_idx < x.n_rows)
-							&& (in_image_col_idx >= 0 && in_image_col_idx < x.n_cols)) {
+					if((in_image_row_idx >= 0 && (UINT)in_image_row_idx < x.n_rows)
+							&& (in_image_col_idx >= 0 && (UINT)in_image_col_idx < x.n_cols)) {
 						//dconv += d(k, l)*x(in_image_row_idx, in_image_col_idx);
 						dconv += M_MEM(d, k, l)*M_MEM(x, in_image_row_idx, in_image_col_idx);
 						//dconv += d.mem[in_image_row_idx+in_image_col_idx*d.n_cols]*x.mem[k+l*x.n_cols];
@@ -248,7 +256,7 @@ void ConvLayer::dw_convolution(const rmat &d, const rmat &x, rmat &result) {
 
 
 void ConvLayer::dx_convolution(const rmat &d, const rmat &w, rmat &result) {
-	int i, j;
+	UINT i, j;
 
 	rmat d_ex(filter_d.stride*d.n_rows, filter_d.stride*d.n_cols);
 	d_ex.zeros();
@@ -279,22 +287,22 @@ void ConvLayer::dx_convolution(const rmat &d, const rmat &w, rmat &result) {
 
 
 
-void ConvLayer::reset_nabla(int idx) {
+void ConvLayer::reset_nabla(UINT idx) {
 	// 한번만 초기화하기 위해 마지막 prev layer의 초기화 요청에 대해서만 처리하고
 	// next layer들에 대해서도 초기화 요청한다.
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	for(int i = 0; i < filter_d.filters; i++) nabla_w[i].zeros();
+	for(UINT i = 0; i < filter_d.filters; i++) nabla_w[i].zeros();
 	nabla_b.zeros();
 
 	Layer::reset_nabla(idx);
 }
 
 
-void ConvLayer::update(int idx, double eta, double lambda, int n, int miniBatchSize) {
+void ConvLayer::update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	for(int i = 0; i < filter_d.filters; i++) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
 		filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
 	}
 	biases -= eta/miniBatchSize*nabla_b;

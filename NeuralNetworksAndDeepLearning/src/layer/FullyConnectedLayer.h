@@ -26,19 +26,19 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(int idx, const rcube &input);
+	void feedforward(UINT idx, const rcube &input);
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void backpropagation(int idx, HiddenLayer *next_layer);
+	void backpropagation(UINT idx, HiddenLayer *next_layer);
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
 	 */
-	void reset_nabla(int idx);
+	void reset_nabla(UINT idx);
 
 	/**
 	 * 한 번의 batch 종료 후 w, b 누적 업데이트를 레이어 w, b에 적용
@@ -47,7 +47,7 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	void update(int idx, double eta, double lambda, int n, int miniBatchSize);
+	void update(UINT idx, double eta, double lambda, int n, int miniBatchSize);
 
 private:
 	void initialize(double p_dropout, Activation *activation_fn);

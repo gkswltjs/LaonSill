@@ -168,7 +168,7 @@ void Util::dropoutLayer(rcube &input, double p_dropout) {
 	//Util::printCube(p, "p:");
 	//Util::printCube(input, "input:");
 
-	int slice, row, col;
+	UINT slice, row, col;
 	for(slice = 0; slice < input.n_slices; slice++) {
 		for(row = 0; row < input.n_rows; row++) {
 			for(col = 0; col < input.n_cols; col++) {

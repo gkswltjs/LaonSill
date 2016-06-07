@@ -45,8 +45,8 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void feedforward(int idx, const rcube &input) {
-		for(int i = 0; i < nextLayers.size(); i++) {
+	virtual void feedforward(UINT idx, const rcube &input) {
+		for(UINT i = 0; i < nextLayers.size(); i++) {
 			nextLayers[i].next_layer->feedforward(nextLayers[i].idx, input);
 		}
 	}
@@ -54,13 +54,13 @@ public:
 	virtual void addNextLayer(next_layer_relation nextLayer) { nextLayers.push_back(nextLayer); }
 
 
-	virtual void reset_nabla(int idx) {
+	virtual void reset_nabla(UINT idx) {
 		for(unsigned int i = 0; i < nextLayers.size(); i++) {
 			nextLayers[i].next_layer->reset_nabla(nextLayers[i].idx);
 		}
 	}
 
-	virtual void update(int idx, double eta, double lambda, int n, int miniBatchSize) {
+	virtual void update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
 		for(unsigned int i = 0; i < nextLayers.size(); i++) {
 			nextLayers[i].next_layer->update(nextLayers[i].idx, eta, lambda, n, miniBatchSize);
 		}
@@ -68,7 +68,7 @@ public:
 
 protected:
 
-	bool isLastPrevLayerRequest(int idx) {
+	bool isLastPrevLayerRequest(UINT idx) {
 		//cout << name << " received request from " << idx << "th prev layer ... " << endl;
 		if(prevLayers.size() > idx+1) {
 			//cout << name << " is not from last prev layer... " << endl;

@@ -20,7 +20,7 @@ public:
 	virtual ~MaxPooling() {}
 
 	void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
-		int i, j, k, l, m;
+		UINT i, j, k, l, m;
 
 		int left_pad = (pool_d.rows-1)/2;
 		int top_pad = (pool_d.cols-1)/2;
@@ -46,8 +46,8 @@ public:
 							in_input_row_idx = j-left_pad+l;
 							in_input_col_idx = k-top_pad+m;
 
-							if((in_input_row_idx >= 0 && in_input_row_idx < input.n_rows)
-									&&(in_input_col_idx >= 0 && in_input_col_idx < input.n_cols)) {
+							if((in_input_row_idx >= 0 && (UINT)in_input_row_idx < input.n_rows)
+									&&(in_input_col_idx >= 0 && (UINT)in_input_col_idx < input.n_cols)) {
 
 								//if(input.slice(i)(in_input_row_idx, in_input_col_idx) > max) {
 								if(C_MEM(input, in_input_row_idx, in_input_col_idx, i) > max) {
@@ -74,7 +74,7 @@ public:
 
 	void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
 
-		int i, j, k;
+		UINT i, j, k;
 		int pool_max_idx;
 		int left_pad = (pool_d.rows-1)/2;
 		int top_pad = (pool_d.cols-1)/2;

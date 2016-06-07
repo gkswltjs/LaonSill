@@ -22,18 +22,18 @@ public:
 
 
 
-	void feedforward(int idx, const rcube &input);
+	void feedforward(UINT idx, const rcube &input);
 
-	void backpropagation(int idx, HiddenLayer *next_layer);
-
-
+	void backpropagation(UINT idx, HiddenLayer *next_layer);
 
 
-	void reset_nabla(int idx) {
+
+
+	void reset_nabla(UINT idx) {
 		if(!isLastPrevLayerRequest(idx)) return;
 		Layer::reset_nabla(idx);
 	}
-	void update(int idx, double eta, double lambda, int n, int miniBatchSize) {
+	void update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
 		if(!isLastPrevLayerRequest(idx)) return;
 		Layer::update(idx, eta, lambda, n, miniBatchSize);
 	}

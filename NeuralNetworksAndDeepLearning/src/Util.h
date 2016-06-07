@@ -37,6 +37,7 @@ typedef fvec rvec;
 typedef fmat rmat;
 typedef fcube rcube;
 
+typedef unsigned int UINT;
 
 
 

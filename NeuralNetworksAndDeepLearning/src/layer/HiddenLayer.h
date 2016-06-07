@@ -33,8 +33,8 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	//virtual void backpropagation(HiddenLayer *next_layer)=0;
-	virtual void backpropagation(int idx, HiddenLayer *next_layer) {
-		for(int i = 0; i < prevLayers.size(); i++) {
+	virtual void backpropagation(UINT idx, HiddenLayer *next_layer) {
+		for(UINT i = 0; i < prevLayers.size(); i++) {
 			prevLayers[i].prev_layer->backpropagation(prevLayers[i].idx, this);
 		}
 	}
@@ -42,7 +42,7 @@ public:
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
 	 */
-	virtual void reset_nabla(int idx)=0;
+	virtual void reset_nabla(UINT idx)=0;
 
 	/**
 	 * 한 번의 batch 종료 후 w, b 누적 업데이트를 레이어 w, b에 적용
@@ -51,7 +51,7 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	virtual void update(int idx, double eta, double lambda, int n, int miniBatchSize)=0;
+	virtual void update(UINT idx, double eta, double lambda, int n, int miniBatchSize)=0;
 
 	void addPrevLayer(prev_layer_relation prevLayer) { prevLayers.push_back(prevLayer); }
 
@@ -62,7 +62,7 @@ public:
 
 
 protected:
-	bool isLastNextLayerRequest(int idx) {
+	bool isLastNextLayerRequest(UINT idx) {
 		//cout << name << " received request from " << idx << "th next layer ... " << endl;
 		if(nextLayers.size() > idx+1) {
 			//cout << name << " is not from last next layer... " << endl;

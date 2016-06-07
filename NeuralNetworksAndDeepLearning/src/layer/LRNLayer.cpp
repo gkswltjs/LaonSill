@@ -20,10 +20,10 @@ LRNLayer::~LRNLayer() {}
 
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::feedforward(int idx, const rcube &input) {
+void LRNLayer::feedforward(UINT idx, const rcube &input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	int i, j;
+	UINT i, j;
 	int top_pad = (lrn_d.local_size-1)/2;
 	int in_channel_idx;
 
@@ -38,7 +38,7 @@ void LRNLayer::feedforward(int idx, const rcube &input) {
 		temp.zeros();
 		for(j = 0; j < lrn_d.local_size; j++) {
 			in_channel_idx = i - top_pad + j;
-			if(in_channel_idx >= 0 && in_channel_idx < this->input.n_slices) {
+			if(in_channel_idx >= 0 && (UINT)in_channel_idx < this->input.n_slices) {
 				temp += sq.slice(in_channel_idx);
 			}
 		}
@@ -58,10 +58,10 @@ void LRNLayer::feedforward(int idx, const rcube &input) {
 
 
 
-void LRNLayer::backpropagation(int idx, HiddenLayer *next_layer) {
+void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
-	int i, j;
+	UINT i, j;
 	int top_pad = (lrn_d.local_size-1)/2;
 	int in_channel_idx;
 	double c = -2*lrn_d.alpha*lrn_d.beta/lrn_d.local_size;
@@ -78,7 +78,7 @@ void LRNLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 		temp.zeros();
 		for(j = 0; j < lrn_d.local_size; j++) {
 			in_channel_idx = i - top_pad + j;
-			if(in_channel_idx >= 0 && in_channel_idx < input.n_slices) {
+			if(in_channel_idx >= 0 && (UINT)in_channel_idx < input.n_slices) {
 				//Util::printMat(pow(z.slice(in_channel_idx), -lrn_d.beta-1), "pow");
 				//Util::printMat(input.slice(in_channel_idx), "input:");
 				//Util::printMat(w_next_delta.slice(in_channel_idx), "w_next_delta:");

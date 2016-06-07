@@ -28,7 +28,7 @@ ConvPoolLayer::ConvPoolLayer(string name, io_dim in_dim, filter_dim filter_d, po
 
 	filters = new rcube[filter_d.filters];
 	nabla_w = new rcube[filter_d.filters];
-	for(int i = 0; i < filter_d.filters; i++) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
 		filters[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
 		filters[i].randn();
 		nabla_w[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
@@ -53,7 +53,7 @@ ConvPoolLayer::ConvPoolLayer(string name, io_dim in_dim, filter_dim filter_d, po
 	this->activation_fn = activation_fn;
 	//if(this->activation_fn) this->activation_fn->initialize_weight();
 	int n_out = filter_d.filters*filter_d.rows*filter_d.cols/(pool_d.rows*pool_d.cols);
-	for(int i = 0; i < filter_d.filters; i++) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
 		//filters[i].randn();
 		//Util::printCube(filters[i], "filter:");
 		filters[i] *= 1 / sqrt(n_out);
@@ -69,7 +69,7 @@ ConvPoolLayer::~ConvPoolLayer() {
 }
 
 
-void ConvPoolLayer::feedforward(int idx, const rcube &input) {
+void ConvPoolLayer::feedforward(UINT idx, const rcube &input) {
 	//Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);
 
@@ -78,9 +78,9 @@ void ConvPoolLayer::feedforward(int idx, const rcube &input) {
 
 	// 1. CONVOLUTION
 	// for i, features (about output)
-	for(int i = 0; i < filter_d.filters; i++) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
 		// for j, channels (about input)
-		for(int j = 0; j < filter_d.channels; j++) {
+		for(UINT j = 0; j < filter_d.channels; j++) {
 			//Util::printMat(this->input.slice(j), "input:");
 			//Util::printMat(filters[i].slice(j), "filter:");
 			convolution(this->input.slice(j), filters[i].slice(j), conv);
@@ -104,7 +104,7 @@ void ConvPoolLayer::feedforward(int idx, const rcube &input) {
 
 
 
-void ConvPoolLayer::backpropagation(int idx, HiddenLayer *next_layer) {
+void ConvPoolLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	rcube da;
 	activation_fn->d_activate(activated, da);
 
@@ -150,8 +150,8 @@ void ConvPoolLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 
 	// dC/dw
 	rmat conv(filter_d.rows, filter_d.cols);
-	for(int i = 0; i < filter_d.filters; i++) {
-		for(int j = 0; j < filter_d.channels; j++) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
+		for(UINT j = 0; j < filter_d.channels; j++) {
 			d_convolution(input.slice(j), delta.slice(i), conv);
 			Util::printMat(conv, "conv:");
 
@@ -167,8 +167,8 @@ void ConvPoolLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 	// dC/dx
 	rmat dconv(size(input.slice(0)));
 	delta_input.zeros();
-	for(int i = 0; i < filter_d.channels; i++) {
-		for(int j = 0; j < filter_d.filters; j++) {
+	for(UINT i = 0; i < filter_d.channels; i++) {
+		for(UINT j = 0; j < filter_d.filters; j++) {
 			convolution(delta.slice(j), flipud(fliplr(filters[j].slice(i))), dconv);
 			//d_convolution(conv_layer->getDelta().slice(j), conv_layer->getWeight()[j].slice(i), dconv);
 			delta_input.slice(i) += dconv;
@@ -182,7 +182,7 @@ void ConvPoolLayer::backpropagation(int idx, HiddenLayer *next_layer) {
 
 
 void ConvPoolLayer::convolution(const rmat &image, const rmat &filter, rmat &result) {
-	int i, j, k, m;
+	UINT i, j, k, m;
 
 	int top_pad = (filter.n_cols-1)/2;
 	int left_pad = (filter.n_rows-1)/2;
@@ -197,8 +197,8 @@ void ConvPoolLayer::convolution(const rmat &image, const rmat &filter, rmat &res
 				for(m = 0; m < filter.n_cols; m++) {
 					in_image_row_idx = i-left_pad+k;
 					in_image_col_idx = j-top_pad+m;
-					if((in_image_row_idx >= 0 && in_image_row_idx < image.n_rows)
-							&& (in_image_col_idx >=0 && in_image_col_idx < image.n_cols)) {
+					if((in_image_row_idx >= 0 && (UINT)in_image_row_idx < image.n_rows)
+							&& (in_image_col_idx >=0 && (UINT)in_image_col_idx < image.n_cols)) {
 						//conv += image.mem[in_image_row_idx+(in_image_col_idx)*image.n_cols]*filter.mem[k+m*filter.n_cols];
 						conv += M_MEM(image, in_image_row_idx, in_image_col_idx)*M_MEM(filter, k, m);
 					}
@@ -287,14 +287,14 @@ void ConvPoolLayer::d_convolution(const rmat &conv, const rmat &filter, rmat &re
 
 
 
-void ConvPoolLayer::reset_nabla(int idx) {
-	for(int i = 0; i < filter_d.filters; i++) nabla_w[i].zeros();
+void ConvPoolLayer::reset_nabla(UINT idx) {
+	for(UINT i = 0; i < filter_d.filters; i++) nabla_w[i].zeros();
 	nabla_b.zeros();
 }
 
 
-void ConvPoolLayer::update(int idx, double eta, double lambda, int n, int miniBatchSize) {
-	for(int i = 0; i < filter_d.filters; i++) {
+void ConvPoolLayer::update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
+	for(UINT i = 0; i < filter_d.filters; i++) {
 		filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
 	}
 	biases -= eta/miniBatchSize*nabla_b;
