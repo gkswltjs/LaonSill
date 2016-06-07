@@ -18,8 +18,10 @@ class NeuralNetDouble : public Network {
 public:
 	NeuralNetDouble() : Network(0, 0, 0) {
 		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 28*28*1, 100, 0.5, new ReLU(io_dim(100, 1, 1)));
-		HiddenLayer *fc2Layer = new FullyConnectedLayer("fc2", 100, 10, 0.5, new ReLU(io_dim(10, 1, 1)));
+		//HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 28*28*1, 100, 0.5, new ReLU(io_dim(100, 1, 1)));
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 28*28*1, 100, 0.5, ActivationType::ReLU);
+		//HiddenLayer *fc2Layer = new FullyConnectedLayer("fc2", 100, 10, 0.5, new ReLU(io_dim(10, 1, 1)));
+		HiddenLayer *fc2Layer = new FullyConnectedLayer("fc2", 100, 10, 0.5, ActivationType::ReLU);
 		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 10, 10, 0.5);
 
 		Network::addLayerRelation(inputLayer, fc1Layer);

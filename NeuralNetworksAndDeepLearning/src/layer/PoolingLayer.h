@@ -10,12 +10,13 @@
 
 #include "HiddenLayer.h"
 #include "../pooling/Pooling.h"
+#include "../pooling/PoolingFactory.h"
 #include "../exception/Exception.h"
 
 
 class PoolingLayer : public HiddenLayer {
 public:
-	PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, Pooling *pooling_fn);
+	PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, PoolingType poolingType);
 	virtual ~PoolingLayer();
 
 	rcube &getDeltaInput() { return this->delta_input; }

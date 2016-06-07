@@ -34,30 +34,22 @@ InceptionLayer::~InceptionLayer() {}
 void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp) {
 
 	//inputLayer = new InputLayer("inputLayer", in_dim);
-	ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv1x1)));
-	ConvLayer *conv3x3reduceLayer = new ConvLayer("conv3x3reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv3x3reduce)));
-	ConvLayer *conv3x3Layer = new ConvLayer("conv3x3", io_dim(in_dim.rows, in_dim.cols, cv3x3reduce), filter_dim(3, 3, cv3x3reduce, cv3x3, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv3x3)));
-	ConvLayer *conv5x5recudeLayer = new ConvLayer("conv5x5reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv5x5reduce)));
-	ConvLayer *conv5x5Layer = new ConvLayer("conv5x5", io_dim(in_dim.rows, in_dim.cols, cv5x5reduce), filter_dim(5, 5, cv5x5reduce, cv5x5, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv5x5)));
-	PoolingLayer *pool3x3Layer = new PoolingLayer("pool3x3", in_dim, pool_dim(3, 3, 1), new MaxPooling());
-	ConvLayer *convProjectionLayer = new ConvLayer("convProjection", in_dim, filter_dim(1, 1, in_dim.channels, cp, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cp)));
+	//ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv1x1)));
+	ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), ActivationType::ReLU);
+	//ConvLayer *conv3x3reduceLayer = new ConvLayer("conv3x3reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv3x3reduce)));
+	ConvLayer *conv3x3reduceLayer = new ConvLayer("conv3x3reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1), ActivationType::ReLU);
+	//ConvLayer *conv3x3Layer = new ConvLayer("conv3x3", io_dim(in_dim.rows, in_dim.cols, cv3x3reduce), filter_dim(3, 3, cv3x3reduce, cv3x3, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv3x3)));
+	ConvLayer *conv3x3Layer = new ConvLayer("conv3x3", io_dim(in_dim.rows, in_dim.cols, cv3x3reduce), filter_dim(3, 3, cv3x3reduce, cv3x3, 1), ActivationType::ReLU);
+	//ConvLayer *conv5x5recudeLayer = new ConvLayer("conv5x5reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv5x5reduce)));
+	ConvLayer *conv5x5recudeLayer = new ConvLayer("conv5x5reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1), ActivationType::ReLU);
+	//ConvLayer *conv5x5Layer = new ConvLayer("conv5x5", io_dim(in_dim.rows, in_dim.cols, cv5x5reduce), filter_dim(5, 5, cv5x5reduce, cv5x5, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv5x5)));
+	ConvLayer *conv5x5Layer = new ConvLayer("conv5x5", io_dim(in_dim.rows, in_dim.cols, cv5x5reduce), filter_dim(5, 5, cv5x5reduce, cv5x5, 1), ActivationType::ReLU);
+	PoolingLayer *pool3x3Layer = new PoolingLayer("pool3x3", in_dim, pool_dim(3, 3, 1), PoolingType::Max);
+	//ConvLayer *convProjectionLayer = new ConvLayer("convProjection", in_dim, filter_dim(1, 1, in_dim.channels, cp, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cp)));
+	ConvLayer *convProjectionLayer = new ConvLayer("convProjection", in_dim, filter_dim(1, 1, in_dim.channels, cp, 1), ActivationType::ReLU);
 	DepthConcatLayer *depthConcatLayer = new DepthConcatLayer("depthConcat", io_dim(in_dim.rows, in_dim.cols, cv1x1+cv3x3+cv5x5+cp));
 
-	/*
-	ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), new Sigmoid());
-	ConvLayer *conv3x3reduceLayer = new ConvLayer("conv3x3reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1), new Sigmoid());
-	ConvLayer *conv3x3Layer = new ConvLayer("conv3x3", io_dim(in_dim.rows, in_dim.cols, cv3x3reduce), filter_dim(3, 3, cv3x3reduce, cv3x3, 1), new Sigmoid());
-	ConvLayer *conv5x5recudeLayer = new ConvLayer("conv5x5reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1), new Sigmoid());
-	ConvLayer *conv5x5Layer = new ConvLayer("conv5x5", io_dim(in_dim.rows, in_dim.cols, cv5x5reduce), filter_dim(5, 5, cv5x5reduce, cv5x5, 1), new Sigmoid());
-	PoolingLayer *pool3x3Layer = new PoolingLayer("pool3x3", in_dim, pool_dim(3, 3, 1), new MaxPooling());
-	ConvLayer *convProjectionLayer = new ConvLayer("convProjection", in_dim, filter_dim(1, 1, in_dim.channels, cp, 1), new Sigmoid());
-	DepthConcatLayer *depthConcatLayer = new DepthConcatLayer("depthConcat", io_dim(in_dim.rows, in_dim.cols, cv1x1+cv3x3+cv5x5+cp));
-	*/
 
-	//Network::addLayerRelation(this, conv1x1Layer);
-	//Network::addLayerRelation(this, conv3x3reduceLayer);
-	//Network::addLayerRelation(this, conv5x5recudeLayer);
-	//Network::addLayerRelation(this, pool3x3Layer);
 
 	firstLayers.push_back(conv1x1Layer);
 	firstLayers.push_back(conv3x3reduceLayer);

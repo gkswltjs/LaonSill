@@ -22,9 +22,11 @@ class ConvNetSingle : public Network {
 public:
 	ConvNetSingle(NetworkListener *networkListener) : Network(0, 0, 0) {
 		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
-		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), new ReLU(io_dim(28, 28, 20)));
-		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(28, 28, 20), pool_dim(3, 3, 2), new MaxPooling());
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 14*14*20, 100, 0.5, new ReLU(io_dim(100, 1, 1)));
+		//HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), new ReLU(io_dim(28, 28, 20)));
+		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), ActivationType::ReLU);
+		HiddenLayer *pool1Layer = new PoolingLayer("pool1", io_dim(28, 28, 20), pool_dim(3, 3, 2), PoolingType::Max);
+		//HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 14*14*20, 100, 0.5, new ReLU(io_dim(100, 1, 1)));
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 14*14*20, 100, 0.5, ActivationType::ReLU);
 		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
 
 		Network::addLayerRelation(inputLayer, conv1Layer);

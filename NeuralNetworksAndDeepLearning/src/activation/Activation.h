@@ -12,6 +12,9 @@
 #include "../Util.h"
 
 
+
+
+
 class Activation {
 public:
 	Activation() {};

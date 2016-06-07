@@ -33,11 +33,26 @@ void log_print(FILE *fp, int log_level, const char* filename, const int line, co
 
 
 
+
+
+
 typedef fvec rvec;
 typedef fmat rmat;
 typedef fcube rcube;
 
 typedef unsigned int UINT;
+
+
+/*
+enum class ActivationType {
+	Sigmoid, Softmax, ReLU
+};
+
+enum class CostType {
+	CrossEntropy, LogLikelihood, Quadratic
+};
+*/
+
 
 
 

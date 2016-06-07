@@ -12,7 +12,7 @@ class NeuralNetSingle : public Network {
 public:
 	NeuralNetSingle() : Network(0, 0, 0) {
 		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 28*28*1, 100, 0.5, new ReLU(io_dim(100, 1, 1)));
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 28*28*1, 100, 0.5, ActivationType::ReLU);
 		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
 
 		Network::addLayerRelation(inputLayer, fc1Layer);

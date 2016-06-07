@@ -192,9 +192,3 @@ void Util::dropoutLayer(rcube &input, double p_dropout) {
 
 
 
-
-
-
-
-
-

@@ -9,22 +9,32 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 
-FullyConnectedLayer::FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, Activation *activation_fn)
+FullyConnectedLayer::FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout)
 	: HiddenLayer(name, n_in, n_out) {
-	initialize(p_dropout, activation_fn);
+	initialize(p_dropout, ActivationType::None);
 }
 
-FullyConnectedLayer::FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn)
+FullyConnectedLayer::FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout)
 	: HiddenLayer(name, in_dim, out_dim) {
-	initialize(p_dropout, activation_fn);
+	initialize(p_dropout, ActivationType::None);
+}
+
+FullyConnectedLayer::FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, ActivationType activationType)
+	: HiddenLayer(name, n_in, n_out) {
+	initialize(p_dropout, activationType);
+}
+
+FullyConnectedLayer::FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, ActivationType activationType)
+	: HiddenLayer(name, in_dim, out_dim) {
+	initialize(p_dropout, activationType);
 }
 
 FullyConnectedLayer::~FullyConnectedLayer() {
-
+	ActivationFactory::destory(activation_fn);
 }
 
 
-void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn) {
+void FullyConnectedLayer::initialize(double p_dropout, ActivationType activationType) {
 	this->p_dropout = p_dropout;
 
 	int n_in = in_dim.size();
@@ -55,7 +65,8 @@ void FullyConnectedLayer::initialize(double p_dropout, Activation *activation_fn
 	 * HiddenLayer에서 activation_fn이 할당되는 곳에서 weight initialize 필요
 	 * 잊어버리기 쉬울 것 같으니 대책이 필요
 	 */
-	this->activation_fn = activation_fn;
+	//this->activation_fn = activation_fn;
+	this->activation_fn = ActivationFactory::create(activationType);
 	if(this->activation_fn) activation_fn->initialize_weight(n_in, this->weight);
 }
 

@@ -15,16 +15,17 @@
 
 class SigmoidLayer : public OutputLayer {
 public:
-	SigmoidLayer(string name, int n_in, int n_out, double p_dropout, Cost *cost_fn)
+	SigmoidLayer(string name, int n_in, int n_out, double p_dropout, CostType costType)
 		: OutputLayer(name, n_in, n_out, p_dropout) {
-		initialize(cost_fn);
+		initialize(costType);
 	}
-	SigmoidLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, Cost *cost_fn)
+	SigmoidLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, CostType costType)
 		: OutputLayer(name, in_dim, out_dim, p_dropout) {
-		initialize(cost_fn);
+		initialize(costType);
 	}
 	virtual ~SigmoidLayer() {
-		if(activation_fn) delete activation_fn;
+		ActivationFactory::destory(activation_fn);
+		CostFactory::destroy(cost_fn);
 	}
 
 	void cost(const rvec &target) {
@@ -37,9 +38,9 @@ public:
 	}
 
 private:
-	void initialize(Cost *cost_fn) {
-		this->cost_fn = cost_fn;
-		this->activation_fn = new Sigmoid();
+	void initialize(CostType costType) {
+		this->cost_fn = CostFactory::create(costType);
+		this->activation_fn = ActivationFactory::create(ActivationType::Sigmoid);
 		this->activation_fn->initialize_weight(in_dim.rows, weight);
 	}
 };

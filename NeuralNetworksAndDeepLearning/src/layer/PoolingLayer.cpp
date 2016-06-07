@@ -7,7 +7,7 @@
 
 #include "PoolingLayer.h"
 
-PoolingLayer::PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, Pooling *pooling_fn)
+PoolingLayer::PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, PoolingType poolingType)
 	: HiddenLayer(name, in_dim, in_dim) {
 
 	this->out_dim.rows = in_dim.rows / pool_d.rows;
@@ -18,7 +18,7 @@ PoolingLayer::PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, Pooling 
 
 	this->pool_d = pool_d;
 
-	this->pooling_fn = pooling_fn;
+	this->pooling_fn = PoolingFactory::create(poolingType);
 
 	this->pool_map.set_size(in_dim.rows/pool_d.stride, in_dim.cols/pool_d.stride, in_dim.channels);
 	this->output.set_size(size(pool_map));
@@ -27,7 +27,7 @@ PoolingLayer::PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, Pooling 
 }
 
 PoolingLayer::~PoolingLayer() {
-	// TODO Auto-generated destructor stub
+	PoolingFactory::destroy(pooling_fn);
 }
 
 

@@ -8,14 +8,17 @@
 #ifndef LAYER_CONVLAYER_H_
 #define LAYER_CONVLAYER_H_
 
+#include <string>
+
+#include "../activation/ActivationFactory.h"
+#include "../Util.h"
 #include "HiddenLayer.h"
 #include "LayerConfig.h"
-#include "../activation/Activation.h"
 
 
 class ConvLayer : public HiddenLayer {
 public:
-	ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation *activation_fn);
+	ConvLayer(string name, io_dim in_dim, filter_dim filter_d, ActivationType activationType);
 	virtual ~ConvLayer();
 
 	filter_dim &get_filter_dim() { return this->filter_d; }

@@ -42,8 +42,8 @@ public:
 		initialize();
 	}
 	virtual ~SoftmaxLayer() {
-		if(cost_fn) delete cost_fn;
-		if(activation_fn) delete activation_fn;
+		ActivationFactory::destory(activation_fn);
+		CostFactory::destroy(cost_fn);
 	}
 
 	void cost(const rvec &target) {
@@ -68,8 +68,8 @@ public:
 
 private:
 	void initialize() {
-		this->cost_fn = new LogLikelihoodCost();
-		this->activation_fn = new Softmax();
+		this->cost_fn = CostFactory::create(CostType::LogLikelihood);
+		this->activation_fn = ActivationFactory::create(ActivationType::Softmax);
 		this->activation_fn->initialize_weight(in_dim.size(), weight);
 
 	}

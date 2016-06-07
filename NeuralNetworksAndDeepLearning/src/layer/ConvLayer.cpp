@@ -11,7 +11,7 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 
-ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation *activation_fn)
+ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, ActivationType activationType)
 	: HiddenLayer(name, in_dim, in_dim) {
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;
@@ -46,11 +46,13 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation
 	output.set_size(size(z));
 
 	// TODO activation에 따라 weight 초기화 하도록 해야 함.
-	this->activation_fn = activation_fn;
+	this->activation_fn = ActivationFactory::create(activationType);
 	//if(this->activation_fn) this->activation_fn->initialize_weight();
 	//int n_out = filter_d.filters*filter_d.rows*filter_d.cols/9;
-	for(UINT i = 0; i < filter_d.filters; i++) {
-		if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.size(), filters[i]);
+	if(this->activation_fn) {
+		for(UINT i = 0; i < filter_d.filters; i++) {
+			 this->activation_fn->initialize_weight(in_dim.size(), filters[i]);
+		}
 	}
 
 	delta.set_size(size(z));
@@ -58,8 +60,9 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation
 }
 
 ConvLayer::~ConvLayer() {
-	if(filters) delete filters;
-	if(nabla_w) delete nabla_w;
+	ActivationFactory::destory(activation_fn);
+	if(filters) delete [] filters;
+	if(nabla_w) delete [] nabla_w;
 }
 
 

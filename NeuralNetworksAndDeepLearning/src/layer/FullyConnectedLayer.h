@@ -11,12 +11,15 @@
 #include "HiddenLayer.h"
 #include "LayerConfig.h"
 #include "../activation/Activation.h"
+#include "../activation/ActivationFactory.h"
 #include "../cost/Cost.h"
 
 class FullyConnectedLayer : public HiddenLayer {
 public:
-	FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, Activation *activation_fn=0);
-	FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, Activation *activation_fn=0);
+	FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout);
+		FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout);
+	FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, ActivationType activationType);
+	FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, ActivationType activationType);
 	virtual ~FullyConnectedLayer();
 
 	rmat &getWeight() { return this->weight; }
@@ -50,7 +53,7 @@ public:
 	void update(UINT idx, double eta, double lambda, int n, int miniBatchSize);
 
 private:
-	void initialize(double p_dropout, Activation *activation_fn);
+	void initialize(double p_dropout, ActivationType activationType);
 
 protected:
 	double p_dropout;

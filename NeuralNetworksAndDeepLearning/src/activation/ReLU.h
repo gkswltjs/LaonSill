@@ -14,6 +14,7 @@
 
 class ReLU : public Activation {
 public:
+	ReLU() {}
 	ReLU(io_dim activation_dim) {
 		zero.set_size(activation_dim.rows, activation_dim.cols, activation_dim.channels);
 		zero.zeros();
@@ -29,6 +30,7 @@ public:
 		weight *= sqrt(2.0/n_in);				// initial point scaling
 	}
 	void activate(const rcube &z, rcube &activation) {
+		if(zero.n_elem <= 1) zero.set_size(size(z));
 		activation = arma::max(z, zero);
 	}
 	void d_activate(const rcube &activation, rcube &da) {

@@ -88,27 +88,15 @@ protected:
 	int evaluate();
 
 
-	Cost *cost_fn;
-	Activation *activation_fn;
 	DataSet *dataSet;
 	NetworkListener *networkListener;
-
-	//Layer **layers;
-
 
 
 	InputLayer *inputLayer;
 	vector<OutputLayer *> outputLayers;
 
 
-
-	//InputLayer *inputLayer;
-	//HiddenLayer **hiddenLayers;
-	//OutputLayer *outputLayer;
-
 	int numLayers;
-	//vector<rvec *> biases;
-	//vector<rmat *> weights;
 };
 
 #endif /* NETWORK_H_ */
