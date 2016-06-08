@@ -38,6 +38,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 	double bias_decay_mult = 0.0;
 
 	this->type = LayerType::Inception;
+	this->id = Layer::getLayerId();
 
 
 	//inputLayer = new InputLayer("inputLayer", in_dim);

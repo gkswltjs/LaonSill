@@ -11,6 +11,8 @@
 
 LRNLayer::LRNLayer(string name, io_dim in_dim, lrn_dim lrn_d) : HiddenLayer(name, in_dim, in_dim) {
 	this->type = LayerType::LRN;
+	this->id = Layer::getLayerId();
+
 	this->lrn_d = lrn_d;
 	this->z.set_size(size(input));
 	this->delta_input.set_size(size(output));

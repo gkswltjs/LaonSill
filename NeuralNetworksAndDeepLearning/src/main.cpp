@@ -228,10 +228,7 @@ void network_test() {
 		Network::addLayerRelation(inputLayer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
 
-		Network network(inputLayer, dataSet, 0);
-		network.addOutputLayer(softmaxLayer);
-		//network.addOutputLayer(softmax2Layer);
-
+		Network network(inputLayer, softmaxLayer, dataSet, 0);
 		network.sgd(5, 2);
 	}
 

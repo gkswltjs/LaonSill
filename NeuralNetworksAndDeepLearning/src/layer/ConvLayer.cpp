@@ -15,6 +15,7 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_par
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, in_dim, in_dim) {
 	this->type = LayerType::Conv;
+	this->id = Layer::getLayerId();
 
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;

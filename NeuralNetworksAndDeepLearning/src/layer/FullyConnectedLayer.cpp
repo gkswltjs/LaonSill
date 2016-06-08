@@ -29,6 +29,7 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 void FullyConnectedLayer::initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
 	this->type = LayerType::FullyConnected;
+	this->id = Layer::getLayerId();
 
 	this->p_dropout = p_dropout;
 

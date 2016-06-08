@@ -19,6 +19,8 @@ DepthConcatLayer::DepthConcatLayer(string name, io_dim in_dim)
 
 void DepthConcatLayer::initialize() {
 	this->type = LayerType::DepthConcat;
+	this->id = Layer::getLayerId();
+
 	this->offsetIndex = 0;
 	this->input.reset();
 	this->delta_input.set_size(size(output));

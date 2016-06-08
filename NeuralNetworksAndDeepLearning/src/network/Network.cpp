@@ -22,8 +22,9 @@
 
 
 
-Network::Network(InputLayer *inputLayer, DataSet *dataSet, NetworkListener *networkListener) {
+Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
 	this->inputLayer = inputLayer;
+	this->outputLayers.push_back(outputLayer);
 	this->dataSet = dataSet;
 	this->networkListener = networkListener;
 }

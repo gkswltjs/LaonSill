@@ -19,7 +19,7 @@
 
 class InceptionNetSingle : public Network {
 public:
-	InceptionNetSingle() : Network(0, 0, 0) {
+	InceptionNetSingle() : Network(0, 0, 0, 0) {
 		double lr_mult = 0.01;
 		double decay_mult = 5.0;
 

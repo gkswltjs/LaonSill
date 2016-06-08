@@ -111,11 +111,17 @@ protected:
 
 
 	LayerType type;
+	int id;
+
+	static int getLayerId() { return layerCount++; }
+	static int layerCount;
 
 };
 
 #endif /* LAYER_LAYER_H_ */
 
+
+int Layer::layerCount = 0;
 
 
 

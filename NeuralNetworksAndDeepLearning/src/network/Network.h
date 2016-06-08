@@ -30,24 +30,13 @@ using namespace arma;
 
 class Network {
 public:
-	Network(InputLayer *inputLayer, DataSet *dataSet, NetworkListener *networkListener);
+	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
 	void setDataSet(DataSet *dataSet) { this->dataSet = dataSet; }
 
-
-
 	void sgd(int epochs, int miniBatchSize);
-
-
-	//void setInputLayer(InputLayer *inputLayer) { this->inputLayer = inputLayer; }
 	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
-
-
-
-
-
-
 
 	/**
 	 * 어디로 옮기면 좋을까
@@ -63,10 +52,6 @@ public:
 		if(pLayer) nextLayer->addPrevLayer(prev_layer_relation(pLayer, prevLayerIdx));
 	}
 
-
-
-
-
 	void save(string filename);
 	void load(string filename);
 
@@ -81,14 +66,11 @@ protected:
 	double accuracy(const vector<const DataSample *> &dataSet);
 	int evaluate();
 
-
 	DataSet *dataSet;
 	NetworkListener *networkListener;
 
-
 	InputLayer *inputLayer;
 	vector<OutputLayer *> outputLayers;
-
 
 	int numLayers;
 };

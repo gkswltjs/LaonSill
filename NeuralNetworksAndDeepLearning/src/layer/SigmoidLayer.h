@@ -42,6 +42,8 @@ public:
 private:
 	void initialize(CostType costType) {
 		this->type = LayerType::Sigmoid;
+		this->id = Layer::getLayerId();
+
 		this->cost_fn = CostFactory::create(costType);
 		this->activation_fn = ActivationFactory::create(ActivationType::Sigmoid);
 		//this->activation_fn->initialize_weight(in_dim.rows, weight);

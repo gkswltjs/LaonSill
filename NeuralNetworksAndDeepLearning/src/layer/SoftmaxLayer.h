@@ -70,6 +70,7 @@ public:
 private:
 	void initialize() {
 		this->type = LayerType::Softmax;
+		this->id = Layer::getLayerId();
 
 		this->cost_fn = CostFactory::create(CostType::LogLikelihood);
 		this->activation_fn = ActivationFactory::create(ActivationType::Softmax);

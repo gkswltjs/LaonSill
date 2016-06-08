@@ -16,7 +16,7 @@
 
 class NeuralNetDouble : public Network {
 public:
-	NeuralNetDouble() : Network(0, 0, 0) {
+	NeuralNetDouble() : Network(0, 0, 0, 0) {
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 

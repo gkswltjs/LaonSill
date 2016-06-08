@@ -43,7 +43,7 @@ public:
 	}
 
 	void save(int idx, ofstream &ofs) {
-
+		if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 
 
@@ -55,6 +55,7 @@ public:
 protected:
 	void initialize() {
 		this->type = LayerType::Input;
+		this->id = Layer::getLayerId();
 	}
 };
 
