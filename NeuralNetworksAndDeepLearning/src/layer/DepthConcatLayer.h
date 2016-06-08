@@ -31,11 +31,11 @@ public:
 
 	void reset_nabla(UINT idx) {
 		if(!isLastPrevLayerRequest(idx)) return;
-		Layer::reset_nabla(idx);
+		propResetNParam();
 	}
 	void update(UINT idx, int n, int miniBatchSize) {
 		if(!isLastPrevLayerRequest(idx)) return;
-		Layer::update(idx, n, miniBatchSize);
+		propUpdate(n, miniBatchSize);
 	}
 
 protected:

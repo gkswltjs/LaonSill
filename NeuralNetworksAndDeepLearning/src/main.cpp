@@ -5,6 +5,8 @@
 #include "network/GoogLeNet.h"
 #include "network/NeuralNetSingle.h"
 #include "network/GoogLeNetMnist.h"
+#include "network/ConvNetSingle.h"
+#include "network/ConvNetDouble.h"
 #include "dataset/MnistDataSet.h"
 #include "dataset/MockDataSet.h"
 #include "dataset/Cifar10DataSet.h"
@@ -86,7 +88,14 @@ void network_test() {
 		//DataSet *cifar10DataSet = new Cifar10DataSet();
 		//cifar10DataSet->load();
 
+
+		/*
 		Network *network = new NeuralNetSingle();
+		network->setDataSet(mnistDataSet);
+		network->sgd(10, 10);
+		*/
+
+		Network *network = new ConvNetSingle();
 		network->setDataSet(mnistDataSet);
 		network->sgd(10, 10);
 

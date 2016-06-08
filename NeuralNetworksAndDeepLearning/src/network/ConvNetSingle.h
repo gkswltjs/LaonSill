@@ -20,7 +20,7 @@
 
 class ConvNetSingle : public Network {
 public:
-	ConvNetSingle(NetworkListener *networkListener) : Network(0, 0, 0) {
+	ConvNetSingle() : Network(0, 0, 0) {
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 

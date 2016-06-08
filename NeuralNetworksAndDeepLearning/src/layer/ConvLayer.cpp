@@ -120,7 +120,7 @@ void ConvLayer::feedforward(UINT idx, const rcube &input) {
 	activation_fn->activate(z, output);
 	Util::printCube(output, "output:");
 
-	Layer::feedforward(idx, this->output);
+	propFeedforward(this->output);
 }
 
 
@@ -175,9 +175,7 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 		}
 	}
 
-
-	HiddenLayer::backpropagation(idx, this);
-
+	propBackpropagation();
 }
 
 
@@ -305,7 +303,7 @@ void ConvLayer::reset_nabla(UINT idx) {
 	for(UINT i = 0; i < filter_d.filters; i++) nabla_w[i].zeros();
 	nabla_b.zeros();
 
-	Layer::reset_nabla(idx);
+	propResetNParam();
 }
 
 
@@ -322,9 +320,7 @@ void ConvLayer::update(UINT idx, int n, int miniBatchSize) {
 	}
 	biases -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
 
-
-
-	Layer::update(idx, n, miniBatchSize);
+	propUpdate(n, miniBatchSize);
 }
 
 

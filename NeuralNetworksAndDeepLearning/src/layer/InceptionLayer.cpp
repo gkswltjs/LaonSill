@@ -150,7 +150,7 @@ void InceptionLayer::feedforward(UINT idx, const rcube &input) {
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->feedforward(0, input);
 	}
-	Layer::feedforward(idx, lastLayer->getOutput());
+	propFeedforward(lastLayer->getOutput());
 }
 
 void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
@@ -169,7 +169,7 @@ void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 		delta_input += firstLayers[i]->getDeltaInput();
 	}
 
-	HiddenLayer::backpropagation(idx, this);
+	propBackpropagation();
 
 	delta_input.set_size(size(output));
 	delta_input.zeros();
@@ -182,7 +182,7 @@ void InceptionLayer::reset_nabla(UINT idx) {
 		firstLayers[i]->reset_nabla(0);
 	}
 
-	Layer::reset_nabla(idx);
+	propResetNParam();
 }
 
 void InceptionLayer::update(UINT idx, int n, int miniBatchSize) {
@@ -191,7 +191,7 @@ void InceptionLayer::update(UINT idx, int n, int miniBatchSize) {
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->update(0, n, miniBatchSize);
 	}
-	Layer::update(idx, n, miniBatchSize);
+	propUpdate(n, miniBatchSize);
 }
 
 

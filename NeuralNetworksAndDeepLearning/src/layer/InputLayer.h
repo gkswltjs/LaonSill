@@ -39,7 +39,7 @@ public:
 		Util::printCube(input, "input:");
 		Util::printCube(this->output, "output:");
 
-		Layer::feedforward(idx, this->output);
+		propFeedforward(this->output);
 	}
 protected:
 	void initialize() {

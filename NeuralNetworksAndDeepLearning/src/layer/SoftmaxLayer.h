@@ -64,8 +64,7 @@ public:
 		// delta input
 		delta_input.slice(0) = weight.t()*delta.slice(0);
 
-
-		HiddenLayer::backpropagation(0, this);
+		propBackpropagation();
 	}
 
 private:

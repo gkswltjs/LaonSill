@@ -36,7 +36,7 @@ public:
 		nabla_b += delta.slice(0);
 		nabla_w += delta.slice(0)*input.slice(0).t();
 
-		HiddenLayer::backpropagation(0, this);
+		propBackpropagation();
 	}
 
 private:

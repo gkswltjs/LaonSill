@@ -53,7 +53,7 @@ void LRNLayer::feedforward(UINT idx, const rcube &input) {
 		//Util::printMat(this->output.slice(i), "output:");
 	}
 
-	Layer::feedforward(idx, this->output);
+	propFeedforward(this->output);
 
 }
 
@@ -90,7 +90,7 @@ void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 		delta_input.slice(i) = c * temp % input.slice(i) + pow(z.slice(i), -lrn_d.beta) % w_next_delta.slice(i);
 	}
 	//Util::printCube(delta_input, "delta_input:");
-	HiddenLayer::backpropagation(idx, this);
+	propBackpropagation();
 	delta_input.zeros();
 }
 

@@ -33,11 +33,8 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	//virtual void backpropagation(HiddenLayer *next_layer)=0;
-	virtual void backpropagation(UINT idx, HiddenLayer *next_layer) {
-		for(UINT i = 0; i < prevLayers.size(); i++) {
-			prevLayers[i].prev_layer->backpropagation(prevLayers[i].idx, this);
-		}
-	}
+	virtual void backpropagation(UINT idx, HiddenLayer *next_layer) { propBackpropagation(); }
+
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
@@ -69,6 +66,12 @@ protected:
 			return false;
 		} else {
 			return true;
+		}
+	}
+
+	void propBackpropagation() {
+		for(UINT i = 0; i < prevLayers.size(); i++) {
+			prevLayers[i].prev_layer->backpropagation(prevLayers[i].idx, this);
 		}
 	}
 

@@ -11,6 +11,7 @@
 #include "LayerConfig.h"
 #include "../Util.h"
 #include <armadillo>
+#include <iostream>
 
 using namespace arma;
 
@@ -43,31 +44,18 @@ public:
 	rcube &getOutput() { return this->output; }
 	vector<next_layer_relation> &getNextLayers() { return this->nextLayers; }
 	int getNextLayerSize() { return this->nextLayers.size(); }
+	void addNextLayer(next_layer_relation nextLayer) { nextLayers.push_back(nextLayer); }
+
 
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void feedforward(UINT idx, const rcube &input) {
-		for(UINT i = 0; i < nextLayers.size(); i++) {
-			nextLayers[i].next_layer->feedforward(nextLayers[i].idx, input);
-		}
-	}
+	virtual void feedforward(UINT idx, const rcube &input) { propFeedforward(input); }
+	virtual void reset_nabla(UINT idx) { propResetNParam(); }
+	virtual void update(UINT idx, int n, int miniBatchSize) { propUpdate(n, miniBatchSize); }
+	virtual void save(ofstream &ofs) { propSave(ofs); }
 
-	virtual void addNextLayer(next_layer_relation nextLayer) { nextLayers.push_back(nextLayer); }
-
-
-	virtual void reset_nabla(UINT idx) {
-		for(unsigned int i = 0; i < nextLayers.size(); i++) {
-			nextLayers[i].next_layer->reset_nabla(nextLayers[i].idx);
-		}
-	}
-
-	virtual void update(UINT idx, int n, int miniBatchSize) {
-		for(unsigned int i = 0; i < nextLayers.size(); i++) {
-			nextLayers[i].next_layer->update(nextLayers[i].idx, n, miniBatchSize);
-		}
-	}
 
 protected:
 
@@ -81,6 +69,29 @@ protected:
 		}
 	}
 
+	void propFeedforward(const rcube output) {
+		for(UINT i = 0; i < nextLayers.size(); i++) {
+			nextLayers[i].next_layer->feedforward(nextLayers[i].idx, output);
+		}
+	}
+
+	void propResetNParam() {
+		for(UINT i = 0; i < nextLayers.size(); i++) {
+			nextLayers[i].next_layer->reset_nabla(nextLayers[i].idx);
+		}
+	}
+
+	void propUpdate(int n, int miniBatchSize) {
+		for(UINT i = 0; i < nextLayers.size(); i++) {
+			nextLayers[i].next_layer->update(nextLayers[i].idx, n, miniBatchSize);
+		}
+	}
+
+	void propSave(ofstream &ofs) {
+		for(UINT i = 0; i < nextLayers.size(); i++) {
+			//nextLayers[i].next_layer->save(ofs);
+		}
+	}
 
 
 	string name;

@@ -68,11 +68,7 @@ void FullyConnectedLayer::initialize(double p_dropout, update_param weight_updat
 	 * HiddenLayer에서 activation_fn이 할당되는 곳에서 weight initialize 필요
 	 * 잊어버리기 쉬울 것 같으니 대책이 필요
 	 */
-	//this->activation_fn = activation_fn;
 	this->activation_fn = ActivationFactory::create(activationType);
-	//if(this->activation_fn) activation_fn->initialize_weight(n_in, this->weight);
-
-
 }
 
 
@@ -98,7 +94,7 @@ void FullyConnectedLayer::feedforward(UINT idx, const rcube &input) {
 	activation_fn->activate(z, output);
 	Util::printCube(output, "output:");
 
-	Layer::feedforward(idx, this->output);
+	propFeedforward(this->output);
 }
 
 void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
@@ -129,7 +125,7 @@ void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	delta_input.slice(0) = weight.t()*delta.slice(0);
 	//fc_layer->getWeight().t()*fc_layer->getDelta().slice(0)
 
-	HiddenLayer::backpropagation(idx, this);
+	propBackpropagation();
 	delta.zeros();
 	delta_input.zeros();
 
@@ -144,7 +140,7 @@ void FullyConnectedLayer::reset_nabla(UINT idx) {
 	nabla_b.zeros();
 	nabla_w.zeros();
 
-	Layer::reset_nabla(idx);
+	propResetNParam();
 }
 
 
@@ -157,7 +153,7 @@ void FullyConnectedLayer::update(UINT idx, int n, int miniBatchSize) {
 	weight = (1-weight_update_param.lr_mult*weight_update_param.decay_mult/n)*weight - (weight_update_param.lr_mult/miniBatchSize)*nabla_w;
 	bias -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
 
-	Layer::update(idx, n, miniBatchSize);
+	propUpdate(n, miniBatchSize);
 }
 
 

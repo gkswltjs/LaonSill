@@ -42,7 +42,7 @@ void PoolingLayer::feedforward(UINT idx, const rcube &input) {
 	Util::convertCube(input, this->input);
 	pooling_fn->pool(pool_d, this->input, pool_map, output);
 
-	Layer::feedforward(idx, this->output);
+	propFeedforward(this->output);
 }
 
 
@@ -64,7 +64,7 @@ void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// dx가 모두 aggregate된 후 이전 레이어로 back propagate한다.
 	if(!isLastNextLayerRequest(idx)) return;
 
-	HiddenLayer::backpropagation(idx, this);
+	propBackpropagation();
 	delta_input.zeros();
 }
 

@@ -38,7 +38,7 @@ void DepthConcatLayer::feedforward(UINT idx, const rcube &input) {
 
 	this->output = this->input;
 
-	Layer::feedforward(idx, this->output);
+	propFeedforward(this->output);
 
 	// backward pass에서 input을 사용하지 않으므로 여기서 reset할 수 있음
 	this->input.reset();
@@ -53,7 +53,7 @@ void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// delta_input = join_slices(this->delta_input, next_layer->getDeltaInput());
 	if(!isLastNextLayerRequest(idx)) return;
 
-	HiddenLayer::backpropagation(idx, this);
+	propBackpropagation();
 	this->delta_input.zeros();
 }
 

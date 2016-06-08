@@ -37,7 +37,7 @@ public:
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Constant, 0.1),
+				param_filler(ParamFillerType::Gaussian, 0.1),
 				ActivationType::ReLU
 				);
 
@@ -56,7 +56,7 @@ public:
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Constant, 0.1),
+				param_filler(ParamFillerType::Gaussian, 0.1),
 				ActivationType::ReLU
 				);
 
@@ -76,7 +76,7 @@ public:
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Constant, 0.1),
+				param_filler(ParamFillerType::Gaussian, 0.1),
 				ActivationType::ReLU);
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
@@ -86,8 +86,8 @@ public:
 				0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
-				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Constant, 0.1)
+				param_filler(ParamFillerType::Constant, 0.0),
+				param_filler(ParamFillerType::Gaussian, 0.1)
 				);
 
 		Network::addLayerRelation(inputLayer, conv1Layer);
