@@ -51,7 +51,7 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	virtual void update(UINT idx, double eta, double lambda, int n, int miniBatchSize)=0;
+	virtual void update(UINT idx, int n, int miniBatchSize)=0;
 
 	void addPrevLayer(prev_layer_relation prevLayer) { prevLayers.push_back(prevLayer); }
 

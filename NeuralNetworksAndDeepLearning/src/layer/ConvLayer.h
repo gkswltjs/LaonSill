@@ -18,7 +18,8 @@
 
 class ConvLayer : public HiddenLayer {
 public:
-	ConvLayer(string name, io_dim in_dim, filter_dim filter_d, ActivationType activationType);
+	ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_f, param_filler bias_filler, ActivationType activationType);
 	virtual ~ConvLayer();
 
 	filter_dim &get_filter_dim() { return this->filter_d; }
@@ -58,7 +59,7 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	void update(UINT idx, double eta, double lambda, int n, int miniBatchSize);
+	void update(UINT idx, int n, int miniBatchSize);
 
 
 
@@ -81,6 +82,11 @@ protected:
 	rcube delta_input;
 
 	Activation *activation_fn;
+
+	update_param weight_update_param;
+	update_param bias_update_param;
+	param_filler weight_filler;
+	param_filler bias_filler;
 };
 
 #endif /* LAYER_CONVLAYER_H_ */

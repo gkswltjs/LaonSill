@@ -17,6 +17,7 @@ public:
 	Softmax() {}
 	virtual ~Softmax() {}
 
+	/*
 	void initialize_weight(int n_in, rmat &weight) {
 		// TODO for debug
 		//weight.randn();
@@ -29,6 +30,7 @@ public:
 		//weight *= sqrt(1.0/n_in);
 		weight.zeros();
 	}
+	*/
 
 	void activate(const rcube &z, rcube &activation) {
 		// TODO softmax는 output layer only,

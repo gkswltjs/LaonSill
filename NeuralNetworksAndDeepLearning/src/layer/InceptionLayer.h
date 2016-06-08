@@ -23,7 +23,7 @@ public:
 	void feedforward(UINT idx, const rcube &input);
 	void backpropagation(UINT idx, HiddenLayer *next_layer);
 	void reset_nabla(UINT idx);
-	void update(UINT idx, double eta, double lambda, int n, int miniBatchSize);
+	void update(UINT idx, int n, int miniBatchSize);
 
 
 

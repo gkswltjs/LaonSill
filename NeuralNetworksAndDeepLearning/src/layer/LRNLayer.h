@@ -29,9 +29,9 @@ public:
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		Layer::reset_nabla(idx);
 	}
-	void update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
+	void update(UINT idx, int n, int miniBatchSize) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		Layer::update(idx, eta, lambda, n, miniBatchSize);
+		Layer::update(idx, n, miniBatchSize);
 	}
 
 private:

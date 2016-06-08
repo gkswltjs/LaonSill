@@ -32,24 +32,93 @@ InceptionLayer::~InceptionLayer() {}
 
 
 void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp) {
+	double weight_lr_mult = 1.0;
+	double weight_decay_mult = 1.0;
+	double bias_lr_mult = 2.0;
+	double bias_decay_mult = 0.0;
 
 	//inputLayer = new InputLayer("inputLayer", in_dim);
 	//ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv1x1)));
-	ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), ActivationType::ReLU);
+	ConvLayer *conv1x1Layer = new ConvLayer(
+			"conv1x1",
+			in_dim,
+			filter_dim(1, 1, in_dim.channels, cv1x1, 1),
+			update_param(weight_lr_mult, weight_decay_mult),
+			update_param(bias_lr_mult, bias_decay_mult),
+			param_filler(ParamFillerType::Xavier, 0.03),
+			param_filler(ParamFillerType::Constant, 0.2),
+			ActivationType::ReLU
+			);
+
 	//ConvLayer *conv3x3reduceLayer = new ConvLayer("conv3x3reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv3x3reduce)));
-	ConvLayer *conv3x3reduceLayer = new ConvLayer("conv3x3reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1), ActivationType::ReLU);
+	ConvLayer *conv3x3reduceLayer = new ConvLayer(
+			"conv3x3reduce",
+			in_dim,
+			filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1),
+			update_param(weight_lr_mult, weight_decay_mult),
+			update_param(bias_lr_mult, bias_decay_mult),
+			param_filler(ParamFillerType::Xavier, 0.09),
+			param_filler(ParamFillerType::Constant, 0.2),
+			ActivationType::ReLU);
+
 	//ConvLayer *conv3x3Layer = new ConvLayer("conv3x3", io_dim(in_dim.rows, in_dim.cols, cv3x3reduce), filter_dim(3, 3, cv3x3reduce, cv3x3, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv3x3)));
-	ConvLayer *conv3x3Layer = new ConvLayer("conv3x3", io_dim(in_dim.rows, in_dim.cols, cv3x3reduce), filter_dim(3, 3, cv3x3reduce, cv3x3, 1), ActivationType::ReLU);
+	ConvLayer *conv3x3Layer = new ConvLayer(
+			"conv3x3",
+			io_dim(in_dim.rows, in_dim.cols, cv3x3reduce),
+			filter_dim(3, 3, cv3x3reduce, cv3x3, 1),
+			update_param(weight_lr_mult, weight_decay_mult),
+			update_param(bias_lr_mult, bias_decay_mult),
+			param_filler(ParamFillerType::Xavier, 0.03),
+			param_filler(ParamFillerType::Constant, 0.2),
+			ActivationType::ReLU
+			);
+
 	//ConvLayer *conv5x5recudeLayer = new ConvLayer("conv5x5reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv5x5reduce)));
-	ConvLayer *conv5x5recudeLayer = new ConvLayer("conv5x5reduce", in_dim, filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1), ActivationType::ReLU);
+	ConvLayer *conv5x5recudeLayer = new ConvLayer(
+			"conv5x5reduce",
+			in_dim,
+			filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1),
+			update_param(weight_lr_mult, weight_decay_mult),
+			update_param(bias_lr_mult, bias_decay_mult),
+			param_filler(ParamFillerType::Xavier, 0.2),
+			param_filler(ParamFillerType::Constant, 0.2),
+			ActivationType::ReLU
+			);
+
 	//ConvLayer *conv5x5Layer = new ConvLayer("conv5x5", io_dim(in_dim.rows, in_dim.cols, cv5x5reduce), filter_dim(5, 5, cv5x5reduce, cv5x5, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv5x5)));
-	ConvLayer *conv5x5Layer = new ConvLayer("conv5x5", io_dim(in_dim.rows, in_dim.cols, cv5x5reduce), filter_dim(5, 5, cv5x5reduce, cv5x5, 1), ActivationType::ReLU);
-	PoolingLayer *pool3x3Layer = new PoolingLayer("pool3x3", in_dim, pool_dim(3, 3, 1), PoolingType::Max);
+	ConvLayer *conv5x5Layer = new ConvLayer(
+			"conv5x5",
+			io_dim(in_dim.rows, in_dim.cols, cv5x5reduce),
+			filter_dim(5, 5, cv5x5reduce, cv5x5, 1),
+			update_param(weight_lr_mult, weight_decay_mult),
+			update_param(bias_lr_mult, bias_decay_mult),
+			param_filler(ParamFillerType::Xavier, 0.03),
+			param_filler(ParamFillerType::Constant, 0.2),
+			ActivationType::ReLU
+			);
+
+	PoolingLayer *pool3x3Layer = new PoolingLayer(
+			"pool3x3",
+			in_dim,
+			pool_dim(3, 3, 1),
+			PoolingType::Max
+			);
+
 	//ConvLayer *convProjectionLayer = new ConvLayer("convProjection", in_dim, filter_dim(1, 1, in_dim.channels, cp, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cp)));
-	ConvLayer *convProjectionLayer = new ConvLayer("convProjection", in_dim, filter_dim(1, 1, in_dim.channels, cp, 1), ActivationType::ReLU);
-	DepthConcatLayer *depthConcatLayer = new DepthConcatLayer("depthConcat", io_dim(in_dim.rows, in_dim.cols, cv1x1+cv3x3+cv5x5+cp));
+	ConvLayer *convProjectionLayer = new ConvLayer(
+			"convProjection",
+			in_dim,
+			filter_dim(1, 1, in_dim.channels, cp, 1),
+			update_param(weight_lr_mult, weight_decay_mult),
+			update_param(bias_lr_mult, bias_decay_mult),
+			param_filler(ParamFillerType::Xavier, 0.1),
+			param_filler(ParamFillerType::Constant, 0.2),
+			ActivationType::ReLU);
 
-
+	DepthConcatLayer *depthConcatLayer = new DepthConcatLayer(
+			"depthConcat",
+			io_dim(in_dim.rows, in_dim.cols, cv1x1+cv3x3+cv5x5+cp)
+			);
 
 	firstLayers.push_back(conv1x1Layer);
 	firstLayers.push_back(conv3x3reduceLayer);
@@ -113,13 +182,13 @@ void InceptionLayer::reset_nabla(UINT idx) {
 	Layer::reset_nabla(idx);
 }
 
-void InceptionLayer::update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
+void InceptionLayer::update(UINT idx, int n, int miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->update(0, eta, lambda, n, miniBatchSize);
+		firstLayers[i]->update(0, n, miniBatchSize);
 	}
-	Layer::update(idx, eta, lambda, n, miniBatchSize);
+	Layer::update(idx, n, miniBatchSize);
 }
 
 

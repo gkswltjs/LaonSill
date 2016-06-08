@@ -21,6 +21,7 @@ public:
 	}
 	virtual ~ReLU() {}
 
+	/*
 	void initialize_weight(int n_in, rmat &weight) {
 		weight.randn();
 		weight *= sqrt(2.0/n_in);				// initial point scaling
@@ -29,6 +30,8 @@ public:
 		weight.randn();
 		weight *= sqrt(2.0/n_in);				// initial point scaling
 	}
+	*/
+
 	void activate(const rcube &z, rcube &activation) {
 		if(zero.n_elem <= 1) zero.set_size(size(z));
 		activation = arma::max(z, zero);

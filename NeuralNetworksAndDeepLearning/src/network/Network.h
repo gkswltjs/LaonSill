@@ -37,7 +37,7 @@ public:
 
 
 
-	void sgd(int epochs, int miniBatchSize, double eta, double lambda);
+	void sgd(int epochs, int miniBatchSize);
 
 
 	//void setInputLayer(InputLayer *inputLayer) { this->inputLayer = inputLayer; }
@@ -71,7 +71,7 @@ public:
 	void load(string filename);
 
 protected:
-	void updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, double lambda);
+	void updateMiniBatch(int nthMiniBatch, int miniBatchSize);
 	void backprop(const DataSample &dataSample);
 
 	//void feedforward();

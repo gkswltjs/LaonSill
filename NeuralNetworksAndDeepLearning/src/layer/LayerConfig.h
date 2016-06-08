@@ -9,11 +9,24 @@
 #define LAYERCONFIG_H_
 
 //#include "../Util.h"
+#include <armadillo>
 
+typedef arma::fvec rvec;
+typedef arma::fmat rmat;
+typedef arma::fcube rcube;
 typedef unsigned int UINT;
 
 class Layer;
 class HiddenLayer;
+
+
+enum class ParamFillerType {
+	None, Constant, Xavier, Gaussian
+};
+
+
+
+
 
 
 typedef struct io_dim {
@@ -82,6 +95,83 @@ typedef struct lrn_dim {
 		this->beta = beta;
 	}
 } lrn_dim;
+
+
+typedef struct update_param {
+	double lr_mult;
+	double decay_mult;
+
+	update_param() {}
+	update_param(double lr_mult, double decay_mult) {
+		this->lr_mult = lr_mult;
+		this->decay_mult = decay_mult;
+	}
+} update_param;
+
+typedef struct param_filler {
+	ParamFillerType type;
+	double value;
+
+	param_filler() {}
+	param_filler(ParamFillerType type, double value=0) {
+		this->type = type;
+		this->value = value;
+	}
+
+	void fill(rvec &param, int n_in) {
+		switch(type) {
+		case ParamFillerType::Constant: param.fill(value); break;
+		case ParamFillerType::Xavier:
+			param.randn();
+			param *= sqrt(3.0/n_in);
+			break;
+		case ParamFillerType::Gaussian:
+			param.randn();
+			break;
+		case ParamFillerType::None:
+		default:
+			break;
+		}
+	}
+
+	void fill(rmat &param, int n_in) {
+		switch(type) {
+		case ParamFillerType::Constant:
+			param.fill(value);
+			break;
+		case ParamFillerType::Xavier:
+			param.randn();
+			param *= sqrt(3.0/n_in);				// initial point scaling
+			break;
+		case ParamFillerType::Gaussian:
+			param.randn();
+			break;
+		case ParamFillerType::None:
+		default:
+			break;
+		}
+	}
+
+	void fill(rcube &param, int n_in) {
+		switch(type) {
+		case ParamFillerType::Constant:
+			param.fill(value);
+			break;
+		case ParamFillerType::Xavier:
+			param.randn();
+			param *= sqrt(3.0/n_in);				// initial point scaling
+			break;
+		case ParamFillerType::Gaussian:
+			param.randn();
+			break;
+		case ParamFillerType::None:
+		default:
+			break;
+		}
+	}
+
+} param_filler;
+
 
 
 

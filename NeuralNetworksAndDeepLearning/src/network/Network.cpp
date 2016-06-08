@@ -35,7 +35,7 @@ Network::~Network() {}
 
 
 
-void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
+void Network::sgd(int epochs, int miniBatchSize) {
 	int trainDataSize = dataSet->getTrainDataSize();
 	int miniBatchesSize = trainDataSize / miniBatchSize;
 
@@ -63,7 +63,7 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 
 			//cout << "reset_nabla()" << endl;
 			inputLayer->reset_nabla(0);
-			updateMiniBatch(j, miniBatchSize, eta, lambda);
+			updateMiniBatch(j, miniBatchSize);
 		}
 		//timer1.stop();
 
@@ -100,7 +100,7 @@ void Network::sgd(int epochs, int miniBatchSize, double eta, double lambda) {
 
 
 
-void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, double lambda) {
+void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
 
 	int baseIndex = nthMiniBatch*miniBatchSize;
 	for(int i = 0; i < miniBatchSize; i++) {
@@ -113,7 +113,7 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize, double eta, d
 	//}
 
 	//cout << "update()" << endl;
-	inputLayer->update(0, eta, lambda, n, miniBatchSize);
+	inputLayer->update(0, n, miniBatchSize);
 }
 
 

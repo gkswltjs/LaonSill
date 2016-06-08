@@ -33,12 +33,14 @@ using namespace arma;
 
 class SoftmaxLayer : public OutputLayer {
 public:
-	SoftmaxLayer(string name, int n_in, int n_out, double p_dropout)
-		: OutputLayer(name, n_in, n_out, p_dropout) {
+	SoftmaxLayer(string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler)
+		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler) {
 		initialize();
 	}
-	SoftmaxLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout)
-		: OutputLayer(name, in_dim, out_dim, p_dropout) {
+	SoftmaxLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler)
+		: OutputLayer(name, in_dim, out_dim, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler) {
 		initialize();
 	}
 	virtual ~SoftmaxLayer() {
@@ -70,8 +72,10 @@ private:
 	void initialize() {
 		this->cost_fn = CostFactory::create(CostType::LogLikelihood);
 		this->activation_fn = ActivationFactory::create(ActivationType::Softmax);
-		this->activation_fn->initialize_weight(in_dim.size(), weight);
+		//this->activation_fn->initialize_weight(in_dim.size(), weight);
 
+		weight.zeros();
+		bias.zeros();
 	}
 };
 

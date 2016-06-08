@@ -16,6 +16,7 @@ public:
 	Sigmoid() {}
 	virtual ~Sigmoid() {}
 
+	/*
 	void initialize_weight(int n_in, rmat &weight) {
 		weight.randn();
 		weight *= 1.0/sqrt(n_in);				// initial point scaling
@@ -24,6 +25,7 @@ public:
 		weight.randn();
 		weight *= 1.0/sqrt(n_in);				// initial point scaling
 	}
+	*/
 
 	/*
 	void initialize_weight(int filters, void *weight, int type) {

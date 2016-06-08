@@ -11,10 +11,17 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 
-ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, ActivationType activationType)
+ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, in_dim, in_dim) {
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;
+
+	this->weight_update_param = weight_update_param;
+	this->bias_update_param = bias_update_param;
+	this->weight_filler = weight_filler;
+	this->bias_filler = bias_filler;
+
 
 	// determine output dimension by in_dim, filter_dim, pool_dim
 	//this->out_dim.rows = (in_dim.rows-filter_d.rows+1)/pool_d.rows;
@@ -28,17 +35,24 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation
 
 	filters = new rcube[filter_d.filters];
 	nabla_w = new rcube[filter_d.filters];
+
 	for(UINT i = 0; i < filter_d.filters; i++) {
 		filters[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
-		filters[i].randn();
+		//filters[i].randn();
+		this->weight_filler.fill(filters[i], in_dim.size());
+
 		nabla_w[i].set_size(filter_d.rows, filter_d.cols, filter_d.channels);
 		nabla_w[i].zeros();
 	}
 
 	biases.set_size(filter_d.filters);
-	biases.zeros();
+	this->bias_filler.fill(biases, in_dim.size());
+
 	nabla_b.set_size(filter_d.filters);
 	nabla_b.zeros();
+
+
+
 
 
 	//z.set_size(in_dim.rows-filter_d.rows+1, in_dim.cols-filter_d.cols+1, filter_d.filters);
@@ -49,11 +63,11 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, Activation
 	this->activation_fn = ActivationFactory::create(activationType);
 	//if(this->activation_fn) this->activation_fn->initialize_weight();
 	//int n_out = filter_d.filters*filter_d.rows*filter_d.cols/9;
-	if(this->activation_fn) {
-		for(UINT i = 0; i < filter_d.filters; i++) {
-			 this->activation_fn->initialize_weight(in_dim.size(), filters[i]);
-		}
-	}
+	//if(this->activation_fn) {
+	//	for(UINT i = 0; i < filter_d.filters; i++) {
+	//		 this->activation_fn->initialize_weight(in_dim.size(), filters[i]);
+	//	}
+	//}
 
 	delta.set_size(size(z));
 
@@ -302,17 +316,22 @@ void ConvLayer::reset_nabla(UINT idx) {
 }
 
 
-void ConvLayer::update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
+void ConvLayer::update(UINT idx, int n, int miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
+	//for(UINT i = 0; i < filter_d.filters; i++) {
+	//	filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
+	//}
+	//biases -= eta/miniBatchSize*nabla_b;
+
 	for(UINT i = 0; i < filter_d.filters; i++) {
-		filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
+		filters[i] = (1-weight_update_param.lr_mult*weight_update_param.decay_mult/n)*filters[i] - (weight_update_param.lr_mult/miniBatchSize)*nabla_w[i];
 	}
-	biases -= eta/miniBatchSize*nabla_b;
+	biases -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
 
 
 
-	Layer::update(idx, eta, lambda, n, miniBatchSize);
+	Layer::update(idx, n, miniBatchSize);
 }
 
 

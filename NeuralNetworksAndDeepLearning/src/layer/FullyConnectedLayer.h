@@ -16,10 +16,10 @@
 
 class FullyConnectedLayer : public HiddenLayer {
 public:
-	FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout);
-		FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout);
-	FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, ActivationType activationType);
-	FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, ActivationType activationType);
+	FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
+	FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
 	virtual ~FullyConnectedLayer();
 
 	rmat &getWeight() { return this->weight; }
@@ -50,10 +50,11 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	void update(UINT idx, double eta, double lambda, int n, int miniBatchSize);
+	void update(UINT idx, int n, int miniBatchSize);
 
 private:
-	void initialize(double p_dropout, ActivationType activationType);
+	void initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
 
 protected:
 	double p_dropout;
@@ -68,6 +69,12 @@ protected:
 	rcube delta;
 	rcube delta_input;
 	Activation *activation_fn;
+
+	update_param weight_update_param;
+	update_param bias_update_param;
+
+	param_filler weight_filler;
+	param_filler bias_filler;
 };
 
 #endif /* LAYER_FULLYCONNECTEDLAYER_H_ */

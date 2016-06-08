@@ -60,9 +60,9 @@ public:
 		}
 	}
 
-	virtual void update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
+	virtual void update(UINT idx, int n, int miniBatchSize) {
 		for(unsigned int i = 0; i < nextLayers.size(); i++) {
-			nextLayers[i].next_layer->update(nextLayers[i].idx, eta, lambda, n, miniBatchSize);
+			nextLayers[i].next_layer->update(nextLayers[i].idx, n, miniBatchSize);
 		}
 	}
 

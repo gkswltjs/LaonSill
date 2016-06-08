@@ -20,10 +20,38 @@
 class InceptionNetSingle : public Network {
 public:
 	InceptionNetSingle() : Network(0, 0, 0) {
-		InputLayer *inputLayer = new InputLayer("input", io_dim(28, 28, 1));
-		HiddenLayer *incept1Layer = new InceptionLayer("incept1", io_dim(28, 28, 1), io_dim(28, 28, 12), 3, 2, 3, 2, 3, 3);
-		HiddenLayer *incept2Layer = new InceptionLayer("incept2", io_dim(28, 28, 12), io_dim(28, 28, 24), 6, 4, 6, 4, 6, 6);
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 28*28*24, 10, 0.5);
+		double lr_mult = 0.01;
+		double decay_mult = 5.0;
+
+		InputLayer *inputLayer = new InputLayer(
+				"input",
+				io_dim(28, 28, 1)
+				);
+
+		HiddenLayer *incept1Layer = new InceptionLayer(
+				"incept1",
+				io_dim(28, 28, 1),
+				io_dim(28, 28, 12),
+				3, 2, 3, 2, 3, 3
+				);
+
+		HiddenLayer *incept2Layer = new InceptionLayer(
+				"incept2",
+				io_dim(28, 28, 12),
+				io_dim(28, 28, 24),
+				6, 4, 6, 4, 6, 6
+				);
+
+		OutputLayer *softmaxLayer = new SoftmaxLayer(
+				"softmax",
+				28*28*24,
+				10,
+				0.5,
+				update_param(lr_mult, decay_mult),
+				update_param(lr_mult, decay_mult),
+				param_filler(ParamFillerType::Xavier),
+				param_filler(ParamFillerType::Constant, 0.1)
+				);
 
 		Network::addLayerRelation(inputLayer, incept1Layer);
 		Network::addLayerRelation(incept1Layer, incept2Layer);

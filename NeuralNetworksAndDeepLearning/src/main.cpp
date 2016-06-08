@@ -88,7 +88,7 @@ void network_test() {
 
 		Network *network = new NeuralNetSingle();
 		network->setDataSet(mnistDataSet);
-		network->sgd(10, 10, 0.1, 5.0);
+		network->sgd(10, 10);
 
 		/*
 		cout << "googlenet with mnist ... " << endl;
@@ -185,9 +185,36 @@ void network_test() {
 		Network::addLayerRelation(fc1Layer, softmax2Layer);
 		*/
 
-		InputLayer *inputLayer = new InputLayer("input", io_dim(10, 10, 1));
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 10*10*1, 100, 0.5, ActivationType::ReLU);
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 100, 10, 0.5);
+		double lr_mult = 3.0;
+		double decay_mult = 5.0;
+
+		InputLayer *inputLayer = new InputLayer(
+				"input",
+				io_dim(10, 10, 1)
+				);
+
+		HiddenLayer *fc1Layer = new FullyConnectedLayer(
+				"fc1",
+				10*10*1,
+				100,
+				0.5,
+				update_param(lr_mult, decay_mult),
+				update_param(lr_mult, decay_mult),
+				param_filler(ParamFillerType::Xavier),
+				param_filler(ParamFillerType::Constant, 0.1),
+				ActivationType::ReLU
+				);
+
+		OutputLayer *softmaxLayer = new SoftmaxLayer(
+				"softmax",
+				100,
+				10,
+				0.5,
+				update_param(lr_mult, decay_mult),
+				update_param(lr_mult, decay_mult),
+				param_filler(ParamFillerType::Xavier),
+				param_filler(ParamFillerType::Constant, 0.1)
+				);
 
 		Network::addLayerRelation(inputLayer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
@@ -196,7 +223,7 @@ void network_test() {
 		network.addOutputLayer(softmaxLayer);
 		//network.addOutputLayer(softmax2Layer);
 
-		network.sgd(5, 2, 3.0, 5.0);
+		network.sgd(5, 2);
 	}
 
 }

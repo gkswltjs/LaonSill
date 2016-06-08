@@ -17,14 +17,16 @@ using namespace arma;
 
 class OutputLayer : public FullyConnectedLayer {
 public:
-	OutputLayer(string name, int n_in, int n_out, double p_dropout) : FullyConnectedLayer(name, n_in, n_out, p_dropout) {}
-	OutputLayer(string name, int n_in, int n_out, double p_dropout, ActivationType activationType, CostType costType)
-		: FullyConnectedLayer(name, n_in, n_out, p_dropout) {
+	//OutputLayer(string name, int n_in, int n_out, double p_dropout) : FullyConnectedLayer(name, n_in, n_out, p_dropout) {}
+	OutputLayer(string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
+		: FullyConnectedLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler) {
 		initialize(activationType, costType);
 	}
-	OutputLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout) : FullyConnectedLayer(name, in_dim, out_dim, p_dropout) {}
-	OutputLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, ActivationType activationType, CostType costType)
-		:FullyConnectedLayer(name, in_dim, out_dim, p_dropout) {
+	//OutputLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout) : FullyConnectedLayer(name, in_dim, out_dim, p_dropout) {}
+	OutputLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
+		:FullyConnectedLayer(name, in_dim, out_dim, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler) {
 		initialize(activationType, costType);
 	};
 	virtual ~OutputLayer() {
@@ -42,7 +44,7 @@ public:
 private:
 	void initialize(ActivationType activationType, CostType costType) {
 		this->activation_fn = ActivationFactory::create(activationType);
-		if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
+		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
 		this->cost_fn = CostFactory::create(costType);
 	}
 

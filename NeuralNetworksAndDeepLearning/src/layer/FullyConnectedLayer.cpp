@@ -9,24 +9,16 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 
-FullyConnectedLayer::FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout)
+FullyConnectedLayer::FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, n_in, n_out) {
-	initialize(p_dropout, ActivationType::None);
+	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
-FullyConnectedLayer::FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout)
+FullyConnectedLayer::FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, in_dim, out_dim) {
-	initialize(p_dropout, ActivationType::None);
-}
-
-FullyConnectedLayer::FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, ActivationType activationType)
-	: HiddenLayer(name, n_in, n_out) {
-	initialize(p_dropout, activationType);
-}
-
-FullyConnectedLayer::FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, ActivationType activationType)
-	: HiddenLayer(name, in_dim, out_dim) {
-	initialize(p_dropout, activationType);
+	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
 FullyConnectedLayer::~FullyConnectedLayer() {
@@ -34,16 +26,25 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 }
 
 
-void FullyConnectedLayer::initialize(double p_dropout, ActivationType activationType) {
+void FullyConnectedLayer::initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
+		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
 	this->p_dropout = p_dropout;
+
+	this->weight_update_param = weight_update_param;
+	this->bias_update_param = bias_update_param;
+	this->weight_filler = weight_filler;
+	this->bias_filler = bias_filler;
+
 
 	int n_in = in_dim.size();
 	int n_out = out_dim.size();
 
 	this->bias.set_size(n_out, 1);
-	this->bias.zeros();
+	//this->bias.zeros();
+	this->bias_filler.fill(this->bias, n_in);
 
 	this->weight.set_size(n_out, n_in);
+	this->weight_filler.fill(this->weight, n_in);
 
 
 	//this->weight.randn();
@@ -67,7 +68,9 @@ void FullyConnectedLayer::initialize(double p_dropout, ActivationType activation
 	 */
 	//this->activation_fn = activation_fn;
 	this->activation_fn = ActivationFactory::create(activationType);
-	if(this->activation_fn) activation_fn->initialize_weight(n_in, this->weight);
+	//if(this->activation_fn) activation_fn->initialize_weight(n_in, this->weight);
+
+
 }
 
 
@@ -155,13 +158,16 @@ void FullyConnectedLayer::reset_nabla(UINT idx) {
 }
 
 
-void FullyConnectedLayer::update(UINT idx, double eta, double lambda, int n, int miniBatchSize) {
+void FullyConnectedLayer::update(UINT idx, int n, int miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;
-	bias -= eta/miniBatchSize*nabla_b;
+	//weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;
+	//bias -= eta/miniBatchSize*nabla_b;
 
-	Layer::update(idx, eta, lambda, n, miniBatchSize);
+	weight = (1-weight_update_param.lr_mult*weight_update_param.decay_mult/n)*weight - (weight_update_param.lr_mult/miniBatchSize)*nabla_w;
+	bias -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
+
+	Layer::update(idx, n, miniBatchSize);
 }
 
 
