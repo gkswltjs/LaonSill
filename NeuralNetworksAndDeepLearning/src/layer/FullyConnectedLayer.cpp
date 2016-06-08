@@ -28,6 +28,8 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 
 void FullyConnectedLayer::initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
+	this->type = LayerType::FullyConnected;
+
 	this->p_dropout = p_dropout;
 
 	this->weight_update_param = weight_update_param;
@@ -102,18 +104,6 @@ void FullyConnectedLayer::feedforward(UINT idx, const rcube &input) {
 void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
-
-	/*
-	FullyConnectedLayer *fc_layer = dynamic_cast<FullyConnectedLayer *>(next_layer);
-	if(fc_layer) {
-		delta.slice(0) = fc_layer->getDelta().slice(0);
-	}
-	else {
-		throw Exception();
-		// TODO fc 다음으로 CONV가 온 경우 처리
-		//delta.slice(0) = next_delta.slice(0) % sp.slice(0);
-	}
-	*/
 
 	rcube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);

@@ -39,6 +39,9 @@ public:
 	}
 
 protected:
+	void initialize();
+
+
 	rcube delta_input;
 	rcube delta_input_sub;
 

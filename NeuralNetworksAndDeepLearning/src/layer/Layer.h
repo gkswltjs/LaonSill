@@ -15,7 +15,10 @@
 using namespace arma;
 
 
-class HiddenLayer;
+enum class LayerType {
+	Input, FullyConnected, Conv, Pooling, DepthConcat, Inception, LRN, Sigmoid, Softmax
+};
+
 
 
 class Layer {
@@ -94,7 +97,10 @@ protected:
 
 	vector<prev_layer_relation> prevLayers;
 	vector<next_layer_relation> nextLayers;
-	vector<bool> forwardFlags;
+
+
+	LayerType type;
+
 };
 
 #endif /* LAYER_LAYER_H_ */

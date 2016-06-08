@@ -9,6 +9,7 @@
 
 PoolingLayer::PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, PoolingType poolingType)
 	: HiddenLayer(name, in_dim, in_dim) {
+	this->type = LayerType::Pooling;
 
 	this->out_dim.rows = in_dim.rows / pool_d.rows;
 	this->out_dim.cols = in_dim.rows / pool_d.cols;

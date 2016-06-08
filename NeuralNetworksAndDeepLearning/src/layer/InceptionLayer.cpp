@@ -37,6 +37,9 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 	double bias_lr_mult = 2.0;
 	double bias_decay_mult = 0.0;
 
+	this->type = LayerType::Inception;
+
+
 	//inputLayer = new InputLayer("inputLayer", in_dim);
 	//ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv1x1)));
 	ConvLayer *conv1x1Layer = new ConvLayer(

@@ -42,10 +42,7 @@ void Network::sgd(int epochs, int miniBatchSize) {
 	Timer timer1, timer2;
 
 	for(int i = 0; i < epochs; i++) {
-
-
 		//timer1.start();
-
 		dataSet->shuffleTrainDataSet();
 
 		timer2.start();
@@ -57,20 +54,11 @@ void Network::sgd(int epochs, int miniBatchSize) {
 			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 
-			//for(int k = 1; k < numLayers; k++) {
-				//(dynamic_cast<HiddenLayer *>(layers[k]))->reset_nabla();
-			//}
-
 			//cout << "reset_nabla()" << endl;
 			inputLayer->reset_nabla(0);
 			updateMiniBatch(j, miniBatchSize);
 		}
 		//timer1.stop();
-
-
-
-
-
 
 		//dataSet->shuffleTestDataSet();
 		if(dataSet->getTestDataSize() > 0) {
@@ -108,9 +96,6 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
 	}
 
 	int n = dataSet->getTrainDataSize();
-	//for(int i = 1; i < numLayers; i++) {
-		//(dynamic_cast<HiddenLayer *>(layers[i]))->update(eta, lambda, n, miniBatchSize);
-	//}
 
 	//cout << "update()" << endl;
 	inputLayer->update(0, n, miniBatchSize);
@@ -119,29 +104,13 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
 
 
 void Network::backprop(const DataSample &dataSample) {
-	//int lastLayerIndex = numLayers-1;
-
 	//Timer timer;
-
 	//timer.start();
 	// feedforward
 	feedforward(dataSample.getData());
 
 	//cout << "time for feed forward: ";
 	//timer.stop();
-
-
-	//Util::printVec(dataSample.getTarget(), "target:");
-	//Util::printCube(layers[lastLayerIndex]->getInput(), "input:");
-
-
-
-	// backward pass
-	//(dynamic_cast<OutputLayer *>(layers[lastLayerIndex]))->cost(dataSample.getTarget());
-	//for(int i = lastLayerIndex-1; i > 0; i--) {
-	//	//(dynamic_cast<HiddenLayer *>(layers[i]))->backpropagation(dynamic_cast<HiddenLayer *>(layers[i+1]));
-	//}
-
 
 	//timer.start();
 	//cout << "backpropagation()" << endl;
@@ -158,19 +127,8 @@ void Network::backprop(const DataSample &dataSample) {
 
 
 void Network::feedforward(const rcube &input) {
-
 	//cout << "feedforward()" << endl;
 	inputLayer->feedforward(0, input);
-
-	/*
-	//Util::printCube(input, "input:");
-	layers[0]->feedforward(input);
-
-
-	for(int i = 1; i < numLayers; i++) {
-		layers[i]->feedforward(layers[i-1]->getOutput());
-	}
-	*/
 
 }
 
@@ -229,14 +187,19 @@ int Network::testEvaluateResult(const rvec &output, const rvec &y) {
 
 
 
-/*
+
 void Network::save(string filename) {
 
+	ifstream fin(filename.c_str(), ios::in | ios::ate | ios::binary);
+
+
+
 }
+
 
 void Network::load(string filename) {
 }
-*/
+
 
 
 

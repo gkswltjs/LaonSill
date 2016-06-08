@@ -14,6 +14,8 @@
 ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, in_dim, in_dim) {
+	this->type = LayerType::Conv;
+
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;
 
@@ -59,7 +61,6 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_par
 	z.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
 	output.set_size(size(z));
 
-	// TODO activation에 따라 weight 초기화 하도록 해야 함.
 	this->activation_fn = ActivationFactory::create(activationType);
 	//if(this->activation_fn) this->activation_fn->initialize_weight();
 	//int n_out = filter_d.filters*filter_d.rows*filter_d.cols/9;
@@ -130,13 +131,6 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
-	// TODO FOR DEBUG
-	//output = randn<rcube>(4, 4, 1);
-	//rcube w_next_delta = randn<rcube>(4, 4, 1);
-	//Util::printCube(output, "output:");
-	//Util::printCube(w_next_delta, "w_next_delta:");
-
-
 	rcube da;
 	activation_fn->d_activate(output, da);
 
@@ -144,7 +138,6 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// 두 레이어를 연결하는 Weight가 있는 경우 (현재 다음 레이어가 FC인 케이스 only)
 	// next_w->()*next_delta: 다음 FC의 delta를 현재 CONV max pool의 delta로 dimension 변환
 	// max pool의 delta를 d_pool을 통해 upsample
-	// TODO FOR DEBUG
 	rcube w_next_delta(size(output));
 	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
 

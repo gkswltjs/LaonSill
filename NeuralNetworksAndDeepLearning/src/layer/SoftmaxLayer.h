@@ -70,12 +70,14 @@ public:
 
 private:
 	void initialize() {
+		this->type = LayerType::Softmax;
+
 		this->cost_fn = CostFactory::create(CostType::LogLikelihood);
 		this->activation_fn = ActivationFactory::create(ActivationType::Softmax);
 		//this->activation_fn->initialize_weight(in_dim.size(), weight);
 
-		weight.zeros();
-		bias.zeros();
+		//weight.zeros();
+		//bias.zeros();
 	}
 };
 

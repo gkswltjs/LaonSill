@@ -19,8 +19,12 @@ using namespace arma;
 
 class InputLayer : public Layer {
 public:
-	InputLayer(string name, int n_in) : Layer(name, n_in, n_in) {}
-	InputLayer(string name, io_dim in_dim) : Layer(name, in_dim, in_dim) {}
+	InputLayer(string name, int n_in) : Layer(name, n_in, n_in) {
+		initialize();
+	}
+	InputLayer(string name, io_dim in_dim) : Layer(name, in_dim, in_dim) {
+		initialize();
+	}
 	virtual ~InputLayer() {}
 
 	/**
@@ -38,6 +42,9 @@ public:
 		Layer::feedforward(idx, this->output);
 	}
 protected:
+	void initialize() {
+		this->type = LayerType::Input;
+	}
 };
 
 #endif /* LAYER_INPUTLAYER_H_ */
