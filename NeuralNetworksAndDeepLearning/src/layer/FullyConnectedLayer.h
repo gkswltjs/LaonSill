@@ -50,7 +50,7 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	void update(UINT idx, int n, int miniBatchSize);
+	void update(UINT idx, UINT n, UINT miniBatchSize);
 
 private:
 	void initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,

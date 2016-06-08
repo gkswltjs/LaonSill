@@ -77,12 +77,6 @@ protected:
 	//void feedforward();
 	void feedforward(const rcube &input);
 	int testEvaluateResult(const rvec &output, const rvec &y);
-
-	//void defaultWeightInitializer(vector<rmat *> &weights, vector<vec *> &biases, bool init);
-	//void deallocParameters(vector<rmat *> weights, vector<vec *> biases);
-	rvec costDerivative(const rvec *outputActivation, const rvec *y);
-	rvec sigmoid(const rvec *activation);
-	rvec sigmoidPrime(const rvec *z);
 	double totalCost(const vector<const DataSample *> &dataSet, double lambda);
 	double accuracy(const vector<const DataSample *> &dataSet);
 	int evaluate();

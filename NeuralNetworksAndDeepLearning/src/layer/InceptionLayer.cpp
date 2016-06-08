@@ -185,7 +185,7 @@ void InceptionLayer::reset_nabla(UINT idx) {
 	propResetNParam();
 }
 
-void InceptionLayer::update(UINT idx, int n, int miniBatchSize) {
+void InceptionLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {

@@ -30,7 +30,7 @@ public:
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		propResetNParam();
 	}
-	void update(UINT idx, int n, int miniBatchSize) {
+	void update(UINT idx, UINT n, UINT miniBatchSize) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		propUpdate(n, miniBatchSize);
 	}

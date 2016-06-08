@@ -144,7 +144,7 @@ void FullyConnectedLayer::reset_nabla(UINT idx) {
 }
 
 
-void FullyConnectedLayer::update(UINT idx, int n, int miniBatchSize) {
+void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	//weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;

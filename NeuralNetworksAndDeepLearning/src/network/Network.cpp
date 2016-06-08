@@ -192,11 +192,11 @@ void Network::save(string filename) {
 
 	ifstream fin(filename.c_str(), ios::in | ios::ate | ios::binary);
 
-	//ofstream ofs(filename.c_str(), ios::binary);
+	ofstream ofs(filename.c_str(), ios::binary);
 
-	//inputLayer->save(ofs);
+	inputLayer->save(0, ofs);
 
-	//ofs.close();
+	ofs.close();
 }
 
 

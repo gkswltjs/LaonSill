@@ -307,7 +307,7 @@ void ConvLayer::reset_nabla(UINT idx) {
 }
 
 
-void ConvLayer::update(UINT idx, int n, int miniBatchSize) {
+void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	//for(UINT i = 0; i < filter_d.filters; i++) {

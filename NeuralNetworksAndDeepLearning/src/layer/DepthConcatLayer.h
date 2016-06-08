@@ -33,7 +33,7 @@ public:
 		if(!isLastPrevLayerRequest(idx)) return;
 		propResetNParam();
 	}
-	void update(UINT idx, int n, int miniBatchSize) {
+	void update(UINT idx, UINT n, UINT miniBatchSize) {
 		if(!isLastPrevLayerRequest(idx)) return;
 		propUpdate(n, miniBatchSize);
 	}

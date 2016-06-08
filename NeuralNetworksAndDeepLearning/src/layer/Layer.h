@@ -53,8 +53,8 @@ public:
 	 */
 	virtual void feedforward(UINT idx, const rcube &input) { propFeedforward(input); }
 	virtual void reset_nabla(UINT idx) { propResetNParam(); }
-	virtual void update(UINT idx, int n, int miniBatchSize) { propUpdate(n, miniBatchSize); }
-	virtual void save(ofstream &ofs) { propSave(ofs); }
+	virtual void update(UINT idx, UINT n, UINT miniBatchSize) { propUpdate(n, miniBatchSize); }
+	virtual void save(UINT idx, ofstream &ofs) { propSave(ofs); }
 
 
 protected:
@@ -81,7 +81,7 @@ protected:
 		}
 	}
 
-	void propUpdate(int n, int miniBatchSize) {
+	void propUpdate(UINT n, UINT miniBatchSize) {
 		for(UINT i = 0; i < nextLayers.size(); i++) {
 			nextLayers[i].next_layer->update(nextLayers[i].idx, n, miniBatchSize);
 		}
@@ -89,7 +89,7 @@ protected:
 
 	void propSave(ofstream &ofs) {
 		for(UINT i = 0; i < nextLayers.size(); i++) {
-			//nextLayers[i].next_layer->save(ofs);
+			nextLayers[i].next_layer->save(nextLayers[i].idx, ofs);
 		}
 	}
 

@@ -59,7 +59,7 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	void update(UINT idx, int n, int miniBatchSize);
+	void update(UINT idx, UINT n, UINT miniBatchSize);
 
 
 

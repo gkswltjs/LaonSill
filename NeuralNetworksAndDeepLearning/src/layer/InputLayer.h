@@ -41,6 +41,17 @@ public:
 
 		propFeedforward(this->output);
 	}
+
+	void save(int idx, ofstream &ofs) {
+
+
+
+
+
+
+		propSave(ofs);
+	}
+
 protected:
 	void initialize() {
 		this->type = LayerType::Input;
