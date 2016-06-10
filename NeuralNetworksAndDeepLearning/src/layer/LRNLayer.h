@@ -15,7 +15,8 @@
 
 class LRNLayer : public HiddenLayer {
 public:
-	LRNLayer(string name, io_dim in_dim, lrn_dim lrn_d);
+	LRNLayer() {}
+	LRNLayer(const char *name, io_dim in_dim, lrn_dim lrn_d);
 	virtual ~LRNLayer();
 
 
@@ -34,7 +35,13 @@ public:
 		propUpdate(n, miniBatchSize);
 	}
 
+	void save(UINT idx, ofstream &ofs);
+	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
 private:
+	void initialize(lrn_dim lrn_d);
+	void save(ofstream &ofs);
+
 	lrn_dim lrn_d;
 	rcube delta_input;
 	rcube z;	// beta powered 전의 weighted sum 상태의 norm term

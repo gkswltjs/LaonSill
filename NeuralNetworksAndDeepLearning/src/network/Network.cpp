@@ -10,9 +10,11 @@
 #include <armadillo>
 #include <iostream>
 #include <vector>
+#include <map>
 
 #include "../dataset/DataSample.h"
 #include "../dataset/DataSet.h"
+#include "../layer/LayerFactory.h"
 #include "../layer/HiddenLayer.h"
 #include "../layer/OutputLayer.h"
 #include "../Util.h"
@@ -24,7 +26,7 @@
 
 Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
 	this->inputLayer = inputLayer;
-	this->outputLayers.push_back(outputLayer);
+	if(outputLayer) this->outputLayers.push_back(outputLayer);
 	this->dataSet = dataSet;
 	this->networkListener = networkListener;
 }
@@ -84,7 +86,13 @@ void Network::sgd(int epochs, int miniBatchSize) {
 		}
 		*/
 	}
+}
 
+
+void Network::test() {
+	if(dataSet->getTestDataSize() > 0) {
+		cout << "Evaluating ... " << evaluate() << " / " << dataSet->getTestDataSize() << endl;
+	}
 }
 
 
@@ -190,10 +198,19 @@ int Network::testEvaluateResult(const rvec &output, const rvec &y) {
 
 
 void Network::save(string filename) {
+	ofstream ofs(filename.c_str(), ios::out | ios::binary);
 
-	ifstream fin(filename.c_str(), ios::in | ios::ate | ios::binary);
+	//int inputLayerSize = 1;
+	int outputLayerSize = outputLayers.size();
 
-	ofstream ofs(filename.c_str(), ios::binary);
+	//ofs.write((char *)&inputLayerSize, sizeof(int));		// input layer size
+	//ofs.write((char *)&inputLayer, sizeof(Layer *));		// input layer address
+	ofs.write((char *)&outputLayerSize, sizeof(int));		// output layer size
+
+	for(UINT i = 0; i < outputLayers.size(); i++) {
+		cout << "outputLayer: " << outputLayers[i] << endl;
+		ofs.write((char *)&outputLayers[i], sizeof(Layer *));
+	}
 
 	inputLayer->save(0, ofs);
 
@@ -202,6 +219,80 @@ void Network::save(string filename) {
 
 
 void Network::load(string filename) {
+	ifstream ifs(filename.c_str(), ios::in | ios::binary);
+
+	//UINT inputLayerSize;
+	//ifs.read((char *)&inputLayerSize, sizeof(UINT));
+
+	//Layer *inputLayer;
+	//ifs.read((char *)&inputLayer, sizeof(Layer *));
+
+	UINT outputLayerSize;
+	ifs.read((char *)&outputLayerSize, sizeof(UINT));
+
+	for(UINT i = 0; i < outputLayerSize; i++) {
+		OutputLayer *outputLayer;
+		ifs.read((char *)&outputLayer, sizeof(OutputLayer *));
+		outputLayers.push_back(outputLayer);
+		//cout << "loaded outputLayer: " << outputLayer << endl;
+	}
+
+	map<Layer *, Layer *> layerMap;
+	this->inputLayer = new InputLayer();
+	this->inputLayer->load(ifs, layerMap);
+
+	// restore output layers of network
+	for(UINT i = 0; i < outputLayerSize; i++) {
+		outputLayers[i] = (OutputLayer *)layerMap.find((Layer *)outputLayers[i])->second;
+	}
+
+
+	/*
+	map<Layer *, Layer *> layerMap;
+	while(true) {
+		LayerType layerType;
+		ifs.read((char *)&layerType, sizeof(int));
+		Layer *address;
+		ifs.read((char *)&address, sizeof(Layer *));
+
+		if(address == 0) break;
+
+		Layer *layer = LayerFactory::create(layerType);
+		layerMap.insert(pair<Layer *, Layer *>(address, layer));
+	}
+	cout << "map size: " << layerMap.size() << endl;
+
+	ifs.seekg(1000);
+	Layer *layerKey;
+	ifs.read((char *)&layerKey, sizeof(Layer *));
+
+	while(ifs) {
+		Layer *layer = layerMap.find(layerKey)->second;
+		if(!layer) throw Exception();
+
+		layer->load(ifs, layerMap);
+
+		vector<next_layer_relation> &nextLayers = layer->getNextLayers();
+		for(UINT i = 0; i < nextLayers.size(); i++) {
+			Layer *nextLayer = nextLayers[i].next_layer;
+			nextLayers[i].next_layer = layerMap.find(nextLayer)->second;
+		}
+
+		// 학습된 네트워크를 load하는 경우 backward pass가 없으므로 불필요
+		//HiddenLayer *hiddenLayer = dynamic_cast<HiddenLayer *>(layer);
+		//if(hiddenLayer) {
+		//	vector<prev_layer_relation> &prevLayers = hiddenLayer->getPrevLayers();
+		//	for(UINT i = 0; i < prevLayers.size(); i++) {
+		//		Layer *prevLayer = prevLayers[i].prev_layer;
+		//		prevLayers[i].prev_layer = dynamic_cast<HiddenLayer *>(layerMap.find(prevLayer)->second);
+		//	}
+		//}
+
+		ifs.read((char *)&layerKey, sizeof(Layer *));
+	}
+	*/
+
+	ifs.close();
 }
 
 

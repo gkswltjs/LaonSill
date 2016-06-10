@@ -7,10 +7,18 @@
 
 #include "PoolingLayer.h"
 
-PoolingLayer::PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, PoolingType poolingType)
+PoolingLayer::PoolingLayer(const char *name, io_dim in_dim, pool_dim pool_d, PoolingType poolingType)
 	: HiddenLayer(name, in_dim, in_dim) {
+	initialize(pool_d, poolingType);
+}
+
+PoolingLayer::~PoolingLayer() {
+	PoolingFactory::destroy(pooling_fn);
+}
+
+void PoolingLayer::initialize(pool_dim pool_d, PoolingType poolingType) {
 	this->type = LayerType::Pooling;
-	this->id = Layer::getLayerId();
+	this->id = Layer::generateLayerId();
 
 	this->out_dim.rows = in_dim.rows / pool_d.rows;
 	this->out_dim.cols = in_dim.rows / pool_d.cols;
@@ -28,9 +36,6 @@ PoolingLayer::PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, PoolingT
 	this->delta_input.zeros();
 }
 
-PoolingLayer::~PoolingLayer() {
-	PoolingFactory::destroy(pooling_fn);
-}
 
 
 void PoolingLayer::feedforward(UINT idx, const rcube &input) {
@@ -71,6 +76,36 @@ void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 
 
 
+
+
+
+
+void PoolingLayer::save(UINT idx, ofstream &ofs) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+	save(ofs);
+	propSave(ofs);
+}
+
+void PoolingLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+
+	pool_dim pool_d;
+	ifs.read((char *)&pool_d, sizeof(pool_dim));
+
+	PoolingType poolingType;
+	ifs.read((char *)&poolingType, sizeof(PoolingType));
+
+	initialize(pool_d, poolingType);
+}
+
+void PoolingLayer::save(ofstream &ofs) {
+	HiddenLayer::save(ofs);
+
+	ofs.write((char *)&pool_d, sizeof(pool_dim));
+
+	int poolingType = (int)pooling_fn->getType();
+	ofs.write((char *)&poolingType, sizeof(int));
+}
 
 
 

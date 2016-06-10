@@ -14,8 +14,9 @@
 
 class DepthConcatLayer : public HiddenLayer {
 public:
-	DepthConcatLayer(string name, int n_in);
-	DepthConcatLayer(string name, io_dim in_dim);
+	DepthConcatLayer() {}
+	DepthConcatLayer(const char *name, int n_in);
+	DepthConcatLayer(const char *name, io_dim in_dim);
 	virtual ~DepthConcatLayer() {}
 
 	rcube &getDeltaInput();
@@ -37,6 +38,9 @@ public:
 		if(!isLastPrevLayerRequest(idx)) return;
 		propUpdate(n, miniBatchSize);
 	}
+
+	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
 
 protected:
 	void initialize();

@@ -13,9 +13,7 @@
 #include "LogLikelihoodCost.h"
 #include "QuadraticCost.h"
 
-enum class CostType {
-	None, CrossEntropy, LogLikelihood, Quadratic
-};
+
 
 class CostFactory {
 public:

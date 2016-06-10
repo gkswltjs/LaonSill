@@ -8,7 +8,6 @@
 #ifndef LAYERCONFIG_H_
 #define LAYERCONFIG_H_
 
-//#include "../Util.h"
 #include <armadillo>
 
 typedef arma::fvec rvec;
@@ -16,8 +15,11 @@ typedef arma::fmat rmat;
 typedef arma::fcube rcube;
 typedef unsigned int UINT;
 
+
 class Layer;
 class HiddenLayer;
+
+
 
 
 enum class ParamFillerType {
@@ -174,8 +176,6 @@ typedef struct param_filler {
 
 
 
-
-
 typedef struct next_layer_relation {
 	Layer *next_layer;
 	UINT idx;
@@ -188,15 +188,18 @@ typedef struct next_layer_relation {
 } next_layer_relation;
 
 typedef struct prev_layer_relation {
-	HiddenLayer *prev_layer;
+	Layer *prev_layer;
 	UINT idx;
 
 	prev_layer_relation() {}
-	prev_layer_relation(HiddenLayer *prev_layer, UINT idx) {
+	prev_layer_relation(Layer *prev_layer, UINT idx) {
 		this->prev_layer = prev_layer;
 		this->idx = idx;
 	}
 } prev_layer_relation;
+
+
+
 
 
 

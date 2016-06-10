@@ -16,9 +16,10 @@
 
 class FullyConnectedLayer : public HiddenLayer {
 public:
-	FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	FullyConnectedLayer() {}
+	FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
-	FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	FullyConnectedLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
 	virtual ~FullyConnectedLayer();
 
@@ -29,19 +30,19 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(UINT idx, const rcube &input);
+	virtual void feedforward(UINT idx, const rcube &input);
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void backpropagation(UINT idx, HiddenLayer *next_layer);
+	virtual void backpropagation(UINT idx, HiddenLayer *next_layer);
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
 	 */
-	void reset_nabla(UINT idx);
+	virtual void reset_nabla(UINT idx);
 
 	/**
 	 * 한 번의 batch 종료 후 w, b 누적 업데이트를 레이어 w, b에 적용
@@ -50,13 +51,20 @@ public:
 	 * @param n:
 	 * @param miniBatchSize:
 	 */
-	void update(UINT idx, UINT n, UINT miniBatchSize);
+	virtual void update(UINT idx, UINT n, UINT miniBatchSize);
+
+	virtual void save(UINT idx, ofstream &ofs);
+	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 private:
 	void initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
 
 protected:
+	virtual void save(ofstream &ofs);
+
+
+
 	double p_dropout;
 
 	rmat weight;

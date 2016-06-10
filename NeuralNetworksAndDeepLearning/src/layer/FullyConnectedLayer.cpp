@@ -9,13 +9,13 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 
-FullyConnectedLayer::FullyConnectedLayer(string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+FullyConnectedLayer::FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, n_in, n_out) {
 	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
-FullyConnectedLayer::FullyConnectedLayer(string name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+FullyConnectedLayer::FullyConnectedLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, in_dim, out_dim) {
 	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
@@ -29,7 +29,7 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 void FullyConnectedLayer::initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
 	this->type = LayerType::FullyConnected;
-	this->id = Layer::getLayerId();
+	this->id = Layer::generateLayerId();
 
 	this->p_dropout = p_dropout;
 
@@ -159,6 +159,44 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 
 
 
+void FullyConnectedLayer::save(UINT idx, ofstream &ofs) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+	save(ofs);
+	propSave(ofs);
+}
+
+void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+
+	double p_dropout;
+	ifs.read((char *)&p_dropout, sizeof(double));
+
+	ActivationType activationType;
+	ifs.read((char *)&activationType, sizeof(int));
+
+	update_param weight_update_param;
+	ifs.read((char *)&weight_update_param, sizeof(update_param));
+
+	update_param bias_update_param;
+	ifs.read((char *)&bias_update_param, sizeof(update_param));
+
+	param_filler weight_filler;
+	ifs.read((char *)&weight_filler, sizeof(param_filler));
+
+	param_filler bias_filler;
+	ifs.read((char *)&bias_filler, sizeof(param_filler));
+
+	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+
+	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
+
+
+	weight.load(ifs, file_type::arma_binary);
+	//weight.print("load-weight:");
+	bias.load(ifs, file_type::arma_binary);
+	//bias.print("load-bias:");
+
+}
 
 
 
@@ -166,7 +204,25 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 
 
 
+void FullyConnectedLayer::save(ofstream &ofs) {
+	HiddenLayer::save(ofs);
 
+	ofs.write((char *)&p_dropout, sizeof(double));
+
+	int activationType = (int)activation_fn->getType();
+	ofs.write((char *)&activationType, sizeof(int));
+	ofs.write((char *)&weight_update_param, sizeof(update_param));
+	ofs.write((char *)&bias_update_param, sizeof(update_param));
+	ofs.write((char *)&weight_filler, sizeof(param_filler));
+	ofs.write((char *)&bias_filler, sizeof(param_filler));
+	//ofs.write((char *)&weight, sizeof(rmat));
+	//ofs.write((char *)&bias, sizeof(rvec));
+
+	//weight.print("save-weight:");
+	weight.save(ofs, file_type::arma_binary);
+	//bias.print("save-bias:");
+	bias.save(ofs, file_type::arma_binary);
+}
 
 
 

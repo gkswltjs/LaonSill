@@ -13,7 +13,9 @@
 
 class LogLikelihoodCost : public Cost {
 public:
-	LogLikelihoodCost() {}
+	LogLikelihoodCost() {
+		this->type = CostType::LogLikelihood;
+	}
 	virtual ~LogLikelihoodCost() {}
 
 	double fn(const rvec *pA, const rvec *pY) {

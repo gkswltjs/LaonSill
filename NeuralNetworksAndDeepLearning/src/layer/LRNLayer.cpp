@@ -9,9 +9,16 @@
 #include "../Util.h"
 
 
-LRNLayer::LRNLayer(string name, io_dim in_dim, lrn_dim lrn_d) : HiddenLayer(name, in_dim, in_dim) {
+LRNLayer::LRNLayer(const char *name, io_dim in_dim, lrn_dim lrn_d) : HiddenLayer(name, in_dim, in_dim) {
+	initialize(lrn_d);
+}
+
+LRNLayer::~LRNLayer() {}
+
+
+void LRNLayer::initialize(lrn_dim lrn_d) {
 	this->type = LayerType::LRN;
-	this->id = Layer::getLayerId();
+	this->id = Layer::generateLayerId();
 
 	this->lrn_d = lrn_d;
 	this->z.set_size(size(input));
@@ -19,7 +26,7 @@ LRNLayer::LRNLayer(string name, io_dim in_dim, lrn_dim lrn_d) : HiddenLayer(name
 	this->delta_input.zeros();
 }
 
-LRNLayer::~LRNLayer() {}
+
 
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
@@ -58,6 +65,9 @@ void LRNLayer::feedforward(UINT idx, const rcube &input) {
 	propFeedforward(this->output);
 
 }
+
+
+
 
 
 
@@ -104,6 +114,27 @@ void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 
 
 
+
+
+void LRNLayer::save(UINT idx, ofstream &ofs) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+	save(ofs);
+	propSave(ofs);
+}
+
+void LRNLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+
+	lrn_dim lrn_d;
+	ifs.read((char *)&lrn_d, sizeof(lrn_dim));
+
+	initialize(lrn_d);
+}
+
+void LRNLayer::save(ofstream &ofs) {
+	HiddenLayer::save(ofs);
+	ofs.write((char *)&lrn_d, sizeof(lrn_dim));
+}
 
 
 

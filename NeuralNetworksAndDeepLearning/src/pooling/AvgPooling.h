@@ -22,7 +22,9 @@ using namespace std;
 
 class AvgPooling : public Pooling {
 public:
-	AvgPooling() {}
+	AvgPooling() {
+		this->type = PoolingType::Avg;
+	}
 	virtual ~AvgPooling() {}
 
 	void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {

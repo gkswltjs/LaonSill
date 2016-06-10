@@ -15,7 +15,9 @@
 class CrossEntropyCost : public Cost {
 
 public:
-	CrossEntropyCost() {}
+	CrossEntropyCost() {
+		this->type = CostType::CrossEntropy;
+	}
 	virtual ~CrossEntropyCost() {}
 
 	double fn(const rvec *pA, const rvec *pY) {

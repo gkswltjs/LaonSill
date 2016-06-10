@@ -14,8 +14,11 @@
 
 class ReLU : public Activation {
 public:
-	ReLU() {}
+	ReLU() {
+		this->type = ActivationType::ReLU;
+	}
 	ReLU(io_dim activation_dim) {
+		this->type = ActivationType::ReLU;
 		zero.set_size(activation_dim.rows, activation_dim.cols, activation_dim.channels);
 		zero.zeros();
 	}
@@ -33,7 +36,10 @@ public:
 	*/
 
 	void activate(const rcube &z, rcube &activation) {
-		if(zero.n_elem <= 1) zero.set_size(size(z));
+		if(zero.n_elem <= 1) {
+			zero.set_size(size(z));
+			zero.zeros();
+		}
 		activation = arma::max(z, zero);
 	}
 	void d_activate(const rcube &activation, rcube &da) {

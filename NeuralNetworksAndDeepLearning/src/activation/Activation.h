@@ -12,13 +12,17 @@
 #include "../Util.h"
 
 
-
+enum class ActivationType {
+	None, Sigmoid, Softmax, ReLU
+};
 
 
 class Activation {
 public:
 	Activation() {};
 	virtual ~Activation() {};
+
+	ActivationType getType() const { return type; }
 
 	/**
 	 * activation function에 따라 layer weight의 초기화하는 방법이 다름
@@ -39,6 +43,9 @@ public:
 	 * weighted sum값이 필요한 케이스에 수정이 필요
 	 */
 	virtual void d_activate(const rcube &activation, rcube &da)=0;
+
+protected:
+	ActivationType type;
 
 };
 

@@ -16,7 +16,9 @@ using namespace std;
 
 class MaxPooling : public Pooling {
 public:
-	MaxPooling() {}
+	MaxPooling() {
+		this->type = PoolingType::Max;
+	}
 	virtual ~MaxPooling() {}
 
 	void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {

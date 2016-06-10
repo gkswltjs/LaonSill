@@ -10,6 +10,7 @@
 
 #include "Layer.h"
 #include "LayerConfig.h"
+#include "LayerFactory.h"
 #include "../Util.h"
 #include "../exception/Exception.h"
 #include <armadillo>
@@ -19,10 +20,11 @@ using namespace arma;
 
 class InputLayer : public Layer {
 public:
-	InputLayer(string name, int n_in) : Layer(name, n_in, n_in) {
+	InputLayer() {}
+	InputLayer(const char *name, int n_in) : Layer(name, n_in, n_in) {
 		initialize();
 	}
-	InputLayer(string name, io_dim in_dim) : Layer(name, in_dim, in_dim) {
+	InputLayer(const char *name, io_dim in_dim) : Layer(name, in_dim, in_dim) {
 		initialize();
 	}
 	virtual ~InputLayer() {}
@@ -32,7 +34,7 @@ public:
 	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
 	 */
 	void feedforward(UINT idx, const rcube &input) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
+		//if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 		Util::convertCube(input, this->input);
 		Util::convertCube(this->input, this->output);
@@ -42,20 +44,60 @@ public:
 		propFeedforward(this->output);
 	}
 
-	void save(int idx, ofstream &ofs) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
+	void save(UINT idx, ofstream &ofs) {
+		saveHeader(0, ofs);
+		// header boundary
+		int type = 0;
+		Layer *layer = 0;
+		ofs.write((char *)&type, sizeof(int));
+		ofs.write((char *)&layer, sizeof(Layer *));
 
-
-
-
-
+		Layer::save(ofs);
 		propSave(ofs);
 	}
 
+	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+		// fill layer map
+		while(true) {
+			LayerType layerType;
+			ifs.read((char *)&layerType, sizeof(int));
+			Layer *address;
+			ifs.read((char *)&address, sizeof(Layer *));
+
+			if(address == 0) break;
+			if(layerType == LayerType::Input) {
+				layerMap.insert(pair<Layer *, Layer *>(address, this));
+			}
+			else {
+				Layer *layer = LayerFactory::create(layerType);
+				layerMap.insert(pair<Layer *, Layer *>(address, layer));
+				//cout << "created layer type: " << (int)layerType << ", address: " << layer << endl;
+			}
+		}
+		//cout << "map size: " << layerMap.size() << endl;
+
+		Layer *layerKey;
+		ifs.read((char *)&layerKey, sizeof(Layer *));
+		Layer::load(ifs, layerMap);
+		initialize();
+		//updateLayerRelation(layerMap);
+
+		ifs.read((char *)&layerKey, sizeof(Layer *));
+		while(ifs) {
+			Layer *layer = layerMap.find(layerKey)->second;
+			if(!layer) throw Exception();
+
+			layer->load(ifs, layerMap);
+
+			ifs.read((char *)&layerKey, sizeof(Layer *));
+		}
+	}
+
 protected:
+
 	void initialize() {
 		this->type = LayerType::Input;
-		this->id = Layer::getLayerId();
+		this->id = Layer::generateLayerId();
 	}
 };
 

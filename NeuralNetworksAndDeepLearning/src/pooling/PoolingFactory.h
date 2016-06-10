@@ -11,10 +11,6 @@
 #include "AvgPooling.h"
 #include "MaxPooling.h"
 
-enum class PoolingType {
-	None, Max, Avg
-};
-
 
 class PoolingFactory {
 public:

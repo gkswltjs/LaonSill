@@ -15,13 +15,13 @@
 #include "../pooling/MaxPooling.h"
 #include "../network/Network.h"
 
-InceptionLayer::InceptionLayer(string name, int n_in, int n_out,
+InceptionLayer::InceptionLayer(const char *name, int n_in, int n_out,
 		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp)
 	: HiddenLayer(name, n_in, n_out) {
 	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, cp);
 }
 
-InceptionLayer::InceptionLayer(string name, io_dim in_dim, io_dim out_dim,
+InceptionLayer::InceptionLayer(const char *name, io_dim in_dim, io_dim out_dim,
 		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp)
 	: HiddenLayer(name, in_dim, out_dim) {
 	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, cp);
@@ -38,13 +38,13 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 	double bias_decay_mult = 0.0;
 
 	this->type = LayerType::Inception;
-	this->id = Layer::getLayerId();
+	this->id = Layer::generateLayerId();
 
 
 	//inputLayer = new InputLayer("inputLayer", in_dim);
 	//ConvLayer *conv1x1Layer = new ConvLayer("conv1x1", in_dim, filter_dim(1, 1, in_dim.channels, cv1x1, 1), new ReLU(io_dim(in_dim.rows, in_dim.cols, cv1x1)));
 	ConvLayer *conv1x1Layer = new ConvLayer(
-			"conv1x1",
+			(char *)"conv1x1",
 			in_dim,
 			filter_dim(1, 1, in_dim.channels, cv1x1, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
@@ -194,6 +194,65 @@ void InceptionLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	}
 	propUpdate(n, miniBatchSize);
 }
+
+
+
+
+
+
+
+
+void InceptionLayer::save(UINT idx, ofstream &ofs) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+	save(ofs);
+	propSave(ofs);
+}
+
+void InceptionLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+
+	lrn_dim lrn_d;
+	ifs.read((char *)&lrn_d, sizeof(lrn_dim));
+
+	//initialize(lrn_d);
+}
+
+void InceptionLayer::save(ofstream &ofs) {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->save(0, ofs);
+	}
+	propSave(ofs);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

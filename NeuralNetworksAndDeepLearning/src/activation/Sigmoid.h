@@ -13,7 +13,9 @@
 
 class Sigmoid : public Activation {
 public:
-	Sigmoid() {}
+	Sigmoid() {
+		this->type = ActivationType::Sigmoid;
+	}
 	virtual ~Sigmoid() {}
 
 	/*

@@ -18,7 +18,8 @@
 
 class ConvLayer : public HiddenLayer {
 public:
-	ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+	ConvLayer() {}
+	ConvLayer(const char *name, io_dim in_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_f, param_filler bias_filler, ActivationType activationType);
 	virtual ~ConvLayer();
 
@@ -62,11 +63,19 @@ public:
 	void update(UINT idx, UINT n, UINT miniBatchSize);
 
 
+	void save(UINT idx, ofstream &ofs);
+	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
 
 protected:
+	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
+
 	void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
 	void dw_convolution(const rmat &d, const rmat &x, rmat &result);
 	void dx_convolution(const rmat &d, const rmat &w, rmat &result);
+
+	void save(ofstream &ofs);
 
 
 	filter_dim filter_d;

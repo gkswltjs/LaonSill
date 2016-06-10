@@ -7,19 +7,19 @@
 
 #include "DepthConcatLayer.h"
 
-DepthConcatLayer::DepthConcatLayer(string name, int n_in)
+DepthConcatLayer::DepthConcatLayer(const char *name, int n_in)
 	: HiddenLayer(name, n_in, n_in) {
 	initialize();
 }
 
-DepthConcatLayer::DepthConcatLayer(string name, io_dim in_dim)
+DepthConcatLayer::DepthConcatLayer(const char *name, io_dim in_dim)
 	: HiddenLayer(name, in_dim, in_dim) {
 	initialize();
 }
 
 void DepthConcatLayer::initialize() {
 	this->type = LayerType::DepthConcat;
-	this->id = Layer::getLayerId();
+	this->id = Layer::generateLayerId();
 
 	this->offsetIndex = 0;
 	this->input.reset();
@@ -67,3 +67,34 @@ rcube &DepthConcatLayer::getDeltaInput() {
 	//if(offsetIndex > prevLayers.size()) offsetIndex = 0;
 	return delta_input_sub;
 }
+
+
+void DepthConcatLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+	initialize();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

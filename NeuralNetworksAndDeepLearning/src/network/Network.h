@@ -30,13 +30,16 @@ using namespace arma;
 
 class Network {
 public:
+	Network() {}
 	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
+	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
 	void setDataSet(DataSet *dataSet) { this->dataSet = dataSet; }
 
 	void sgd(int epochs, int miniBatchSize);
-	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
+	void test();
+
 
 	/**
 	 * 어디로 옮기면 좋을까
@@ -71,8 +74,6 @@ protected:
 
 	InputLayer *inputLayer;
 	vector<OutputLayer *> outputLayers;
-
-	int numLayers;
 };
 
 #endif /* NETWORK_H_ */

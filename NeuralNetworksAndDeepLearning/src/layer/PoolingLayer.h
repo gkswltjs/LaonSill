@@ -16,7 +16,8 @@
 
 class PoolingLayer : public HiddenLayer {
 public:
-	PoolingLayer(string name, io_dim in_dim, pool_dim pool_d, PoolingType poolingType);
+	PoolingLayer() {}
+	PoolingLayer(const char *name, io_dim in_dim, pool_dim pool_d, PoolingType poolingType);
 	virtual ~PoolingLayer();
 
 	rcube &getDeltaInput() { return this->delta_input; }
@@ -35,7 +36,13 @@ public:
 		propUpdate(n, miniBatchSize);
 	}
 
+	void save(UINT idx, ofstream &ofs);
+	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
 private:
+	void initialize(pool_dim pool_d, PoolingType poolingType);
+	void save(ofstream &ofs);
+
 	ucube pool_map;
 	rcube delta;
 	rcube delta_input;

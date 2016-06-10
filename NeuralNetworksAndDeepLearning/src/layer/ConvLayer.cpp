@@ -11,11 +11,25 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 
-ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+ConvLayer::ConvLayer(const char *name, io_dim in_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, in_dim, in_dim) {
+
+	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+}
+
+ConvLayer::~ConvLayer() {
+	ActivationFactory::destory(activation_fn);
+	if(filters) delete [] filters;
+	if(nabla_w) delete [] nabla_w;
+}
+
+
+void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
+
 	this->type = LayerType::Conv;
-	this->id = Layer::getLayerId();
+	this->id = Layer::generateLayerId();
 
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;
@@ -24,7 +38,6 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_par
 	this->bias_update_param = bias_update_param;
 	this->weight_filler = weight_filler;
 	this->bias_filler = bias_filler;
-
 
 	// determine output dimension by in_dim, filter_dim, pool_dim
 	//this->out_dim.rows = (in_dim.rows-filter_d.rows+1)/pool_d.rows;
@@ -55,9 +68,6 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_par
 	nabla_b.zeros();
 
 
-
-
-
 	//z.set_size(in_dim.rows-filter_d.rows+1, in_dim.cols-filter_d.cols+1, filter_d.filters);
 	z.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
 	output.set_size(size(z));
@@ -72,14 +82,9 @@ ConvLayer::ConvLayer(string name, io_dim in_dim, filter_dim filter_d, update_par
 	//}
 
 	delta.set_size(size(z));
-
 }
 
-ConvLayer::~ConvLayer() {
-	ActivationFactory::destory(activation_fn);
-	if(filters) delete [] filters;
-	if(nabla_w) delete [] nabla_w;
-}
+
 
 
 void ConvLayer::feedforward(UINT idx, const rcube &input) {
@@ -327,6 +332,67 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 
 
 
+void ConvLayer::save(UINT idx, ofstream &ofs) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+	save(ofs);
+	propSave(ofs);
+}
+
+void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+
+	filter_dim filter_d;
+	ifs.read((char *)&filter_d, sizeof(filter_dim));
+
+	ActivationType activationType;
+	ifs.read((char *)&activationType, sizeof(int));
+
+	update_param weight_update_param;
+	ifs.read((char *)&weight_update_param, sizeof(update_param));
+
+	update_param bias_update_param;
+	ifs.read((char *)&bias_update_param, sizeof(update_param));
+
+	param_filler weight_filler;
+	ifs.read((char *)&weight_filler, sizeof(param_filler));
+
+	param_filler bias_filler;
+	ifs.read((char *)&bias_filler, sizeof(param_filler));
+
+	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+
+	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
+	for(UINT i = 0; i < filter_d.filters; i++) {
+		filters[i].load(ifs, file_type::arma_binary);
+	}
+	biases.load(ifs, file_type::arma_binary);
+}
+
+
+
+
+
+
+
+void ConvLayer::save(ofstream &ofs) {
+	HiddenLayer::save(ofs);
+
+	int activationType = (int)activation_fn->getType();
+
+	ofs.write((char *)&filter_d, sizeof(filter_dim));
+	ofs.write((char *)&activationType, sizeof(int));
+	ofs.write((char *)&weight_update_param, sizeof(update_param));
+	ofs.write((char *)&bias_update_param, sizeof(update_param));
+	ofs.write((char *)&weight_filler, sizeof(param_filler));
+	ofs.write((char *)&bias_filler, sizeof(param_filler));
+	//ofs.write((char *)&weight, sizeof(rmat));
+	//ofs.write((char *)&bias, sizeof(rvec));
+
+	for(UINT i = 0; i < filter_d.filters; i++) {
+		filters[i].save(ofs, file_type::arma_binary);
+	}
+	biases.save(ofs, file_type::arma_binary);
+}
 
 
 

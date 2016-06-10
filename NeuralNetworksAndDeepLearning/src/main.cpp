@@ -52,17 +52,8 @@ int main(int argc, char** argv) {
 	cout.precision(11);
 	cout.setf(ios::fixed);
 
+
 	network_test();
-
-
-
-	/*
-	rcube input = randn<rcube>(8, 8, 1);
-	ConvLayer *convLayer = new ConvLayer("conv", io_dim(8, 8, 1), filter_dim(7, 7, 1, 1, 2), ActivationType::Sigmoid);
-	convLayer->feedforward(0, input);
-	convLayer->backpropagation(0, 0);
-	*/
-
 
 	cout << "end" << endl;
 
@@ -89,15 +80,20 @@ void network_test() {
 		//cifar10DataSet->load();
 
 
-		/*
-		Network *network = new NeuralNetSingle();
-		network->setDataSet(mnistDataSet);
-		network->sgd(10, 10);
-		*/
+		//Network *network = new NeuralNetSingle();
+		//network->setDataSet(mnistDataSet);
+		//network->sgd(1, 10);
+		//network->save("g:\\NeuralNetSingle.network");
 
-		Network *network = new ConvNetSingle();
-		network->setDataSet(mnistDataSet);
-		network->sgd(10, 10);
+		Network *network_load = new Network();
+		network_load->load("g:\\NeuralNetSingle.network");
+		network_load->setDataSet(mnistDataSet);
+		network_load->test();
+
+
+		//Network *network = new ConvNetSingle();
+		//network->setDataSet(mnistDataSet);
+		//network->sgd(10, 10);
 
 		/*
 		cout << "googlenet with mnist ... " << endl;

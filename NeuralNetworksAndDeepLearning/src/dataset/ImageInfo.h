@@ -27,7 +27,7 @@ public:
 	}
 
 	string getFilename() const { return this->filename; }
-	long getFilesize() const { return this->filesize; }
+	size_t getFilesize() const { return this->filesize; }
 
 
 	int load() {
@@ -45,7 +45,7 @@ public:
 		return 0;
 	}
 
-	unsigned char *getBufferPtrAt(long position) const {
+	unsigned char *getBufferPtrAt(size_t position) const {
 		if(position >= filesize) return 0;
 		return &buffer[position];
 	}
@@ -53,7 +53,7 @@ public:
 
 private:
 	string filename;
-	long filesize;
+	size_t filesize;
 	unsigned char *buffer;
 };
 

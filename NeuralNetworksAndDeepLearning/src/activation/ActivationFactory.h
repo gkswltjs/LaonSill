@@ -14,9 +14,7 @@
 #include "Softmax.h"
 #include "ReLU.h"
 
-enum class ActivationType {
-	None, Sigmoid, Softmax, ReLU
-};
+
 
 class ActivationFactory {
 public:

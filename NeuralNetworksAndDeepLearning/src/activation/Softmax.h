@@ -14,7 +14,9 @@
 
 class Softmax : public Activation {
 public:
-	Softmax() {}
+	Softmax() {
+		this->type = ActivationType::Softmax;
+	}
 	virtual ~Softmax() {}
 
 	/*

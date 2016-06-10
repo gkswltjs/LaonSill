@@ -15,7 +15,9 @@
 
 class QuadraticCost : public Cost {
 public:
-	QuadraticCost() {}
+	QuadraticCost() {
+		this->type = CostType::Quadratic;
+	}
 	virtual ~QuadraticCost() {}
 
 	double fn(const rvec *pA, const rvec *pY) {
