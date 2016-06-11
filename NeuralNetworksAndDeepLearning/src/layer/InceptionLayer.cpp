@@ -27,7 +27,14 @@ InceptionLayer::InceptionLayer(const char *name, io_dim in_dim, io_dim out_dim,
 	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, cp);
 }
 
-InceptionLayer::~InceptionLayer() {}
+InceptionLayer::~InceptionLayer() {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		if(firstLayers[i]) {
+			delete firstLayers[i];
+			firstLayers[i] = NULL;
+		}
+	}
+}
 
 
 void InceptionLayer::initialize() {

@@ -31,8 +31,11 @@ public:
 		}
 	}
 
-	static void destory(Activation *activation_fn) {
-		if(activation_fn) delete activation_fn;
+	static void destory(Activation *&activation_fn) {
+		if(activation_fn) {
+			delete activation_fn;
+			activation_fn = NULL;
+		}
 	}
 };
 

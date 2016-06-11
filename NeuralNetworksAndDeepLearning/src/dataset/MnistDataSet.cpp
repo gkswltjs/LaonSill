@@ -22,9 +22,18 @@ MnistDataSet::MnistDataSet(double validationSetRatio = 0.0) {
 }
 
 MnistDataSet::~MnistDataSet() {
-	if(trainDataSet) delete trainDataSet;
-	if(validationDataSet) delete validationDataSet;
-	if(testDataSet) delete testDataSet;
+	if(trainDataSet) {
+		delete trainDataSet;
+		trainDataSet = NULL;
+	}
+	if(validationDataSet) {
+		delete validationDataSet;
+		validationDataSet = NULL;
+	}
+	if(testDataSet) {
+		delete testDataSet;
+		testDataSet = NULL;
+	}
 }
 
 void MnistDataSet::load() {

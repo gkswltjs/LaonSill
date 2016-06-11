@@ -29,7 +29,6 @@ public:
 				io_dim(28, 28, 1)
 				);
 
-		//HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(28, 28, 1), filter_dim(5, 5, 1, 20, 1), new ReLU(io_dim(28, 28, 20)));
 		HiddenLayer *conv1Layer = new ConvLayer(
 				"conv1",
 				io_dim(28, 28, 1),
@@ -48,7 +47,6 @@ public:
 				PoolingType::Max
 				);
 
-		//HiddenLayer *conv2Layer = new ConvLayer("conv2", io_dim(14, 14, 20), filter_dim(5, 5, 20, 40, 1), new ReLU(io_dim(14, 14, 40)));
 		HiddenLayer *conv2Layer = new ConvLayer(
 				"conv2",
 				io_dim(14, 14, 20),

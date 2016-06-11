@@ -75,6 +75,11 @@ void network_test() {
 	if(!debug) {
 		Util::setPrint(false);
 
+		Network *network = new InceptionNetSingle();
+		delete network;
+		network = NULL;
+
+		/*
 		// DataSet은 memory를 크게 차지할 수 있으므로 heap에 생성
 		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
 		mnistDataSet->load();
@@ -92,6 +97,7 @@ void network_test() {
 			network->sgd(1, 10);
 			network->save(savefile);
 		}
+		*/
 
 		//Network *network_load = new Network();
 		//network_load->load("g:\\InceptionNetSingle.network");

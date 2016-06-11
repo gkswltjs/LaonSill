@@ -44,8 +44,11 @@ public:
 		}
 	}
 
-	static void destroy(Layer *layer) {
-		if(layer) delete layer;
+	static void destroy(Layer *&layer) {
+		if(layer) {
+			delete layer;
+			layer = NULL;
+		}
 	}
 
 };

@@ -37,18 +37,17 @@ public:
 	SoftmaxLayer() {}
 	SoftmaxLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler)
-		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler) {
+		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
+				ActivationType::Softmax, CostType::LogLikelihood) {
 		initialize();
 	}
 	SoftmaxLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler)
-		: OutputLayer(name, in_dim, out_dim, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler) {
+		: OutputLayer(name, in_dim, out_dim, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
+				ActivationType::Softmax, CostType::LogLikelihood) {
 		initialize();
 	}
-	virtual ~SoftmaxLayer() {
-		ActivationFactory::destory(activation_fn);
-		CostFactory::destroy(cost_fn);
-	}
+	virtual ~SoftmaxLayer() {}
 
 	void cost(const rvec &target) {
 		// delta
@@ -85,8 +84,8 @@ private:
 		this->type = LayerType::Softmax;
 		this->id = Layer::generateLayerId();
 
-		this->cost_fn = CostFactory::create(CostType::LogLikelihood);
-		this->activation_fn = ActivationFactory::create(ActivationType::Softmax);
+		//this->cost_fn = CostFactory::create(CostType::LogLikelihood);
+		//this->activation_fn = ActivationFactory::create(ActivationType::Softmax);
 		//this->activation_fn->initialize_weight(in_dim.size(), weight);
 
 		//weight.zeros();

@@ -26,8 +26,11 @@ public:
 		}
 	}
 
-	static void destroy(Pooling *pooling_fn) {
-		if(pooling_fn) delete pooling_fn;
+	static void destroy(Pooling *&pooling_fn) {
+		if(pooling_fn) {
+			delete pooling_fn;
+			pooling_fn = NULL;
+		}
 	}
 };
 

@@ -10,9 +10,18 @@
 Cifar10DataSet::Cifar10DataSet() {}
 
 Cifar10DataSet::~Cifar10DataSet() {
-	if(trainDataSet) delete trainDataSet;
-	if(validationDataSet) delete validationDataSet;
-	if(testDataSet) delete testDataSet;
+	if(trainDataSet) {
+		delete trainDataSet;
+		trainDataSet = NULL;
+	}
+	if(validationDataSet) {
+		delete validationDataSet;
+		validationDataSet = NULL;
+	}
+	if(testDataSet) {
+		delete testDataSet;
+		testDataSet = NULL;
+	}
 }
 
 void Cifar10DataSet::load() {

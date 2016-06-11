@@ -20,8 +20,14 @@ ConvLayer::ConvLayer(const char *name, io_dim in_dim, filter_dim filter_d, updat
 
 ConvLayer::~ConvLayer() {
 	ActivationFactory::destory(activation_fn);
-	if(filters) delete [] filters;
-	if(nabla_w) delete [] nabla_w;
+	if(filters) {
+		delete [] filters;
+		filters = NULL;
+	}
+	if(nabla_w) {
+		delete [] nabla_w;
+		nabla_w = NULL;
+	}
 }
 
 

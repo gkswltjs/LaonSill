@@ -17,10 +17,20 @@ int Layer::layerCount = 0;
 Layer::Layer(const char *name, int n_in, int n_out) {
 	initialize(name, io_dim(n_in, 1, 1), io_dim(n_out, 1, 1));
 }
+
 Layer::Layer(const char *name, io_dim in_dim, io_dim out_dim) {
 	initialize(name, in_dim, out_dim);
 }
-Layer::~Layer() {}
+
+Layer::~Layer() {
+	for(UINT i = 0; i < nextLayers.size(); i++) {
+		if(nextLayers[i].next_layer && nextLayers[i].next_layer->isLastPrevLayerRequest(nextLayers[i].idx)) {
+			delete nextLayers[i].next_layer;
+			nextLayers[i].next_layer = NULL;
+		}
+	}
+	//cout << "destroying " << name << " layer ... " << endl;
+}
 
 
 void Layer::addPrevLayer(prev_layer_relation prevLayer) { prevLayers.push_back(prevLayer); }

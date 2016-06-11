@@ -58,11 +58,11 @@ public:
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void loadHeader(ofstream &ofs);
 
-protected:
-	void initialize(const char *name, io_dim in_dim, io_dim out_dim);
-
 	bool isLastPrevLayerRequest(UINT idx);
 	bool isLastNextLayerRequest(UINT idx);
+
+protected:
+	void initialize(const char *name, io_dim in_dim, io_dim out_dim);
 
 	void propFeedforward(const rcube output);
 	void propResetNParam();

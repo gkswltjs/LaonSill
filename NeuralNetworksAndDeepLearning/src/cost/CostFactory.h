@@ -30,8 +30,11 @@ public:
 		}
 	}
 
-	static void destroy(Cost *cost_fn) {
-		if(cost_fn) delete cost_fn;
+	static void destroy(Cost *&cost_fn) {
+		if(cost_fn) {
+			delete cost_fn;
+			cost_fn = NULL;
+		}
 	}
 };
 

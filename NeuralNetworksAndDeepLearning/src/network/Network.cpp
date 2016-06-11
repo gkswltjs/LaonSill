@@ -31,7 +31,12 @@ Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *data
 	this->networkListener = networkListener;
 }
 
-Network::~Network() {}
+Network::~Network() {
+	if(inputLayer) {
+		delete inputLayer;
+		inputLayer = NULL;
+	}
+}
 
 
 
