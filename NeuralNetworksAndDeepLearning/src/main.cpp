@@ -4,9 +4,11 @@
 #include "network/Network.h"
 #include "network/GoogLeNet.h"
 #include "network/NeuralNetSingle.h"
+#include "network/NeuralNetDouble.h"
 #include "network/GoogLeNetMnist.h"
 #include "network/ConvNetSingle.h"
 #include "network/ConvNetDouble.h"
+#include "network/InceptionNetSingle.h"
 #include "dataset/MnistDataSet.h"
 #include "dataset/MockDataSet.h"
 #include "dataset/Cifar10DataSet.h"
@@ -79,16 +81,22 @@ void network_test() {
 		//DataSet *cifar10DataSet = new Cifar10DataSet();
 		//cifar10DataSet->load();
 
+		char savefile[64];
+		double lr_mult[5] = {0.001, 0.01, 0.1, 0.1, 1.0};
 
-		//Network *network = new NeuralNetSingle();
-		//network->setDataSet(mnistDataSet);
-		//network->sgd(1, 10);
-		//network->save("g:\\NeuralNetSingle.network");
+		for(UINT i = 0; i < 5; i++) {
+			sprintf(savefile, "g:\\InceptionNetSingle-%lf.network", lr_mult[i]);
 
-		Network *network_load = new Network();
-		network_load->load("g:\\NeuralNetSingle.network");
-		network_load->setDataSet(mnistDataSet);
-		network_load->test();
+			Network *network = new InceptionNetSingle(lr_mult[i], 5.0);
+			network->setDataSet(mnistDataSet);
+			network->sgd(1, 10);
+			network->save(savefile);
+		}
+
+		//Network *network_load = new Network();
+		//network_load->load("g:\\InceptionNetSingle.network");
+		//network_load->setDataSet(mnistDataSet);
+		//network_load->test();
 
 
 		//Network *network = new ConvNetSingle();

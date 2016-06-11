@@ -12,7 +12,7 @@
 
 class InceptionNetAux : public Network {
 public:
-	InceptionNetAux() : Network(0, 0, 0, 0) {
+	InceptionNetAux() : Network() {
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 

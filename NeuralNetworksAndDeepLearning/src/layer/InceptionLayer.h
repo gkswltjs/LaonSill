@@ -28,11 +28,13 @@ public:
 
 	void save(UINT idx, ofstream &ofs);
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-
+	void saveNinHeader(UINT idx, ofstream &ofs);
 
 private:
+	void initialize();
 	void initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 	void save(ofstream &ofs);
+
 
 	rcube delta_input;
 

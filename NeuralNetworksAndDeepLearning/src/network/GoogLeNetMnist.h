@@ -23,7 +23,7 @@
 
 class GoogLeNetMnist : public Network {
 public:
-	GoogLeNetMnist() : Network(0, 0, 0, 0) {
+	GoogLeNetMnist() : Network() {
 		double weight_lr_mult = 1.0;
 		double weight_decay_mult = 1.0;
 		double bias_lr_mult = 2.0;

@@ -6,7 +6,8 @@
  */
 
 #include "Layer.h"
-#include "../Util.h"
+#include "LayerFactory.h"
+#include "../exception/Exception.h"
 
 
 int Layer::layerCount = 0;
@@ -35,6 +36,7 @@ void Layer::reset_nabla(UINT idx) { propResetNParam(); }
 void Layer::update(UINT idx, UINT n, UINT miniBatchSize) { propUpdate(n, miniBatchSize); }
 
 void Layer::save(UINT idx, ofstream &ofs) {
+	if(!isLastPrevLayerRequest(idx)) return;
 	save(ofs);
 	propSave(ofs);
 }
@@ -196,6 +198,46 @@ void Layer::updateLayerRelation(map<Layer *, Layer *> &layerMap) {
 		}
 	//}
 }
+
+void Layer::loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	// fill layer map
+	while(true) {
+		LayerType layerType;
+		ifs.read((char *)&layerType, sizeof(int));
+		Layer *address;
+		ifs.read((char *)&address, sizeof(Layer *));
+
+		if(address == 0) break;
+		if(layerType == LayerType::Input) {
+			layerMap.insert(pair<Layer *, Layer *>(address, this));
+		}
+		else {
+			Layer *layer = LayerFactory::create(layerType);
+			layerMap.insert(pair<Layer *, Layer *>(address, layer));
+			//cout << "created layer type: " << (int)layerType << ", address: " << layer << endl;
+		}
+	}
+	//cout << "map size: " << layerMap.size() << endl;
+
+	Layer *layerKey;
+	//ifs.read((char *)&layerKey, sizeof(Layer *));
+	//initialize();
+
+	ifs.read((char *)&layerKey, sizeof(Layer *));
+	while(ifs && layerKey) {
+		Layer *layer = layerMap.find(layerKey)->second;
+		if(!layer) throw Exception();
+
+		if(layer->getType() == LayerType::Input) {
+			Layer::load(ifs, layerMap);
+		} else {
+			layer->load(ifs, layerMap);
+		}
+		ifs.read((char *)&layerKey, sizeof(Layer *));
+	}
+}
+
+
 
 
 

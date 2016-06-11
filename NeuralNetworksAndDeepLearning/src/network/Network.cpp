@@ -198,6 +198,9 @@ int Network::testEvaluateResult(const rvec &output, const rvec &y) {
 
 
 void Network::save(string filename) {
+	Timer timer;
+	timer.start();
+
 	ofstream ofs(filename.c_str(), ios::out | ios::binary);
 
 	//int inputLayerSize = 1;
@@ -215,6 +218,8 @@ void Network::save(string filename) {
 	inputLayer->save(0, ofs);
 
 	ofs.close();
+
+	cout << "time elapsed to save network: " << timer.stop(false) << endl;
 }
 
 

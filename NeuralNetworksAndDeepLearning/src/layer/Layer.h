@@ -33,6 +33,7 @@ public:
 	int getId() const { return id; }
 	rcube &getInput() { return this->input; }
 	rcube &getOutput() { return this->output; }
+	LayerType getType() { return this->type; }
 
 	vector<next_layer_relation> &getNextLayers() { return this->nextLayers; }
 	int getNextLayerSize() { return this->nextLayers.size(); }
@@ -53,6 +54,7 @@ public:
 	virtual void update(UINT idx, UINT n, UINT miniBatchSize);
 
 	virtual void save(UINT idx, ofstream &ofs);
+	virtual void saveHeader(UINT idx, ofstream &ofs);
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void loadHeader(ofstream &ofs);
 
@@ -67,8 +69,8 @@ protected:
 	void propUpdate(UINT n, UINT miniBatchSize);
 	void propSave(ofstream &ofs);
 
-	virtual void saveHeader(UINT idx, ofstream &ofs);
 	virtual void save(ofstream &ofs);
+	virtual void loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void updateLayerRelation(map<Layer *, Layer *> &layerMap);
 
 	static int generateLayerId();

@@ -34,7 +34,7 @@ void MnistDataSet::load() {
 			{"./data/mnist/t10k-images.idx3-ubyte", "./data/mnist/t10k-labels.idx1-ubyte"}
 	};
 
-	trainDataSize = loadDataSetFromResource(filenames[0], trainDataSet, 0, 50000);
+	trainDataSize = loadDataSetFromResource(filenames[0], trainDataSet, 0, 10000);
 	//trainDataSize = loadDataSetFromResource(filenames[0], trainDataSet, 0, 10000);
 	//validationDataSize = loadDataSetFromResource(filenames[0], validationDataSet, 50000, 10000);
 	testDataSize = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);

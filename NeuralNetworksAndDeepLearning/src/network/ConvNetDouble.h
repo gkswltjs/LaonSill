@@ -20,7 +20,7 @@
 
 class ConvNetDouble : public Network {
 public:
-	ConvNetDouble() : Network(0, 0, 0, 0) {
+	ConvNetDouble() : Network() {
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 

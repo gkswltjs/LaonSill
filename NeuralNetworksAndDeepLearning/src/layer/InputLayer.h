@@ -10,7 +10,6 @@
 
 #include "Layer.h"
 #include "LayerConfig.h"
-#include "LayerFactory.h"
 #include "../Util.h"
 #include "../exception/Exception.h"
 #include <armadillo>
@@ -57,40 +56,9 @@ public:
 	}
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-		// fill layer map
-		while(true) {
-			LayerType layerType;
-			ifs.read((char *)&layerType, sizeof(int));
-			Layer *address;
-			ifs.read((char *)&address, sizeof(Layer *));
-
-			if(address == 0) break;
-			if(layerType == LayerType::Input) {
-				layerMap.insert(pair<Layer *, Layer *>(address, this));
-			}
-			else {
-				Layer *layer = LayerFactory::create(layerType);
-				layerMap.insert(pair<Layer *, Layer *>(address, layer));
-				//cout << "created layer type: " << (int)layerType << ", address: " << layer << endl;
-			}
-		}
-		//cout << "map size: " << layerMap.size() << endl;
-
-		Layer *layerKey;
-		ifs.read((char *)&layerKey, sizeof(Layer *));
-		Layer::load(ifs, layerMap);
 		initialize();
-		//updateLayerRelation(layerMap);
 
-		ifs.read((char *)&layerKey, sizeof(Layer *));
-		while(ifs) {
-			Layer *layer = layerMap.find(layerKey)->second;
-			if(!layer) throw Exception();
-
-			layer->load(ifs, layerMap);
-
-			ifs.read((char *)&layerKey, sizeof(Layer *));
-		}
+		loadNetwork(ifs, layerMap);
 	}
 
 protected:
