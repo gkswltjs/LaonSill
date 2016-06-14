@@ -75,11 +75,11 @@ void network_test() {
 	if(!debug) {
 		Util::setPrint(false);
 
-		Network *network = new InceptionNetSingle();
-		delete network;
-		network = NULL;
+		//Network *network = new InceptionNetSingle();
+		//delete network;
+		//network = NULL;
 
-		/*
+
 		// DataSet은 memory를 크게 차지할 수 있으므로 heap에 생성
 		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
 		mnistDataSet->load();
@@ -92,12 +92,19 @@ void network_test() {
 		for(UINT i = 0; i < 5; i++) {
 			sprintf(savefile, "g:\\InceptionNetSingle-%lf.network", lr_mult[i]);
 
-			Network *network = new InceptionNetSingle(lr_mult[i], 5.0);
+			//Network *network = new InceptionNetSingle(lr_mult[i], 5.0);
+			//network->setDataSet(mnistDataSet);
+			//network->sgd(1, 10);
+			//network->save(savefile);
+
+			Network *network = new Network();
+			network->load(savefile);
 			network->setDataSet(mnistDataSet);
-			network->sgd(1, 10);
-			network->save(savefile);
+			network->test();
+
+			delete network;
 		}
-		*/
+
 
 		//Network *network_load = new Network();
 		//network_load->load("g:\\InceptionNetSingle.network");

@@ -29,7 +29,7 @@ Layer::~Layer() {
 			nextLayers[i].next_layer = NULL;
 		}
 	}
-	//cout << "destroying " << name << " layer ... " << endl;
+	cout << "destroying " << name << " layer ... " << endl;
 }
 
 
