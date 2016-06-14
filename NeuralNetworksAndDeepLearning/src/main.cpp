@@ -86,6 +86,7 @@ void network_test() {
 		//DataSet *cifar10DataSet = new Cifar10DataSet();
 		//cifar10DataSet->load();
 
+		/*
 		char savefile[64];
 		double lr_mult[5] = {0.001, 0.01, 0.1, 0.1, 1.0};
 
@@ -104,6 +105,7 @@ void network_test() {
 
 			delete network;
 		}
+		*/
 
 
 		//Network *network_load = new Network();
@@ -112,9 +114,9 @@ void network_test() {
 		//network_load->test();
 
 
-		//Network *network = new ConvNetSingle();
-		//network->setDataSet(mnistDataSet);
-		//network->sgd(10, 10);
+		Network *network = new ConvNetSingle();
+		network->setDataSet(mnistDataSet);
+		network->sgd(10, 10);
 
 		/*
 		cout << "googlenet with mnist ... " << endl;
