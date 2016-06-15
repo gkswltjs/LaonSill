@@ -49,7 +49,7 @@ void network_test();
 
 
 int main(int argc, char** argv) {
-	cout << "main" << endl;
+	cout << "main - cuda" << endl;
 
 	cout.precision(11);
 	cout.setf(ios::fixed);
