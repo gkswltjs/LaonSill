@@ -33,6 +33,8 @@ void log_print(FILE *fp, int log_level, const char* filename, const int line, co
 
 
 
+#define CPU_MODE	0
+
 
 
 
