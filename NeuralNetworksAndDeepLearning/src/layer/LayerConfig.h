@@ -19,7 +19,7 @@
 
 
 class Layer;
-class HiddenLayer;
+
 
 
 

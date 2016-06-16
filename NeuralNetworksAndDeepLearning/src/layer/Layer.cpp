@@ -350,8 +350,8 @@ void Layer::initialize(const char *name, io_dim in_dim, io_dim out_dim) {
 	//this->name = name;
 	this->in_dim = in_dim;
 	this->out_dim = out_dim;
-	this->input.set_size(in_dim.rows, in_dim.cols, in_dim.channels);
-	this->output.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
+	//this->input.set_size(in_dim.rows, in_dim.cols, in_dim.channels);
+	//this->output.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
 }
 
 bool Layer::isLastPrevLayerRequest(UINT idx) {
