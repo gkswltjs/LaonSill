@@ -8,12 +8,14 @@
 #ifndef LAYERCONFIG_H_
 #define LAYERCONFIG_H_
 
+#include "../Util.h"
 #include <armadillo>
 
-typedef arma::fvec rvec;
-typedef arma::fmat rmat;
-typedef arma::fcube rcube;
-typedef unsigned int UINT;
+
+//typedef arma::fvec rvec;
+//typedef arma::fmat rmat;
+//typedef arma::fcube rcube;
+//typedef unsigned int UINT;
 
 
 class Layer;
@@ -25,9 +27,6 @@ class HiddenLayer;
 enum class ParamFillerType {
 	None, Constant, Xavier, Gaussian
 };
-
-
-
 
 
 

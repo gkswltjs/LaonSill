@@ -8,7 +8,7 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
-#include "layer/LayerConfig.h"
+//#include "layer/LayerConfig.h"
 #include <string>
 #include <armadillo>
 #include <iostream>
