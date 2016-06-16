@@ -17,6 +17,9 @@ using namespace arma;
 
 
 class DataSample {
+
+
+#if CPU_MODE
 public:
 	DataSample() {}
 
@@ -102,6 +105,44 @@ public:
 private:
 	rcube data;
 	rvec target;
+
+#else
+public:
+	DataSample() {}
+
+	void init(int rows, int cols, int channels, int classes) {
+		data = new DATATYPE[rows*cols*channels];
+
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_real_distribution<> ud(-0.1, 0.1);
+
+		UINT i;
+		for(i = 0; i < rows*cols*channels; i++) {
+			data[i] = static_cast<DATATYPE>(ud(gen));
+		}
+
+		target = 5;
+
+		//data = randu<rcube>(rows, cols, channels);
+		//target = rvec(classes, 1);
+		//target(0, 0) = 1.0;
+	}
+
+	virtual ~DataSample() {
+		delete [] data;
+	}
+
+	const DATATYPE *getData() const { return this->data; }
+	const int getTarget() const { return this->target; }
+
+
+private:
+	DATATYPE *data;
+	int target;
+#endif
+
+
 };
 
 #endif /* DATASET_DATASAMPLE_H_ */

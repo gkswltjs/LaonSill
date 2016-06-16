@@ -15,17 +15,12 @@ using namespace arma;
 
 
 
-#if CPU_MODE
-
-
 class HiddenLayer : public Layer {
 public:
 	HiddenLayer() {}
 	HiddenLayer(const char *name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
 	HiddenLayer(const char *name, io_dim in_dim, io_dim out_dim) : Layer(name, in_dim, out_dim) {}
 	virtual ~HiddenLayer() {}
-
-	virtual rcube &getDeltaInput()=0;
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
@@ -51,21 +46,6 @@ public:
 
 
 
-
-
-	//virtual void save(UINT idx, ofstream &ofs) {
-	//	save(ofs);
-	//	propSave(ofs);
-	//}
-
-	//virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	//	Layer::load(ifs, layerMap);
-	//}
-
-
-
-
-
 protected:
 
 	void propBackpropagation() {
@@ -76,19 +56,34 @@ protected:
 		}
 	}
 
+
+
+#if CPU_MODE
+	virtual rcube &getDeltaInput()=0;
+
+	//virtual void save(UINT idx, ofstream &ofs) {
+	//	save(ofs);
+	//	propSave(ofs);
+	//}
+
+	//virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	//	Layer::load(ifs, layerMap);
+	//}
+
 	//virtual void save(ofstream &ofs) {
 	//	Layer::save(ofs);
 	//}
+
+#else
+	virtual DATATYPE *getDeltaInput()=0;
+
+#endif
 
 
 };
 
 
-#else
 
-
-
-#endif
 
 
 

@@ -36,6 +36,7 @@
 #include "activation/ReLU.h"
 
 #include "Timer.h"
+#include "cuda/Cuda.h"
 
 using namespace std;
 using namespace arma;
@@ -45,17 +46,36 @@ using namespace arma;
 
 
 void network_test();
+void cuda_test();
 
 int main(int argc, char** argv) {
 	cout << "main" << endl;
 	cout.precision(11);
 	cout.setf(ios::fixed);
 
-	network_test();
+	//network_test();
+	cuda_test();
 
 	cout << "end" << endl;
 	return 0;
 }
+
+
+void cuda_test() {
+	Cuda::create(0);
+
+	MockDataSet *dataSet = new MockDataSet();
+	dataSet->load();
+
+	const DataSample &dataSample = dataSet->getTestDataAt(0);
+	InputLayer *inputLayer = new InputLayer("input", io_dim(10, 10, 3));
+	inputLayer->feedforward(0, dataSample.getData());
+
+	//inputLayer->feedforward(0, )
+
+	Cuda::destroy();
+}
+
 
 
 

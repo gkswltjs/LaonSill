@@ -49,6 +49,8 @@ int Cifar10DataSet::loadDataSetFromResource(string *resources, int numResources,
 	if(dataSet) delete dataSet;
 	dataSet = new DataSample[dataSize];
 
+
+#if CPU_MODE
 	for(int i = 0; i < numResources; i++) {
 		ImageInfo dataInfo(resources[i]);
 		dataInfo.load();
@@ -62,6 +64,10 @@ int Cifar10DataSet::loadDataSetFromResource(string *resources, int numResources,
 			dataSet[i*10000+j].readData(dataPtr, 32, 32, 3);
 		}
 	}
+#else
+
+#endif
+
 	return dataSize;
 }
 

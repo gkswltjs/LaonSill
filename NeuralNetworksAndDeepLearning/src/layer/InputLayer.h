@@ -17,9 +17,6 @@
 using namespace arma;
 
 
-#if CPU_MODE
-
-
 class InputLayer : public Layer {
 public:
 	InputLayer() {}
@@ -30,21 +27,6 @@ public:
 		initialize();
 	}
 	virtual ~InputLayer() {}
-
-	/**
-	 * Input 무조건 첫번째 layer,
-	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
-	 */
-	void feedforward(UINT idx, const rcube &input) {
-		//if(!isLastPrevLayerRequest(idx)) throw Exception();
-
-		Util::convertCube(input, this->input);
-		Util::convertCube(this->input, this->output);
-		Util::printCube(input, "input:");
-		Util::printCube(this->output, "output:");
-
-		propFeedforward(this->output);
-	}
 
 	void save(UINT idx, ofstream &ofs) {
 		saveHeader(0, ofs);
@@ -65,18 +47,56 @@ public:
 	}
 
 protected:
-
 	void initialize() {
 		this->type = LayerType::Input;
 		this->id = Layer::generateLayerId();
 	}
+
+
+#if CPU_MODE
+public:
+	/**
+	 * Input 무조건 첫번째 layer,
+	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
+	 */
+	void feedforward(UINT idx, const rcube &input) {
+		//if(!isLastPrevLayerRequest(idx)) throw Exception();
+
+		Util::convertCube(input, this->input);
+		Util::convertCube(this->input, this->output);
+		Util::printCube(input, "input:");
+		Util::printCube(this->output, "output:");
+
+		propFeedforward(this->output);
+	}
+
+#else
+public:
+	void feedforward(UINT idx, const DATATYPE *input) {
+		//if(!isLastPrevLayerRequest(idx)) throw Exception();
+
+		//this->d_input = input;
+		//checkCudaErrors(cudaMemcpyAsync(this->d_input, input, sizeof(DATATYPE)*in_dim.size(), cudaMemcpyHostToDevice));
+
+		//Util::printData(input, in_dim.rows, in_dim.cols, in_dim.channels, "input:");
+		checkCudaErrors(cudaMemcpyAsync(this->d_output, input, sizeof(DATATYPE)*in_dim.size(), cudaMemcpyHostToDevice));
+
+		//DATATYPE *host = new DATATYPE[in_dim.size()];
+		//checkCudaErrors(cudaMemcpyAsync(host, this->d_output, sizeof(DATATYPE)*in_dim.size(), cudaMemcpyDeviceToHost));
+		//Util::printData(host, in_dim.rows, in_dim.cols, in_dim.channels, "output:");
+
+		propFeedforward(this->d_output);
+	}
+protected:
+
+#endif
+
+
+
+
 };
 
 
-#else
-
-
-#endif
 
 
 

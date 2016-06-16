@@ -9,11 +9,11 @@
 #define LAYER_LAYER_H_
 
 #include "LayerConfig.h"
+#include "../cuda/Cuda.h"
 #include "../Util.h"
 #include <armadillo>
 #include <iostream>
 #include <map>
-#include <cudnn.h>
 
 using namespace arma;
 
@@ -28,6 +28,8 @@ class Layer {
 
 public:
 	Layer() {}
+	Layer(const char *name, int n_in, int n_out);
+	Layer(const char *name, io_dim in_dim, io_dim out_dim);
 	virtual ~Layer();
 
 	int getId() const { return id; }
@@ -54,6 +56,7 @@ public:
 
 
 protected:
+	void initialize(const char *name, io_dim in_dim, io_dim out_dim);
 	void propResetNParam();
 	void propUpdate(UINT n, UINT miniBatchSize);
 	void propSave(ofstream &ofs);
@@ -82,9 +85,6 @@ protected:
 #if CPU_MODE
 
 public:
-	Layer(const char *name, int n_in, int n_out);
-	Layer(const char *name, io_dim in_dim, io_dim out_dim);
-
 	rcube &getInput() { return this->input; }
 	rcube &getOutput() { return this->output; }
 
@@ -96,8 +96,6 @@ public:
 	virtual void feedforward(UINT idx, const rcube &input);
 
 protected:
-	void initialize(const char *name, io_dim in_dim, io_dim out_dim);
-
 	void propFeedforward(const rcube output);
 
 	rcube input;
@@ -106,32 +104,25 @@ protected:
 #else
 
 public:
-	Layer(const char *name, int n_in, int n_out);
-	Layer(const char *name, io_dim in_dim, io_dim out_dim);
+	const DATATYPE *getInput() { return this->d_input; }
+	DATATYPE *getOutput() { return this->d_output; }
 
-	DATATYPE *getInput() { return this->input; }
-	DATATYPE *getOutput() { return this->output; }
-
-	/**
-	 * 주어진 입력 input에 대해 출력 activation을 계산
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
-	// sub class에서 구현이 없을 때에만 참조, 구현이 있을 경우 prop*() 함수를 참조
-	virtual void feedforward(UINT idx, const rcube &input);
+	virtual void feedforward(UINT idx, const DATATYPE *input);
 
 protected:
-	void initialize(const char *name, io_dim in_dim, io_dim out_dim);
+	void propFeedforward(const DATATYPE *output);
 
-	void propFeedforward(const rcube output);
+	//DATATYPE *input;
+	//DATATYPE *output;
 
-	DATATYPE *input;
-	DATATYPE *output;
-
-	DATATYPE *d_input;
-	DATATYPE *d_output;
+	const DATATYPE *d_input;		// input pointer is assigned from prev layer output pointer
+	DATATYPE *d_output;		// has own device memory allocated
 
 	cudnnTensorDescriptor_t inputTensorDesc;
 	cudnnTensorDescriptor_t outputTensorDesc;
+
+	cudnnHandle_t cudnnHandle;
+	cublasHandle_t cublasHandle;
 
 #endif
 

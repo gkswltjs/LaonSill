@@ -112,6 +112,26 @@ void Util::printUCube(const ucube &c, string name) {
 }
 
 
+void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, string name) {
+	if(Util::print && data) {
+		UINT i,j,k;
+
+		cout << "-------------------------------------" << endl;
+		cout << "name: " << name << endl;
+		cout << "rows x cols x slices: " << rows << " x " << cols << " x " << channels << endl;
+		for(i = 0; i < channels; i++) {
+			for(j = 0; j < rows; j++) {
+				for(k = 0; k < cols; k++) {
+					cout << data[i*rows*cols+j*cols+k] << " ";
+				}
+				cout << endl;
+			}
+			cout << endl;
+		}
+		cout << "-------------------------------------" << endl;
+	}
+}
+
 
 /*
 void Util::convertCubeToVec(const io_dim &cube_dim, const cube &c, vec &v) {

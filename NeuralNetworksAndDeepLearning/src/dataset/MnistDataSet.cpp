@@ -108,6 +108,7 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 int MnistDataSet::loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size) {
 	// LOAD IMAGE DATA
 
+#if CPU_MODE
 	ImageInfo dataInfo(resources[0]);
 	dataInfo.load();
 
@@ -154,6 +155,10 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], DataSample *&data
 		dataSet[i-offset].readData(dataPtr, dataNumRows, dataNumCols, 1, targetPtr, 10);
 	}
 	return stop-offset;
+#else
+	return 0;
+#endif
+
 }
 
 
