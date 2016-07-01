@@ -12,10 +12,6 @@
 
 int Layer::layerCount = 0;
 
-Layer::Layer(const char *name, int n_in, int n_out) {
-	initialize(name, io_dim(n_in, 1, 1), io_dim(n_out, 1, 1));
-}
-
 Layer::Layer(const char *name, io_dim in_dim, io_dim out_dim) {
 	initialize(name, in_dim, out_dim);
 }
@@ -86,6 +82,10 @@ int Layer::generateLayerId() {
 
 
 #if CPU_MODE
+
+Layer::Layer(const char *name, int n_in, int n_out) {
+	initialize(name, io_dim(n_in, 1, 1), io_dim(n_out, 1, 1));
+}
 
 Layer::~Layer() {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
@@ -263,11 +263,8 @@ void Layer::initialize(const char *name, io_dim in_dim, io_dim out_dim) {
 	this->in_dim = in_dim;
 	this->out_dim = out_dim;
 
-	//this->input = new DATATYPE[in_dim.size()];
-	//this->output = new DATATYPE[out_dim.size()];
-
-	//checkCudaErrors(cudaMalloc(&this->d_input, sizeof(DATATYPE)*in_dim.size()));
-	checkCudaErrors(cudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.size()));
+	//checkCudaErrors(cudaMalloc(&this->d_input, sizeof(DATATYPE)*in_dim.batchsize()));
+	checkCudaErrors(cudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));

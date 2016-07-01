@@ -28,7 +28,6 @@ class Layer {
 
 public:
 	Layer() {}
-	Layer(const char *name, int n_in, int n_out);
 	Layer(const char *name, io_dim in_dim, io_dim out_dim);
 	virtual ~Layer();
 
@@ -83,8 +82,9 @@ protected:
 
 
 #if CPU_MODE
-
 public:
+	Layer(const char *name, int n_in, int n_out);
+
 	rcube &getInput() { return this->input; }
 	rcube &getOutput() { return this->output; }
 
@@ -120,9 +120,6 @@ protected:
 
 	cudnnTensorDescriptor_t inputTensorDesc;
 	cudnnTensorDescriptor_t outputTensorDesc;
-
-	cudnnHandle_t cudnnHandle;
-	cublasHandle_t cublasHandle;
 
 #endif
 

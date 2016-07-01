@@ -14,19 +14,19 @@
 
 class NeuralNetSingle : public Network {
 public:
-	NeuralNetSingle() : Network() {
-		double lr_mult = 0.01;
+	NeuralNetSingle(UINT batchSize=1) : Network(batchSize) {
+		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 
 		InputLayer *inputLayer = new InputLayer(
 				"input",
-				io_dim(28, 28, 1)
+				io_dim(28, 28, 1, batchSize)
 				);
 
 		HiddenLayer *fc1Layer = new FullyConnectedLayer(
 				"fc1",
-				28*28*1,
-				100,
+				io_dim(28*28*1, 1, 1, batchSize),
+				io_dim(100, 1, 1, batchSize),
 				0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
@@ -37,8 +37,8 @@ public:
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
 				"softmax",
-				100,
-				10,
+				io_dim(100, 1, 1, batchSize),
+				io_dim(10, 1, 1, batchSize),
 				0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),

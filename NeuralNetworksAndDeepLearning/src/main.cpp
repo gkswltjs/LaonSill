@@ -90,17 +90,16 @@ void network_test() {
 		}
 		*/
 
-		cout << endl;
-
-		Network *network = new NeuralNetSingle();
+		Network *network = new NeuralNetSingle(100);
 		network->setDataSet(dataSet);
-		network->sgd(10, 1);
+		network->sgd(10);
 
 	} else {
-		Util::setPrint(true);
+		Util::setPrint(false);
 
 		int numTrainData = 2;
 		int numTestData = 2;
+		int batchSize = 2;
 		MockDataSet *dataSet = new MockDataSet(5, 5, 1, numTrainData, numTestData);
 		dataSet->load();
 
@@ -116,14 +115,14 @@ void network_test() {
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 
-		InputLayer *inputLayer = new InputLayer("input", io_dim(5, 5, 1, 1));
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 5*5*1, 20, 0.5,
+		InputLayer *inputLayer = new InputLayer("input", io_dim(5*5, 1, 1, batchSize));
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", io_dim(5*5, 1, 1, batchSize), io_dim(20, 1, 1, batchSize), 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1),
 				ActivationType::ReLU);
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 20, 10, 0.5,
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(20, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
@@ -132,8 +131,8 @@ void network_test() {
 		Network::addLayerRelation(inputLayer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
 
-		Network *network = new Network(inputLayer, softmaxLayer, dataSet, 0);
-		network->sgd(10, 1);
+		Network *network = new Network(batchSize, inputLayer, softmaxLayer, dataSet, 0);
+		network->sgd(10);
 
 	}
 

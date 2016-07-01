@@ -18,7 +18,6 @@ using namespace arma;
 class HiddenLayer : public Layer {
 public:
 	HiddenLayer() {}
-	HiddenLayer(const char *name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
 	HiddenLayer(const char *name, io_dim in_dim, io_dim out_dim) : Layer(name, in_dim, out_dim) {}
 	virtual ~HiddenLayer() {}
 
@@ -60,6 +59,8 @@ protected:
 
 #if CPU_MODE
 public:
+	HiddenLayer(const char *name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
+
 	virtual rcube &getDeltaInput()=0;
 
 	//virtual void save(UINT idx, ofstream &ofs) {

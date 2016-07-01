@@ -26,7 +26,8 @@
 
 
 
-Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
+Network::Network(UINT batchSize, InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
+	this->batchSize = batchSize;
 	this->inputLayer = inputLayer;
 	if(outputLayer) this->outputLayers.push_back(outputLayer);
 	this->dataSet = dataSet;
@@ -43,9 +44,9 @@ Network::~Network() {
 
 
 
-void Network::sgd(int epochs, int miniBatchSize) {
+void Network::sgd(int epochs) {
 	int trainDataSize = dataSet->getNumTrainData();
-	int miniBatchesSize = trainDataSize / miniBatchSize;
+	int miniBatchesSize = trainDataSize / batchSize;
 
 	Timer timer1, timer2;
 	for(int i = 0; i < epochs; i++) {
@@ -54,16 +55,16 @@ void Network::sgd(int epochs, int miniBatchSize) {
 		//dataSet->shuffleTrainDataSet();
 		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			//if((j+1)%6000 == 0) {
-			//	cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
-			//	timer2.start();
-			//}
+			if((j+1)%100 == 0) {
+				cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+				timer2.start();
+			}
 			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 
 			//cout << "reset_nabla()" << endl;
 			inputLayer->reset_nabla(0);
-			updateMiniBatch(j, miniBatchSize);
+			updateMiniBatch(j);
 		}
 		//timer1.stop();
 
@@ -78,9 +79,11 @@ void Network::sgd(int epochs, int miniBatchSize) {
 
 
 void Network::test() {
+	/*
 	if(dataSet->getNumTestData() > 0) {
 		cout << "Evaluating ... " << evaluate() << " / " << dataSet->getNumTestData() << endl;
 	}
+	*/
 }
 
 
@@ -221,19 +224,20 @@ int Network::evaluate() {
 	int testResult = 0;
 	//bool printBak = Util::getPrint();
 	//Util::setPrint(true);
-	int testDataSize = dataSet->getNumTestData();
-	for(int i = 0; i < testDataSize; i++) {
+
+	int testBatchesSize = dataSet->getNumTestData()/batchSize;
+	for(int i = 0; i < testBatchesSize; i++) {
 		// TODO 개별 데이터에 대해 테스트 중... batch로 처리하도록 수정해야 함
 		// FEED FORWARD
 		DATATYPE *d_testData;
-		checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()));
+		checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize));
 
 		//const DATATYPE *testData = dataSet->getTestDataAt(i);
 		//for(int j = 0; j < 10; j++) { cout << testData[j] << ", "; }
 		//cout << endl;
 
 		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i),
-				sizeof(DATATYPE)*inputLayer->getInputDimension(), cudaMemcpyHostToDevice));
+				sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize, cudaMemcpyHostToDevice));
 
 		feedforward(d_testData);
 		checkCudaErrors(cudaFree(d_testData));
@@ -364,24 +368,24 @@ void Network::feedforward(const DATATYPE *input) {
 }
 
 
-void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
+void Network::updateMiniBatch(int nthMiniBatch) {
 	Cuda::refresh();
 
-	int baseIndex = nthMiniBatch*miniBatchSize;
+	int baseIndex = nthMiniBatch*batchSize;
 
 	// FEED FORWARD
 	DATATYPE *d_trainData;
-	checkCudaErrors(cudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputDimension()*miniBatchSize));
+	checkCudaErrors(cudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize));
 	checkCudaErrors(cudaMemcpyAsync(d_trainData, dataSet->getTrainDataAt(baseIndex),
-			sizeof(DATATYPE)*inputLayer->getInputDimension()*miniBatchSize, cudaMemcpyHostToDevice));
+			sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize, cudaMemcpyHostToDevice));
 
 	feedforward(d_trainData);
 
 	// BACK PROPAGATION
 	UINT *d_trainLabel;
-	checkCudaErrors(cudaMalloc(&d_trainLabel, sizeof(UINT)*miniBatchSize));
+	checkCudaErrors(cudaMalloc(&d_trainLabel, sizeof(UINT)*batchSize));
 	checkCudaErrors(cudaMemcpyAsync(d_trainLabel, dataSet->getTrainLabelAt(baseIndex),
-				sizeof(UINT)*miniBatchSize, cudaMemcpyHostToDevice));
+				sizeof(UINT)*batchSize, cudaMemcpyHostToDevice));
 
 	for(UINT i = 0; i < outputLayers.size(); i++) {
 		outputLayers[i]->cost(d_trainLabel);
@@ -393,7 +397,7 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
 	// UPDATE
 	//cout << "update()" << endl;
 	int n = dataSet->getNumTrainData();
-	inputLayer->update(0, n, miniBatchSize);
+	inputLayer->update(0, n, batchSize);
 }
 
 
@@ -401,26 +405,30 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
 
 
 int Network::testEvaluateResult(const DATATYPE *d_output, const UINT *y) {
+	const int num_labels = 10;
+	int sum = 0;
 
-	DATATYPE *output = new DATATYPE[10];
-	checkCudaErrors(cudaMemcpyAsync(output, d_output,	sizeof(float)*10, cudaMemcpyDeviceToHost));
+	DATATYPE *output = new DATATYPE[num_labels*batchSize];
+	checkCudaErrors(cudaMemcpyAsync(output, d_output,	sizeof(float)*num_labels*batchSize, cudaMemcpyDeviceToHost));
 
-	DATATYPE maxValue = -100000;
-	int maxIndex = 0;
-	for(int i = 0; i < 10; i++) {
-		//cout << output[i] << ", ";
-		if(output[i] > maxValue) {
-			maxValue = output[i];
-			maxIndex = i;
+	for(int j = 0; j < batchSize; j++) {
+		DATATYPE maxValue = -100000;
+		int maxIndex = 0;
+		for(int i = 0; i < num_labels; i++) {
+			//cout << output[i] << ", ";
+			if(output[num_labels*j+i] > maxValue) {
+				maxValue = output[num_labels*j+i];
+				maxIndex = i;
+			}
 		}
+		//cout << endl << "maxIndex: " << maxIndex << ", y: " << y[0] << endl;
+
+		if(maxIndex == y[j]) sum++;
 	}
-	//cout << endl << "maxIndex: " << maxIndex << ", y: " << y[0] << endl;
+
 	delete [] output;
 
-	if(maxIndex == y[0]) return 1;
-	else return 0;
-
-
+	return sum;
 
 	//Util::printVec(&evaluateResult, "result");
 	//Util::printVec(y, "y");

@@ -31,14 +31,14 @@ using namespace arma;
 
 class Network {
 public:
-	Network() {}
-	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
+	Network(UINT batchSize=1) { this->batchSize = batchSize; }
+	Network(UINT batchSize, InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
 	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
 	void setDataSet(DataSet *dataSet) { this->dataSet = dataSet; }
 
-	void sgd(int epochs, int miniBatchSize);
+	void sgd(int epochs);
 	void test();
 
 
@@ -60,7 +60,7 @@ public:
 	void load(string filename);
 
 protected:
-	void updateMiniBatch(int nthMiniBatch, int miniBatchSize);
+	void updateMiniBatch(int nthMiniBatch);
 	void backprop(const DataSample &dataSample);
 
 	double totalCost(const vector<const DataSample *> &dataSet, double lambda);
@@ -72,6 +72,8 @@ protected:
 
 	InputLayer *inputLayer;
 	vector<OutputLayer *> outputLayers;
+
+	UINT batchSize;
 
 #if CPU_MODE
 protected:

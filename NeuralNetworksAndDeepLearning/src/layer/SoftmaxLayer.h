@@ -38,12 +38,6 @@ using namespace arma;
 class SoftmaxLayer : public OutputLayer {
 public:
 	SoftmaxLayer() {}
-	SoftmaxLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler)
-		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
-				ActivationType::Softmax, CostType::LogLikelihood) {
-		initialize();
-	}
 	SoftmaxLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler)
 		: OutputLayer(name, in_dim, out_dim, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
@@ -65,6 +59,13 @@ public:
 
 #if CPU_MODE
 public:
+	SoftmaxLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler)
+		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
+				ActivationType::Softmax, CostType::LogLikelihood) {
+		initialize();
+	}
+
 	void cost(const rvec &target) {
 		// delta
 		cost_fn->d_cost(z, output, target, delta);
@@ -103,27 +104,27 @@ public:
 		Cuda::refresh();
 
 		cost_fn->d_cost(d_z, d_output, target, d_delta, out_dim.rows, out_dim.batches);
-		Util::printDeviceData(d_delta, out_dim.rows, 1, out_dim.channels, out_dim.batches, "d_delta:");
+		Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
 		// Accounting for batch size in SGD
 		// checkCudaErrors(cublasSscal(cublasHandle, ref_fc2.outputs * m_batchSize, &scalVal, dloss_data, 1));
 
 		//Util::setPrint(true);
 
 		float alpha = 1.0f, beta = 0.0f;
-		Util::printDeviceData(d_input, in_dim.rows, 1, 1, in_dim.batches, "d_input:");
+		Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
 		checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, out_dim.rows, in_dim.rows, out_dim.batches,
 				&alpha, d_delta, out_dim.rows, d_input, in_dim.rows, &beta, d_delta_weight, out_dim.rows));
-		Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, in_dim.batches, "d_delta_weight:");
+		Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
 
 		checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N, out_dim.rows, out_dim.batches,
 				&alpha, d_delta, out_dim.rows, d_onevec, 1, &beta, d_delta_bias, 1));
-		Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, in_dim.batches, "d_delta_bias:");
+		Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
 
-		Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, in_dim.batches, "d_weight:");
-		Util::printDeviceData(d_delta, out_dim.rows, 1, 1, in_dim.batches, "d_delta:");
+		Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
+		Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
 		checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, in_dim.rows, out_dim.batches, out_dim.rows,
 				&alpha, d_weight, out_dim.rows, d_delta, out_dim.rows, &beta, d_delta_input, in_dim.rows));
-		Util::printDeviceData(d_delta_input, in_dim.rows, 1, 1, in_dim.batches, "d_delta_input:");
+		Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.batches, 1, 1, "d_delta_input:");
 
 		//Util::setPrint(false);
 

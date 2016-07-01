@@ -22,8 +22,7 @@
 class FullyConnectedLayer : public HiddenLayer {
 public:
 	FullyConnectedLayer() {}
-	FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
+
 	FullyConnectedLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
 	virtual ~FullyConnectedLayer();
@@ -71,6 +70,9 @@ protected:
 
 #if CPU_MODE
 public:
+	FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
+
 	rmat &getWeight() { return this->weight; }
 	rcube &getDeltaInput() { return this->delta_input; }
 

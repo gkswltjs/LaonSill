@@ -16,12 +16,6 @@
 
 
 
-FullyConnectedLayer::FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
-	: HiddenLayer(name, n_in, n_out) {
-	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
-}
-
 FullyConnectedLayer::FullyConnectedLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, in_dim, out_dim) {
@@ -37,6 +31,12 @@ void FullyConnectedLayer::save(UINT idx, ofstream &ofs) {
 
 
 #if CPU_MODE
+
+FullyConnectedLayer::FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
+	: HiddenLayer(name, n_in, n_out) {
+	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+}
 
 FullyConnectedLayer::~FullyConnectedLayer() {
 	ActivationFactory::destory(activation_fn);
@@ -273,27 +273,27 @@ void FullyConnectedLayer::initialize(double p_dropout, update_param weight_updat
 	this->weight_filler = weight_filler;
 	this->bias_filler = bias_filler;
 
-	int n_in = in_dim.size();
-	int n_out = out_dim.size();
+	int u_in = in_dim.unitsize();
+	int u_out = out_dim.unitsize();
+	int b_in = in_dim.batchsize();
+	int b_out = out_dim.batchsize();
 
-	weight = new DATATYPE[n_in*n_out];
-	bias = new DATATYPE[n_out];
+	weight = new DATATYPE[u_out*u_in];
+	bias = new DATATYPE[u_out];
 
-	weight_filler.fill(weight, n_in*n_out, n_in*n_out);
-	bias_filler.fill(bias, n_out, 0);
-	Util::printData(weight, n_out, n_in, 1, 1, "weight:");
-	Util::printData(bias, n_out, 1, 1, 1, "bias:");
+	weight_filler.fill(weight, u_out*u_in, u_out*u_in);
+	bias_filler.fill(bias, u_out, 0);
+	Util::printData(weight, u_out, u_in, 1, 1, "weight:");
+	Util::printData(bias, u_out, 1, 1, 1, "bias:");
 
+	checkCudaErrors(cudaMalloc(&this->d_weight, sizeof(DATATYPE)*u_out*u_in));
+	checkCudaErrors(cudaMalloc(&this->d_bias, sizeof(DATATYPE)*u_out));
 
-	checkCudaErrors(cudaMalloc(&this->d_weight, sizeof(DATATYPE)*n_in*n_out));
-	checkCudaErrors(cudaMalloc(&this->d_bias, sizeof(DATATYPE)*n_out));
-
-	checkCudaErrors(cudaMalloc(&this->d_z, sizeof(DATATYPE)*n_out));
-	checkCudaErrors(cudaMalloc(&this->d_delta, sizeof(DATATYPE)*n_out));
-	checkCudaErrors(cudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*n_in));
-	checkCudaErrors(cudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*n_in*n_out));
-	checkCudaErrors(cudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*n_out));
-
+	checkCudaErrors(cudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
+	checkCudaErrors(cudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
+	checkCudaErrors(cudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
+	checkCudaErrors(cudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
+	checkCudaErrors(cudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
 
 	//DATATYPE *onevec = new DATATYPE[in_dim.batches];
 	//for(int i = 0; i < in_dim.batches; i++) onevec[i] = 1;
@@ -302,8 +302,8 @@ void FullyConnectedLayer::initialize(double p_dropout, update_param weight_updat
 	//Util::printDeviceData(d_onevec, 1, 1, 1, in_dim.batches, "d_onevec:");
 	//checkCudaErrors(cudaMemcpyAsync(this->d_onevec, onevec, sizeof(DATATYPE)*in_dim.batches, cudaMemcpyHostToDevice));
 
-	checkCudaErrors(cudaMemcpyAsync(this->d_weight, weight, sizeof(DATATYPE)*n_in*n_out, cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpyAsync(this->d_bias, bias, sizeof(DATATYPE)*n_out, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpyAsync(this->d_weight, weight, sizeof(DATATYPE)*u_out*u_in, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpyAsync(this->d_bias, bias, sizeof(DATATYPE)*u_out, cudaMemcpyHostToDevice));
 
 	this->activation_fn = ActivationFactory::create(activationType);
 
@@ -343,7 +343,8 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
 	float alpha = 1.0f, beta = 0.0f;
 
 	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
-	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+	Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
 			out_dim.rows, out_dim.batches, in_dim.rows,
@@ -353,7 +354,7 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
 			&beta,
 			d_z, out_dim.rows));
 
-	Util::printDeviceData(d_z, out_dim.rows, 1, out_dim.channels, out_dim.batches, "d_z:");
+	Util::printDeviceData(d_z, out_dim.rows, out_dim.batches, 1, 1, "d_z:");
 	//Util::printDeviceData(d_bias, out_dim.rows, 1, out_dim.channels, out_dim.batches, "d_b:");
 	//Util::printDeviceData(d_onevec, 1, 1, 1, in_dim.batches, "d_onevec:");
 
@@ -365,11 +366,11 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
 	    &alpha,
 	    d_z, out_dim.rows));
 
-	Util::printDeviceData(d_z, out_dim.rows, 1, out_dim.channels, out_dim.batches, "d_z:");
+	Util::printDeviceData(d_z, out_dim.rows, out_dim.batches, 1, 1, "d_z:");
 
-	//Util::printDeviceData(d_output, out_dim.rows, 1, out_dim.channels, out_dim.batches, "d_output:");
+	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 	activation_fn->activate(d_z, d_output, outputTensorDesc);
-	Util::printDeviceData(d_output, out_dim.rows, 1, out_dim.channels, out_dim.batches, "d_output:");
+	Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, "d_output:");
 
 	propFeedforward(this->d_output);
 }
@@ -379,25 +380,26 @@ void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 
 	Cuda::refresh();
 
-	Util::printDeviceData(next_layer->getDeltaInput(), out_dim.rows, 1, 1, out_dim.batches, "delta_input:");
-	Util::printDeviceData(d_output, out_dim.rows, 1, 1, out_dim.batches, "output:");
+	Util::printDeviceData(next_layer->getDeltaInput(), out_dim.rows, out_dim.batches, 1, 1, "delta_input:");
+	Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, "output:");
 	activation_fn->d_activate(d_output, next_layer->getDeltaInput(), d_z, d_delta, outputTensorDesc);
-	Util::printDeviceData(d_delta, out_dim.rows, 1, 1, in_dim.batches, "d_delta:");
+	Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
 
 	float alpha = 1.0f, beta = 0.0f;
-	Util::printDeviceData(d_input, in_dim.rows, 1, 1, in_dim.batches, "d_input:");
+	Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, out_dim.rows, in_dim.rows, out_dim.batches,
 			&alpha, d_delta, out_dim.rows, d_input, in_dim.rows, &beta, d_delta_weight, out_dim.rows));
-	Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, in_dim.batches, "d_delta_weight:");
+	Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
 
 	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N, out_dim.rows, out_dim.batches,
 			&alpha, d_delta, out_dim.rows, d_onevec, 1, &beta, d_delta_bias, 1));
-	Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, in_dim.batches, "d_delta_bias:");
+	Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
 
-	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, in_dim.batches, "d_weight:");
+	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
+	Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, in_dim.rows, out_dim.batches, out_dim.rows,
 			&alpha, d_weight, out_dim.rows, d_delta, out_dim.rows, &beta, d_delta_input, in_dim.rows));
-	Util::printDeviceData(d_delta_input, in_dim.rows, 1, 1, in_dim.batches, "d_delta_input:");
+	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.batches, 1, 1, "d_delta_input:");
 
 	/*
 	 * rcube w_next_delta(size(output));

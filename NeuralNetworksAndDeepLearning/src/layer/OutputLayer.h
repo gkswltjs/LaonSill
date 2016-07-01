@@ -22,11 +22,7 @@ class OutputLayer : public FullyConnectedLayer {
 public:
 	OutputLayer() {}
 	//OutputLayer(const char *name, int n_in, int n_out, double p_dropout) : FullyConnectedLayer(name, n_in, n_out, p_dropout) {}
-	OutputLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
-		: FullyConnectedLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
-		initialize(costType);
-	}
+
 	//OutputLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout) : FullyConnectedLayer(name, in_dim, out_dim, p_dropout) {}
 	OutputLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
@@ -45,6 +41,12 @@ protected:
 
 #if CPU_MODE
 public:
+	OutputLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
+		: FullyConnectedLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
+		initialize(costType);
+	}
+
 	/**
 	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
 	 * @param target: 현재 데이터에 대한 목적값

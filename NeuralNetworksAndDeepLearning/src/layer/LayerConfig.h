@@ -44,7 +44,9 @@ typedef struct io_dim {
     	this->channels = channels;
     	this->batches = batches;
     }
-    int size() const { return rows*cols*channels*batches; }
+    //int size() const { return rows*cols*channels*batches; }
+    int unitsize() const { return rows*cols*channels; }
+    int batchsize() const { return rows*cols*channels*batches; }
 } io_dim;
 
 typedef struct filter_dim : public io_dim {
