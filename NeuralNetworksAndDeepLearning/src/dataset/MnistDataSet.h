@@ -32,8 +32,11 @@ public:
 	void shuffleTestDataSet();
 
 private:
+#if CPU_MODE
 	int loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size);
-	//int loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet);
+#else
+	int loadDataSetFromResource(string resources[2], vector<DATATYPE> *&dataSet, vector<UINT> *&labelSet, int offset, int size);
+#endif
 
 	double validationSetRatio;
 };

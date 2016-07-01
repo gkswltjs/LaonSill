@@ -16,7 +16,7 @@
 
 
 
-#if CPU_MODE
+
 
 
 class FullyConnectedLayer : public HiddenLayer {
@@ -27,15 +27,6 @@ public:
 	FullyConnectedLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
 	virtual ~FullyConnectedLayer();
-
-	rmat &getWeight() { return this->weight; }
-	rcube &getDeltaInput() { return this->delta_input; }
-
-	/**
-	 * 주어진 입력 input에 대해 출력 activation을 계산
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
-	virtual void feedforward(UINT idx, const rcube &input);
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
@@ -68,10 +59,31 @@ private:
 protected:
 	virtual void save(ofstream &ofs);
 
-
-
 	double p_dropout;
 
+	update_param weight_update_param;
+	update_param bias_update_param;
+
+	param_filler weight_filler;
+	param_filler bias_filler;
+
+	Activation *activation_fn;
+
+#if CPU_MODE
+public:
+	rmat &getWeight() { return this->weight; }
+	rcube &getDeltaInput() { return this->delta_input; }
+
+	/**
+	 * 주어진 입력 input에 대해 출력 activation을 계산
+	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
+	 */
+	virtual void feedforward(UINT idx, const rcube &input);
+
+
+
+
+protected:
 	rmat weight;
 	rvec bias;
 
@@ -81,22 +93,52 @@ protected:
 	rcube z;
 	rcube delta;
 	rcube delta_input;
-	Activation *activation_fn;
-
-	update_param weight_update_param;
-	update_param bias_update_param;
-
-	param_filler weight_filler;
-	param_filler bias_filler;
-};
 
 
 
 #else
 
+public:
+	DATATYPE *getWeight() { return this->d_weight; }
+	DATATYPE *getDeltaInput() { return this->d_delta_input; }
 
+	/**
+	 * 주어진 입력 input에 대해 출력 activation을 계산
+	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
+	 */
+	virtual void feedforward(UINT idx, const DATATYPE *input);
+
+
+protected:
+	DATATYPE *weight;
+	DATATYPE *bias;
+
+	DATATYPE *d_weight;
+	DATATYPE *d_bias;
+
+	DATATYPE *d_z;
+	DATATYPE *d_delta;
+	DATATYPE *d_delta_input;
+	DATATYPE *d_delta_weight;
+	DATATYPE *d_delta_bias;
+
+	DATATYPE *d_onevec;
+
+	//rvec nabla_b;
+	//rmat nabla_w;
+
+	//rcube z;
+	//rcube delta;
+	//rcube delta_input;
 
 #endif
+
+
+};
+
+
+
+
 
 
 #endif /* LAYER_FULLYCONNECTEDLAYER_H_ */

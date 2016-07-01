@@ -257,6 +257,8 @@ void Layer::loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 #else
 
 void Layer::initialize(const char *name, io_dim in_dim, io_dim out_dim) {
+	Cuda::refresh();
+
 	strcpy(this->name, name);
 	this->in_dim = in_dim;
 	this->out_dim = out_dim;
@@ -282,6 +284,8 @@ void Layer::initialize(const char *name, io_dim in_dim, io_dim out_dim) {
 
 
 Layer::~Layer() {
+	Cuda::refresh();
+
 	for(UINT i = 0; i < nextLayers.size(); i++) {
 		if(nextLayers[i].next_layer && nextLayers[i].next_layer->isLastPrevLayerRequest(nextLayers[i].idx)) {
 			delete nextLayers[i].next_layer;

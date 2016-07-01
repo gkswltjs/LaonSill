@@ -8,8 +8,10 @@
 #ifndef LAYERCONFIG_H_
 #define LAYERCONFIG_H_
 
+#include <cmath>
+#include <cstring>
+
 #include "../Util.h"
-#include <armadillo>
 
 
 //typedef arma::fvec rvec;
@@ -102,6 +104,7 @@ typedef struct param_filler {
 		this->value = value;
 	}
 
+#if CPU_MODE
 	void fill(rvec &param, int n_in) {
 		switch(type) {
 		case ParamFillerType::Constant: param.fill(value); break;
@@ -153,6 +156,40 @@ typedef struct param_filler {
 			break;
 		}
 	}
+
+#else
+	void fill(DATATYPE *param, int size, int factor) {
+		UINT i;
+		switch(type) {
+		case ParamFillerType::Constant:
+		{
+			//memset(param, value, size);
+			for(int i = 0; i < size; i++) param[i] = value;
+		}
+			break;
+		case ParamFillerType::Xavier:
+		{
+			std::random_device rd_xavier;
+			std::mt19937 gen_xavier(rd_xavier());
+			float sd_xavier = sqrt(3.0f / factor);
+			std::uniform_real_distribution<> uniform_dist(-sd_xavier, sd_xavier);
+			for(i = 0; i < size; i++) param[i] = static_cast<DATATYPE>(uniform_dist(gen_xavier));
+		}
+			break;
+		case ParamFillerType::Gaussian:
+		{
+			std::random_device rd_gaussian;
+			std::mt19937 gen_gaussian(rd_gaussian());
+			std::normal_distribution<> normal_dist(-1.0, 1.0);
+			for(i = 0; i < size; i++) param[i] = static_cast<DATATYPE>(normal_dist(gen_gaussian));
+		}
+			break;
+		case ParamFillerType::None:
+		default:
+			break;
+		}
+	}
+#endif
 
 } param_filler;
 

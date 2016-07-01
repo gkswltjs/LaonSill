@@ -28,6 +28,8 @@ public:
 	}
 	virtual ~InputLayer() {}
 
+	int getInputDimension() const { return in_dim.rows*in_dim.cols*in_dim.channels; }
+
 	void save(UINT idx, ofstream &ofs) {
 		saveHeader(0, ofs);
 		// header boundary
@@ -73,13 +75,15 @@ public:
 #else
 public:
 	void feedforward(UINT idx, const DATATYPE *input) {
-		//if(!isLastPrevLayerRequest(idx)) throw Exception();
+		if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-		//this->d_input = input;
-		//checkCudaErrors(cudaMemcpyAsync(this->d_input, input, sizeof(DATATYPE)*in_dim.size(), cudaMemcpyHostToDevice));
+		Cuda::refresh();
 
-		//Util::printData(input, in_dim.rows, in_dim.cols, in_dim.channels, "input:");
-		checkCudaErrors(cudaMemcpyAsync(this->d_output, input, sizeof(DATATYPE)*in_dim.size(), cudaMemcpyHostToDevice));
+		//Util::printData(input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "input:");
+		//checkCudaErrors(cudaMemcpyAsync(this->d_output, input, sizeof(DATATYPE)*in_dim.size(), cudaMemcpyHostToDevice));
+
+		this->d_input = input;
+		checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.size()*in_dim.batches, cudaMemcpyHostToDevice));
 
 		//DATATYPE *host = new DATATYPE[in_dim.size()];
 		//checkCudaErrors(cudaMemcpyAsync(host, this->d_output, sizeof(DATATYPE)*in_dim.size(), cudaMemcpyDeviceToHost));

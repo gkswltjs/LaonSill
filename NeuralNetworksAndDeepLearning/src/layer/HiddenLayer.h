@@ -59,6 +59,7 @@ protected:
 
 
 #if CPU_MODE
+public:
 	virtual rcube &getDeltaInput()=0;
 
 	//virtual void save(UINT idx, ofstream &ofs) {
@@ -75,6 +76,7 @@ protected:
 	//}
 
 #else
+public:
 	virtual DATATYPE *getDeltaInput()=0;
 
 #endif

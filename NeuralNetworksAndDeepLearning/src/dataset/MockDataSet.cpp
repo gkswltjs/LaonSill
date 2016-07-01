@@ -9,46 +9,32 @@
 #include "DataSample.h"
 #include "../Util.h"
 
-MockDataSet::MockDataSet() {
-	trainDataSize = 10;
-	validationDataSize = 10;
-	testDataSize = 10;
+MockDataSet::MockDataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData)
+	: DataSet(rows, cols, channels, numTrainData, numTestData) {}
 
-	trainDataSet = new DataSample[trainDataSize];
-	validationDataSet = new DataSample[validationDataSize];
-	testDataSet = new DataSample[testDataSize];
-}
-
-MockDataSet::~MockDataSet() {
-	if(trainDataSet) {
-		delete trainDataSet;
-		trainDataSet = NULL;
-	}
-	if(validationDataSet) {
-		delete validationDataSet;
-		validationDataSet = NULL;
-	}
-	if(testDataSet) {
-		delete testDataSet;
-		testDataSet = NULL;
-	}
-}
-
+MockDataSet::~MockDataSet() {}
 
 void MockDataSet::load() {
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> ud(-0.1, 0.1);
 
-	for(int i = 0; i < trainDataSize; i++) {
-		trainDataSet[i].init(10, 10, 3, 10);
+	UINT i;
+	// load train data
+	for(i = 0; i < dataSize*numTrainData; i++) {
+		(*trainDataSet)[i] = static_cast<DATATYPE>(ud(gen));
+	}
+	for(i = 0; i < numTrainData; i++) {
+		(*trainLabelSet)[i] = static_cast<UINT>(ud(gen)*50+5);
 	}
 
-	for(int i = 0; i < validationDataSize; i++) {
-		validationDataSet[i].init(10, 10, 3, 10);
+	// load test data
+	for(i = 0; i < dataSize*numTestData; i++) {
+		(*testDataSet)[i] = static_cast<DATATYPE>(ud(gen));
 	}
-
-	for(int i = 0; i < testDataSize; i++) {
-		testDataSet[i].init(10, 10, 3, 10);
+	for(i = 0; i < numTestData; i++) {
+		(*testLabelSet)[i] = static_cast<UINT>(ud(gen)*50+5);
 	}
-
 
 	/*
 	double trainData[100] = {

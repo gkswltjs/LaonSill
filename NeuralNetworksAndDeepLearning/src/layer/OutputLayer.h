@@ -16,7 +16,7 @@ using namespace arma;
 
 
 
-#if CPU_MODE
+
 
 class OutputLayer : public FullyConnectedLayer {
 public:
@@ -37,6 +37,14 @@ public:
 		CostFactory::destroy(cost_fn);
 	};
 
+protected:
+	void initialize(CostType costType) {
+		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
+		this->cost_fn = CostFactory::create(costType);
+	}
+
+#if CPU_MODE
+public:
 	/**
 	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
 	 * @param target: 현재 데이터에 대한 목적값
@@ -54,11 +62,6 @@ public:
 
 
 protected:
-	void initialize(CostType costType) {
-		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
-		this->cost_fn = CostFactory::create(costType);
-	}
-
 	virtual void save(ofstream &ofs) {
 		FullyConnectedLayer::save(ofs);
 
@@ -67,14 +70,40 @@ protected:
 	}
 
 	Cost *cost_fn;
-};
 
 
 #else
 
+public:
+	/**
+	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
+	 * @param target: 현재 데이터에 대한 목적값
+	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
+	 */
+	virtual void cost(const UINT *target)=0;
+	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+		FullyConnectedLayer::load(ifs, layerMap);
+		//CostType type;
+		//ifs.read((char *)&type, sizeof(int));
+		//initialize(type);
+	}
 
+
+protected:
+	virtual void save(ofstream &ofs) {
+		FullyConnectedLayer::save(ofs);
+		//int costType = (int)cost_fn->getType();
+		//ofs.write((char *)&costType, sizeof(int));
+	}
+	Cost *cost_fn;
 
 #endif
+
+
+};
+
+
+
 
 
 

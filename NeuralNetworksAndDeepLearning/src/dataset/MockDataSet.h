@@ -12,7 +12,7 @@
 
 class MockDataSet : public DataSet {
 public:
-	MockDataSet();
+	MockDataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData);
 	virtual ~MockDataSet();
 
 	virtual void load();

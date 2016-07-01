@@ -112,25 +112,52 @@ void Util::printUCube(const ucube &c, string name) {
 }
 
 
-void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, string name) {
+void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, UINT batches, string name) {
 	if(Util::print && data) {
-		UINT i,j,k;
+		UINT i,j,k,l;
 
 		cout << "-------------------------------------" << endl;
 		cout << "name: " << name << endl;
-		cout << "rows x cols x slices: " << rows << " x " << cols << " x " << channels << endl;
-		for(i = 0; i < channels; i++) {
-			for(j = 0; j < rows; j++) {
-				for(k = 0; k < cols; k++) {
-					cout << data[i*rows*cols+j*cols+k] << " ";
+		cout << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
+
+		UINT batchElem = rows*cols*channels;
+		UINT channelElem = rows*cols;
+		for(i = 0; i < batches; i++) {
+			for(j = 0; j < channels; j++) {
+				for(k = 0; k < rows; k++) {
+					for(l = 0; l < cols; l++) {
+						cout << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+					}
+					cout << endl;
 				}
 				cout << endl;
 			}
 			cout << endl;
 		}
+
+		//for(i = 0; i < std::min(10, (int)(rows*cols*channels*batches)); i++) {
+		//	cout << data[i] << ",";
+		//}
+		//cout << endl;
+
 		cout << "-------------------------------------" << endl;
 	}
 }
+
+
+void Util::printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT channels, UINT batches, string name) {
+	if(Util::print) {
+		Cuda::refresh();
+
+		DATATYPE *data = new DATATYPE[rows*cols*channels*batches];
+		checkCudaErrors(cudaMemcpyAsync(data, d_data, sizeof(DATATYPE)*rows*cols*channels*batches, cudaMemcpyDeviceToHost));
+		Util::printData(data, rows, cols, channels, batches, name);
+		// TODO 메모리 해제시 print가 제대로 동작하지 않음
+		//if(data) delete [] data;
+	}
+}
+\
+
 
 
 /*

@@ -11,9 +11,13 @@
 #include "Activation.h"
 
 
-#if CPU_MODE
+
 
 class ReLU : public Activation {
+public:
+	virtual ~ReLU() {}
+
+#if CPU_MODE
 public:
 	ReLU() {
 		this->type = ActivationType::ReLU;
@@ -23,8 +27,6 @@ public:
 		zero.set_size(activation_dim.rows, activation_dim.cols, activation_dim.channels);
 		zero.zeros();
 	}
-	virtual ~ReLU() {}
-
 	/*
 	void initialize_weight(int n_in, rmat &weight) {
 		weight.randn();
@@ -35,7 +37,6 @@ public:
 		weight *= sqrt(2.0/n_in);				// initial point scaling
 	}
 	*/
-
 	void activate(const rcube &z, rcube &activation) {
 		if(zero.n_elem <= 1) {
 			zero.set_size(size(z));
@@ -51,51 +52,35 @@ public:
 
 private:
 	rcube zero;
-};
 
 #else
-
-class ReLU : public Activation {
 public:
 	ReLU() {
 		this->type = ActivationType::ReLU;
+		checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
+		checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0.0));
 	}
-	ReLU(io_dim activation_dim) {
-		this->type = ActivationType::ReLU;
-		zero.set_size(activation_dim.rows, activation_dim.cols, activation_dim.channels);
-		zero.zeros();
+	void activate(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc) {
+		float alpha = 1.0f, beta = 0.0f;
+		checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, activationDesc, &alpha,
+					tensorDesc, z, &beta, tensorDesc, activation));
 	}
-	virtual ~ReLU() {}
-
-	/*
-	void initialize_weight(int n_in, rmat &weight) {
-		weight.randn();
-		weight *= sqrt(2.0/n_in);				// initial point scaling
-	}
-	void initialize_weight(int n_in, rcube &weight) {
-		weight.randn();
-		weight *= sqrt(2.0/n_in);				// initial point scaling
-	}
-	*/
-
-	void activate(const rcube &z, rcube &activation) {
-		if(zero.n_elem <= 1) {
-			zero.set_size(size(z));
-			zero.zeros();
-		}
-		activation = arma::max(z, zero);
-	}
-	void d_activate(const rcube &activation, rcube &da) {
-		Util::printCube(activation, "d_activate-activation:");
-		da = conv_to<rcube>::from(activation > zero);
-		Util::printCube(da, "d_activate-da:");
+	void d_activate(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
+			cudnnTensorDescriptor_t &tensorDesc) {
+		float alpha = 1.0f, beta = 0.0f;
+		checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, activationDesc, &alpha,
+				tensorDesc, activation, tensorDesc, deltaInput,
+				tensorDesc, z, &beta, tensorDesc, da));
 	}
 
 private:
-	rcube zero;
-};
+	cudnnActivationDescriptor_t activationDesc;
 
 #endif
+
+};
+
+
 
 
 

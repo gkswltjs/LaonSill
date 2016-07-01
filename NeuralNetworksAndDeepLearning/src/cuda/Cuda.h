@@ -44,6 +44,19 @@
 } while(0)
 
 
+// Block width for CUDA kernels
+#define BW 128
+
+/**
+ * Computes ceil(x / y) for integral nonnegative values.
+ */
+static inline unsigned int RoundUp(unsigned int nominator, unsigned int denominator)
+{
+	return (nominator + denominator - 1) / denominator;
+}
+
+
+
 class Cuda {
 public:
 	Cuda();
@@ -55,6 +68,7 @@ public:
 
 	static void create(int gpuid);
 	static void destroy();
+	static void refresh();
 
 };
 

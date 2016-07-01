@@ -12,6 +12,7 @@
 #include <string>
 #include <armadillo>
 #include <iostream>
+#include "cuda/Cuda.h"
 
 using namespace std;
 using namespace arma;
@@ -82,8 +83,8 @@ public:
 	static void printMat(const rmat &matrix, string name);
 	static void printCube(const rcube &c, string name);
 	static void printUCube(const ucube &c, string name);
-	static void printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, string name);
-
+	static void printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, UINT batches, string name);
+	static void printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT channels, UINT batches, string name);
 
 	static int getPrint() { return Util::print; }
 	static void setPrint(bool print) { Util::print = print; };
@@ -99,6 +100,8 @@ public:
 	static void convertCube(const rcube &input, rcube &output);
 
 	static void dropoutLayer(rcube &input, double p_dropout);
+
+
 
 
 

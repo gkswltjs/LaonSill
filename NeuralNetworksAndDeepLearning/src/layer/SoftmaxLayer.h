@@ -32,7 +32,7 @@ using namespace arma;
 
 
 
-#if CPU_MODE
+
 
 
 class SoftmaxLayer : public OutputLayer {
@@ -52,25 +52,6 @@ public:
 	}
 	virtual ~SoftmaxLayer() {}
 
-	void cost(const rvec &target) {
-		// delta
-		cost_fn->d_cost(z, output, target, delta);
-
-		Util::printVec(nabla_b, "bias:");
-		Util::printMat(nabla_w, "weight");
-		Util::printCube(delta, "delta:");
-		Util::printCube(input, "input:");
-
-		nabla_b += delta.slice(0);
-		// delta weight
-		nabla_w += delta.slice(0)*input.slice(0).t();
-
-		// delta input
-		delta_input.slice(0) = weight.t()*delta.slice(0);
-
-		propBackpropagation();
-	}
-
 	void save(UINT idx, ofstream &ofs) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		OutputLayer::save(ofs);
@@ -81,6 +62,27 @@ public:
 		OutputLayer::load(ifs, layerMap);
 		initialize();
 	}
+
+#if CPU_MODE
+public:
+	void cost(const rvec &target) {
+		// delta
+		cost_fn->d_cost(z, output, target, delta);
+		Util::printVec(nabla_b, "bias:");
+		Util::printMat(nabla_w, "weight");
+		Util::printCube(delta, "delta:");
+		Util::printCube(input, "input:");
+		nabla_b += delta.slice(0);
+		// delta weight
+		nabla_w += delta.slice(0)*input.slice(0).t();
+
+		// delta input
+		delta_input.slice(0) = weight.t()*delta.slice(0);
+
+		propBackpropagation();
+	}
+
+
 
 private:
 	void initialize() {
@@ -95,15 +97,60 @@ private:
 		//bias.zeros();
 	}
 
+#else
+public:
+	void cost(const UINT *target) {
+		Cuda::refresh();
+
+		cost_fn->d_cost(d_z, d_output, target, d_delta, out_dim.rows, out_dim.batches);
+		Util::printDeviceData(d_delta, out_dim.rows, 1, out_dim.channels, out_dim.batches, "d_delta:");
+		// Accounting for batch size in SGD
+		// checkCudaErrors(cublasSscal(cublasHandle, ref_fc2.outputs * m_batchSize, &scalVal, dloss_data, 1));
+
+		//Util::setPrint(true);
+
+		float alpha = 1.0f, beta = 0.0f;
+		Util::printDeviceData(d_input, in_dim.rows, 1, 1, in_dim.batches, "d_input:");
+		checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, out_dim.rows, in_dim.rows, out_dim.batches,
+				&alpha, d_delta, out_dim.rows, d_input, in_dim.rows, &beta, d_delta_weight, out_dim.rows));
+		Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, in_dim.batches, "d_delta_weight:");
+
+		checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N, out_dim.rows, out_dim.batches,
+				&alpha, d_delta, out_dim.rows, d_onevec, 1, &beta, d_delta_bias, 1));
+		Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, in_dim.batches, "d_delta_bias:");
+
+		Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, in_dim.batches, "d_weight:");
+		Util::printDeviceData(d_delta, out_dim.rows, 1, 1, in_dim.batches, "d_delta:");
+		checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, in_dim.rows, out_dim.batches, out_dim.rows,
+				&alpha, d_weight, out_dim.rows, d_delta, out_dim.rows, &beta, d_delta_input, in_dim.rows));
+		Util::printDeviceData(d_delta_input, in_dim.rows, 1, 1, in_dim.batches, "d_delta_input:");
+
+		//Util::setPrint(false);
+
+		propBackpropagation();
+	}
+
+
+
+private:
+	void initialize() {
+		this->type = LayerType::Softmax;
+		this->id = Layer::generateLayerId();
+
+		//this->cost_fn = CostFactory::create(CostType::LogLikelihood);
+		//this->activation_fn = ActivationFactory::create(ActivationType::Softmax);
+		//this->activation_fn->initialize_weight(in_dim.size(), weight);
+
+		//weight.zeros();
+		//bias.zeros();
+	}
+#endif
 
 };
 
 
 
-#else
 
-
-#endif
 
 
 

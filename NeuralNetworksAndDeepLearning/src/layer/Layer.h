@@ -116,7 +116,7 @@ protected:
 	//DATATYPE *output;
 
 	const DATATYPE *d_input;		// input pointer is assigned from prev layer output pointer
-	DATATYPE *d_output;		// has own device memory allocated
+	DATATYPE *d_output;					// has own device memory allocated
 
 	cudnnTensorDescriptor_t inputTensorDesc;
 	cudnnTensorDescriptor_t outputTensorDesc;

@@ -16,36 +16,26 @@ enum class CostType {
 
 
 
+
+
+class Cost {
+public:
+	Cost() {}
+	virtual ~Cost() {}
+	CostType getType() const { return type; }
+
 #if CPU_MODE
-
-class Cost {
 public:
-	Cost() {}
-	virtual ~Cost() {}
-	CostType getType() const { return type; }
-
 	virtual double fn(const rvec *pA, const rvec *pY) = 0;
 	virtual void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta) = 0;
-
-protected:
-	CostType type;
-};
-
 #else
-
-class Cost {
 public:
-	Cost() {}
-	virtual ~Cost() {}
-	CostType getType() const { return type; }
-
 	virtual double fn(const rvec *pA, const rvec *pY) = 0;
-	virtual void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta) = 0;
+	virtual void d_cost(const DATATYPE *z, DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT size) = 0;
+#endif
 
 protected:
 	CostType type;
 };
-
-#endif
 
 #endif /* COST_COST_H_ */

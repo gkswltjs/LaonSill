@@ -9,13 +9,13 @@
 #define NETWORK_NEURALNETSINGLE_H_
 
 
-#if CPU_MODE
+
 
 
 class NeuralNetSingle : public Network {
 public:
 	NeuralNetSingle() : Network() {
-		double lr_mult = 0.1;
+		double lr_mult = 0.01;
 		double decay_mult = 5.0;
 
 		InputLayer *inputLayer = new InputLayer(
@@ -54,12 +54,6 @@ public:
 	}
 	virtual ~NeuralNetSingle() {}
 };
-
-
-#else
-
-
-#endif
 
 
 

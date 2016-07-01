@@ -14,10 +14,10 @@
 #include "../activation/Activation.h"
 #include "../monitor/NetworkListener.h"
 #include "../layer/Layer.h"
-//#include "../layer/InputLayer.h"
-//#include "../layer/HiddenLayer.h"
-//#include "../layer/OutputLayer.h"
-//#include "../layer/LayerConfig.h"
+#include "../layer/InputLayer.h"
+#include "../layer/HiddenLayer.h"
+#include "../layer/OutputLayer.h"
+#include "../layer/LayerConfig.h"
 
 class DataSample;
 
@@ -27,8 +27,6 @@ using namespace std;
 using namespace arma;
 
 
-
-#if CPU_MODE
 
 
 class Network {
@@ -65,9 +63,6 @@ protected:
 	void updateMiniBatch(int nthMiniBatch, int miniBatchSize);
 	void backprop(const DataSample &dataSample);
 
-	//void feedforward();
-	void feedforward(const rcube &input);
-	int testEvaluateResult(const rvec &output, const rvec &y);
 	double totalCost(const vector<const DataSample *> &dataSet, double lambda);
 	double accuracy(const vector<const DataSample *> &dataSet);
 	int evaluate();
@@ -77,14 +72,26 @@ protected:
 
 	InputLayer *inputLayer;
 	vector<OutputLayer *> outputLayers;
-};
+
+#if CPU_MODE
+protected:
+	//void feedforward();
+	void feedforward(const rcube &input);
+	int testEvaluateResult(const rvec &output, const rvec &y);
 
 
 #else
-
-
+protected:
+	void feedforward(const DATATYPE *input);
+	int testEvaluateResult(const DATATYPE *output, const UINT *y);
 
 #endif
+
+
+};
+
+
+
 
 
 #endif /* NETWORK_H_ */
