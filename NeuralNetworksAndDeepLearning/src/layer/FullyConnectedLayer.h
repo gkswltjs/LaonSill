@@ -95,9 +95,6 @@ protected:
 	rcube z;
 	rcube delta;
 	rcube delta_input;
-
-
-
 #else
 
 public:

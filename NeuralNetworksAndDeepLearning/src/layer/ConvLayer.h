@@ -16,18 +16,22 @@
 #include "LayerConfig.h"
 
 
-#if CPU_MODE
+
 
 
 
 class ConvLayer : public HiddenLayer {
 public:
 	ConvLayer() {}
-	ConvLayer(const char *name, io_dim in_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+	ConvLayer(const char *name, io_dim in_dim, io_dim out_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_f, param_filler bias_filler, ActivationType activationType);
 	virtual ~ConvLayer();
 
 	filter_dim &get_filter_dim() { return this->filter_d; }
+
+#if CPU_MODE
+public:
+
 	rcube *getWeight() { return this->filters; }
 	rcube &getDeltaInput() { return this->delta_input; }
 
@@ -37,6 +41,12 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	void feedforward(UINT idx, const rcube &input);
+
+#else
+	DATATYPE *getWeight() { return this->filters; }
+	DATATYPE *getDeltaInput() { return this->d_delta_input; }
+	void feedforward(UINT idx, const DATATYPE *input);
+#endif
 
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
@@ -74,15 +84,21 @@ public:
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
+	void save(ofstream &ofs);
 
+	filter_dim filter_d;
+	Activation *activation_fn;
+
+	update_param weight_update_param;
+	update_param bias_update_param;
+	param_filler weight_filler;
+	param_filler bias_filler;
+
+#if CPU_MODE
+protected:
 	void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
 	void dw_convolution(const rmat &d, const rmat &x, rmat &result);
 	void dx_convolution(const rmat &d, const rmat &w, rmat &result);
-
-	void save(ofstream &ofs);
-
-
-	filter_dim filter_d;
 
 	rcube *filters;		// weights
 	rvec biases;
@@ -93,22 +109,34 @@ protected:
 	rcube z;
 	rcube delta;
 	rcube delta_input;
-
-	Activation *activation_fn;
-
-	update_param weight_update_param;
-	update_param bias_update_param;
-	param_filler weight_filler;
-	param_filler bias_filler;
-};
-
-
 #else
+protected:
+	DATATYPE *filters;
+	DATATYPE *biases;
 
+	DATATYPE *d_filters;
+	DATATYPE *d_biases;
 
+	DATATYPE *d_z;
+	DATATYPE *d_delta;
+	DATATYPE *d_delta_input;
+	DATATYPE *d_delta_weight;
+	DATATYPE *d_delta_bias;
 
+	cudnnTensorDescriptor_t biasTensorDesc;
+	cudnnFilterDescriptor_t filterDesc;
+	cudnnConvolutionDescriptor_t convDesc;
+	cudnnConvolutionFwdAlgo_t convFwdAlgo;
+	cudnnConvolutionBwdFilterAlgo_t convBwdFilterAlgo;
+	cudnnConvolutionBwdDataAlgo_t convBwdDataAlgo;
+
+	size_t workspaceSize;
+	void *d_workspace;
 
 #endif
+
+
+};
 
 
 

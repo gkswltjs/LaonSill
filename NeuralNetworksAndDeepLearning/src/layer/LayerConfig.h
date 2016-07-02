@@ -57,6 +57,7 @@ typedef struct filter_dim : public io_dim {
 		this->filters = filters;
 		this->stride = stride;
 	}
+	int size() const { return rows*cols*channels*filters; }
 } filter_dim;
 
 typedef struct pool_dim {

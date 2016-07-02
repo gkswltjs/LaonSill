@@ -70,7 +70,7 @@ void network_test() {
 	Cuda::create(0);
 	cout << "Cuda creation done ... " << endl;
 
-	bool debug = false;
+	bool debug = true;
 	double validationSetRatio = 1.0/6.0;
 
 	if(!debug) {
@@ -95,7 +95,7 @@ void network_test() {
 		network->sgd(10);
 
 	} else {
-		Util::setPrint(false);
+		Util::setPrint(true);
 
 		int numTrainData = 2;
 		int numTestData = 2;
@@ -115,21 +115,27 @@ void network_test() {
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 
-		InputLayer *inputLayer = new InputLayer("input", io_dim(5*5, 1, 1, batchSize));
+		InputLayer *inputLayer = new InputLayer("input", io_dim(5, 5, 1, batchSize));
+		/*
 		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", io_dim(5*5, 1, 1, batchSize), io_dim(20, 1, 1, batchSize), 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1),
 				ActivationType::ReLU);
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(20, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
+				*/
+		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(5, 5, 1, batchSize), io_dim(5, 5, 2, batchSize), filter_dim(3, 3, 1, 2, 1),
+						update_param(lr_mult, decay_mult), update_param(lr_mult, decay_mult),
+						param_filler(ParamFillerType::Xavier), param_filler(ParamFillerType::Constant, 0.1),
+						ActivationType::ReLU);
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(5*5*2, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1));
 
-		Network::addLayerRelation(inputLayer, fc1Layer);
-		Network::addLayerRelation(fc1Layer, softmaxLayer);
+		Network::addLayerRelation(inputLayer, conv1Layer);
+		Network::addLayerRelation(conv1Layer, softmaxLayer);
 
 		Network *network = new Network(batchSize, inputLayer, softmaxLayer, dataSet, 0);
 		network->sgd(10);
