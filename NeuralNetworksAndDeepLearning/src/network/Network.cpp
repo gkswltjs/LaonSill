@@ -55,10 +55,10 @@ void Network::sgd(int epochs) {
 		//dataSet->shuffleTrainDataSet();
 		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			if((j+1)%100 == 0) {
-				cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
-				timer2.start();
-			}
+			//if((j+1)%100 == 0) {
+			//	cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+			//	timer2.start();
+			//}
 			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 
@@ -236,7 +236,7 @@ int Network::evaluate() {
 		//for(int j = 0; j < 10; j++) { cout << testData[j] << ", "; }
 		//cout << endl;
 
-		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i),
+		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*batchSize),
 				sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize, cudaMemcpyHostToDevice));
 
 		feedforward(d_testData);
@@ -251,6 +251,8 @@ int Network::evaluate() {
 		//checkCudaErrors(cudaFree(d_testLabel));
 
 	}
+
+	//Util::setPrint(false);
 	return testResult;
 #endif
 }
@@ -409,7 +411,12 @@ int Network::testEvaluateResult(const DATATYPE *d_output, const UINT *y) {
 	int sum = 0;
 
 	DATATYPE *output = new DATATYPE[num_labels*batchSize];
-	checkCudaErrors(cudaMemcpyAsync(output, d_output,	sizeof(float)*num_labels*batchSize, cudaMemcpyDeviceToHost));
+
+	//Util::setPrint(true);
+	//Util::printDeviceData(d_output, num_labels, 1, 1, 1, "d_output:");
+	//cout << "y for 0: " << y[0] << ", y for 1: " << y[1] << endl;
+	//Util::setPrint(false);
+	checkCudaErrors(cudaMemcpyAsync(output, d_output,	sizeof(DATATYPE)*num_labels*batchSize, cudaMemcpyDeviceToHost));
 
 	for(int j = 0; j < batchSize; j++) {
 		DATATYPE maxValue = -100000;

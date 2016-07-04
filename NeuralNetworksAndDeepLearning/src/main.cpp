@@ -70,7 +70,7 @@ void network_test() {
 	Cuda::create(0);
 	cout << "Cuda creation done ... " << endl;
 
-	bool debug = true;
+	bool debug = false;
 	double validationSetRatio = 1.0/6.0;
 
 	if(!debug) {
@@ -90,7 +90,8 @@ void network_test() {
 		}
 		*/
 
-		Network *network = new NeuralNetSingle(100);
+		Network *network = new NeuralNetSingle(10);
+		//Network *network = new ConvNetSingle(10);
 		network->setDataSet(dataSet);
 		network->sgd(10);
 
@@ -99,7 +100,7 @@ void network_test() {
 
 		int numTrainData = 2;
 		int numTestData = 2;
-		int batchSize = 2;
+		int batchSize = 1;
 		MockDataSet *dataSet = new MockDataSet(5, 5, 1, numTrainData, numTestData);
 		dataSet->load();
 
@@ -128,14 +129,22 @@ void network_test() {
 						update_param(lr_mult, decay_mult), update_param(lr_mult, decay_mult),
 						param_filler(ParamFillerType::Xavier), param_filler(ParamFillerType::Constant, 0.1),
 						ActivationType::ReLU);
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(5*5*2, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
+
+		HiddenLayer *pool1Layer = new PoolingLayer("pool1",
+						io_dim(5, 5, 2, batchSize),
+						io_dim(3, 3, 2, batchSize),
+						pool_dim(3, 3, 2),
+						PoolingType::Max);
+
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(3*3*2, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1));
 
 		Network::addLayerRelation(inputLayer, conv1Layer);
-		Network::addLayerRelation(conv1Layer, softmaxLayer);
+		Network::addLayerRelation(conv1Layer, pool1Layer);
+		Network::addLayerRelation(pool1Layer, softmaxLayer);
 
 		Network *network = new Network(batchSize, inputLayer, softmaxLayer, dataSet, 0);
 		network->sgd(10);

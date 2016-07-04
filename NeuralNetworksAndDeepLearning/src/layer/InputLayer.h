@@ -20,9 +20,6 @@ using namespace arma;
 class InputLayer : public Layer {
 public:
 	InputLayer() {}
-	InputLayer(const char *name, int n_in) : Layer(name, n_in, n_in) {
-		initialize();
-	}
 	InputLayer(const char *name, io_dim in_dim) : Layer(name, in_dim, in_dim) {
 		initialize();
 	}
@@ -57,6 +54,9 @@ protected:
 
 #if CPU_MODE
 public:
+	InputLayer(const char *name, int n_in) : Layer(name, n_in, n_in) {
+		initialize();
+	}
 	/**
 	 * Input 무조건 첫번째 layer,
 	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음

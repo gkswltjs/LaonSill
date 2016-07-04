@@ -156,7 +156,13 @@ void Util::printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT ch
 		//if(data) delete [] data;
 	}
 }
-\
+
+
+void Util::printMessage(string message) {
+	if(Util::print) {
+		cout << message << endl;
+	}
+}
 
 
 

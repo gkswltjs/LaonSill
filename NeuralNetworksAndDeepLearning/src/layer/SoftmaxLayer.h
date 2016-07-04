@@ -101,14 +101,13 @@ private:
 #else
 public:
 	void cost(const UINT *target) {
+		Util::printMessage("SoftmaxLayer::cost()---");
 		Cuda::refresh();
 
 		cost_fn->d_cost(d_z, d_output, target, d_delta, out_dim.rows, out_dim.batches);
 		Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
 		// Accounting for batch size in SGD
 		// checkCudaErrors(cublasSscal(cublasHandle, ref_fc2.outputs * m_batchSize, &scalVal, dloss_data, 1));
-
-		//Util::setPrint(true);
 
 		float alpha = 1.0f, beta = 0.0f;
 		Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
@@ -125,8 +124,6 @@ public:
 		checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, in_dim.rows, out_dim.batches, out_dim.rows,
 				&alpha, d_weight, out_dim.rows, d_delta, out_dim.rows, &beta, d_delta_input, in_dim.rows));
 		Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.batches, 1, 1, "d_delta_input:");
-
-		//Util::setPrint(false);
 
 		propBackpropagation();
 	}

@@ -38,7 +38,9 @@ typedef struct io_dim {
     UINT channels;
     UINT batches;
 
-    io_dim(UINT rows=1, UINT cols=1, UINT channels=1, UINT batches=1) {
+    //io_dim(UINT rows=1, UINT cols=1, UINT channels=1, UINT batches=1) {
+    io_dim() {}
+    io_dim(UINT rows, UINT cols, UINT channels, UINT batches) {
     	this->rows = rows;
     	this->cols = cols;
     	this->channels = channels;
@@ -53,7 +55,9 @@ typedef struct filter_dim : public io_dim {
 	UINT filters;
 	UINT stride;
 
-	filter_dim(UINT rows=1, UINT cols=1, UINT channels=1, UINT filters=1, UINT stride=1) : io_dim(rows, cols, channels) {
+	//filter_dim(UINT rows=1, UINT cols=1, UINT channels=1, UINT filters=1, UINT stride=1) : io_dim(rows, cols, channels) {
+	filter_dim() {}
+	filter_dim(UINT rows, UINT cols, UINT channels, UINT filters, UINT stride) : io_dim(rows, cols, channels, 1) {
 		this->filters = filters;
 		this->stride = stride;
 	}
@@ -65,7 +69,9 @@ typedef struct pool_dim {
 	UINT cols;
 	UINT stride;
 
-	pool_dim(UINT rows=1, UINT cols=1, UINT stride=1) {
+	//pool_dim(UINT rows=1, UINT cols=1, UINT stride=1) {
+	pool_dim() {}
+	pool_dim(UINT rows, UINT cols, UINT stride) {
 		this->rows = rows;
 		this->cols = cols;
 		this->stride = stride;
@@ -78,7 +84,9 @@ typedef struct lrn_dim {
 	double alpha;
 	double beta;
 
-	lrn_dim(UINT local_size=5, double alpha=1, double beta=5) {
+	//lrn_dim(UINT local_size=5, double alpha=1, double beta=5) {
+	lrn_dim() {}
+	lrn_dim(UINT local_size, double alpha, double beta) {
 		this->local_size = local_size;
 		this->alpha = alpha;
 		this->beta = beta;

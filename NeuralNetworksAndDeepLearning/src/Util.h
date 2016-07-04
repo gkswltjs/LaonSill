@@ -85,6 +85,7 @@ public:
 	static void printUCube(const ucube &c, string name);
 	static void printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, UINT batches, string name);
 	static void printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT channels, UINT batches, string name);
+	static void printMessage(string message);
 
 	static int getPrint() { return Util::print; }
 	static void setPrint(bool print) { Util::print = print; };

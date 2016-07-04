@@ -20,43 +20,28 @@ enum class PoolingType {
 };
 
 
+
+
+class Pooling {
+public:
+	Pooling() {}
+	virtual ~Pooling() {}
+	PoolingType getType() const { return this->type; }
+
 #if CPU_MODE
-
-class Pooling {
-public:
-	Pooling() {}
-	virtual ~Pooling() {}
-	PoolingType getType() const { return this->type; }
-
 	virtual void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
 	virtual void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
-
-protected:
-	PoolingType type;
-
-
-};
-
 #else
-
-
-class Pooling {
-public:
-	Pooling() {}
-	virtual ~Pooling() {}
-	PoolingType getType() const { return this->type; }
-
-	virtual void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
-	virtual void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
-
-protected:
-	PoolingType type;
-
-
-};
-
-
+	virtual void pool(const cudnnTensorDescriptor_t xDesc, const DATATYPE *x,
+			const cudnnTensorDescriptor_t yDesc, DATATYPE *y)=0;
+	virtual void d_pool(const cudnnTensorDescriptor_t yDesc, const DATATYPE *y, const DATATYPE *dy,
+			const cudnnTensorDescriptor_t xDesc, const DATATYPE *x, DATATYPE *dx)=0;
 #endif
 
+protected:
+	PoolingType type;
+
+
+};
 
 #endif /* POOLING_POOLING_H_ */

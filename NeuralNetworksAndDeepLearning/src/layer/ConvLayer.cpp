@@ -508,7 +508,7 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	// backward filter algorithm
 	checkCUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(Cuda::cudnnHandle,
 			inputTensorDesc, outputTensorDesc, convDesc, filterDesc,
-			CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 128<<20, &convBwdFilterAlgo));
+			CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 32<<20, &convBwdFilterAlgo));
 
 	checkCUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(Cuda::cudnnHandle,
 			inputTensorDesc, outputTensorDesc, convDesc, filterDesc,
@@ -517,7 +517,7 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	// backward data algorithm
 	checkCUDNN(cudnnGetConvolutionBackwardDataAlgorithm(Cuda::cudnnHandle,
 			filterDesc, outputTensorDesc, convDesc, inputTensorDesc,
-			CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 128<<20, &convBwdDataAlgo));
+			CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 32<<20, &convBwdDataAlgo));
 
 	checkCUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(Cuda::cudnnHandle,
 			filterDesc, outputTensorDesc, convDesc, inputTensorDesc,
@@ -540,8 +540,10 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 
 void ConvLayer::feedforward(UINT idx, const DATATYPE *input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
+	Util::printMessage("ConvLayer::feedforward()---");
 	Cuda::refresh();
 
+	//Util::setPrint(true);
 	this->d_input = input;
 	float alpha = 1.0f, beta = 0.0f;
 
@@ -560,6 +562,7 @@ void ConvLayer::feedforward(UINT idx, const DATATYPE *input) {
 
 	activation_fn->activate(d_z, d_output, outputTensorDesc);
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
+	//Util::setPrint(false);
 
 	propFeedforward(d_output);
 }
@@ -572,6 +575,7 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
+	Util::printMessage("ConvLayer::backpropagation()---");
 	Cuda::refresh();
 
 	Util::printDeviceData(next_layer->getDeltaInput(), out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "prev_delta_input:");
@@ -598,6 +602,7 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 			(void *)&beta, inputTensorDesc, d_delta_input));
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 
+	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
 	/*
 	rcube da;
 	activation_fn->d_activate(output, da);
@@ -663,6 +668,10 @@ void ConvLayer::reset_nabla(UINT idx) {
 void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
+	Util::printMessage("ConvLayer::update()---");
+	//Util::setPrint(true);
+	Util::printMessage("ConvLayer::update()");
+
 	//for(UINT i = 0; i < filter_d.filters; i++) {
 	//	filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
 	//}
@@ -688,6 +697,8 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.filters),
 			&alpha, d_delta_bias, 1, d_biases, 1));
 	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
+
+	//Util::setPrint(false);
 
 	propUpdate(n, miniBatchSize);
 }

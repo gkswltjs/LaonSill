@@ -337,6 +337,7 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
+	Util::printMessage("FullyConnectedLayer::feedforward()---");
 	Cuda::refresh();
 
 	this->d_input = input;
@@ -370,7 +371,10 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
 
 	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 	activation_fn->activate(d_z, d_output, outputTensorDesc);
+
+	//Util::setPrint(true);
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, "d_output:");
+	//Util::setPrint(false);
 
 	propFeedforward(this->d_output);
 }
@@ -378,6 +382,7 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
 void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
+	Util::printMessage("FullyConnectedLayer::backpropagation()---");
 	Cuda::refresh();
 
 	Util::printDeviceData(next_layer->getDeltaInput(), out_dim.rows, out_dim.batches, 1, 1, "delta_input:");
@@ -433,6 +438,7 @@ void FullyConnectedLayer::reset_nabla(UINT idx) {
 void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
+	Util::printMessage("FullyConnectedLayer::update()---");
 	Cuda::refresh();
 
 	//weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;
