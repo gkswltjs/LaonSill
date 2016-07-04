@@ -227,15 +227,11 @@ int Network::evaluate() {
 
 	int testBatchesSize = dataSet->getNumTestData()/batchSize;
 	for(int i = 0; i < testBatchesSize; i++) {
-		// TODO 개별 데이터에 대해 테스트 중... batch로 처리하도록 수정해야 함
+
 		// FEED FORWARD
 		DATATYPE *d_testData;
 		checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize));
-
-		//const DATATYPE *testData = dataSet->getTestDataAt(i);
-		//for(int j = 0; j < 10; j++) { cout << testData[j] << ", "; }
-		//cout << endl;
-
+		//checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*batchSize),
 		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*batchSize),
 				sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize, cudaMemcpyHostToDevice));
 
@@ -247,7 +243,7 @@ int Network::evaluate() {
 		//checkCudaErrors(cudaMemcpyAsync(d_testLabel, dataSet->getTestLabelAt(i),
 		//		sizeof(UINT), cudaMemcpyHostToDevice));
 
-		testResult += testEvaluateResult(outputLayers[0]->getOutput(), dataSet->getTestLabelAt(i));
+		testResult += testEvaluateResult(outputLayers[0]->getOutput(), dataSet->getTestLabelAt(i*batchSize));
 		//checkCudaErrors(cudaFree(d_testLabel));
 
 	}

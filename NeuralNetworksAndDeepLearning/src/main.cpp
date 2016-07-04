@@ -90,8 +90,8 @@ void network_test() {
 		}
 		*/
 
-		Network *network = new NeuralNetSingle(10);
-		//Network *network = new ConvNetSingle(10);
+		//Network *network = new NeuralNetSingle(100);
+		Network *network = new ConvNetSingle(10);
 		network->setDataSet(dataSet);
 		network->sgd(10);
 
