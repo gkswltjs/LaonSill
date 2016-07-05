@@ -16,38 +16,38 @@
 
 
 
-#if CPU_MODE
-
 
 class InceptionNetSingle : public Network {
 public:
-	InceptionNetSingle(double lr_mult=0.01, double decay_mult=5.0) : Network() {
+	InceptionNetSingle(UINT batchSize=1, double lr_mult=0.01, double decay_mult=5.0) : Network(batchSize) {
 		//double lr_mult = 0.01;
 		//double decay_mult = 5.0;
 
 		InputLayer *inputLayer = new InputLayer(
 				"input",
-				io_dim(28, 28, 1)
+				io_dim(28, 28, 1, batchSize)
 				);
 
 		HiddenLayer *incept1Layer = new InceptionLayer(
 				"incept1",
-				io_dim(28, 28, 1),
-				io_dim(28, 28, 12),
+				io_dim(28, 28, 1, batchSize),
+				io_dim(28, 28, 12, batchSize),
 				3, 2, 3, 2, 3, 3
 				);
 
+		/*
 		HiddenLayer *incept2Layer = new InceptionLayer(
 				"incept2",
-				io_dim(28, 28, 12),
-				io_dim(28, 28, 24),
+				io_dim(28, 28, 12, batchSize),
+				io_dim(28, 28, 24, batchSize),
 				6, 4, 6, 4, 6, 6
 				);
+				*/
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
 				"softmax",
-				28*28*24,
-				10,
+				io_dim(28*28*12, 1, 1, batchSize),
+				io_dim(10, 1, 1, batchSize),
 				0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
@@ -56,21 +56,14 @@ public:
 				);
 
 		Network::addLayerRelation(inputLayer, incept1Layer);
-		Network::addLayerRelation(incept1Layer, incept2Layer);
-		Network::addLayerRelation(incept2Layer, softmaxLayer);
+		//Network::addLayerRelation(incept1Layer, incept2Layer);
+		Network::addLayerRelation(incept1Layer, softmaxLayer);
 
 		this->inputLayer = inputLayer;
 		addOutputLayer(softmaxLayer);
 	}
 	virtual ~InceptionNetSingle() {}
 };
-
-
-#else
-
-
-
-#endif
 
 
 #endif /* NETWORK_INCEPTIONNETSINGLE_H_ */

@@ -9,15 +9,43 @@
 #include "../Util.h"
 
 
-#if CPU_MODE
+
 
 
 LRNLayer::LRNLayer(const char *name, io_dim in_dim, lrn_dim lrn_d) : HiddenLayer(name, in_dim, in_dim) {
 	initialize(lrn_d);
 }
 
-LRNLayer::~LRNLayer() {}
 
+
+
+
+
+void LRNLayer::save(UINT idx, ofstream &ofs) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+	save(ofs);
+	propSave(ofs);
+}
+
+void LRNLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+
+	lrn_dim lrn_d;
+	ifs.read((char *)&lrn_d, sizeof(lrn_dim));
+
+	initialize(lrn_d);
+}
+
+void LRNLayer::save(ofstream &ofs) {
+	HiddenLayer::save(ofs);
+	ofs.write((char *)&lrn_d, sizeof(lrn_dim));
+}
+
+
+
+#if CPU_MODE
+
+LRNLayer::~LRNLayer() {}
 
 void LRNLayer::initialize(lrn_dim lrn_d) {
 	this->type = LayerType::LRN;
@@ -28,8 +56,6 @@ void LRNLayer::initialize(lrn_dim lrn_d) {
 	this->delta_input.set_size(size(output));
 	this->delta_input.zeros();
 }
-
-
 
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
@@ -70,10 +96,6 @@ void LRNLayer::feedforward(UINT idx, const rcube &input) {
 }
 
 
-
-
-
-
 void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
@@ -109,47 +131,69 @@ void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	delta_input.zeros();
 }
 
-
-
-
-
-
-
-
-
-
-
-void LRNLayer::save(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	save(ofs);
-	propSave(ofs);
-}
-
-void LRNLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
-
-	lrn_dim lrn_d;
-	ifs.read((char *)&lrn_d, sizeof(lrn_dim));
-
-	initialize(lrn_d);
-}
-
-void LRNLayer::save(ofstream &ofs) {
-	HiddenLayer::save(ofs);
-	ofs.write((char *)&lrn_d, sizeof(lrn_dim));
-}
-
-
-
-
 #else
+void LRNLayer::initialize(lrn_dim lrn_d) {
+	this->type = LayerType::LRN;
+	this->id = Layer::generateLayerId();
+
+	this->lrn_d = lrn_d;
+
+	//checkCudaErrors(cudaMalloc(&this->d_delta, sizeof(DATATYPE)*out_dim.batchsize()));
+	checkCudaErrors(cudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+
+	checkCUDNN(cudnnCreateLRNDescriptor(&lrnDesc));
+	checkCUDNN(cudnnSetLRNDescriptor(lrnDesc, lrn_d.local_size, lrn_d.alpha, lrn_d.beta, lrn_d.k));
 
 
+	//this->z.set_size(size(input));
+	//this->delta_input.set_size(size(output));
+	//this->delta_input.zeros();
+}
 
 
+LRNLayer::~LRNLayer() {
+	//checkCudaErrors(cudaFree(d_delta));
+	checkCudaErrors(cudaFree(d_delta_input));
+
+	checkCUDNN(cudnnDestroyLRNDescriptor(lrnDesc));
+}
+
+
+// (1 + alpha/n * sigma(i)(xi^2))^beta
+void LRNLayer::feedforward(UINT idx, const DATATYPE *input) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+
+	this->d_input = input;
+
+	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+
+	checkCUDNN(cudnnLRNCrossChannelForward(Cuda::cudnnHandle,
+			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
+			&alpha, inputTensorDesc, d_input,
+			&beta, outputTensorDesc, d_output));
+
+	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
+
+	propFeedforward(d_output);
+}
+
+
+void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+	if(!isLastNextLayerRequest(idx)) throw Exception();
+
+	DATATYPE *next_delta_input = next_layer->getDeltaInput();
+	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
+
+	checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,
+			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
+			&alpha, outputTensorDesc, d_output, outputTensorDesc, next_delta_input, inputTensorDesc, d_input,
+			&beta, inputTensorDesc, d_delta_input));
+
+	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
+
+	propBackpropagation();
+}
 #endif
-
-
 
 
 

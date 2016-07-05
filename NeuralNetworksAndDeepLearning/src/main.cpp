@@ -92,25 +92,32 @@ void network_test() {
 
 		//Network *network = new NeuralNetSingle(100);
 		//Network *network = new ConvNetSingle(10);
-		Network *network = new ConvNetDouble(10);
-		network->setDataSet(dataSet);
-		network->sgd(10);
+		//Network *network = new ConvNetDouble(10);
+
+		float lr[] = {0.1, 0.05, 0.01, 0.005, 0.001};
+		for(int i = 0; i < 5; i++) {
+			Network *network = new InceptionNetSingle(10, lr[i]);
+			network->setDataSet(dataSet);
+			network->sgd(10);
+			delete network;
+		}
 
 	} else {
-		Util::setPrint(true);
+		Util::setPrint(false);
 
-		int numTrainData = 2;
-		int numTestData = 2;
-		int batchSize = 1;
-		MockDataSet *dataSet = new MockDataSet(5, 5, 1, numTrainData, numTestData);
+		int numTrainData = 4;
+		int numTestData = 4;
+		int channels = 1;
+		int batchSize = 2;
+		MockDataSet *dataSet = new MockDataSet(5, 5, channels, numTrainData, numTestData);
 		dataSet->load();
 
 		for(int i = 0; i < numTrainData; i++) {
-			Util::printData(dataSet->getTrainDataAt(i), 5, 5, 1, 1, "train_data");
+			Util::printData(dataSet->getTrainDataAt(i), 5, 5, channels, 1, "train_data");
 			cout << i << "th label: " << dataSet->getTrainLabelAt(i)[0] << endl;
 		}
 		for(int i = 0; i < numTestData; i++) {
-			Util::printData(dataSet->getTestDataAt(i), 5, 5, 1, 1, "test_data");
+			Util::printData(dataSet->getTestDataAt(i), 5, 5, channels, 1, "test_data");
 			cout << i << "th label: " << dataSet->getTestLabelAt(i)[0] << endl;
 		}
 
@@ -118,6 +125,32 @@ void network_test() {
 		double decay_mult = 5.0;
 
 		InputLayer *inputLayer = new InputLayer("input", io_dim(5, 5, 1, batchSize));
+
+		HiddenLayer *conv1Layer = new ConvLayer("conv1",
+						io_dim(5, 5, 1, batchSize), io_dim(5, 5, 2, batchSize),
+						filter_dim(3, 3, 1, 2, 1),
+						update_param(lr_mult, decay_mult), update_param(lr_mult, decay_mult),
+						param_filler(ParamFillerType::Xavier), param_filler(ParamFillerType::Constant, 0.1),
+						ActivationType::ReLU);
+
+		HiddenLayer *conv2Layer = new ConvLayer("conv2",
+						io_dim(5, 5, 1, batchSize), io_dim(5, 5, 3, batchSize),
+						filter_dim(3, 3, 1, 3, 1),
+						update_param(lr_mult, decay_mult), update_param(lr_mult, decay_mult),
+						param_filler(ParamFillerType::Xavier), param_filler(ParamFillerType::Constant, 0.1),
+						ActivationType::ReLU);
+
+		HiddenLayer *depthConcatLayer = new DepthConcatLayer("depthConcat",
+					io_dim(5, 5, 5, batchSize));
+
+		/*
+		LRNLayer *lrnLayer = new LRNLayer(
+				"lrn1",
+				io_dim(5, 5, channels, batchSize),
+				lrn_dim(5, 0.0001, 0.75, 2.0)
+		);
+		*/
+
 		/*
 		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", io_dim(5*5, 1, 1, batchSize), io_dim(20, 1, 1, batchSize), 0.5,
 				update_param(lr_mult, decay_mult),
@@ -126,6 +159,7 @@ void network_test() {
 				param_filler(ParamFillerType::Gaussian, 1),
 				ActivationType::ReLU);
 				*/
+		/*
 		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(5, 5, 1, batchSize), io_dim(5, 5, 2, batchSize), filter_dim(3, 3, 1, 2, 1),
 						update_param(lr_mult, decay_mult), update_param(lr_mult, decay_mult),
 						param_filler(ParamFillerType::Xavier), param_filler(ParamFillerType::Constant, 0.1),
@@ -136,20 +170,22 @@ void network_test() {
 						io_dim(3, 3, 2, batchSize),
 						pool_dim(3, 3, 2),
 						PoolingType::Max);
+						*/
 
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(3*3*2, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(5*5*5, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1));
 
 		Network::addLayerRelation(inputLayer, conv1Layer);
-		Network::addLayerRelation(conv1Layer, pool1Layer);
-		Network::addLayerRelation(pool1Layer, softmaxLayer);
+		Network::addLayerRelation(inputLayer, conv2Layer);
+		Network::addLayerRelation(conv1Layer, depthConcatLayer);
+		Network::addLayerRelation(conv2Layer, depthConcatLayer);
+		Network::addLayerRelation(depthConcatLayer, softmaxLayer);
 
 		Network *network = new Network(batchSize, inputLayer, softmaxLayer, dataSet, 0);
 		network->sgd(10);
-
 	}
 
 	Cuda::destroy();

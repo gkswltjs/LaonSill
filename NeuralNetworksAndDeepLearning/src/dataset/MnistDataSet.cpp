@@ -67,8 +67,12 @@ MnistDataSet::~MnistDataSet() {
 void MnistDataSet::load() {
 
 	string filenames[2][2] = {
-			{"./data/mnist/train-images.idx3-ubyte", "./data/mnist/train-labels.idx1-ubyte"},
-			{"./data/mnist/t10k-images.idx3-ubyte", "./data/mnist/t10k-labels.idx1-ubyte"}
+			//{"./data/mnist/train-images.idx3-ubyte", "./data/mnist/train-labels.idx1-ubyte"},
+			//{"./data/mnist/t10k-images.idx3-ubyte", "./data/mnist/t10k-labels.idx1-ubyte"}
+			{"/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/mnist/train-images.idx3-ubyte",
+			 "/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/mnist/train-labels.idx1-ubyte"},
+			{"/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/mnist/t10k-images.idx3-ubyte",
+			 "/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/mnist/t10k-labels.idx1-ubyte"}
 	};
 
 

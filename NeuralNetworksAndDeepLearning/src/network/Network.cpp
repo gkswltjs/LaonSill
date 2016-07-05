@@ -50,15 +50,15 @@ void Network::sgd(int epochs) {
 
 	Timer timer1, timer2;
 	for(int i = 0; i < epochs; i++) {
-		//timer1.start();
+		timer1.start();
 		// TODO do not invoke, due to data-label separation
 		//dataSet->shuffleTrainDataSet();
-		timer2.start();
+		//timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			if((j+1)%600 == 0) {
-				cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
-				timer2.start();
-			}
+			//if((j+1)%600 == 0) {
+			//	cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+			//	timer2.start();
+			//}
 			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 
@@ -69,8 +69,8 @@ void Network::sgd(int epochs) {
 		//timer1.stop();
 
 		//dataSet->shuffleTestDataSet();
-		if(dataSet->getNumTestData() > 0) { cout << "Epoch " << i+1 << " " << evaluate() << " / " << dataSet->getNumTestData() << endl; }
-		else { cout << "Epoch " << i+1 << " complete." << endl; }
+		if(dataSet->getNumTestData() > 0) { cout << "Epoch " << i+1 << " " << evaluate() << " / " << dataSet->getNumTestData() << ":" << timer1.stop(false) << endl; }
+		else { cout << "Epoch " << i+1 << " complete: " << timer1.stop(false) << endl; }
 	}
 }
 

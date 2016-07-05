@@ -13,25 +13,15 @@
 
 
 
-#if CPU_MODE
+
 
 class DepthConcatLayer : public HiddenLayer {
 public:
 	DepthConcatLayer() {}
-	DepthConcatLayer(const char *name, int n_in);
 	DepthConcatLayer(const char *name, io_dim in_dim);
-	virtual ~DepthConcatLayer() {}
-
-	rcube &getDeltaInput();
-
-
-
-	void feedforward(UINT idx, const rcube &input);
+	virtual ~DepthConcatLayer();
 
 	void backpropagation(UINT idx, HiddenLayer *next_layer);
-
-
-
 
 	void reset_nabla(UINT idx) {
 		if(!isLastPrevLayerRequest(idx)) return;
@@ -44,23 +34,42 @@ public:
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
+#if CPU_MODE
+public:
+	DepthConcatLayer(const char *name, int n_in);
+	rcube &getDeltaInput();
+	void feedforward(UINT idx, const rcube &input);
+#else
+	/**
+	 * DepthConcatLayer의 getDetalInput()의 경우,
+	 * 내부적으로 호출횟수를 카운트하므로 절대 로깅용으로 호출해서는 안됨.
+	 */
+	DATATYPE *getDeltaInput();
+	void feedforward(UINT idx, const DATATYPE *input);
+#endif
+
 
 protected:
 	void initialize();
 
 
+	int offsetIndex;
+
+#if CPU_MODE
+protected:
 	rcube delta_input;
 	rcube delta_input_sub;
 
 	vector<int> offsets;
-	int offsetIndex;
+#else
+protected:
+	const float alpha=1.0f, beta=0.0f;
+	DATATYPE *d_delta_input;
+#endif
+
+
 
 };
-
-#else
-
-
-#endif
 
 
 

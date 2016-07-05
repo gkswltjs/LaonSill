@@ -83,13 +83,14 @@ typedef struct lrn_dim {
 	UINT local_size;
 	double alpha;
 	double beta;
+	double k;
 
 	//lrn_dim(UINT local_size=5, double alpha=1, double beta=5) {
-	lrn_dim() {}
-	lrn_dim(UINT local_size, double alpha, double beta) {
+	lrn_dim(UINT local_size=5, double alpha=0.0001, double beta=0.75, double k=2.0) {
 		this->local_size = local_size;
 		this->alpha = alpha;
 		this->beta = beta;
+		this->k = k;
 	}
 } lrn_dim;
 

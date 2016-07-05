@@ -578,9 +578,10 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	Util::printMessage("ConvLayer::backpropagation()---");
 	Cuda::refresh();
 
-	Util::printDeviceData(next_layer->getDeltaInput(), out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "prev_delta_input:");
+	DATATYPE *next_delta_input = next_layer->getDeltaInput();
+	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "prev_delta_input:");
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
-	activation_fn->d_activate(d_output, next_layer->getDeltaInput(), d_z, d_delta, outputTensorDesc);
+	activation_fn->d_activate(d_output, next_delta_input, d_z, d_delta, outputTensorDesc);
 	Util::printDeviceData(d_delta, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta:");
 
 	float alpha = 1.0f, beta = 0.0f;

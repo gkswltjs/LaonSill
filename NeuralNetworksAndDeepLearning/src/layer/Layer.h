@@ -38,6 +38,9 @@ public:
 	int getNextLayerSize() { return this->nextLayers.size(); }
 	vector<prev_layer_relation> &getPrevLayers() { return this->prevLayers; }
 	int getPrevLayerSize() { return this->prevLayers.size(); }
+	io_dim getInDimension() const { return in_dim; }
+	io_dim getOutDimension() const { return out_dim; }
+
 
 	void addPrevLayer(prev_layer_relation prevLayer);
 	void addNextLayer(next_layer_relation nextLayer);
