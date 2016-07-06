@@ -50,9 +50,26 @@ typedef float DATATYPE;
 
 
 
+/*
+template<class T>
+static cudaError_t ucudaMalloc(
+  T      **devPtr,
+  size_t   size
+) {
+	static size_t cuda_mem = 0;
 
+	if(size > 1*1024*1024) {
+		cout << endl;
+	}
 
-
+	cudaError_t cudaError = cudaMalloc(devPtr, size);
+	cuda_mem += size;
+	size_t free, total;
+	cudaMemGetInfo(&free, &total);
+	cout << "allocated: " << cuda_mem/(1024*1024) << "mb, free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+	return cudaError;
+}
+*/
 
 
 
@@ -102,6 +119,24 @@ public:
 
 	static void dropoutLayer(rcube &input, double p_dropout);
 
+	template<class T>
+	static cudaError_t ucudaMalloc(
+	  T      **devPtr,
+	  size_t   size
+	) {
+
+
+		//if(size > 1024*1024) {
+		//	cout << endl;
+		//}
+
+		cudaError_t cudaError = cudaMalloc(devPtr, size);
+		cuda_mem += size;
+		size_t free, total;
+		cudaMemGetInfo(&free, &total);
+		//cout << ++alloc_cnt << " allocated: " << cuda_mem/(1024*1024) << "mb, free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+		return cudaError;
+	}
 
 
 
@@ -109,6 +144,8 @@ public:
 
 private:
 	static bool print;
+	static size_t cuda_mem;
+	static int alloc_cnt;
 
 };
 

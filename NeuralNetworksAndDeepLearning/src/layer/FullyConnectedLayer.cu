@@ -286,18 +286,18 @@ void FullyConnectedLayer::initialize(double p_dropout, update_param weight_updat
 	Util::printData(weight, u_out, u_in, 1, 1, "weight:");
 	Util::printData(bias, u_out, 1, 1, 1, "bias:");
 
-	checkCudaErrors(cudaMalloc(&this->d_weight, sizeof(DATATYPE)*u_out*u_in));
-	checkCudaErrors(cudaMalloc(&this->d_bias, sizeof(DATATYPE)*u_out));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_weight, sizeof(DATATYPE)*u_out*u_in));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_bias, sizeof(DATATYPE)*u_out));
 
-	checkCudaErrors(cudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
-	checkCudaErrors(cudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
-	checkCudaErrors(cudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
-	checkCudaErrors(cudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
-	checkCudaErrors(cudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
 
 	//DATATYPE *onevec = new DATATYPE[in_dim.batches];
 	//for(int i = 0; i < in_dim.batches; i++) onevec[i] = 1;
-	checkCudaErrors(cudaMalloc(&this->d_onevec, sizeof(DATATYPE)*in_dim.batches));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(DATATYPE)*in_dim.batches));
 	FillOnes<<<RoundUp(in_dim.batches, BW), BW>>>(this->d_onevec, in_dim.batches);
 	//Util::printDeviceData(d_onevec, 1, 1, 1, in_dim.batches, "d_onevec:");
 	//checkCudaErrors(cudaMemcpyAsync(this->d_onevec, onevec, sizeof(DATATYPE)*in_dim.batches, cudaMemcpyHostToDevice));
@@ -337,7 +337,7 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	Util::printMessage("FullyConnectedLayer::feedforward()---");
+	Util::printMessage("FullyConnectedLayer::feedforward()---"+string(name));
 	Cuda::refresh();
 
 	this->d_input = input;
@@ -382,7 +382,7 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
 void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
-	Util::printMessage("FullyConnectedLayer::backpropagation()---");
+	Util::printMessage("FullyConnectedLayer::backpropagation()---"+string(name));
 	Cuda::refresh();
 
 	DATATYPE *next_delta_input = next_layer->getDeltaInput();
@@ -439,27 +439,29 @@ void FullyConnectedLayer::reset_nabla(UINT idx) {
 void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	Util::printMessage("FullyConnectedLayer::update()---");
+	Util::printMessage("FullyConnectedLayer::update()---"+string(name));
 	Cuda::refresh();
 
 	//weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;
 	//bias -= eta/miniBatchSize*nabla_b;
-
 	//weight = (1-weight_update_param.lr_mult*weight_update_param.decay_mult/n)*weight - (weight_update_param.lr_mult/miniBatchSize)*nabla_w;
 	//bias -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
 
-	float alpha = -weight_update_param.lr_mult/miniBatchSize;
+	float delta_scale = -weight_update_param.lr_mult/miniBatchSize;
+	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
 
 	Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
 	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.rows*out_dim.rows), &param_scale, d_weight, 1));
+	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.rows*out_dim.rows),
-			&alpha, d_delta_weight, 1, d_weight, 1));
+			&delta_scale, d_delta_weight, 1, d_weight, 1));
 	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
 
 	Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
 	Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "d_bias:");
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.rows),
-			&alpha, d_delta_bias, 1, d_bias, 1));
+			&delta_scale, d_delta_bias, 1, d_bias, 1));
 	Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "d_bias:");
 
 	propUpdate(n, miniBatchSize);

@@ -113,12 +113,12 @@ public:
 
 		checkCUDNN(cudnnCreatePoolingDescriptor(&poolDesc));
 
-		int pad = (pool_d.rows-1)/2;
+		//int pad = (pool_d.rows-1)/2;
 		checkCUDNN(cudnnSetPooling2dDescriptor(poolDesc,
 				CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING,
 				CUDNN_PROPAGATE_NAN,
 				pool_d.rows, pool_d.cols,
-				pad, pad,
+				0, 0,
 				pool_d.stride, pool_d.stride));
 	}
 	virtual ~AvgPooling() {

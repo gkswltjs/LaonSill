@@ -119,6 +119,7 @@ void InceptionLayer::reset_nabla(UINT idx) {
 }
 
 void InceptionLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
+	Util::printMessage("InceptionLayer::update()---"+string(name));
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {
@@ -304,7 +305,7 @@ void InceptionLayer::initialize() {
 	this->id = Layer::generateLayerId();
 
 	int workspaceSize = std::max(in_dim.batchsize(), out_dim.batchsize());
-	checkCudaErrors(cudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*workspaceSize));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*workspaceSize));
 }
 
 void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp) {
@@ -417,6 +418,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 
 void InceptionLayer::feedforward(UINT idx, const DATATYPE *input) {
+	Util::printMessage("InceptionLayer::feedforward()---"+string(name));
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->feedforward(0, input);
@@ -425,7 +427,7 @@ void InceptionLayer::feedforward(UINT idx, const DATATYPE *input) {
 }
 
 void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
-	Util::printMessage("InceptionLayer::backpropagation()---");
+	Util::printMessage("InceptionLayer::backpropagation()---"+string(name));
 	if(idx == 0) {
 		checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*out_dim.batchsize()));
 	}

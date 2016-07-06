@@ -75,6 +75,7 @@ public:
 #else
 public:
 	void feedforward(UINT idx, const DATATYPE *input) {
+		Util::printMessage("InputLayer::feedforward()---"+string(name));
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 		Cuda::refresh();

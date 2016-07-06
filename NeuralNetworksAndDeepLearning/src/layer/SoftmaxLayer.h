@@ -101,7 +101,7 @@ private:
 #else
 public:
 	void cost(const UINT *target) {
-		Util::printMessage("SoftmaxLayer::cost()---");
+		Util::printMessage("SoftmaxLayer::cost()---"+string(name));
 		Cuda::refresh();
 
 		cost_fn->d_cost(d_z, d_output, target, d_delta, out_dim.rows, out_dim.batches);

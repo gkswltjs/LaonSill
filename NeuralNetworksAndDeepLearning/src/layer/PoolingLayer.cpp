@@ -114,8 +114,8 @@ void PoolingLayer::initialize(pool_dim pool_d, PoolingType poolingType) {
 	this->pool_d = pool_d;
 	this->pooling_fn = PoolingFactory::create(poolingType, pool_d);
 
-	checkCudaErrors(cudaMalloc(&this->d_delta, sizeof(DATATYPE)*out_dim.batchsize()));
-	checkCudaErrors(cudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*out_dim.batchsize()));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
 
 PoolingLayer::~PoolingLayer() {
@@ -127,8 +127,8 @@ PoolingLayer::~PoolingLayer() {
 
 
 void PoolingLayer::feedforward(UINT idx, const DATATYPE *input) {
+	Util::printMessage("PoolingLayer::feedforward()---"+string(name));
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	Util::printMessage("PoolingLayer::feedforward()---");
 	this->d_input = input;
 
 	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
@@ -141,7 +141,7 @@ void PoolingLayer::feedforward(UINT idx, const DATATYPE *input) {
 
 
 void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
-	Util::printMessage("PoolingLayer::backpropagation()---");
+	Util::printMessage("PoolingLayer::backpropagation()---"+string(name));
 	Cuda::refresh();
 
 	if(idx == 0) {

@@ -82,7 +82,7 @@ void DepthConcatLayer::initialize() {
 
 	this->offsetIndex = 0;
 
-	checkCudaErrors(cudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
 
 DepthConcatLayer::~DepthConcatLayer() {
@@ -96,7 +96,7 @@ void DepthConcatLayer::feedforward(UINT idx, const DATATYPE *input) {
 	bool print = Util::getPrint();
 	//Util::setPrint(true);
 
-	Util::printMessage("DepthConcatLayer::feedforward()---");
+	Util::printMessage("DepthConcatLayer::feedforward()---"+string(name));
 	//if(idx == 0) {
 	//	checkCudaErrors(cudaMemset(d_output, 0, sizeof(DATATYPE)*out_dim.batchsize()));
 	//	offsetIndex = 0;
@@ -127,7 +127,7 @@ void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	bool print = Util::getPrint();
 	//Util::setPrint(true);
 
-	Util::printMessage("DepthConcatLayer::backpropagation()---");
+	Util::printMessage("DepthConcatLayer::backpropagation()---"+string(name));
 	if(idx == 0) {
 		checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*out_dim.batchsize()));
 		offsetIndex = 0;
@@ -161,8 +161,6 @@ void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 DATATYPE *DepthConcatLayer::getDeltaInput() {
 	bool print = Util::getPrint();
 	//Util::setPrint(true);
-
-	Util::printMessage("DepthConcatLayer::getDeltaInput()---");
 
 	int inBatchOffset = 0;
 	for(int i = 0; i < offsetIndex; i++) {

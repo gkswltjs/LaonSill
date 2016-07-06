@@ -264,7 +264,7 @@ void Layer::initialize(const char *name, io_dim in_dim, io_dim out_dim) {
 	this->out_dim = out_dim;
 
 	//checkCudaErrors(cudaMalloc(&this->d_input, sizeof(DATATYPE)*in_dim.batchsize()));
-	checkCudaErrors(cudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
+	checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
@@ -299,7 +299,7 @@ Layer::~Layer() {
 	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 
-	cout << "destroying " << name << " layer ... " << endl;
+	//cout << "destroying " << name << " layer ... " << endl;
 }
 
 

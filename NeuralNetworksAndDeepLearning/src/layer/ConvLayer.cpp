@@ -407,6 +407,22 @@ void ConvLayer::save(ofstream &ofs) {
 
 #else
 
+/*
+size_t ConvLayer::workspaceSize = -10000000;
+void * ConvLayer::d_workspace = 0;
+
+void ConvLayer::init() {
+	if(workspaceSize > 0) {
+		checkCudaErrors(cudaMalloc(&d_workspace, workspaceSize));
+	}
+}
+
+void ConvLayer::destroy() {
+	if(d_workspace) checkCudaErrors(cudaFree(d_workspace));
+}
+*/
+
+
 ConvLayer::~ConvLayer() {
 
 	if(filters) delete [] filters;
@@ -454,14 +470,14 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	int b_in = in_dim.batchsize();
 	int b_out = out_dim.batchsize();
 
-	checkCudaErrors(cudaMalloc(&this->d_filters, sizeof(DATATYPE)*filter_size));
-	checkCudaErrors(cudaMalloc(&this->d_biases, sizeof(DATATYPE)*filter_d.filters));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_filters, sizeof(DATATYPE)*filter_size));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_biases, sizeof(DATATYPE)*filter_d.filters));
 
-	checkCudaErrors(cudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
-	checkCudaErrors(cudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
-	checkCudaErrors(cudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
-	checkCudaErrors(cudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
-	checkCudaErrors(cudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
 
 	checkCudaErrors(cudaMemcpyAsync(this->d_filters, filters, sizeof(DATATYPE)*filter_size, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpyAsync(this->d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
@@ -523,12 +539,16 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 			filterDesc, outputTensorDesc, convDesc, inputTensorDesc,
 			convBwdDataAlgo, &convBwdDataWorkspaceSize));
 
-	workspaceSize = std::max(convFwdWorkspaceSize, convBwdFilterWorkspaceSize);
+	workspaceSize = 0;
+	workspaceSize = std::max(workspaceSize, convFwdWorkspaceSize);
+	workspaceSize = std::max(workspaceSize, convBwdFilterWorkspaceSize);
 	workspaceSize = std::max(workspaceSize, convBwdDataWorkspaceSize);
+	//cout << workspaceSize << ", " << convFwdWorkspaceSize << ", " << convBwdFilterWorkspaceSize << ", " << convBwdDataWorkspaceSize << endl;
 
 	d_workspace = 0;
 	if(workspaceSize > 0) {
-		checkCudaErrors(cudaMalloc(&d_workspace, workspaceSize));
+		//cout << "workspaceSize: " << workspaceSize << endl;
+		checkCudaErrors(Util::ucudaMalloc(&d_workspace, workspaceSize));
 	}
 
 	this->activation_fn = ActivationFactory::create(activationType);
@@ -540,7 +560,7 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 
 void ConvLayer::feedforward(UINT idx, const DATATYPE *input) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	Util::printMessage("ConvLayer::feedforward()---");
+	Util::printMessage("ConvLayer::feedforward()---"+string(name));
 	Cuda::refresh();
 
 	//Util::setPrint(true);
@@ -575,7 +595,7 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
-	Util::printMessage("ConvLayer::backpropagation()---");
+	Util::printMessage("ConvLayer::backpropagation()---"+string(name));
 	Cuda::refresh();
 
 	DATATYPE *next_delta_input = next_layer->getDeltaInput();
@@ -669,9 +689,8 @@ void ConvLayer::reset_nabla(UINT idx) {
 void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	Util::printMessage("ConvLayer::update()---");
+	Util::printMessage("ConvLayer::update()---"+string(name));
 	//Util::setPrint(true);
-	Util::printMessage("ConvLayer::update()");
 
 	//for(UINT i = 0; i < filter_d.filters; i++) {
 	//	filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
@@ -685,18 +704,20 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	biases -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
 	*/
 
-	float alpha = -weight_update_param.lr_mult/miniBatchSize;
+	//float alpha = -weight_update_param.lr_mult/miniBatchSize;
+	float delta_scale = -weight_update_param.lr_mult/miniBatchSize;
+	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
 
 	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
 	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.size()),
-			&alpha, d_delta_weight, 1, d_filters, 1));
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(filter_d.size()), &param_scale, d_filters, 1));
+	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.size()), &delta_scale, d_delta_weight, 1, d_filters, 1));
 	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
 
 	Util::printDeviceData(d_delta_bias, 1, 1, filter_d.filters, 1, "d_delta_bias:");
 	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.filters),
-			&alpha, d_delta_bias, 1, d_biases, 1));
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.filters),	&delta_scale, d_delta_bias, 1, d_biases, 1));
 	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
 
 	//Util::setPrint(false);

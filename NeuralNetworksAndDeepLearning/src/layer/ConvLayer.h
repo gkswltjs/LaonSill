@@ -43,6 +43,9 @@ public:
 	void feedforward(UINT idx, const rcube &input);
 
 #else
+	//static void init();
+	//static void destroy();
+
 	DATATYPE *getWeight() { return this->filters; }
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }
 	void feedforward(UINT idx, const DATATYPE *input);
@@ -132,6 +135,9 @@ protected:
 
 	size_t workspaceSize;
 	void *d_workspace;
+
+//static size_t workspaceSize;
+//static void *d_workspace;
 
 #endif
 

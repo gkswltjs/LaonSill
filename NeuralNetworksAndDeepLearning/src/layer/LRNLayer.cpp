@@ -139,7 +139,7 @@ void LRNLayer::initialize(lrn_dim lrn_d) {
 	this->lrn_d = lrn_d;
 
 	//checkCudaErrors(cudaMalloc(&this->d_delta, sizeof(DATATYPE)*out_dim.batchsize()));
-	checkCudaErrors(cudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 
 	checkCUDNN(cudnnCreateLRNDescriptor(&lrnDesc));
 	checkCUDNN(cudnnSetLRNDescriptor(lrnDesc, lrn_d.local_size, lrn_d.alpha, lrn_d.beta, lrn_d.k));
@@ -161,6 +161,7 @@ LRNLayer::~LRNLayer() {
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
 void LRNLayer::feedforward(UINT idx, const DATATYPE *input) {
+	Util::printMessage("LRNLayer::feedforward()---"+string(name));
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	this->d_input = input;
@@ -179,6 +180,7 @@ void LRNLayer::feedforward(UINT idx, const DATATYPE *input) {
 
 
 void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+	Util::printMessage("LRNLayer::backpropagation()---"+string(name));
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
 	DATATYPE *next_delta_input = next_layer->getDeltaInput();

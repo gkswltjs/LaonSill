@@ -14,9 +14,7 @@
 
 class NeuralNetSingle : public Network {
 public:
-	NeuralNetSingle(UINT batchSize=1) : Network(batchSize) {
-		double lr_mult = 0.1;
-		double decay_mult = 5.0;
+	NeuralNetSingle(UINT batchSize=1, double lr_mult=0.1, double decay_mult=5.0) : Network(batchSize) {
 
 		InputLayer *inputLayer = new InputLayer(
 				"input",

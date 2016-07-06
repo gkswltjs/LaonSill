@@ -53,9 +53,9 @@ void Network::sgd(int epochs) {
 		timer1.start();
 		// TODO do not invoke, due to data-label separation
 		//dataSet->shuffleTrainDataSet();
-		//timer2.start();
+		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			//if((j+1)%600 == 0) {
+			//if((j+1)%100 == 0) {
 			//	cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//	timer2.start();
 			//}
@@ -69,8 +69,11 @@ void Network::sgd(int epochs) {
 		//timer1.stop();
 
 		//dataSet->shuffleTestDataSet();
-		if(dataSet->getNumTestData() > 0) { cout << "Epoch " << i+1 << " " << evaluate() << " / " << dataSet->getNumTestData() << ":" << timer1.stop(false) << endl; }
+		int eval = evaluate();
+		if(dataSet->getNumTestData() > 0) { cout << "Epoch " << i+1 << " " << eval << " / " << dataSet->getNumTestData() << ":" << timer1.stop(false) << endl; }
 		else { cout << "Epoch " << i+1 << " complete: " << timer1.stop(false) << endl; }
+
+		if(eval < 1500) break;
 	}
 }
 
@@ -230,7 +233,7 @@ int Network::evaluate() {
 
 		// FEED FORWARD
 		DATATYPE *d_testData;
-		checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize));
+		checkCudaErrors(Util::ucudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize));
 		//checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*batchSize),
 		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*batchSize),
 				sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize, cudaMemcpyHostToDevice));

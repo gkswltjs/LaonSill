@@ -13,6 +13,8 @@
 
 
 bool Util::print = true;
+size_t Util::cuda_mem = 0;
+int Util::alloc_cnt = 0;
 
 
 static const char *LEVEL_LABEL[4] = {"DEBUG","INFO ", "WARN ", "ERROR"};
