@@ -17,7 +17,7 @@
 
 class DepthConcatLayer : public HiddenLayer {
 public:
-	DepthConcatLayer() {}
+	DepthConcatLayer() { this->type = LayerType::DepthConcat; }
 	DepthConcatLayer(const char *name, io_dim in_dim);
 	virtual ~DepthConcatLayer();
 

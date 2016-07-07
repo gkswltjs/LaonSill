@@ -471,37 +471,27 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 
 
 void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	/*
 	HiddenLayer::load(ifs, layerMap);
 
 	double p_dropout;
-	ifs.read((char *)&p_dropout, sizeof(double));
-
 	ActivationType activationType;
+	update_param weight_update_param, bias_update_param;
+	param_filler weight_filler, bias_filler;
+
+	ifs.read((char *)&p_dropout, sizeof(double));
 	ifs.read((char *)&activationType, sizeof(int));
-
-	update_param weight_update_param;
 	ifs.read((char *)&weight_update_param, sizeof(update_param));
-
-	update_param bias_update_param;
 	ifs.read((char *)&bias_update_param, sizeof(update_param));
-
-	param_filler weight_filler;
 	ifs.read((char *)&weight_filler, sizeof(param_filler));
-
-	param_filler bias_filler;
 	ifs.read((char *)&bias_filler, sizeof(param_filler));
 
 	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 
 	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
-
-
-	weight.load(ifs, file_type::arma_binary);
-	//weight.print("load-weight:");
-	bias.load(ifs, file_type::arma_binary);
-	//bias.print("load-bias:");
-*/
+	ifs.read((char *)weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize());
+	ifs.read((char *)bias, sizeof(DATATYPE)*out_dim.unitsize());
+	checkCudaErrors(cudaMemcpyAsync(d_weight, weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize(), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpyAsync(d_bias, bias, sizeof(DATATYPE)*out_dim.unitsize(), cudaMemcpyHostToDevice));
 }
 
 
@@ -511,7 +501,6 @@ void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 void FullyConnectedLayer::save(ofstream &ofs) {
-	/*
 	HiddenLayer::save(ofs);
 
 	ofs.write((char *)&p_dropout, sizeof(double));
@@ -525,11 +514,15 @@ void FullyConnectedLayer::save(ofstream &ofs) {
 	//ofs.write((char *)&weight, sizeof(rmat));
 	//ofs.write((char *)&bias, sizeof(rvec));
 
+	checkCudaErrors(cudaMemcpyAsync(weight, d_weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize(), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpyAsync(bias, d_bias, sizeof(DATATYPE)*out_dim.unitsize(), cudaMemcpyDeviceToHost));
+	ofs.write((char *)weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize());
+	ofs.write((char *)bias, sizeof(DATATYPE)*out_dim.unitsize());
+
 	//weight.print("save-weight:");
-	weight.save(ofs, file_type::arma_binary);
+	//weight.save(ofs, file_type::arma_binary);
 	//bias.print("save-bias:");
-	bias.save(ofs, file_type::arma_binary);
-	*/
+	//bias.save(ofs, file_type::arma_binary);
 }
 
 

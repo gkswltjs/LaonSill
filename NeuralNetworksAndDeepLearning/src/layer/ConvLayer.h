@@ -22,7 +22,7 @@
 
 class ConvLayer : public HiddenLayer {
 public:
-	ConvLayer() {}
+	ConvLayer() { this->type = LayerType::Conv; }
 	ConvLayer(const char *name, io_dim in_dim, io_dim out_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_f, param_filler bias_filler, ActivationType activationType);
 	virtual ~ConvLayer();

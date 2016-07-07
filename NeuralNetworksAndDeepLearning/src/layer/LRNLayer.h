@@ -19,7 +19,7 @@
 
 class LRNLayer : public HiddenLayer {
 public:
-	LRNLayer() {}
+	LRNLayer() { this->type = LayerType::LRN; }
 	LRNLayer(const char *name, io_dim in_dim, lrn_dim lrn_d);
 	virtual ~LRNLayer();
 

@@ -19,6 +19,13 @@ ConvLayer::ConvLayer(const char *name, io_dim in_dim, io_dim out_dim, filter_dim
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
+void ConvLayer::save(UINT idx, ofstream &ofs) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+	save(ofs);
+	propSave(ofs);
+}
+
+
 
 #if CPU_MODE
 
@@ -342,11 +349,6 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 
 
 
-void ConvLayer::save(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	save(ofs);
-	propSave(ofs);
-}
 
 void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	HiddenLayer::load(ifs, layerMap);
@@ -624,51 +626,6 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 
 	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
-	/*
-	rcube da;
-	activation_fn->d_activate(output, da);
-
-	rcube dp;
-	// 두 레이어를 연결하는 Weight가 있는 경우 (현재 다음 레이어가 FC인 케이스 only)
-	// next_w->()*next_delta: 다음 FC의 delta를 현재 CONV max pool의 delta로 dimension 변환
-	// max pool의 delta를 d_pool을 통해 upsample
-	rcube w_next_delta(size(output));
-	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
-
-
-	delta = w_next_delta % da;		//delta conv
-
-	Util::printCube(da, "da:");
-	Util::printCube(w_next_delta, "w_next_delta:");
-	Util::printCube(delta, "delta:");
-
-	// dw
-	rmat conv(filter_d.rows, filter_d.cols);
-	for(UINT i = 0; i < filter_d.filters; i++) {
-		for(UINT j = 0; j < filter_d.channels; j++) {
-			dw_convolution(delta.slice(i), input.slice(j), conv);
-			Util::printMat(conv, "conv:");
-
-			Util::printMat(nabla_w[i].slice(j), "nabla_w:");
-			nabla_w[i].slice(j) += conv;
-			Util::printMat(nabla_w[i].slice(j), "nabla_w after:");
-		}
-		nabla_b(i) += accu(delta.slice(i));
-	}
-
-	// dx
-	rmat dconv(size(input.slice(0)));
-	delta_input.zeros();
-	for(UINT i = 0; i < filter_d.channels; i++) {
-		for(UINT j = 0; j < filter_d.filters; j++) {
-			Util::printMat(filters[j].slice(i), "filter:");
-			Util::printMat(flipud(fliplr(filters[j].slice(i))), "filp:");
-			dx_convolution(delta.slice(j), flipud(fliplr(filters[j].slice(i))), dconv);
-			//d_convolution(conv_layer->getDelta().slice(j), conv_layer->getWeight()[j].slice(i), dconv);
-			delta_input.slice(i) += dconv;
-		}
-	}
-	*/
 
 	propBackpropagation();
 }
@@ -726,55 +683,9 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 }
 
 
-
-void ConvLayer::save(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	save(ofs);
-	propSave(ofs);
-}
-
-void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
-
-	/*
-	filter_dim filter_d;
-	ifs.read((char *)&filter_d, sizeof(filter_dim));
-
-	ActivationType activationType;
-	ifs.read((char *)&activationType, sizeof(int));
-
-	update_param weight_update_param;
-	ifs.read((char *)&weight_update_param, sizeof(update_param));
-
-	update_param bias_update_param;
-	ifs.read((char *)&bias_update_param, sizeof(update_param));
-
-	param_filler weight_filler;
-	ifs.read((char *)&weight_filler, sizeof(param_filler));
-
-	param_filler bias_filler;
-	ifs.read((char *)&bias_filler, sizeof(param_filler));
-
-	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
-
-	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
-	for(UINT i = 0; i < filter_d.filters; i++) {
-		filters[i].load(ifs, file_type::arma_binary);
-	}
-	biases.load(ifs, file_type::arma_binary);
-	*/
-}
-
-
-
-
-
-
-
 void ConvLayer::save(ofstream &ofs) {
 	HiddenLayer::save(ofs);
 
-	/*
 	int activationType = (int)activation_fn->getType();
 
 	ofs.write((char *)&filter_d, sizeof(filter_dim));
@@ -783,15 +694,43 @@ void ConvLayer::save(ofstream &ofs) {
 	ofs.write((char *)&bias_update_param, sizeof(update_param));
 	ofs.write((char *)&weight_filler, sizeof(param_filler));
 	ofs.write((char *)&bias_filler, sizeof(param_filler));
-	//ofs.write((char *)&weight, sizeof(rmat));
-	//ofs.write((char *)&bias, sizeof(rvec));
 
-	for(UINT i = 0; i < filter_d.filters; i++) {
-		filters[i].save(ofs, file_type::arma_binary);
-	}
-	biases.save(ofs, file_type::arma_binary);
-	*/
+	checkCudaErrors(cudaMemcpyAsync(filters, d_filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpyAsync(biases, d_biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyDeviceToHost));
+	ofs.write((char *)filters, sizeof(DATATYPE)*filter_d.size());
+	ofs.write((char *)biases, sizeof(DATATYPE)*filter_d.filters);
 }
+
+
+void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+
+	filter_dim filter_d;
+	ActivationType activationType;
+	update_param weight_update_param, bias_update_param;
+	param_filler weight_filler, bias_filler;
+
+	ifs.read((char *)&filter_d, sizeof(filter_dim));
+	ifs.read((char *)&activationType, sizeof(int));
+	ifs.read((char *)&weight_update_param, sizeof(update_param));
+	ifs.read((char *)&bias_update_param, sizeof(update_param));
+	ifs.read((char *)&weight_filler, sizeof(param_filler));
+	ifs.read((char *)&bias_filler, sizeof(param_filler));
+
+	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+
+	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
+	ifs.read((char *)filters, sizeof(DATATYPE)*filter_d.size());
+	ifs.read((char *)biases, sizeof(DATATYPE)*filter_d.filters);
+	checkCudaErrors(cudaMemcpyAsync(d_filters, filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpyAsync(d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
+}
+
+
+
+
+
+
 
 
 

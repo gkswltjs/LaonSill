@@ -111,40 +111,49 @@ void network_test() {
 		}
 		*/
 
-		//Network *network = new NeuralNetSingle(100);
-		//Network *network = new ConvNetSingle(10);
+		//Network *network = new NeuralNetSingle(10);
+		//Network *network = new ConvNetSingle(100);
 		//Network *network = new ConvNetDouble(10);
 		//ConvLayer::init();
-
 		//float lr[] = {0.1, 0.05, 0.01, 0.005, 0.001};
 		//float lr[] = {1.0, 0.5, 0.1, 0.05, 0.01};
 		float lr[] = {10.0, 5.0, 0.005, 0.001};
 		//float wd[] = {10.0, 5.0, 1.0, 0.5, 0.1};
 		float wd[] = {100.0, 50.0, 0.05, 0.01};
 
-		for(int i = 0; i < 5; i++) {
-			for(int j = 0; j < 5; j++) {
+		//for(int i = 0; i < 5; i++) {
+		//	for(int j = 0; j < 5; j++) {
 				//Network *network = new InceptionNetAux(10, lr[i], wd[j]);
-				//Network *network = new InceptionNetAux(10, 0.5, 0.1);
+				Network *network = new InceptionNetAux(10, 0.5, 0.1);
 				//Network *network = new InceptionNetSingle(10);
 				//Network *network = new NeuralNetSingle(10);
-				cout << "lr: " << lr[i] << ", wd: " << wd[j] << endl;
-				Network *network = new GoogLeNetMnist(10, lr[i], wd[j]);
+				//cout << "lr: " << lr[i] << ", wd: " << wd[j] << endl;
+				//Network *network = new GoogLeNetMnist(10, lr[i], wd[j]);
 				network->setDataSet(dataSet);
-				network->sgd(100);
+				network->sgd(10);
+				//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
 				//ConvLayer::destroy();
-				delete network;
-			}
-		}
+				//delete network;
+			//}
+	//	}
+				/*
+				Network *network_load = new Network();
+				network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
+				network_load->setDataSet(dataSet);
+				network_load->test();
+				*/
 
 	} else {
-		Util::setPrint(true);
+		Util::setPrint(false);
 
 		int numTrainData = 4;
 		int numTestData = 4;
 		int channels = 1;
 		int batchSize = 2;
-		MockDataSet *dataSet = new MockDataSet(7, 7, channels, numTrainData, numTestData);
+		int rows = 5;
+		int cols = 5;
+
+		MockDataSet *dataSet = new MockDataSet(rows, cols, channels, numTrainData, numTestData);
 		dataSet->load();
 
 		/*
@@ -160,13 +169,15 @@ void network_test() {
 
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
-		InputLayer *inputLayer = new InputLayer("input", io_dim(7, 7, channels, batchSize));
+		InputLayer *inputLayer = new InputLayer("input", io_dim(rows, cols, channels, batchSize));
 
+		/*
 		HiddenLayer *avgPoolLayer = new PoolingLayer("avgPool",
 				io_dim(7, 7, channels, batchSize),
 				io_dim(1, 1, channels, batchSize),
 				pool_dim(7, 7, 4),
 				PoolingType::Avg);
+				*/
 		/*
 		HiddenLayer *conv1Layer = new ConvLayer("conv1",
 						io_dim(5, 5, 1, batchSize), io_dim(5, 5, 2, batchSize),
@@ -196,14 +207,14 @@ void network_test() {
 		);
 		*/
 
-		/*
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", io_dim(5*5, 1, 1, batchSize), io_dim(20, 1, 1, batchSize), 0.5,
+
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", io_dim(rows*cols*channels, 1, 1, batchSize), io_dim(20, 1, 1, batchSize), 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1),
 				ActivationType::ReLU);
-				*/
+
 		/*
 		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(5, 5, 1, batchSize), io_dim(5, 5, 2, batchSize), filter_dim(3, 3, 1, 2, 1),
 						update_param(lr_mult, decay_mult), update_param(lr_mult, decay_mult),
@@ -217,24 +228,25 @@ void network_test() {
 						PoolingType::Max);
 						*/
 
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(1*1*channels, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(20*1*1, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1));
 
-		Network::addLayerRelation(inputLayer, avgPoolLayer);
-		Network::addLayerRelation(avgPoolLayer, softmaxLayer);
-		/*
-		Network::addLayerRelation(inputLayer, conv1Layer);
-		Network::addLayerRelation(inputLayer, conv2Layer);
-		Network::addLayerRelation(conv1Layer, depthConcatLayer);
-		Network::addLayerRelation(conv2Layer, depthConcatLayer);
-		Network::addLayerRelation(depthConcatLayer, softmaxLayer);
-		*/
+		Network::addLayerRelation(inputLayer, fc1Layer);
+		Network::addLayerRelation(fc1Layer, softmaxLayer);
 
 		Network *network = new Network(batchSize, inputLayer, softmaxLayer, dataSet, 0);
-		network->sgd(10);
+		network->sgd(1);
+		network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
+
+
+		Network *network_load = new Network();
+		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
+		network_load->setDataSet(dataSet);
+		network_load->test();
+
 	}
 
 	Cuda::destroy();

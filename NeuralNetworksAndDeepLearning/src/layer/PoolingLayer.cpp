@@ -24,9 +24,9 @@ void PoolingLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	HiddenLayer::load(ifs, layerMap);
 
 	pool_dim pool_d;
-	ifs.read((char *)&pool_d, sizeof(pool_dim));
-
 	PoolingType poolingType;
+
+	ifs.read((char *)&pool_d, sizeof(pool_dim));
 	ifs.read((char *)&poolingType, sizeof(PoolingType));
 
 	initialize(pool_d, poolingType);
@@ -35,9 +35,9 @@ void PoolingLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 void PoolingLayer::save(ofstream &ofs) {
 	HiddenLayer::save(ofs);
 
-	ofs.write((char *)&pool_d, sizeof(pool_dim));
-
 	int poolingType = (int)pooling_fn->getType();
+
+	ofs.write((char *)&pool_d, sizeof(pool_dim));
 	ofs.write((char *)&poolingType, sizeof(int));
 }
 

@@ -20,7 +20,7 @@
 
 class PoolingLayer : public HiddenLayer {
 public:
-	PoolingLayer() {}
+	PoolingLayer() { this->type = LayerType::Pooling; }
 	PoolingLayer(const char *name, io_dim in_dim, io_dim out_dim, pool_dim pool_d, PoolingType poolingType);
 	virtual ~PoolingLayer();
 

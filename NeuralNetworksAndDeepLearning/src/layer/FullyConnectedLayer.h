@@ -21,7 +21,7 @@
 
 class FullyConnectedLayer : public HiddenLayer {
 public:
-	FullyConnectedLayer() {}
+	FullyConnectedLayer() { this->type = LayerType::FullyConnected; }
 
 	FullyConnectedLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
@@ -122,6 +122,9 @@ protected:
 	DATATYPE *d_delta_bias;
 
 	DATATYPE *d_onevec;
+
+
+
 
 	//rvec nabla_b;
 	//rmat nabla_w;

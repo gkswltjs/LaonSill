@@ -72,7 +72,6 @@ void Network::sgd(int epochs) {
 		int eval = evaluate();
 		if(dataSet->getNumTestData() > 0) { cout << "Epoch " << i+1 << " " << eval << " / " << dataSet->getNumTestData() << ":" << timer1.stop(false) << endl; }
 		else { cout << "Epoch " << i+1 << " complete: " << timer1.stop(false) << endl; }
-
 		if(eval < 1500) break;
 	}
 }
@@ -82,11 +81,9 @@ void Network::sgd(int epochs) {
 
 
 void Network::test() {
-	/*
 	if(dataSet->getNumTestData() > 0) {
 		cout << "Evaluating ... " << evaluate() << " / " << dataSet->getNumTestData() << endl;
 	}
-	*/
 }
 
 
@@ -102,21 +99,17 @@ void Network::save(string filename) {
 	timer.start();
 
 	ofstream ofs(filename.c_str(), ios::out | ios::binary);
-
 	//int inputLayerSize = 1;
 	int outputLayerSize = outputLayers.size();
 
 	//ofs.write((char *)&inputLayerSize, sizeof(int));		// input layer size
 	//ofs.write((char *)&inputLayer, sizeof(Layer *));		// input layer address
-	ofs.write((char *)&outputLayerSize, sizeof(int));		// output layer size
-
+	ofs.write((char *)&batchSize, sizeof(UINT));
+	ofs.write((char *)&outputLayerSize, sizeof(UINT));		// output layer size
 	for(UINT i = 0; i < outputLayers.size(); i++) {
-		cout << "outputLayer: " << outputLayers[i] << endl;
 		ofs.write((char *)&outputLayers[i], sizeof(Layer *));
 	}
-
 	inputLayer->save(0, ofs);
-
 	ofs.close();
 
 	cout << "time elapsed to save network: " << timer.stop(false) << endl;
@@ -128,11 +121,12 @@ void Network::load(string filename) {
 
 	//UINT inputLayerSize;
 	//ifs.read((char *)&inputLayerSize, sizeof(UINT));
-
 	//Layer *inputLayer;
 	//ifs.read((char *)&inputLayer, sizeof(Layer *));
 
 	UINT outputLayerSize;
+
+	ifs.read((char *)&batchSize, sizeof(UINT));
 	ifs.read((char *)&outputLayerSize, sizeof(UINT));
 
 	for(UINT i = 0; i < outputLayerSize; i++) {

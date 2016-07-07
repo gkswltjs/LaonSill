@@ -51,7 +51,6 @@ public:
 	virtual void save(UINT idx, ofstream &ofs);
 	virtual void saveHeader(UINT idx, ofstream &ofs);
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	virtual void loadHeader(ofstream &ofs);
 
 	bool isLastPrevLayerRequest(UINT idx);
 	bool isLastNextLayerRequest(UINT idx);
@@ -69,7 +68,6 @@ protected:
 
 	static int generateLayerId();
 
-
 	LayerType type;
 	int id;
 	char name[32];
@@ -81,8 +79,6 @@ protected:
 	vector<next_layer_relation> nextLayers;
 
 	static int layerCount;
-
-
 
 #if CPU_MODE
 public:

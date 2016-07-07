@@ -36,15 +36,14 @@ void InceptionLayer::save(UINT idx, ofstream &ofs) {
 void InceptionLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	HiddenLayer::load(ifs, layerMap);
 
-	UINT firstLayerSize;
+	UINT firstLayerSize, lastLayerSize;
+
 	ifs.read((char *)&firstLayerSize, sizeof(UINT));
 	for(UINT i = 0; i < firstLayerSize; i++) {
 		HiddenLayer *firstLayer;
 		ifs.read((char *)&firstLayer, sizeof(HiddenLayer *));
 		firstLayers.push_back(firstLayer);
 	}
-
-	UINT lastLayerSize;
 	ifs.read((char *)&lastLayerSize, sizeof(UINT));
 	ifs.read((char *)&lastLayer, sizeof(HiddenLayer *));
 
@@ -73,7 +72,6 @@ void InceptionLayer::save(ofstream &ofs) {
 	UINT lastLayerSize = 1;
 	ofs.write((char *)&lastLayerSize, sizeof(UINT));
 	ofs.write((char *)&lastLayer, sizeof(Layer *));
-
 
 	// InceptionLayer의 NIN (내부 네트워크)를 save ////////
 	saveNinHeader(0, ofs);

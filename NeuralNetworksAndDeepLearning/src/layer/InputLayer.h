@@ -19,7 +19,7 @@ using namespace arma;
 
 class InputLayer : public Layer {
 public:
-	InputLayer() {}
+	InputLayer() { this->type = LayerType::Input; }
 	InputLayer(const char *name, io_dim in_dim) : Layer(name, in_dim, in_dim) {
 		initialize();
 	}
@@ -29,7 +29,8 @@ public:
 
 	void save(UINT idx, ofstream &ofs) {
 		saveHeader(0, ofs);
-		// header boundary
+
+		// header boundary (dummy layer)
 		int type = 0;
 		Layer *layer = 0;
 		ofs.write((char *)&type, sizeof(int));
@@ -41,7 +42,6 @@ public:
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		initialize();
-
 		loadNetwork(ifs, layerMap);
 	}
 
@@ -82,7 +82,7 @@ public:
 
 		this->d_input = input;
 		//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
-		checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
 
 		propFeedforward(this->d_output);
 	}

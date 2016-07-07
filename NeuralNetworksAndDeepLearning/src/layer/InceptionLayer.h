@@ -15,7 +15,7 @@
 
 class InceptionLayer : public HiddenLayer {
 public:
-	InceptionLayer() {}
+	InceptionLayer() { this->type = LayerType::Inception; }
 	InceptionLayer(const char *name, io_dim in_dim, io_dim out_dim, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 	virtual ~InceptionLayer();
 

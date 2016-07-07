@@ -19,7 +19,7 @@
 
 class SigmoidLayer : public OutputLayer {
 public:
-	SigmoidLayer() {}
+	SigmoidLayer() { this->type = LayerType::Sigmoid; }
 	SigmoidLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, CostType costType)
 		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, ActivationType::Sigmoid, costType) {
