@@ -23,7 +23,7 @@
 
 class ConvNetSingle : public Network {
 public:
-	ConvNetSingle(UINT batchSize=1) : Network(batchSize) {
+	ConvNetSingle(UINT batchSize=1, NetworkListener *networkListener=0) : Network(batchSize, networkListener) {
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 		int filters = 20;

@@ -24,7 +24,7 @@
 
 class GoogLeNetMnist : public Network {
 public:
-	GoogLeNetMnist(UINT batchSize=1, double lr_mult=0.1, double decay_mult=5.0) : Network(batchSize) {
+	GoogLeNetMnist(UINT batchSize=1, NetworkListener *networkListener=0, double lr_mult=0.1, double decay_mult=5.0) : Network(batchSize, networkListener) {
 		double weight_lr_mult = 1.0;
 		double weight_decay_mult = 1.0;
 		double bias_lr_mult = 2.0;
@@ -38,8 +38,8 @@ public:
 		ConvLayer *conv1_7x7_s2 = new ConvLayer(
 				"conv1_7x7_s2",
 				io_dim(28, 28, 1, batchSize),
-				io_dim(14, 14, 8, batchSize),
-				filter_dim(5, 5, 1, 8, 2),
+				io_dim(28, 28, 20, batchSize),
+				filter_dim(5, 5, 1, 20, 1),
 				update_param(weight_lr_mult, weight_decay_mult),
 				update_param(bias_lr_mult, bias_decay_mult),
 				param_filler(ParamFillerType::Xavier, 0.1),
@@ -49,23 +49,23 @@ public:
 
 		PoolingLayer *pool1_3x3_s2 = new PoolingLayer(
 				"pool1_3x3_s2",
-				io_dim(14, 14, 8, batchSize),
-				io_dim(7, 7, 8, batchSize),
+				io_dim(28, 28, 20, batchSize),
+				io_dim(14, 14, 20, batchSize),
 				pool_dim(3, 3, 2),
 				PoolingType::Max
 				);
 
 		LRNLayer *pool1_norm1 = new LRNLayer(
 				"lrn1",
-				io_dim(7, 7, 8, batchSize),
+				io_dim(14, 14, 20, batchSize),
 				lrn_dim(5, 0.0001, 0.75)
 				);
 
 		ConvLayer *conv2_3x3_reduce = new ConvLayer(
 				"conv2_3x3_reduce",
-				io_dim(7, 7, 8, batchSize),
-				io_dim(7, 7, 4, batchSize),
-				filter_dim(1, 1, 8, 4, 1),
+				io_dim(14, 14, 20, batchSize),
+				io_dim(14, 14, 10, batchSize),
+				filter_dim(1, 1, 20, 10, 1),
 				update_param(weight_lr_mult, weight_decay_mult),
 				update_param(bias_lr_mult, bias_decay_mult),
 				param_filler(ParamFillerType::Xavier, 0.1),
@@ -75,9 +75,9 @@ public:
 
 		ConvLayer *conv2_3x3 = new ConvLayer(
 				"conv2_3x3",
-				io_dim(7, 7, 4, batchSize),
-				io_dim(7, 7, 16, batchSize),
-				filter_dim(3, 3, 4, 16, 1),
+				io_dim(14, 14, 10, batchSize),
+				io_dim(14, 14, 16, batchSize),
+				filter_dim(3, 3, 10, 16, 1),
 				update_param(weight_lr_mult, weight_decay_mult),
 				update_param(bias_lr_mult, bias_decay_mult),
 				param_filler(ParamFillerType::Xavier, 0.03),
@@ -87,15 +87,15 @@ public:
 
 		LRNLayer *conv2_norm2 = new LRNLayer(
 				"lrn1",
-				io_dim(7, 7, 16, batchSize),
+				io_dim(14, 14, 16, batchSize),
 				lrn_dim(5, 0.0001, 0.75)
 				);
 
 		PoolingLayer *pool2_3x3_s2 = new PoolingLayer(
 				"pool2_3x3_s2",
+				io_dim(14, 14, 16, batchSize),
 				io_dim(7, 7, 16, batchSize),
-				io_dim(7, 7, 16, batchSize),
-				pool_dim(3, 3, 1),
+				pool_dim(3, 3, 2),
 				PoolingType::Max
 				);
 

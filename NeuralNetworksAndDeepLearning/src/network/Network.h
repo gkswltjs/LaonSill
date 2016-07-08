@@ -31,7 +31,10 @@ using namespace arma;
 
 class Network {
 public:
-	Network(UINT batchSize=1) { this->batchSize = batchSize; }
+	Network(UINT batchSize=1, NetworkListener *networkListener=0) {
+		this->batchSize = batchSize;
+		this->networkListener = networkListener;
+	}
 	Network(UINT batchSize, InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
@@ -65,7 +68,7 @@ protected:
 
 	double totalCost(const vector<const DataSample *> &dataSet, double lambda);
 	double accuracy(const vector<const DataSample *> &dataSet);
-	int evaluate();
+	int evaluate(int &accurateCnt, float &cost);
 
 	DataSet *dataSet;
 	NetworkListener *networkListener;
@@ -85,7 +88,7 @@ protected:
 #else
 protected:
 	void feedforward(const DATATYPE *input);
-	int testEvaluateResult(const DATATYPE *output, const UINT *y);
+	int testEvaluateResult(const DATATYPE *output, const UINT *y, int &accurateCnt, float &cost);
 
 #endif
 

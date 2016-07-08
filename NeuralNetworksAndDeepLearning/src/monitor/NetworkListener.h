@@ -13,7 +13,8 @@ public:
 	NetworkListener() {}
 	virtual ~NetworkListener() {}
 
-	virtual void epochComplete(double validationCost, double validationAccuracy, double trainCost, double trainAccuracy) = 0;
+	//virtual void epochComplete(double validationCost, double validationAccuracy, double trainCost, double trainAccuracy) = 0;
+	virtual void epochComplete(float cost, float accuracy) = 0;
 };
 
 #endif /* MONITOR_NETWORKLISTENER_H_ */

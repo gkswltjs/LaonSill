@@ -5,8 +5,8 @@
  *      Author: jhkim
  */
 
-#ifndef NETWORK_INCEPTIONNETSINGLE_H_
-#define NETWORK_INCEPTIONNETSINGLE_H_
+#ifndef NETWORK_INCEPTIONNETMULT_H_
+#define NETWORK_INCEPTIONNETMULT_H_
 
 #include "../layer/InceptionLayer.h"
 #include "../layer/InputLayer.h"
@@ -17,9 +17,10 @@
 
 
 
-class InceptionNetSingle : public Network {
+class InceptionNetMult : public Network {
 public:
-	InceptionNetSingle(UINT batchSize=1, NetworkListener *networkListener=0, double lr_mult=0.01, double decay_mult=5.0) : Network(batchSize, networkListener) {
+	InceptionNetMult(UINT batchSize=1, NetworkListener *networkListener=0, double lr_mult=0.01, double decay_mult=5.0)
+		: Network(batchSize, networkListener) {
 		//double lr_mult = 0.01;
 		//double decay_mult = 5.0;
 
@@ -35,18 +36,36 @@ public:
 				3, 2, 3, 2, 3, 3
 				);
 
-		/*
 		HiddenLayer *incept2Layer = new InceptionLayer(
 				"incept2",
 				io_dim(28, 28, 12, batchSize),
 				io_dim(28, 28, 24, batchSize),
 				6, 4, 6, 4, 6, 6
 				);
+
+		/*
+		HiddenLayer *incept2Layer = new InceptiornLayer(
+				"incept2",
+				io_dim(28, 28, 24, batchSize),
+				io_dim(28, 28, 36, batchSize),
+				9, 6, 9, 6, 9, 9
+				);
 				*/
+
+		FullyConnectedLayer *fcLayer = new FullyConnectedLayer(
+				"fc1",
+				io_dim(28*28*24, 1, 1, batchSize),
+				io_dim(1000, 1, 1, batchSize),
+				0.5,
+				update_param(lr_mult, decay_mult),
+				update_param(lr_mult, decay_mult),
+				param_filler(ParamFillerType::Xavier),
+				param_filler(ParamFillerType::Gaussian, 1),
+				ActivationType::ReLU);
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
 				"softmax",
-				io_dim(28*28*12, 1, 1, batchSize),
+				io_dim(1000, 1, 1, batchSize),
 				io_dim(10, 1, 1, batchSize),
 				0.5,
 				update_param(lr_mult, decay_mult),
@@ -56,14 +75,15 @@ public:
 				);
 
 		Network::addLayerRelation(inputLayer, incept1Layer);
-		//Network::addLayerRelation(incept1Layer, incept2Layer);
-		Network::addLayerRelation(incept1Layer, softmaxLayer);
+		Network::addLayerRelation(incept1Layer, incept2Layer);
+		Network::addLayerRelation(incept2Layer, fcLayer);
+		Network::addLayerRelation(fcLayer, softmaxLayer);
 
 		this->inputLayer = inputLayer;
 		addOutputLayer(softmaxLayer);
 	}
-	virtual ~InceptionNetSingle() {}
+	virtual ~InceptionNetMult() {}
 };
 
 
-#endif /* NETWORK_INCEPTIONNETSINGLE_H_ */
+#endif /* NETWORK_INCEPTIONNETMULT_H_ */

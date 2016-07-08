@@ -49,3 +49,20 @@ void Cuda::destroy() {
 void Cuda::refresh() {
 	checkCudaErrors(cudaSetDevice(Cuda::gpuid));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

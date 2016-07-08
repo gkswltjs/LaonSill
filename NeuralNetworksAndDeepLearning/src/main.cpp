@@ -9,6 +9,7 @@
 #include "network/ConvNetSingle.h"
 #include "network/ConvNetDouble.h"
 #include "network/InceptionNetSingle.h"
+#include "network/InceptionNetMult.h"
 #include "network/InceptionNetAux.h"
 #include "dataset/MnistDataSet.h"
 #include "dataset/MockDataSet.h"
@@ -38,6 +39,10 @@
 
 #include "Timer.h"
 #include "cuda/Cuda.h"
+#include <gnuplot-iostream.h>
+#include <cmath>
+#include <boost/tuple/tuple.hpp>
+
 
 using namespace std;
 using namespace arma;
@@ -49,6 +54,7 @@ using namespace arma;
 void network_test();
 void cuda_gemm_test();
 void cuda_conv_test();
+void gnuplot_test();
 
 int main(int argc, char** argv) {
 	cout << "main" << endl;
@@ -57,27 +63,8 @@ int main(int argc, char** argv) {
 
 
 	network_test();
-	//cuda_gemm_test();
-	//cuda_conv_test();
+	//gnuplot_test();
 
-
-	//cudaDeviceProp prop;
-	//checkCudaErrors(cudaGetDeviceProperties(&prop, 0));
-
-	/*
-	size_t free, total;
-	cudaMemGetInfo(&free, &total);
-	cout << free << " free of total " << total << endl;
-	*/
-
-
-	/*
-	char *data[1024];
-	for(int i = 0; i < 1024; i++) {
-		cout << "trying to allocate " << i+1 << "mb ... " << endl;
-		checkCudaErrors(Util::ucudaMalloc(&data[i], sizeof(char)*1024*1024));
-	}
-	*/
 
 
 	cout << "end" << endl;
@@ -100,6 +87,10 @@ void network_test() {
 		DataSet *dataSet = new MnistDataSet(validationSetRatio);
 		dataSet->load();
 
+
+		int maxEpoch = 30;
+		NetworkListener *networkListener = new NetworkMonitor(maxEpoch);
+
 		/*
 		for(int i = 0; i < 10; i++) {
 			Util::printData(dataSet->getTrainDataAt(i), 28, 28, 1, 1, "train_data");
@@ -111,9 +102,9 @@ void network_test() {
 		}
 		*/
 
-		//Network *network = new NeuralNetSingle(10);
-		//Network *network = new ConvNetSingle(100);
-		//Network *network = new ConvNetDouble(10);
+		//Network *network = new NeuralNetSingle(10, networkListener);
+		//Network *network = new ConvNetSingle(100, networkListener);
+		//Network *network = new ConvNetDouble(100);
 		//ConvLayer::init();
 		//float lr[] = {0.1, 0.05, 0.01, 0.005, 0.001};
 		//float lr[] = {1.0, 0.5, 0.1, 0.05, 0.01};
@@ -124,24 +115,20 @@ void network_test() {
 		//for(int i = 0; i < 5; i++) {
 		//	for(int j = 0; j < 5; j++) {
 				//Network *network = new InceptionNetAux(10, lr[i], wd[j]);
-				Network *network = new InceptionNetAux(10, 0.5, 0.1);
-				//Network *network = new InceptionNetSingle(10);
+
+				//Network *network = new InceptionNetAux(10, networkListener, 0.0025, 10);
+				//Network *network = new InceptionNetSingle(10, networkListener, 0.005, 5.0);
+				Network *network = new InceptionNetMult(10, networkListener, 0.000075, 1.0);
 				//Network *network = new NeuralNetSingle(10);
 				//cout << "lr: " << lr[i] << ", wd: " << wd[j] << endl;
-				//Network *network = new GoogLeNetMnist(10, lr[i], wd[j]);
+				//Network *network = new GoogLeNetMnist(10, networkListener, 0.0001, 0.0);
 				network->setDataSet(dataSet);
-				network->sgd(10);
+				network->sgd(maxEpoch);
 				//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
 				//ConvLayer::destroy();
 				//delete network;
 			//}
 	//	}
-				/*
-				Network *network_load = new Network();
-				network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
-				network_load->setDataSet(dataSet);
-				network_load->test();
-				*/
 
 	} else {
 		Util::setPrint(false);
@@ -252,6 +239,38 @@ void network_test() {
 	Cuda::destroy();
 }
 
+
+
+
+void gnuplot_test() {
+
+	/*
+	Gnuplot gp;
+	vector<boost::tuple<float, float>> data;
+	for(int i = 0; i < 10; i++) {
+		data.push_back(boost::make_tuple(i, i*10));
+	}
+
+	gp << "set xrange [0:10]\nset yrange [0:100]\n";
+	gp << "plot '-' with lines title 'accuracy'" << "\n";
+	gp.send1d(data);
+	*/
+
+	NetworkListener *networkListener = new NetworkMonitor(10);
+	networkListener->epochComplete(3.0f, 92.0f);
+	networkListener->epochComplete(4.0f, 92.0f);
+	networkListener->epochComplete(5.0f, 92.0f);
+
+
+#ifdef _WIN32
+	// For Windows, prompt for a keystroke before the Gnuplot object goes out of scope so that
+	// the gnuplot window doesn't get closed.
+	std::cout << "Press enter to exit." << std::endl;
+	std::cin.get();
+#endif
+
+
+}
 
 
 void cuda_gemm_test() {

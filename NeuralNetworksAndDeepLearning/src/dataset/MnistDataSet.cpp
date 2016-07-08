@@ -82,8 +82,8 @@ void MnistDataSet::load() {
 #else
 	numTrainData = loadDataSetFromResource(filenames[0], trainDataSet, trainLabelSet, 0, 50000);
 	numTestData = loadDataSetFromResource(filenames[1], testDataSet, testLabelSet, 0, 10000);
-	//numTrainData = 10;
-	//numTestData = 10;
+	numTrainData = 1000;
+	numTestData = 1000;
 #endif
 
 	//trainDataSize = loadDataSetFromResource(filenames[0], trainDataSet);

@@ -22,7 +22,7 @@
 
 class InceptionNetAux : public Network {
 public:
-	InceptionNetAux(UINT batchSize=10, double lr_mult=0.5, double decay_mult=0.1) : Network(batchSize) {
+	InceptionNetAux(UINT batchSize=10, NetworkListener *networkListener=0, double lr_mult=0.0025, double decay_mult=0.0) : Network(batchSize, networkListener) {
 
 			InputLayer *inputLayer = new InputLayer(
 					"input",
@@ -62,15 +62,13 @@ public:
 					15, 10, 15, 10, 15, 15
 					);
 
-
-			/*
 			HiddenLayer *incept2Layer = new InceptionLayer(
 					"incept2",
-					io_dim(28, 28, 12, batchSize),
-					io_dim(28, 28, 24, batchSize),
-					6, 4, 6, 4, 6, 6
+					io_dim(14, 14, 60, batchSize),
+					io_dim(14, 14, 60, batchSize),
+					15, 15, 15, 15, 15, 15
 					);
-					*/
+
 
 			/*
 			HiddenLayer *fc1Layer = new FullyConnectedLayer(
@@ -100,8 +98,8 @@ public:
 			Network::addLayerRelation(conv1Layer, pool1Layer);
 			Network::addLayerRelation(pool1Layer, lrn1Layer);
 			Network::addLayerRelation(lrn1Layer, incept1Layer);
-			//Network::addLayerRelation(pool1Layer, incept1Layer);
-			Network::addLayerRelation(incept1Layer, softmaxLayer);
+			Network::addLayerRelation(incept1Layer, incept2Layer);
+			Network::addLayerRelation(incept2Layer, softmaxLayer);
 
 			this->inputLayer = inputLayer;
 			addOutputLayer(softmaxLayer);
