@@ -9,8 +9,8 @@
 
 
 
-PoolingLayer::PoolingLayer(const char *name, io_dim in_dim, io_dim out_dim, pool_dim pool_d, PoolingType poolingType)
-	: HiddenLayer(name, in_dim, out_dim) {
+PoolingLayer::PoolingLayer(const char *name, pool_dim pool_d, PoolingType poolingType)
+	: HiddenLayer(name) {
 	initialize(pool_d, poolingType);
 }
 
@@ -47,7 +47,6 @@ void PoolingLayer::save(ofstream &ofs) {
 #if CPU_MODE
 void PoolingLayer::initialize(pool_dim pool_d, PoolingType poolingType) {
 	this->type = LayerType::Pooling;
-	this->id = Layer::generateLayerId();
 
 	this->out_dim.rows = in_dim.rows / pool_d.rows;
 	this->out_dim.cols = in_dim.rows / pool_d.cols;
@@ -104,19 +103,40 @@ void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 #else
 void PoolingLayer::initialize(pool_dim pool_d, PoolingType poolingType) {
 	this->type = LayerType::Pooling;
-	this->id = Layer::generateLayerId();
-
-	//this->out_dim.rows = in_dim.rows / pool_d.rows;
-	//this->out_dim.cols = in_dim.rows / pool_d.cols;
-	//this->out_dim.channels = in_dim.channels;
-	//this->output.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
-
 	this->pool_d = pool_d;
 	this->pooling_fn = PoolingFactory::create(poolingType, pool_d);
+}
+
+void PoolingLayer::_shape() {
+	cudnnTensorDescriptor_t tempInputTensorDesc;
+	checkCUDNN(cudnnCreateTensorDescriptor(&tempInputTensorDesc));
+	checkCUDNN(cudnnSetTensor4dDescriptor(tempInputTensorDesc,
+				CUDNN_TENSOR_NCHW,
+				CUDNN_DATA_FLOAT,
+				in_dim.batches, in_dim.channels, in_dim.rows, in_dim.cols));
+
+	int n, c, h, w;
+	checkCUDNN(cudnnGetPooling2dForwardOutputDim(pooling_fn->getPoolDesc(),
+			tempInputTensorDesc,
+			&n, &c, &h, &w));
+
+	out_dim.batches = n;
+	out_dim.channels = c;
+	out_dim.rows = h;
+	out_dim.cols = w;
+
+	checkCUDNN(cudnnDestroyTensorDescriptor(tempInputTensorDesc));
+
+	HiddenLayer::_shape();
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*out_dim.batchsize()));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
+
+void PoolingLayer::_reshape() {
+
+}
+
 
 PoolingLayer::~PoolingLayer() {
 	checkCudaErrors(cudaFree(d_delta));

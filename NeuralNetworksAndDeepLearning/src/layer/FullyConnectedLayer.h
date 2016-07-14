@@ -23,7 +23,7 @@ class FullyConnectedLayer : public HiddenLayer {
 public:
 	FullyConnectedLayer() { this->type = LayerType::FullyConnected; }
 
-	FullyConnectedLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	FullyConnectedLayer(const char *name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
 	virtual ~FullyConnectedLayer();
 
@@ -51,23 +51,6 @@ public:
 	virtual void save(UINT idx, ofstream &ofs);
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
-private:
-	void initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
-
-protected:
-	virtual void save(ofstream &ofs);
-
-	double p_dropout;
-
-	update_param weight_update_param;
-	update_param bias_update_param;
-
-	param_filler weight_filler;
-	param_filler bias_filler;
-
-	Activation *activation_fn;
-
 #if CPU_MODE
 public:
 	FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
@@ -81,10 +64,43 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	virtual void feedforward(UINT idx, const rcube &input);
+#else
+public:
+	DATATYPE *getWeight() { return this->d_weight; }
+	DATATYPE *getDeltaInput() { return this->d_delta_input; }
+
+	/**
+	 * 주어진 입력 input에 대해 출력 activation을 계산
+	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
+	 */
+	virtual void feedforward(UINT idx, const DATATYPE *input);
+
+#endif
 
 
 
 
+
+private:
+	void initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
+
+protected:
+	virtual void save(ofstream &ofs);
+	virtual void _shape();
+	virtual void _reshape();
+
+	double p_dropout;
+
+	update_param weight_update_param;
+	update_param bias_update_param;
+
+	param_filler weight_filler;
+	param_filler bias_filler;
+
+	Activation *activation_fn;
+
+#if CPU_MODE
 protected:
 	rmat weight;
 	rvec bias;
@@ -96,18 +112,6 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-
-public:
-	DATATYPE *getWeight() { return this->d_weight; }
-	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-
-	/**
-	 * 주어진 입력 input에 대해 출력 activation을 계산
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
-	virtual void feedforward(UINT idx, const DATATYPE *input);
-
-
 protected:
 	DATATYPE *weight;
 	DATATYPE *bias;
@@ -122,17 +126,6 @@ protected:
 	DATATYPE *d_delta_bias;
 
 	DATATYPE *d_onevec;
-
-
-
-
-	//rvec nabla_b;
-	//rmat nabla_w;
-
-	//rcube z;
-	//rcube delta;
-	//rcube delta_input;
-
 #endif
 
 

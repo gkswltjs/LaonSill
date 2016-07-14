@@ -26,8 +26,7 @@
 
 
 
-Network::Network(UINT batchSize, InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
-	this->batchSize = batchSize;
+Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
 	this->inputLayer = inputLayer;
 	if(outputLayer) this->outputLayers.push_back(outputLayer);
 	this->dataSet = dataSet;
@@ -41,12 +40,26 @@ Network::~Network() {
 	}
 }
 
+void Network::setDataSet(DataSet *dataSet, UINT batches) {
+	this->dataSet = dataSet;
+	this->in_dim.rows = dataSet->getRows();
+	this->in_dim.cols = dataSet->getCols();
+	this->in_dim.channels = dataSet->getChannels();
+	this->in_dim.batches = batches;
+}
 
+void Network::shape() {
+	inputLayer->shape(0, in_dim);
+}
+
+void Network::reshape() {
+
+}
 
 
 void Network::sgd(int epochs) {
 	int trainDataSize = dataSet->getNumTrainData();
-	int miniBatchesSize = trainDataSize / batchSize;
+	int miniBatchesSize = trainDataSize / in_dim.batches;
 
 	Timer timer1, timer2;
 	for(int i = 0; i < epochs; i++) {
@@ -126,9 +139,9 @@ void Network::save(string filename) {
 	//int inputLayerSize = 1;
 	int outputLayerSize = outputLayers.size();
 
+	ofs.write((char *)&in_dim, sizeof(io_dim));
 	//ofs.write((char *)&inputLayerSize, sizeof(int));		// input layer size
 	//ofs.write((char *)&inputLayer, sizeof(Layer *));		// input layer address
-	ofs.write((char *)&batchSize, sizeof(UINT));
 	ofs.write((char *)&outputLayerSize, sizeof(UINT));		// output layer size
 	for(UINT i = 0; i < outputLayers.size(); i++) {
 		ofs.write((char *)&outputLayers[i], sizeof(Layer *));
@@ -142,22 +155,14 @@ void Network::save(string filename) {
 
 void Network::load(string filename) {
 	ifstream ifs(filename.c_str(), ios::in | ios::binary);
-
-	//UINT inputLayerSize;
-	//ifs.read((char *)&inputLayerSize, sizeof(UINT));
-	//Layer *inputLayer;
-	//ifs.read((char *)&inputLayer, sizeof(Layer *));
-
 	UINT outputLayerSize;
 
-	ifs.read((char *)&batchSize, sizeof(UINT));
+	ifs.read((char *)&in_dim, sizeof(in_dim));
 	ifs.read((char *)&outputLayerSize, sizeof(UINT));
-
 	for(UINT i = 0; i < outputLayerSize; i++) {
 		OutputLayer *outputLayer;
 		ifs.read((char *)&outputLayer, sizeof(OutputLayer *));
 		outputLayers.push_back(outputLayer);
-		//cout << "loaded outputLayer: " << outputLayer << endl;
 	}
 
 	map<Layer *, Layer *> layerMap;
@@ -247,15 +252,15 @@ int Network::evaluate(int &accurateCnt, float &cost) {
 	//bool printBak = Util::getPrint();
 	//Util::setPrint(true);
 
-	int testBatchesSize = dataSet->getNumTestData()/batchSize;
+	int testBatchesSize = dataSet->getNumTestData()/in_dim.batches;
 	for(int i = 0; i < testBatchesSize; i++) {
 
 		// FEED FORWARD
 		DATATYPE *d_testData;
-		checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize));
-		//checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*batchSize),
-		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*batchSize),
-				sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches));
+		//checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*in_dim.batches),
+		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*in_dim.batches),
+				sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches, cudaMemcpyHostToDevice));
 
 		feedforward(d_testData);
 		checkCudaErrors(cudaFree(d_testData));
@@ -265,7 +270,7 @@ int Network::evaluate(int &accurateCnt, float &cost) {
 		//checkCudaErrors(cudaMemcpyAsync(d_testLabel, dataSet->getTestLabelAt(i),
 		//		sizeof(UINT), cudaMemcpyHostToDevice));
 
-		testEvaluateResult(outputLayers[0]->getOutput(), dataSet->getTestLabelAt(i*batchSize), accurateCnt, cost);
+		testEvaluateResult(outputLayers[0]->getOutput(), dataSet->getTestLabelAt(i*in_dim.batches), accurateCnt, cost);
 		//checkCudaErrors(cudaFree(d_testLabel));
 	}
 
@@ -390,21 +395,21 @@ void Network::feedforward(const DATATYPE *input) {
 void Network::updateMiniBatch(int nthMiniBatch) {
 	Cuda::refresh();
 
-	int baseIndex = nthMiniBatch*batchSize;
+	int baseIndex = nthMiniBatch*in_dim.batches;
 
 	// FEED FORWARD
 	DATATYPE *d_trainData;
-	checkCudaErrors(cudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize));
+	checkCudaErrors(cudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches));
 	checkCudaErrors(cudaMemcpyAsync(d_trainData, dataSet->getTrainDataAt(baseIndex),
-			sizeof(DATATYPE)*inputLayer->getInputDimension()*batchSize, cudaMemcpyHostToDevice));
+			sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches, cudaMemcpyHostToDevice));
 
 	feedforward(d_trainData);
 
 	// BACK PROPAGATION
 	UINT *d_trainLabel;
-	checkCudaErrors(cudaMalloc(&d_trainLabel, sizeof(UINT)*batchSize));
+	checkCudaErrors(cudaMalloc(&d_trainLabel, sizeof(UINT)*in_dim.batches));
 	checkCudaErrors(cudaMemcpyAsync(d_trainLabel, dataSet->getTrainLabelAt(baseIndex),
-				sizeof(UINT)*batchSize, cudaMemcpyHostToDevice));
+				sizeof(UINT)*in_dim.batches, cudaMemcpyHostToDevice));
 
 	for(UINT i = 0; i < outputLayers.size(); i++) {
 		outputLayers[i]->cost(d_trainLabel);
@@ -416,7 +421,7 @@ void Network::updateMiniBatch(int nthMiniBatch) {
 	// UPDATE
 	//cout << "update()" << endl;
 	int n = dataSet->getNumTrainData();
-	inputLayer->update(0, n, batchSize);
+	inputLayer->update(0, n, in_dim.batches);
 }
 
 
@@ -425,15 +430,15 @@ void Network::updateMiniBatch(int nthMiniBatch) {
 
 int Network::testEvaluateResult(const DATATYPE *d_output, const UINT *y, int &accurateCnt, float &cost) {
 	const int num_labels = 10;
-	DATATYPE *output = new DATATYPE[num_labels*batchSize];
+	DATATYPE *output = new DATATYPE[num_labels*in_dim.batches];
 
 	//Util::setPrint(true);
 	//Util::printDeviceData(d_output, num_labels, 1, 1, 1, "d_output:");
 	//cout << "y for 0: " << y[0] << ", y for 1: " << y[1] << endl;
 	//Util::setPrint(false);
-	checkCudaErrors(cudaMemcpyAsync(output, d_output,	sizeof(DATATYPE)*num_labels*batchSize, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpyAsync(output, d_output,	sizeof(DATATYPE)*num_labels*in_dim.batches, cudaMemcpyDeviceToHost));
 
-	for(int j = 0; j < batchSize; j++) {
+	for(int j = 0; j < in_dim.batches; j++) {
 		DATATYPE maxValue = -100000;
 		int maxIndex = 0;
 		for(int i = 0; i < num_labels; i++) {

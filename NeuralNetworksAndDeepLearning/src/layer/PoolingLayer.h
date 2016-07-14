@@ -21,7 +21,7 @@
 class PoolingLayer : public HiddenLayer {
 public:
 	PoolingLayer() { this->type = LayerType::Pooling; }
-	PoolingLayer(const char *name, io_dim in_dim, io_dim out_dim, pool_dim pool_d, PoolingType poolingType);
+	PoolingLayer(const char *name, pool_dim pool_d, PoolingType poolingType);
 	virtual ~PoolingLayer();
 
 	void backpropagation(UINT idx, HiddenLayer *next_layer);
@@ -51,20 +51,22 @@ public:
 	void feedforward(UINT idx, const DATATYPE *input);
 #endif
 
-private:
+protected:
 	void initialize(pool_dim pool_d, PoolingType poolingType);
 	void save(ofstream &ofs);
+	virtual void _shape();
+	virtual void _reshape();
 
 	pool_dim pool_d;
 	Pooling *pooling_fn;
 
 #if CPU_MODE
-private:
+protected:
 	ucube pool_map;
 	rcube delta;
 	rcube delta_input;
 #else
-private:
+protected:
 	DATATYPE *d_delta;
 	DATATYPE *d_delta_input;
 

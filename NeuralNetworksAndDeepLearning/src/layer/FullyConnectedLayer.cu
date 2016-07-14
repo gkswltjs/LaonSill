@@ -16,10 +16,10 @@
 
 
 
-FullyConnectedLayer::FullyConnectedLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+FullyConnectedLayer::FullyConnectedLayer(const char *name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
-	: HiddenLayer(name, in_dim, out_dim) {
-	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+	: HiddenLayer(name) {
+	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
 void FullyConnectedLayer::save(UINT idx, ofstream &ofs) {
@@ -45,7 +45,6 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 void FullyConnectedLayer::initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
 	this->type = LayerType::FullyConnected;
-	this->id = Layer::generateLayerId();
 
 	this->p_dropout = p_dropout;
 
@@ -259,12 +258,11 @@ __global__ void FillOnes(DATATYPE *vec, int size)
 
 
 
-void FullyConnectedLayer::initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
+void FullyConnectedLayer::initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
 	Cuda::refresh();
-
+	this->out_dim = io_dim(n_out, 1, 1, 1);
 	this->type = LayerType::FullyConnected;
-	this->id = Layer::generateLayerId();
 
 	this->p_dropout = p_dropout;
 
@@ -272,6 +270,17 @@ void FullyConnectedLayer::initialize(double p_dropout, update_param weight_updat
 	this->bias_update_param = bias_update_param;
 	this->weight_filler = weight_filler;
 	this->bias_filler = bias_filler;
+
+	this->activation_fn = ActivationFactory::create(activationType);
+}
+
+void FullyConnectedLayer::_shape() {
+	in_dim.rows = in_dim.rows*in_dim.cols*in_dim.channels;
+	in_dim.cols = 1;
+	in_dim.channels = 1;
+	out_dim.batches = in_dim.batches;
+
+	HiddenLayer::_shape();
 
 	int u_in = in_dim.unitsize();
 	int u_out = out_dim.unitsize();
@@ -295,20 +304,21 @@ void FullyConnectedLayer::initialize(double p_dropout, update_param weight_updat
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
 
-	//DATATYPE *onevec = new DATATYPE[in_dim.batches];
-	//for(int i = 0; i < in_dim.batches; i++) onevec[i] = 1;
 	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(DATATYPE)*in_dim.batches));
 	FillOnes<<<RoundUp(in_dim.batches, BW), BW>>>(this->d_onevec, in_dim.batches);
-	//Util::printDeviceData(d_onevec, 1, 1, 1, in_dim.batches, "d_onevec:");
-	//checkCudaErrors(cudaMemcpyAsync(this->d_onevec, onevec, sizeof(DATATYPE)*in_dim.batches, cudaMemcpyHostToDevice));
 
 	checkCudaErrors(cudaMemcpyAsync(this->d_weight, weight, sizeof(DATATYPE)*u_out*u_in, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpyAsync(this->d_bias, bias, sizeof(DATATYPE)*u_out, cudaMemcpyHostToDevice));
 
-	this->activation_fn = ActivationFactory::create(activationType);
-
 	checkCudaErrors(cudaDeviceSynchronize());
 }
+
+void FullyConnectedLayer::_reshape() {
+
+}
+
+
+
 
 FullyConnectedLayer::~FullyConnectedLayer() {
 	Cuda::refresh();
@@ -473,6 +483,7 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	HiddenLayer::load(ifs, layerMap);
 
+	int n_out = 0;
 	double p_dropout;
 	ActivationType activationType;
 	update_param weight_update_param, bias_update_param;
@@ -485,7 +496,7 @@ void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	ifs.read((char *)&weight_filler, sizeof(param_filler));
 	ifs.read((char *)&bias_filler, sizeof(param_filler));
 
-	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 
 	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
 	ifs.read((char *)weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize());

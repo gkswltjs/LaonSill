@@ -20,10 +20,11 @@ using namespace arma;
 class InputLayer : public Layer {
 public:
 	InputLayer() { this->type = LayerType::Input; }
-	InputLayer(const char *name, io_dim in_dim) : Layer(name, in_dim, in_dim) {
+	InputLayer(const char *name) : Layer(name) {
 		initialize();
 	}
 	virtual ~InputLayer() {}
+
 
 	int getInputDimension() const { return in_dim.rows*in_dim.cols*in_dim.channels; }
 
@@ -44,13 +45,6 @@ public:
 		initialize();
 		loadNetwork(ifs, layerMap);
 	}
-
-protected:
-	void initialize() {
-		this->type = LayerType::Input;
-		this->id = Layer::generateLayerId();
-	}
-
 
 #if CPU_MODE
 public:
@@ -86,8 +80,28 @@ public:
 
 		propFeedforward(this->d_output);
 	}
-protected:
+#endif
 
+
+
+
+protected:
+	void initialize() {
+		this->type = LayerType::Input;
+	}
+
+
+#if CPU_MODE
+protected:
+#else
+protected:
+	virtual void _shape() {
+		this->out_dim = in_dim;
+		Layer::_shape();
+	}
+	virtual void _reshape() {
+
+	}
 #endif
 
 

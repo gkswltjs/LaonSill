@@ -23,34 +23,11 @@
 class ConvLayer : public HiddenLayer {
 public:
 	ConvLayer() { this->type = LayerType::Conv; }
-	ConvLayer(const char *name, io_dim in_dim, io_dim out_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+	ConvLayer(const char *name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_f, param_filler bias_filler, ActivationType activationType);
 	virtual ~ConvLayer();
 
 	filter_dim &get_filter_dim() { return this->filter_d; }
-
-#if CPU_MODE
-public:
-
-	rcube *getWeight() { return this->filters; }
-	rcube &getDeltaInput() { return this->delta_input; }
-
-
-	/**
-	 * 주어진 입력 input에 대해 출력 activation을 계산
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
-	void feedforward(UINT idx, const rcube &input);
-
-#else
-	//static void init();
-	//static void destroy();
-
-	DATATYPE *getWeight() { return this->filters; }
-	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-	void feedforward(UINT idx, const DATATYPE *input);
-#endif
-
 	/**
 	 * 네트워크 cost에 대한 weight update양 계산
 	 * @param next_w: 다음 레이어의 weight
@@ -83,11 +60,36 @@ public:
 	void save(UINT idx, ofstream &ofs);
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
+#if CPU_MODE
+public:
+
+	rcube *getWeight() { return this->filters; }
+	rcube &getDeltaInput() { return this->delta_input; }
+
+
+	/**
+	 * 주어진 입력 input에 대해 출력 activation을 계산
+	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
+	 */
+	void feedforward(UINT idx, const rcube &input);
+
+#else
+	//static void init();
+	//static void destroy();
+
+	DATATYPE *getWeight() { return this->filters; }
+	DATATYPE *getDeltaInput() { return this->d_delta_input; }
+	void feedforward(UINT idx, const DATATYPE *input);
+#endif
+
 
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
 	void save(ofstream &ofs);
+
+	virtual void _shape();
+	virtual void _reshape();
 
 	filter_dim filter_d;
 	Activation *activation_fn;
@@ -135,10 +137,6 @@ protected:
 
 	size_t workspaceSize;
 	void *d_workspace;
-
-//static size_t workspaceSize;
-//static void *d_workspace;
-
 #endif
 
 

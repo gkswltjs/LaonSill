@@ -18,7 +18,7 @@
 class DepthConcatLayer : public HiddenLayer {
 public:
 	DepthConcatLayer() { this->type = LayerType::DepthConcat; }
-	DepthConcatLayer(const char *name, io_dim in_dim);
+	DepthConcatLayer(const char *name);
 	virtual ~DepthConcatLayer();
 
 	void backpropagation(UINT idx, HiddenLayer *next_layer);
@@ -33,6 +33,9 @@ public:
 	}
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
+	virtual void shape(UINT idx, io_dim in_dim);
+	virtual void reshape(UINT idx, io_dim in_dim);
 
 #if CPU_MODE
 public:
@@ -51,6 +54,8 @@ public:
 
 protected:
 	void initialize();
+	virtual void _shape();
+	virtual void _reshape();
 
 
 	int offsetIndex;

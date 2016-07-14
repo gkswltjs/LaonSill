@@ -12,8 +12,8 @@
 
 int Layer::layerCount = 0;
 
-Layer::Layer(const char *name, io_dim in_dim, io_dim out_dim) {
-	initialize(name, in_dim, out_dim);
+Layer::Layer(const char *name) {
+	initialize(name);
 }
 
 void Layer::addPrevLayer(prev_layer_relation prevLayer) { prevLayers.push_back(prevLayer); }
@@ -51,13 +51,12 @@ void Layer::save(ofstream &ofs) {
 void Layer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	int layerId;
 	char name[LAYER_NAME_LENGTH];
-	io_dim in_dim, out_dim;
 	UINT nextLayerSize, prevLayerSize;
 
 	ifs.read((char *)&layerId, sizeof(int));
 	ifs.read(name, LAYER_NAME_LENGTH);
-	ifs.read((char *)&in_dim, sizeof(io_dim));
-	ifs.read((char *)&out_dim, sizeof(io_dim));
+	//ifs.read((char *)&in_dim, sizeof(io_dim));
+	//ifs.read((char *)&out_dim, sizeof(io_dim));
 	ifs.read((char *)&nextLayerSize, sizeof(UINT));
 	for(UINT i = 0; i < nextLayerSize; i++) {
 		next_layer_relation nextLayer;
@@ -70,7 +69,7 @@ void Layer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		ifs.read((char *)&prevLayer, sizeof(prev_layer_relation));
 		prevLayers.push_back(prevLayer);
 	}
-	initialize(name, in_dim, out_dim);
+	initialize(name);
 	updateLayerRelation(layerMap);
 }
 
@@ -239,13 +238,14 @@ void Layer::propFeedforward(const rcube output) {
 
 #else
 
-void Layer::initialize(const char *name, io_dim in_dim, io_dim out_dim) {
-	Cuda::refresh();
 
-	strcpy(this->name, name);
+void Layer::shape(UINT idx, io_dim in_dim) {
 	this->in_dim = in_dim;
-	this->out_dim = out_dim;
+	_shape();
+	propShape();
+}
 
+void Layer::_shape() {
 	//checkCudaErrors(cudaMalloc(&this->d_input, sizeof(DATATYPE)*in_dim.batchsize()));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
 
@@ -260,6 +260,39 @@ void Layer::initialize(const char *name, io_dim in_dim, io_dim out_dim) {
 			CUDNN_TENSOR_NCHW,
 			CUDNN_DATA_FLOAT,
 			out_dim.batches, out_dim.channels, out_dim.rows, out_dim.cols));
+}
+
+void Layer::propShape() {
+	for(UINT i = 0; i < nextLayers.size(); i++) {
+		nextLayers[i].next_layer->shape(nextLayers[i].idx, out_dim);
+	}
+}
+
+void Layer::reshape(UINT idx, io_dim in_dim) {
+	_reshape();
+	propReshape();
+}
+
+void Layer::_reshape() {
+	// 이전의 input, output 설정과 관련된 memory 정리
+
+
+
+	_shape();
+}
+
+void Layer::propReshape() {
+	for(UINT i = 0; i < nextLayers.size(); i++) {
+		nextLayers[i].next_layer->reshape(nextLayers[i].idx, out_dim);
+	}
+}
+
+
+
+void Layer::initialize(const char *name) {
+	Cuda::refresh();
+	strcpy(this->name, name);
+	this->id = Layer::generateLayerId();
 }
 
 

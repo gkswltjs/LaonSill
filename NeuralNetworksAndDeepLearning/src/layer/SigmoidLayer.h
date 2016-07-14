@@ -58,7 +58,6 @@ public:
 private:
 	void initialize() {
 		this->type = LayerType::Sigmoid;
-		this->id = Layer::generateLayerId();
 
 		//this->cost_fn = CostFactory::create(costType);
 		//this->activation_fn = ActivationFactory::create(ActivationType::Sigmoid);

@@ -19,19 +19,20 @@
 
 class InceptionNetSingle : public Network {
 public:
-	InceptionNetSingle(UINT batchSize=1, NetworkListener *networkListener=0, double lr_mult=0.01, double decay_mult=5.0) : Network(batchSize, networkListener) {
+	InceptionNetSingle(NetworkListener *networkListener=0, double lr_mult=0.01, double decay_mult=5.0) : Network(networkListener) {
 		//double lr_mult = 0.01;
 		//double decay_mult = 5.0;
 
 		InputLayer *inputLayer = new InputLayer(
-				"input",
-				io_dim(28, 28, 1, batchSize)
+				"input"
+				//io_dim(28, 28, 1, batchSize)
 				);
 
 		HiddenLayer *incept1Layer = new InceptionLayer(
 				"incept1",
-				io_dim(28, 28, 1, batchSize),
-				io_dim(28, 28, 12, batchSize),
+				//io_dim(28, 28, 1, batchSize),
+				//io_dim(28, 28, 12, batchSize),
+				1,
 				3, 2, 3, 2, 3, 3
 				);
 
@@ -46,8 +47,9 @@ public:
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
 				"softmax",
-				io_dim(28*28*12, 1, 1, batchSize),
-				io_dim(10, 1, 1, batchSize),
+				//io_dim(28*28*12, 1, 1, batchSize),
+				//io_dim(10, 1, 1, batchSize),
+				10,
 				0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),

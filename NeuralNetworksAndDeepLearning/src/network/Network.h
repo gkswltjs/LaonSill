@@ -31,15 +31,14 @@ using namespace arma;
 
 class Network {
 public:
-	Network(UINT batchSize=1, NetworkListener *networkListener=0) {
-		this->batchSize = batchSize;
+	Network(NetworkListener *networkListener=0) {
 		this->networkListener = networkListener;
 	}
-	Network(UINT batchSize, InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
+	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
 	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
-	void setDataSet(DataSet *dataSet) { this->dataSet = dataSet; }
+	void setDataSet(DataSet *dataSet, UINT batches);
 
 	void sgd(int epochs);
 	void test();
@@ -61,6 +60,8 @@ public:
 
 	void save(string filename);
 	void load(string filename);
+	void shape();
+	void reshape();
 
 protected:
 	void updateMiniBatch(int nthMiniBatch);
@@ -76,7 +77,7 @@ protected:
 	InputLayer *inputLayer;
 	vector<OutputLayer *> outputLayers;
 
-	UINT batchSize;
+	io_dim in_dim;
 
 #if CPU_MODE
 protected:

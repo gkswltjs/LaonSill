@@ -139,10 +139,6 @@ public:
 				&beta, xDesc, dx));
 	}
 
-private:
-	cudnnPoolingDescriptor_t poolDesc;
-	const float alpha = 1.0f, beta = 0.0f;
-
 #endif
 };
 

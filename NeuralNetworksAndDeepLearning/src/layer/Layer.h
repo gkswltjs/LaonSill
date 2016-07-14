@@ -28,7 +28,7 @@ class Layer {
 
 public:
 	Layer() {}
-	Layer(const char *name, io_dim in_dim, io_dim out_dim);
+	Layer(const char *name);
 	virtual ~Layer();
 
 	int getId() const { return id; }
@@ -55,30 +55,11 @@ public:
 	bool isLastPrevLayerRequest(UINT idx);
 	bool isLastNextLayerRequest(UINT idx);
 
-
-protected:
-	void initialize(const char *name, io_dim in_dim, io_dim out_dim);
-	void propResetNParam();
-	void propUpdate(UINT n, UINT miniBatchSize);
-	void propSave(ofstream &ofs);
-
-	virtual void save(ofstream &ofs);
-	virtual void loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	virtual void updateLayerRelation(map<Layer *, Layer *> &layerMap);
-
-	static int generateLayerId();
-
-	LayerType type;
-	int id;
-	char name[32];
-
-	io_dim in_dim;
-	io_dim out_dim;
-
-	vector<prev_layer_relation> prevLayers;
-	vector<next_layer_relation> nextLayers;
-
-	static int layerCount;
+	/*
+	 * _shape() wrapper, _shape()를 호출하고 다음 레이어로 shape() 전파
+	 */
+	virtual void shape(UINT idx, io_dim in_dim);
+	virtual void reshape(UINT idx, io_dim in_dim);
 
 #if CPU_MODE
 public:
@@ -93,33 +74,62 @@ public:
 	 */
 	// sub class에서 구현이 없을 때에만 참조, 구현이 있을 경우 prop*() 함수를 참조
 	virtual void feedforward(UINT idx, const rcube &input);
-
-protected:
-	void propFeedforward(const rcube output);
-
-	rcube input;
-	rcube output;
-
 #else
-
 public:
 	const DATATYPE *getInput() { return this->d_input; }
 	DATATYPE *getOutput() { return this->d_output; }
 
 	virtual void feedforward(UINT idx, const DATATYPE *input);
+#endif
+
+
 
 protected:
-	void propFeedforward(const DATATYPE *output);
+	void initialize(const char *name);
+	void propResetNParam();
+	void propUpdate(UINT n, UINT miniBatchSize);
+	void propSave(ofstream &ofs);
 
-	//DATATYPE *input;
-	//DATATYPE *output;
+	virtual void save(ofstream &ofs);
+	virtual void loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	virtual void updateLayerRelation(map<Layer *, Layer *> &layerMap);
+
+	static int generateLayerId();
+
+	virtual void _shape();
+	virtual void _reshape();
+	void propShape();
+	void propReshape();
+
+
+
+	LayerType type;
+	int id;
+	char name[32];
+
+	io_dim in_dim;
+	io_dim out_dim;
+
+	vector<prev_layer_relation> prevLayers;
+	vector<next_layer_relation> nextLayers;
+
+	static int layerCount;
+
+#if CPU_MODE
+protected:
+	void propFeedforward(const rcube output);
+
+	rcube input;
+	rcube output;
+#else
+protected:
+	void propFeedforward(const DATATYPE *output);
 
 	const DATATYPE *d_input;		// input pointer is assigned from prev layer output pointer
 	DATATYPE *d_output;					// has own device memory allocated
 
 	cudnnTensorDescriptor_t inputTensorDesc;
 	cudnnTensorDescriptor_t outputTensorDesc;
-
 #endif
 
 

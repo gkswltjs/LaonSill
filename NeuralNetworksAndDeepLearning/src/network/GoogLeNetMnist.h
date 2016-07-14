@@ -24,21 +24,21 @@
 
 class GoogLeNetMnist : public Network {
 public:
-	GoogLeNetMnist(UINT batchSize=1, NetworkListener *networkListener=0, double lr_mult=0.1, double decay_mult=5.0) : Network(batchSize, networkListener) {
+	GoogLeNetMnist(NetworkListener *networkListener=0, double lr_mult=0.1, double decay_mult=5.0) : Network(networkListener) {
 		double weight_lr_mult = lr_mult;
 		double weight_decay_mult = decay_mult;
 		double bias_lr_mult = lr_mult;
 		double bias_decay_mult = decay_mult;
 
 		InputLayer *inputLayer = new InputLayer(
-				"input",
-				io_dim(28, 28, 1, batchSize)
+				"input"
+				//io_dim(28, 28, 1, batchSize)
 				);
 
 		ConvLayer *conv1_7x7_s2 = new ConvLayer(
 				"conv1_7x7_s2",
-				io_dim(28, 28, 1, batchSize),
-				io_dim(28, 28, 20, batchSize),
+				//io_dim(28, 28, 1, batchSize),
+				//io_dim(28, 28, 20, batchSize),
 				filter_dim(5, 5, 1, 20, 1),
 				update_param(weight_lr_mult, weight_decay_mult),
 				update_param(bias_lr_mult, bias_decay_mult),
@@ -49,22 +49,22 @@ public:
 
 		PoolingLayer *pool1_3x3_s2 = new PoolingLayer(
 				"pool1_3x3_s2",
-				io_dim(28, 28, 20, batchSize),
-				io_dim(14, 14, 20, batchSize),
+				//io_dim(28, 28, 20, batchSize),
+				//io_dim(14, 14, 20, batchSize),
 				pool_dim(3, 3, 2),
 				PoolingType::Max
 				);
 
 		LRNLayer *pool1_norm1 = new LRNLayer(
 				"lrn1",
-				io_dim(14, 14, 20, batchSize),
+				//io_dim(14, 14, 20, batchSize),
 				lrn_dim(5, 0.0001, 0.75)
 				);
 
 		ConvLayer *conv2_3x3_reduce = new ConvLayer(
 				"conv2_3x3_reduce",
-				io_dim(14, 14, 20, batchSize),
-				io_dim(14, 14, 10, batchSize),
+				//io_dim(14, 14, 20, batchSize),
+				//io_dim(14, 14, 10, batchSize),
 				filter_dim(1, 1, 20, 10, 1),
 				update_param(weight_lr_mult, weight_decay_mult),
 				update_param(bias_lr_mult, bias_decay_mult),
@@ -75,8 +75,8 @@ public:
 
 		ConvLayer *conv2_3x3 = new ConvLayer(
 				"conv2_3x3",
-				io_dim(14, 14, 10, batchSize),
-				io_dim(14, 14, 16, batchSize),
+				//io_dim(14, 14, 10, batchSize),
+				//io_dim(14, 14, 16, batchSize),
 				filter_dim(3, 3, 10, 16, 1),
 				update_param(weight_lr_mult, weight_decay_mult),
 				update_param(bias_lr_mult, bias_decay_mult),
@@ -87,101 +87,110 @@ public:
 
 		LRNLayer *conv2_norm2 = new LRNLayer(
 				"lrn1",
-				io_dim(14, 14, 16, batchSize),
+				//io_dim(14, 14, 16, batchSize),
 				lrn_dim(5, 0.0001, 0.75)
 				);
 
 		PoolingLayer *pool2_3x3_s2 = new PoolingLayer(
 				"pool2_3x3_s2",
-				io_dim(14, 14, 16, batchSize),
-				io_dim(14, 14, 16, batchSize),
+				//io_dim(14, 14, 16, batchSize),
+				//io_dim(14, 14, 16, batchSize),
 				pool_dim(3, 3, 1),
 				PoolingType::Max
 				);
 
 		InceptionLayer *inception_3a = new InceptionLayer(
 				"inception_3a",
-				io_dim(14, 14, 16, batchSize),
-				io_dim(14, 14, 16, batchSize),
+				//io_dim(14, 14, 16, batchSize),
+				//io_dim(14, 14, 16, batchSize),
+				16,
 				4, 2, 4, 2, 4, 4
 				);
 
 		InceptionLayer *inception_3b = new InceptionLayer(
 				"inception_3b",
-				io_dim(14, 14, 16, batchSize),
-				io_dim(14, 14, 20, batchSize),
+				//io_dim(14, 14, 16, batchSize),
+				//io_dim(14, 14, 20, batchSize),
+				16,
 				5, 3, 5, 3, 5, 5
 				);
 
 		PoolingLayer *pool3_3x3_s2 = new PoolingLayer(
 				"pool3_3x3_s2",
-				io_dim(14, 14, 20, batchSize),
-				io_dim(7, 7, 20, batchSize),
+				//io_dim(14, 14, 20, batchSize),
+				//io_dim(7, 7, 20, batchSize),
 				pool_dim(3, 3, 2),
 				PoolingType::Max
 				);
 
 		InceptionLayer *inception_4a = new InceptionLayer(
 				"inception_4a",
-				io_dim(7, 7, 20, batchSize),
-				io_dim(7, 7, 24, batchSize),
+				//io_dim(7, 7, 20, batchSize),
+				//io_dim(7, 7, 24, batchSize),
+				20,
 				6, 3, 6, 3, 6, 6
 				);
 
 		InceptionLayer *inception_4b = new InceptionLayer(
 				"inception_4b",
-				io_dim(7, 7, 24, batchSize),
-				io_dim(7, 7, 28, batchSize),
+				//io_dim(7, 7, 24, batchSize),
+				//io_dim(7, 7, 28, batchSize),
+				24,
 				7, 4, 7, 4, 7, 7
 				);
 
 		InceptionLayer *inception_4c = new InceptionLayer(
 				"inception_4c",
-				io_dim(7, 7, 28, batchSize),
-				io_dim(7, 7, 32, batchSize),
+				//io_dim(7, 7, 28, batchSize),
+				//io_dim(7, 7, 32, batchSize),
+				28,
 				8, 4, 8, 4, 8, 8
 				);
 
 		InceptionLayer *inception_4d = new InceptionLayer(
 				"inception_4d",
-				io_dim(7, 7, 32, batchSize),
-				io_dim(7, 7, 36, batchSize),
+				//io_dim(7, 7, 32, batchSize),
+				//io_dim(7, 7, 36, batchSize),
+				32,
 				9, 5, 9, 5, 9, 9
 				);
 
 		InceptionLayer *inception_4e = new InceptionLayer(
 				"inception_4e",
-				io_dim(7, 7, 36, batchSize),
-				io_dim(7, 7, 40, batchSize),
+				//io_dim(7, 7, 36, batchSize),
+				//io_dim(7, 7, 40, batchSize),
+				36,
 				10, 5, 10, 5, 10, 10
 				);
 
 		PoolingLayer *pool4_3x3_s2 = new PoolingLayer(
 				"pool4_3x3_s2",
-				io_dim(7, 7, 40, batchSize),
-				io_dim(7, 7, 40, batchSize),
+				//io_dim(7, 7, 40, batchSize),
+				//io_dim(7, 7, 40, batchSize),
 				pool_dim(3, 3, 1),
 				PoolingType::Max
 				);
 
 		InceptionLayer *inception_5a = new InceptionLayer(
 				"inception_5a",
-				io_dim(7, 7, 40, batchSize),
-				io_dim(7, 7, 44, batchSize),
+				//io_dim(7, 7, 40, batchSize),
+				//io_dim(7, 7, 44, batchSize),
+				40,
 				11, 6, 11, 6, 11, 11
 				);
 
 		InceptionLayer *inception_5b = new InceptionLayer(
 				"inception_5b",
-				io_dim(7, 7, 44, batchSize),
-				io_dim(7, 7, 48, batchSize),
+				//io_dim(7, 7, 44, batchSize),
+				//io_dim(7, 7, 48, batchSize),
+				44,
 				12, 6, 12, 6, 12, 12
 				);
 
 		PoolingLayer *pool5_7x7_s1 = new PoolingLayer(
 				"pool5_7x7_s1",
-				io_dim(7, 7, 48, batchSize),
-				io_dim(1, 1, 48, batchSize),
+				//io_dim(7, 7, 48, batchSize),
+				//io_dim(1, 1, 48, batchSize),
 				pool_dim(7, 7, 7),
 				PoolingType::Max
 				);
@@ -190,8 +199,9 @@ public:
 
 		SoftmaxLayer *outputLayer = new SoftmaxLayer(
 				"output",
-				io_dim(1*1*48, 1, 1, batchSize),
-				io_dim(10, 1, 1, batchSize),
+				//io_dim(1*1*48, 1, 1, batchSize),
+				//io_dim(10, 1, 1, batchSize),
+				10,
 				0.0,
 				update_param(weight_lr_mult, weight_decay_mult),
 				update_param(bias_lr_mult, bias_decay_mult),

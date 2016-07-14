@@ -20,7 +20,7 @@
 class LRNLayer : public HiddenLayer {
 public:
 	LRNLayer() { this->type = LayerType::LRN; }
-	LRNLayer(const char *name, io_dim in_dim, lrn_dim lrn_d);
+	LRNLayer(const char *name, lrn_dim lrn_d);
 	virtual ~LRNLayer();
 
 	void backpropagation(UINT idx, HiddenLayer *next_layer);
@@ -49,9 +49,11 @@ public:
 #endif
 
 
-private:
+protected:
 	void initialize(lrn_dim lrn_d);
 	void save(ofstream &ofs);
+	virtual void _shape();
+	virtual void _reshape();
 
 	lrn_dim lrn_d;
 

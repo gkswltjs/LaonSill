@@ -84,34 +84,6 @@ int main(int argc, char** argv) {
 
 
 
-void cimg_test() {
-
-	CImg<unsigned char> image("/home/jhkim/바탕화면/crop_sample/10_by_10.jpeg");
-	int width = image.width();
-	int height = image.height();
-	unsigned char *ptr = image.data(0, 0);
-
-	cout << "width: " << width << ", height: " << height << endl;
-
-	/*
-	for(int i = 0; i < height; i++) {
-		for(int j = 0; j < width*3; j++) {
-			cout << (int)ptr[i*width*3+j] << " ";
-		}
-		cout << endl;
-	}
-	*/
-
-	for(int k = 0; k < 3; k++) {
-		for(int i = 0; i < 10; i++) {
-			for(int j = 0; j < 10; j++) {
-				cout << (int)ptr[10*10*k+10*i+j] << " ";
-			}
-			cout << endl;
-		}
-	}
-}
-
 
 
 
@@ -137,68 +109,19 @@ void network_test() {
 		DataSet *dataSet = new MnistDataSet(validationSetRatio);
 		dataSet->load();
 
-
 		int maxEpoch = 30;
 		NetworkListener *networkListener = new NetworkMonitor(maxEpoch);
 
-		/*
-		for(int i = 0; i < 10; i++) {
-			Util::printData(dataSet->getTrainDataAt(i), 28, 28, 1, 1, "train_data");
-			cout << i << "th label: " << dataSet->getTrainLabelAt(i)[0] << endl;
-		}
-		for(int i = 0; i < 10; i++) {
-			Util::printData(dataSet->getTestDataAt(i), 28, 28, 1, 1, "test_data");
-			cout << i << "th label: " << dataSet->getTestLabelAt(i)[0] << endl;
-		}
-		*/
-
-		//Network *network = new NeuralNetSingle(10, networkListener);
-		//Network *network = new ConvNetSingle(100, networkListener);
-		//Network *network = new ConvNetDouble(100);
-		//ConvLayer::init();
-		//float lr[] = {0.1, 0.05, 0.01, 0.005, 0.001};
-		//float lr[] = {1.0, 0.5, 0.1, 0.05, 0.01};
-		float lr[] = {10.0, 5.0, 0.005, 0.001};
-		//float wd[] = {10.0, 5.0, 1.0, 0.5, 0.1};
-		float wd[] = {100.0, 50.0, 0.05, 0.01};
-
-		//for(int i = 0; i < 5; i++) {
-		//	for(int j = 0; j < 5; j++) {
-				//Network *network = new InceptionNetAux(10, lr[i], wd[j]);
-
-				//Network *network = new InceptionNetAux(10, networkListener, 0.0025, 10);
-				//Network *network = new InceptionNetSingle(10, networkListener, 0.005, 5.0);
-				//Network *network = new InceptionNetMult(10, networkListener, 0.00009, 5.0);
-
-
-		Network *network = new NeuralNetSingle(10, networkListener, 0.01, 5.0);
-		network->setDataSet(dataSet);
+		//Network *network = new NeuralNetSingle(networkListener, 0.01, 5.0);
+		//Network *network = new InceptionNetAux(networkListener);
+		Network *network = new InceptionNetSingle(networkListener);
+		network->setDataSet(dataSet, 10);
+		network->shape();
 		network->sgd(maxEpoch);
-		network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
 
 
-				//cout << "lr: " << lr[i] << ", wd: " << wd[j] << endl;
 
-
-		/*
-		float learning_rate = 0.00000005;
-		while(learning_rate > 0) {
-				cout << "learning_rate: " << learning_rate << endl;
-				Network *network = new GoogLeNetMnist(10, networkListener, learning_rate, 5000.0);
-				network->setDataSet(dataSet);
-				network->sgd(maxEpoch);
-				delete network;
-
-				learning_rate *= 0.9;
-				break;
-		}
-		*/
-				//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
-				//ConvLayer::destroy();
-				//delete network;
-			//}
-	//	}
-
+		//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
 		/*
 		Network *network_load = new Network();
 		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
@@ -232,7 +155,7 @@ void network_test() {
 
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
-		InputLayer *inputLayer = new InputLayer("input", io_dim(rows, cols, channels, batchSize));
+		InputLayer *inputLayer = new InputLayer("input");
 
 		/*
 		HiddenLayer *avgPoolLayer = new PoolingLayer("avgPool",
@@ -271,7 +194,7 @@ void network_test() {
 		*/
 
 
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", io_dim(rows*cols*channels, 1, 1, batchSize), io_dim(20, 1, 1, batchSize), 0.5,
+		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 20, 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
@@ -291,7 +214,7 @@ void network_test() {
 						PoolingType::Max);
 						*/
 
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", io_dim(20*1*1, 1, 1, batchSize), io_dim(10, 1, 1, batchSize), 0.5,
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 10, 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
@@ -300,7 +223,9 @@ void network_test() {
 		Network::addLayerRelation(inputLayer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
 
-		Network *network = new Network(batchSize, inputLayer, softmaxLayer, dataSet, 0);
+		/*
+		Network *network = new Network(inputLayer, softmaxLayer, dataSet, 0);
+
 		network->sgd(1);
 		network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
 
@@ -309,12 +234,41 @@ void network_test() {
 		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
 		network_load->setDataSet(dataSet);
 		network_load->test();
+		*/
 
 	}
 
 	Cuda::destroy();
 }
 
+
+void cimg_test() {
+
+	CImg<unsigned char> image("/home/jhkim/바탕화면/crop_sample/10_by_10.jpeg");
+	int width = image.width();
+	int height = image.height();
+	unsigned char *ptr = image.data(0, 0);
+
+	cout << "width: " << width << ", height: " << height << endl;
+
+	/*
+	for(int i = 0; i < height; i++) {
+		for(int j = 0; j < width*3; j++) {
+			cout << (int)ptr[i*width*3+j] << " ";
+		}
+		cout << endl;
+	}
+	*/
+
+	for(int k = 0; k < 3; k++) {
+		for(int i = 0; i < 10; i++) {
+			for(int j = 0; j < 10; j++) {
+				cout << (int)ptr[10*10*k+10*i+j] << " ";
+			}
+			cout << endl;
+		}
+	}
+}
 
 
 

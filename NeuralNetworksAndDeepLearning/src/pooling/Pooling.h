@@ -32,15 +32,19 @@ public:
 	virtual void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
 	virtual void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
 #else
+	cudnnPoolingDescriptor_t getPoolDesc() const { return poolDesc; }
+
 	virtual void pool(const cudnnTensorDescriptor_t xDesc, const DATATYPE *x,
 			const cudnnTensorDescriptor_t yDesc, DATATYPE *y)=0;
 	virtual void d_pool(const cudnnTensorDescriptor_t yDesc, const DATATYPE *y, const DATATYPE *dy,
 			const cudnnTensorDescriptor_t xDesc, const DATATYPE *x, DATATYPE *dx)=0;
+
 #endif
 
 protected:
 	PoolingType type;
-
+	cudnnPoolingDescriptor_t poolDesc;
+	const float alpha = 1.0f, beta = 0.0f;
 
 };
 

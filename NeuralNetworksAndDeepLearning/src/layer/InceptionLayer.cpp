@@ -16,10 +16,10 @@
 #include "../network/Network.h"
 
 
-InceptionLayer::InceptionLayer(const char *name, io_dim in_dim, io_dim out_dim,
-		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp)
-	: HiddenLayer(name, in_dim, out_dim) {
-	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, cp);
+InceptionLayer::InceptionLayer(const char *name,
+		int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp)
+	: HiddenLayer(name) {
+	initialize(ic, oc_cv1x1, oc_cv3x3reduce, oc_cv3x3, oc_cv5x5reduce, oc_cv5x5, oc_cp);
 }
 
 
@@ -147,7 +147,6 @@ InceptionLayer::~InceptionLayer() {
 
 void InceptionLayer::initialize() {
 	this->type = LayerType::Inception;
-	this->id = Layer::generateLayerId();
 
 	delta_input.set_size(size(output));
 	delta_input.zeros();
@@ -300,13 +299,9 @@ InceptionLayer::~InceptionLayer() {
 
 void InceptionLayer::initialize() {
 	this->type = LayerType::Inception;
-	this->id = Layer::generateLayerId();
-
-	int workspaceSize = std::max(in_dim.batchsize(), out_dim.batchsize());
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*workspaceSize));
 }
 
-void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp) {
+void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp) {
 	initialize();
 
 	double weight_lr_mult = 1.0;
@@ -316,9 +311,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 	ConvLayer *conv1x1Layer = new ConvLayer(
 			(char *)"conv1x1",
-			in_dim,
-			io_dim(in_dim.rows, in_dim.cols, cv1x1, in_dim.batches),
-			filter_dim(1, 1, in_dim.channels, cv1x1, 1),
+			filter_dim(1, 1, ic, oc_cv1x1, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
 			param_filler(ParamFillerType::Xavier, 0.03),
@@ -328,9 +321,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 	ConvLayer *conv3x3reduceLayer = new ConvLayer(
 			"conv3x3reduce",
-			in_dim,
-			io_dim(in_dim.rows, in_dim.cols, cv3x3reduce, in_dim.batches),
-			filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1),
+			filter_dim(1, 1, ic, oc_cv3x3reduce, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
 			param_filler(ParamFillerType::Xavier, 0.09),
@@ -339,9 +330,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 	ConvLayer *conv3x3Layer = new ConvLayer(
 			"conv3x3",
-			io_dim(in_dim.rows, in_dim.cols, cv3x3reduce, in_dim.batches),
-			io_dim(in_dim.rows, in_dim.cols, cv3x3, in_dim.batches),
-			filter_dim(3, 3, cv3x3reduce, cv3x3, 1),
+			filter_dim(3, 3, oc_cv3x3reduce, oc_cv3x3, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
 			param_filler(ParamFillerType::Xavier, 0.03),
@@ -351,9 +340,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 	ConvLayer *conv5x5recudeLayer = new ConvLayer(
 			"conv5x5reduce",
-			in_dim,
-			io_dim(in_dim.rows, in_dim.cols, cv5x5reduce, in_dim.batches),
-			filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1),
+			filter_dim(1, 1, ic, oc_cv5x5reduce, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
 			param_filler(ParamFillerType::Xavier, 0.2),
@@ -363,9 +350,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 	ConvLayer *conv5x5Layer = new ConvLayer(
 			"conv5x5",
-			io_dim(in_dim.rows, in_dim.cols, cv5x5reduce, in_dim.batches),
-			io_dim(in_dim.rows, in_dim.cols, cv5x5, in_dim.batches),
-			filter_dim(5, 5, cv5x5reduce, cv5x5, 1),
+			filter_dim(5, 5, oc_cv5x5reduce, oc_cv5x5, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
 			param_filler(ParamFillerType::Xavier, 0.03),
@@ -375,17 +360,13 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 	PoolingLayer *pool3x3Layer = new PoolingLayer(
 			"pool3x3",
-			in_dim,
-			in_dim,
 			pool_dim(3, 3, 1),
 			PoolingType::Max
 			);
 
 	ConvLayer *convProjectionLayer = new ConvLayer(
 			"convProjection",
-			in_dim,
-			io_dim(in_dim.rows, in_dim.cols, cp, in_dim.batches),
-			filter_dim(1, 1, in_dim.channels, cp, 1),
+			filter_dim(1, 1, ic, oc_cp, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
 			param_filler(ParamFillerType::Xavier, 0.1),
@@ -393,8 +374,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 			ActivationType::ReLU);
 
 	DepthConcatLayer *depthConcatLayer = new DepthConcatLayer(
-			"depthConcat",
-			io_dim(in_dim.rows, in_dim.cols, cv1x1+cv3x3+cv5x5+cp, in_dim.batches)
+			"depthConcat"
 			);
 
 	firstLayers.push_back(conv1x1Layer);
@@ -412,6 +392,27 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 	Network::addLayerRelation(conv5x5Layer, depthConcatLayer);
 	Network::addLayerRelation(convProjectionLayer, depthConcatLayer);
 }
+
+void InceptionLayer::_shape() {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->shape(0, in_dim);
+	}
+	out_dim = lastLayer->getOutDimension();
+
+	HiddenLayer::_shape();
+
+	int workspaceSize = std::max(in_dim.batchsize(), out_dim.batchsize());
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*workspaceSize));
+}
+
+void InceptionLayer::_reshape() {
+
+}
+
+
+
+
+
 
 
 

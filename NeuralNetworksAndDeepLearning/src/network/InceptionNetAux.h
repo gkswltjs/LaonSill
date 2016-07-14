@@ -22,17 +22,17 @@
 
 class InceptionNetAux : public Network {
 public:
-	InceptionNetAux(UINT batchSize=10, NetworkListener *networkListener=0, double lr_mult=0.0025, double decay_mult=0.0) : Network(batchSize, networkListener) {
+	InceptionNetAux(NetworkListener *networkListener=0, double lr_mult=0.0025, double decay_mult=0.0) : Network(networkListener) {
 
 			InputLayer *inputLayer = new InputLayer(
-					"input",
-					io_dim(28, 28, 1, batchSize)
+					"input"
+					//io_dim(28, 28, 1, batchSize)
 					);
 
 			HiddenLayer *conv1Layer = new ConvLayer(
 					"conv1",
-					io_dim(28, 28, 1, batchSize),
-					io_dim(28, 28, 10, batchSize),
+					//io_dim(28, 28, 1, batchSize),
+					//io_dim(28, 28, 10, batchSize),
 					filter_dim(5, 5, 1, 10, 1),
 					update_param(lr_mult, decay_mult),
 					update_param(lr_mult, decay_mult),
@@ -43,29 +43,31 @@ public:
 
 			HiddenLayer *pool1Layer = new PoolingLayer(
 					"pool1",
-					io_dim(28, 28, 10, batchSize),
-					io_dim(14, 14, 10, batchSize),
+					//io_dim(28, 28, 10, batchSize),
+					//io_dim(14, 14, 10, batchSize),
 					pool_dim(3, 3, 2),
 					PoolingType::Max
 					);
 
 			HiddenLayer *lrn1Layer = new LRNLayer(
 					"lrn1",
-					io_dim(14, 14, 10, batchSize),
+					//io_dim(14, 14, 10, batchSize),
 					lrn_dim(5)
 					);
 
 			HiddenLayer *incept1Layer = new InceptionLayer(
 					"incept1",
-					io_dim(14, 14, 10, batchSize),
-					io_dim(14, 14, 60, batchSize),
+					//io_dim(14, 14, 10, batchSize),
+					//io_dim(14, 14, 60, batchSize),
+					10,
 					15, 10, 15, 10, 15, 15
 					);
 
 			HiddenLayer *incept2Layer = new InceptionLayer(
 					"incept2",
-					io_dim(14, 14, 60, batchSize),
-					io_dim(14, 14, 60, batchSize),
+					//io_dim(14, 14, 60, batchSize),
+					//io_dim(14, 14, 60, batchSize),
+					60,
 					15, 15, 15, 15, 15, 15
 					);
 
@@ -85,8 +87,9 @@ public:
 
 			OutputLayer *softmaxLayer = new SoftmaxLayer(
 					"softmax",
-					io_dim(14*14*60, 1, 1, batchSize),
-					io_dim(10, 1, 1, batchSize),
+					//io_dim(14*14*60, 1, 1, batchSize),
+					//io_dim(10, 1, 1, batchSize),
+					10,
 					0.5,
 					update_param(lr_mult, decay_mult),
 					update_param(lr_mult, decay_mult),

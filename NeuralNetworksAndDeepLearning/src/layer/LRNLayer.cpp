@@ -12,7 +12,7 @@
 
 
 
-LRNLayer::LRNLayer(const char *name, io_dim in_dim, lrn_dim lrn_d) : HiddenLayer(name, in_dim, in_dim) {
+LRNLayer::LRNLayer(const char *name, lrn_dim lrn_d) : HiddenLayer(name) {
 	initialize(lrn_d);
 }
 
@@ -49,7 +49,6 @@ LRNLayer::~LRNLayer() {}
 
 void LRNLayer::initialize(lrn_dim lrn_d) {
 	this->type = LayerType::LRN;
-	this->id = Layer::generateLayerId();
 
 	this->lrn_d = lrn_d;
 	this->z.set_size(size(input));
@@ -134,20 +133,22 @@ void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 #else
 void LRNLayer::initialize(lrn_dim lrn_d) {
 	this->type = LayerType::LRN;
-	this->id = Layer::generateLayerId();
-
 	this->lrn_d = lrn_d;
-
-	//checkCudaErrors(cudaMalloc(&this->d_delta, sizeof(DATATYPE)*out_dim.batchsize()));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 
 	checkCUDNN(cudnnCreateLRNDescriptor(&lrnDesc));
 	checkCUDNN(cudnnSetLRNDescriptor(lrnDesc, lrn_d.local_size, lrn_d.alpha, lrn_d.beta, lrn_d.k));
+}
 
+void LRNLayer::_shape() {
+	out_dim = in_dim;
 
-	//this->z.set_size(size(input));
-	//this->delta_input.set_size(size(output));
-	//this->delta_input.zeros();
+	HiddenLayer::_shape();
+
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+}
+
+void LRNLayer::_reshape() {
+
 }
 
 

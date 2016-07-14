@@ -7,8 +7,8 @@
 
 #include "DepthConcatLayer.h"
 
-DepthConcatLayer::DepthConcatLayer(const char *name, io_dim in_dim)
-	: HiddenLayer(name, in_dim, in_dim) {
+DepthConcatLayer::DepthConcatLayer(const char *name)
+	: HiddenLayer(name) {
 	initialize();
 }
 
@@ -27,7 +27,6 @@ DepthConcatLayer::~DepthConcatLayer() {}
 
 void DepthConcatLayer::initialize() {
 	this->type = LayerType::DepthConcat;
-	this->id = Layer::generateLayerId();
 
 	this->offsetIndex = 0;
 	this->input.reset();
@@ -78,11 +77,35 @@ rcube &DepthConcatLayer::getDeltaInput() {
 
 void DepthConcatLayer::initialize() {
 	this->type = LayerType::DepthConcat;
-	this->id = Layer::generateLayerId();
-
 	this->offsetIndex = 0;
+	this->out_dim.channels = 0;
+}
+
+void DepthConcatLayer::shape(UINT idx, io_dim in_dim) {
+	out_dim.channels += in_dim.channels;
+	if(!isLastPrevLayerRequest(idx)) return;
+
+	HiddenLayer::shape(idx, in_dim);
+}
+
+void DepthConcatLayer::_shape() {
+	in_dim.channels = out_dim.channels;
+	out_dim.rows = in_dim.rows;
+	out_dim.cols = in_dim.cols;
+	out_dim.batches = in_dim.batches;
+
+	HiddenLayer::_shape();
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+}
+
+void DepthConcatLayer::reshape(UINT idx, io_dim in_dim) {
+	if(!isLastPrevLayerRequest(idx)) return;
+	Layer::reshape(idx, in_dim);
+}
+
+void DepthConcatLayer::_reshape() {
+
 }
 
 DepthConcatLayer::~DepthConcatLayer() {

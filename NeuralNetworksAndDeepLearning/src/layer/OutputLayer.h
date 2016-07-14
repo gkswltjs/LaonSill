@@ -21,23 +21,14 @@ using namespace arma;
 class OutputLayer : public FullyConnectedLayer {
 public:
 	OutputLayer() {}
-	//OutputLayer(const char *name, int n_in, int n_out, double p_dropout) : FullyConnectedLayer(name, n_in, n_out, p_dropout) {}
-
-	//OutputLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout) : FullyConnectedLayer(name, in_dim, out_dim, p_dropout) {}
-	OutputLayer(const char *name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	OutputLayer(const char *name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
-		:FullyConnectedLayer(name, in_dim, out_dim, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
+		:FullyConnectedLayer(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};
 	virtual ~OutputLayer() {
 		CostFactory::destroy(cost_fn);
 	};
-
-protected:
-	void initialize(CostType costType) {
-		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
-		this->cost_fn = CostFactory::create(costType);
-	}
 
 #if CPU_MODE
 public:
@@ -61,21 +52,7 @@ public:
 
 		initialize(type);
 	}
-
-
-protected:
-	virtual void save(ofstream &ofs) {
-		FullyConnectedLayer::save(ofs);
-
-		int costType = (int)cost_fn->getType();
-		ofs.write((char *)&costType, sizeof(int));
-	}
-
-	Cost *cost_fn;
-
-
 #else
-
 public:
 	/**
 	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
@@ -89,8 +66,32 @@ public:
 		//ifs.read((char *)&type, sizeof(int));
 		//initialize(type);
 	}
+#endif
 
 
+protected:
+	void initialize(CostType costType) {
+		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
+		this->cost_fn = CostFactory::create(costType);
+	}
+	virtual void _shape() {
+		FullyConnectedLayer::_shape();
+	}
+
+	virtual void _reshape() {
+	}
+
+#if CPU_MODE
+protected:
+	virtual void save(ofstream &ofs) {
+		FullyConnectedLayer::save(ofs);
+
+		int costType = (int)cost_fn->getType();
+		ofs.write((char *)&costType, sizeof(int));
+	}
+
+	Cost *cost_fn;
+#else
 protected:
 	virtual void save(ofstream &ofs) {
 		FullyConnectedLayer::save(ofs);

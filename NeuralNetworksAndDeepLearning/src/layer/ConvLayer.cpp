@@ -12,9 +12,9 @@
 #include "../exception/Exception.h"
 
 
-ConvLayer::ConvLayer(const char *name, io_dim in_dim, io_dim out_dim, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+ConvLayer::ConvLayer(const char *name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
-	: HiddenLayer(name, in_dim, out_dim) {
+	: HiddenLayer(name) {
 
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
@@ -46,7 +46,6 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
 
 	this->type = LayerType::Conv;
-	this->id = Layer::generateLayerId();
 
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;
@@ -450,8 +449,6 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
 
 	this->type = LayerType::Conv;
-	this->id = Layer::generateLayerId();
-
 	this->filter_d = filter_d;
 
 	this->weight_update_param = weight_update_param;
@@ -467,23 +464,11 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	weight_filler.fill(this->filters, filter_size, filter_size);
 	bias_filler.fill(this->biases, filter_d.filters, 0);
 
-	int u_in = in_dim.unitsize();
-	int u_out = out_dim.unitsize();
-	int b_in = in_dim.batchsize();
-	int b_out = out_dim.batchsize();
-
 	checkCudaErrors(Util::ucudaMalloc(&this->d_filters, sizeof(DATATYPE)*filter_size));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_biases, sizeof(DATATYPE)*filter_d.filters));
 
-	checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
-
 	checkCudaErrors(cudaMemcpyAsync(this->d_filters, filters, sizeof(DATATYPE)*filter_size, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpyAsync(this->d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
-
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&biasTensorDesc));
 	checkCUDNN(cudnnCreateFilterDescriptor(&filterDesc));
@@ -502,14 +487,45 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 			pad, pad, filter_d.stride, filter_d.stride, 1, 1,
 			CUDNN_CROSS_CORRELATION));
 
+	this->activation_fn = ActivationFactory::create(activationType);
+	//checkCudaErrors(cudaDeviceSynchronize());
+}
+
+
+
+void ConvLayer::_shape() {
+	cudnnTensorDescriptor_t tempInputTensorDesc;
+	checkCUDNN(cudnnCreateTensorDescriptor(&tempInputTensorDesc));
+	checkCUDNN(cudnnSetTensor4dDescriptor(tempInputTensorDesc,
+				CUDNN_TENSOR_NCHW,
+				CUDNN_DATA_FLOAT,
+				in_dim.batches, in_dim.channels, in_dim.rows, in_dim.cols));
+
 	int n, c, h, w;
 	checkCUDNN(cudnnGetConvolution2dForwardOutputDim(convDesc,
-			inputTensorDesc, filterDesc,
+			tempInputTensorDesc, filterDesc,
 			&n, &c, &h, &w));
+
+	out_dim.batches = n;
+	out_dim.channels = c;
 	out_dim.rows = h;
 	out_dim.cols = w;
-	out_dim.channels = c;
-	out_dim.batches = n;
+
+
+	checkCUDNN(cudnnDestroyTensorDescriptor(tempInputTensorDesc));
+
+	HiddenLayer::_shape();
+
+	int u_in = in_dim.unitsize();
+	int u_out = out_dim.unitsize();
+	int b_in = in_dim.batchsize();
+	int b_out = out_dim.batchsize();
+
+	checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
 
 	size_t convFwdWorkspaceSize;
 	size_t convBwdFilterWorkspaceSize;
@@ -552,11 +568,27 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 		//cout << "workspaceSize: " << workspaceSize << endl;
 		checkCudaErrors(Util::ucudaMalloc(&d_workspace, workspaceSize));
 	}
-
-	this->activation_fn = ActivationFactory::create(activationType);
-
-	//checkCudaErrors(cudaDeviceSynchronize());
 }
+
+void ConvLayer::_reshape() {
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

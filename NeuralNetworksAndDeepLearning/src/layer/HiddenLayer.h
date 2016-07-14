@@ -18,7 +18,7 @@ using namespace arma;
 class HiddenLayer : public Layer {
 public:
 	HiddenLayer() {}
-	HiddenLayer(const char *name, io_dim in_dim, io_dim out_dim) : Layer(name, in_dim, out_dim) {}
+	HiddenLayer(const char *name) : Layer(name) {}
 	virtual ~HiddenLayer() {}
 
 	/**
@@ -43,6 +43,16 @@ public:
 	 */
 	virtual void update(UINT idx, UINT n, UINT miniBatchSize)=0;
 
+#if CPU_MODE
+public:
+	HiddenLayer(const char *name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
+	virtual rcube &getDeltaInput()=0;
+#else
+public:
+	virtual DATATYPE *getDeltaInput()=0;
+
+#endif
+
 
 
 protected:
@@ -55,32 +65,20 @@ protected:
 		}
 	}
 
-
-
 #if CPU_MODE
-public:
-	HiddenLayer(const char *name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
-
-	virtual rcube &getDeltaInput()=0;
-
-	//virtual void save(UINT idx, ofstream &ofs) {
-	//	save(ofs);
-	//	propSave(ofs);
-	//}
-
-	//virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	//	Layer::load(ifs, layerMap);
-	//}
-
-	//virtual void save(ofstream &ofs) {
-	//	Layer::save(ofs);
-	//}
-
+protected:
 #else
-public:
-	virtual DATATYPE *getDeltaInput()=0;
+protected:
+	virtual void _shape() {
+		Layer::_shape();
+	}
+	virtual void _reshape() {
 
+	}
 #endif
+
+
+
 
 
 };

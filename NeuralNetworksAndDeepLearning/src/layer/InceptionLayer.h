@@ -16,7 +16,7 @@
 class InceptionLayer : public HiddenLayer {
 public:
 	InceptionLayer() { this->type = LayerType::Inception; }
-	InceptionLayer(const char *name, io_dim in_dim, io_dim out_dim, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
+	InceptionLayer(const char *name, int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp);
 	virtual ~InceptionLayer();
 
 	void backpropagation(UINT idx, HiddenLayer *next_layer);
@@ -38,18 +38,23 @@ public:
 	void feedforward(UINT idx, const DATATYPE *input);
 #endif
 
-private:
+protected:
 	void initialize();
-	void initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
+	void initialize(int ic, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 	void save(ofstream &ofs);
+
+	virtual void _shape();
+	virtual void _reshape();
 
 	//InputLayer *inputLayer;
 	vector<HiddenLayer *> firstLayers;
 	HiddenLayer *lastLayer;
 
 #if CPU_MODE
+protected:
 	rcube delta_input;
 #else
+protected:
 	const float alpha=1.0f, beta=0.0f;
 	DATATYPE *d_delta_input;
 #endif
