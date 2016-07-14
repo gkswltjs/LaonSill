@@ -44,6 +44,9 @@ public:
 		if(testLabelSet) delete testLabelSet;
 	}
 
+	UINT getRows() const { return this->rows; }
+	UINT getCols() const { return this->cols; }
+	UINT getChannels() const { return this->channels; }
 	UINT getNumTrainData() const { return this->numTrainData; }
 	UINT getNumValidationData() const { return this->numValidationData; }
 	UINT getNumTestData() const { return this->numTestData; }

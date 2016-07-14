@@ -25,19 +25,19 @@ void Cuda::create(int gpuid) {
 		printf("ERROR: Invalid GPU ID %d (There are %d GPUs on this machine)\n", gpuid, num_gpus);
 	  exit(1);
 	}
-	cout << "cudaGetDeviceCount: " << timer.stop(false) << endl;
+	//cout << "cudaGetDeviceCount: " << timer.stop(false) << endl;
 	timer.start();
 	Cuda::gpuid = gpuid;
 	checkCudaErrors(cudaSetDevice(Cuda::gpuid));
-	cout << "cudaSetDevice: " << timer.stop(false) << endl;
+	//cout << "cudaSetDevice: " << timer.stop(false) << endl;
 
 	timer.start();
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
-	cout << "cublasCreate: " << timer.stop(false) << endl;
+	//cout << "cublasCreate: " << timer.stop(false) << endl;
 
 	timer.start();
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
-	cout << "cudnnCreate: " << timer.stop(false) << endl;
+	//cout << "cudnnCreate: " << timer.stop(false) << endl;
 }
 
 void Cuda::destroy() {

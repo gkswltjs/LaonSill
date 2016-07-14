@@ -29,18 +29,33 @@ public:
 				io_dim(28, 28, 1, batchSize)
 				);
 
+		HiddenLayer *pool1Layer = new PoolingLayer(
+				"pool1",
+				io_dim(28, 28, 1, batchSize),
+				io_dim(14, 14, 1, batchSize),
+				pool_dim(3, 3, 2),
+				PoolingType::Max
+				);
+
 		HiddenLayer *incept1Layer = new InceptionLayer(
 				"incept1",
-				io_dim(28, 28, 1, batchSize),
-				io_dim(28, 28, 12, batchSize),
+				io_dim(14, 14, 1, batchSize),
+				io_dim(14, 14, 12, batchSize),
 				3, 2, 3, 2, 3, 3
 				);
 
 		HiddenLayer *incept2Layer = new InceptionLayer(
 				"incept2",
-				io_dim(28, 28, 12, batchSize),
-				io_dim(28, 28, 24, batchSize),
+				io_dim(14, 14, 12, batchSize),
+				io_dim(14, 14, 24, batchSize),
 				6, 4, 6, 4, 6, 6
+				);
+
+		HiddenLayer *incept3Layer = new InceptionLayer(
+				"incept2",
+				io_dim(14, 14, 24, batchSize),
+				io_dim(14, 14, 36, batchSize),
+				9, 6, 9, 6, 9, 9
 				);
 
 		/*
@@ -52,20 +67,9 @@ public:
 				);
 				*/
 
-		FullyConnectedLayer *fcLayer = new FullyConnectedLayer(
-				"fc1",
-				io_dim(28*28*24, 1, 1, batchSize),
-				io_dim(1000, 1, 1, batchSize),
-				0.5,
-				update_param(lr_mult, decay_mult),
-				update_param(lr_mult, decay_mult),
-				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Gaussian, 1),
-				ActivationType::ReLU);
-
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
 				"softmax",
-				io_dim(1000, 1, 1, batchSize),
+				io_dim(14*14*36, 1, 1, batchSize),
 				io_dim(10, 1, 1, batchSize),
 				0.5,
 				update_param(lr_mult, decay_mult),
@@ -74,10 +78,11 @@ public:
 				param_filler(ParamFillerType::Constant, 0.1)
 				);
 
-		Network::addLayerRelation(inputLayer, incept1Layer);
+		Network::addLayerRelation(inputLayer, pool1Layer);
+		Network::addLayerRelation(pool1Layer, incept1Layer);
 		Network::addLayerRelation(incept1Layer, incept2Layer);
-		Network::addLayerRelation(incept2Layer, fcLayer);
-		Network::addLayerRelation(fcLayer, softmaxLayer);
+		Network::addLayerRelation(incept2Layer, incept3Layer);
+		Network::addLayerRelation(incept3Layer, softmaxLayer);
 
 		this->inputLayer = inputLayer;
 		addOutputLayer(softmaxLayer);

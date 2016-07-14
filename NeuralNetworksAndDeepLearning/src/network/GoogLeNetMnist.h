@@ -25,10 +25,10 @@
 class GoogLeNetMnist : public Network {
 public:
 	GoogLeNetMnist(UINT batchSize=1, NetworkListener *networkListener=0, double lr_mult=0.1, double decay_mult=5.0) : Network(batchSize, networkListener) {
-		double weight_lr_mult = 1.0;
-		double weight_decay_mult = 1.0;
-		double bias_lr_mult = 2.0;
-		double bias_decay_mult = 0.0;
+		double weight_lr_mult = lr_mult;
+		double weight_decay_mult = decay_mult;
+		double bias_lr_mult = lr_mult;
+		double bias_decay_mult = decay_mult;
 
 		InputLayer *inputLayer = new InputLayer(
 				"input",
@@ -94,30 +94,30 @@ public:
 		PoolingLayer *pool2_3x3_s2 = new PoolingLayer(
 				"pool2_3x3_s2",
 				io_dim(14, 14, 16, batchSize),
-				io_dim(7, 7, 16, batchSize),
-				pool_dim(3, 3, 2),
+				io_dim(14, 14, 16, batchSize),
+				pool_dim(3, 3, 1),
 				PoolingType::Max
 				);
 
 		InceptionLayer *inception_3a = new InceptionLayer(
 				"inception_3a",
-				io_dim(7, 7, 16, batchSize),
-				io_dim(7, 7, 16, batchSize),
+				io_dim(14, 14, 16, batchSize),
+				io_dim(14, 14, 16, batchSize),
 				4, 2, 4, 2, 4, 4
 				);
 
 		InceptionLayer *inception_3b = new InceptionLayer(
 				"inception_3b",
-				io_dim(7, 7, 16, batchSize),
-				io_dim(7, 7, 20, batchSize),
+				io_dim(14, 14, 16, batchSize),
+				io_dim(14, 14, 20, batchSize),
 				5, 3, 5, 3, 5, 5
 				);
 
 		PoolingLayer *pool3_3x3_s2 = new PoolingLayer(
 				"pool3_3x3_s2",
+				io_dim(14, 14, 20, batchSize),
 				io_dim(7, 7, 20, batchSize),
-				io_dim(7, 7, 20, batchSize),
-				pool_dim(3, 3, 1),
+				pool_dim(3, 3, 2),
 				PoolingType::Max
 				);
 
@@ -190,12 +190,12 @@ public:
 
 		SoftmaxLayer *outputLayer = new SoftmaxLayer(
 				"output",
-				io_dim(48, 1, 1, batchSize),
+				io_dim(1*1*48, 1, 1, batchSize),
 				io_dim(10, 1, 1, batchSize),
 				0.0,
 				update_param(weight_lr_mult, weight_decay_mult),
 				update_param(bias_lr_mult, bias_decay_mult),
-				param_filler(ParamFillerType::Xavier),
+				param_filler(ParamFillerType::Constant, 0.0),
 				param_filler(ParamFillerType::Constant, 0.0)
 				);
 
@@ -219,7 +219,8 @@ public:
 		Network::addLayerRelation(inception_5a, inception_5b);
 		Network::addLayerRelation(inception_5b, pool5_7x7_s1);
 		Network::addLayerRelation(pool5_7x7_s1, outputLayer);
-		//Network::addLayerRelation(fc1, outputLayer);
+
+		//Network::addLayerRelation(pool1_norm1, outputLayer);
 
 		this->inputLayer = inputLayer;
 		addOutputLayer(outputLayer);

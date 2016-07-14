@@ -5,8 +5,10 @@
  *      Author: jhkim
  */
 
+
 #include "MnistDataSet.h"
 
+/*
 #include <iostream>
 
 
@@ -82,8 +84,8 @@ void MnistDataSet::load() {
 #else
 	numTrainData = loadDataSetFromResource(filenames[0], trainDataSet, trainLabelSet, 0, 50000);
 	numTestData = loadDataSetFromResource(filenames[1], testDataSet, testLabelSet, 0, 10000);
-	numTrainData = 1000;
-	numTestData = 1000;
+	//numTrainData = 1000;
+	//numTestData = 1000;
 #endif
 
 	//trainDataSize = loadDataSetFromResource(filenames[0], trainDataSet);
@@ -91,7 +93,7 @@ void MnistDataSet::load() {
 
 }
 
-
+*/
 
 /*
 int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const DataSample *> &dataSet) {
@@ -141,7 +143,7 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 }
 */
 
-
+/*
 #if CPU_MODE
 int MnistDataSet::loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size) {
 	// LOAD IMAGE DATA
@@ -309,7 +311,7 @@ void MnistDataSet::shuffleValidationDataSet() {
 void MnistDataSet::shuffleTestDataSet() {
 	random_shuffle(&testDataSet[0], &testDataSet[numTestData]);
 }
-
+*/
 
 
 

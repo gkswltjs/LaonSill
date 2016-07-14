@@ -42,10 +42,12 @@
 #include <gnuplot-iostream.h>
 #include <cmath>
 #include <boost/tuple/tuple.hpp>
-
+#include <CImg.h>
+#include "util/ImagePacker.h"
 
 using namespace std;
 using namespace arma;
+using namespace cimg_library;
 
 // Armadillo documentation is available at:
 // http://arma.sourceforge.net/docs.html
@@ -55,6 +57,7 @@ void network_test();
 void cuda_gemm_test();
 void cuda_conv_test();
 void gnuplot_test();
+void cimg_test();
 
 int main(int argc, char** argv) {
 	cout << "main" << endl;
@@ -64,12 +67,59 @@ int main(int argc, char** argv) {
 
 	network_test();
 	//gnuplot_test();
+	//cimg_test();
 
+	/*
+	ImagePacker imagePacker(
+			"/home/jhkim/바탕화면/crop/",
+			"/home/jhkim/바탕화면/vvg_image.ubyte",
+			"/home/jhkim/바탕화면/vvg_label.ubyte");
+	imagePacker.pack();
+	*/
 
 
 	cout << "end" << endl;
 	return 0;
 }
+
+
+
+void cimg_test() {
+
+	CImg<unsigned char> image("/home/jhkim/바탕화면/crop_sample/10_by_10.jpeg");
+	int width = image.width();
+	int height = image.height();
+	unsigned char *ptr = image.data(0, 0);
+
+	cout << "width: " << width << ", height: " << height << endl;
+
+	/*
+	for(int i = 0; i < height; i++) {
+		for(int j = 0; j < width*3; j++) {
+			cout << (int)ptr[i*width*3+j] << " ";
+		}
+		cout << endl;
+	}
+	*/
+
+	for(int k = 0; k < 3; k++) {
+		for(int i = 0; i < 10; i++) {
+			for(int j = 0; j < 10; j++) {
+				cout << (int)ptr[10*10*k+10*i+j] << " ";
+			}
+			cout << endl;
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -118,17 +168,43 @@ void network_test() {
 
 				//Network *network = new InceptionNetAux(10, networkListener, 0.0025, 10);
 				//Network *network = new InceptionNetSingle(10, networkListener, 0.005, 5.0);
-				Network *network = new InceptionNetMult(10, networkListener, 0.000075, 1.0);
-				//Network *network = new NeuralNetSingle(10);
+				//Network *network = new InceptionNetMult(10, networkListener, 0.00009, 5.0);
+
+
+		Network *network = new NeuralNetSingle(10, networkListener, 0.01, 5.0);
+		network->setDataSet(dataSet);
+		network->sgd(maxEpoch);
+		network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
+
+
 				//cout << "lr: " << lr[i] << ", wd: " << wd[j] << endl;
-				//Network *network = new GoogLeNetMnist(10, networkListener, 0.0001, 0.0);
+
+
+		/*
+		float learning_rate = 0.00000005;
+		while(learning_rate > 0) {
+				cout << "learning_rate: " << learning_rate << endl;
+				Network *network = new GoogLeNetMnist(10, networkListener, learning_rate, 5000.0);
 				network->setDataSet(dataSet);
 				network->sgd(maxEpoch);
+				delete network;
+
+				learning_rate *= 0.9;
+				break;
+		}
+		*/
 				//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
 				//ConvLayer::destroy();
 				//delete network;
 			//}
 	//	}
+
+		/*
+		Network *network_load = new Network();
+		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
+		network_load->setDataSet(dataSet);
+		network_load->test();
+		*/
 
 	} else {
 		Util::setPrint(false);
