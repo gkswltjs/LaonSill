@@ -46,12 +46,6 @@ public:
 	}
 	virtual ~SoftmaxLayer() {}
 
-	void save(UINT idx, ofstream &ofs) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		OutputLayer::save(ofs);
-		propSave(ofs);
-	}
-
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		OutputLayer::load(ifs, layerMap);
 		initialize();
@@ -146,7 +140,8 @@ protected:
 		OutputLayer::_shape();
 	}
 
-	virtual void _reshape() {
+	virtual void _clearShape() {
+		OutputLayer::_clearShape();
 	}
 #endif
 

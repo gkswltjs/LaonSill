@@ -56,8 +56,6 @@ public:
 	 */
 	void update(UINT idx, UINT n, UINT miniBatchSize);
 
-
-	void save(UINT idx, ofstream &ofs);
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 #if CPU_MODE
@@ -86,10 +84,10 @@ public:
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
-	void save(ofstream &ofs);
 
+	virtual void _save(ofstream &ofs);
 	virtual void _shape();
-	virtual void _reshape();
+	virtual void _clearShape();
 
 	filter_dim filter_d;
 	Activation *activation_fn;

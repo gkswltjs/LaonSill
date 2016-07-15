@@ -33,33 +33,35 @@ public:
 
 	int getId() const { return id; }
 	LayerType getType() { return this->type; }
-
 	vector<next_layer_relation> &getNextLayers() { return this->nextLayers; }
-	int getNextLayerSize() { return this->nextLayers.size(); }
 	vector<prev_layer_relation> &getPrevLayers() { return this->prevLayers; }
+	int getNextLayerSize() { return this->nextLayers.size(); }
 	int getPrevLayerSize() { return this->prevLayers.size(); }
 	io_dim getInDimension() const { return in_dim; }
 	io_dim getOutDimension() const { return out_dim; }
 
-
 	void addPrevLayer(prev_layer_relation prevLayer);
 	void addNextLayer(next_layer_relation nextLayer);
+
+	bool isLastPrevLayerRequest(UINT idx);
+	bool isLastNextLayerRequest(UINT idx);
 
 	virtual void reset_nabla(UINT idx);
 	virtual void update(UINT idx, UINT n, UINT miniBatchSize);
 
+
+
+
 	virtual void save(UINT idx, ofstream &ofs);
 	virtual void saveHeader(UINT idx, ofstream &ofs);
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-
-	bool isLastPrevLayerRequest(UINT idx);
-	bool isLastNextLayerRequest(UINT idx);
 
 	/*
 	 * _shape() wrapper, _shape()를 호출하고 다음 레이어로 shape() 전파
 	 */
 	virtual void shape(UINT idx, io_dim in_dim);
 	virtual void reshape(UINT idx, io_dim in_dim);
+	virtual void clearShape(UINT idx);
 
 #if CPU_MODE
 public:
@@ -82,25 +84,27 @@ public:
 	virtual void feedforward(UINT idx, const DATATYPE *input);
 #endif
 
-
-
 protected:
 	void initialize(const char *name);
-	void propResetNParam();
-	void propUpdate(UINT n, UINT miniBatchSize);
-	void propSave(ofstream &ofs);
 
-	virtual void save(ofstream &ofs);
+
+
 	virtual void loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void updateLayerRelation(map<Layer *, Layer *> &layerMap);
 
 	static int generateLayerId();
 
+	virtual void _save(ofstream &ofs);
 	virtual void _shape();
 	virtual void _reshape();
+	virtual void _clearShape();
+
 	void propShape();
 	void propReshape();
-
+	void propClearShape();
+	void propResetNParam();
+	void propUpdate(UINT n, UINT miniBatchSize);
+	void propSave(ofstream &ofs);
 
 
 	LayerType type;

@@ -48,7 +48,6 @@ public:
 	 */
 	virtual void update(UINT idx, UINT n, UINT miniBatchSize);
 
-	virtual void save(UINT idx, ofstream &ofs);
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 #if CPU_MODE
@@ -86,9 +85,9 @@ private:
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
 
 protected:
-	virtual void save(ofstream &ofs);
+	virtual void _save(ofstream &ofs);
 	virtual void _shape();
-	virtual void _reshape();
+	virtual void _clearShape();
 
 	double p_dropout;
 

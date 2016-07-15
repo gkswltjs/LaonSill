@@ -104,8 +104,18 @@ void DepthConcatLayer::reshape(UINT idx, io_dim in_dim) {
 	Layer::reshape(idx, in_dim);
 }
 
-void DepthConcatLayer::_reshape() {
+void DepthConcatLayer::clearShape(UINT idx) {
+	if(!isLastPrevLayerRequest(idx)) return;
+	Layer::clearShape(idx);
+}
 
+void DepthConcatLayer::_clearShape() {
+	checkCudaErrors(cudaFree(d_delta_input));
+	d_delta_input = 0;
+	offsetIndex = 0;
+	out_dim.channels = 0;
+
+	HiddenLayer::_clearShape();
 }
 
 DepthConcatLayer::~DepthConcatLayer() {

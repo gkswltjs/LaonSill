@@ -78,13 +78,14 @@ protected:
 		FullyConnectedLayer::_shape();
 	}
 
-	virtual void _reshape() {
+	virtual void _clearShape() {
+		FullyConnectedLayer::_clearShape();
 	}
 
 #if CPU_MODE
 protected:
-	virtual void save(ofstream &ofs) {
-		FullyConnectedLayer::save(ofs);
+	virtual void _save(ofstream &ofs) {
+		FullyConnectedLayer::_save(ofs);
 
 		int costType = (int)cost_fn->getType();
 		ofs.write((char *)&costType, sizeof(int));
@@ -93,8 +94,8 @@ protected:
 	Cost *cost_fn;
 #else
 protected:
-	virtual void save(ofstream &ofs) {
-		FullyConnectedLayer::save(ofs);
+	virtual void _save(ofstream &ofs) {
+		FullyConnectedLayer::_save(ofs);
 		//int costType = (int)cost_fn->getType();
 		//ofs.write((char *)&costType, sizeof(int));
 	}

@@ -161,6 +161,7 @@ void Util::printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT ch
 
 
 void Util::printMessage(string message) {
+	//if(true || Util::print) {
 	if(Util::print) {
 		cout << message << endl;
 	}

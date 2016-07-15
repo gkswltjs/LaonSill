@@ -26,12 +26,7 @@ InceptionLayer::InceptionLayer(const char *name,
 
 
 
-void InceptionLayer::save(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	save(ofs);
-	propSave(ofs);
-}
 
 void InceptionLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	HiddenLayer::load(ifs, layerMap);
@@ -59,8 +54,8 @@ void InceptionLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 }
 
-void InceptionLayer::save(ofstream &ofs) {
-	HiddenLayer::save(ofs);
+void InceptionLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
 
 	UINT firstLayerSize = firstLayers.size();
 	ofs.write((char *)&firstLayerSize, sizeof(UINT));
@@ -406,7 +401,16 @@ void InceptionLayer::_shape() {
 }
 
 void InceptionLayer::_reshape() {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->clearShape(0);
+	}
+	HiddenLayer::_reshape();
+}
 
+void InceptionLayer::_clearShape() {
+	checkCudaErrors(cudaFree(d_delta_input));
+
+	HiddenLayer::_clearShape();
 }
 
 

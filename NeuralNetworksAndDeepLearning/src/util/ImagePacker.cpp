@@ -14,8 +14,12 @@
 #include <CImg.h>
 
 #include "../Util.h"
+#include "UByteImage.h"
 
 using namespace cimg_library;
+
+
+
 
 ImagePacker::ImagePacker(const char *image_dir, const char *outfile_image_path, const char *outfile_label_path) {
 	strcpy(this->image_dir, image_dir);
@@ -30,11 +34,11 @@ void ImagePacker::pack() {
 	ofstream ofsImage(outfile_image_path, ios::out | ios::binary);
 	ofstream ofsLabel(outfile_label_path, ios::out | ios::binary);
 
-	//ofs.write((char *)&outputLayerSize, sizeof(UINT));		// output layer size
-	//UINT set_width, set_height;
+	UByteImageDataset imageDataSet;
+	UByteLabelDataset labelDataSet;
 
-	const UINT magicNumberImage = 2051;
-	const UINT magicNumberLabel = 2049;
+	imageDataSet.magic = UBYTE_IMAGE_MAGIC;
+	labelDataSet.magic = UBYTE_LABEL_MAGIC;
 
 	// find number of images in dir
 	UINT imageCount = 0;
@@ -49,10 +53,10 @@ void ImagePacker::pack() {
 	} else { perror("could not load ... "); }
 	cout << "imageCount: " << imageCount << endl;
 
-	ofsImage.write((char *)&magicNumberImage, sizeof(UINT));
-	ofsImage.write((char *)&imageCount, sizeof(UINT));
-	ofsLabel.write((char *)&magicNumberLabel, sizeof(UINT));
-	ofsLabel.write((char *)&imageCount, sizeof(UINT));
+	imageDataSet.length = imageCount;
+	labelDataSet.length = imageCount;
+	labelDataSet.Swap();
+	ofsLabel.write((char *)&labelDataSet, sizeof(UByteLabelDataset));
 
 	if((dir = opendir(image_dir)) != NULL) {
 		int set_width = 0;
@@ -77,8 +81,10 @@ void ImagePacker::pack() {
 			if(first) {
 				set_width = width;
 				set_height = height;
-				ofsImage.write((char *)&set_width, sizeof(UINT));
-				ofsImage.write((char *)&set_height, sizeof(UINT));
+				imageDataSet.width = width;
+				imageDataSet.height = height;
+				imageDataSet.Swap();
+				ofsImage.write((char *)&imageDataSet, sizeof(UByteImageDataset));
 				first = false;
 			}
 

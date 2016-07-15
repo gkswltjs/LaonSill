@@ -23,7 +23,6 @@ public:
 	void reset_nabla(UINT idx);
 	void update(UINT idx, UINT n, UINT miniBatchSize);
 
-	void save(UINT idx, ofstream &ofs);
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	void saveNinHeader(UINT idx, ofstream &ofs);
 
@@ -41,10 +40,11 @@ public:
 protected:
 	void initialize();
 	void initialize(int ic, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
-	void save(ofstream &ofs);
 
+	virtual void _save(ofstream &ofs);
 	virtual void _shape();
 	virtual void _reshape();
+	virtual void _clearShape();
 
 	//InputLayer *inputLayer;
 	vector<HiddenLayer *> firstLayers;

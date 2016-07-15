@@ -53,7 +53,7 @@ void Network::shape() {
 }
 
 void Network::reshape() {
-
+	inputLayer->reshape(0, in_dim);
 }
 
 

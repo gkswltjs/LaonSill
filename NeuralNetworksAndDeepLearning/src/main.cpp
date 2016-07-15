@@ -11,6 +11,7 @@
 #include "network/InceptionNetSingle.h"
 #include "network/InceptionNetMult.h"
 #include "network/InceptionNetAux.h"
+#include "dataset/VvgDataSet.h"
 #include "dataset/MnistDataSet.h"
 #include "dataset/MockDataSet.h"
 #include "dataset/Cifar10DataSet.h"
@@ -64,18 +65,19 @@ int main(int argc, char** argv) {
 	cout.precision(11);
 	cout.setf(ios::fixed);
 
-
 	network_test();
 	//gnuplot_test();
 	//cimg_test();
 
+
 	/*
 	ImagePacker imagePacker(
 			"/home/jhkim/바탕화면/crop/",
-			"/home/jhkim/바탕화면/vvg_image.ubyte",
-			"/home/jhkim/바탕화면/vvg_label.ubyte");
+			"/home/jhkim/data/learning/vvg/vvg_image.ubyte",
+			"/home/jhkim/data/learning/vvg/vvg_label.ubyte");
 	imagePacker.pack();
 	*/
+
 
 
 	cout << "end" << endl;
@@ -106,20 +108,28 @@ void network_test() {
 	if(!debug) {
 		Util::setPrint(false);
 
-		DataSet *dataSet = new MnistDataSet(validationSetRatio);
-		dataSet->load();
+		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
+		mnistDataSet->load();
+
+		DataSet *vvgDataSet = new VvgDataSet(validationSetRatio);
+		vvgDataSet->load();
+
 
 		int maxEpoch = 30;
 		NetworkListener *networkListener = new NetworkMonitor(maxEpoch);
 
 		//Network *network = new NeuralNetSingle(networkListener, 0.01, 5.0);
+		//Network *network = new ConvNetSingle(networkListener);
 		//Network *network = new InceptionNetAux(networkListener);
 		Network *network = new InceptionNetSingle(networkListener);
-		network->setDataSet(dataSet, 10);
+		network->setDataSet(vvgDataSet, 10);
 		network->shape();
+
+		cout << "reshaping ... " << endl;
+		network->setDataSet(mnistDataSet, 10);
+		network->reshape();
+
 		network->sgd(maxEpoch);
-
-
 
 		//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
 		/*

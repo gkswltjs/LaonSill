@@ -63,6 +63,7 @@ public:
 					15, 10, 15, 10, 15, 15
 					);
 
+			/*
 			HiddenLayer *incept2Layer = new InceptionLayer(
 					"incept2",
 					//io_dim(14, 14, 60, batchSize),
@@ -70,6 +71,7 @@ public:
 					60,
 					15, 15, 15, 15, 15, 15
 					);
+					*/
 
 
 			/*
@@ -101,8 +103,7 @@ public:
 			Network::addLayerRelation(conv1Layer, pool1Layer);
 			Network::addLayerRelation(pool1Layer, lrn1Layer);
 			Network::addLayerRelation(lrn1Layer, incept1Layer);
-			Network::addLayerRelation(incept1Layer, incept2Layer);
-			Network::addLayerRelation(incept2Layer, softmaxLayer);
+			Network::addLayerRelation(incept1Layer, softmaxLayer);
 
 			this->inputLayer = inputLayer;
 			addOutputLayer(softmaxLayer);

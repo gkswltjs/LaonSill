@@ -24,11 +24,11 @@ void Layer::update(UINT idx, UINT n, UINT miniBatchSize) { propUpdate(n, miniBat
 
 void Layer::save(UINT idx, ofstream &ofs) {
 	if(!isLastPrevLayerRequest(idx)) return;
-	save(ofs);
+	_save(ofs);
 	propSave(ofs);
 }
 
-void Layer::save(ofstream &ofs) {
+void Layer::_save(ofstream &ofs) {
 	Layer *address = this;
 	UINT nextLayerSize = nextLayers.size();
 	UINT prevLayerSize = prevLayers.size();
@@ -36,8 +36,8 @@ void Layer::save(ofstream &ofs) {
 	ofs.write((char *)&address, sizeof(Layer *));					// layer address
 	ofs.write((char *)&id, sizeof(int));									// layer id
 	ofs.write(name, LAYER_NAME_LENGTH);										// layer name
-	ofs.write((char *)&in_dim, sizeof(io_dim));						// layer in_dim
-	ofs.write((char *)&out_dim, sizeof(io_dim));					// layer out_dim
+	//ofs.write((char *)&in_dim, sizeof(io_dim));						// layer in_dim
+	//ofs.write((char *)&out_dim, sizeof(io_dim));					// layer out_dim
 	ofs.write((char *)&nextLayerSize, sizeof(UINT));			// layer next layer size
 	for(UINT i = 0; i < nextLayerSize; i++) {							// layer next layers
 		ofs.write((char *)&nextLayers[i], sizeof(next_layer_relation));
@@ -240,12 +240,14 @@ void Layer::propFeedforward(const rcube output) {
 
 
 void Layer::shape(UINT idx, io_dim in_dim) {
+	Util::printMessage(string(name)+"---shape()");
 	this->in_dim = in_dim;
 	_shape();
 	propShape();
 }
 
 void Layer::_shape() {
+	Util::printMessage(string(name)+"---_shape()");
 	//checkCudaErrors(cudaMalloc(&this->d_input, sizeof(DATATYPE)*in_dim.batchsize()));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
 
@@ -263,27 +265,55 @@ void Layer::_shape() {
 }
 
 void Layer::propShape() {
+	Util::printMessage(string(name)+"---propShape()");
 	for(UINT i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i].next_layer->shape(nextLayers[i].idx, out_dim);
 	}
 }
 
 void Layer::reshape(UINT idx, io_dim in_dim) {
+	Util::printMessage(string(name)+"---reshape()");
+	this->in_dim = in_dim;
 	_reshape();
 	propReshape();
 }
 
 void Layer::_reshape() {
+	Util::printMessage(string(name)+"---_reshape()");
 	// 이전의 input, output 설정과 관련된 memory 정리
-
-
-
+	_clearShape();
 	_shape();
 }
 
+void Layer::clearShape(UINT idx) {
+	Util::printMessage(string(name)+"---clearShape()");
+	_clearShape();
+	propClearShape();
+}
+
+void Layer::_clearShape() {
+	Util::printMessage(string(name)+"---_clearShape()");
+	checkCudaErrors(cudaFree(d_output));
+	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
+
+	d_output = 0;
+	inputTensorDesc = 0;
+	outputTensorDesc = 0;
+}
+
+
 void Layer::propReshape() {
+	Util::printMessage(string(name)+"---propReshape()");
 	for(UINT i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i].next_layer->reshape(nextLayers[i].idx, out_dim);
+	}
+}
+
+void Layer::propClearShape() {
+	Util::printMessage(string(name)+"---propClearShape()");
+	for(UINT i = 0; i < nextLayers.size(); i++) {
+		nextLayers[i].next_layer->clearShape(nextLayers[i].idx);
 	}
 }
 
@@ -306,14 +336,11 @@ Layer::~Layer() {
 		}
 	}
 
-	//delete [] input;
-	//delete [] output;
+	_clearShape();
 
-	//checkCudaErrors(cudaFree(d_input));
-	checkCudaErrors(cudaFree(d_output));
-
-	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
-	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
+	//checkCudaErrors(cudaFree(d_output));
+	//checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
+	//checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 
 	//cout << "destroying " << name << " layer ... " << endl;
 }

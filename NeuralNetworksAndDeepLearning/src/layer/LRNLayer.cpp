@@ -21,11 +21,7 @@ LRNLayer::LRNLayer(const char *name, lrn_dim lrn_d) : HiddenLayer(name) {
 
 
 
-void LRNLayer::save(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	save(ofs);
-	propSave(ofs);
-}
+
 
 void LRNLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	HiddenLayer::load(ifs, layerMap);
@@ -36,8 +32,8 @@ void LRNLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	initialize(lrn_d);
 }
 
-void LRNLayer::save(ofstream &ofs) {
-	HiddenLayer::save(ofs);
+void LRNLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
 	ofs.write((char *)&lrn_d, sizeof(lrn_dim));
 }
 
@@ -147,8 +143,10 @@ void LRNLayer::_shape() {
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
 
-void LRNLayer::_reshape() {
+void LRNLayer::_clearShape() {
+	checkCudaErrors(cudaFree(d_delta_input));
 
+	HiddenLayer::_clearShape();
 }
 
 

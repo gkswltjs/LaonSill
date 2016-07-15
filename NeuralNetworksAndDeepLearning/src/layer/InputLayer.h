@@ -28,7 +28,7 @@ public:
 
 	int getInputDimension() const { return in_dim.rows*in_dim.cols*in_dim.channels; }
 
-	void save(UINT idx, ofstream &ofs) {
+	virtual void save(UINT idx, ofstream &ofs) {
 		saveHeader(0, ofs);
 
 		// header boundary (dummy layer)
@@ -37,7 +37,7 @@ public:
 		ofs.write((char *)&type, sizeof(int));
 		ofs.write((char *)&layer, sizeof(Layer *));
 
-		Layer::save(ofs);
+		Layer::_save(ofs);
 		propSave(ofs);
 	}
 
@@ -90,7 +90,6 @@ protected:
 		this->type = LayerType::Input;
 	}
 
-
 #if CPU_MODE
 protected:
 #else
@@ -99,9 +98,11 @@ protected:
 		this->out_dim = in_dim;
 		Layer::_shape();
 	}
-	virtual void _reshape() {
 
+	virtual void _clearShape() {
+		Layer::_clearShape();
 	}
+
 #endif
 
 

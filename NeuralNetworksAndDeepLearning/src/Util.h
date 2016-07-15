@@ -134,7 +134,7 @@ public:
 		cuda_mem += size;
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
-		//cout << ++alloc_cnt << " allocated: " << cuda_mem/(1024*1024) << "mb, free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+		//cout << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
 		return cudaError;
 	}
 

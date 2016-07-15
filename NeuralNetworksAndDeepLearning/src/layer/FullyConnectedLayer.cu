@@ -22,11 +22,6 @@ FullyConnectedLayer::FullyConnectedLayer(const char *name, int n_out, double p_d
 	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
-void FullyConnectedLayer::save(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	save(ofs);
-	propSave(ofs);
-}
 
 
 
@@ -213,8 +208,8 @@ void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 
-void FullyConnectedLayer::save(ofstream &ofs) {
-	HiddenLayer::save(ofs);
+void FullyConnectedLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
 
 	ofs.write((char *)&p_dropout, sizeof(double));
 
@@ -313,8 +308,32 @@ void FullyConnectedLayer::_shape() {
 	checkCudaErrors(cudaDeviceSynchronize());
 }
 
-void FullyConnectedLayer::_reshape() {
+void FullyConnectedLayer::_clearShape() {
+	if(weight) delete [] weight;
+	if(bias) delete [] bias;
 
+	checkCudaErrors(cudaFree(d_weight));
+	checkCudaErrors(cudaFree(d_bias));
+
+	checkCudaErrors(cudaFree(d_z));
+	checkCudaErrors(cudaFree(d_delta));
+	checkCudaErrors(cudaFree(d_delta_input));
+	checkCudaErrors(cudaFree(d_delta_weight));
+	checkCudaErrors(cudaFree(d_delta_bias));
+
+	weight = 0;
+	bias = 0;
+
+	d_weight = 0;
+	d_bias = 0;
+
+	d_z = 0;
+	d_delta = 0;
+	d_delta_input = 0;
+	d_delta_weight = 0;
+	d_delta_bias = 0;
+
+	HiddenLayer::_clearShape();
 }
 
 
@@ -334,6 +353,8 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 	checkCudaErrors(cudaFree(d_delta_input));
 	checkCudaErrors(cudaFree(d_delta_weight));
 	checkCudaErrors(cudaFree(d_delta_bias));
+
+	checkCudaErrors(cudaFree(d_onevec));
 
 	ActivationFactory::destory(activation_fn);
 }
@@ -511,8 +532,8 @@ void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 
-void FullyConnectedLayer::save(ofstream &ofs) {
-	HiddenLayer::save(ofs);
+void FullyConnectedLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
 
 	ofs.write((char *)&p_dropout, sizeof(double));
 
@@ -522,18 +543,11 @@ void FullyConnectedLayer::save(ofstream &ofs) {
 	ofs.write((char *)&bias_update_param, sizeof(update_param));
 	ofs.write((char *)&weight_filler, sizeof(param_filler));
 	ofs.write((char *)&bias_filler, sizeof(param_filler));
-	//ofs.write((char *)&weight, sizeof(rmat));
-	//ofs.write((char *)&bias, sizeof(rvec));
 
 	checkCudaErrors(cudaMemcpyAsync(weight, d_weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize(), cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpyAsync(bias, d_bias, sizeof(DATATYPE)*out_dim.unitsize(), cudaMemcpyDeviceToHost));
 	ofs.write((char *)weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize());
 	ofs.write((char *)bias, sizeof(DATATYPE)*out_dim.unitsize());
-
-	//weight.print("save-weight:");
-	//weight.save(ofs, file_type::arma_binary);
-	//bias.print("save-bias:");
-	//bias.save(ofs, file_type::arma_binary);
 }
 
 

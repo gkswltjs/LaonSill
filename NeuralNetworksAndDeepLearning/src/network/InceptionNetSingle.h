@@ -28,6 +28,7 @@ public:
 				//io_dim(28, 28, 1, batchSize)
 				);
 
+
 		HiddenLayer *incept1Layer = new InceptionLayer(
 				"incept1",
 				//io_dim(28, 28, 1, batchSize),
@@ -35,6 +36,7 @@ public:
 				1,
 				3, 2, 3, 2, 3, 3
 				);
+
 
 		/*
 		HiddenLayer *incept2Layer = new InceptionLayer(

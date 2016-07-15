@@ -72,9 +72,10 @@ protected:
 	virtual void _shape() {
 		Layer::_shape();
 	}
-	virtual void _reshape() {
-
+	virtual void _clearShape() {
+		Layer::_clearShape();
 	}
+
 #endif
 
 

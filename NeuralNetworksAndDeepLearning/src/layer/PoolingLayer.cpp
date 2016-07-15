@@ -14,11 +14,6 @@ PoolingLayer::PoolingLayer(const char *name, pool_dim pool_d, PoolingType poolin
 	initialize(pool_d, poolingType);
 }
 
-void PoolingLayer::save(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	save(ofs);
-	propSave(ofs);
-}
 
 void PoolingLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	HiddenLayer::load(ifs, layerMap);
@@ -32,8 +27,8 @@ void PoolingLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	initialize(pool_d, poolingType);
 }
 
-void PoolingLayer::save(ofstream &ofs) {
-	HiddenLayer::save(ofs);
+void PoolingLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
 
 	int poolingType = (int)pooling_fn->getType();
 
@@ -133,8 +128,14 @@ void PoolingLayer::_shape() {
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
 
-void PoolingLayer::_reshape() {
+void PoolingLayer::_clearShape() {
+	checkCudaErrors(cudaFree(d_delta));
+	checkCudaErrors(cudaFree(d_delta_input));
 
+	d_delta = 0;
+	d_delta_input = 0;
+
+	HiddenLayer::_clearShape();
 }
 
 

@@ -36,7 +36,6 @@ public:
 		propUpdate(n, miniBatchSize);
 	}
 
-	void save(UINT idx, ofstream &ofs);
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 #if CPU_MODE
@@ -53,9 +52,9 @@ public:
 
 protected:
 	void initialize(pool_dim pool_d, PoolingType poolingType);
-	void save(ofstream &ofs);
+	virtual void _save(ofstream &ofs);
 	virtual void _shape();
-	virtual void _reshape();
+	virtual void _clearShape();
 
 	pool_dim pool_d;
 	Pooling *pooling_fn;

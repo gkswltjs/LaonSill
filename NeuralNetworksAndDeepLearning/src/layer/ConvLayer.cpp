@@ -19,13 +19,6 @@ ConvLayer::ConvLayer(const char *name, filter_dim filter_d, update_param weight_
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
-void ConvLayer::save(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	save(ofs);
-	propSave(ofs);
-}
-
-
 
 #if CPU_MODE
 
@@ -385,8 +378,8 @@ void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 
-void ConvLayer::save(ofstream &ofs) {
-	HiddenLayer::save(ofs);
+void ConvLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
 
 	int activationType = (int)activation_fn->getType();
 
@@ -434,7 +427,6 @@ ConvLayer::~ConvLayer() {
 	checkCudaErrors(cudaFree(d_delta_input));
 	checkCudaErrors(cudaFree(d_delta_weight));
 	checkCudaErrors(cudaFree(d_delta_bias));
-
 	if(d_workspace) checkCudaErrors(cudaFree(d_workspace));
 
 	checkCUDNN(cudnnDestroyTensorDescriptor(biasTensorDesc));
@@ -466,6 +458,8 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_filters, sizeof(DATATYPE)*filter_size));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_biases, sizeof(DATATYPE)*filter_d.filters));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*filter_size));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*filter_d.filters));
 
 	checkCudaErrors(cudaMemcpyAsync(this->d_filters, filters, sizeof(DATATYPE)*filter_size, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpyAsync(this->d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
@@ -501,7 +495,7 @@ void ConvLayer::_shape() {
 				CUDNN_DATA_FLOAT,
 				in_dim.batches, in_dim.channels, in_dim.rows, in_dim.cols));
 
-	int n, c, h, w;
+	int n = 0, c = 0, h = 0, w = 0;
 	checkCUDNN(cudnnGetConvolution2dForwardOutputDim(convDesc,
 			tempInputTensorDesc, filterDesc,
 			&n, &c, &h, &w));
@@ -510,7 +504,6 @@ void ConvLayer::_shape() {
 	out_dim.channels = c;
 	out_dim.rows = h;
 	out_dim.cols = w;
-
 
 	checkCUDNN(cudnnDestroyTensorDescriptor(tempInputTensorDesc));
 
@@ -524,8 +517,6 @@ void ConvLayer::_shape() {
 	checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
 
 	size_t convFwdWorkspaceSize;
 	size_t convBwdFilterWorkspaceSize;
@@ -570,8 +561,21 @@ void ConvLayer::_shape() {
 	}
 }
 
-void ConvLayer::_reshape() {
+void ConvLayer::_clearShape() {
+	checkCudaErrors(cudaFree(d_z));
+	checkCudaErrors(cudaFree(d_delta));
+	checkCudaErrors(cudaFree(d_delta_input));
 
+	d_z = 0;
+	d_delta = 0;
+	d_delta_input = 0;
+
+	if(d_workspace) {
+		checkCudaErrors(cudaFree(d_workspace));
+		d_workspace = 0;
+	}
+
+	HiddenLayer::_clearShape();
 }
 
 
@@ -714,9 +718,8 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	propUpdate(n, miniBatchSize);
 }
 
-
-void ConvLayer::save(ofstream &ofs) {
-	HiddenLayer::save(ofs);
+void ConvLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
 
 	int activationType = (int)activation_fn->getType();
 

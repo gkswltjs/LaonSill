@@ -36,6 +36,7 @@ public:
 
 	virtual void shape(UINT idx, io_dim in_dim);
 	virtual void reshape(UINT idx, io_dim in_dim);
+	virtual void clearShape(UINT idx);
 
 #if CPU_MODE
 public:
@@ -55,7 +56,7 @@ public:
 protected:
 	void initialize();
 	virtual void _shape();
-	virtual void _reshape();
+	virtual void _clearShape();
 
 
 	int offsetIndex;

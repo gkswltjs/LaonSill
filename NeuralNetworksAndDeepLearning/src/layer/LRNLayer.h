@@ -35,7 +35,6 @@ public:
 		propUpdate(n, miniBatchSize);
 	}
 
-	void save(UINT idx, ofstream &ofs);
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 #if CPU_MODE
@@ -51,9 +50,10 @@ public:
 
 protected:
 	void initialize(lrn_dim lrn_d);
-	void save(ofstream &ofs);
+
+	virtual void _save(ofstream &ofs);
 	virtual void _shape();
-	virtual void _reshape();
+	virtual void _clearShape();
 
 	lrn_dim lrn_d;
 
