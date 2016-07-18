@@ -30,11 +30,11 @@ public:
 public:
 	InceptionLayer(const char *name, int n_in, int n_out, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 	rcube &getDeltaInput() { return this->delta_input; }
-	void feedforward(UINT idx, const rcube &input);
+	void feedforward(UINT idx, const rcube &input, const char *end=0);
 #else
 public:
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-	void feedforward(UINT idx, const DATATYPE *input);
+	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 #endif
 
 protected:
@@ -42,7 +42,7 @@ protected:
 	void initialize(int ic, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 
 	virtual void _save(ofstream &ofs);
-	virtual void _shape();
+	virtual void _shape(bool recursive=true);
 	virtual void _reshape();
 	virtual void _clearShape();
 

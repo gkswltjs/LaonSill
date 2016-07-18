@@ -15,6 +15,7 @@ DepthConcatLayer::DepthConcatLayer(const char *name)
 void DepthConcatLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	HiddenLayer::load(ifs, layerMap);
 	initialize();
+	DepthConcatLayer::_shape(false);
 }
 
 #if CPU_MODE
@@ -34,7 +35,7 @@ void DepthConcatLayer::initialize() {
 	this->delta_input.zeros();
 }
 
-void DepthConcatLayer::feedforward(UINT idx, const rcube &input) {
+void DepthConcatLayer::feedforward(UINT idx, const rcube &input, const char *end=0) {
 	this->input = join_slices(this->input, input);
 	Util::printCube(this->input, "input:");
 
@@ -44,7 +45,7 @@ void DepthConcatLayer::feedforward(UINT idx, const rcube &input) {
 
 	this->output = this->input;
 
-	propFeedforward(this->output);
+	propFeedforward(this->output, end);
 
 	// backward pass에서 input을 사용하지 않으므로 여기서 reset할 수 있음
 	this->input.reset();
@@ -88,13 +89,15 @@ void DepthConcatLayer::shape(UINT idx, io_dim in_dim) {
 	HiddenLayer::shape(idx, in_dim);
 }
 
-void DepthConcatLayer::_shape() {
+void DepthConcatLayer::_shape(bool recursive) {
 	in_dim.channels = out_dim.channels;
 	out_dim.rows = in_dim.rows;
 	out_dim.cols = in_dim.cols;
 	out_dim.batches = in_dim.batches;
 
-	HiddenLayer::_shape();
+	if(recursive) {
+		HiddenLayer::_shape();
+	}
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
@@ -125,7 +128,7 @@ DepthConcatLayer::~DepthConcatLayer() {
 
 
 
-void DepthConcatLayer::feedforward(UINT idx, const DATATYPE *input) {
+void DepthConcatLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	bool print = Util::getPrint();
 	//Util::setPrint(true);
 
@@ -150,10 +153,10 @@ void DepthConcatLayer::feedforward(UINT idx, const DATATYPE *input) {
 				sizeof(DATATYPE)*prev_out_dim.unitsize(), cudaMemcpyDeviceToDevice));
 	}
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
-	Util::setPrint(print);
+	//Util::setPrint(print);
 
 	if(!isLastPrevLayerRequest(idx)) return;
-	propFeedforward(this->d_output);
+	propFeedforward(this->d_output, end);
 }
 
 void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
@@ -186,7 +189,7 @@ void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 
 	if(!isLastNextLayerRequest(idx)) return;
 
-	Util::setPrint(print);
+	//Util::setPrint(print);
 	propBackpropagation();
 }
 
@@ -205,7 +208,7 @@ DATATYPE *DepthConcatLayer::getDeltaInput() {
 
 	offsetIndex++;
 
-	Util::setPrint(print);
+	//Util::setPrint(print);
 	return d_delta_input+inBatchOffset;
 }
 

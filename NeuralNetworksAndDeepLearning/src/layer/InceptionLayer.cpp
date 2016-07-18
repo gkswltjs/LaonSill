@@ -42,8 +42,6 @@ void InceptionLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	ifs.read((char *)&lastLayerSize, sizeof(UINT));
 	ifs.read((char *)&lastLayer, sizeof(HiddenLayer *));
 
-	initialize();
-
 	map<Layer *, Layer *> ninLayerMap;
 	loadNetwork(ifs, ninLayerMap);
 
@@ -52,6 +50,8 @@ void InceptionLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	}
 	lastLayer = (HiddenLayer *)ninLayerMap.find(lastLayer)->second;
 
+	initialize();
+	InceptionLayer::_shape(false);
 }
 
 void InceptionLayer::_save(ofstream &ofs) {
@@ -249,13 +249,13 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 
 
-void InceptionLayer::feedforward(UINT idx, const rcube &input) {
+void InceptionLayer::feedforward(UINT idx, const rcube &input, const char *end=0) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->feedforward(0, input);
+		firstLayers[i]->feedforward(0, input, end);
 	}
-	propFeedforward(lastLayer->getOutput());
+	propFeedforward(lastLayer->getOutput(), end);
 }
 
 void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
@@ -388,13 +388,15 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	Network::addLayerRelation(convProjectionLayer, depthConcatLayer);
 }
 
-void InceptionLayer::_shape() {
+void InceptionLayer::_shape(bool recursive) {
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->shape(0, in_dim);
 	}
 	out_dim = lastLayer->getOutDimension();
 
-	HiddenLayer::_shape();
+	if(recursive) {
+		HiddenLayer::_shape();
+	}
 
 	int workspaceSize = std::max(in_dim.batchsize(), out_dim.batchsize());
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*workspaceSize));
@@ -420,13 +422,13 @@ void InceptionLayer::_clearShape() {
 
 
 
-void InceptionLayer::feedforward(UINT idx, const DATATYPE *input) {
+void InceptionLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	Util::printMessage("InceptionLayer::feedforward()---"+string(name));
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->feedforward(0, input);
+		firstLayers[i]->feedforward(0, input, end);
 	}
-	propFeedforward(lastLayer->getOutput());
+	propFeedforward(lastLayer->getOutput(), end);
 }
 
 void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {

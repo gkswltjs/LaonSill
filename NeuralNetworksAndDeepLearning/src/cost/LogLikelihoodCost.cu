@@ -50,8 +50,13 @@ double LogLikelihoodCost::fn(const rvec *pA, const rvec *pY) {
 //cost_fn->d_cost(d_z, d_output, target, d_delta, out_dim.rows, out_dim.batches);
 void LogLikelihoodCost::d_cost(const DATATYPE *z, DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize) {
 	Cuda::refresh();
+
+	Util::printDeviceData(activation, numLabels, 1, 1, batchsize, "activation:");
+
 	checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(DATATYPE)*numLabels*batchsize, cudaMemcpyDeviceToDevice));
 	SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(target, numLabels, batchsize, delta);
+
+	Util::printDeviceData(delta, numLabels, 1, 1, batchsize, "activation:");
 	checkCudaErrors(cudaDeviceSynchronize());
 }
 #endif

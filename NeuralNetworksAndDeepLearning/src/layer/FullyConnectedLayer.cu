@@ -85,7 +85,7 @@ void FullyConnectedLayer::initialize(double p_dropout, update_param weight_updat
 
 
 
-void FullyConnectedLayer::feedforward(UINT idx, const rcube &input) {
+void FullyConnectedLayer::feedforward(UINT idx, const rcube &input, const char *end) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::printCube(input, "input:");
@@ -104,7 +104,7 @@ void FullyConnectedLayer::feedforward(UINT idx, const rcube &input) {
 	activation_fn->activate(z, output);
 	Util::printCube(output, "output:");
 
-	propFeedforward(this->output);
+	propFeedforward(this->output, end);
 }
 
 void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
@@ -269,13 +269,15 @@ void FullyConnectedLayer::initialize(int n_out, double p_dropout, update_param w
 	this->activation_fn = ActivationFactory::create(activationType);
 }
 
-void FullyConnectedLayer::_shape() {
+void FullyConnectedLayer::_shape(bool recursive) {
 	in_dim.rows = in_dim.rows*in_dim.cols*in_dim.channels;
 	in_dim.cols = 1;
 	in_dim.channels = 1;
 	out_dim.batches = in_dim.batches;
 
-	HiddenLayer::_shape();
+	if(recursive) {
+		HiddenLayer::_shape();
+	}
 
 	int u_in = in_dim.unitsize();
 	int u_out = out_dim.unitsize();
@@ -286,6 +288,7 @@ void FullyConnectedLayer::_shape() {
 	bias = new DATATYPE[u_out];
 
 	weight_filler.fill(weight, u_out*u_in, u_out*u_in);
+	//weight_filler.fill(weight, in_dim.rows*in_dim.cols, in_dim.rows*in_dim.cols);
 	bias_filler.fill(bias, u_out, 0);
 	Util::printData(weight, u_out, u_in, 1, 1, "weight:");
 	Util::printData(bias, u_out, 1, 1, 1, "bias:");
@@ -365,7 +368,7 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 
 
 
-void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
+void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::printMessage("FullyConnectedLayer::feedforward()---"+string(name));
@@ -407,7 +410,7 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input) {
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, "d_output:");
 	//Util::setPrint(false);
 
-	propFeedforward(this->d_output);
+	propFeedforward(this->d_output, end);
 }
 
 void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
@@ -504,12 +507,13 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	HiddenLayer::load(ifs, layerMap);
 
-	int n_out = 0;
+	UINT n_out = 0;
 	double p_dropout;
 	ActivationType activationType;
 	update_param weight_update_param, bias_update_param;
 	param_filler weight_filler, bias_filler;
 
+	ifs.read((char *)&n_out, sizeof(UINT));
 	ifs.read((char *)&p_dropout, sizeof(double));
 	ifs.read((char *)&activationType, sizeof(int));
 	ifs.read((char *)&weight_update_param, sizeof(update_param));
@@ -518,6 +522,7 @@ void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	ifs.read((char *)&bias_filler, sizeof(param_filler));
 
 	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+	FullyConnectedLayer::_shape(false);
 
 	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
 	ifs.read((char *)weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize());
@@ -535,9 +540,10 @@ void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 void FullyConnectedLayer::_save(ofstream &ofs) {
 	HiddenLayer::_save(ofs);
 
-	ofs.write((char *)&p_dropout, sizeof(double));
-
 	int activationType = (int)activation_fn->getType();
+
+	ofs.write((char *)&out_dim.rows, sizeof(UINT));
+	ofs.write((char *)&p_dropout, sizeof(double));
 	ofs.write((char *)&activationType, sizeof(int));
 	ofs.write((char *)&weight_update_param, sizeof(update_param));
 	ofs.write((char *)&bias_update_param, sizeof(update_param));

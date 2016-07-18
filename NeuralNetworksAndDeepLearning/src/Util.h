@@ -59,14 +59,14 @@ static cudaError_t ucudaMalloc(
 	static size_t cuda_mem = 0;
 
 	if(size > 1*1024*1024) {
-		cout << endl;
+		outstream << endl;
 	}
 
 	cudaError_t cudaError = cudaMalloc(devPtr, size);
 	cuda_mem += size;
 	size_t free, total;
 	cudaMemGetInfo(&free, &total);
-	cout << "allocated: " << cuda_mem/(1024*1024) << "mb, free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+	outstream << "allocated: " << cuda_mem/(1024*1024) << "mb, free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
 	return cudaError;
 }
 */
@@ -106,6 +106,12 @@ public:
 
 	static int getPrint() { return Util::print; }
 	static void setPrint(bool print) { Util::print = print; };
+	static void setOutstream(ostream *outstream) {
+		Util::outstream = outstream;
+	}
+	static void setOutstream(string outfile) {
+		Util::outstream = new ofstream(outfile.c_str(), ios::out | ios::binary);
+	}
 
 	//static void convertCubeToVec(const io_dim &cube_dim, const cube &c, vec &v);
 
@@ -127,14 +133,14 @@ public:
 
 
 		//if(size > 1024*1024) {
-		//	cout << endl;
+		//	(*outstream) << endl;
 		//}
 
 		cudaError_t cudaError = cudaMalloc(devPtr, size);
 		cuda_mem += size;
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
-		//cout << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+		//(*outstream) << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
 		return cudaError;
 	}
 
@@ -146,6 +152,7 @@ private:
 	static bool print;
 	static size_t cuda_mem;
 	static int alloc_cnt;
+	static ostream *outstream;
 
 };
 

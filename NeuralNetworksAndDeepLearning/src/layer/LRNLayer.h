@@ -40,11 +40,11 @@ public:
 #if CPU_MODE
 public:
 	rcube &getDeltaInput() { return delta_input; }
-	void feedforward(UINT idx, const rcube &input);
+	void feedforward(UINT idx, const rcube &input, const char *end=0);
 #else
 public:
 	DATATYPE *getDeltaInput() { return d_delta_input; }
-	void feedforward(UINT idx, const DATATYPE *input);
+	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 #endif
 
 
@@ -52,7 +52,7 @@ protected:
 	void initialize(lrn_dim lrn_d);
 
 	virtual void _save(ofstream &ofs);
-	virtual void _shape();
+	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
 	lrn_dim lrn_d;

@@ -41,8 +41,9 @@ public:
 		propSave(ofs);
 	}
 
-	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		initialize();
+		InputLayer::_shape(false);
 		loadNetwork(ifs, layerMap);
 	}
 
@@ -55,7 +56,7 @@ public:
 	 * Input 무조건 첫번째 layer,
 	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
 	 */
-	void feedforward(UINT idx, const rcube &input) {
+	void feedforward(UINT idx, const rcube &input, const char *end=0) {
 		//if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 		Util::convertCube(input, this->input);
@@ -63,12 +64,12 @@ public:
 		Util::printCube(input, "input:");
 		Util::printCube(this->output, "output:");
 
-		propFeedforward(this->output);
+		propFeedforward(this->output, end);
 	}
 
 #else
 public:
-	void feedforward(UINT idx, const DATATYPE *input) {
+	void feedforward(UINT idx, const DATATYPE *input, const char *end=0) {
 		Util::printMessage("InputLayer::feedforward()---"+string(name));
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 
@@ -78,7 +79,7 @@ public:
 		//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
 		checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
 
-		propFeedforward(this->d_output);
+		propFeedforward(this->d_output, end);
 	}
 #endif
 
@@ -94,9 +95,11 @@ protected:
 protected:
 #else
 protected:
-	virtual void _shape() {
+	virtual void _shape(bool recursive=true) {
 		this->out_dim = in_dim;
-		Layer::_shape();
+		if(recursive) {
+			Layer::_shape();
+		}
 	}
 
 	virtual void _clearShape() {

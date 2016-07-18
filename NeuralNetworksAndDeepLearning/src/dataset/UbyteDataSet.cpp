@@ -44,8 +44,6 @@ void UbyteDataSet::load() {
 #else
 	numTrainData = loadDataSetFromResource(train_image, train_label, trainDataSet, trainLabelSet, 0, 50000);
 	numTestData = loadDataSetFromResource(test_image, test_label, testDataSet, testLabelSet, 0, 10000);
-	//numTrainData = 1000;
-	//numTestData = 1000;
 #endif
 }
 

@@ -56,7 +56,7 @@ public:
 	 */
 	void update(UINT idx, UINT n, UINT miniBatchSize);
 
-	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 #if CPU_MODE
 public:
@@ -69,7 +69,7 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(UINT idx, const rcube &input);
+	void feedforward(UINT idx, const rcube &input, const char *end=0);
 
 #else
 	//static void init();
@@ -77,7 +77,7 @@ public:
 
 	DATATYPE *getWeight() { return this->filters; }
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-	void feedforward(UINT idx, const DATATYPE *input);
+	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 #endif
 
 
@@ -86,7 +86,7 @@ protected:
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
 
 	virtual void _save(ofstream &ofs);
-	virtual void _shape();
+	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
 	filter_dim filter_d;

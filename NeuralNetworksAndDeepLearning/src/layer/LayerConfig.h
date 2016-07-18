@@ -32,14 +32,16 @@ enum class ParamFillerType {
 
 
 
-typedef struct io_dim {
+struct io_dim {
     UINT rows;
     UINT cols;
     UINT channels;
     UINT batches;
 
     //io_dim(UINT rows=1, UINT cols=1, UINT channels=1, UINT batches=1) {
-    io_dim() {}
+    io_dim() {
+
+    }
     io_dim(UINT rows, UINT cols, UINT channels, UINT batches) {
     	this->rows = rows;
     	this->cols = cols;
@@ -49,9 +51,9 @@ typedef struct io_dim {
     //int size() const { return rows*cols*channels*batches; }
     int unitsize() const { return rows*cols*channels; }
     int batchsize() const { return rows*cols*channels*batches; }
-} io_dim;
+};
 
-typedef struct filter_dim : public io_dim {
+struct filter_dim : public io_dim {
 	UINT filters;
 	UINT stride;
 
@@ -62,9 +64,9 @@ typedef struct filter_dim : public io_dim {
 		this->stride = stride;
 	}
 	int size() const { return rows*cols*channels*filters; }
-} filter_dim;
+};
 
-typedef struct pool_dim {
+struct pool_dim {
 	UINT rows;
 	UINT cols;
 	UINT stride;
@@ -76,10 +78,10 @@ typedef struct pool_dim {
 		this->cols = cols;
 		this->stride = stride;
 	}
-} pool_dim;
+};
 
 
-typedef struct lrn_dim {
+struct lrn_dim {
 	UINT local_size;
 	double alpha;
 	double beta;
@@ -92,10 +94,10 @@ typedef struct lrn_dim {
 		this->beta = beta;
 		this->k = k;
 	}
-} lrn_dim;
+};
 
 
-typedef struct update_param {
+struct update_param {
 	double lr_mult;
 	double decay_mult;
 
@@ -104,9 +106,9 @@ typedef struct update_param {
 		this->lr_mult = lr_mult;
 		this->decay_mult = decay_mult;
 	}
-} update_param;
+};
 
-typedef struct param_filler {
+struct param_filler {
 	ParamFillerType type;
 	double value;
 
@@ -203,11 +205,11 @@ typedef struct param_filler {
 	}
 #endif
 
-} param_filler;
+};
 
 
 
-typedef struct next_layer_relation {
+struct next_layer_relation {
 	Layer *next_layer;
 	UINT idx;
 
@@ -216,9 +218,9 @@ typedef struct next_layer_relation {
 		this->next_layer = next_layer;
 		this->idx = idx;
 	}
-} next_layer_relation;
+};
 
-typedef struct prev_layer_relation {
+struct prev_layer_relation {
 	Layer *prev_layer;
 	UINT idx;
 
@@ -227,7 +229,7 @@ typedef struct prev_layer_relation {
 		this->prev_layer = prev_layer;
 		this->idx = idx;
 	}
-} prev_layer_relation;
+};
 
 
 

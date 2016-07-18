@@ -23,9 +23,7 @@
 
 class ConvNetSingle : public Network {
 public:
-	ConvNetSingle(NetworkListener *networkListener=0) : Network(networkListener) {
-		double lr_mult = 0.1;
-		double decay_mult = 5.0;
+	ConvNetSingle(NetworkListener *networkListener=0, double lr_mult=0.1, double decay_mult=5.0) : Network(networkListener) {
 		int filters = 20;
 
 		InputLayer *inputLayer = new InputLayer(
@@ -37,7 +35,7 @@ public:
 				"conv1",
 				//io_dim(28, 28, 1, batchSize),
 				//io_dim(28, 28, filters, batchSize),
-				filter_dim(5, 5, 1, filters, 1),
+				filter_dim(5, 5, 3, filters, 1),
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),

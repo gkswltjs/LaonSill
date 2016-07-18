@@ -15,6 +15,7 @@
 bool Util::print = true;
 size_t Util::cuda_mem = 0;
 int Util::alloc_cnt = 0;
+ostream *Util::outstream = 0;
 
 
 static const char *LEVEL_LABEL[4] = {"DEBUG","INFO ", "WARN ", "ERROR"};
@@ -67,49 +68,49 @@ int Util::pack4BytesToInt(unsigned char *buffer)
 
 void Util::printVec(const rvec &vector, string name) {
 	if(Util::print) {
-		cout << "-------------------------------------" << endl;
-		cout << "name: " << name << endl;
-		cout << "address: " << &vector << endl;
-		cout << "rows x cols: " << vector.n_rows << " x " << vector.n_cols << endl;
+		(*outstream) << "-------------------------------------" << endl;
+		(*outstream) << "name: " << name << endl;
+		(*outstream) << "address: " << &vector << endl;
+		(*outstream) << "rows x cols: " << vector.n_rows << " x " << vector.n_cols << endl;
 		vector.print("vec values: ");
-		cout << endl;
-		cout << "-------------------------------------" << endl;
+		(*outstream) << endl;
+		(*outstream) << "-------------------------------------" << endl;
 	}
 }
 
 void Util::printMat(const rmat &matrix, string name) {
 	if(Util::print) {
-		cout << "-------------------------------------" << endl;
-		cout << "name: " << name << endl;
-		cout << "address: " << &matrix << endl;
-		cout << "rows x cols: " << matrix.n_rows << " x " << matrix.n_cols << endl;
-		matrix.raw_print(cout, "mat values: ");
-		cout << endl;
-		cout << "-------------------------------------" << endl;
+		(*outstream) << "-------------------------------------" << endl;
+		(*outstream) << "name: " << name << endl;
+		(*outstream) << "address: " << &matrix << endl;
+		(*outstream) << "rows x cols: " << matrix.n_rows << " x " << matrix.n_cols << endl;
+		matrix.raw_print((*outstream), "mat values: ");
+		(*outstream) << endl;
+		(*outstream) << "-------------------------------------" << endl;
 	}
 }
 
 void Util::printCube(const rcube &c, string name) {
 	if(Util::print) {
-		cout << "-------------------------------------" << endl;
-		cout << "name: " << name << endl;
-		cout << "address: " << &c << endl;
-		cout << "rows x cols x slices: " << c.n_rows << " x " << c.n_cols << " x " << c.n_slices << endl;
-		c.raw_print(cout, "cube values: ");
-		cout << endl;
-		cout << "-------------------------------------" << endl;
+		(*outstream) << "-------------------------------------" << endl;
+		(*outstream) << "name: " << name << endl;
+		(*outstream) << "address: " << &c << endl;
+		(*outstream) << "rows x cols x slices: " << c.n_rows << " x " << c.n_cols << " x " << c.n_slices << endl;
+		c.raw_print((*outstream), "cube values: ");
+		(*outstream) << endl;
+		(*outstream) << "-------------------------------------" << endl;
 	}
 }
 
 void Util::printUCube(const ucube &c, string name) {
 	if(Util::print) {
-		cout << "-------------------------------------" << endl;
-		cout << "name: " << name << endl;
-		cout << "address: " << &c << endl;
-		cout << "rows x cols x slices: " << c.n_rows << " x " << c.n_cols << " x " << c.n_slices << endl;
-		c.raw_print(cout, "cube values: ");
-		cout << endl;
-		cout << "-------------------------------------" << endl;
+		(*outstream) << "-------------------------------------" << endl;
+		(*outstream) << "name: " << name << endl;
+		(*outstream) << "address: " << &c << endl;
+		(*outstream) << "rows x cols x slices: " << c.n_rows << " x " << c.n_cols << " x " << c.n_slices << endl;
+		c.raw_print((*outstream), "cube values: ");
+		(*outstream) << endl;
+		(*outstream) << "-------------------------------------" << endl;
 	}
 }
 
@@ -118,9 +119,9 @@ void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, 
 	if(Util::print && data) {
 		UINT i,j,k,l;
 
-		cout << "-------------------------------------" << endl;
-		cout << "name: " << name << endl;
-		cout << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
+		(*outstream) << "-------------------------------------" << endl;
+		(*outstream) << "name: " << name << endl;
+		(*outstream) << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
 
 		UINT batchElem = rows*cols*channels;
 		UINT channelElem = rows*cols;
@@ -128,21 +129,23 @@ void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, 
 			for(j = 0; j < channels; j++) {
 				for(k = 0; k < rows; k++) {
 					for(l = 0; l < cols; l++) {
-						cout << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+				//for(k = 0; k < std::min(10, (int)rows); k++) {
+				//	for(l = 0; l < std::min(10, (int)cols); l++) {
+						(*outstream) << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
 					}
-					cout << endl;
+					(*outstream) << endl;
 				}
-				cout << endl;
+				(*outstream) << endl;
 			}
-			cout << endl;
+			(*outstream) << endl;
 		}
 
 		//for(i = 0; i < std::min(10, (int)(rows*cols*channels*batches)); i++) {
-		//	cout << data[i] << ",";
+		//	(*outstream) << data[i] << ",";
 		//}
-		//cout << endl;
+		//(*outstream) << endl;
 
-		cout << "-------------------------------------" << endl;
+		(*outstream) << "-------------------------------------" << endl;
 	}
 }
 
@@ -163,7 +166,7 @@ void Util::printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT ch
 void Util::printMessage(string message) {
 	//if(true || Util::print) {
 	if(Util::print) {
-		cout << message << endl;
+		(*outstream) << message << endl;
 	}
 }
 

@@ -21,7 +21,11 @@ using namespace arma;
 
 class DataSet {
 public:
-	DataSet() {}
+	DataSet() {
+		mean_r = 0;
+		mean_g = 0;
+		mean_b = 0;
+	}
 	DataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData) {
 		this->rows = rows;
 		this->cols = cols;
@@ -34,6 +38,10 @@ public:
 		trainLabelSet = new vector<UINT>(numTrainData);
 		testDataSet = new vector<DATATYPE>(this->dataSize*numTestData);
 		testLabelSet = new vector<UINT>(numTestData);
+
+		mean_r = 0;
+		mean_g = 0;
+		mean_b = 0;
 	}
 	virtual ~DataSet() {
 		if(trainDataSet) delete trainDataSet;
@@ -84,6 +92,29 @@ public:
 	virtual void shuffleTrainDataSet() = 0;
 	virtual void shuffleValidationDataSet() = 0;
 	virtual void shuffleTestDataSet() = 0;
+	void zeroMean() {
+		cout << "mean_r: " << mean_r << ", mean_g: " << mean_g << ", mean_b: " << mean_b << endl;
+
+		UINT i;
+		for(i = 0; i < numTrainData; i++) {
+			mean_r += (*trainDataSet)[i*channels+0];
+			mean_g += (*trainDataSet)[i*channels+1];
+			mean_b += (*trainDataSet)[i*channels+2];
+		}
+
+
+		mean_r /= numTrainData;
+		mean_g /= numTrainData;
+		mean_b /= numTrainData;
+
+		cout << "mean_r: " << mean_r << ", mean_g: " << mean_g << ", mean_b: " << mean_b << endl;
+
+		for(i = 0; i < numTrainData; i++) {
+			(*trainDataSet)[i*channels+0] -= mean_r;
+			(*trainDataSet)[i*channels+1] -= mean_g;
+			(*trainDataSet)[i*channels+2] -= mean_b;
+		}
+	}
 
 private:
 
@@ -98,6 +129,8 @@ protected:
 	UINT numValidationData;
 	UINT numTestData;
 
+
+
 	//DataSample *trainDataSet;
 	//DataSample *validationDataSet;
 	//DataSample *testDataSet;
@@ -107,6 +140,10 @@ protected:
 	vector<UINT> *validationLabelSet;
 	vector<DATATYPE> *testDataSet;
 	vector<UINT> *testLabelSet;
+
+	DATATYPE mean_r;
+	DATATYPE mean_g;
+	DATATYPE mean_b;
 
 	//vector<const DataSample *> trainDataSet;
 	//vector<const DataSample *> validationDataSet;

@@ -62,7 +62,7 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void feedforward(UINT idx, const rcube &input);
+	virtual void feedforward(UINT idx, const rcube &input, const char *end=0);
 #else
 public:
 	DATATYPE *getWeight() { return this->d_weight; }
@@ -72,7 +72,7 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void feedforward(UINT idx, const DATATYPE *input);
+	virtual void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 
 #endif
 
@@ -86,7 +86,7 @@ private:
 
 protected:
 	virtual void _save(ofstream &ofs);
-	virtual void _shape();
+	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
 	double p_dropout;

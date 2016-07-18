@@ -52,8 +52,11 @@ void Network::shape() {
 	inputLayer->shape(0, in_dim);
 }
 
-void Network::reshape() {
-	inputLayer->reshape(0, in_dim);
+void Network::reshape(io_dim in_dim) {
+	if(in_dim.unitsize() > 0) {
+		this->in_dim = in_dim;
+	}
+	inputLayer->reshape(0, this->in_dim);
 }
 
 
@@ -254,6 +257,7 @@ int Network::evaluate(int &accurateCnt, float &cost) {
 
 	int testBatchesSize = dataSet->getNumTestData()/in_dim.batches;
 	for(int i = 0; i < testBatchesSize; i++) {
+	//for(int i = 2; i < 3; i++) {
 
 		// FEED FORWARD
 		DATATYPE *d_testData;
@@ -262,15 +266,24 @@ int Network::evaluate(int &accurateCnt, float &cost) {
 		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*in_dim.batches),
 				sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches, cudaMemcpyHostToDevice));
 
+		io_dim in_dim = inputLayer->getInDimension();
+		//Util::setPrint(true);
+		Util::printData(dataSet->getTestDataAt(i*in_dim.batches), in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_testData:");
+		//Util::setPrint(false);
+
 		feedforward(d_testData);
 		checkCudaErrors(cudaFree(d_testData));
-
+		io_dim out_dim = outputLayers[0]->getOutDimension();
+		//Util::setPrint(true);
+		Util::printDeviceData(outputLayers[0]->getOutput(), out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "output:");
+		//Util::setPrint(false);
 		//UINT *d_testLabel;
 		//checkCudaErrors(cudaMalloc(&d_testLabel, sizeof(UINT)));
 		//checkCudaErrors(cudaMemcpyAsync(d_testLabel, dataSet->getTestLabelAt(i),
 		//		sizeof(UINT), cudaMemcpyHostToDevice));
 
-		testEvaluateResult(outputLayers[0]->getOutput(), dataSet->getTestLabelAt(i*in_dim.batches), accurateCnt, cost);
+		testEvaluateResult(outputLayers[0]->getOutDimension().rows, outputLayers[0]->getOutput(),
+				dataSet->getTestLabelAt(i*in_dim.batches), accurateCnt, cost);
 		//checkCudaErrors(cudaFree(d_testLabel));
 	}
 
@@ -289,9 +302,9 @@ int Network::evaluate(int &accurateCnt, float &cost) {
 
 
 
-void Network::feedforward(const rcube &input) {
+void Network::feedforward(const rcube &input, const char *end) {
 	//cout << "feedforward()" << endl;
-	inputLayer->feedforward(0, input);
+	inputLayer->feedforward(0, input, end);
 
 }
 
@@ -386,9 +399,9 @@ int Network::testEvaluateResult(const rvec &output, const rvec &y) {
 
 
 
-void Network::feedforward(const DATATYPE *input) {
+void Network::feedforward(const DATATYPE *input, const char *end) {
 	//cout << "feedforward()" << endl;
-	inputLayer->feedforward(0, input);
+	inputLayer->feedforward(0, input, end);
 }
 
 
@@ -407,6 +420,14 @@ void Network::updateMiniBatch(int nthMiniBatch) {
 
 	// BACK PROPAGATION
 	UINT *d_trainLabel;
+
+	/*
+	for(int i = 0; i < in_dim.batches; i++) {
+		//Util::printMessage(string(dataSet->getTrainLabelAt(baseIndex)[i]));
+		cout << "target for " << i << "th train: " << dataSet->getTrainLabelAt(baseIndex)[i] << endl;
+	}
+	*/
+
 	checkCudaErrors(cudaMalloc(&d_trainLabel, sizeof(UINT)*in_dim.batches));
 	checkCudaErrors(cudaMemcpyAsync(d_trainLabel, dataSet->getTrainLabelAt(baseIndex),
 				sizeof(UINT)*in_dim.batches, cudaMemcpyHostToDevice));
@@ -428,8 +449,7 @@ void Network::updateMiniBatch(int nthMiniBatch) {
 
 
 
-int Network::testEvaluateResult(const DATATYPE *d_output, const UINT *y, int &accurateCnt, float &cost) {
-	const int num_labels = 10;
+int Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output, const UINT *y, int &accurateCnt, float &cost) {
 	DATATYPE *output = new DATATYPE[num_labels*in_dim.batches];
 
 	//Util::setPrint(true);
@@ -452,7 +472,7 @@ int Network::testEvaluateResult(const DATATYPE *d_output, const UINT *y, int &ac
 			if(i == y[j]) cost += std::abs(output[num_labels*j+i]-1);
 			else cost += std::abs(output[num_labels*j+i]);
 		}
-		//cout << endl << "maxIndex: " << maxIndex << ", y: " << y[0] << endl;
+		//cout << endl << "maxIndex: " << maxIndex << ", y: " << y[j] << endl;
 
 		if(maxIndex == y[j]) accurateCnt++;
 	}
@@ -479,7 +499,13 @@ int Network::testEvaluateResult(const DATATYPE *d_output, const UINT *y, int &ac
 #endif
 
 
+void Network::objective(const char *name) {
 
+}
+
+void Network::backpropagation(const char *name) {
+
+}
 
 
 

@@ -41,19 +41,19 @@ public:
 #if CPU_MODE
 public:
 	rcube &getDeltaInput() { return this->delta_input; }
-	void feedforward(UINT idx, const rcube &input);
+	void feedforward(UINT idx, const rcube &input, const char *end=0);
 
 #else
 public:
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }
 
-	void feedforward(UINT idx, const DATATYPE *input);
+	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 #endif
 
 protected:
 	void initialize(pool_dim pool_d, PoolingType poolingType);
 	virtual void _save(ofstream &ofs);
-	virtual void _shape();
+	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
 	pool_dim pool_d;

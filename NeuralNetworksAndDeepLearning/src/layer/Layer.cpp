@@ -36,8 +36,8 @@ void Layer::_save(ofstream &ofs) {
 	ofs.write((char *)&address, sizeof(Layer *));					// layer address
 	ofs.write((char *)&id, sizeof(int));									// layer id
 	ofs.write(name, LAYER_NAME_LENGTH);										// layer name
-	//ofs.write((char *)&in_dim, sizeof(io_dim));						// layer in_dim
-	//ofs.write((char *)&out_dim, sizeof(io_dim));					// layer out_dim
+	ofs.write((char *)&in_dim, sizeof(io_dim));						// layer in_dim
+	ofs.write((char *)&out_dim, sizeof(io_dim));					// layer out_dim
 	ofs.write((char *)&nextLayerSize, sizeof(UINT));			// layer next layer size
 	for(UINT i = 0; i < nextLayerSize; i++) {							// layer next layers
 		ofs.write((char *)&nextLayers[i], sizeof(next_layer_relation));
@@ -55,8 +55,8 @@ void Layer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 	ifs.read((char *)&layerId, sizeof(int));
 	ifs.read(name, LAYER_NAME_LENGTH);
-	//ifs.read((char *)&in_dim, sizeof(io_dim));
-	//ifs.read((char *)&out_dim, sizeof(io_dim));
+	ifs.read((char *)&in_dim, sizeof(io_dim));
+	ifs.read((char *)&out_dim, sizeof(io_dim));
 	ifs.read((char *)&nextLayerSize, sizeof(UINT));
 	for(UINT i = 0; i < nextLayerSize; i++) {
 		next_layer_relation nextLayer;
@@ -70,6 +70,9 @@ void Layer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		prevLayers.push_back(prevLayer);
 	}
 	initialize(name);
+
+	Util::printMessage(string(name)+"---load()");
+	Layer::_shape(false);
 	updateLayerRelation(layerMap);
 }
 
@@ -176,7 +179,7 @@ void Layer::saveHeader(UINT idx, ofstream &ofs) {
 	ofs.write((char *)&type, sizeof(int));
 	ofs.write((char *)&p, sizeof(Layer *));
 
-	cout << "save header for " << name << ", type: " << (int)type << ", address: " << p << endl;
+	//cout << "save header for " << name << ", type: " << (int)type << ", address: " << p << endl;
 	for(UINT i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i].next_layer->saveHeader(nextLayers[i].idx, ofs);
 	}
@@ -197,7 +200,7 @@ Layer::~Layer() {
 			nextLayers[i].next_layer = NULL;
 		}
 	}
-	cout << "destroying " << name << " layer ... " << endl;
+	//cout << "destroying " << name << " layer ... " << endl;
 }
 
 /**
@@ -205,7 +208,7 @@ Layer::~Layer() {
  * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
  */
 // sub class에서 구현이 없을 때에만 참조, 구현이 있을 경우 prop*() 함수를 참조
-void Layer::feedforward(UINT idx, const rcube &input) { propFeedforward(input); }
+void Layer::feedforward(UINT idx, const rcube &input, const char *end=0) { propFeedforward(input, end); }
 
 
 
@@ -221,9 +224,9 @@ void Layer::initialize(const char *name, io_dim in_dim, io_dim out_dim) {
 	this->output.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
 }
 
-void Layer::propFeedforward(const rcube output) {
+void Layer::propFeedforward(const rcube output, const char *end=0) {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->feedforward(nextLayers[i].idx, output);
+		nextLayers[i].next_layer->feedforward(nextLayers[i].idx, output, end);
 	}
 }
 
@@ -246,9 +249,8 @@ void Layer::shape(UINT idx, io_dim in_dim) {
 	propShape();
 }
 
-void Layer::_shape() {
+void Layer::_shape(bool recursive) {
 	Util::printMessage(string(name)+"---_shape()");
-	//checkCudaErrors(cudaMalloc(&this->d_input, sizeof(DATATYPE)*in_dim.batchsize()));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
@@ -352,11 +354,13 @@ Layer::~Layer() {
  * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
  */
 // sub class에서 구현이 없을 때에만 참조, 구현이 있을 경우 prop*() 함수를 참조
-void Layer::feedforward(UINT idx, const DATATYPE *input) { propFeedforward(input); }
+void Layer::feedforward(UINT idx, const DATATYPE *input, const char *end) { propFeedforward(input, end); }
 
-void Layer::propFeedforward(const DATATYPE *output) {
+void Layer::propFeedforward(const DATATYPE *output, const char *end) {
+	if(end != 0 && strcmp(name, end)) return;
+
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->feedforward(nextLayers[i].idx, output);
+		nextLayers[i].next_layer->feedforward(nextLayers[i].idx, output, end);
 	}
 }
 

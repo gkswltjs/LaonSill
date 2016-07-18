@@ -42,20 +42,20 @@ public:
 public:
 	DepthConcatLayer(const char *name, int n_in);
 	rcube &getDeltaInput();
-	void feedforward(UINT idx, const rcube &input);
+	void feedforward(UINT idx, const rcube &input, const char *end=0);
 #else
 	/**
 	 * DepthConcatLayer의 getDetalInput()의 경우,
 	 * 내부적으로 호출횟수를 카운트하므로 절대 로깅용으로 호출해서는 안됨.
 	 */
 	DATATYPE *getDeltaInput();
-	void feedforward(UINT idx, const DATATYPE *input);
+	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 #endif
 
 
 protected:
 	void initialize();
-	virtual void _shape();
+	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
 

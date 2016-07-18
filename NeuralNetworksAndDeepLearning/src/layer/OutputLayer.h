@@ -62,6 +62,8 @@ public:
 	virtual void cost(const UINT *target)=0;
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		FullyConnectedLayer::load(ifs, layerMap);
+
+		OutputLayer::_shape(false);
 		//CostType type;
 		//ifs.read((char *)&type, sizeof(int));
 		//initialize(type);
@@ -74,8 +76,10 @@ protected:
 		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
 		this->cost_fn = CostFactory::create(costType);
 	}
-	virtual void _shape() {
-		FullyConnectedLayer::_shape();
+	virtual void _shape(bool recursive=true) {
+		if(recursive) {
+			FullyConnectedLayer::_shape();
+		}
 	}
 
 	virtual void _clearShape() {

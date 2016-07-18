@@ -75,13 +75,13 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	// sub class에서 구현이 없을 때에만 참조, 구현이 있을 경우 prop*() 함수를 참조
-	virtual void feedforward(UINT idx, const rcube &input);
+	virtual void feedforward(UINT idx, const rcube &input, const char *end=0);
 #else
 public:
 	const DATATYPE *getInput() { return this->d_input; }
 	DATATYPE *getOutput() { return this->d_output; }
 
-	virtual void feedforward(UINT idx, const DATATYPE *input);
+	virtual void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 #endif
 
 protected:
@@ -95,7 +95,7 @@ protected:
 	static int generateLayerId();
 
 	virtual void _save(ofstream &ofs);
-	virtual void _shape();
+	virtual void _shape(bool recursive=true);
 	virtual void _reshape();
 	virtual void _clearShape();
 
@@ -121,13 +121,13 @@ protected:
 
 #if CPU_MODE
 protected:
-	void propFeedforward(const rcube output);
+	void propFeedforward(const rcube output, const char *end=0);
 
 	rcube input;
 	rcube output;
 #else
 protected:
-	void propFeedforward(const DATATYPE *output);
+	void propFeedforward(const DATATYPE *output, const char *end=0);
 
 	const DATATYPE *d_input;		// input pointer is assigned from prev layer output pointer
 	DATATYPE *d_output;					// has own device memory allocated

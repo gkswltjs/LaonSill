@@ -25,6 +25,8 @@ void PoolingLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	ifs.read((char *)&poolingType, sizeof(PoolingType));
 
 	initialize(pool_d, poolingType);
+
+	PoolingLayer::_shape(false);
 }
 
 void PoolingLayer::_save(ofstream &ofs) {
@@ -63,13 +65,13 @@ PoolingLayer::~PoolingLayer() {
 	PoolingFactory::destroy(pooling_fn);
 }
 
-void PoolingLayer::feedforward(UINT idx, const rcube &input) {
+void PoolingLayer::feedforward(UINT idx, const rcube &input, const char *end=0) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::convertCube(input, this->input);
 	pooling_fn->pool(pool_d, this->input, pool_map, output);
 
-	propFeedforward(this->output);
+	propFeedforward(this->output, end);
 }
 
 
@@ -102,7 +104,7 @@ void PoolingLayer::initialize(pool_dim pool_d, PoolingType poolingType) {
 	this->pooling_fn = PoolingFactory::create(poolingType, pool_d);
 }
 
-void PoolingLayer::_shape() {
+void PoolingLayer::_shape(bool recursive) {
 	cudnnTensorDescriptor_t tempInputTensorDesc;
 	checkCUDNN(cudnnCreateTensorDescriptor(&tempInputTensorDesc));
 	checkCUDNN(cudnnSetTensor4dDescriptor(tempInputTensorDesc,
@@ -122,7 +124,9 @@ void PoolingLayer::_shape() {
 
 	checkCUDNN(cudnnDestroyTensorDescriptor(tempInputTensorDesc));
 
-	HiddenLayer::_shape();
+	if(recursive) {
+		HiddenLayer::_shape();
+	}
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*out_dim.batchsize()));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
@@ -147,7 +151,7 @@ PoolingLayer::~PoolingLayer() {
 }
 
 
-void PoolingLayer::feedforward(UINT idx, const DATATYPE *input) {
+void PoolingLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	Util::printMessage("PoolingLayer::feedforward()---"+string(name));
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 	this->d_input = input;
@@ -156,7 +160,7 @@ void PoolingLayer::feedforward(UINT idx, const DATATYPE *input) {
 	pooling_fn->pool(inputTensorDesc, d_input, outputTensorDesc, d_output);
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 
-	propFeedforward(d_output);
+	propFeedforward(d_output, end);
 }
 
 

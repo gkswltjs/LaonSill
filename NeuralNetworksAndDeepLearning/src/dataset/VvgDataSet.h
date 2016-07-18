@@ -19,9 +19,10 @@ public:
 				"/home/jhkim/data/learning/vvg/vvg_image.ubyte",
 				"/home/jhkim/data/learning/vvg/vvg_label.ubyte",
 				validationSetRatio) {
-		this->channels = 1;
+		this->channels = 3;
 	}
 	virtual ~VvgDataSet() {}
+
 };
 
 #endif /* VVGDATASET_H_ */

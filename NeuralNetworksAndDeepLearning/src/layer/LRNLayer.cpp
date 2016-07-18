@@ -30,6 +30,7 @@ void LRNLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	ifs.read((char *)&lrn_d, sizeof(lrn_dim));
 
 	initialize(lrn_d);
+	LRNLayer::_shape(false);
 }
 
 void LRNLayer::_save(ofstream &ofs) {
@@ -54,7 +55,7 @@ void LRNLayer::initialize(lrn_dim lrn_d) {
 
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::feedforward(UINT idx, const rcube &input) {
+void LRNLayer::feedforward(UINT idx, const rcube &input, const char *end) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	UINT i, j;
@@ -86,7 +87,7 @@ void LRNLayer::feedforward(UINT idx, const rcube &input) {
 		//Util::printMat(this->output.slice(i), "output:");
 	}
 
-	propFeedforward(this->output);
+	propFeedforward(this->output, end);
 
 }
 
@@ -135,10 +136,12 @@ void LRNLayer::initialize(lrn_dim lrn_d) {
 	checkCUDNN(cudnnSetLRNDescriptor(lrnDesc, lrn_d.local_size, lrn_d.alpha, lrn_d.beta, lrn_d.k));
 }
 
-void LRNLayer::_shape() {
+void LRNLayer::_shape(bool recursive) {
 	out_dim = in_dim;
 
-	HiddenLayer::_shape();
+	if(recursive) {
+		HiddenLayer::_shape();
+	}
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
@@ -159,7 +162,7 @@ LRNLayer::~LRNLayer() {
 
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::feedforward(UINT idx, const DATATYPE *input) {
+void LRNLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	Util::printMessage("LRNLayer::feedforward()---"+string(name));
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
@@ -174,7 +177,7 @@ void LRNLayer::feedforward(UINT idx, const DATATYPE *input) {
 
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 
-	propFeedforward(d_output);
+	propFeedforward(d_output, end);
 }
 
 

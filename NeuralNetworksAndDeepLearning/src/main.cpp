@@ -37,6 +37,7 @@
 #include "activation/Activation.h"
 #include "activation/Sigmoid.h"
 #include "activation/ReLU.h"
+#include "application/DeepDream.h"
 
 #include "Timer.h"
 #include "cuda/Cuda.h"
@@ -59,15 +60,27 @@ void cuda_gemm_test();
 void cuda_conv_test();
 void gnuplot_test();
 void cimg_test();
+void deepdream_test();
 
 int main(int argc, char** argv) {
 	cout << "main" << endl;
 	cout.precision(11);
 	cout.setf(ios::fixed);
 
-	network_test();
+	Util::setOutstream(&cout);
+	//Util::setOutstream("./log");
+	//Util::printMessage("message ... ");
+
+
+	//CImg<DATATYPE> image("/home/jhkim/1258494B4EE332004A1D29.jpeg");
+	//cout << "size: " << image.size() << endl;
+
+
+	//network_test();
+	deepdream_test();
 	//gnuplot_test();
 	//cimg_test();
+
 
 
 	/*
@@ -78,23 +91,26 @@ int main(int argc, char** argv) {
 	imagePacker.pack();
 	*/
 
-
-
 	cout << "end" << endl;
 	return 0;
 }
 
 
+void deepdream_test() {
+	Cuda::create(0);
+	cout << "Cuda creation done ... " << endl;
 
+	Util::setPrint(false);
+	Network *network_load = new Network();
+	network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetSingle_vvg.network");
+	//network_load->setDataSet(vvgDataSet, 10);
+	//network_load->test();
 
+	DeepDream *deepdream = new DeepDream(network_load, "/home/jhkim/1258494B4EE332004A1D29.jpeg");
+	deepdream->deepdream();
 
-
-
-
-
-
-
-
+	Cuda::destroy();
+}
 
 
 void network_test() {
@@ -110,34 +126,35 @@ void network_test() {
 
 		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
 		mnistDataSet->load();
-
 		DataSet *vvgDataSet = new VvgDataSet(validationSetRatio);
 		vvgDataSet->load();
-
+		//vvgDataSet->zeroMean();
 
 		int maxEpoch = 30;
 		NetworkListener *networkListener = new NetworkMonitor(maxEpoch);
 
-		//Network *network = new NeuralNetSingle(networkListener, 0.01, 5.0);
-		//Network *network = new ConvNetSingle(networkListener);
+
+
+		/*
+		//Network *network = new NeuralNetSingle(networkListener, 0.005, 5.0);
+		Network *network = new ConvNetSingle(networkListener, 0.005, 5.0);
 		//Network *network = new InceptionNetAux(networkListener);
-		Network *network = new InceptionNetSingle(networkListener);
+		//Network *network = new InceptionNetSingle(networkListener);
+		//network->setDataSet(vvgDataSet, 10);
+		//network->shape();
+		//cout << "reshaping ... " << endl;
 		network->setDataSet(vvgDataSet, 10);
 		network->shape();
-
-		cout << "reshaping ... " << endl;
-		network->setDataSet(mnistDataSet, 10);
-		network->reshape();
-
 		network->sgd(maxEpoch);
-
-		//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
-		/*
-		Network *network_load = new Network();
-		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
-		network_load->setDataSet(dataSet);
-		network_load->test();
+		network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetSingle_vvg.network");
 		*/
+
+		Network *network_load = new Network();
+		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetSingle_vvg.network");
+		network_load->setDataSet(vvgDataSet, 10);
+		network_load->test();
+
+
 
 	} else {
 		Util::setPrint(false);
@@ -250,6 +267,11 @@ void network_test() {
 
 	Cuda::destroy();
 }
+
+
+
+
+
 
 
 void cimg_test() {

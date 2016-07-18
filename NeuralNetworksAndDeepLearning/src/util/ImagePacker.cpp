@@ -95,7 +95,7 @@ void ImagePacker::pack() {
 			unsigned char *ptr = image.data(0);
 			ofsImage.write((char *)ptr, sizeof(unsigned char)*width*height*3);
 
-			unsigned char label = ent->d_name[0]-'1';
+			unsigned char label = ent->d_name[0]-'0';
 			ofsLabel.write((char *)&label, sizeof(unsigned char));
 		}
 		closedir(dir);

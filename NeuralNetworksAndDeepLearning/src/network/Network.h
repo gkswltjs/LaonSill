@@ -61,11 +61,30 @@ public:
 	void save(string filename);
 	void load(string filename);
 	void shape();
-	void reshape();
+	void reshape(io_dim in_dim=io_dim(0,0,0,0));
+
+	void backprop(const DataSample &dataSample);
+
+	void objective(const char *name=0);
+	void backpropagation(const char *name=0);
+
+
+
+
+
+#if CPU_MODE
+public:
+	void feedforward(const rcube &input, const char *end=0);
+#else
+public:
+	void feedforward(const DATATYPE *input, const char *end=0);
+#endif
+
+
 
 protected:
 	void updateMiniBatch(int nthMiniBatch);
-	void backprop(const DataSample &dataSample);
+
 
 	double totalCost(const vector<const DataSample *> &dataSet, double lambda);
 	double accuracy(const vector<const DataSample *> &dataSet);
@@ -81,16 +100,10 @@ protected:
 
 #if CPU_MODE
 protected:
-	//void feedforward();
-	void feedforward(const rcube &input);
 	int testEvaluateResult(const rvec &output, const rvec &y);
-
-
 #else
 protected:
-	void feedforward(const DATATYPE *input);
-	int testEvaluateResult(const DATATYPE *output, const UINT *y, int &accurateCnt, float &cost);
-
+	int testEvaluateResult(const int num_labels, const DATATYPE *output, const UINT *y, int &accurateCnt, float &cost);
 #endif
 
 

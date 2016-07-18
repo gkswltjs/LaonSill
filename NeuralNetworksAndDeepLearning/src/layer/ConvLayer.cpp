@@ -96,7 +96,7 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 
 
 
-void ConvLayer::feedforward(UINT idx, const rcube &input) {
+void ConvLayer::feedforward(UINT idx, const rcube &input, const char *end) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	// 현재 CONV 레이어의 경우 여러 레이어로 값이 전달되지 않기 때문에 무의미하다.
@@ -135,7 +135,7 @@ void ConvLayer::feedforward(UINT idx, const rcube &input) {
 	activation_fn->activate(z, output);
 	Util::printCube(output, "output:");
 
-	propFeedforward(this->output);
+	propFeedforward(this->output, end);
 }
 
 
@@ -487,7 +487,7 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 
 
 
-void ConvLayer::_shape() {
+void ConvLayer::_shape(bool recursive) {
 	cudnnTensorDescriptor_t tempInputTensorDesc;
 	checkCUDNN(cudnnCreateTensorDescriptor(&tempInputTensorDesc));
 	checkCUDNN(cudnnSetTensor4dDescriptor(tempInputTensorDesc,
@@ -507,7 +507,9 @@ void ConvLayer::_shape() {
 
 	checkCUDNN(cudnnDestroyTensorDescriptor(tempInputTensorDesc));
 
-	HiddenLayer::_shape();
+	if(recursive) {
+		HiddenLayer::_shape();
+	}
 
 	int u_in = in_dim.unitsize();
 	int u_out = out_dim.unitsize();
@@ -596,7 +598,7 @@ void ConvLayer::_clearShape() {
 
 
 
-void ConvLayer::feedforward(UINT idx, const DATATYPE *input) {
+void ConvLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 	Util::printMessage("ConvLayer::feedforward()---"+string(name));
 	Cuda::refresh();
@@ -622,7 +624,7 @@ void ConvLayer::feedforward(UINT idx, const DATATYPE *input) {
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 	//Util::setPrint(false);
 
-	propFeedforward(d_output);
+	propFeedforward(d_output, end);
 }
 
 
@@ -753,6 +755,7 @@ void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	ifs.read((char *)&bias_filler, sizeof(param_filler));
 
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+	ConvLayer::_shape(false);
 
 	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
 	ifs.read((char *)filters, sizeof(DATATYPE)*filter_d.size());

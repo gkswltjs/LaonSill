@@ -43,6 +43,7 @@ public:
 	 */
 	virtual void update(UINT idx, UINT n, UINT miniBatchSize)=0;
 
+
 #if CPU_MODE
 public:
 	HiddenLayer(const char *name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
@@ -69,8 +70,10 @@ protected:
 protected:
 #else
 protected:
-	virtual void _shape() {
-		Layer::_shape();
+	virtual void _shape(bool recursive=true) {
+		if(recursive) {
+			Layer::_shape();
+		}
 	}
 	virtual void _clearShape() {
 		Layer::_clearShape();

@@ -49,6 +49,7 @@ public:
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		OutputLayer::load(ifs, layerMap);
 		initialize();
+		SoftmaxLayer::_shape(false);
 	}
 
 #if CPU_MODE
@@ -136,8 +137,10 @@ protected:
 		//bias.zeros();
 	}
 
-	virtual void _shape() {
-		OutputLayer::_shape();
+	virtual void _shape(bool recursive=true) {
+		if(recursive) {
+			OutputLayer::_shape();
+		}
 	}
 
 	virtual void _clearShape() {
