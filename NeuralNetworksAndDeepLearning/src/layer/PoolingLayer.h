@@ -67,8 +67,6 @@ protected:
 #else
 protected:
 	DATATYPE *d_delta;
-	DATATYPE *d_delta_input;
-
 #endif
 
 };

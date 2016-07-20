@@ -51,6 +51,13 @@ public:
 #else
 public:
 	virtual DATATYPE *getDeltaInput()=0;
+	void setDeltaInput(DATATYPE *delta_input) {
+		checkCudaErrors(cudaMemcpyAsync(d_delta_input, delta_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+
+		Util::printDeviceData(delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "delta_input:");
+		Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
+
+	}
 
 #endif
 
@@ -78,6 +85,9 @@ protected:
 	virtual void _clearShape() {
 		Layer::_clearShape();
 	}
+
+	DATATYPE *d_delta_input;
+
 
 #endif
 

@@ -9,7 +9,8 @@
 #define LAYERCONFIG_H_
 
 #include <cmath>
-#include <cstring>
+#include <chrono>
+#include <random>
 
 #include "../Util.h"
 
@@ -172,7 +173,7 @@ struct param_filler {
 	}
 
 #else
-	void fill(DATATYPE *param, int size, int factor) {
+	void fill(DATATYPE *param, int size, int n_in, int n_out) {
 		UINT i;
 		switch(type) {
 		case ParamFillerType::Constant:
@@ -181,21 +182,25 @@ struct param_filler {
 			for(int i = 0; i < size; i++) param[i] = value;
 		}
 			break;
+
+		// ret = Nd4j.randn(order, shape).divi(FastMath.sqrt(shape[0] + shape[1]));
+		// N(0, 1), {channel in, channel out, kernel x, kernel y},
 		case ParamFillerType::Xavier:
 		{
 			std::random_device rd_xavier;
 			std::mt19937 gen_xavier(rd_xavier());
-			float sd_xavier = sqrt(3.0f / factor);
-			std::uniform_real_distribution<> uniform_dist(-sd_xavier, sd_xavier);
-			for(i = 0; i < size; i++) param[i] = static_cast<DATATYPE>(uniform_dist(gen_xavier));
+			std::normal_distribution<DATATYPE> normal_dist(0.0, 1.0);
+			float sd_xavier = sqrt(1.0f / (n_in+n_out));
+			for(i = 0; i < size; i++) param[i] = normal_dist(gen_xavier)*sd_xavier;
 		}
 			break;
 		case ParamFillerType::Gaussian:
 		{
 			std::random_device rd_gaussian;
 			std::mt19937 gen_gaussian(rd_gaussian());
-			std::normal_distribution<> normal_dist(-1.0, 1.0);
-			for(i = 0; i < size; i++) param[i] = static_cast<DATATYPE>(normal_dist(gen_gaussian));
+			std::normal_distribution<DATATYPE> normal_dist(0.0, 1.0);
+			float sd_gaussian = 1.0f/n_out;
+			for(i = 0; i < size; i++) param[i] = (normal_dist(gen_gaussian)-0.5f)*sd_gaussian;
 		}
 			break;
 		case ParamFillerType::None:

@@ -15,6 +15,8 @@
 using namespace cimg_library;
 
 
+
+
 class DeepDream {
 public:
 	DeepDream(Network *network, const char *base_img, UINT iter_n=10, UINT octave_n=4,
@@ -24,10 +26,11 @@ public:
 	void deepdream();
 
 private:
-	void make_step(DATATYPE *src, const char *end, float step_size=1.5, float jitter=32);
+	void make_step(DATATYPE* src, DATATYPE* d_src, const char* end, float step_size=1.5, float jitter=32);
 	void objective_L2();
 	void preprocess(CImg<DATATYPE>& img);
 	void deprocess(CImg<DATATYPE>& img);
+	void clipImage(CImg<DATATYPE>& img);
 
 	Network *network;
 	char base_img[256];
@@ -36,6 +39,8 @@ private:
 	double octave_scale;
 	char end[256];
 	bool clip;
+
+	DATATYPE mean[3];
 };
 
 

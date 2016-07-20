@@ -284,12 +284,13 @@ void FullyConnectedLayer::_shape(bool recursive) {
 	int b_in = in_dim.batchsize();
 	int b_out = out_dim.batchsize();
 
+
+
 	weight = new DATATYPE[u_out*u_in];
 	bias = new DATATYPE[u_out];
 
-	weight_filler.fill(weight, u_out*u_in, u_out*u_in);
-	//weight_filler.fill(weight, in_dim.rows*in_dim.cols, in_dim.rows*in_dim.cols);
-	bias_filler.fill(bias, u_out, 0);
+	weight_filler.fill(weight, u_out*u_in, u_in, u_out);
+	bias_filler.fill(bias, u_out, u_in, u_out);
 	Util::printData(weight, u_out, u_in, 1, 1, "weight:");
 	Util::printData(bias, u_out, 1, 1, 1, "bias:");
 
@@ -299,6 +300,7 @@ void FullyConnectedLayer::_shape(bool recursive) {
 	checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
+
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*u_out*u_in));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*u_out));
 

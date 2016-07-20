@@ -28,6 +28,8 @@ public:
 				"/home/jhkim/data/learning/mnist/t10k-labels.idx1-ubyte",
 				validationSetRatio) {
 		this->channels = 1;
+
+		this->mean[0] = 0.13066047740;
 	}
 	virtual ~MnistDataSet() {}
 

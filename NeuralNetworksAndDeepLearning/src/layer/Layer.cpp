@@ -250,7 +250,9 @@ void Layer::shape(UINT idx, io_dim in_dim) {
 }
 
 void Layer::_shape(bool recursive) {
+	Util::setPrint(true);
 	Util::printMessage(string(name)+"---_shape()");
+	Util::setPrint(false);
 	checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
@@ -357,7 +359,7 @@ Layer::~Layer() {
 void Layer::feedforward(UINT idx, const DATATYPE *input, const char *end) { propFeedforward(input, end); }
 
 void Layer::propFeedforward(const DATATYPE *output, const char *end) {
-	if(end != 0 && strcmp(name, end)) return;
+	if(end != 0 && strcmp(name, end) == 0) return;
 
 	for(UINT i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i].next_layer->feedforward(nextLayers[i].idx, output, end);
@@ -368,7 +370,19 @@ void Layer::propFeedforward(const DATATYPE *output, const char *end) {
 #endif
 
 
+Layer *Layer::find(UINT idx, const char *name) {
+	if(!isLastPrevLayerRequest(idx)) return 0;
 
+	if(strcmp(name, this->name) == 0) {
+		return this;
+	} else {
+		for(UINT i = 0; i < nextLayers.size(); i++) {
+			Layer* result = nextLayers[i].next_layer->find(nextLayers[i].idx, name);
+			if(result != 0) return result;
+		}
+	}
+	return 0;
+}
 
 
 

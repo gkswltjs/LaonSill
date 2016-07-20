@@ -8,6 +8,7 @@
 #include "network/GoogLeNetMnist.h"
 #include "network/ConvNetSingle.h"
 #include "network/ConvNetDouble.h"
+#include "network/ConvNetMult.h"
 #include "network/InceptionNetSingle.h"
 #include "network/InceptionNetMult.h"
 #include "network/InceptionNetAux.h"
@@ -62,6 +63,28 @@ void gnuplot_test();
 void cimg_test();
 void deepdream_test();
 
+
+
+
+void pi(const char *head, CImg<DATATYPE>& img, bool force=false) {
+	if(force || true) {
+		int width = std::min(5, img.width());
+		int height = std::min(5, img.height());
+
+		cout << head << "-" << img.width() << "x" << img.height() << "x" << img.spectrum() << endl;
+		DATATYPE *data = img.data();
+		for(int i = 0; i < height; i++) {
+			for(int j = 0; j < width; j++) {
+				cout << data[i*img.width()+j] << ", ";
+			}
+			cout << endl;
+		}
+	}
+}
+
+
+
+
 int main(int argc, char** argv) {
 	cout << "main" << endl;
 	cout.precision(11);
@@ -71,15 +94,20 @@ int main(int argc, char** argv) {
 	//Util::setOutstream("./log");
 	//Util::printMessage("message ... ");
 
-
-	//CImg<DATATYPE> image("/home/jhkim/1258494B4EE332004A1D29.jpeg");
-	//cout << "size: " << image.size() << endl;
-
-
-	//network_test();
-	deepdream_test();
+	network_test();
+	//deepdream_test();
 	//gnuplot_test();
 	//cimg_test();
+
+	/*
+	DataSet *vvg = new VvgDataSet(0.8);
+	vvg->load();
+	vvg->zeroMean();
+
+	DataSet *mnist = new MnistDataSet(0.8);
+	mnist->load();
+	mnist->zeroMean();
+	*/
 
 
 
@@ -102,11 +130,16 @@ void deepdream_test() {
 
 	Util::setPrint(false);
 	Network *network_load = new Network();
-	network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetSingle_vvg.network");
+	//network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetDouble_vvg.network");
+	network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetMult_vvg_zm_29.network");
 	//network_load->setDataSet(vvgDataSet, 10);
 	//network_load->test();
 
-	DeepDream *deepdream = new DeepDream(network_load, "/home/jhkim/1258494B4EE332004A1D29.jpeg");
+	//"/home/jhkim/cloud_84.jpg"
+	//"/home/jhkim/sky1024px.jpg"
+	DeepDream *deepdream = new DeepDream(network_load, "/home/jhkim/sky1024px.jpg", 10, 4, 1.4, "pool3");
+	//DeepDream *deepdream = new DeepDream(network_load, "/home/jhkim/cloud_84.jpg", 2, 2, 1.4, "conv2");
+	//DeepDream *deepdream = new DeepDream(network_load, "/home/jhkim/altocumulus_small.jpg", 2, 2, 1.4, "conv3");
 	deepdream->deepdream();
 
 	Cuda::destroy();
@@ -124,20 +157,30 @@ void network_test() {
 	if(!debug) {
 		Util::setPrint(false);
 
-		DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
-		mnistDataSet->load();
+		//DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
+		//mnistDataSet->load();
+		//mnistDataSet->zeroMean(true);
+
 		DataSet *vvgDataSet = new VvgDataSet(validationSetRatio);
 		vvgDataSet->load();
-		//vvgDataSet->zeroMean();
+		vvgDataSet->zeroMean(true);
+
+		double lr[6] = {10.0, 1.0, 0.1, 0.01, 0.001, 0.0001};
+		double wd[2] = {500.0, 100.0};
+
+		//for(int i = 4; i < 6; i++) {
+		//	for(int j = 1; j < 2; j++) {
+		//	cout << "lr: " << lr[i] << ", wd: " << wd[j] << endl;
 
 		int maxEpoch = 30;
 		NetworkListener *networkListener = new NetworkMonitor(maxEpoch);
 
 
+		Network *network = new GoogLeNet(networkListener);
 
-		/*
+		//Network *network = new ConvNetDouble(networkListener);
 		//Network *network = new NeuralNetSingle(networkListener, 0.005, 5.0);
-		Network *network = new ConvNetSingle(networkListener, 0.005, 5.0);
+		//Network *network = new ConvNetMult(networkListener, 0.01, 5.0);
 		//Network *network = new InceptionNetAux(networkListener);
 		//Network *network = new InceptionNetSingle(networkListener);
 		//network->setDataSet(vvgDataSet, 10);
@@ -145,14 +188,25 @@ void network_test() {
 		//cout << "reshaping ... " << endl;
 		network->setDataSet(vvgDataSet, 10);
 		network->shape();
+		network->saveConfig("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/GoogLeNet_vvg_zm_");
 		network->sgd(maxEpoch);
-		network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetSingle_vvg.network");
-		*/
+		//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetMult_vvg_zm.network");
 
+		//delete networkListener;
+		//delete network;
+		//	}
+
+		//}
+
+
+
+		/*
 		Network *network_load = new Network();
-		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetSingle_vvg.network");
+		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetMult_vvg_zm.network");
 		network_load->setDataSet(vvgDataSet, 10);
 		network_load->test();
+		*/
+
 
 
 

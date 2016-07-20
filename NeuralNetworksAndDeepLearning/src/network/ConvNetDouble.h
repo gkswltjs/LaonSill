@@ -23,9 +23,7 @@
 
 class ConvNetDouble : public Network {
 public:
-	ConvNetDouble() : Network() {
-		double lr_mult = 0.05;
-		double decay_mult = 5.0;
+	ConvNetDouble(NetworkListener *networkListener=0, double lr_mult = 0.05, double decay_mult = 5.0) : Network(networkListener) {
 		int filters1 = 20;
 		int filters2 = 40;
 
@@ -38,7 +36,7 @@ public:
 				"conv1",
 				//io_dim(28, 28, 1, batchSize),
 				//io_dim(28, 28, filters1, batchSize),
-				filter_dim(5, 5, 1, filters1, 1),
+				filter_dim(5, 5, 3, filters1, 1),
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),

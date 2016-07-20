@@ -22,9 +22,9 @@ using namespace arma;
 class DataSet {
 public:
 	DataSet() {
-		mean_r = 0;
-		mean_g = 0;
-		mean_b = 0;
+		mean[0] = 0;
+		mean[1] = 0;
+		mean[2] = 0;
 	}
 	DataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData) {
 		this->rows = rows;
@@ -39,9 +39,9 @@ public:
 		testDataSet = new vector<DATATYPE>(this->dataSize*numTestData);
 		testLabelSet = new vector<UINT>(numTestData);
 
-		mean_r = 0;
-		mean_g = 0;
-		mean_b = 0;
+		mean[0] = 0;
+		mean[1] = 0;
+		mean[2] = 0;
 	}
 	virtual ~DataSet() {
 		if(trainDataSet) delete trainDataSet;
@@ -92,28 +92,52 @@ public:
 	virtual void shuffleTrainDataSet() = 0;
 	virtual void shuffleValidationDataSet() = 0;
 	virtual void shuffleTestDataSet() = 0;
-	void zeroMean() {
-		cout << "mean_r: " << mean_r << ", mean_g: " << mean_g << ", mean_b: " << mean_b << endl;
+	void zeroMean(bool hasMean=false) {
+		//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
+		UINT di, ci, hi, wi;
 
-		UINT i;
-		for(i = 0; i < numTrainData; i++) {
-			mean_r += (*trainDataSet)[i*channels+0];
-			mean_g += (*trainDataSet)[i*channels+1];
-			mean_b += (*trainDataSet)[i*channels+2];
+		if(!hasMean) {
+			for(di = 0; di < numTrainData; di++) {
+				for(ci = 0; ci < channels; ci++) {
+					for(hi = 0; hi < rows; hi++) {
+						for(wi = 0; wi < cols; wi++) {
+							mean[ci] += (*trainDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels];
+						}
+					}
+				}
+				//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
+			}
+
+			//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
+			for(ci = 0; ci < channels; ci++) {
+				mean[ci] /= rows*cols*numTrainData;
+			}
+			cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 		}
 
-
-		mean_r /= numTrainData;
-		mean_g /= numTrainData;
-		mean_b /= numTrainData;
-
-		cout << "mean_r: " << mean_r << ", mean_g: " << mean_g << ", mean_b: " << mean_b << endl;
-
-		for(i = 0; i < numTrainData; i++) {
-			(*trainDataSet)[i*channels+0] -= mean_r;
-			(*trainDataSet)[i*channels+1] -= mean_g;
-			(*trainDataSet)[i*channels+2] -= mean_b;
+		for(di = 0; di < numTrainData; di++) {
+			for(ci = 0; ci < channels; ci++) {
+				for(hi = 0; hi < rows; hi++) {
+					for(wi = 0; wi < cols; wi++) {
+						(*trainDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels] -= mean[ci];
+					}
+				}
+			}
 		}
+
+		for(di = 0; di < numTestData; di++) {
+			for(ci = 0; ci < channels; ci++) {
+				for(hi = 0; hi < rows; hi++) {
+					for(wi = 0; wi < cols; wi++) {
+						(*testDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels] -= mean[ci];
+					}
+				}
+			}
+		}
+	}
+
+	DATATYPE getMean(UINT channel) {
+		return (DATATYPE)mean[channel];
 	}
 
 private:
@@ -141,9 +165,7 @@ protected:
 	vector<DATATYPE> *testDataSet;
 	vector<UINT> *testLabelSet;
 
-	DATATYPE mean_r;
-	DATATYPE mean_g;
-	DATATYPE mean_b;
+	double mean[3];
 
 	//vector<const DataSample *> trainDataSet;
 	//vector<const DataSample *> validationDataSet;

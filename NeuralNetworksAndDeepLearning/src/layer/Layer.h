@@ -52,9 +52,13 @@ public:
 
 
 
+	Layer* find(UINT idx, const char* name);
+
 	virtual void save(UINT idx, ofstream &ofs);
 	virtual void saveHeader(UINT idx, ofstream &ofs);
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
+
 
 	/*
 	 * _shape() wrapper, _shape()를 호출하고 다음 레이어로 shape() 전파

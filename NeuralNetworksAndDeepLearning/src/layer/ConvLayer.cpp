@@ -453,8 +453,8 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	this->biases = new DATATYPE[filter_d.filters];
 
 	// TODO init factor 조정해야 함
-	weight_filler.fill(this->filters, filter_size, filter_size);
-	bias_filler.fill(this->biases, filter_d.filters, 0);
+	weight_filler.fill(this->filters, filter_size, filter_d.channels, filter_d.filters);
+	bias_filler.fill(this->biases, filter_d.filters, filter_d.channels, filter_d.filters);
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_filters, sizeof(DATATYPE)*filter_size));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_biases, sizeof(DATATYPE)*filter_d.filters));

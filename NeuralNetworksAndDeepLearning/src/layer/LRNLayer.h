@@ -66,7 +66,6 @@ private:
 	const float alpha=1.0f, beta=0.0f;
 
 	//DATATYPE *d_delta;
-	DATATYPE *d_delta_input;
 
 	cudnnLRNDescriptor_t lrnDesc;
 #endif

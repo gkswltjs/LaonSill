@@ -31,6 +31,9 @@ Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *data
 	if(outputLayer) this->outputLayers.push_back(outputLayer);
 	this->dataSet = dataSet;
 	this->networkListener = networkListener;
+	this->maxAccuracy = 0.0;
+	this->minCost = 100.0;
+	this->saveConfigured = false;
 }
 
 Network::~Network() {
@@ -93,6 +96,15 @@ void Network::sgd(int epochs) {
 		cost /= numTestData;
 		accuracy = (float)accurateCnt/numTestData;
 
+		if(saveConfigured && cost < minCost) {
+			minCost = cost;
+			char savePath[256];
+			sprintf(savePath, "%s%02d.network", savePrefix, i+1);
+			save(savePath);
+		}
+
+
+
 		if(dataSet->getNumTestData() > 0) {
 			cout << "Epoch " << i+1 << " " << accurateCnt << " / " << numTestData
 					<< ", accuracy: " << accuracy << ", cost: " << cost << " :" << timer1.stop(false) << endl;
@@ -129,16 +141,19 @@ void Network::test() {
 
 
 
+void Network::saveConfig(const char* savePrefix) {
+	strcpy(this->savePrefix, savePrefix);
+	this->saveConfigured = true;
+}
 
 
 
 
-
-void Network::save(string filename) {
+void Network::save(const char* filename) {
 	Timer timer;
 	timer.start();
 
-	ofstream ofs(filename.c_str(), ios::out | ios::binary);
+	ofstream ofs(filename, ios::out | ios::binary);
 	//int inputLayerSize = 1;
 	int outputLayerSize = outputLayers.size();
 
@@ -156,8 +171,8 @@ void Network::save(string filename) {
 }
 
 
-void Network::load(string filename) {
-	ifstream ifs(filename.c_str(), ios::in | ios::binary);
+void Network::load(const char* filename) {
+	ifstream ifs(filename, ios::in | ios::binary);
 	UINT outputLayerSize;
 
 	ifs.read((char *)&in_dim, sizeof(in_dim));
@@ -225,6 +240,16 @@ void Network::load(string filename) {
 
 	ifs.close();
 }
+
+
+
+DATATYPE Network::getDataSetMean(UINT channel) {
+	if(dataSet) {
+		return dataSet->getMean(channel);
+	}
+	return 0.0;
+}
+
 
 
 
@@ -499,12 +524,8 @@ int Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output, 
 #endif
 
 
-void Network::objective(const char *name) {
-
-}
-
-void Network::backpropagation(const char *name) {
-
+Layer* Network::findLayer(const char *name) {
+	return inputLayer->find(0, name);
 }
 
 

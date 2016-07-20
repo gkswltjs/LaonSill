@@ -122,7 +122,6 @@ protected:
 
 	DATATYPE *d_z;
 	DATATYPE *d_delta;
-	DATATYPE *d_delta_input;
 	DATATYPE *d_delta_weight;
 	DATATYPE *d_delta_bias;
 

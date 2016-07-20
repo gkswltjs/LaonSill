@@ -33,12 +33,16 @@ class Network {
 public:
 	Network(NetworkListener *networkListener=0) {
 		this->networkListener = networkListener;
+		this->maxAccuracy = 0.0;
+		this->minCost = 100.0;
+		this->saveConfigured = false;
 	}
 	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
 	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
 	void setDataSet(DataSet *dataSet, UINT batches);
+	InputLayer *getInputLayer() const { return this->inputLayer; }
 
 	void sgd(int epochs);
 	void test();
@@ -58,18 +62,14 @@ public:
 		if(pLayer) nextLayer->addPrevLayer(prev_layer_relation(pLayer, prevLayerIdx));
 	}
 
-	void save(string filename);
-	void load(string filename);
+	void saveConfig(const char *savePrefix);
+	void save(const char* filename);
+	void load(const char* filename);
 	void shape();
 	void reshape(io_dim in_dim=io_dim(0,0,0,0));
-
 	void backprop(const DataSample &dataSample);
-
-	void objective(const char *name=0);
-	void backpropagation(const char *name=0);
-
-
-
+	Layer *findLayer(const char *name);
+	DATATYPE getDataSetMean(UINT channel);
 
 
 #if CPU_MODE
@@ -97,6 +97,11 @@ protected:
 	vector<OutputLayer *> outputLayers;
 
 	io_dim in_dim;
+
+	char savePrefix[200];
+	bool saveConfigured;
+	double maxAccuracy;
+	double minCost;
 
 #if CPU_MODE
 protected:

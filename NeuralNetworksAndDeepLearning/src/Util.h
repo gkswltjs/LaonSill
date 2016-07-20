@@ -130,8 +130,6 @@ public:
 	  T      **devPtr,
 	  size_t   size
 	) {
-
-
 		//if(size > 1024*1024) {
 		//	(*outstream) << endl;
 		//}
@@ -140,7 +138,7 @@ public:
 		cuda_mem += size;
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
-		//(*outstream) << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+		(*outstream) << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
 		return cudaError;
 	}
 
