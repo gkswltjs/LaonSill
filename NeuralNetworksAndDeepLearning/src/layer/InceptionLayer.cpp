@@ -304,8 +304,11 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	double bias_lr_mult = 2.0;
 	double bias_decay_mult = 0.0;
 
+
+	char subLayerName[256];
+	sprintf(subLayerName, "%s/%s", this->name, "conv1x1");
 	ConvLayer *conv1x1Layer = new ConvLayer(
-			(char *)"conv1x1",
+			subLayerName,
 			filter_dim(1, 1, ic, oc_cv1x1, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
@@ -314,8 +317,9 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			ActivationType::ReLU
 			);
 
+	sprintf(subLayerName, "%s/%s", this->name, "conv3x3reduce");
 	ConvLayer *conv3x3reduceLayer = new ConvLayer(
-			"conv3x3reduce",
+			subLayerName,
 			filter_dim(1, 1, ic, oc_cv3x3reduce, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
@@ -323,8 +327,9 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			param_filler(ParamFillerType::Constant, 0.2),
 			ActivationType::ReLU);
 
+	sprintf(subLayerName, "%s/%s", this->name, "conv3x3");
 	ConvLayer *conv3x3Layer = new ConvLayer(
-			"conv3x3",
+			subLayerName,
 			filter_dim(3, 3, oc_cv3x3reduce, oc_cv3x3, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
@@ -333,8 +338,9 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			ActivationType::ReLU
 			);
 
+	sprintf(subLayerName, "%s/%s", this->name, "conv5x5reduce");
 	ConvLayer *conv5x5recudeLayer = new ConvLayer(
-			"conv5x5reduce",
+			subLayerName,
 			filter_dim(1, 1, ic, oc_cv5x5reduce, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
@@ -343,8 +349,9 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			ActivationType::ReLU
 			);
 
+	sprintf(subLayerName, "%s/%s", this->name, "conv5x5");
 	ConvLayer *conv5x5Layer = new ConvLayer(
-			"conv5x5",
+			subLayerName,
 			filter_dim(5, 5, oc_cv5x5reduce, oc_cv5x5, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
@@ -353,14 +360,16 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			ActivationType::ReLU
 			);
 
+	sprintf(subLayerName, "%s/%s", this->name, "pool3x3");
 	PoolingLayer *pool3x3Layer = new PoolingLayer(
-			"pool3x3",
+			subLayerName,
 			pool_dim(3, 3, 1),
 			PoolingType::Max
 			);
 
+	sprintf(subLayerName, "%s/%s", this->name, "convProjection");
 	ConvLayer *convProjectionLayer = new ConvLayer(
-			"convProjection",
+			subLayerName,
 			filter_dim(1, 1, ic, oc_cp, 1),
 			update_param(weight_lr_mult, weight_decay_mult),
 			update_param(bias_lr_mult, bias_decay_mult),
@@ -368,8 +377,9 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			param_filler(ParamFillerType::Constant, 0.2),
 			ActivationType::ReLU);
 
+	sprintf(subLayerName, "%s/%s", this->name, "depthConcat");
 	DepthConcatLayer *depthConcatLayer = new DepthConcatLayer(
-			"depthConcat"
+			subLayerName
 			);
 
 	firstLayers.push_back(conv1x1Layer);
@@ -431,16 +441,16 @@ void InceptionLayer::feedforward(UINT idx, const DATATYPE *input, const char *en
 	propFeedforward(lastLayer->getOutput(), end);
 }
 
-void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+void InceptionLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	Util::printMessage("InceptionLayer::backpropagation()---"+string(name));
 	if(idx == 0) {
 		checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*out_dim.batchsize()));
 	}
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()),
-			&alpha, next_layer->getDeltaInput(), 1, d_delta_input, 1));
+			&alpha, next_delta_input, 1, d_delta_input, 1));
 
 	if(!isLastNextLayerRequest(idx)) return;
-	lastLayer->backpropagation(0, this);
+	lastLayer->backpropagation(0, this->getDeltaInput());
 
 	checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*in_dim.batchsize()));
 	for(UINT i = 0; i < firstLayers.size(); i++) {
@@ -481,7 +491,16 @@ void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 
 
 
+Layer* InceptionLayer::find(UINT idx, const char* name) {
+	if(!isLastPrevLayerRequest(idx)) return 0;
 
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		Layer* result = firstLayers[i]->find(0, name);
+		if(result) return result;
+	}
+
+	return Layer::find(idx, name);
+}
 
 
 

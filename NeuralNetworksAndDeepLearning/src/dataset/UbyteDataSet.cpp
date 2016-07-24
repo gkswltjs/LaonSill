@@ -183,6 +183,7 @@ int UbyteDataSet::loadDataSetFromResource(const char *data_path, const char *lab
 		//	cout << bswap((*tempDataSet)[i]) << endl;
 		//}
 		(*dataSet)[i] = (*tempDataSet)[i]/255.0f;
+
 	}
 
 	if (fread(&(*tempLabelSet)[0], sizeof(uint8_t), label_header.length, lbfp) != label_header.length) {

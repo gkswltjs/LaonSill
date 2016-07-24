@@ -253,6 +253,8 @@ void Layer::_shape(bool recursive) {
 	Util::setPrint(true);
 	Util::printMessage(string(name)+"---_shape()");
 	Util::setPrint(false);
+	Cuda::refresh();
+
 	checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));

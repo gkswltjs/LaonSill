@@ -26,7 +26,7 @@ public:
 	void deepdream();
 
 private:
-	void make_step(DATATYPE* src, DATATYPE* d_src, const char* end, float step_size=1.5, float jitter=32);
+	void make_step(CImg<DATATYPE>& src, DATATYPE* d_src, const char* end, float step_size=1.5, int jitter=32);
 	void objective_L2();
 	void preprocess(CImg<DATATYPE>& img);
 	void deprocess(CImg<DATATYPE>& img);

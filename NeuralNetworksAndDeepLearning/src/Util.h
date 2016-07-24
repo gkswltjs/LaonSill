@@ -39,6 +39,7 @@ void log_print(FILE *fp, int log_level, const char* filename, const int line, co
 
 
 
+
 typedef fvec rvec;
 typedef fmat rmat;
 typedef fcube rcube;
@@ -138,7 +139,8 @@ public:
 		cuda_mem += size;
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
-		(*outstream) << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+		//(*outstream) << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+		cout << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
 		return cudaError;
 	}
 

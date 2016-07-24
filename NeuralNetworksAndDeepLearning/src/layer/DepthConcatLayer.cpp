@@ -159,7 +159,7 @@ void DepthConcatLayer::feedforward(UINT idx, const DATATYPE *input, const char *
 	propFeedforward(this->d_output, end);
 }
 
-void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+void DepthConcatLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	bool print = Util::getPrint();
 	//Util::setPrint(true);
 
@@ -175,7 +175,7 @@ void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 		offsets[i] = offsets[i-1] + prevLayers[i-1].prev_layer->getOutDimension().unitsize();
 	}
 
-	DATATYPE *next_delta_input = next_layer->getDeltaInput();
+	//DATATYPE *next_delta_input = next_layer->getDeltaInput();
 	Util::printDeviceData(d_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_input:");
 	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
 	for(int j = 0; j < prevLayers.size(); j++) {

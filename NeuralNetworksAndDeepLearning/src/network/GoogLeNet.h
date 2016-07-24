@@ -25,7 +25,8 @@
 
 class GoogLeNet : public Network {
 public:
-	GoogLeNet(NetworkListener *networkListener=0) : Network(networkListener) {
+	GoogLeNet(NetworkListener *networkListener=0, double w_lr_mult=0.1, double w_decay_mult=1.0,
+			double b_lr_mult=2.0, double b_decay_mult=0.0) : Network(networkListener) {
 		double weight_lr_mult = 1.0;
 		double weight_decay_mult = 1.0;
 		double bias_lr_mult = 2.0;

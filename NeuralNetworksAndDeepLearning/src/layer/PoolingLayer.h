@@ -24,7 +24,7 @@ public:
 	PoolingLayer(const char *name, pool_dim pool_d, PoolingType poolingType);
 	virtual ~PoolingLayer();
 
-	void backpropagation(UINT idx, HiddenLayer *next_layer);
+	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 
 	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
 	void reset_nabla(UINT idx) {

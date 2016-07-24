@@ -33,7 +33,7 @@ public:
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void backpropagation(UINT idx, HiddenLayer *next_layer);
+	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 
 	/**
 	 * 현재 레이어가 최종 레이어인 경우 δL을 계산

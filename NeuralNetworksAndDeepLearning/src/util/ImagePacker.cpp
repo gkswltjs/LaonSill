@@ -13,24 +13,97 @@
 #include <iostream>
 #include <CImg.h>
 
+
 #include "../Util.h"
 #include "UByteImage.h"
 
+using namespace std;
 using namespace cimg_library;
 
 
+const string ImagePacker::path_save = "save";
+const string ImagePacker::path_crop = "crop";
 
 
-ImagePacker::ImagePacker(const char *image_dir, const char *outfile_image_path, const char *outfile_label_path) {
-	strcpy(this->image_dir, image_dir);
-	strcpy(this->outfile_image_path, outfile_image_path);
-	strcpy(this->outfile_label_path, outfile_label_path);
+
+
+ImagePacker::ImagePacker(string image_dir,
+		int numCategory,
+		int numTrain,
+		int numTest,
+		int numImagesInFile) {
+	//strcpy(this->image_dir, image_dir);
+	this->image_dir = image_dir;
+
+	this->numCategory = numCategory;
+	this->numTrain = numTrain;
+	this->numTest = numTest;
+	this->numImagesInFile = numImagesInFile;
 }
 
 ImagePacker::~ImagePacker() {}
 
 
+void ImagePacker::load() {
+#if CPU_MODE
+	int categoryCount = 0;
+	DIR *dir;
+	if((dir = opendir(image_dir.c_str())) != NULL) {
+		struct dirent ent;
+		struct dirent *result;
+		while(readdir_r(dir, &ent, &result) == 0) {
+			if(result == NULL) break;
+			if(ent.d_type == 4 && end.d_name[0] != '.') {
+				category_t category;
+				category.id = categoryCount;
+				category.name = ent.d_name;
+				loadFilesInCategory(image_dir+"/"+category.name, category.fileList);
+				categoryList.push_back(category);
+			}
+			if(++categoryCount >= numCategory) {
+				break;
+			}
+		}
+		closedir(dir);
+		numCategory = categoryCount;
+	} else {
+		perror("could not load ... ");
+		exit(-1);
+	}
+#endif
+}
+
+void ImagePacker::loadFilesInCategory(string categoryPath, vector<string>& fileList) {
+#if CPU_MODE
+	int fileCount = 0;
+	DIR *dir;
+	if((dir = opendir(categoryPath.c_str())) != NULL) {
+		struct dirent ent;
+		struct dirent *result;
+		while(readdir_r(dir, &ent, &result) == 0) {
+			if(result == NULL) break;
+			if(ent.d_type == 8) {
+				fileList.push_back(ent.d_name);
+			}
+		}
+		closedir(dir);
+	} else {
+		perror("could not load ... ");
+		exit(-1);
+	}
+#endif
+}
+
+void ImagePacker::show() {
+
+	//for(category_t )
+
+}
+
+
+
 void ImagePacker::pack() {
+#if CPU_MODE
 	ofstream ofsImage(outfile_image_path, ios::out | ios::binary);
 	ofstream ofsLabel(outfile_label_path, ios::out | ios::binary);
 
@@ -103,6 +176,6 @@ void ImagePacker::pack() {
 
 	ofsImage.close();
 	ofsLabel.close();
-
+#endif
 }
 

@@ -165,7 +165,7 @@ void PoolingLayer::feedforward(UINT idx, const DATATYPE *input, const char *end)
 
 
 
-void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+void PoolingLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	Util::printMessage("PoolingLayer::backpropagation()---"+string(name));
 	Cuda::refresh();
 
@@ -177,7 +177,7 @@ void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 
 	// add next_delta_input to delta
 	const float alpha = 1.0f;
-	DATATYPE *next_delta_input = next_layer->getDeltaInput();
+	//DATATYPE *next_delta_input = next_layer->getDeltaInput();
 	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()),
 			&alpha, next_delta_input, 1, d_delta, 1));

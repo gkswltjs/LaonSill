@@ -33,11 +33,11 @@ public:
 					"conv1",
 					//io_dim(28, 28, 1, batchSize),
 					//io_dim(28, 28, 10, batchSize),
-					filter_dim(5, 5, 1, 10, 1),
+					filter_dim(5, 5, 3, 10, 2),
 					update_param(lr_mult, decay_mult),
 					update_param(lr_mult, decay_mult),
 					param_filler(ParamFillerType::Xavier),
-					param_filler(ParamFillerType::Constant, 0.1),
+					param_filler(ParamFillerType::Constant, 0.0),
 					ActivationType::ReLU
 					);
 
@@ -63,7 +63,7 @@ public:
 					15, 10, 15, 10, 15, 15
 					);
 
-			/*
+
 			HiddenLayer *incept2Layer = new InceptionLayer(
 					"incept2",
 					//io_dim(14, 14, 60, batchSize),
@@ -71,21 +71,74 @@ public:
 					60,
 					15, 15, 15, 15, 15, 15
 					);
-					*/
 
+			HiddenLayer *conv2Layer = new ConvLayer(
+					"conv2",
+					//io_dim(28, 28, 1, batchSize),
+					//io_dim(28, 28, 10, batchSize),
+					filter_dim(5, 5, 60, 80, 2),
+					update_param(lr_mult, decay_mult),
+					update_param(lr_mult, decay_mult),
+					param_filler(ParamFillerType::Xavier),
+					param_filler(ParamFillerType::Constant, 0.0),
+					ActivationType::ReLU
+					);
+
+			HiddenLayer *pool2Layer = new PoolingLayer(
+					"pool2",
+					//io_dim(28, 28, 10, batchSize),
+					//io_dim(14, 14, 10, batchSize),
+					pool_dim(3, 3, 2),
+					PoolingType::Max
+					);
 
 			/*
+			HiddenLayer *incept3Layer = new InceptionLayer(
+					"incept3",
+					//io_dim(14, 14, 60, batchSize),
+					//io_dim(14, 14, 60, batchSize),
+					60,
+					20, 15, 20, 15, 20, 20
+					);
+
+			HiddenLayer *incept4Layer = new InceptionLayer(
+					"incept4",
+					//io_dim(14, 14, 60, batchSize),
+					//io_dim(14, 14, 60, batchSize),
+					80,
+					25, 20, 25, 20, 25, 25
+					);
+
+			HiddenLayer *conv2Layer = new ConvLayer(
+					"conv2",
+					//io_dim(28, 28, 1, batchSize),
+					//io_dim(28, 28, 10, batchSize),
+					filter_dim(5, 5, 100, 100, 2),
+					update_param(lr_mult, decay_mult),
+					update_param(lr_mult, decay_mult),
+					param_filler(ParamFillerType::Xavier),
+					param_filler(ParamFillerType::Constant, 0.0),
+					ActivationType::ReLU
+					);
+
+			HiddenLayer *pool2Layer = new PoolingLayer(
+					"pool2",
+					//io_dim(28, 28, 10, batchSize),
+					//io_dim(14, 14, 10, batchSize),
+					pool_dim(3, 3, 2),
+					PoolingType::Max
+					);
+
 			HiddenLayer *fc1Layer = new FullyConnectedLayer(
-							"fc1",
-							io_dim(14*14*120, 1, 1, batchSize),
-							io_dim(500, 1, 1, batchSize),
-							0.5,
-							update_param(lr_mult, decay_mult),
-							update_param(lr_mult, decay_mult),
-							param_filler(ParamFillerType::Xavier),
-							param_filler(ParamFillerType::Constant, 0.1),
-							ActivationType::ReLU);
-							*/
+					"fc1",
+					1000,
+					0.5,
+					update_param(lr_mult, decay_mult),
+					update_param(lr_mult, decay_mult),
+					param_filler(ParamFillerType::Xavier),
+					param_filler(ParamFillerType::Constant, 0.0),
+					ActivationType::ReLU);
+					*/
 
 			OutputLayer *softmaxLayer = new SoftmaxLayer(
 					"softmax",
@@ -95,15 +148,25 @@ public:
 					0.5,
 					update_param(lr_mult, decay_mult),
 					update_param(lr_mult, decay_mult),
-					param_filler(ParamFillerType::Xavier),
-					param_filler(ParamFillerType::Constant, 0.1)
+					param_filler(ParamFillerType::Constant, 0.0),
+					param_filler(ParamFillerType::Constant, 0.0)
 					);
 
 			Network::addLayerRelation(inputLayer, conv1Layer);
 			Network::addLayerRelation(conv1Layer, pool1Layer);
 			Network::addLayerRelation(pool1Layer, lrn1Layer);
 			Network::addLayerRelation(lrn1Layer, incept1Layer);
-			Network::addLayerRelation(incept1Layer, softmaxLayer);
+			Network::addLayerRelation(incept1Layer, incept2Layer);
+			Network::addLayerRelation(incept2Layer, conv2Layer);
+			Network::addLayerRelation(conv2Layer, pool2Layer);
+			/*
+			Network::addLayerRelation(incept2Layer, incept3Layer);
+			Network::addLayerRelation(incept3Layer, incept4Layer);
+			Network::addLayerRelation(incept4Layer, conv2Layer);
+			Network::addLayerRelation(conv2Layer, pool2Layer);
+			Network::addLayerRelation(pool2Layer, fc1Layer);
+			*/
+			Network::addLayerRelation(pool2Layer, softmaxLayer);
 
 			this->inputLayer = inputLayer;
 			addOutputLayer(softmaxLayer);

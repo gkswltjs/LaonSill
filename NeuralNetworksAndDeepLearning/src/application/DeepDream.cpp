@@ -55,74 +55,59 @@ void printImage(const char *head, CImg<DATATYPE>& img, bool force=false) {
 
 
 void DeepDream::deepdream() {
+	Util::setPrint(false);
+	// prepare base images for all octaves
 	CImg<DATATYPE> image(base_img);
+	//Util::printData(image.data(), image.height(), image.width(), image.spectrum(), 1, "image:");
 	image.normalize(0.0, 1.0);
+	//Util::printData(image.data(), image.height(), image.width(), image.spectrum(), 1, "image:");
 	preprocess(image);
-	//printImage("preprocess", image);
-	Util::printData(image.data(), image.height(), image.width(), image.spectrum(), 1, "image:");
-
+	//Util::printData(image.data(), image.height(), image.width(), image.spectrum(), 1, "image:");
 	CImgDisplay main_disp(image, "input image");
 
 	vector<CImg<DATATYPE>> octaves(octave_n);
-	//vector<DATATYPE *> d_octaves(octave_n);
 	for(int i = 0; i < octave_n; i++) {
 		octaves[i] = image;
 		cout << "image size for octave " << i << "-width: " << image.width() << ", height: " << image.height() << ", spectrum: " << image.spectrum() << endl;
-
 		image.resize(image.width()/octave_scale, image.height()/octave_scale, -100, -100, 5);
 	}
 
 	CImg<DATATYPE> src;
-	//printImage("src", src);
 	CImgDisplay process_disp(src, "proccess");
-
+	// allocate image for network-produced details
 	CImg<DATATYPE> detail(octaves[octave_n-1], "xyzc", 0.0);
-	//printImage("detail", detail);
+
 
 	for(int octave_index = octave_n-1; octave_index >= 0; octave_index--) {
 		CImg<DATATYPE>& octave_base = octaves[octave_index];
 		Util::printData(octave_base.data(), octave_base.height(), octave_base.width(), octave_base.spectrum(), 1, "octave_base:");
 
-		int w = octave_base.width();
-		int h = octave_base.height();
+		const int w = octave_base.width();
+		const int h = octave_base.height();
 		if(octave_index < octave_n-1) {
+			// upscale details from the previous octave
 			detail.resize(w, h, -100, -100, 5);
-			//printImage("detail", detail);
-			Util::printData(detail.data(), detail.height(), detail.width(), detail.spectrum(), 1, "detail:");
 		}
+		Util::printData(detail.data(), detail.height(), detail.width(), detail.spectrum(), 1, "detail:");
 
 
+		// resize the network's input image size
 		network->reshape(io_dim(h, w, octave_base.spectrum(), 1));
-
 		src = octave_base + detail;
-		//printImage("src", src, true);
-
 
 		DATATYPE *d_src;
 		checkCudaErrors(cudaMalloc(&d_src, sizeof(DATATYPE)*src.size()));
 		for(int i = 0; i < iter_n; i++) {
-			checkCudaErrors(cudaMemcpyAsync(d_src, src.data(), sizeof(DATATYPE)*src.size(), cudaMemcpyHostToDevice));
-
-
-			Util::printData(src.data(), src.height(), src.width(), src.spectrum(), 1, "src:");
-			Util::printDeviceData(d_src, src.height(), src.width(), src.spectrum(), 1, "d_src:");
-
-			make_step(src.data(), d_src, end, 1.5);
-
-			//unshift image
-			if(clip) { clipImage(src); }
-
+			make_step(src, d_src, end, 0.005);
 			Util::printData(src.data(), src.height(), src.width(), src.spectrum(), 1, "src_after_make_step:");
 			// reconstruction된 이미지를 다시 normalize ...
 			//src.normalize(0.0, 1.0);
 			//Util::printData(src.data(), src.height(), src.width(), src.spectrum(), 1, "src_after_make_step_normalize:");
 
-			// display용 cimg //////////////////////////////////////////////////////////////////////////////
-			CImg<DATATYPE> temp_src(src);
 			//visualization
+			CImg<DATATYPE> temp_src(src);
 			deprocess(temp_src);
 			//temp_src.normalize(0.0, 1.0);
-			//printImage("temp_src", temp_src);
 
 			// adjust image contrast if clipping is disabled
 			if(!clip) {
@@ -132,18 +117,20 @@ void DeepDream::deepdream() {
 			cout << "octave: " << octave_index << ", iter: " << i << ", end: " << end << ", dim: " << endl;
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		}
-		//checkCudaErrors(cudaMemcpyAsync(src.data(), d_src, sizeof(DATATYPE)*src.size(), cudaMemcpyDeviceToHost));
 		checkCudaErrors(cudaFree(d_src));
 
+		// extract details produced on the current octave
 		detail = src - octave_base;
+		Util::printData(src.data(), src.height(), src.width(), src.spectrum(), 1, "src:");
+		Util::printData(octave_base.data(), octave_base.height(), octave_base.width(), octave_base.spectrum(), 1, "octave_base:");
 		Util::printData(detail.data(), detail.height(), detail.width(), detail.spectrum(), 1, "detail:");
 	}
-
 	deprocess(src);
 
-	//for(int i = 0; i < octave_n; i++) {
-	//	checkCudaErrors(cudaFree(d_octaves[i]));
-	//}
+	char result_path[256];
+	sprintf(result_path, "/home/jhkim/result-%s.jpg", end);
+	src.normalize(0, 255);
+	src.save_jpeg(result_path, 100);
 
 	while(!process_disp.is_closed()) {
 		process_disp.wait();
@@ -156,9 +143,17 @@ void DeepDream::deepdream() {
 }
 
 
-void DeepDream::make_step(DATATYPE *src, DATATYPE *d_src, const char *end, float step_size, float jitter) {
-	//jitter
+void DeepDream::make_step(CImg<DATATYPE>& src, DATATYPE *d_src, const char *end, float step_size, int jitter) {
+	//apply jitter shift
+	srand((unsigned int)time(NULL));
+	int ox = rand()%(jitter*2+1)-jitter;
+	int oy = rand()%(jitter*2+1)-jitter;
 
+	src.shift(ox, 0, 0, 0, 2);
+	src.shift(0, oy, 0, 0, 2);
+
+	DATATYPE* p_src = src.data();
+	checkCudaErrors(cudaMemcpyAsync(d_src, p_src, sizeof(DATATYPE)*src.size(), cudaMemcpyHostToDevice));
 
 	network->feedforward(d_src, end);
 	HiddenLayer* dst = dynamic_cast<HiddenLayer*>(network->findLayer(end));
@@ -166,13 +161,16 @@ void DeepDream::make_step(DATATYPE *src, DATATYPE *d_src, const char *end, float
 		cout << "could not find layer of name " << end << " ... " << endl;
 		exit(-1);
 	}
+	/*
 	HiddenLayer* dst_nextLayer = dynamic_cast<HiddenLayer*>(dst->getNextLayers()[0].next_layer);
 	if(!dst_nextLayer) {
 		cout << "could not find next layer ... " << endl;
 		exit(-1);
 	}
+	// specify the optimization objective
 	dst_nextLayer->setDeltaInput(dst->getOutput());
-	dst->backpropagation(0, dst_nextLayer);
+	*/
+	dst->backpropagation(0, dst->getOutput());
 	HiddenLayer* firstHiddenLayer = dynamic_cast<HiddenLayer*>(network->getInputLayer()->getNextLayers()[0].next_layer);
 	if(!firstHiddenLayer) {
 		cout << "cout not find first hidden layer ... " << endl;
@@ -183,30 +181,42 @@ void DeepDream::make_step(DATATYPE *src, DATATYPE *d_src, const char *end, float
 	int input_b_outsize = in_dim.batchsize();
 	DATATYPE *g = new DATATYPE[input_b_outsize];
 	checkCudaErrors(cudaMemcpyAsync(g, firstHiddenLayer->getDeltaInput(), sizeof(DATATYPE)*input_b_outsize, cudaMemcpyDeviceToHost));
-	//firstHiddenLayer->getDeltaInput()
 
 	Util::printData(g, in_dim.rows, in_dim.cols, in_dim.channels, 1, "g:");
-	Util::printData(src, in_dim.rows, in_dim.cols, in_dim.channels, 1, "src:");
+	Util::printData(p_src, in_dim.rows, in_dim.cols, in_dim.channels, 1, "src:");
 
-	float g_mean = 0.0f;
+	// apply normalizedascent step to the input image
+	double g_sum = 0.0f;
 	for(int i = 0; i < input_b_outsize; i++) {
-		g_mean += std::abs(g[i]);
+		g_sum += std::abs(g[i]);
 	}
-	g_mean /= input_b_outsize;
+	float g_coef = (float)(step_size/(g_sum / input_b_outsize));
+	for(int i = 0; i < input_b_outsize; i++) {
+		p_src[i] += g_coef*g[i];
+	}
 
-	for(int i = 0; i < input_b_outsize; i++) {
-		src[i] += step_size/g_mean*g[i];
-	}
+	//unshift image
+	src.shift(-ox, 0, 0, 0, 2);
+	src.shift(0, -oy, 0, 0, 2);
 
 	//printImage("src", src, in_dim.cols, in_dim.rows, in_dim.channels, true);
-	Util::printData(src, in_dim.rows, in_dim.cols, in_dim.channels, 1, "src:");
+	Util::printData(p_src, in_dim.rows, in_dim.cols, in_dim.channels, 1, "src:");
+
+	if(clip) {
+		clipImage(src);
+	}
 
 	delete [] g;
 }
 
+
+
+
+
 void DeepDream::objective_L2() {
 
 }
+
 
 void DeepDream::preprocess(CImg<DATATYPE>& img) {
 	DATATYPE *data_ptr = img.data();
@@ -258,4 +268,3 @@ void DeepDream::clipImage(CImg<DATATYPE>& img) {
 		}
 	}
 }
-

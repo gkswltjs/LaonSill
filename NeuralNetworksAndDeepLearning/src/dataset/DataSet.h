@@ -95,13 +95,14 @@ public:
 	void zeroMean(bool hasMean=false) {
 		//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 		UINT di, ci, hi, wi;
+		double sum[3] = {0.0, 0.0, 0.0};
 
 		if(!hasMean) {
 			for(di = 0; di < numTrainData; di++) {
 				for(ci = 0; ci < channels; ci++) {
 					for(hi = 0; hi < rows; hi++) {
 						for(wi = 0; wi < cols; wi++) {
-							mean[ci] += (*trainDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels];
+							sum[ci] += (*trainDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels];
 						}
 					}
 				}
@@ -110,7 +111,7 @@ public:
 
 			//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 			for(ci = 0; ci < channels; ci++) {
-				mean[ci] /= rows*cols*numTrainData;
+				mean[ci] = (DATATYPE)(sum[ci] / rows*cols*numTrainData);
 			}
 			cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 		}
@@ -137,7 +138,10 @@ public:
 	}
 
 	DATATYPE getMean(UINT channel) {
-		return (DATATYPE)mean[channel];
+		return mean[channel];
+	}
+	DATATYPE *getMean() {
+		return mean;
 	}
 
 private:
@@ -165,7 +169,7 @@ protected:
 	vector<DATATYPE> *testDataSet;
 	vector<UINT> *testLabelSet;
 
-	double mean[3];
+	DATATYPE mean[3];
 
 	//vector<const DataSample *> trainDataSet;
 	//vector<const DataSample *> validationDataSet;

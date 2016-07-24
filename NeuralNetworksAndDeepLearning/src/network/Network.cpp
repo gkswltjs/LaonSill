@@ -49,10 +49,14 @@ void Network::setDataSet(DataSet *dataSet, UINT batches) {
 	this->in_dim.cols = dataSet->getCols();
 	this->in_dim.channels = dataSet->getChannels();
 	this->in_dim.batches = batches;
+	setDataSetMean(dataSet->getMean());
 }
 
-void Network::shape() {
-	inputLayer->shape(0, in_dim);
+void Network::shape(io_dim in_dim) {
+	if(in_dim.unitsize() > 0) {
+		this->in_dim = in_dim;
+	}
+	inputLayer->shape(0, this->in_dim);
 }
 
 void Network::reshape(io_dim in_dim) {
@@ -74,10 +78,10 @@ void Network::sgd(int epochs) {
 		//dataSet->shuffleTrainDataSet();
 		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			//if((j+1)%100 == 0) {
-			//	cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
-			//	timer2.start();
-			//}
+			if((j+1)%10 == 0) {
+				cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+				timer2.start();
+			}
 			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 
@@ -244,10 +248,13 @@ void Network::load(const char* filename) {
 
 
 DATATYPE Network::getDataSetMean(UINT channel) {
-	if(dataSet) {
-		return dataSet->getMean(channel);
+	return dataSetMean[channel];
+}
+
+void Network::setDataSetMean(DATATYPE *dataSetMean) {
+	for(int i = 0; i < 3; i++) {
+		this->dataSetMean[i] = dataSetMean[i];
 	}
-	return 0.0;
 }
 
 

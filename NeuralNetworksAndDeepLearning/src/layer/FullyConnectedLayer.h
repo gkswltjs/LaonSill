@@ -32,7 +32,7 @@ public:
 	 * @param next_w: 다음 레이어의 weight
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void backpropagation(UINT idx, HiddenLayer *next_layer);
+	virtual void backpropagation(UINT idx, DATATYPE *next_delta_input);
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset

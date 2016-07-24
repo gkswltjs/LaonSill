@@ -631,14 +631,14 @@ void ConvLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 
 
 
-void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+void ConvLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
 	Util::printMessage("ConvLayer::backpropagation()---"+string(name));
 	Cuda::refresh();
 
-	DATATYPE *next_delta_input = next_layer->getDeltaInput();
+	//DATATYPE *next_delta_input = next_layer->getDeltaInput();
 	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "prev_delta_input:");
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 	activation_fn->d_activate(d_output, next_delta_input, d_z, d_delta, outputTensorDesc);

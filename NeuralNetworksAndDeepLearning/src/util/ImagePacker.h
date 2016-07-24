@@ -8,18 +8,64 @@
 #ifndef IMAGEPACKER_H_
 #define IMAGEPACKER_H_
 
+
+#include <string>
+#include <vector>
+
+
+using namespace std;
+
+
+struct category_t {
+	int id;
+	string name;
+	vector<string> fileList;
+	int fileIndex;
+
+	bool end() {
+		return (fileList.size() >= fileIndex);
+	}
+};
+
+
+
 class ImagePacker {
 public:
-	ImagePacker(const char *image_dir, const char *outfile_image_path, const char *outfile_label_path);
+	ImagePacker(string image_dir,
+			int numCategory,
+			int numTrain,
+			int numTest,
+			int numImagesInFile);
 	virtual ~ImagePacker();
 
+	void load();
+	void show();
 	void pack();
 
 private:
-	char image_dir[256];
-	char outfile_image_path[256];
-	char outfile_label_path[256];
+	void loadFilesInCategory(string categoryPath, vector<string>& fileList);
+
+
+	string image_dir;
+
+	static const string path_crop;
+	static const string path_save;
+
+	vector<category_t> categoryList;
+	int numCategory;
+	int numTrain;
+	int numTest;
+	int numImagesInFile;
 
 };
 
 #endif /* IMAGEPACKER_H_ */
+
+
+
+
+
+
+
+
+

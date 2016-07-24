@@ -52,7 +52,7 @@ public:
 
 
 
-	Layer* find(UINT idx, const char* name);
+	virtual Layer* find(UINT idx, const char* name);
 
 	virtual void save(UINT idx, ofstream &ofs);
 	virtual void saveHeader(UINT idx, ofstream &ofs);
@@ -83,7 +83,7 @@ public:
 #else
 public:
 	const DATATYPE *getInput() { return this->d_input; }
-	DATATYPE *getOutput() { return this->d_output; }
+	virtual DATATYPE *getOutput() { return this->d_output; }
 
 	virtual void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 #endif

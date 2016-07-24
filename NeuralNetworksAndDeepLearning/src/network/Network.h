@@ -36,6 +36,7 @@ public:
 		this->maxAccuracy = 0.0;
 		this->minCost = 100.0;
 		this->saveConfigured = false;
+		this->dataSet = 0;
 	}
 	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
@@ -65,11 +66,12 @@ public:
 	void saveConfig(const char *savePrefix);
 	void save(const char* filename);
 	void load(const char* filename);
-	void shape();
+	void shape(io_dim in_dim=io_dim(0,0,0,0));
 	void reshape(io_dim in_dim=io_dim(0,0,0,0));
 	void backprop(const DataSample &dataSample);
 	Layer *findLayer(const char *name);
 	DATATYPE getDataSetMean(UINT channel);
+	void setDataSetMean(DATATYPE *dataSetMean);
 
 
 #if CPU_MODE
@@ -102,6 +104,7 @@ protected:
 	bool saveConfigured;
 	double maxAccuracy;
 	double minCost;
+	DATATYPE dataSetMean[3];
 
 #if CPU_MODE
 protected:

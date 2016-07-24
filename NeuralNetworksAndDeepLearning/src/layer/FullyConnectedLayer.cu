@@ -415,13 +415,13 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input, const cha
 	propFeedforward(this->d_output, end);
 }
 
-void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+void FullyConnectedLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
 	Util::printMessage("FullyConnectedLayer::backpropagation()---"+string(name));
 	Cuda::refresh();
 
-	DATATYPE *next_delta_input = next_layer->getDeltaInput();
+	//DATATYPE *next_delta_input = next_layer->getDeltaInput();
 	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.batches, 1, 1, "delta_input:");
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, "output:");
 	activation_fn->d_activate(d_output, next_delta_input, d_z, d_delta, outputTensorDesc);

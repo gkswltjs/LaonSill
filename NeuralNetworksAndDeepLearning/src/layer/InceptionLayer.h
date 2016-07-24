@@ -19,12 +19,16 @@ public:
 	InceptionLayer(const char *name, int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp);
 	virtual ~InceptionLayer();
 
-	void backpropagation(UINT idx, HiddenLayer *next_layer);
+	virtual DATATYPE *getOutput() { return lastLayer->getOutput(); }
+
+	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 	void reset_nabla(UINT idx);
 	void update(UINT idx, UINT n, UINT miniBatchSize);
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	void saveNinHeader(UINT idx, ofstream &ofs);
+	virtual Layer* find(UINT idx, const char* name);
+
 
 #if CPU_MODE
 public:

@@ -27,7 +27,7 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	//virtual void backpropagation(HiddenLayer *next_layer)=0;
-	virtual void backpropagation(UINT idx, HiddenLayer *next_layer) { propBackpropagation(); }
+	virtual void backpropagation(UINT idx, DATATYPE *next_delta_input) { propBackpropagation(); }
 
 	/**
 	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
@@ -53,10 +53,8 @@ public:
 	virtual DATATYPE *getDeltaInput()=0;
 	void setDeltaInput(DATATYPE *delta_input) {
 		checkCudaErrors(cudaMemcpyAsync(d_delta_input, delta_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
-
 		Util::printDeviceData(delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "delta_input:");
 		Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
-
 	}
 
 #endif
@@ -69,7 +67,7 @@ protected:
 		HiddenLayer *hiddenLayer;
 		for(UINT i = 0; i < prevLayers.size(); i++) {
 			hiddenLayer = dynamic_cast<HiddenLayer *>(prevLayers[i].prev_layer);
-			if(hiddenLayer) hiddenLayer->backpropagation(prevLayers[i].idx, this);
+			if(hiddenLayer) hiddenLayer->backpropagation(prevLayers[i].idx, this->getDeltaInput());
 		}
 	}
 

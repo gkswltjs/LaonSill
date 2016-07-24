@@ -23,7 +23,7 @@ public:
 	LRNLayer(const char *name, lrn_dim lrn_d);
 	virtual ~LRNLayer();
 
-	void backpropagation(UINT idx, HiddenLayer *next_layer);
+	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 
 	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
 	void reset_nabla(UINT idx) {

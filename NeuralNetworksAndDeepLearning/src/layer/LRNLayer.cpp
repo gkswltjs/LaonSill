@@ -181,11 +181,11 @@ void LRNLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 }
 
 
-void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+void LRNLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	Util::printMessage("LRNLayer::backpropagation()---"+string(name));
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
-	DATATYPE *next_delta_input = next_layer->getDeltaInput();
+	//DATATYPE *next_delta_input = next_layer->getDeltaInput();
 	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
 
 	checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,

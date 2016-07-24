@@ -21,7 +21,7 @@ public:
 	DepthConcatLayer(const char *name);
 	virtual ~DepthConcatLayer();
 
-	void backpropagation(UINT idx, HiddenLayer *next_layer);
+	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 
 	void reset_nabla(UINT idx) {
 		if(!isLastPrevLayerRequest(idx)) return;
