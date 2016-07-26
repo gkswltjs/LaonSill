@@ -91,6 +91,7 @@ public:
 		*/
 
 
+
 		InputLayer *inputLayer = new InputLayer(
 				"input"
 				);
@@ -117,7 +118,7 @@ public:
 		HiddenLayer *pool1Layer = new PoolingLayer(
 				"pool5",
 				pool_dim(2, 2, 2),
-				PoolingType::Max
+				PoolingType::Avg
 				);
 
 		HiddenLayer *conv2_1Layer = new ConvLayer(
@@ -129,7 +130,6 @@ public:
 				param_filler(ParamFillerType::Constant, 0.1),
 				ActivationType::ReLU
 				);
-
 
 		HiddenLayer *conv2_2Layer = new ConvLayer(
 				"conv2_2",
@@ -143,11 +143,10 @@ public:
 
 		HiddenLayer *pool2Layer = new PoolingLayer(
 				"pool2",
-				pool_dim(2, 2, 8),
-				PoolingType::Max
+				pool_dim(2, 2, 2),
+				PoolingType::Avg
 				);
 
-		/*
 		HiddenLayer *conv3_1Layer = new ConvLayer(
 				"conv3_1",
 				filter_dim(3, 3, 128, 256, 1),
@@ -157,6 +156,7 @@ public:
 				param_filler(ParamFillerType::Constant, 0.1),
 				ActivationType::ReLU
 				);
+
 
 		HiddenLayer *conv3_2Layer = new ConvLayer(
 				"conv3_2",
@@ -191,7 +191,7 @@ public:
 		HiddenLayer *pool3Layer = new PoolingLayer(
 				"pool3",
 				pool_dim(2, 2, 2),
-				PoolingType::Max
+				PoolingType::Avg
 				);
 
 		HiddenLayer *conv4_1Layer = new ConvLayer(
@@ -237,7 +237,7 @@ public:
 		HiddenLayer *pool4Layer = new PoolingLayer(
 				"pool4",
 				pool_dim(2, 2, 2),
-				PoolingType::Max
+				PoolingType::Avg
 				);
 
 		HiddenLayer *conv5_1Layer = new ConvLayer(
@@ -283,10 +283,10 @@ public:
 		HiddenLayer *pool5Layer = new PoolingLayer(
 				"pool5",
 				pool_dim(2, 2, 2),
-				PoolingType::Max
+				PoolingType::Avg
 				);
-				*/
 
+		/*
 		HiddenLayer *fc7Layer = new FullyConnectedLayer(
 				"fc7",
 				500,
@@ -297,10 +297,12 @@ public:
 				param_filler(ParamFillerType::Constant, 0.1),
 				ActivationType::ReLU
 				);
+				*/
+
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
 				"softmax8",
-				10,
+				1,
 				0.5,
 				update_param(w_lr_mult, w_decay_mult),
 				update_param(b_lr_mult, b_decay_mult),
@@ -314,7 +316,7 @@ public:
 		Network::addLayerRelation(pool1Layer, conv2_1Layer);
 		Network::addLayerRelation(conv2_1Layer, conv2_2Layer);
 		Network::addLayerRelation(conv2_2Layer, pool2Layer);
-		Network::addLayerRelation(pool2Layer, /*conv3_1Layer);
+		Network::addLayerRelation(pool2Layer, conv3_1Layer);
 		Network::addLayerRelation(conv3_1Layer, conv3_2Layer);
 		Network::addLayerRelation(conv3_2Layer, conv3_3Layer);
 		Network::addLayerRelation(conv3_3Layer, conv3_4Layer);
@@ -329,12 +331,11 @@ public:
 		Network::addLayerRelation(conv5_2Layer, conv5_3Layer);
 		Network::addLayerRelation(conv5_3Layer, conv5_4Layer);
 		Network::addLayerRelation(conv5_4Layer, pool5Layer);
-		Network::addLayerRelation(pool5Layer,*/
-		fc7Layer);
-		Network::addLayerRelation(fc7Layer, softmaxLayer);
+		Network::addLayerRelation(pool5Layer, softmaxLayer);
 
 		this->inputLayer = inputLayer;
 		addOutputLayer(softmaxLayer);
+
 
 	}
 	virtual ~VGG19Net() {}

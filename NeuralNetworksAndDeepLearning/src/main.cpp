@@ -80,9 +80,9 @@ int main(int argc, char** argv) {
 	//Util::setOutstream("./log");
 	//Util::printMessage("message ... ");
 
-	artisticstyle_test();
-	//network_test();
+	network_test();
 	//deepdream_test();
+	//artisticstyle_test();
 	//gnuplot_test();
 	//cimg_test();
 
@@ -117,12 +117,15 @@ void artisticstyle_test() {
 	Util::setPrint(false);
 	DataSet* vvgDataSet = new VvgDataSet(0.8);
 
-	Network *network_load = new Network();
-	network_load->setDataSetMean(vvgDataSet->getMean());
-	network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/artistic_04.network");
+	Network *network = new VGG19Net();
+	//network->setDataSetMean(vvgDataSet->getMean());
+	//Network *network_load = new Network();
+	//network_load->setDataSetMean(vvgDataSet->getMean());
+	//network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/artistic_04.network");
 
-	ArtisticStyle *as = new ArtisticStyle(network_load);
-	as->style("/home/jhkim/tubingen_320.jpg", "/home/jhkim/starry_night_320.jpg", "conv2_1");
+	ArtisticStyle *as = new ArtisticStyle(network);
+	//as->style("/home/jhkim/tubingen_224.jpg", "/home/jhkim/starry_night_224.jpg", "conv2_1");
+	as->style("/home/jhkim/tubingen_224.jpg", "/home/jhkim/composition_224.jpg", "conv3_1");
 
 	Cuda::destroy();
 }

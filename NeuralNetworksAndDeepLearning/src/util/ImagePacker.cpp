@@ -45,7 +45,6 @@ ImagePacker::~ImagePacker() {}
 
 
 void ImagePacker::load() {
-#if CPU_MODE
 	int categoryCount = 0;
 	DIR *dir;
 	if((dir = opendir(image_dir.c_str())) != NULL) {
@@ -53,7 +52,7 @@ void ImagePacker::load() {
 		struct dirent *result;
 		while(readdir_r(dir, &ent, &result) == 0) {
 			if(result == NULL) break;
-			if(ent.d_type == 4 && end.d_name[0] != '.') {
+			if(ent.d_type == 4 && ent.d_name[0] != '.') {
 				category_t category;
 				category.id = categoryCount;
 				category.name = ent.d_name;
@@ -70,11 +69,9 @@ void ImagePacker::load() {
 		perror("could not load ... ");
 		exit(-1);
 	}
-#endif
 }
 
 void ImagePacker::loadFilesInCategory(string categoryPath, vector<string>& fileList) {
-#if CPU_MODE
 	int fileCount = 0;
 	DIR *dir;
 	if((dir = opendir(categoryPath.c_str())) != NULL) {
@@ -91,13 +88,13 @@ void ImagePacker::loadFilesInCategory(string categoryPath, vector<string>& fileL
 		perror("could not load ... ");
 		exit(-1);
 	}
-#endif
 }
 
 void ImagePacker::show() {
-
-	//for(category_t )
-
+	for(int i = 0; i < categoryList.size(); i++) {
+		category_t& category = categoryList[i];
+		cout << i << "th category: " << category.name << ", files: " << category.fileList.size() << endl;
+	}
 }
 
 

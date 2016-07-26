@@ -34,6 +34,11 @@ Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *data
 	this->maxAccuracy = 0.0;
 	this->minCost = 100.0;
 	this->saveConfigured = false;
+
+	this->dataSetMean[0] = 0.0f;
+	this->dataSetMean[1] = 0.0f;
+	this->dataSetMean[2] = 0.0f;
+
 }
 
 Network::~Network() {
@@ -534,6 +539,7 @@ int Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output, 
 Layer* Network::findLayer(const char *name) {
 	return inputLayer->find(0, name);
 }
+
 
 
 

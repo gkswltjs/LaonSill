@@ -37,6 +37,10 @@ public:
 		this->minCost = 100.0;
 		this->saveConfigured = false;
 		this->dataSet = 0;
+
+		this->dataSetMean[0] = 0.0f;
+		this->dataSetMean[1] = 0.0f;
+		this->dataSetMean[2] = 0.0f;
 	}
 	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
