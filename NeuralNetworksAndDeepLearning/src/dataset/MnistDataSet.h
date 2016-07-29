@@ -20,15 +20,17 @@ using namespace arma;
 
 class MnistDataSet : public UbyteDataSet {
 public:
-	MnistDataSet(double validationSetRatio) :
-		UbyteDataSet(
+	MnistDataSet(double validationSetRatio)
+		: UbyteDataSet(
 				"/home/jhkim/data/learning/mnist/train-images.idx3-ubyte",
 				"/home/jhkim/data/learning/mnist/train-labels.idx1-ubyte",
+				1,
 				"/home/jhkim/data/learning/mnist/t10k-images.idx3-ubyte",
 				"/home/jhkim/data/learning/mnist/t10k-labels.idx1-ubyte",
+				1,
+				1,
 				validationSetRatio) {
 		this->channels = 1;
-
 		this->mean[0] = 0.13066047740;
 	}
 	virtual ~MnistDataSet() {}

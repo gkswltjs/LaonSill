@@ -23,11 +23,13 @@ struct UByteImageDataset {
 	uint32_t length;		/// Number of images in dataset.
 	uint32_t height;		/// The height of each image.
 	uint32_t width;			/// The width of each image.
+	uint32_t channel;		/// The channel of each image.
 	void Swap() {
 		magic = bswap(magic);
 		length = bswap(length);
 		height = bswap(height);
 		width = bswap(width);
+		channel = bswap(channel);
 	}
 };
 

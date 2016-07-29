@@ -703,6 +703,8 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	float delta_scale = -weight_update_param.lr_mult/miniBatchSize;
 	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
 
+	float b_delta_scale = -bias_update_param.lr_mult/miniBatchSize;
+
 	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
 	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(filter_d.size()), &param_scale, d_filters, 1));
@@ -712,7 +714,7 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 
 	Util::printDeviceData(d_delta_bias, 1, 1, filter_d.filters, 1, "d_delta_bias:");
 	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.filters),	&delta_scale, d_delta_bias, 1, d_biases, 1));
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.filters),	&b_delta_scale, d_delta_bias, 1, d_biases, 1));
 	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
 
 	//Util::setPrint(false);

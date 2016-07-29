@@ -27,25 +27,30 @@ class GoogLeNet : public Network {
 public:
 	GoogLeNet(NetworkListener *networkListener=0, double w_lr_mult=0.1, double w_decay_mult=1.0,
 			double b_lr_mult=2.0, double b_decay_mult=0.0) : Network(networkListener) {
-		double weight_lr_mult = 1.0;
-		double weight_decay_mult = 1.0;
-		double bias_lr_mult = 2.0;
-		double bias_decay_mult = 0.0;
 
+		update_param weight_update_param(w_lr_mult, w_decay_mult);
+		update_param bias_update_param(b_lr_mult, b_decay_mult);
+
+
+		// 224x224x3
 		InputLayer *inputLayer = new InputLayer(
 				"input"
 				);
 
+		// 112x112x64
 		ConvLayer *conv1_7x7_s2 = new ConvLayer(
 				"conv1_7x7_s2",
 				filter_dim(7, 7, 3, 64, 2),
-				update_param(weight_lr_mult, weight_decay_mult),
-				update_param(bias_lr_mult, bias_decay_mult),
+				//update_param(weight_lr_mult, weight_decay_mult),
+				//update_param(bias_lr_mult, bias_decay_mult),
+				weight_update_param,
+				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.2),
 				ActivationType::ReLU
 				);
 
+		// 56x56x64
 		PoolingLayer *pool1_3x3_s2 = new PoolingLayer(
 				"pool1_3x3_s2",
 				pool_dim(3, 3, 2),
@@ -57,21 +62,27 @@ public:
 				lrn_dim(5, 0.0001, 0.75)
 				);
 
+		// 56x56x64
 		ConvLayer *conv2_3x3_reduce = new ConvLayer(
 				"conv2_3x3_reduce",
 				filter_dim(1, 1, 64, 64, 1),
-				update_param(weight_lr_mult, weight_decay_mult),
-				update_param(bias_lr_mult, bias_decay_mult),
+				//update_param(weight_lr_mult, weight_decay_mult),
+				//update_param(bias_lr_mult, bias_decay_mult),
+				weight_update_param,
+				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.2),
 				ActivationType::ReLU
 				);
 
+		// 56x56x192
 		ConvLayer *conv2_3x3 = new ConvLayer(
 				"conv2_3x3",
 				filter_dim(3, 3, 64, 192, 1),
-				update_param(weight_lr_mult, weight_decay_mult),
-				update_param(bias_lr_mult, bias_decay_mult),
+				//update_param(weight_lr_mult, weight_decay_mult),
+				//update_param(bias_lr_mult, bias_decay_mult),
+				weight_update_param,
+				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.2),
 				ActivationType::ReLU
@@ -82,6 +93,7 @@ public:
 				lrn_dim(5, 0.0001, 0.75)
 				);
 
+		// 28x28x192
 		PoolingLayer *pool2_3x3_s2 = new PoolingLayer(
 				"pool2_3x3_s2",
 				pool_dim(3, 3, 2),
@@ -91,13 +103,17 @@ public:
 		InceptionLayer *inception_3a = new InceptionLayer(
 				"inception_3a",
 				192,
-				64, 96, 128, 16, 32, 32
+				64, 96, 128, 16, 32, 32,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_3b = new InceptionLayer(
 				"inception_3b",
 				256,
-				128, 128, 192, 32, 96, 64
+				128, 128, 192, 32, 96, 64,
+				weight_update_param,
+				bias_update_param
 				);
 
 		PoolingLayer *pool3_3x3_s2 = new PoolingLayer(
@@ -109,31 +125,41 @@ public:
 		InceptionLayer *inception_4a = new InceptionLayer(
 				"inception_4a",
 				480,
-				192, 96, 208, 16, 48, 64
+				192, 96, 208, 16, 48, 64,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_4b = new InceptionLayer(
 				"inception_4b",
 				512,
-				160, 112, 224, 24, 64, 64
+				160, 112, 224, 24, 64, 64,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_4c = new InceptionLayer(
 				"inception_4c",
 				512,
-				128, 128, 256, 24, 64, 64
+				128, 128, 256, 24, 64, 64,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_4d = new InceptionLayer(
 				"inception_4d",
 				512,
-				112, 144, 288, 32, 64, 64
+				112, 144, 288, 32, 64, 64,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_4e = new InceptionLayer(
 				"inception_4e",
 				528,
-				256, 160, 320, 32, 128, 128
+				256, 160, 320, 32, 128, 128,
+				weight_update_param,
+				bias_update_param
 				);
 
 		PoolingLayer *pool4_3x3_s2 = new PoolingLayer(
@@ -145,13 +171,17 @@ public:
 		InceptionLayer *inception_5a = new InceptionLayer(
 				"inception_5a",
 				832,
-				256, 160, 320, 32, 128, 128
+				256, 160, 320, 32, 128, 128,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_5b = new InceptionLayer(
 				"inception_5b",
 				832,
-				384, 192, 384, 48, 128, 128
+				384, 192, 384, 48, 128, 128,
+				weight_update_param,
+				bias_update_param
 				);
 
 		PoolingLayer *pool5_7x7_s1 = new PoolingLayer(
@@ -160,27 +190,16 @@ public:
 				PoolingType::Avg
 				);
 
-		/*
-		FullyConnectedLayer *fc1 = new FullyConnectedLayer(
-				"fc1",
-				1024,
-				1000,
-				0.4,
-				update_param(),
-				update_param(),
-				param_filler(),
-				param_filler(),
-				ActivationType::ReLU
-				);
-				*/
-
 		SoftmaxLayer *outputLayer = new SoftmaxLayer(
 				"output",
-				1000,
+				100,
 				0.4,
-				update_param(weight_lr_mult, weight_decay_mult),
-				update_param(bias_lr_mult, bias_decay_mult),
+				//update_param(weight_lr_mult, weight_decay_mult),
+				//update_param(bias_lr_mult, bias_decay_mult),
+				weight_update_param,
+				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
+				//param_filler(ParamFillerType::Constant, 0.0),
 				param_filler(ParamFillerType::Constant, 0.0)
 				);
 
@@ -204,7 +223,6 @@ public:
 		Network::addLayerRelation(inception_5a, inception_5b);
 		Network::addLayerRelation(inception_5b, pool5_7x7_s1);
 		Network::addLayerRelation(pool5_7x7_s1, outputLayer);
-		//Network::addLayerRelation(fc1, outputLayer);
 
 		this->inputLayer = inputLayer;
 		addOutputLayer(outputLayer);

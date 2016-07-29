@@ -18,6 +18,7 @@
 #include "../layer/HiddenLayer.h"
 #include "../layer/OutputLayer.h"
 #include "../layer/LayerConfig.h"
+#include "../evaluation/Evaluation.h"
 
 class DataSample;
 
@@ -31,23 +32,16 @@ using namespace arma;
 
 class Network {
 public:
-	Network(NetworkListener *networkListener=0) {
-		this->networkListener = networkListener;
-		this->maxAccuracy = 0.0;
-		this->minCost = 100.0;
-		this->saveConfigured = false;
-		this->dataSet = 0;
-
-		this->dataSetMean[0] = 0.0f;
-		this->dataSetMean[1] = 0.0f;
-		this->dataSetMean[2] = 0.0f;
-	}
+	Network(NetworkListener *networkListener=0);
 	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	virtual ~Network();
 
-	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
 	void setDataSet(DataSet *dataSet, UINT batches);
 	InputLayer *getInputLayer() const { return this->inputLayer; }
+
+	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
+	void addEvaluation(Evaluation *evaluation);
+	void addNetworkListener(NetworkListener* networkListener);
 
 	void sgd(int epochs);
 	void test();
@@ -94,13 +88,15 @@ protected:
 
 	double totalCost(const vector<const DataSample *> &dataSet, double lambda);
 	double accuracy(const vector<const DataSample *> &dataSet);
-	int evaluate(int &accurateCnt, float &cost);
+	void evaluate();
 
 	DataSet *dataSet;
-	NetworkListener *networkListener;
+
 
 	InputLayer *inputLayer;
-	vector<OutputLayer *> outputLayers;
+	vector<OutputLayer*> outputLayers;
+	vector<Evaluation*> evaluations;
+	vector<NetworkListener*> networkListeners;
 
 	io_dim in_dim;
 
@@ -115,7 +111,7 @@ protected:
 	int testEvaluateResult(const rvec &output, const rvec &y);
 #else
 protected:
-	int testEvaluateResult(const int num_labels, const DATATYPE *output, const UINT *y, int &accurateCnt, float &cost);
+	void testEvaluateResult(const int num_labels, const DATATYPE *output, const UINT *y);
 #endif
 
 

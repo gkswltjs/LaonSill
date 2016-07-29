@@ -22,15 +22,14 @@
 
 
 
-
-
-
+Network::Network(NetworkListener *networkListener)
+	: Network(0, 0, 0, networkListener) {}
 
 Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
 	this->inputLayer = inputLayer;
 	if(outputLayer) this->outputLayers.push_back(outputLayer);
 	this->dataSet = dataSet;
-	this->networkListener = networkListener;
+	if(networkListener) this->networkListeners.push_back(networkListener);
 	this->maxAccuracy = 0.0;
 	this->minCost = 100.0;
 	this->saveConfigured = false;
@@ -38,7 +37,6 @@ Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *data
 	this->dataSetMean[0] = 0.0f;
 	this->dataSetMean[1] = 0.0f;
 	this->dataSetMean[2] = 0.0f;
-
 }
 
 Network::~Network() {
@@ -83,7 +81,7 @@ void Network::sgd(int epochs) {
 		//dataSet->shuffleTrainDataSet();
 		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			if((j+1)%10 == 0) {
+			if((j+1)%100 == 0) {
 				cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 				timer2.start();
 			}
@@ -92,18 +90,19 @@ void Network::sgd(int epochs) {
 
 			//cout << "reset_nabla()" << endl;
 			inputLayer->reset_nabla(0);
-			updateMiniBatch(j);
+
+			//for(int k = 0; k < 5; k++) {
+				updateMiniBatch(j);
+			//}
 		}
 		//timer1.stop();
 
 		//dataSet->shuffleTestDataSet();
-		int accurateCnt = 0;
-		float cost = 0.0f;
-		float accuracy = 0.0f;
-		int numTestData = dataSet->getNumTestData();
-		evaluate(accurateCnt, cost);
-		cost /= numTestData;
-		accuracy = (float)accurateCnt/numTestData;
+		float numTestData = dataSet->getNumTestData();
+		evaluate();
+		float cost = evaluations[0]->getCost() / numTestData;
+		int accurateCnt = evaluations[0]->getAccurateCount();
+		float accuracy = accurateCnt/numTestData;
 
 		if(saveConfigured && cost < minCost) {
 			minCost = cost;
@@ -112,14 +111,12 @@ void Network::sgd(int epochs) {
 			save(savePath);
 		}
 
-
-
 		if(dataSet->getNumTestData() > 0) {
-			cout << "Epoch " << i+1 << " " << accurateCnt << " / " << numTestData
+			cout << "Epoch " << i+1 << " " << accurateCnt << " / " << (int)numTestData
 					<< ", accuracy: " << accuracy << ", cost: " << cost << " :" << timer1.stop(false) << endl;
 
-			if(networkListener) {
-				networkListener->epochComplete(cost, accuracy);
+			for(int nl = 0; nl < networkListeners.size(); nl++) {
+				networkListeners[nl]->epochComplete(evaluations[nl]->getCost()/numTestData, evaluations[nl]->getAccurateCount()/numTestData);
 			}
 		}
 		else { cout << "Epoch " << i+1 << " complete: " << timer1.stop(false) << endl; }
@@ -133,13 +130,11 @@ void Network::sgd(int epochs) {
 
 void Network::test() {
 	Timer timer;
-	int accurateCnt = 0;
-	float cost = 0.0f;
-	float accuracy = 0.0f;
-	int numTestData = dataSet->getNumTestData();
-	evaluate(accurateCnt, cost);
-	cost /= numTestData;
-	accuracy = (float)accurateCnt/numTestData;
+	float numTestData = (float)dataSet->getNumTestData();
+	evaluate();
+	int accurateCnt = evaluations[0]->getAccurateCount();
+	float cost = evaluations[0]->getCost() / numTestData;
+	float accuracy = accurateCnt / numTestData;
 
 	if(dataSet->getNumTestData() > 0) {
 		timer.start();
@@ -266,7 +261,7 @@ void Network::setDataSetMean(DATATYPE *dataSetMean) {
 
 
 
-int Network::evaluate(int &accurateCnt, float &cost) {
+void Network::evaluate() {
 #if CPU_MODE
 	int testResult = 0;
 	//bool printBak = Util::getPrint();
@@ -291,6 +286,10 @@ int Network::evaluate(int &accurateCnt, float &cost) {
 	//float cost = 0;
 	//bool printBak = Util::getPrint();
 	//Util::setPrint(true);
+
+	for(int i = 0; i < evaluations.size(); i++) {
+		evaluations[i]->reset();
+	}
 
 	int testBatchesSize = dataSet->getNumTestData()/in_dim.batches;
 	for(int i = 0; i < testBatchesSize; i++) {
@@ -320,12 +319,11 @@ int Network::evaluate(int &accurateCnt, float &cost) {
 		//		sizeof(UINT), cudaMemcpyHostToDevice));
 
 		testEvaluateResult(outputLayers[0]->getOutDimension().rows, outputLayers[0]->getOutput(),
-				dataSet->getTestLabelAt(i*in_dim.batches), accurateCnt, cost);
+				dataSet->getTestLabelAt(i*in_dim.batches));
 		//checkCudaErrors(cudaFree(d_testLabel));
 	}
 
 	//Util::setPrint(false);
-	return accurateCnt;
 #endif
 }
 
@@ -486,7 +484,7 @@ void Network::updateMiniBatch(int nthMiniBatch) {
 
 
 
-int Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output, const UINT *y, int &accurateCnt, float &cost) {
+void Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output, const UINT *y) {
 	DATATYPE *output = new DATATYPE[num_labels*in_dim.batches];
 
 	//Util::setPrint(true);
@@ -495,6 +493,11 @@ int Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output, 
 	//Util::setPrint(false);
 	checkCudaErrors(cudaMemcpyAsync(output, d_output,	sizeof(DATATYPE)*num_labels*in_dim.batches, cudaMemcpyDeviceToHost));
 
+	for(int i = 0; i < evaluations.size(); i++) {
+		evaluations[i]->evaluate(num_labels, in_dim.batches, output, y);
+	}
+
+	/*
 	for(int j = 0; j < in_dim.batches; j++) {
 		DATATYPE maxValue = -100000;
 		int maxIndex = 0;
@@ -513,10 +516,11 @@ int Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output, 
 
 		if(maxIndex == y[j]) accurateCnt++;
 	}
+	*/
 
 	delete [] output;
 
-	return accurateCnt;
+	//return accurateCnt;
 
 	//Util::printVec(&evaluateResult, "result");
 	//Util::printVec(y, "y");
@@ -536,13 +540,17 @@ int Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output, 
 #endif
 
 
-Layer* Network::findLayer(const char *name) {
+Layer* Network::findLayer(const char* name) {
 	return inputLayer->find(0, name);
 }
 
+void Network::addEvaluation(Evaluation* evaluation) {
+	evaluations.push_back(evaluation);
+}
 
-
-
+void Network::addNetworkListener(NetworkListener* networkListener) {
+	networkListeners.push_back(networkListener);
+}
 
 
 

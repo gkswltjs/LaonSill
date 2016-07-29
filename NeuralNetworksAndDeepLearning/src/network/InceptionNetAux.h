@@ -23,6 +23,8 @@
 class InceptionNetAux : public Network {
 public:
 	InceptionNetAux(NetworkListener *networkListener=0, double lr_mult=0.0025, double decay_mult=0.0) : Network(networkListener) {
+			update_param weight_update_param(lr_mult, decay_mult);
+			update_param bias_update_param(lr_mult, decay_mult);
 
 			InputLayer *inputLayer = new InputLayer(
 					"input"
@@ -34,8 +36,10 @@ public:
 					//io_dim(28, 28, 1, batchSize),
 					//io_dim(28, 28, 10, batchSize),
 					filter_dim(5, 5, 3, 10, 2),
-					update_param(lr_mult, decay_mult),
-					update_param(lr_mult, decay_mult),
+					//update_param(lr_mult, decay_mult),
+					//update_param(lr_mult, decay_mult),
+					weight_update_param,
+					bias_update_param,
 					param_filler(ParamFillerType::Xavier),
 					param_filler(ParamFillerType::Constant, 0.0),
 					ActivationType::ReLU
@@ -60,7 +64,9 @@ public:
 					//io_dim(14, 14, 10, batchSize),
 					//io_dim(14, 14, 60, batchSize),
 					10,
-					15, 10, 15, 10, 15, 15
+					15, 10, 15, 10, 15, 15,
+					weight_update_param,
+					bias_update_param
 					);
 
 
@@ -69,7 +75,11 @@ public:
 					//io_dim(14, 14, 60, batchSize),
 					//io_dim(14, 14, 60, batchSize),
 					60,
-					15, 15, 15, 15, 15, 15
+					15, 15, 15, 15, 15, 15,
+					//update_param(lr_mult, decay_mult),
+					//update_param(lr_mult, decay_mult),
+					weight_update_param,
+					bias_update_param
 					);
 
 			HiddenLayer *conv2Layer = new ConvLayer(
@@ -77,8 +87,10 @@ public:
 					//io_dim(28, 28, 1, batchSize),
 					//io_dim(28, 28, 10, batchSize),
 					filter_dim(5, 5, 60, 80, 2),
-					update_param(lr_mult, decay_mult),
-					update_param(lr_mult, decay_mult),
+					//update_param(lr_mult, decay_mult),
+					//update_param(lr_mult, decay_mult),
+					weight_update_param,
+					bias_update_param,
 					param_filler(ParamFillerType::Xavier),
 					param_filler(ParamFillerType::Constant, 0.0),
 					ActivationType::ReLU
@@ -146,8 +158,10 @@ public:
 					//io_dim(10, 1, 1, batchSize),
 					10,
 					0.5,
-					update_param(lr_mult, decay_mult),
-					update_param(lr_mult, decay_mult),
+					//update_param(lr_mult, decay_mult),
+					//update_param(lr_mult, decay_mult),
+					weight_update_param,
+					bias_update_param,
 					param_filler(ParamFillerType::Constant, 0.0),
 					param_filler(ParamFillerType::Constant, 0.0)
 					);

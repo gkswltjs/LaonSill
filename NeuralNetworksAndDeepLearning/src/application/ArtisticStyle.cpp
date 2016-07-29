@@ -27,7 +27,7 @@ using namespace std;
 using namespace cimg_library;
 using namespace arma;
 
-
+#if CPU_MODE
 struct LayerInfo_t {
 	HiddenLayer* layer;
 	io_dim out_dim;
@@ -447,7 +447,7 @@ void ArtisticStyle::clipImage(CImg<DATATYPE>& img) {
 
 
 
-
+#endif
 
 
 

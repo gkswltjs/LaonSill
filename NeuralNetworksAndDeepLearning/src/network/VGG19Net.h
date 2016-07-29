@@ -286,10 +286,9 @@ public:
 				PoolingType::Avg
 				);
 
-		/*
 		HiddenLayer *fc7Layer = new FullyConnectedLayer(
 				"fc7",
-				500,
+				4096,
 				0.5,
 				update_param(w_lr_mult, w_decay_mult),
 				update_param(b_lr_mult, b_decay_mult),
@@ -297,12 +296,21 @@ public:
 				param_filler(ParamFillerType::Constant, 0.1),
 				ActivationType::ReLU
 				);
-				*/
 
+		HiddenLayer *fc8Layer = new FullyConnectedLayer(
+				"fc8",
+				1000,
+				0.5,
+				update_param(w_lr_mult, w_decay_mult),
+				update_param(b_lr_mult, b_decay_mult),
+				param_filler(ParamFillerType::Xavier),
+				param_filler(ParamFillerType::Constant, 0.1),
+				ActivationType::ReLU
+				);
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
 				"softmax8",
-				1,
+				100,
 				0.5,
 				update_param(w_lr_mult, w_decay_mult),
 				update_param(b_lr_mult, b_decay_mult),
@@ -331,7 +339,9 @@ public:
 		Network::addLayerRelation(conv5_2Layer, conv5_3Layer);
 		Network::addLayerRelation(conv5_3Layer, conv5_4Layer);
 		Network::addLayerRelation(conv5_4Layer, pool5Layer);
-		Network::addLayerRelation(pool5Layer, softmaxLayer);
+		Network::addLayerRelation(pool5Layer, fc7Layer);
+		Network::addLayerRelation(fc7Layer, fc8Layer);
+		Network::addLayerRelation(fc8Layer, softmaxLayer);
 
 		this->inputLayer = inputLayer;
 		addOutputLayer(softmaxLayer);

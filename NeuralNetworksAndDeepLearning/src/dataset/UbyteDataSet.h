@@ -23,11 +23,28 @@ using namespace arma;
 
 class UbyteDataSet : public DataSet {
 public:
-	UbyteDataSet(const char *train_image, const char *train_label,
-			const char *test_image, const char *test_label, double validationSetRatio);
+	UbyteDataSet(
+			string train_image,
+			string train_label,
+			int numTrainFile,
+			string test_image,
+			string test_label,
+			int numTestFile,
+			int channel=0,
+			double validationSetRatio=0.0
+			);
 	virtual ~UbyteDataSet();
 
 	virtual void load();
+
+	virtual const DATATYPE *getTrainDataAt(int index);
+	virtual const UINT *getTrainLabelAt(int index);
+	virtual const DATATYPE *getValidationDataAt(int index);
+	virtual const UINT *getValidationLabelAt(int index);
+	virtual const DATATYPE *getTestDataAt(int index);
+	virtual const UINT *getTestLabelAt(int index);
+
+
 	void shuffleTrainDataSet();
 	void shuffleValidationDataSet();
 	void shuffleTestDataSet();
@@ -38,15 +55,70 @@ protected:
 	int loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size);
 #else
 protected:
-	int loadDataSetFromResource(const char *data_path, const char *label_path, vector<DATATYPE> *&dataSet, vector<UINT> *&labelSet, int offset, int size);
+	int load(int type, int page=0);
+	int loadDataSetFromResource(
+			string data_path,
+			string label_path,
+			vector<DATATYPE> *&dataSet,
+			vector<UINT> *&labelSet,
+			int offset,
+			int size);
 #endif
 
 protected:
-	char train_image[256];
-	char train_label[256];
-	char test_image[256];
-	char test_label[256];
+	string train_image;
+	string train_label;
+	int numTrainFile;
+	string test_image;
+	string test_label;
+	int numTestFile;
 	double validationSetRatio;
+
+	int trainFileIndex;
+	int testFileIndex;
+	int numImagesInFile;
+
+	vector<uint8_t> *bufDataSet;
 };
 
 #endif /* UBYTEDATASET_H_ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

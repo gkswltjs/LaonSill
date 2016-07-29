@@ -10,7 +10,6 @@
 #include "../exception/Exception.h"
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
-
 #include <cublas_v2.h>
 #include <cudnn.h>
 
@@ -485,6 +484,7 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 
 	float delta_scale = -weight_update_param.lr_mult/miniBatchSize;
 	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
+	float b_delta_scale = -bias_update_param.lr_mult/miniBatchSize;
 
 	Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
 	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
@@ -497,7 +497,7 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
 	Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "d_bias:");
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.rows),
-			&delta_scale, d_delta_bias, 1, d_bias, 1));
+			&b_delta_scale, d_delta_bias, 1, d_bias, 1));
 	Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "d_bias:");
 
 	propUpdate(n, miniBatchSize);

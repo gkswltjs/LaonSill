@@ -25,6 +25,13 @@ public:
 		mean[0] = 0;
 		mean[1] = 0;
 		mean[2] = 0;
+
+		trainDataSet = 0;
+		trainLabelSet = 0;
+		validationDataSet = 0;
+		validationLabelSet = 0;
+		testDataSet = 0;
+		testLabelSet = 0;
 	}
 	DataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData) {
 		this->rows = rows;
@@ -59,27 +66,27 @@ public:
 	UINT getNumValidationData() const { return this->numValidationData; }
 	UINT getNumTestData() const { return this->numTestData; }
 
-	const DATATYPE *getTrainDataAt(int index) {
+	virtual const DATATYPE *getTrainDataAt(int index) {
 		if(index >= numTrainData) throw Exception();
 		return &(*trainDataSet)[dataSize*index];
 	}
-	const UINT *getTrainLabelAt(int index) {
+	virtual const UINT *getTrainLabelAt(int index) {
 		if(index >= numTrainData) throw Exception();
 		return &(*trainLabelSet)[index];
 	}
-	const DATATYPE *getValidationDataAt(int index) {
+	virtual const DATATYPE *getValidationDataAt(int index) {
 		if(index >= numValidationData) throw Exception();
 		return &(*validationDataSet)[dataSize*index];
 	}
-	const UINT *getValidationLabelAt(int index) {
+	virtual const UINT *getValidationLabelAt(int index) {
 		if(index >= numValidationData) throw Exception();
 		return &(*validationLabelSet)[index];
 	}
-	const DATATYPE *getTestDataAt(int index) {
+	virtual const DATATYPE *getTestDataAt(int index) {
 		if(index >= numTestData) throw Exception();
 		return &(*testDataSet)[dataSize*index];
 	}
-	const UINT *getTestLabelAt(int index) {
+	virtual const UINT *getTestLabelAt(int index) {
 		if(index >= numTestData) throw Exception();
 		return &(*testLabelSet)[index];
 	}
@@ -152,7 +159,7 @@ protected:
 	UINT rows;
 	UINT cols;
 	UINT channels;
-	UINT dataSize;
+	size_t dataSize;
 	UINT numTrainData;
 	UINT numValidationData;
 	UINT numTestData;

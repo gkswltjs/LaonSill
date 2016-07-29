@@ -22,8 +22,16 @@ struct category_t {
 	vector<string> fileList;
 	int fileIndex;
 
+	category_t() {
+		fileIndex = 0;
+	}
+
+	string getCurrentFile() {
+		if(end()) {	exit(1); }
+		return fileList[fileIndex++];
+	}
 	bool end() {
-		return (fileList.size() >= fileIndex);
+		return (fileList.size() <= fileIndex);
 	}
 };
 
@@ -35,7 +43,9 @@ public:
 			int numCategory,
 			int numTrain,
 			int numTest,
-			int numImagesInFile);
+			int numImagesInTrainFile,
+			int numImagesInTestFile,
+			int numChannels);
 	virtual ~ImagePacker();
 
 	void load();
@@ -44,6 +54,7 @@ public:
 
 private:
 	void loadFilesInCategory(string categoryPath, vector<string>& fileList);
+	void _pack(string dataPath, string labelPath, int numImagesInFile, int size);
 
 
 	string image_dir;
@@ -52,10 +63,14 @@ private:
 	static const string path_save;
 
 	vector<category_t> categoryList;
-	int numCategory;
-	int numTrain;
-	int numTest;
-	int numImagesInFile;
+	int numCategory;											// pack 대상 category 수
+	int numTrain;												// train 이미지 수
+	int numTest;												// test 이미지 수
+	int numImagesInTrainFile;									// train pack file 하나당 이미지 수
+	int numImagesInTestFile;									// test pack file 하나당 이미지 수
+	int numChannels;
+
+	uint32_t categoryIndex;
 
 };
 

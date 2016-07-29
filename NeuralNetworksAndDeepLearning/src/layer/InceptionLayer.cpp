@@ -16,10 +16,10 @@
 #include "../network/Network.h"
 
 
-InceptionLayer::InceptionLayer(const char *name,
-		int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp)
+InceptionLayer::InceptionLayer(const char *name, int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp,
+		update_param weight_update_param, update_param bias_update_param)
 	: HiddenLayer(name) {
-	initialize(ic, oc_cv1x1, oc_cv3x3reduce, oc_cv3x3, oc_cv5x5reduce, oc_cv5x5, oc_cp);
+	initialize(ic, oc_cv1x1, oc_cv3x3reduce, oc_cv3x3, oc_cv5x5reduce, oc_cv5x5, oc_cp, weight_update_param, bias_update_param);
 }
 
 
@@ -296,13 +296,16 @@ void InceptionLayer::initialize() {
 	this->type = LayerType::Inception;
 }
 
-void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp) {
+void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp,
+		update_param weight_update_param, update_param bias_update_param) {
 	initialize();
 
-	double weight_lr_mult = 1.0;
-	double weight_decay_mult = 1.0;
-	double bias_lr_mult = 2.0;
-	double bias_decay_mult = 0.0;
+	//double weight_lr_mult = 1.0;
+	//double weight_decay_mult = 1.0;
+	//double bias_lr_mult = 2.0;
+	//double bias_decay_mult = 0.0;
+
+	double bias_const = 0.0;
 
 
 	char subLayerName[256];
@@ -310,10 +313,12 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	ConvLayer *conv1x1Layer = new ConvLayer(
 			subLayerName,
 			filter_dim(1, 1, ic, oc_cv1x1, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
+			//update_param(weight_lr_mult, weight_decay_mult),
+			//update_param(bias_lr_mult, bias_decay_mult),
+			weight_update_param,
+			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.03),
-			param_filler(ParamFillerType::Constant, 0.2),
+			param_filler(ParamFillerType::Constant, bias_const),
 			ActivationType::ReLU
 			);
 
@@ -321,20 +326,24 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	ConvLayer *conv3x3reduceLayer = new ConvLayer(
 			subLayerName,
 			filter_dim(1, 1, ic, oc_cv3x3reduce, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
+			//update_param(weight_lr_mult, weight_decay_mult),
+			//update_param(bias_lr_mult, bias_decay_mult),
+			weight_update_param,
+			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.09),
-			param_filler(ParamFillerType::Constant, 0.2),
+			param_filler(ParamFillerType::Constant, bias_const),
 			ActivationType::ReLU);
 
 	sprintf(subLayerName, "%s/%s", this->name, "conv3x3");
 	ConvLayer *conv3x3Layer = new ConvLayer(
 			subLayerName,
 			filter_dim(3, 3, oc_cv3x3reduce, oc_cv3x3, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
+			//update_param(weight_lr_mult, weight_decay_mult),
+			//update_param(bias_lr_mult, bias_decay_mult),
+			weight_update_param,
+			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.03),
-			param_filler(ParamFillerType::Constant, 0.2),
+			param_filler(ParamFillerType::Constant, bias_const),
 			ActivationType::ReLU
 			);
 
@@ -342,10 +351,12 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	ConvLayer *conv5x5recudeLayer = new ConvLayer(
 			subLayerName,
 			filter_dim(1, 1, ic, oc_cv5x5reduce, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
+			//update_param(weight_lr_mult, weight_decay_mult),
+			//update_param(bias_lr_mult, bias_decay_mult),
+			weight_update_param,
+			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.2),
-			param_filler(ParamFillerType::Constant, 0.2),
+			param_filler(ParamFillerType::Constant, bias_const),
 			ActivationType::ReLU
 			);
 
@@ -353,10 +364,12 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	ConvLayer *conv5x5Layer = new ConvLayer(
 			subLayerName,
 			filter_dim(5, 5, oc_cv5x5reduce, oc_cv5x5, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
+			//update_param(weight_lr_mult, weight_decay_mult),
+			//update_param(bias_lr_mult, bias_decay_mult),
+			weight_update_param,
+			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.03),
-			param_filler(ParamFillerType::Constant, 0.2),
+			param_filler(ParamFillerType::Constant, bias_const),
 			ActivationType::ReLU
 			);
 
@@ -371,10 +384,12 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	ConvLayer *convProjectionLayer = new ConvLayer(
 			subLayerName,
 			filter_dim(1, 1, ic, oc_cp, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
+			//update_param(weight_lr_mult, weight_decay_mult),
+			//update_param(bias_lr_mult, bias_decay_mult),
+			weight_update_param,
+			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.1),
-			param_filler(ParamFillerType::Constant, 0.2),
+			param_filler(ParamFillerType::Constant, bias_const),
 			ActivationType::ReLU);
 
 	sprintf(subLayerName, "%s/%s", this->name, "depthConcat");

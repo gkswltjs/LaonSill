@@ -14,17 +14,36 @@
 #include "../util/UByteImage.h"
 #include "DataSample.h"
 #include "ImageInfo.h"
+#include "../Timer.h"
 
 
 
+UbyteDataSet::UbyteDataSet(
+		string train_image,
+		string train_label,
+		int numTrainFile,
+		string test_image,
+		string test_label,
+		int numTestFile,
+		int channel,
+		double validationSetRatio) {
 
-UbyteDataSet::UbyteDataSet(const char *train_image, const char *train_label,
-		const char *test_image, const char *test_label, double validationSetRatio = 0.0) {
-	strcpy(this->train_image, train_image);
-	strcpy(this->train_label, train_label);
-	strcpy(this->test_image, test_image);
-	strcpy(this->test_label, test_label);
+	this->train_image = train_image;
+	this->train_label = train_label;
+	this->numTrainFile = numTrainFile;
+	this->test_image = test_image;
+	this->test_label = test_label;
+	this->numTestFile = numTestFile;
+
+	this->trainFileIndex = 0;
+	this->testFileIndex = 0;
+
 	this->validationSetRatio = validationSetRatio;
+
+	// TODO parameterize ...
+	this->channels = channel;
+
+	this->bufDataSet = 0;
 }
 
 UbyteDataSet::~UbyteDataSet() {
@@ -36,16 +55,131 @@ UbyteDataSet::~UbyteDataSet() {
 	if(testLabelSet) { delete testLabelSet; }
 }
 
+
+
+const DATATYPE *UbyteDataSet::getTrainDataAt(int index) {
+	if(index >= numTrainData || index < 0) throw Exception();
+	int reqPage = index / numImagesInFile;
+	if(reqPage != trainFileIndex) {
+		load(0, reqPage);
+		trainFileIndex = reqPage;
+	}
+	return &(*trainDataSet)[dataSize*(index-reqPage*numImagesInFile)];
+}
+
+const UINT *UbyteDataSet::getTrainLabelAt(int index) {
+	if(index >= numTrainData || index < 0) throw Exception();
+	int reqPage = index / numImagesInFile;
+	if(reqPage != trainFileIndex) {
+		load(0, reqPage);
+		trainFileIndex = reqPage;
+	}
+	return &(*trainLabelSet)[index-reqPage*numImagesInFile];
+}
+
+const DATATYPE *UbyteDataSet::getValidationDataAt(int index) {
+	if(index >= numValidationData || index < 0) throw Exception();
+	return &(*validationDataSet)[dataSize*index];
+}
+
+const UINT *UbyteDataSet::getValidationLabelAt(int index) {
+	if(index >= numValidationData || index < 0) throw Exception();
+	return &(*validationLabelSet)[index];
+}
+
+const DATATYPE *UbyteDataSet::getTestDataAt(int index) {
+	if(index >= numTestData || index < 0) throw Exception();
+	int reqPage = index / numImagesInFile;
+	if(reqPage != testFileIndex) {
+		load(1, reqPage);
+		testFileIndex = reqPage;
+	}
+	return &(*testDataSet)[dataSize*(index-reqPage*numImagesInFile)];
+}
+
+const UINT *UbyteDataSet::getTestLabelAt(int index) {
+	if(index >= numTestData || index < 0) throw Exception();
+	int reqPage = index / numImagesInFile;
+	if(reqPage != testFileIndex) {
+		load(1, reqPage);
+		testFileIndex = reqPage;
+	}
+	return &(*testLabelSet)[index-reqPage*numImagesInFile];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void UbyteDataSet::load() {
 
 #if CPU_MODE
 	numTrainData = loadDataSetFromResource(filenames[0], trainDataSet, 0, 10000);
 	numTestData = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);
 #else
-	numTrainData = loadDataSetFromResource(train_image, train_label, trainDataSet, trainLabelSet, 0, 50000);
-	numTestData = loadDataSetFromResource(test_image, test_label, testDataSet, testLabelSet, 0, 10000);
+	int numTrainDataInFile = load(0);
+	int numTestDataInFile = load(1);
+
+	if(numTrainDataInFile <= 0 || numTestDataInFile <= 0) {
+		cout << "could not load resources ... " << endl;
+		exit(1);
+	}
+
+	numTrainData = numTrainDataInFile*numTrainFile;
+	numTestData = numTestDataInFile*numTestFile;
+	numImagesInFile = numTrainDataInFile;
 #endif
 }
+
+
+int UbyteDataSet::load(int type, int page) {
+	Timer timer;
+	timer.start();
+	cout << "load for type " << type << ", page: " << page << " has started ... " << endl;
+
+
+	string pageSuffix = to_string(page);
+	// train
+	if(type == 0) {
+		return loadDataSetFromResource(train_image+pageSuffix, train_label+pageSuffix,
+				trainDataSet, trainLabelSet, 0, 50000);
+	} else if(type == 1) {
+		return loadDataSetFromResource(test_image+pageSuffix, test_label+pageSuffix,
+				testDataSet, testLabelSet, 0, 10000);
+	}
+	//cout << "load done ... :" << timer.stop(false) << endl;
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #if CPU_MODE
@@ -101,18 +235,28 @@ int UbyteDataSet::loadDataSetFromResource(string resources[2], DataSample *&data
 
 #else
 
-int UbyteDataSet::loadDataSetFromResource(const char *data_path, const char *label_path,
-		vector<DATATYPE> *&dataSet, vector<UINT> *&labelSet, int offset, int size) {
 
-	FILE *imfp = fopen(data_path, "rb");
+
+
+
+
+int UbyteDataSet::loadDataSetFromResource(
+		string data_path,
+		string label_path,
+		vector<DATATYPE> *&dataSet,
+		vector<UINT> *&labelSet,
+		int offset,
+		int size) {
+
+	FILE *imfp = fopen(data_path.c_str(), "rb");
 	if(!imfp) {
-		printf("ERROR: Cannot open image dataset %s\n", data_path);
+		cout << "ERROR: Cannot open image dataset " << data_path << endl;
 		return 0;
 	}
-	FILE *lbfp = fopen(label_path, "rb");
+	FILE *lbfp = fopen(label_path.c_str(), "rb");
 	if(!lbfp) {
 		fclose(imfp);
-		printf("ERROR: Cannot open label dataset %s\n", label_path);
+		cout << "ERROR: Cannot open label dataset " << label_path << endl;
 		return 0;
 	}
 
@@ -121,13 +265,13 @@ int UbyteDataSet::loadDataSetFromResource(const char *data_path, const char *lab
 
 	// Read and verify file headers
 	if(fread(&image_header, sizeof(UByteImageDataset), 1, imfp) != 1) {
-		printf("ERROR: Invalid dataset file (image file header)\n");
+		cout << "ERROR: Invalid dataset file (image file header)" << endl;
 		fclose(imfp);
 		fclose(lbfp);
 		return 0;
 	}
 	if(fread(&label_header, sizeof(UByteLabelDataset), 1, lbfp) != 1) {
-		printf("ERROR: Invalid dataset file (label file header)\n");
+		cout << "ERROR: Invalid dataset file (label file header)" << endl;
 		fclose(imfp);
 		fclose(lbfp);
 		return 0;
@@ -160,43 +304,51 @@ int UbyteDataSet::loadDataSetFromResource(const char *data_path, const char *lab
 	// Output dimensions
 	size_t width = image_header.width;
 	size_t height = image_header.height;
+	size_t channel = image_header.channel;
 	this->cols = width;
 	this->rows = height;
+	this->channels = channel;
 	this->dataSize = rows*cols*channels;
 
 	// Read images and labels (if requested)
-	size_t dataSetSize = image_header.length*dataSize;
-	dataSet = new vector<DATATYPE>(dataSetSize);
-	vector<uint8_t> *tempDataSet = new vector<uint8_t>(dataSetSize);
-	labelSet = new vector<UINT>(label_header.length);
-	vector<uint8_t> *tempLabelSet = new vector<uint8_t>(label_header.length);
+	size_t dataSetSize = ((size_t)image_header.length)*dataSize;
+	if(!dataSet) dataSet = new vector<DATATYPE>(dataSetSize);
+	if(!bufDataSet) bufDataSet = new vector<uint8_t>(dataSetSize);
+	if(!labelSet) labelSet = new vector<UINT>(label_header.length);
+	//vector<uint8_t> *tempLabelSet = new vector<uint8_t>(label_header.length);
 
-	if(fread(&(*tempDataSet)[0], sizeof(uint8_t), dataSetSize, imfp) != dataSetSize) {
+	if(fread(&(*bufDataSet)[0], sizeof(uint8_t), dataSetSize, imfp) != dataSetSize) {
 		printf("ERROR: Invalid dataset file (partial image dataset)\n");
 		fclose(imfp);
 		fclose(lbfp);
 		return 0;
 	}
 
-	for(size_t i = 0; i < dataSetSize; i++) {
-		//if((*tempDataSet)[i] > 0) {
-		//	cout << bswap((*tempDataSet)[i]) << endl;
-		//}
-		(*dataSet)[i] = (*tempDataSet)[i]/255.0f;
 
+	/*
+	for(size_t i = 0; i < image_header.length; i++) {
+		for(int j = 0; j < channel; j++) {
+			for(int k = 0; k < width*height; k++) {
+				(*dataSet)[k+j*width*height+i*width*height*channel] = (*bufDataSet)[i]/255.0f - mean[j];
+			}
+		}
+	}
+	*/
+
+	for(size_t i = 0; i < dataSetSize; i++) {
+		(*dataSet)[i] = (*bufDataSet)[i]/255.0f - 0.4f;
 	}
 
-	if (fread(&(*tempLabelSet)[0], sizeof(uint8_t), label_header.length, lbfp) != label_header.length) {
+	if (fread(&(*labelSet)[0], sizeof(uint32_t), label_header.length, lbfp) != label_header.length) {
 		printf("ERROR: Invalid dataset file (partial label dataset)\n");
 		fclose(imfp);
 		fclose(lbfp);
 		return 0;
 	}
 
-	for(size_t i = 0; i < label_header.length; i++) {
-		(*labelSet)[i] = (*tempLabelSet)[i];
-	}
-
+	//for(size_t i = 0; i < label_header.length; i++) {
+	//	(*labelSet)[i] = (*tempLabelSet)[i];
+	//}
 
 	fclose(imfp);
 	fclose(lbfp);

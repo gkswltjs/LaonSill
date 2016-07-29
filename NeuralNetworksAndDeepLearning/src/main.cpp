@@ -18,6 +18,11 @@
 #include "dataset/MnistDataSet.h"
 #include "dataset/MockDataSet.h"
 #include "dataset/Cifar10DataSet.h"
+#include "dataset/UbyteDataSet.h"
+#include "dataset/DataSet.h"
+#include "dataset/ImageNet10Cat1000Train100TestDataSet.h"
+#include "dataset/ImageNet100Cat10000Train1000TestDataSet.h"
+#include "dataset/ImageNet1000Cat1000000Train100000TestDataSet.h"
 #include "Util.h"
 #include "pooling/Pooling.h"
 #include "pooling/MaxPooling.h"
@@ -42,6 +47,9 @@
 #include "activation/ReLU.h"
 #include "application/DeepDream.h"
 #include "application/ArtisticStyle.h"
+#include "evaluation/Evaluation.h"
+#include "evaluation/Top1Evaluation.h"
+#include "evaluation/Top5Evaluation.h"
 
 #include "Timer.h"
 #include "cuda/Cuda.h"
@@ -111,6 +119,7 @@ int main(int argc, char** argv) {
 }
 
 void artisticstyle_test() {
+	/*
 	Cuda::create(0);
 	cout << "Cuda creation done ... " << endl;
 
@@ -128,6 +137,7 @@ void artisticstyle_test() {
 	as->style("/home/jhkim/tubingen_224.jpg", "/home/jhkim/composition_224.jpg", "conv3_1");
 
 	Cuda::destroy();
+	*/
 }
 
 
@@ -168,53 +178,36 @@ void network_test() {
 
 	if(!debug) {
 		Util::setPrint(false);
+		DataSet *dataSet = new ImageNet100Cat10000Train1000TestDataSet();
+		dataSet->load();
 
-		//DataSet *mnistDataSet = new MnistDataSet(validationSetRatio);
-		//mnistDataSet->load();
-		//mnistDataSet->zeroMean(true);
+		int maxEpoch = 1000;
+		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
+		NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
+		Evaluation* top1Evaluation = new Top1Evaluation();
+		Evaluation* top5Evaluation = new Top5Evaluation();
 
-		DataSet *vvgDataSet = new VvgDataSet(validationSetRatio);
-		vvgDataSet->load();
-		vvgDataSet->zeroMean(true);
-
-		double lr[6] = {10.0, 1.0, 0.1, 0.01, 0.001, 0.0001};
-		double wd[2] = {500.0, 100.0};
-
-		//for(int i = 4; i < 6; i++) {
-		//	for(int j = 1; j < 2; j++) {
-		//	cout << "lr: " << lr[i] << ", wd: " << wd[j] << endl;
-
-		int maxEpoch = 100;
-		NetworkListener *networkListener = new NetworkMonitor(maxEpoch);
-
-		Network *network = new VGG19Net(networkListener, 0.002, 1.0, 2.0, 0.0);
+		double w_lr_mult = 0.01;
+		double w_wd_mult = 0.0002;
+		double b_lr_mult = 0.02;
+		double b_wd_mult = 0.0;
+		//Network *network = new VGG19Net(top1Listener, 0.002, 1.0, 2.0, 0.0);
 		//Network *network = new AlexNet(networkListener, 0.002, 1.0, 2.0, 0.0);
-		//Network *network = new GoogLeNet(networkListener, 0.002, 1.0, 2.0, 0.0);
-		//Network *network = new ConvNetDouble(networkListener);
-		//Network *network = new NeuralNetSingle(networkListener, 0.005, 5.0);
+		Network *network = new GoogLeNet(top1Listener, w_lr_mult, w_wd_mult, b_lr_mult, b_wd_mult);
+		//Network *network = new ConvNetDouble(top1Listener, 0.01, 0.0);
+		//Network *network = new NeuralNetSingle(top1Listener, 0.005, 5.0);
 		//Network *network = new ConvNetMult(networkListener, 0.01, 5.0);
 		//Network *network = new InceptionNetAux(networkListener, 0.00001, 100);
 		//Network *network = new InceptionNetAux(networkListener, 0.0001, 5.0);
-		//Network *network = new InceptionNetSingle(networkListener);
-		//network->setDataSet(vvgDataSet, 10);
-		//network->shape();
-		//cout << "reshaping ... " << endl;
-		network->setDataSet(vvgDataSet, 1);
+		//Network *network = new InceptionNetSingle(top1Listener, 0.01, 0.1);
+		network->addNetworkListener(top5Listener);
+		network->addEvaluation(top1Evaluation);
+		network->addEvaluation(top5Evaluation);
+		network->setDataSet(dataSet, 10);
 		network->shape();
-		network->saveConfig("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/artistic_");
+		//network->saveConfig("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/artistic_");
 		network->sgd(maxEpoch);
 		//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetMult_vvg_zm.network");
-
-
-
-		//delete networkListener;
-		//delete network;
-		//	}
-
-		//}
-
-
-
 
 		/*
 		Network *network_load = new Network();
@@ -222,10 +215,6 @@ void network_test() {
 		network_load->setDataSet(vvgDataSet, 10);
 		network_load->test();
 		*/
-
-
-
-
 
 	} else {
 		Util::setPrint(false);

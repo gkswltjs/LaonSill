@@ -13,14 +13,15 @@
 class VvgDataSet : public UbyteDataSet {
 public:
 	VvgDataSet(double validationSetRatio)
-		:	UbyteDataSet(
+		: UbyteDataSet(
 				"/home/jhkim/data/learning/vvg/vvg_image.ubyte",
 				"/home/jhkim/data/learning/vvg/vvg_label.ubyte",
+				1,
 				"/home/jhkim/data/learning/vvg/vvg_image.ubyte",
 				"/home/jhkim/data/learning/vvg/vvg_label.ubyte",
+				1,
+				3,
 				validationSetRatio) {
-		this->channels = 3;
-
 		this->mean[0] = 0.55806416406;
 		this->mean[1] = 0.51419142615;
 		this->mean[2] = 0.40562924818;

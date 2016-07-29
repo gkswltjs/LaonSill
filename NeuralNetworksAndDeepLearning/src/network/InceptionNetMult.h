@@ -21,8 +21,8 @@ class InceptionNetMult : public Network {
 public:
 	InceptionNetMult(NetworkListener *networkListener=0, double lr_mult=0.01, double decay_mult=5.0)
 		: Network(networkListener) {
-		//double lr_mult = 0.01;
-		//double decay_mult = 5.0;
+		update_param weight_update_param(lr_mult, decay_mult);
+		update_param bias_update_param(lr_mult, decay_mult);
 
 		InputLayer *inputLayer = new InputLayer(
 				"input"
@@ -42,7 +42,9 @@ public:
 				//io_dim(14, 14, 1, batchSize),
 				//io_dim(14, 14, 12, batchSize),
 				1,
-				3, 2, 3, 2, 3, 3
+				3, 2, 3, 2, 3, 3,
+				weight_update_param,
+				bias_update_param
 				);
 
 		HiddenLayer *incept2Layer = new InceptionLayer(
@@ -50,7 +52,9 @@ public:
 				//io_dim(14, 14, 12, batchSize),
 				//io_dim(14, 14, 24, batchSize),
 				12,
-				6, 4, 6, 4, 6, 6
+				6, 4, 6, 4, 6, 6,
+				weight_update_param,
+				bias_update_param
 				);
 
 		HiddenLayer *incept3Layer = new InceptionLayer(
@@ -58,7 +62,9 @@ public:
 				//io_dim(14, 14, 24, batchSize),
 				//io_dim(14, 14, 36, batchSize),
 				24,
-				9, 6, 9, 6, 9, 9
+				9, 6, 9, 6, 9, 9,
+				weight_update_param,
+				bias_update_param
 				);
 
 		/*
@@ -76,8 +82,10 @@ public:
 				//io_dim(10, 1, 1, batchSize),
 				10,
 				0.5,
-				update_param(lr_mult, decay_mult),
-				update_param(lr_mult, decay_mult),
+				//update_param(lr_mult, decay_mult),
+				//update_param(lr_mult, decay_mult),
+				weight_update_param,
+				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1)
 				);

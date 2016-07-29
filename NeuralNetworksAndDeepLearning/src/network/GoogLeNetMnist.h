@@ -25,10 +25,8 @@
 class GoogLeNetMnist : public Network {
 public:
 	GoogLeNetMnist(NetworkListener *networkListener=0, double lr_mult=0.1, double decay_mult=5.0) : Network(networkListener) {
-		double weight_lr_mult = lr_mult;
-		double weight_decay_mult = decay_mult;
-		double bias_lr_mult = lr_mult;
-		double bias_decay_mult = decay_mult;
+		update_param weight_update_param(lr_mult, decay_mult);
+		update_param bias_update_param(lr_mult, decay_mult);
 
 		InputLayer *inputLayer = new InputLayer(
 				"input"
@@ -40,8 +38,10 @@ public:
 				//io_dim(28, 28, 1, batchSize),
 				//io_dim(28, 28, 20, batchSize),
 				filter_dim(5, 5, 1, 20, 1),
-				update_param(weight_lr_mult, weight_decay_mult),
-				update_param(bias_lr_mult, bias_decay_mult),
+				//update_param(weight_lr_mult, weight_decay_mult),
+				//update_param(bias_lr_mult, bias_decay_mult),
+				weight_update_param,
+				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.1),
 				param_filler(ParamFillerType::Constant, 0.2),
 				ActivationType::ReLU
@@ -66,8 +66,10 @@ public:
 				//io_dim(14, 14, 20, batchSize),
 				//io_dim(14, 14, 10, batchSize),
 				filter_dim(1, 1, 20, 10, 1),
-				update_param(weight_lr_mult, weight_decay_mult),
-				update_param(bias_lr_mult, bias_decay_mult),
+				//update_param(weight_lr_mult, weight_decay_mult),
+				//update_param(bias_lr_mult, bias_decay_mult),
+				weight_update_param,
+				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.1),
 				param_filler(ParamFillerType::Constant, 0.2),
 				ActivationType::ReLU
@@ -78,8 +80,10 @@ public:
 				//io_dim(14, 14, 10, batchSize),
 				//io_dim(14, 14, 16, batchSize),
 				filter_dim(3, 3, 10, 16, 1),
-				update_param(weight_lr_mult, weight_decay_mult),
-				update_param(bias_lr_mult, bias_decay_mult),
+				//update_param(weight_lr_mult, weight_decay_mult),
+				//update_param(bias_lr_mult, bias_decay_mult),
+				weight_update_param,
+				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.03),
 				param_filler(ParamFillerType::Constant, 0.2),
 				ActivationType::ReLU
@@ -104,7 +108,9 @@ public:
 				//io_dim(14, 14, 16, batchSize),
 				//io_dim(14, 14, 16, batchSize),
 				16,
-				4, 2, 4, 2, 4, 4
+				4, 2, 4, 2, 4, 4,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_3b = new InceptionLayer(
@@ -112,7 +118,9 @@ public:
 				//io_dim(14, 14, 16, batchSize),
 				//io_dim(14, 14, 20, batchSize),
 				16,
-				5, 3, 5, 3, 5, 5
+				5, 3, 5, 3, 5, 5,
+				weight_update_param,
+				bias_update_param
 				);
 
 		PoolingLayer *pool3_3x3_s2 = new PoolingLayer(
@@ -128,7 +136,9 @@ public:
 				//io_dim(7, 7, 20, batchSize),
 				//io_dim(7, 7, 24, batchSize),
 				20,
-				6, 3, 6, 3, 6, 6
+				6, 3, 6, 3, 6, 6,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_4b = new InceptionLayer(
@@ -136,7 +146,9 @@ public:
 				//io_dim(7, 7, 24, batchSize),
 				//io_dim(7, 7, 28, batchSize),
 				24,
-				7, 4, 7, 4, 7, 7
+				7, 4, 7, 4, 7, 7,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_4c = new InceptionLayer(
@@ -144,7 +156,9 @@ public:
 				//io_dim(7, 7, 28, batchSize),
 				//io_dim(7, 7, 32, batchSize),
 				28,
-				8, 4, 8, 4, 8, 8
+				8, 4, 8, 4, 8, 8,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_4d = new InceptionLayer(
@@ -152,7 +166,9 @@ public:
 				//io_dim(7, 7, 32, batchSize),
 				//io_dim(7, 7, 36, batchSize),
 				32,
-				9, 5, 9, 5, 9, 9
+				9, 5, 9, 5, 9, 9,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_4e = new InceptionLayer(
@@ -160,7 +176,9 @@ public:
 				//io_dim(7, 7, 36, batchSize),
 				//io_dim(7, 7, 40, batchSize),
 				36,
-				10, 5, 10, 5, 10, 10
+				10, 5, 10, 5, 10, 10,
+				weight_update_param,
+				bias_update_param
 				);
 
 		PoolingLayer *pool4_3x3_s2 = new PoolingLayer(
@@ -176,7 +194,9 @@ public:
 				//io_dim(7, 7, 40, batchSize),
 				//io_dim(7, 7, 44, batchSize),
 				40,
-				11, 6, 11, 6, 11, 11
+				11, 6, 11, 6, 11, 11,
+				weight_update_param,
+				bias_update_param
 				);
 
 		InceptionLayer *inception_5b = new InceptionLayer(
@@ -184,7 +204,9 @@ public:
 				//io_dim(7, 7, 44, batchSize),
 				//io_dim(7, 7, 48, batchSize),
 				44,
-				12, 6, 12, 6, 12, 12
+				12, 6, 12, 6, 12, 12,
+				weight_update_param,
+				bias_update_param
 				);
 
 		PoolingLayer *pool5_7x7_s1 = new PoolingLayer(
@@ -203,8 +225,10 @@ public:
 				//io_dim(10, 1, 1, batchSize),
 				10,
 				0.0,
-				update_param(weight_lr_mult, weight_decay_mult),
-				update_param(bias_lr_mult, bias_decay_mult),
+				//update_param(weight_lr_mult, weight_decay_mult),
+				//update_param(bias_lr_mult, bias_decay_mult),
+				weight_update_param,
+				bias_update_param,
 				param_filler(ParamFillerType::Constant, 0.0),
 				param_filler(ParamFillerType::Constant, 0.0)
 				);

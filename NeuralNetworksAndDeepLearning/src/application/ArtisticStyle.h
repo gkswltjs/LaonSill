@@ -13,6 +13,7 @@
 
 using namespace cimg_library;
 
+#if CPU_MODE
 
 class ArtisticStyle {
 public:
@@ -31,5 +32,7 @@ private:
 	Network *network;
 	DATATYPE mean[3];
 };
+
+#endif
 
 #endif /* ARTISTICSTYLE_H_ */
