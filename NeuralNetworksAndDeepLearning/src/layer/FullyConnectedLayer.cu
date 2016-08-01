@@ -288,10 +288,12 @@ void FullyConnectedLayer::_shape(bool recursive) {
 	weight = new DATATYPE[u_out*u_in];
 	bias = new DATATYPE[u_out];
 
+	cout << this->name << ", fanin: " << u_out*u_in << endl;
 	weight_filler.fill(weight, u_out*u_in, u_in, u_out);
 	bias_filler.fill(bias, u_out, u_in, u_out);
 	Util::printData(weight, u_out, u_in, 1, 1, "weight:");
 	Util::printData(bias, u_out, 1, 1, 1, "bias:");
+
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_weight, sizeof(DATATYPE)*u_out*u_in));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_bias, sizeof(DATATYPE)*u_out));
@@ -408,8 +410,11 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input, const cha
 	activation_fn->activate(d_z, d_output, outputTensorDesc);
 
 	//Util::setPrint(true);
-	Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, "d_output:");
+	Util::printDeviceData(d_z, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/d_z:"));
+	Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/d_output:"));
 	//Util::setPrint(false);
+
+	//exit(1);
 
 	propFeedforward(this->d_output, end);
 }
@@ -485,6 +490,10 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	float delta_scale = -weight_update_param.lr_mult/miniBatchSize;
 	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
 	float b_delta_scale = -bias_update_param.lr_mult/miniBatchSize;
+	//float delta_scale = -weight_update_param.lr_mult;
+	//float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
+	//float param_scale = 1-weight_update_param.decay_mult;
+	//float b_delta_scale = -bias_update_param.lr_mult;
 
 	Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
 	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");

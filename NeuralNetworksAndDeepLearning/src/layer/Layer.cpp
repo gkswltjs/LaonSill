@@ -250,8 +250,12 @@ void Layer::shape(UINT idx, io_dim in_dim) {
 }
 
 void Layer::_shape(bool recursive) {
+	char message[256];
+	sprintf(message, "%s---_shape():in-%dx%dx%dx%d, out-%dx%dx%dx%d", name, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches,
+			out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches);
 	Util::setPrint(true);
-	Util::printMessage(string(name)+"---_shape()");
+	Util::printMessage(string(message));
+	//Util::printMessage(string(name)+"---_shape():"+);
 	Util::setPrint(false);
 	Cuda::refresh();
 

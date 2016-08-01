@@ -16,22 +16,21 @@ class ImageNet1000Cat1000000Train100000TestDataSet : public UbyteDataSet {
 public:
 	ImageNet1000Cat1000000Train100000TestDataSet()
 		: UbyteDataSet(
-				"/home/jhkim/image/ILSVRC2012/save/1000cat_1000000train_100000test_10000_10000/train_data",
-				"/home/jhkim/image/ILSVRC2012/save/1000cat_1000000train_100000test_10000_10000/train_label",
+				"/home/jhkim/image/ILSVRC2012/save/1000cat_1000000train_10000test_50000_10000/train_data",
+				"/home/jhkim/image/ILSVRC2012/save/1000cat_1000000train_10000test_50000_10000/train_label",
 				20,
-				"/home/jhkim/image/ILSVRC2012/save/1000cat_1000000train_100000test_10000_10000/train_data",
-				"/home/jhkim/image/ILSVRC2012/save/1000cat_1000000train_100000test_10000_10000/train_label",
+				"/home/jhkim/image/ILSVRC2012/save/1000cat_1000000train_10000test_50000_10000/test_data",
+				"/home/jhkim/image/ILSVRC2012/save/1000cat_1000000train_10000test_50000_10000/test_label",
 				1,
 				3,
 				0.8) {
 
-		// ImageNet mean r,g,b 참고 (r,g,b 순서가 뒤집어져있을 수 있음)
-		this->mean[0] = 0.407843137;		// 104
-		this->mean[1] = 0.454901961;		// 116
-		this->mean[2] = 0.478431373;		// 122
+		// ImageNet mean r,g,b 참
+		this->mean[0] = 122.0 / 255.0;		// R: 122
+		this->mean[1] = 116.0 / 255.0;		// G: 116
+		this->mean[2] = 104.0 / 255.0;		// B: 104
 	}
 	virtual ~ImageNet1000Cat1000000Train100000TestDataSet() {}
-
 
 	virtual void load() {
 		UbyteDataSet::load();

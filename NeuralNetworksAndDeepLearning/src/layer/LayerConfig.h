@@ -187,23 +187,26 @@ struct param_filler {
 		// N(0, 1), {channel in, channel out, kernel x, kernel y},
 		case ParamFillerType::Xavier:
 		{
-			/*
-			float sd_xavier = sqrt(1.0f / (n_in+n_out));
+
+			//float sd_xavier = sqrt(1.0f / (n_in+n_out));
 			//float sd_xavier = sqrt(3.0f / (n_out));
+			float sd_xavier = sqrt(3.0f / (n_in));
 			cout << "sd_xavier: " << sd_xavier << endl;
 			std::random_device rd_xavier;
 			std::mt19937 gen_xavier(rd_xavier());
 			//std::uni _distribution<DATATYPE> normal_dist(0.0, 1.0);
 			std::uniform_real_distribution<DATATYPE> unifrom_dist(-sd_xavier, sd_xavier);
 			for(i = 0; i < size; i++) param[i] = unifrom_dist(gen_xavier);
-			*/
 
+			/*
 			std::random_device rd_xavier;
 			std::mt19937 gen_xavier(rd_xavier());
 			std::normal_distribution<DATATYPE> normal_dist(0.0, 1.0);
 			//float sd_xavier = sqrt(1.0f / (n_in+n_out));
-			float sd_xavier = sqrt(1.0f / ((n_in+n_out)));
-			for(i = 0; i < size; i++) param[i] = normal_dist(gen_xavier)*sd_xavier;
+			float sd_xavier = sqrt(2.0f / n_in);
+			cout << "sd_xavier: " << sd_xavier << endl;
+			for(i = 0; i < size; i++) param[i] = normal_dist(gen_xavier);//*sd_xavier;
+			*/
 		}
 			break;
 		case ParamFillerType::Gaussian:

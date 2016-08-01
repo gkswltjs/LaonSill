@@ -59,22 +59,66 @@ public:
 	}
 
 #else
-	Softmax() {
+	Softmax() : num_label(100), batches(10) {
 		this->type = ActivationType::Softmax;
+		h_z = new DATATYPE[num_label*batches];
+		h_activation = new DATATYPE[num_label*batches];
 	}
 
 	void activate(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc) {
 		float alpha = 1.0f, beta = 0.0f;
 		//checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL,
 		//		&alpha, tensorDesc, z, &beta, tensorDesc, activation));
-		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
-					&alpha, tensorDesc, z, &beta, tensorDesc, activation));
+
+
+		checkCudaErrors(cudaMemcpyAsync(this->h_z, z, sizeof(DATATYPE)*num_label*batches, cudaMemcpyDeviceToHost));
+		for(int batch = 0; batch < batches; batch++) {
+			DATATYPE max = -1000;
+			for(int label = 0; label < num_label; label++) {
+				int index = batch*num_label+label;
+				if(h_z[index]>max) {
+					max = h_z[index];
+				}
+			}
+			//cout << "softmax: " << max << endl;
+
+			DATATYPE sum = 0;
+			for(int label = 0; label < num_label; label++) {
+				int index = batch*num_label+label;
+				h_activation[index] = std::exp(h_z[index]-max);
+				sum += h_activation[index];
+			}
+
+			for(int label = 0; label < num_label; label++) {
+				h_activation[batch*num_label+label] /= sum;
+			}
+		}
+		checkCudaErrors(cudaMemcpyAsync(activation, h_activation, sizeof(DATATYPE)*num_label*batches, cudaMemcpyHostToDevice));
+
+
+		//Util::setPrint(true);
+		Util::printData(h_z, num_label, batches, 1, 1, string("/d_z:"));
+		Util::printData(h_activation, num_label, batches, 1, 1, string("/d_output:"));
+		Util::setPrint(false);
+
+
+
+		//checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+		//	&alpha, tensorDesc, z, &beta, tensorDesc, activation));
 	}
 
 	void d_activate(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
 				cudnnTensorDescriptor_t &tensorDesc) {
 	}
+
+	DATATYPE *h_z;
+	DATATYPE *h_activation;
+	const int num_label;
+	const int batches;
+
 #endif
+
+
 
 };
 

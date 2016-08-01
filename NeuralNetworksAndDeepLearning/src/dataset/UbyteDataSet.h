@@ -76,7 +76,8 @@ protected:
 
 	int trainFileIndex;
 	int testFileIndex;
-	int numImagesInFile;
+	int numImagesInTrainFile;
+	int numImagesInTestFile;
 
 	vector<uint8_t> *bufDataSet;
 };

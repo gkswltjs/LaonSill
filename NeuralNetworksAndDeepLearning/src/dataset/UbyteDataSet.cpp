@@ -59,22 +59,22 @@ UbyteDataSet::~UbyteDataSet() {
 
 const DATATYPE *UbyteDataSet::getTrainDataAt(int index) {
 	if(index >= numTrainData || index < 0) throw Exception();
-	int reqPage = index / numImagesInFile;
+	int reqPage = index / numImagesInTrainFile;
 	if(reqPage != trainFileIndex) {
 		load(0, reqPage);
 		trainFileIndex = reqPage;
 	}
-	return &(*trainDataSet)[dataSize*(index-reqPage*numImagesInFile)];
+	return &(*trainDataSet)[dataSize*(index-reqPage*numImagesInTrainFile)];
 }
 
 const UINT *UbyteDataSet::getTrainLabelAt(int index) {
 	if(index >= numTrainData || index < 0) throw Exception();
-	int reqPage = index / numImagesInFile;
+	int reqPage = index / numImagesInTrainFile;
 	if(reqPage != trainFileIndex) {
 		load(0, reqPage);
 		trainFileIndex = reqPage;
 	}
-	return &(*trainLabelSet)[index-reqPage*numImagesInFile];
+	return &(*trainLabelSet)[index-reqPage*numImagesInTrainFile];
 }
 
 const DATATYPE *UbyteDataSet::getValidationDataAt(int index) {
@@ -89,22 +89,22 @@ const UINT *UbyteDataSet::getValidationLabelAt(int index) {
 
 const DATATYPE *UbyteDataSet::getTestDataAt(int index) {
 	if(index >= numTestData || index < 0) throw Exception();
-	int reqPage = index / numImagesInFile;
+	int reqPage = index / numImagesInTestFile;
 	if(reqPage != testFileIndex) {
 		load(1, reqPage);
 		testFileIndex = reqPage;
 	}
-	return &(*testDataSet)[dataSize*(index-reqPage*numImagesInFile)];
+	return &(*testDataSet)[dataSize*(index-reqPage*numImagesInTestFile)];
 }
 
 const UINT *UbyteDataSet::getTestLabelAt(int index) {
 	if(index >= numTestData || index < 0) throw Exception();
-	int reqPage = index / numImagesInFile;
+	int reqPage = index / numImagesInTestFile;
 	if(reqPage != testFileIndex) {
 		load(1, reqPage);
 		testFileIndex = reqPage;
 	}
-	return &(*testLabelSet)[index-reqPage*numImagesInFile];
+	return &(*testLabelSet)[index-reqPage*numImagesInTestFile];
 }
 
 
@@ -139,7 +139,8 @@ void UbyteDataSet::load() {
 
 	numTrainData = numTrainDataInFile*numTrainFile;
 	numTestData = numTestDataInFile*numTestFile;
-	numImagesInFile = numTrainDataInFile;
+	numImagesInTrainFile = numTrainDataInFile;
+	numImagesInTestFile = numTestDataInFile;
 #endif
 }
 
@@ -336,7 +337,7 @@ int UbyteDataSet::loadDataSetFromResource(
 	*/
 
 	for(size_t i = 0; i < dataSetSize; i++) {
-		(*dataSet)[i] = (*bufDataSet)[i]/255.0f - 0.4f;
+		(*dataSet)[i] = (*bufDataSet)[i]/255.0f;
 	}
 
 	if (fread(&(*labelSet)[0], sizeof(uint32_t), label_header.length, lbfp) != label_header.length) {
@@ -345,6 +346,20 @@ int UbyteDataSet::loadDataSetFromResource(
 		fclose(lbfp);
 		return 0;
 	}
+
+
+	/*
+	cout << "label: " << endl;
+	for(int i = 0; i < label_header.length / 10; i++) {
+		for(int j = 0; j < 10; j++) {
+			cout << (*labelSet)[j+i*10] << ", ";
+		}
+		cout << endl;
+	}
+	exit(1);
+	*/
+
+
 
 	//for(size_t i = 0; i < label_header.length; i++) {
 	//	(*labelSet)[i] = (*tempLabelSet)[i];

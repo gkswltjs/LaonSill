@@ -17,18 +17,18 @@ public:
 				"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_data",
 				"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_label",
 				1,
-				//"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_data",
-				//"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_label",
-				"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/test_data",
-				"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/test_label",
+				"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_data",
+				"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_label",
+				//"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/test_data",
+				//"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/test_label",
 				1,
 				3,
 				0.8) {
 
 		// ImageNet mean r,g,b 참고 (r,g,b 순서가 뒤집어져있을 수 있음)
-		this->mean[0] = 0.407843137;		// 104
-		this->mean[1] = 0.454901961;		// 116
-		this->mean[2] = 0.478431373;		// 122
+		this->mean[0] = 0.47684615850;		// R: 122
+		this->mean[1] = 0.45469805598;		// G: 116
+		this->mean[2] = 0.41394191980;		// B: 104
 	}
 	virtual ~ImageNet100Cat10000Train1000TestDataSet() {}
 

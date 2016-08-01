@@ -58,6 +58,13 @@
 #include <boost/tuple/tuple.hpp>
 #include <CImg.h>
 #include "util/ImagePacker.h"
+#include <fenv.h>
+
+
+
+
+
+
 
 using namespace std;
 using namespace arma;
@@ -67,7 +74,7 @@ using namespace cimg_library;
 // http://arma.sourceforge.net/docs.html
 
 
-void network_test();
+void network_test(double lr, double wd, int batches);
 void cuda_gemm_test();
 void cuda_conv_test();
 void gnuplot_test();
@@ -79,16 +86,31 @@ void artisticstyle_test();
 
 
 
-int main(int argc, char** argv) {
+int main_(int argc, char** argv) {
 	cout << "main" << endl;
 	cout.precision(11);
 	cout.setf(ios::fixed);
 
-	Util::setOutstream(&cout);
-	//Util::setOutstream("./log");
+	feenableexcept(FE_INVALID | FE_OVERFLOW);
+
+	//Util::setOutstream(&cout);
+	Util::setOutstream("./log");
 	//Util::printMessage("message ... ");
 
-	network_test();
+	double lr = 0.001;
+	double wd = 0.02;
+	int batches = 10;
+	/*
+	if(argc > 0) {
+		lr = atof(argv[1]);
+		wd = atof(argv[2]);
+		batches = atoi(argv[3]);
+	}
+	*/
+	network_test(lr, wd, batches);
+
+
+
 	//deepdream_test();
 	//artisticstyle_test();
 	//gnuplot_test();
@@ -168,7 +190,7 @@ void deepdream_test() {
 }
 
 
-void network_test() {
+void network_test(double lr, double wd, int batches) {
 	//arma_rng::set_seed_random();
 	Cuda::create(0);
 	cout << "Cuda creation done ... " << endl;
@@ -179,7 +201,9 @@ void network_test() {
 	if(!debug) {
 		Util::setPrint(false);
 		DataSet *dataSet = new ImageNet100Cat10000Train1000TestDataSet();
+		//DataSet* dataSet = new ImageNet1000Cat1000000Train100000TestDataSet();
 		dataSet->load();
+		dataSet->zeroMean(true);
 
 		int maxEpoch = 1000;
 		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
@@ -187,8 +211,10 @@ void network_test() {
 		Evaluation* top1Evaluation = new Top1Evaluation();
 		Evaluation* top5Evaluation = new Top5Evaluation();
 
-		double w_lr_mult = 0.01;
-		double w_wd_mult = 0.0002;
+		//double w_lr_mult = 0.01;
+		double w_lr_mult = lr;
+		//double w_wd_mult = 0.0002;
+		double w_wd_mult = wd;
 		double b_lr_mult = 0.02;
 		double b_wd_mult = 0.0;
 		//Network *network = new VGG19Net(top1Listener, 0.002, 1.0, 2.0, 0.0);
@@ -203,7 +229,7 @@ void network_test() {
 		network->addNetworkListener(top5Listener);
 		network->addEvaluation(top1Evaluation);
 		network->addEvaluation(top5Evaluation);
-		network->setDataSet(dataSet, 10);
+		network->setDataSet(dataSet, batches);
 		network->shape();
 		//network->saveConfig("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/artistic_");
 		network->sgd(maxEpoch);
@@ -225,9 +251,15 @@ void network_test() {
 		int batchSize = 2;
 		int rows = 5;
 		int cols = 5;
+		int maxEpoch = 100;
 
 		MockDataSet *dataSet = new MockDataSet(rows, cols, channels, numTrainData, numTestData);
 		dataSet->load();
+
+		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
+		NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
+		Evaluation* top1Evaluation = new Top1Evaluation();
+		Evaluation* top5Evaluation = new Top5Evaluation();
 
 		/*
 		for(int i = 0; i < numTrainData; i++) {
@@ -244,85 +276,21 @@ void network_test() {
 		double decay_mult = 5.0;
 		InputLayer *inputLayer = new InputLayer("input");
 
-		/*
-		HiddenLayer *avgPoolLayer = new PoolingLayer("avgPool",
-				io_dim(7, 7, channels, batchSize),
-				io_dim(1, 1, channels, batchSize),
-				pool_dim(7, 7, 4),
-				PoolingType::Avg);
-				*/
-		/*
-		HiddenLayer *conv1Layer = new ConvLayer("conv1",
-						io_dim(5, 5, 1, batchSize), io_dim(5, 5, 2, batchSize),
-						filter_dim(3, 3, 1, 2, 1),
-						update_param(lr_mult, decay_mult), update_param(lr_mult, decay_mult),
-						param_filler(ParamFillerType::Xavier), param_filler(ParamFillerType::Constant, 0.1),
-						ActivationType::ReLU);
+		HiddenLayer *poolingLayer = new PoolingLayer("pool1", pool_dim(2, 2, 2), PoolingType::Max);
 
-		HiddenLayer *conv2Layer = new ConvLayer("conv2",
-						io_dim(5, 5, 1, batchSize), io_dim(5, 5, 3, batchSize),
-						filter_dim(3, 3, 1, 3, 1),
-						update_param(lr_mult, decay_mult), update_param(lr_mult, decay_mult),
-						param_filler(ParamFillerType::Xavier), param_filler(ParamFillerType::Constant, 0.1),
-						ActivationType::ReLU);
-
-		HiddenLayer *depthConcatLayer = new DepthConcatLayer("depthConcat",
-					io_dim(5, 5, 5, batchSize));
-					*/
-
-
-
-		/*
-		LRNLayer *lrnLayer = new LRNLayer(
-				"lrn1",
-				io_dim(5, 5, channels, batchSize),
-				lrn_dim(5, 0.0001, 0.75, 2.0)
-		);
-		*/
-
-
-		HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 20, 0.5,
-				update_param(lr_mult, decay_mult),
-				update_param(lr_mult, decay_mult),
-				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Gaussian, 1),
-				ActivationType::ReLU);
-
-		/*
-		HiddenLayer *conv1Layer = new ConvLayer("conv1", io_dim(5, 5, 1, batchSize), io_dim(5, 5, 2, batchSize), filter_dim(3, 3, 1, 2, 1),
-						update_param(lr_mult, decay_mult), update_param(lr_mult, decay_mult),
-						param_filler(ParamFillerType::Xavier), param_filler(ParamFillerType::Constant, 0.1),
-						ActivationType::ReLU);
-
-		HiddenLayer *pool1Layer = new PoolingLayer("pool1",
-						io_dim(5, 5, 2, batchSize),
-						io_dim(3, 3, 2, batchSize),
-						pool_dim(3, 3, 2),
-						PoolingType::Max);
-						*/
-
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 10, 0.5,
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 5, 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1));
 
-		Network::addLayerRelation(inputLayer, fc1Layer);
-		Network::addLayerRelation(fc1Layer, softmaxLayer);
+		Network::addLayerRelation(inputLayer, poolingLayer);
+		Network::addLayerRelation(poolingLayer, softmaxLayer);
 
-		/*
-		Network *network = new Network(inputLayer, softmaxLayer, dataSet, 0);
-
-		network->sgd(1);
-		network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
-
-
-		Network *network_load = new Network();
-		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/NeuralNetSingle.network");
-		network_load->setDataSet(dataSet);
-		network_load->test();
-		*/
-
+		Network *network = new Network(inputLayer, softmaxLayer, dataSet, top1Listener);
+		network->setDataSet(dataSet, batchSize);
+		network->addEvaluation(top1Evaluation);
+		network->sgd(maxEpoch);
 	}
 
 	Cuda::destroy();

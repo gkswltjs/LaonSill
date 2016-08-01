@@ -452,17 +452,12 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	this->filters = new DATATYPE[filter_size];
 	this->biases = new DATATYPE[filter_d.filters];
 
-	// TODO init factor 조정해야 함
-	weight_filler.fill(this->filters, filter_size, filter_d.channels, filter_d.filters);
-	bias_filler.fill(this->biases, filter_d.filters, filter_d.channels, filter_d.filters);
-
 	checkCudaErrors(Util::ucudaMalloc(&this->d_filters, sizeof(DATATYPE)*filter_size));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_biases, sizeof(DATATYPE)*filter_d.filters));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*filter_size));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*filter_d.filters));
 
-	checkCudaErrors(cudaMemcpyAsync(this->d_filters, filters, sizeof(DATATYPE)*filter_size, cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpyAsync(this->d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
+
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&biasTensorDesc));
 	checkCUDNN(cudnnCreateFilterDescriptor(&filterDesc));
@@ -515,6 +510,41 @@ void ConvLayer::_shape(bool recursive) {
 	int u_out = out_dim.unitsize();
 	int b_in = in_dim.batchsize();
 	int b_out = out_dim.batchsize();
+
+
+
+
+
+
+
+
+	// TODO init factor 조정해야 함
+	//weight_filler.fill(this->filters, filter_size, filter_d.channels, filter_d.filters);
+	//bias_filler.fill(this->biases, filter_d.filters, filter_d.channels, filter_d.filters);
+
+	cout << this->name << ", fanin: " << filter_d.unitsize() << endl;
+	weight_filler.fill(this->filters, filter_d.size(), filter_d.unitsize(), filter_d.filters);
+	bias_filler.fill(this->biases, filter_d.filters, filter_d.unitsize(), filter_d.filters);
+	//weight_filler.fill(this->filters, filter_d.size(), in_dim.unitsize(), filter_d.filters);
+	//bias_filler.fill(this->biases, filter_d.filters, in_dim.unitsize(), filter_d.filters);
+
+	Util::printData(this->filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, this->name+string("/filters:"));
+	Util::printData(this->biases, filter_d.filters, 1, 1, 1, this->name+string("/biases:"));
+
+	checkCudaErrors(cudaMemcpyAsync(this->d_filters, filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpyAsync(this->d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
+
+
+
+
+
+
+
+
+
+
+
+
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
@@ -621,8 +651,14 @@ void ConvLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	Util::printDeviceData(d_z, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_z:");
 
 	activation_fn->activate(d_z, d_output, outputTensorDesc);
-	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
-	//Util::setPrint(false);
+
+	//if(Util::temp_flag && strncmp("inception", this->name, 9) == 0) {
+	if(Util::validPage()) {
+		Util::setPrint(true);
+		//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, this->name+string("/d_output:"));
+		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
+		Util::setPrint(false);
+	}
 
 	propFeedforward(d_output, end);
 }
@@ -702,8 +738,12 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	//float alpha = -weight_update_param.lr_mult/miniBatchSize;
 	float delta_scale = -weight_update_param.lr_mult/miniBatchSize;
 	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
-
 	float b_delta_scale = -bias_update_param.lr_mult/miniBatchSize;
+
+	//float delta_scale = -weight_update_param.lr_mult;
+	//float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
+	//float param_scale = 1-weight_update_param.decay_mult;
+	//float b_delta_scale = -bias_update_param.lr_mult;
 
 	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
 	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");

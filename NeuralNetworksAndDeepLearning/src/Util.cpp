@@ -11,11 +11,14 @@
 #include <cstdlib>
 #include <stdarg.h>
 
-
+int Util::page = 0;
+int Util::start_page = 1000;
+int Util::end_page = 1500;
+bool Util::temp_flag = false;
 bool Util::print = true;
 size_t Util::cuda_mem = 0;
 int Util::alloc_cnt = 0;
-ostream *Util::outstream = 0;
+ostream *Util::outstream = &cout;
 
 
 static const char *LEVEL_LABEL[4] = {"DEBUG","INFO ", "WARN ", "ERROR"};

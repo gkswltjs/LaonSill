@@ -116,9 +116,10 @@ public:
 				//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 			}
 
-			//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
+			cout << "sum_0: " << sum[0] << ", sum_1: " << sum[1] << ", sum_2: " << sum[2] << endl;
+			cout << "rows: " << rows << ", cols: " << cols << ", numTrainData: " << numTrainData << endl;
 			for(ci = 0; ci < channels; ci++) {
-				mean[ci] = (DATATYPE)(sum[ci] / rows*cols*numTrainData);
+				mean[ci] = (DATATYPE)(sum[ci] / (rows*cols*numTrainData));
 			}
 			cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 		}

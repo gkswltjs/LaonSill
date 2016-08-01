@@ -88,12 +88,12 @@ void Network::sgd(int epochs) {
 			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 
-			//cout << "reset_nabla()" << endl;
-			inputLayer->reset_nabla(0);
 
-			//for(int k = 0; k < 5; k++) {
-				updateMiniBatch(j);
-			//}
+
+			Util::page = j;
+			inputLayer->reset_nabla(0);
+			updateMiniBatch(j);
+
 		}
 		//timer1.stop();
 
@@ -303,11 +303,21 @@ void Network::evaluate() {
 				sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches, cudaMemcpyHostToDevice));
 
 		io_dim in_dim = inputLayer->getInDimension();
-		//Util::setPrint(true);
 		Util::printData(dataSet->getTestDataAt(i*in_dim.batches), in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_testData:");
 		//Util::setPrint(false);
 
+
+
+
+
+		//Util::temp_flag = true;
 		feedforward(d_testData);
+		//Util::temp_flag = false;
+		//exit(1);
+
+
+
+
 		checkCudaErrors(cudaFree(d_testData));
 		io_dim out_dim = outputLayers[0]->getOutDimension();
 		//Util::setPrint(true);

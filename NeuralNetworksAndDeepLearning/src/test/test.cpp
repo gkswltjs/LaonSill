@@ -5,6 +5,10 @@
 #include "../util/ImagePacker.h"
 #include "../Util.h"
 
+#include <boost/math/special_functions/next.hpp>
+#include <boost/random.hpp>
+
+
 using namespace std;
 
 
@@ -12,8 +16,10 @@ void imagepacker_test(int numCategory, int numTrain, int numTest, int numImagesI
 void ubytedataset_test();
 void xavier_test();
 
-int main_test(int argc, char** argv) {
+int main(int argc, char** argv) {
 
+
+	/*
 	int numCategory = atoi(argv[1]);
 	int numTrain = atoi(argv[2]);
 	int numTest = atoi(argv[3]);
@@ -21,6 +27,7 @@ int main_test(int argc, char** argv) {
 	int numImagesInTestFile = atoi(argv[5]);
 	int numChannels = atoi(argv[6]);
 	imagepacker_test(numCategory, numTrain, numTest, numImagesInTrainFile, numImagesInTestFile, numChannels);
+	*/
 
 	//ubytedataset_test();
 	//xavier_test();

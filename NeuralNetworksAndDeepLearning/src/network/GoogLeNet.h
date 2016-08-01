@@ -14,10 +14,12 @@
 #include "../layer/InputLayer.h"
 #include "../layer/LayerConfig.h"
 #include "../layer/LRNLayer.h"
+#include "../layer/DepthConcatLayer.h"
 #include "../layer/PoolingLayer.h"
 #include "../layer/SoftmaxLayer.h"
 #include "../pooling/AvgPooling.h"
 #include "../pooling/MaxPooling.h"
+
 #include "Network.h"
 
 
@@ -30,6 +32,8 @@ public:
 
 		update_param weight_update_param(w_lr_mult, w_decay_mult);
 		update_param bias_update_param(b_lr_mult, b_decay_mult);
+
+		double bias_const = 0.0;
 
 
 		// 224x224x3
@@ -46,7 +50,7 @@ public:
 				weight_update_param,
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Constant, 0.2),
+				param_filler(ParamFillerType::Constant, bias_const),
 				ActivationType::ReLU
 				);
 
@@ -71,7 +75,7 @@ public:
 				weight_update_param,
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Constant, 0.2),
+				param_filler(ParamFillerType::Constant, bias_const),
 				ActivationType::ReLU
 				);
 
@@ -84,7 +88,7 @@ public:
 				weight_update_param,
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Constant, 0.2),
+				param_filler(ParamFillerType::Constant, bias_const),
 				ActivationType::ReLU
 				);
 
@@ -99,6 +103,24 @@ public:
 				pool_dim(3, 3, 2),
 				PoolingType::Max
 				);
+
+		/*
+		InceptionLayer *inception_3a = new InceptionLayer(
+				"inception_3a",
+				192,
+				48, 72, 96, 12, 24, 24,
+				weight_update_param,
+				bias_update_param
+				);
+
+		InceptionLayer *inception_3b = new InceptionLayer(
+				"inception_3b",
+				192,
+				48, 72, 96, 12, 24, 24,
+				weight_update_param,
+				bias_update_param
+				);
+				*/
 
 		InceptionLayer *inception_3a = new InceptionLayer(
 				"inception_3a",
@@ -200,7 +222,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
 				//param_filler(ParamFillerType::Constant, 0.0),
-				param_filler(ParamFillerType::Constant, 0.0)
+				param_filler(ParamFillerType::Constant, bias_const)
 				);
 
 		Network::addLayerRelation(inputLayer, conv1_7x7_s2);
@@ -212,7 +234,7 @@ public:
 		Network::addLayerRelation(conv2_norm2, pool2_3x3_s2);
 		Network::addLayerRelation(pool2_3x3_s2, inception_3a);
 		Network::addLayerRelation(inception_3a, inception_3b);
-		Network::addLayerRelation(inception_3b, pool3_3x3_s2);
+		Network::addLayerRelation(inception_3b, /*pool3_3x3_s2);
 		Network::addLayerRelation(pool3_3x3_s2, inception_4a);
 		Network::addLayerRelation(inception_4a, inception_4b);
 		Network::addLayerRelation(inception_4b, inception_4c);
@@ -221,7 +243,7 @@ public:
 		Network::addLayerRelation(inception_4e, pool4_3x3_s2);
 		Network::addLayerRelation(pool4_3x3_s2, inception_5a);
 		Network::addLayerRelation(inception_5a, inception_5b);
-		Network::addLayerRelation(inception_5b, pool5_7x7_s1);
+		Network::addLayerRelation(inception_5b, */pool5_7x7_s1);
 		Network::addLayerRelation(pool5_7x7_s1, outputLayer);
 
 		this->inputLayer = inputLayer;
