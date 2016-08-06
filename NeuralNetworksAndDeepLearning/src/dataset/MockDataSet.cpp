@@ -9,8 +9,8 @@
 #include "DataSample.h"
 #include "../Util.h"
 
-MockDataSet::MockDataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData)
-	: DataSet(rows, cols, channels, numTrainData, numTestData) {}
+MockDataSet::MockDataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData, UINT numLabels)
+	: DataSet(rows, cols, channels, numTrainData, numTestData), numLabels(numLabels) {}
 
 MockDataSet::~MockDataSet() {}
 
@@ -25,7 +25,9 @@ void MockDataSet::load() {
 		(*trainDataSet)[i] = static_cast<DATATYPE>(ud(gen));
 	}
 	for(i = 0; i < numTrainData; i++) {
-		(*trainLabelSet)[i] = static_cast<UINT>(ud(gen)*50+5);
+		UINT label = static_cast<UINT>((ud(gen)+0.1)*numLabels*5);
+		cout << "label: " << label << endl;
+		(*trainLabelSet)[i] = static_cast<UINT>(label);
 	}
 
 	// load test data
@@ -33,7 +35,9 @@ void MockDataSet::load() {
 		(*testDataSet)[i] = static_cast<DATATYPE>(ud(gen));
 	}
 	for(i = 0; i < numTestData; i++) {
-		(*testLabelSet)[i] = static_cast<UINT>(ud(gen)*50+5);
+		UINT label = static_cast<UINT>((ud(gen)+0.1)*numLabels*5);
+				cout << "label: " << label << endl;
+		(*testLabelSet)[i] = static_cast<UINT>(label);
 	}
 
 	/*

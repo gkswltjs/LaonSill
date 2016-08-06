@@ -11,11 +11,13 @@
 #include <cstdlib>
 #include <stdarg.h>
 
+bool Util::train = true;
+
 int Util::page = 0;
 int Util::start_page = 1000;
 int Util::end_page = 1500;
 bool Util::temp_flag = false;
-bool Util::print = true;
+bool Util::print = false;
 size_t Util::cuda_mem = 0;
 int Util::alloc_cnt = 0;
 ostream *Util::outstream = &cout;

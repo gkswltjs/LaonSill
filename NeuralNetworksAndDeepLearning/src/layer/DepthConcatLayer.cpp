@@ -154,12 +154,11 @@ void DepthConcatLayer::feedforward(UINT idx, const DATATYPE *input, const char *
 	}
 
 	//if(Util::temp_flag && strncmp("inception", this->name, 9) == 0) {
-	if(Util::validPage()) {
-		Util::setPrint(true);
-		//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, this->name+string("/d_output:"));
-		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
-		Util::setPrint(false);
-	}
+	//if(Util::validPage()) {
+		//Util::setPrint(true);
+		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, this->name+string("/d_output:"));
+		//Util::setPrint(false);
+	//}
 
 	if(!isLastPrevLayerRequest(idx)) return;
 	propFeedforward(this->d_output, end);

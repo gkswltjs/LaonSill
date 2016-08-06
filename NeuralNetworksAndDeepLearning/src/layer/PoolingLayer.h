@@ -38,6 +38,7 @@ public:
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
+
 #if CPU_MODE
 public:
 	rcube &getDeltaInput() { return this->delta_input; }

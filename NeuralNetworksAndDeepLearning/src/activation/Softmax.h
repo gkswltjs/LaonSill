@@ -1,8 +1,9 @@
-/*
- * Softmax.h
- *
- *  Created on: 2016. 5. 12.
- *      Author: jhkim
+/**
+ * @file Softmax.h
+ * @date 2016/5/12
+ * @author jhkim
+ * @brief
+ * @details
  */
 
 #ifndef ACTIVATION_SOFTMAX_H_
@@ -15,7 +16,10 @@
 
 
 
-
+/**
+ * @brief Softmax Activation 구현 클래스.
+ * @details Activation 클래스를 상속받아 Softmax 활성화를 구현.
+ */
 class Softmax : public Activation {
 public:
 	virtual ~Softmax() {}
@@ -59,7 +63,7 @@ public:
 	}
 
 #else
-	Softmax() : num_label(100), batches(10) {
+	Softmax() : num_label(1000), batches(50) {
 		this->type = ActivationType::Softmax;
 		h_z = new DATATYPE[num_label*batches];
 		h_activation = new DATATYPE[num_label*batches];
@@ -70,7 +74,7 @@ public:
 		//checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL,
 		//		&alpha, tensorDesc, z, &beta, tensorDesc, activation));
 
-
+		/*
 		checkCudaErrors(cudaMemcpyAsync(this->h_z, z, sizeof(DATATYPE)*num_label*batches, cudaMemcpyDeviceToHost));
 		for(int batch = 0; batch < batches; batch++) {
 			DATATYPE max = -1000;
@@ -101,20 +105,36 @@ public:
 		Util::printData(h_activation, num_label, batches, 1, 1, string("/d_output:"));
 		Util::setPrint(false);
 
+		*/
 
 
-		//checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
-		//	&alpha, tensorDesc, z, &beta, tensorDesc, activation));
+		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+			&alpha, tensorDesc, z, &beta, tensorDesc, activation));
+
+
+		float result;
+		//cout << "softmax result sum: " << endl;
+		for(int i = 0; i < batches; i++) {
+			checkCudaErrors(cublasSasum(Cuda::cublasHandle, num_label, activation+i*num_label, 1, &result));
+			//cout << result << ", ";
+			if(result > 1.005f || result < 0.995f) {
+				cout << "!!!!!!!!!!!!!!!!!!!!!softmax sum abnormal: " << result << endl;
+			}
+		}
+		//cout << endl;
+
+
+
 	}
 
 	void d_activate(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
 				cudnnTensorDescriptor_t &tensorDesc) {
 	}
 
-	DATATYPE *h_z;
-	DATATYPE *h_activation;
-	const int num_label;
-	const int batches;
+	DATATYPE *h_z;						///< (임시) 활성화 입력값 확인용 호스트 메모리 포인터.
+	DATATYPE *h_activation;				///< (임시) 활성화 출력값 확인용 호스트 메모리 포인터.
+	const int num_label;				///< (임시) 네트워크의 레이블 수.
+	const int batches;					///< (임시) 네트워크의 batch 사이즈.
 
 #endif
 

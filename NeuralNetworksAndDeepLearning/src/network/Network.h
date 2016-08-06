@@ -72,6 +72,9 @@ public:
 	void setDataSetMean(DATATYPE *dataSetMean);
 
 
+	void clipGradients();
+
+
 #if CPU_MODE
 public:
 	void feedforward(const rcube &input, const char *end=0);
@@ -84,6 +87,11 @@ public:
 
 protected:
 	void updateMiniBatch(int nthMiniBatch);
+
+	void applyUpdate();
+
+
+
 
 
 	double totalCost(const vector<const DataSample *> &dataSet, double lambda);
@@ -105,6 +113,19 @@ protected:
 	double maxAccuracy;
 	double minCost;
 	DATATYPE dataSetMean[3];
+	DATATYPE clipGradientsLevel;
+
+
+
+
+
+
+	DATATYPE* d_trainData;
+	UINT *d_trainLabel;
+
+
+
+
 
 #if CPU_MODE
 protected:

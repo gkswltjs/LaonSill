@@ -58,6 +58,9 @@ public:
 
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
+	virtual bool isLearnable() { return true; }
+
+
 #if CPU_MODE
 public:
 
@@ -88,6 +91,9 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
+	virtual DATATYPE _sumSquareParam();
+	virtual DATATYPE _sumSquareParam2();
+	virtual void _scaleParam(DATATYPE scale_factor);
 
 	filter_dim filter_d;
 	Activation *activation_fn;
@@ -123,7 +129,9 @@ protected:
 	DATATYPE *d_z;
 	DATATYPE *d_delta;
 	DATATYPE *d_delta_weight;
+	DATATYPE *d_delta_weight_prev;
 	DATATYPE *d_delta_bias;
+	DATATYPE *d_delta_bias_prev;
 
 	cudnnTensorDescriptor_t biasTensorDesc;
 	cudnnFilterDescriptor_t filterDesc;

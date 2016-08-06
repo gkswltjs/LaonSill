@@ -140,12 +140,13 @@ public:
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
 		//(*outstream) << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
-		//cout << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+		cout << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
 		return cudaError;
 	}
 
 
 
+	static bool train;
 	static int page;
 	static int start_page;
 	static int end_page;

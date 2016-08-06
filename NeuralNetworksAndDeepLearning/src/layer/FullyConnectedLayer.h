@@ -50,6 +50,8 @@ public:
 
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
+	virtual bool isLearnable() { return true; }
+
 #if CPU_MODE
 public:
 	FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
@@ -88,6 +90,9 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
+	virtual DATATYPE _sumSquareParam();
+	virtual DATATYPE _sumSquareParam2();
+	virtual void _scaleParam(DATATYPE scale_factor);
 
 	double p_dropout;
 
@@ -121,9 +126,19 @@ protected:
 	DATATYPE *d_z;
 	DATATYPE *d_delta;
 	DATATYPE *d_delta_weight;
+	DATATYPE *d_delta_weight_prev;			// for momentum, delta weight history;
 	DATATYPE *d_delta_bias;
+	DATATYPE *d_delta_bias_prev;			// for momentum, delta bias history;
 
 	DATATYPE *d_onevec;
+
+
+
+	DATATYPE *mask;
+	DATATYPE *d_mask;
+	DATATYPE scale;
+
+
 #endif
 
 

@@ -56,7 +56,7 @@ public:
 
 		if(costMax != 0 > costMin != 0) {
 			gnuplot_cost << "set xrange [0:" << std::min(maxEpoch+1, (int)(costSet.size()+10))
-				<< "]\nset yrange [" << std::max(0.0, 0.8*costMin) << ":" << std::min(100.0, 1.2*costMax) << "]\n";
+				<< "]\nset yrange [" << std::max(0.0, 0.95*costMin) << ":" << std::min(2.0, 1.05*costMax) << "]\n";
 			gnuplot_cost << "plot '-' with linespoints pt 1 title 'cost'" << "\n";
 			gnuplot_cost.send1d(costSet);
 		}

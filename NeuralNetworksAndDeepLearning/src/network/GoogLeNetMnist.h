@@ -241,7 +241,7 @@ public:
 		Network::addLayerRelation(conv2_3x3, conv2_norm2);
 		Network::addLayerRelation(conv2_norm2, pool2_3x3_s2);
 		Network::addLayerRelation(pool2_3x3_s2, inception_3a);
-		Network::addLayerRelation(inception_3a, inception_3b);
+		Network::addLayerRelation(inception_3a, /*inception_3b);
 		Network::addLayerRelation(inception_3b, pool3_3x3_s2);
 		Network::addLayerRelation(pool3_3x3_s2, inception_4a);
 		Network::addLayerRelation(inception_4a, inception_4b);
@@ -251,7 +251,7 @@ public:
 		Network::addLayerRelation(inception_4e, pool4_3x3_s2);
 		Network::addLayerRelation(pool4_3x3_s2, inception_5a);
 		Network::addLayerRelation(inception_5a, inception_5b);
-		Network::addLayerRelation(inception_5b, pool5_7x7_s1);
+		Network::addLayerRelation(inception_5b, */pool5_7x7_s1);
 		Network::addLayerRelation(pool5_7x7_s1, outputLayer);
 
 		//Network::addLayerRelation(pool1_norm1, outputLayer);

@@ -30,6 +30,8 @@ public:
 	void saveNinHeader(UINT idx, ofstream &ofs);
 	virtual Layer* find(UINT idx, const char* name);
 
+	virtual bool isLearnable() { return true; }
+
 
 #if CPU_MODE
 public:
@@ -51,6 +53,9 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _reshape();
 	virtual void _clearShape();
+	virtual DATATYPE _sumSquareParam();
+	virtual DATATYPE _sumSquareParam2();
+	virtual void _scaleParam(DATATYPE scale_factor);
 
 	//InputLayer *inputLayer;
 	vector<HiddenLayer *> firstLayers;

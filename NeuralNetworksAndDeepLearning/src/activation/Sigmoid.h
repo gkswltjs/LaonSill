@@ -1,9 +1,12 @@
-/*
- * Sigmoid.h
- *
- *  Created on: 2016. 5. 10.
- *      Author: jhkim
+/**
+ * @file Sigmoid.h
+ * @date 2016/5/10
+ * @author jhkim
+ * @brief
+ * @details
  */
+
+
 
 #ifndef ACTIVATION_SIGMOID_H_
 #define ACTIVATION_SIGMOID_H_
@@ -11,7 +14,10 @@
 #include "Activation.h"
 
 
-
+/**
+ * @brief Sigmoid Activation 구현 클래스.
+ * @details Activation 클래스를 상속받아 Sigmoid 활성화를 구현.
+ */
 class Sigmoid : public Activation {
 public:
 	virtual ~Sigmoid() {}
@@ -77,7 +83,7 @@ public:
 	}
 #endif
 private:
-	cudnnActivationDescriptor_t activationDesc;
+	cudnnActivationDescriptor_t activationDesc;			///< cudnn 활성화 관련 자료구조에 대한 포인터.
 
 };
 

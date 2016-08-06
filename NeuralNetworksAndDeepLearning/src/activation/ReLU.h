@@ -1,9 +1,11 @@
-/*
- * ReLU.h
- *
- *  Created on: 2016. 5. 18.
- *      Author: jhkim
+/**
+ * @file ReLU.h
+ * @date 2016/5/18
+ * @author jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef ACTIVATION_RELU_H_
 #define ACTIVATION_RELU_H_
@@ -12,7 +14,10 @@
 
 
 
-
+/**
+ * @brief ReLU(Rectified Linear Unit) Activation 구현 클래스.
+ * @details Activation 클래스를 상속받아 ReLU 활성화를 구현.
+ */
 class ReLU : public Activation {
 public:
 	virtual ~ReLU() {}
@@ -74,7 +79,7 @@ public:
 	}
 
 private:
-	cudnnActivationDescriptor_t activationDesc;
+	cudnnActivationDescriptor_t activationDesc;			///< cudnn 활성화 관련 자료구조에 대한 포인터.
 
 #endif
 

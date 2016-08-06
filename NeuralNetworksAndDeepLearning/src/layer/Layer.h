@@ -67,6 +67,12 @@ public:
 	virtual void reshape(UINT idx, io_dim in_dim);
 	virtual void clearShape(UINT idx);
 
+
+	virtual bool isLearnable() { return false; }
+	virtual DATATYPE sumSquareParam(UINT idx);
+	virtual DATATYPE sumSquareParam2(UINT idx);
+	virtual void scaleParam(UINT idx, DATATYPE scale_factor);
+
 #if CPU_MODE
 public:
 	Layer(const char *name, int n_in, int n_out);
@@ -102,6 +108,9 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _reshape();
 	virtual void _clearShape();
+	virtual DATATYPE _sumSquareParam();
+	virtual DATATYPE _sumSquareParam2();
+	virtual void _scaleParam(DATATYPE scale_factor);
 
 	void propShape();
 	void propReshape();
@@ -109,6 +118,9 @@ protected:
 	void propResetNParam();
 	void propUpdate(UINT n, UINT miniBatchSize);
 	void propSave(ofstream &ofs);
+	DATATYPE propSumSquareParam();
+	DATATYPE propSumSquareParam2();
+	void propScaleParam(DATATYPE scale_factor);
 
 
 	LayerType type;

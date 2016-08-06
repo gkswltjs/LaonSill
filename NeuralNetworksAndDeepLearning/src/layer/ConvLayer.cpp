@@ -426,7 +426,9 @@ ConvLayer::~ConvLayer() {
 	checkCudaErrors(cudaFree(d_delta));
 	checkCudaErrors(cudaFree(d_delta_input));
 	checkCudaErrors(cudaFree(d_delta_weight));
+	checkCudaErrors(cudaFree(d_delta_weight_prev));
 	checkCudaErrors(cudaFree(d_delta_bias));
+	checkCudaErrors(cudaFree(d_delta_bias_prev));
 	if(d_workspace) checkCudaErrors(cudaFree(d_workspace));
 
 	checkCUDNN(cudnnDestroyTensorDescriptor(biasTensorDesc));
@@ -455,8 +457,12 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	checkCudaErrors(Util::ucudaMalloc(&this->d_filters, sizeof(DATATYPE)*filter_size));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_biases, sizeof(DATATYPE)*filter_d.filters));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(DATATYPE)*filter_size));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*filter_d.filters));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight_prev, sizeof(DATATYPE)*filter_size));
+	checkCudaErrors(cudaMemset(d_delta_weight_prev, 0, filter_size*sizeof(DATATYPE)));
 
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(DATATYPE)*filter_d.filters));
+	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias_prev, sizeof(DATATYPE)*filter_d.filters));
+	checkCudaErrors(cudaMemset(d_delta_bias_prev, 0, filter_d.filters*sizeof(DATATYPE)));
 
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&biasTensorDesc));
@@ -653,12 +659,12 @@ void ConvLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	activation_fn->activate(d_z, d_output, outputTensorDesc);
 
 	//if(Util::temp_flag && strncmp("inception", this->name, 9) == 0) {
-	if(Util::validPage()) {
-		Util::setPrint(true);
+	//if(Util::validPage()) {
+		//Util::setPrint(true);
 		//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, this->name+string("/d_output:"));
 		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
-		Util::setPrint(false);
-	}
+		//Util::setPrint(false);
+	//}
 
 	propFeedforward(d_output, end);
 }
@@ -697,8 +703,8 @@ void ConvLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 			(void *)&alpha, filterDesc, d_filters, outputTensorDesc, d_delta, convDesc, convBwdDataAlgo,
 			d_workspace, workspaceSize,
 			(void *)&beta, inputTensorDesc, d_delta_input));
-	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 
+	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
 
 	propBackpropagation();
@@ -735,15 +741,10 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	biases -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
 	*/
 
-	//float alpha = -weight_update_param.lr_mult/miniBatchSize;
+	/*
 	float delta_scale = -weight_update_param.lr_mult/miniBatchSize;
 	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
 	float b_delta_scale = -bias_update_param.lr_mult/miniBatchSize;
-
-	//float delta_scale = -weight_update_param.lr_mult;
-	//float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
-	//float param_scale = 1-weight_update_param.decay_mult;
-	//float b_delta_scale = -bias_update_param.lr_mult;
 
 	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
 	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
@@ -756,6 +757,35 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.filters),	&b_delta_scale, d_delta_bias, 1, d_biases, 1));
 	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
+	*/
+
+
+
+	int weight_size = filter_d.size();
+	DATATYPE norm_scale = 1.0/in_dim.batches;
+	DATATYPE reg_scale = weight_update_param.decay_mult;
+	DATATYPE momentum = 0.0;
+	DATATYPE learning_scale = weight_update_param.lr_mult;
+	DATATYPE negative_one = -1.0;
+
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_delta_weight, 1));								// normalize by batch size
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &reg_scale, d_filters, 1, d_delta_weight, 1));					// regularize
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &momentum, d_delta_weight_prev, 1));								//
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &learning_scale, d_delta_weight, 1, d_delta_weight_prev, 1));	// momentum
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &negative_one, d_delta_weight_prev, 1, d_filters, 1));			// update
+
+
+	int bias_size = filter_d.filters;
+	DATATYPE reg_scale_b = bias_update_param.decay_mult;
+	DATATYPE learning_scale_b = bias_update_param.lr_mult;
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_delta_bias, 1));								// normalize by batch size
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_biases, 1, d_delta_bias, 1));					// regularize
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_delta_bias_prev, 1));								//
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &learning_scale_b, d_delta_bias, 1, d_delta_bias_prev, 1));	// momentum
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_delta_bias_prev, 1, d_biases, 1));			// update
+
+
+
 
 	//Util::setPrint(false);
 
@@ -808,8 +838,41 @@ void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 
+DATATYPE ConvLayer::_sumSquareParam() {
+	DATATYPE weight_result;
+	DATATYPE bias_result;
+
+	int weight_size = filter_d.size();
+	checkCudaErrors(cublasSdot(Cuda::cublasHandle, weight_size, d_delta_weight, 1, d_delta_weight, 1, &weight_result));
+	int bias_size = filter_d.filters;
+	checkCudaErrors(cublasSdot(Cuda::cublasHandle, bias_size, d_delta_bias, 1, d_delta_bias, 1, &bias_result));
+
+	//cout << weight_result + bias_result << " ";
+
+	return weight_result + bias_result;
+}
 
 
+DATATYPE ConvLayer::_sumSquareParam2() {
+	DATATYPE weight_result;
+	DATATYPE bias_result;
+
+	int weight_size = filter_d.size();
+	checkCudaErrors(cublasSdot(Cuda::cublasHandle, weight_size, d_filters, 1, d_filters, 1, &weight_result));
+
+	int bias_size = filter_d.filters;
+	checkCudaErrors(cublasSdot(Cuda::cublasHandle, bias_size, d_biases, 1, d_biases, 1, &bias_result));
+
+	return weight_result + bias_result;
+}
+
+void ConvLayer::_scaleParam(DATATYPE scale_factor) {
+	int weight_size = filter_d.size();
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &scale_factor, d_delta_weight, 1));
+
+	int bias_size = filter_d.filters;
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &scale_factor, d_delta_bias, 1));
+}
 
 
 

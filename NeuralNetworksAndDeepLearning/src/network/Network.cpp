@@ -37,6 +37,8 @@ Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *data
 	this->dataSetMean[0] = 0.0f;
 	this->dataSetMean[1] = 0.0f;
 	this->dataSetMean[2] = 0.0f;
+
+	this->clipGradientsLevel = 1000.0f;
 }
 
 Network::~Network() {
@@ -44,6 +46,9 @@ Network::~Network() {
 		delete inputLayer;
 		inputLayer = NULL;
 	}
+
+	checkCudaErrors(cudaFree(d_trainLabel));
+	checkCudaErrors(cudaFree(d_trainData));
 }
 
 void Network::setDataSet(DataSet *dataSet, UINT batches) {
@@ -60,6 +65,13 @@ void Network::shape(io_dim in_dim) {
 		this->in_dim = in_dim;
 	}
 	inputLayer->shape(0, this->in_dim);
+
+
+
+	//cout << "inputLayer->getInputDimension()*in_dim.batches: " << inputLayer->getInputDimension()*this->in_dim.batches << endl;
+	checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputDimension()*this->in_dim.batches));
+	checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
+
 }
 
 void Network::reshape(io_dim in_dim) {
@@ -76,6 +88,9 @@ void Network::sgd(int epochs) {
 
 	Timer timer1, timer2;
 	for(int i = 0; i < epochs; i++) {
+
+		Util::train = true;
+
 		timer1.start();
 		// TODO do not invoke, due to data-label separation
 		//dataSet->shuffleTrainDataSet();
@@ -96,6 +111,9 @@ void Network::sgd(int epochs) {
 
 		}
 		//timer1.stop();
+
+		Util::train = false;
+
 
 		//dataSet->shuffleTestDataSet();
 		float numTestData = dataSet->getNumTestData();
@@ -118,6 +136,9 @@ void Network::sgd(int epochs) {
 			for(int nl = 0; nl < networkListeners.size(); nl++) {
 				networkListeners[nl]->epochComplete(evaluations[nl]->getCost()/numTestData, evaluations[nl]->getAccurateCount()/numTestData);
 			}
+
+			// l2norm logging용임, clip을 여기서 하려고 하는 건 아님...
+			//clipGradients();
 		}
 		else { cout << "Epoch " << i+1 << " complete: " << timer1.stop(false) << endl; }
 		//if(accuracy < 0.15) break;
@@ -129,6 +150,9 @@ void Network::sgd(int epochs) {
 
 
 void Network::test() {
+	Util::train = false;
+
+
 	Timer timer;
 	float numTestData = (float)dataSet->getNumTestData();
 	evaluate();
@@ -292,33 +316,22 @@ void Network::evaluate() {
 	}
 
 	int testBatchesSize = dataSet->getNumTestData()/in_dim.batches;
+	DATATYPE *d_testData;
+	checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches));
+
 	for(int i = 0; i < testBatchesSize; i++) {
 	//for(int i = 2; i < 3; i++) {
 
 		// FEED FORWARD
-		DATATYPE *d_testData;
-		checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches));
 		//checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*in_dim.batches),
 		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*in_dim.batches),
 				sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches, cudaMemcpyHostToDevice));
 
 		io_dim in_dim = inputLayer->getInDimension();
 		Util::printData(dataSet->getTestDataAt(i*in_dim.batches), in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_testData:");
-		//Util::setPrint(false);
 
-
-
-
-
-		//Util::temp_flag = true;
 		feedforward(d_testData);
-		//Util::temp_flag = false;
-		//exit(1);
 
-
-
-
-		checkCudaErrors(cudaFree(d_testData));
 		io_dim out_dim = outputLayers[0]->getOutDimension();
 		//Util::setPrint(true);
 		Util::printDeviceData(outputLayers[0]->getOutput(), out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "output:");
@@ -332,6 +345,7 @@ void Network::evaluate() {
 				dataSet->getTestLabelAt(i*in_dim.batches));
 		//checkCudaErrors(cudaFree(d_testLabel));
 	}
+	checkCudaErrors(cudaFree(d_testData));
 
 	//Util::setPrint(false);
 #endif
@@ -456,16 +470,17 @@ void Network::updateMiniBatch(int nthMiniBatch) {
 	int baseIndex = nthMiniBatch*in_dim.batches;
 
 	// FEED FORWARD
-	DATATYPE *d_trainData;
-	checkCudaErrors(cudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches));
 	checkCudaErrors(cudaMemcpyAsync(d_trainData, dataSet->getTrainDataAt(baseIndex),
 			sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches, cudaMemcpyHostToDevice));
+
+
+	//float input_norm;
+	//checkCudaErrors(cublasSdot(Cuda::cublasHandle, inputLayer->getInputDimension()*in_dim.batches, d_trainData, 1, d_trainData, 1, &input_norm));
+	//cout << "input norm is " << sqrt(input_norm) << endl;
 
 	feedforward(d_trainData);
 
 	// BACK PROPAGATION
-	UINT *d_trainLabel;
-
 	/*
 	for(int i = 0; i < in_dim.batches; i++) {
 		//Util::printMessage(string(dataSet->getTrainLabelAt(baseIndex)[i]));
@@ -473,21 +488,49 @@ void Network::updateMiniBatch(int nthMiniBatch) {
 	}
 	*/
 
-	checkCudaErrors(cudaMalloc(&d_trainLabel, sizeof(UINT)*in_dim.batches));
 	checkCudaErrors(cudaMemcpyAsync(d_trainLabel, dataSet->getTrainLabelAt(baseIndex),
 				sizeof(UINT)*in_dim.batches, cudaMemcpyHostToDevice));
 
 	for(UINT i = 0; i < outputLayers.size(); i++) {
 		outputLayers[i]->cost(d_trainLabel);
 	}
-	checkCudaErrors(cudaFree(d_trainLabel));
-	checkCudaErrors(cudaFree(d_trainData));
-	//cudaError_t
+
 
 	// UPDATE
+	applyUpdate();
+}
+
+void Network::applyUpdate() {
+	clipGradients();
+
 	//cout << "update()" << endl;
 	int n = dataSet->getNumTrainData();
 	inputLayer->update(0, n, in_dim.batches);
+}
+
+void Network::clipGradients() {
+
+	if(clipGradientsLevel < 0) return;
+
+	DATATYPE sumsq_grad = inputLayer->sumSquareParam(0);
+	DATATYPE sumsq_grad2 = inputLayer->sumSquareParam2(0);
+	const DATATYPE l2norm_grad = std::sqrt(sumsq_grad);
+	const DATATYPE l2norm_grad2 = std::sqrt(sumsq_grad2);
+
+	cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " <= " << clipGradientsLevel << ")" << endl;
+
+	/*
+	if(l2norm_grad > clipGradientsLevel) {
+		DATATYPE scale_factor = clipGradientsLevel / (l2norm_grad*1);
+
+		cout << "Gradient clipping: scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " > " << clipGradientsLevel <<
+				") by scale factor " << scale_factor << endl;
+		inputLayer->scaleParam(0, scale_factor);
+	} else {
+		cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " <= " << clipGradientsLevel << ")" << endl;
+	}
+	*/
+
 }
 
 

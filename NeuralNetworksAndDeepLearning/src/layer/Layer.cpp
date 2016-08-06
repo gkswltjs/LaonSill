@@ -253,10 +253,10 @@ void Layer::_shape(bool recursive) {
 	char message[256];
 	sprintf(message, "%s---_shape():in-%dx%dx%dx%d, out-%dx%dx%dx%d", name, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches,
 			out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches);
-	Util::setPrint(true);
+	//Util::setPrint(true);
 	Util::printMessage(string(message));
 	//Util::printMessage(string(name)+"---_shape():"+);
-	Util::setPrint(false);
+	//Util::setPrint(false);
 	Cuda::refresh();
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
@@ -326,6 +326,80 @@ void Layer::propClearShape() {
 		nextLayers[i].next_layer->clearShape(nextLayers[i].idx);
 	}
 }
+
+DATATYPE Layer::sumSquareParam(UINT idx) {
+	if(!isLastPrevLayerRequest(idx)) return 0.0;
+
+	DATATYPE result =_sumSquareParam();
+	result += propSumSquareParam();
+	return result;
+}
+
+DATATYPE Layer::_sumSquareParam() {
+	return 0.0;
+}
+
+DATATYPE Layer::propSumSquareParam() {
+	Util::printMessage(string(name)+"---propSumSquareParam()");
+	DATATYPE result = 0.0;
+	for(UINT i = 0; i < nextLayers.size(); i++) {
+		result += nextLayers[i].next_layer->sumSquareParam(nextLayers[i].idx);
+	}
+	return result;
+}
+
+
+
+DATATYPE Layer::sumSquareParam2(UINT idx) {
+	if(!isLastPrevLayerRequest(idx)) return 0.0;
+
+	DATATYPE result =_sumSquareParam2();
+	result += propSumSquareParam2();
+	return result;
+}
+
+DATATYPE Layer::_sumSquareParam2() {
+	return 0.0;
+}
+
+DATATYPE Layer::propSumSquareParam2() {
+	Util::printMessage(string(name)+"---propSumSquareParam2()");
+	DATATYPE result = 0.0;
+	for(UINT i = 0; i < nextLayers.size(); i++) {
+		result += nextLayers[i].next_layer->sumSquareParam2(nextLayers[i].idx);
+	}
+	return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+void Layer::scaleParam(UINT idx, DATATYPE scale_factor) {
+	if(!isLastPrevLayerRequest(idx)) return;
+	_scaleParam(scale_factor);
+	propScaleParam(scale_factor);
+}
+
+void Layer::_scaleParam(DATATYPE scale_factor) {
+	return;
+}
+
+void Layer::propScaleParam(DATATYPE scale_factor) {
+	Util::printMessage(string(name)+"---propScaleParam()");
+	for(UINT i = 0; i < nextLayers.size(); i++) {
+		nextLayers[i].next_layer->scaleParam(nextLayers[i].idx, scale_factor);
+	}
+}
+
+
+
 
 
 

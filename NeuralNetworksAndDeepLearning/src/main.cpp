@@ -20,6 +20,7 @@
 #include "dataset/Cifar10DataSet.h"
 #include "dataset/UbyteDataSet.h"
 #include "dataset/DataSet.h"
+#include "dataset/ImageNet10Cat100Train100TestDataSet.h"
 #include "dataset/ImageNet10Cat1000Train100TestDataSet.h"
 #include "dataset/ImageNet100Cat10000Train1000TestDataSet.h"
 #include "dataset/ImageNet1000Cat1000000Train100000TestDataSet.h"
@@ -42,6 +43,7 @@
 #include "layer/LRNLayer.h"
 #include "layer/InceptionLayer.h"
 #include "layer/DepthConcatLayer.h"
+#include "layer/LayerConfig.h"
 #include "activation/Activation.h"
 #include "activation/Sigmoid.h"
 #include "activation/ReLU.h"
@@ -59,12 +61,6 @@
 #include <CImg.h>
 #include "util/ImagePacker.h"
 #include <fenv.h>
-
-
-
-
-
-
 
 using namespace std;
 using namespace arma;
@@ -86,20 +82,42 @@ void artisticstyle_test();
 
 
 
-int main_(int argc, char** argv) {
+int main(int argc, char** argv) {
 	cout << "main" << endl;
 	cout.precision(11);
 	cout.setf(ios::fixed);
 
 	feenableexcept(FE_INVALID | FE_OVERFLOW);
 
-	//Util::setOutstream(&cout);
-	Util::setOutstream("./log");
+
+	/*
+	Cuda::create(0);
+	DataSet *dataSet = new ImageNet10Cat100Train100TestDataSet();
+	dataSet->load();
+	int maxEpoch = 1000;
+	NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
+	Evaluation* top1Evaluation = new Top1Evaluation();
+
+	Network *network = new NeuralNetSingle(top1Listener, 0.005, 5.0);
+	network->addEvaluation(top1Evaluation);
+	network->setDataSet(dataSet, 1);
+	network->shape();
+	//network->sgd(maxEpoch);
+
+	network->clipGradients();
+
+	Cuda::destroy();
+	*/
+
+
+	Util::setOutstream(&cout);
+	//Util::setOutstream("./log");
 	//Util::printMessage("message ... ");
 
 	double lr = 0.001;
-	double wd = 0.02;
-	int batches = 10;
+	double wd = 0.0002;
+	int batches = 50;
+
 	/*
 	if(argc > 0) {
 		lr = atof(argv[1]);
@@ -107,7 +125,11 @@ int main_(int argc, char** argv) {
 		batches = atoi(argv[3]);
 	}
 	*/
+
 	network_test(lr, wd, batches);
+
+
+
 
 
 
@@ -125,9 +147,6 @@ int main_(int argc, char** argv) {
 	mnist->load();
 	mnist->zeroMean();
 	*/
-
-
-
 	/*
 	ImagePacker imagePacker(
 			"/home/jhkim/바탕화면/crop/",
@@ -139,6 +158,134 @@ int main_(int argc, char** argv) {
 	cout << "end" << endl;
 	return 0;
 }
+
+
+
+void network_test(double lr, double wd, int batches) {
+	//arma_rng::set_seed_random();
+	Cuda::create(0);
+	cout << "Cuda creation done ... " << endl;
+
+	bool debug = false;
+	double validationSetRatio = 1.0/6.0;
+
+	if(!debug) {
+		Util::setPrint(false);
+		//DataSet* dataSet = new ImageNet10Cat100Train100TestDataSet();
+		//DataSet *dataSet = new ImageNet100Cat10000Train1000TestDataSet();
+		DataSet* dataSet = new ImageNet1000Cat1000000Train100000TestDataSet();
+		//DataSet* dataSet = new MockDataSet(28, 28, 1, 10, 2, 5);
+		dataSet->load();
+		dataSet->zeroMean(true);
+
+		int maxEpoch = 1000;
+		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
+		NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
+		Evaluation* top1Evaluation = new Top1Evaluation();
+		Evaluation* top5Evaluation = new Top5Evaluation();
+
+		//double w_lr_mult = 0.01;
+		//double w_wd_mult = 0.0002;
+		//double b_lr_mult = 0.02;
+		//double b_wd_mult = 0.0;
+		double w_lr_mult = lr;
+		double w_wd_mult = wd;
+		double b_lr_mult = lr;
+		double b_wd_mult = wd;
+		//Network *network = new VGG19Net(top1Listener, 0.002, 1.0, 2.0, 0.0);
+		//Network *network = new AlexNet(networkListener, 0.002, 1.0, 2.0, 0.0);
+		Network *network = new GoogLeNet(top1Listener, w_lr_mult, w_wd_mult, b_lr_mult, b_wd_mult);
+		//Network *network = new ConvNetDouble(top1Listener, 0.01, 0.0);
+		//Network *network = new NeuralNetSingle(top1Listener, 0.005, 5.0);
+		//Network *network = new ConvNetMult(networkListener, 0.01, 5.0);
+		//Network *network = new InceptionNetAux(networkListener, 0.00001, 100);
+		//Network *network = new InceptionNetAux(networkListener, 0.0001, 5.0);
+		//Network *network = new InceptionNetSingle(top1Listener, 0.01, 0.1);
+		network->addNetworkListener(top5Listener);
+		network->addEvaluation(top1Evaluation);
+		network->addEvaluation(top5Evaluation);
+		network->setDataSet(dataSet, batches);
+		network->shape();
+		//network->saveConfig("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/artistic_");
+		network->sgd(maxEpoch);
+		//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetMult_vvg_zm.network");
+
+		/*
+		Network *network_load = new Network();
+		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/InceptionNetAux_vvg_zm_30.network");
+		network_load->setDataSet(vvgDataSet, 10);
+		network_load->test();
+		*/
+
+	} else {
+		Util::setPrint(false);
+
+		int numTrainData = 4;
+		int numTestData = 4;
+		int channels = 1;
+		int batchSize = 2;
+		int rows = 5;
+		int cols = 5;
+		int maxEpoch = 100;
+		int numLabels = 5;
+
+		MockDataSet *dataSet = new MockDataSet(rows, cols, channels, numTrainData, numTestData, numLabels);
+		dataSet->load();
+
+		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
+		NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
+		Evaluation* top1Evaluation = new Top1Evaluation();
+		Evaluation* top5Evaluation = new Top5Evaluation();
+
+		/*
+		for(int i = 0; i < numTrainData; i++) {
+			Util::printData(dataSet->getTrainDataAt(i), 5, 5, channels, 1, "train_data");
+			cout << i << "th label: " << dataSet->getTrainLabelAt(i)[0] << endl;
+		}
+		for(int i = 0; i < numTestData; i++) {
+			Util::printData(dataSet->getTestDataAt(i), 5, 5, channels, 1, "test_data");
+			cout << i << "th label: " << dataSet->getTestLabelAt(i)[0] << endl;
+		}
+		*/
+
+		double lr_mult = 0.1;
+		double decay_mult = 5.0;
+		InputLayer *inputLayer = new InputLayer("input");
+
+		//HiddenLayer *poolingLayer = new PoolingLayer("pool1", pool_dim(2, 2, 2), PoolingType::Max);
+		HiddenLayer *inceptionLayer = new InceptionLayer(
+				"inception",
+				1,
+				3, 2, 3, 2, 4, 5,
+				update_param(lr_mult, decay_mult),
+				update_param(lr_mult, decay_mult));
+
+		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", numLabels, 0.5,
+				update_param(lr_mult, decay_mult),
+				update_param(lr_mult, decay_mult),
+				param_filler(ParamFillerType::Xavier),
+				param_filler(ParamFillerType::Gaussian, 1));
+
+		//Network::addLayerRelation(inputLayer, poolingLayer);
+		//Network::addLayerRelation(poolingLayer, softmaxLayer);
+		Network::addLayerRelation(inputLayer, inceptionLayer);
+		Network::addLayerRelation(inceptionLayer, softmaxLayer);
+		//Network::addLayerRelation(InceptionLayer, )
+		//		softmaxLayer);
+
+		Network *network = new Network(inputLayer, softmaxLayer, dataSet, top1Listener);
+		network->setDataSet(dataSet, batchSize);
+		network->addEvaluation(top1Evaluation);
+		network->shape();
+		network->sgd(maxEpoch);
+	}
+
+	Cuda::destroy();
+}
+
+
+
+
 
 void artisticstyle_test() {
 	/*
@@ -188,118 +335,6 @@ void deepdream_test() {
 
 	Cuda::destroy();
 }
-
-
-void network_test(double lr, double wd, int batches) {
-	//arma_rng::set_seed_random();
-	Cuda::create(0);
-	cout << "Cuda creation done ... " << endl;
-
-	bool debug = false;
-	double validationSetRatio = 1.0/6.0;
-
-	if(!debug) {
-		Util::setPrint(false);
-		DataSet *dataSet = new ImageNet100Cat10000Train1000TestDataSet();
-		//DataSet* dataSet = new ImageNet1000Cat1000000Train100000TestDataSet();
-		dataSet->load();
-		dataSet->zeroMean(true);
-
-		int maxEpoch = 1000;
-		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
-		NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
-		Evaluation* top1Evaluation = new Top1Evaluation();
-		Evaluation* top5Evaluation = new Top5Evaluation();
-
-		//double w_lr_mult = 0.01;
-		double w_lr_mult = lr;
-		//double w_wd_mult = 0.0002;
-		double w_wd_mult = wd;
-		double b_lr_mult = 0.02;
-		double b_wd_mult = 0.0;
-		//Network *network = new VGG19Net(top1Listener, 0.002, 1.0, 2.0, 0.0);
-		//Network *network = new AlexNet(networkListener, 0.002, 1.0, 2.0, 0.0);
-		Network *network = new GoogLeNet(top1Listener, w_lr_mult, w_wd_mult, b_lr_mult, b_wd_mult);
-		//Network *network = new ConvNetDouble(top1Listener, 0.01, 0.0);
-		//Network *network = new NeuralNetSingle(top1Listener, 0.005, 5.0);
-		//Network *network = new ConvNetMult(networkListener, 0.01, 5.0);
-		//Network *network = new InceptionNetAux(networkListener, 0.00001, 100);
-		//Network *network = new InceptionNetAux(networkListener, 0.0001, 5.0);
-		//Network *network = new InceptionNetSingle(top1Listener, 0.01, 0.1);
-		network->addNetworkListener(top5Listener);
-		network->addEvaluation(top1Evaluation);
-		network->addEvaluation(top5Evaluation);
-		network->setDataSet(dataSet, batches);
-		network->shape();
-		//network->saveConfig("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/artistic_");
-		network->sgd(maxEpoch);
-		//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetMult_vvg_zm.network");
-
-		/*
-		Network *network_load = new Network();
-		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/InceptionNetAux_vvg_zm_30.network");
-		network_load->setDataSet(vvgDataSet, 10);
-		network_load->test();
-		*/
-
-	} else {
-		Util::setPrint(false);
-
-		int numTrainData = 4;
-		int numTestData = 4;
-		int channels = 1;
-		int batchSize = 2;
-		int rows = 5;
-		int cols = 5;
-		int maxEpoch = 100;
-
-		MockDataSet *dataSet = new MockDataSet(rows, cols, channels, numTrainData, numTestData);
-		dataSet->load();
-
-		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
-		NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
-		Evaluation* top1Evaluation = new Top1Evaluation();
-		Evaluation* top5Evaluation = new Top5Evaluation();
-
-		/*
-		for(int i = 0; i < numTrainData; i++) {
-			Util::printData(dataSet->getTrainDataAt(i), 5, 5, channels, 1, "train_data");
-			cout << i << "th label: " << dataSet->getTrainLabelAt(i)[0] << endl;
-		}
-		for(int i = 0; i < numTestData; i++) {
-			Util::printData(dataSet->getTestDataAt(i), 5, 5, channels, 1, "test_data");
-			cout << i << "th label: " << dataSet->getTestLabelAt(i)[0] << endl;
-		}
-		*/
-
-		double lr_mult = 0.1;
-		double decay_mult = 5.0;
-		InputLayer *inputLayer = new InputLayer("input");
-
-		HiddenLayer *poolingLayer = new PoolingLayer("pool1", pool_dim(2, 2, 2), PoolingType::Max);
-
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", 5, 0.5,
-				update_param(lr_mult, decay_mult),
-				update_param(lr_mult, decay_mult),
-				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Gaussian, 1));
-
-		Network::addLayerRelation(inputLayer, poolingLayer);
-		Network::addLayerRelation(poolingLayer, softmaxLayer);
-
-		Network *network = new Network(inputLayer, softmaxLayer, dataSet, top1Listener);
-		network->setDataSet(dataSet, batchSize);
-		network->addEvaluation(top1Evaluation);
-		network->sgd(maxEpoch);
-	}
-
-	Cuda::destroy();
-}
-
-
-
-
-
 
 
 void cimg_test() {

@@ -30,8 +30,17 @@ public:
 				else cost += std::abs(output[num_labels*j+i]);
 			}
 			if(maxIndex == y[j]) accurateCount++;
-			//cout << "result for batch " << j << "- target: " << y[j] << ", prediction: " << maxIndex << endl;
+			//cout << "result for batch " << j << "- target: " << y[j] << ", prediction: " << maxIndex << ", ac cost:" << cost << ", cost:" << cost/(j+1) << endl;
 		}
+		/*
+		Util::setPrint(true);
+		Util::printData(output, num_labels, batches, 1, 1, "output:");
+		Util::setPrint(false);
+		for(int i = 0; i < batches; i++) {
+			cout << y[i] << endl;
+		}
+		exit(1);
+		*/
 	}
 
 };

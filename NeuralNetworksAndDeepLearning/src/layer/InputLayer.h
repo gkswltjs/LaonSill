@@ -77,7 +77,21 @@ public:
 
 		this->d_input = input;
 		//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
+
+
+
+
+
+
+
 		checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+
+		//float norm = 0.0f;
+		//checkCudaErrors(cublasSnrm2(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), this->d_output, 1, &norm));
+		//norm = 1.0f/norm;
+		//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &norm, this->d_output, 1));
+
+		//exit(1);
 
 		propFeedforward(this->d_output, end);
 	}

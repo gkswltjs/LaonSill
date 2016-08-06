@@ -12,13 +12,16 @@
 
 class MockDataSet : public DataSet {
 public:
-	MockDataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData);
+	MockDataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData, UINT numLabels);
 	virtual ~MockDataSet();
 
 	virtual void load();
 	void shuffleTrainDataSet() {}
 	void shuffleValidationDataSet() {}
 	void shuffleTestDataSet() {}
+
+private:
+	UINT numLabels;
 
 };
 

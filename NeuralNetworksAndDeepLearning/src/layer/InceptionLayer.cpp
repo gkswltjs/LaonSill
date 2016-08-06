@@ -305,7 +305,7 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	//double bias_lr_mult = 2.0;
 	//double bias_decay_mult = 0.0;
 
-	double bias_const = 0.0;
+	double bias_const = 0.1;
 
 
 	char subLayerName[256];
@@ -450,28 +450,46 @@ void InceptionLayer::_clearShape() {
 void InceptionLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	Util::printMessage("InceptionLayer::feedforward()---"+string(name));
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
+
+	this->d_input = input;
+	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+
 	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->feedforward(0, input, end);
+		firstLayers[i]->feedforward(0, this->d_input, end);
 	}
 	propFeedforward(lastLayer->getOutput(), end);
 }
 
 void InceptionLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	Util::printMessage("InceptionLayer::backpropagation()---"+string(name));
+
 	if(idx == 0) {
 		checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*out_dim.batchsize()));
 	}
+
+	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
+	Util::printDeviceData(d_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_input:");
+
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()),
 			&alpha, next_delta_input, 1, d_delta_input, 1));
+
+	Util::printDeviceData(d_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_input:");
 
 	if(!isLastNextLayerRequest(idx)) return;
 	lastLayer->backpropagation(0, this->getDeltaInput());
 
 	checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*in_dim.batchsize()));
+	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
+
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()),
 					&alpha, firstLayers[i]->getDeltaInput(), 1, d_delta_input, 1));
 	}
+	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
+
+	// TODO
+	float scale_term = 1.0f / firstLayers.size();
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &scale_term, d_delta_input, 1));
 
 	propBackpropagation();
 
@@ -497,6 +515,34 @@ void InceptionLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	delta_input.zeros();
 	*/
 }
+
+
+
+DATATYPE InceptionLayer::_sumSquareParam() {
+	DATATYPE result;
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		result += firstLayers[i]->sumSquareParam(0);
+	}
+	return result;
+}
+
+DATATYPE InceptionLayer::_sumSquareParam2() {
+	DATATYPE result;
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		result += firstLayers[i]->sumSquareParam2(0);
+	}
+	return result;
+}
+
+
+void InceptionLayer::_scaleParam(DATATYPE scale_factor) {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->scaleParam(0, scale_factor);
+	}
+}
+
+
+
 
 
 

@@ -160,12 +160,12 @@ void PoolingLayer::feedforward(UINT idx, const DATATYPE *input, const char *end)
 	pooling_fn->pool(inputTensorDesc, d_input, outputTensorDesc, d_output);
 
 
-	if(Util::validPage()) {
-		Util::setPrint(true);
+	//if(Util::validPage()) {
+		//Util::setPrint(true);
 		//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, this->name+string("/d_output:"));
 		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
-		Util::setPrint(false);
-	}
+		//Util::setPrint(false);
+	//}
 
 	propFeedforward(d_output, end);
 }
@@ -196,6 +196,7 @@ void PoolingLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
 	pooling_fn->d_pool(outputTensorDesc, d_output, d_delta, inputTensorDesc, d_input, d_delta_input);
+
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 
 	propBackpropagation();

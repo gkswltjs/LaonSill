@@ -14,6 +14,8 @@ class ImageNet100Cat10000Train1000TestDataSet : public UbyteDataSet {
 public:
 	ImageNet100Cat10000Train1000TestDataSet()
 		: UbyteDataSet(
+				//"/home/jhkim/image/ILSVRC2012/save/train_data",
+				//"/home/jhkim/image/ILSVRC2012/save/train_label",
 				"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_data",
 				"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_label",
 				1,
