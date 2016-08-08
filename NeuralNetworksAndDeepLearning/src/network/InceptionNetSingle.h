@@ -1,8 +1,9 @@
-/*
- * InceptionNetSingle.h
- *
- *  Created on: 2016. 6. 2.
- *      Author: jhkim
+/**
+ * @file InceptionNetSingle.h
+ * @date 2016/6/2
+ * @author jhkim
+ * @brief
+ * @details
  */
 
 #ifndef NETWORK_INCEPTIONNETSINGLE_H_
@@ -22,7 +23,9 @@
 
 
 
-
+/**
+ * @brief 하나의 인셉션 레이어를 가진 Network를 구현한 클래스
+ */
 class InceptionNetSingle : public Network {
 public:
 	InceptionNetSingle(NetworkListener *networkListener=0, double lr_mult=0.01, double decay_mult=5.0) : Network(networkListener) {

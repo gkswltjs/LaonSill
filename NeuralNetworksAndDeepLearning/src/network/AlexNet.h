@@ -1,9 +1,11 @@
-/*
- * AlexNet.h
- *
- *  Created on: 2016. 7. 21.
- *      Author: jhkim
+/**
+ * @file AlexNet.h
+ * @date 2016/7/21
+ * @author jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef ALEXNET_H_
 #define ALEXNET_H_
@@ -23,7 +25,9 @@
 
 
 
-
+/**
+ * @brief AlexNet을 구현한 Network 클래스
+ */
 class AlexNet : public Network {
 public:
 	AlexNet(NetworkListener *networkListener=0, double w_lr_mult=0.1, double w_decay_mult=1.0,

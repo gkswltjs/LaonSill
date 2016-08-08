@@ -1,9 +1,11 @@
-/*
- * GoogLeNet.h
- *
- *  Created on: 2016. 5. 31.
- *      Author: jhkim
+/**
+ * @file GoogLeNet.h
+ * @date 2016/5/31
+ * @author jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef NETWORK_GOOGLENET_H_
 #define NETWORK_GOOGLENET_H_
@@ -24,7 +26,9 @@
 
 
 
-
+/**
+ * @brief GoogLeNet을 구현한 Network 클래스
+ */
 class GoogLeNet : public Network {
 public:
 	GoogLeNet(NetworkListener *networkListener=0, double w_lr_mult=0.1, double w_decay_mult=1.0,

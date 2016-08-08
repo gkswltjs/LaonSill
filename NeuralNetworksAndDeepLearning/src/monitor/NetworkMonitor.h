@@ -1,8 +1,9 @@
-/*
- * NetworkMonitor.h
- *
- *  Created on: 2016. 4. 26.
- *      Author: jhkim
+/**
+ * @file NetworkMonitor.h
+ * @date 2016/4/26
+ * @author jhkim
+ * @brief
+ * @details
  */
 
 #ifndef MONITOR_NETWORKMONITOR_H_
@@ -19,10 +20,14 @@
 using namespace std;
 
 
+/**
+ * @brief 네트워크 상태 모니터링 클래스
+ * @details 네트워크의 이벤트마다 이벤트 파라미터를 그래프로 ploat하는 역할을 한다.
+ */
 class NetworkMonitor : public NetworkListener {
 public:
-	NetworkMonitor(int maxEpoch) {
-		this->maxEpoch = maxEpoch;
+	NetworkMonitor(int maxEpoch)
+		: maxEpoch(maxEpoch) {
 
 		//gnuplot_accuracy << "set xrange [0:30]\nset yrange [80:100]\n";
 		//gnuplot_cost << "set xrange [0:30]\nset yrange [0:0.5]\n";
@@ -113,15 +118,17 @@ public:
 	}
 
 protected:
-	vector<boost::tuple<int, float>> accuracySet;
-	vector<boost::tuple<int, float>> costSet;
-	float accuracyMax=0.0f, accuracyMin=1.0f;
-	float costMax=0.0f, costMin=100.0f;
+	vector<boost::tuple<int, float>> accuracySet;		///< epoch마다 계산된 #epoch, 정확도 튜플 목록 벡터
+	vector<boost::tuple<int, float>> costSet;			///< epcoh마다 계산된 #epcoh, cost 튜플 목록 벡터
+	float accuracyMax=0.0f;								///< 학습의 정확도 최대값
+	float accuracyMin=1.0f;								///< 학습의 정확도 최소값
+	float costMax=0.0f;									///< 학습의 cost 최대값
+	float costMin=100.0f;								///< 학습의 cost 최소값
 
-	Gnuplot gnuplot_accuracy;
-	Gnuplot gnuplot_cost;
+	Gnuplot gnuplot_accuracy;							///< gnu plot 정확도 그래프 객체
+	Gnuplot gnuplot_cost;								///< gnu plot cost 그래프 객체
 
-	int maxEpoch;
+	const int maxEpoch;									///< 최대 epoch값
 
 };
 

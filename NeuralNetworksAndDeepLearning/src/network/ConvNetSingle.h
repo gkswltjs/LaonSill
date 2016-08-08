@@ -1,9 +1,11 @@
-/*
- * ConvNetSingle.h
- *
- *  Created on: 2016. 6. 2.
- *      Author: jhkim
+/**
+ * @file ConvNetSingle.h
+ * @date 2016/6/2
+ * @author jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef NETWORK_CONVNETSINGLE_H_
 #define NETWORK_CONVNETSINGLE_H_
@@ -20,7 +22,9 @@
 
 
 
-
+/**
+ * @brief 하나의 컨볼루션 레이어를 가진 Network를 구현한 클래스
+ */
 class ConvNetSingle : public Network {
 public:
 	ConvNetSingle(NetworkListener *networkListener=0, double lr_mult=0.1, double decay_mult=5.0) : Network(networkListener) {

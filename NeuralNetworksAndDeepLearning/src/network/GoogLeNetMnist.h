@@ -1,9 +1,11 @@
-/*
- * GoogLeNetMnist.h
- *
- *  Created on: 2016. 6. 1.
- *      Author: jhkim
+/**
+ * @file GoogLeNetMnist.h
+ * @date 2016/6/1
+ * @author jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef NETWORK_GOOGLENETMNIST_H_
 #define NETWORK_GOOGLENETMNIST_H_
@@ -21,7 +23,11 @@
 #include "Network.h"
 
 
-
+/**
+ * @brief GoogLeNet을 Mnist 데이터셋에 대해 구현한 Network 클래스
+ * @details 네트워크를 특정 입력 구조에 의존하지 않도록 구분해서 일반 GoogLeNet 클래스와 차이가 없어졌다.
+ *          사용하지 않음.
+ */
 class GoogLeNetMnist : public Network {
 public:
 	GoogLeNetMnist(NetworkListener *networkListener=0, double lr_mult=0.1, double decay_mult=5.0) : Network(networkListener) {

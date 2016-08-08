@@ -1,8 +1,9 @@
-/*
- * MonitorSet.h
- *
- *  Created on: 2016. 4. 26.
- *      Author: jhkim
+/**
+ * @file MonitorSet.h
+ * @date 2016/4/26
+ * @author jhkim
+ * @brief
+ * @details
  */
 
 #ifndef MONITORSET_H_
@@ -12,7 +13,12 @@
 
 using namespace std;
 
-
+/**
+ * @brief 모티터링 대상이 되는 통계값을 저장하는 저장소 클래스
+ * @details 현재 사용하지 않는다.
+ * @todo 고정적으로 accuracy, cost 두 가지 통계값을 대상으로 하도록 하고 있음.
+ *       범용적인 통계값을 저장할 수 있도록 수정이 필요하다.
+ */
 class MonitorSet {
 public:
 	MonitorSet() {}

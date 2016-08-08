@@ -1,8 +1,9 @@
-/*
- * MaxPooling.h
- *
- *  Created on: 2016. 5. 16.
- *      Author: jhkim
+/**
+ * @file MaxPooling.h
+ * @date 2016/5/16
+ * @author jhkim
+ * @brief
+ * @details
  */
 
 #ifndef POOLING_MAXPOOLING_H_
@@ -13,7 +14,11 @@
 
 using namespace std;
 
-
+/**
+ * @brief 최대 풀링을 구현한 Pooling 클래스
+ * @details 항상 커널사이즈 절반 크기의 padding이 적용된다.
+ * @todo padding 관련 파라미터를 추가하고 파라미터에 따라 padding이 적용되도록 수정한다.
+ */
 class MaxPooling : public Pooling {
 #if CPU_MODE
 public:
@@ -106,6 +111,10 @@ public:
 	}
 #else
 public:
+	/**
+	 * @details MaxPooling 생성자
+	 * @param pool_d 풀링 연산 관련 파라미터 구조체
+	 */
 	MaxPooling(pool_dim pool_d) {
 		this->type = PoolingType::Max;
 
@@ -119,6 +128,9 @@ public:
 				pad, pad,
 				pool_d.stride, pool_d.stride));
 	}
+	/**
+	 * @details MaxPooling 소멸자
+	 */
 	virtual ~MaxPooling() {
 		checkCUDNN(cudnnDestroyPoolingDescriptor(poolDesc));
 	}

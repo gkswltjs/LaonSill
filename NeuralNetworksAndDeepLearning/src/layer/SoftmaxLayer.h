@@ -1,8 +1,9 @@
-/*
- * SoftmaxLayer.h
- *
- *  Created on: 2016. 8. 1.
- *      Author: jhkim
+/**
+ * @file SoftmaxLayer.h
+ * @date 2016/8/1
+ * @author jhkim
+ * @brief
+ * @details
  */
 
 #ifndef SOFTMAXLAYER_H_
@@ -23,10 +24,23 @@ using namespace arma;
 
 
 
-
+/**
+ * @brief 소프트맥스 출력 레이어
+ * @details 활성화 함수로 Softmax를, cost 함수로 LogLikelihood를 적용시킨 출력 레이어
+ */
 class SoftmaxLayer : public OutputLayer {
 public:
 	SoftmaxLayer();
+	/**
+	 * @details SoftmaxLayer 생성자
+	 * @param name 레이어의 이름 문자열 포인터
+	 * @param n_out 출력 노드의 수
+	 * @param p_dropout dropout을 적용할 확율
+	 * @param weight_update_param weight 갱신 관련 파라미터 구조체
+	 * @param bias_update_param bias 갱신 관련 파라미터 구조체
+	 * @param weight_filler weight 초기화 관련 파라미터 구조체
+	 * @param bias_filler bias 초기화 관련 파라미터 구조체
+	 */
 	SoftmaxLayer(const char *name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler);
 	virtual ~SoftmaxLayer();

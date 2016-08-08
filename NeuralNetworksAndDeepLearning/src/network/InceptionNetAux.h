@@ -1,9 +1,11 @@
-/*
- * InceptionNetAux.h
- *
- *  Created on: 2016. 6. 2.
- *      Author: jhkim
+/**
+ * @file InceptionNetAux.h
+ * @date 2016/6/2
+ * @author jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef NETWORK_INCEPTIONNETAUX_H_
 #define NETWORK_INCEPTIONNETAUX_H_
@@ -19,7 +21,9 @@
 #include "../Util.h"
 #include "Network.h"
 
-
+/**
+ * @brief Auxiliary Network를 가진 인셉션 Network를 구현한 클래스
+ */
 class InceptionNetAux : public Network {
 public:
 	InceptionNetAux(NetworkListener *networkListener=0, double lr_mult=0.0025, double decay_mult=0.0) : Network(networkListener) {

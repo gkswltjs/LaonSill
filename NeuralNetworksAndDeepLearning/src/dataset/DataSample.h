@@ -1,9 +1,11 @@
-/*
- * DataSample.h
- *
- *  Created on: 2016. 4. 21.
- *      Author: jhkim
+/**
+ * @file DataSample.h
+ * @date 2016/4/21
+ * @author jhkim
+ * @brief deprecated. not used.
+ * @details
  */
+
 
 #ifndef DATASET_DATASAMPLE_H_
 #define DATASET_DATASAMPLE_H_

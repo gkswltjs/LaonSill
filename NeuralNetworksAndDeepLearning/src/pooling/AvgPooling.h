@@ -1,15 +1,11 @@
-/*
- * AvgPooling.h
- *
- *  Created on: 2016. 5. 24.
- *      Author: jhkim
- *
- *
- *
- * input의 좌상단을 pool 영역의 좌상단에 맞춰 pooling
- * overlap되지 않게 pooling
- * input.n_rows / pool_d.rows 만큼 down sample
- *
+/**
+ * @file AvgPooling.h
+ * @date 2016/5/24
+ * @author jhkim
+ * @brief input의 좌상단을 pool 영역의 좌상단에 맞춰 pooling
+ *        overlap되지 않게 pooling
+ *        input.n_rows / pool_d.rows 만큼 down sample
+ * @details
  */
 
 #ifndef POOLING_AVGPOOLING_H_
@@ -19,6 +15,14 @@
 
 using namespace std;
 
+
+
+
+/**
+ * @brief 평균 풀링을 구현한 Pooling 클래스
+ * @details 항상 padding이 적용되지 않는다.
+ * @todo padding 관련 파라미터를 추가하고 파라미터에 따라 padding이 적용되도록 수정한다.
+ */
 class AvgPooling : public Pooling {
 #if CPU_MODE
 public:
@@ -106,6 +110,10 @@ public:
 	}
 #else
 public:
+	/**
+	 * @details AvgPooling 생성자
+	 * @param pool_d 풀링 연산 관련 파라미터 구조체
+	 */
 	AvgPooling(pool_dim pool_d) {
 		this->type = PoolingType::Avg;
 		//this->alpha = 1.0f;
@@ -121,6 +129,9 @@ public:
 				0, 0,
 				pool_d.stride, pool_d.stride));
 	}
+	/**
+	 * @details AvgPooling 소멸자
+	 */
 	virtual ~AvgPooling() {
 		checkCUDNN(cudnnDestroyPoolingDescriptor(poolDesc));
 	}

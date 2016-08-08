@@ -1,8 +1,9 @@
-/*
- * LRNLayer.h
- *
- *  Created on: 2016. 5. 25.
- *      Author: jhkim
+/**
+ * @file	LRNLayer.h
+ * @date	2016/5/25
+ * @author	jhkim
+ * @brief
+ * @details
  */
 
 #ifndef LAYER_LRNLAYER_H_
@@ -16,7 +17,13 @@
 
 
 
-
+/**
+ * @brief Local Response Normalization 레이어
+ * @details 입력값의 row x column 상의 값들에 대해 인접 채널의 동일 위치값들을 이용(ACROSS CHANNEL)하여 정규화하는 레이어
+ *          (WITHIN CHANNEL과 같이 한 채널 내에서 정규화하는 방법도 있으나 아직 사용하지 않아 별도 파라미터로 기능을 제공하지 않음)
+ *          'http://caffe.berkeleyvision.org/tutorial/layers.html'의 Local Response Normalization (LRN) 항목 참고
+ *          (1+(α/n)∑ixi^2)^β의 수식으로 계산
+ */
 class LRNLayer : public HiddenLayer {
 public:
 	LRNLayer() { this->type = LayerType::LRN; }
@@ -55,7 +62,7 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
-	lrn_dim lrn_d;
+	lrn_dim lrn_d;					///< LRN 연산 관련 파라미터 구조체
 
 #if CPU_MODE
 private:
@@ -63,11 +70,8 @@ private:
 	rcube z;	// beta powered 전의 weighted sum 상태의 norm term
 #else
 private:
-	const float alpha=1.0f, beta=0.0f;
-
-	//DATATYPE *d_delta;
-
-	cudnnLRNDescriptor_t lrnDesc;
+	const float alpha=1.0f, beta=0.0f;			///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
+	cudnnLRNDescriptor_t lrnDesc;				///< cudnn LRN 연산 정보 구조체
 #endif
 
 };

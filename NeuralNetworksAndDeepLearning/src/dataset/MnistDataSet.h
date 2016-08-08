@@ -1,9 +1,12 @@
-/*
- * MnistDataSet.h
- *
- *  Created on: 2016. 4. 23.
- *      Author: jhkim
+/**
+ * @file	MnistDataSet.h
+ * @date	2016/4/23
+ * @author	jhkim
+ * @brief
+ * @details
  */
+
+
 
 #ifndef MNISTDATASET_DATASET_H_
 #define MNISTDATASET_DATASET_H_
@@ -17,7 +20,12 @@ using namespace std;
 using namespace arma;
 
 
-
+/**
+ * @brief Mnist 데이터 셋을 로드하기 위해 구현된 DataSet 클래스.
+ * @details http://yann.lecun.com/exdb/mnist/의 데이터를 사용.
+ * @todo UbyteDataSet이 channel값을 읽도록 수정되었고, label값을 1000범위까지 읽도록(unsigned int) 수정되어
+ *       unsigned char로 label이 저장된 현재의 original 파일을 읽을 경우 error가 발생할 것.
+ */
 class MnistDataSet : public UbyteDataSet {
 public:
 	MnistDataSet(double validationSetRatio)

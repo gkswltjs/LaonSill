@@ -1,9 +1,11 @@
-/*
- * ConvNetDouble.h
- *
- *  Created on: 2016. 6. 2.
- *      Author: jhkim
+/**
+ * @file ConvNetDouble.h
+ * @date 2016/6/2
+ * @author jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef NETWORK_CONVNETDOUBLE_H_
 #define NETWORK_CONVNETDOUBLE_H_
@@ -20,7 +22,9 @@
 
 
 
-
+/**
+ * @brief 두 개의 컨볼루션 레이어를 가진 Network를 구현한 클래스
+ */
 class ConvNetDouble : public Network {
 public:
 	ConvNetDouble(NetworkListener *networkListener=0, double lr_mult = 0.05, double decay_mult = 5.0) : Network(networkListener) {

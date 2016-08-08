@@ -1,8 +1,9 @@
-/*
- * Cuda.h
- *
- *  Created on: 2016. 6. 16.
- *      Author: jhkim
+/**
+ * @file	Cuda.h
+ * @date	2016/6/16
+ * @author	jhkim
+ * @brief	Cuda관련 매크로 및 상수, 클래스 선언.
+ * @details
  */
 
 #ifndef CUDA_H_
@@ -75,20 +76,32 @@ static inline unsigned int RoundUp(unsigned int nominator, unsigned int denomina
 	return (nominator + denominator - 1) / denominator;
 }
 
-
-
+/**
+ * @brief Cuda 라이브러리 사용에 필요한 핸들을 생성하여 전역으로 관리하는 클래스.
+ * @detail Cuda 장치를 설정하고 cudnn, cublas 관련 핸들을 전역으로 생성, 삭제, 리프레시 하는 역할을 함.
+ */
 class Cuda {
 public:
 	Cuda();
 	virtual ~Cuda();
 
-	static int gpuid;
-	static cudnnHandle_t cudnnHandle;
-	static cublasHandle_t cublasHandle;
-
+	/**
+	 * @details 지정된 id이 Cuda 장치를 설정하고 cudnn, cublas 핸들을 생성.
+	 * @param gpuid Cuda를 사용할 장치의 id
+	 */
 	static void create(int gpuid);
+	/**
+	 * @details create()를 통해 생성한 Cuda관련 리소스를 정리.
+	 */
 	static void destroy();
+	/**
+	 * @details Cuda를 실행할 장치 재설정.
+	 */
 	static void refresh();
+
+	static int gpuid;							///< Cuda를 사용할 장치의 id
+	static cudnnHandle_t cudnnHandle;			///< cudnn 라이브러리 컨텍스트 핸들.
+	static cublasHandle_t cublasHandle;			///< cublas 라이브러리 컨텍스트 핸들.
 
 };
 

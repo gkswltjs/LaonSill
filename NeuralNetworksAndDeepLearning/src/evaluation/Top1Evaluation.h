@@ -1,15 +1,21 @@
-/*
- * Top1Evaluation.h
- *
- *  Created on: 2016. 7. 27.
- *      Author: jhkim
+/**
+ * @file	Top1Evaluation.h
+ * @date	2016/7/27
+ * @author	jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef TOP1EVALUATION_H_
 #define TOP1EVALUATION_H_
 
 #include "Evaluation.h"
 
+/**
+ * @brief 네트워크 1위 추정과 정답의 일치율을 평가하는 Evaluation 클래스
+ * @details
+ */
 class Top1Evaluation : public Evaluation {
 public:
 	Top1Evaluation() {}

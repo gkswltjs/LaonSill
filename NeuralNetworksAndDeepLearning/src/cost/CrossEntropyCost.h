@@ -1,8 +1,9 @@
-/*
- * CrossEntropyCost.h
- *
- *  Created on: 2016. 4. 25.
- *      Author: jhkim
+/**
+ * @file	CostEntropyCost.h
+ * @date	2016/4/25
+ * @author	jhkim
+ * @brief
+ * @details
  */
 
 #ifndef COST_CROSSENTROPYCOST_H_
@@ -15,7 +16,9 @@
 
 
 
-
+/**
+ * @details
+ */
 class CrossEntropyCost : public Cost {
 
 public:
@@ -49,7 +52,7 @@ public:
 		//Util::printVec(delta, "result");
 	}
 #else
-	double fn(const rvec *pA, const rvec *pY) {
+	double fn(const DATATYPE *pA, const DATATYPE *pY) {
 		return 0.0;
 	}
 

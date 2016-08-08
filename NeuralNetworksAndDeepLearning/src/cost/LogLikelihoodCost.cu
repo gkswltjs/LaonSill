@@ -43,7 +43,7 @@ void LogLikelihoodCost::d_cost(const rcube &z, const rcube &activation, const rv
 }
 #else
 
-double LogLikelihoodCost::fn(const rvec *pA, const rvec *pY) {
+double LogLikelihoodCost::fn(const DATATYPE *pA, const DATATYPE *pY) {
 	return 0.0;
 }
 

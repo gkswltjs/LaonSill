@@ -1,9 +1,11 @@
-/*
- * InceptionNetSingle.h
- *
- *  Created on: 2016. 6. 2.
- *      Author: jhkim
+/**
+ * @file InceptionNetMult.h
+ * @date 2016/6/2
+ * @author jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef NETWORK_INCEPTIONNETMULT_H_
 #define NETWORK_INCEPTIONNETMULT_H_
@@ -16,7 +18,9 @@
 
 
 
-
+/**
+ * @brief 복수개의 인셉션 레이어를 가진 Network를 구현한 클래스
+ */
 class InceptionNetMult : public Network {
 public:
 	InceptionNetMult(NetworkListener *networkListener=0, double lr_mult=0.01, double decay_mult=5.0)

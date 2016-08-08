@@ -1,8 +1,9 @@
-/*
- * LayerFactory.h
- *
- *  Created on: 2016. 6. 9.
- *      Author: jhkim
+/**
+ * @file	LayerFactory.h
+ * @date	2016/6/9
+ * @author	jhkim
+ * @brief
+ * @details
  */
 
 #ifndef LAYER_LAYERFACTORY_H_
@@ -26,12 +27,22 @@ class Layer;
 
 
 
-
+/**
+ * @brief 주어진 레이어 타입에 따라 레이어 객체를 생성하여 반환
+ * @details 주어진 레이어 타입에 따라 레이어 객체를 생성하여 반환하고
+ *          사용이 완료된 레이어 객체를 소멸시키는 역할을 함.
+ * @todo (객체를 생성한 곳에서 삭제한다는 원칙에 따라 만들었으나 수정이 필요)
+ */
 class LayerFactory {
 public:
 	LayerFactory() {}
 	virtual ~LayerFactory() {}
 
+	/**
+	 * @details 주어진 레이어 타입에 따라 레이어 객체를 생성하여 반환.
+	 * @param layerType 생성하고자 하는 레이어 객체의 타입.
+	 * @return 생성한 레이어 객체.
+	 */
 	static Layer *create(LayerType layerType) {
 		switch(layerType) {
 		case LayerType::Input: return new InputLayer();
@@ -47,6 +58,10 @@ public:
 		}
 	}
 
+	/**
+	 * @details LayerFactory에서 생성한 레이어 객체를 소멸.
+	 * @param layer 레이어 객체에 대한 포인터 참조자.
+	 */
 	static void destroy(Layer *&layer) {
 		if(layer) {
 			delete layer;

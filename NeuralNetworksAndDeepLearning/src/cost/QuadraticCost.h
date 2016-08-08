@@ -1,9 +1,11 @@
-/*
- * QuadraticCost.h
- *
- *  Created on: 2016. 4. 25.
- *      Author: jhkim
+/**
+ * @file	QuadraticCost.h
+ * @date	2016/4/25
+ * @author	jhkim
+ * @brief
+ * @details
  */
+
 
 #ifndef COST_QUADRATICCOST_H_
 #define COST_QUADRATICCOST_H_
@@ -31,10 +33,10 @@ public:
 		delta.slice(0) = activation.slice(0) - target;
 	}
 #else
-	double fn(const rvec *pA, const rvec *pY) {
+	double fn(const DATATYPE* pA, const DATATYPE* pY) {
 		return 0.5*sum(square(*pA - *pY));
 	}
-	void d_cost(const DATATYPE *z, DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT size) {
+	void d_cost(const DATATYPE *z, DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize) {
 		Cuda::refresh();
 		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(DATATYPE)*size, cudaMemcpyDeviceToDevice));
 		UINT i;

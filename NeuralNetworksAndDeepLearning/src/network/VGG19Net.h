@@ -1,8 +1,9 @@
-/*
- * VGG19Net.h
- *
- *  Created on: 2016. 7. 22.
- *      Author: jhkim
+/**
+ * @file VGG19Net.h
+ * @date 2016/7/22
+ * @author jhkim
+ * @brief
+ * @details
  */
 
 #ifndef VGG19NET_H_
@@ -22,7 +23,9 @@
 
 
 
-
+/**
+ * @brief VGG19Net을 구현한 Network 클래스
+ */
 class VGG19Net : public Network {
 public:
 	VGG19Net(NetworkListener *networkListener=0, double w_lr_mult=0.1, double w_decay_mult=1.0,

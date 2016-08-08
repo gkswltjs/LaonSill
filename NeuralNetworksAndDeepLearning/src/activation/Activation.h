@@ -16,7 +16,7 @@
 
 
 /**
- * @brief	Activation 타입 열거형 선언.
+ * @brief	Activation 타입 열거형
  * @details	지원하는 Activation 타입 열거,
  *          현재 Sigmoid, Softmax, ReLU 함수를 지원.
  */

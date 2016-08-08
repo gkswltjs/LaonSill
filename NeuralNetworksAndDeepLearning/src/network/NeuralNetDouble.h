@@ -1,9 +1,13 @@
-/*
- * NeuralNetDouble.h
- *
- *  Created on: 2016. 6. 2.
- *      Author: jhkim
+/**
+ * @file NeuralNetDouble.h
+ * @date 2016/6/2
+ * @author jhkim
+ * @brief
+ * @details
  */
+
+
+
 
 #ifndef NETWORK_NEURALNETDOUBLE_H_
 #define NETWORK_NEURALNETDOUBLE_H_

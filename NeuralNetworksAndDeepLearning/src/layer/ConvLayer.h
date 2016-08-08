@@ -1,8 +1,9 @@
-/*
- * ConvLayer.h
- *
- *  Created on: 2016. 5. 23.
- *      Author: jhkim
+/**
+ * @file	ConvLayer.h
+ * @date	2016/5/23
+ * @author	jhkim
+ * @brief
+ * @details
  */
 
 #ifndef LAYER_CONVLAYER_H_
@@ -19,47 +20,36 @@
 
 
 
-
+/**
+ * @brief 컨볼루션 레이어
+ * @details
+ */
 class ConvLayer : public HiddenLayer {
 public:
 	ConvLayer() { this->type = LayerType::Conv; }
+	/**
+	 * @details ConvLayer 생성자
+	 * @param filter_d 컨볼루션 연산 관련 파라미터 구조체
+	 * @param weight_update_param weight 갱신 관련 파라미터 구조체
+	 * @param bias_update_param bias 갱신 관련 파라미터 구조체
+	 * @param weight_filler filter 초기화 관련 파라미터 구조체
+	 * @param bias_filler bias 초기화 관련 파라미터 구조체
+	 * @param activationType 컨볼루션 결과에 적용할 활성화 타입
+	 */
 	ConvLayer(const char *name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_f, param_filler bias_filler, ActivationType activationType);
+			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
 	virtual ~ConvLayer();
 
+	/**
+	 * @details 컨볼루션 연산 관련 파라미터 구조체를 조회한다.
+	 * @return 컨볼루션 연산 관련 파라미터
+	 */
 	filter_dim &get_filter_dim() { return this->filter_d; }
-	/**
-	 * 네트워크 cost에 대한 weight update양 계산
-	 * @param next_w: 다음 레이어의 weight
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
-
-	/**
-	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
-	 * @param target: 현재 데이터에 대한 목적값
-	 * @param output: 레이어 출력
-	 */
-	//void cost(const vec &target, const vec &input);
-
-	/**
-	 * 한 번의 batch 종료 후 재사용을 위해 w, b 누적 업데이트를 reset
-	 */
 	void reset_nabla(UINT idx);
-
-	/**
-	 * 한 번의 batch 종료 후 w, b 누적 업데이트를 레이어 w, b에 적용
-	 * @param eta:
-	 * @param lambda:
-	 * @param n:
-	 * @param miniBatchSize:
-	 */
 	void update(UINT idx, UINT n, UINT miniBatchSize);
-
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-
 	virtual bool isLearnable() { return true; }
-
 
 #if CPU_MODE
 public:
@@ -95,13 +85,13 @@ protected:
 	virtual DATATYPE _sumSquareParam2();
 	virtual void _scaleParam(DATATYPE scale_factor);
 
-	filter_dim filter_d;
-	Activation *activation_fn;
+	filter_dim filter_d;							///< 컨볼루션 연산 관련 파라미터 구조체
+	Activation *activation_fn;						///< 활성화 객체
 
-	update_param weight_update_param;
-	update_param bias_update_param;
-	param_filler weight_filler;
-	param_filler bias_filler;
+	update_param weight_update_param;				///< weight 갱신 관련 파라미터 구조체
+	update_param bias_update_param;					///< bias 갱신 관련 파라미터 구조체
+	param_filler weight_filler;						///< weight 초기화 관련 파라미터 구조체
+	param_filler bias_filler;						///< bias 초기화 관련 파라미터 구조체
 
 #if CPU_MODE
 protected:
@@ -120,28 +110,28 @@ protected:
 	rcube delta_input;
 #else
 protected:
-	DATATYPE *filters;
-	DATATYPE *biases;
+	DATATYPE *filters;								///< filter 호스트 메모리 포인터
+	DATATYPE *biases;								///< bias 호스트 메모리 포인터
 
-	DATATYPE *d_filters;
-	DATATYPE *d_biases;
+	DATATYPE *d_filters;							///< filter 장치 메모리 포인터
+	DATATYPE *d_biases;								///< bias 장치 메모리 포인터
 
-	DATATYPE *d_z;
-	DATATYPE *d_delta;
-	DATATYPE *d_delta_weight;
-	DATATYPE *d_delta_weight_prev;
-	DATATYPE *d_delta_bias;
-	DATATYPE *d_delta_bias_prev;
+	DATATYPE *d_z;									///< filter map 장치 메모리 포인터
+	DATATYPE *d_delta;								///< 네트워크 cost의 z(filter map)에 관한 gradient 장치 메모리 포인터
+	DATATYPE *d_delta_weight;						///< 네트워크 cost의 weight(filter)에 관한 gradient 장치 메모리 포인터
+	DATATYPE *d_delta_weight_prev;					///< 이전 업데이트의 네트워크 cost의 weight에 관한 graident 장치 메모리 포인터
+	DATATYPE *d_delta_bias;							///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
+	DATATYPE *d_delta_bias_prev;					///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
 
-	cudnnTensorDescriptor_t biasTensorDesc;
-	cudnnFilterDescriptor_t filterDesc;
-	cudnnConvolutionDescriptor_t convDesc;
-	cudnnConvolutionFwdAlgo_t convFwdAlgo;
-	cudnnConvolutionBwdFilterAlgo_t convBwdFilterAlgo;
-	cudnnConvolutionBwdDataAlgo_t convBwdDataAlgo;
+	cudnnTensorDescriptor_t biasTensorDesc;			///< cudnn bias 구조 정보 구조체
+	cudnnFilterDescriptor_t filterDesc;				///< cudnn filter 구조 정보 구조체
+	cudnnConvolutionDescriptor_t convDesc;			///< cudnn 컨볼루션 연산 정보 구조체
+	cudnnConvolutionFwdAlgo_t convFwdAlgo;			///< cudnn 컨볼루션 포워드 알고리즘 열거형 (입력 데이터에 대해 convolution 수행할 알고리즘)
+	cudnnConvolutionBwdFilterAlgo_t convBwdFilterAlgo;	///< cudnn filter 백워드 알고리즘 열거형 (네트워크 cost의 filter에 관한 gradient를 구할 때의 알고리즘)
+	cudnnConvolutionBwdDataAlgo_t convBwdDataAlgo;	///< cudnn data 백워드 알고리즘 열거형 (네트워크 cost의 입력 데이터에 관한 gradient를 구할 때의 알고리즘)
 
-	size_t workspaceSize;
-	void *d_workspace;
+	size_t workspaceSize;							///< cudnn forward, backward에 필요한 작업공간 GPU 메모리 사이즈
+	void *d_workspace;								///< cudnn forward, backward에 필요한 작업공간 장치 메모리 포인터
 #endif
 
 

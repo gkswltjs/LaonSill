@@ -1,9 +1,14 @@
-/*
- * Network.h
- *
- *  Created on: 2016. 4. 20.
- *      Author: jhkim
+/**
+ * @file Network.h
+ * @date 2016/4/20
+ * @author jhkim
+ * @brief
+ * @details
  */
+
+
+
+
 
 #ifndef NETWORK_H_
 #define NETWORK_H_
@@ -29,26 +34,75 @@ using namespace arma;
 
 
 
-
+/**
+ * @brief 네트워크 기본 클래스
+ * @details 실제 작업이 일어나는 링크드 형식의 레이어 목록을 래핑하고 사용자 인터페이스를 제공한다.
+ * @todo sgd 형태의 네트워크를 기본으로 하고 있으나 다양한 형태의 네트워크 최적화 기법을 적용할 수 있도록 수정되어야 한다.
+ *       (SGD, AdaDelta, AdaGrad, Adam, NAG ... )
+ *       개별 파라미터를 각각 전달하는 형태이나 Network Param 형태의 구조체를 만들어 한 번에 전달하도록 수정해야 한다.
+ */
 class Network {
 public:
+	/**
+	 * @details Network 생성자
+	 * @param networkListener 네트워크 상태 리스너
+	 */
 	Network(NetworkListener *networkListener=0);
+	/**
+	 * @details Network 생성자
+	 * @param inputLayer 입력 레이어
+	 * @param outputLayer 출력 레이어
+	 * @param dataSet 학습 및 테스트용 데이터셋
+	 * @param networkListener 네트워크 상태 리스너
+	 */
 	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
+	/**
+	 * @details Network 소멸자
+	 */
 	virtual ~Network();
 
+	/**
+	 * @details DataSet setter method
+	 * @param dataSet 학습 및 테스트용 데이터셋
+	 * @param batches 데이터셋 배치 단위 사이즈
+	 */
 	void setDataSet(DataSet *dataSet, UINT batches);
+	/**
+	 * @details 네트워크에 설정된 입력 레이어를 조회한다.
+	 * @return 네트워크에 설정된 입력 레이어
+	 */
 	InputLayer *getInputLayer() const { return this->inputLayer; }
-
+	/**
+	 * @details 네트워크에 출력 레이어를 추가한다.
+	 * @param outputLayer 네트워크에 추가할 출력 레이어
+	 */
 	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
+	/**
+	 * @details 네트워크의 추론 결과를 평가할 평가객체를 추가한다.
+	 * @param evaluation 네트워크의 추론 결과를 평가할 평가객체
+	 */
 	void addEvaluation(Evaluation *evaluation);
+	/**
+	 * @details 네트워크의 내부 이벤트 리스너를 추가한다.
+	 * @param networkListener 네트워크의 내부 이벤트 리스너
+	 */
 	void addNetworkListener(NetworkListener* networkListener);
-
+	/**
+	 * @details stochastic gradient descent를 수행한다.
+	 * @param epochs sgd를 수행할 최대 epoch
+	 */
 	void sgd(int epochs);
+	/**
+	 * @details 네트워크의 주어진 테스트 데이터셋으로 네트워크 테스트를 수행한다.
+	 */
 	void test();
 
 
 	/**
-	 * 어디로 옮기면 좋을까
+	 * @details 레이어간의 이전, 다음 레이어 관계를 생성한다.
+	 * @param prevLayer 레이어 관계에서 이전 레이어
+	 * @param nextLayer 레이어 관계에서 다음 레이어
+	 * @todo Network 클래스에 구현할 method가 아니다.
 	 */
 	static void addLayerRelation(Layer *prevLayer, HiddenLayer *nextLayer) {
 		int nextLayerIdx = nextLayer->getPrevLayerSize();
@@ -61,18 +115,51 @@ public:
 		if(pLayer) nextLayer->addPrevLayer(prev_layer_relation(pLayer, prevLayerIdx));
 	}
 
+	/**
+	 * @details 네트워크 쓰기관련 설정을 한다.
+	 * @param savePrefix 네트워크 쓰기 파일의 경로의 prefix
+	 */
 	void saveConfig(const char *savePrefix);
+	/**
+	 * @details 네트워크를 파일에 쓴다.
+	 * @param filename 네트워크를 쓸 파일의 경로
+	 */
 	void save(const char* filename);
+	/**
+	 * @details 네트워크를 파일로부터 읽는다.
+	 * @param filename 네트워크를 읽을 파일의 경로
+	 */
 	void load(const char* filename);
+	/**
+	 * @details 네트워크의 입력 데이터 구조 정보를 설정한다.
+	 * @param in_dim 네트워크의 입력 데이터 구조 정보 구조체
+	 */
 	void shape(io_dim in_dim=io_dim(0,0,0,0));
+	/**
+	 * @details 네트워크가 이미 입력 데이터 구조 정보가 설정된 상태에서 이를 변경한다.
+	 * @param in_dim 네트워크의 변경할 입력 데이터 구조 정보 구조체
+	 */
 	void reshape(io_dim in_dim=io_dim(0,0,0,0));
-	void backprop(const DataSample &dataSample);
+	/**
+	 * @details 네트워크 내부의 레이어를 이름으로 찾는다.
+	 * @param name 찾을 레이어의 이름
+	 * @return 찾은 레이어에 대한 포인터
+	 */
 	Layer *findLayer(const char *name);
+	/**
+	 * @details 네트워크에 등록된 데이터셋 특정 채널의 평균값을 조회한다.
+	 * @param 데이터셋의 조회할 채널 index
+	 * @return 조회된 특정 채널의 평균값
+	 */
 	DATATYPE getDataSetMean(UINT channel);
+	/**
+	 * @details 네트워크에 등록된 데이터셋에 각 채널의 평균값을 설정한다.
+	 * @param dataSetMean 채널의 평균값을 담고 있는 배열의 포인터
+	 */
 	void setDataSetMean(DATATYPE *dataSetMean);
 
 
-	void clipGradients();
+
 
 
 #if CPU_MODE
@@ -86,45 +173,47 @@ public:
 
 
 protected:
+	/**
+	 * @details 배치단위의 학습이 종료된 후 학습된 내용을 적절한 정규화 과정을 거쳐 네트워크에 반영한다.
+	 * @param nthMiniBatch 한 epoch내에서 종료된 batch의 index
+	 */
 	void updateMiniBatch(int nthMiniBatch);
-
+	/**
+	 * @details 배치단위의 학습된 내용을 네트워크에 반영한다.
+	 */
 	void applyUpdate();
+	/**
+	 * @details 배치단위의 학습된 파라미터의 L2 norm을 설정된 값을 기준으로 스케일 다운한다.
+	 *          gradient explode를 예방하는 역할을 한다.
+	 */
+	void clipGradients();
 
 
-
-
-
-	double totalCost(const vector<const DataSample *> &dataSet, double lambda);
-	double accuracy(const vector<const DataSample *> &dataSet);
+	//double totalCost(const vector<const DataSample *> &dataSet, double lambda);
+	//double accuracy(const vector<const DataSample *> &dataSet);
+	/**
+	 * @details 전체 테스트셋에 대해 현재의 네트워크를 평가한다.
+	 */
 	void evaluate();
 
-	DataSet *dataSet;
+	DataSet *dataSet;							///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
 
+	InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터
+	vector<OutputLayer*> outputLayers;			///< 네트워크 출력 레이어 포인터 목록 벡터
+	vector<Evaluation*> evaluations;			///< 네트워크 평가 객체 포인터 목록 벡터
+	vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 목록 벡터
 
-	InputLayer *inputLayer;
-	vector<OutputLayer*> outputLayers;
-	vector<Evaluation*> evaluations;
-	vector<NetworkListener*> networkListeners;
+	io_dim in_dim;								///< 네트워크 입력 데이터 구조 정보 구조체
 
-	io_dim in_dim;
+	char savePrefix[200];						///< 네트워크 파일 쓰기 경로 prefix
+	bool saveConfigured;						///< 네트워크 쓰기 설정 여부
+	double maxAccuracy;							///< 네트워크 평가 최대 정확도
+	double minCost;								///< 네트워크 평가 최소 cost
+	DATATYPE dataSetMean[3];					///< 네트워크 데이터셋 평균 배열
+	DATATYPE clipGradientsLevel;				///< 학습 gradient의 L2 norm의 크기를 제한하는 기준값
 
-	char savePrefix[200];
-	bool saveConfigured;
-	double maxAccuracy;
-	double minCost;
-	DATATYPE dataSetMean[3];
-	DATATYPE clipGradientsLevel;
-
-
-
-
-
-
-	DATATYPE* d_trainData;
-	UINT *d_trainLabel;
-
-
-
+	DATATYPE* d_trainData;						///< 학습 데이터 장치 메모리 포인터
+	UINT *d_trainLabel;							///< 학습 데이터 정답 장치 메모리 포인터
 
 
 #if CPU_MODE
@@ -132,6 +221,12 @@ protected:
 	int testEvaluateResult(const rvec &output, const rvec &y);
 #else
 protected:
+	/**
+	 * @details 특정 테스트 데이터 하나에 대해 평가한다.
+	 * @param num_labels 데이터셋 레이블 크기 (카테고리의 수)
+	 * @param output 데이터에 대한 네트워크의 출력 장치 메모리 포인터
+	 * @param y 데이터의 정답 호스트 메모리 포인터
+	 */
 	void testEvaluateResult(const int num_labels, const DATATYPE *output, const UINT *y);
 #endif
 

@@ -1,8 +1,9 @@
-/*
- * ConvNetMult.h
- *
- *  Created on: 2016. 7. 18.
- *      Author: jhkim
+/**
+ * @file ConvNetMult.h
+ * @date 2016/7/18
+ * @author jhkim
+ * @brief
+ * @details
  */
 
 #ifndef CONVNETMULT_H_
@@ -22,7 +23,9 @@
 
 
 
-
+/**
+ * @brief 복수개의 컨볼루션 레이어를 가진 Network를 구현한 클래스
+ */
 class ConvNetMult : public Network {
 public:
 	ConvNetMult(NetworkListener *networkListener=0, double lr_mult = 0.05, double decay_mult = 5.0) : Network(networkListener) {

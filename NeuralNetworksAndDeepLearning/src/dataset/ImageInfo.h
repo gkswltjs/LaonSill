@@ -1,8 +1,9 @@
-/*
- * ImageInfo.h
- *
- *  Created on: 2016. 4. 21.
- *      Author: jhkim
+/**
+ * @file ImageInfo.h
+ * @date 2016/4/21
+ * @author jhkim
+ * @brief 사용하지 않음.
+ * @details
  */
 
 #ifndef DATASET_IMAGEINFO_H_

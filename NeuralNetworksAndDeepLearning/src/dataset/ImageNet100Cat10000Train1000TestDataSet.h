@@ -1,8 +1,9 @@
-/*
- * ImageNet100Cat10000Train1000TestDataSet.h
- *
- *  Created on: 2016. 7. 27.
- *      Author: jhkim
+/**
+ * @file	ImageNet100Cat10000Train1000TestDataSet.h
+ * @date	2016/7/27
+ * @author	jhkim
+ * @brief
+ * @details
  */
 
 #ifndef IMAGENET100CAT10000TRAIN1000TESTDATASET_H_
@@ -10,6 +11,11 @@
 
 #include "UbyteDataSet.h"
 
+
+/**
+ * @brief ImageNet 데이터 중 100 카테고리, 10,000 학습데이터, 1,000 테스트데이터 셋을 로드하기 위해
+ *        구현된 DataSet 클래스.
+ */
 class ImageNet100Cat10000Train1000TestDataSet : public UbyteDataSet {
 public:
 	ImageNet100Cat10000Train1000TestDataSet()
