@@ -36,7 +36,7 @@ public:
 	 * @param bias_filler bias 초기화 관련 파라미터 구조체
 	 * @param activationType 컨볼루션 결과에 적용할 활성화 타입
 	 */
-	ConvLayer(const char *name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+	ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
 	virtual ~ConvLayer();
 

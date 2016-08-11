@@ -56,7 +56,7 @@ public:
 	 * @details 레이어 클래스 생성자
 	 * @param name 레이어 이름에 대한 문자열 포인터
 	 */
-	Layer(const char *name);
+	Layer(const string name);
 	/**
 	 * @details 레이어 클래스 소멸자
 	 */
@@ -148,7 +148,7 @@ public:
 	 * @param name 찾고자 하는 레이어의 이름
 	 * @return 찾은 레이어에 대한 포인터, 해당하는 레이어가 없는 경우 0
 	 */
-	virtual Layer* find(UINT idx, const char* name);
+	virtual Layer* find(UINT idx, const string name);
 	/**
 	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
@@ -214,7 +214,7 @@ public:
 
 #ifndef GPU_MODE
 public:
-	Layer(const char *name, int n_in, int n_out);
+	Layer(const string name, int n_in, int n_out);
 
 	rcube &getInput() { return this->input; }
 	rcube &getOutput() { return this->output; }
@@ -251,7 +251,7 @@ protected:
 	 * @details 레이어를 초기화한다.
 	 * @param name 레이어의 이름 문자열 포인터
 	 */
-	void initialize(const char *name);
+	void initialize(const string name);
 	/**
 	 * @details 레이어 메타정보로부터 레이어 구성을 로드한다.
 	 * @param ifs 레이어를 읽어들일 입력 스트림
@@ -347,7 +347,7 @@ protected:
 
 	LayerType type;				///< 레이어의 타입
 	int id;						///< 레이어의 고유 아이디
-	char name[32];				///< 레이어의 이름
+	string name;			///< 레이어의 이름
 
 	io_dim in_dim;				///< 레이어의 입력 데이터 구조 정보
 	io_dim out_dim;				///< 레이어의 출력 데이터 구조 정보
@@ -372,7 +372,7 @@ protected:
 	 */
 	void propFeedforward(const DATATYPE *output, const char *end=0);
 
-	const DATATYPE *d_input;			///< 현재 레이어의 입력값 장치 메모리 포인터 (이전 레이어의 출력값 메모리 포인터를 공유)
+	const DATATYPE* d_input;			///< 현재 레이어의 입력값 장치 메모리 포인터 (이전 레이어의 출력값 메모리 포인터를 공유)
 	DATATYPE *d_output;					///< 현재 레이어의 출력값 장치 메모리 포인터 (고유한 장치 할당 메모리 포인터)
 
 	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보

@@ -593,7 +593,7 @@ void Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output,
 #endif
 
 
-Layer* Network::findLayer(const char* name) {
+Layer* Network::findLayer(const string name) {
 	return inputLayer->find(0, name);
 }
 

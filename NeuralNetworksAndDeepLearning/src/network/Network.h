@@ -145,7 +145,7 @@ public:
 	 * @param name 찾을 레이어의 이름
 	 * @return 찾은 레이어에 대한 포인터
 	 */
-	Layer *findLayer(const char *name);
+	Layer *findLayer(const string name);
 	/**
 	 * @details 네트워크에 등록된 데이터셋 특정 채널의 평균값을 조회한다.
 	 * @param 데이터셋의 조회할 채널 index

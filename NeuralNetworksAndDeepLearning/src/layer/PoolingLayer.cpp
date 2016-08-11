@@ -9,7 +9,7 @@
 
 
 
-PoolingLayer::PoolingLayer(const char *name, pool_dim pool_d, PoolingType poolingType)
+PoolingLayer::PoolingLayer(const string name, pool_dim pool_d, PoolingType poolingType)
 	: HiddenLayer(name) {
 	initialize(pool_d, poolingType);
 }

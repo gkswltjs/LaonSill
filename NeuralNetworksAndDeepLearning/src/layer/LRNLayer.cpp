@@ -12,7 +12,7 @@
 
 
 
-LRNLayer::LRNLayer(const char *name, lrn_dim lrn_d) : HiddenLayer(name) {
+LRNLayer::LRNLayer(const string name, lrn_dim lrn_d) : HiddenLayer(name) {
 	initialize(lrn_d);
 }
 

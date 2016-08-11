@@ -36,7 +36,7 @@ public:
 	 * @param weight_update_param weight 갱신 관련 파라미터 구조체
 	 * @param bias_update_param bias 갱신 관련 파라미터 구조체
 	 */
-	InceptionLayer(const char *name, int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp,
+	InceptionLayer(const string name, int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp,
 			update_param weight_update_param, update_param bias_update_param);
 	virtual ~InceptionLayer();
 
@@ -60,7 +60,7 @@ public:
 
 #ifndef GPU_MODE
 public:
-	InceptionLayer(const char *name, int n_in, int n_out, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
+	InceptionLayer(const string name, int n_in, int n_out, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 	rcube &getDeltaInput() { return this->delta_input; }
 	void feedforward(UINT idx, const rcube &input, const char *end=0);
 #else

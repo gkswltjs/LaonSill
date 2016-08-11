@@ -41,7 +41,7 @@ public:
 	 * @param weight_filler weight 초기화 관련 파라미터 구조체
 	 * @param bias_filler bias 초기화 관련 파라미터 구조체
 	 */
-	SoftmaxLayer(const char *name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	SoftmaxLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler);
 	virtual ~SoftmaxLayer();
 
@@ -49,7 +49,7 @@ public:
 
 #ifndef GPU_MODE
 public:
-	SoftmaxLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	SoftmaxLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler)
 		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
 				ActivationType::Softmax, CostType::LogLikelihood) {

@@ -7,7 +7,7 @@
 
 #include "DepthConcatLayer.h"
 
-DepthConcatLayer::DepthConcatLayer(const char *name)
+DepthConcatLayer::DepthConcatLayer(const string name)
 	: HiddenLayer(name) {
 	initialize();
 }
@@ -19,7 +19,7 @@ void DepthConcatLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 }
 
 #ifndef GPU_MODE
-DepthConcatLayer::DepthConcatLayer(const char *name, int n_in)
+DepthConcatLayer::DepthConcatLayer(const string name, int n_in)
 	: HiddenLayer(name, n_in, n_in) {
 	initialize();
 }

@@ -27,7 +27,7 @@
 class LRNLayer : public HiddenLayer {
 public:
 	LRNLayer() { this->type = LayerType::LRN; }
-	LRNLayer(const char *name, lrn_dim lrn_d);
+	LRNLayer(const string name, lrn_dim lrn_d);
 	virtual ~LRNLayer();
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);

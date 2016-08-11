@@ -37,7 +37,7 @@ public:
 	 * @details InputLayer 생성자
 	 * @param name 레이어의 이름 문자열 포인터
 	 */
-	InputLayer(const char *name) : Layer(name) {
+	InputLayer(const string name) : Layer(name) {
 		initialize();
 	}
 	/**
@@ -72,7 +72,7 @@ public:
 
 #ifndef GPU_MODE
 public:
-	InputLayer(const char *name, int n_in) : Layer(name, n_in, n_in) {
+	InputLayer(const string name, int n_in) : Layer(name, n_in, n_in) {
 		initialize();
 	}
 	/**

@@ -23,7 +23,7 @@ using namespace arma;
 class HiddenLayer : public Layer {
 public:
 	HiddenLayer() {}
-	HiddenLayer(const char *name) : Layer(name) {}
+	HiddenLayer(const string name) : Layer(name) {}
 	virtual ~HiddenLayer() {}
 
 	/**
@@ -56,7 +56,7 @@ public:
 
 #ifndef GPU_MODE
 public:
-	HiddenLayer(const char *name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
+	HiddenLayer(const string name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
 	virtual rcube &getDeltaInput()=0;
 #else
 public:

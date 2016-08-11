@@ -39,7 +39,7 @@ public:
 	 * @param activationType weighted sum에 적용할 활성화 타입
 	 * @param costType 레이어 출력값에 대한 cost 계산 타입
 	 */
-	OutputLayer(const char *name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	OutputLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
 		:FullyConnectedLayer(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
@@ -50,7 +50,7 @@ public:
 
 #ifndef GPU_MODE
 public:
-	OutputLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	OutputLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
 		: FullyConnectedLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);

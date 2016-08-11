@@ -12,7 +12,7 @@
 #include "../exception/Exception.h"
 
 
-ConvLayer::ConvLayer(const char *name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+ConvLayer::ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name) {
 

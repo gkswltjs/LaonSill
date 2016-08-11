@@ -15,7 +15,7 @@
 
 
 
-FullyConnectedLayer::FullyConnectedLayer(const char *name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+FullyConnectedLayer::FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name) {
 	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
@@ -26,7 +26,7 @@ FullyConnectedLayer::FullyConnectedLayer(const char *name, int n_out, double p_d
 
 #ifndef GPU_MODE
 
-FullyConnectedLayer::FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+FullyConnectedLayer::FullyConnectedLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name, n_in, n_out) {
 	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);

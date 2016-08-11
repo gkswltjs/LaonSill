@@ -12,7 +12,7 @@
 
 int Layer::layerCount = 0;
 
-Layer::Layer(const char *name) {
+Layer::Layer(const string name) {
 	initialize(name);
 }
 
@@ -35,7 +35,7 @@ void Layer::_save(ofstream &ofs) {
 
 	ofs.write((char *)&address, sizeof(Layer *));					// layer address
 	ofs.write((char *)&id, sizeof(int));									// layer id
-	ofs.write(name, LAYER_NAME_LENGTH);										// layer name
+	ofs.write(name.c_str(), LAYER_NAME_LENGTH);										// layer name
 	ofs.write((char *)&in_dim, sizeof(io_dim));						// layer in_dim
 	ofs.write((char *)&out_dim, sizeof(io_dim));					// layer out_dim
 	ofs.write((char *)&nextLayerSize, sizeof(UINT));			// layer next layer size
@@ -189,7 +189,7 @@ void Layer::saveHeader(UINT idx, ofstream &ofs) {
 
 #ifndef GPU_MODE
 
-Layer::Layer(const char *name, int n_in, int n_out) {
+Layer::Layer(const string name, int n_in, int n_out) {
 	initialize(name, io_dim(n_in, 1, 1), io_dim(n_out, 1, 1));
 }
 
@@ -215,7 +215,7 @@ void Layer::feedforward(UINT idx, const rcube &input, const char *end=0) { propF
 
 
 
-void Layer::initialize(const char *name, io_dim in_dim, io_dim out_dim) {
+void Layer::initialize(const string name, io_dim in_dim, io_dim out_dim) {
 	strcpy(this->name, name);
 	//this->name = name;
 	this->in_dim = in_dim;
@@ -251,7 +251,7 @@ void Layer::shape(UINT idx, io_dim in_dim) {
 
 void Layer::_shape(bool recursive) {
 	char message[256];
-	sprintf(message, "%s---_shape():in-%dx%dx%dx%d, out-%dx%dx%dx%d", name, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches,
+	sprintf(message, "%s---_shape():in-%dx%dx%dx%d, out-%dx%dx%dx%d", name.c_str(), in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches,
 			out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches);
 	//Util::setPrint(true);
 	Util::printMessage(string(message));
@@ -403,15 +403,14 @@ void Layer::propScaleParam(DATATYPE scale_factor) {
 
 
 
-void Layer::initialize(const char *name) {
-	Cuda::refresh();
-	strcpy(this->name, name);
+void Layer::initialize(const string name) {
+	this->name = name;
 	this->id = Layer::generateLayerId();
 }
 
 
 Layer::~Layer() {
-	Cuda::refresh();
+	//Cuda::refresh();
 
 	for(UINT i = 0; i < nextLayers.size(); i++) {
 		if(nextLayers[i].next_layer && nextLayers[i].next_layer->isLastPrevLayerRequest(nextLayers[i].idx)) {
@@ -439,7 +438,7 @@ Layer::~Layer() {
 void Layer::feedforward(UINT idx, const DATATYPE *input, const char *end) { propFeedforward(input, end); }
 
 void Layer::propFeedforward(const DATATYPE *output, const char *end) {
-	if(end != 0 && strcmp(name, end) == 0) return;
+	if(end != 0 && name == end) return;
 
 	for(UINT i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i].next_layer->feedforward(nextLayers[i].idx, output, end);
@@ -450,10 +449,10 @@ void Layer::propFeedforward(const DATATYPE *output, const char *end) {
 #endif
 
 
-Layer *Layer::find(UINT idx, const char *name) {
+Layer *Layer::find(UINT idx, const string name) {
 	if(!isLastPrevLayerRequest(idx)) return 0;
 
-	if(strcmp(name, this->name) == 0) {
+	if(this->name == name) {
 		return this;
 	} else {
 		for(UINT i = 0; i < nextLayers.size(); i++) {

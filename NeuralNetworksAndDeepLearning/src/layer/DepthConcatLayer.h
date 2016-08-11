@@ -26,7 +26,7 @@
 class DepthConcatLayer : public HiddenLayer {
 public:
 	DepthConcatLayer() { this->type = LayerType::DepthConcat; }
-	DepthConcatLayer(const char *name);
+	DepthConcatLayer(const string name);
 	virtual ~DepthConcatLayer();
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
@@ -48,7 +48,7 @@ public:
 
 #ifndef GPU_MODE
 public:
-	DepthConcatLayer(const char *name, int n_in);
+	DepthConcatLayer(const string name, int n_in);
 	rcube &getDeltaInput();
 	void feedforward(UINT idx, const rcube &input, const char *end=0);
 #else

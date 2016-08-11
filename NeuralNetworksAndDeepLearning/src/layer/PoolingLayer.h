@@ -33,7 +33,7 @@ public:
 	 * @param name 레이어 이름 문자열 포인터
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 */
-	PoolingLayer(const char *name, pool_dim pool_d, PoolingType poolingType);
+	PoolingLayer(const string name, pool_dim pool_d, PoolingType poolingType);
 	virtual ~PoolingLayer();
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
