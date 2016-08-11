@@ -46,7 +46,7 @@ public:
 	 */
 	filter_dim &get_filter_dim() { return this->filter_d; }
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
-	void reset_nabla(UINT idx);
+
 	void update(UINT idx, UINT n, UINT miniBatchSize);
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual bool isLearnable() { return true; }

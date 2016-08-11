@@ -43,7 +43,6 @@ public:
 	virtual DATATYPE *getOutput() { return lastLayer->getOutput(); }
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
-	void reset_nabla(UINT idx);
 	void update(UINT idx, UINT n, UINT miniBatchSize);
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
@@ -63,6 +62,7 @@ public:
 	InceptionLayer(const string name, int n_in, int n_out, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 	rcube &getDeltaInput() { return this->delta_input; }
 	void feedforward(UINT idx, const rcube &input, const char *end=0);
+	void reset_nabla(UINT idx);
 #else
 public:
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }

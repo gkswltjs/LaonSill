@@ -583,11 +583,12 @@ void FullyConnectedLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) 
 
 
 
-
+/*
 void FullyConnectedLayer::reset_nabla(UINT idx) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 	propResetNParam();
 }
+*/
 
 
 void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {

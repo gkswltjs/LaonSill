@@ -102,14 +102,7 @@ void InceptionLayer::saveNinHeader(UINT idx, ofstream &ofs) {
 	}
 }
 
-void InceptionLayer::reset_nabla(UINT idx) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->reset_nabla(0);
-	}
-	propResetNParam();
-}
 
 void InceptionLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	Util::printMessage("InceptionLayer::update()---"+string(name));
@@ -279,6 +272,16 @@ void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	delta_input.set_size(size(output));
 	delta_input.zeros();
 }
+
+void InceptionLayer::reset_nabla(UINT idx) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->reset_nabla(0);
+	}
+	propResetNParam();
+}
+
 
 #else
 

@@ -34,17 +34,6 @@ public:
 	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
 	 */
 	virtual void backpropagation(UINT idx, DATATYPE *next_delta_input) { propBackpropagation(); }
-
-	/**
-	 * @details CPU MODE에서 누적된 학습 parameter값들을 reset한다.
-	 *          현재 CPU_MODE의 경우 batch 단위의 학습을 한번에 수행하지 않고
-	 *          각 데이터 별로 학습, 학습결과를 누적하여 batch 단위만큼 학습된 경우
-	 *          누적된 학습결과를 갱신한다. 이 때 누적된 학습결과를 다음 batch 학습을 위해 reset하는 기능을 한다.
-	 *          (GPU 연산에서는 현재 아무일도 하지 않고 있음)
-	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
-	 */
-	virtual void reset_nabla(UINT idx)=0;
-
 	/**
 	 * @details batch 단위의 학습을 종료한 후, 학습 파라미터들을 갱신한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 idx
@@ -58,6 +47,16 @@ public:
 public:
 	HiddenLayer(const string name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
 	virtual rcube &getDeltaInput()=0;
+
+	/**
+	 * @details CPU MODE에서 누적된 학습 parameter값들을 reset한다.
+	 *          현재 CPU_MODE의 경우 batch 단위의 학습을 한번에 수행하지 않고
+	 *          각 데이터 별로 학습, 학습결과를 누적하여 batch 단위만큼 학습된 경우
+	 *          누적된 학습결과를 갱신한다. 이 때 누적된 학습결과를 다음 batch 학습을 위해 reset하는 기능을 한다.
+	 *          (GPU 연산에서는 현재 아무일도 하지 않고 있음)
+	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
+	 */
+	virtual void reset_nabla(UINT idx)=0;
 #else
 public:
 	/**

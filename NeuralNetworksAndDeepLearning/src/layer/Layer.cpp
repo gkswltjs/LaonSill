@@ -19,7 +19,7 @@ Layer::Layer(const string name) {
 void Layer::addPrevLayer(prev_layer_relation prevLayer) { prevLayers.push_back(prevLayer); }
 void Layer::addNextLayer(next_layer_relation nextLayer) { nextLayers.push_back(nextLayer); }
 
-void Layer::reset_nabla(UINT idx) { propResetNParam(); }
+
 void Layer::update(UINT idx, UINT n, UINT miniBatchSize) { propUpdate(n, miniBatchSize); }
 
 void Layer::save(UINT idx, ofstream &ofs) {
@@ -131,11 +131,6 @@ bool Layer::isLastNextLayerRequest(UINT idx) {
 }
 
 
-void Layer::propResetNParam() {
-	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->reset_nabla(nextLayers[i].idx);
-	}
-}
 
 void Layer::propUpdate(UINT n, UINT miniBatchSize) {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
@@ -203,6 +198,11 @@ Layer::~Layer() {
 	//cout << "destroying " << name << " layer ... " << endl;
 }
 
+
+void Layer::reset_nabla(UINT idx) { propResetNParam(); }
+
+
+
 /**
  * 주어진 입력 input에 대해 출력 activation을 계산
  * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
@@ -231,6 +231,11 @@ void Layer::propFeedforward(const rcube output, const char *end=0) {
 }
 
 
+void Layer::propResetNParam() {
+	for(UINT i = 0; i < nextLayers.size(); i++) {
+		nextLayers[i].next_layer->reset_nabla(nextLayers[i].idx);
+	}
+}
 
 
 

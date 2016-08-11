@@ -126,12 +126,7 @@ public:
 	 * @return 현재 레이어에 연결된 마지막 다음 레이어 여부
 	 */
 	bool isLastNextLayerRequest(UINT idx);
-	/**
-	 * @details batch단위로 누적된 gradient를 초기화하고 다음 레이어들에 대해 reset_nabla()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @todo GPU_MODE에서 사용하지 않는다.
-	 */
-	virtual void reset_nabla(UINT idx);
+
 	/**
 	 * @details 계산된 gradient를 각 학습레이어에서 갱신하고 다음 레이어들에 대해 update()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
@@ -216,6 +211,13 @@ public:
 public:
 	Layer(const string name, int n_in, int n_out);
 
+	/**
+	 * @details batch단위로 누적된 gradient를 초기화하고 다음 레이어들에 대해 reset_nabla()를 요청한다.
+	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @todo GPU_MODE에서 사용하지 않는다.
+	 */
+	virtual void reset_nabla(UINT idx);
+
 	rcube &getInput() { return this->input; }
 	rcube &getOutput() { return this->output; }
 
@@ -270,6 +272,19 @@ protected:
 	 */
 	static int generateLayerId();
 
+
+
+
+
+
+
+
+
+	////////////////////////////////////////////////////////////////////
+	// prop 계열의 method (레이어 연결을 따라 연쇄 호출되는 method) 들에 대해
+	// 각 레이어의 실제 작업을 담당하는 method들
+	////////////////////////////////////////////////////////////////////
+
 	/**
 	 * @details 현재 레이어를 스트림에 쓴다.
 	 * @param ofs 레이어를 쓸 출력 스트림
@@ -304,6 +319,14 @@ protected:
 	 */
 	virtual void _scaleParam(DATATYPE scale_factor);
 
+
+
+
+
+	////////////////////////////////////////////////////////////////////
+	// 이전, 이후 레이어로의 method 호출을 담당하는 호출 propagation method들
+	////////////////////////////////////////////////////////////////////
+
 	/**
 	 * @details 다음 레이어들에 대해 shape() 메쏘드를 호출한다.
 	 */
@@ -316,10 +339,6 @@ protected:
 	 * @details 다음 레이어들에 대해 clearShape() 메쏘드를 호출한다.
 	 */
 	void propClearShape();
-	/**
-	 * @details 다음 레이어들에 대해 reset_nabla() 메쏘드를 호출한다.
-	 */
-	void propResetNParam();
 	/**
 	 * @details 다음 레이어들에 대해 update() 메쏘드를 호출한다.
 	 */
@@ -345,6 +364,17 @@ protected:
 	void propScaleParam(DATATYPE scale_factor);
 
 
+
+
+
+
+
+
+
+
+
+
+
 	LayerType type;				///< 레이어의 타입
 	int id;						///< 레이어의 고유 아이디
 	string name;			///< 레이어의 이름
@@ -360,6 +390,10 @@ protected:
 #ifndef GPU_MODE
 protected:
 	void propFeedforward(const rcube output, const char *end=0);
+	/**
+	 * @details 다음 레이어들에 대해 reset_nabla() 메쏘드를 호출한다.
+	 */
+	void propResetNParam();
 
 	rcube input;
 	rcube output;

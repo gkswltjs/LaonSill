@@ -45,7 +45,6 @@ public:
 	virtual ~FullyConnectedLayer();
 
 	virtual void backpropagation(UINT idx, DATATYPE *next_delta_input);
-	virtual void reset_nabla(UINT idx);
 	virtual void update(UINT idx, UINT n, UINT miniBatchSize);
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual bool isLearnable() { return true; }
@@ -63,6 +62,7 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	virtual void feedforward(UINT idx, const rcube &input, const char *end=0);
+	virtual void reset_nabla(UINT idx);
 #else
 public:
 	/**

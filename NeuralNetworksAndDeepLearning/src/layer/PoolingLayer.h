@@ -37,10 +37,6 @@ public:
 	virtual ~PoolingLayer();
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
-	void reset_nabla(UINT idx) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		propResetNParam();
-	}
 	void update(UINT idx, UINT n, UINT miniBatchSize) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		propUpdate(n, miniBatchSize);
@@ -52,6 +48,10 @@ public:
 public:
 	rcube &getDeltaInput() { return this->delta_input; }
 	void feedforward(UINT idx, const rcube &input, const char *end=0);
+	void reset_nabla(UINT idx) {
+		if(!isLastPrevLayerRequest(idx)) throw Exception();
+		propResetNParam();
+	}
 
 #else
 public:

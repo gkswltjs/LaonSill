@@ -31,10 +31,6 @@ public:
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 
-	void reset_nabla(UINT idx) {
-		if(!isLastPrevLayerRequest(idx)) return;
-		propResetNParam();
-	}
 	void update(UINT idx, UINT n, UINT miniBatchSize) {
 		if(!isLastPrevLayerRequest(idx)) return;
 		propUpdate(n, miniBatchSize);
@@ -51,6 +47,10 @@ public:
 	DepthConcatLayer(const string name, int n_in);
 	rcube &getDeltaInput();
 	void feedforward(UINT idx, const rcube &input, const char *end=0);
+	void reset_nabla(UINT idx) {
+		if(!isLastPrevLayerRequest(idx)) return;
+		propResetNParam();
+	}
 #else
 	/**
 	 * @details 조합되어있는 입력에 관한 gradient를 getDeltaInput의 호출 순서에 따라 다시 deconcatenation하여 조회한다.

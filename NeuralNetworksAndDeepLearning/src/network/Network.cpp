@@ -106,7 +106,9 @@ void Network::sgd(int epochs) {
 
 
 			Util::page = j;
+#ifndef GPU_MODE
 			inputLayer->reset_nabla(0);
+#endif
 			updateMiniBatch(j);
 
 		}

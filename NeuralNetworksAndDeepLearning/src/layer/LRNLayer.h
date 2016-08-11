@@ -32,11 +32,7 @@ public:
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 
-	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
-	void reset_nabla(UINT idx) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		propResetNParam();
-	}
+
 	void update(UINT idx, UINT n, UINT miniBatchSize) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		propUpdate(n, miniBatchSize);
@@ -48,6 +44,11 @@ public:
 public:
 	rcube &getDeltaInput() { return delta_input; }
 	void feedforward(UINT idx, const rcube &input, const char *end=0);
+	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
+	void reset_nabla(UINT idx) {
+		if(!isLastPrevLayerRequest(idx)) throw Exception();
+		propResetNParam();
+	}
 #else
 public:
 	DATATYPE *getDeltaInput() { return d_delta_input; }

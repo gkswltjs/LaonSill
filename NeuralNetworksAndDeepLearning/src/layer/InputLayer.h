@@ -31,17 +31,21 @@ class InputLayer : public Layer {
 public:
 	/**
 	 * @details InputLayer 기본 생성자
+	 *          LayerFactory에서 객체 생성을 위해 name 파라미터가 없는 기본 생성자가 필요하다.
 	 */
-	InputLayer() { this->type = LayerType::Input; }
+	InputLayer() {
+		initialize();
+	}
 	/**
 	 * @details InputLayer 생성자
-	 * @param name 레이어의 이름 문자열 포인터
+	 * @param name 레이어의 이름 문자열
 	 */
 	InputLayer(const string name) : Layer(name) {
 		initialize();
 	}
 	/**
 	 * @details InputLayer 소멸자
+	 *          가능성은 낮지만 InputLayer를 상속하는 경우를 대비하여 virtual로 소멸자를 선언했다.
 	 */
 	virtual ~InputLayer() {}
 
@@ -51,9 +55,15 @@ public:
 	 */
 	int getInputDimension() const { return in_dim.rows*in_dim.cols*in_dim.channels; }
 
+	/**
+	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
+	 *          입력 레이어의 경우 시작레이어이기 때문에 자신의 레이어를 쓸 뿐 아니라
+	 *          연결된 이 후의 레이어들의 메타 정보를 기록하는 역할도 한다.
+	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param ofs 레이어를 쓸 출력 스트림
+	 */
 	virtual void save(UINT idx, ofstream &ofs) {
 		saveHeader(0, ofs);
-
 		// header boundary (dummy layer)
 		int type = 0;
 		Layer *layer = 0;

@@ -711,6 +711,7 @@ void ConvLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 }
 
 
+/*
 void ConvLayer::reset_nabla(UINT idx) {
 	// 한번만 초기화하기 위해 마지막 prev layer의 초기화 요청에 대해서만 처리하고
 	// next layer들에 대해서도 초기화 요청한다.
@@ -721,7 +722,7 @@ void ConvLayer::reset_nabla(UINT idx) {
 
 	propResetNParam();
 }
-
+*/
 
 void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
