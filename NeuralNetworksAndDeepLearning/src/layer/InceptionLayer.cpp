@@ -104,14 +104,12 @@ void InceptionLayer::saveNinHeader(UINT idx, ofstream &ofs) {
 
 
 
-void InceptionLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
+void InceptionLayer::_update(UINT n, UINT miniBatchSize) {
 	Util::printMessage("InceptionLayer::update()---"+string(name));
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->update(0, n, miniBatchSize);
 	}
-	propUpdate(n, miniBatchSize);
 }
 
 
@@ -242,7 +240,7 @@ void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5
 
 
 
-void InceptionLayer::feedforward(UINT idx, const rcube &input, const char *end=0) {
+void InceptionLayer::_feedforward(UINT idx, const rcube &input, const char *end=0) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {
@@ -422,7 +420,7 @@ void InceptionLayer::_shape(bool recursive) {
 
 void InceptionLayer::_reshape() {
 	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->clearShape(0);
+		firstLayers[i]->reshape(0, in_dim);
 	}
 	HiddenLayer::_reshape();
 }
@@ -440,9 +438,8 @@ void InceptionLayer::_clearShape() {
 
 
 
-void InceptionLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
-	Util::printMessage("InceptionLayer::feedforward()---"+string(name));
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
+void InceptionLayer::_feedforward(const DATATYPE *input, const char *end) {
+	Util::printMessage("InceptionLayer::_feedforward()---"+string(name));
 
 	this->d_input = input;
 	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
@@ -450,7 +447,6 @@ void InceptionLayer::feedforward(UINT idx, const DATATYPE *input, const char *en
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->feedforward(0, this->d_input, end);
 	}
-	propFeedforward(lastLayer->getOutput(), end);
 }
 
 void InceptionLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
@@ -511,18 +507,18 @@ void InceptionLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 
 
 
-DATATYPE InceptionLayer::_sumSquareParam() {
+DATATYPE InceptionLayer::_sumSquareGrad() {
 	DATATYPE result;
 	for(UINT i = 0; i < firstLayers.size(); i++) {
-		result += firstLayers[i]->sumSquareParam(0);
+		result += firstLayers[i]->sumSquareGrad(0);
 	}
 	return result;
 }
 
-DATATYPE InceptionLayer::_sumSquareParam2() {
+DATATYPE InceptionLayer::_sumSquareParam() {
 	DATATYPE result;
 	for(UINT i = 0; i < firstLayers.size(); i++) {
-		result += firstLayers[i]->sumSquareParam2(0);
+		result += firstLayers[i]->sumSquareParam(0);
 	}
 	return result;
 }

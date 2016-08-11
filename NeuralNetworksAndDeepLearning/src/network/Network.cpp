@@ -66,8 +66,6 @@ void Network::shape(io_dim in_dim) {
 	}
 	inputLayer->shape(0, this->in_dim);
 
-
-
 	//cout << "inputLayer->getInputDimension()*in_dim.batches: " << inputLayer->getInputDimension()*this->in_dim.batches << endl;
 	checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputDimension()*this->in_dim.batches));
 	checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
@@ -514,8 +512,8 @@ void Network::clipGradients() {
 
 	if(clipGradientsLevel < 0) return;
 
-	DATATYPE sumsq_grad = inputLayer->sumSquareParam(0);
-	DATATYPE sumsq_grad2 = inputLayer->sumSquareParam2(0);
+	DATATYPE sumsq_grad = inputLayer->sumSquareGrad(0);
+	DATATYPE sumsq_grad2 = inputLayer->sumSquareParam(0);
 	const DATATYPE l2norm_grad = std::sqrt(sumsq_grad);
 	const DATATYPE l2norm_grad2 = std::sqrt(sumsq_grad2);
 

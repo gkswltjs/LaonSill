@@ -55,7 +55,7 @@ void LRNLayer::initialize(lrn_dim lrn_d) {
 
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::feedforward(UINT idx, const rcube &input, const char *end) {
+void LRNLayer::_feedforward(const rcube &input, const char *end) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	UINT i, j;
@@ -162,10 +162,8 @@ LRNLayer::~LRNLayer() {
 
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
-	Util::printMessage("LRNLayer::feedforward()---"+string(name));
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-
+void LRNLayer::_feedforward(const DATATYPE *input, const char *end) {
+	Util::printMessage("LRNLayer::_feedforward()---"+string(name));
 	this->d_input = input;
 
 	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
@@ -181,8 +179,6 @@ void LRNLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
 		//Util::setPrint(false);
 	//}
-
-	propFeedforward(d_output, end);
 }
 
 

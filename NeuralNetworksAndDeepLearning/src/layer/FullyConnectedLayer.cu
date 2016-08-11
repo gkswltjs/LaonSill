@@ -84,7 +84,7 @@ void FullyConnectedLayer::initialize(double p_dropout, update_param weight_updat
 
 
 
-void FullyConnectedLayer::feedforward(UINT idx, const rcube &input, const char *end) {
+void FullyConnectedLayer::_feedforward(const rcube &input, const char *end) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::printCube(input, "input:");
@@ -437,10 +437,8 @@ __global__ void Dropout(const int n, const DATATYPE* in, const DATATYPE* mask,
 
 
 
-void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-
-	Util::printMessage("FullyConnectedLayer::feedforward()---"+string(name));
+void FullyConnectedLayer::_feedforward(const DATATYPE *input, const char *end) {
+	Util::printMessage("FullyConnectedLayer::_feedforward()---"+string(name));
 	Cuda::refresh();
 
 	this->d_input = input;
@@ -483,12 +481,6 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input, const cha
 	//exit(1);
 
 
-
-
-
-
-
-
 	/*
 	// TODO skip when test
 	if(Util::train && p_dropout < 1.0f) {
@@ -506,11 +498,6 @@ void FullyConnectedLayer::feedforward(UINT idx, const DATATYPE *input, const cha
 		//Util::setPrint(false);
 	}
 	*/
-
-
-
-
-	propFeedforward(this->d_output, end);
 }
 
 void FullyConnectedLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
@@ -591,10 +578,8 @@ void FullyConnectedLayer::reset_nabla(UINT idx) {
 */
 
 
-void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
+void FullyConnectedLayer::_update(UINT n, UINT miniBatchSize) {
 	Util::printMessage("FullyConnectedLayer::update()---"+string(name));
-
 	/*
 	//weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;
 	//bias -= eta/miniBatchSize*nabla_b;
@@ -652,9 +637,6 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_delta_bias_prev, 1));								//
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &learning_scale_b, d_delta_bias, 1, d_delta_bias_prev, 1));	// momentum
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_delta_bias_prev, 1, d_bias, 1));				// update
-
-
-	propUpdate(n, miniBatchSize);
 }
 
 
@@ -728,7 +710,7 @@ void FullyConnectedLayer::_save(ofstream &ofs) {
 }
 
 
-DATATYPE FullyConnectedLayer::_sumSquareParam() {
+DATATYPE FullyConnectedLayer::_sumSquareGrad() {
 	DATATYPE weight_result;
 	DATATYPE bias_result;
 
@@ -743,7 +725,7 @@ DATATYPE FullyConnectedLayer::_sumSquareParam() {
 	return weight_result + bias_result;
 }
 
-DATATYPE FullyConnectedLayer::_sumSquareParam2() {
+DATATYPE FullyConnectedLayer::_sumSquareParam() {
 	DATATYPE weight_result;
 	DATATYPE bias_result;
 

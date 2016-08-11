@@ -13,16 +13,18 @@
 #ifndef LAYER_LAYER_H_
 #define LAYER_LAYER_H_
 
-#include "LayerConfig.h"
-#include "../cuda/Cuda.h"
-#include "../Util.h"
-#include <armadillo>
+#include <cudnn.h>
 #include <iostream>
 #include <map>
+#include <string>
+#include <vector>
+
+#include "../Util.h"
+#include "LayerConfig.h"
 
 using namespace arma;
 
-const int LAYER_NAME_LENGTH = 32;
+
 
 /**
  * @brief 레이어 타입 열거형
@@ -48,6 +50,10 @@ enum class LayerType {
 class Layer {
 
 public:
+	////////////////////////////////////////////////////////////////////
+	// CONSTRUCTOR & DESCTRUCTOR
+	////////////////////////////////////////////////////////////////////
+
 	/**
 	 * @details 레이어 클래스 기본 생성자
 	 */
@@ -63,6 +69,13 @@ public:
 	virtual ~Layer();
 
 
+
+
+
+
+	////////////////////////////////////////////////////////////////////
+	// GETTER & SETTER
+	////////////////////////////////////////////////////////////////////
 
 	/**
 	 * @details 레이어에 부여된 유일한 id값을 조회한다.
@@ -98,12 +111,44 @@ public:
 	 * @details 레이어의 입력 데이터 구조정보를 담고 있는 구조체를 조회한다.
 	 * @return 레이어의 입력 데이터 구조정보를 담고 있는 구조체
 	 */
-	io_dim getInDimension() const { return in_dim; }
+	io_dim getInDimension() const { return this->in_dim; }
 	/**
 	 * @details 레이어의 출력 데이터 구조정보를 담고 있는 구조체를 조회한다.
 	 * @return 레이어의 출력 데이터 구조정보를 담고 있는 구조체
 	 */
-	io_dim getOutDimension() const { return out_dim; }
+	io_dim getOutDimension() const { return this->out_dim; }
+#ifndef GPU_MODE
+	rcube &getInput() { return this->input; }
+	rcube &getOutput() { return this->output; }
+#else
+	/**
+	 * @details 레이어의 입력값 장치 포인터를 조회한다.
+	 * @return 레이어 입력값 장치 포인터
+	 */
+	const DATATYPE *getInput() { return this->d_input; }
+	/**
+	 * @details 레이어의 출력값 장치 포인터를 조회한다.
+	 * @return 레이어 출력값 장치 포인터
+	 */
+	virtual DATATYPE *getOutput() { return this->d_output; }
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	////////////////////////////////////////////////////////////////////
+	//
+	////////////////////////////////////////////////////////////////////
 	/**
 	 * @details 레이어에 이전 레이어를 추가한다.
 	 * @param prevLayer 현재 레이어에 연결할 이전 레이어의 정보 구조체
@@ -127,42 +172,18 @@ public:
 	 */
 	bool isLastNextLayerRequest(UINT idx);
 
-	/**
-	 * @details 계산된 gradient를 각 학습레이어에서 갱신하고 다음 레이어들에 대해 update()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param n 학습 데이터의 수
-	 * @param miniBatchSize 학습에 사용한 batch 사이즈
-	 */
-	virtual void update(UINT idx, UINT n, UINT miniBatchSize);
+
 
 
 
 	/**
 	 * @details 현재 레이어가 찾으려는 레이어인지 확인하고 아닌 경우 다음 레이어들에 대해 find()를 요청한다.
+	 *          InceptionLayer와 같은 특수 레이어들에서 자체적인 find() 기능을 구현해야 해서 가상함수이다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param name 찾고자 하는 레이어의 이름
 	 * @return 찾은 레이어에 대한 포인터, 해당하는 레이어가 없는 경우 0
 	 */
 	virtual Layer* find(UINT idx, const string name);
-	/**
-	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param ofs 레이어를 쓸 출력 스트림
-	 */
-	virtual void save(UINT idx, ofstream &ofs);
-	/**
-	 * @details 현재 레이어의 메타정보를 스트림의 헤더에 쓰고 다음 레이어들에 대해 saveHeader()를 요청한다.
-	 *          입력 레이어 또는 내부 레이어가 있는 레이어(e.g 인셉션레이어)에서 사용한다.
-	 * @param  idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param ofs 레이어를 쓸 출력 스트림
-	 */
-	virtual void saveHeader(UINT idx, ofstream &ofs);
-	/**
-	 * @details 현재 레이어를 스트림으로부터 읽어 들이고 다음 레이어들에 대해 load()를 요청한다.
-	 * @param ifs 레이어를 읽어들일 입력 스트림
-	 * @param layerMap
-	 */
-	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	/**
 	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화하고
 	 *          다음 레이어들에 대해 shape()를 요청한다.
@@ -181,66 +202,70 @@ public:
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 */
 	virtual void clearShape(UINT idx);
-
-	/**
-	 * @details 학습하는 레이어인지 여부를 조회한다.
-	 * @return 학습하는 레이어인지 여부
-	 */
-	virtual bool isLearnable() { return false; }
 	/**
 	 * @details 학습 파라미터(weight, bias등)의 gradient에 대한 square sum값을 구하고
-	 *          다음 레이어들에 대해 sumSquareParam()을 요청한다.
+	 *          다음 레이어들에 대해 sumSquareGrad()을 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @return 학습 파라미터 gradient에 대한 square sum값
 	 */
-	virtual DATATYPE sumSquareParam(UINT idx);
+	virtual DATATYPE sumSquareGrad(UINT idx);
 	/**
-	 * @details 학습 파라미터(weight, bias등)에 대한 square sum값을 구하고 다음 레이어들에 대해 sumSquareParam2()를 요청한다.
+	 * @details 학습 파라미터(weight, bias등)에 대한 square sum값을 구하고 다음 레이어들에 대해 sumSquareParam()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @return 학습 파리미터에 대한 square sum값
 	 */
-	virtual DATATYPE sumSquareParam2(UINT idx);
+	virtual DATATYPE sumSquareParam(UINT idx);
 	/**
 	 * @details 학습 파라미터의 gradient를 스케일링하고 다음 레이어들에 대해 scaleParam()을 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param 학습 파라미터 스케일링 팩터
 	 */
 	virtual void scaleParam(UINT idx, DATATYPE scale_factor);
-
-#ifndef GPU_MODE
-public:
-	Layer(const string name, int n_in, int n_out);
-
 	/**
-	 * @details batch단위로 누적된 gradient를 초기화하고 다음 레이어들에 대해 reset_nabla()를 요청한다.
+	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @todo GPU_MODE에서 사용하지 않는다.
+	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	virtual void reset_nabla(UINT idx);
-
-	rcube &getInput() { return this->input; }
-	rcube &getOutput() { return this->output; }
-
+	virtual void save(UINT idx, ofstream &ofs);
+	/**
+	 * @details 현재 레이어의 메타정보를 스트림의 헤더에 쓰고 다음 레이어들에 대해 saveHeader()를 요청한다.
+	 *          입력 레이어 또는 내부 레이어가 있는 레이어(e.g 인셉션레이어)에서 사용한다.
+	 * @param  idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param ofs 레이어를 쓸 출력 스트림
+	 */
+	virtual void saveHeader(UINT idx, ofstream &ofs);
+	/**
+	 * @details 현재 레이어를 스트림으로부터 읽어 들여 복구한다.
+	 *          - 레이어의 상속받은 상위 클래스 영역 읽기 및 초기화 (_shape() 포함, Layer 클래스 제외)
+	 *          - 현재 클래스 영역 읽기 및 초기화 (_shape() 포함)
+	 *          읽기에 대해서 최초 레이어 (입력 레이어)에서 글로벌하게 진행.
+	 * @param ifs 레이어를 읽어들일 입력 스트림
+	 * @param layerMap
+	 */
+	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	/**
+	 * @details 계산된 gradient를 각 학습레이어에서 갱신하고 다음 레이어들에 대해 update()를 요청한다.
+	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param n 학습 데이터의 수
+	 * @param miniBatchSize 학습에 사용한 batch 사이즈
+	 */
+	virtual void update(UINT idx, UINT n, UINT miniBatchSize);
+#ifndef GPU_MODE
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	// sub class에서 구현이 없을 때에만 참조, 구현이 있을 경우 prop*() 함수를 참조
 	virtual void feedforward(UINT idx, const rcube &input, const char *end=0);
+	/**
+	 * @details batch단위로 누적된 gradient를 초기화하고 다음 레이어들에 대해 reset_nabla()를 요청한다.
+	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @todo GPU_MODE에서 사용하지 않는다.
+	 */
+	virtual void reset_nabla(UINT idx);
 #else
-public:
 	/**
-	 * @details 레이어의 입력값 장치 포인터를 조회한다.
-	 * @return 레이어 입력값 장치 포인터
-	 */
-	const DATATYPE *getInput() { return this->d_input; }
-	/**
-	 * @details 레이어의 출력값 장치 포인터를 조회한다.
-	 * @return 레이어 출력값 장치 포인터
-	 */
-	virtual DATATYPE *getOutput() { return this->d_output; }
-	/**
-	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
+	 * @details 레이어 입력값을 전달받아 출력값을 계산하고 다음 레이어들에 대해 feedforward()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
@@ -248,7 +273,21 @@ public:
 	virtual void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 #endif
 
+
+
+
+
 protected:
+	/**
+	 * @details 유일한 레이어 아이디를 생성한다.
+	 * @return 생성된 레이어 아이디
+	 */
+	static int generateLayerId();
+
+
+
+
+
 	/**
 	 * @details 레이어를 초기화한다.
 	 * @param name 레이어의 이름 문자열 포인터
@@ -266,11 +305,7 @@ protected:
 	 * @param layerMap save당시 레이어의 주소를 키, 해당 레이어를 값으로 하는 맵
 	 */
 	virtual void updateLayerRelation(map<Layer *, Layer *> &layerMap);
-	/**
-	 * @details 유일한 레이어 아이디를 생성한다.
-	 * @return 생성된 레이어 아이디
-	 */
-	static int generateLayerId();
+
 
 
 
@@ -285,11 +320,6 @@ protected:
 	// 각 레이어의 실제 작업을 담당하는 method들
 	////////////////////////////////////////////////////////////////////
 
-	/**
-	 * @details 현재 레이어를 스트림에 쓴다.
-	 * @param ofs 레이어를 쓸 출력 스트림
-	 */
-	virtual void _save(ofstream &ofs);
 	/**
 	 * @details 현재 레이어의 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화한다.
 	 * @param recursive 상위 레이어에 대해서 _shape()를 재귀적으로 호출할 것인지 여부
@@ -307,17 +337,38 @@ protected:
 	 * @details 학습 파라미터(weight, bias등)의 gradient에 대한 square sum값을 구한다.
 	 * @return 학습 파라미터의 gradient에 대한 square sum값
 	 */
-	virtual DATATYPE _sumSquareParam();
+	virtual DATATYPE _sumSquareGrad();
 	/**
 	 * @details 학습 파라미터(weight, bias등)에 대한 square sum값을 구한다.
 	 * @return 학습 파라미터에 대한 square sum값
 	 */
-	virtual DATATYPE _sumSquareParam2();
+	virtual DATATYPE _sumSquareParam();
 	/**
 	 * @details 학습 파라미터의 gradient를 스케일링한다.
 	 * @param scale_factor 학습 파라미터의 gradient를 스케일할 팩터
 	 */
 	virtual void _scaleParam(DATATYPE scale_factor);
+	/**
+	 * @details 현재 레이어를 스트림에 쓴다.
+	 * @param ofs 레이어를 쓸 출력 스트림
+	 */
+	virtual void _save(ofstream &ofs);
+	/**
+	 * @details 계산된 gradient를 각 학습레이어에서 갱신한다.
+	 * @param n 학습 데이터의 수
+	 * @param miniBatchSize 학습에 사용한 batch 사이즈
+	 */
+	virtual void _update(UINT n, UINT miniBatchSize);
+	/**
+	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
+	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
+	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
+	 */
+	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+
+
+
+
 
 
 
@@ -340,74 +391,69 @@ protected:
 	 */
 	void propClearShape();
 	/**
-	 * @details 다음 레이어들에 대해 update() 메쏘드를 호출한다.
+	 * @details 다음 레이어들에 대해 sumSquareGrad() 메쏘드를 호출한다.
+	 * @return 다음 레이어들로부터 계산된 square sum값의 합
 	 */
-	void propUpdate(UINT n, UINT miniBatchSize);
-	/**
-	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
-	 */
-	void propSave(ofstream &ofs);
+	DATATYPE propSumSquareGrad();
 	/**
 	 * @details 다음 레이어들에 대해 sumSquareParam() 메쏘드를 호출한다.
 	 * @return 다음 레이어들로부터 계산된 square sum값의 합
 	 */
 	DATATYPE propSumSquareParam();
 	/**
-	 * @details 다음 레이어들에 대해 sumSquareParam2() 메쏘드를 호출한다.
-	 * @return 다음 레이어들로부터 계산된 square sum값의 합
-	 */
-	DATATYPE propSumSquareParam2();
-	/**
 	 * @details 다음 레이어들에 대해 scaleParam() 메쏘드를 호출한다.
 	 * @param scale_factor 학습 파라미터의 gradient를 스케일할 팩터
 	 */
 	void propScaleParam(DATATYPE scale_factor);
-
-
-
-
-
-
-
-
-
-
-
-
-
-	LayerType type;				///< 레이어의 타입
-	int id;						///< 레이어의 고유 아이디
-	string name;			///< 레이어의 이름
-
-	io_dim in_dim;				///< 레이어의 입력 데이터 구조 정보
-	io_dim out_dim;				///< 레이어의 출력 데이터 구조 정보
-
-	vector<prev_layer_relation> prevLayers;			///< 현재 레이어의 이전(입력) 레이어 목록 벡터
-	vector<next_layer_relation> nextLayers;			///< 현재 레이어의 다음(출력) 레이어 목록 벡터
-
-	static int layerCount;							///< 레이어의 고유 아이디 생성을 위한 레이어 카운터
-
+	/**
+	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
+	 */
+	void propSave(ofstream &ofs);
+	/**
+	 * @details 다음 레이어들에 대해 update() 메쏘드를 호출한다.
+	 */
+	void propUpdate(UINT n, UINT miniBatchSize);
 #ifndef GPU_MODE
-protected:
+	/**
+	 * @details 다음 레이어들에 대해 feedforward() 메쏘드를 호출한다.
+	 * @param output 현재 레이어의 출력값 장치 메모리 포인터
+	 * @param end feedforward 중단 레이어의 이름 (0인 경우 최종 output레이어가 중단 레이어)
+	 */
 	void propFeedforward(const rcube output, const char *end=0);
 	/**
 	 * @details 다음 레이어들에 대해 reset_nabla() 메쏘드를 호출한다.
 	 */
 	void propResetNParam();
-
-	rcube input;
-	rcube output;
 #else
-protected:
 	/**
 	 * @details 다음 레이어들에 대해 feedforward() 메쏘드를 호출한다.
 	 * @param output 현재 레이어의 출력값 장치 메모리 포인터
 	 * @param end feedforward 중단 레이어의 이름 (0인 경우 최종 output레이어가 중단 레이어)
 	 */
 	void propFeedforward(const DATATYPE *output, const char *end=0);
+#endif
 
-	const DATATYPE* d_input;			///< 현재 레이어의 입력값 장치 메모리 포인터 (이전 레이어의 출력값 메모리 포인터를 공유)
-	DATATYPE *d_output;					///< 현재 레이어의 출력값 장치 메모리 포인터 (고유한 장치 할당 메모리 포인터)
+
+
+
+
+protected:
+	LayerType type;										///< 레이어의 타입
+	int id;												///< 레이어의 고유 아이디
+	string name;										///< 레이어의 이름
+
+	io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
+	io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
+
+	vector<prev_layer_relation> prevLayers;				///< 현재 레이어의 이전(입력) 레이어 목록 벡터
+	vector<next_layer_relation> nextLayers;				///< 현재 레이어의 다음(출력) 레이어 목록 벡터
+
+#ifndef GPU_MODE
+	rcube input;
+	rcube output;
+#else
+	const DATATYPE* d_input;							///< 현재 레이어의 입력값 장치 메모리 포인터 (이전 레이어의 출력값 메모리 포인터를 공유)
+	DATATYPE *d_output;									///< 현재 레이어의 출력값 장치 메모리 포인터 (고유한 장치 할당 메모리 포인터)
 
 	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
@@ -415,6 +461,9 @@ protected:
 
 
 
+
+	static int layerCount;								///< 레이어의 고유 아이디 생성을 위한 레이어 카운터
+	static const int LAYER_NAME_LENGTH = 32;
 };
 
 

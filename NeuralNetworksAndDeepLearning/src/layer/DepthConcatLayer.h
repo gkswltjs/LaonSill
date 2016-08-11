@@ -30,23 +30,25 @@ public:
 	virtual ~DepthConcatLayer();
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
-
-	void update(UINT idx, UINT n, UINT miniBatchSize) {
-		if(!isLastPrevLayerRequest(idx)) return;
-		propUpdate(n, miniBatchSize);
-	}
-
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 	virtual void shape(UINT idx, io_dim in_dim);
 	virtual void reshape(UINT idx, io_dim in_dim);
 	virtual void clearShape(UINT idx);
+	/**
+	 * @details 레이어 입력값을 전달받아 출력값을 계산하고 다음 레이어들에 대해 feedforward()를 요청한다.
+	 *          하나의 입력만을 처리하는 다른 레이어와는 달리 연결된 이전 레이어의 입력을 모두 concat하는 특수 기능을 구현한다.ㅈ
+	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
+	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
+	 */
+	virtual void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 
 #ifndef GPU_MODE
 public:
 	DepthConcatLayer(const string name, int n_in);
 	rcube &getDeltaInput();
-	void feedforward(UINT idx, const rcube &input, const char *end=0);
+	virtual void _feedforward(const rcube &input, const char *end=0);
 	void reset_nabla(UINT idx) {
 		if(!isLastPrevLayerRequest(idx)) return;
 		propResetNParam();
@@ -59,7 +61,7 @@ public:
 	 * @return getDeltaInput() 순서에 따라 deconcate된 d_delta_input 장치 메모리 포인터
 	 */
 	DATATYPE *getDeltaInput();
-	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
+
 #endif
 
 
@@ -68,6 +70,7 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
+	void concatInput(UINT idx, const DATATYPE* input);
 
 	int offsetIndex;			///< 입력에 관한 gradient 호출한 횟수 카운터, getDeltaInput() 호출마다 증가되고 feedforward()가 수행될 때 reset된다.
 

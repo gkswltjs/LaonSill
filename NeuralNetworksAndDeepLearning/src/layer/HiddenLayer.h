@@ -34,13 +34,6 @@ public:
 	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
 	 */
 	virtual void backpropagation(UINT idx, DATATYPE *next_delta_input) { propBackpropagation(); }
-	/**
-	 * @details batch 단위의 학습을 종료한 후, 학습 파라미터들을 갱신한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 idx
-	 * @param n 전체 학습 데이터의 수
-	 * @param miniBatchSize batch 사이즈
-	 */
-	virtual void update(UINT idx, UINT n, UINT miniBatchSize)=0;
 
 
 #ifndef GPU_MODE

@@ -37,17 +37,13 @@ public:
 	virtual ~PoolingLayer();
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
-	void update(UINT idx, UINT n, UINT miniBatchSize) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		propUpdate(n, miniBatchSize);
-	}
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 
 #ifndef GPU_MODE
 public:
 	rcube &getDeltaInput() { return this->delta_input; }
-	void feedforward(UINT idx, const rcube &input, const char *end=0);
+	void _feedforward(UINT idx, const rcube &input, const char *end=0);
 	void reset_nabla(UINT idx) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
 		propResetNParam();
@@ -56,7 +52,7 @@ public:
 #else
 public:
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
+
 #endif
 
 protected:
@@ -64,6 +60,7 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
+	virtual void _feedforward(const DATATYPE *input, const char *end=0);
 
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
 	Pooling *pooling_fn;			///< 풀링 객체

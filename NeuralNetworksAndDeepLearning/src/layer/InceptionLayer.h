@@ -43,7 +43,7 @@ public:
 	virtual DATATYPE *getOutput() { return lastLayer->getOutput(); }
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
-	void update(UINT idx, UINT n, UINT miniBatchSize);
+
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	/**
@@ -54,19 +54,17 @@ public:
 	void saveNinHeader(UINT idx, ofstream &ofs);
 	virtual Layer* find(UINT idx, const char* name);
 
-	virtual bool isLearnable() { return true; }
-
 
 #ifndef GPU_MODE
 public:
 	InceptionLayer(const string name, int n_in, int n_out, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 	rcube &getDeltaInput() { return this->delta_input; }
-	void feedforward(UINT idx, const rcube &input, const char *end=0);
+	void _feedforward(const rcube &input, const char *end=0);
 	void reset_nabla(UINT idx);
 #else
 public:
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
+	void _feedforward(const DATATYPE *input, const char *end=0);
 #endif
 
 protected:
@@ -78,9 +76,10 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _reshape();
 	virtual void _clearShape();
+	virtual DATATYPE _sumSquareGrad();
 	virtual DATATYPE _sumSquareParam();
-	virtual DATATYPE _sumSquareParam2();
 	virtual void _scaleParam(DATATYPE scale_factor);
+	virtual void _update(UINT n, UINT miniBatchSize);
 
 	//InputLayer *inputLayer;
 	vector<HiddenLayer *> firstLayers;				///< 인셉션 레이어 내부 네트워크의 시작 레이어 포인터 목록 벡터

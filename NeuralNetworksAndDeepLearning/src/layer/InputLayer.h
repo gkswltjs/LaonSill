@@ -89,7 +89,7 @@ public:
 	 * Input 무조건 첫번째 layer,
 	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
 	 */
-	void feedforward(UINT idx, const rcube &input, const char *end=0) {
+	void _feedforward(const rcube &input, const char *end=0) {
 		//if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 		Util::convertCube(input, this->input);
@@ -102,12 +102,8 @@ public:
 
 #else
 public:
-	void feedforward(UINT idx, const DATATYPE *input, const char *end=0) {
-		Util::printMessage("InputLayer::feedforward()---"+string(name));
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-
-		Cuda::refresh();
-
+	void _feedforward(const DATATYPE *input, const char *end=0) {
+		Util::printMessage("InputLayer::_feedforward()---"+string(name));
 		this->d_input = input;
 		//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
 
@@ -117,10 +113,6 @@ public:
 		//checkCudaErrors(cublasSnrm2(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), this->d_output, 1, &norm));
 		//norm = 1.0f/norm;
 		//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &norm, this->d_output, 1));
-
-		//exit(1);
-
-		propFeedforward(this->d_output, end);
 	}
 #endif
 

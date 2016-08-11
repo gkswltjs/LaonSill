@@ -47,9 +47,8 @@ public:
 	filter_dim &get_filter_dim() { return this->filter_d; }
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 
-	void update(UINT idx, UINT n, UINT miniBatchSize);
+
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	virtual bool isLearnable() { return true; }
 
 #ifndef GPU_MODE
 public:
@@ -62,7 +61,7 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	void feedforward(UINT idx, const rcube &input, const char *end=0);
+	virtual void _feedforward(const rcube &input, const char *end=0);
 
 #else
 	//static void init();
@@ -70,7 +69,7 @@ public:
 
 	DATATYPE *getWeight() { return this->filters; }
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
+
 #endif
 
 
@@ -81,9 +80,11 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
+	virtual DATATYPE _sumSquareGrad();
 	virtual DATATYPE _sumSquareParam();
-	virtual DATATYPE _sumSquareParam2();
 	virtual void _scaleParam(DATATYPE scale_factor);
+	virtual void _update(UINT n, UINT miniBatchSize);
+	virtual void _feedforward(const DATATYPE *input, const char *end=0);
 
 	filter_dim filter_d;							///< 컨볼루션 연산 관련 파라미터 구조체
 	Activation *activation_fn;						///< 활성화 객체

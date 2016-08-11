@@ -32,18 +32,12 @@ public:
 
 	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 
-
-	void update(UINT idx, UINT n, UINT miniBatchSize) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		propUpdate(n, miniBatchSize);
-	}
-
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 #ifndef GPU_MODE
 public:
 	rcube &getDeltaInput() { return delta_input; }
-	void feedforward(UINT idx, const rcube &input, const char *end=0);
+	void _feedforward(UINT idx, const rcube &input, const char *end=0);
 	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
 	void reset_nabla(UINT idx) {
 		if(!isLastPrevLayerRequest(idx)) throw Exception();
@@ -52,7 +46,7 @@ public:
 #else
 public:
 	DATATYPE *getDeltaInput() { return d_delta_input; }
-	void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
+
 #endif
 
 
@@ -62,6 +56,7 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
+	virtual void _feedforward(const DATATYPE *input, const char *end=0);
 
 	lrn_dim lrn_d;					///< LRN 연산 관련 파라미터 구조체
 

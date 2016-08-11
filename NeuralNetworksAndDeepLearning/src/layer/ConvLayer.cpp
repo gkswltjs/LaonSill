@@ -96,7 +96,7 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 
 
 
-void ConvLayer::feedforward(UINT idx, const rcube &input, const char *end) {
+void ConvLayer::_feedforward(const rcube &input, const char *end) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	// 현재 CONV 레이어의 경우 여러 레이어로 값이 전달되지 않기 때문에 무의미하다.
@@ -634,10 +634,8 @@ void ConvLayer::_clearShape() {
 
 
 
-void ConvLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-	Util::printMessage("ConvLayer::feedforward()---"+string(name));
-	Cuda::refresh();
+void ConvLayer::_feedforward(const DATATYPE *input, const char *end) {
+	Util::printMessage("ConvLayer::_feedforward()---"+string(name));
 
 	//Util::setPrint(true);
 	this->d_input = input;
@@ -665,8 +663,6 @@ void ConvLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
 		//Util::setPrint(false);
 	//}
-
-	propFeedforward(d_output, end);
 }
 
 
@@ -724,9 +720,7 @@ void ConvLayer::reset_nabla(UINT idx) {
 }
 */
 
-void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-
+void ConvLayer::_update(UINT n, UINT miniBatchSize) {
 	Util::printMessage("ConvLayer::update()---"+string(name));
 	//Util::setPrint(true);
 
@@ -760,8 +754,6 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
 	*/
 
-
-
 	int weight_size = filter_d.size();
 	DATATYPE norm_scale = 1.0/in_dim.batches;
 	DATATYPE reg_scale = weight_update_param.decay_mult;
@@ -785,12 +777,6 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &learning_scale_b, d_delta_bias, 1, d_delta_bias_prev, 1));	// momentum
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_delta_bias_prev, 1, d_biases, 1));			// update
 
-
-
-
-	//Util::setPrint(false);
-
-	propUpdate(n, miniBatchSize);
 }
 
 void ConvLayer::_save(ofstream &ofs) {
@@ -839,7 +825,7 @@ void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 
-DATATYPE ConvLayer::_sumSquareParam() {
+DATATYPE ConvLayer::_sumSquareGrad() {
 	DATATYPE weight_result;
 	DATATYPE bias_result;
 
@@ -854,7 +840,7 @@ DATATYPE ConvLayer::_sumSquareParam() {
 }
 
 
-DATATYPE ConvLayer::_sumSquareParam2() {
+DATATYPE ConvLayer::_sumSquareParam() {
 	DATATYPE weight_result;
 	DATATYPE bias_result;
 

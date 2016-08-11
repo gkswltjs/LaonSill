@@ -166,7 +166,7 @@ void network_test(double lr, double wd, int batches) {
 	Cuda::create(0);
 	cout << "Cuda creation done ... " << endl;
 
-	bool debug = false;
+	bool debug = true;
 	double validationSetRatio = 1.0/6.0;
 
 	if(!debug) {
@@ -218,7 +218,7 @@ void network_test(double lr, double wd, int batches) {
 		*/
 
 	} else {
-		Util::setPrint(false);
+		Util::setPrint(true);
 
 		int numTrainData = 4;
 		int numTestData = 4;
@@ -233,50 +233,33 @@ void network_test(double lr, double wd, int batches) {
 		dataSet->load();
 
 		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
-		NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
+		//NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
 		Evaluation* top1Evaluation = new Top1Evaluation();
-		Evaluation* top5Evaluation = new Top5Evaluation();
-
-		/*
-		for(int i = 0; i < numTrainData; i++) {
-			Util::printData(dataSet->getTrainDataAt(i), 5, 5, channels, 1, "train_data");
-			cout << i << "th label: " << dataSet->getTrainLabelAt(i)[0] << endl;
-		}
-		for(int i = 0; i < numTestData; i++) {
-			Util::printData(dataSet->getTestDataAt(i), 5, 5, channels, 1, "test_data");
-			cout << i << "th label: " << dataSet->getTestLabelAt(i)[0] << endl;
-		}
-		*/
+		//Evaluation* top5Evaluation = new Top5Evaluation();
 
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 		InputLayer *inputLayer = new InputLayer("input");
-
-		//HiddenLayer *poolingLayer = new PoolingLayer("pool1", pool_dim(2, 2, 2), PoolingType::Max);
 		HiddenLayer *inceptionLayer = new InceptionLayer(
 				"inception",
 				1,
 				3, 2, 3, 2, 4, 5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult));
-
 		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", numLabels, 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1));
 
-		//Network::addLayerRelation(inputLayer, poolingLayer);
-		//Network::addLayerRelation(poolingLayer, softmaxLayer);
 		Network::addLayerRelation(inputLayer, inceptionLayer);
 		Network::addLayerRelation(inceptionLayer, softmaxLayer);
-		//Network::addLayerRelation(InceptionLayer, )
-		//		softmaxLayer);
 
 		Network *network = new Network(inputLayer, softmaxLayer, dataSet, top1Listener);
 		network->setDataSet(dataSet, batchSize);
 		network->addEvaluation(top1Evaluation);
 		network->shape();
+		network->reshape(io_dim(4, 4, 1, 2));
 		network->sgd(maxEpoch);
 	}
 

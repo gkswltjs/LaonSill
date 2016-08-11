@@ -44,10 +44,9 @@ public:
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
 	virtual ~FullyConnectedLayer();
 
-	virtual void backpropagation(UINT idx, DATATYPE *next_delta_input);
-	virtual void update(UINT idx, UINT n, UINT miniBatchSize);
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	virtual bool isLearnable() { return true; }
+	virtual void backpropagation(UINT idx, DATATYPE *next_delta_input);
+	virtual void _update(UINT n, UINT miniBatchSize);
 
 #ifndef GPU_MODE
 public:
@@ -61,7 +60,7 @@ public:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void feedforward(UINT idx, const rcube &input, const char *end=0);
+	virtual void _feedforward(const rcube &input, const char *end=0);
 	virtual void reset_nabla(UINT idx);
 #else
 public:
@@ -71,7 +70,7 @@ public:
 	 */
 	DATATYPE *getWeight() { return this->d_weight; }
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-	virtual void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
+
 
 #endif
 
@@ -87,9 +86,10 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
+	virtual DATATYPE _sumSquareGrad();
 	virtual DATATYPE _sumSquareParam();
-	virtual DATATYPE _sumSquareParam2();
 	virtual void _scaleParam(DATATYPE scale_factor);
+	virtual void _feedforward(const DATATYPE *input, const char *end=0);
 
 	double p_dropout;						///< dropout을 적용할 확율
 

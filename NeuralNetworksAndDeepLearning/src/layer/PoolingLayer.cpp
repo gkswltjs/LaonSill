@@ -65,7 +65,7 @@ PoolingLayer::~PoolingLayer() {
 	PoolingFactory::destroy(pooling_fn);
 }
 
-void PoolingLayer::feedforward(UINT idx, const rcube &input, const char *end=0) {
+void PoolingLayer::_feedforward(UINT idx, const rcube &input, const char *end=0) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::convertCube(input, this->input);
@@ -151,9 +151,8 @@ PoolingLayer::~PoolingLayer() {
 }
 
 
-void PoolingLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
-	Util::printMessage("PoolingLayer::feedforward()---"+string(name));
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
+void PoolingLayer::_feedforward(const DATATYPE *input, const char *end) {
+	Util::printMessage("PoolingLayer::_feedforward()---"+string(name));
 	this->d_input = input;
 
 	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
@@ -167,7 +166,6 @@ void PoolingLayer::feedforward(UINT idx, const DATATYPE *input, const char *end)
 		//Util::setPrint(false);
 	//}
 
-	propFeedforward(d_output, end);
 }
 
 
