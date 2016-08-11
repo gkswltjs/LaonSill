@@ -2,7 +2,7 @@
 #include "LogLikelihoodCost.h"
 
 
-#if CPU_MODE == 0
+#ifdef GPU_MODE
 /**
  * Computes the backpropagation results of the Softmax loss for each result in a batch.
  * Uses the softmax values obtained from forward propagation to compute the difference.
@@ -30,7 +30,7 @@ LogLikelihoodCost::LogLikelihoodCost() {
 }
 LogLikelihoodCost::~LogLikelihoodCost() {}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 double LogLikelihoodCost::fn(const rvec *pA, const rvec *pY) {
 	return 0.0;
 }

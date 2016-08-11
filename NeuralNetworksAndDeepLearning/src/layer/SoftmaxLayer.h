@@ -47,7 +47,7 @@ public:
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	SoftmaxLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler)
@@ -81,7 +81,7 @@ public:
 
 protected:
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	void initialize() {
 		this->type = LayerType::Softmax;

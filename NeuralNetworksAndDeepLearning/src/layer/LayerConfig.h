@@ -161,7 +161,7 @@ struct param_filler {
 		this->value = value;
 	}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 	void fill(rvec &param, int n_in) {
 		switch(type) {
 		case ParamFillerType::Constant: param.fill(value); break;

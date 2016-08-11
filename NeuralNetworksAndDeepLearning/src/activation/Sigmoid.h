@@ -22,7 +22,7 @@ class Sigmoid : public Activation {
 public:
 	virtual ~Sigmoid() {}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	Sigmoid() {
 		this->type = ActivationType::Sigmoid;

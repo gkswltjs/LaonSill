@@ -51,7 +51,7 @@ public:
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual bool isLearnable() { return true; }
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 
 	rcube *getWeight() { return this->filters; }
@@ -93,7 +93,7 @@ protected:
 	param_filler weight_filler;						///< weight 초기화 관련 파라미터 구조체
 	param_filler bias_filler;						///< bias 초기화 관련 파라미터 구조체
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
 	void dw_convolution(const rmat &d, const rmat &x, rmat &result);

@@ -20,7 +20,7 @@ ConvLayer::ConvLayer(const char *name, filter_dim filter_d, update_param weight_
 }
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 
 ConvLayer::~ConvLayer() {
 	ActivationFactory::destory(activation_fn);

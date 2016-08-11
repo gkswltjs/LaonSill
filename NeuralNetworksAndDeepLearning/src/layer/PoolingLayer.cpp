@@ -41,7 +41,7 @@ void PoolingLayer::_save(ofstream &ofs) {
 
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 void PoolingLayer::initialize(pool_dim pool_d, PoolingType poolingType) {
 	this->type = LayerType::Pooling;
 

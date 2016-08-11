@@ -18,7 +18,7 @@ void DepthConcatLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	DepthConcatLayer::_shape(false);
 }
 
-#if CPU_MODE
+#ifndef GPU_MODE
 DepthConcatLayer::DepthConcatLayer(const char *name, int n_in)
 	: HiddenLayer(name, n_in, n_in) {
 	initialize();

@@ -48,7 +48,7 @@ public:
 		CostFactory::destroy(cost_fn);
 	};
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	OutputLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
@@ -106,7 +106,7 @@ protected:
 		FullyConnectedLayer::_clearShape();
 	}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	virtual void _save(ofstream &ofs) {
 		FullyConnectedLayer::_save(ofs);

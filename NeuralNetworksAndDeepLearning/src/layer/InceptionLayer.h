@@ -58,7 +58,7 @@ public:
 	virtual bool isLearnable() { return true; }
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	InceptionLayer(const char *name, int n_in, int n_out, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp);
 	rcube &getDeltaInput() { return this->delta_input; }
@@ -86,12 +86,13 @@ protected:
 	vector<HiddenLayer *> firstLayers;				///< 인셉션 레이어 내부 네트워크의 시작 레이어 포인터 목록 벡터
 	HiddenLayer *lastLayer;							///< 인셉션 레이어 내부 네트워크의 출력 레이어 포인터
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	rcube delta_input;
 #else
 protected:
 	const float alpha=1.0f, beta=0.0f;				///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
+#endif
 
 
 

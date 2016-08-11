@@ -62,6 +62,8 @@ public:
 	 */
 	virtual ~Layer();
 
+
+
 	/**
 	 * @details 레이어에 부여된 유일한 id값을 조회한다.
 	 * @return 레이어 id
@@ -71,27 +73,27 @@ public:
 	 * @biref 레이어의 타입을 조회한다.
 	 * @return 레이어 타입
 	 */
-	LayerType getType() { return this->type; }
+	LayerType getType() const { return this->type; }
 	/**
 	 * @details 레이어에 연결된 다음 레이어 목록 벡터를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어 목록 벡터
 	 */
-	vector<next_layer_relation> &getNextLayers() { return this->nextLayers; }
+	vector<next_layer_relation>& getNextLayers() { return this->nextLayers; }
 	/**
 	 * @details 레이어에 연결된 이전 레이어 목록 벡터를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어 목록 벡터
 	 */
-	vector<prev_layer_relation> &getPrevLayers() { return this->prevLayers; }
+	vector<prev_layer_relation>& getPrevLayers() { return this->prevLayers; }
 	/**
 	 * @details 레이어에 연결된 다음 레이어의 수를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어의 수
 	 */
-	int getNextLayerSize() { return this->nextLayers.size(); }
+	int getNextLayerSize() const { return this->nextLayers.size(); }
 	/**
 	 * @details 레이어에 연결된 이전 레이어의 수를 조회한다.
 	 * @return 레이어에 연결된 이전 레이어의 수
 	 */
-	int getPrevLayerSize() { return this->prevLayers.size(); }
+	int getPrevLayerSize() const { return this->prevLayers.size(); }
 	/**
 	 * @details 레이어의 입력 데이터 구조정보를 담고 있는 구조체를 조회한다.
 	 * @return 레이어의 입력 데이터 구조정보를 담고 있는 구조체
@@ -210,7 +212,7 @@ public:
 	 */
 	virtual void scaleParam(UINT idx, DATATYPE scale_factor);
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	Layer(const char *name, int n_in, int n_out);
 
@@ -355,7 +357,7 @@ protected:
 
 	static int layerCount;							///< 레이어의 고유 아이디 생성을 위한 레이어 카운터
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	void propFeedforward(const rcube output, const char *end=0);
 

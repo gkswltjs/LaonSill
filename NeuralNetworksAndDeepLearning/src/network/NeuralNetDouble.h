@@ -19,7 +19,7 @@
 #include "Network.h"
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 
 
 class NeuralNetDouble : public Network {

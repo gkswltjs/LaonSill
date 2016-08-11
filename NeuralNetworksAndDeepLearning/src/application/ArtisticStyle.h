@@ -13,7 +13,7 @@
 
 using namespace cimg_library;
 
-#if CPU_MODE
+#ifndef GPU_MODE
 
 class ArtisticStyle {
 public:

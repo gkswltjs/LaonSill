@@ -19,7 +19,7 @@ public:
 	LogLikelihoodCost();
 	virtual ~LogLikelihoodCost();
 
-#if CPU_MODE
+#ifndef GPU_MODE
 	double fn(const rvec *pA, const rvec *pY);
 	void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta);
 #else

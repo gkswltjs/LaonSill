@@ -125,7 +125,7 @@ const UINT *UbyteDataSet::getTestLabelAt(int index) {
 
 void UbyteDataSet::load() {
 
-#if CPU_MODE
+#ifndef GPU_MODE
 	numTrainData = loadDataSetFromResource(filenames[0], trainDataSet, 0, 10000);
 	numTestData = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);
 #else
@@ -183,7 +183,7 @@ int UbyteDataSet::load(int type, int page) {
 
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 int UbyteDataSet::loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size) {
 	// LOAD IMAGE DATA
 	ImageInfo dataInfo(resources[0]);

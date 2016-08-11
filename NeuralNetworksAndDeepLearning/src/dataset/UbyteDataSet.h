@@ -77,7 +77,7 @@ public:
 	void shuffleTestDataSet();
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	int loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size);
 #else

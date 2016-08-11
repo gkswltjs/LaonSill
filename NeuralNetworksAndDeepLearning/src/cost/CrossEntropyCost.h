@@ -27,7 +27,7 @@ public:
 	}
 	virtual ~CrossEntropyCost() {}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	double fn(const rvec *pA, const rvec *pY) {
 		/*

@@ -48,7 +48,7 @@ public:
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	rcube &getDeltaInput() { return this->delta_input; }
 	void feedforward(UINT idx, const rcube &input, const char *end=0);
@@ -68,7 +68,7 @@ protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
 	Pooling *pooling_fn;			///< 풀링 객체
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	ucube pool_map;
 	rcube delta;

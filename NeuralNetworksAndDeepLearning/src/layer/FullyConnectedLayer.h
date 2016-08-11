@@ -50,7 +50,7 @@ public:
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual bool isLearnable() { return true; }
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	FullyConnectedLayer(const char *name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
@@ -101,7 +101,7 @@ protected:
 
 	Activation *activation_fn;				///< 활성화 객체
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	rmat weight;
 	rvec bias;

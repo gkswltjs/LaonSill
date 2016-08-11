@@ -40,7 +40,7 @@ void LRNLayer::_save(ofstream &ofs) {
 
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 
 LRNLayer::~LRNLayer() {}
 

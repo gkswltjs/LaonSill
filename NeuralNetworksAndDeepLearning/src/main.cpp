@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
 	//Util::setOutstream("./log");
 	//Util::printMessage("message ... ");
 
-	double lr = 0.001;
+	double lr = 0.01;
 	double wd = 0.0002;
 	int batches = 50;
 
@@ -172,8 +172,8 @@ void network_test(double lr, double wd, int batches) {
 	if(!debug) {
 		Util::setPrint(false);
 		//DataSet* dataSet = new ImageNet10Cat100Train100TestDataSet();
-		//DataSet *dataSet = new ImageNet100Cat10000Train1000TestDataSet();
-		DataSet* dataSet = new ImageNet1000Cat1000000Train100000TestDataSet();
+		DataSet *dataSet = new ImageNet100Cat10000Train1000TestDataSet();
+		//DataSet* dataSet = new ImageNet1000Cat1000000Train100000TestDataSet();
 		//DataSet* dataSet = new MockDataSet(28, 28, 1, 10, 2, 5);
 		dataSet->load();
 		dataSet->zeroMean(true);

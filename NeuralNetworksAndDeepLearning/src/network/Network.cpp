@@ -286,7 +286,7 @@ void Network::setDataSetMean(DATATYPE *dataSetMean) {
 
 
 void Network::evaluate() {
-#if CPU_MODE
+#ifndef GPU_MODE
 	int testResult = 0;
 	//bool printBak = Util::getPrint();
 	//Util::setPrint(true);
@@ -356,7 +356,7 @@ void Network::evaluate() {
 
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 
 
 

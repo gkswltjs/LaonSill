@@ -162,7 +162,7 @@ public:
 
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	void feedforward(const rcube &input, const char *end=0);
 #else
@@ -216,7 +216,7 @@ protected:
 	UINT *d_trainLabel;							///< 학습 데이터 정답 장치 메모리 포인터
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	int testEvaluateResult(const rvec &output, const rvec &y);
 #else

@@ -24,7 +24,7 @@ public:
 	}
 	virtual ~QuadraticCost() {}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	double fn(const rvec *pA, const rvec *pY) {
 		return 0.5*sum(square(*pA - *pY));
@@ -34,15 +34,18 @@ public:
 	}
 #else
 	double fn(const DATATYPE* pA, const DATATYPE* pY) {
-		return 0.5*sum(square(*pA - *pY));
+		//return 0.5*sum(square(*pA - *pY));
+		return 0.0;
 	}
 	void d_cost(const DATATYPE *z, DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize) {
+		/*
 		Cuda::refresh();
 		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(DATATYPE)*size, cudaMemcpyDeviceToDevice));
 		UINT i;
 		for(i = 0; i < size/numLabels; i++) {
 			delta[i*numLabels+target[i]]-=1;
 		}
+		*/
 	}
 #endif
 

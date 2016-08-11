@@ -20,7 +20,7 @@ using namespace std;
  * @todo padding 관련 파라미터를 추가하고 파라미터에 따라 padding이 적용되도록 수정한다.
  */
 class MaxPooling : public Pooling {
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	MaxPooling() {
 		this->type = PoolingType::Max;

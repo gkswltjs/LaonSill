@@ -54,7 +54,7 @@ public:
 	virtual void update(UINT idx, UINT n, UINT miniBatchSize)=0;
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	HiddenLayer(const char *name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
 	virtual rcube &getDeltaInput()=0;
@@ -93,7 +93,7 @@ protected:
 		}
 	}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 #else
 protected:

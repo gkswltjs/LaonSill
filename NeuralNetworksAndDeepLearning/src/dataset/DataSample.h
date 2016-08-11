@@ -21,7 +21,7 @@ using namespace arma;
 class DataSample {
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	DataSample() {}
 

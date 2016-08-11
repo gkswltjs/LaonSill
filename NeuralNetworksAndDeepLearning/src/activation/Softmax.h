@@ -24,7 +24,7 @@ class Softmax : public Activation {
 public:
 	virtual ~Softmax() {}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	Softmax() {
 		this->type = ActivationType::Softmax;
@@ -63,7 +63,7 @@ public:
 	}
 
 #else
-	Softmax() : num_label(1000), batches(50) {
+	Softmax() : num_label(100), batches(50) {
 		this->type = ActivationType::Softmax;
 		h_z = new DATATYPE[num_label*batches];
 		h_activation = new DATATYPE[num_label*batches];

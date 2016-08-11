@@ -47,7 +47,7 @@ public:
 	//virtual void initialize_weight(int n_in, rcube &weight)=0;
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 	/**
 	 * activation function
 	 */

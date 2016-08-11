@@ -78,7 +78,7 @@ void MnistDataSet::load() {
 	};
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 	numTrainData = loadDataSetFromResource(filenames[0], trainDataSet, 0, 10000);
 	numTestData = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);
 #else
@@ -144,7 +144,7 @@ int MnistDataSet::loadDataSetFromResource(string resources[2], vector<const Data
 */
 
 /*
-#if CPU_MODE
+#ifndef GPU_MODE
 int MnistDataSet::loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size) {
 	// LOAD IMAGE DATA
 	ImageInfo dataInfo(resources[0]);

@@ -32,7 +32,7 @@ void Cifar10DataSet::load() {
 			{"./data/cifar-10/test_batch.bin", "", "", "", ""}
 	};
 
-#if CPU_MODE
+#ifndef GPU_MODE
 	trainDataSize = loadDataSetFromResource(filenames[0], 5, trainDataSet, 50000);
 	//validationDataSize = loadDataSetFromResource(filenames[0], validationDataSet, 50000, 10000);
 	testDataSize = loadDataSetFromResource(filenames[1], 1, testDataSet, 10000);
@@ -52,7 +52,7 @@ int Cifar10DataSet::loadDataSetFromResource(string *resources, int numResources,
 	dataSet = new DataSample[dataSize];
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 	for(int i = 0; i < numResources; i++) {
 		ImageInfo dataInfo(resources[i]);
 		dataInfo.load();

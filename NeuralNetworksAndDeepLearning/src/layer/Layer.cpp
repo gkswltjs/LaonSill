@@ -187,7 +187,7 @@ void Layer::saveHeader(UINT idx, ofstream &ofs) {
 
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 
 Layer::Layer(const char *name, int n_in, int n_out) {
 	initialize(name, io_dim(n_in, 1, 1), io_dim(n_out, 1, 1));

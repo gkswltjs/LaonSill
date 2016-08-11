@@ -48,7 +48,7 @@ public:
 	 */
 	PoolingType getType() const { return this->type; }
 
-#if CPU_MODE
+#ifndef GPU_MODE
 	virtual void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
 	virtual void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
 #else

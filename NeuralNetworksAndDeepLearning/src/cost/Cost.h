@@ -42,7 +42,7 @@ public:
 	 */
 	CostType getType() const { return type; }
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	virtual double fn(const rvec *pA, const rvec *pY) = 0;
 	virtual void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta) = 0;

@@ -70,7 +70,7 @@ public:
 		loadNetwork(ifs, layerMap);
 	}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	InputLayer(const char *name, int n_in) : Layer(name, n_in, n_in) {
 		initialize();
@@ -122,7 +122,7 @@ protected:
 		this->type = LayerType::Input;
 	}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 #else
 protected:

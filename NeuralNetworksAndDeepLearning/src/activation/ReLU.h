@@ -22,7 +22,7 @@ class ReLU : public Activation {
 public:
 	virtual ~ReLU() {}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	ReLU() {
 		this->type = ActivationType::ReLU;

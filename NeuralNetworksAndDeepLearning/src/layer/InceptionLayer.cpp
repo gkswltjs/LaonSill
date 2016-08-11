@@ -123,7 +123,7 @@ void InceptionLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 
 InceptionLayer::InceptionLayer(const char *name, int n_in, int n_out,
 		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp)
@@ -488,8 +488,8 @@ void InceptionLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 
 	// TODO
-	float scale_term = 1.0f / firstLayers.size();
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &scale_term, d_delta_input, 1));
+	//float scale_term = 1.0f / firstLayers.size();
+	//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &scale_term, d_delta_input, 1));
 
 	propBackpropagation();
 

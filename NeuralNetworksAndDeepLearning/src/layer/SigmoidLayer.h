@@ -16,7 +16,7 @@
 
 
 
-#if CPU_MODE
+#ifndef GPU_MODE
 
 
 class SigmoidLayer : public OutputLayer {

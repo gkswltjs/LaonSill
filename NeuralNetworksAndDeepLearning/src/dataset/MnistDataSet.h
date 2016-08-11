@@ -52,7 +52,7 @@ public:
 
 	/*
 private:
-#if CPU_MODE
+#ifndef GPU_MODE
 	int loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size);
 #else
 	int loadDataSetFromResource(string resources[2], vector<DATATYPE> *&dataSet, vector<UINT> *&labelSet, int offset, int size);

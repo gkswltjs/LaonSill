@@ -46,7 +46,7 @@ public:
 	virtual void reshape(UINT idx, io_dim in_dim);
 	virtual void clearShape(UINT idx);
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	DepthConcatLayer(const char *name, int n_in);
 	rcube &getDeltaInput();
@@ -71,7 +71,7 @@ protected:
 
 	int offsetIndex;			///< 입력에 관한 gradient 호출한 횟수 카운터, getDeltaInput() 호출마다 증가되고 feedforward()가 수행될 때 reset된다.
 
-#if CPU_MODE
+#ifndef GPU_MODE
 protected:
 	rcube delta_input;
 	rcube delta_input_sub;

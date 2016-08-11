@@ -44,7 +44,7 @@ public:
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	rcube &getDeltaInput() { return delta_input; }
 	void feedforward(UINT idx, const rcube &input, const char *end=0);
@@ -64,7 +64,7 @@ protected:
 
 	lrn_dim lrn_d;					///< LRN 연산 관련 파라미터 구조체
 
-#if CPU_MODE
+#ifndef GPU_MODE
 private:
 	rcube delta_input;
 	rcube z;	// beta powered 전의 weighted sum 상태의 norm term

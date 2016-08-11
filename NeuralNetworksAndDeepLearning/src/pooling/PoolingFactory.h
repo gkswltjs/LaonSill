@@ -27,7 +27,7 @@ public:
 	PoolingFactory() {}
 	virtual ~PoolingFactory() {}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 	static Pooling *create(PoolingType poolingType) {
 		switch(poolingType) {
 		case PoolingType::Max: return new MaxPooling();

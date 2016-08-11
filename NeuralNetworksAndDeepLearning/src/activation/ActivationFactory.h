@@ -30,7 +30,7 @@ public:
 	ActivationFactory() {}
 	virtual ~ActivationFactory() {}
 
-#if CPU_MODE
+#ifndef GPU_MODE
 public:
 	static Activation *create(ActivationType activationType) {
 		switch(activationType) {
