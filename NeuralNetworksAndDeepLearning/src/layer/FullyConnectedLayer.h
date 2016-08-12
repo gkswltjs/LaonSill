@@ -28,7 +28,11 @@
  */
 class FullyConnectedLayer : public HiddenLayer {
 public:
-	FullyConnectedLayer() { this->type = LayerType::FullyConnected; }
+	/**
+	 * @details FullyConnectedLayer 기본 생성자
+	 *          내부적으로 레이어 타입만 초기화한다.
+	 */
+	FullyConnectedLayer();
 	/**
 	 * @details FullyConnectedLayer 생성자
 	 * @param name 레이어의 이름 문자열 포인터
@@ -42,39 +46,28 @@ public:
 	 */
 	FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
-	virtual ~FullyConnectedLayer();
-
-	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	virtual void backpropagation(UINT idx, DATATYPE *next_delta_input);
-	virtual void _update(UINT n, UINT miniBatchSize);
-
 #ifndef GPU_MODE
-public:
 	FullyConnectedLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
+#endif
+	virtual ~FullyConnectedLayer();
 
+
+
+#ifndef GPU_MODE
 	rmat &getWeight() { return this->weight; }
 	rcube &getDeltaInput() { return this->delta_input; }
-
-	/**
-	 * 주어진 입력 input에 대해 출력 activation을 계산
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
-	virtual void _feedforward(const rcube &input, const char *end=0);
-	virtual void reset_nabla(UINT idx);
 #else
-public:
 	/**
 	 * @details 레이어의 weight 장치 메모리 포인터를 조회한다.
 	 * @return 레이어의 weight 장치 메모리 포인터
 	 */
 	DATATYPE *getWeight() { return this->d_weight; }
 	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-
-
 #endif
 
 
+	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 
 
@@ -83,14 +76,30 @@ private:
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
 
 protected:
-	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	virtual DATATYPE _sumSquareGrad();
 	virtual DATATYPE _sumSquareParam();
 	virtual void _scaleParam(DATATYPE scale_factor);
+	virtual void _save(ofstream &ofs);
+	virtual void _update(UINT n, UINT miniBatchSize);
+#ifndef GPU_MODE
+	/**
+	 * 주어진 입력 input에 대해 출력 activation을 계산
+	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
+	 */
+	virtual void _feedforward(const rcube &input, const char *end=0);
+	virtual void reset_nabla(UINT idx);
+#else
 	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+#endif
+	virtual void _backpropagation();
 
+
+
+
+
+protected:
 	double p_dropout;						///< dropout을 적용할 확율
 
 	update_param weight_update_param;		///< weight 갱신 관련 파라미터 구조체
@@ -102,7 +111,6 @@ protected:
 	Activation *activation_fn;				///< 활성화 객체
 
 #ifndef GPU_MODE
-protected:
 	rmat weight;
 	rvec bias;
 
@@ -113,7 +121,6 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-protected:
 	DATATYPE *weight;						///< weight 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
 	DATATYPE *bias;							///< bias 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
 
@@ -132,8 +139,6 @@ protected:
 	DATATYPE *mask;							///< dropout 마스크 호스트 메모리 포인터
 	DATATYPE *d_mask;						///< dropout 마스크 장치 메모리 포인터
 	DATATYPE scale;							///< dropout 스케일 팩터
-
-
 #endif
 
 

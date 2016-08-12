@@ -66,8 +66,8 @@ void Network::shape(io_dim in_dim) {
 	}
 	inputLayer->shape(0, this->in_dim);
 
-	//cout << "inputLayer->getInputDimension()*in_dim.batches: " << inputLayer->getInputDimension()*this->in_dim.batches << endl;
-	checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputDimension()*this->in_dim.batches));
+	//cout << "inputLayer->getInputSize()*in_dim.batches: " << inputLayer->getInputSize()*this->in_dim.batches << endl;
+	checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputSize()*this->in_dim.batches));
 	checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
 
 }
@@ -317,7 +317,7 @@ void Network::evaluate() {
 
 	int testBatchesSize = dataSet->getNumTestData()/in_dim.batches;
 	DATATYPE *d_testData;
-	checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches));
+	checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputSize()*in_dim.batches));
 
 	for(int i = 0; i < testBatchesSize; i++) {
 	//for(int i = 2; i < 3; i++) {
@@ -325,7 +325,7 @@ void Network::evaluate() {
 		// FEED FORWARD
 		//checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*in_dim.batches),
 		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*in_dim.batches),
-				sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches, cudaMemcpyHostToDevice));
+				sizeof(DATATYPE)*inputLayer->getInputSize()*in_dim.batches, cudaMemcpyHostToDevice));
 
 		io_dim in_dim = inputLayer->getInDimension();
 		Util::printData(dataSet->getTestDataAt(i*in_dim.batches), in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_testData:");
@@ -471,11 +471,9 @@ void Network::updateMiniBatch(int nthMiniBatch) {
 
 	// FEED FORWARD
 	checkCudaErrors(cudaMemcpyAsync(d_trainData, dataSet->getTrainDataAt(baseIndex),
-			sizeof(DATATYPE)*inputLayer->getInputDimension()*in_dim.batches, cudaMemcpyHostToDevice));
-
-
+			sizeof(DATATYPE)*inputLayer->getInputSize()*in_dim.batches, cudaMemcpyHostToDevice));
 	//float input_norm;
-	//checkCudaErrors(cublasSdot(Cuda::cublasHandle, inputLayer->getInputDimension()*in_dim.batches, d_trainData, 1, d_trainData, 1, &input_norm));
+	//checkCudaErrors(cublasSdot(Cuda::cublasHandle, inputLayer->getInputSize()*in_dim.batches, d_trainData, 1, d_trainData, 1, &input_norm));
 	//cout << "input norm is " << sqrt(input_norm) << endl;
 
 	feedforward(d_trainData);

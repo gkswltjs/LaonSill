@@ -9,9 +9,13 @@
 #ifndef LAYER_CONVLAYER_H_
 #define LAYER_CONVLAYER_H_
 
+#include <cudnn.h>
+#include <stddef.h>
+#include <iostream>
+#include <map>
 #include <string>
 
-#include "../activation/ActivationFactory.h"
+#include "../activation/Activation.h"
 #include "../Util.h"
 #include "HiddenLayer.h"
 #include "LayerConfig.h"
@@ -26,7 +30,10 @@
  */
 class ConvLayer : public HiddenLayer {
 public:
-	ConvLayer() { this->type = LayerType::Conv; }
+	/**
+	 * @details ConvLayer 기본 생성자
+	 */
+	ConvLayer();
 	/**
 	 * @details ConvLayer 생성자
 	 * @param filter_d 컨볼루션 연산 관련 파라미터 구조체
@@ -38,54 +45,66 @@ public:
 	 */
 	ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
+	/**
+	 * @details ConvLayer 소멸자
+	 */
 	virtual ~ConvLayer();
 
+
+
+#ifndef GPU_MODE
+	rcube *getWeight() { return this->filters; }
+	rcube &getDeltaInput() { return this->delta_input; }
+#else
+	DATATYPE *getWeight() { return this->filters; }
+	DATATYPE *getDeltaInput() { return this->d_delta_input; }
+#endif
 	/**
 	 * @details 컨볼루션 연산 관련 파라미터 구조체를 조회한다.
 	 * @return 컨볼루션 연산 관련 파라미터
 	 */
 	filter_dim &get_filter_dim() { return this->filter_d; }
-	void backpropagation(UINT idx, DATATYPE *next_delta_input);
+
 
 
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
-#ifndef GPU_MODE
-public:
-
-	rcube *getWeight() { return this->filters; }
-	rcube &getDeltaInput() { return this->delta_input; }
-
-
-	/**
-	 * 주어진 입력 input에 대해 출력 activation을 계산
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
-	virtual void _feedforward(const rcube &input, const char *end=0);
-
-#else
-	//static void init();
-	//static void destroy();
-
-	DATATYPE *getWeight() { return this->filters; }
-	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-
-#endif
 
 
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
 
-	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	virtual DATATYPE _sumSquareGrad();
 	virtual DATATYPE _sumSquareParam();
-	virtual void _scaleParam(DATATYPE scale_factor);
+	virtual void _save(ofstream &ofs);
 	virtual void _update(UINT n, UINT miniBatchSize);
-	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+#ifndef GPU_MODE
+	void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
+	void dw_convolution(const rmat &d, const rmat &x, rmat &result);
+	void dx_convolution(const rmat &d, const rmat &w, rmat &result);
 
+	/**
+	 * 주어진 입력 input에 대해 출력 activation을 계산
+	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
+	 */
+	virtual void _feedforward(const rcube &input, const char *end=0);
+#else
+	virtual void _scaleParam(DATATYPE scale_factor);
+	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+	virtual void _backpropagation();
+#endif
+
+
+
+
+
+
+
+
+protected:
 	filter_dim filter_d;							///< 컨볼루션 연산 관련 파라미터 구조체
 	Activation *activation_fn;						///< 활성화 객체
 
@@ -95,11 +114,6 @@ protected:
 	param_filler bias_filler;						///< bias 초기화 관련 파라미터 구조체
 
 #ifndef GPU_MODE
-protected:
-	void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
-	void dw_convolution(const rmat &d, const rmat &x, rmat &result);
-	void dx_convolution(const rmat &d, const rmat &w, rmat &result);
-
 	rcube *filters;		// weights
 	rvec biases;
 
@@ -110,7 +124,6 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-protected:
 	DATATYPE *filters;								///< filter 호스트 메모리 포인터
 	DATATYPE *biases;								///< bias 호스트 메모리 포인터
 

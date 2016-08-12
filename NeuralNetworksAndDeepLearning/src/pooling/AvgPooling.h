@@ -140,14 +140,14 @@ public:
 			const cudnnTensorDescriptor_t yDesc, DATATYPE *y) {
 
 		checkCUDNN(cudnnPoolingForward(Cuda::cudnnHandle, poolDesc,
-				&alpha, xDesc, x, &beta, yDesc, y));
+				&Cuda::alpha, xDesc, x, &Cuda::beta, yDesc, y));
 	}
 
 	void d_pool(const cudnnTensorDescriptor_t yDesc, const DATATYPE *y, const DATATYPE *dy,
 			const cudnnTensorDescriptor_t xDesc, const DATATYPE *x, DATATYPE *dx) {
 		checkCUDNN(cudnnPoolingBackward(Cuda::cudnnHandle, poolDesc,
-				&alpha, yDesc, y, yDesc, dy, xDesc, x,
-				&beta, xDesc, dx));
+				&Cuda::alpha, yDesc, y, yDesc, dy, xDesc, x,
+				&Cuda::beta, xDesc, dx));
 	}
 
 #endif

@@ -103,6 +103,9 @@ public:
 	static cudnnHandle_t cudnnHandle;			///< cudnn 라이브러리 컨텍스트 핸들.
 	static cublasHandle_t cublasHandle;			///< cublas 라이브러리 컨텍스트 핸들.
 
+	static const float alpha;
+	static const float beta;
+
 };
 
 #endif /* CUDA_H_ */

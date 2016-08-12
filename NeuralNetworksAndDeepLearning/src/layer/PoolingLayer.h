@@ -36,7 +36,7 @@ public:
 	PoolingLayer(const string name, pool_dim pool_d, PoolingType poolingType);
 	virtual ~PoolingLayer();
 
-	void backpropagation(UINT idx, DATATYPE *next_delta_input);
+
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 
@@ -61,6 +61,7 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+	virtual void _backpropagation();
 
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
 	Pooling *pooling_fn;			///< 풀링 객체

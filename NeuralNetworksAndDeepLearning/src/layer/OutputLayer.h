@@ -12,9 +12,13 @@
 
 #include "FullyConnectedLayer.h"
 #include "../cost/CostFactory.h"
+#ifndef GPU_MODE
 #include <armadillo>
+#endif
 
+#ifndef GPU_MODE
 using namespace arma;
+#endif
 
 
 
@@ -44,18 +48,22 @@ public:
 		:FullyConnectedLayer(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};
-	virtual ~OutputLayer() {
-		CostFactory::destroy(cost_fn);
-	};
-
 #ifndef GPU_MODE
-public:
 	OutputLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
 		: FullyConnectedLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	}
+#endif
+	virtual ~OutputLayer() {
+		CostFactory::destroy(cost_fn);
+	};
 
+
+
+
+
+#ifndef GPU_MODE
 	/**
 	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
 	 * @param target: 현재 데이터에 대한 목적값
@@ -71,7 +79,6 @@ public:
 		initialize(type);
 	}
 #else
-public:
 	/**
 	 * @details 출력레이어의 cost를 게산한다.
 	 * @param target 현재 cost를 구한 데이터에 대한 정답 장치 메모리 포인터
@@ -91,48 +98,51 @@ public:
 #endif
 
 
+
+
+
+
 protected:
 	void initialize(CostType costType) {
 		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
 		this->cost_fn = CostFactory::create(costType);
 	}
+
+
+
+
 	virtual void _shape(bool recursive=true) {
 		if(recursive) {
 			FullyConnectedLayer::_shape();
 		}
 	}
-
 	virtual void _clearShape() {
 		FullyConnectedLayer::_clearShape();
 	}
-
 #ifndef GPU_MODE
-protected:
 	virtual void _save(ofstream &ofs) {
 		FullyConnectedLayer::_save(ofs);
 
 		int costType = (int)cost_fn->getType();
 		ofs.write((char *)&costType, sizeof(int));
 	}
-
-	Cost *cost_fn;
 #else
-protected:
 	virtual void _save(ofstream &ofs) {
 		FullyConnectedLayer::_save(ofs);
 		//int costType = (int)cost_fn->getType();
 		//ofs.write((char *)&costType, sizeof(int));
 	}
-	Cost *cost_fn;				///< cost 객체
-
 #endif
 
 
+
+
+
+protected:
+	Cost *cost_fn;				///< cost 객체
+
+
 };
-
-
-
-
 
 
 #endif /* LAYER_OUTPUTLAYER_H_ */

@@ -30,7 +30,7 @@ public:
 	LRNLayer(const string name, lrn_dim lrn_d);
 	virtual ~LRNLayer();
 
-	void backpropagation(UINT idx, DATATYPE *next_delta_input);
+
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
@@ -57,6 +57,7 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+	virtual void _backpropagation();
 
 	lrn_dim lrn_d;					///< LRN 연산 관련 파라미터 구조체
 
@@ -66,7 +67,7 @@ private:
 	rcube z;	// beta powered 전의 weighted sum 상태의 norm term
 #else
 private:
-	const float alpha=1.0f, beta=0.0f;			///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
+	//const float alpha=1.0f, beta=0.0f;			///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
 	cudnnLRNDescriptor_t lrnDesc;				///< cudnn LRN 연산 정보 구조체
 #endif
 

@@ -80,7 +80,7 @@ public:
 protected:
 	PoolingType type;							///< 풀링 타입
 	cudnnPoolingDescriptor_t poolDesc;			///< cudnn 풀링 연산 정보 구조체
-	const float alpha = 1.0f, beta = 0.0f;		///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
+	//const float alpha = 1.0f, beta = 0.0f;		///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
 
 };
 

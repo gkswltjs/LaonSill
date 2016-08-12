@@ -143,11 +143,11 @@ void LRNLayer::_shape(bool recursive) {
 		HiddenLayer::_shape();
 	}
 
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
 
 void LRNLayer::_clearShape() {
-	checkCudaErrors(cudaFree(d_delta_input));
+	//checkCudaErrors(cudaFree(d_delta_input));
 
 	HiddenLayer::_clearShape();
 }
@@ -155,7 +155,7 @@ void LRNLayer::_clearShape() {
 
 LRNLayer::~LRNLayer() {
 	//checkCudaErrors(cudaFree(d_delta));
-	checkCudaErrors(cudaFree(d_delta_input));
+	//checkCudaErrors(cudaFree(d_delta_input));
 
 	checkCUDNN(cudnnDestroyLRNDescriptor(lrnDesc));
 }
@@ -170,8 +170,8 @@ void LRNLayer::_feedforward(const DATATYPE *input, const char *end) {
 
 	checkCUDNN(cudnnLRNCrossChannelForward(Cuda::cudnnHandle,
 			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
-			&alpha, inputTensorDesc, d_input,
-			&beta, outputTensorDesc, d_output));
+			&Cuda::alpha, inputTensorDesc, d_input,
+			&Cuda::beta, outputTensorDesc, d_output));
 
 	//if(Util::validPage()) {
 		//Util::setPrint(true);
@@ -182,21 +182,16 @@ void LRNLayer::_feedforward(const DATATYPE *input, const char *end) {
 }
 
 
-void LRNLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
-	Util::printMessage("LRNLayer::backpropagation()---"+string(name));
-	if(!isLastNextLayerRequest(idx)) throw Exception();
-
-	//DATATYPE *next_delta_input = next_layer->getDeltaInput();
-	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
+void LRNLayer::_backpropagation() {
+	Util::printMessage("LRNLayer::_backpropagation()---"+string(name));
+	Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
 
 	checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,
 			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
-			&alpha, outputTensorDesc, d_output, outputTensorDesc, next_delta_input, inputTensorDesc, d_input,
-			&beta, inputTensorDesc, d_delta_input));
+			&Cuda::alpha, outputTensorDesc, d_output, outputTensorDesc, d_delta_output, inputTensorDesc, d_input,
+			&Cuda::beta, inputTensorDesc, d_delta_input));
 
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
-
-	propBackpropagation();
 }
 #endif
 

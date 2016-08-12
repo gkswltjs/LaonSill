@@ -12,16 +12,17 @@
 #include "../exception/Exception.h"
 
 
+ConvLayer::ConvLayer() {
+	this->type = LayerType::Conv;
+}
+
 ConvLayer::ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
 	: HiddenLayer(name) {
-
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
-
 #ifndef GPU_MODE
-
 ConvLayer::~ConvLayer() {
 	ActivationFactory::destory(activation_fn);
 	if(filters) {
@@ -33,7 +34,62 @@ ConvLayer::~ConvLayer() {
 		nabla_w = NULL;
 	}
 }
+#else
+ConvLayer::~ConvLayer() {
 
+	if(filters) delete [] filters;
+	if(biases) delete [] biases;
+
+	checkCudaErrors(cudaFree(d_z));
+	checkCudaErrors(cudaFree(d_delta));
+	//checkCudaErrors(cudaFree(d_delta_input));
+	checkCudaErrors(cudaFree(d_delta_weight));
+	checkCudaErrors(cudaFree(d_delta_weight_prev));
+	checkCudaErrors(cudaFree(d_delta_bias));
+	checkCudaErrors(cudaFree(d_delta_bias_prev));
+	if(d_workspace) checkCudaErrors(cudaFree(d_workspace));
+
+	checkCUDNN(cudnnDestroyTensorDescriptor(biasTensorDesc));
+	checkCUDNN(cudnnDestroyFilterDescriptor(filterDesc));
+	checkCUDNN(cudnnDestroyConvolutionDescriptor(convDesc));
+
+	ActivationFactory::destory(activation_fn);
+}
+#endif
+
+
+
+
+#ifndef GPU_MODE
+void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+
+	filter_dim filter_d;
+	ifs.read((char *)&filter_d, sizeof(filter_dim));
+
+	ActivationType activationType;
+	ifs.read((char *)&activationType, sizeof(int));
+
+	update_param weight_update_param;
+	ifs.read((char *)&weight_update_param, sizeof(update_param));
+
+	update_param bias_update_param;
+	ifs.read((char *)&bias_update_param, sizeof(update_param));
+
+	param_filler weight_filler;
+	ifs.read((char *)&weight_filler, sizeof(param_filler));
+
+	param_filler bias_filler;
+	ifs.read((char *)&bias_filler, sizeof(param_filler));
+
+	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+
+	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
+	for(UINT i = 0; i < filter_d.filters; i++) {
+		filters[i].load(ifs, file_type::arma_binary);
+	}
+	biases.load(ifs, file_type::arma_binary);
+}
 
 void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
@@ -93,9 +149,6 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	delta.set_size(size(z));
 }
 
-
-
-
 void ConvLayer::_feedforward(const rcube &input, const char *end) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
@@ -137,10 +190,6 @@ void ConvLayer::_feedforward(const rcube &input, const char *end) {
 
 	propFeedforward(this->output, end);
 }
-
-
-
-
 
 void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
@@ -193,7 +242,6 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	propBackpropagation();
 }
 
-
 void ConvLayer::convolution(const rmat &x, const rmat &w, rmat &result, int stride) {
 	UINT i, j, k, m;
 
@@ -231,13 +279,9 @@ void ConvLayer::convolution(const rmat &x, const rmat &w, rmat &result, int stri
 	}
 }
 
-
-
-
 // Yn,m = Sigma(i for 0~filter_size-1)Sigma(j for 0~filter_size-1) Wi,j * Xstride*n-filter_size/2+i, stride*m-filter_size/2+j
 // dC/dWi,j	= dC/dY * dY/dWi,j
 // 			= Sigma(n)Sigma(m) delta n,m * Xstride*n-filter_size/2+i, stride*m-filter_size/2+j)
-
 void ConvLayer::dw_convolution(const rmat &d, const rmat &x, rmat &result) {
 
 	UINT i, j, k, l;
@@ -274,9 +318,7 @@ void ConvLayer::dw_convolution(const rmat &d, const rmat &x, rmat &result) {
 	Util::printMat(d, "d:");
 	Util::printMat(x, "x:");
 	Util::printMat(result, "result:");
-
 }
-
 
 void ConvLayer::dx_convolution(const rmat &d, const rmat &w, rmat &result) {
 	UINT i, j;
@@ -302,13 +344,7 @@ void ConvLayer::dx_convolution(const rmat &d, const rmat &w, rmat &result) {
 	Util::printMat(d_ex, "d_ex:");
 	Util::printMat(w, "w:");
 	Util::printMat(result, "result:");
-
 }
-
-
-
-
-
 
 void ConvLayer::reset_nabla(UINT idx) {
 	// 한번만 초기화하기 위해 마지막 prev layer의 초기화 요청에 대해서만 처리하고
@@ -320,7 +356,6 @@ void ConvLayer::reset_nabla(UINT idx) {
 
 	propResetNParam();
 }
-
 
 void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
@@ -337,46 +372,6 @@ void ConvLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 
 	propUpdate(n, miniBatchSize);
 }
-
-
-
-
-
-void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
-
-	filter_dim filter_d;
-	ifs.read((char *)&filter_d, sizeof(filter_dim));
-
-	ActivationType activationType;
-	ifs.read((char *)&activationType, sizeof(int));
-
-	update_param weight_update_param;
-	ifs.read((char *)&weight_update_param, sizeof(update_param));
-
-	update_param bias_update_param;
-	ifs.read((char *)&bias_update_param, sizeof(update_param));
-
-	param_filler weight_filler;
-	ifs.read((char *)&weight_filler, sizeof(param_filler));
-
-	param_filler bias_filler;
-	ifs.read((char *)&bias_filler, sizeof(param_filler));
-
-	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
-
-	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
-	for(UINT i = 0; i < filter_d.filters; i++) {
-		filters[i].load(ifs, file_type::arma_binary);
-	}
-	biases.load(ifs, file_type::arma_binary);
-}
-
-
-
-
-
-
 
 void ConvLayer::_save(ofstream &ofs) {
 	HiddenLayer::_save(ofs);
@@ -397,47 +392,31 @@ void ConvLayer::_save(ofstream &ofs) {
 	}
 	biases.save(ofs, file_type::arma_binary);
 }
-
-
 #else
+void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
 
-/*
-size_t ConvLayer::workspaceSize = -10000000;
-void * ConvLayer::d_workspace = 0;
+	filter_dim filter_d;
+	ActivationType activationType;
+	update_param weight_update_param, bias_update_param;
+	param_filler weight_filler, bias_filler;
 
-void ConvLayer::init() {
-	if(workspaceSize > 0) {
-		checkCudaErrors(cudaMalloc(&d_workspace, workspaceSize));
-	}
+	ifs.read((char *)&filter_d, sizeof(filter_dim));
+	ifs.read((char *)&activationType, sizeof(int));
+	ifs.read((char *)&weight_update_param, sizeof(update_param));
+	ifs.read((char *)&bias_update_param, sizeof(update_param));
+	ifs.read((char *)&weight_filler, sizeof(param_filler));
+	ifs.read((char *)&bias_filler, sizeof(param_filler));
+
+	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+	ConvLayer::_shape(false);
+
+	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
+	ifs.read((char *)filters, sizeof(DATATYPE)*filter_d.size());
+	ifs.read((char *)biases, sizeof(DATATYPE)*filter_d.filters);
+	checkCudaErrors(cudaMemcpyAsync(d_filters, filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpyAsync(d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
 }
-
-void ConvLayer::destroy() {
-	if(d_workspace) checkCudaErrors(cudaFree(d_workspace));
-}
-*/
-
-
-ConvLayer::~ConvLayer() {
-
-	if(filters) delete [] filters;
-	if(biases) delete [] biases;
-
-	checkCudaErrors(cudaFree(d_z));
-	checkCudaErrors(cudaFree(d_delta));
-	checkCudaErrors(cudaFree(d_delta_input));
-	checkCudaErrors(cudaFree(d_delta_weight));
-	checkCudaErrors(cudaFree(d_delta_weight_prev));
-	checkCudaErrors(cudaFree(d_delta_bias));
-	checkCudaErrors(cudaFree(d_delta_bias_prev));
-	if(d_workspace) checkCudaErrors(cudaFree(d_workspace));
-
-	checkCUDNN(cudnnDestroyTensorDescriptor(biasTensorDesc));
-	checkCUDNN(cudnnDestroyFilterDescriptor(filterDesc));
-	checkCUDNN(cudnnDestroyConvolutionDescriptor(convDesc));
-
-	ActivationFactory::destory(activation_fn);
-}
-
 
 void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
@@ -486,8 +465,6 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	//checkCudaErrors(cudaDeviceSynchronize());
 }
 
-
-
 void ConvLayer::_shape(bool recursive) {
 	cudnnTensorDescriptor_t tempInputTensorDesc;
 	checkCUDNN(cudnnCreateTensorDescriptor(&tempInputTensorDesc));
@@ -517,13 +494,6 @@ void ConvLayer::_shape(bool recursive) {
 	int b_in = in_dim.batchsize();
 	int b_out = out_dim.batchsize();
 
-
-
-
-
-
-
-
 	// TODO init factor 조정해야 함
 	//weight_filler.fill(this->filters, filter_size, filter_d.channels, filter_d.filters);
 	//bias_filler.fill(this->biases, filter_d.filters, filter_d.channels, filter_d.filters);
@@ -540,21 +510,9 @@ void ConvLayer::_shape(bool recursive) {
 	checkCudaErrors(cudaMemcpyAsync(this->d_filters, filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpyAsync(this->d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
 
-
-
-
-
-
-
-
-
-
-
-
-
 	checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(DATATYPE)*b_out));
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*b_out));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*b_in));
 
 	size_t convFwdWorkspaceSize;
 	size_t convBwdFilterWorkspaceSize;
@@ -602,11 +560,11 @@ void ConvLayer::_shape(bool recursive) {
 void ConvLayer::_clearShape() {
 	checkCudaErrors(cudaFree(d_z));
 	checkCudaErrors(cudaFree(d_delta));
-	checkCudaErrors(cudaFree(d_delta_input));
+	//checkCudaErrors(cudaFree(d_delta_input));
 
 	d_z = 0;
 	d_delta = 0;
-	d_delta_input = 0;
+	//d_delta_input = 0;
 
 	if(d_workspace) {
 		checkCudaErrors(cudaFree(d_workspace));
@@ -616,109 +574,58 @@ void ConvLayer::_clearShape() {
 	HiddenLayer::_clearShape();
 }
 
+DATATYPE ConvLayer::_sumSquareGrad() {
+	DATATYPE weight_result;
+	DATATYPE bias_result;
 
+	int weight_size = filter_d.size();
+	checkCudaErrors(cublasSdot(Cuda::cublasHandle, weight_size, d_delta_weight, 1, d_delta_weight, 1, &weight_result));
+	int bias_size = filter_d.filters;
+	checkCudaErrors(cublasSdot(Cuda::cublasHandle, bias_size, d_delta_bias, 1, d_delta_bias, 1, &bias_result));
 
+	//cout << weight_result + bias_result << " ";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void ConvLayer::_feedforward(const DATATYPE *input, const char *end) {
-	Util::printMessage("ConvLayer::_feedforward()---"+string(name));
-
-	//Util::setPrint(true);
-	this->d_input = input;
-	float alpha = 1.0f, beta = 0.0f;
-
-	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
-	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
-
-	checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle,
-			&alpha, inputTensorDesc, d_input, filterDesc, d_filters, convDesc,
-			convFwdAlgo, d_workspace, workspaceSize, &beta, outputTensorDesc, d_z));
-	Util::printDeviceData(d_z, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_z:");
-
-	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
-	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
-			(void *)&alpha, biasTensorDesc,	d_biases, (void *)&alpha, outputTensorDesc, d_z));
-	Util::printDeviceData(d_z, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_z:");
-
-	activation_fn->activate(d_z, d_output, outputTensorDesc);
-
-	//if(Util::temp_flag && strncmp("inception", this->name, 9) == 0) {
-	//if(Util::validPage()) {
-		//Util::setPrint(true);
-		//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, this->name+string("/d_output:"));
-		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
-		//Util::setPrint(false);
-	//}
+	return weight_result + bias_result;
 }
 
+DATATYPE ConvLayer::_sumSquareParam() {
+	DATATYPE weight_result;
+	DATATYPE bias_result;
 
+	int weight_size = filter_d.size();
+	checkCudaErrors(cublasSdot(Cuda::cublasHandle, weight_size, d_filters, 1, d_filters, 1, &weight_result));
 
+	int bias_size = filter_d.filters;
+	checkCudaErrors(cublasSdot(Cuda::cublasHandle, bias_size, d_biases, 1, d_biases, 1, &bias_result));
 
-
-void ConvLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
-	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
-	if(!isLastNextLayerRequest(idx)) throw Exception();
-
-	Util::printMessage("ConvLayer::backpropagation()---"+string(name));
-	Cuda::refresh();
-
-	//DATATYPE *next_delta_input = next_layer->getDeltaInput();
-	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "prev_delta_input:");
-	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
-	activation_fn->d_activate(d_output, next_delta_input, d_z, d_delta, outputTensorDesc);
-	Util::printDeviceData(d_delta, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta:");
-
-	float alpha = 1.0f, beta = 0.0f;
-	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
-	checkCUDNN(cudnnConvolutionBackwardFilter(Cuda::cudnnHandle,
-			(void *)&alpha, inputTensorDesc, d_input, outputTensorDesc, d_delta, convDesc, convBwdFilterAlgo,
-			d_workspace, workspaceSize,
-			(void *)&beta, filterDesc, d_delta_weight));
-	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
-
-	checkCUDNN(cudnnConvolutionBackwardBias(Cuda::cudnnHandle,
-			&alpha, outputTensorDesc, d_delta, &beta, biasTensorDesc, d_delta_bias));
-	Util::printDeviceData(d_delta_bias, 1, 1, filter_d.filters, 1, "d_delta_bias:");
-
-	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
-	checkCUDNN(cudnnConvolutionBackwardData(Cuda::cudnnHandle,
-			(void *)&alpha, filterDesc, d_filters, outputTensorDesc, d_delta, convDesc, convBwdDataAlgo,
-			d_workspace, workspaceSize,
-			(void *)&beta, inputTensorDesc, d_delta_input));
-
-	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
-	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
-
-	propBackpropagation();
+	return weight_result + bias_result;
 }
 
+void ConvLayer::_scaleParam(DATATYPE scale_factor) {
+	int weight_size = filter_d.size();
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &scale_factor, d_delta_weight, 1));
 
-/*
-void ConvLayer::reset_nabla(UINT idx) {
-	// 한번만 초기화하기 위해 마지막 prev layer의 초기화 요청에 대해서만 처리하고
-	// next layer들에 대해서도 초기화 요청한다.
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-
-	//for(UINT i = 0; i < filter_d.filters; i++) nabla_w[i].zeros();
-	//nabla_b.zeros();
-
-	propResetNParam();
+	int bias_size = filter_d.filters;
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &scale_factor, d_delta_bias, 1));
 }
-*/
+
+void ConvLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
+
+	int activationType = (int)activation_fn->getType();
+
+	ofs.write((char *)&filter_d, sizeof(filter_dim));
+	ofs.write((char *)&activationType, sizeof(int));
+	ofs.write((char *)&weight_update_param, sizeof(update_param));
+	ofs.write((char *)&bias_update_param, sizeof(update_param));
+	ofs.write((char *)&weight_filler, sizeof(param_filler));
+	ofs.write((char *)&bias_filler, sizeof(param_filler));
+
+	checkCudaErrors(cudaMemcpyAsync(filters, d_filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpyAsync(biases, d_biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyDeviceToHost));
+	ofs.write((char *)filters, sizeof(DATATYPE)*filter_d.size());
+	ofs.write((char *)biases, sizeof(DATATYPE)*filter_d.filters);
+}
 
 void ConvLayer::_update(UINT n, UINT miniBatchSize) {
 	Util::printMessage("ConvLayer::update()---"+string(name));
@@ -779,94 +686,70 @@ void ConvLayer::_update(UINT n, UINT miniBatchSize) {
 
 }
 
-void ConvLayer::_save(ofstream &ofs) {
-	HiddenLayer::_save(ofs);
+void ConvLayer::_feedforward(const DATATYPE *input, const char *end) {
+	Util::printMessage("ConvLayer::_feedforward()---"+string(name));
 
-	int activationType = (int)activation_fn->getType();
+	//Util::setPrint(true);
+	this->d_input = input;
+	//float alpha = 1.0f, beta = 0.0f;
 
-	ofs.write((char *)&filter_d, sizeof(filter_dim));
-	ofs.write((char *)&activationType, sizeof(int));
-	ofs.write((char *)&weight_update_param, sizeof(update_param));
-	ofs.write((char *)&bias_update_param, sizeof(update_param));
-	ofs.write((char *)&weight_filler, sizeof(param_filler));
-	ofs.write((char *)&bias_filler, sizeof(param_filler));
+	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
 
-	checkCudaErrors(cudaMemcpyAsync(filters, d_filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpyAsync(biases, d_biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyDeviceToHost));
-	ofs.write((char *)filters, sizeof(DATATYPE)*filter_d.size());
-	ofs.write((char *)biases, sizeof(DATATYPE)*filter_d.filters);
+	checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle,
+			&Cuda::alpha, inputTensorDesc, d_input, filterDesc, d_filters, convDesc,
+			convFwdAlgo, d_workspace, workspaceSize, &Cuda::beta, outputTensorDesc, d_z));
+	Util::printDeviceData(d_z, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_z:");
+
+	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
+	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
+			(void *)&Cuda::alpha, biasTensorDesc,	d_biases, (void *)&Cuda::alpha, outputTensorDesc, d_z));
+	Util::printDeviceData(d_z, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_z:");
+
+	activation_fn->activate(d_z, d_output, outputTensorDesc);
+
+	//if(Util::temp_flag && strncmp("inception", this->name, 9) == 0) {
+	//if(Util::validPage()) {
+		//Util::setPrint(true);
+		//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, this->name+string("/d_output:"));
+		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
+		//Util::setPrint(false);
+	//}
 }
 
+void ConvLayer::_backpropagation() {
+	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
 
-void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
+	Util::printMessage("ConvLayer::backpropagation()---"+string(name));
+	Cuda::refresh();
 
-	filter_dim filter_d;
-	ActivationType activationType;
-	update_param weight_update_param, bias_update_param;
-	param_filler weight_filler, bias_filler;
+	Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
+	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
+	activation_fn->d_activate(d_output, d_delta_output, d_z, d_delta, outputTensorDesc);
+	Util::printDeviceData(d_delta, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta:");
 
-	ifs.read((char *)&filter_d, sizeof(filter_dim));
-	ifs.read((char *)&activationType, sizeof(int));
-	ifs.read((char *)&weight_update_param, sizeof(update_param));
-	ifs.read((char *)&bias_update_param, sizeof(update_param));
-	ifs.read((char *)&weight_filler, sizeof(param_filler));
-	ifs.read((char *)&bias_filler, sizeof(param_filler));
+	//float alpha = 1.0f, beta = 0.0f;
+	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+	checkCUDNN(cudnnConvolutionBackwardFilter(Cuda::cudnnHandle,
+			(void *)&Cuda::alpha, inputTensorDesc, d_input, outputTensorDesc, d_delta, convDesc, convBwdFilterAlgo,
+			d_workspace, workspaceSize,
+			(void *)&Cuda::beta, filterDesc, d_delta_weight));
+	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
 
-	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
-	ConvLayer::_shape(false);
+	checkCUDNN(cudnnConvolutionBackwardBias(Cuda::cudnnHandle,
+			&Cuda::alpha, outputTensorDesc, d_delta, &Cuda::beta, biasTensorDesc, d_delta_bias));
+	Util::printDeviceData(d_delta_bias, 1, 1, filter_d.filters, 1, "d_delta_bias:");
 
-	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
-	ifs.read((char *)filters, sizeof(DATATYPE)*filter_d.size());
-	ifs.read((char *)biases, sizeof(DATATYPE)*filter_d.filters);
-	checkCudaErrors(cudaMemcpyAsync(d_filters, filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpyAsync(d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
+	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
+	checkCUDNN(cudnnConvolutionBackwardData(Cuda::cudnnHandle,
+			(void *)&Cuda::alpha, filterDesc, d_filters, outputTensorDesc, d_delta, convDesc, convBwdDataAlgo,
+			d_workspace, workspaceSize,
+			(void *)&Cuda::beta, inputTensorDesc, d_delta_input));
+
+	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
+	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
 }
-
-
-
-DATATYPE ConvLayer::_sumSquareGrad() {
-	DATATYPE weight_result;
-	DATATYPE bias_result;
-
-	int weight_size = filter_d.size();
-	checkCudaErrors(cublasSdot(Cuda::cublasHandle, weight_size, d_delta_weight, 1, d_delta_weight, 1, &weight_result));
-	int bias_size = filter_d.filters;
-	checkCudaErrors(cublasSdot(Cuda::cublasHandle, bias_size, d_delta_bias, 1, d_delta_bias, 1, &bias_result));
-
-	//cout << weight_result + bias_result << " ";
-
-	return weight_result + bias_result;
-}
-
-
-DATATYPE ConvLayer::_sumSquareParam() {
-	DATATYPE weight_result;
-	DATATYPE bias_result;
-
-	int weight_size = filter_d.size();
-	checkCudaErrors(cublasSdot(Cuda::cublasHandle, weight_size, d_filters, 1, d_filters, 1, &weight_result));
-
-	int bias_size = filter_d.filters;
-	checkCudaErrors(cublasSdot(Cuda::cublasHandle, bias_size, d_biases, 1, d_biases, 1, &bias_result));
-
-	return weight_result + bias_result;
-}
-
-void ConvLayer::_scaleParam(DATATYPE scale_factor) {
-	int weight_size = filter_d.size();
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &scale_factor, d_delta_weight, 1));
-
-	int bias_size = filter_d.filters;
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &scale_factor, d_delta_bias, 1));
-}
-
-
-
-
 
 #endif
-
-
 
 

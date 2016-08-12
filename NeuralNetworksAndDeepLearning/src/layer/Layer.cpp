@@ -208,6 +208,7 @@ void Layer::feedforward(UINT idx, const rcube &input, const char *end=0) {
 }
 #else
 void Layer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
+	_concat(idx, input);
 	if (!isLastPrevLayerRequest(idx)) return;
 
 	_feedforward(input, end);
@@ -385,6 +386,9 @@ void Layer::_feedforward(const DATATYPE *input, const char *end) {
 	return;
 }
 
+void Layer::_concat(UINT idx, const DATATYPE* input) {
+	return;
+}
 
 
 

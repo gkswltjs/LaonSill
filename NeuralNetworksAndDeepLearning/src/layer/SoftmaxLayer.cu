@@ -9,6 +9,7 @@
 
 
 
+#ifdef GPU_MODE
 ///////////////////////////////////////////////////////////////////////////////////////////
 // GPU Kernels
 
@@ -27,6 +28,9 @@ __global__ void Dropout_(const int n, const DATATYPE* in, const DATATYPE* mask,
 		out[index] = in[index] * (mask[index]) * scale;
 	}
 }
+#endif
+
+
 
 
 
@@ -40,19 +44,38 @@ SoftmaxLayer::SoftmaxLayer(const string name, int n_out, double p_dropout, updat
 			ActivationType::Softmax, CostType::LogLikelihood) {
 	initialize();
 }
-
+#ifndef GPU_MODE
+SoftmaxLayer::SoftmaxLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler)
+	: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
+			ActivationType::Softmax, CostType::LogLikelihood) {
+	initialize();
+}
+#endif
 SoftmaxLayer::~SoftmaxLayer() {}
 
-void SoftmaxLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	OutputLayer::load(ifs, layerMap);
-	initialize();
-	SoftmaxLayer::_shape(false);
+
+
+
+
+#ifndef GPU_MODE
+void SoftmaxLayer::cost(const rvec &target) {
+	// delta
+	cost_fn->d_cost(z, output, target, delta);
+	Util::printVec(nabla_b, "bias:");
+	Util::printMat(nabla_w, "weight");
+	Util::printCube(delta, "delta:");
+	Util::printCube(input, "input:");
+	nabla_b += delta.slice(0);
+	// delta weight
+	nabla_w += delta.slice(0)*input.slice(0).t();
+
+	// delta input
+	delta_input.slice(0) = weight.t()*delta.slice(0);
+
+	propBackpropagation();
 }
-
-
-
-
-
+#else
 void SoftmaxLayer::cost(const UINT *target) {
 	Util::printMessage("SoftmaxLayer::cost()---"+string(name));
 	Cuda::refresh();
@@ -65,9 +88,6 @@ void SoftmaxLayer::cost(const UINT *target) {
 	//Util::setPrint(false);
 	// Accounting for batch size in SGD
 	// checkCudaErrors(cublasSscal(cublasHandle, ref_fc2.outputs * m_batchSize, &scalVal, dloss_data, 1));
-
-
-
 
 	/*
 	if(Util::train && p_dropout < 1.0f) {
@@ -83,30 +103,31 @@ void SoftmaxLayer::cost(const UINT *target) {
 	}
 	*/
 
-
-
-
-	float alpha = 1.0f, beta = 0.0f;
 	Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, out_dim.rows, in_dim.rows, out_dim.batches,
-			&alpha, d_delta, out_dim.rows, d_input, in_dim.rows, &beta, d_delta_weight, out_dim.rows));
+			&Cuda::alpha, d_delta, out_dim.rows, d_input, in_dim.rows, &Cuda::beta, d_delta_weight, out_dim.rows));
 	Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
 
 	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N, out_dim.rows, out_dim.batches,
-			&alpha, d_delta, out_dim.rows, d_onevec, 1, &beta, d_delta_bias, 1));
+			&Cuda::alpha, d_delta, out_dim.rows, d_onevec, 1, &Cuda::beta, d_delta_bias, 1));
 	Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
 
 	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
 	Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, in_dim.rows, out_dim.batches, out_dim.rows,
-			&alpha, d_weight, out_dim.rows, d_delta, out_dim.rows, &beta, d_delta_input, in_dim.rows));
+			&Cuda::alpha, d_weight, out_dim.rows, d_delta, out_dim.rows, &Cuda::beta, d_delta_input, in_dim.rows));
 
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.batches, 1, 1, "d_delta_input:");
 
 	propBackpropagation();
 }
+#endif
 
-
+void SoftmaxLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	OutputLayer::load(ifs, layerMap);
+	initialize();
+	SoftmaxLayer::_shape(false);
+}
 
 
 
@@ -124,6 +145,9 @@ void SoftmaxLayer::initialize() {
 	//bias.zeros();
 }
 
+
+
+
 void SoftmaxLayer::_shape(bool recursive) {
 	if(recursive) {
 		OutputLayer::_shape();
@@ -133,3 +157,27 @@ void SoftmaxLayer::_shape(bool recursive) {
 void SoftmaxLayer::_clearShape() {
 	OutputLayer::_clearShape();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

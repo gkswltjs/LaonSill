@@ -70,7 +70,7 @@ public:
 	}
 
 	void activate(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc) {
-		float alpha = 1.0f, beta = 0.0f;
+		//float alpha = 1.0f, beta = 0.0f;
 		//checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL,
 		//		&alpha, tensorDesc, z, &beta, tensorDesc, activation));
 
@@ -109,7 +109,7 @@ public:
 
 
 		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
-			&alpha, tensorDesc, z, &beta, tensorDesc, activation));
+			&Cuda::alpha, tensorDesc, z, &Cuda::beta, tensorDesc, activation));
 
 
 		float result;

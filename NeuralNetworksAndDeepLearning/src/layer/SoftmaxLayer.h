@@ -13,9 +13,13 @@
 #include "../cost/LogLikelihoodCost.h"
 #include "../activation/Softmax.h"
 #include "../exception/Exception.h"
+#ifndef GPU_MODE
 #include <armadillo>
+#endif
 
+#ifndef GPU_MODE
 using namespace arma;
+#endif
 
 
 
@@ -43,66 +47,36 @@ public:
 	 */
 	SoftmaxLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler);
+#ifndef GPU_MODE
+	SoftmaxLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+			param_filler weight_filler, param_filler bias_filler);
+#endif
 	virtual ~SoftmaxLayer();
 
-	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
 
 #ifndef GPU_MODE
-public:
-	SoftmaxLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler)
-		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
-				ActivationType::Softmax, CostType::LogLikelihood) {
-		initialize();
-	}
-
-	void cost(const rvec &target) {
-		// delta
-		cost_fn->d_cost(z, output, target, delta);
-		Util::printVec(nabla_b, "bias:");
-		Util::printMat(nabla_w, "weight");
-		Util::printCube(delta, "delta:");
-		Util::printCube(input, "input:");
-		nabla_b += delta.slice(0);
-		// delta weight
-		nabla_w += delta.slice(0)*input.slice(0).t();
-
-		// delta input
-		delta_input.slice(0) = weight.t()*delta.slice(0);
-
-		propBackpropagation();
-	}
-
+	void cost(const rvec &target);
 #else
-public:
+	/**
+	 * @details 출력 레이어의 출력값과 데이터에 대한 정답으로 cost를 계산한다.
+	 * @param target 데이터에 대한 정답 장치 메모리 포인터
+	 */
 	void cost(const UINT *target);
 #endif
+	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 
-protected:
 
-#ifndef GPU_MODE
-protected:
-	void initialize() {
-		this->type = LayerType::Softmax;
-
-		//this->cost_fn = CostFactory::create(CostType::LogLikelihood);
-		//this->activation_fn = ActivationFactory::create(ActivationType::Softmax);
-		//this->activation_fn->initialize_weight(in_dim.size(), weight);
-
-		//weight.zeros();
-		//bias.zeros();
-	}
-#else
 protected:
 	void initialize();
+
+
+protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-#endif
 
 };
-
-
 
 
 

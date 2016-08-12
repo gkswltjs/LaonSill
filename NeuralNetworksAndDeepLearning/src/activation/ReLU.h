@@ -66,16 +66,16 @@ public:
 		checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0.0));
 	}
 	void activate(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc) {
-		float alpha = 1.0f, beta = 0.0f;
-		checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, activationDesc, &alpha,
-					tensorDesc, z, &beta, tensorDesc, activation));
+		//float alpha = 1.0f, beta = 0.0f;
+		checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, activationDesc, &Cuda::alpha,
+					tensorDesc, z, &Cuda::beta, tensorDesc, activation));
 	}
 	void d_activate(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
 			cudnnTensorDescriptor_t &tensorDesc) {
-		float alpha = 1.0f, beta = 0.0f;
-		checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, activationDesc, &alpha,
+		//float alpha = 1.0f, beta = 0.0f;
+		checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, activationDesc, &Cuda::alpha,
 				tensorDesc, activation, tensorDesc, deltaInput,
-				tensorDesc, z, &beta, tensorDesc, da));
+				tensorDesc, z, &Cuda::beta, tensorDesc, da));
 	}
 
 private:

@@ -129,15 +129,15 @@ void PoolingLayer::_shape(bool recursive) {
 	}
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(DATATYPE)*out_dim.batchsize()));
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
 
 void PoolingLayer::_clearShape() {
 	checkCudaErrors(cudaFree(d_delta));
-	checkCudaErrors(cudaFree(d_delta_input));
+	//checkCudaErrors(cudaFree(d_delta_input));
 
 	d_delta = 0;
-	d_delta_input = 0;
+	//d_delta_input = 0;
 
 	HiddenLayer::_clearShape();
 }
@@ -145,7 +145,7 @@ void PoolingLayer::_clearShape() {
 
 PoolingLayer::~PoolingLayer() {
 	checkCudaErrors(cudaFree(d_delta));
-	checkCudaErrors(cudaFree(d_delta_input));
+	//checkCudaErrors(cudaFree(d_delta_input));
 
 	PoolingFactory::destroy(pooling_fn);
 }
@@ -170,49 +170,16 @@ void PoolingLayer::_feedforward(const DATATYPE *input, const char *end) {
 
 
 
-void PoolingLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
-	Util::printMessage("PoolingLayer::backpropagation()---"+string(name));
+void PoolingLayer::_backpropagation() {
+	Util::printMessage("PoolingLayer::_backpropagation()---"+string(name));
 	Cuda::refresh();
-
-	if(idx == 0) {
-		// initialize d_delta
-		checkCudaErrors(cudaMemset(d_delta, 0, sizeof(DATATYPE)*out_dim.batchsize()));
-	}
-	Util::printDeviceData(d_delta, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta:");
-
-	// add next_delta_input to delta
-	const float alpha = 1.0f;
-	//DATATYPE *next_delta_input = next_layer->getDeltaInput();
-	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()),
-			&alpha, next_delta_input, 1, d_delta, 1));
-	Util::printDeviceData(d_delta, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta:");
-
-	if(!isLastNextLayerRequest(idx)) return;
 
 	// backpropagate delta to delta_input
 	Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
-	pooling_fn->d_pool(outputTensorDesc, d_output, d_delta, inputTensorDesc, d_input, d_delta_input);
+	pooling_fn->d_pool(outputTensorDesc, d_output, d_delta_output, inputTensorDesc, d_input, d_delta_input);
 
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
-
-	propBackpropagation();
-
-	/*
-	// TODO w_next_delta를 모두 합하여 한 번에 d_pool하는 것이 연산적으로 유리, 수정 필요
-	rcube w_next_delta(size(output));
-	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
-
-	rcube temp(size(delta_input));
-	pooling_fn->d_pool(pool_d, w_next_delta, pool_map, temp);
-	delta_input += temp;
-
-	// dx가 모두 aggregate된 후 이전 레이어로 back propagate한다.
-	if(!isLastNextLayerRequest(idx)) return;
-
-	propBackpropagation();
-	*/
 }
 
 #endif

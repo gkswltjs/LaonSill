@@ -9,6 +9,9 @@
 #include "../Timer.h"
 
 int Cuda::gpuid = 0;
+const float Cuda::alpha = 1.0f;
+const float Cuda::beta = 0.0f;
+
 cudnnHandle_t Cuda::cudnnHandle;
 cublasHandle_t Cuda::cublasHandle;
 

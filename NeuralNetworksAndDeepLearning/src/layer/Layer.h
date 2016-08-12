@@ -365,6 +365,14 @@ protected:
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
 	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+	/**
+	 * @details 복수의 '이전' 레이어로부터의 입력을 조합한다.
+	 *          조합은 입력의 합으로 한다.
+	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 idx
+	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
+	 */
+	virtual void _concat(UINT idx, const DATATYPE* input);
+
 
 
 

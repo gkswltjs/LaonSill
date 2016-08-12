@@ -102,7 +102,7 @@ void DepthConcatLayer::_shape(bool recursive) {
 		HiddenLayer::_shape();
 	}
 
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
 
 void DepthConcatLayer::reshape(UINT idx, io_dim in_dim) {
@@ -118,8 +118,8 @@ void DepthConcatLayer::clearShape(UINT idx) {
 }
 
 void DepthConcatLayer::_clearShape() {
-	checkCudaErrors(cudaFree(d_delta_input));
-	d_delta_input = NULL;
+	//checkCudaErrors(cudaFree(d_delta_input));
+	//d_delta_input = NULL;
 	offsetIndex = 0;
 	//out_dim.channels = 0;
 
@@ -128,19 +128,11 @@ void DepthConcatLayer::_clearShape() {
 
 DepthConcatLayer::~DepthConcatLayer() {
 
-	checkCudaErrors(cudaFree(d_delta_input));
+	//checkCudaErrors(cudaFree(d_delta_input));
 }
 
 
-
-void DepthConcatLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
-	// Layer::feedforward()의 경우 먼저 마지막 레이어인지 확인 후 아닌 경우 종료
-	// DepthConcatLayer의 경우, 요청에 대해 모두 save를 하고 있어야 한다.
-	concatInput(idx, input);
-	HiddenLayer::feedforward(idx, input, end);
-}
-
-void DepthConcatLayer::concatInput(UINT idx, const DATATYPE* input) {
+void DepthConcatLayer::_concat(UINT idx, const DATATYPE* input) {
 	bool print = Util::getPrint();
 	//Util::setPrint(true);
 
@@ -173,7 +165,8 @@ void DepthConcatLayer::concatInput(UINT idx, const DATATYPE* input) {
 	//}
 }
 
-void DepthConcatLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
+
+void DepthConcatLayer::_deconcat(UINT idx, const DATATYPE* next_delta_input) {
 	bool print = Util::getPrint();
 	//Util::setPrint(true);
 
@@ -196,16 +189,12 @@ void DepthConcatLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
 		for(int i = 0; i < out_dim.batches; i++) {
 			//cout << "next_delta_input offset: " << out_dim.unitsize()*i+offsets[j] << ", d_delta_input offset: " << offsets[j]*2+prevLayers[j].prev_layer->getOutDimension().unitsize()*i << endl;
 			checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(prevLayers[j].prev_layer->getOutDimension().unitsize()),
-					&alpha, next_delta_input+out_dim.unitsize()*i+offsets[j], 1, d_delta_input+offsets[j]*2+prevLayers[j].prev_layer->getOutDimension().unitsize()*i, 1));
+					&Cuda::alpha, next_delta_input+out_dim.unitsize()*i+offsets[j], 1, d_delta_input+offsets[j]*2+prevLayers[j].prev_layer->getOutDimension().unitsize()*i, 1));
 		}
 	}
 	Util::printDeviceData(d_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_input:");
-
-	if(!isLastNextLayerRequest(idx)) return;
-
-	//Util::setPrint(print);
-	propBackpropagation();
 }
+
 
 
 DATATYPE *DepthConcatLayer::getDeltaInput() {

@@ -14,9 +14,13 @@
 #include "LayerConfig.h"
 #include "../Util.h"
 #include "../exception/Exception.h"
+#ifndef GPU_MODE
 #include <armadillo>
+#endif
 
+#ifndef GPU_MODE
 using namespace arma;
+#endif
 
 
 /**
@@ -43,9 +47,13 @@ public:
 	InputLayer(const string name) : Layer(name) {
 		initialize();
 	}
+#ifndef GPU_MODE
+	InputLayer(const string name, int n_in) : Layer(name, n_in, n_in) {
+		initialize();
+	}
+#endif
 	/**
 	 * @details InputLayer 소멸자
-	 *          가능성은 낮지만 InputLayer를 상속하는 경우를 대비하여 virtual로 소멸자를 선언했다.
 	 */
 	virtual ~InputLayer() {}
 
@@ -53,25 +61,8 @@ public:
 	 * @details batch size 1 기준의 입력 엘리먼트의 갯수를 조회한다.
 	 * @return batch size 1 기준의 입력 엘리먼트의 갯수
 	 */
-	int getInputDimension() const { return in_dim.rows*in_dim.cols*in_dim.channels; }
-
-	/**
-	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
-	 *          입력 레이어의 경우 시작레이어이기 때문에 자신의 레이어를 쓸 뿐 아니라
-	 *          연결된 이 후의 레이어들의 메타 정보를 기록하는 역할도 한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param ofs 레이어를 쓸 출력 스트림
-	 */
-	virtual void save(UINT idx, ofstream &ofs) {
-		saveHeader(0, ofs);
-		// header boundary (dummy layer)
-		int type = 0;
-		Layer *layer = 0;
-		ofs.write((char *)&type, sizeof(int));
-		ofs.write((char *)&layer, sizeof(Layer *));
-
-		Layer::_save(ofs);
-		propSave(ofs);
+	int getInputSize() const {
+		return in_dim.rows*in_dim.cols*in_dim.channels;
 	}
 
 	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
@@ -80,16 +71,44 @@ public:
 		loadNetwork(ifs, layerMap);
 	}
 
-#ifndef GPU_MODE
-public:
-	InputLayer(const string name, int n_in) : Layer(name, n_in, n_in) {
-		initialize();
+
+protected:
+	void initialize() {
+		this->type = LayerType::Input;
 	}
+
+	virtual void _shape(bool recursive=true) {
+		this->out_dim = in_dim;
+		if(recursive) {
+			Layer::_shape();
+		}
+	}
+	virtual void _clearShape() {
+		Layer::_clearShape();
+	}
+	/**
+	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
+	 *          입력 레이어의 경우 시작레이어이기 때문에 자신의 레이어를 쓸 뿐 아니라
+	 *          연결된 이 후의 레이어들의 메타 정보를 기록하는 역할도 한다.
+	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param ofs 레이어를 쓸 출력 스트림
+	 */
+	virtual void _save(ofstream &ofs) {
+		saveHeader(0, ofs);
+		// header boundary (dummy layer)
+		int type = 0;
+		Layer *layer = 0;
+		ofs.write((char *)&type, sizeof(int));
+		ofs.write((char *)&layer, sizeof(Layer *));
+
+		Layer::_save(ofs);
+	}
+#ifndef GPU_MODE
 	/**
 	 * Input 무조건 첫번째 layer,
 	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
 	 */
-	void _feedforward(const rcube &input, const char *end=0) {
+	virtual void _feedforward(const rcube &input, const char *end=0) {
 		//if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 		Util::convertCube(input, this->input);
@@ -99,10 +118,8 @@ public:
 
 		propFeedforward(this->output, end);
 	}
-
 #else
-public:
-	void _feedforward(const DATATYPE *input, const char *end=0) {
+	virtual void _feedforward(const DATATYPE *input, const char *end=0) {
 		Util::printMessage("InputLayer::_feedforward()---"+string(name));
 		this->d_input = input;
 		//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
@@ -115,35 +132,6 @@ public:
 		//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &norm, this->d_output, 1));
 	}
 #endif
-
-
-
-
-protected:
-	void initialize() {
-		this->type = LayerType::Input;
-	}
-
-#ifndef GPU_MODE
-protected:
-#else
-protected:
-	virtual void _shape(bool recursive=true) {
-		this->out_dim = in_dim;
-		if(recursive) {
-			Layer::_shape();
-		}
-	}
-
-	virtual void _clearShape() {
-		Layer::_clearShape();
-	}
-
-#endif
-
-
-
-
 };
 
 

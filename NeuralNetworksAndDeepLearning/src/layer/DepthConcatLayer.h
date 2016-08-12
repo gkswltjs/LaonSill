@@ -29,20 +29,11 @@ public:
 	DepthConcatLayer(const string name);
 	virtual ~DepthConcatLayer();
 
-	void backpropagation(UINT idx, DATATYPE *next_delta_input);
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 	virtual void shape(UINT idx, io_dim in_dim);
 	virtual void reshape(UINT idx, io_dim in_dim);
 	virtual void clearShape(UINT idx);
-	/**
-	 * @details 레이어 입력값을 전달받아 출력값을 계산하고 다음 레이어들에 대해 feedforward()를 요청한다.
-	 *          하나의 입력만을 처리하는 다른 레이어와는 달리 연결된 이전 레이어의 입력을 모두 concat하는 특수 기능을 구현한다.ㅈ
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
-	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
-	 */
-	virtual void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
 
 #ifndef GPU_MODE
 public:
@@ -70,7 +61,14 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
-	void concatInput(UINT idx, const DATATYPE* input);
+	/**
+	 * @details 일반적인 concat과 달리 channel을 기준으로 조합하므로 재정의한다.
+	 */
+	virtual void _concat(UINT idx, const DATATYPE* input);
+	/**
+	 * @details 일반적인 deconcat과 달리 channel을 기준으로 해체하므로 재정의한다.
+	 */
+	virtual void _deconcat(UINT idx, const DATATYPE* next_delta_input);
 
 	int offsetIndex;			///< 입력에 관한 gradient 호출한 횟수 카운터, getDeltaInput() 호출마다 증가되고 feedforward()가 수행될 때 reset된다.
 
@@ -82,7 +80,7 @@ protected:
 	vector<int> offsets;
 #else
 protected:
-	const float alpha=1.0f, beta=0.0f;				///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
+	//const float alpha=1.0f, beta=0.0f;				///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
 #endif
 
 

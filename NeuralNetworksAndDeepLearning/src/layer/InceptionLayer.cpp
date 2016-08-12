@@ -290,7 +290,7 @@ InceptionLayer::~InceptionLayer() {
 			firstLayers[i] = NULL;
 		}
 	}
-	checkCudaErrors(cudaFree(d_delta_input));
+	//checkCudaErrors(cudaFree(d_delta_input));
 }
 
 void InceptionLayer::initialize() {
@@ -414,8 +414,10 @@ void InceptionLayer::_shape(bool recursive) {
 		HiddenLayer::_shape();
 	}
 
-	int workspaceSize = std::max(in_dim.batchsize(), out_dim.batchsize());
-	checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*workspaceSize));
+	// TODO HiddenLayer에서 in_dim.batchsize()기준으로 생성...
+	// out_dim.batchsize()가 in_dim.batchsize() 대비 더 큰 경우를 따져봐야 한다.
+	//int workspaceSize = std::max(in_dim.batchsize(), out_dim.batchsize());
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*workspaceSize));
 }
 
 void InceptionLayer::_reshape() {
@@ -426,7 +428,7 @@ void InceptionLayer::_reshape() {
 }
 
 void InceptionLayer::_clearShape() {
-	checkCudaErrors(cudaFree(d_delta_input));
+	//checkCudaErrors(cudaFree(d_delta_input));
 
 	HiddenLayer::_clearShape();
 }
@@ -449,60 +451,21 @@ void InceptionLayer::_feedforward(const DATATYPE *input, const char *end) {
 	}
 }
 
-void InceptionLayer::backpropagation(UINT idx, DATATYPE *next_delta_input) {
-	Util::printMessage("InceptionLayer::backpropagation()---"+string(name));
+void InceptionLayer::_backpropagation() {
+	lastLayer->backpropagation(0, d_delta_output);
 
-	if(idx == 0) {
-		checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*out_dim.batchsize()));
-	}
-
-	Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
-	Util::printDeviceData(d_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_input:");
-
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()),
-			&alpha, next_delta_input, 1, d_delta_input, 1));
-
-	Util::printDeviceData(d_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_input:");
-
-	if(!isLastNextLayerRequest(idx)) return;
-	lastLayer->backpropagation(0, this->getDeltaInput());
-
-	checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*in_dim.batchsize()));
-	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
+	//checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*in_dim.batchsize()));
+	//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {
-		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()),
-					&alpha, firstLayers[i]->getDeltaInput(), 1, d_delta_input, 1));
+		if (i == 0) {
+			checkCudaErrors(cudaMemcpyAsync(d_delta_input, firstLayers[i]->getDeltaInput(), sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+		} else {
+			checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()),
+					&Cuda::alpha, firstLayers[i]->getDeltaInput(), 1, d_delta_input, 1));
+		}
 	}
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
-
-	// TODO
-	//float scale_term = 1.0f / firstLayers.size();
-	//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &scale_term, d_delta_input, 1));
-
-	propBackpropagation();
-
-	/*
-	rcube w_next_delta(size(output));
-	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
-	Util::printCube(w_next_delta, "w_next_delta:");
-	Util::printCube(delta_input, "delta_input:");
-	delta_input += w_next_delta;
-
-	if(!isLastNextLayerRequest(idx)) return;
-	lastLayer->backpropagation(0, this);
-
-	delta_input.set_size(size(input));
-	delta_input.zeros();
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		delta_input += firstLayers[i]->getDeltaInput();
-	}
-
-	propBackpropagation();
-
-	delta_input.set_size(size(output));
-	delta_input.zeros();
-	*/
 }
 
 
