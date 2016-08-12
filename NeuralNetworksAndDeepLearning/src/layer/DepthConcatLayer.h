@@ -25,25 +25,15 @@
  */
 class DepthConcatLayer : public HiddenLayer {
 public:
-	DepthConcatLayer() { this->type = LayerType::DepthConcat; }
+	DepthConcatLayer();
 	DepthConcatLayer(const string name);
+#ifndef GPU_MODE
+	DepthConcatLayer(const string name, int n_in);
+#endif
 	virtual ~DepthConcatLayer();
 
-	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-
-	virtual void shape(UINT idx, io_dim in_dim);
-	virtual void reshape(UINT idx, io_dim in_dim);
-	virtual void clearShape(UINT idx);
-
 #ifndef GPU_MODE
-public:
-	DepthConcatLayer(const string name, int n_in);
 	rcube &getDeltaInput();
-	virtual void _feedforward(const rcube &input, const char *end=0);
-	void reset_nabla(UINT idx) {
-		if(!isLastPrevLayerRequest(idx)) return;
-		propResetNParam();
-	}
 #else
 	/**
 	 * @details 조합되어있는 입력에 관한 gradient를 getDeltaInput의 호출 순서에 따라 다시 deconcatenation하여 조회한다.
@@ -52,15 +42,27 @@ public:
 	 * @return getDeltaInput() 순서에 따라 deconcate된 d_delta_input 장치 메모리 포인터
 	 */
 	DATATYPE *getDeltaInput();
-
 #endif
 
+	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
+	virtual void shape(UINT idx, io_dim in_dim);
+	virtual void reshape(UINT idx, io_dim in_dim);
+	virtual void clearShape(UINT idx);
 
 protected:
 	void initialize();
+
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
+#ifndef GPU_MODE
+	virtual void _feedforward(const rcube &input, const char *end=0);
+	void reset_nabla(UINT idx) {
+		if(!isLastPrevLayerRequest(idx)) return;
+		propResetNParam();
+	}
+#else
 	/**
 	 * @details 일반적인 concat과 달리 channel을 기준으로 조합하므로 재정의한다.
 	 */
@@ -69,21 +71,18 @@ protected:
 	 * @details 일반적인 deconcat과 달리 channel을 기준으로 해체하므로 재정의한다.
 	 */
 	virtual void _deconcat(UINT idx, const DATATYPE* next_delta_input);
+#endif
 
-	int offsetIndex;			///< 입력에 관한 gradient 호출한 횟수 카운터, getDeltaInput() 호출마다 증가되고 feedforward()가 수행될 때 reset된다.
 
-#ifndef GPU_MODE
 protected:
+#ifndef GPU_MODE
 	rcube delta_input;
 	rcube delta_input_sub;
 
 	vector<int> offsets;
 #else
-protected:
-	//const float alpha=1.0f, beta=0.0f;				///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
+	int offsetIndex;			///< 입력에 관한 gradient 호출한 횟수 카운터, getDeltaInput() 호출마다 증가되고 feedforward()가 수행될 때 reset된다.
 #endif
-
-
 
 };
 

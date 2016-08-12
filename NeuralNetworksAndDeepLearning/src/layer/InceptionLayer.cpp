@@ -16,16 +16,42 @@
 #include "../network/Network.h"
 
 
+InceptionLayer::InceptionLayer() {
+	this->type = LayerType::Inception;
+}
+
 InceptionLayer::InceptionLayer(const string name, int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp,
 		update_param weight_update_param, update_param bias_update_param)
 	: HiddenLayer(name) {
 	initialize(ic, oc_cv1x1, oc_cv3x3reduce, oc_cv3x3, oc_cv5x5reduce, oc_cv5x5, oc_cp, weight_update_param, bias_update_param);
 }
 
+#ifndef GPU_MODE
+InceptionLayer::InceptionLayer(const string name, int n_in, int n_out,
+		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp)
+	: HiddenLayer(name, n_in, n_out) {
+	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, cp);
+}
 
-
-
-
+InceptionLayer::~InceptionLayer() {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		if(firstLayers[i]) {
+			delete firstLayers[i];
+			firstLayers[i] = NULL;
+		}
+	}
+}
+#else
+InceptionLayer::~InceptionLayer() {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		if(firstLayers[i]) {
+			delete firstLayers[i];
+			firstLayers[i] = NULL;
+		}
+	}
+	//checkCudaErrors(cudaFree(d_delta_input));
+}
+#endif
 
 
 void InceptionLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
@@ -54,41 +80,6 @@ void InceptionLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	InceptionLayer::_shape(false);
 }
 
-void InceptionLayer::_save(ofstream &ofs) {
-	HiddenLayer::_save(ofs);
-
-	UINT firstLayerSize = firstLayers.size();
-	ofs.write((char *)&firstLayerSize, sizeof(UINT));
-	// layer next layers
-	for(UINT i = 0; i < firstLayerSize; i++) {
-		ofs.write((char *)&firstLayers[i], sizeof(Layer *));
-	}
-
-	UINT lastLayerSize = 1;
-	ofs.write((char *)&lastLayerSize, sizeof(UINT));
-	ofs.write((char *)&lastLayer, sizeof(Layer *));
-
-	// InceptionLayer의 NIN (내부 네트워크)를 save ////////
-	saveNinHeader(0, ofs);
-	// header boundary
-	int type = 0;
-	Layer *layer = 0;
-	ofs.write((char *)&type, sizeof(int));
-	ofs.write((char *)&layer, sizeof(Layer *));
-
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->save(0, ofs);
-	}
-	//////////////////////////////////////////////////
-
-	Layer *boundary = 0;
-	ofs.write((char *)&boundary, sizeof(Layer *));
-}
-
-
-
-
-
 void InceptionLayer::saveNinHeader(UINT idx, ofstream &ofs) {
 	if(!isLastPrevLayerRequest(idx)) return;
 
@@ -102,200 +93,32 @@ void InceptionLayer::saveNinHeader(UINT idx, ofstream &ofs) {
 	}
 }
 
-
-
-void InceptionLayer::_update(UINT n, UINT miniBatchSize) {
-	Util::printMessage("InceptionLayer::update()---"+string(name));
+Layer* InceptionLayer::find(UINT idx, const char* name) {
+	if(!isLastPrevLayerRequest(idx)) return 0;
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->update(0, n, miniBatchSize);
+		Layer* result = firstLayers[i]->find(0, name);
+		if(result) return result;
 	}
+
+	return Layer::find(idx, name);
 }
 
 
 
 #ifndef GPU_MODE
-
-InceptionLayer::InceptionLayer(const string name, int n_in, int n_out,
-		int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp)
-	: HiddenLayer(name, n_in, n_out) {
-	initialize(cv1x1, cv3x3reduce, cv3x3, cv5x5reduce, cv5x5, cp);
-}
-
-InceptionLayer::~InceptionLayer() {
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		if(firstLayers[i]) {
-			delete firstLayers[i];
-			firstLayers[i] = NULL;
-		}
-	}
-}
-
 void InceptionLayer::initialize() {
 	this->type = LayerType::Inception;
 
 	delta_input.set_size(size(output));
 	delta_input.zeros();
 }
-
-void InceptionLayer::initialize(int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp) {
-	initialize();
-
-	double weight_lr_mult = 1.0;
-	double weight_decay_mult = 1.0;
-	double bias_lr_mult = 2.0;
-	double bias_decay_mult = 0.0;
-
-	ConvLayer *conv1x1Layer = new ConvLayer(
-			(char *)"conv1x1",
-			in_dim,
-			filter_dim(1, 1, in_dim.channels, cv1x1, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
-			param_filler(ParamFillerType::Xavier, 0.03),
-			param_filler(ParamFillerType::Constant, 0.2),
-			ActivationType::ReLU
-			);
-
-	ConvLayer *conv3x3reduceLayer = new ConvLayer(
-			"conv3x3reduce",
-			in_dim,
-			filter_dim(1, 1, in_dim.channels, cv3x3reduce, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
-			param_filler(ParamFillerType::Xavier, 0.09),
-			param_filler(ParamFillerType::Constant, 0.2),
-			ActivationType::ReLU);
-
-	ConvLayer *conv3x3Layer = new ConvLayer(
-			"conv3x3",
-			io_dim(in_dim.rows, in_dim.cols, cv3x3reduce),
-			filter_dim(3, 3, cv3x3reduce, cv3x3, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
-			param_filler(ParamFillerType::Xavier, 0.03),
-			param_filler(ParamFillerType::Constant, 0.2),
-			ActivationType::ReLU
-			);
-
-	ConvLayer *conv5x5recudeLayer = new ConvLayer(
-			"conv5x5reduce",
-			in_dim,
-			filter_dim(1, 1, in_dim.channels, cv5x5reduce, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
-			param_filler(ParamFillerType::Xavier, 0.2),
-			param_filler(ParamFillerType::Constant, 0.2),
-			ActivationType::ReLU
-			);
-
-	ConvLayer *conv5x5Layer = new ConvLayer(
-			"conv5x5",
-			io_dim(in_dim.rows, in_dim.cols, cv5x5reduce),
-			filter_dim(5, 5, cv5x5reduce, cv5x5, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
-			param_filler(ParamFillerType::Xavier, 0.03),
-			param_filler(ParamFillerType::Constant, 0.2),
-			ActivationType::ReLU
-			);
-
-	PoolingLayer *pool3x3Layer = new PoolingLayer(
-			"pool3x3",
-			in_dim,
-			pool_dim(3, 3, 1),
-			PoolingType::Max
-			);
-
-	ConvLayer *convProjectionLayer = new ConvLayer(
-			"convProjection",
-			in_dim,
-			filter_dim(1, 1, in_dim.channels, cp, 1),
-			update_param(weight_lr_mult, weight_decay_mult),
-			update_param(bias_lr_mult, bias_decay_mult),
-			param_filler(ParamFillerType::Xavier, 0.1),
-			param_filler(ParamFillerType::Constant, 0.2),
-			ActivationType::ReLU);
-
-	DepthConcatLayer *depthConcatLayer = new DepthConcatLayer(
-			"depthConcat",
-			io_dim(in_dim.rows, in_dim.cols, cv1x1+cv3x3+cv5x5+cp)
-			);
-
-	firstLayers.push_back(conv1x1Layer);
-	firstLayers.push_back(conv3x3reduceLayer);
-	firstLayers.push_back(conv5x5recudeLayer);
-	firstLayers.push_back(pool3x3Layer);
-
-	lastLayer = depthConcatLayer;
-
-	Network::addLayerRelation(conv3x3reduceLayer, conv3x3Layer);
-	Network::addLayerRelation(conv5x5recudeLayer, conv5x5Layer);
-	Network::addLayerRelation(pool3x3Layer, convProjectionLayer);
-	Network::addLayerRelation(conv1x1Layer, depthConcatLayer);
-	Network::addLayerRelation(conv3x3Layer, depthConcatLayer);
-	Network::addLayerRelation(conv5x5Layer, depthConcatLayer);
-	Network::addLayerRelation(convProjectionLayer, depthConcatLayer);
-}
-
-
-
-void InceptionLayer::_feedforward(UINT idx, const rcube &input, const char *end=0) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->feedforward(0, input, end);
-	}
-	propFeedforward(lastLayer->getOutput(), end);
-}
-
-void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
-	rcube w_next_delta(size(output));
-	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
-	Util::printCube(w_next_delta, "w_next_delta:");
-	Util::printCube(delta_input, "delta_input:");
-	delta_input += w_next_delta;
-
-	if(!isLastNextLayerRequest(idx)) return;
-	lastLayer->backpropagation(0, this);
-
-	delta_input.set_size(size(input));
-	delta_input.zeros();
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		delta_input += firstLayers[i]->getDeltaInput();
-	}
-
-	propBackpropagation();
-
-	delta_input.set_size(size(output));
-	delta_input.zeros();
-}
-
-void InceptionLayer::reset_nabla(UINT idx) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
-
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->reset_nabla(0);
-	}
-	propResetNParam();
-}
-
 
 #else
-
-InceptionLayer::~InceptionLayer() {
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		if(firstLayers[i]) {
-			delete firstLayers[i];
-			firstLayers[i] = NULL;
-		}
-	}
-	//checkCudaErrors(cudaFree(d_delta_input));
-}
-
 void InceptionLayer::initialize() {
 	this->type = LayerType::Inception;
 }
+#endif
 
 void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp,
 		update_param weight_update_param, update_param bias_update_param) {
@@ -404,6 +227,7 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	Network::addLayerRelation(convProjectionLayer, depthConcatLayer);
 }
 
+
 void InceptionLayer::_shape(bool recursive) {
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->shape(0, in_dim);
@@ -433,13 +257,109 @@ void InceptionLayer::_clearShape() {
 	HiddenLayer::_clearShape();
 }
 
+DATATYPE InceptionLayer::_sumSquareGrad() {
+	DATATYPE result;
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		result += firstLayers[i]->sumSquareGrad(0);
+	}
+	return result;
+}
+
+DATATYPE InceptionLayer::_sumSquareParam() {
+	DATATYPE result;
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		result += firstLayers[i]->sumSquareParam(0);
+	}
+	return result;
+}
 
 
+void InceptionLayer::_scaleParam(DATATYPE scale_factor) {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->scaleParam(0, scale_factor);
+	}
+}
 
+void InceptionLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
 
+	UINT firstLayerSize = firstLayers.size();
+	ofs.write((char *)&firstLayerSize, sizeof(UINT));
+	// layer next layers
+	for(UINT i = 0; i < firstLayerSize; i++) {
+		ofs.write((char *)&firstLayers[i], sizeof(Layer *));
+	}
 
+	UINT lastLayerSize = 1;
+	ofs.write((char *)&lastLayerSize, sizeof(UINT));
+	ofs.write((char *)&lastLayer, sizeof(Layer *));
 
+	// InceptionLayer의 NIN (내부 네트워크)를 save ////////
+	saveNinHeader(0, ofs);
+	// header boundary
+	int type = 0;
+	Layer *layer = 0;
+	ofs.write((char *)&type, sizeof(int));
+	ofs.write((char *)&layer, sizeof(Layer *));
 
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->save(0, ofs);
+	}
+	//////////////////////////////////////////////////
+
+	Layer *boundary = 0;
+	ofs.write((char *)&boundary, sizeof(Layer *));
+}
+
+void InceptionLayer::_update(UINT n, UINT miniBatchSize) {
+	Util::printMessage("InceptionLayer::update()---"+string(name));
+
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->update(0, n, miniBatchSize);
+	}
+}
+
+#ifndef GPU_MODE
+void InceptionLayer::_feedforward(UINT idx, const rcube &input, const char *end=0) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->feedforward(0, input, end);
+	}
+	propFeedforward(lastLayer->getOutput(), end);
+}
+
+void InceptionLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+	rcube w_next_delta(size(output));
+	Util::convertCube(next_layer->getDeltaInput(), w_next_delta);
+	Util::printCube(w_next_delta, "w_next_delta:");
+	Util::printCube(delta_input, "delta_input:");
+	delta_input += w_next_delta;
+
+	if(!isLastNextLayerRequest(idx)) return;
+	lastLayer->backpropagation(0, this);
+
+	delta_input.set_size(size(input));
+	delta_input.zeros();
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		delta_input += firstLayers[i]->getDeltaInput();
+	}
+
+	propBackpropagation();
+
+	delta_input.set_size(size(output));
+	delta_input.zeros();
+}
+
+void InceptionLayer::reset_nabla(UINT idx) {
+	if(!isLastPrevLayerRequest(idx)) throw Exception();
+
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->reset_nabla(0);
+	}
+	propResetNParam();
+}
+#else
 void InceptionLayer::_feedforward(const DATATYPE *input, const char *end) {
 	Util::printMessage("InceptionLayer::_feedforward()---"+string(name));
 
@@ -467,73 +387,7 @@ void InceptionLayer::_backpropagation() {
 	}
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 }
-
-
-
-DATATYPE InceptionLayer::_sumSquareGrad() {
-	DATATYPE result;
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		result += firstLayers[i]->sumSquareGrad(0);
-	}
-	return result;
-}
-
-DATATYPE InceptionLayer::_sumSquareParam() {
-	DATATYPE result;
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		result += firstLayers[i]->sumSquareParam(0);
-	}
-	return result;
-}
-
-
-void InceptionLayer::_scaleParam(DATATYPE scale_factor) {
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->scaleParam(0, scale_factor);
-	}
-}
-
-
-
-
-
-
-
-
 #endif
-
-
-
-Layer* InceptionLayer::find(UINT idx, const char* name) {
-	if(!isLastPrevLayerRequest(idx)) return 0;
-
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		Layer* result = firstLayers[i]->find(0, name);
-		if(result) return result;
-	}
-
-	return Layer::find(idx, name);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -7,15 +7,13 @@
 
 #include "DepthConcatLayer.h"
 
+DepthConcatLayer::DepthConcatLayer() {
+	this->type = LayerType::DepthConcat;
+}
+
 DepthConcatLayer::DepthConcatLayer(const string name)
 	: HiddenLayer(name) {
 	initialize();
-}
-
-void DepthConcatLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
-	initialize();
-	DepthConcatLayer::_shape(false);
 }
 
 #ifndef GPU_MODE
@@ -23,9 +21,70 @@ DepthConcatLayer::DepthConcatLayer(const string name, int n_in)
 	: HiddenLayer(name, n_in, n_in) {
 	initialize();
 }
+#endif
 
 DepthConcatLayer::~DepthConcatLayer() {}
 
+
+
+#ifndef GPU_MODE
+rcube &DepthConcatLayer::getDeltaInput() {
+	int startIndex = (offsetIndex>0)?offsets[offsetIndex-1]:0;
+	delta_input_sub = delta_input.subcube(0, 0, startIndex, delta_input.n_rows-1, delta_input.n_cols-1, offsets[offsetIndex]-1);
+	offsetIndex++;
+	//if(offsetIndex > prevLayers.size()) offsetIndex = 0;
+	return delta_input_sub;
+}
+#else
+DATATYPE *DepthConcatLayer::getDeltaInput() {
+	bool print = Util::getPrint();
+
+	int inBatchOffset = 0;
+	for(int i = 0; i < offsetIndex; i++) {
+		inBatchOffset += prevLayers[i].prev_layer->getOutDimension().batchsize();
+	}
+
+	io_dim prev_out_dim = prevLayers[offsetIndex].prev_layer->getOutDimension();
+	Util::printDeviceData(d_delta_input+inBatchOffset, prev_out_dim.rows, prev_out_dim.cols, prev_out_dim.channels, prev_out_dim.batches, "d_delta_input:");
+
+	offsetIndex++;
+	return d_delta_input+inBatchOffset;
+}
+#endif
+
+
+
+void DepthConcatLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::load(ifs, layerMap);
+	initialize();
+	DepthConcatLayer::_shape(false);
+}
+
+void DepthConcatLayer::shape(UINT idx, io_dim in_dim) {
+	// DepthConcatLayer에서 필요로하는 output channel수만 카운트하고
+	// 나머지는 모두 상위 레이어의 shape()로 위임한다.
+	if (idx == 0) out_dim.channels = 0;
+	out_dim.channels += in_dim.channels;
+	//if(!isLastPrevLayerRequest(idx)) return;
+
+	HiddenLayer::shape(idx, in_dim);
+}
+
+void DepthConcatLayer::reshape(UINT idx, io_dim in_dim) {
+	//if(!isLastPrevLayerRequest(idx)) return;
+	if (idx == 0) out_dim.channels = 0;
+	out_dim.channels += in_dim.channels;
+	HiddenLayer::reshape(idx, in_dim);
+}
+
+void DepthConcatLayer::clearShape(UINT idx) {
+	if(!isLastPrevLayerRequest(idx)) return;
+	Layer::clearShape(idx);
+}
+
+
+
+#ifndef GPU_MODE
 void DepthConcatLayer::initialize() {
 	this->type = LayerType::DepthConcat;
 
@@ -63,34 +122,13 @@ void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	propBackpropagation();
 	this->delta_input.zeros();
 }
-
-
-rcube &DepthConcatLayer::getDeltaInput() {
-	int startIndex = (offsetIndex>0)?offsets[offsetIndex-1]:0;
-	delta_input_sub = delta_input.subcube(0, 0, startIndex, delta_input.n_rows-1, delta_input.n_cols-1, offsets[offsetIndex]-1);
-	offsetIndex++;
-	//if(offsetIndex > prevLayers.size()) offsetIndex = 0;
-	return delta_input_sub;
-}
-
 #else
-
-
 void DepthConcatLayer::initialize() {
 	this->type = LayerType::DepthConcat;
 	this->offsetIndex = 0;
 	this->out_dim.channels = 0;
 }
 
-void DepthConcatLayer::shape(UINT idx, io_dim in_dim) {
-	// DepthConcatLayer에서 필요로하는 output channel수만 카운트하고
-	// 나머지는 모두 상위 레이어의 shape()로 위임한다.
-	if (idx == 0) out_dim.channels = 0;
-	out_dim.channels += in_dim.channels;
-	//if(!isLastPrevLayerRequest(idx)) return;
-
-	HiddenLayer::shape(idx, in_dim);
-}
 
 void DepthConcatLayer::_shape(bool recursive) {
 	in_dim.channels = out_dim.channels;
@@ -101,21 +139,9 @@ void DepthConcatLayer::_shape(bool recursive) {
 	if (recursive) {
 		HiddenLayer::_shape();
 	}
-
 	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
 
-void DepthConcatLayer::reshape(UINT idx, io_dim in_dim) {
-	//if(!isLastPrevLayerRequest(idx)) return;
-	if (idx == 0) out_dim.channels = 0;
-	out_dim.channels += in_dim.channels;
-	HiddenLayer::reshape(idx, in_dim);
-}
-
-void DepthConcatLayer::clearShape(UINT idx) {
-	if(!isLastPrevLayerRequest(idx)) return;
-	Layer::clearShape(idx);
-}
 
 void DepthConcatLayer::_clearShape() {
 	//checkCudaErrors(cudaFree(d_delta_input));
@@ -124,11 +150,6 @@ void DepthConcatLayer::_clearShape() {
 	//out_dim.channels = 0;
 
 	HiddenLayer::_clearShape();
-}
-
-DepthConcatLayer::~DepthConcatLayer() {
-
-	//checkCudaErrors(cudaFree(d_delta_input));
 }
 
 
@@ -194,27 +215,6 @@ void DepthConcatLayer::_deconcat(UINT idx, const DATATYPE* next_delta_input) {
 	}
 	Util::printDeviceData(d_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_input:");
 }
-
-
-
-DATATYPE *DepthConcatLayer::getDeltaInput() {
-	bool print = Util::getPrint();
-	//Util::setPrint(true);
-
-	int inBatchOffset = 0;
-	for(int i = 0; i < offsetIndex; i++) {
-		inBatchOffset += prevLayers[i].prev_layer->getOutDimension().batchsize();
-	}
-
-	io_dim prev_out_dim = prevLayers[offsetIndex].prev_layer->getOutDimension();
-	Util::printDeviceData(d_delta_input+inBatchOffset, prev_out_dim.rows, prev_out_dim.cols, prev_out_dim.channels, prev_out_dim.batches, "d_delta_input:");
-
-	offsetIndex++;
-
-	//Util::setPrint(print);
-	return d_delta_input+inBatchOffset;
-}
-
 
 #endif
 

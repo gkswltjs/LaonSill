@@ -8,11 +8,27 @@
 #include "PoolingLayer.h"
 
 
+PoolingLayer::PoolingLayer() {
+	this->type = LayerType::Pooling;
+}
 
 PoolingLayer::PoolingLayer(const string name, pool_dim pool_d, PoolingType poolingType)
 	: HiddenLayer(name) {
 	initialize(pool_d, poolingType);
 }
+
+#ifndef GPU_MODE
+PoolingLayer::~PoolingLayer() {
+	PoolingFactory::destroy(pooling_fn);
+}
+#else
+PoolingLayer::~PoolingLayer() {
+	checkCudaErrors(cudaFree(d_delta));
+	//checkCudaErrors(cudaFree(d_delta_input));
+
+	PoolingFactory::destroy(pooling_fn);
+}
+#endif
 
 
 void PoolingLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
@@ -28,17 +44,6 @@ void PoolingLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 	PoolingLayer::_shape(false);
 }
-
-void PoolingLayer::_save(ofstream &ofs) {
-	HiddenLayer::_save(ofs);
-
-	int poolingType = (int)pooling_fn->getType();
-
-	ofs.write((char *)&pool_d, sizeof(pool_dim));
-	ofs.write((char *)&poolingType, sizeof(int));
-}
-
-
 
 
 #ifndef GPU_MODE
@@ -60,11 +65,25 @@ void PoolingLayer::initialize(pool_dim pool_d, PoolingType poolingType) {
 	this->delta_input.set_size(size(input));
 	this->delta_input.zeros();
 }
+#else
+void PoolingLayer::initialize(pool_dim pool_d, PoolingType poolingType) {
+	this->type = LayerType::Pooling;
+	this->pool_d = pool_d;
+	this->pooling_fn = PoolingFactory::create(poolingType, pool_d);
+}
+#endif
 
-PoolingLayer::~PoolingLayer() {
-	PoolingFactory::destroy(pooling_fn);
+
+void PoolingLayer::_save(ofstream &ofs) {
+	HiddenLayer::_save(ofs);
+
+	int poolingType = (int)pooling_fn->getType();
+
+	ofs.write((char *)&pool_d, sizeof(pool_dim));
+	ofs.write((char *)&poolingType, sizeof(int));
 }
 
+#ifndef GPU_MODE
 void PoolingLayer::_feedforward(UINT idx, const rcube &input, const char *end=0) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
@@ -73,8 +92,6 @@ void PoolingLayer::_feedforward(UINT idx, const rcube &input, const char *end=0)
 
 	propFeedforward(this->output, end);
 }
-
-
 
 void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	// TODO w_next_delta를 모두 합하여 한 번에 d_pool하는 것이 연산적으로 유리, 수정 필요
@@ -96,14 +113,7 @@ void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	propBackpropagation();
 	delta_input.zeros();
 }
-
 #else
-void PoolingLayer::initialize(pool_dim pool_d, PoolingType poolingType) {
-	this->type = LayerType::Pooling;
-	this->pool_d = pool_d;
-	this->pooling_fn = PoolingFactory::create(poolingType, pool_d);
-}
-
 void PoolingLayer::_shape(bool recursive) {
 	cudnnTensorDescriptor_t tempInputTensorDesc;
 	checkCUDNN(cudnnCreateTensorDescriptor(&tempInputTensorDesc));
@@ -136,20 +146,11 @@ void PoolingLayer::_clearShape() {
 	checkCudaErrors(cudaFree(d_delta));
 	//checkCudaErrors(cudaFree(d_delta_input));
 
-	d_delta = 0;
+	d_delta = NULL;
 	//d_delta_input = 0;
 
 	HiddenLayer::_clearShape();
 }
-
-
-PoolingLayer::~PoolingLayer() {
-	checkCudaErrors(cudaFree(d_delta));
-	//checkCudaErrors(cudaFree(d_delta_input));
-
-	PoolingFactory::destroy(pooling_fn);
-}
-
 
 void PoolingLayer::_feedforward(const DATATYPE *input, const char *end) {
 	Util::printMessage("PoolingLayer::_feedforward()---"+string(name));
@@ -165,10 +166,7 @@ void PoolingLayer::_feedforward(const DATATYPE *input, const char *end) {
 		Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
 		//Util::setPrint(false);
 	//}
-
 }
-
-
 
 void PoolingLayer::_backpropagation() {
 	Util::printMessage("PoolingLayer::_backpropagation()---"+string(name));
@@ -181,7 +179,6 @@ void PoolingLayer::_backpropagation() {
 
 	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 }
-
 #endif
 
 

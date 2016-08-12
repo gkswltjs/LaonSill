@@ -27,52 +27,56 @@
  */
 class PoolingLayer : public HiddenLayer {
 public:
-	PoolingLayer() { this->type = LayerType::Pooling; }
+	/**
+	 * @details PoolingLayer 기본 생성자
+	 */
+	PoolingLayer();
 	/**
 	 * @details PoolingLayer 생성자
 	 * @param name 레이어 이름 문자열 포인터
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 */
 	PoolingLayer(const string name, pool_dim pool_d, PoolingType poolingType);
+	/**
+	 * @details PoolingLayer 소멸자
+	 */
 	virtual ~PoolingLayer();
 
+#ifndef GPU_MODE
+	rcube &getDeltaInput() { return this->delta_input; }
+#else
+	DATATYPE *getDeltaInput() { return this->d_delta_input; }
+#endif
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
-
-#ifndef GPU_MODE
-public:
-	rcube &getDeltaInput() { return this->delta_input; }
-	void _feedforward(UINT idx, const rcube &input, const char *end=0);
-	void reset_nabla(UINT idx) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		propResetNParam();
-	}
-
-#else
-public:
-	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-
-#endif
 
 protected:
 	void initialize(pool_dim pool_d, PoolingType poolingType);
 	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual void _feedforward(const DATATYPE *input, const char *end=0);
 	virtual void _backpropagation();
+#ifndef GPU_MODE
+	void _feedforward(UINT idx, const rcube &input, const char *end=0);
+	void reset_nabla(UINT idx) {
+		if(!isLastPrevLayerRequest(idx)) throw Exception();
+		propResetNParam();
+	}
+#else
+	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+#endif
 
+
+protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
 	Pooling *pooling_fn;			///< 풀링 객체
 
 #ifndef GPU_MODE
-protected:
 	ucube pool_map;
 	rcube delta;
 	rcube delta_input;
 #else
-protected:
 	DATATYPE *d_delta;				///< 다음 레이어에서 전달된 gradient 장치 메모리 포인터 (복수의 다음 레이어가 있는 경우 gradient를 누적하는 메모리)
 #endif
 

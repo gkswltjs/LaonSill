@@ -26,28 +26,28 @@
  */
 class LRNLayer : public HiddenLayer {
 public:
-	LRNLayer() { this->type = LayerType::LRN; }
+	/**
+	 * @details LRNLayer 기본 생성자
+	 */
+	LRNLayer();
+	/**
+	 * @details LRNLayer 생성자
+	 * @param 레이어 이름 문자열
+	 * @param lrn_d LRN 연산 관련 파라미터 구조체
+	 */
 	LRNLayer(const string name, lrn_dim lrn_d);
+	/**
+	 * @details LRNLayer 소멸자
+	 */
 	virtual ~LRNLayer();
 
-
+#ifndef GPU_MODE
+	rcube &getDeltaInput() { return delta_input; }
+#else
+	DATATYPE *getDeltaInput() { return d_delta_input; }
+#endif
 
 	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-
-#ifndef GPU_MODE
-public:
-	rcube &getDeltaInput() { return delta_input; }
-	void _feedforward(UINT idx, const rcube &input, const char *end=0);
-	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
-	void reset_nabla(UINT idx) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		propResetNParam();
-	}
-#else
-public:
-	DATATYPE *getDeltaInput() { return d_delta_input; }
-
-#endif
 
 
 protected:
@@ -56,24 +56,31 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual void _feedforward(const DATATYPE *input, const char *end=0);
 	virtual void _backpropagation();
 
+#ifndef GPU_MODE
+	void _feedforward(UINT idx, const rcube &input, const char *end=0);
+	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
+	void reset_nabla(UINT idx) {
+		if(!isLastPrevLayerRequest(idx)) throw Exception();
+		propResetNParam();
+	}
+#else
+	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+#endif
+
+
+protected:
 	lrn_dim lrn_d;					///< LRN 연산 관련 파라미터 구조체
 
 #ifndef GPU_MODE
-private:
 	rcube delta_input;
 	rcube z;	// beta powered 전의 weighted sum 상태의 norm term
 #else
-private:
-	//const float alpha=1.0f, beta=0.0f;			///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
 	cudnnLRNDescriptor_t lrnDesc;				///< cudnn LRN 연산 정보 구조체
 #endif
 
 };
-
-
 
 
 #endif /* LAYER_LRNLAYER_H_ */
