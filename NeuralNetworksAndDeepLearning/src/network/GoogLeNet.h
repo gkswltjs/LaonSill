@@ -24,7 +24,7 @@
 
 #include "Network.h"
 
-
+#ifndef GPU_MODE
 
 /**
  * @brief GoogLeNet을 구현한 Network 클래스
@@ -54,14 +54,14 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, bias_const),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		// 56x56x64
 		PoolingLayer *pool1_3x3_s2 = new PoolingLayer(
 				"pool1_3x3_s2",
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		LRNLayer *pool1_norm1 = new LRNLayer(
@@ -79,7 +79,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, bias_const),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		// 56x56x192
@@ -92,11 +92,11 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, bias_const),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		LRNLayer *conv2_norm2 = new LRNLayer(
-				"lrn1",
+				"lrn2",
 				lrn_dim(5, 0.0001, 0.75)
 				);
 
@@ -104,7 +104,7 @@ public:
 		PoolingLayer *pool2_3x3_s2 = new PoolingLayer(
 				"pool2_3x3_s2",
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 
@@ -130,7 +130,7 @@ public:
 		PoolingLayer *pool3_3x3_s2 = new PoolingLayer(
 				"pool3_3x3_s2",
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		// 14x14x512
@@ -182,7 +182,7 @@ public:
 		PoolingLayer *pool4_3x3_s2 = new PoolingLayer(
 				"pool4_3x3_s2",
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		// 7x7x832
@@ -208,7 +208,7 @@ public:
 		PoolingLayer *pool5_7x7_s1 = new PoolingLayer(
 				"pool5_7x7_s1",
 				pool_dim(7, 7, 4),
-				PoolingType::Avg
+				Pooling::Avg
 				);
 
 		// 1000
@@ -251,6 +251,16 @@ public:
 	}
 	virtual ~GoogLeNet() {}
 };
+
+#endif
+
+
+
+
+
+
+
+
 
 
 

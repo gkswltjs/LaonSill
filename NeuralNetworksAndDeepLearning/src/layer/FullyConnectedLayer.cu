@@ -8,6 +8,7 @@
 #include "FullyConnectedLayer.h"
 #include "../Util.h"
 #include "../exception/Exception.h"
+#include "../network/NetworkConfig.h"
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <cublas_v2.h>
@@ -64,18 +65,24 @@ __global__ void Dropout(const int n, const DATATYPE* in, const DATATYPE* mask,
 
 
 FullyConnectedLayer::FullyConnectedLayer() {
-	this->type = LayerType::FullyConnected;
+	this->type = Layer::FullyConnected;
+}
+
+FullyConnectedLayer::FullyConnectedLayer(Builder* builder)
+	: HiddenLayer(builder) {
+	initialize(builder->_nOut, builder->_pDropout, builder->_weightUpdateParam, builder->_biasUpdateParam,
+			builder->_weightFiller, builder->_biasFiller, builder->_activationType);
 }
 
 FullyConnectedLayer::FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
+		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType)
 	: HiddenLayer(name) {
 	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
 #ifndef GPU_MODE
 FullyConnectedLayer::FullyConnectedLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
+		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType)
 	: HiddenLayer(name, n_in, n_out) {
 	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
@@ -109,13 +116,13 @@ FullyConnectedLayer::~FullyConnectedLayer() {
 
 
 #ifndef GPU_MODE
-void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
+void FullyConnectedLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::_load(ifs, layerMap);
 
 	double p_dropout;
 	ifs.read((char *)&p_dropout, sizeof(double));
 
-	ActivationType activationType;
+	Activation::Type activationType;
 	ifs.read((char *)&activationType, sizeof(int));
 
 	update_param weight_update_param;
@@ -143,8 +150,8 @@ void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 }
 
 void FullyConnectedLayer::initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
-	this->type = LayerType::FullyConnected;
+		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
+	this->type = Layer::FullyConnected;
 	this->p_dropout = p_dropout;
 
 	this->weight_update_param = weight_update_param;
@@ -205,7 +212,7 @@ void FullyConnectedLayer::_save(ofstream &ofs) {
 	bias.save(ofs, file_type::arma_binary);
 }
 
-void FullyConnectedLayer::_feedforward(const rcube &input, const char *end) {
+void FullyConnectedLayer::_feedforward() {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::printCube(input, "input:");
@@ -283,38 +290,11 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 }
 
 #else
-void FullyConnectedLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
-
-	UINT n_out = 0;
-	double p_dropout;
-	ActivationType activationType;
-	update_param weight_update_param, bias_update_param;
-	param_filler weight_filler, bias_filler;
-
-	ifs.read((char *)&n_out, sizeof(UINT));
-	ifs.read((char *)&p_dropout, sizeof(double));
-	ifs.read((char *)&activationType, sizeof(int));
-	ifs.read((char *)&weight_update_param, sizeof(update_param));
-	ifs.read((char *)&bias_update_param, sizeof(update_param));
-	ifs.read((char *)&weight_filler, sizeof(param_filler));
-	ifs.read((char *)&bias_filler, sizeof(param_filler));
-
-	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
-	FullyConnectedLayer::_shape(false);
-
-	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
-	ifs.read((char *)weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize());
-	ifs.read((char *)bias, sizeof(DATATYPE)*out_dim.unitsize());
-	checkCudaErrors(cudaMemcpyAsync(d_weight, weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize(), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpyAsync(d_bias, bias, sizeof(DATATYPE)*out_dim.unitsize(), cudaMemcpyHostToDevice));
-}
-
 void FullyConnectedLayer::initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
+		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
 	Cuda::refresh();
 	this->out_dim = io_dim(n_out, 1, 1, 1);
-	this->type = LayerType::FullyConnected;
+	this->type = Layer::FullyConnected;
 
 	this->p_dropout = p_dropout;
 
@@ -347,7 +327,7 @@ void FullyConnectedLayer::_shape(bool recursive) {
 	weight = new DATATYPE[u_out*u_in];
 	bias = new DATATYPE[u_out];
 
-	cout << this->name << ", fanin: " << u_out*u_in << endl;
+	//cout << this->name << ", fanin: " << u_out*u_in << endl;
 	weight_filler.fill(weight, u_out*u_in, u_in, u_out);
 	bias_filler.fill(bias, u_out, u_in, u_out);
 
@@ -423,7 +403,7 @@ void FullyConnectedLayer::_clearShape() {
 	HiddenLayer::_clearShape();
 }
 
-DATATYPE FullyConnectedLayer::_sumSquareGrad() {
+double FullyConnectedLayer::_sumSquareGrad() {
 	DATATYPE weight_result;
 	DATATYPE bias_result;
 
@@ -438,7 +418,7 @@ DATATYPE FullyConnectedLayer::_sumSquareGrad() {
 	return weight_result + bias_result;
 }
 
-DATATYPE FullyConnectedLayer::_sumSquareParam() {
+double FullyConnectedLayer::_sumSquareParam() {
 	DATATYPE weight_result;
 	DATATYPE bias_result;
 
@@ -478,8 +458,34 @@ void FullyConnectedLayer::_save(ofstream &ofs) {
 	ofs.write((char *)bias, sizeof(DATATYPE)*out_dim.unitsize());
 }
 
+void FullyConnectedLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::_load(ifs, layerMap);
+
+	UINT n_out = 0;
+	double p_dropout;
+	Activation::Type activationType;
+	update_param weight_update_param, bias_update_param;
+	param_filler weight_filler, bias_filler;
+
+	ifs.read((char *)&n_out, sizeof(UINT));
+	ifs.read((char *)&p_dropout, sizeof(double));
+	ifs.read((char *)&activationType, sizeof(int));
+	ifs.read((char *)&weight_update_param, sizeof(update_param));
+	ifs.read((char *)&bias_update_param, sizeof(update_param));
+	ifs.read((char *)&weight_filler, sizeof(param_filler));
+	ifs.read((char *)&bias_filler, sizeof(param_filler));
+
+	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+	FullyConnectedLayer::_shape(false);
+
+	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
+	ifs.read((char *)weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize());
+	ifs.read((char *)bias, sizeof(DATATYPE)*out_dim.unitsize());
+	checkCudaErrors(cudaMemcpyAsync(d_weight, weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize(), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpyAsync(d_bias, bias, sizeof(DATATYPE)*out_dim.unitsize(), cudaMemcpyHostToDevice));
+}
+
 void FullyConnectedLayer::_update(UINT n, UINT miniBatchSize) {
-	Util::printMessage("FullyConnectedLayer::update()---"+string(name));
 	/*
 	//weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;
 	//bias -= eta/miniBatchSize*nabla_b;
@@ -507,9 +513,9 @@ void FullyConnectedLayer::_update(UINT n, UINT miniBatchSize) {
 
 	int weight_size = in_dim.rows*out_dim.rows;
 	DATATYPE norm_scale = 1.0/in_dim.batches;
-	DATATYPE reg_scale = weight_update_param.decay_mult;
-	DATATYPE momentum = 0.0;
-	DATATYPE learning_scale = weight_update_param.lr_mult;
+	DATATYPE reg_scale = networkConfig->_weightDecay * weight_update_param.decay_mult;
+	DATATYPE momentum = networkConfig->_momentum;
+	DATATYPE learning_scale = networkConfig->_baseLearningRate * weight_update_param.lr_mult;
 	DATATYPE negative_one = -1.0;
 
 	//Util::setPrint(true);
@@ -530,8 +536,8 @@ void FullyConnectedLayer::_update(UINT n, UINT miniBatchSize) {
 
 
 	int bias_size = out_dim.rows;
-	DATATYPE reg_scale_b = bias_update_param.decay_mult;
-	DATATYPE learning_scale_b = bias_update_param.lr_mult;
+	DATATYPE reg_scale_b = networkConfig->_weightDecay * bias_update_param.decay_mult;
+	DATATYPE learning_scale_b = networkConfig->_baseLearningRate * bias_update_param.lr_mult;
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_delta_bias, 1));								// normalize by batch size
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_bias, 1, d_delta_bias, 1));					// regularize
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_delta_bias_prev, 1));								//
@@ -539,11 +545,10 @@ void FullyConnectedLayer::_update(UINT n, UINT miniBatchSize) {
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_delta_bias_prev, 1, d_bias, 1));				// update
 }
 
-void FullyConnectedLayer::_feedforward(const DATATYPE *input, const char *end) {
-	Util::printMessage("FullyConnectedLayer::_feedforward()---"+string(name));
+void FullyConnectedLayer::_feedforward() {
 	Cuda::refresh();
 
-	this->d_input = input;
+	//this->d_input = input;
 	//float alpha = 1.0f, beta = 0.0f;
 
 	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
@@ -603,7 +608,6 @@ void FullyConnectedLayer::_feedforward(const DATATYPE *input, const char *end) {
 }
 
 void FullyConnectedLayer::_backpropagation() {
-	Util::printMessage("FullyConnectedLayer::backpropagation()---"+string(name));
 	Cuda::refresh();
 	/*
 	if(Util::train && p_dropout < 1.0f) {

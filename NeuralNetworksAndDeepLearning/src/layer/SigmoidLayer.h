@@ -21,15 +21,15 @@
 
 class SigmoidLayer : public OutputLayer {
 public:
-	SigmoidLayer() { this->type = LayerType::Sigmoid; }
+	SigmoidLayer() { this->type = Layer::Sigmoid; }
 	SigmoidLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, CostType costType)
-		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, ActivationType::Sigmoid, costType) {
+			param_filler weight_filler, param_filler bias_filler, Cost::Type costType)
+		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, Activation::Sigmoid, costType) {
 		initialize();
 	}
 	SigmoidLayer(const string name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, CostType costType)
-		: OutputLayer(name, in_dim, out_dim, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, ActivationType::Sigmoid, costType) {
+			param_filler weight_filler, param_filler bias_filler, Cost::Type costType)
+		: OutputLayer(name, in_dim, out_dim, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, Activation::Sigmoid, costType) {
 		initialize();
 	}
 	virtual ~SigmoidLayer() {
@@ -46,17 +46,17 @@ public:
 		propBackpropagation();
 	}
 
-	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-		OutputLayer::load(ifs, layerMap);
+	void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+		OutputLayer::_load(ifs, layerMap);
 		initialize();
 	}
 
 private:
 	void initialize() {
-		this->type = LayerType::Sigmoid;
+		this->type = Layer::Sigmoid;
 
 		//this->cost_fn = CostFactory::create(costType);
-		//this->activation_fn = ActivationFactory::create(ActivationType::Sigmoid);
+		//this->activation_fn = ActivationFactory::create(Activation::Sigmoid);
 		//this->activation_fn->initialize_weight(in_dim.rows, weight);
 	}
 };

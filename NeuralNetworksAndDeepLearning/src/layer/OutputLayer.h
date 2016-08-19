@@ -30,7 +30,68 @@ using namespace arma;
  */
 class OutputLayer : public FullyConnectedLayer {
 public:
+	class Builder : public FullyConnectedLayer::Builder {
+	public:
+		Cost::Type _costType;
+
+		Builder() {
+			_costType = Cost::None;
+		}
+		Builder* costType(Cost::Type costType) {
+			this->_costType = costType;
+			return this;
+		}
+		Builder* nOut(uint32_t nOut) {
+			FullyConnectedLayer::Builder::nOut(nOut);
+			return this;
+		}
+		Builder* pDropout(uint32_t pDropout) {
+			FullyConnectedLayer::Builder::pDropout(pDropout);
+			return this;
+		}
+		Builder* weightUpdateParam(double lr_mult, double decay_mult) {
+			FullyConnectedLayer::Builder::weightUpdateParam(lr_mult, decay_mult);
+			return this;
+		}
+		Builder* biasUpdateParam(double lr_mult, double decay_mult) {
+			FullyConnectedLayer::Builder::biasUpdateParam(lr_mult, decay_mult);
+			return this;
+		}
+		Builder* weightFiller(ParamFillerType weightFillerType, double value) {
+			FullyConnectedLayer::Builder::weightFiller(weightFillerType, value);
+			return this;
+		}
+		Builder* biasFiller(ParamFillerType biasFillerType, double value) {
+			FullyConnectedLayer::Builder::biasFiller(biasFillerType, value);
+			return this;
+		}
+		Builder* activationType(Activation::Type activationType) {
+			FullyConnectedLayer::Builder::activationType(activationType);
+			return this;
+		}
+		virtual Builder* name(const string name) {
+			FullyConnectedLayer::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			FullyConnectedLayer::Builder::id(id);
+			return this;
+		}
+		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+			FullyConnectedLayer::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+			FullyConnectedLayer::Builder::prevLayerIndices(prevLayerIndices);
+			return this;
+		}
+		Layer* build() = 0;
+	};
+
 	OutputLayer() {}
+	OutputLayer(Builder* builder) : FullyConnectedLayer(builder) {
+		initialize(builder->_costType);
+	}
 	/**
 	 * @details OutputLayer 생성자
 	 * @param name 레이어의 이름 문자열 포인터
@@ -44,13 +105,13 @@ public:
 	 * @param costType 레이어 출력값에 대한 cost 계산 타입
 	 */
 	OutputLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::None, Cost::Type costType=Cost::None)
 		:FullyConnectedLayer(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};
 #ifndef GPU_MODE
 	OutputLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None, CostType costType=CostType::None)
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::None, Cost::Type costType=Cost::None)
 		: FullyConnectedLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	}
@@ -70,14 +131,6 @@ public:
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	virtual void cost(const rvec &target)=0;
-	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-		FullyConnectedLayer::load(ifs, layerMap);
-
-		CostType type;
-		ifs.read((char *)&type, sizeof(int));
-
-		initialize(type);
-	}
 #else
 	/**
 	 * @details 출력레이어의 cost를 게산한다.
@@ -87,14 +140,6 @@ public:
 	 *       하지만 적절한 modularity를 달성하기 위해서 cost를 구하는 것과 gradient를 계산하는 것은 구분되어야 한다.
 	 */
 	virtual void cost(const UINT *target)=0;
-	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-		FullyConnectedLayer::load(ifs, layerMap);
-
-		OutputLayer::_shape(false);
-		//CostType type;
-		//ifs.read((char *)&type, sizeof(int));
-		//initialize(type);
-	}
 #endif
 
 
@@ -103,7 +148,7 @@ public:
 
 
 protected:
-	void initialize(CostType costType) {
+	void initialize(Cost::Type costType) {
 		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
 		this->cost_fn = CostFactory::create(costType);
 	}
@@ -126,11 +171,27 @@ protected:
 		int costType = (int)cost_fn->getType();
 		ofs.write((char *)&costType, sizeof(int));
 	}
+	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+		FullyConnectedLayer::_load(ifs, layerMap);
+
+		Cost::Type type;
+		ifs.read((char *)&type, sizeof(int));
+
+		initialize(type);
+	}
 #else
 	virtual void _save(ofstream &ofs) {
 		FullyConnectedLayer::_save(ofs);
 		//int costType = (int)cost_fn->getType();
 		//ofs.write((char *)&costType, sizeof(int));
+	}
+	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+		FullyConnectedLayer::_load(ifs, layerMap);
+
+		OutputLayer::_shape(false);
+		//Cost::Type type;
+		//ifs.read((char *)&type, sizeof(int));
+		//initialize(type);
 	}
 #endif
 

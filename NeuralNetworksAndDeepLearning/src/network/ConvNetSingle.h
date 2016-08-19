@@ -20,7 +20,7 @@
 #include "Network.h"
 
 
-
+#ifndef GPU_MODE
 
 /**
  * @brief 하나의 컨볼루션 레이어를 가진 Network를 구현한 클래스
@@ -44,7 +44,7 @@ public:
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *pool1Layer = new PoolingLayer(
@@ -52,7 +52,7 @@ public:
 				//io_dim(28, 28, filters, batchSize),
 				//io_dim(14, 14, filters, batchSize),
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		//HiddenLayer *fc1Layer = new FullyConnectedLayer("fc1", 14*14*20, 100, 0.5, new ReLU(io_dim(100, 1, 1)));
@@ -66,7 +66,7 @@ public:
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
@@ -92,6 +92,6 @@ public:
 	virtual ~ConvNetSingle() {}
 };
 
-
+#endif
 
 #endif /* NETWORK_CONVNETSINGLE_H_ */

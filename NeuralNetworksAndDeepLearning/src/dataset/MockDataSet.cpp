@@ -6,10 +6,10 @@
  */
 
 #include "MockDataSet.h"
-#include "DataSample.h"
 #include "../Util.h"
+#include <random>
 
-MockDataSet::MockDataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData, UINT numLabels)
+MockDataSet::MockDataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t numTrainData, uint32_t numTestData, uint32_t numLabels)
 	: DataSet(rows, cols, channels, numTrainData, numTestData), numLabels(numLabels) {}
 
 MockDataSet::~MockDataSet() {}
@@ -19,15 +19,14 @@ void MockDataSet::load() {
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> ud(-0.1, 0.1);
 
-	UINT i;
+	uint32_t i;
 	// load train data
 	for(i = 0; i < dataSize*numTrainData; i++) {
 		(*trainDataSet)[i] = static_cast<DATATYPE>(ud(gen));
 	}
 	for(i = 0; i < numTrainData; i++) {
-		UINT label = static_cast<UINT>((ud(gen)+0.1)*numLabels*5);
-		cout << "label: " << label << endl;
-		(*trainLabelSet)[i] = static_cast<UINT>(label);
+		uint32_t label = static_cast<uint32_t>((ud(gen)+0.1)*numLabels*5);
+		(*trainLabelSet)[i] = static_cast<uint32_t>(label);
 	}
 
 	// load test data
@@ -35,46 +34,9 @@ void MockDataSet::load() {
 		(*testDataSet)[i] = static_cast<DATATYPE>(ud(gen));
 	}
 	for(i = 0; i < numTestData; i++) {
-		UINT label = static_cast<UINT>((ud(gen)+0.1)*numLabels*5);
-				cout << "label: " << label << endl;
-		(*testLabelSet)[i] = static_cast<UINT>(label);
+		uint32_t label = static_cast<uint32_t>((ud(gen)+0.1)*numLabels*5);
+		(*testLabelSet)[i] = static_cast<uint32_t>(label);
 	}
-
-	/*
-	double trainData[100] = {
-			0.0, 0.3, 0.4, 0.5, 0.6, 0.7, 0.6, 0.5, 0.4, 0.3,
-			0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
-			0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
-			0.2, 0.4, 0.6, 0.8, 0.9, 0.7, 0.5, 0.3, 0.1, 0.0,
-			0.1, 0.3, 0.5, 0.7, 0.9, 0.8, 0.6, 0.4, 0.2, 0.0,
-			0.0, 0.3, 0.4, 0.5, 0.6, 0.7, 0.6, 0.5, 0.4, 0.3,
-			0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
-			0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
-			0.2, 0.4, 0.6, 0.8, 0.9, 0.7, 0.5, 0.3, 0.1, 0.0,
-			0.1, 0.3, 0.5, 0.7, 0.9, 0.8, 0.6, 0.4, 0.2, 0.0,
-	};
-	int trainTarget[trainDataSize] = {
-			0, 1, 2, 3, 4, 5, 6, 7, 8, 9
-	};
-
-
-	for(int i = 0; i < trainDataSize; i++) {
-		trainDataSet[i].readData(trainData, trainTarget[i]);
-		//trainDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
-		//Util::printVec(trainDataSet[i]->getData(), "data");
-		//Util::printVec(trainDataSet[i]->getTarget(), "target");
-	}
-
-	for(int i = 0; i < validationDataSize; i++) {
-		validationDataSet[i].readData(trainData, trainTarget[i]);
-		//validationDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
-	}
-
-	for(int i = 0; i < testDataSize; i++) {
-		testDataSet[i].readData(trainData, trainTarget[i]);
-		//testDataSet.push_back(new DataSample(&trainData[i*9], trainTarget[i]));
-	}
-	*/
 }
 
 

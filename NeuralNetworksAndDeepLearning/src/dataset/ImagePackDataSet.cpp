@@ -1,110 +1,97 @@
 /*
- * UbyteDataSet.cpp
+ * ImagePackDataSet.cpp
  *
  *  Created on: 2016. 7. 13.
  *      Author: jhkim
  */
 
-#include "UbyteDataSet.h"
+#include "ImagePackDataSet.h"
 
+#include <stddef.h>
+#include <algorithm>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 
-
-#include "../Util.h"
-#include "../util/UByteImage.h"
-#include "DataSample.h"
-#include "ImageInfo.h"
+#include "../exception/Exception.h"
 #include "../Timer.h"
+#include "../util/UByteImage.h"
+#include "../Util.h"
 
 
 
-UbyteDataSet::UbyteDataSet(
-		string train_image,
-		string train_label,
-		int numTrainFile,
-		string test_image,
-		string test_label,
-		int numTestFile,
-		int channel,
-		double validationSetRatio) {
-
-	this->train_image = train_image;
-	this->train_label = train_label;
-	this->numTrainFile = numTrainFile;
-	this->test_image = test_image;
-	this->test_label = test_label;
-	this->numTestFile = numTestFile;
+ImagePackDataSet::ImagePackDataSet(
+		string trainImage,
+		string trainLabel,
+		uint32_t numTrainFile,
+		string testImage,
+		string testLabel,
+		uint32_t numTestFile)
+	: trainImage(trainImage),
+	  trainLabel(trainLabel),
+	  numTrainFile(numTrainFile),
+	  testImage(testImage),
+	  testLabel(testLabel),
+	  numTestFile(numTestFile) {
 
 	this->trainFileIndex = 0;
 	this->testFileIndex = 0;
-
-	this->validationSetRatio = validationSetRatio;
-
-	// TODO parameterize ...
-	this->channels = channel;
-
-	this->bufDataSet = 0;
+	this->bufDataSet = NULL;
 }
 
-UbyteDataSet::~UbyteDataSet() {
-	if(trainDataSet) { delete trainDataSet; }
-	if(trainLabelSet) { delete trainLabelSet; }
-	if(validationDataSet) { delete validationDataSet; }
-	if(validationLabelSet) { delete validationLabelSet; }
-	if(testDataSet) { delete testDataSet; }
-	if(testLabelSet) { delete testLabelSet; }
-}
+ImagePackDataSet::~ImagePackDataSet() {}
 
 
 
-const DATATYPE *UbyteDataSet::getTrainDataAt(int index) {
+const DATATYPE *ImagePackDataSet::getTrainDataAt(int index) {
 	if(index >= numTrainData || index < 0) throw Exception();
 	int reqPage = index / numImagesInTrainFile;
 	if(reqPage != trainFileIndex) {
-		load(0, reqPage);
+		load(DataSet::Train, reqPage);
 		trainFileIndex = reqPage;
 	}
-	return &(*trainDataSet)[dataSize*(index-reqPage*numImagesInTrainFile)];
+	return &(*trainDataSet)[dataSize*(*trainSetIndices)[(index-reqPage*numImagesInTrainFile)]];
 }
 
-const UINT *UbyteDataSet::getTrainLabelAt(int index) {
+const UINT *ImagePackDataSet::getTrainLabelAt(int index) {
 	if(index >= numTrainData || index < 0) throw Exception();
 	int reqPage = index / numImagesInTrainFile;
 	if(reqPage != trainFileIndex) {
-		load(0, reqPage);
+		load(DataSet::Train, reqPage);
 		trainFileIndex = reqPage;
 	}
-	return &(*trainLabelSet)[index-reqPage*numImagesInTrainFile];
+	return &(*trainLabelSet)[(*trainSetIndices)[index-reqPage*numImagesInTrainFile]];
 }
 
-const DATATYPE *UbyteDataSet::getValidationDataAt(int index) {
+const DATATYPE *ImagePackDataSet::getValidationDataAt(int index) {
 	if(index >= numValidationData || index < 0) throw Exception();
 	return &(*validationDataSet)[dataSize*index];
 }
 
-const UINT *UbyteDataSet::getValidationLabelAt(int index) {
+const UINT *ImagePackDataSet::getValidationLabelAt(int index) {
 	if(index >= numValidationData || index < 0) throw Exception();
 	return &(*validationLabelSet)[index];
 }
 
-const DATATYPE *UbyteDataSet::getTestDataAt(int index) {
+const DATATYPE *ImagePackDataSet::getTestDataAt(int index) {
 	if(index >= numTestData || index < 0) throw Exception();
 	int reqPage = index / numImagesInTestFile;
 	if(reqPage != testFileIndex) {
-		load(1, reqPage);
+		load(DataSet::Test, reqPage);
 		testFileIndex = reqPage;
 	}
-	return &(*testDataSet)[dataSize*(index-reqPage*numImagesInTestFile)];
+	return &(*testDataSet)[dataSize*(*testSetIndices)[(index-reqPage*numImagesInTestFile)]];
 }
 
-const UINT *UbyteDataSet::getTestLabelAt(int index) {
+const UINT *ImagePackDataSet::getTestLabelAt(int index) {
 	if(index >= numTestData || index < 0) throw Exception();
 	int reqPage = index / numImagesInTestFile;
 	if(reqPage != testFileIndex) {
-		load(1, reqPage);
+		load(DataSet::Test, reqPage);
 		testFileIndex = reqPage;
 	}
-	return &(*testLabelSet)[index-reqPage*numImagesInTestFile];
+	return &(*testLabelSet)[(*testSetIndices)[index-reqPage*numImagesInTestFile]];
 }
 
 
@@ -113,24 +100,14 @@ const UINT *UbyteDataSet::getTestLabelAt(int index) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-void UbyteDataSet::load() {
+void ImagePackDataSet::load() {
 
 #ifndef GPU_MODE
 	numTrainData = loadDataSetFromResource(filenames[0], trainDataSet, 0, 10000);
 	numTestData = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);
 #else
-	int numTrainDataInFile = load(0);
-	int numTestDataInFile = load(1);
+	int numTrainDataInFile = load(DataSet::Train, 0);
+	int numTestDataInFile = load(DataSet::Test, 0);
 
 	if(numTrainDataInFile <= 0 || numTestDataInFile <= 0) {
 		cout << "could not load resources ... " << endl;
@@ -145,46 +122,33 @@ void UbyteDataSet::load() {
 }
 
 
-int UbyteDataSet::load(int type, int page) {
-	Timer timer;
-	timer.start();
-	cout << "load for type " << type << ", page: " << page << " has started ... " << endl;
-
-
+int ImagePackDataSet::load(DataSet::Type type, int page) {
 	string pageSuffix = to_string(page);
+	int numData = 0;
 	// train
-	if(type == 0) {
-		return loadDataSetFromResource(train_image+pageSuffix, train_label+pageSuffix,
-				trainDataSet, trainLabelSet, 0, 50000);
-	} else if(type == 1) {
-		return loadDataSetFromResource(test_image+pageSuffix, test_label+pageSuffix,
-				testDataSet, testLabelSet, 0, 10000);
+	switch(type) {
+	case DataSet::Train:
+		numData = loadDataSetFromResource(
+				trainImage+pageSuffix,
+				trainLabel+pageSuffix,
+				trainDataSet,
+				trainLabelSet,
+				trainSetIndices);
+		break;
+	case DataSet::Test:
+		numData = loadDataSetFromResource(
+				testImage+pageSuffix,
+				testLabel+pageSuffix,
+				testDataSet,
+				testLabelSet,
+				testSetIndices);
+		break;
 	}
-	//cout << "load done ... :" << timer.stop(false) << endl;
-	return 0;
+	return numData;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GPU_MODE
-int UbyteDataSet::loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size) {
+int ImagePackDataSet::loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size) {
 	// LOAD IMAGE DATA
 	ImageInfo dataInfo(resources[0]);
 	dataInfo.load();
@@ -235,19 +199,12 @@ int UbyteDataSet::loadDataSetFromResource(string resources[2], DataSample *&data
 }
 
 #else
-
-
-
-
-
-
-int UbyteDataSet::loadDataSetFromResource(
+int ImagePackDataSet::loadDataSetFromResource(
 		string data_path,
 		string label_path,
 		vector<DATATYPE> *&dataSet,
 		vector<UINT> *&labelSet,
-		int offset,
-		int size) {
+		vector<uint32_t>*& setIndices) {
 
 	FILE *imfp = fopen(data_path.c_str(), "rb");
 	if(!imfp) {
@@ -316,7 +273,8 @@ int UbyteDataSet::loadDataSetFromResource(
 	if(!dataSet) dataSet = new vector<DATATYPE>(dataSetSize);
 	if(!bufDataSet) bufDataSet = new vector<uint8_t>(dataSetSize);
 	if(!labelSet) labelSet = new vector<UINT>(label_header.length);
-	//vector<uint8_t> *tempLabelSet = new vector<uint8_t>(label_header.length);
+	if(!setIndices) setIndices = new vector<uint32_t>(label_header.length);
+	std::iota(setIndices->begin(), setIndices->end(), 0);
 
 	if(fread(&(*bufDataSet)[0], sizeof(uint8_t), dataSetSize, imfp) != dataSetSize) {
 		printf("ERROR: Invalid dataset file (partial image dataset)\n");
@@ -324,17 +282,6 @@ int UbyteDataSet::loadDataSetFromResource(
 		fclose(lbfp);
 		return 0;
 	}
-
-
-	/*
-	for(size_t i = 0; i < image_header.length; i++) {
-		for(int j = 0; j < channel; j++) {
-			for(int k = 0; k < width*height; k++) {
-				(*dataSet)[k+j*width*height+i*width*height*channel] = (*bufDataSet)[i]/255.0f - mean[j];
-			}
-		}
-	}
-	*/
 
 	for(size_t i = 0; i < dataSetSize; i++) {
 		(*dataSet)[i] = (*bufDataSet)[i]/255.0f;
@@ -347,45 +294,11 @@ int UbyteDataSet::loadDataSetFromResource(
 		return 0;
 	}
 
-
-	/*
-	cout << "label: " << endl;
-	for(int i = 0; i < label_header.length / 10; i++) {
-		for(int j = 0; j < 10; j++) {
-			cout << (*labelSet)[j+i*10] << ", ";
-		}
-		cout << endl;
-	}
-	exit(1);
-	*/
-
-
-
-	//for(size_t i = 0; i < label_header.length; i++) {
-	//	(*labelSet)[i] = (*tempLabelSet)[i];
-	//}
-
 	fclose(imfp);
 	fclose(lbfp);
 
 	return image_header.length;
 }
 #endif
-
-
-
-void UbyteDataSet::shuffleTrainDataSet() {
-	random_shuffle(&trainDataSet[0], &trainDataSet[numTrainData]);
-}
-
-void UbyteDataSet::shuffleValidationDataSet() {
-	random_shuffle(&validationDataSet[0], &validationDataSet[numValidationData]);
-}
-
-void UbyteDataSet::shuffleTestDataSet() {
-	random_shuffle(&testDataSet[0], &testDataSet[numTestData]);
-}
-
-
 
 

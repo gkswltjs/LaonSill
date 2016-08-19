@@ -25,6 +25,8 @@
 
 
 
+#ifndef GPU_MODE
+
 /**
  * @brief AlexNet을 구현한 Network 클래스
  */
@@ -45,7 +47,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		LRNLayer *pool_norm1 = new LRNLayer(
@@ -56,7 +58,7 @@ public:
 		HiddenLayer *pool1Layer = new PoolingLayer(
 				"pool1",
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		HiddenLayer *conv2Layer = new ConvLayer(
@@ -66,7 +68,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		LRNLayer *pool_norm2 = new LRNLayer(
@@ -77,7 +79,7 @@ public:
 		HiddenLayer *pool2Layer = new PoolingLayer(
 				"pool2",
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		HiddenLayer *conv3Layer = new ConvLayer(
@@ -87,7 +89,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv4Layer = new ConvLayer(
@@ -97,7 +99,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv5Layer = new ConvLayer(
@@ -107,13 +109,13 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *pool5Layer = new PoolingLayer(
 				"pool5",
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		/*
@@ -125,7 +127,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 				*/
 
@@ -137,7 +139,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
@@ -170,7 +172,7 @@ public:
 	}
 	virtual ~AlexNet() {}
 };
-
+#endif
 
 
 

@@ -28,11 +28,86 @@
  */
 class FullyConnectedLayer : public HiddenLayer {
 public:
+	class Builder : public HiddenLayer::Builder {
+	public:
+		uint32_t _nOut;
+		double _pDropout;
+		update_param _weightUpdateParam;
+		update_param _biasUpdateParam;
+		param_filler _weightFiller;
+		param_filler _biasFiller;
+		Activation::Type _activationType;
+
+		Builder() {
+			_nOut = 0;
+			_pDropout = 0.0;
+			_weightUpdateParam.lr_mult = 1.0;
+			_weightUpdateParam.decay_mult = 0.0;
+			_biasUpdateParam.lr_mult = 1.0;
+			_biasUpdateParam.decay_mult = 0.0;
+			_weightFiller.type = ParamFillerType::None;
+			_biasFiller.type = ParamFillerType::None;
+			_activationType = Activation::None;
+		}
+		Builder* nOut(uint32_t nOut) {
+			this->_nOut = nOut;
+			return this;
+		}
+		Builder* pDropout(uint32_t pDropout) {
+			this->_pDropout = pDropout;
+			return this;
+		}
+		Builder* weightUpdateParam(double lr_mult, double decay_mult) {
+			this->_weightUpdateParam.lr_mult = lr_mult;
+			this->_weightUpdateParam.decay_mult = decay_mult;
+			return this;
+		}
+		Builder* biasUpdateParam(double lr_mult, double decay_mult) {
+			this->_biasUpdateParam.lr_mult = lr_mult;
+			this->_biasUpdateParam.decay_mult = decay_mult;
+			return this;
+		}
+		Builder* weightFiller(ParamFillerType weightFillerType, double value) {
+			this->_weightFiller.type = weightFillerType;
+			this->_weightFiller.value = value;
+			return this;
+		}
+		Builder* biasFiller(ParamFillerType paramFillerType, double value) {
+			this->_biasFiller.type = paramFillerType;
+			this->_biasFiller.value = value;
+			return this;
+		}
+		Builder* activationType(Activation::Type activationType) {
+			this->_activationType = activationType;
+			return this;
+		}
+		virtual Builder* name(const string name) {
+			HiddenLayer::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			HiddenLayer::Builder::id(id);
+			return this;
+		}
+		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			return this;
+		}
+		Layer* build() {
+			return new FullyConnectedLayer(this);
+		}
+	};
+
 	/**
 	 * @details FullyConnectedLayer 기본 생성자
 	 *          내부적으로 레이어 타입만 초기화한다.
 	 */
 	FullyConnectedLayer();
+	FullyConnectedLayer(Builder* builder);
 	/**
 	 * @details FullyConnectedLayer 생성자
 	 * @param name 레이어의 이름 문자열 포인터
@@ -45,10 +120,10 @@ public:
 	 * @param activationType weighted sum에 적용할 활성화 타입
 	 */
 	FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::None);
 #ifndef GPU_MODE
 	FullyConnectedLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType=ActivationType::None);
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::None);
 #endif
 	virtual ~FullyConnectedLayer();
 
@@ -56,42 +131,41 @@ public:
 
 #ifndef GPU_MODE
 	rmat &getWeight() { return this->weight; }
-	rcube &getDeltaInput() { return this->delta_input; }
 #else
 	/**
 	 * @details 레이어의 weight 장치 메모리 포인터를 조회한다.
 	 * @return 레이어의 weight 장치 메모리 포인터
 	 */
 	DATATYPE *getWeight() { return this->d_weight; }
-	DATATYPE *getDeltaInput() { return this->d_delta_input; }
 #endif
 
 
-	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
 
 
 
 private:
 	void initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType);
 
 protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual DATATYPE _sumSquareGrad();
-	virtual DATATYPE _sumSquareParam();
+	virtual double _sumSquareGrad();
+	virtual double _sumSquareParam();
 	virtual void _scaleParam(DATATYPE scale_factor);
 	virtual void _save(ofstream &ofs);
+	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void _update(UINT n, UINT miniBatchSize);
 #ifndef GPU_MODE
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void _feedforward(const rcube &input, const char *end=0);
+	virtual void _feedforward();
 	virtual void reset_nabla(UINT idx);
 #else
-	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+	virtual void _feedforward();
 #endif
 	virtual void _backpropagation();
 
@@ -140,7 +214,6 @@ protected:
 	DATATYPE *d_mask;						///< dropout 마스크 장치 메모리 포인터
 	DATATYPE scale;							///< dropout 스케일 팩터
 #endif
-
 
 };
 

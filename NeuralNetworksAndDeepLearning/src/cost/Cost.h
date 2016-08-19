@@ -13,17 +13,7 @@
 
 #include "../Util.h"
 
-/**
- * @brief Cost 타입 열거형 선언.
- * @details 지원하는 Cost 타입 열거,
- *          현재 CrossEntropy, LogLikelihood, Quadratic 함수를 지원.
- */
-enum class CostType {
-	None = 0, 				// Cost를 사용하지 않음. Undefined.
-	CrossEntropy = 1, 		// Cost에 CrossEntropy 함수를 적용.
-	LogLikelihood = 2, 		// Cost에 LogLikelihood 함수를 적용.
-	Quadratic = 3			// Cost에 Quadratic 함수를 적용.
-};
+
 
 
 
@@ -37,10 +27,22 @@ public:
 	virtual ~Cost() {}
 
 	/**
+	 * @brief Cost 타입 열거형 선언.
+	 * @details 지원하는 Cost 타입 열거,
+	 *          현재 CrossEntropy, LogLikelihood, Quadratic 함수를 지원.
+	 */
+	enum Type {
+		None = 0, 				// Cost를 사용하지 않음. Undefined.
+		CrossEntropy = 1, 		// Cost에 CrossEntropy 함수를 적용.
+		LogLikelihood = 2, 		// Cost에 LogLikelihood 함수를 적용.
+		Quadratic = 3			// Cost에 Quadratic 함수를 적용.
+	};
+
+	/**
 	 * @details 현재 Cost 객체의 타입을 조회.
 	 * @return 현재 Cost 객체 타입.
 	 */
-	CostType getType() const { return type; }
+	Cost::Type getType() const { return type; }
 
 #ifndef GPU_MODE
 public:
@@ -70,7 +72,7 @@ public:
 #endif
 
 protected:
-	CostType type;				///< 현재 Cost 객체의 Cost 타입.
+	Cost::Type type;				///< 현재 Cost 객체의 Cost 타입.
 };
 
 #endif /* COST_COST_H_ */

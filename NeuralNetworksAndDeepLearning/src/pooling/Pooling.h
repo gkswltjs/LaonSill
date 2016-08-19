@@ -10,21 +10,7 @@
 #define POOLING_POOLING_H_
 
 
-#include <armadillo>
 
-using namespace arma;
-
-
-/**
- * @brief 풀링 타입 열거형
- * @details	지원하는 풀링 타입 열거,
- *          현재 Max, Average 풀링을 지원.
- */
-enum class PoolingType {
-	None=0,			// 풀링을 적용하지 않는다.
-	Max=1,			// 최대 풀링을 적용한다.
-	Avg=2			// 평균 풀링을 적용한다.
-};
 
 
 
@@ -42,11 +28,24 @@ public:
 	 * @details Pooling 소멸자
 	 */
 	virtual ~Pooling() {}
+
+	/**
+	 * @brief 풀링 타입 열거형
+	 * @details	지원하는 풀링 타입 열거,
+	 *          현재 Max, Average 풀링을 지원.
+	 */
+	enum Type {
+		None=0,			// 풀링을 적용하지 않는다.
+		Max=1,			// 최대 풀링을 적용한다.
+		Avg=2			// 평균 풀링을 적용한다.
+	};
+
+
 	/**
 	 * @details 풀링 타입을 조회한다.
 	 * @return 풀링 타입
 	 */
-	PoolingType getType() const { return this->type; }
+	Pooling::Type getType() const { return this->type; }
 
 #ifndef GPU_MODE
 	virtual void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
@@ -78,7 +77,7 @@ public:
 #endif
 
 protected:
-	PoolingType type;							///< 풀링 타입
+	Pooling::Type type;							///< 풀링 타입
 	cudnnPoolingDescriptor_t poolDesc;			///< cudnn 풀링 연산 정보 구조체
 	//const float alpha = 1.0f, beta = 0.0f;		///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
 

@@ -9,7 +9,7 @@
 #ifndef NETWORK_NEURALNETSINGLE_H_
 #define NETWORK_NEURALNETSINGLE_H_
 
-
+#ifndef GPU_MODE
 
 /**
  * @brief 하나의 FullyConnectedLayer를 가진 Network를 구현한 클래스
@@ -33,7 +33,7 @@ public:
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
@@ -51,12 +51,12 @@ public:
 		Network::addLayerRelation(inputLayer, fc1Layer);
 		Network::addLayerRelation(fc1Layer, softmaxLayer);
 
-		this->inputLayer = inputLayer;
+		this->config->_inputLayer = inputLayer;
 		addOutputLayer(softmaxLayer);
 	}
 	virtual ~NeuralNetSingle() {}
 };
 
-
+#endif
 
 #endif /* NETWORK_NEURALNETSINGLE_H_ */

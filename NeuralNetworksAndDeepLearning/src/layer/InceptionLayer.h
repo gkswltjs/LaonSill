@@ -9,6 +9,9 @@
 #ifndef LAYER_INCEPTIONLAYER_H_
 #define LAYER_INCEPTIONLAYER_H_
 
+
+
+#ifndef GPU_MODE
 #include "InputLayer.h"
 #include "HiddenLayer.h"
 
@@ -22,10 +25,94 @@
  */
 class InceptionLayer : public HiddenLayer {
 public:
+	class Builder : public HiddenLayer::Builder {
+	public:
+		uint32_t _ic;
+		uint32_t _oc_cv1x1;
+		uint32_t _oc_cv3x3reduce;
+		uint32_t _oc_cv3x3;
+		uint32_t _oc_cv5x5reduce;
+		uint32_t _oc_cv5x5;
+		uint32_t _oc_cp;
+		update_param _weightUpdateParam;
+		update_param _biasUpdateParam;
+
+		Builder() {
+			_ic = 0;
+			_oc_cv1x1 = 0;
+			_oc_cv3x3reduce = 0;
+			_oc_cv3x3 = 0;
+			_oc_cv5x5reduce = 0;
+			_oc_cv5x5 = 0;
+			_oc_cp = 0;
+			_weightUpdateParam.lr_mult = 1.0;
+			_weightUpdateParam.decay_mult = 0.0;
+			_biasUpdateParam.lr_mult = 1.0;
+			_biasUpdateParam.decay_mult = 0.0;
+		}
+		Builder* ic(uint32_t ic) {
+			this->_ic = ic;
+			return this;
+		}
+		Builder* oc_cv1x1(uint32_t oc_cv1x1) {
+			this->_oc_cv1x1 = oc_cv1x1;
+			return this;
+		}
+		Builder* oc_cv3x3reduce(uint32_t oc_cv3x3reduce) {
+			this->_oc_cv3x3reduce = oc_cv3x3reduce;
+			return this;
+		}
+		Builder* oc_cv3x3(uint32_t oc_cv3x3) {
+			this->_oc_cv3x3 = oc_cv3x3;
+			return this;
+		}
+		Builder* oc_cv5x5reduce(uint32_t oc_cv5x5reduce) {
+			this->_oc_cv5x5reduce = oc_cv5x5reduce;
+			return this;
+		}
+		Builder* oc_cv5x5(uint32_t oc_cv5x5) {
+			this->_oc_cv5x5 = oc_cv5x5;
+			return this;
+		}
+		Builder* oc_cp(uint32_t oc_cp) {
+			this->_oc_cp = oc_cp;
+			return this;
+		}
+		Builder* weightUpdateParam(double lr_mult, double decay_mult) {
+			this->_weightUpdateParam.lr_mult = lr_mult;
+			this->_weightUpdateParam.decay_mult = decay_mult;
+			return this;
+		}
+		Builder* biasUpdateParam(double lr_mult, double decay_mult) {
+			this->_biasUpdateParam.lr_mult = lr_mult;
+			this->_biasUpdateParam.decay_mult = decay_mult;
+			return this;
+		}
+		virtual Builder* name(const string name) {
+			HiddenLayer::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			HiddenLayer::Builder::id(id);
+			return this;
+		}
+		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			return this;
+		}
+		Layer* build() {
+			return new InceptionLayer(this);
+		}
+	};
 	/**
 	 * @details InceptionLayer 기본 생성자
 	 */
 	InceptionLayer();
+	InceptionLayer(Builder* builder);
 	/**
 	 * @details InceptionLayer 생성자
 	 * @param name 레이어 이름 문자열
@@ -49,34 +136,35 @@ public:
 	 */
 	virtual ~InceptionLayer();
 
-#ifndef GPU_MODE
-	rcube &getDeltaInput() { return this->delta_input; }
-#else
-	DATATYPE *getDeltaInput() { return this->d_delta_input; }
-#endif
 	virtual DATATYPE *getOutput() { return lastLayer->getOutput(); }
 
-	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	/**
-	 * @details 인센셥 레이어의 내부 네트워크의 메타 정보를 쓴다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param ofs 레이어를 쓸 출력 스트림
-	 */
-	void saveNinHeader(UINT idx, ofstream &ofs);
-	virtual Layer* find(UINT idx, const char* name);
+	virtual void setNetworkConfig(NetworkConfig* networkConfig);
 
+	/**
+	 * @details 내부 레이어들에 'end' param을 전달해야 해서 재정의
+	 *          _feedforward()만 재정의해서 'end'를 전달할 방법이 없다.
+	 */
+	virtual void feedforward(UINT idx, const DATATYPE* input, const char* end);
 
 protected:
 	void initialize();
 	void initialize(int ic, int cv1x1, int cv3x3reduce, int cv3x3, int cv5x5reduce, int cv5x5, int cp,
 			update_param weight_update_param, update_param bias_update_param);
 
-	virtual void _save(ofstream &ofs);
+	virtual Layer* _find(const string name);
 	virtual void _shape(bool recursive=true);
 	virtual void _reshape();
 	virtual void _clearShape();
-	virtual DATATYPE _sumSquareGrad();
-	virtual DATATYPE _sumSquareParam();
+	virtual double _sumSquareGrad();
+	virtual double _sumSquareParam();
+	virtual void _save(ofstream &ofs);
+	/**
+	 * @details 인센셥 레이어의 내부 네트워크의 메타 정보를 쓴다.
+	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param ofs 레이어를 쓸 출력 스트림
+	 */
+	void _saveNinHeader(ofstream &ofs);
+	void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void _update(UINT n, UINT miniBatchSize);
 	/**
 	 * @details 레이어로 전달된 gradient를 내부 네트워크로 전달하고,
@@ -86,22 +174,17 @@ protected:
 	virtual void _backpropagation();
 
 #ifndef GPU_MODE
-	void _feedforward(const rcube &input, const char *end=0);
-	void reset_nabla(UINT idx);
+	virtual void reset_nabla(UINT idx);
 #else
 	virtual void _scaleParam(DATATYPE scale_factor);
-	/**
-	 * @details 레이어로 전달된 입력을 내부 네트워크로 전달하여 레이어 출력을 구한다.
-	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
-	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
-	 */
-	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+#endif
 
 
 protected:
 	//InputLayer *inputLayer;
-	vector<HiddenLayer *> firstLayers;				///< 인셉션 레이어 내부 네트워크의 시작 레이어 포인터 목록 벡터
+	vector<HiddenLayer*> firstLayers;				///< 인셉션 레이어 내부 네트워크의 시작 레이어 포인터 목록 벡터
 	HiddenLayer *lastLayer;							///< 인셉션 레이어 내부 네트워크의 출력 레이어 포인터
+	vector<Layer*> layers;
 
 #ifndef GPU_MODE
 	rcube delta_input;
@@ -109,8 +192,9 @@ protected:
 #endif
 
 
+
 };
 
-
+#endif
 
 #endif /* LAYER_INCEPTIONLAYER_H_ */

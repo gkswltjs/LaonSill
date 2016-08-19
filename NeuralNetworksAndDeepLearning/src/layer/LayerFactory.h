@@ -14,7 +14,7 @@
 #include "../exception/Exception.h"
 #include "ConvLayer.h"
 #include "DepthConcatLayer.h"
-#include "InceptionLayer.h"
+//#include "InceptionLayer.h"
 #include "InputLayer.h"
 #include "Layer.h"
 #include "LRNLayer.h"
@@ -43,17 +43,17 @@ public:
 	 * @param layerType 생성하고자 하는 레이어 객체의 타입.
 	 * @return 생성한 레이어 객체.
 	 */
-	static Layer *create(LayerType layerType) {
+	static Layer *create(Layer::Type layerType) {
 		switch(layerType) {
-		case LayerType::Input: return new InputLayer();
-		case LayerType::FullyConnected: return new FullyConnectedLayer();
-		case LayerType::Conv: return new ConvLayer();
-		case LayerType::Pooling: return new PoolingLayer();
-		case LayerType::DepthConcat: return new DepthConcatLayer();
-		case LayerType::Inception: return new InceptionLayer();
-		case LayerType::LRN: return new LRNLayer();
-		//case LayerType::Sigmoid: return new SigmoidLayer();
-		case LayerType::Softmax: return new SoftmaxLayer();
+		case Layer::Input: return new InputLayer();
+		case Layer::FullyConnected: return new FullyConnectedLayer();
+		case Layer::Conv: return new ConvLayer();
+		case Layer::Pool: return new PoolingLayer();
+		case Layer::DepthConcat: return new DepthConcatLayer();
+		//case Layer::Inception: return new InceptionLayer();
+		case Layer::LRN: return new LRNLayer();
+		//case Layer::Sigmoid: return new SigmoidLayer();
+		case Layer::Softmax: return new SoftmaxLayer();
 		default: throw new Exception();
 		}
 	}

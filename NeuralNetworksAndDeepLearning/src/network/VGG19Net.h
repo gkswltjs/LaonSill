@@ -22,7 +22,7 @@
 
 
 
-
+#ifndef GPU_MODE
 /**
  * @brief VGG19Net을 구현한 Network 클래스
  */
@@ -44,7 +44,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv1_2Layer = new ConvLayer(
@@ -54,13 +54,13 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *pool1Layer = new PoolingLayer(
 				"pool5",
 				pool_dim(2, 2, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		HiddenLayer *conv2_1Layer = new ConvLayer(
@@ -70,7 +70,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
@@ -105,7 +105,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv1_2Layer = new ConvLayer(
@@ -115,13 +115,13 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *pool1Layer = new PoolingLayer(
 				"pool5",
 				pool_dim(2, 2, 2),
-				PoolingType::Avg
+				Pooling::Avg
 				);
 
 		HiddenLayer *conv2_1Layer = new ConvLayer(
@@ -131,7 +131,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv2_2Layer = new ConvLayer(
@@ -141,13 +141,13 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *pool2Layer = new PoolingLayer(
 				"pool2",
 				pool_dim(2, 2, 2),
-				PoolingType::Avg
+				Pooling::Avg
 				);
 
 		HiddenLayer *conv3_1Layer = new ConvLayer(
@@ -157,7 +157,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 
@@ -168,7 +168,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv3_3Layer = new ConvLayer(
@@ -178,7 +178,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv3_4Layer = new ConvLayer(
@@ -188,13 +188,13 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *pool3Layer = new PoolingLayer(
 				"pool3",
 				pool_dim(2, 2, 2),
-				PoolingType::Avg
+				Pooling::Avg
 				);
 
 		HiddenLayer *conv4_1Layer = new ConvLayer(
@@ -204,7 +204,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv4_2Layer = new ConvLayer(
@@ -214,7 +214,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv4_3Layer = new ConvLayer(
@@ -224,7 +224,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv4_4Layer = new ConvLayer(
@@ -234,13 +234,13 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *pool4Layer = new PoolingLayer(
 				"pool4",
 				pool_dim(2, 2, 2),
-				PoolingType::Avg
+				Pooling::Avg
 				);
 
 		HiddenLayer *conv5_1Layer = new ConvLayer(
@@ -250,7 +250,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv5_2Layer = new ConvLayer(
@@ -260,7 +260,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv5_3Layer = new ConvLayer(
@@ -270,7 +270,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *conv5_4Layer = new ConvLayer(
@@ -280,13 +280,13 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *pool5Layer = new PoolingLayer(
 				"pool5",
 				pool_dim(2, 2, 2),
-				PoolingType::Avg
+				Pooling::Avg
 				);
 
 		HiddenLayer *fc7Layer = new FullyConnectedLayer(
@@ -297,7 +297,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *fc8Layer = new FullyConnectedLayer(
@@ -308,7 +308,7 @@ public:
 				update_param(b_lr_mult, b_decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(
@@ -354,7 +354,7 @@ public:
 	virtual ~VGG19Net() {}
 };
 
-
+#endif
 
 
 

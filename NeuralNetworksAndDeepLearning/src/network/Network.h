@@ -13,7 +13,6 @@
 #ifndef NETWORK_H_
 #define NETWORK_H_
 
-#include <armadillo>
 
 #include "../cost/Cost.h"
 #include "../activation/Activation.h"
@@ -24,13 +23,14 @@
 #include "../layer/OutputLayer.h"
 #include "../layer/LayerConfig.h"
 #include "../evaluation/Evaluation.h"
+#include "NetworkConfig.h"
 
 class DataSample;
-
 class DataSet;
 
 using namespace std;
-using namespace arma;
+
+
 
 
 
@@ -43,6 +43,8 @@ using namespace arma;
  */
 class Network {
 public:
+	//Network(NetworkParam& networkParam);
+	Network(NetworkConfig* networkConfig);
 	/**
 	 * @details Network 생성자
 	 * @param networkListener 네트워크 상태 리스너
@@ -61,22 +63,24 @@ public:
 	 */
 	virtual ~Network();
 
+
+	/**
+	 * @details 네트워크에 설정된 입력 레이어를 조회한다.
+	 * @return 네트워크에 설정된 입력 레이어
+	 */
+	InputLayer *getInputLayer() const { return this->config->_inputLayer; }
 	/**
 	 * @details DataSet setter method
 	 * @param dataSet 학습 및 테스트용 데이터셋
 	 * @param batches 데이터셋 배치 단위 사이즈
 	 */
 	void setDataSet(DataSet *dataSet, UINT batches);
-	/**
-	 * @details 네트워크에 설정된 입력 레이어를 조회한다.
-	 * @return 네트워크에 설정된 입력 레이어
-	 */
-	InputLayer *getInputLayer() const { return this->inputLayer; }
+
 	/**
 	 * @details 네트워크에 출력 레이어를 추가한다.
 	 * @param outputLayer 네트워크에 추가할 출력 레이어
 	 */
-	void addOutputLayer(OutputLayer *outputLayer) { this->outputLayers.push_back(outputLayer); }
+	void addOutputLayer(OutputLayer *outputLayer) { this->config->_outputLayers.push_back(outputLayer); }
 	/**
 	 * @details 네트워크의 추론 결과를 평가할 평가객체를 추가한다.
 	 * @param evaluation 네트워크의 추론 결과를 평가할 평가객체
@@ -87,6 +91,7 @@ public:
 	 * @param networkListener 네트워크의 내부 이벤트 리스너
 	 */
 	void addNetworkListener(NetworkListener* networkListener);
+
 	/**
 	 * @details stochastic gradient descent를 수행한다.
 	 * @param epochs sgd를 수행할 최대 epoch
@@ -105,14 +110,11 @@ public:
 	 * @todo Network 클래스에 구현할 method가 아니다.
 	 */
 	static void addLayerRelation(Layer *prevLayer, HiddenLayer *nextLayer) {
-		int nextLayerIdx = nextLayer->getPrevLayerSize();
-		int prevLayerIdx = prevLayer->getNextLayerSize();
-
-		prevLayer->addNextLayer(next_layer_relation(nextLayer, nextLayerIdx));
+		prevLayer->addNextLayer(nextLayer);
 
 		// prev layer가 hidden layer가 아닌 경우 prev layers에 추가할 필요 없음
 		HiddenLayer *pLayer = dynamic_cast<HiddenLayer *>(prevLayer);
-		if(pLayer) nextLayer->addPrevLayer(prev_layer_relation(pLayer, prevLayerIdx));
+		if(pLayer) nextLayer->addPrevLayer(pLayer);
 	}
 
 	/**
@@ -196,24 +198,25 @@ protected:
 	 */
 	void evaluate();
 
-	DataSet *dataSet;							///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
+	NetworkConfig* config;
+	//DataSet *dataSet;							///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
 
-	InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터
-	vector<OutputLayer*> outputLayers;			///< 네트워크 출력 레이어 포인터 목록 벡터
-	vector<Evaluation*> evaluations;			///< 네트워크 평가 객체 포인터 목록 벡터
-	vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 목록 벡터
+	//InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터
+	//vector<OutputLayer*> outputLayers;			///< 네트워크 출력 레이어 포인터 목록 벡터
+	//vector<Evaluation*> evaluations;			///< 네트워크 평가 객체 포인터 목록 벡터
+	//vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 목록 벡터
 
 	io_dim in_dim;								///< 네트워크 입력 데이터 구조 정보 구조체
 
-	char savePrefix[200];						///< 네트워크 파일 쓰기 경로 prefix
-	bool saveConfigured;						///< 네트워크 쓰기 설정 여부
+	//char savePrefix[200];						///< 네트워크 파일 쓰기 경로 prefix
+	//bool saveConfigured;						///< 네트워크 쓰기 설정 여부
 	double maxAccuracy;							///< 네트워크 평가 최대 정확도
 	double minCost;								///< 네트워크 평가 최소 cost
 	DATATYPE dataSetMean[3];					///< 네트워크 데이터셋 평균 배열
-	DATATYPE clipGradientsLevel;				///< 학습 gradient의 L2 norm의 크기를 제한하는 기준값
+	//DATATYPE clipGradientsLevel;				///< 학습 gradient의 L2 norm의 크기를 제한하는 기준값
 
 	DATATYPE* d_trainData;						///< 학습 데이터 장치 메모리 포인터
-	UINT *d_trainLabel;							///< 학습 데이터 정답 장치 메모리 포인터
+	UINT* d_trainLabel;							///< 학습 데이터 정답 장치 메모리 포인터
 
 
 #ifndef GPU_MODE
@@ -231,8 +234,77 @@ protected:
 #endif
 
 
+
+
+public:
+	class Config {
+		uint32_t batchsize;
+		uint32_t epochs;
+
+		string savePathPrefix;
+		float clipGradientsLevel;
+	};
+
+
+
+
+
+
 };
 
+
+
+
+
+
+/*
+struct NetworkParam {
+	NetworkParam() {
+		inputLayer = NULL;
+		dataSet = NULL;
+		batchsize = 1;
+		epochs = 1;
+		clipGradientsLevel = 35.0f;
+	}
+
+	InputLayer* inputLayer;
+	vector<OutputLayer*> outputLayers;
+	DataSet* dataSet;
+	vector<Evaluation*> evaluations;
+	vector<NetworkListener*> networkListeners;
+
+	uint32_t batchsize;
+	uint32_t epochs;
+
+	string savePathPrefix;
+	float clipGradientsLevel;
+
+
+	void setOutputLayer(OutputLayer* outputLayer) {
+		outputLayers.clear();
+		outputLayers.push_back(outputLayer);
+	}
+	void addOutputLayer(OutputLayer* outputLayer) {
+		outputLayers.push_back(outputLayer);
+	}
+
+	void setEvaluation(Evaluation* evaluation) {
+		evaluations.clear();
+		evaluations.push_back(evaluation);
+	}
+	void addEvaluation(Evaluation* evaluation) {
+		evaluations.push_back(evaluation);
+	}
+
+	void setNetworkListener(NetworkListener* networkListener) {
+		networkListeners.clear();
+		networkListeners.push_back(networkListener);
+	}
+	void addNetworkListener(NetworkListener* networkListener) {
+		networkListeners.push_back(networkListener);
+	}
+};
+*/
 
 
 

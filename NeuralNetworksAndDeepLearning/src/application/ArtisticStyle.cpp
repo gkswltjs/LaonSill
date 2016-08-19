@@ -7,6 +7,7 @@
 
 #include "ArtisticStyle.h"
 
+#ifndef GPU_MODE
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
@@ -27,7 +28,7 @@ using namespace std;
 using namespace cimg_library;
 using namespace arma;
 
-#ifndef GPU_MODE
+
 struct LayerInfo_t {
 	HiddenLayer* layer;
 	io_dim out_dim;
@@ -115,7 +116,7 @@ void ArtisticStyle::style(const char* content_img_path, const char* style_img_pa
 	}
 	*/
 
-	HiddenLayer* firstHiddenLayer = dynamic_cast<HiddenLayer*>(network->getInputLayer()->getNextLayers()[0].next_layer);
+	HiddenLayer* firstHiddenLayer = dynamic_cast<HiddenLayer*>(network->getInputLayer()->getNextLayers()[0]);
 	if(!firstHiddenLayer) {
 		cout << "cout not find first hidden layer ... " << endl;
 		exit(-1);

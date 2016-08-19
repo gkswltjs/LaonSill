@@ -26,7 +26,7 @@ __global__ void SoftmaxLossBackprop(const UINT *label, int num_labels, int batch
 
 
 LogLikelihoodCost::LogLikelihoodCost() {
-		this->type = CostType::LogLikelihood;
+		this->type = Cost::LogLikelihood;
 }
 LogLikelihoodCost::~LogLikelihoodCost() {}
 

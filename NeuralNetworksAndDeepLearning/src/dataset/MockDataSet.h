@@ -22,17 +22,12 @@
  */
 class MockDataSet : public DataSet {
 public:
-	MockDataSet(UINT rows, UINT cols, UINT channels, UINT numTrainData, UINT numTestData, UINT numLabels);
+	MockDataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t numTrainData, uint32_t numTestData, uint32_t numLabels);
 	virtual ~MockDataSet();
 
 	virtual void load();
-	void shuffleTrainDataSet() {}
-	void shuffleValidationDataSet() {}
-	void shuffleTestDataSet() {}
-
 private:
-	UINT numLabels;				///< 생성할 데이터셋의 정답레이블 크기. 랜덤 레이블 생성을 위해 필요.
-
+	uint32_t numLabels;				///< 생성할 데이터셋의 정답레이블 크기. 랜덤 레이블 생성을 위해 필요.
 };
 
 #endif /* DATASET_MOCKDATASET_H_ */

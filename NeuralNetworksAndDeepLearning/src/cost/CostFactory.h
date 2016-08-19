@@ -31,12 +31,12 @@ public:
 	 * @param activationType 생성하고자 하는 Activation 객체의 타입.
 	 * @return 생성한 Activation 객체.
 	 */
-	static Cost *create(CostType costType) {
+	static Cost *create(Cost::Type costType) {
 		switch(costType) {
-		case CostType::CrossEntropy: return new CrossEntropyCost();
-		case CostType::LogLikelihood: return new LogLikelihoodCost();
-		case CostType::Quadratic: return new QuadraticCost();
-		case CostType::None:
+		case Cost::CrossEntropy: return new CrossEntropyCost();
+		case Cost::LogLikelihood: return new LogLikelihoodCost();
+		case Cost::Quadratic: return new QuadraticCost();
+		case Cost::None:
 		default: return 0;
 		}
 	}

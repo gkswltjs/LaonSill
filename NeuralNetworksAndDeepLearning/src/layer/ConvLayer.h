@@ -30,10 +30,86 @@
  */
 class ConvLayer : public HiddenLayer {
 public:
+	class Builder : public HiddenLayer::Builder {
+	public:
+		filter_dim _filterDim;
+		update_param _weightUpdateParam;
+		update_param _biasUpdateParam;
+		param_filler _weightFiller;
+		param_filler _biasFiller;
+		Activation::Type _activationType;
+
+		Builder() {
+			_filterDim.rows = 0;
+			_filterDim.cols = 0;
+			_filterDim.channels = 0;
+			_filterDim.filters = 0;
+			_filterDim.stride = 0;
+			_weightUpdateParam.lr_mult = 1.0;
+			_weightUpdateParam.decay_mult = 0.0;
+			_biasUpdateParam.lr_mult = 1.0;
+			_biasUpdateParam.decay_mult = 0.0;
+			_weightFiller.type = ParamFillerType::None;
+			_biasFiller.type = ParamFillerType::None;
+			_activationType = Activation::None;
+		}
+		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters, uint32_t stride) {
+			_filterDim.rows = rows;
+			_filterDim.cols = cols;
+			_filterDim.channels = channels;
+			_filterDim.filters = filters;
+			_filterDim.stride = stride;
+			return this;
+		}
+		Builder* weightUpdateParam(double lr_mult, double decay_mult) {
+			this->_weightUpdateParam.lr_mult = lr_mult;
+			this->_weightUpdateParam.decay_mult = decay_mult;
+			return this;
+		}
+		Builder* biasUpdateParam(double lr_mult, double decay_mult) {
+			this->_biasUpdateParam.lr_mult = lr_mult;
+			this->_biasUpdateParam.decay_mult = decay_mult;
+			return this;
+		}
+		Builder* weightFiller(ParamFillerType weightFillerType, double value) {
+			this->_weightFiller.type = weightFillerType;
+			this->_weightFiller.value = value;
+			return this;
+		}
+		Builder* biasFiller(ParamFillerType paramFillerType, double value) {
+			this->_biasFiller.type = paramFillerType;
+			this->_biasFiller.value = value;
+			return this;
+		}
+		Builder* activationType(Activation::Type activationType) {
+			this->_activationType = activationType;
+			return this;
+		}
+		virtual Builder* name(const string name) {
+			HiddenLayer::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			HiddenLayer::Builder::id(id);
+			return this;
+		}
+		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			return this;
+		}
+		Layer* build() {
+			return new ConvLayer(this);
+		}
+	};
 	/**
 	 * @details ConvLayer 기본 생성자
 	 */
 	ConvLayer();
+	ConvLayer(Builder* builder);
 	/**
 	 * @details ConvLayer 생성자
 	 * @param filter_d 컨볼루션 연산 관련 파라미터 구조체
@@ -44,7 +120,7 @@ public:
 	 * @param activationType 컨볼루션 결과에 적용할 활성화 타입
 	 */
 	ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType);
 	/**
 	 * @details ConvLayer 소멸자
 	 */
@@ -54,10 +130,8 @@ public:
 
 #ifndef GPU_MODE
 	rcube *getWeight() { return this->filters; }
-	rcube &getDeltaInput() { return this->delta_input; }
 #else
 	DATATYPE *getWeight() { return this->filters; }
-	DATATYPE *getDeltaInput() { return this->d_delta_input; }
 #endif
 	/**
 	 * @details 컨볼루션 연산 관련 파라미터 구조체를 조회한다.
@@ -67,19 +141,20 @@ public:
 
 
 
-	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
 
 
 
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, ActivationType activationType);
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType);
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual DATATYPE _sumSquareGrad();
-	virtual DATATYPE _sumSquareParam();
+	virtual double _sumSquareGrad();
+	virtual double _sumSquareParam();
 	virtual void _save(ofstream &ofs);
+	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void _update(UINT n, UINT miniBatchSize);
 #ifndef GPU_MODE
 	void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
@@ -90,10 +165,10 @@ protected:
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
-	virtual void _feedforward(const rcube &input, const char *end=0);
+	virtual void _feedforward();
 #else
 	virtual void _scaleParam(DATATYPE scale_factor);
-	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+	virtual void _feedforward();
 	virtual void _backpropagation();
 #endif
 
@@ -147,6 +222,10 @@ protected:
 	size_t workspaceSize;							///< cudnn forward, backward에 필요한 작업공간 GPU 메모리 사이즈
 	void *d_workspace;								///< cudnn forward, backward에 필요한 작업공간 장치 메모리 포인터
 #endif
+
+
+
+
 
 
 };

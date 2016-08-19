@@ -22,7 +22,7 @@
 #include "../pooling/MaxPooling.h"
 #include "Network.h"
 
-
+#ifndef GPU_MODE
 /**
  * @brief GoogLeNet을 Mnist 데이터셋에 대해 구현한 Network 클래스
  * @details 네트워크를 특정 입력 구조에 의존하지 않도록 구분해서 일반 GoogLeNet 클래스와 차이가 없어졌다.
@@ -50,7 +50,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.1),
 				param_filler(ParamFillerType::Constant, 0.2),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		PoolingLayer *pool1_3x3_s2 = new PoolingLayer(
@@ -58,7 +58,7 @@ public:
 				//io_dim(28, 28, 20, batchSize),
 				//io_dim(14, 14, 20, batchSize),
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		LRNLayer *pool1_norm1 = new LRNLayer(
@@ -78,7 +78,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.1),
 				param_filler(ParamFillerType::Constant, 0.2),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		ConvLayer *conv2_3x3 = new ConvLayer(
@@ -92,7 +92,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.03),
 				param_filler(ParamFillerType::Constant, 0.2),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		LRNLayer *conv2_norm2 = new LRNLayer(
@@ -106,7 +106,7 @@ public:
 				//io_dim(14, 14, 16, batchSize),
 				//io_dim(14, 14, 16, batchSize),
 				pool_dim(3, 3, 1),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		InceptionLayer *inception_3a = new InceptionLayer(
@@ -134,7 +134,7 @@ public:
 				//io_dim(14, 14, 20, batchSize),
 				//io_dim(7, 7, 20, batchSize),
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		InceptionLayer *inception_4a = new InceptionLayer(
@@ -192,7 +192,7 @@ public:
 				//io_dim(7, 7, 40, batchSize),
 				//io_dim(7, 7, 40, batchSize),
 				pool_dim(3, 3, 1),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		InceptionLayer *inception_5a = new InceptionLayer(
@@ -220,10 +220,10 @@ public:
 				//io_dim(7, 7, 48, batchSize),
 				//io_dim(1, 1, 48, batchSize),
 				pool_dim(7, 7, 7),
-				PoolingType::Max
+				Pooling::Max
 				);
 
-		//FullyConnectedLayer *fc1 = new FullyConnectedLayer("fc1", 48, 48, 0.4, ActivationType::ReLU);
+		//FullyConnectedLayer *fc1 = new FullyConnectedLayer("fc1", 48, 48, 0.4, Activation::ReLU);
 
 		SoftmaxLayer *outputLayer = new SoftmaxLayer(
 				"output",
@@ -268,6 +268,7 @@ public:
 	virtual ~GoogLeNetMnist() {}
 };
 
+#endif
 
 
 

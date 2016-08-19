@@ -35,20 +35,25 @@ __global__ void Dropout_(const int n, const DATATYPE* in, const DATATYPE* mask,
 
 
 SoftmaxLayer::SoftmaxLayer() {
-	this->type = LayerType::Softmax;
+	this->type = Layer::Softmax;
+}
+
+SoftmaxLayer::SoftmaxLayer(Builder* builder)
+	: OutputLayer(builder) {
+	initialize();
 }
 
 SoftmaxLayer::SoftmaxLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler)
 	: OutputLayer(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
-			ActivationType::Softmax, CostType::LogLikelihood) {
+			Activation::Softmax, Cost::LogLikelihood) {
 	initialize();
 }
 #ifndef GPU_MODE
 SoftmaxLayer::SoftmaxLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler)
 	: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
-			ActivationType::Softmax, CostType::LogLikelihood) {
+			Activation::Softmax, Cost::LogLikelihood) {
 	initialize();
 }
 #endif
@@ -123,22 +128,12 @@ void SoftmaxLayer::cost(const UINT *target) {
 }
 #endif
 
-void SoftmaxLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	OutputLayer::load(ifs, layerMap);
-	initialize();
-	SoftmaxLayer::_shape(false);
-}
-
-
-
-
-
 
 void SoftmaxLayer::initialize() {
-	this->type = LayerType::Softmax;
+	this->type = Layer::Softmax;
 
-	//this->cost_fn = CostFactory::create(CostType::LogLikelihood);
-	//this->activation_fn = ActivationFactory::create(ActivationType::Softmax);
+	//this->cost_fn = CostFactory::create(Cost::LogLikelihood);
+	//this->activation_fn = ActivationFactory::create(Activation::Softmax);
 	//this->activation_fn->initialize_weight(in_dim.size(), weight);
 
 	//weight.zeros();
@@ -157,6 +152,13 @@ void SoftmaxLayer::_shape(bool recursive) {
 void SoftmaxLayer::_clearShape() {
 	OutputLayer::_clearShape();
 }
+
+void SoftmaxLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	OutputLayer::_load(ifs, layerMap);
+	initialize();
+	SoftmaxLayer::_shape(false);
+}
+
 
 
 

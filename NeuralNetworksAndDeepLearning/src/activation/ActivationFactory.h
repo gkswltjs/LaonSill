@@ -32,12 +32,12 @@ public:
 
 #ifndef GPU_MODE
 public:
-	static Activation *create(ActivationType activationType) {
+	static Activation *create(Activation::Type activationType) {
 		switch(activationType) {
-		case ActivationType::Sigmoid: return new Sigmoid();
-		case ActivationType::Softmax: return new Softmax();
-		case ActivationType::ReLU: return new ReLU();
-		case ActivationType::None:
+		case Activation::Sigmoid: return new Sigmoid();
+		case Activation::Softmax: return new Softmax();
+		case Activation::ReLU: return new ReLU();
+		case Activation::None:
 		default: return 0;
 		}
 	}
@@ -55,12 +55,12 @@ public:
 	 * @param activationType 생성하고자 하는 Activation 객체의 타입.
 	 * @return 생성한 Activation 객체.
 	 */
-	static Activation *create(ActivationType activationType) {
+	static Activation *create(Activation::Type activationType) {
 		switch(activationType) {
-		case ActivationType::Sigmoid: return new Sigmoid();
-		case ActivationType::Softmax: return new Softmax();
-		case ActivationType::ReLU: return new ReLU();
-		case ActivationType::None:
+		case Activation::Sigmoid: return new Sigmoid();
+		case Activation::Softmax: return new Softmax();
+		case Activation::ReLU: return new ReLU();
+		case Activation::None:
 		default: return 0;
 		}
 	}

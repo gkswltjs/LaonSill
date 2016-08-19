@@ -15,17 +15,7 @@
 #include "../Util.h"
 
 
-/**
- * @brief	Activation 타입 열거형
- * @details	지원하는 Activation 타입 열거,
- *          현재 Sigmoid, Softmax, ReLU 함수를 지원.
- */
-enum class ActivationType {
-	None = 0,		// Activation을 사용하지 않음, 입력값을 그대로 출력.
-	Sigmoid = 1, 	// Activation에 Sigmoid 함수를 적용.
-	Softmax = 2,	// Activation에 Softmax 함수를 적용.
-	ReLU = 3		// Activation에 Rectified Linear Unit 함수를 적용.
-};
+
 
 
 
@@ -38,7 +28,19 @@ public:
 	Activation() {};
 	virtual ~Activation() {};
 
-	ActivationType getType() const { return type; }
+	/**
+	 * @brief	Activation 타입 열거형
+	 * @details	지원하는 Activation 타입 열거,
+	 *          현재 Sigmoid, Softmax, ReLU 함수를 지원.
+	 */
+	enum Type {
+		None = 0,		// Activation을 사용하지 않음, 입력값을 그대로 출력.
+		Sigmoid = 1, 	// Activation에 Sigmoid 함수를 적용.
+		Softmax = 2,	// Activation에 Softmax 함수를 적용.
+		ReLU = 3		// Activation에 Rectified Linear Unit 함수를 적용.
+	};
+
+	Activation::Type getType() const { return type; }
 
 	/**
 	 * activation function에 따라 layer weight의 초기화하는 방법이 다름
@@ -84,7 +86,7 @@ public:
 
 
 protected:
-	ActivationType type;	///< 현재 Activation 객체의 Activation 타입.
+	Type type;	///< 현재 Activation 객체의 Activation 타입.
 
 };
 

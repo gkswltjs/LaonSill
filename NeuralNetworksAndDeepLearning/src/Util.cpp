@@ -10,6 +10,8 @@
 
 #include <cstdlib>
 #include <stdarg.h>
+#include <cstring>
+
 
 bool Util::train = true;
 
@@ -71,6 +73,8 @@ int Util::pack4BytesToInt(unsigned char *buffer)
 	return result;
 }
 
+
+#ifndef GPU_MODE
 void Util::printVec(const rvec &vector, string name) {
 	if(Util::print) {
 		(*outstream) << "-------------------------------------" << endl;
@@ -118,7 +122,7 @@ void Util::printUCube(const ucube &c, string name) {
 		(*outstream) << "-------------------------------------" << endl;
 	}
 }
-
+#endif
 
 void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, UINT batches, string name) {
 	if(Util::print && data) {
@@ -169,7 +173,6 @@ void Util::printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT ch
 
 
 void Util::printMessage(string message) {
-	//if(true || Util::print) {
 	if(Util::print) {
 		(*outstream) << message << endl;
 	}
@@ -194,6 +197,8 @@ void Util::convertCubeToVec(const io_dim &cube_dim, const cube &c, vec &v) {
 */
 
 
+
+#ifndef GPU_MODE
 void Util::convertCube(const rcube &input, rcube &output) {
 	// input, output의 dim이 동일한 경우, 변환이 필요없음, input을 output으로 그대로 전달
 	if(size(input) == size(output)) {
@@ -244,7 +249,7 @@ void Util::dropoutLayer(rcube &input, double p_dropout) {
 	//Util::printCube(input, "input:");
 }
 
-
+#endif
 
 
 

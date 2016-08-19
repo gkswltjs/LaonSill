@@ -42,7 +42,7 @@ public:
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		HiddenLayer *fc2Layer = new FullyConnectedLayer(
@@ -54,7 +54,7 @@ public:
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Constant, 0.1),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		OutputLayer *softmaxLayer = new SoftmaxLayer(

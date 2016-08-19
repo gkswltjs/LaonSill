@@ -27,7 +27,7 @@ public:
 #ifndef GPU_MODE
 public:
 	Softmax() {
-		this->type = ActivationType::Softmax;
+		this->type = Activation::Softmax;
 	}
 
 
@@ -63,8 +63,8 @@ public:
 	}
 
 #else
-	Softmax() : num_label(100), batches(50) {
-		this->type = ActivationType::Softmax;
+	Softmax() : num_label(10), batches(10) {
+		this->type = Activation::Softmax;
 		h_z = new DATATYPE[num_label*batches];
 		h_activation = new DATATYPE[num_label*batches];
 	}
@@ -112,6 +112,7 @@ public:
 			&Cuda::alpha, tensorDesc, z, &Cuda::beta, tensorDesc, activation));
 
 
+		/*
 		float result;
 		//cout << "softmax result sum: " << endl;
 		for(int i = 0; i < batches; i++) {
@@ -122,7 +123,7 @@ public:
 			}
 		}
 		//cout << endl;
-
+		*/
 
 
 	}

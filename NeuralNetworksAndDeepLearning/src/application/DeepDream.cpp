@@ -8,7 +8,7 @@
 #include "DeepDream.h"
 
 
-
+#ifndef GPU_MODE
 DeepDream::DeepDream(Network *network, const char *base_img, UINT iter_n, UINT octave_n,
 		double octave_scale, const char *end, bool clip) {
 
@@ -162,7 +162,7 @@ void DeepDream::make_step(CImg<DATATYPE>& src, DATATYPE *d_src, const char *end,
 		exit(-1);
 	}
 	/*
-	HiddenLayer* dst_nextLayer = dynamic_cast<HiddenLayer*>(dst->getNextLayers()[0].next_layer);
+	HiddenLayer* dst_nextLayer = dynamic_cast<HiddenLayer*>(dst->getNextLayers()[0]);
 	if(!dst_nextLayer) {
 		cout << "could not find next layer ... " << endl;
 		exit(-1);
@@ -171,7 +171,7 @@ void DeepDream::make_step(CImg<DATATYPE>& src, DATATYPE *d_src, const char *end,
 	dst_nextLayer->setDeltaInput(dst->getOutput());
 	*/
 	dst->backpropagation(0, dst->getOutput());
-	HiddenLayer* firstHiddenLayer = dynamic_cast<HiddenLayer*>(network->getInputLayer()->getNextLayers()[0].next_layer);
+	HiddenLayer* firstHiddenLayer = dynamic_cast<HiddenLayer*>(network->getInputLayer()->getNextLayers()[0]);
 	if(!firstHiddenLayer) {
 		cout << "cout not find first hidden layer ... " << endl;
 		exit(-1);
@@ -268,3 +268,4 @@ void DeepDream::clipImage(CImg<DATATYPE>& img) {
 		}
 	}
 }
+#endif

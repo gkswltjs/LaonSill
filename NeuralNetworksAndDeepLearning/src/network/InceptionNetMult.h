@@ -17,7 +17,7 @@
 #include "Network.h"
 
 
-
+#ifndef GPU_MODE
 /**
  * @brief 복수개의 인셉션 레이어를 가진 Network를 구현한 클래스
  */
@@ -38,7 +38,7 @@ public:
 				//io_dim(28, 28, 1, batchSize),
 				//io_dim(14, 14, 1, batchSize),
 				pool_dim(3, 3, 2),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		HiddenLayer *incept1Layer = new InceptionLayer(
@@ -105,6 +105,6 @@ public:
 	}
 	virtual ~InceptionNetMult() {}
 };
-
+#endif
 
 #endif /* NETWORK_INCEPTIONNETMULT_H_ */

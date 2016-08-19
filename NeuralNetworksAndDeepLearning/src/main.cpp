@@ -1,5 +1,4 @@
 #include <iostream>
-#include <armadillo>
 
 #include "network/VGG19Net.h"
 #include "network/AlexNet.h"
@@ -14,16 +13,9 @@
 #include "network/InceptionNetSingle.h"
 #include "network/InceptionNetMult.h"
 #include "network/InceptionNetAux.h"
-#include "dataset/VvgDataSet.h"
 #include "dataset/MnistDataSet.h"
 #include "dataset/MockDataSet.h"
-#include "dataset/Cifar10DataSet.h"
-#include "dataset/UbyteDataSet.h"
 #include "dataset/DataSet.h"
-#include "dataset/ImageNet10Cat100Train100TestDataSet.h"
-#include "dataset/ImageNet10Cat1000Train100TestDataSet.h"
-#include "dataset/ImageNet100Cat10000Train1000TestDataSet.h"
-#include "dataset/ImageNet1000Cat1000000Train100000TestDataSet.h"
 #include "Util.h"
 #include "pooling/Pooling.h"
 #include "pooling/MaxPooling.h"
@@ -53,6 +45,8 @@
 #include "evaluation/Top1Evaluation.h"
 #include "evaluation/Top5Evaluation.h"
 
+#include "network/NetworkConfig.h"
+
 #include "Timer.h"
 #include "cuda/Cuda.h"
 #include <gnuplot-iostream.h>
@@ -62,8 +56,9 @@
 #include "util/ImagePacker.h"
 #include <fenv.h>
 
+#include "debug/Debug.h"
+
 using namespace std;
-using namespace arma;
 using namespace cimg_library;
 
 // Armadillo documentation is available at:
@@ -77,10 +72,7 @@ void gnuplot_test();
 void cimg_test();
 void deepdream_test();
 void artisticstyle_test();
-
-
-
-
+void config_test();
 
 int main(int argc, char** argv) {
 	cout << "main" << endl;
@@ -90,43 +82,22 @@ int main(int argc, char** argv) {
 	feenableexcept(FE_INVALID | FE_OVERFLOW);
 
 
-	/*
-	Cuda::create(0);
-	DataSet *dataSet = new ImageNet10Cat100Train100TestDataSet();
-	dataSet->load();
-	int maxEpoch = 1000;
-	NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
-	Evaluation* top1Evaluation = new Top1Evaluation();
-
-	Network *network = new NeuralNetSingle(top1Listener, 0.005, 5.0);
-	network->addEvaluation(top1Evaluation);
-	network->setDataSet(dataSet, 1);
-	network->shape();
-	//network->sgd(maxEpoch);
-
-	network->clipGradients();
-
-	Cuda::destroy();
-	*/
-
-
 	Util::setOutstream(&cout);
 	//Util::setOutstream("./log");
 	//Util::printMessage("message ... ");
 
-	double lr = 0.01;
-	double wd = 0.0002;
-	int batches = 50;
+	config_test();
 
-	/*
-	if(argc > 0) {
-		lr = atof(argv[1]);
-		wd = atof(argv[2]);
-		batches = atoi(argv[3]);
-	}
-	*/
 
-	network_test(lr, wd, batches);
+	//double lr = 0.01;
+	//double wd = 0.0002;
+	//int batches = 50;
+	//if(argc > 0) {
+	//	lr = atof(argv[1]);
+	//	wd = atof(argv[2]);
+	//	batches = atoi(argv[3]);
+	//}
+	//network_test(lr, wd, batches);
 
 
 
@@ -159,7 +130,53 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
+void config_test() {
+	Cuda::create(0);
+	//Util::setPrint(true);
 
+	const uint32_t maxEpoch = 1000;
+	const uint32_t batchSize = 10;
+	const float baseLearningRate = 0.05f;
+	const float weightDecay = 0.0002f;
+	const float momentum = 0.9f;
+	const float clipGradientsLevel = 2400.0f;
+
+	//DataSet* dataSet = new MockDataSet(28, 28, 1, 10, 10, 10);
+	//DataSet* dataSet = new MnistDataSet(0.8);
+	//DataSet* dataSet = new MockDataSet(224, 224, 3, 100, 100, 100);
+	//DataSet* dataSet = createImageNet10CatDataSet();
+	DataSet* dataSet = createImageNet100CatDataSet();
+	//DataSet* dataSet = createMnistDataSet();
+	dataSet->load();
+	dataSet->zeroMean(true);
+
+	Evaluation* top1Evaluation = new Top1Evaluation();
+	Evaluation* top5Evaluation = new Top5Evaluation();
+	NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
+	NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
+
+	//LayersConfig* layersConfig = createCNNDoubleLayersConfig();
+	LayersConfig* layersConfig = createGoogLeNetLayersConfig();
+	//LayersConfig* layersConfig = createInceptionLayersConfig();
+	NetworkConfig* networkConfig =
+			(new NetworkConfig::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->clipGradientsLevel(clipGradientsLevel)
+			->dataSet(dataSet)
+			->evaluations({top1Evaluation, top5Evaluation})
+			->networkListeners({top1Listener, top5Listener})
+			->layersConfig(layersConfig)
+			->build();
+
+	Network* network = new Network(networkConfig);
+	network->shape();
+	network->sgd(maxEpoch);
+
+	Cuda::destroy();
+}
 
 void network_test(double lr, double wd, int batches) {
 	//arma_rng::set_seed_random();
@@ -172,9 +189,9 @@ void network_test(double lr, double wd, int batches) {
 	if(!debug) {
 		Util::setPrint(false);
 		//DataSet* dataSet = new ImageNet10Cat100Train100TestDataSet();
-		DataSet *dataSet = new ImageNet100Cat10000Train1000TestDataSet();
+		//DataSet *dataSet = new ImageNet100Cat10000Train1000TestDataSet();
 		//DataSet* dataSet = new ImageNet1000Cat1000000Train100000TestDataSet();
-		//DataSet* dataSet = new MockDataSet(28, 28, 1, 10, 2, 5);
+		DataSet* dataSet = new MockDataSet(28, 28, 1, 10, 2, 5);
 		dataSet->load();
 		dataSet->zeroMean(true);
 
@@ -192,9 +209,10 @@ void network_test(double lr, double wd, int batches) {
 		double w_wd_mult = wd;
 		double b_lr_mult = lr;
 		double b_wd_mult = wd;
+		Network* network = new Network();
 		//Network *network = new VGG19Net(top1Listener, 0.002, 1.0, 2.0, 0.0);
 		//Network *network = new AlexNet(networkListener, 0.002, 1.0, 2.0, 0.0);
-		Network *network = new GoogLeNet(top1Listener, w_lr_mult, w_wd_mult, b_lr_mult, b_wd_mult);
+		//Network *network = new GoogLeNet(top1Listener, w_lr_mult, w_wd_mult, b_lr_mult, b_wd_mult);
 		//Network *network = new ConvNetDouble(top1Listener, 0.01, 0.0);
 		//Network *network = new NeuralNetSingle(top1Listener, 0.005, 5.0);
 		//Network *network = new ConvNetMult(networkListener, 0.01, 5.0);
@@ -240,27 +258,22 @@ void network_test(double lr, double wd, int batches) {
 		double lr_mult = 0.1;
 		double decay_mult = 5.0;
 		InputLayer *inputLayer = new InputLayer("input");
-		HiddenLayer *inceptionLayer = new InceptionLayer(
-				"inception",
-				1,
-				3, 2, 3, 2, 4, 5,
-				update_param(lr_mult, decay_mult),
-				update_param(lr_mult, decay_mult));
 		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", numLabels, 0.5,
 				update_param(lr_mult, decay_mult),
 				update_param(lr_mult, decay_mult),
 				param_filler(ParamFillerType::Xavier),
 				param_filler(ParamFillerType::Gaussian, 1));
 
-		Network::addLayerRelation(inputLayer, inceptionLayer);
-		Network::addLayerRelation(inceptionLayer, softmaxLayer);
+		Network::addLayerRelation(inputLayer, softmaxLayer);
 
+		/*
 		Network *network = new Network(inputLayer, softmaxLayer, dataSet, top1Listener);
 		network->setDataSet(dataSet, batchSize);
 		network->addEvaluation(top1Evaluation);
 		network->shape();
 		network->reshape(io_dim(4, 4, 1, 2));
 		network->sgd(maxEpoch);
+		*/
 	}
 
 	Cuda::destroy();
@@ -296,6 +309,7 @@ void artisticstyle_test() {
 
 
 void deepdream_test() {
+	/*
 	Cuda::create(0);
 	cout << "Cuda creation done ... " << endl;
 
@@ -317,6 +331,7 @@ void deepdream_test() {
 	deepdream->deepdream();
 
 	Cuda::destroy();
+	*/
 }
 
 
@@ -513,7 +528,7 @@ void cuda_gemm_test() {
 			update_param(lr_mult, decay_mult),
 			param_filler(ParamFillerType::Xavier),
 			param_filler(ParamFillerType::Gaussian, 1),
-			ActivationType::ReLU);
+			Activation::ReLU);
 
 	OutputLayer *softmaxLayer = new SoftmaxLayer(
 			"softmax",

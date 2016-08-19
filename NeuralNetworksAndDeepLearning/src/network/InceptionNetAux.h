@@ -21,6 +21,9 @@
 #include "../Util.h"
 #include "Network.h"
 
+
+
+#ifndef GPU_MODE
 /**
  * @brief Auxiliary Network를 가진 인셉션 Network를 구현한 클래스
  */
@@ -46,7 +49,7 @@ public:
 					bias_update_param,
 					param_filler(ParamFillerType::Xavier),
 					param_filler(ParamFillerType::Constant, 0.0),
-					ActivationType::ReLU
+					Activation::ReLU
 					);
 
 			HiddenLayer *pool1Layer = new PoolingLayer(
@@ -54,7 +57,7 @@ public:
 					//io_dim(28, 28, 10, batchSize),
 					//io_dim(14, 14, 10, batchSize),
 					pool_dim(3, 3, 2),
-					PoolingType::Max
+					Pooling::Max
 					);
 
 			HiddenLayer *lrn1Layer = new LRNLayer(
@@ -97,7 +100,7 @@ public:
 					bias_update_param,
 					param_filler(ParamFillerType::Xavier),
 					param_filler(ParamFillerType::Constant, 0.0),
-					ActivationType::ReLU
+					Activation::ReLU
 					);
 
 			HiddenLayer *pool2Layer = new PoolingLayer(
@@ -105,7 +108,7 @@ public:
 					//io_dim(28, 28, 10, batchSize),
 					//io_dim(14, 14, 10, batchSize),
 					pool_dim(3, 3, 2),
-					PoolingType::Max
+					Pooling::Max
 					);
 
 			/*
@@ -134,7 +137,7 @@ public:
 					update_param(lr_mult, decay_mult),
 					param_filler(ParamFillerType::Xavier),
 					param_filler(ParamFillerType::Constant, 0.0),
-					ActivationType::ReLU
+					Activation::ReLU
 					);
 
 			HiddenLayer *pool2Layer = new PoolingLayer(
@@ -142,7 +145,7 @@ public:
 					//io_dim(28, 28, 10, batchSize),
 					//io_dim(14, 14, 10, batchSize),
 					pool_dim(3, 3, 2),
-					PoolingType::Max
+					Pooling::Max
 					);
 
 			HiddenLayer *fc1Layer = new FullyConnectedLayer(
@@ -153,7 +156,7 @@ public:
 					update_param(lr_mult, decay_mult),
 					param_filler(ParamFillerType::Xavier),
 					param_filler(ParamFillerType::Constant, 0.0),
-					ActivationType::ReLU);
+					Activation::ReLU);
 					*/
 
 			OutputLayer *softmaxLayer = new SoftmaxLayer(
@@ -191,6 +194,8 @@ public:
 	}
 	virtual ~InceptionNetAux() {}
 };
+
+#endif
 
 
 #endif /* NETWORK_INCEPTIONNETAUX_H_ */

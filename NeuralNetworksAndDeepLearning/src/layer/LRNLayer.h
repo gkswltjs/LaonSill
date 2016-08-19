@@ -26,10 +26,42 @@
  */
 class LRNLayer : public HiddenLayer {
 public:
+	class Builder : public HiddenLayer::Builder {
+	public:
+		lrn_dim _lrnDim;
+		Builder() {}
+		Builder* lrnDim(uint32_t local_size, double alpha, double beta, double k) {
+			this->_lrnDim.local_size = local_size;
+			this->_lrnDim.alpha = alpha;
+			this->_lrnDim.beta = beta;
+			this->_lrnDim.k = k;
+			return this;
+		}
+		virtual Builder* name(const string name) {
+			HiddenLayer::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			HiddenLayer::Builder::id(id);
+			return this;
+		}
+		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			return this;
+		}
+		Layer* build() {
+			return new LRNLayer(this);
+		}
+	};
 	/**
 	 * @details LRNLayer 기본 생성자
 	 */
 	LRNLayer();
+	LRNLayer(Builder* builder);
 	/**
 	 * @details LRNLayer 생성자
 	 * @param 레이어 이름 문자열
@@ -41,21 +73,16 @@ public:
 	 */
 	virtual ~LRNLayer();
 
-#ifndef GPU_MODE
-	rcube &getDeltaInput() { return delta_input; }
-#else
-	DATATYPE *getDeltaInput() { return d_delta_input; }
-#endif
 
-	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 
 protected:
 	void initialize(lrn_dim lrn_d);
 
-	virtual void _save(ofstream &ofs);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
+	virtual void _save(ofstream &ofs);
+	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void _backpropagation();
 
 #ifndef GPU_MODE
@@ -66,7 +93,7 @@ protected:
 		propResetNParam();
 	}
 #else
-	virtual void _feedforward(const DATATYPE *input, const char *end=0);
+	virtual void _feedforward();
 #endif
 
 

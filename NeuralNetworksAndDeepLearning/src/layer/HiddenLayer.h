@@ -28,7 +28,37 @@ using namespace arma;
  */
 class HiddenLayer : public Layer {
 public:
+	class Builder : public Layer::Builder {
+	public:
+		vector<uint32_t> _prevLayerIndices;
+
+		Builder() {}
+		virtual Builder* name(const string name) {
+			Layer::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			Layer::Builder::id(id);
+			return this;
+		}
+		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+			Layer::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+			this->_prevLayerIndices = prevLayerIndices;
+			return this;
+		}
+		Layer* build() = 0;
+	};
+
+
 	HiddenLayer() {}
+	HiddenLayer(Builder* builder) : Layer(builder) {
+		for(uint32_t i = 0; i < builder->_prevLayerIndices.size(); i++) {
+			this->prevLayers.push_back((Layer*)((size_t)builder->_prevLayerIndices[i]));
+		}
+	}
 	HiddenLayer(const string name) : Layer(name) {}
 #ifndef GPU_MODE
 	HiddenLayer(const string name, int n_in, int n_out) : Layer(name, n_in, n_out) {}
@@ -41,7 +71,7 @@ public:
 #endif
 
 #ifndef GPU_MODE
-	virtual rcube &getDeltaInput()=0;
+	virtual rcube &getDeltaInput() { return this->delta_input; }
 
 	/**
 	 * @details CPU MODE에서 누적된 학습 parameter값들을 reset한다.
@@ -57,7 +87,8 @@ public:
 	 * @details 네트워크 cost의 현재 레이어 입력에 관한 gradient 장치 메모리 포인터를 조회한다.
 	 * @return 네트워크 cost의 현재 레이어 입력에 관한 gradient 장치 메모리 포인터
 	 */
-	virtual DATATYPE *getDeltaInput()=0;
+	virtual DATATYPE *getDeltaInput() { return this->d_delta_input; }
+	virtual DATATYPE *getDeltaOutput() { return this->d_delta_output; }
 	/**
 	 * @details 네트워크 cost의 현재 레이어 입력에 관한 gradient값을 특정 값으로 설정한다.
 	 *          deepdream application 수행을 위해 임시로 만들었다.
@@ -81,8 +112,9 @@ public:
 	 */
 	virtual void backpropagation(UINT idx, DATATYPE *next_delta_input) {
 		_deconcat(idx, next_delta_input);
-		if (!isLastNextLayerRequest(idx)) return;
+		if (!w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
 
+		//_scaleGradient();
 		_backpropagation();
 		propBackpropagation();
 	}
@@ -98,7 +130,7 @@ protected:
 			Layer::_shape();
 		}
 		checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
-		checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*out_dim.batchsize()));
+		checkCudaErrors(Util::ucudaMalloc(&this->d_delta_output, sizeof(DATATYPE)*out_dim.batchsize()));
 	}
 	virtual void _clearShape() {
 		checkCudaErrors(cudaFree(d_delta_input));
@@ -113,7 +145,7 @@ protected:
 	 *          현재 레이어의 parameter(parameter가 있는 경우), input에 관한 gradient를 계산한다.
 	 */
 	virtual void _backpropagation() {
-		return;
+		checkCudaErrors(cudaMemcpyAsync(this->d_delta_input, this->d_delta_output, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
 	}
 	/**
 	 * @details 복수의 '다음' 레이어로부터의 gradient를 조합한다.
@@ -122,12 +154,10 @@ protected:
 	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
 	 */
 	virtual void _deconcat(UINT idx, const DATATYPE* next_delta_input) {
-		Util::printMessage("HiddenLayer::backpropagation()---"+string(name));
-
 		Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
 		Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
 		// 첫번째 branch로부터의 backpropagation, 그대로 copy
-		if(idx == 0) {
+		if(isFirstNextLayerRequest(idx)) {
 			checkCudaErrors(cudaMemcpyAsync(d_delta_output, next_delta_input, sizeof(DATATYPE)*out_dim.batchsize(), cudaMemcpyDeviceToDevice));
 		}
 		// 첫번째 이후의 branch로부터의 backpropagation, accumulate gradient
@@ -137,6 +167,17 @@ protected:
 		}
 		Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
 	}
+	/**
+	 * @details 복수의 '다음' 레이어로부터의 gradient들에 대해 branch의 수 기준으로 스케일링한다.
+	 *          _deconcat()이 gradient합산이 아닌 방식으로 구현된 경우 _scaleGradient() 역시 적절히 재정의해야 한다.
+	 */
+	virtual void _scaleGradient() {
+		if(nextLayers.size() > 1) {
+			float branchFactor = 1.0f / nextLayers.size();
+			//cout << this->name << "'s backpropagation branch factor is " << branchFactor << endl;
+			checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()), &branchFactor, d_delta_output, 1));
+		}
+	}
 
 	/**
 	 * @details 이전 레이어들에 대해 backpropagation() 메쏘드를 호출한다.
@@ -144,8 +185,12 @@ protected:
 	void propBackpropagation() {
 		HiddenLayer *hiddenLayer;
 		for(UINT i = 0; i < prevLayers.size(); i++) {
-			hiddenLayer = dynamic_cast<HiddenLayer *>(prevLayers[i].prev_layer);
-			if(hiddenLayer) hiddenLayer->backpropagation(prevLayers[i].idx, this->getDeltaInput());
+			hiddenLayer = dynamic_cast<HiddenLayer *>(prevLayers[i]);
+
+			// !!! 대부분의 경우 _backpropagation에서 사용한 d_delta_input을 그대로 사용하므로 문제가 없지만
+			// DepthConcatLayer와 같이 d_delta_input을 분배해야 하는 케이스가 있으므로 d_delta_input을 그대로 사용하지 말고
+			// getter를 사용하여 이전 레이어에 d_delta_input을 전달해야 한다.
+			if(hiddenLayer) hiddenLayer->backpropagation(id, this->getDeltaInput());
 		}
 	}
 
@@ -155,6 +200,7 @@ protected:
 protected:
 	DATATYPE *d_delta_input;			///< 네트워크 cost의 현재 레이어 입력에 관한 gradient 장치 메모리 포인터
 	DATATYPE *d_delta_output;			///< 네트워크 cost의 현재 레이어 출력에 관한 gradient 장치 메모리 포인터, multi-branch concat memory.
+
 };
 
 

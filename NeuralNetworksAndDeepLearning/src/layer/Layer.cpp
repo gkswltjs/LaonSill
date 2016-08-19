@@ -8,6 +8,7 @@
 #include "Layer.h"
 #include "LayerFactory.h"
 #include "../exception/Exception.h"
+#include "../network/NetworkConfig.h"
 
 
 int Layer::layerCount = 0;
@@ -24,6 +25,13 @@ Layer::Layer(const string name) {
 	initialize(name);
 }
 
+Layer::Layer(Builder* builder) {
+	for(uint32_t i = 0; i < builder->_nextLayerIndices.size(); i++) {
+		this->nextLayers.push_back((Layer*)((size_t)builder->_nextLayerIndices[i]));
+	}
+	initialize(builder->_name);
+}
+
 #ifndef GPU_MODE
 Layer::Layer(const string name, int n_in, int n_out) {
 	initialize(name, io_dim(n_in, 1, 1), io_dim(n_out, 1, 1));
@@ -31,21 +39,25 @@ Layer::Layer(const string name, int n_in, int n_out) {
 
 Layer::~Layer() {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		if(nextLayers[i].next_layer && nextLayers[i].next_layer->isLastPrevLayerRequest(nextLayers[i].idx)) {
-			delete nextLayers[i].next_layer;
-			nextLayers[i].next_layer = NULL;
+		if(nextLayers[i] && nextLayers[i]->isLastPrevLayerRequest(i)) {
+			delete nextLayers[i];
 		}
 	}
+	nextLayers.clear();
 	//cout << "destroying " << name << " layer ... " << endl;
 }
 #else
 Layer::~Layer() {
+	// 다음 레이어들에 대해 소멸을 요청
+	// 현재의 레이어가 요청하는 다음 레이어에 대해 마지막 이전 레이어인 경우,
+	// 다음 레이어에 대해 소멸을 요청하게 된다. (multi-branch인 경우 복수의 소멸 요청을 피하기 위해)
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		if(nextLayers[i].next_layer && nextLayers[i].next_layer->isLastPrevLayerRequest(nextLayers[i].idx)) {
-			delete nextLayers[i].next_layer;
-			nextLayers[i].next_layer = NULL;
+		if(nextLayers[i] && nextLayers[i]->isLastPrevLayerRequest(id)) {
+			delete nextLayers[i];
 		}
 	}
+	nextLayers.clear();
+
 	_clearShape();
 	//checkCudaErrors(cudaFree(d_output));
 	//checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
@@ -56,106 +68,133 @@ Layer::~Layer() {
 
 
 
-void Layer::addPrevLayer(prev_layer_relation prevLayer) {
+void Layer::addPrevLayer(Layer* prevLayer) {
 	prevLayers.push_back(prevLayer);
 }
 
-void Layer::addNextLayer(next_layer_relation nextLayer) {
+void Layer::addNextLayer(Layer* nextLayer) {
 	nextLayers.push_back(nextLayer);
 }
 
+bool Layer::isFirstPrevLayerRequest(UINT idx) {
+	if(prevLayers.size() < 1) return true;
+	if(prevLayers[0]->getId() != idx) return false;
+	else return true;
+}
+
 bool Layer::isLastPrevLayerRequest(UINT idx) {
-	if(prevLayers.size() > idx+1) return false;
+	uint32_t numPrevLayers = prevLayers.size();
+	if(numPrevLayers < 1) return true;
+	if(prevLayers[numPrevLayers-1]->getId() != idx) return false;
+	else return true;
+}
+
+bool Layer::isFirstNextLayerRequest(UINT idx) {
+	if(nextLayers.size() < 1) return true;
+	if(nextLayers[0]->getId() != idx) return false;
 	else return true;
 }
 
 bool Layer::isLastNextLayerRequest(UINT idx) {
-	if(nextLayers.size() > idx+1) return false;
+	uint32_t numNextLayers = nextLayers.size();
+	if(numNextLayers < 1) return true;
+	if(nextLayers[numNextLayers-1]->getId() != idx) return false;
 	else return true;
 }
 
 
 
+bool Layer::w_isLastPrevLayerRequest(UINT idx, const string method) {
+#ifdef PRINT_CALLSTACK
+	cout << method << this->name << "-";
+#endif
+	bool result = isLastPrevLayerRequest(idx);
+#ifdef PRINT_CALLSTACK
+	if (!result) cout << "skipped ... " << endl;
+	else cout << "entered ... " << endl;
+#endif
+	return result;
+}
 
+bool Layer::w_isLastNextLayerRequest(UINT idx, const string method) {
+#ifdef PRINT_CALLSTACK
+	cout << method << this->name << "-";
+#endif
+	bool result = isLastNextLayerRequest(idx);
+#ifdef PRINT_CALLSTACK
+	if (!result) cout << "skipped ... " << endl;
+	else cout << "entered ... " << endl;
+#endif
+	return result;
+}
 
 
 
 Layer* Layer::find(UINT idx, const string name) {
 	// 레이어 찾기의 경우 마지막 branch의 요청에 대해서만 처리하면 된다.
-	if (!isLastPrevLayerRequest(idx)) return 0;
+	if (!w_isLastPrevLayerRequest(idx, "Layer::find()")) return 0;
 
-	// 현재 레이어가 찾는 레이어인 경우
-	if (this->name == name) {
-		return this;
-	}
-	// 현재 레이어가 찾는 레이어가 아닌 경우 다음 레이어로 호출 전달
-	else {
-		for (uint32_t i = 0; i < nextLayers.size(); i++) {
-			Layer* result = nextLayers[i].next_layer->find(nextLayers[i].idx, name);
-			if(result != 0) return result;
-		}
-		return 0;
-	}
+	Layer* layer = _find(name);
+	if(layer) return layer;
+
+	return propFind();
 }
 
 void Layer::shape(UINT idx, io_dim in_dim) {
-	if (!isLastPrevLayerRequest(idx)) return;
+	if (!w_isLastPrevLayerRequest(idx, "Layer::shape()")) return;
 
-	Util::printMessage(string(name)+"---shape()");
 	this->in_dim = in_dim;
 	_shape();
 	propShape();
 }
 
 void Layer::reshape(UINT idx, io_dim in_dim) {
-	if (!isLastPrevLayerRequest(idx)) return;
+	if (!w_isLastPrevLayerRequest(idx, "Layer::reshape()")) return;
 
-	Util::printMessage(string(name)+"---reshape()");
 	this->in_dim = in_dim;
 	_reshape();
 	propReshape();
 }
 
 void Layer::clearShape(UINT idx) {
-	if (!isLastPrevLayerRequest(idx)) return;
+	if (!w_isLastPrevLayerRequest(idx, "Layer::clearShape()")) return;
 
-	Util::printMessage(string(name)+"---clearShape()");
 	_clearShape();
 	propClearShape();
 }
 
-DATATYPE Layer::sumSquareGrad(UINT idx) {
-	if(!isLastPrevLayerRequest(idx)) return 0.0;
+double Layer::sumSquareGrad(UINT idx) {
+	if(!w_isLastPrevLayerRequest(idx, "Layer::sumSquareGrad()")) return 0.0;
 
-	DATATYPE result =_sumSquareGrad();
+	double result =_sumSquareGrad();
 	result += propSumSquareGrad();
 	return result;
 }
 
-DATATYPE Layer::sumSquareParam(UINT idx) {
-	if(!isLastPrevLayerRequest(idx)) return 0.0;
+double Layer::sumSquareParam(UINT idx) {
+	if(!w_isLastPrevLayerRequest(idx, "Layer::sumSquareParam()")) return 0.0;
 
-	DATATYPE result =_sumSquareParam();
+	double result =_sumSquareParam();
 	result += propSumSquareParam();
 	return result;
 }
 
 void Layer::scaleParam(UINT idx, DATATYPE scale_factor) {
-	if(!isLastPrevLayerRequest(idx)) return;
+	if(!w_isLastPrevLayerRequest(idx, "Layer::scaleParam()")) return;
 
 	_scaleParam(scale_factor);
 	propScaleParam(scale_factor);
 }
 
 void Layer::save(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) return;
+	if(!w_isLastPrevLayerRequest(idx, "Layer::save()")) return;
 
 	_save(ofs);
 	propSave(ofs);
 }
 
 void Layer::saveHeader(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) return;
+	if(!w_isLastPrevLayerRequest(idx, "Layer::saveHeader()")) return;
 
 	Layer *p = this;
 	ofs.write((char *)&type, sizeof(int));
@@ -163,40 +202,16 @@ void Layer::saveHeader(UINT idx, ofstream &ofs) {
 
 	//cout << "save header for " << name << ", type: " << (int)type << ", address: " << p << endl;
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->saveHeader(nextLayers[i].idx, ofs);
+		nextLayers[i]->saveHeader(i, ofs);
 	}
 }
 
 void Layer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	int layerId;
-	char name[LAYER_NAME_LENGTH];
-	UINT nextLayerSize, prevLayerSize;
-
-	ifs.read((char *)&layerId, sizeof(int));
-	ifs.read(name, LAYER_NAME_LENGTH);
-	ifs.read((char *)&in_dim, sizeof(io_dim));
-	ifs.read((char *)&out_dim, sizeof(io_dim));
-	ifs.read((char *)&nextLayerSize, sizeof(UINT));
-	for(UINT i = 0; i < nextLayerSize; i++) {
-		next_layer_relation nextLayer;
-		ifs.read((char *)&nextLayer, sizeof(next_layer_relation));
-		nextLayers.push_back(nextLayer);
-	}
-	ifs.read((char *)&prevLayerSize, sizeof(UINT));
-	for(UINT i = 0; i < prevLayerSize; i++) {
-		prev_layer_relation prevLayer;
-		ifs.read((char *)&prevLayer, sizeof(prev_layer_relation));
-		prevLayers.push_back(prevLayer);
-	}
-	initialize(name);
-
-	Util::printMessage(string(name)+"---load()");
-	Layer::_shape(false);
-	updateLayerRelation(layerMap);
+	_load(ifs, layerMap);
 }
 
 void Layer::update(UINT idx, UINT n, UINT miniBatchSize) {
-	if (!isLastPrevLayerRequest(idx)) return;
+	if (!w_isLastPrevLayerRequest(idx, "Layer::update()")) return;
 
 	_update(n, miniBatchSize);
 	propUpdate(n, miniBatchSize);
@@ -209,10 +224,11 @@ void Layer::feedforward(UINT idx, const rcube &input, const char *end=0) {
 #else
 void Layer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
 	_concat(idx, input);
-	if (!isLastPrevLayerRequest(idx)) return;
+	if (!w_isLastPrevLayerRequest(idx, "Layer::feedforward()")) return;
 
-	_feedforward(input, end);
-	propFeedforward(input, end);
+	//_scaleInput();
+	_feedforward();
+	propFeedforward(end);
 }
 #endif
 
@@ -243,7 +259,7 @@ void Layer::initialize(const string name) {
 void Layer::loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	// fill layer map
 	while(true) {
-		LayerType layerType;
+		Layer::Type layerType;
 		Layer *address;
 
 		ifs.read((char *)&layerType, sizeof(int));
@@ -253,7 +269,7 @@ void Layer::loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		//cout << loc << ", " << (int)layerType << endl;
 
 		if(address == 0) break;
-		if(layerType == LayerType::Input) {
+		if(layerType == Layer::Input) {
 			layerMap.insert(pair<Layer *, Layer *>(address, this));
 		}
 		else {
@@ -273,7 +289,7 @@ void Layer::loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		Layer *layer = layerMap.find(layerKey)->second;
 		if(!layer) throw Exception();
 
-		if(layer->getType() == LayerType::Input) {
+		if(layer->getType() == Layer::Input) {
 			Layer::load(ifs, layerMap);
 		} else {
 			layer->load(ifs, layerMap);
@@ -282,18 +298,16 @@ void Layer::loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	}
 }
 
-void Layer::updateLayerRelation(map<Layer *, Layer *> &layerMap) {
+void Layer::updateLayerRelation(map<Layer*, Layer*> &layerMap) {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		Layer *nextLayer = nextLayers[i].next_layer;
-		nextLayers[i].next_layer = layerMap.find(nextLayer)->second;
+		nextLayers[i] = layerMap.find((Layer*)nextLayers[i])->second;
 	}
 
 	// 학습된 네트워크를 load하는 경우 backward pass가 없으므로 불필요
 	//HiddenLayer *hiddenLayer = dynamic_cast<HiddenLayer *>(this);
 	//if(hiddenLayer) {
-		for(UINT i = 0; i < prevLayers.size(); i++) {
-			Layer *prevLayer = prevLayers[i].prev_layer;
-			prevLayers[i].prev_layer = layerMap.find(prevLayer)->second;
+		for(uint32_t i = 0; i < prevLayers.size(); i++) {
+			prevLayers[i] = layerMap.find(prevLayers[i])->second;
 		}
 	//}
 }
@@ -305,7 +319,14 @@ void Layer::updateLayerRelation(map<Layer *, Layer *> &layerMap) {
 
 
 
-
+Layer* Layer::_find(const string name) {
+	// 현재 레이어가 찾는 레이어인 경우
+	if (this->name == name) {
+		return this;
+	} else {
+		return 0;
+	}
+}
 
 void Layer::_shape(bool recursive) {
 	char message[256];
@@ -313,6 +334,7 @@ void Layer::_shape(bool recursive) {
 			out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches);
 	Util::printMessage(string(message));
 
+	checkCudaErrors(Util::ucudaMalloc(&this->d_input, sizeof(DATATYPE)*in_dim.batchsize()));		//batch size 고려
 	checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
@@ -329,28 +351,28 @@ void Layer::_shape(bool recursive) {
 }
 
 void Layer::_reshape() {
-	Util::printMessage(string(name)+"---_reshape()");
 	// 이전의 input, output 설정과 관련된 memory 정리
 	_clearShape();
 	_shape();
 }
 
 void Layer::_clearShape() {
-	Util::printMessage(string(name)+"---_clearShape()");
+	checkCudaErrors(cudaFree(d_input));
 	checkCudaErrors(cudaFree(d_output));
 	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 
-	d_output = 0;
-	inputTensorDesc = 0;
-	outputTensorDesc = 0;
+	d_input = NULL;
+	d_output = NULL;
+	inputTensorDesc = NULL;
+	outputTensorDesc = NULL;
 }
 
-DATATYPE Layer::_sumSquareGrad() {
+double Layer::_sumSquareGrad() {
 	return 0.0;
 }
 
-DATATYPE Layer::_sumSquareParam() {
+double Layer::_sumSquareParam() {
 	return 0.0;
 }
 
@@ -370,24 +392,71 @@ void Layer::_save(ofstream &ofs) {
 	ofs.write((char *)&out_dim, sizeof(io_dim));							// layer out_dim
 	ofs.write((char *)&nextLayerSize, sizeof(UINT));						// layer next layer size
 	for(UINT i = 0; i < nextLayerSize; i++) {								// layer next layers
-		ofs.write((char *)&nextLayers[i], sizeof(next_layer_relation));
+		ofs.write((char *)&nextLayers[i], sizeof(Layer*));
 	}
 	ofs.write((char *)&prevLayerSize, sizeof(UINT));						// layer prev layer size
 	for(UINT i = 0; i < prevLayers.size(); i++) {							// layer prev layers
-		ofs.write((char *)&prevLayers[i], sizeof(prev_layer_relation));
+		ofs.write((char *)&prevLayers[i], sizeof(Layer*));
 	}
+}
+
+void Layer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	int layerId;
+	char name[LAYER_NAME_LENGTH];
+	UINT nextLayerSize, prevLayerSize;
+
+	ifs.read((char *)&layerId, sizeof(int));
+	ifs.read(name, LAYER_NAME_LENGTH);
+	ifs.read((char *)&in_dim, sizeof(io_dim));
+	ifs.read((char *)&out_dim, sizeof(io_dim));
+	ifs.read((char *)&nextLayerSize, sizeof(UINT));
+	for(UINT i = 0; i < nextLayerSize; i++) {
+		Layer* nextLayer;
+		ifs.read((char *)&nextLayer, sizeof(Layer*));
+		nextLayers.push_back(nextLayer);
+	}
+	ifs.read((char *)&prevLayerSize, sizeof(UINT));
+	for(UINT i = 0; i < prevLayerSize; i++) {
+		Layer* prevLayer;
+		ifs.read((char *)&prevLayer, sizeof(Layer*));
+		prevLayers.push_back(prevLayer);
+	}
+	initialize(name);
+
+	Layer::_shape(false);
+	updateLayerRelation(layerMap);
 }
 
 void Layer::_update(UINT n, UINT miniBatchSize) {
 	return;
 }
 
-void Layer::_feedforward(const DATATYPE *input, const char *end) {
-	return;
+void Layer::_feedforward() {
+	checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
 }
 
 void Layer::_concat(UINT idx, const DATATYPE* input) {
-	return;
+	Util::printDeviceData(input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "input:");
+	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+
+	// 첫번째 branch로부터의 input, 그대로 copy
+	if(isFirstPrevLayerRequest(idx)) {
+		checkCudaErrors(cudaMemcpyAsync(d_input, input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+	}
+	// 첫번째 이후의 branch로부터의 input, accumulate input
+	else {
+		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()),
+				&Cuda::alpha, input, 1, d_input, 1));
+	}
+	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+}
+
+void Layer::_scaleInput() {
+	if(prevLayers.size() > 1) {
+		float branchFactor = 1.0f / prevLayers.size();
+		//cout << this->name << "'s feedforward branch factor is " << branchFactor << endl;
+		checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &branchFactor, d_input, 1));
+	}
 }
 
 
@@ -400,84 +469,84 @@ void Layer::_concat(UINT idx, const DATATYPE* input) {
 
 
 
-
+Layer* Layer::propFind() {
+	for (uint32_t i = 0; i < nextLayers.size(); i++) {
+		Layer* result = nextLayers[i]->find(id, name);
+		if(result != 0) return result;
+	}
+	return 0;
+}
 
 void Layer::propShape() {
-	Util::printMessage(string(name)+"---propShape()");
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->shape(nextLayers[i].idx, out_dim);
+		nextLayers[i]->shape(id, out_dim);
 	}
 }
 
 void Layer::propReshape() {
-	Util::printMessage(string(name)+"---propReshape()");
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->reshape(nextLayers[i].idx, out_dim);
+		nextLayers[i]->reshape(id, out_dim);
 	}
 }
 
 void Layer::propClearShape() {
-	Util::printMessage(string(name)+"---propClearShape()");
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->clearShape(nextLayers[i].idx);
+		nextLayers[i]->clearShape(id);
 	}
 }
 
-DATATYPE Layer::propSumSquareGrad() {
-	Util::printMessage(string(name)+"---propSumSquareGrad()");
-	DATATYPE result = 0.0;
+double Layer::propSumSquareGrad() {
+	double result = 0.0;
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		result += nextLayers[i].next_layer->sumSquareGrad(nextLayers[i].idx);
+		result += nextLayers[i]->sumSquareGrad(id);
 	}
 	return result;
 }
 
-DATATYPE Layer::propSumSquareParam() {
-	Util::printMessage(string(name)+"---propSumSquareParam()");
-	DATATYPE result = 0.0;
+double Layer::propSumSquareParam() {
+	double result = 0.0;
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		result += nextLayers[i].next_layer->sumSquareParam(nextLayers[i].idx);
+		result += nextLayers[i]->sumSquareParam(id);
 	}
 	return result;
 }
 
 void Layer::propScaleParam(DATATYPE scale_factor) {
-	Util::printMessage(string(name)+"---propScaleParam()");
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->scaleParam(nextLayers[i].idx, scale_factor);
+		nextLayers[i]->scaleParam(id, scale_factor);
 	}
 }
 
 void Layer::propSave(ofstream &ofs) {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->save(nextLayers[i].idx, ofs);
+		nextLayers[i]->save(id, ofs);
 	}
 }
 
 void Layer::propUpdate(UINT n, UINT miniBatchSize) {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->update(nextLayers[i].idx, n, miniBatchSize);
+		nextLayers[i]->update(id, n, miniBatchSize);
 	}
 }
 
 #ifndef GPU_MODE
 void Layer::propFeedforward(const rcube output, const char *end=0) {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->feedforward(nextLayers[i].idx, output, end);
+		nextLayers[i]->feedforward(i, output, end);
 	}
 }
 
 void Layer::propResetNParam() {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->reset_nabla(nextLayers[i].idx);
+		nextLayers[i]->reset_nabla(i);
 	}
 }
 #else
-void Layer::propFeedforward(const DATATYPE *output, const char *end) {
+void Layer::propFeedforward(const char *end) {
 	if(end != 0 && name == end) return;
 
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i].next_layer->feedforward(nextLayers[i].idx, output, end);
+		nextLayers[i]->feedforward(id, d_output, end);
 	}
 }
 #endif

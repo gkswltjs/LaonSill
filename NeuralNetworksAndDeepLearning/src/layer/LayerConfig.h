@@ -240,7 +240,7 @@ struct param_filler {
 			//float sd_xavier = sqrt(3.0f / (n_out));
 
 			float sd_xavier = sqrt(3.0f / (n_in));
-			cout << "sd_xavier: " << sd_xavier << endl;
+			//cout << "sd_xavier: " << sd_xavier << endl;
 			std::random_device rd_xavier;
 			std::mt19937 gen_xavier(rd_xavier());
 			//std::uni _distribution<DATATYPE> normal_dist(0.0, 1.0);
@@ -279,7 +279,7 @@ struct param_filler {
 };
 
 
-
+/*
 struct next_layer_relation {
 	Layer *next_layer;
 	UINT idx;
@@ -301,7 +301,7 @@ struct prev_layer_relation {
 		this->idx = idx;
 	}
 };
-
+*/
 
 
 

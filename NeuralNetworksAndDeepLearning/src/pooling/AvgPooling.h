@@ -27,7 +27,7 @@ class AvgPooling : public Pooling {
 #ifndef GPU_MODE
 public:
 	AvgPooling() {
-		this->type = PoolingType::Avg;
+		this->type = Pooling::Avg;
 	}
 	virtual ~AvgPooling() {}
 
@@ -115,7 +115,7 @@ public:
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 */
 	AvgPooling(pool_dim pool_d) {
-		this->type = PoolingType::Avg;
+		this->type = Pooling::Avg;
 		//this->alpha = 1.0f;
 		//this->beta = 0.0f;
 

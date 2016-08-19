@@ -20,7 +20,7 @@
 class QuadraticCost : public Cost {
 public:
 	QuadraticCost() {
-		this->type = CostType::Quadratic;
+		this->type = Cost::Quadratic;
 	}
 	virtual ~QuadraticCost() {}
 

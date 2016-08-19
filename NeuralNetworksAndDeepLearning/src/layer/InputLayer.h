@@ -10,10 +10,15 @@
 #ifndef LAYER_INPUTLAYER_H_
 #define LAYER_INPUTLAYER_H_
 
+#include <cstdint>
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
+
 #include "Layer.h"
 #include "LayerConfig.h"
-#include "../Util.h"
-#include "../exception/Exception.h"
+
 #ifndef GPU_MODE
 #include <armadillo>
 #endif
@@ -33,6 +38,27 @@ using namespace arma;
  */
 class InputLayer : public Layer {
 public:
+	class Builder : public Layer::Builder {
+	public:
+		Builder() {}
+		virtual Builder* name(const string name) {
+			Layer::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			Layer::Builder::id(id);
+			return this;
+		}
+		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+			Layer::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		Layer* build() {
+			return new InputLayer(this);
+		}
+	};
+
+
 	/**
 	 * @details InputLayer 기본 생성자
 	 *          LayerFactory에서 객체 생성을 위해 name 파라미터가 없는 기본 생성자가 필요하다.
@@ -47,6 +73,9 @@ public:
 	InputLayer(const string name) : Layer(name) {
 		initialize();
 	}
+	InputLayer(Builder* builder) : Layer(builder) {
+		initialize();
+	}
 #ifndef GPU_MODE
 	InputLayer(const string name, int n_in) : Layer(name, n_in, n_in) {
 		initialize();
@@ -57,6 +86,7 @@ public:
 	 */
 	virtual ~InputLayer() {}
 
+
 	/**
 	 * @details batch size 1 기준의 입력 엘리먼트의 갯수를 조회한다.
 	 * @return batch size 1 기준의 입력 엘리먼트의 갯수
@@ -65,16 +95,9 @@ public:
 		return in_dim.rows*in_dim.cols*in_dim.channels;
 	}
 
-	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-		initialize();
-		InputLayer::_shape(false);
-		loadNetwork(ifs, layerMap);
-	}
-
-
 protected:
 	void initialize() {
-		this->type = LayerType::Input;
+		this->type = Layer::Input;
 	}
 
 	virtual void _shape(bool recursive=true) {
@@ -103,14 +126,17 @@ protected:
 
 		Layer::_save(ofs);
 	}
+	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+		initialize();
+		InputLayer::_shape(false);
+		loadNetwork(ifs, layerMap);
+	}
 #ifndef GPU_MODE
 	/**
 	 * Input 무조건 첫번째 layer,
 	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
 	 */
-	virtual void _feedforward(const rcube &input, const char *end=0) {
-		//if(!isLastPrevLayerRequest(idx)) throw Exception();
-
+	virtual void _feedforward() {
 		Util::convertCube(input, this->input);
 		Util::convertCube(this->input, this->output);
 		Util::printCube(input, "input:");
@@ -119,19 +145,9 @@ protected:
 		propFeedforward(this->output, end);
 	}
 #else
-	virtual void _feedforward(const DATATYPE *input, const char *end=0) {
-		Util::printMessage("InputLayer::_feedforward()---"+string(name));
-		this->d_input = input;
-		//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
-
-		checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
-
-		//float norm = 0.0f;
-		//checkCudaErrors(cublasSnrm2(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), this->d_output, 1, &norm));
-		//norm = 1.0f/norm;
-		//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &norm, this->d_output, 1));
-	}
 #endif
+
+
 };
 
 

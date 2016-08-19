@@ -8,7 +8,7 @@
 #ifndef DEEPDREAM_H_
 #define DEEPDREAM_H_
 
-
+#ifndef GPU_MODE
 #include "../network/Network.h"
 #include <CImg.h>
 
@@ -42,6 +42,7 @@ private:
 
 	DATATYPE mean[3];
 };
+#endif
 
 
 #endif /* DEEPDREAM_H_ */

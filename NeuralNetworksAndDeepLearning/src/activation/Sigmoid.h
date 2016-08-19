@@ -25,7 +25,7 @@ public:
 #ifndef GPU_MODE
 public:
 	Sigmoid() {
-		this->type = ActivationType::Sigmoid;
+		this->type = Activation::Sigmoid;
 	}
 	/*
 	void initialize_weight(int n_in, rmat &weight) {
@@ -65,7 +65,7 @@ public:
 #else
 public:
 	Sigmoid() {
-		this->type = ActivationType::Sigmoid;
+		this->type = Activation::Sigmoid;
 		checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
 		checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_SIGMOID, CUDNN_PROPAGATE_NAN, 0.0));
 	}

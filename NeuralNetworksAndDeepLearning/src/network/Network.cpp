@@ -7,12 +7,10 @@
 
 #include "Network.h"
 
-#include <armadillo>
 #include <iostream>
 #include <vector>
 #include <map>
 
-#include "../dataset/DataSample.h"
 #include "../dataset/DataSet.h"
 #include "../layer/LayerFactory.h"
 #include "../layer/HiddenLayer.h"
@@ -22,10 +20,21 @@
 
 
 
+
+
+Network::Network(NetworkConfig* config)
+	: config(config) {
+	DataSet* dataSet = config->_dataSet;
+	this->in_dim.rows = dataSet->getRows();
+	this->in_dim.cols = dataSet->getCols();
+	this->in_dim.channels = dataSet->getChannels();
+	this->in_dim.batches = config->_batchSize;
+}
+
 Network::Network(NetworkListener *networkListener)
 	: Network(0, 0, 0, networkListener) {}
 
-Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
+Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {/*
 	this->inputLayer = inputLayer;
 	if(outputLayer) this->outputLayers.push_back(outputLayer);
 	this->dataSet = dataSet;
@@ -39,35 +48,38 @@ Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *data
 	this->dataSetMean[2] = 0.0f;
 
 	this->clipGradientsLevel = 1000.0f;
+	*/
 }
 
-Network::~Network() {
-	if(inputLayer) {
-		delete inputLayer;
-		inputLayer = NULL;
-	}
 
+Network::~Network() {
+	if(config->_inputLayer) {
+		delete config->_inputLayer;
+		config->_inputLayer = NULL;
+	}
 	checkCudaErrors(cudaFree(d_trainLabel));
 	checkCudaErrors(cudaFree(d_trainData));
 }
 
 void Network::setDataSet(DataSet *dataSet, UINT batches) {
+	/*
 	this->dataSet = dataSet;
 	this->in_dim.rows = dataSet->getRows();
 	this->in_dim.cols = dataSet->getCols();
 	this->in_dim.channels = dataSet->getChannels();
 	this->in_dim.batches = batches;
 	setDataSetMean(dataSet->getMean());
+	*/
 }
 
 void Network::shape(io_dim in_dim) {
 	if(in_dim.unitsize() > 0) {
 		this->in_dim = in_dim;
 	}
-	inputLayer->shape(0, this->in_dim);
+	config->_inputLayer->shape(0, this->in_dim);
 
 	//cout << "inputLayer->getInputSize()*in_dim.batches: " << inputLayer->getInputSize()*this->in_dim.batches << endl;
-	checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*inputLayer->getInputSize()*this->in_dim.batches));
+	checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*config->_inputLayer->getInputSize()*this->in_dim.batches));
 	checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
 
 }
@@ -76,11 +88,15 @@ void Network::reshape(io_dim in_dim) {
 	if(in_dim.unitsize() > 0) {
 		this->in_dim = in_dim;
 	}
-	inputLayer->reshape(0, this->in_dim);
+	config->_inputLayer->reshape(0, this->in_dim);
 }
 
 
 void Network::sgd(int epochs) {
+	DataSet* dataSet = config->_dataSet;
+	vector<Evaluation*>& evaluations = config->_evaluations;
+	vector<NetworkListener*>& networkListeners = config->_networkListeners;
+
 	int trainDataSize = dataSet->getNumTrainData();
 	int miniBatchesSize = trainDataSize / in_dim.batches;
 
@@ -94,10 +110,10 @@ void Network::sgd(int epochs) {
 		//dataSet->shuffleTrainDataSet();
 		timer2.start();
 		for(int j = 0; j < miniBatchesSize; j++) {
-			if((j+1)%100 == 0) {
-				cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
-				timer2.start();
-			}
+			//if((j+1)%100 == 0) {
+			//	cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+			//	timer2.start();
+			//}
 			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 
@@ -109,8 +125,14 @@ void Network::sgd(int epochs) {
 #endif
 			updateMiniBatch(j);
 
+			//if(j >= 2) {
+			//	exit(1);
+			//}
 		}
 		//timer1.stop();
+
+		// l2norm logging용임, clip을 여기서 하려고 하는 건 아님...
+		//clipGradients();
 
 		Util::train = false;
 
@@ -122,12 +144,14 @@ void Network::sgd(int epochs) {
 		int accurateCnt = evaluations[0]->getAccurateCount();
 		float accuracy = accurateCnt/numTestData;
 
+		/*
 		if(saveConfigured && cost < minCost) {
 			minCost = cost;
 			char savePath[256];
 			sprintf(savePath, "%s%02d.network", savePrefix, i+1);
 			save(savePath);
 		}
+		*/
 
 		if(dataSet->getNumTestData() > 0) {
 			cout << "Epoch " << i+1 << " " << accurateCnt << " / " << (int)numTestData
@@ -136,9 +160,6 @@ void Network::sgd(int epochs) {
 			for(int nl = 0; nl < networkListeners.size(); nl++) {
 				networkListeners[nl]->epochComplete(evaluations[nl]->getCost()/numTestData, evaluations[nl]->getAccurateCount()/numTestData);
 			}
-
-			// l2norm logging용임, clip을 여기서 하려고 하는 건 아님...
-			//clipGradients();
 		}
 		else { cout << "Epoch " << i+1 << " complete: " << timer1.stop(false) << endl; }
 		//if(accuracy < 0.15) break;
@@ -151,7 +172,8 @@ void Network::sgd(int epochs) {
 
 void Network::test() {
 	Util::train = false;
-
+	DataSet* dataSet = config->_dataSet;
+	vector<Evaluation*>& evaluations = config->_evaluations;
 
 	Timer timer;
 	float numTestData = (float)dataSet->getNumTestData();
@@ -168,16 +190,20 @@ void Network::test() {
 
 
 
-
+/*
 void Network::saveConfig(const char* savePrefix) {
 	strcpy(this->savePrefix, savePrefix);
 	this->saveConfigured = true;
 }
+*/
 
 
 
 
 void Network::save(const char* filename) {
+	InputLayer* inputLayer = config->_inputLayer;
+	vector<OutputLayer*>& outputLayers = config->_outputLayers;
+
 	Timer timer;
 	timer.start();
 
@@ -200,6 +226,9 @@ void Network::save(const char* filename) {
 
 
 void Network::load(const char* filename) {
+	InputLayer* inputLayer = config->_inputLayer;
+	vector<OutputLayer*>& outputLayers = config->_outputLayers;
+
 	ifstream ifs(filename, ios::in | ios::binary);
 	UINT outputLayerSize;
 
@@ -212,8 +241,8 @@ void Network::load(const char* filename) {
 	}
 
 	map<Layer *, Layer *> layerMap;
-	this->inputLayer = new InputLayer();
-	this->inputLayer->load(ifs, layerMap);
+	config->_inputLayer = new InputLayer();
+	config->_inputLayer->load(ifs, layerMap);
 
 	// restore output layers of network
 	for(UINT i = 0; i < outputLayerSize; i++) {
@@ -224,7 +253,7 @@ void Network::load(const char* filename) {
 	/*
 	map<Layer *, Layer *> layerMap;
 	while(true) {
-		LayerType layerType;
+		Layer::Type layerType;
 		ifs.read((char *)&layerType, sizeof(int));
 		Layer *address;
 		ifs.read((char *)&address, sizeof(Layer *));
@@ -248,8 +277,8 @@ void Network::load(const char* filename) {
 
 		vector<next_layer_relation> &nextLayers = layer->getNextLayers();
 		for(UINT i = 0; i < nextLayers.size(); i++) {
-			Layer *nextLayer = nextLayers[i].next_layer;
-			nextLayers[i].next_layer = layerMap.find(nextLayer)->second;
+			Layer *nextLayer = nextLayers[i];
+			nextLayers[i] = layerMap.find(nextLayer)->second;
 		}
 
 		// 학습된 네트워크를 load하는 경우 backward pass가 없으므로 불필요
@@ -257,8 +286,8 @@ void Network::load(const char* filename) {
 		//if(hiddenLayer) {
 		//	vector<prev_layer_relation> &prevLayers = hiddenLayer->getPrevLayers();
 		//	for(UINT i = 0; i < prevLayers.size(); i++) {
-		//		Layer *prevLayer = prevLayers[i].prev_layer;
-		//		prevLayers[i].prev_layer = dynamic_cast<HiddenLayer *>(layerMap.find(prevLayer)->second);
+		//		Layer *prevLayer = prevLayers[i];
+		//		prevLayers[i] = dynamic_cast<HiddenLayer *>(layerMap.find(prevLayer)->second);
 		//	}
 		//}
 
@@ -270,7 +299,7 @@ void Network::load(const char* filename) {
 }
 
 
-
+/*
 DATATYPE Network::getDataSetMean(UINT channel) {
 	return dataSetMean[channel];
 }
@@ -280,6 +309,7 @@ void Network::setDataSetMean(DATATYPE *dataSetMean) {
 		this->dataSetMean[i] = dataSetMean[i];
 	}
 }
+*/
 
 
 
@@ -305,6 +335,11 @@ void Network::evaluate() {
 	return testResult;
 #else
 	Cuda::refresh();
+
+	DataSet* dataSet = config->_dataSet;
+	InputLayer* inputLayer = config->_inputLayer;
+	vector<OutputLayer*>& outputLayers = config->_outputLayers;
+	vector<Evaluation*>& evaluations = config->_evaluations;
 
 	//int accurateCnt = 0;
 	//float cost = 0;
@@ -460,12 +495,15 @@ int Network::testEvaluateResult(const rvec &output, const rvec &y) {
 
 void Network::feedforward(const DATATYPE *input, const char *end) {
 	//cout << "feedforward()" << endl;
-	inputLayer->feedforward(0, input, end);
+	config->_inputLayer->feedforward(0, input, end);
 }
 
 
 void Network::updateMiniBatch(int nthMiniBatch) {
 	Cuda::refresh();
+	DataSet* dataSet = config->_dataSet;
+	InputLayer* inputLayer = config->_inputLayer;
+	vector<OutputLayer*> outputLayers = config->_outputLayers;
 
 	int baseIndex = nthMiniBatch*in_dim.batches;
 
@@ -502,33 +540,31 @@ void Network::applyUpdate() {
 	clipGradients();
 
 	//cout << "update()" << endl;
-	int n = dataSet->getNumTrainData();
-	inputLayer->update(0, n, in_dim.batches);
+	int n = config->_dataSet->getNumTrainData();
+	config->_inputLayer->update(0, n, in_dim.batches);
 }
 
 void Network::clipGradients() {
+	const float clipGradientsLevel = config->_clipGradientsLevel;
 
-	if(clipGradientsLevel < 0) return;
-
-	DATATYPE sumsq_grad = inputLayer->sumSquareGrad(0);
-	DATATYPE sumsq_grad2 = inputLayer->sumSquareParam(0);
+	double sumsq_grad = config->_inputLayer->sumSquareGrad(0);
+	double sumsq_grad2 = config->_inputLayer->sumSquareParam(0);
 	const DATATYPE l2norm_grad = std::sqrt(sumsq_grad);
 	const DATATYPE l2norm_grad2 = std::sqrt(sumsq_grad2);
 
-	cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " <= " << clipGradientsLevel << ")" << endl;
-
-	/*
-	if(l2norm_grad > clipGradientsLevel) {
-		DATATYPE scale_factor = clipGradientsLevel / (l2norm_grad*1);
-
-		cout << "Gradient clipping: scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " > " << clipGradientsLevel <<
-				") by scale factor " << scale_factor << endl;
-		inputLayer->scaleParam(0, scale_factor);
-	} else {
+	if(clipGradientsLevel < 0.0001) {
 		cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " <= " << clipGradientsLevel << ")" << endl;
-	}
-	*/
+	} else {
+		if(l2norm_grad > clipGradientsLevel) {
+			DATATYPE scale_factor = clipGradientsLevel / (l2norm_grad*1);
 
+			cout << "Gradient clipping: scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " > " << clipGradientsLevel <<
+					") by scale factor " << scale_factor << endl;
+			config->_inputLayer->scaleParam(0, scale_factor);
+		} else {
+			cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " <= " << clipGradientsLevel << ")" << endl;
+		}
+	}
 }
 
 
@@ -544,8 +580,8 @@ void Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output,
 	//Util::setPrint(false);
 	checkCudaErrors(cudaMemcpyAsync(output, d_output,	sizeof(DATATYPE)*num_labels*in_dim.batches, cudaMemcpyDeviceToHost));
 
-	for(int i = 0; i < evaluations.size(); i++) {
-		evaluations[i]->evaluate(num_labels, in_dim.batches, output, y);
+	for(int i = 0; i < config->_evaluations.size(); i++) {
+		config->_evaluations[i]->evaluate(num_labels, in_dim.batches, output, y);
 	}
 
 	/*
@@ -592,15 +628,22 @@ void Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output,
 
 
 Layer* Network::findLayer(const string name) {
-	return inputLayer->find(0, name);
+	//return config->_inputLayer->find(0, name);
+	map<string, Layer*>& nameLayerMap = config->_nameLayerMap;
+	map<string, Layer*>::iterator it = nameLayerMap.find(name);
+	if(it != nameLayerMap.end()) {
+		return it->second;
+	} else {
+		return 0;
+	}
 }
 
 void Network::addEvaluation(Evaluation* evaluation) {
-	evaluations.push_back(evaluation);
+	config->_evaluations.push_back(evaluation);
 }
 
 void Network::addNetworkListener(NetworkListener* networkListener) {
-	networkListeners.push_back(networkListener);
+	config->_networkListeners.push_back(networkListener);
 }
 
 

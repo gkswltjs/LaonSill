@@ -25,7 +25,32 @@
  */
 class DepthConcatLayer : public HiddenLayer {
 public:
+	class Builder : public HiddenLayer::Builder {
+	public:
+		Builder() {}
+		virtual Builder* name(const string name) {
+			HiddenLayer::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			HiddenLayer::Builder::id(id);
+			return this;
+		}
+		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			return this;
+		}
+		Layer* build() {
+			return new DepthConcatLayer(this);
+		}
+	};
+
 	DepthConcatLayer();
+	DepthConcatLayer(Builder* builder);
 	DepthConcatLayer(const string name);
 #ifndef GPU_MODE
 	DepthConcatLayer(const string name, int n_in);
@@ -44,20 +69,18 @@ public:
 	DATATYPE *getDeltaInput();
 #endif
 
-	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-
 	virtual void shape(UINT idx, io_dim in_dim);
 	virtual void reshape(UINT idx, io_dim in_dim);
-	virtual void clearShape(UINT idx);
 
 protected:
 	void initialize();
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
+	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 
 #ifndef GPU_MODE
-	virtual void _feedforward(const rcube &input, const char *end=0);
+	virtual void _feedforward();
 	void reset_nabla(UINT idx) {
 		if(!isLastPrevLayerRequest(idx)) return;
 		propResetNParam();
@@ -71,6 +94,16 @@ protected:
 	 * @details 일반적인 deconcat과 달리 channel을 기준으로 해체하므로 재정의한다.
 	 */
 	virtual void _deconcat(UINT idx, const DATATYPE* next_delta_input);
+	/**
+	 * @details _concat()에서 입력값이 합산되는 방식이 아니므로 합산에 대해
+	 *          scaling을 적용하는 기본 _scaleInput()을 재정의하여 scale하지 않도록 한다.
+	 */
+	virtual void _scaleInput();
+	/**
+	 * @details _deconcat()에서 gradient값이 합산되는 방식이 아니므로 합산에 대해
+	 *          scaling을 적용하는 기본 _scaleGradient()를 재정의하여 scale하지 않도록 한다.
+	 */
+	virtual void _scaleGradient();
 #endif
 
 
@@ -83,7 +116,6 @@ protected:
 #else
 	int offsetIndex;			///< 입력에 관한 gradient 호출한 횟수 카운터, getDeltaInput() 호출마다 증가되고 feedforward()가 수행될 때 reset된다.
 #endif
-
 };
 
 

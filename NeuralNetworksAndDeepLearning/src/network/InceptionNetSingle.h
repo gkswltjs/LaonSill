@@ -23,6 +23,9 @@
 
 
 
+
+#ifndef GPU_MODE
+
 /**
  * @brief 하나의 인셉션 레이어를 가진 Network를 구현한 클래스
  */
@@ -70,7 +73,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.03),
 				param_filler(ParamFillerType::Constant, 0.2),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		sprintf(subLayerName, "%s/%s", inceptionName, "conv3x3reduce");
@@ -83,7 +86,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.09),
 				param_filler(ParamFillerType::Constant, 0.2),
-				ActivationType::ReLU);
+				Activation::ReLU);
 
 		sprintf(subLayerName, "%s/%s", inceptionName, "conv3x3");
 		ConvLayer *conv3x3Layer = new ConvLayer(
@@ -95,7 +98,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.03),
 				param_filler(ParamFillerType::Constant, 0.2),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		sprintf(subLayerName, "%s/%s", inceptionName, "conv5x5reduce");
@@ -108,7 +111,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.2),
 				param_filler(ParamFillerType::Constant, 0.2),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		sprintf(subLayerName, "%s/%s", inceptionName, "conv5x5");
@@ -121,14 +124,14 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.03),
 				param_filler(ParamFillerType::Constant, 0.2),
-				ActivationType::ReLU
+				Activation::ReLU
 				);
 
 		sprintf(subLayerName, "%s/%s", inceptionName, "pool3x3");
 		PoolingLayer *pool3x3Layer = new PoolingLayer(
 				subLayerName,
 				pool_dim(3, 3, 1),
-				PoolingType::Max
+				Pooling::Max
 				);
 
 		sprintf(subLayerName, "%s/%s", inceptionName, "convProjection");
@@ -141,7 +144,7 @@ public:
 				bias_update_param,
 				param_filler(ParamFillerType::Xavier, 0.1),
 				param_filler(ParamFillerType::Constant, 0.2),
-				ActivationType::ReLU);
+				Activation::ReLU);
 
 		sprintf(subLayerName, "%s/%s", inceptionName, "depthConcat");
 		DepthConcatLayer *depthConcatLayer = new DepthConcatLayer(
@@ -198,5 +201,6 @@ public:
 	virtual ~InceptionNetSingle() {}
 };
 
+#endif
 
 #endif /* NETWORK_INCEPTIONNETSINGLE_H_ */

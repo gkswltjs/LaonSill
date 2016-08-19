@@ -23,7 +23,7 @@ class CrossEntropyCost : public Cost {
 
 public:
 	CrossEntropyCost() {
-		this->type = CostType::CrossEntropy;
+		this->type = Cost::CrossEntropy;
 	}
 	virtual ~CrossEntropyCost() {}
 

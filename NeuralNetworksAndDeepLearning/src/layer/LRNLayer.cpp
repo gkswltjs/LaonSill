@@ -11,7 +11,11 @@
 
 
 LRNLayer::LRNLayer() {
-	this->type = LayerType::LRN;
+	this->type = Layer::LRN;
+}
+
+LRNLayer::LRNLayer(Builder* builder) : HiddenLayer(builder) {
+	initialize(builder->_lrnDim);
 }
 
 LRNLayer::LRNLayer(const string name, lrn_dim lrn_d) : HiddenLayer(name) {
@@ -30,20 +34,12 @@ LRNLayer::~LRNLayer() {
 #endif
 
 
-void LRNLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
 
-	lrn_dim lrn_d;
-	ifs.read((char *)&lrn_d, sizeof(lrn_dim));
-
-	initialize(lrn_d);
-	LRNLayer::_shape(false);
-}
 
 
 #ifndef GPU_MODE
 void LRNLayer::initialize(lrn_dim lrn_d) {
-	this->type = LayerType::LRN;
+	this->type = Layer::LRN;
 
 	this->lrn_d = lrn_d;
 	this->z.set_size(size(input));
@@ -52,7 +48,7 @@ void LRNLayer::initialize(lrn_dim lrn_d) {
 }
 #else
 void LRNLayer::initialize(lrn_dim lrn_d) {
-	this->type = LayerType::LRN;
+	this->type = Layer::LRN;
 	this->lrn_d = lrn_d;
 
 	checkCUDNN(cudnnCreateLRNDescriptor(&lrnDesc));
@@ -83,11 +79,21 @@ void LRNLayer::_save(ofstream &ofs) {
 	ofs.write((char *)&lrn_d, sizeof(lrn_dim));
 }
 
+void LRNLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::_load(ifs, layerMap);
+
+	lrn_dim lrn_d;
+	ifs.read((char *)&lrn_d, sizeof(lrn_dim));
+
+	initialize(lrn_d);
+	LRNLayer::_shape(false);
+}
+
 
 
 #ifndef GPU_MODE
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::_feedforward(const rcube &input, const char *end) {
+void LRNLayer::_feedforward() {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	UINT i, j;
@@ -157,9 +163,8 @@ void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 }
 #else
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::_feedforward(const DATATYPE *input, const char *end) {
-	Util::printMessage("LRNLayer::_feedforward()---"+string(name));
-	this->d_input = input;
+void LRNLayer::_feedforward() {
+	//this->d_input = input;
 
 	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
 
@@ -177,7 +182,6 @@ void LRNLayer::_feedforward(const DATATYPE *input, const char *end) {
 }
 
 void LRNLayer::_backpropagation() {
-	Util::printMessage("LRNLayer::_backpropagation()---"+string(name));
 	Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
 
 	checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,

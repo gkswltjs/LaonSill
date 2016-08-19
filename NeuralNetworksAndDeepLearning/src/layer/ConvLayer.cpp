@@ -10,14 +10,21 @@
 #include "FullyConnectedLayer.h"
 #include "../Util.h"
 #include "../exception/Exception.h"
+#include "../network/NetworkConfig.h"
 
 
 ConvLayer::ConvLayer() {
-	this->type = LayerType::Conv;
+	this->type = Layer::Conv;
+}
+
+ConvLayer::ConvLayer(Builder* builder)
+	: HiddenLayer(builder) {
+	initialize(builder->_filterDim, builder->_weightUpdateParam, builder->_biasUpdateParam,
+			builder->_weightFiller, builder->_biasFiller, builder->_activationType);
 }
 
 ConvLayer::ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, ActivationType activationType)
+		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType)
 	: HiddenLayer(name) {
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
@@ -61,13 +68,13 @@ ConvLayer::~ConvLayer() {
 
 
 #ifndef GPU_MODE
-void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
+void ConvLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::_load(ifs, layerMap);
 
 	filter_dim filter_d;
 	ifs.read((char *)&filter_d, sizeof(filter_dim));
 
-	ActivationType activationType;
+	Activation::Type activationType;
 	ifs.read((char *)&activationType, sizeof(int));
 
 	update_param weight_update_param;
@@ -92,9 +99,9 @@ void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 }
 
 void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
+		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
 
-	this->type = LayerType::Conv;
+	this->type = Layer::Conv;
 
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;
@@ -149,8 +156,7 @@ void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param
 	delta.set_size(size(z));
 }
 
-void ConvLayer::_feedforward(const rcube &input, const char *end) {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
+void ConvLayer::_feedforward() {
 
 	// 현재 CONV 레이어의 경우 여러 레이어로 값이 전달되지 않기 때문에 무의미하다.
 	// 다만 backpropagation에서 delta값을 합으로 할당하기 때문에 어쨌든 0로 init은 반드시 해야 함.
@@ -393,35 +399,10 @@ void ConvLayer::_save(ofstream &ofs) {
 	biases.save(ofs, file_type::arma_binary);
 }
 #else
-void ConvLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
-
-	filter_dim filter_d;
-	ActivationType activationType;
-	update_param weight_update_param, bias_update_param;
-	param_filler weight_filler, bias_filler;
-
-	ifs.read((char *)&filter_d, sizeof(filter_dim));
-	ifs.read((char *)&activationType, sizeof(int));
-	ifs.read((char *)&weight_update_param, sizeof(update_param));
-	ifs.read((char *)&bias_update_param, sizeof(update_param));
-	ifs.read((char *)&weight_filler, sizeof(param_filler));
-	ifs.read((char *)&bias_filler, sizeof(param_filler));
-
-	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
-	ConvLayer::_shape(false);
-
-	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
-	ifs.read((char *)filters, sizeof(DATATYPE)*filter_d.size());
-	ifs.read((char *)biases, sizeof(DATATYPE)*filter_d.filters);
-	checkCudaErrors(cudaMemcpyAsync(d_filters, filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpyAsync(d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
-}
-
 void ConvLayer::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, ActivationType activationType) {
+		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
 
-	this->type = LayerType::Conv;
+	this->type = Layer::Conv;
 	this->filter_d = filter_d;
 
 	this->weight_update_param = weight_update_param;
@@ -498,7 +479,7 @@ void ConvLayer::_shape(bool recursive) {
 	//weight_filler.fill(this->filters, filter_size, filter_d.channels, filter_d.filters);
 	//bias_filler.fill(this->biases, filter_d.filters, filter_d.channels, filter_d.filters);
 
-	cout << this->name << ", fanin: " << filter_d.unitsize() << endl;
+	//cout << this->name << ", fanin: " << filter_d.unitsize() << endl;
 	weight_filler.fill(this->filters, filter_d.size(), filter_d.unitsize(), filter_d.filters);
 	bias_filler.fill(this->biases, filter_d.filters, filter_d.unitsize(), filter_d.filters);
 	//weight_filler.fill(this->filters, filter_d.size(), in_dim.unitsize(), filter_d.filters);
@@ -574,11 +555,12 @@ void ConvLayer::_clearShape() {
 	HiddenLayer::_clearShape();
 }
 
-DATATYPE ConvLayer::_sumSquareGrad() {
+double ConvLayer::_sumSquareGrad() {
 	DATATYPE weight_result;
 	DATATYPE bias_result;
 
 	int weight_size = filter_d.size();
+	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
 	checkCudaErrors(cublasSdot(Cuda::cublasHandle, weight_size, d_delta_weight, 1, d_delta_weight, 1, &weight_result));
 	int bias_size = filter_d.filters;
 	checkCudaErrors(cublasSdot(Cuda::cublasHandle, bias_size, d_delta_bias, 1, d_delta_bias, 1, &bias_result));
@@ -588,7 +570,7 @@ DATATYPE ConvLayer::_sumSquareGrad() {
 	return weight_result + bias_result;
 }
 
-DATATYPE ConvLayer::_sumSquareParam() {
+double ConvLayer::_sumSquareParam() {
 	DATATYPE weight_result;
 	DATATYPE bias_result;
 
@@ -627,8 +609,32 @@ void ConvLayer::_save(ofstream &ofs) {
 	ofs.write((char *)biases, sizeof(DATATYPE)*filter_d.filters);
 }
 
+void ConvLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::_load(ifs, layerMap);
+
+	filter_dim filter_d;
+	Activation::Type activationType;
+	update_param weight_update_param, bias_update_param;
+	param_filler weight_filler, bias_filler;
+
+	ifs.read((char *)&filter_d, sizeof(filter_dim));
+	ifs.read((char *)&activationType, sizeof(int));
+	ifs.read((char *)&weight_update_param, sizeof(update_param));
+	ifs.read((char *)&bias_update_param, sizeof(update_param));
+	ifs.read((char *)&weight_filler, sizeof(param_filler));
+	ifs.read((char *)&bias_filler, sizeof(param_filler));
+
+	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+	ConvLayer::_shape(false);
+
+	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
+	ifs.read((char *)filters, sizeof(DATATYPE)*filter_d.size());
+	ifs.read((char *)biases, sizeof(DATATYPE)*filter_d.filters);
+	checkCudaErrors(cudaMemcpyAsync(d_filters, filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpyAsync(d_biases, biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyHostToDevice));
+}
+
 void ConvLayer::_update(UINT n, UINT miniBatchSize) {
-	Util::printMessage("ConvLayer::update()---"+string(name));
 	//Util::setPrint(true);
 
 	//for(UINT i = 0; i < filter_d.filters; i++) {
@@ -663,9 +669,9 @@ void ConvLayer::_update(UINT n, UINT miniBatchSize) {
 
 	int weight_size = filter_d.size();
 	DATATYPE norm_scale = 1.0/in_dim.batches;
-	DATATYPE reg_scale = weight_update_param.decay_mult;
-	DATATYPE momentum = 0.0;
-	DATATYPE learning_scale = weight_update_param.lr_mult;
+	DATATYPE reg_scale = networkConfig->_weightDecay * weight_update_param.decay_mult;
+	DATATYPE momentum = networkConfig->_momentum;
+	DATATYPE learning_scale = networkConfig->_baseLearningRate * weight_update_param.lr_mult;
 	DATATYPE negative_one = -1.0;
 
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_delta_weight, 1));								// normalize by batch size
@@ -676,8 +682,8 @@ void ConvLayer::_update(UINT n, UINT miniBatchSize) {
 
 
 	int bias_size = filter_d.filters;
-	DATATYPE reg_scale_b = bias_update_param.decay_mult;
-	DATATYPE learning_scale_b = bias_update_param.lr_mult;
+	DATATYPE reg_scale_b = networkConfig->_weightDecay * bias_update_param.decay_mult;
+	DATATYPE learning_scale_b = networkConfig->_baseLearningRate * bias_update_param.lr_mult;
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_delta_bias, 1));								// normalize by batch size
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_biases, 1, d_delta_bias, 1));					// regularize
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_delta_bias_prev, 1));								//
@@ -686,11 +692,9 @@ void ConvLayer::_update(UINT n, UINT miniBatchSize) {
 
 }
 
-void ConvLayer::_feedforward(const DATATYPE *input, const char *end) {
-	Util::printMessage("ConvLayer::_feedforward()---"+string(name));
-
+void ConvLayer::_feedforward() {
 	//Util::setPrint(true);
-	this->d_input = input;
+	//this->d_input = input;
 	//float alpha = 1.0f, beta = 0.0f;
 
 	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
@@ -719,8 +723,6 @@ void ConvLayer::_feedforward(const DATATYPE *input, const char *end) {
 
 void ConvLayer::_backpropagation() {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
-
-	Util::printMessage("ConvLayer::backpropagation()---"+string(name));
 	Cuda::refresh();
 
 	Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");

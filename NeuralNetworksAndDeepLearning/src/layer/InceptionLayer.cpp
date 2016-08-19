@@ -5,6 +5,8 @@
  *      Author: jhkim
  */
 
+
+#ifndef GPU_MODE
 #include "InceptionLayer.h"
 #include "../exception/Exception.h"
 #include "../layer/ConvLayer.h"
@@ -17,7 +19,13 @@
 
 
 InceptionLayer::InceptionLayer() {
-	this->type = LayerType::Inception;
+	this->type = Layer::Inception;
+}
+
+InceptionLayer::InceptionLayer(Builder* builder)
+	: HiddenLayer(builder) {
+	initialize(builder->_ic, builder->_oc_cv1x1, builder->_oc_cv3x3reduce, builder->_oc_cv3x3, builder->_oc_cv5x5reduce, builder->_oc_cv5x5,
+			builder->_oc_cp, builder->_weightUpdateParam, builder->_biasUpdateParam);
 }
 
 InceptionLayer::InceptionLayer(const string name, int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc_cv3x3, int oc_cv5x5reduce, int oc_cv5x5, int oc_cp,
@@ -54,61 +62,9 @@ InceptionLayer::~InceptionLayer() {
 #endif
 
 
-void InceptionLayer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::load(ifs, layerMap);
-
-	UINT firstLayerSize, lastLayerSize;
-
-	ifs.read((char *)&firstLayerSize, sizeof(UINT));
-	for(UINT i = 0; i < firstLayerSize; i++) {
-		HiddenLayer *firstLayer;
-		ifs.read((char *)&firstLayer, sizeof(HiddenLayer *));
-		firstLayers.push_back(firstLayer);
-	}
-	ifs.read((char *)&lastLayerSize, sizeof(UINT));
-	ifs.read((char *)&lastLayer, sizeof(HiddenLayer *));
-
-	map<Layer *, Layer *> ninLayerMap;
-	loadNetwork(ifs, ninLayerMap);
-
-	for(UINT i = 0; i < firstLayerSize; i++) {
-		firstLayers[i] = (HiddenLayer *)ninLayerMap.find(firstLayers[i])->second;
-	}
-	lastLayer = (HiddenLayer *)ninLayerMap.find(lastLayer)->second;
-
-	initialize();
-	InceptionLayer::_shape(false);
-}
-
-void InceptionLayer::saveNinHeader(UINT idx, ofstream &ofs) {
-	if(!isLastPrevLayerRequest(idx)) return;
-
-	//Layer *p = this;
-	//ofs.write((char *)&type, sizeof(int));
-	//ofs.write((char *)&p, sizeof(Layer *));
-
-	//cout << "save header for " << name << ", type: " << (int)type << ", address: " << p << endl;
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		firstLayers[i]->saveHeader(0, ofs);
-	}
-}
-
-Layer* InceptionLayer::find(UINT idx, const char* name) {
-	if(!isLastPrevLayerRequest(idx)) return 0;
-
-	for(UINT i = 0; i < firstLayers.size(); i++) {
-		Layer* result = firstLayers[i]->find(0, name);
-		if(result) return result;
-	}
-
-	return Layer::find(idx, name);
-}
-
-
-
 #ifndef GPU_MODE
 void InceptionLayer::initialize() {
-	this->type = LayerType::Inception;
+	this->type = Layer::Inception;
 
 	delta_input.set_size(size(output));
 	delta_input.zeros();
@@ -116,7 +72,7 @@ void InceptionLayer::initialize() {
 
 #else
 void InceptionLayer::initialize() {
-	this->type = LayerType::Inception;
+	this->type = Layer::Inception;
 }
 #endif
 
@@ -124,6 +80,102 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 		update_param weight_update_param, update_param bias_update_param) {
 	initialize();
 
+	/*
+	LayersConfig* layersConfig =
+			(new LayersConfig::Builder())
+			->layer(0, (new ConvLayer::Builder())
+					->name(this->name+"/conv1x1")
+					->filterDim(1, 1, ic, oc_cv1x1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation::ReLU)
+					->nextLayerIndices({7}))
+			->layer(1, (new ConvLayer::Builder())
+					->name(this->name+"/conv3x3reduce")
+					->filterDim(1, 1, ic, oc_cv3x3reduce, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation::ReLU)
+					->nextLayerIndices({2}))
+			->layer(2, (new ConvLayer::Builder())
+					->name(this->name+"/conv3x3")
+					->filterDim(3, 3, oc_cv3x3reduce, oc_cv3x3, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation::ReLU)
+					->prevLayerIndices({1})
+					->nextLayerIndices({7}))
+			->layer(3, (new ConvLayer::Builder())
+					->name(this->name+"/conv5x5reduce")
+					->filterDim(3, 3, ic, oc_cv5x5reduce, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation::ReLU)
+					->nextLayerIndices({4}))
+			->layer(4, (new ConvLayer::Builder())
+					->name(this->name+"/conv5x5")
+					->filterDim(3, 3, oc_cv5x5reduce, oc_cv5x5, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation::ReLU)
+					->prevLayerIndices({3})
+					->nextLayerIndices({7}))
+			->layer(5, (new PoolingLayer::Builder())
+					->name(this->name+"/pool3x3")
+					->poolDim(3, 3, 1)
+					->poolingType(Pooling::Max)
+					->nextLayerIndices({6}))
+			->layer(6, (new ConvLayer::Builder())
+					->name(this->name+"/convProjection")
+					->filterDim(3, 3, ic, oc_cp, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation::ReLU)
+					->prevLayerIndices({5})
+					->nextLayerIndices({7}))
+			->layer(7, (new DepthConcatLayer::Builder())
+					->name(this->name+"/dpethConcat")
+					->prevLayerIndices({0, 2, 4, 6}))
+			->build();
+			*/
+	LayersConfig *layersConfig = NULL;
+
+
+	vector<Layer*>& _firstLayers = layersConfig->_firstLayers;
+	for(uint32_t i = 0; i < _firstLayers.size(); i++) {
+		HiddenLayer* firstLayer = dynamic_cast<HiddenLayer*>(_firstLayers[i]);
+		if(!firstLayer) {
+			cout << "invalid first layer ... " << endl;
+			exit(1);
+		}
+		this->firstLayers.push_back(firstLayer);
+	}
+	vector<Layer*>& _lastLayers = layersConfig->_lastLayers;
+	if(_lastLayers.size() != 1) {
+		cout << "last layer of inception layer should be 1 ... " << endl;
+		exit(1);
+	}
+	HiddenLayer* lastLayer = dynamic_cast<HiddenLayer*>(_lastLayers[0]);
+	if(!lastLayer) {
+		cout << "invalid last layer ... " << endl;
+		exit(1);
+	}
+	this->lastLayer = lastLayer;
+	this->layers = layersConfig->_layers;
+
+	/*
 	//double weight_lr_mult = 1.0;
 	//double weight_decay_mult = 1.0;
 	//double bias_lr_mult = 2.0;
@@ -140,7 +192,7 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.03),
 			param_filler(ParamFillerType::Constant, bias_const),
-			ActivationType::ReLU
+			Activation::ReLU
 			);
 
 	ConvLayer *conv3x3reduceLayer = new ConvLayer(
@@ -152,7 +204,7 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.09),
 			param_filler(ParamFillerType::Constant, bias_const),
-			ActivationType::ReLU);
+			Activation::ReLU);
 
 	ConvLayer *conv3x3Layer = new ConvLayer(
 			this->name+"/conv3x3",
@@ -163,7 +215,7 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.03),
 			param_filler(ParamFillerType::Constant, bias_const),
-			ActivationType::ReLU
+			Activation::ReLU
 			);
 
 	ConvLayer *conv5x5recudeLayer = new ConvLayer(
@@ -175,7 +227,7 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.2),
 			param_filler(ParamFillerType::Constant, bias_const),
-			ActivationType::ReLU
+			Activation::ReLU
 			);
 
 	ConvLayer *conv5x5Layer = new ConvLayer(
@@ -187,13 +239,13 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.03),
 			param_filler(ParamFillerType::Constant, bias_const),
-			ActivationType::ReLU
+			Activation::ReLU
 			);
 
 	PoolingLayer *pool3x3Layer = new PoolingLayer(
 			this->name+"/pool3x3",
 			pool_dim(3, 3, 1),
-			PoolingType::Max
+			Pooling::Max
 			);
 
 	ConvLayer *convProjectionLayer = new ConvLayer(
@@ -205,7 +257,7 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 			bias_update_param,
 			param_filler(ParamFillerType::Xavier, 0.1),
 			param_filler(ParamFillerType::Constant, bias_const),
-			ActivationType::ReLU);
+			Activation::ReLU);
 
 	DepthConcatLayer *depthConcatLayer = new DepthConcatLayer(
 			this->name+"/depthConcat"
@@ -225,8 +277,27 @@ void InceptionLayer::initialize(int ic, int oc_cv1x1, int oc_cv3x3reduce, int oc
 	Network::addLayerRelation(conv3x3Layer, depthConcatLayer);
 	Network::addLayerRelation(conv5x5Layer, depthConcatLayer);
 	Network::addLayerRelation(convProjectionLayer, depthConcatLayer);
+	*/
+
+
 }
 
+
+void InceptionLayer::setNetworkConfig(NetworkConfig* networkConfig) {
+	HiddenLayer::setNetworkConfig(networkConfig);
+	for(uint32_t i = 0; i < layers.size(); i++) {
+		layers[i]->setNetworkConfig(networkConfig);
+	}
+}
+
+
+Layer* InceptionLayer::_find(const string name) {
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		Layer* result = firstLayers[i]->find(0, name);
+		if(result) return result;
+	}
+	return 0;
+}
 
 void InceptionLayer::_shape(bool recursive) {
 	for(UINT i = 0; i < firstLayers.size(); i++) {
@@ -257,16 +328,16 @@ void InceptionLayer::_clearShape() {
 	HiddenLayer::_clearShape();
 }
 
-DATATYPE InceptionLayer::_sumSquareGrad() {
-	DATATYPE result;
+double InceptionLayer::_sumSquareGrad() {
+	double result;
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		result += firstLayers[i]->sumSquareGrad(0);
 	}
 	return result;
 }
 
-DATATYPE InceptionLayer::_sumSquareParam() {
-	DATATYPE result;
+double InceptionLayer::_sumSquareParam() {
+	double result;
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		result += firstLayers[i]->sumSquareParam(0);
 	}
@@ -295,7 +366,7 @@ void InceptionLayer::_save(ofstream &ofs) {
 	ofs.write((char *)&lastLayer, sizeof(Layer *));
 
 	// InceptionLayer의 NIN (내부 네트워크)를 save ////////
-	saveNinHeader(0, ofs);
+	_saveNinHeader(ofs);
 	// header boundary
 	int type = 0;
 	Layer *layer = 0;
@@ -309,6 +380,43 @@ void InceptionLayer::_save(ofstream &ofs) {
 
 	Layer *boundary = 0;
 	ofs.write((char *)&boundary, sizeof(Layer *));
+}
+
+void InceptionLayer::_saveNinHeader(ofstream &ofs) {
+	//Layer *p = this;
+	//ofs.write((char *)&type, sizeof(int));
+	//ofs.write((char *)&p, sizeof(Layer *));
+
+	//cout << "save header for " << name << ", type: " << (int)type << ", address: " << p << endl;
+	for(UINT i = 0; i < firstLayers.size(); i++) {
+		firstLayers[i]->saveHeader(0, ofs);
+	}
+}
+
+void InceptionLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	HiddenLayer::_load(ifs, layerMap);
+
+	UINT firstLayerSize, lastLayerSize;
+
+	ifs.read((char *)&firstLayerSize, sizeof(UINT));
+	for(UINT i = 0; i < firstLayerSize; i++) {
+		HiddenLayer *firstLayer;
+		ifs.read((char *)&firstLayer, sizeof(HiddenLayer *));
+		firstLayers.push_back(firstLayer);
+	}
+	ifs.read((char *)&lastLayerSize, sizeof(UINT));
+	ifs.read((char *)&lastLayer, sizeof(HiddenLayer *));
+
+	map<Layer *, Layer *> ninLayerMap;
+	loadNetwork(ifs, ninLayerMap);
+
+	for(UINT i = 0; i < firstLayerSize; i++) {
+		firstLayers[i] = (HiddenLayer *)ninLayerMap.find(firstLayers[i])->second;
+	}
+	lastLayer = (HiddenLayer *)ninLayerMap.find(lastLayer)->second;
+
+	initialize();
+	InceptionLayer::_shape(false);
 }
 
 void InceptionLayer::_update(UINT n, UINT miniBatchSize) {
@@ -360,16 +468,22 @@ void InceptionLayer::reset_nabla(UINT idx) {
 	propResetNParam();
 }
 #else
-void InceptionLayer::_feedforward(const DATATYPE *input, const char *end) {
-	Util::printMessage("InceptionLayer::_feedforward()---"+string(name));
+void InceptionLayer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
+	//Util::printMessage("InceptionLayer::feedforward()---"+string(name));
 
-	this->d_input = input;
-	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+	_concat(idx, input);
+	if (!isLastPrevLayerRequest(idx)) return;
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		firstLayers[i]->feedforward(0, this->d_input, end);
 	}
+	checkCudaErrors(cudaMemcpyAsync(this->d_output, lastLayer->getOutput(), sizeof(DATATYPE)*out_dim.batchsize(), cudaMemcpyDeviceToDevice));
+
+	propFeedforward(end);
 }
+
+
+
 
 void InceptionLayer::_backpropagation() {
 	lastLayer->backpropagation(0, d_delta_output);
@@ -390,6 +504,6 @@ void InceptionLayer::_backpropagation() {
 #endif
 
 
-
+#endif
 
 

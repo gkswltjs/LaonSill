@@ -34,7 +34,67 @@ using namespace arma;
  */
 class SoftmaxLayer : public OutputLayer {
 public:
+	class Builder : public OutputLayer::Builder {
+	public:
+		Builder() {
+			_activationType = Activation::Softmax;
+			_costType = Cost::LogLikelihood;
+		}
+		Builder* costType(Cost::Type costType) {
+			OutputLayer::Builder::costType(costType);
+			return this;
+		}
+		Builder* nOut(uint32_t nOut) {
+			OutputLayer::Builder::nOut(nOut);
+			return this;
+		}
+		Builder* pDropout(uint32_t pDropout) {
+			OutputLayer::Builder::pDropout(pDropout);
+			return this;
+		}
+		Builder* weightUpdateParam(double lr_mult, double decay_mult) {
+			OutputLayer::Builder::weightUpdateParam(lr_mult, decay_mult);
+			return this;
+		}
+		Builder* biasUpdateParam(double lr_mult, double decay_mult) {
+			OutputLayer::Builder::biasUpdateParam(lr_mult, decay_mult);
+			return this;
+		}
+		Builder* weightFiller(ParamFillerType weightFillerType, double value) {
+			OutputLayer::Builder::weightFiller(weightFillerType, value);
+			return this;
+		}
+		Builder* biasFiller(ParamFillerType biasFillerType, double value) {
+			OutputLayer::Builder::biasFiller(biasFillerType, value);
+			return this;
+		}
+		Builder* activationType(Activation::Type activationType) {
+			OutputLayer::Builder::activationType(activationType);
+			return this;
+		}
+		virtual Builder* name(const string name) {
+			OutputLayer::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			OutputLayer::Builder::id(id);
+			return this;
+		}
+		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+			OutputLayer::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+			OutputLayer::Builder::prevLayerIndices(prevLayerIndices);
+			return this;
+		}
+		Layer* build() {
+			return new SoftmaxLayer(this);
+		}
+	};
+
 	SoftmaxLayer();
+	SoftmaxLayer(Builder* builder);
 	/**
 	 * @details SoftmaxLayer 생성자
 	 * @param name 레이어의 이름 문자열 포인터
@@ -64,8 +124,6 @@ public:
 	 */
 	void cost(const UINT *target);
 #endif
-	void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-
 
 
 protected:
@@ -75,6 +133,10 @@ protected:
 protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
+	void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+
+
+
 
 };
 

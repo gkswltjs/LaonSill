@@ -12,12 +12,11 @@
 
 //#include "layer/LayerConfig.h"
 #include <string>
-#include <armadillo>
 #include <iostream>
+#include <fstream>
 #include "cuda/Cuda.h"
 
 using namespace std;
-using namespace arma;
 
 
 #define	LOG_DEBUG	0
@@ -41,10 +40,11 @@ void log_print(FILE *fp, int log_level, const char* filename, const int line, co
 
 
 
-
+#ifndef GPU_MODE
 typedef fvec rvec;
 typedef fmat rmat;
 typedef fcube rcube;
+#endif
 
 typedef unsigned int UINT;
 
@@ -76,21 +76,6 @@ static cudaError_t ucudaMalloc(
 
 
 
-/*
-enum class ActivationType {
-	Sigmoid, Softmax, ReLU
-};
-
-enum class CostType {
-	CrossEntropy, LogLikelihood, Quadratic
-};
-*/
-
-
-
-
-
-
 /**
  * @brief 각종 유틸리티 함수들을 정적으로 포함하는 클래스
  * @details
@@ -113,6 +98,8 @@ public:
 	 * @return pack한 정수값
 	 */
 	static int pack4BytesToInt(unsigned char *buffer);
+
+#ifndef GPU_MODE
 	/**
 	 * @details rvec 타입의 벡터를 메타정보와 함께 설정된 출력 스트림에 출력한다.
 	 * @param vector 출력할 벡터
@@ -137,6 +124,7 @@ public:
 	 * @param name 출력에 사용할 레이블
 	 */
 	static void printUCube(const ucube &c, string name);
+#endif
 	/**
 	 * @details 호스트의 메모리를 지정된 데이터 구조로 메타정보와 함께 설정된 출력 스트림에 출력한다.
 	 * @param data 출력할 데이터 호스트 배열 포인터
@@ -187,6 +175,7 @@ public:
 		Util::outstream = new ofstream(outfile.c_str(), ios::out | ios::binary);
 	}
 
+#ifndef GPU_MODE
 	/**
 	 * @details 입력의 3차원 행렬을 출력의 3차원 행렬의 구조로 변환하여 출력 행렬에 전달한다.
 	 * @param input 입력 3차원 행렬
@@ -199,6 +188,7 @@ public:
 	 * @param p_dropout dropout 확률
 	 */
 	static void dropoutLayer(rcube &input, double p_dropout);
+#endif
 
 	/**
 	 * @details cudaMalloc Wrapper, 메모리를 할당할 때 마다 잔여 메모리를 로깅한다.
@@ -219,7 +209,7 @@ public:
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
 		//(*outstream) << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
-		cout << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+		//cout << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
 		return cudaError;
 	}
 

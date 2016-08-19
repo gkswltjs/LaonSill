@@ -25,10 +25,10 @@ public:
 #ifndef GPU_MODE
 public:
 	ReLU() {
-		this->type = ActivationType::ReLU;
+		this->type = Activation::ReLU;
 	}
 	ReLU(io_dim activation_dim) {
-		this->type = ActivationType::ReLU;
+		this->type = Activation::TypeReLU;
 		zero.set_size(activation_dim.rows, activation_dim.cols, activation_dim.channels);
 		zero.zeros();
 	}
@@ -61,7 +61,7 @@ private:
 #else
 public:
 	ReLU() {
-		this->type = ActivationType::ReLU;
+		this->type = Activation::ReLU;
 		checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
 		checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0.0));
 	}

@@ -7,14 +7,17 @@
 
 #include "ImagePacker.h"
 
-#include <dirent.h>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
 #include <CImg.h>
+#include <dirent.h>
+#include <algorithm>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
 
-
-#include "../Util.h"
 #include "UByteImage.h"
 
 using namespace std;
