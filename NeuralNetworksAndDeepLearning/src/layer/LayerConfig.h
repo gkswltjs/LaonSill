@@ -33,10 +33,9 @@ class Layer;
  *          현재 Constant, Xavier, Gaussian을 지원.
  */
 enum class ParamFillerType {
-	None=0,				// 초기화하지 않음
-	Constant=1,			// 특정값으로 초기화
-	Xavier=2,			// 특정 범위의 uniform distribution을 따르는 값으로 초기화
-	Gaussian=3			// Gaussian distribution을 따르는 값으로 초기화
+	Constant=0,			// 특정값으로 초기화
+	Xavier,				// 특정 범위의 uniform distribution을 따르는 값으로 초기화
+	Gaussian			// Gaussian distribution을 따르는 값으로 초기화
 };
 
 
@@ -269,7 +268,6 @@ struct param_filler {
 			for(i = 0; i < size; i++) param[i] = normal_dist(gen_gaussian)*sd_gaussian;
 		}
 			break;
-		case ParamFillerType::None:
 		default:
 			break;
 		}

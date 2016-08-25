@@ -10,6 +10,7 @@
 #define LAYER_FULLYCONNECTEDLAYER_H_
 
 #include "HiddenLayer.h"
+#include "LearnableLayer.h"
 #include "LayerConfig.h"
 #include "../activation/Activation.h"
 #include "../activation/ActivationFactory.h"
@@ -26,7 +27,7 @@
  *          입력 레이어가 다차원인 경우(이미지의 경우 height x width x channel의 3차원) 1차원으로 flatten((height*width*channel) x 1 x 1)된다.
  *          출력 역시 1차원 flatten 결과이며 필요에 따라서 입력받는 레이어에서 다시 차원을 복구해야 한다.
  */
-class FullyConnectedLayer : public HiddenLayer {
+class FullyConnectedLayer : public HiddenLayer, public LearnableLayer {
 public:
 	class Builder : public HiddenLayer::Builder {
 	public:
@@ -45,9 +46,9 @@ public:
 			_weightUpdateParam.decay_mult = 0.0;
 			_biasUpdateParam.lr_mult = 1.0;
 			_biasUpdateParam.decay_mult = 0.0;
-			_weightFiller.type = ParamFillerType::None;
-			_biasFiller.type = ParamFillerType::None;
-			_activationType = Activation::None;
+			_weightFiller.type = ParamFillerType::Constant;
+			_biasFiller.type = ParamFillerType::Constant;
+			_activationType = Activation::NoActivation;
 		}
 		Builder* nOut(uint32_t nOut) {
 			this->_nOut = nOut;
@@ -120,24 +121,15 @@ public:
 	 * @param activationType weighted sum에 적용할 활성화 타입
 	 */
 	FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::None);
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::NoActivation);
 #ifndef GPU_MODE
 	FullyConnectedLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::None);
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::NoActivation);
 #endif
 	virtual ~FullyConnectedLayer();
 
 
 
-#ifndef GPU_MODE
-	rmat &getWeight() { return this->weight; }
-#else
-	/**
-	 * @details 레이어의 weight 장치 메모리 포인터를 조회한다.
-	 * @return 레이어의 weight 장치 메모리 포인터
-	 */
-	DATATYPE *getWeight() { return this->d_weight; }
-#endif
 
 
 
@@ -151,12 +143,15 @@ private:
 protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual double _sumSquareGrad();
-	virtual double _sumSquareParam();
-	virtual void _scaleParam(DATATYPE scale_factor);
+	//virtual double _sumSquareGrad();
+	//virtual double _sumSquareParam();
+	virtual DATATYPE sumSquareParamsData();
+	virtual DATATYPE sumSquareParamsGrad();
+	virtual void scaleParamsGrad(DATATYPE scale);
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	virtual void _update(UINT n, UINT miniBatchSize);
+	//virtual void _update(UINT n, UINT miniBatchSize);
+	virtual void update();
 #ifndef GPU_MODE
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
@@ -168,6 +163,11 @@ protected:
 	virtual void _feedforward();
 #endif
 	virtual void _backpropagation();
+
+	enum ParamType {
+		Weight = 0,
+		Bias = 1
+	};
 
 
 
@@ -195,18 +195,22 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	DATATYPE *weight;						///< weight 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
-	DATATYPE *bias;							///< bias 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
+	//DATATYPE *weight;						///< weight 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
+	//DATATYPE *bias;						///< bias 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
 
-	DATATYPE *d_weight;						///< weight 장치 메모리 포인터
-	DATATYPE *d_bias;						///< bias 장치 메모리 포인터
+	//DATATYPE *d_weight;					///< weight 장치 메모리 포인터
+	//DATATYPE *d_bias;						///< bias 장치 메모리 포인터
 
-	DATATYPE *d_z;							///< weighted sum 장치 메모리 포인터
-	DATATYPE *d_delta;						///< 네트워크 cost의 z(weighted sum)에 관한 gradient 장치 메모리 포인터
-	DATATYPE *d_delta_weight;				///< 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터
-	DATATYPE *d_delta_weight_prev;			///< 이전 업데이트의 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
-	DATATYPE *d_delta_bias;					///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
-	DATATYPE *d_delta_bias_prev;			///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
+	//DATATYPE *d_z;							///< weighted sum 장치 메모리 포인터
+	//DATATYPE *d_delta;						///< 네트워크 cost의 z(weighted sum)에 관한 gradient 장치 메모리 포인터
+	//DATATYPE *d_delta_weight;				///< 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터
+	//DATATYPE *d_delta_weight_prev;		///< 이전 업데이트의 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
+	//DATATYPE *d_delta_bias;				///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
+	//DATATYPE *d_delta_bias_prev;			///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
+
+	Data* _preActivation;
+	vector<Data*> _params;
+	vector<Data*> _paramsHistory;
 
 	DATATYPE *d_onevec;						///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
 

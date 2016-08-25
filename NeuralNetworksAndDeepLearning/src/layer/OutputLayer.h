@@ -35,7 +35,7 @@ public:
 		Cost::Type _costType;
 
 		Builder() {
-			_costType = Cost::None;
+			//_costType = Cost::None;
 		}
 		Builder* costType(Cost::Type costType) {
 			this->_costType = costType;
@@ -105,13 +105,13 @@ public:
 	 * @param costType 레이어 출력값에 대한 cost 계산 타입
 	 */
 	OutputLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::None, Cost::Type costType=Cost::None)
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType, Cost::Type costType)
 		:FullyConnectedLayer(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};
 #ifndef GPU_MODE
 	OutputLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::None, Cost::Type costType=Cost::None)
+			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType, Cost::Type costType)
 		: FullyConnectedLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	}

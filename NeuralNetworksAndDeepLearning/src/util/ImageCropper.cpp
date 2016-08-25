@@ -6,6 +6,7 @@
  */
 
 #include "ImageCropper.h"
+#include "../Util.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -17,7 +18,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include "../Timer.h"
 
 using namespace std;
 using namespace cimg_library;

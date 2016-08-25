@@ -35,7 +35,7 @@ public:
 	 *          현재 Max, Average 풀링을 지원.
 	 */
 	enum Type {
-		None=0,			// 풀링을 적용하지 않는다.
+		NoPooling=0,	// 풀링을 적용하지 않는다.
 		Max=1,			// 최대 풀링을 적용한다.
 		Avg=2			// 평균 풀링을 적용한다.
 	};

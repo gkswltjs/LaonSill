@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "../dataset/ImagePackDataSet.h"
-#include "../Timer.h"
 #include "../util/ImagePacker.h"
 #include "../Util.h"
 

@@ -13,7 +13,6 @@
 #ifndef LAYER_LAYER_H_
 #define LAYER_LAYER_H_
 
-#include <cudnn.h>
 #include <iostream>
 #include <map>
 #include <string>
@@ -21,6 +20,7 @@
 
 #include "../Util.h"
 #include "LayerConfig.h"
+#include "../Data.h"
 
 
 class NetworkConfig;
@@ -156,19 +156,19 @@ public:
 	 */
 	io_dim getOutDimension() const { return this->out_dim; }
 #ifndef GPU_MODE
-	rcube &getInput() { return this->input; }
-	rcube &getOutput() { return this->output; }
+	rcube &getInput() { return this->_input; }
+	rcube &getOutput() { return this->_output; }
 #else
 	/**
 	 * @details 레이어의 입력값 장치 포인터를 조회한다.
 	 * @return 레이어 입력값 장치 포인터
 	 */
-	const DATATYPE *getInput() { return this->d_input; }
+	virtual Data* getInput() { return this->_input; }
 	/**
 	 * @details 레이어의 출력값 장치 포인터를 조회한다.
 	 * @return 레이어 출력값 장치 포인터
 	 */
-	virtual DATATYPE *getOutput() { return this->d_output; }
+	virtual Data *getOutput() { return this->_output; }
 #endif
 
 	virtual void setNetworkConfig(NetworkConfig* networkConfig) { this->networkConfig = networkConfig; }
@@ -261,19 +261,19 @@ public:
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @return 학습 파라미터 gradient에 대한 square sum값
 	 */
-	virtual double sumSquareGrad(UINT idx);
+	//virtual double sumSquareGrad(UINT idx);
 	/**
 	 * @details 학습 파라미터(weight, bias등)에 대한 square sum값을 구하고 다음 레이어들에 대해 sumSquareParam()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @return 학습 파리미터에 대한 square sum값
 	 */
-	virtual double sumSquareParam(UINT idx);
+	//virtual double sumSquareParam(UINT idx);
 	/**
 	 * @details 학습 파라미터의 gradient를 스케일링하고 다음 레이어들에 대해 scaleParam()을 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param 학습 파라미터 스케일링 팩터
 	 */
-	virtual void scaleParam(UINT idx, DATATYPE scale_factor);
+	//virtual void scaleParam(UINT idx, DATATYPE scale_factor);
 	/**
 	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
@@ -302,7 +302,7 @@ public:
 	 * @param n 학습 데이터의 수
 	 * @param miniBatchSize 학습에 사용한 batch 사이즈
 	 */
-	virtual void update(UINT idx, UINT n, UINT miniBatchSize);
+	//virtual void update(UINT idx, UINT n, UINT miniBatchSize);
 #ifndef GPU_MODE
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
@@ -323,7 +323,7 @@ public:
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
-	virtual void feedforward(UINT idx, const DATATYPE *input, const char *end=0);
+	virtual void feedforward(UINT idx, Data* input, const char *end=0);
 #endif
 
 
@@ -332,20 +332,10 @@ public:
 
 protected:
 	/**
-	 * @details 유일한 레이어 아이디를 생성한다.
-	 * @return 생성된 레이어 아이디
-	 */
-	static int generateLayerId();
-
-
-
-
-
-	/**
 	 * @details 레이어를 초기화한다.
 	 * @param name 레이어의 이름 문자열 포인터
 	 */
-	void initialize(const string name);
+	void initialize(uint32_t id, const string name);
 	/**
 	 * @details 레이어 메타정보로부터 레이어 구성을 로드한다.
 	 * @param ifs 레이어를 읽어들일 입력 스트림
@@ -396,17 +386,17 @@ protected:
 	 * @details 학습 파라미터(weight, bias등)의 gradient에 대한 square sum값을 구한다.
 	 * @return 학습 파라미터의 gradient에 대한 square sum값
 	 */
-	virtual double _sumSquareGrad();
+	//virtual double _sumSquareGrad();
 	/**
 	 * @details 학습 파라미터(weight, bias등)에 대한 square sum값을 구한다.
 	 * @return 학습 파라미터에 대한 square sum값
 	 */
-	virtual double _sumSquareParam();
+	//virtual double _sumSquareParam();
 	/**
 	 * @details 학습 파라미터의 gradient를 스케일링한다.
 	 * @param scale_factor 학습 파라미터의 gradient를 스케일할 팩터
 	 */
-	virtual void _scaleParam(DATATYPE scale_factor);
+	//virtual void _scaleParam(DATATYPE scale_factor);
 	/**
 	 * @details 현재 레이어를 스트림에 쓴다.
 	 * @param ofs 레이어를 쓸 출력 스트림
@@ -426,7 +416,7 @@ protected:
 	 * @param n 학습 데이터의 수
 	 * @param miniBatchSize 학습에 사용한 batch 사이즈
 	 */
-	virtual void _update(UINT n, UINT miniBatchSize);
+	//virtual void _update(UINT n, UINT miniBatchSize);
 	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
@@ -439,13 +429,12 @@ protected:
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 idx
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 */
-	virtual void _concat(UINT idx, const DATATYPE* input);
+	virtual void _concat(UINT idx, Data* input);
 	/**
 	 * @details 복수의 '이전' 레이어로부터의 입력들에 대해 branch의 수 기준으로 스케일링한다.
 	 *          _concat()이 입력 합산이 아닌 방식으로 구현된 경우 _scaleInput() 역시 적절히 재정의해야 한다.
 	 */
 	virtual void _scaleInput();
-
 
 
 
@@ -479,17 +468,17 @@ protected:
 	 * @details 다음 레이어들에 대해 sumSquareGrad() 메쏘드를 호출한다.
 	 * @return 다음 레이어들로부터 계산된 square sum값의 합
 	 */
-	double propSumSquareGrad();
+	//double propSumSquareGrad();
 	/**
 	 * @details 다음 레이어들에 대해 sumSquareParam() 메쏘드를 호출한다.
 	 * @return 다음 레이어들로부터 계산된 square sum값의 합
 	 */
-	double propSumSquareParam();
+	//double propSumSquareParam();
 	/**
 	 * @details 다음 레이어들에 대해 scaleParam() 메쏘드를 호출한다.
 	 * @param scale_factor 학습 파라미터의 gradient를 스케일할 팩터
 	 */
-	void propScaleParam(DATATYPE scale_factor);
+	//void propScaleParam(DATATYPE scale_factor);
 	/**
 	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
 	 */
@@ -497,7 +486,7 @@ protected:
 	/**
 	 * @details 다음 레이어들에 대해 update() 메쏘드를 호출한다.
 	 */
-	void propUpdate(UINT n, UINT miniBatchSize);
+	//void propUpdate(UINT n, UINT miniBatchSize);
 #ifndef GPU_MODE
 	/**
 	 * @details 다음 레이어들에 대해 feedforward() 메쏘드를 호출한다.
@@ -536,17 +525,16 @@ protected:
 	rcube input;
 	rcube output;
 #else
-	DATATYPE* d_input;									///< 현재 레이어의 입력값 장치 메모리 포인터
-	DATATYPE* d_output;									///< 현재 레이어의 출력값 장치 메모리 포인터
+	//DATATYPE* d_input;									///< 현재 레이어의 입력값 장치 메모리 포인터
+	//DATATYPE* d_output;									///< 현재 레이어의 출력값 장치 메모리 포인터
+	Data* _input;
+	Data* _output;
 
 	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 #endif
 
 
-
-
-	static int layerCount;								///< 레이어의 고유 아이디 생성을 위한 레이어 카운터
 	static const int LAYER_NAME_LENGTH = 32;
 
 };

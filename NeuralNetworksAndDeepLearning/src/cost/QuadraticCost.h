@@ -37,7 +37,7 @@ public:
 		//return 0.5*sum(square(*pA - *pY));
 		return 0.0;
 	}
-	void d_cost(const DATATYPE *z, DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize) {
+	void d_cost(const DATATYPE *z, const DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize) {
 		/*
 		Cuda::refresh();
 		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(DATATYPE)*size, cudaMemcpyDeviceToDevice));

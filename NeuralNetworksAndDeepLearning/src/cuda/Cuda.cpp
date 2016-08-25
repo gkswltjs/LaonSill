@@ -6,7 +6,7 @@
  */
 
 #include "Cuda.h"
-#include "../Timer.h"
+#include "../Util.h"
 
 int Cuda::gpuid = 0;
 const float Cuda::alpha = 1.0f;

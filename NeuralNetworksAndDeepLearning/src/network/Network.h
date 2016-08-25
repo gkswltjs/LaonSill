@@ -49,7 +49,7 @@ public:
 	 * @details Network 생성자
 	 * @param networkListener 네트워크 상태 리스너
 	 */
-	Network(NetworkListener *networkListener=0);
+	//Network(NetworkListener *networkListener=0);
 	/**
 	 * @details Network 생성자
 	 * @param inputLayer 입력 레이어
@@ -57,40 +57,22 @@ public:
 	 * @param dataSet 학습 및 테스트용 데이터셋
 	 * @param networkListener 네트워크 상태 리스너
 	 */
-	Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
+	//Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
 	/**
 	 * @details Network 소멸자
 	 */
 	virtual ~Network();
-
 
 	/**
 	 * @details 네트워크에 설정된 입력 레이어를 조회한다.
 	 * @return 네트워크에 설정된 입력 레이어
 	 */
 	InputLayer *getInputLayer() const { return this->config->_inputLayer; }
-	/**
-	 * @details DataSet setter method
-	 * @param dataSet 학습 및 테스트용 데이터셋
-	 * @param batches 데이터셋 배치 단위 사이즈
-	 */
-	void setDataSet(DataSet *dataSet, UINT batches);
 
-	/**
-	 * @details 네트워크에 출력 레이어를 추가한다.
-	 * @param outputLayer 네트워크에 추가할 출력 레이어
-	 */
-	void addOutputLayer(OutputLayer *outputLayer) { this->config->_outputLayers.push_back(outputLayer); }
-	/**
-	 * @details 네트워크의 추론 결과를 평가할 평가객체를 추가한다.
-	 * @param evaluation 네트워크의 추론 결과를 평가할 평가객체
-	 */
-	void addEvaluation(Evaluation *evaluation);
-	/**
-	 * @details 네트워크의 내부 이벤트 리스너를 추가한다.
-	 * @param networkListener 네트워크의 내부 이벤트 리스너
-	 */
-	void addNetworkListener(NetworkListener* networkListener);
+
+
+
+
 
 	/**
 	 * @details stochastic gradient descent를 수행한다.
@@ -102,20 +84,6 @@ public:
 	 */
 	void test();
 
-
-	/**
-	 * @details 레이어간의 이전, 다음 레이어 관계를 생성한다.
-	 * @param prevLayer 레이어 관계에서 이전 레이어
-	 * @param nextLayer 레이어 관계에서 다음 레이어
-	 * @todo Network 클래스에 구현할 method가 아니다.
-	 */
-	static void addLayerRelation(Layer *prevLayer, HiddenLayer *nextLayer) {
-		prevLayer->addNextLayer(nextLayer);
-
-		// prev layer가 hidden layer가 아닌 경우 prev layers에 추가할 필요 없음
-		HiddenLayer *pLayer = dynamic_cast<HiddenLayer *>(prevLayer);
-		if(pLayer) nextLayer->addPrevLayer(pLayer);
-	}
 
 	/**
 	 * @details 네트워크 쓰기관련 설정을 한다.
@@ -147,7 +115,7 @@ public:
 	 * @param name 찾을 레이어의 이름
 	 * @return 찾은 레이어에 대한 포인터
 	 */
-	Layer *findLayer(const string name);
+	Layer* findLayer(const string name);
 	/**
 	 * @details 네트워크에 등록된 데이터셋 특정 채널의 평균값을 조회한다.
 	 * @param 데이터셋의 조회할 채널 index
@@ -163,7 +131,7 @@ public:
 
 
 
-
+/*
 #ifndef GPU_MODE
 public:
 	void feedforward(const rcube &input, const char *end=0);
@@ -171,7 +139,7 @@ public:
 public:
 	void feedforward(const DATATYPE *input, const char *end=0);
 #endif
-
+*/
 
 
 protected:
@@ -179,7 +147,7 @@ protected:
 	 * @details 배치단위의 학습이 종료된 후 학습된 내용을 적절한 정규화 과정을 거쳐 네트워크에 반영한다.
 	 * @param nthMiniBatch 한 epoch내에서 종료된 batch의 index
 	 */
-	void updateMiniBatch(int nthMiniBatch);
+	void trainBatch(uint32_t batchIndex);
 	/**
 	 * @details 배치단위의 학습된 내용을 네트워크에 반영한다.
 	 */
@@ -190,14 +158,39 @@ protected:
 	 */
 	void clipGradients();
 
+	double computeSumSquareParamsData();
+	double computeSumSquareParamsGrad();
+	void scaleParamsGrad(DATATYPE scale);
+
 
 	//double totalCost(const vector<const DataSample *> &dataSet, double lambda);
 	//double accuracy(const vector<const DataSample *> &dataSet);
 	/**
-	 * @details 전체 테스트셋에 대해 현재의 네트워크를 평가한다.
+	 * @details 학습된 네트워크에 대해 전체 테스트셋으로 네트워크를 평가한다.
 	 */
-	void evaluate();
+	void evaluateTestSet();
 
+#ifndef GPU_MODE
+	int testEvaluateResult(const rvec &output, const rvec &y);
+#else
+	/**
+	 * @details 특정 테스트 데이터 하나에 대해 feedforward된 네트워크를 target값으로 평가한다.
+	 * @param num_labels 데이터셋 레이블 크기 (카테고리의 수)
+	 * @param output 데이터에 대한 네트워크의 출력 장치 메모리 포인터
+	 * @param y 데이터의 정답 호스트 메모리 포인터
+	 */
+	//void evaluateTestData(const int num_labels, Data* output, const UINT *y);
+	void evaluateTestData(uint32_t batchIndex);
+#endif
+
+
+
+
+
+
+
+
+protected:
 	NetworkConfig* config;
 	//DataSet *dataSet;							///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
 
@@ -215,98 +208,11 @@ protected:
 	DATATYPE dataSetMean[3];					///< 네트워크 데이터셋 평균 배열
 	//DATATYPE clipGradientsLevel;				///< 학습 gradient의 L2 norm의 크기를 제한하는 기준값
 
-	DATATYPE* d_trainData;						///< 학습 데이터 장치 메모리 포인터
+	//Data* trainData;
+	//DATATYPE* d_trainData;						///< 학습 데이터 장치 메모리 포인터
 	UINT* d_trainLabel;							///< 학습 데이터 정답 장치 메모리 포인터
 
-
-#ifndef GPU_MODE
-protected:
-	int testEvaluateResult(const rvec &output, const rvec &y);
-#else
-protected:
-	/**
-	 * @details 특정 테스트 데이터 하나에 대해 평가한다.
-	 * @param num_labels 데이터셋 레이블 크기 (카테고리의 수)
-	 * @param output 데이터에 대한 네트워크의 출력 장치 메모리 포인터
-	 * @param y 데이터의 정답 호스트 메모리 포인터
-	 */
-	void testEvaluateResult(const int num_labels, const DATATYPE *output, const UINT *y);
-#endif
-
-
-
-
-public:
-	class Config {
-		uint32_t batchsize;
-		uint32_t epochs;
-
-		string savePathPrefix;
-		float clipGradientsLevel;
-	};
-
-
-
-
-
-
 };
-
-
-
-
-
-
-/*
-struct NetworkParam {
-	NetworkParam() {
-		inputLayer = NULL;
-		dataSet = NULL;
-		batchsize = 1;
-		epochs = 1;
-		clipGradientsLevel = 35.0f;
-	}
-
-	InputLayer* inputLayer;
-	vector<OutputLayer*> outputLayers;
-	DataSet* dataSet;
-	vector<Evaluation*> evaluations;
-	vector<NetworkListener*> networkListeners;
-
-	uint32_t batchsize;
-	uint32_t epochs;
-
-	string savePathPrefix;
-	float clipGradientsLevel;
-
-
-	void setOutputLayer(OutputLayer* outputLayer) {
-		outputLayers.clear();
-		outputLayers.push_back(outputLayer);
-	}
-	void addOutputLayer(OutputLayer* outputLayer) {
-		outputLayers.push_back(outputLayer);
-	}
-
-	void setEvaluation(Evaluation* evaluation) {
-		evaluations.clear();
-		evaluations.push_back(evaluation);
-	}
-	void addEvaluation(Evaluation* evaluation) {
-		evaluations.push_back(evaluation);
-	}
-
-	void setNetworkListener(NetworkListener* networkListener) {
-		networkListeners.clear();
-		networkListeners.push_back(networkListener);
-	}
-	void addNetworkListener(NetworkListener* networkListener) {
-		networkListeners.push_back(networkListener);
-	}
-};
-*/
-
-
 
 
 #endif /* NETWORK_H_ */

@@ -17,6 +17,7 @@
 #include "../layer/Layer.h"
 #include "../layer/InputLayer.h"
 #include "../layer/OutputLayer.h"
+#include "../layer/LearnableLayer.h"
 #include "../monitor/NetworkListener.h"
 
 class DataSet;
@@ -46,6 +47,7 @@ public:
 			vector<Layer*> firstLayers;
 			vector<Layer*> lastLayers;
 			vector<Layer*> layers;
+			vector<LearnableLayer*> learnableLayers;
 			map<uint32_t, Layer*> idLayerMap;
 
 			uint32_t layerSize = _layerWise.size();
@@ -66,12 +68,20 @@ public:
 					}
 
 					if(numPrevLayers < 1) {
-						cout << "firstLayer: " << currentLayer->getName().c_str() << endl;
+						//cout << "firstLayer: " << currentLayer->getName() << endl;
 						firstLayers.push_back(currentLayer);
 					} else if(numNextLayers < 1) {
-						cout << "lastLayer: " << currentLayer->getName().c_str() << endl;
+						//cout << "lastLayer: " << currentLayer->getName() << endl;
 						lastLayers.push_back(currentLayer);
 					}
+
+					// 학습 레이어 추가
+					LearnableLayer* learnableLayer = dynamic_cast<LearnableLayer*>(currentLayer);
+					if(learnableLayer) {
+						learnableLayers.push_back(learnableLayer);
+					}
+
+
 					layers.push_back(currentLayer);
 					idLayerMap[it->first] = currentLayer;
 				//}
@@ -108,7 +118,8 @@ public:
 			return (new LayersConfig(this))
 				->firstLayers(firstLayers)
 				->lastLayers(lastLayers)
-				->layers(layers);
+				->layers(layers)
+				->learnableLayers(learnableLayers);
 		}
 	};
 
@@ -118,6 +129,7 @@ public:
 	vector<Layer*> _firstLayers;
 	vector<Layer*> _lastLayers;
 	vector<Layer*> _layers;
+	vector<LearnableLayer*> _learnableLayers;
 
 	LayersConfig(Builder* builder) {}
 	LayersConfig* firstLayers(vector<Layer*> firstLayers) {
@@ -130,6 +142,10 @@ public:
 	}
 	LayersConfig* layers(vector<Layer*> layers) {
 		this->_layers = layers;
+		return this;
+	}
+	LayersConfig* learnableLayers(vector<LearnableLayer*> learnableLayers) {
+		this->_learnableLayers = learnableLayers;
 		return this;
 	}
 };
@@ -267,6 +283,7 @@ public:
 					->inputLayer(inputLayer)
 					->outputLayers(outputLayers)
 					->layers(_layersConfig->_layers)
+					->learnableLayers(_layersConfig->_learnableLayers)
 					->nameLayerMap(nameLayerMap);
 
 			for(uint32_t i = 0; i < _layersConfig->_layers.size(); i++) {
@@ -281,6 +298,7 @@ public:
 	InputLayer* _inputLayer;
 	vector<OutputLayer*> _outputLayers;
 	vector<Layer*> _layers;
+	vector<LearnableLayer*> _learnableLayers;
 	map<string, Layer*> _nameLayerMap;
 
 	DataSet* _dataSet;
@@ -349,6 +367,10 @@ public:
 	}
 	NetworkConfig* layers(vector<Layer*> layers) {
 		this->_layers = layers;
+		return this;
+	}
+	NetworkConfig* learnableLayers(vector<LearnableLayer*> learnableLayers) {
+		this->_learnableLayers = learnableLayers;
 		return this;
 	}
 	NetworkConfig* nameLayerMap(map<string, Layer*> nameLayerMap) {

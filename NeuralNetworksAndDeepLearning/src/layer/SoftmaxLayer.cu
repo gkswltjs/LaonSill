@@ -83,14 +83,19 @@ void SoftmaxLayer::cost(const rvec &target) {
 #else
 void SoftmaxLayer::cost(const UINT *target) {
 	Util::printMessage("SoftmaxLayer::cost()---"+string(name));
-	Cuda::refresh();
+
+	const DATATYPE* d_z = _preActivation->gpu_data();
+	const DATATYPE* d_output = _output->gpu_data();
+	DATATYPE* d_delta = _preActivation->mutable_gpu_grad();
 
 	cost_fn->d_cost(d_z, d_output, target, d_delta, out_dim.rows, out_dim.batches);
 
 
-	//Util::setPrint(true);
-	Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
-	//Util::setPrint(false);
+
+	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
+	_preActivation->print_grad("d_delta:");
+
+
 	// Accounting for batch size in SGD
 	// checkCudaErrors(cublasSscal(cublasHandle, ref_fc2.outputs * m_batchSize, &scalVal, dloss_data, 1));
 
@@ -108,21 +113,33 @@ void SoftmaxLayer::cost(const UINT *target) {
 	}
 	*/
 
-	Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
+	//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
+	_input->print_data("d_input:");
+	const DATATYPE* d_input = _input->gpu_data();
+	DATATYPE* d_delta_weight = _params[Weight]->mutable_gpu_grad();
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, out_dim.rows, in_dim.rows, out_dim.batches,
 			&Cuda::alpha, d_delta, out_dim.rows, d_input, in_dim.rows, &Cuda::beta, d_delta_weight, out_dim.rows));
-	Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
+	//Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
+	_params[Weight]->print_grad("d_delta_weight:");
 
+	DATATYPE* d_delta_bias = _params[Bias]->mutable_gpu_grad();
 	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N, out_dim.rows, out_dim.batches,
 			&Cuda::alpha, d_delta, out_dim.rows, d_onevec, 1, &Cuda::beta, d_delta_bias, 1));
-	Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
+	//Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
+	_params[Bias]->print_grad("d_delta_bias:");
 
-	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
-	Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
+	//Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
+	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
+	_params[Weight]->print_data("d_weight:");
+	_preActivation->print_grad("d_delta");
+
+	const DATATYPE* d_weight = _params[Weight]->gpu_data();
+	DATATYPE* d_delta_input = _input->mutable_gpu_grad();
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, in_dim.rows, out_dim.batches, out_dim.rows,
 			&Cuda::alpha, d_weight, out_dim.rows, d_delta, out_dim.rows, &Cuda::beta, d_delta_input, in_dim.rows));
 
-	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.batches, 1, 1, "d_delta_input:");
+	//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.batches, 1, 1, "d_delta_input:");
+	_input->print_grad("d_delta_input:");
 
 	propBackpropagation();
 }

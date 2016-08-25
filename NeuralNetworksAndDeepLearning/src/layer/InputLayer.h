@@ -95,6 +95,14 @@ public:
 		return in_dim.rows*in_dim.cols*in_dim.channels;
 	}
 
+	using Layer::feedforward;
+	void feedforward(const DATATYPE* input, const char* end=0) {
+		_input->set_data(input, Data::HostToDevice);
+
+		_feedforward();
+		propFeedforward(end);
+	}
+
 protected:
 	void initialize() {
 		this->type = Layer::Input;

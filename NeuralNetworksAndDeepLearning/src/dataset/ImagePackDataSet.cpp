@@ -15,7 +15,6 @@
 #include <iostream>
 
 #include "../exception/Exception.h"
-#include "../Timer.h"
 #include "../util/UByteImage.h"
 #include "../Util.h"
 

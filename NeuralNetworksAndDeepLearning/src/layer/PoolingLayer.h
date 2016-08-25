@@ -36,7 +36,7 @@ public:
 			_poolDim.cols = 0;
 			_poolDim.rows = 0;
 			_poolDim.stride = 0;
-			_poolingType = Pooling::None;
+			_poolingType = Pooling::Max;
 		}
 		Builder* poolDim(uint32_t cols, uint32_t rows, uint32_t stride) {
 			this->_poolDim.cols = cols;

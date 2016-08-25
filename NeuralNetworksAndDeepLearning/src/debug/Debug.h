@@ -20,9 +20,11 @@ DataSet* createMnistDataSet();
 DataSet* createImageNet10CatDataSet();
 DataSet* createImageNet100CatDataSet();
 
-
+LayersConfig* createCNNSimpleLayersConfig();
 LayersConfig* createCNNDoubleLayersConfig();
 LayersConfig* createGoogLeNetLayersConfig();
+LayersConfig* createGoogLeNetInception3ALayersConfig();
+LayersConfig* createGoogLeNetInception3ASimpleLayersConfig();
 LayersConfig* createInceptionLayersConfig();
 
 

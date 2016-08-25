@@ -9,7 +9,6 @@
 #ifndef LAYER_CONVLAYER_H_
 #define LAYER_CONVLAYER_H_
 
-#include <cudnn.h>
 #include <stddef.h>
 #include <iostream>
 #include <map>
@@ -18,6 +17,7 @@
 #include "../activation/Activation.h"
 #include "../Util.h"
 #include "HiddenLayer.h"
+#include "LearnableLayer.h"
 #include "LayerConfig.h"
 
 
@@ -28,7 +28,7 @@
  * @brief 컨볼루션 레이어
  * @details
  */
-class ConvLayer : public HiddenLayer {
+class ConvLayer : public HiddenLayer, public LearnableLayer {
 public:
 	class Builder : public HiddenLayer::Builder {
 	public:
@@ -49,9 +49,9 @@ public:
 			_weightUpdateParam.decay_mult = 0.0;
 			_biasUpdateParam.lr_mult = 1.0;
 			_biasUpdateParam.decay_mult = 0.0;
-			_weightFiller.type = ParamFillerType::None;
-			_biasFiller.type = ParamFillerType::None;
-			_activationType = Activation::None;
+			_weightFiller.type = ParamFillerType::Constant;
+			_biasFiller.type = ParamFillerType::Constant;
+			_activationType = Activation::NoActivation;
 		}
 		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters, uint32_t stride) {
 			_filterDim.rows = rows;
@@ -128,11 +128,6 @@ public:
 
 
 
-#ifndef GPU_MODE
-	rcube *getWeight() { return this->filters; }
-#else
-	DATATYPE *getWeight() { return this->filters; }
-#endif
 	/**
 	 * @details 컨볼루션 연산 관련 파라미터 구조체를 조회한다.
 	 * @return 컨볼루션 연산 관련 파라미터
@@ -151,11 +146,14 @@ protected:
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual double _sumSquareGrad();
-	virtual double _sumSquareParam();
+	//virtual double _sumSquareGrad();
+	//virtual double _sumSquareParam();
+	virtual DATATYPE sumSquareParamsData();
+	virtual DATATYPE sumSquareParamsGrad();
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	virtual void _update(UINT n, UINT miniBatchSize);
+	//virtual void _update(UINT n, UINT miniBatchSize);
+	virtual void update();
 #ifndef GPU_MODE
 	void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
 	void dw_convolution(const rmat &d, const rmat &x, rmat &result);
@@ -167,11 +165,15 @@ protected:
 	 */
 	virtual void _feedforward();
 #else
-	virtual void _scaleParam(DATATYPE scale_factor);
+	virtual void scaleParamsGrad(DATATYPE scale);
 	virtual void _feedforward();
 	virtual void _backpropagation();
 #endif
 
+	enum ParamType {
+		Filter = 0,
+		Bias = 1
+	};
 
 
 
@@ -199,18 +201,22 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	DATATYPE *filters;								///< filter 호스트 메모리 포인터
-	DATATYPE *biases;								///< bias 호스트 메모리 포인터
+	//DATATYPE *filters;								///< filter 호스트 메모리 포인터
+	//DATATYPE *biases;								///< bias 호스트 메모리 포인터
 
-	DATATYPE *d_filters;							///< filter 장치 메모리 포인터
-	DATATYPE *d_biases;								///< bias 장치 메모리 포인터
+	//DATATYPE *d_filters;							///< filter 장치 메모리 포인터
+	//DATATYPE *d_biases;								///< bias 장치 메모리 포인터
 
-	DATATYPE *d_z;									///< filter map 장치 메모리 포인터
-	DATATYPE *d_delta;								///< 네트워크 cost의 z(filter map)에 관한 gradient 장치 메모리 포인터
-	DATATYPE *d_delta_weight;						///< 네트워크 cost의 weight(filter)에 관한 gradient 장치 메모리 포인터
-	DATATYPE *d_delta_weight_prev;					///< 이전 업데이트의 네트워크 cost의 weight에 관한 graident 장치 메모리 포인터
-	DATATYPE *d_delta_bias;							///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
-	DATATYPE *d_delta_bias_prev;					///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
+	//DATATYPE *d_z;									///< filter map 장치 메모리 포인터
+	//DATATYPE *d_delta;								///< 네트워크 cost의 z(filter map)에 관한 gradient 장치 메모리 포인터
+	//DATATYPE *d_delta_weight;						///< 네트워크 cost의 weight(filter)에 관한 gradient 장치 메모리 포인터
+	//DATATYPE *d_delta_weight_prev;					///< 이전 업데이트의 네트워크 cost의 weight에 관한 graident 장치 메모리 포인터
+	//DATATYPE *d_delta_bias;							///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
+	//DATATYPE *d_delta_bias_prev;					///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
+
+	Data* _preActivation;
+	vector<Data*> _params;
+	vector<Data*> _paramsHistory;
 
 	cudnnTensorDescriptor_t biasTensorDesc;			///< cudnn bias 구조 정보 구조체
 	cudnnFilterDescriptor_t filterDesc;				///< cudnn filter 구조 정보 구조체

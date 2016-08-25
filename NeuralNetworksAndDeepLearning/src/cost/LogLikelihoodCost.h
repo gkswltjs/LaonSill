@@ -24,8 +24,10 @@ public:
 	void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta);
 #else
 	double fn(const DATATYPE *pA, const DATATYPE *pY);
-	void d_cost(const DATATYPE *z, DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize);
+	void d_cost(const DATATYPE *z, const DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize);
 #endif
+
+
 
 };
 

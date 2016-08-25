@@ -47,8 +47,7 @@ public:
 		switch(poolingType) {
 		case Pooling::Max: return new MaxPooling(pool_d);
 		case Pooling::Avg: return new AvgPooling(pool_d);
-		case Pooling::None:
-		default: return 0;
+		default: return NULL;
 		}
 	}
 #endif

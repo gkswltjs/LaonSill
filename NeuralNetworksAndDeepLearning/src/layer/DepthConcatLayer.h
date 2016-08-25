@@ -58,7 +58,7 @@ public:
 	virtual ~DepthConcatLayer();
 
 #ifndef GPU_MODE
-	rcube &getDeltaInput();
+	//rcube &getDeltaInput();
 #else
 	/**
 	 * @details 조합되어있는 입력에 관한 gradient를 getDeltaInput의 호출 순서에 따라 다시 deconcatenation하여 조회한다.
@@ -66,7 +66,7 @@ public:
 	 *          feedforward()를 다시 수행한 경우 해당 순서가 reset된다.
 	 * @return getDeltaInput() 순서에 따라 deconcate된 d_delta_input 장치 메모리 포인터
 	 */
-	DATATYPE *getDeltaInput();
+	//DATATYPE *getDeltaInput();
 #endif
 
 	virtual void shape(UINT idx, io_dim in_dim);
@@ -89,11 +89,11 @@ protected:
 	/**
 	 * @details 일반적인 concat과 달리 channel을 기준으로 조합하므로 재정의한다.
 	 */
-	virtual void _concat(UINT idx, const DATATYPE* input);
+	virtual void _concat(UINT idx, Data* input);
 	/**
 	 * @details 일반적인 deconcat과 달리 channel을 기준으로 해체하므로 재정의한다.
 	 */
-	virtual void _deconcat(UINT idx, const DATATYPE* next_delta_input);
+	virtual void _deconcat(UINT idx, Data* next_delta_input, uint32_t offset);
 	/**
 	 * @details _concat()에서 입력값이 합산되는 방식이 아니므로 합산에 대해
 	 *          scaling을 적용하는 기본 _scaleInput()을 재정의하여 scale하지 않도록 한다.
@@ -101,9 +101,16 @@ protected:
 	virtual void _scaleInput();
 	/**
 	 * @details _deconcat()에서 gradient값이 합산되는 방식이 아니므로 합산에 대해
-	 *          scaling을 적용하는 기본 _scaleGradient()를 재정의하여 scale하지 않도록 한다.
+	 *          scaling을 적용하는 기본 대_scaleGradient()를 재정의하여 scale하지 않도록 한다.
 	 */
 	virtual void _scaleGradient();
+
+	virtual void propBackpropagation();
+
+
+
+
+
 #endif
 
 

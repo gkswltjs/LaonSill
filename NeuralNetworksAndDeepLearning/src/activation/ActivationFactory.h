@@ -60,7 +60,7 @@ public:
 		case Activation::Sigmoid: return new Sigmoid();
 		case Activation::Softmax: return new Softmax();
 		case Activation::ReLU: return new ReLU();
-		case Activation::None:
+		case Activation::NoActivation:
 		default: return 0;
 		}
 	}

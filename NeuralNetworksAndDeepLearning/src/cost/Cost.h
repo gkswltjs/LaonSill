@@ -14,9 +14,6 @@
 #include "../Util.h"
 
 
-
-
-
 /**
  * @brief	Cost 구현 클래스의 베이스 추상 클래스.
  * @details	Cost 클래스를 상속받아 Cost를 구현하는 클래스를 생성할 수 있음.
@@ -32,10 +29,10 @@ public:
 	 *          현재 CrossEntropy, LogLikelihood, Quadratic 함수를 지원.
 	 */
 	enum Type {
-		None = 0, 				// Cost를 사용하지 않음. Undefined.
-		CrossEntropy = 1, 		// Cost에 CrossEntropy 함수를 적용.
-		LogLikelihood = 2, 		// Cost에 LogLikelihood 함수를 적용.
-		Quadratic = 3			// Cost에 Quadratic 함수를 적용.
+		NoCost,				// Cost를 사용하지 않음. Undefined.
+		CrossEntropy, 		// Cost에 CrossEntropy 함수를 적용.
+		LogLikelihood, 		// Cost에 LogLikelihood 함수를 적용.
+		Quadratic			// Cost에 Quadratic 함수를 적용.
 	};
 
 	/**
@@ -45,11 +42,9 @@ public:
 	Cost::Type getType() const { return type; }
 
 #ifndef GPU_MODE
-public:
 	virtual double fn(const rvec *pA, const rvec *pY) = 0;
 	virtual void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta) = 0;
 #else
-public:
 	/**
 	 * @details activation값와 정답값을 이용하여 cost를 계산.
 	 * @param pA activation값 장치 메모리 포인터.
@@ -68,7 +63,7 @@ public:
 	 * @param numLabels 정답값의 레이블 수.
 	 * @param batchsize 데이터 배치 수.
 	 */
-	virtual void d_cost(const DATATYPE *z, DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize) = 0;
+	virtual void d_cost(const DATATYPE *z, const DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize) = 0;
 #endif
 
 protected:

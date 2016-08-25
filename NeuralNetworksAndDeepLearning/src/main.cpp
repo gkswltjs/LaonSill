@@ -1,152 +1,62 @@
+#include <CImg.h>
+#include <stddef.h>
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
+#include <vector>
 
-#include "network/VGG19Net.h"
-#include "network/AlexNet.h"
-#include "network/Network.h"
-#include "network/GoogLeNet.h"
-#include "network/NeuralNetSingle.h"
-#include "network/NeuralNetDouble.h"
-#include "network/GoogLeNetMnist.h"
-#include "network/ConvNetSingle.h"
-#include "network/ConvNetDouble.h"
-#include "network/ConvNetMult.h"
-#include "network/InceptionNetSingle.h"
-#include "network/InceptionNetMult.h"
-#include "network/InceptionNetAux.h"
-#include "dataset/MnistDataSet.h"
-#include "dataset/MockDataSet.h"
+#include "cuda/Cuda.h"
 #include "dataset/DataSet.h"
-#include "Util.h"
-#include "pooling/Pooling.h"
-#include "pooling/MaxPooling.h"
-#include "pooling/AvgPooling.h"
-#include "cost/CrossEntropyCost.h"
-#include "cost/LogLikelihoodCost.h"
-#include "monitor/NetworkMonitor.h"
-#include "exception/Exception.h"
-
-#include "layer/Layer.h"
-#include "layer/InputLayer.h"
-#include "layer/FullyConnectedLayer.h"
-#include "layer/ConvLayer.h"
-#include "layer/PoolingLayer.h"
-#include "layer/SigmoidLayer.h"
-#include "layer/SoftmaxLayer.h"
-#include "layer/LRNLayer.h"
-#include "layer/InceptionLayer.h"
-#include "layer/DepthConcatLayer.h"
-#include "layer/LayerConfig.h"
-#include "activation/Activation.h"
-#include "activation/Sigmoid.h"
-#include "activation/ReLU.h"
-#include "application/DeepDream.h"
-#include "application/ArtisticStyle.h"
-#include "evaluation/Evaluation.h"
+#include "dataset/MockDataSet.h"
+#include "debug/Debug.h"
 #include "evaluation/Top1Evaluation.h"
 #include "evaluation/Top5Evaluation.h"
-
+#include "monitor/NetworkMonitor.h"
+#include "network/Network.h"
 #include "network/NetworkConfig.h"
-
-#include "Timer.h"
-#include "cuda/Cuda.h"
-#include <gnuplot-iostream.h>
-#include <cmath>
-#include <boost/tuple/tuple.hpp>
-#include <CImg.h>
-#include "util/ImagePacker.h"
-#include <fenv.h>
-
-#include "debug/Debug.h"
+#include "Util.h"
 
 using namespace std;
-using namespace cimg_library;
 
-// Armadillo documentation is available at:
-// http://arma.sourceforge.net/docs.html
-
-
-void network_test(double lr, double wd, int batches);
+void network_test();
 void cuda_gemm_test();
 void cuda_conv_test();
-void gnuplot_test();
-void cimg_test();
-void deepdream_test();
-void artisticstyle_test();
-void config_test();
+
+
+
 
 int main(int argc, char** argv) {
 	cout << "main" << endl;
 	cout.precision(11);
 	cout.setf(ios::fixed);
-
-	feenableexcept(FE_INVALID | FE_OVERFLOW);
-
-
 	Util::setOutstream(&cout);
 	//Util::setOutstream("./log");
-	//Util::printMessage("message ... ");
 
-	config_test();
-
-
-	//double lr = 0.01;
-	//double wd = 0.0002;
-	//int batches = 50;
-	//if(argc > 0) {
-	//	lr = atof(argv[1]);
-	//	wd = atof(argv[2]);
-	//	batches = atoi(argv[3]);
-	//}
-	//network_test(lr, wd, batches);
-
-
-
-
-
-
-	//deepdream_test();
-	//artisticstyle_test();
-	//gnuplot_test();
-	//cimg_test();
-
-	/*
-	DataSet *vvg = new VvgDataSet(0.8);
-	vvg->load();
-	vvg->zeroMean();
-
-	DataSet *mnist = new MnistDataSet(0.8);
-	mnist->load();
-	mnist->zeroMean();
-	*/
-	/*
-	ImagePacker imagePacker(
-			"/home/jhkim/바탕화면/crop/",
-			"/home/jhkim/data/learning/vvg/vvg_image.ubyte",
-			"/home/jhkim/data/learning/vvg/vvg_label.ubyte");
-	imagePacker.pack();
-	*/
+	network_test();
 
 	cout << "end" << endl;
 	return 0;
 }
 
-void config_test() {
+
+void network_test() {
 	Cuda::create(0);
-	//Util::setPrint(true);
+	cout << "Cuda creation done ... " << endl;
+	Util::setPrint(false);
 
 	const uint32_t maxEpoch = 1000;
 	const uint32_t batchSize = 10;
-	const float baseLearningRate = 0.05f;
+	const float baseLearningRate = 0.01f;
 	const float weightDecay = 0.0002f;
 	const float momentum = 0.9f;
-	const float clipGradientsLevel = 2400.0f;
+	const float clipGradientsLevel = 100.0f;
 
-	//DataSet* dataSet = new MockDataSet(28, 28, 1, 10, 10, 10);
+	//DataSet* dataSet = new MockDataSet(56, 56, 3, 10, 10, 10);
 	//DataSet* dataSet = new MnistDataSet(0.8);
 	//DataSet* dataSet = new MockDataSet(224, 224, 3, 100, 100, 100);
 	//DataSet* dataSet = createImageNet10CatDataSet();
-	DataSet* dataSet = createImageNet100CatDataSet();
-	//DataSet* dataSet = createMnistDataSet();
+	//DataSet* dataSet = createImageNet100CatDataSet();
+	DataSet* dataSet = createMnistDataSet();
 	dataSet->load();
 	dataSet->zeroMean(true);
 
@@ -155,9 +65,12 @@ void config_test() {
 	NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
 	NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
 
-	//LayersConfig* layersConfig = createCNNDoubleLayersConfig();
-	LayersConfig* layersConfig = createGoogLeNetLayersConfig();
+	//LayersConfig* layersConfig = createCNNSimpleLayersConfig();
+	LayersConfig* layersConfig = createCNNDoubleLayersConfig();
+	//LayersConfig* layersConfig = createGoogLeNetLayersConfig();
 	//LayersConfig* layersConfig = createInceptionLayersConfig();
+	//LayersConfig* layersConfig = createGoogLeNetInception3ALayersConfig();
+	//LayersConfig* layersConfig = createGoogLeNetInception3ASimpleLayersConfig();
 	NetworkConfig* networkConfig =
 			(new NetworkConfig::Builder())
 			->batchSize(batchSize)
@@ -178,222 +91,10 @@ void config_test() {
 	Cuda::destroy();
 }
 
-void network_test(double lr, double wd, int batches) {
-	//arma_rng::set_seed_random();
-	Cuda::create(0);
-	cout << "Cuda creation done ... " << endl;
-
-	bool debug = true;
-	double validationSetRatio = 1.0/6.0;
-
-	if(!debug) {
-		Util::setPrint(false);
-		//DataSet* dataSet = new ImageNet10Cat100Train100TestDataSet();
-		//DataSet *dataSet = new ImageNet100Cat10000Train1000TestDataSet();
-		//DataSet* dataSet = new ImageNet1000Cat1000000Train100000TestDataSet();
-		DataSet* dataSet = new MockDataSet(28, 28, 1, 10, 2, 5);
-		dataSet->load();
-		dataSet->zeroMean(true);
-
-		int maxEpoch = 1000;
-		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
-		NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
-		Evaluation* top1Evaluation = new Top1Evaluation();
-		Evaluation* top5Evaluation = new Top5Evaluation();
-
-		//double w_lr_mult = 0.01;
-		//double w_wd_mult = 0.0002;
-		//double b_lr_mult = 0.02;
-		//double b_wd_mult = 0.0;
-		double w_lr_mult = lr;
-		double w_wd_mult = wd;
-		double b_lr_mult = lr;
-		double b_wd_mult = wd;
-		Network* network = new Network();
-		//Network *network = new VGG19Net(top1Listener, 0.002, 1.0, 2.0, 0.0);
-		//Network *network = new AlexNet(networkListener, 0.002, 1.0, 2.0, 0.0);
-		//Network *network = new GoogLeNet(top1Listener, w_lr_mult, w_wd_mult, b_lr_mult, b_wd_mult);
-		//Network *network = new ConvNetDouble(top1Listener, 0.01, 0.0);
-		//Network *network = new NeuralNetSingle(top1Listener, 0.005, 5.0);
-		//Network *network = new ConvNetMult(networkListener, 0.01, 5.0);
-		//Network *network = new InceptionNetAux(networkListener, 0.00001, 100);
-		//Network *network = new InceptionNetAux(networkListener, 0.0001, 5.0);
-		//Network *network = new InceptionNetSingle(top1Listener, 0.01, 0.1);
-		network->addNetworkListener(top5Listener);
-		network->addEvaluation(top1Evaluation);
-		network->addEvaluation(top5Evaluation);
-		network->setDataSet(dataSet, batches);
-		network->shape();
-		//network->saveConfig("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/artistic_");
-		network->sgd(maxEpoch);
-		//network->save("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/ConvNetMult_vvg_zm.network");
-
-		/*
-		Network *network_load = new Network();
-		network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/InceptionNetAux_vvg_zm_30.network");
-		network_load->setDataSet(vvgDataSet, 10);
-		network_load->test();
-		*/
-
-	} else {
-		Util::setPrint(true);
-
-		int numTrainData = 4;
-		int numTestData = 4;
-		int channels = 1;
-		int batchSize = 2;
-		int rows = 5;
-		int cols = 5;
-		int maxEpoch = 100;
-		int numLabels = 5;
-
-		MockDataSet *dataSet = new MockDataSet(rows, cols, channels, numTrainData, numTestData, numLabels);
-		dataSet->load();
-
-		NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
-		//NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
-		Evaluation* top1Evaluation = new Top1Evaluation();
-		//Evaluation* top5Evaluation = new Top5Evaluation();
-
-		double lr_mult = 0.1;
-		double decay_mult = 5.0;
-		InputLayer *inputLayer = new InputLayer("input");
-		OutputLayer *softmaxLayer = new SoftmaxLayer("softmax", numLabels, 0.5,
-				update_param(lr_mult, decay_mult),
-				update_param(lr_mult, decay_mult),
-				param_filler(ParamFillerType::Xavier),
-				param_filler(ParamFillerType::Gaussian, 1));
-
-		Network::addLayerRelation(inputLayer, softmaxLayer);
-
-		/*
-		Network *network = new Network(inputLayer, softmaxLayer, dataSet, top1Listener);
-		network->setDataSet(dataSet, batchSize);
-		network->addEvaluation(top1Evaluation);
-		network->shape();
-		network->reshape(io_dim(4, 4, 1, 2));
-		network->sgd(maxEpoch);
-		*/
-	}
-
-	Cuda::destroy();
-}
 
 
 
 
-
-void artisticstyle_test() {
-	/*
-	Cuda::create(0);
-	cout << "Cuda creation done ... " << endl;
-
-	Util::setPrint(false);
-	DataSet* vvgDataSet = new VvgDataSet(0.8);
-
-	Network *network = new VGG19Net();
-	//network->setDataSetMean(vvgDataSet->getMean());
-	//Network *network_load = new Network();
-	//network_load->setDataSetMean(vvgDataSet->getMean());
-	//network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/artistic_04.network");
-
-	ArtisticStyle *as = new ArtisticStyle(network);
-	//as->style("/home/jhkim/tubingen_224.jpg", "/home/jhkim/starry_night_224.jpg", "conv2_1");
-	as->style("/home/jhkim/tubingen_224.jpg", "/home/jhkim/composition_224.jpg", "conv3_1");
-
-	Cuda::destroy();
-	*/
-}
-
-
-
-
-void deepdream_test() {
-	/*
-	Cuda::create(0);
-	cout << "Cuda creation done ... " << endl;
-
-	Util::setPrint(false);
-
-	DataSet* vvgDataSet = new VvgDataSet(0.8);
-
-	Network *network_load = new Network();
-	network_load->setDataSetMean(vvgDataSet->getMean());
-	network_load->load("/home/jhkim/dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/data/save/alexnet_mini_10.network");
-
-	//network_load->test();
-
-	//"/home/jhkim/cloud_84.jpg"
-	//"/home/jhkim/sky1024px.jpg"
-	DeepDream *deepdream = new DeepDream(network_load, "/home/jhkim/cloud_256.jpg", 10, 4, 1.4, "pool1");
-	//DeepDream *deepdream = new DeepDream(network_load, "/home/jhkim/cloud_84.jpg", 2, 2, 1.4, "conv2");
-	//DeepDream *deepdream = new DeepDream(network_load, "/home/jhkim/altocumulus_small.jpg", 2, 2, 1.4, "conv3");
-	deepdream->deepdream();
-
-	Cuda::destroy();
-	*/
-}
-
-
-void cimg_test() {
-
-	CImg<unsigned char> image("/home/jhkim/바탕화면/crop_sample/10_by_10.jpeg");
-	int width = image.width();
-	int height = image.height();
-	unsigned char *ptr = image.data(0, 0);
-
-	cout << "width: " << width << ", height: " << height << endl;
-
-	/*
-	for(int i = 0; i < height; i++) {
-		for(int j = 0; j < width*3; j++) {
-			cout << (int)ptr[i*width*3+j] << " ";
-		}
-		cout << endl;
-	}
-	*/
-
-	for(int k = 0; k < 3; k++) {
-		for(int i = 0; i < 10; i++) {
-			for(int j = 0; j < 10; j++) {
-				cout << (int)ptr[10*10*k+10*i+j] << " ";
-			}
-			cout << endl;
-		}
-	}
-}
-
-
-
-void gnuplot_test() {
-
-	/*
-	Gnuplot gp;
-	vector<boost::tuple<float, float>> data;
-	for(int i = 0; i < 10; i++) {
-		data.push_back(boost::make_tuple(i, i*10));
-	}
-
-	gp << "set xrange [0:10]\nset yrange [0:100]\n";
-	gp << "plot '-' with lines title 'accuracy'" << "\n";
-	gp.send1d(data);
-	*/
-
-	NetworkListener *networkListener = new NetworkMonitor(10);
-	networkListener->epochComplete(3.0f, 92.0f);
-	networkListener->epochComplete(4.0f, 92.0f);
-	networkListener->epochComplete(5.0f, 92.0f);
-
-
-#ifdef _WIN32
-	// For Windows, prompt for a keystroke before the Gnuplot object goes out of scope so that
-	// the gnuplot window doesn't get closed.
-	std::cout << "Press enter to exit." << std::endl;
-	std::cin.get();
-#endif
-
-
-}
 
 
 void cuda_gemm_test() {

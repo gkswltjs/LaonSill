@@ -16,10 +16,6 @@
 #include "../layer/HiddenLayer.h"
 #include "../layer/OutputLayer.h"
 #include "../Util.h"
-#include "../Timer.h"
-
-
-
 
 
 Network::Network(NetworkConfig* config)
@@ -29,12 +25,17 @@ Network::Network(NetworkConfig* config)
 	this->in_dim.cols = dataSet->getCols();
 	this->in_dim.channels = dataSet->getChannels();
 	this->in_dim.batches = config->_batchSize;
+
+	this->d_trainLabel = NULL;
+
+	//this->trainData = new Data();
 }
 
+/*
 Network::Network(NetworkListener *networkListener)
 	: Network(0, 0, 0, networkListener) {}
 
-Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {/*
+Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
 	this->inputLayer = inputLayer;
 	if(outputLayer) this->outputLayers.push_back(outputLayer);
 	this->dataSet = dataSet;
@@ -48,8 +49,8 @@ Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *data
 	this->dataSetMean[2] = 0.0f;
 
 	this->clipGradientsLevel = 1000.0f;
-	*/
 }
+*/
 
 
 Network::~Network() {
@@ -58,38 +59,11 @@ Network::~Network() {
 		config->_inputLayer = NULL;
 	}
 	checkCudaErrors(cudaFree(d_trainLabel));
-	checkCudaErrors(cudaFree(d_trainData));
+	//checkCudaErrors(cudaFree(d_trainData));
+
+	//delete trainData;
 }
 
-void Network::setDataSet(DataSet *dataSet, UINT batches) {
-	/*
-	this->dataSet = dataSet;
-	this->in_dim.rows = dataSet->getRows();
-	this->in_dim.cols = dataSet->getCols();
-	this->in_dim.channels = dataSet->getChannels();
-	this->in_dim.batches = batches;
-	setDataSetMean(dataSet->getMean());
-	*/
-}
-
-void Network::shape(io_dim in_dim) {
-	if(in_dim.unitsize() > 0) {
-		this->in_dim = in_dim;
-	}
-	config->_inputLayer->shape(0, this->in_dim);
-
-	//cout << "inputLayer->getInputSize()*in_dim.batches: " << inputLayer->getInputSize()*this->in_dim.batches << endl;
-	checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*config->_inputLayer->getInputSize()*this->in_dim.batches));
-	checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
-
-}
-
-void Network::reshape(io_dim in_dim) {
-	if(in_dim.unitsize() > 0) {
-		this->in_dim = in_dim;
-	}
-	config->_inputLayer->reshape(0, this->in_dim);
-}
 
 
 void Network::sgd(int epochs) {
@@ -97,78 +71,106 @@ void Network::sgd(int epochs) {
 	vector<Evaluation*>& evaluations = config->_evaluations;
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
-	int trainDataSize = dataSet->getNumTrainData();
-	int miniBatchesSize = trainDataSize / in_dim.batches;
+	const uint32_t trainDataSize = dataSet->getNumTrainData();
+	const uint32_t numBatches = trainDataSize / in_dim.batches;
 
-	Timer timer1, timer2;
-	for(int i = 0; i < epochs; i++) {
-
+	Timer timer1;
+	Timer timer2;
+	for(uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		Util::train = true;
 
-		timer1.start();
-		// TODO do not invoke, due to data-label separation
 		//dataSet->shuffleTrainDataSet();
+		timer1.start();
 		timer2.start();
-		for(int j = 0; j < miniBatchesSize; j++) {
-			//if((j+1)%100 == 0) {
-			//	cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+		for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
+			//if((batchIndex+1)%100 == 0) {
+			//	cout << "Minibatch " << batchIndex+1 << " started: " << timer2.stop(false) << endl;
 			//	timer2.start();
 			//}
-			//cout << "Minibatch " << j+1 << " started: " << timer2.stop(false) << endl;
+			//cout << "Minibatch " << batchIndex+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
-
-
-
-			Util::page = j;
 #ifndef GPU_MODE
 			inputLayer->reset_nabla(0);
 #endif
-			updateMiniBatch(j);
-
-			//if(j >= 2) {
-			//	exit(1);
-			//}
+			trainBatch(batchIndex);
+			// UPDATE
+			applyUpdate();
 		}
-		//timer1.stop();
-
-		// l2norm logging용임, clip을 여기서 하려고 하는 건 아님...
-		//clipGradients();
-
 		Util::train = false;
 
+		const uint32_t numTestData = dataSet->getNumTestData();
+		if(numTestData > 0) {
+			evaluateTestSet();
 
-		//dataSet->shuffleTestDataSet();
-		float numTestData = dataSet->getNumTestData();
-		evaluate();
-		float cost = evaluations[0]->getCost() / numTestData;
-		int accurateCnt = evaluations[0]->getAccurateCount();
-		float accuracy = accurateCnt/numTestData;
+			const float cost = evaluations[0]->getCost() / numTestData;
+			const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
+			const float accuracy = (float)accurateCnt/numTestData;
 
-		/*
-		if(saveConfigured && cost < minCost) {
-			minCost = cost;
-			char savePath[256];
-			sprintf(savePath, "%s%02d.network", savePrefix, i+1);
-			save(savePath);
-		}
-		*/
+			//save();
+			cout << "Epoch " << epochIndex+1 << " " << accurateCnt << " / " << numTestData <<
+					", accuracy: " << accuracy << ", cost: " << cost <<
+					" :" << timer1.stop(false) << endl;
 
-		if(dataSet->getNumTestData() > 0) {
-			cout << "Epoch " << i+1 << " " << accurateCnt << " / " << (int)numTestData
-					<< ", accuracy: " << accuracy << ", cost: " << cost << " :" << timer1.stop(false) << endl;
-
-			for(int nl = 0; nl < networkListeners.size(); nl++) {
-				networkListeners[nl]->epochComplete(evaluations[nl]->getCost()/numTestData, evaluations[nl]->getAccurateCount()/numTestData);
+			for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
+				networkListeners[nl]->epochComplete(
+						evaluations[nl]->getCost()/numTestData,
+						(float)evaluations[nl]->getAccurateCount()/numTestData);
 			}
 		}
-		else { cout << "Epoch " << i+1 << " complete: " << timer1.stop(false) << endl; }
-		//if(accuracy < 0.15) break;
+		else {
+			cout << "Epoch " << epochIndex+1 << " complete: " << timer1.stop(false) << endl;
+		}
 	}
 }
 
 
 
+void Network::evaluateTestSet() {
+#ifndef GPU_MODE
+	int testResult = 0;
+	//bool printBak = Util::getPrint();
+	//Util::setPrint(true);
+	int testDataSize = dataSet->getNumTestData();
+	for(int i = 0; i < testDataSize; i++) {
+		//const DataSample *testData = dataSet->getTestDataAt(i);
+		const DataSample &testData = dataSet->getTestDataAt(i);
+		//Util::printVec(testData->getData(), "data");
+		//Util::printVec(testData->getTarget(), "target");
 
+		feedforward(testData.getData());
+		testResult += testEvaluateResult(outputLayers[0]->getOutput(), testData.getTarget());
+	}
+	//Util::setPrint(printBak);
+
+	return testResult;
+#else
+	DataSet* dataSet = config->_dataSet;
+	vector<Evaluation*>& evaluations = config->_evaluations;
+
+	for(int i = 0; i < evaluations.size(); i++) {
+		evaluations[i]->reset();
+	}
+
+	const uint32_t numBatches = dataSet->getNumTestData()/in_dim.batches;
+	for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
+		evaluateTestData(batchIndex);
+	}
+#endif
+}
+
+void Network::evaluateTestData(uint32_t batchIndex) {
+	config->_inputLayer->feedforward(config->_dataSet->getTestDataAt(batchIndex*in_dim.batches));
+
+	const uint32_t numLabels = config->_outputLayers[0]->getOutDimension().rows;
+	Data* networkOutput = config->_outputLayers[0]->getOutput();
+	const UINT* y = config->_dataSet->getTestLabelAt(batchIndex*in_dim.batches);
+
+	networkOutput->print_data("networkOutput:");
+	const DATATYPE* output = networkOutput->cpu_data();
+	for(int i = 0; i < config->_evaluations.size(); i++) {
+		config->_evaluations[i]->evaluate(numLabels, in_dim.batches, output, y);
+	}
+}
 
 void Network::test() {
 	Util::train = false;
@@ -177,7 +179,7 @@ void Network::test() {
 
 	Timer timer;
 	float numTestData = (float)dataSet->getNumTestData();
-	evaluate();
+	evaluateTestSet();
 	int accurateCnt = evaluations[0]->getAccurateCount();
 	float cost = evaluations[0]->getCost() / numTestData;
 	float accuracy = accurateCnt / numTestData;
@@ -189,6 +191,196 @@ void Network::test() {
 }
 
 
+#ifndef GPU_MODE
+
+void Network::feedforward(const rcube &input, const char *end) {
+	//cout << "feedforward()" << endl;
+	inputLayer->feedforward(0, input, end);
+
+}
+
+void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
+
+	int baseIndex = nthMiniBatch*miniBatchSize;
+	for(int i = 0; i < miniBatchSize; i++) {
+		backprop(dataSet->getTrainDataAt(baseIndex+i));
+	}
+
+	int n = dataSet->getTrainData();
+
+	//cout << "update()" << endl;
+	//inputLayer->update(0, n, miniBatchSize);
+}
+
+void Network::backprop(const DataSample &dataSample) {
+	//Timer timer;
+	//timer.start();
+	// feedforward
+	feedforward(dataSample.getData());
+
+	//cout << "time for feed forward: ";
+	//timer.stop();
+
+	//timer.start();
+	//cout << "backpropagation()" << endl;
+	for(UINT i = 0; i < outputLayers.size(); i++) {
+		//outputLayers[i]->cost(dataSample.getTarget());
+	}
+	//cout << "time for backward: ";
+	//timer.stop();
+}
+
+/*
+double Network::totalCost(const vector<const DataSample *> &dataSet, double lambda) {
+	double cost = 0.0;
+	int dataSize = dataSet.size();
+
+	for(int i = 0; i < dataSize; i++) {
+		vec activation = feedforward(dataSet[i]->getData());
+		cost += this->cost->fn(&activation, dataSet[i]->getTarget());
+	}
+	cost /= dataSize;
+
+	// add weight decay term of cost
+	for(int i = 1; i < numLayers; i++) {
+		cost += 0.5*(lambda/dataSize)*accu(square(*weights[i]));
+	}
+	return cost;
+}
+
+double Network::accuracy(const vector<const DataSample *> &dataSet) {
+	int total = 0;
+	int dataSize = dataSet.size();
+	for(int i = 0; i < dataSize; i++) {
+		const DataSample *dataSample = dataSet[i];
+		Util::printVec(dataSample->getData(), "data");
+		Util::printVec(dataSample->getTarget(), "target");
+		total += testEvaluateResult(feedforward(dataSample->getData()), dataSample->getTarget());
+	}
+	return total/(double)dataSize;
+}
+*/
+
+int Network::testEvaluateResult(const rvec &output, const rvec &y) {
+	//Util::printVec(&evaluateResult, "result");
+	//Util::printVec(y, "y");
+
+	uword rrow, yrow;
+	output.max(rrow);
+	y.max(yrow);
+
+	if(rrow == yrow) return 1;
+	else return 0;
+}
+#else
+
+/*
+void Network::feedforward(const DATATYPE *input, const char *end) {
+	trainData->set_gpu_data(input);
+	config->_inputLayer->feedforward(0, trainData, end);
+}
+*/
+
+void Network::trainBatch(uint32_t batchIndex) {
+	DataSet* dataSet = config->_dataSet;
+	InputLayer* inputLayer = config->_inputLayer;
+	vector<OutputLayer*> outputLayers = config->_outputLayers;
+
+	int baseIndex = batchIndex*in_dim.batches;
+
+	// FORWARD PASS
+	config->_inputLayer->feedforward(dataSet->getTrainDataAt(baseIndex));
+
+	// BACKWARD PASS
+	checkCudaErrors(cudaMemcpyAsync(d_trainLabel, dataSet->getTrainLabelAt(baseIndex),
+				sizeof(UINT)*in_dim.batches, cudaMemcpyHostToDevice));
+
+	for(UINT i = 0; i < outputLayers.size(); i++) {
+		outputLayers[i]->cost(d_trainLabel);
+		//outputLayers[i]->cost(dataSet->getTrainLabelAt(baseIndex));
+	}
+}
+
+#endif
+
+void Network::applyUpdate() {
+	clipGradients();
+
+	uint32_t numLearnableLayers = config->_learnableLayers.size();
+	for(uint32_t i = 0; i < numLearnableLayers; i++) {
+		config->_learnableLayers[i]->update();
+	}
+}
+
+void Network::clipGradients() {
+	const float clipGradientsLevel = config->_clipGradientsLevel;
+	const double sumsqParamsGrad = computeSumSquareParamsGrad();
+	const double sumsqParamsData = computeSumSquareParamsData();
+
+	const double l2normParamsGrad = std::sqrt(sumsqParamsGrad);
+	const double l2normParamsData = std::sqrt(sumsqParamsData);
+
+	if(clipGradientsLevel < 0.0001) {
+		cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
+				", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
+	} else {
+		if(l2normParamsGrad > clipGradientsLevel) {
+			const DATATYPE scale_factor = clipGradientsLevel / (l2normParamsGrad*1);
+
+			cout << "Gradient clipping: scaling down gradients (L2 norm " << l2normParamsGrad <<
+					", Weight: " << l2normParamsData << " > " << clipGradientsLevel <<
+					") by scale factor " << scale_factor << endl;
+			scaleParamsGrad(scale_factor);
+		} else {
+			cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
+					", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
+		}
+	}
+}
+
+double Network::computeSumSquareParamsData() {
+	uint32_t numLearnableLayers = config->_learnableLayers.size();
+	double sumsq = 0.0;
+	for(uint32_t i = 0; i < numLearnableLayers; i++) {
+		sumsq += config->_learnableLayers[i]->sumSquareParamsData();
+	}
+	return sumsq;
+}
+
+double Network::computeSumSquareParamsGrad() {
+	uint32_t numLearnableLayers = config->_learnableLayers.size();
+	double sumsq = 0.0;
+	for(uint32_t i = 0; i < numLearnableLayers; i++) {
+		sumsq += config->_learnableLayers[i]->sumSquareParamsGrad();
+	}
+	return sumsq;
+}
+
+void Network::scaleParamsGrad(DATATYPE scale) {
+	uint32_t numLearnableLayers = config->_learnableLayers.size();
+	for(uint32_t i = 0; i < numLearnableLayers; i++) {
+		config->_learnableLayers[i]->scaleParamsGrad(scale);
+	}
+}
+
+void Network::shape(io_dim in_dim) {
+	if(in_dim.unitsize() > 0) {
+		this->in_dim = in_dim;
+	}
+	config->_inputLayer->shape(0, this->in_dim);
+
+	//checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*config->_inputLayer->getInputSize()*this->in_dim.batches));
+	checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
+
+	//trainData->reshape({this->in_dim.batches, this->in_dim.channels, this->in_dim.rows, this->in_dim.cols});
+}
+
+void Network::reshape(io_dim in_dim) {
+	if(in_dim.unitsize() > 0) {
+		this->in_dim = in_dim;
+	}
+	config->_inputLayer->reshape(0, this->in_dim);
+}
 
 /*
 void Network::saveConfig(const char* savePrefix) {
@@ -197,10 +389,13 @@ void Network::saveConfig(const char* savePrefix) {
 }
 */
 
-
-
-
 void Network::save(const char* filename) {
+	//if(saveConfigured && cost < minCost) {
+	//	minCost = cost;
+	//	char savePath[256];
+	//	sprintf(savePath, "%s%02d.network", savePrefix, i+1);
+	//	save(savePath);
+
 	InputLayer* inputLayer = config->_inputLayer;
 	vector<OutputLayer*>& outputLayers = config->_outputLayers;
 
@@ -223,7 +418,6 @@ void Network::save(const char* filename) {
 
 	cout << "time elapsed to save network: " << timer.stop(false) << endl;
 }
-
 
 void Network::load(const char* filename) {
 	InputLayer* inputLayer = config->_inputLayer;
@@ -248,7 +442,6 @@ void Network::load(const char* filename) {
 	for(UINT i = 0; i < outputLayerSize; i++) {
 		outputLayers[i] = (OutputLayer *)layerMap.find((Layer *)outputLayers[i])->second;
 	}
-
 
 	/*
 	map<Layer *, Layer *> layerMap;
@@ -298,7 +491,6 @@ void Network::load(const char* filename) {
 	ifs.close();
 }
 
-
 /*
 DATATYPE Network::getDataSetMean(UINT channel) {
 	return dataSetMean[channel];
@@ -311,322 +503,6 @@ void Network::setDataSetMean(DATATYPE *dataSetMean) {
 }
 */
 
-
-
-
-
-void Network::evaluate() {
-#ifndef GPU_MODE
-	int testResult = 0;
-	//bool printBak = Util::getPrint();
-	//Util::setPrint(true);
-	int testDataSize = dataSet->getNumTestData();
-	for(int i = 0; i < testDataSize; i++) {
-		//const DataSample *testData = dataSet->getTestDataAt(i);
-		const DataSample &testData = dataSet->getTestDataAt(i);
-		//Util::printVec(testData->getData(), "data");
-		//Util::printVec(testData->getTarget(), "target");
-
-		feedforward(testData.getData());
-		testResult += testEvaluateResult(outputLayers[0]->getOutput(), testData.getTarget());
-	}
-	//Util::setPrint(printBak);
-
-	return testResult;
-#else
-	Cuda::refresh();
-
-	DataSet* dataSet = config->_dataSet;
-	InputLayer* inputLayer = config->_inputLayer;
-	vector<OutputLayer*>& outputLayers = config->_outputLayers;
-	vector<Evaluation*>& evaluations = config->_evaluations;
-
-	//int accurateCnt = 0;
-	//float cost = 0;
-	//bool printBak = Util::getPrint();
-	//Util::setPrint(true);
-
-	for(int i = 0; i < evaluations.size(); i++) {
-		evaluations[i]->reset();
-	}
-
-	int testBatchesSize = dataSet->getNumTestData()/in_dim.batches;
-	DATATYPE *d_testData;
-	checkCudaErrors(cudaMalloc(&d_testData, sizeof(DATATYPE)*inputLayer->getInputSize()*in_dim.batches));
-
-	for(int i = 0; i < testBatchesSize; i++) {
-	//for(int i = 2; i < 3; i++) {
-
-		// FEED FORWARD
-		//checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*in_dim.batches),
-		checkCudaErrors(cudaMemcpyAsync(d_testData, dataSet->getTestDataAt(i*in_dim.batches),
-				sizeof(DATATYPE)*inputLayer->getInputSize()*in_dim.batches, cudaMemcpyHostToDevice));
-
-		io_dim in_dim = inputLayer->getInDimension();
-		Util::printData(dataSet->getTestDataAt(i*in_dim.batches), in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_testData:");
-
-		feedforward(d_testData);
-
-		io_dim out_dim = outputLayers[0]->getOutDimension();
-		//Util::setPrint(true);
-		Util::printDeviceData(outputLayers[0]->getOutput(), out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "output:");
-		//Util::setPrint(false);
-		//UINT *d_testLabel;
-		//checkCudaErrors(cudaMalloc(&d_testLabel, sizeof(UINT)));
-		//checkCudaErrors(cudaMemcpyAsync(d_testLabel, dataSet->getTestLabelAt(i),
-		//		sizeof(UINT), cudaMemcpyHostToDevice));
-
-		testEvaluateResult(outputLayers[0]->getOutDimension().rows, outputLayers[0]->getOutput(),
-				dataSet->getTestLabelAt(i*in_dim.batches));
-		//checkCudaErrors(cudaFree(d_testLabel));
-	}
-	checkCudaErrors(cudaFree(d_testData));
-
-	//Util::setPrint(false);
-#endif
-}
-
-
-
-
-
-
-#ifndef GPU_MODE
-
-
-
-
-void Network::feedforward(const rcube &input, const char *end) {
-	//cout << "feedforward()" << endl;
-	inputLayer->feedforward(0, input, end);
-
-}
-
-
-
-void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
-
-	int baseIndex = nthMiniBatch*miniBatchSize;
-	for(int i = 0; i < miniBatchSize; i++) {
-		backprop(dataSet->getTrainDataAt(baseIndex+i));
-	}
-
-	int n = dataSet->getTrainData();
-
-	//cout << "update()" << endl;
-	//inputLayer->update(0, n, miniBatchSize);
-}
-
-
-void Network::backprop(const DataSample &dataSample) {
-	//Timer timer;
-	//timer.start();
-	// feedforward
-	feedforward(dataSample.getData());
-
-	//cout << "time for feed forward: ";
-	//timer.stop();
-
-	//timer.start();
-	//cout << "backpropagation()" << endl;
-	for(UINT i = 0; i < outputLayers.size(); i++) {
-		//outputLayers[i]->cost(dataSample.getTarget());
-	}
-	//cout << "time for backward: ";
-	//timer.stop();
-
-}
-
-
-/*
-double Network::totalCost(const vector<const DataSample *> &dataSet, double lambda) {
-	double cost = 0.0;
-	int dataSize = dataSet.size();
-
-	for(int i = 0; i < dataSize; i++) {
-		vec activation = feedforward(dataSet[i]->getData());
-		cost += this->cost->fn(&activation, dataSet[i]->getTarget());
-	}
-	cost /= dataSize;
-
-	// add weight decay term of cost
-	for(int i = 1; i < numLayers; i++) {
-		cost += 0.5*(lambda/dataSize)*accu(square(*weights[i]));
-	}
-	return cost;
-}
-
-
-
-double Network::accuracy(const vector<const DataSample *> &dataSet) {
-	int total = 0;
-	int dataSize = dataSet.size();
-	for(int i = 0; i < dataSize; i++) {
-		const DataSample *dataSample = dataSet[i];
-		Util::printVec(dataSample->getData(), "data");
-		Util::printVec(dataSample->getTarget(), "target");
-		total += testEvaluateResult(feedforward(dataSample->getData()), dataSample->getTarget());
-	}
-	return total/(double)dataSize;
-}
-*/
-
-
-
-
-int Network::testEvaluateResult(const rvec &output, const rvec &y) {
-	//Util::printVec(&evaluateResult, "result");
-	//Util::printVec(y, "y");
-
-	uword rrow, yrow;
-	output.max(rrow);
-	y.max(yrow);
-
-	if(rrow == yrow) return 1;
-	else return 0;
-}
-
-
-#else
-
-
-
-
-
-void Network::feedforward(const DATATYPE *input, const char *end) {
-	//cout << "feedforward()" << endl;
-	config->_inputLayer->feedforward(0, input, end);
-}
-
-
-void Network::updateMiniBatch(int nthMiniBatch) {
-	Cuda::refresh();
-	DataSet* dataSet = config->_dataSet;
-	InputLayer* inputLayer = config->_inputLayer;
-	vector<OutputLayer*> outputLayers = config->_outputLayers;
-
-	int baseIndex = nthMiniBatch*in_dim.batches;
-
-	// FEED FORWARD
-	checkCudaErrors(cudaMemcpyAsync(d_trainData, dataSet->getTrainDataAt(baseIndex),
-			sizeof(DATATYPE)*inputLayer->getInputSize()*in_dim.batches, cudaMemcpyHostToDevice));
-	//float input_norm;
-	//checkCudaErrors(cublasSdot(Cuda::cublasHandle, inputLayer->getInputSize()*in_dim.batches, d_trainData, 1, d_trainData, 1, &input_norm));
-	//cout << "input norm is " << sqrt(input_norm) << endl;
-
-	feedforward(d_trainData);
-
-	// BACK PROPAGATION
-	/*
-	for(int i = 0; i < in_dim.batches; i++) {
-		//Util::printMessage(string(dataSet->getTrainLabelAt(baseIndex)[i]));
-		cout << "target for " << i << "th train: " << dataSet->getTrainLabelAt(baseIndex)[i] << endl;
-	}
-	*/
-
-	checkCudaErrors(cudaMemcpyAsync(d_trainLabel, dataSet->getTrainLabelAt(baseIndex),
-				sizeof(UINT)*in_dim.batches, cudaMemcpyHostToDevice));
-
-	for(UINT i = 0; i < outputLayers.size(); i++) {
-		outputLayers[i]->cost(d_trainLabel);
-	}
-
-
-	// UPDATE
-	applyUpdate();
-}
-
-void Network::applyUpdate() {
-	clipGradients();
-
-	//cout << "update()" << endl;
-	int n = config->_dataSet->getNumTrainData();
-	config->_inputLayer->update(0, n, in_dim.batches);
-}
-
-void Network::clipGradients() {
-	const float clipGradientsLevel = config->_clipGradientsLevel;
-
-	double sumsq_grad = config->_inputLayer->sumSquareGrad(0);
-	double sumsq_grad2 = config->_inputLayer->sumSquareParam(0);
-	const DATATYPE l2norm_grad = std::sqrt(sumsq_grad);
-	const DATATYPE l2norm_grad2 = std::sqrt(sumsq_grad2);
-
-	if(clipGradientsLevel < 0.0001) {
-		cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " <= " << clipGradientsLevel << ")" << endl;
-	} else {
-		if(l2norm_grad > clipGradientsLevel) {
-			DATATYPE scale_factor = clipGradientsLevel / (l2norm_grad*1);
-
-			cout << "Gradient clipping: scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " > " << clipGradientsLevel <<
-					") by scale factor " << scale_factor << endl;
-			config->_inputLayer->scaleParam(0, scale_factor);
-		} else {
-			cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2norm_grad << ", Weight: " << l2norm_grad2 << " <= " << clipGradientsLevel << ")" << endl;
-		}
-	}
-}
-
-
-
-
-
-void Network::testEvaluateResult(const int num_labels, const DATATYPE *d_output, const UINT *y) {
-	DATATYPE *output = new DATATYPE[num_labels*in_dim.batches];
-
-	//Util::setPrint(true);
-	//Util::printDeviceData(d_output, num_labels, 1, 1, 1, "d_output:");
-	//cout << "y for 0: " << y[0] << ", y for 1: " << y[1] << endl;
-	//Util::setPrint(false);
-	checkCudaErrors(cudaMemcpyAsync(output, d_output,	sizeof(DATATYPE)*num_labels*in_dim.batches, cudaMemcpyDeviceToHost));
-
-	for(int i = 0; i < config->_evaluations.size(); i++) {
-		config->_evaluations[i]->evaluate(num_labels, in_dim.batches, output, y);
-	}
-
-	/*
-	for(int j = 0; j < in_dim.batches; j++) {
-		DATATYPE maxValue = -100000;
-		int maxIndex = 0;
-		for(int i = 0; i < num_labels; i++) {
-			//cout << output[i] << ", ";
-			if(output[num_labels*j+i] > maxValue) {
-				maxValue = output[num_labels*j+i];
-				maxIndex = i;
-			}
-
-			// cost
-			if(i == y[j]) cost += std::abs(output[num_labels*j+i]-1);
-			else cost += std::abs(output[num_labels*j+i]);
-		}
-		//cout << endl << "maxIndex: " << maxIndex << ", y: " << y[j] << endl;
-
-		if(maxIndex == y[j]) accurateCnt++;
-	}
-	*/
-
-	delete [] output;
-
-	//return accurateCnt;
-
-	//Util::printVec(&evaluateResult, "result");
-	//Util::printVec(y, "y");
-
-	/*
-	uword rrow, yrow;
-	output.max(rrow);
-	y.max(yrow);
-
-	if(rrow == yrow) return 1;
-	else return 0;
-	*/
-}
-
-
-
-#endif
-
-
 Layer* Network::findLayer(const string name) {
 	//return config->_inputLayer->find(0, name);
 	map<string, Layer*>& nameLayerMap = config->_nameLayerMap;
@@ -637,19 +513,6 @@ Layer* Network::findLayer(const string name) {
 		return 0;
 	}
 }
-
-void Network::addEvaluation(Evaluation* evaluation) {
-	config->_evaluations.push_back(evaluation);
-}
-
-void Network::addNetworkListener(NetworkListener* networkListener) {
-	config->_networkListeners.push_back(networkListener);
-}
-
-
-
-
-
 
 
 

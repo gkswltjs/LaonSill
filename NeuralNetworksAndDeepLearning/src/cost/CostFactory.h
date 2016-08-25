@@ -36,8 +36,7 @@ public:
 		case Cost::CrossEntropy: return new CrossEntropyCost();
 		case Cost::LogLikelihood: return new LogLikelihoodCost();
 		case Cost::Quadratic: return new QuadraticCost();
-		case Cost::None:
-		default: return 0;
+		default: return NULL;
 		}
 	}
 

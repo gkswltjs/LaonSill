@@ -11,25 +11,15 @@
 #include "../network/NetworkConfig.h"
 
 
-int Layer::layerCount = 0;
-
-int Layer::generateLayerId() {
-	return layerCount++;
-}
-
-
-
-
-
 Layer::Layer(const string name) {
-	initialize(name);
+	initialize(0, name);
 }
 
 Layer::Layer(Builder* builder) {
 	for(uint32_t i = 0; i < builder->_nextLayerIndices.size(); i++) {
 		this->nextLayers.push_back((Layer*)((size_t)builder->_nextLayerIndices[i]));
 	}
-	initialize(builder->_name);
+	initialize(builder->_id, builder->_name);
 }
 
 #ifndef GPU_MODE
@@ -163,6 +153,7 @@ void Layer::clearShape(UINT idx) {
 	propClearShape();
 }
 
+/*
 double Layer::sumSquareGrad(UINT idx) {
 	if(!w_isLastPrevLayerRequest(idx, "Layer::sumSquareGrad()")) return 0.0;
 
@@ -179,12 +170,14 @@ double Layer::sumSquareParam(UINT idx) {
 	return result;
 }
 
+
 void Layer::scaleParam(UINT idx, DATATYPE scale_factor) {
 	if(!w_isLastPrevLayerRequest(idx, "Layer::scaleParam()")) return;
 
 	_scaleParam(scale_factor);
 	propScaleParam(scale_factor);
 }
+*/
 
 void Layer::save(UINT idx, ofstream &ofs) {
 	if(!w_isLastPrevLayerRequest(idx, "Layer::save()")) return;
@@ -210,19 +203,24 @@ void Layer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	_load(ifs, layerMap);
 }
 
+/*
 void Layer::update(UINT idx, UINT n, UINT miniBatchSize) {
 	if (!w_isLastPrevLayerRequest(idx, "Layer::update()")) return;
 
 	_update(n, miniBatchSize);
 	propUpdate(n, miniBatchSize);
 }
+*/
+
+
+
 
 #ifndef GPU_MODE
 void Layer::feedforward(UINT idx, const rcube &input, const char *end=0) {
 	propFeedforward(input, end);
 }
 #else
-void Layer::feedforward(UINT idx, const DATATYPE *input, const char *end) {
+void Layer::feedforward(UINT idx, Data* input, const char *end) {
 	_concat(idx, input);
 	if (!w_isLastPrevLayerRequest(idx, "Layer::feedforward()")) return;
 
@@ -250,9 +248,11 @@ void Layer::initialize(const string name, io_dim in_dim, io_dim out_dim) {
 	this->output.set_size(out_dim.rows, out_dim.cols, out_dim.channels);
 }
 #else
-void Layer::initialize(const string name) {
+void Layer::initialize(uint32_t id, const string name) {
+	this->id = id;
 	this->name = name;
-	this->id = Layer::generateLayerId();
+	this->_input = new Data();
+	this->_output = new Data();
 }
 #endif
 
@@ -332,10 +332,14 @@ void Layer::_shape(bool recursive) {
 	char message[256];
 	sprintf(message, "%s---_shape():in-%dx%dx%dx%d, out-%dx%dx%dx%d", name.c_str(), in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches,
 			out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches);
+	Util::setPrint(true);
 	Util::printMessage(string(message));
+	Util::setPrint(false);
 
-	checkCudaErrors(Util::ucudaMalloc(&this->d_input, sizeof(DATATYPE)*in_dim.batchsize()));		//batch size 고려
-	checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_input, sizeof(DATATYPE)*in_dim.batchsize()));		//batch size 고려
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(DATATYPE)*out_dim.batchsize()));		//batch size 고려
+	_input->reshape({in_dim.batches, in_dim.channels, in_dim.rows, in_dim.cols});
+	_output->reshape({out_dim.batches, out_dim.channels, out_dim.rows, out_dim.cols});
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
@@ -357,17 +361,20 @@ void Layer::_reshape() {
 }
 
 void Layer::_clearShape() {
-	checkCudaErrors(cudaFree(d_input));
-	checkCudaErrors(cudaFree(d_output));
+	//checkCudaErrors(cudaFree(d_input));
+	//checkCudaErrors(cudaFree(d_output));
 	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 
-	d_input = NULL;
-	d_output = NULL;
+	delete _input;
+	delete _output;
+	_input = NULL;
+	_output = NULL;
 	inputTensorDesc = NULL;
 	outputTensorDesc = NULL;
 }
 
+/*
 double Layer::_sumSquareGrad() {
 	return 0.0;
 }
@@ -376,9 +383,11 @@ double Layer::_sumSquareParam() {
 	return 0.0;
 }
 
+
 void Layer::_scaleParam(DATATYPE scale_factor) {
 	return;
 }
+*/
 
 void Layer::_save(ofstream &ofs) {
 	Layer *address = this;
@@ -421,43 +430,66 @@ void Layer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 		ifs.read((char *)&prevLayer, sizeof(Layer*));
 		prevLayers.push_back(prevLayer);
 	}
-	initialize(name);
+	initialize(layerId, name);
 
 	Layer::_shape(false);
 	updateLayerRelation(layerMap);
 }
 
+/*
 void Layer::_update(UINT n, UINT miniBatchSize) {
 	return;
 }
+*/
 
 void Layer::_feedforward() {
-	checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+	//checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+	_output->set_gpu_data(_input);
 }
 
-void Layer::_concat(UINT idx, const DATATYPE* input) {
-	Util::printDeviceData(input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "input:");
-	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+
+void Layer::_concat(UINT idx, Data* input) {
+	//Util::printDeviceData(input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "input:");
+	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+	input->print_data("input:");
+	_input->print_data("d_input:");
 
 	// 첫번째 branch로부터의 input, 그대로 copy
 	if(isFirstPrevLayerRequest(idx)) {
-		checkCudaErrors(cudaMemcpyAsync(d_input, input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+		//checkCudaErrors(cudaMemcpyAsync(d_input, input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+		_input->set_gpu_data(input);
 	}
 	// 첫번째 이후의 branch로부터의 input, accumulate input
 	else {
-		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()),
-				&Cuda::alpha, input, 1, d_input, 1));
+		//checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()),
+		//		&Cuda::alpha, input, 1, d_input, 1));
+		_input->add_gpu_data(input);
 	}
-	Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+	_input->print_data("d_input:");
 }
+
+/*
+void Layer::_distDataToNext(uint32_t nextLayerIndex, Layer* nextLayer) {
+	Data* nextInput = nextLayer->getInput();
+
+	if(nextLayer->isFirstPrevLayerRequest(id)) {
+		nextInput->set_gpu_data(_output);
+	} else {
+		nextInput->add_gpu_data(_output);
+	}
+}
+*/
 
 void Layer::_scaleInput() {
 	if(prevLayers.size() > 1) {
 		float branchFactor = 1.0f / prevLayers.size();
 		//cout << this->name << "'s feedforward branch factor is " << branchFactor << endl;
-		checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &branchFactor, d_input, 1));
+		//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &branchFactor, d_input, 1));
+		_input->scale_gpu_data(branchFactor);
 	}
 }
+
 
 
 
@@ -495,6 +527,7 @@ void Layer::propClearShape() {
 	}
 }
 
+/*
 double Layer::propSumSquareGrad() {
 	double result = 0.0;
 	for(UINT i = 0; i < nextLayers.size(); i++) {
@@ -511,11 +544,13 @@ double Layer::propSumSquareParam() {
 	return result;
 }
 
+
 void Layer::propScaleParam(DATATYPE scale_factor) {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i]->scaleParam(id, scale_factor);
 	}
 }
+*/
 
 void Layer::propSave(ofstream &ofs) {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
@@ -523,11 +558,13 @@ void Layer::propSave(ofstream &ofs) {
 	}
 }
 
+/*
 void Layer::propUpdate(UINT n, UINT miniBatchSize) {
 	for(UINT i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i]->update(id, n, miniBatchSize);
 	}
 }
+*/
 
 #ifndef GPU_MODE
 void Layer::propFeedforward(const rcube output, const char *end=0) {
@@ -546,10 +583,77 @@ void Layer::propFeedforward(const char *end) {
 	if(end != 0 && name == end) return;
 
 	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i]->feedforward(id, d_output, end);
+		//_distDataToNext(i, nextLayers[i]);
+		nextLayers[i]->feedforward(id, this->getOutput(), end);
 	}
 }
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
