@@ -166,7 +166,7 @@ void Network::evaluateTestData(uint32_t batchIndex) {
 	const UINT* y = config->_dataSet->getTestLabelAt(batchIndex*in_dim.batches);
 
 	networkOutput->print_data("networkOutput:");
-	const DATATYPE* output = networkOutput->cpu_data();
+	const DATATYPE* output = networkOutput->host_data();
 	for(int i = 0; i < config->_evaluations.size(); i++) {
 		config->_evaluations[i]->evaluate(numLabels, in_dim.batches, output, y);
 	}
@@ -276,7 +276,7 @@ int Network::testEvaluateResult(const rvec &output, const rvec &y) {
 
 /*
 void Network::feedforward(const DATATYPE *input, const char *end) {
-	trainData->set_gpu_data(input);
+	trainData->set_data(input);
 	config->_inputLayer->feedforward(0, trainData, end);
 }
 */

@@ -153,7 +153,7 @@ LayersConfig* createCNNDoubleLayersConfig() {
 			->layer((new FullyConnectedLayer::Builder())
 					->id(5)
 					->name("fullyConnectedLayer1")
-					->nOut(500)
+					->nOut(5000)
 					->pDropout(0.4)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)

@@ -97,7 +97,7 @@ public:
 	/*
 	void setDeltaInput(DATATYPE *delta_input) {
 		//checkCudaErrors(cudaMemcpyAsync(d_delta_input, delta_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
-		_input->set_gpu_grad(delta_input);
+		_input->set_device_grad(delta_input);
 
 		//Util::printDeviceData(delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "delta_input:");
 		//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
@@ -151,7 +151,7 @@ protected:
 	 */
 	virtual void _backpropagation() {
 		//checkCudaErrors(cudaMemcpyAsync(this->d_delta_input, this->d_delta_output, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
-		_input->set_gpu_grad(_output);
+		_input->set_device_grad(_output);
 	}
 	/**
 	 * @details 복수의 '다음' 레이어로부터의 gradient를 조합한다.
@@ -167,12 +167,12 @@ protected:
 		// 첫번째 branch로부터의 backpropagation, 그대로 copy
 		if(isFirstNextLayerRequest(idx)) {
 			//checkCudaErrors(cudaMemcpyAsync(d_delta_output, next_delta_input, sizeof(DATATYPE)*out_dim.batchsize(), cudaMemcpyDeviceToDevice));
-			_output->set_gpu_grad(next_delta_input, offset);
+			_output->set_device_grad(next_delta_input, offset);
 		}
 		// 첫번째 이후의 branch로부터의 backpropagation, accumulate gradient
 		else {
 			//checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()), &Cuda::alpha, next_delta_input, 1, d_delta_output, 1));
-			_output->add_gpu_grad(next_delta_input, offset);
+			_output->add_device_grad(next_delta_input, offset);
 		}
 		//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
 		_output->print_grad("d_delta_output:");
@@ -189,7 +189,7 @@ protected:
 			float branchFactor = 1.0f / nextLayers.size();
 			//cout << this->name << "'s backpropagation branch factor is " << branchFactor << endl;
 			//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()), &branchFactor, d_delta_output, 1));
-			_output->scale_gpu_grad(branchFactor);
+			_output->scale_device_grad(branchFactor);
 		}
 	}
 

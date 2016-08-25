@@ -348,8 +348,8 @@ void FullyConnectedLayer::_shape(bool recursive) {
 
 
 	//cout << this->name << ", fanin: " << u_out*u_in << endl;
-	weight_filler.fill(_params[ParamType::Weight]->mutable_cpu_data(), u_out*u_in, u_in, u_out);
-	bias_filler.fill(_params[ParamType::Bias]->mutable_cpu_data(), u_out, u_in, u_out);
+	weight_filler.fill(_params[ParamType::Weight]->mutable_host_data(), u_out*u_in, u_in, u_out);
+	bias_filler.fill(_params[ParamType::Bias]->mutable_host_data(), u_out, u_in, u_out);
 
 	//Util::printData(weight, u_out, u_in, 1, 1, "weight:");
 	//Util::printData(bias, u_out, 1, 1, 1, "bias:");
@@ -466,7 +466,7 @@ double FullyConnectedLayer::_sumSquareParam() {
 DATATYPE FullyConnectedLayer::sumSquareParamsData() {
 	DATATYPE result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
-		result += _params[i]->sumsq_gpu_data();
+		result += _params[i]->sumsq_device_data();
 	}
 	return result;
 	/*
@@ -488,7 +488,7 @@ DATATYPE FullyConnectedLayer::sumSquareParamsData() {
 DATATYPE FullyConnectedLayer::sumSquareParamsGrad() {
 	DATATYPE result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
-		result += _params[i]->sumsq_gpu_grad();
+		result += _params[i]->sumsq_device_grad();
 	}
 	return result;
 	/*
@@ -507,7 +507,7 @@ DATATYPE FullyConnectedLayer::sumSquareParamsGrad() {
 
 void FullyConnectedLayer::scaleParamsGrad(DATATYPE scale) {
 	for(uint32_t i = 0; i < _params.size(); i++) {
-		_params[i]->scale_gpu_grad(scale);
+		_params[i]->scale_device_grad(scale);
 	}
 	/*
 	int weight_size = out_dim.unitsize()*in_dim.unitsize();
@@ -535,8 +535,8 @@ void FullyConnectedLayer::_save(ofstream &ofs) {
 	//checkCudaErrors(cudaMemcpyAsync(weight, d_weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize(), cudaMemcpyDeviceToHost));
 	//checkCudaErrors(cudaMemcpyAsync(bias, d_bias, sizeof(DATATYPE)*out_dim.unitsize(), cudaMemcpyDeviceToHost));
 
-	const DATATYPE* weight = _params[ParamType::Weight]->cpu_data();
-	const DATATYPE* bias = _params[ParamType::Bias]->cpu_data();
+	const DATATYPE* weight = _params[ParamType::Weight]->host_data();
+	const DATATYPE* bias = _params[ParamType::Bias]->host_data();
 	ofs.write((char *)weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize());
 	ofs.write((char *)bias, sizeof(DATATYPE)*out_dim.unitsize());
 }
@@ -561,8 +561,8 @@ void FullyConnectedLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) 
 	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 	FullyConnectedLayer::_shape(false);
 
-	DATATYPE* weight = _params[ParamType::Weight]->mutable_cpu_data();
-	DATATYPE* bias = _params[ParamType::Bias]->mutable_cpu_data();
+	DATATYPE* weight = _params[ParamType::Weight]->mutable_host_data();
+	DATATYPE* bias = _params[ParamType::Bias]->mutable_host_data();
 	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
 	ifs.read((char *)weight, sizeof(DATATYPE)*out_dim.unitsize()*in_dim.unitsize());
 	ifs.read((char *)bias, sizeof(DATATYPE)*out_dim.unitsize());
@@ -612,9 +612,9 @@ void FullyConnectedLayer::update() {
 	_params[ParamType::Weight]->print_data("d_weight:");
 	_paramsHistory[ParamType::Weight]->print_grad("d_delta_weight_prev:");
 
-	DATATYPE* d_delta_weight = _params[ParamType::Weight]->mutable_gpu_grad();
-	DATATYPE* d_weight = _params[ParamType::Weight]->mutable_gpu_data();
-	DATATYPE* d_delta_weight_prev = _paramsHistory[ParamType::Weight]->mutable_gpu_grad();
+	DATATYPE* d_delta_weight = _params[ParamType::Weight]->mutable_device_grad();
+	DATATYPE* d_weight = _params[ParamType::Weight]->mutable_device_data();
+	DATATYPE* d_delta_weight_prev = _paramsHistory[ParamType::Weight]->mutable_device_grad();
 
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_delta_weight, 1));								// normalize by batch size
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &reg_scale, d_weight, 1, d_delta_weight, 1));					// regularize
@@ -634,9 +634,9 @@ void FullyConnectedLayer::update() {
 	DATATYPE reg_scale_b = networkConfig->_weightDecay * bias_update_param.decay_mult;
 	DATATYPE learning_scale_b = networkConfig->_baseLearningRate * bias_update_param.lr_mult;
 
-	DATATYPE* d_delta_bias = _params[Bias]->mutable_gpu_grad();
-	DATATYPE* d_bias = _params[Bias]->mutable_gpu_data();
-	DATATYPE* d_delta_bias_prev = _paramsHistory[Bias]->mutable_gpu_grad();
+	DATATYPE* d_delta_bias = _params[Bias]->mutable_device_grad();
+	DATATYPE* d_bias = _params[Bias]->mutable_device_data();
+	DATATYPE* d_delta_bias_prev = _paramsHistory[Bias]->mutable_device_grad();
 
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_delta_bias, 1));								// normalize by batch size
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_bias, 1, d_delta_bias, 1));					// regularize
@@ -651,9 +651,9 @@ void FullyConnectedLayer::_feedforward() {
 	_params[Weight]->print_data("d_weight:");
 	_input->print_data("d_input:");
 
-	const DATATYPE* d_weight = _params[Weight]->gpu_data();
-	const DATATYPE* d_input = _input->gpu_data();
-	DATATYPE* d_z = _preActivation->mutable_gpu_data();
+	const DATATYPE* d_weight = _params[Weight]->device_data();
+	const DATATYPE* d_input = _input->device_data();
+	DATATYPE* d_z = _preActivation->mutable_device_data();
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
 			out_dim.rows, out_dim.batches, in_dim.rows,
@@ -668,7 +668,7 @@ void FullyConnectedLayer::_feedforward() {
 	_preActivation->print_data("d_z:");
 	_params[Bias]->print_data("d_b:");
 
-	const DATATYPE* d_bias = _params[Bias]->gpu_data();
+	const DATATYPE* d_bias = _params[Bias]->device_data();
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
 			out_dim.rows, out_dim.batches, 1,
@@ -682,7 +682,7 @@ void FullyConnectedLayer::_feedforward() {
 	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 	_preActivation->print_data("d_z:");
 
-	DATATYPE* d_output = _output->mutable_gpu_data();
+	DATATYPE* d_output = _output->mutable_device_data();
 
 	activation_fn->activate(d_z, d_output, outputTensorDesc);
 
@@ -729,10 +729,10 @@ void FullyConnectedLayer::_backpropagation() {
 	//Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, "output:");
 	_output->print_data("output:");
 
-	const DATATYPE* d_output = _output->gpu_data();
-	const DATATYPE* d_delta_output = _output->gpu_grad();
-	const DATATYPE* d_z = _preActivation->gpu_data();
-	DATATYPE* d_delta = _preActivation->mutable_gpu_grad();
+	const DATATYPE* d_output = _output->device_data();
+	const DATATYPE* d_delta_output = _output->device_grad();
+	const DATATYPE* d_z = _preActivation->device_data();
+	DATATYPE* d_delta = _preActivation->mutable_device_grad();
 
 	activation_fn->d_activate(d_output, d_delta_output, d_z, d_delta, outputTensorDesc);
 
@@ -741,15 +741,15 @@ void FullyConnectedLayer::_backpropagation() {
 
 	//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
 	_input->print_data("d_input:");
-	const DATATYPE* d_input = _input->gpu_data();
-	DATATYPE* d_delta_weight = _params[Weight]->mutable_gpu_grad();
+	const DATATYPE* d_input = _input->device_data();
+	DATATYPE* d_delta_weight = _params[Weight]->mutable_device_grad();
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, out_dim.rows, in_dim.rows, out_dim.batches,
 			&Cuda::alpha, d_delta, out_dim.rows, d_input, in_dim.rows, &Cuda::beta, d_delta_weight, out_dim.rows));
 	//Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
 	_params[Weight]->print_grad("d_delta_weight:");
 
-	DATATYPE* d_delta_bias = _params[Bias]->mutable_gpu_grad();
+	DATATYPE* d_delta_bias = _params[Bias]->mutable_device_grad();
 	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N, out_dim.rows, out_dim.batches,
 			&Cuda::alpha, d_delta, out_dim.rows, d_onevec, 1, &Cuda::beta, d_delta_bias, 1));
 	//Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
@@ -760,8 +760,8 @@ void FullyConnectedLayer::_backpropagation() {
 	_params[Weight]->print_data("d_weight:");
 	_preActivation->print_grad("d_delta");
 
-	const DATATYPE* d_weight = _params[Weight]->gpu_data();
-	DATATYPE* d_delta_input = _input->mutable_gpu_grad();
+	const DATATYPE* d_weight = _params[Weight]->device_data();
+	DATATYPE* d_delta_input = _input->mutable_device_grad();
 	//checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, in_dim.rows, out_dim.batches, out_dim.rows,
 			//&Cuda::alpha, d_weight, out_dim.rows, d_delta, out_dim.rows, &Cuda::beta, d_delta_input, in_dim.rows));
 

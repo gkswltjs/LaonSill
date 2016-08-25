@@ -444,7 +444,7 @@ void Layer::_update(UINT n, UINT miniBatchSize) {
 
 void Layer::_feedforward() {
 	//checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
-	_output->set_gpu_data(_input);
+	_output->set_device_data(_input);
 }
 
 
@@ -457,13 +457,13 @@ void Layer::_concat(UINT idx, Data* input) {
 	// 첫번째 branch로부터의 input, 그대로 copy
 	if(isFirstPrevLayerRequest(idx)) {
 		//checkCudaErrors(cudaMemcpyAsync(d_input, input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
-		_input->set_gpu_data(input);
+		_input->set_device_data(input);
 	}
 	// 첫번째 이후의 branch로부터의 input, accumulate input
 	else {
 		//checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()),
 		//		&Cuda::alpha, input, 1, d_input, 1));
-		_input->add_gpu_data(input);
+		_input->add_device_data(input);
 	}
 	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
 	_input->print_data("d_input:");
@@ -474,9 +474,9 @@ void Layer::_distDataToNext(uint32_t nextLayerIndex, Layer* nextLayer) {
 	Data* nextInput = nextLayer->getInput();
 
 	if(nextLayer->isFirstPrevLayerRequest(id)) {
-		nextInput->set_gpu_data(_output);
+		nextInput->set_device_data(_output);
 	} else {
-		nextInput->add_gpu_data(_output);
+		nextInput->add_device_data(_output);
 	}
 }
 */
@@ -486,7 +486,7 @@ void Layer::_scaleInput() {
 		float branchFactor = 1.0f / prevLayers.size();
 		//cout << this->name << "'s feedforward branch factor is " << branchFactor << endl;
 		//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &branchFactor, d_input, 1));
-		_input->scale_gpu_data(branchFactor);
+		_input->scale_device_data(branchFactor);
 	}
 }
 

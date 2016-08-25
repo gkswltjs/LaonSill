@@ -21,6 +21,234 @@
 uint32_t Data::printConfig = 0;
 
 
+
+Data::Data() {
+	this->_shape.resize(SHAPE_SIZE);
+}
+
+
+Data::~Data() {}
+
+
+void Data::reshape(const vector<uint32_t>& shape) {
+	if(shape.size() != SHAPE_SIZE) {
+		cout << "invalid data shape ... " << endl;
+		exit(1);
+	}
+	_shape = shape;
+
+	_count = 1;
+	for(uint32_t i = 0; i < _shape.size(); i++) _count *= _shape[i];
+
+	_data.reshape(_count);
+	_grad.reshape(_count);
+}
+
+const DATATYPE* Data::host_data() {
+	return _data.host_mem();
+}
+
+const DATATYPE* Data::device_data() {
+	return _data.device_mem();
+}
+
+const DATATYPE* Data::host_grad() {
+	return _grad.host_mem();
+}
+
+const DATATYPE* Data::device_grad() {
+	return _grad.device_mem();
+}
+
+DATATYPE* Data::mutable_host_data() {
+	return _data.mutable_host_mem();
+}
+
+DATATYPE* Data::mutable_device_data() {
+	return _data.mutable_device_mem();
+}
+
+DATATYPE* Data::mutable_host_grad() {
+	return _grad.mutable_host_mem();
+}
+
+DATATYPE* Data::mutable_device_grad() {
+	return _grad.mutable_device_mem();
+}
+
+
+
+
+
+void Data::reset_host_data() {
+	_data.reset_host_mem();
+}
+
+void Data::reset_device_data() {
+	_data.reset_device_mem();
+}
+
+void Data::reset_host_grad() {
+	_grad.reset_host_mem();
+}
+
+void Data::reset_device_grad() {
+	_grad.reset_device_mem();
+}
+
+
+
+
+
+
+
+
+
+
+
+void Data::set_host_data(const DATATYPE* data) {
+	_data.set_mem(data, SyncMem::CopyType::HostToHost);
+}
+
+void Data::set_host_with_device_data(const DATATYPE* data) {
+	_data.set_mem(data, SyncMem::CopyType::DeviceToHost);
+}
+
+void Data::set_device_with_host_data(const DATATYPE* data) {
+	_data.set_mem(data, SyncMem::CopyType::HostToDevice);
+}
+
+void Data::set_device_data(const DATATYPE* data) {
+	_data.set_mem(data, SyncMem::CopyType::DeviceToDevice);
+}
+
+
+void Data::set_host_grad(const DATATYPE* grad) {
+	_grad.set_mem(grad, SyncMem::CopyType::HostToHost);
+}
+
+void Data::set_device_grad(const DATATYPE* grad) {
+	_grad.set_mem(grad, SyncMem::CopyType::DeviceToDevice);
+}
+
+
+
+
+
+
+void Data::add_host_data(const DATATYPE* data) {
+	_data.add_host_mem(data);
+}
+
+void Data::add_device_data(const DATATYPE* data) {
+	_data.add_device_mem(data);
+}
+
+void Data::add_host_grad(const DATATYPE* grad) {
+	_grad.add_host_mem(grad);
+}
+
+void Data::add_device_grad(const DATATYPE* grad) {
+	_grad.add_device_mem(grad);
+}
+
+
+
+
+void Data::scale_host_data(const float scale) {
+	_data.scale_host_mem(scale);
+}
+
+void Data::scale_device_data(const float scale) {
+	_data.scale_device_mem(scale);
+}
+
+void Data::scale_host_grad(const float scale) {
+	_grad.scale_host_mem(scale);
+}
+
+void Data::scale_device_grad(const float scale) {
+	_grad.scale_device_mem(scale);
+}
+
+
+
+
+DATATYPE Data::sumsq_device_data() {
+	return _data.sumsq_device_mem();
+}
+
+DATATYPE Data::sumsq_device_grad() {
+	return _grad.sumsq_device_mem();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void Data::print_data(const string& head) {
+	if(printConfig) {
+		print(host_data(), head);
+	}
+}
+
+void Data::print_grad(const string& head) {
+	if(printConfig) {
+		print(host_grad(), head);
+	}
+}
+
+void Data::print(const DATATYPE* data, const string& head) {
+	UINT i,j,k,l;
+
+	const uint32_t rows = _shape[2];
+	const uint32_t cols = _shape[3];
+	const uint32_t channels = _shape[1];
+	const uint32_t batches = _shape[0];
+
+	cout << "-------------------------------------" << endl;
+	cout << "name: " << head << endl;
+	cout << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
+
+	UINT batchElem = rows*cols*channels;
+	UINT channelElem = rows*cols;
+	for(i = 0; i < batches; i++) {
+		for(j = 0; j < channels; j++) {
+			for(k = 0; k < rows; k++) {
+				for(l = 0; l < cols; l++) {
+			//for(k = 0; k < std::min(10, (int)rows); k++) {
+			//	for(l = 0; l < std::min(10, (int)cols); l++) {
+					cout << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+				}
+				cout << endl;
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}
+	cout << "-------------------------------------" << endl;
+}
+
+
+
+
+
+
+
+
+/*
 Data::Data() {
 	this->_shape.resize(SHAPE_SIZE);
 	_cpu_data = NULL;
@@ -286,7 +514,7 @@ DATATYPE Data::sumsq_gpu_data() {
 }
 
 DATATYPE Data::sumsq_gpu_grad() {
-	
+
 	DATATYPE sumsq;
 	//alloc_gpu_grad();
 	const DATATYPE* gpu_grad = Data::gpu_grad();
@@ -399,7 +627,7 @@ bool Data::alloc_gpu_grad() {
 	}
 	return false;
 }
-
+*/
 
 
 

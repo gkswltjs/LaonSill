@@ -189,8 +189,8 @@ void DepthConcatLayer::_concat(UINT idx, Data* input) {
 	_input->print_data("d_input:");
 	input->print_data("input:");
 
-	DATATYPE* d_input = _input->mutable_gpu_data();
-	const DATATYPE* prev_input = input->gpu_data();
+	DATATYPE* d_input = _input->mutable_device_data();
+	const DATATYPE* prev_input = input->device_data();
 	for(int i = 0; i < prev_out_dim.batches; i++) {
 		checkCudaErrors(cudaMemcpyAsync(d_input+in_dim.unitsize()*i+inBatchOffset, prev_input+prev_out_dim.unitsize()*i,
 				sizeof(DATATYPE)*prev_out_dim.unitsize(), cudaMemcpyDeviceToDevice));
@@ -207,7 +207,7 @@ void DepthConcatLayer::_deconcat(UINT idx, Data* next_delta_input, uint32_t offs
 #endif
 	if(isFirstNextLayerRequest(idx)) {
 		//checkCudaErrors(cudaMemset(d_delta_output, 0, sizeof(DATATYPE)*out_dim.batchsize()));
-		_output->reset_gpu_grad();
+		_output->reset_device_grad();
 		offsetIndex = 0;
 	}
 
@@ -223,8 +223,8 @@ void DepthConcatLayer::_deconcat(UINT idx, Data* next_delta_input, uint32_t offs
 	next_delta_input->print_grad("next_delta_input:");
 
 
-	const DATATYPE* d_next_delta_input = next_delta_input->gpu_grad();
-	DATATYPE* d_delta_output = _output->mutable_gpu_grad();
+	const DATATYPE* d_next_delta_input = next_delta_input->device_grad();
+	DATATYPE* d_delta_output = _output->mutable_device_grad();
 	uint32_t layerOffset = 0;
 	for(int j = 0; j < prevLayers.size(); j++) {
 		if(j > 0) {

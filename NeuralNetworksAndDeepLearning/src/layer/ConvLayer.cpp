@@ -501,11 +501,12 @@ void ConvLayer::_shape(bool recursive) {
 
 	//weight_filler.fill(this->filters, filter_d.size(), filter_d.unitsize(), filter_d.filters);
 	//bias_filler.fill(this->biases, filter_d.filters, filter_d.unitsize(), filter_d.filters);
-	weight_filler.fill(_params[Filter]->mutable_cpu_data(), filter_d.size(), filter_d.unitsize(), filter_d.filters);
-	bias_filler.fill(_params[Bias]->mutable_cpu_data(), filter_d.filters, filter_d.unitsize(), filter_d.filters);
+	weight_filler.fill(_params[Filter]->mutable_host_data(), filter_d.size(), filter_d.unitsize(), filter_d.filters);
+	bias_filler.fill(_params[Bias]->mutable_host_data(), filter_d.filters, filter_d.unitsize(), filter_d.filters);
 
 	//Util::printData(this->filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, this->name+string("/filters:"));
 	//Util::printData(this->biases, filter_d.filters, 1, 1, 1, this->name+string("/biases:"));
+
 	_params[Filter]->print_data(this->name+string("/filters:"));
 	_params[Bias]->print_data(this->name+string("/biases:"));
 
@@ -589,7 +590,7 @@ void ConvLayer::_clearShape() {
 DATATYPE ConvLayer::sumSquareParamsData() {
 	DATATYPE result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
-		result += _params[i]->sumsq_gpu_data();
+		result += _params[i]->sumsq_device_data();
 	}
 	return result;
 	/*
@@ -611,7 +612,7 @@ DATATYPE ConvLayer::sumSquareParamsData() {
 DATATYPE ConvLayer::sumSquareParamsGrad() {
 	DATATYPE result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
-		result += _params[i]->sumsq_gpu_grad();
+		result += _params[i]->sumsq_device_grad();
 	}
 	return result;
 	/*
@@ -630,7 +631,7 @@ DATATYPE ConvLayer::sumSquareParamsGrad() {
 
 void ConvLayer::scaleParamsGrad(DATATYPE scale) {
 	for(uint32_t i = 0; i < _params.size(); i++) {
-		_params[i]->scale_gpu_grad(scale);
+		_params[i]->scale_device_grad(scale);
 	}
 
 	/*
@@ -655,8 +656,8 @@ void ConvLayer::_save(ofstream &ofs) {
 	ofs.write((char *)&bias_filler, sizeof(param_filler));
 
 
-	const DATATYPE* filters = _params[Filter]->cpu_data();
-	const DATATYPE* biases = _params[Bias]->cpu_data();
+	const DATATYPE* filters = _params[Filter]->host_data();
+	const DATATYPE* biases = _params[Bias]->host_data();
 	//checkCudaErrors(cudaMemcpyAsync(filters, d_filters, sizeof(DATATYPE)*filter_d.size(), cudaMemcpyDeviceToHost));
 	//checkCudaErrors(cudaMemcpyAsync(biases, d_biases, sizeof(DATATYPE)*filter_d.filters, cudaMemcpyDeviceToHost));
 	ofs.write((char *)filters, sizeof(DATATYPE)*filter_d.size());
@@ -681,8 +682,8 @@ void ConvLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 	ConvLayer::_shape(false);
 
-	DATATYPE* filters = _params[Filter]->mutable_cpu_data();
-	DATATYPE* biases = _params[Bias]->mutable_cpu_data();
+	DATATYPE* filters = _params[Filter]->mutable_host_data();
+	DATATYPE* biases = _params[Bias]->mutable_host_data();
 	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
 	ifs.read((char *)filters, sizeof(DATATYPE)*filter_d.size());
 	ifs.read((char *)biases, sizeof(DATATYPE)*filter_d.filters);
@@ -730,9 +731,9 @@ void ConvLayer::update() {
 	DATATYPE learning_scale = networkConfig->_baseLearningRate * weight_update_param.lr_mult;
 	DATATYPE negative_one = -1.0;
 
-	DATATYPE* d_delta_weight = _params[Filter]->mutable_gpu_grad();
-	DATATYPE* d_filters = _params[Filter]->mutable_gpu_data();
-	DATATYPE* d_delta_weight_prev = _paramsHistory[Filter]->mutable_gpu_grad();
+	DATATYPE* d_delta_weight = _params[Filter]->mutable_device_grad();
+	DATATYPE* d_filters = _params[Filter]->mutable_device_data();
+	DATATYPE* d_delta_weight_prev = _paramsHistory[Filter]->mutable_device_grad();
 
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_delta_weight, 1));								// normalize by batch size
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &reg_scale, d_filters, 1, d_delta_weight, 1));					// regularize
@@ -745,9 +746,9 @@ void ConvLayer::update() {
 	DATATYPE reg_scale_b = networkConfig->_weightDecay * bias_update_param.decay_mult;
 	DATATYPE learning_scale_b = networkConfig->_baseLearningRate * bias_update_param.lr_mult;
 
-	DATATYPE* d_delta_bias = _params[Bias]->mutable_gpu_grad();
-	DATATYPE* d_biases = _params[Bias]->mutable_gpu_data();
-	DATATYPE* d_delta_bias_prev = _paramsHistory[Bias]->mutable_gpu_grad();
+	DATATYPE* d_delta_bias = _params[Bias]->mutable_device_grad();
+	DATATYPE* d_biases = _params[Bias]->mutable_device_data();
+	DATATYPE* d_delta_bias_prev = _paramsHistory[Bias]->mutable_device_grad();
 
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_delta_bias, 1));								// normalize by batch size
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_biases, 1, d_delta_bias, 1));					// regularize
@@ -767,9 +768,9 @@ void ConvLayer::_feedforward() {
 	_input->print_data("d_input:");
 	_params[Filter]->print_data("d_weight:");
 
-	const DATATYPE* d_filters = _params[Filter]->gpu_data();
-	const DATATYPE* d_input = _input->gpu_data();
-	DATATYPE* d_z = _preActivation->mutable_gpu_data();
+	const DATATYPE* d_filters = _params[Filter]->device_data();
+	const DATATYPE* d_input = _input->device_data();
+	DATATYPE* d_z = _preActivation->mutable_device_data();
 
 	checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle,
 			&Cuda::alpha, inputTensorDesc, d_input, filterDesc, d_filters, convDesc,
@@ -779,12 +780,12 @@ void ConvLayer::_feedforward() {
 
 	//Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
 	_params[Bias]->print_data("d_b:");
-	const DATATYPE* d_biases = _params[Bias]->gpu_data();
+	const DATATYPE* d_biases = _params[Bias]->device_data();
 	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
 			(void *)&Cuda::alpha, biasTensorDesc,	d_biases, (void *)&Cuda::alpha, outputTensorDesc, d_z));
 	Util::printDeviceData(d_z, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_z:");
 
-	DATATYPE* d_output = _output->mutable_gpu_data();
+	DATATYPE* d_output = _output->mutable_device_data();
 	activation_fn->activate(d_z, d_output, outputTensorDesc);
 
 	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
@@ -801,10 +802,10 @@ void ConvLayer::_backpropagation() {
 	_output->print_grad("d_delta_output:");
 	_output->print_data("output:");
 
-	const DATATYPE* d_output = _output->gpu_data();
-	const DATATYPE* d_delta_output = _output->gpu_grad();
-	const DATATYPE* d_z = _preActivation->gpu_data();
-	DATATYPE* d_delta = _preActivation->mutable_gpu_grad();
+	const DATATYPE* d_output = _output->device_data();
+	const DATATYPE* d_delta_output = _output->device_grad();
+	const DATATYPE* d_z = _preActivation->device_data();
+	DATATYPE* d_delta = _preActivation->mutable_device_grad();
 
 	activation_fn->d_activate(d_output, d_delta_output, d_z, d_delta, outputTensorDesc);
 	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta:");
@@ -812,8 +813,8 @@ void ConvLayer::_backpropagation() {
 	_preActivation->print_grad("d_delta:");
 	_input->print_data("d_input:");
 
-	const DATATYPE* d_input = _input->gpu_data();
-	DATATYPE* d_delta_weight = _params[Filter]->mutable_gpu_grad();
+	const DATATYPE* d_input = _input->device_data();
+	DATATYPE* d_delta_weight = _params[Filter]->mutable_device_grad();
 
 	checkCUDNN(cudnnConvolutionBackwardFilter(Cuda::cudnnHandle,
 			(void *)&Cuda::alpha, inputTensorDesc, d_input, outputTensorDesc, d_delta, convDesc, convBwdFilterAlgo,
@@ -822,7 +823,7 @@ void ConvLayer::_backpropagation() {
 	//Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
 	_params[Filter]->print_grad("d_delta_weight:");
 
-	DATATYPE* d_delta_bias = _params[Bias]->mutable_gpu_grad();
+	DATATYPE* d_delta_bias = _params[Bias]->mutable_device_grad();
 	checkCUDNN(cudnnConvolutionBackwardBias(Cuda::cudnnHandle,
 			&Cuda::alpha, outputTensorDesc, d_delta, &Cuda::beta, biasTensorDesc, d_delta_bias));
 	//Util::printDeviceData(d_delta_bias, 1, 1, filter_d.filters, 1, "d_delta_bias:");
@@ -830,8 +831,8 @@ void ConvLayer::_backpropagation() {
 	_params[Bias]->print_grad("d_delta_bias:");
 	_params[Filter]->print_data("d_weight:");
 
-	const DATATYPE* d_filters = _params[Filter]->gpu_data();
-	DATATYPE* d_delta_input = _input->mutable_gpu_grad();
+	const DATATYPE* d_filters = _params[Filter]->device_data();
+	DATATYPE* d_delta_input = _input->mutable_device_grad();
 	checkCUDNN(cudnnConvolutionBackwardData(Cuda::cudnnHandle,
 			(void *)&Cuda::alpha, filterDesc, d_filters, outputTensorDesc, d_delta, convDesc, convBwdDataAlgo,
 			d_workspace, workspaceSize,

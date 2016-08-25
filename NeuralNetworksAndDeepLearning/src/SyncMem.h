@@ -33,9 +33,8 @@ public:
 	DATATYPE* mutable_host_mem();
 	DATATYPE* mutable_device_mem();
 
+
 	void set_mem(const DATATYPE* mem, CopyType copyType);
-	void set_host_mem(const DATATYPE* mem);
-	void set_device_mem(const DATATYPE* mem);
 
 	void reset_host_mem();
 	void reset_device_mem();

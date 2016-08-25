@@ -97,7 +97,8 @@ public:
 
 	using Layer::feedforward;
 	void feedforward(const DATATYPE* input, const char* end=0) {
-		_input->set_data(input, Data::HostToDevice);
+		//_input->set_data(input, Data::HostToDevice);
+		_input->set_device_with_host_data(input);
 
 		_feedforward();
 		propFeedforward(end);

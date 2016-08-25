@@ -169,8 +169,8 @@ void LRNLayer::_feedforward() {
 	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
 	_input->print_data("d_input:");
 
-	const DATATYPE* d_input = _input->gpu_data();
-	DATATYPE* d_output = _output->mutable_gpu_data();
+	const DATATYPE* d_input = _input->device_data();
+	DATATYPE* d_output = _output->mutable_device_data();
 	checkCUDNN(cudnnLRNCrossChannelForward(Cuda::cudnnHandle,
 			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
 			&Cuda::alpha, inputTensorDesc, d_input,
@@ -183,10 +183,10 @@ void LRNLayer::_feedforward() {
 void LRNLayer::_backpropagation() {
 	//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
 	_output->print_grad("d_delta_output:");
-	const DATATYPE* d_output = _output->gpu_data();
-	const DATATYPE* d_delta_output = _output->gpu_grad();
-	const DATATYPE* d_input = _input->gpu_data();
-	DATATYPE* d_delta_input = _input->mutable_gpu_grad();
+	const DATATYPE* d_output = _output->device_data();
+	const DATATYPE* d_delta_output = _output->device_grad();
+	const DATATYPE* d_input = _input->device_data();
+	DATATYPE* d_delta_input = _input->mutable_device_grad();
 	checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,
 			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
 			&Cuda::alpha, outputTensorDesc, d_output, outputTensorDesc, d_delta_output, inputTensorDesc, d_input,
