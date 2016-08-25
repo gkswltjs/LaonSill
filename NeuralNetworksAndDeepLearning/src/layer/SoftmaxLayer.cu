@@ -81,16 +81,18 @@ void SoftmaxLayer::cost(const rvec &target) {
 	propBackpropagation();
 }
 #else
-void SoftmaxLayer::cost(const UINT *target) {
+void SoftmaxLayer::cost(const uint32_t* target) {
 	Util::printMessage("SoftmaxLayer::cost()---"+string(name));
+
+	_target.set_mem(target, SyncMemCopyType::HostToDevice);
+	//_target.print("target:");
 
 	const DATATYPE* d_z = _preActivation->device_data();
 	const DATATYPE* d_output = _output->device_data();
+	const uint32_t* d_target = _target.device_mem();
 	DATATYPE* d_delta = _preActivation->mutable_device_grad();
 
-	cost_fn->d_cost(d_z, d_output, target, d_delta, out_dim.rows, out_dim.batches);
-
-
+	cost_fn->d_cost(d_z, d_output, d_target, d_delta, out_dim.rows, out_dim.batches);
 
 	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
 	_preActivation->print_grad("d_delta:");

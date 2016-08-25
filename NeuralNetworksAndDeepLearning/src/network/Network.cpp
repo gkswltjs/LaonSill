@@ -26,7 +26,7 @@ Network::Network(NetworkConfig* config)
 	this->in_dim.channels = dataSet->getChannels();
 	this->in_dim.batches = config->_batchSize;
 
-	this->d_trainLabel = NULL;
+	//this->d_trainLabel = NULL;
 
 	//this->trainData = new Data();
 }
@@ -58,7 +58,7 @@ Network::~Network() {
 		delete config->_inputLayer;
 		config->_inputLayer = NULL;
 	}
-	checkCudaErrors(cudaFree(d_trainLabel));
+	//checkCudaErrors(cudaFree(d_trainLabel));
 	//checkCudaErrors(cudaFree(d_trainData));
 
 	//delete trainData;
@@ -163,7 +163,7 @@ void Network::evaluateTestData(uint32_t batchIndex) {
 
 	const uint32_t numLabels = config->_outputLayers[0]->getOutDimension().rows;
 	Data* networkOutput = config->_outputLayers[0]->getOutput();
-	const UINT* y = config->_dataSet->getTestLabelAt(batchIndex*in_dim.batches);
+	const uint32_t* y = config->_dataSet->getTestLabelAt(batchIndex*in_dim.batches);
 
 	networkOutput->print_data("networkOutput:");
 	const DATATYPE* output = networkOutput->host_data();
@@ -292,12 +292,12 @@ void Network::trainBatch(uint32_t batchIndex) {
 	config->_inputLayer->feedforward(dataSet->getTrainDataAt(baseIndex));
 
 	// BACKWARD PASS
-	checkCudaErrors(cudaMemcpyAsync(d_trainLabel, dataSet->getTrainLabelAt(baseIndex),
-				sizeof(UINT)*in_dim.batches, cudaMemcpyHostToDevice));
+	//checkCudaErrors(cudaMemcpyAsync(d_trainLabel, dataSet->getTrainLabelAt(baseIndex),
+	//			sizeof(UINT)*in_dim.batches, cudaMemcpyHostToDevice));
 
 	for(UINT i = 0; i < outputLayers.size(); i++) {
-		outputLayers[i]->cost(d_trainLabel);
-		//outputLayers[i]->cost(dataSet->getTrainLabelAt(baseIndex));
+		//outputLayers[i]->cost(d_trainLabel);
+		outputLayers[i]->cost(dataSet->getTrainLabelAt(baseIndex));
 	}
 }
 
@@ -370,7 +370,7 @@ void Network::shape(io_dim in_dim) {
 	config->_inputLayer->shape(0, this->in_dim);
 
 	//checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*config->_inputLayer->getInputSize()*this->in_dim.batches));
-	checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
+	//checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
 
 	//trainData->reshape({this->in_dim.batches, this->in_dim.channels, this->in_dim.rows, this->in_dim.cols});
 }

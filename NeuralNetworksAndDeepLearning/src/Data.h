@@ -78,8 +78,8 @@ public:
 	void scale_device_grad(const float scale);
 
 
-	DATATYPE sumsq_device_data();
-	DATATYPE sumsq_device_grad();
+	float sumsq_device_data();
+	float sumsq_device_grad();
 
 
 	inline uint32_t batches() const { return _shape[0]; }
@@ -98,8 +98,9 @@ private:
 
 private:
 	vector<uint32_t> _shape;
-	SyncMem _data;
-	SyncMem _grad;
+
+	SyncMem<DATATYPE> _data;
+	SyncMem<DATATYPE> _grad;
 
 	size_t _count;
 

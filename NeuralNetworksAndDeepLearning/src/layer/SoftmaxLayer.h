@@ -122,7 +122,7 @@ public:
 	 * @details 출력 레이어의 출력값과 데이터에 대한 정답으로 cost를 계산한다.
 	 * @param target 데이터에 대한 정답 장치 메모리 포인터
 	 */
-	void cost(const UINT *target);
+	void cost(const uint32_t *target);
 #endif
 
 

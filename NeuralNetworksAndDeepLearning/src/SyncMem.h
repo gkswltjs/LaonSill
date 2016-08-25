@@ -12,41 +12,56 @@
 
 #include "Util.h"
 
+enum SyncMemCopyType {
+	HostToHost=0,
+	HostToDevice=1,
+	DeviceToHost=2,
+	DeviceToDevice=3
+};
+
+
+
+template <typename Dtype>
 class SyncMem {
 public:
-	enum CopyType {
-		HostToHost=0,
-		HostToDevice=1,
-		DeviceToHost=2,
-		DeviceToDevice=3
-	};
-
-
 	SyncMem();
 	virtual ~SyncMem();
 
 	void reshape(size_t size);
 
-	const DATATYPE* host_mem();
-	const DATATYPE* device_mem();
+	const Dtype* host_mem();
+	const Dtype* device_mem();
 
-	DATATYPE* mutable_host_mem();
-	DATATYPE* mutable_device_mem();
+	Dtype* mutable_host_mem();
+	Dtype* mutable_device_mem();
 
 
-	void set_mem(const DATATYPE* mem, CopyType copyType);
+	void set_mem(const Dtype* mem, SyncMemCopyType copyType);
 
 	void reset_host_mem();
 	void reset_device_mem();
 
-	void add_host_mem(const DATATYPE* mem);
-	void add_device_mem(const DATATYPE* mem);
+	void add_host_mem(const Dtype* mem);
+
+	/**
+	 * @details float, double 타입의 template에 한해 사용
+	 */
+	void add_device_mem(const Dtype* mem);
 
 	void scale_host_mem(const float scale);
+	/**
+	 * @details float, double 타입의 template에 한해 사용
+	 */
 	void scale_device_mem(const float scale);
 
-	//DATATYPE sumsq_host_mem();
-	DATATYPE sumsq_device_mem();
+	//Dtype sumsq_host_mem();
+	/**
+	 * @details float, double 타입의 template에 한해 사용
+	 */
+	float sumsq_device_mem();
+
+
+	void print(const string& head);
 
 
 private:
@@ -60,8 +75,8 @@ private:
 private:
 	size_t _size;
 
-	DATATYPE* _host_mem;
-	DATATYPE* _device_mem;
+	Dtype* _host_mem;
+	Dtype* _device_mem;
 
 	bool _host_mem_updated;
 	bool _device_mem_updated;

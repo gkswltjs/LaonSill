@@ -210,7 +210,7 @@ protected:
 
 	//Data* trainData;
 	//DATATYPE* d_trainData;						///< 학습 데이터 장치 메모리 포인터
-	UINT* d_trainLabel;							///< 학습 데이터 정답 장치 메모리 포인터
+	//UINT* d_trainLabel;							///< 학습 데이터 정답 장치 메모리 포인터
 
 };
 

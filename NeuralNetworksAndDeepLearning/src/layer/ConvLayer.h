@@ -148,8 +148,8 @@ protected:
 	virtual void _clearShape();
 	//virtual double _sumSquareGrad();
 	//virtual double _sumSquareParam();
-	virtual DATATYPE sumSquareParamsData();
-	virtual DATATYPE sumSquareParamsGrad();
+	virtual float sumSquareParamsData();
+	virtual float sumSquareParamsGrad();
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	//virtual void _update(UINT n, UINT miniBatchSize);

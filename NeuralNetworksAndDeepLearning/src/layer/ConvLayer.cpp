@@ -587,8 +587,8 @@ void ConvLayer::_clearShape() {
 	HiddenLayer::_clearShape();
 }
 
-DATATYPE ConvLayer::sumSquareParamsData() {
-	DATATYPE result = 0.0;
+float ConvLayer::sumSquareParamsData() {
+	float result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
 		result += _params[i]->sumsq_device_data();
 	}
@@ -609,8 +609,8 @@ DATATYPE ConvLayer::sumSquareParamsData() {
 	*/
 }
 
-DATATYPE ConvLayer::sumSquareParamsGrad() {
-	DATATYPE result = 0.0;
+float ConvLayer::sumSquareParamsGrad() {
+	float result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
 		result += _params[i]->sumsq_device_grad();
 	}

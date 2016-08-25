@@ -297,6 +297,8 @@ void FullyConnectedLayer::update(UINT idx, UINT n, UINT miniBatchSize) {
 void FullyConnectedLayer::initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
 	Cuda::refresh();
+
+	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
 	this->out_dim = io_dim(n_out, 1, 1, 1);
 	this->type = Layer::FullyConnected;
 
@@ -463,8 +465,8 @@ double FullyConnectedLayer::_sumSquareParam() {
 }
 */
 
-DATATYPE FullyConnectedLayer::sumSquareParamsData() {
-	DATATYPE result = 0.0;
+float FullyConnectedLayer::sumSquareParamsData() {
+	float result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
 		result += _params[i]->sumsq_device_data();
 	}

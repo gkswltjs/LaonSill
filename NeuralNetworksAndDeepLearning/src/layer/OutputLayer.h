@@ -12,6 +12,7 @@
 
 #include "FullyConnectedLayer.h"
 #include "../cost/CostFactory.h"
+#include "../SyncMem.h"
 #ifndef GPU_MODE
 #include <armadillo>
 #endif
@@ -139,7 +140,7 @@ public:
 	 *       별도로 cost를 구하고 gradient를 다시 계산할 경우 효율적이지 못해서 cost에서 gradient까지 계산하게 되어있다.
 	 *       하지만 적절한 modularity를 달성하기 위해서 cost를 구하는 것과 gradient를 계산하는 것은 구분되어야 한다.
 	 */
-	virtual void cost(const UINT *target)=0;
+	virtual void cost(const uint32_t *target)=0;
 #endif
 
 
@@ -160,6 +161,7 @@ protected:
 		if(recursive) {
 			FullyConnectedLayer::_shape();
 		}
+		_target.reshape(out_dim.batches);
 	}
 	virtual void _clearShape() {
 		FullyConnectedLayer::_clearShape();
@@ -202,7 +204,7 @@ protected:
 protected:
 	Cost *cost_fn;				///< cost 객체
 
-
+	SyncMem<uint32_t> _target;
 };
 
 

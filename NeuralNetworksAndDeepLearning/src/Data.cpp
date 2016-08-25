@@ -107,28 +107,28 @@ void Data::reset_device_grad() {
 
 
 void Data::set_host_data(const DATATYPE* data) {
-	_data.set_mem(data, SyncMem::CopyType::HostToHost);
+	_data.set_mem(data, SyncMemCopyType::HostToHost);
 }
 
 void Data::set_host_with_device_data(const DATATYPE* data) {
-	_data.set_mem(data, SyncMem::CopyType::DeviceToHost);
+	_data.set_mem(data, SyncMemCopyType::DeviceToHost);
 }
 
 void Data::set_device_with_host_data(const DATATYPE* data) {
-	_data.set_mem(data, SyncMem::CopyType::HostToDevice);
+	_data.set_mem(data, SyncMemCopyType::HostToDevice);
 }
 
 void Data::set_device_data(const DATATYPE* data) {
-	_data.set_mem(data, SyncMem::CopyType::DeviceToDevice);
+	_data.set_mem(data, SyncMemCopyType::DeviceToDevice);
 }
 
 
 void Data::set_host_grad(const DATATYPE* grad) {
-	_grad.set_mem(grad, SyncMem::CopyType::HostToHost);
+	_grad.set_mem(grad, SyncMemCopyType::HostToHost);
 }
 
 void Data::set_device_grad(const DATATYPE* grad) {
-	_grad.set_mem(grad, SyncMem::CopyType::DeviceToDevice);
+	_grad.set_mem(grad, SyncMemCopyType::DeviceToDevice);
 }
 
 
@@ -174,11 +174,11 @@ void Data::scale_device_grad(const float scale) {
 
 
 
-DATATYPE Data::sumsq_device_data() {
+float Data::sumsq_device_data() {
 	return _data.sumsq_device_mem();
 }
 
-DATATYPE Data::sumsq_device_grad() {
+float Data::sumsq_device_grad() {
 	return _grad.sumsq_device_mem();
 }
 
