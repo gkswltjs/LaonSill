@@ -22,57 +22,18 @@ LRNLayer::LRNLayer(const string name, lrn_dim lrn_d) : HiddenLayer(name) {
 	initialize(lrn_d);
 }
 
-#ifndef GPU_MODE
-LRNLayer::~LRNLayer() {}
-#else
-LRNLayer::~LRNLayer() {
-	//checkCudaErrors(cudaFree(d_delta));
-	//checkCudaErrors(cudaFree(d_delta_input));
-
-	checkCUDNN(cudnnDestroyLRNDescriptor(lrnDesc));
-}
-#endif
-
-
-
-
-
-#ifndef GPU_MODE
-void LRNLayer::initialize(lrn_dim lrn_d) {
-	this->type = Layer::LRN;
-
-	this->lrn_d = lrn_d;
-	this->z.set_size(size(input));
-	this->delta_input.set_size(size(output));
-	this->delta_input.zeros();
-}
-#else
-void LRNLayer::initialize(lrn_dim lrn_d) {
-	this->type = Layer::LRN;
-	this->lrn_d = lrn_d;
-
-	checkCUDNN(cudnnCreateLRNDescriptor(&lrnDesc));
-	checkCUDNN(cudnnSetLRNDescriptor(lrnDesc, lrn_d.local_size, lrn_d.alpha, lrn_d.beta, lrn_d.k));
-}
-#endif
-
-
-#ifndef GPU_MODE
-#else
 void LRNLayer::_shape(bool recursive) {
 	out_dim = in_dim;
 
 	if(recursive) {
 		HiddenLayer::_shape();
 	}
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
 }
 
 void LRNLayer::_clearShape() {
-	//checkCudaErrors(cudaFree(d_delta_input));
 	HiddenLayer::_clearShape();
 }
-#endif
+
 
 void LRNLayer::_save(ofstream &ofs) {
 	HiddenLayer::_save(ofs);
@@ -91,7 +52,31 @@ void LRNLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef GPU_MODE
+LRNLayer::~LRNLayer() {}
+
+void LRNLayer::initialize(lrn_dim lrn_d) {
+	this->type = Layer::LRN;
+
+	this->lrn_d = lrn_d;
+	this->z.set_size(size(input));
+	this->delta_input.set_size(size(output));
+	this->delta_input.zeros();
+}
+
 // (1 + alpha/n * sigma(i)(xi^2))^beta
 void LRNLayer::_feedforward() {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
@@ -161,46 +146,8 @@ void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	propBackpropagation();
 	delta_input.zeros();
 }
-#else
-// (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::_feedforward() {
-	//this->d_input = input;
 
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
-	_input->print_data("d_input:");
-
-	const DATATYPE* d_input = _input->device_data();
-	DATATYPE* d_output = _output->mutable_device_data();
-	checkCUDNN(cudnnLRNCrossChannelForward(Cuda::cudnnHandle,
-			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
-			&Cuda::alpha, inputTensorDesc, d_input,
-			&Cuda::beta, outputTensorDesc, d_output));
-
-	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
-	_output->print_data(this->name+string("/d_output:"));
-}
-
-void LRNLayer::_backpropagation() {
-	//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
-	_output->print_grad("d_delta_output:");
-	const DATATYPE* d_output = _output->device_data();
-	const DATATYPE* d_delta_output = _output->device_grad();
-	const DATATYPE* d_input = _input->device_data();
-	DATATYPE* d_delta_input = _input->mutable_device_grad();
-	checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,
-			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
-			&Cuda::alpha, outputTensorDesc, d_output, outputTensorDesc, d_delta_output, inputTensorDesc, d_input,
-			&Cuda::beta, inputTensorDesc, d_delta_input));
-
-	//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
-	_input->print_grad("d_delta_input:");
-}
 #endif
-
-
-
-
-
 
 
 

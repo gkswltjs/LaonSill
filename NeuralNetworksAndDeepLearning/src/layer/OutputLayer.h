@@ -13,15 +13,6 @@
 #include "FullyConnectedLayer.h"
 #include "../cost/CostFactory.h"
 #include "../SyncMem.h"
-#ifndef GPU_MODE
-#include <armadillo>
-#endif
-
-#ifndef GPU_MODE
-using namespace arma;
-#endif
-
-
 
 
 /**
@@ -36,7 +27,7 @@ public:
 		Cost::Type _costType;
 
 		Builder() {
-			//_costType = Cost::None;
+			_costType = Cost::NoCost;
 		}
 		Builder* costType(Cost::Type costType) {
 			this->_costType = costType;
@@ -110,29 +101,10 @@ public:
 		:FullyConnectedLayer(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};
-#ifndef GPU_MODE
-	OutputLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType, Cost::Type costType)
-		: FullyConnectedLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
-		initialize(costType);
-	}
-#endif
 	virtual ~OutputLayer() {
 		CostFactory::destroy(cost_fn);
 	};
 
-
-
-
-
-#ifndef GPU_MODE
-	/**
-	 * 현재 레이어가 최종 레이어인 경우 δL을 계산
-	 * @param target: 현재 데이터에 대한 목적값
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
-	virtual void cost(const rvec &target)=0;
-#else
 	/**
 	 * @details 출력레이어의 cost를 게산한다.
 	 * @param target 현재 cost를 구한 데이터에 대한 정답 장치 메모리 포인터
@@ -141,11 +113,6 @@ public:
 	 *       하지만 적절한 modularity를 달성하기 위해서 cost를 구하는 것과 gradient를 계산하는 것은 구분되어야 한다.
 	 */
 	virtual void cost(const uint32_t *target)=0;
-#endif
-
-
-
-
 
 
 protected:
@@ -153,8 +120,6 @@ protected:
 		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
 		this->cost_fn = CostFactory::create(costType);
 	}
-
-
 
 
 	virtual void _shape(bool recursive=true) {
@@ -166,22 +131,6 @@ protected:
 	virtual void _clearShape() {
 		FullyConnectedLayer::_clearShape();
 	}
-#ifndef GPU_MODE
-	virtual void _save(ofstream &ofs) {
-		FullyConnectedLayer::_save(ofs);
-
-		int costType = (int)cost_fn->getType();
-		ofs.write((char *)&costType, sizeof(int));
-	}
-	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-		FullyConnectedLayer::_load(ifs, layerMap);
-
-		Cost::Type type;
-		ifs.read((char *)&type, sizeof(int));
-
-		initialize(type);
-	}
-#else
 	virtual void _save(ofstream &ofs) {
 		FullyConnectedLayer::_save(ofs);
 		//int costType = (int)cost_fn->getType();
@@ -195,11 +144,6 @@ protected:
 		//ifs.read((char *)&type, sizeof(int));
 		//initialize(type);
 	}
-#endif
-
-
-
-
 
 protected:
 	Cost *cost_fn;				///< cost 객체

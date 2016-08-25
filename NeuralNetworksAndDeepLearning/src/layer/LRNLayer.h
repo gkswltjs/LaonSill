@@ -84,18 +84,7 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void _backpropagation();
-
-#ifndef GPU_MODE
-	void _feedforward(UINT idx, const rcube &input, const char *end=0);
-	// update할 weight, bias가 없기 때문에 아래의 method에서는 do nothing
-	void reset_nabla(UINT idx) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		propResetNParam();
-	}
-#else
 	virtual void _feedforward();
-#endif
-
 
 protected:
 	lrn_dim lrn_d;					///< LRN 연산 관련 파라미터 구조체

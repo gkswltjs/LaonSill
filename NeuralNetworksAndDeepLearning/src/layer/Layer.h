@@ -225,18 +225,6 @@ public:
 	bool isLastNextLayerRequest(UINT idx);
 	bool w_isLastNextLayerRequest(UINT idx, const string method);
 
-
-
-
-
-	/**
-	 * @details 현재 레이어가 찾으려는 레이어인지 확인하고 아닌 경우 다음 레이어들에 대해 find()를 요청한다.
-	 *          InceptionLayer와 같은 특수 레이어들에서 자체적인 find() 기능을 구현해야 해서 가상함수이다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param name 찾고자 하는 레이어의 이름
-	 * @return 찾은 레이어에 대한 포인터, 해당하는 레이어가 없는 경우 0
-	 */
-	virtual Layer* find(UINT idx, const string name);
 	/**
 	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화하고
 	 *          다음 레이어들에 대해 shape()를 요청한다.
@@ -362,13 +350,6 @@ protected:
 	// prop 계열의 method (레이어 연결을 따라 연쇄 호출되는 method) 들에 대해
 	// 각 레이어의 실제 작업을 담당하는 method들
 	////////////////////////////////////////////////////////////////////
-
-	/**
-	 * @details 현재 레이어가 찾으려는 레이어인지 확인한다.
-	 * @param name 찾고자 하는 레이어의 이름
-	 * @return 찾은 레이어에 대한 포인터, 해당하는 레이어가 없는 경우 0
-	 */
-	virtual Layer* _find(const string name);
 	/**
 	 * @details 현재 레이어의 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화한다.
 	 * @param recursive 상위 레이어에 대해서 _shape()를 재귀적으로 호출할 것인지 여부
@@ -448,10 +429,6 @@ protected:
 	// 이전, 이후 레이어로의 method 호출을 담당하는 호출 propagation method들
 	////////////////////////////////////////////////////////////////////
 
-	/**
-	 * @details 다음 레이어들에 대해 find() 메쏘드를 호출한다.
-	 */
-	Layer* propFind();
 	/**
 	 * @details 다음 레이어들에 대해 shape() 메쏘드를 호출한다.
 	 */

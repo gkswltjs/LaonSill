@@ -19,15 +19,6 @@
 #include "Layer.h"
 #include "LayerConfig.h"
 
-#ifndef GPU_MODE
-#include <armadillo>
-#endif
-
-#ifndef GPU_MODE
-using namespace arma;
-#endif
-
-
 /**
  * @brief 입력 레이어 클래스
  * @details 입력 데이터를 그대로 출력 데이터로 전달하는 역할을 한다.
@@ -76,11 +67,6 @@ public:
 	InputLayer(Builder* builder) : Layer(builder) {
 		initialize();
 	}
-#ifndef GPU_MODE
-	InputLayer(const string name, int n_in) : Layer(name, n_in, n_in) {
-		initialize();
-	}
-#endif
 	/**
 	 * @details InputLayer 소멸자
 	 */
@@ -140,22 +126,6 @@ protected:
 		InputLayer::_shape(false);
 		loadNetwork(ifs, layerMap);
 	}
-#ifndef GPU_MODE
-	/**
-	 * Input 무조건 첫번째 layer,
-	 * feedforward로 들어오는 input외의 input에 대해서는 고려하지 않음
-	 */
-	virtual void _feedforward() {
-		Util::convertCube(input, this->input);
-		Util::convertCube(this->input, this->output);
-		Util::printCube(input, "input:");
-		Util::printCube(this->output, "output:");
-
-		propFeedforward(this->output, end);
-	}
-#else
-#endif
-
 
 };
 

@@ -152,34 +152,15 @@ protected:
 	virtual float sumSquareParamsGrad();
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	//virtual void _update(UINT n, UINT miniBatchSize);
 	virtual void update();
-#ifndef GPU_MODE
-	void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
-	void dw_convolution(const rmat &d, const rmat &x, rmat &result);
-	void dx_convolution(const rmat &d, const rmat &w, rmat &result);
-
-	/**
-	 * 주어진 입력 input에 대해 출력 activation을 계산
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
-	virtual void _feedforward();
-#else
 	virtual void scaleParamsGrad(DATATYPE scale);
 	virtual void _feedforward();
 	virtual void _backpropagation();
-#endif
 
 	enum ParamType {
 		Filter = 0,
 		Bias = 1
 	};
-
-
-
-
-
-
 
 protected:
 	filter_dim filter_d;							///< 컨볼루션 연산 관련 파라미터 구조체

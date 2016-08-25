@@ -17,9 +17,6 @@
 #include "../cost/Cost.h"
 
 
-
-
-
 /**
  * @brief Fully Connected (Inner Product) 레이어
  * @details 이전 레이어와 현재 레이어의 모든 노드들에 대해 연결성이 있고
@@ -122,10 +119,6 @@ public:
 	 */
 	FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::NoActivation);
-#ifndef GPU_MODE
-	FullyConnectedLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::NoActivation);
-#endif
 	virtual ~FullyConnectedLayer();
 
 
@@ -152,16 +145,7 @@ protected:
 	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	//virtual void _update(UINT n, UINT miniBatchSize);
 	virtual void update();
-#ifndef GPU_MODE
-	/**
-	 * 주어진 입력 input에 대해 출력 activation을 계산
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
 	virtual void _feedforward();
-	virtual void reset_nabla(UINT idx);
-#else
-	virtual void _feedforward();
-#endif
 	virtual void _backpropagation();
 
 	enum ParamType {

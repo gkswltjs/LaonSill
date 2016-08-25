@@ -292,11 +292,7 @@ void Network::trainBatch(uint32_t batchIndex) {
 	config->_inputLayer->feedforward(dataSet->getTrainDataAt(baseIndex));
 
 	// BACKWARD PASS
-	//checkCudaErrors(cudaMemcpyAsync(d_trainLabel, dataSet->getTrainLabelAt(baseIndex),
-	//			sizeof(UINT)*in_dim.batches, cudaMemcpyHostToDevice));
-
 	for(UINT i = 0; i < outputLayers.size(); i++) {
-		//outputLayers[i]->cost(d_trainLabel);
 		outputLayers[i]->cost(dataSet->getTrainLabelAt(baseIndex));
 	}
 }
@@ -306,7 +302,7 @@ void Network::trainBatch(uint32_t batchIndex) {
 void Network::applyUpdate() {
 	clipGradients();
 
-	uint32_t numLearnableLayers = config->_learnableLayers.size();
+	const uint32_t numLearnableLayers = config->_learnableLayers.size();
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
 		config->_learnableLayers[i]->update();
 	}
@@ -371,7 +367,6 @@ void Network::shape(io_dim in_dim) {
 
 	//checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*config->_inputLayer->getInputSize()*this->in_dim.batches));
 	//checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
-
 	//trainData->reshape({this->in_dim.batches, this->in_dim.channels, this->in_dim.rows, this->in_dim.cols});
 }
 

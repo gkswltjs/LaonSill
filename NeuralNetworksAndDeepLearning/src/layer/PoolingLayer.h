@@ -93,16 +93,7 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
 	virtual void _backpropagation();
-#ifndef GPU_MODE
-	void _feedforward(UINT idx, const rcube &input, const char *end=0);
-	void reset_nabla(UINT idx) {
-		if(!isLastPrevLayerRequest(idx)) throw Exception();
-		propResetNParam();
-	}
-#else
 	virtual void _feedforward();
-#endif
-
 
 protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
