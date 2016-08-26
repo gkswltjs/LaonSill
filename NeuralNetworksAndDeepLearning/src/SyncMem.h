@@ -9,6 +9,7 @@
 #define SYNCMEM_H_
 
 #include <stddef.h>
+#include <vector>
 
 #include "Util.h"
 
@@ -58,15 +59,16 @@ public:
 	/**
 	 * @details float, double 타입의 template에 한해 사용
 	 */
-	float sumsq_device_mem();
+	double sumsq_device_mem();
 
 
 	void print(const string& head);
+	void print(const string& head, const std::vector<uint32_t>& shape);
 
 
 private:
-	void checkDeviceMemAndUpdateHostMem();
-	void checkHostMemAndUpdateDeviceMem();
+	void checkDeviceMemAndUpdateHostMem(bool reset=true);
+	void checkHostMemAndUpdateDeviceMem(bool reset=true);
 
 	void checkMemValidity();
 

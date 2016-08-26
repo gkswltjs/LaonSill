@@ -78,8 +78,8 @@ public:
 	void scale_device_grad(const float scale);
 
 
-	float sumsq_device_data();
-	float sumsq_device_grad();
+	double sumsq_device_data();
+	double sumsq_device_grad();
 
 
 	inline uint32_t batches() const { return _shape[0]; }
@@ -91,9 +91,6 @@ public:
 	void print_data(const string& head);
 	void print_grad(const string& head);
 
-
-private:
-	void print(const DATATYPE* data, const string& head);
 
 
 private:

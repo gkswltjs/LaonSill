@@ -137,6 +137,7 @@ void FullyConnectedLayer::_shape(bool recursive) {
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(DATATYPE)*in_dim.batches));
 	FillValues<<<RoundUp(in_dim.batches, BW), BW>>>(this->d_onevec, in_dim.batches, 1.0f);
+	//cuda_FillValues(this->d_onevec, in_dim.batches, 1.0f);
 	//checkCudaErrors(cudaMemset(d_onevec, 1, in_dim.batches));
 
 
@@ -304,20 +305,18 @@ void FullyConnectedLayer::_feedforward() {
 	    &Cuda::alpha,
 	    d_z, out_dim.rows));
 
-	//Util::printDeviceData(d_z, out_dim.rows, out_dim.batches, 1, 1, "d_z:");
-	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
-	_preActivation->print_data("d_z:");
-
 	DATATYPE* d_output = _output->mutable_device_data();
+	//const DATATYPE* h_output = _output->host_data();
+	//const DATATYPE* h_z = _preActivation->host_data();
 
-	activation_fn->activate(d_z, d_output, outputTensorDesc);
+	activation_fn->forward(outputTensorDesc, d_z, d_output);
 
 	//Util::printDeviceData(d_z, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/d_z:"));
 	//Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/d_output:"));
 	_preActivation->print_data(this->name+string("/d_z:"));
 	_output->print_data(this->name+string("/d_output:"));
 
-	//exit(1);
+
 
 
 	/*
@@ -360,7 +359,8 @@ void FullyConnectedLayer::_backpropagation() {
 	const DATATYPE* d_z = _preActivation->device_data();
 	DATATYPE* d_delta = _preActivation->mutable_device_grad();
 
-	activation_fn->d_activate(d_output, d_delta_output, d_z, d_delta, outputTensorDesc);
+	//activation_fn->backward(d_output, d_delta_output, d_z, d_delta, outputTensorDesc);
+	activation_fn->backward(outputTensorDesc, d_output, d_delta_output, d_z, d_delta);
 
 	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
 	_preActivation->print_grad("d_delta:");
@@ -406,7 +406,7 @@ void FullyConnectedLayer::_backpropagation() {
 	/*
 	 * rcube w_next_delta(size(output));
 	rcube sp;
-	activation_fn->d_activate(output, sp);
+	activation_fn->backward(output, sp);
 
 	// delta l = dC/dz
 	delta.slice(0) = w_next_delta.slice(0) % sp.slice(0);

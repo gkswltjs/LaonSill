@@ -97,7 +97,6 @@ LayersConfig* createCNNSimpleLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation::Type::ReLU)
 					->prevLayerIndices({2}))
 			->build();
 
@@ -117,7 +116,7 @@ LayersConfig* createCNNDoubleLayersConfig() {
 			->layer((new ConvLayer::Builder())
 					->id(1)
 					->name("convLayer1")
-					->filterDim(5, 5, 1, 10, 2)
+					->filterDim(5, 5, 1, 20, 1)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -135,7 +134,7 @@ LayersConfig* createCNNDoubleLayersConfig() {
 			->layer((new ConvLayer::Builder())
 					->id(3)
 					->name("convLayer2")
-					->filterDim(5, 5, 10, 20, 2)
+					->filterDim(5, 5, 20, 40, 1)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -171,7 +170,6 @@ LayersConfig* createCNNDoubleLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation::Type::ReLU)
 					->prevLayerIndices({5}))
 			->build();
 
@@ -349,7 +347,6 @@ LayersConfig* createGoogLeNetInception3ASimpleLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, bias_const)
-					->activationType(Activation::ReLU)
 					->prevLayerIndices({16}))
 			->build();
 
@@ -525,7 +522,6 @@ LayersConfig* createGoogLeNetInception3ALayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, bias_const)
-					->activationType(Activation::ReLU)
 					->prevLayerIndices({16}))
 			->build();
 
@@ -879,7 +875,6 @@ LayersConfig* createGoogLeNetLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, bias_const)
-					->activationType(Activation::Type::ReLU)
 					->prevLayerIndices({33}))
 			->build();
 
@@ -997,7 +992,6 @@ LayersConfig* createInceptionLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation::Type::ReLU)
 					->prevLayerIndices({8}))
 			->build();
 
@@ -1110,7 +1104,6 @@ LayersConfig* createInceptionLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation::Type::ReLU)
 					->prevLayerIndices({8}))
 			->build();
 			*/

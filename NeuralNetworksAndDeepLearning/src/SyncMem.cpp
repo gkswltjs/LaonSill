@@ -8,6 +8,7 @@
 #include "SyncMem.h"
 #include "cuda/Cuda.h"
 #include <cstring>
+#include <limits>
 
 
 //#define SYNCMEM_LOG
@@ -141,36 +142,42 @@ void SyncMem<DATATYPE>::scale_device_mem(const float scale) {
 //Dtype SyncMem<Dtype>::sumsq_host_mem() {}
 
 template <>
-float SyncMem<DATATYPE>::sumsq_device_mem() {
+double SyncMem<DATATYPE>::sumsq_device_mem() {
 	float sumsq;
 	const DATATYPE* _mem = device_mem();
 	checkCudaErrors(cublasSdot(Cuda::cublasHandle, _size, _mem, 1, _mem, 1, &sumsq));
-	return sumsq;
+
+	// NaN test
+	if(isnan(sumsq)) {
+		sumsq = std::numeric_limits<float>::max();
+		print("data:");
+	}
+	return (double)sumsq;
 }
 
 
 template <typename Dtype>
-void SyncMem<Dtype>::checkDeviceMemAndUpdateHostMem() {
+void SyncMem<Dtype>::checkDeviceMemAndUpdateHostMem(bool reset) {
 	checkMemValidity();
 	if(_device_mem_updated) {
 #ifdef SYNCMEM_LOG
 		cout << "device mem is updated, updating host mem ... " << endl;
 #endif
 		checkCudaErrors(cudaMemcpyAsync(_host_mem, _device_mem, sizeof(Dtype)*_size, cudaMemcpyDeviceToHost));
-		_device_mem_updated = false;
+		if(reset) _device_mem_updated = false;
 	}
 
 }
 
 template <typename Dtype>
-void SyncMem<Dtype>::checkHostMemAndUpdateDeviceMem() {
+void SyncMem<Dtype>::checkHostMemAndUpdateDeviceMem(bool reset) {
 	checkMemValidity();
 	if(_host_mem_updated) {
 #ifdef SYNCMEM_LOG
 		cout << "host mem is updated, updating device mem ... " << endl;
 #endif
 		checkCudaErrors(cudaMemcpyAsync(_device_mem, _host_mem, sizeof(Dtype)*_size, cudaMemcpyHostToDevice));
-		_host_mem_updated = false;
+		if(reset) _host_mem_updated = false;
 	}
 }
 
@@ -195,12 +202,61 @@ void SyncMem<Dtype>::print(const string& head) {
 	cout << "-------------------------------------" << endl;
 	cout << "name: " << head << " of size: " << _size << endl;
 
-	const Dtype* data = host_mem();
+	// print()실행시 updated flag를 reset,
+	// mutable pointer 조회하여 계속 업데이트할 경우 print() 이후의 update가 반영되지 않음.
+	// 강제로 flag를 reset하지 않도록 수정
+	checkDeviceMemAndUpdateHostMem(false);
+	const Dtype* data = _host_mem;
 	const uint32_t printSize = std::min(10, (int)_size);
 	for(uint32_t i = 0; i < printSize; i++) {
 		cout << data[i] << ", ";
 	}
 	cout << endl << "-------------------------------------" << endl;
+}
+
+template <typename Dtype>
+void SyncMem<Dtype>::print(const string& head, const std::vector<uint32_t>& shape) {
+	if(shape.size() != 4) {
+		cout << "shape size should be 4 ... " << endl;
+		exit(1);
+	}
+
+
+
+	checkDeviceMemAndUpdateHostMem(false);
+	const Dtype* data = _host_mem;
+
+
+
+	UINT i,j,k,l;
+
+	const uint32_t rows = shape[2];
+	const uint32_t cols = shape[3];
+	const uint32_t channels = shape[1];
+	const uint32_t batches = shape[0];
+
+	cout << "-------------------------------------" << endl;
+	cout << "name: " << head << endl;
+	cout << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
+
+	UINT batchElem = rows*cols*channels;
+	UINT channelElem = rows*cols;
+	for(i = 0; i < batches; i++) {
+		for(j = 0; j < channels; j++) {
+			for(k = 0; k < rows; k++) {
+				for(l = 0; l < cols; l++) {
+			//for(k = 0; k < std::min(10, (int)rows); k++) {
+			//	for(l = 0; l < std::min(10, (int)cols); l++) {
+					cout << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+				}
+				cout << endl;
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}
+	cout << "-------------------------------------" << endl;
+
 }
 
 

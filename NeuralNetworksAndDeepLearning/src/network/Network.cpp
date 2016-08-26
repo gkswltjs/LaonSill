@@ -317,8 +317,8 @@ void Network::clipGradients() {
 	const double l2normParamsData = std::sqrt(sumsqParamsData);
 
 	if(clipGradientsLevel < 0.0001) {
-		cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
-				", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
+		//cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
+		//		", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
 	} else {
 		if(l2normParamsGrad > clipGradientsLevel) {
 			const DATATYPE scale_factor = clipGradientsLevel / (l2normParamsGrad*1);
@@ -328,8 +328,8 @@ void Network::clipGradients() {
 					") by scale factor " << scale_factor << endl;
 			scaleParamsGrad(scale_factor);
 		} else {
-			cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
-					", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
+			//cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
+			//		", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
 		}
 	}
 }
@@ -347,7 +347,8 @@ double Network::computeSumSquareParamsGrad() {
 	uint32_t numLearnableLayers = config->_learnableLayers.size();
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		sumsq += config->_learnableLayers[i]->sumSquareParamsGrad();
+		float temp = config->_learnableLayers[i]->sumSquareParamsGrad();
+		sumsq += temp;
 	}
 	return sumsq;
 }

@@ -15,8 +15,8 @@ public:
 	virtual ~LearnableLayer() {}
 
 	virtual void update() = 0;
-	virtual float sumSquareParamsData() = 0;
-	virtual float sumSquareParamsGrad() = 0;
+	virtual double sumSquareParamsData() = 0;
+	virtual double sumSquareParamsGrad() = 0;
 	virtual void scaleParamsGrad(DATATYPE scale) = 0;
 };
 

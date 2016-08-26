@@ -31,16 +31,16 @@ ConvLayer::ConvLayer(const string name, filter_dim filter_d, update_param weight
 
 
 
-float ConvLayer::sumSquareParamsData() {
-	float result = 0.0;
+double ConvLayer::sumSquareParamsData() {
+	double result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
 		result += _params[i]->sumsq_device_data();
 	}
 	return result;
 }
 
-float ConvLayer::sumSquareParamsGrad() {
-	float result = 0.0;
+double ConvLayer::sumSquareParamsGrad() {
+	double result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
 		result += _params[i]->sumsq_device_grad();
 	}
@@ -201,7 +201,7 @@ void ConvLayer::_feedforward() {
 
 
 	// 2. ACTIVATION
-	activation_fn->activate(z, output);
+	activation_fn->forward(z, output);
 	Util::printCube(output, "output:");
 
 	propFeedforward(this->output, end);
@@ -212,7 +212,7 @@ void ConvLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
 	rcube da;
-	activation_fn->d_activate(output, da);
+	activation_fn->backward(output, da);
 
 	rcube dp;
 	// 두 레이어를 연결하는 Weight가 있는 경우 (현재 다음 레이어가 FC인 케이스 only)

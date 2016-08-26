@@ -367,7 +367,7 @@ void ConvLayer::_feedforward() {
 	Util::printDeviceData(d_z, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_z:");
 
 	DATATYPE* d_output = _output->mutable_device_data();
-	activation_fn->activate(d_z, d_output, outputTensorDesc);
+	activation_fn->forward(outputTensorDesc, d_z, d_output);
 
 	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
 	_output->print_data(this->name+string("d_output:"));
@@ -388,7 +388,8 @@ void ConvLayer::_backpropagation() {
 	const DATATYPE* d_z = _preActivation->device_data();
 	DATATYPE* d_delta = _preActivation->mutable_device_grad();
 
-	activation_fn->d_activate(d_output, d_delta_output, d_z, d_delta, outputTensorDesc);
+	//activation_fn->backward(d_output, d_delta_output, d_z, d_delta, outputTensorDesc);
+	activation_fn->backward(outputTensorDesc, d_output, d_delta_output, d_z, d_delta);
 	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta:");
 	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
 	_preActivation->print_grad("d_delta:");

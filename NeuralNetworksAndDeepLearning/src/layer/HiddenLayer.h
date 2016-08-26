@@ -43,7 +43,6 @@ public:
 		Layer* build() = 0;
 	};
 
-
 	HiddenLayer() {}
 	HiddenLayer(Builder* builder) : Layer(builder) {
 		for(uint32_t i = 0; i < builder->_prevLayerIndices.size(); i++) {

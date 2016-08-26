@@ -53,7 +53,7 @@ public:
 	/**
 	 * activation function
 	 */
-	virtual void activate(const rcube &z, rcube &activation)=0;
+	virtual void forward(const rcube &z, rcube &activation)=0;
 
 	/**
 	 * activation derivation
@@ -61,7 +61,7 @@ public:
 	 * 현재까지 activation으로도 계산이 가능하여 파라미터를 activation으로 지정
 	 * weighted sum값이 필요한 케이스에 수정이 필요
 	 */
-	virtual void d_activate(const rcube &activation, rcube &da)=0;
+	virtual void backward(const rcube &activation, rcube &da)=0;
 #else
 	/**
 	 * @details 입력값에 대해 활성화 함수를 적용한 값을 반환.
@@ -69,7 +69,8 @@ public:
 	 * @param activation 활성화 함수를 적용한 출력값을 담고 있는 장치 메모리 포인터.
 	 * @param tensorDesc 입력값 z의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터.
 	 */
-	virtual void activate(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc)=0;
+	//virtual void activate(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc)=0;
+	virtual void forward(const cudnnTensorDescriptor_t& desc, const DATATYPE* x, DATATYPE* y) = 0;
 
 	/**
 	 * @details 활성화 함수 출력값을 입력값에 대해 미분한 결과를 반환.
@@ -79,8 +80,9 @@ public:
 	 * @param da Cost를 z에 대해 미분한 결과를 담고 있는 장치 메모리 포인터.
 	 * @param tensorDesc activate, deltaInput, z, da의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터.
 	 */
-	virtual void d_activate(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
-			cudnnTensorDescriptor_t &tensorDesc) = 0;
+	//virtual void backward(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
+	//		cudnnTensorDescriptor_t &tensorDesc) = 0;
+	virtual void backward(const cudnnTensorDescriptor_t& desc,  const DATATYPE *y, const DATATYPE *dy, const DATATYPE *x, DATATYPE *dx) = 0;
 
 #endif
 

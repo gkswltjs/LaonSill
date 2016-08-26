@@ -76,6 +76,24 @@ static inline unsigned int RoundUp(unsigned int nominator, unsigned int denomina
 	return (nominator + denominator - 1) / denominator;
 }
 
+
+
+//typedef float DATATYPE;
+//void cuda_FillValues(DATATYPE* vec, int size, DATATYPE value);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * @brief Cuda 라이브러리 사용에 필요한 핸들을 생성하여 전역으로 관리하는 클래스.
  * @detail Cuda 장치를 설정하고 cudnn, cublas 관련 핸들을 전역으로 생성, 삭제, 리프레시 하는 역할을 함.

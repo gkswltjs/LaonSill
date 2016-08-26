@@ -174,11 +174,11 @@ void Data::scale_device_grad(const float scale) {
 
 
 
-float Data::sumsq_device_data() {
+double Data::sumsq_device_data() {
 	return _data.sumsq_device_mem();
 }
 
-float Data::sumsq_device_grad() {
+double Data::sumsq_device_grad() {
 	return _grad.sumsq_device_mem();
 }
 
@@ -200,48 +200,15 @@ float Data::sumsq_device_grad() {
 
 void Data::print_data(const string& head) {
 	if(printConfig) {
-		print(host_data(), head);
+		_data.print(head, _shape);
 	}
 }
 
 void Data::print_grad(const string& head) {
 	if(printConfig) {
-		print(host_grad(), head);
+		_grad.print(head, _shape);
 	}
 }
-
-void Data::print(const DATATYPE* data, const string& head) {
-	UINT i,j,k,l;
-
-	const uint32_t rows = _shape[2];
-	const uint32_t cols = _shape[3];
-	const uint32_t channels = _shape[1];
-	const uint32_t batches = _shape[0];
-
-	cout << "-------------------------------------" << endl;
-	cout << "name: " << head << endl;
-	cout << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
-
-	UINT batchElem = rows*cols*channels;
-	UINT channelElem = rows*cols;
-	for(i = 0; i < batches; i++) {
-		for(j = 0; j < channels; j++) {
-			for(k = 0; k < rows; k++) {
-				for(l = 0; l < cols; l++) {
-			//for(k = 0; k < std::min(10, (int)rows); k++) {
-			//	for(l = 0; l < std::min(10, (int)cols); l++) {
-					cout << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
-				}
-				cout << endl;
-			}
-			cout << endl;
-		}
-		cout << endl;
-	}
-	cout << "-------------------------------------" << endl;
-}
-
-
 
 
 

@@ -46,7 +46,7 @@ public:
 	}
 	*/
 
-	void activate(const rcube &z, rcube &activation) {
+	void forward(const rcube &z, rcube &activation) {
 		// TODO softmax는 output layer only,
 		// vector형태의 output을 전제
 		//Util::printCube(z, "z:");
@@ -63,79 +63,44 @@ public:
 	}
 
 #else
-	Softmax() : num_label(10), batches(10) {
+	Softmax() {// : num_label(10), batches(10) {
 		this->type = Activation::Softmax;
-		h_z = new DATATYPE[num_label*batches];
-		h_activation = new DATATYPE[num_label*batches];
+		//h_z = new DATATYPE[num_label*batches];
+		//h_activation = new DATATYPE[num_label*batches];
 	}
 
-	void activate(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc) {
-		//float alpha = 1.0f, beta = 0.0f;
-		//checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL,
-		//		&alpha, tensorDesc, z, &beta, tensorDesc, activation));
-
-		/*
-		checkCudaErrors(cudaMemcpyAsync(this->h_z, z, sizeof(DATATYPE)*num_label*batches, cudaMemcpyDeviceToHost));
-		for(int batch = 0; batch < batches; batch++) {
-			DATATYPE max = -1000;
-			for(int label = 0; label < num_label; label++) {
-				int index = batch*num_label+label;
-				if(h_z[index]>max) {
-					max = h_z[index];
-				}
-			}
-			//cout << "softmax: " << max << endl;
-
-			DATATYPE sum = 0;
-			for(int label = 0; label < num_label; label++) {
-				int index = batch*num_label+label;
-				h_activation[index] = std::exp(h_z[index]-max);
-				sum += h_activation[index];
-			}
-
-			for(int label = 0; label < num_label; label++) {
-				h_activation[batch*num_label+label] /= sum;
-			}
-		}
-		checkCudaErrors(cudaMemcpyAsync(activation, h_activation, sizeof(DATATYPE)*num_label*batches, cudaMemcpyHostToDevice));
-
-
-		//Util::setPrint(true);
-		Util::printData(h_z, num_label, batches, 1, 1, string("/d_z:"));
-		Util::printData(h_activation, num_label, batches, 1, 1, string("/d_output:"));
-		Util::setPrint(false);
-
-		*/
-
-
+	/*
+	void forward(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc) {
 		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
 			&Cuda::alpha, tensorDesc, z, &Cuda::beta, tensorDesc, activation));
+	}
+	*/
 
-
-		/*
-		float result;
-		//cout << "softmax result sum: " << endl;
-		for(int i = 0; i < batches; i++) {
-			checkCudaErrors(cublasSasum(Cuda::cublasHandle, num_label, activation+i*num_label, 1, &result));
-			//cout << result << ", ";
-			if(result > 1.005f || result < 0.995f) {
-				cout << "!!!!!!!!!!!!!!!!!!!!!softmax sum abnormal: " << result << endl;
-			}
-		}
-		//cout << endl;
-		*/
-
-
+	void forward(const cudnnTensorDescriptor_t& desc, const DATATYPE* x, DATATYPE* y) {
+		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+				&Cuda::alpha, desc, x, &Cuda::beta, desc, y));
 	}
 
-	void d_activate(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
+	/*
+	void backward(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
 				cudnnTensorDescriptor_t &tensorDesc) {
+
+		checkCUDNN(cudnnSoftmaxBackward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+				&Cuda::alpha, ))
+
+	}
+	*/
+
+	void backward(const cudnnTensorDescriptor_t& desc,  const DATATYPE *y, const DATATYPE *dy, const DATATYPE *x, DATATYPE *dx) {
+		checkCUDNN(cudnnSoftmaxBackward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+				&Cuda::alpha, desc, y, desc, dy,
+				&Cuda::beta, desc, dx));
 	}
 
-	DATATYPE *h_z;						///< (임시) 활성화 입력값 확인용 호스트 메모리 포인터.
-	DATATYPE *h_activation;				///< (임시) 활성화 출력값 확인용 호스트 메모리 포인터.
-	const int num_label;				///< (임시) 네트워크의 레이블 수.
-	const int batches;					///< (임시) 네트워크의 batch 사이즈.
+	//DATATYPE *h_z;						///< (임시) 활성화 입력값 확인용 호스트 메모리 포인터.
+	//DATATYPE *h_activation;				///< (임시) 활성화 출력값 확인용 호스트 메모리 포인터.
+	//const int num_label;				///< (임시) 네트워크의 레이블 수.
+	//const int batches;					///< (임시) 네트워크의 batch 사이즈.
 
 #endif
 

@@ -57,16 +57,16 @@ void FullyConnectedLayer::initialize(int n_out, double p_dropout, update_param w
 	this->_preActivation = new Data();						// weighted sum (pre activation)
 }
 
-float FullyConnectedLayer::sumSquareParamsData() {
-	float result = 0.0;
+double FullyConnectedLayer::sumSquareParamsData() {
+	double result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
 		result += _params[i]->sumsq_device_data();
 	}
 	return result;
 }
 
-DATATYPE FullyConnectedLayer::sumSquareParamsGrad() {
-	DATATYPE result = 0.0;
+double FullyConnectedLayer::sumSquareParamsGrad() {
+	double result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
 		result += _params[i]->sumsq_device_grad();
 	}
@@ -261,7 +261,7 @@ void FullyConnectedLayer::_feedforward() {
 	z.slice(0) = weight*this->input.slice(0) + bias;
 	Util::printCube(z, "z:");
 
-	activation_fn->activate(z, output);
+	activation_fn->forward(z, output);
 	Util::printCube(output, "output:");
 
 	propFeedforward(this->output, end);
@@ -279,7 +279,7 @@ void FullyConnectedLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 	//Util::printMat(next_delta.slice(0), "next_delta");
 
 	rcube sp;
-	activation_fn->d_activate(output, sp);
+	activation_fn->backward(output, sp);
 
 	// delta l = dC/dz
 	delta.slice(0) = w_next_delta.slice(0) % sp.slice(0);
