@@ -38,7 +38,7 @@ public:
 	}
 
 	void cost(const rvec &target) {
-		cost_fn->d_cost(z, output, target, delta);
+		cost_fn->backward(z, output, target, delta);
 
 		nabla_b += delta.slice(0);
 		nabla_w += delta.slice(0)*input.slice(0).t();

@@ -11,6 +11,7 @@
 #define TOP1EVALUATION_H_
 
 #include "Evaluation.h"
+#include <limits>
 
 /**
  * @brief 네트워크 1위 추정과 정답의 일치율을 평가하는 Evaluation 클래스
@@ -24,7 +25,7 @@ public:
 	virtual void evaluate(const int num_labels, const int batches, const DATATYPE *output, const UINT *y) {
 		//cout << "Top1Evaluation: " << endl;
 		for(int j = 0; j < batches; j++) {
-			DATATYPE maxValue = -100000.0;
+			DATATYPE maxValue = -std::numeric_limits<float>::max();
 			int maxIndex = 0;
 			for(int i = 0; i < num_labels; i++) {
 				if(output[num_labels*j+i] > maxValue) {

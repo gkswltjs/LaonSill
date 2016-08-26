@@ -100,9 +100,10 @@ void Network::sgd(int epochs) {
 
 		const uint32_t numTestData = dataSet->getNumTestData();
 		if(numTestData > 0) {
-			evaluateTestSet();
+			double cost = evaluateTestSet();
+			cost /= numTestData;
 
-			const float cost = evaluations[0]->getCost() / numTestData;
+			//const float cost = evaluations[0]->getCost() / numTestData;
 			const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
 			const float accuracy = (float)accurateCnt/numTestData;
 
@@ -125,7 +126,7 @@ void Network::sgd(int epochs) {
 
 
 
-void Network::evaluateTestSet() {
+double Network::evaluateTestSet() {
 #ifndef GPU_MODE
 	int testResult = 0;
 	//bool printBak = Util::getPrint();
@@ -146,6 +147,7 @@ void Network::evaluateTestSet() {
 #else
 	DataSet* dataSet = config->_dataSet;
 	vector<Evaluation*>& evaluations = config->_evaluations;
+	double cost = 0.0;
 
 	for(int i = 0; i < evaluations.size(); i++) {
 		evaluations[i]->reset();
@@ -153,23 +155,28 @@ void Network::evaluateTestSet() {
 
 	const uint32_t numBatches = dataSet->getNumTestData()/in_dim.batches;
 	for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
-		evaluateTestData(batchIndex);
+		cost += evaluateTestData(batchIndex);
 	}
+	return cost;
 #endif
 }
 
-void Network::evaluateTestData(uint32_t batchIndex) {
+double Network::evaluateTestData(uint32_t batchIndex) {
 	config->_inputLayer->feedforward(config->_dataSet->getTestDataAt(batchIndex*in_dim.batches));
+	OutputLayer* outputLayer = config->_outputLayers[0];
 
-	const uint32_t numLabels = config->_outputLayers[0]->getOutDimension().rows;
-	Data* networkOutput = config->_outputLayers[0]->getOutput();
+	const uint32_t numLabels = outputLayer->getOutDimension().rows;
+	Data* networkOutput = outputLayer->getOutput();
 	const uint32_t* y = config->_dataSet->getTestLabelAt(batchIndex*in_dim.batches);
+	double cost = outputLayer->cost(y);
 
 	networkOutput->print_data("networkOutput:");
 	const DATATYPE* output = networkOutput->host_data();
 	for(int i = 0; i < config->_evaluations.size(); i++) {
 		config->_evaluations[i]->evaluate(numLabels, in_dim.batches, output, y);
 	}
+
+	return cost;
 }
 
 void Network::test() {
@@ -179,9 +186,9 @@ void Network::test() {
 
 	Timer timer;
 	float numTestData = (float)dataSet->getNumTestData();
-	evaluateTestSet();
+	double cost = evaluateTestSet();
+	cost /= numTestData;
 	int accurateCnt = evaluations[0]->getAccurateCount();
-	float cost = evaluations[0]->getCost() / numTestData;
 	float accuracy = accurateCnt / numTestData;
 
 	if(dataSet->getNumTestData() > 0) {
@@ -293,7 +300,7 @@ void Network::trainBatch(uint32_t batchIndex) {
 
 	// BACKWARD PASS
 	for(UINT i = 0; i < outputLayers.size(); i++) {
-		outputLayers[i]->cost(dataSet->getTrainLabelAt(baseIndex));
+		outputLayers[i]->backpropagation(dataSet->getTrainLabelAt(baseIndex));
 	}
 }
 
@@ -317,8 +324,8 @@ void Network::clipGradients() {
 	const double l2normParamsData = std::sqrt(sumsqParamsData);
 
 	if(clipGradientsLevel < 0.0001) {
-		//cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
-		//		", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
+		cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
+				", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
 	} else {
 		if(l2normParamsGrad > clipGradientsLevel) {
 			const DATATYPE scale_factor = clipGradientsLevel / (l2normParamsGrad*1);
@@ -328,8 +335,8 @@ void Network::clipGradients() {
 					") by scale factor " << scale_factor << endl;
 			scaleParamsGrad(scale_factor);
 		} else {
-			//cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
-			//		", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
+			cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
+					", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
 		}
 	}
 }

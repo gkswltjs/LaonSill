@@ -168,7 +168,7 @@ protected:
 	/**
 	 * @details 학습된 네트워크에 대해 전체 테스트셋으로 네트워크를 평가한다.
 	 */
-	void evaluateTestSet();
+	double evaluateTestSet();
 
 #ifndef GPU_MODE
 	int testEvaluateResult(const rvec &output, const rvec &y);
@@ -180,7 +180,7 @@ protected:
 	 * @param y 데이터의 정답 호스트 메모리 포인터
 	 */
 	//void evaluateTestData(const int num_labels, Data* output, const UINT *y);
-	void evaluateTestData(uint32_t batchIndex);
+	double evaluateTestData(uint32_t batchIndex);
 #endif
 
 

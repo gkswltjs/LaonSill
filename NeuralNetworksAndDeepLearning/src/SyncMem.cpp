@@ -148,10 +148,12 @@ double SyncMem<DATATYPE>::sumsq_device_mem() {
 	checkCudaErrors(cublasSdot(Cuda::cublasHandle, _size, _mem, 1, _mem, 1, &sumsq));
 
 	// NaN test
+	/*
 	if(isnan(sumsq)) {
 		sumsq = std::numeric_limits<float>::max();
 		print("data:");
 	}
+	*/
 	return (double)sumsq;
 }
 

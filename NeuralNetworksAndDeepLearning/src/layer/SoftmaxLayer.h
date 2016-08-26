@@ -97,11 +97,14 @@ public:
 			param_filler weight_filler, param_filler bias_filler);
 	virtual ~SoftmaxLayer();
 
+	using OutputLayer::backpropagation;
+	void backpropagation(const uint32_t* target);
+
 	/**
 	 * @details 출력 레이어의 출력값과 데이터에 대한 정답으로 cost를 계산한다.
 	 * @param target 데이터에 대한 정답 장치 메모리 포인터
 	 */
-	void cost(const uint32_t *target);
+	double cost(const uint32_t *target);
 
 protected:
 	void initialize();

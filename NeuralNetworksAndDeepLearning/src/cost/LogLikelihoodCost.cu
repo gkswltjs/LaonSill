@@ -24,6 +24,7 @@ __global__ void SoftmaxLossBackprop(const uint32_t* label, int num_labels, int b
 }
 */
 
+
 __global__ void SoftmaxLossBackprop(
 		const DATATYPE *z,
 		const DATATYPE *activation,
@@ -33,8 +34,7 @@ __global__ void SoftmaxLossBackprop(
 		uint32_t batchsize) {
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= batchsize)
-		return;
+	if (idx >= batchsize) return;
 	const int targetValue = static_cast<int>(target[idx]);
 	// For each item in the batch, decrease the result of the label's value by 1
 	delta[idx * numLabels + targetValue] = -1.0/activation[idx*numLabels + targetValue];
@@ -45,7 +45,7 @@ __global__ void SoftmaxLossBackprop(
 
 
 LogLikelihoodCost::LogLikelihoodCost() {
-		this->type = Cost::LogLikelihood;
+	this->type = Cost::LogLikelihood;
 }
 LogLikelihoodCost::~LogLikelihoodCost() {}
 
@@ -62,15 +62,28 @@ void LogLikelihoodCost::d_cost(const rcube &z, const rcube &activation, const rv
 }
 #else
 
-double LogLikelihoodCost::fn(const DATATYPE *pA, const DATATYPE *pY) {
-	return 0.0;
+double LogLikelihoodCost::forward(const DATATYPE* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) {
+	double cost = 0.0;
+	for(uint32_t batchIndex = 0; batchIndex < batchsize; batchIndex++) {
+		cost -= std::log(output[batchIndex*numLabels+target[batchIndex]]);
+	}
+	return cost;
 }
 
-void LogLikelihoodCost::d_cost(const DATATYPE *z, const DATATYPE *activation, const uint32_t *target, DATATYPE *delta, UINT numLabels, UINT batchsize) {
+void LogLikelihoodCost::backward(const DATATYPE *z, const DATATYPE *activation, const uint32_t *target, DATATYPE *delta, UINT numLabels, UINT batchsize) {
 	//checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(DATATYPE)*numLabels*batchsize, cudaMemcpyDeviceToDevice));
 	SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(z, activation, target, delta, numLabels, batchsize);
 }
 #endif
+
+
+
+
+
+
+
+
+
 
 
 

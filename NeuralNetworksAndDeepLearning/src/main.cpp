@@ -45,11 +45,11 @@ void network_test() {
 	Util::setPrint(false);
 
 	const uint32_t maxEpoch = 1000;
-	const uint32_t batchSize = 10;
-	const float baseLearningRate = 0.001f;
-	const float weightDecay = 0.002f;
+	const uint32_t batchSize = 50;
+	const float baseLearningRate = 0.01f;
+	const float weightDecay = 0.0002f;
 	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
+	const float clipGradientsLevel = 500.0f;
 
 	//DataSet* dataSet = new MockDataSet(28, 28, 1, 10, 10, 10);
 	//DataSet* dataSet = new MockDataSet(56, 56, 3, 10, 10, 10);

@@ -52,7 +52,7 @@ public:
 	 * @return 계산된 cost값.
 	 * @todo 사용중이지 않기 때문에 사용시 정비가 필요, 현재 이 method의 결과는 무효함.
 	 */
-	virtual double fn(const DATATYPE *pA, const DATATYPE *pY) = 0;
+	virtual double forward(const DATATYPE* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) = 0;
 
 	/**
 	 * @details cost에 대해 activation 입력으로 미분 결과를 계산
@@ -63,7 +63,7 @@ public:
 	 * @param numLabels 정답값의 레이블 수.
 	 * @param batchsize 데이터 배치 수.
 	 */
-	virtual void d_cost(const DATATYPE *z, const DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize) = 0;
+	virtual void backward(const DATATYPE *z, const DATATYPE *activation, const uint32_t *target, DATATYPE *delta, uint32_t numLabels, uint32_t batchsize) = 0;
 #endif
 
 protected:

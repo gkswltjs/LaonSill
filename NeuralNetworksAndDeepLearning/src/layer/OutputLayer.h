@@ -105,6 +105,10 @@ public:
 		CostFactory::destroy(cost_fn);
 	};
 
+	//virtual void backpropagation(UINT idx, Data* next_input, uint32_t offset) {
+	using FullyConnectedLayer::backpropagation;
+	virtual void backpropagation(const uint32_t* target) = 0;
+
 	/**
 	 * @details 출력레이어의 cost를 게산한다.
 	 * @param target 현재 cost를 구한 데이터에 대한 정답 장치 메모리 포인터
@@ -112,7 +116,7 @@ public:
 	 *       별도로 cost를 구하고 gradient를 다시 계산할 경우 효율적이지 못해서 cost에서 gradient까지 계산하게 되어있다.
 	 *       하지만 적절한 modularity를 달성하기 위해서 cost를 구하는 것과 gradient를 계산하는 것은 구분되어야 한다.
 	 */
-	virtual void cost(const uint32_t *target)=0;
+	virtual double cost(const uint32_t* target) = 0;
 
 
 protected:

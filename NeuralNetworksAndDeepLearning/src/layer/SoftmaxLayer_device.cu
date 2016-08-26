@@ -31,9 +31,8 @@ __global__ void Dropout_(const int n, const DATATYPE* in, const DATATYPE* mask,
 
 
 
-
-void SoftmaxLayer::cost(const uint32_t* target) {
-	Util::printMessage("SoftmaxLayer::cost()---"+string(name));
+void SoftmaxLayer::backpropagation(const uint32_t* target) {
+	Util::printMessage("SoftmaxLayer::target()---"+string(name));
 
 	_target.set_mem(target, SyncMemCopyType::HostToDevice);
 	//_target.print("target:");
@@ -44,7 +43,7 @@ void SoftmaxLayer::cost(const uint32_t* target) {
 	//DATATYPE* d_delta = _preActivation->mutable_device_grad();
 	_output->reset_device_grad();
 	DATATYPE* d_delta = _output->mutable_device_grad();
-	cost_fn->d_cost(d_z, d_output, d_target, d_delta, out_dim.rows, out_dim.batches);
+	cost_fn->backward(d_z, d_output, d_target, d_delta, out_dim.rows, out_dim.batches);
 
 	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
 	_output->print_data("d_output:");
@@ -53,10 +52,6 @@ void SoftmaxLayer::cost(const uint32_t* target) {
 
 	_backpropagation();
 	propBackpropagation();
-
-
-
-
 
 
 	//_output->reset_device_grad();
@@ -81,9 +76,6 @@ void SoftmaxLayer::cost(const uint32_t* target) {
 	*/
 
 	//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
-
-
-
 
 	/*
 	_input->print_data("d_input:");
@@ -115,6 +107,13 @@ void SoftmaxLayer::cost(const uint32_t* target) {
 
 	propBackpropagation();
 	*/
+}
+
+
+double SoftmaxLayer::cost(const uint32_t* target) {
+	// 편의상 HOST에서 계산, DEVICE 코드로 변환해야 함
+	_target.set_mem(target, SyncMemCopyType::HostToHost);
+	return cost_fn->forward(_output->host_data(), _target.host_mem(), out_dim.rows, out_dim.batches);
 }
 
 

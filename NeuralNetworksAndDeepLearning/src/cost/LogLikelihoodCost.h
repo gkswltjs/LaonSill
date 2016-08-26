@@ -26,8 +26,8 @@ public:
 	/**
 	 * @details C = -ln(ayL)
 	 */
-	double fn(const DATATYPE *pA, const DATATYPE *pY);
-	void d_cost(const DATATYPE *z, const DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize);
+	double forward(const DATATYPE* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize);
+	void backward(const DATATYPE *z, const DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize);
 #endif
 
 

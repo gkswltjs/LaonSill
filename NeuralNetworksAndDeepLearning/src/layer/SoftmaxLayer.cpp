@@ -67,7 +67,7 @@ void SoftmaxLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 #ifndef GPU_MODE
 void SoftmaxLayer::cost(const rvec &target) {
 	// delta
-	cost_fn->d_cost(z, output, target, delta);
+	cost_fn->backward(z, output, target, delta);
 	Util::printVec(nabla_b, "bias:");
 	Util::printMat(nabla_w, "weight");
 	Util::printCube(delta, "delta:");
