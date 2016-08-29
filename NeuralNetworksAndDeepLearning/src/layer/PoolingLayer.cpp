@@ -104,7 +104,7 @@ void PoolingLayer<Dtype>::_feedforward(uint32_t idx, const rcube &input, const c
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::convertCube(input, this->input);
-	pooling_fn->pool(pool_d, this->input, pool_map, output);
+	pooling_fn->forward(pool_d, this->input, pool_map, output);
 
 	propFeedforward(this->output, end);
 }
@@ -119,7 +119,7 @@ void PoolingLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer)
 	Util::printCube(w_next_delta, "w_next_delta:");
 
 	rcube temp(size(delta_input));
-	pooling_fn->d_pool(pool_d, w_next_delta, pool_map, temp);
+	pooling_fn->backward(pool_d, w_next_delta, pool_map, temp);
 	delta_input += temp;
 	Util::printCube(delta_input, "delta_input:");
 

@@ -23,6 +23,11 @@
 template <typename Dtype>
 class SoftmaxLayer : public OutputLayer<Dtype> {
 public:
+	/**
+	 * @brief 소프트맥스 출력 레이어 객체 빌더
+	 * @details 소프트맥스 출력 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 소프트 맥스 레이어 객체를 생성한다.
+	 */
 	class Builder : public OutputLayer<Dtype>::Builder {
 	public:
 		Builder() {
@@ -98,6 +103,11 @@ public:
 			param_filler weight_filler, param_filler bias_filler);
 	virtual ~SoftmaxLayer();
 
+	/**
+	 * @details 히든 레이어의 backpropagation()을 override
+	 *          히든 레이어와 달리 출력 레이어는 Cost와 target값을 통해 gradient가 계산된다.
+	 * @param target 현재 입력 데이터에 대한 정답 레이블
+	 */
 	using OutputLayer<Dtype>::backpropagation;
 	void backpropagation(const uint32_t* target);
 
@@ -109,7 +119,6 @@ public:
 
 protected:
 	void initialize();
-
 
 protected:
 	virtual void _shape(bool recursive=true);

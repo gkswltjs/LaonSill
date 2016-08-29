@@ -30,6 +30,11 @@
 template <typename Dtype>
 class InputLayer : public Layer<Dtype> {
 public:
+	/**
+	 * @brief 입력 레이어 객체 빌더
+	 * @details 입력 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 레이어 입력 객체를 생성한다.
+	 */
 	class Builder : public Layer<Dtype>::Builder {
 	public:
 		Builder() {}

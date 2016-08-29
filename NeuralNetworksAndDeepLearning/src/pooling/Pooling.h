@@ -49,8 +49,8 @@ public:
 	Type getType() const { return this->type; }
 
 #ifndef GPU_MODE
-	virtual void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
-	virtual void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
+	virtual void forward(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
+	virtual void backward(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
 #else
 	cudnnPoolingDescriptor_t getPoolDesc() const { return poolDesc; }
 
@@ -61,24 +61,24 @@ public:
 	 * @param yDesc 출력값 y의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터
 	 * @param y 출력값 장치 메모리 포인터
 	 */
-	virtual void pool(const cudnnTensorDescriptor_t xDesc, const Dtype* x,
+	virtual void forward(const cudnnTensorDescriptor_t xDesc, const Dtype* x,
 			const cudnnTensorDescriptor_t yDesc, Dtype* y)=0;
 	/**
 	 * @details 입력 x에 관한 gradient를 구한다.
-	 * @param yDesc 출력값 y의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터
-	 * @param y 출력값 장치 메모리 포인터
-	 * @param dy 출력 y에 관한 gradient
-	 * @param xDesc 입력값 x의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터
-	 * @param x 입력값 장치 메모리 포인터
-	 * @param dx 입력 x에 관한 gradient
+	 * @param yDesc 출력 y의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터
+	 * @param y 출력 데이터 장치 메모리 포인터
+	 * @param dy 출력 그레디언트 장치 메모리 포인터
+	 * @param xDesc 입력 x의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터
+	 * @param x 입력 데이터 장치 메모리 포인터
+	 * @param dx 입력 그레디언트 장치 메모리 포인터
 	 */
-	virtual void d_pool(const cudnnTensorDescriptor_t yDesc, const Dtype* y, const Dtype* dy,
+	virtual void backward(const cudnnTensorDescriptor_t yDesc, const Dtype* y, const Dtype* dy,
 			const cudnnTensorDescriptor_t xDesc, const Dtype* x, Dtype* dx)=0;
 
 #endif
 
 protected:
-	Type type;							///< 풀링 타입
+	Type type;									///< 풀링 타입
 	cudnnPoolingDescriptor_t poolDesc;			///< cudnn 풀링 연산 정보 구조체
 
 };

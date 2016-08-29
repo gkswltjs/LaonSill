@@ -20,6 +20,11 @@
 template <typename Dtype>
 class HiddenLayer : public Layer<Dtype> {
 public:
+	/**
+	 * @brief 히든 레이어 객체 빌더
+	 * @details 히든 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 히든 레이어 객체를 생성한다.
+	 */
 	class Builder : public Layer<Dtype>::Builder {
 	public:
 		vector<uint32_t> _prevLayerIndices;
@@ -73,6 +78,14 @@ public:
 
 
 protected:
+	/**
+	 * @details 네트워크 cost의 다음 레이어의 입력에 관한 gradient값을 전달 받아
+	 *          현재 레이어의 parameter(parameter가 있는 경우), input에 관한 gradient를 계산한다.
+	 */
+	virtual void _backpropagation() {
+		this->_input->set_device_grad(this->_output);
+	}
+
 	virtual void _shape(bool recursive=true) {
 		if(recursive) {
 			Layer<Dtype>::_shape();
@@ -81,13 +94,7 @@ protected:
 	virtual void _clearShape() {
 		Layer<Dtype>::_clearShape();
 	}
-	/**
-	 * @details 네트워크 cost의 다음 레이어의 입력에 관한 gradient값을 전달 받아
-	 *          현재 레이어의 parameter(parameter가 있는 경우), input에 관한 gradient를 계산한다.
-	 */
-	virtual void _backpropagation() {
-		this->_input->set_device_grad(this->_output);
-	}
+
 	/**
 	 * @details 복수의 '다음' 레이어로부터의 gradient를 조합한다.
 	 *          기본 조합은 gradient의 합으로 한다.
@@ -112,8 +119,6 @@ protected:
 		//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
 		this->_output->print_grad("d_delta_output:");
 	}
-
-
 
 	/**
 	 * @details 복수의 '다음' 레이어로부터의 gradient들에 대해 branch의 수 기준으로 스케일링한다.

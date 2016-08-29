@@ -170,15 +170,15 @@ protected:
 	vector<uint32_t>* trainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
 	vector<uint32_t>* trainSetIndices;			///< 학습셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
 
-	vector<Dtype>* validationDataSet;		///< 유효데이터셋 벡터에 대한 포인터.
+	vector<Dtype>* validationDataSet;			///< 유효데이터셋 벡터에 대한 포인터.
 	vector<uint32_t>* validationLabelSet;		///< 유효데이터셋의 정답 레이블 벡터에 대한 포인터.
 	vector<uint32_t>* validationSetIndices;		///< 유효셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
 
-	vector<Dtype>* testDataSet;				///< 테스트데이터셋 벡터에 대한 포인터.
+	vector<Dtype>* testDataSet;					///< 테스트데이터셋 벡터에 대한 포인터.
 	vector<uint32_t>* testLabelSet;				///< 테스트데이터셋의 정답 레이블 벡터에 대한 포인터.
 	vector<uint32_t>* testSetIndices;			///< 테스트셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
 
-	Dtype mean[3];							///< 학습데이터셋의 각 채널별 평균값을 저장하는 배열.
+	Dtype mean[3];								///< 학습데이터셋의 각 채널별 평균값을 저장하는 배열.
 };
 
 #endif /* DATASET_H_ */

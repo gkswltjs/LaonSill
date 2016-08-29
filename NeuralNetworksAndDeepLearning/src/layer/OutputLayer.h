@@ -23,6 +23,11 @@
 template <typename Dtype>
 class OutputLayer : public FullyConnectedLayer<Dtype> {
 public:
+	/**
+	 * @brief 출력 레이어 객체 빌더
+	 * @details 출력 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 출력 레이어 객체를 생성한다.
+	 */
 	class Builder : public FullyConnectedLayer<Dtype>::Builder {
 	public:
 		typename Cost<Dtype>::Type _costType;
@@ -106,6 +111,11 @@ public:
 		CostFactory<Dtype>::destroy(cost_fn);
 	};
 
+	/**
+	 * @details 히든 레이어의 backpropagation()을 override
+	 *          히든 레이어와 달리 출력 레이어는 Cost와 target값을 통해 gradient가 계산된다.
+	 * @param target 현재 입력 데이터에 대한 정답 레이블
+	 */
 	using FullyConnectedLayer<Dtype>::backpropagation;
 	virtual void backpropagation(const uint32_t* target) = 0;
 
@@ -124,7 +134,6 @@ protected:
 		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
 		this->cost_fn = CostFactory<Dtype>::create(costType);
 	}
-
 
 	virtual void _shape(bool recursive=true) {
 		if(recursive) {

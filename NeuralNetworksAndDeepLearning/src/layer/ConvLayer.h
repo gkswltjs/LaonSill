@@ -31,6 +31,11 @@
 template <typename Dtype>
 class ConvLayer : public HiddenLayer<Dtype>, public LearnableLayer {
 public:
+	/**
+	 * @brief 컨볼루션 레이어 객체 빌더
+	 * @details 컨볼루션 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 컨볼루션 레이어 객체를 생성한다.
+	 */
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		filter_dim _filterDim;
@@ -127,8 +132,6 @@ public:
 	 */
 	virtual ~ConvLayer();
 
-
-
 	/**
 	 * @details 컨볼루션 연산 관련 파라미터 구조체를 조회한다.
 	 * @return 컨볼루션 연산 관련 파라미터
@@ -140,16 +143,22 @@ protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType);
 
-	virtual void _shape(bool recursive=true);
-	virtual void _clearShape();
-	virtual double sumSquareParamsData();
-	virtual double sumSquareParamsGrad();
-	virtual void _save(ofstream &ofs);
-	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
-	virtual void update();
-	virtual void scaleParamsGrad(float scale);
 	virtual void _feedforward();
 	virtual void _backpropagation();
+
+	virtual void _shape(bool recursive=true);
+	virtual void _clearShape();
+	virtual void _save(ofstream &ofs);
+	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+
+	//////////////////////////////////////////
+	// Learnable Layer Method
+	//////////////////////////////////////////
+	virtual void update();
+	virtual double sumSquareParamsData();
+	virtual double sumSquareParamsGrad();
+	virtual void scaleParamsGrad(float scale);
+	//////////////////////////////////////////
 
 	enum ParamType {
 		Filter = 0,
@@ -158,7 +167,7 @@ protected:
 
 protected:
 	filter_dim filter_d;							///< 컨볼루션 연산 관련 파라미터 구조체
-	Activation<Dtype> *activation_fn;						///< 활성화 객체
+	Activation<Dtype> *activation_fn;				///< 활성화 객체
 
 	update_param weight_update_param;				///< weight 갱신 관련 파라미터 구조체
 	update_param bias_update_param;					///< bias 갱신 관련 파라미터 구조체
@@ -170,15 +179,6 @@ protected:
 	vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
 
 #ifndef GPU_MODE
-	rcube *filters;		// weights
-	rvec biases;
-
-	rcube *nabla_w;
-	rvec nabla_b;
-
-	rcube z;
-	rcube delta;
-	rcube delta_input;
 #else
 	cudnnTensorDescriptor_t biasTensorDesc;			///< cudnn bias 구조 정보 구조체
 	cudnnFilterDescriptor_t filterDesc;				///< cudnn filter 구조 정보 구조체

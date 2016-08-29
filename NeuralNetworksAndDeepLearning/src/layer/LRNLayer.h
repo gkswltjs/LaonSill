@@ -27,6 +27,11 @@
 template <typename Dtype>
 class LRNLayer : public HiddenLayer<Dtype> {
 public:
+	/**
+	 * @brief LRN 레이어 객체 빌더
+	 * @details LRN 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 LRN 레이어 객체를 생성한다.
+	 */
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		lrn_dim _lrnDim;
@@ -80,15 +85,17 @@ public:
 protected:
 	void initialize(lrn_dim lrn_d);
 
+	virtual void _backpropagation();
+	virtual void _feedforward();
+
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
-	virtual void _backpropagation();
-	virtual void _feedforward();
+
 
 protected:
-	lrn_dim lrn_d;					///< LRN 연산 관련 파라미터 구조체
+	lrn_dim lrn_d;								///< LRN 연산 관련 파라미터 구조체
 
 #ifndef GPU_MODE
 	rcube delta_input;

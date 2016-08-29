@@ -27,15 +27,20 @@
 template <typename Dtype>
 class FullyConnectedLayer : public HiddenLayer<Dtype>, public LearnableLayer {
 public:
+	/**
+	 * @brief Fully Connected 레이어 객체 빌더
+	 * @details Fully Connected 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 Fully Connected 레이어 객체를 생성한다.
+	 */
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
-		uint32_t _nOut;
-		double _pDropout;
-		update_param _weightUpdateParam;
-		update_param _biasUpdateParam;
-		param_filler _weightFiller;
-		param_filler _biasFiller;
-		typename Activation<Dtype>::Type _activationType;
+		uint32_t _nOut;										///< 출력 노드의 수
+		double _pDropout;									///< dropout을 적용할 확율
+		update_param _weightUpdateParam;					///< weight 갱신 관련 파라미터 구조체
+		update_param _biasUpdateParam;						///< bias 갱신 관련 파라미터 구조체
+		param_filler _weightFiller;							///< weight 초기화 관련 파라미터 구조체
+		param_filler _biasFiller;							///< bias 초기화 관련 파라미터 구조체
+		typename Activation<Dtype>::Type _activationType;	///< weighted sum에 적용할 활성화 타입
 
 		Builder() {
 			_nOut = 0;
@@ -101,8 +106,6 @@ public:
 		}
 	};
 
-
-
 	/**
 	 * @details FullyConnectedLayer 기본 생성자
 	 *          내부적으로 레이어 타입만 초기화한다.
@@ -112,7 +115,7 @@ public:
 
 	/**
 	 * @details FullyConnectedLayer 생성자
-	 * @param name 레이어의 이름 문자열 포인터
+	 * @param name 레이어의 이름 문자열
 	 * @param n_out 출력 노드의 수
 	 * @param p_dropout dropout을 적용할 확율
 	 * @param weight_update_param weight 갱신 관련 파라미터 구조체
@@ -128,38 +131,42 @@ public:
 
 
 
-
-
-
-
-
 private:
+	/**
+	 * @details FullyConnectedLayer를 초기화한다.
+	 * @param n_out 출력 노드의 수
+	 * @param p_dropout dropout을 적용할 확율
+	 * @param weight_update_param weight 갱신 관련 파라미터 구조체
+	 * @param bias_update_param bias 갱신 관련 파라미터 구조체
+	 * @param weight_filler weight 초기화 관련 파라미터 구조체
+	 * @param bias_filler bias 초기화 관련 파라미터 구조체
+	 * @param activationType weighted sum에 적용할 활성화 타입
+	 */
 	void initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType);
 
 protected:
+	virtual void _feedforward();
+	virtual void _backpropagation();
+
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	//virtual double _sumSquareGrad();
-	//virtual double _sumSquareParam();
+	virtual void _save(ofstream& ofs);
+	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+
+	//////////////////////////////////////////
+	// Learnable Layer Method
+	//////////////////////////////////////////
+	virtual void update();
 	virtual double sumSquareParamsData();
 	virtual double sumSquareParamsGrad();
 	virtual void scaleParamsGrad(float scale);
-	virtual void _save(ofstream& ofs);
-	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
-	//virtual void _update(uint32_t n, uint32_t miniBatchSize);
-	virtual void update();
-	virtual void _feedforward();
-	virtual void _backpropagation();
+	//////////////////////////////////////////
 
 	enum ParamType {
 		Weight = 0,
 		Bias = 1
 	};
-
-
-
-
 
 protected:
 	double p_dropout;						///< dropout을 적용할 확율

@@ -28,10 +28,15 @@
 template <typename Dtype>
 class PoolingLayer : public HiddenLayer<Dtype> {
 public:
+	/**
+	 * @brief 풀링 레이어 객체 빌더
+	 * @details 풀링 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 풀링 레이어 객체를 생성한다.
+	 */
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
-		pool_dim _poolDim;
-		typename Pooling<Dtype>::Type _poolingType;
+		pool_dim _poolDim;								///< 풀링 파라미터
+		typename Pooling<Dtype>::Type _poolingType;		///< 풀링 타입
 
 		Builder() {
 			_poolDim.cols = 0;
@@ -89,12 +94,14 @@ public:
 
 protected:
 	void initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
+
+	virtual void _feedforward();
+	virtual void _backpropagation();
+
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
-	virtual void _backpropagation();
-	virtual void _feedforward();
 
 protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체

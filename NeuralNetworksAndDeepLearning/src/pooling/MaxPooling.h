@@ -28,7 +28,7 @@ public:
 	}
 	virtual ~MaxPooling() {}
 
-	void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
+	void forward(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
 		UINT i, j, k, l, m;
 
 		int left_pad = (pool_d.rows-1)/2;
@@ -81,7 +81,7 @@ public:
 		Util::printCube(output, "output:");
 	}
 
-	void d_pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
+	void backward(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output) {
 
 		UINT i, j, k;
 		int pool_max_idx;
@@ -136,14 +136,14 @@ public:
 		checkCUDNN(cudnnDestroyPoolingDescriptor(this->poolDesc));
 	}
 
-	void pool(const cudnnTensorDescriptor_t xDesc, const Dtype* x,
+	void forward(const cudnnTensorDescriptor_t xDesc, const Dtype* x,
 			const cudnnTensorDescriptor_t yDesc, Dtype* y) {
 
 		checkCUDNN(cudnnPoolingForward(Cuda::cudnnHandle, this->poolDesc,
 				&Cuda::alpha, xDesc, x, &Cuda::beta, yDesc, y));
 	}
 
-	void d_pool(const cudnnTensorDescriptor_t yDesc, const Dtype* y, const Dtype* dy,
+	void backward(const cudnnTensorDescriptor_t yDesc, const Dtype* y, const Dtype* dy,
 			const cudnnTensorDescriptor_t xDesc, const Dtype* x, Dtype* dx) {
 		checkCUDNN(cudnnPoolingBackward(Cuda::cudnnHandle, this->poolDesc,
 				&Cuda::alpha, yDesc, y, yDesc, dy, xDesc, x,

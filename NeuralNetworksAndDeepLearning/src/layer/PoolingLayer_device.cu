@@ -47,7 +47,7 @@ void PoolingLayer<Dtype>::_feedforward() {
 	this->_input->print_data("d_input:");
 	const Dtype* d_input = this->_input->device_data();
 	Dtype* d_output = this->_output->mutable_device_data();
-	pooling_fn->pool(this->inputTensorDesc, d_input, this->outputTensorDesc, d_output);
+	pooling_fn->forward(this->inputTensorDesc, d_input, this->outputTensorDesc, d_output);
 
 	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
 	this->_output->print_data(this->name+string("/d_output:"));
@@ -65,7 +65,7 @@ void PoolingLayer<Dtype>::_backpropagation() {
 	const Dtype* d_delta_output = this->_output->device_grad();
 	const Dtype* d_input = this->_input->device_data();
 	Dtype* d_delta_input = this->_input->mutable_device_grad();
-	pooling_fn->d_pool(this->outputTensorDesc, d_output, d_delta_output, this->inputTensorDesc, d_input, d_delta_input);
+	pooling_fn->backward(this->outputTensorDesc, d_output, d_delta_output, this->inputTensorDesc, d_input, d_delta_input);
 
 	//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 	this->_input->print_grad("d_delta_input:");

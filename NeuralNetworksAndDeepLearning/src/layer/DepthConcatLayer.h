@@ -26,6 +26,11 @@
 template <typename Dtype>
 class DepthConcatLayer : public HiddenLayer<Dtype> {
 public:
+	/**
+	 * @brief Depth Concatenation 레이어 객체 빌더
+	 * @details Depth Concatenation 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 Depth Concatenation 레이어 객체를 생성한다.
+	 */
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		Builder() {}
@@ -83,7 +88,11 @@ protected:
 	 *          scaling을 적용하는 기본 대_scaleGradient()를 재정의하여 scale하지 않도록 한다.
 	 */
 	virtual void _scaleGradient() {};
-
+	/**
+	 * @details 입력 그레디언트 전체를 이전 레이어에 전달하는 것이 아니라
+	 *          이전 레이어의 출력 사이즈에 따라 입력 그레디언트를 나누어줘야 하므로
+	 *          propBackpropagation()을 재정의한다.
+	 */
 	virtual void propBackpropagation();
 
 

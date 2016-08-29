@@ -32,15 +32,23 @@ template <typename Dtype> class NetworkConfig;
 /**
  * @brief 레이어 베이스 추상 클래스, 모든 레이어는 이 클래스를 상속받아 구현한다.
  * @details
+ * @todo  save/load/reshape 관련 method의 경우 아직 정리가 되지 않음,
+ *        레이어 리팩토링이 어느정도 정리된 후에 작업할 예정임.
+ *        template화하였지만 float에 대해서만 처리됨, double과 관련된 처리를 구현해야 함.
  */
 template <typename Dtype>
 class Layer {
 public:
+	/**
+	 * @brief 레이어 객체 빌더
+	 * @details 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
+	 *          해당 파라미터를 만족하는 레이어 객체를 생성한다.
+	 */
 	class Builder {
 	public:
-		string _name;
-		uint32_t _id;
-		vector<uint32_t> _nextLayerIndices;
+		string _name;							///< 레이어의 이름
+		uint32_t _id;							///< 레이어의 아이디
+		vector<uint32_t> _nextLayerIndices;		///< 레이어의 다음 레이어 아이디 목록
 
 		Builder() {
 			_name = "";
@@ -61,8 +69,6 @@ public:
 		virtual Layer<Dtype>* build() = 0;
 	};
 
-
-
 	/**
 	 * @brief 레이어 타입 열거형
 	 * @details	지원하는 레이어 타입 열거,
@@ -78,7 +84,6 @@ public:
 		Sigmoid=7, 					// 시그모이드 레이어
 		Softmax=8					// 소프트맥스 레이어
 	};
-
 
 
 	////////////////////////////////////////////////////////////////////
@@ -103,10 +108,6 @@ public:
 	 * @details 레이어 클래스 소멸자
 	 */
 	virtual ~Layer();
-
-
-
-
 
 
 	////////////////////////////////////////////////////////////////////
@@ -158,10 +159,6 @@ public:
 	 * @return 레이어의 출력 데이터 구조정보를 담고 있는 구조체
 	 */
 	io_dim getOutDimension() const { return this->out_dim; }
-#ifndef GPU_MODE
-	rcube &getInput() { return this->_input; }
-	rcube &getOutput() { return this->_output; }
-#else
 	/**
 	 * @details 레이어의 입력값 장치 포인터를 조회한다.
 	 * @return 레이어 입력값 장치 포인터
@@ -172,18 +169,12 @@ public:
 	 * @return 레이어 출력값 장치 포인터
 	 */
 	virtual Data<Dtype>* getOutput() { return this->_output; }
-#endif
 
+	/**
+	 * @details 레이어에 네트워크 설정값을 설정한다.
+	 * @param networkConfig 네트워크 설정값 객체
+	 */
 	virtual void setNetworkConfig(NetworkConfig<Dtype>* networkConfig) { this->networkConfig = networkConfig; }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -209,10 +200,18 @@ public:
 	bool isFirstPrevLayerRequest(uint32_t idx);
 	/**
 	 * @details 현재 레이어에 연결된 마지막 이전 레이어 여부를 조회한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @return 현재 레이어에 연결된 마지막 이전 레이어 여부
 	 */
 	bool isLastPrevLayerRequest(uint32_t idx);
+	/**
+	 * @details isLastPrevLayerRequest()의 Logging버전 (임시 method)
+	 *          어떤 레이어의 어떤 method에 대해 테스트하고 있는지,
+	 *          테스트를 통과했는지 통과하지 못했는지를 화면에 출력한다.
+	 * @param idx 요청을 보낸 이전 레이어의 id
+	 * @param method 이 method를 호출한 method의 이름
+	 * @return 현재 레이어에 연결된 마지막 이전 레이어 여부
+	 */
 	bool w_isLastPrevLayerRequest(uint32_t idx, const string method);
 	/**
 	 * @details 현재 레이어에 연결된 첫 다음 레이어 여부를 조회한다.
@@ -222,59 +221,46 @@ public:
 	bool isFirstNextLayerRequest(uint32_t idx);
 	/**
 	 * @details 현재 레이어에 연결된 마지막 다음 레이어 여부를 조회한다.
-	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
+	 * @param idx 요청을 보낸 다음 레이어의 id
 	 * @return 현재 레이어에 연결된 마지막 다음 레이어 여부
 	 */
 	bool isLastNextLayerRequest(uint32_t idx);
+	/**
+	 * @details isLastNextLayerRequest()의 Logging버전 (임시 method)
+	 *          어떤 레이어의 어떤 method에 대해 테스트하고 있는지,
+	 *          테스트를 통과했는지 통과하지 못했는지를 화면에 출력한다.
+	 * @param idx 요청을 보낸 다음 레이어의 id
+	 */
 	bool w_isLastNextLayerRequest(uint32_t idx, const string method);
 
 	/**
 	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화하고
 	 *          다음 레이어들에 대해 shape()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 현재 레이어의 입력 데이터 구조정보
 	 */
 	virtual void shape(uint32_t idx, io_dim in_dim);
 	/**
 	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 새롭게 변경할 현재 레이어의 입력 데이터 구조정보
 	 */
 	virtual void reshape(uint32_t idx, io_dim in_dim);
 	/**
 	 * @details 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 clear하고 다음 레이어들에 대해 clearShape()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param idx 요청을 보낸 이전 레이어의 id
 	 */
 	virtual void clearShape(uint32_t idx);
 	/**
-	 * @details 학습 파라미터(weight, bias등)의 gradient에 대한 square sum값을 구하고
-	 *          다음 레이어들에 대해 sumSquareGrad()을 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @return 학습 파라미터 gradient에 대한 square sum값
-	 */
-	//virtual double sumSquareGrad(uint32_t idx);
-	/**
-	 * @details 학습 파라미터(weight, bias등)에 대한 square sum값을 구하고 다음 레이어들에 대해 sumSquareParam()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @return 학습 파리미터에 대한 square sum값
-	 */
-	//virtual double sumSquareParam(uint32_t idx);
-	/**
-	 * @details 학습 파라미터의 gradient를 스케일링하고 다음 레이어들에 대해 scaleParam()을 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param 학습 파라미터 스케일링 팩터
-	 */
-	//virtual void scaleParam(uint32_t idx, Dtype scale_factor);
-	/**
 	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
 	virtual void save(uint32_t idx, ofstream &ofs);
 	/**
 	 * @details 현재 레이어의 메타정보를 스트림의 헤더에 쓰고 다음 레이어들에 대해 saveHeader()를 요청한다.
 	 *          입력 레이어 또는 내부 레이어가 있는 레이어(e.g 인셉션레이어)에서 사용한다.
-	 * @param  idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param  idx 요청을 보낸 이전 레이어의 id
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
 	virtual void saveHeader(uint32_t idx, ofstream &ofs);
@@ -287,30 +273,18 @@ public:
 	 * @param layerMap
 	 */
 	virtual void load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
-	/**
-	 * @details 계산된 gradient를 각 학습레이어에서 갱신하고 다음 레이어들에 대해 update()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param n 학습 데이터의 수
-	 * @param miniBatchSize 학습에 사용한 batch 사이즈
-	 */
-	//virtual void update(uint32_t idx, uint32_t n, uint32_t miniBatchSize);
+
 #ifndef GPU_MODE
 	/**
-	 * 주어진 입력 input에 대해 출력 activation을 계산
-	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
-	 */
-	// sub class에서 구현이 없을 때에만 참조, 구현이 있을 경우 prop*() 함수를 참조
-	virtual void feedforward(uint32_t idx, const rcube &input, const char *end=0);
-	/**
 	 * @details batch단위로 누적된 gradient를 초기화하고 다음 레이어들에 대해 reset_nabla()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @todo GPU_MODE에서 사용하지 않는다.
 	 */
 	virtual void reset_nabla(uint32_t idx);
 #else
 	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산하고 다음 레이어들에 대해 feedforward()를 요청한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
+	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
@@ -367,21 +341,6 @@ protected:
 	 */
 	virtual void _clearShape();
 	/**
-	 * @details 학습 파라미터(weight, bias등)의 gradient에 대한 square sum값을 구한다.
-	 * @return 학습 파라미터의 gradient에 대한 square sum값
-	 */
-	//virtual double _sumSquareGrad();
-	/**
-	 * @details 학습 파라미터(weight, bias등)에 대한 square sum값을 구한다.
-	 * @return 학습 파라미터에 대한 square sum값
-	 */
-	//virtual double _sumSquareParam();
-	/**
-	 * @details 학습 파라미터의 gradient를 스케일링한다.
-	 * @param scale_factor 학습 파라미터의 gradient를 스케일할 팩터
-	 */
-	//virtual void _scaleParam(Dtype scale_factor);
-	/**
 	 * @details 현재 레이어를 스트림에 쓴다.
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
@@ -395,12 +354,6 @@ protected:
 	 * @param layerMap
 	 */
 	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
-	/**
-	 * @details 계산된 gradient를 각 학습레이어에서 갱신한다.
-	 * @param n 학습 데이터의 수
-	 * @param miniBatchSize 학습에 사용한 batch 사이즈
-	 */
-	//virtual void _update(uint32_t n, uint32_t miniBatchSize);
 	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
@@ -445,35 +398,11 @@ protected:
 	 */
 	void propClearShape();
 	/**
-	 * @details 다음 레이어들에 대해 sumSquareGrad() 메쏘드를 호출한다.
-	 * @return 다음 레이어들로부터 계산된 square sum값의 합
-	 */
-	//double propSumSquareGrad();
-	/**
-	 * @details 다음 레이어들에 대해 sumSquareParam() 메쏘드를 호출한다.
-	 * @return 다음 레이어들로부터 계산된 square sum값의 합
-	 */
-	//double propSumSquareParam();
-	/**
-	 * @details 다음 레이어들에 대해 scaleParam() 메쏘드를 호출한다.
-	 * @param scale_factor 학습 파라미터의 gradient를 스케일할 팩터
-	 */
-	//void propScaleParam(Dtype scale_factor);
-	/**
 	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
 	 */
 	void propSave(ofstream &ofs);
-	/**
-	 * @details 다음 레이어들에 대해 update() 메쏘드를 호출한다.
-	 */
-	//void propUpdate(uint32_t n, uint32_t miniBatchSize);
+
 #ifndef GPU_MODE
-	/**
-	 * @details 다음 레이어들에 대해 feedforward() 메쏘드를 호출한다.
-	 * @param output 현재 레이어의 출력값 장치 메모리 포인터
-	 * @param end feedforward 중단 레이어의 이름 (0인 경우 최종 output레이어가 중단 레이어)
-	 */
-	void propFeedforward(const rcube output, const char *end=0);
 	/**
 	 * @details 다음 레이어들에 대해 reset_nabla() 메쏘드를 호출한다.
 	 */
@@ -493,7 +422,7 @@ protected:
 	int id;												///< 레이어의 고유 아이디
 	string name;										///< 레이어의 이름
 
-	NetworkConfig<Dtype>* networkConfig;
+	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
 	io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
 	io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
@@ -501,13 +430,11 @@ protected:
 	vector<Layer<Dtype>*> prevLayers;					///< 현재 레이어의 이전(입력) 레이어 목록 벡터
 	vector<Layer<Dtype>*> nextLayers;					///< 현재 레이어의 다음(출력) 레이어 목록 벡터
 
-#ifndef GPU_MODE
-	rcube input;
-	rcube output;
-#else
-	Data<Dtype>* _input;
-	Data<Dtype>* _output;
+	Data<Dtype>* _input;								///< 레이어 입력 데이터 및 그레디언트
+	Data<Dtype>* _output;								///< 레이어 출력 데이터 및 그레디언트
 
+#ifndef GPU_MODE
+#else
 	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 #endif
