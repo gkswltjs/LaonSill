@@ -17,7 +17,7 @@
 
 using namespace std;
 
-
+template <typename Dtype>
 class DataSet {
 public:
 	DataSet();
@@ -58,30 +58,30 @@ public:
 	 * @details 학습데이터에 대한 포인터 조회.
 	 * @return 학습데이터에 대한 포인터.
 	 */
-	const vector<DATATYPE> *getTrainDataSet() const { return this->trainDataSet; }
+	const vector<Dtype> *getTrainDataSet() const { return this->trainDataSet; }
 	/**
 	 * @details 유효데이터에 대한 포인터 조회.
 	 * @return 유효데이터에 대한 포인터.
 	 */
-	const vector<DATATYPE> *getValidationDataSet() const { return this->validationDataSet; }
+	const vector<Dtype> *getValidationDataSet() const { return this->validationDataSet; }
 	/**
 	 * @details 테스트데이터에 대한 포인터 조회.
 	 * @return 테스트데이터에 대한 포인터.
 	 */
-	const vector<DATATYPE> *getTestDataSet() const { return this->testDataSet; }
+	const vector<Dtype> *getTestDataSet() const { return this->testDataSet; }
 	/**
 	 * @details 특정 채널의 평균값을 조회한다.
 	 * @param channel 조회하고자 하는 채널의 index
 	 * @return 지정한 채널의 평균값.
 	 */
-	const DATATYPE getMean(uint32_t channel) const { return mean[channel]; }
+	const Dtype getMean(uint32_t channel) const { return mean[channel]; }
 	/**
 	 * @details 전체 채널의 평균값 배열의 첫번째 위치에 대한 포인터를 조회한다.
 	 * @return 전체 채널 평균값 배열의 첫번째 위치에 대한 포인터.
 	 */
-	const DATATYPE *getMean() const { return mean; }
+	const Dtype *getMean() const { return mean; }
 
-	void setMean(const vector<DATATYPE>& means);
+	void setMean(const vector<Dtype>& means);
 
 
 
@@ -91,7 +91,7 @@ public:
 	 * @param index 조회하고자 하는 학습 데이터의 index
 	 * @return index번째 학습데이터에 대한 포인터.
 	 */
-	virtual const DATATYPE *getTrainDataAt(int index);
+	virtual const Dtype *getTrainDataAt(int index);
 	/**
 	 * @details index번째 학습데이터의 정답 레이블에 대한 포인터 조회.
 	 * @param index 조회하고자 하는 학습 데이터 정답 레이블의 index
@@ -103,7 +103,7 @@ public:
 	 * @param index 조회하고자 하는 유효 데이터의 index
 	 * @return index번째 유효데이터에 대한 포인터.
 	 */
-	virtual const DATATYPE *getValidationDataAt(int index);
+	virtual const Dtype *getValidationDataAt(int index);
 	/**
 	 * @details index번째 유효데이터의 정답 레이블에 대한 포인터 조회.
 	 * @param index 조회하고자 하는 유효 데이터 정답 레이블의 index
@@ -115,7 +115,7 @@ public:
 	 * @param index 조회하고자 하는 테스트데이터의 index
 	 * @return index번째 테스트데이터에 대한 포인터.
 	 */
-	virtual const DATATYPE *getTestDataAt(int index);
+	virtual const Dtype *getTestDataAt(int index);
 	/**
 	 * @details index번째 테스트데이터의 정답 레이블에 대한 포인터 조회.
 	 * @param index 조회하고자 하는 테스트데이터 정답 레이블의 index
@@ -166,19 +166,19 @@ protected:
 	uint32_t numValidationData;					///< 유효데이터의 수.
 	uint32_t numTestData;						///< 테스트데이터의 수.
 
-	vector<DATATYPE>* trainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
+	vector<Dtype>* trainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
 	vector<uint32_t>* trainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
 	vector<uint32_t>* trainSetIndices;			///< 학습셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
 
-	vector<DATATYPE>* validationDataSet;		///< 유효데이터셋 벡터에 대한 포인터.
+	vector<Dtype>* validationDataSet;		///< 유효데이터셋 벡터에 대한 포인터.
 	vector<uint32_t>* validationLabelSet;		///< 유효데이터셋의 정답 레이블 벡터에 대한 포인터.
 	vector<uint32_t>* validationSetIndices;		///< 유효셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
 
-	vector<DATATYPE>* testDataSet;				///< 테스트데이터셋 벡터에 대한 포인터.
+	vector<Dtype>* testDataSet;				///< 테스트데이터셋 벡터에 대한 포인터.
 	vector<uint32_t>* testLabelSet;				///< 테스트데이터셋의 정답 레이블 벡터에 대한 포인터.
 	vector<uint32_t>* testSetIndices;			///< 테스트셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
 
-	DATATYPE mean[3];							///< 학습데이터셋의 각 채널별 평균값을 저장하는 배열.
+	Dtype mean[3];							///< 학습데이터셋의 각 채널별 평균값을 저장하는 배열.
 };
 
 #endif /* DATASET_H_ */

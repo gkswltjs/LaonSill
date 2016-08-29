@@ -260,7 +260,7 @@ void imagepacker_test(int numCategory,
 
 void imagepackdataset_test() {
 
-	ImagePackDataSet dataSet(
+	ImagePackDataSet<float> dataSet(
 			"/home/jhkim/image/ILSVRC2012/save/train_data",
 			"/home/jhkim/image/ILSVRC2012/save/train_label",
 			10,
@@ -270,8 +270,8 @@ void imagepackdataset_test() {
 
 	dataSet.load();
 
-	const DATATYPE* data = 0;
-	const UINT* label = 0;
+	const float* data = 0;
+	const uint32_t* label = 0;
 	data = dataSet.getTrainDataAt(0);
 	label = dataSet.getTrainLabelAt(0);
 

@@ -20,7 +20,8 @@
  *          디버깅 및 테스트용.
  * @todo -0.1 ~ 0.1의 uniform dist의 난수 생성으로 지정, 필요에 따라 변경할 수 있도록 수정.
  */
-class MockDataSet : public DataSet {
+template <typename Dtype>
+class MockDataSet : public DataSet<Dtype> {
 public:
 	MockDataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t numTrainData, uint32_t numTestData, uint32_t numLabels);
 	virtual ~MockDataSet();

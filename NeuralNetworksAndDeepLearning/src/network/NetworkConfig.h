@@ -20,7 +20,7 @@
 #include "../layer/LearnableLayer.h"
 #include "../monitor/NetworkListener.h"
 
-class DataSet;
+template <typename Dtype> class DataSet;
 
 using namespace std;
 
@@ -171,7 +171,7 @@ class NetworkConfig {
 public:
 	class Builder {
 	public:
-		DataSet* _dataSet;
+		DataSet<Dtype>* _dataSet;
 		vector<Evaluation*> _evaluations;
 		vector<NetworkListener*> _networkListeners;
 		LayersConfig<Dtype>* _layersConfig;
@@ -219,7 +219,7 @@ public:
 			this->_clipGradientsLevel = clipGradientsLevel;
 			return this;
 		}
-		Builder* dataSet(DataSet* dataSet) {
+		Builder* dataSet(DataSet<Dtype>* dataSet) {
 			this->_dataSet = dataSet;
 			return this;
 		}
@@ -305,7 +305,7 @@ public:
 	vector<LearnableLayer*> _learnableLayers;
 	map<string, Layer<Dtype>*> _nameLayerMap;
 
-	DataSet* _dataSet;
+	DataSet<Dtype>* _dataSet;
 	vector<Evaluation*> _evaluations;
 	vector<NetworkListener*> _networkListeners;
 	LayersConfig<Dtype>* _layersConfig;
@@ -345,7 +345,7 @@ public:
 		this->_clipGradientsLevel = clipGradientsLevel;
 		return this;
 	}
-	NetworkConfig* dataSet(DataSet* dataSet) {
+	NetworkConfig* dataSet(DataSet<Dtype>* dataSet) {
 		this->_dataSet = dataSet;
 		return this;
 	}

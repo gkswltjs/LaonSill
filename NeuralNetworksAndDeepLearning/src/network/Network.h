@@ -26,7 +26,7 @@
 #include "NetworkConfig.h"
 
 class DataSample;
-class DataSet;
+template <typename Dtype> class DataSet;
 
 using namespace std;
 

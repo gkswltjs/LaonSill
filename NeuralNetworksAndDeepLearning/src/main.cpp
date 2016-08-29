@@ -56,7 +56,7 @@ void network_test() {
 	//DataSet* dataSet = new MockDataSet(224, 224, 3, 100, 100, 100);
 	//DataSet* dataSet = createImageNet10CatDataSet();
 	//DataSet* dataSet = createImageNet100CatDataSet();
-	DataSet* dataSet = createMnistDataSet();
+	DataSet<float>* dataSet = createMnistDataSet<float>();
 	dataSet->load();
 	dataSet->zeroMean(true);
 

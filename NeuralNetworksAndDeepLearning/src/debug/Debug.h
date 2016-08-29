@@ -25,9 +25,8 @@
 #include "../network/NetworkConfig.h"
 #include "../pooling/Pooling.h"
 
-class DataSet;
-template <typename Dtype>
-class LayersConfig;
+template <typename Dtype> class DataSet;
+template <typename Dtype> class LayersConfig;
 
 
 
@@ -62,9 +61,9 @@ LayersConfig<Dtype>* createInceptionLayersConfig();
 
 
 
-
-DataSet* createMnistDataSet() {
-	DataSet* dataSet = new ImagePackDataSet(
+template <typename Dtype>
+DataSet<Dtype>* createMnistDataSet() {
+	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
 			"/home/jhkim/data/learning/mnist/train_data",
 			"/home/jhkim/data/learning/mnist/train_label",
 			1,
@@ -76,8 +75,9 @@ DataSet* createMnistDataSet() {
 
 }
 
-DataSet* createImageNet10CatDataSet() {
-	DataSet* dataSet = new ImagePackDataSet(
+template <typename Dtype>
+DataSet<Dtype>* createImageNet10CatDataSet() {
+	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
 			"/home/jhkim/image/ILSVRC2012/save/10cat_100train_100test_100_100/train_data",
 			"/home/jhkim/image/ILSVRC2012/save/10cat_100train_100test_100_100/train_label",
 			1,
@@ -90,8 +90,9 @@ DataSet* createImageNet10CatDataSet() {
 	return dataSet;
 }
 
-DataSet* createImageNet100CatDataSet() {
-	DataSet* dataSet = new ImagePackDataSet(
+template <typename Dtype>
+DataSet<Dtype>* createImageNet100CatDataSet() {
+	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
 			"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_data",
 			"/home/jhkim/image/ILSVRC2012/save/100cat_10000train_1000test_10000_1000/train_label",
 			1,

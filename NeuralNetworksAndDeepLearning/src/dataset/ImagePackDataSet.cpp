@@ -19,8 +19,8 @@
 #include "../Util.h"
 
 
-
-ImagePackDataSet::ImagePackDataSet(
+template <typename Dtype>
+ImagePackDataSet<Dtype>::ImagePackDataSet(
 		string trainImage,
 		string trainLabel,
 		uint32_t numTrainFile,
@@ -39,58 +39,64 @@ ImagePackDataSet::ImagePackDataSet(
 	this->bufDataSet = NULL;
 }
 
-ImagePackDataSet::~ImagePackDataSet() {}
+template <typename Dtype>
+ImagePackDataSet<Dtype>::~ImagePackDataSet() {}
 
 
-
-const DATATYPE *ImagePackDataSet::getTrainDataAt(int index) {
-	if(index >= numTrainData || index < 0) throw Exception();
+template <typename Dtype>
+const Dtype* ImagePackDataSet<Dtype>::getTrainDataAt(int index) {
+	if(index >= this->numTrainData || index < 0) throw Exception();
 	int reqPage = index / numImagesInTrainFile;
 	if(reqPage != trainFileIndex) {
-		load(DataSet::Train, reqPage);
+		load(DataSet<Dtype>::Train, reqPage);
 		trainFileIndex = reqPage;
 	}
-	return &(*trainDataSet)[dataSize*(*trainSetIndices)[(index-reqPage*numImagesInTrainFile)]];
+	return &(*this->trainDataSet)[this->dataSize*(*this->trainSetIndices)[(index-reqPage*numImagesInTrainFile)]];
 }
 
-const UINT *ImagePackDataSet::getTrainLabelAt(int index) {
-	if(index >= numTrainData || index < 0) throw Exception();
+template <typename Dtype>
+const uint32_t* ImagePackDataSet<Dtype>::getTrainLabelAt(int index) {
+	if(index >= this->numTrainData || index < 0) throw Exception();
 	int reqPage = index / numImagesInTrainFile;
 	if(reqPage != trainFileIndex) {
-		load(DataSet::Train, reqPage);
+		load(DataSet<Dtype>::Train, reqPage);
 		trainFileIndex = reqPage;
 	}
-	return &(*trainLabelSet)[(*trainSetIndices)[index-reqPage*numImagesInTrainFile]];
+	return &(*this->trainLabelSet)[(*this->trainSetIndices)[index-reqPage*numImagesInTrainFile]];
 }
 
-const DATATYPE *ImagePackDataSet::getValidationDataAt(int index) {
-	if(index >= numValidationData || index < 0) throw Exception();
-	return &(*validationDataSet)[dataSize*index];
+template <typename Dtype>
+const Dtype* ImagePackDataSet<Dtype>::getValidationDataAt(int index) {
+	if(index >= this->numValidationData || index < 0) throw Exception();
+	return &(*this->validationDataSet)[this->dataSize*index];
 }
 
-const UINT *ImagePackDataSet::getValidationLabelAt(int index) {
-	if(index >= numValidationData || index < 0) throw Exception();
-	return &(*validationLabelSet)[index];
+template <typename Dtype>
+const uint32_t* ImagePackDataSet<Dtype>::getValidationLabelAt(int index) {
+	if(index >= this->numValidationData || index < 0) throw Exception();
+	return &(*this->validationLabelSet)[index];
 }
 
-const DATATYPE *ImagePackDataSet::getTestDataAt(int index) {
-	if(index >= numTestData || index < 0) throw Exception();
+template <typename Dtype>
+const Dtype* ImagePackDataSet<Dtype>::getTestDataAt(int index) {
+	if(index >= this->numTestData || index < 0) throw Exception();
 	int reqPage = index / numImagesInTestFile;
 	if(reqPage != testFileIndex) {
-		load(DataSet::Test, reqPage);
+		load(DataSet<Dtype>::Test, reqPage);
 		testFileIndex = reqPage;
 	}
-	return &(*testDataSet)[dataSize*(*testSetIndices)[(index-reqPage*numImagesInTestFile)]];
+	return &(*this->testDataSet)[this->dataSize*(*this->testSetIndices)[(index-reqPage*numImagesInTestFile)]];
 }
 
-const UINT *ImagePackDataSet::getTestLabelAt(int index) {
-	if(index >= numTestData || index < 0) throw Exception();
+template <typename Dtype>
+const uint32_t* ImagePackDataSet<Dtype>::getTestLabelAt(int index) {
+	if(index >= this->numTestData || index < 0) throw Exception();
 	int reqPage = index / numImagesInTestFile;
 	if(reqPage != testFileIndex) {
-		load(DataSet::Test, reqPage);
+		load(DataSet<Dtype>::Test, reqPage);
 		testFileIndex = reqPage;
 	}
-	return &(*testLabelSet)[(*testSetIndices)[index-reqPage*numImagesInTestFile]];
+	return &(*this->testLabelSet)[(*this->testSetIndices)[index-reqPage*numImagesInTestFile]];
 }
 
 
@@ -98,62 +104,63 @@ const UINT *ImagePackDataSet::getTestLabelAt(int index) {
 
 
 
-
-void ImagePackDataSet::load() {
+template <typename Dtype>
+void ImagePackDataSet<Dtype>::load() {
 
 #ifndef GPU_MODE
 	numTrainData = loadDataSetFromResource(filenames[0], trainDataSet, 0, 10000);
 	numTestData = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);
 #else
-	int numTrainDataInFile = load(DataSet::Train, 0);
-	int numTestDataInFile = load(DataSet::Test, 0);
+	int numTrainDataInFile = load(DataSet<Dtype>::Train, 0);
+	int numTestDataInFile = load(DataSet<Dtype>::Test, 0);
 
 	if(numTrainDataInFile <= 0 || numTestDataInFile <= 0) {
 		cout << "could not load resources ... " << endl;
 		exit(1);
 	}
 
-	numTrainData = numTrainDataInFile*numTrainFile;
-	numTestData = numTestDataInFile*numTestFile;
-	numImagesInTrainFile = numTrainDataInFile;
-	numImagesInTestFile = numTestDataInFile;
+	this->numTrainData = numTrainDataInFile*numTrainFile;
+	this->numTestData = numTestDataInFile*numTestFile;
+	this->numImagesInTrainFile = numTrainDataInFile;
+	this->numImagesInTestFile = numTestDataInFile;
 #endif
 }
 
-
-int ImagePackDataSet::load(DataSet::Type type, int page) {
+template <typename Dtype>
+int ImagePackDataSet<Dtype>::load(typename DataSet<Dtype>::Type type, int page) {
 	string pageSuffix = to_string(page);
 	int numData = 0;
 	// train
 	switch(type) {
-	case DataSet::Train:
+	case DataSet<Dtype>::Train:
 		numData = loadDataSetFromResource(
 				trainImage+pageSuffix,
 				trainLabel+pageSuffix,
-				trainDataSet,
-				trainLabelSet,
-				trainSetIndices);
+				this->trainDataSet,
+				this->trainLabelSet,
+				this->trainSetIndices);
 		break;
-	case DataSet::Test:
+	case DataSet<Dtype>::Test:
 		numData = loadDataSetFromResource(
 				testImage+pageSuffix,
 				testLabel+pageSuffix,
-				testDataSet,
-				testLabelSet,
-				testSetIndices);
+				this->testDataSet,
+				this->testLabelSet,
+				this->testSetIndices);
 		break;
 	}
 	return numData;
 }
 
 #ifndef GPU_MODE
-int ImagePackDataSet::loadDataSetFromResource(string resources[2], DataSample *&dataSet, int offset, int size) {
+template <typename Dtype>
+int ImagePackDataSet<Dtype>::loadDataSetFromResource(string resources[2], DataSample* &dataSet, int offset, int size) {
 	// LOAD IMAGE DATA
 	ImageInfo dataInfo(resources[0]);
 	dataInfo.load();
 
 	// READ IMAGE DATA META DATA
-	unsigned char *dataPtr = dataInfo.getBufferPtrAt(0);
+	unsigned char* dataPtr = dataInfo.getBufferPtrAt(0);
 	int dataMagicNumber = Util::pack4BytesToInt(dataPtr);
 	if(dataMagicNumber != 0x00000803) return -1;
 	dataPtr += 4;
@@ -169,7 +176,7 @@ int ImagePackDataSet::loadDataSetFromResource(string resources[2], DataSample *&
 	targetInfo.load();
 
 	// READ LABEL DATA META DATA
-	unsigned char *targetPtr = targetInfo.getBufferPtrAt(0);
+	unsigned char* targetPtr = targetInfo.getBufferPtrAt(0);
 	int targetMagicNumber = Util::pack4BytesToInt(targetPtr);
 	if(targetMagicNumber != 0x00000801) return -1;
 	targetPtr += 4;
@@ -184,12 +191,12 @@ int ImagePackDataSet::loadDataSetFromResource(string resources[2], DataSample *&
 	int stop = dataSize;
 	if(size > 0) stop = min(dataSize, offset+size);
 
-	//int dataArea = dataNumRows * dataNumCols;
+	//int dataArea = dataNumRows*  dataNumCols;
 	if(dataSet) delete dataSet;
 	dataSet = new DataSample[stop-offset];
 
 	for(int i = offset; i < stop; i++) {
-		//const DataSample *dataSample = new DataSample(dataPtr, dataArea, targetPtr, 10);
+		//const DataSample* dataSample = new DataSample(dataPtr, dataArea, targetPtr, 10);
 		//dataSet.push_back(dataSample);
 		//dataSet[i-offset].readData(dataPtr, dataNumRows, dataNumCols, 1, targetPtr, 10);
 		dataSet[i-offset].readData(dataPtr, dataNumRows, dataNumCols, 1, targetPtr, 10);
@@ -198,19 +205,20 @@ int ImagePackDataSet::loadDataSetFromResource(string resources[2], DataSample *&
 }
 
 #else
-int ImagePackDataSet::loadDataSetFromResource(
+template <typename Dtype>
+int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 		string data_path,
 		string label_path,
-		vector<DATATYPE> *&dataSet,
-		vector<UINT> *&labelSet,
+		vector<Dtype>*& dataSet,
+		vector<uint32_t>*& labelSet,
 		vector<uint32_t>*& setIndices) {
 
-	FILE *imfp = fopen(data_path.c_str(), "rb");
+	FILE* imfp = fopen(data_path.c_str(), "rb");
 	if(!imfp) {
 		cout << "ERROR: Cannot open image dataset " << data_path << endl;
 		return 0;
 	}
-	FILE *lbfp = fopen(label_path.c_str(), "rb");
+	FILE* lbfp = fopen(label_path.c_str(), "rb");
 	if(!lbfp) {
 		fclose(imfp);
 		cout << "ERROR: Cannot open label dataset " << label_path << endl;
@@ -265,13 +273,13 @@ int ImagePackDataSet::loadDataSetFromResource(
 	this->cols = width;
 	this->rows = height;
 	this->channels = channel;
-	this->dataSize = rows*cols*channels;
+	this->dataSize = this->rows*this->cols*this->channels;
 
 	// Read images and labels (if requested)
-	size_t dataSetSize = ((size_t)image_header.length)*dataSize;
-	if(!dataSet) dataSet = new vector<DATATYPE>(dataSetSize);
+	size_t dataSetSize = ((size_t)image_header.length)*this->dataSize;
+	if(!dataSet) dataSet = new vector<Dtype>(dataSetSize);
 	if(!bufDataSet) bufDataSet = new vector<uint8_t>(dataSetSize);
-	if(!labelSet) labelSet = new vector<UINT>(label_header.length);
+	if(!labelSet) labelSet = new vector<uint32_t>(label_header.length);
 	if(!setIndices) setIndices = new vector<uint32_t>(label_header.length);
 	std::iota(setIndices->begin(), setIndices->end(), 0);
 
@@ -301,3 +309,4 @@ int ImagePackDataSet::loadDataSetFromResource(
 #endif
 
 
+template class ImagePackDataSet<float>;

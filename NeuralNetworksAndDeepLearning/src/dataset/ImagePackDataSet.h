@@ -29,7 +29,8 @@ using namespace std;
  *          (mnist의 경우 10진법 숫자를 구별하기 위해 10개의 카테고리가 있었고 이는 2^8=256, 8bit으로 수용가능해 unsigned char를 사용)
  * @todo mnist 파일의 수정없이 파라미터를 통해 mnist 원본을 그대로 읽을 수 있도록 수정할 수도 있음.
  */
-class ImagePackDataSet : public DataSet {
+template <typename Dtype>
+class ImagePackDataSet : public DataSet<Dtype> {
 public:
 	/**
 	 * @details ImagePackDataSet 생성자.
@@ -56,12 +57,12 @@ public:
 
 	virtual void load();
 
-	virtual const DATATYPE *getTrainDataAt(int index);
-	virtual const UINT *getTrainLabelAt(int index);
-	virtual const DATATYPE *getValidationDataAt(int index);
-	virtual const UINT *getValidationLabelAt(int index);
-	virtual const DATATYPE *getTestDataAt(int index);
-	virtual const UINT *getTestLabelAt(int index);
+	virtual const Dtype* getTrainDataAt(int index);
+	virtual const uint32_t* getTrainLabelAt(int index);
+	virtual const Dtype* getValidationDataAt(int index);
+	virtual const uint32_t* getValidationLabelAt(int index);
+	virtual const Dtype* getTestDataAt(int index);
+	virtual const uint32_t* getTestLabelAt(int index);
 
 
 #ifndef GPU_MODE
@@ -69,12 +70,12 @@ protected:
 	int loadDataSetFromResource(string resources[2], DataSample *&dataSet);
 #else
 protected:
-	int load(DataSet::Type type, int page);
+	int load(typename DataSet<Dtype>::Type type, int page);
 	int loadDataSetFromResource(
 			string data_path,
 			string label_path,
-			vector<DATATYPE> *&dataSet,
-			vector<UINT> *&labelSet,
+			vector<Dtype> *&dataSet,
+			vector<uint32_t> *&labelSet,
 			vector<uint32_t>*& setIndices);
 #endif
 
@@ -92,7 +93,7 @@ protected:
 	int numImagesInTrainFile;				///< 학습데이터셋 파일 하나에 들어있는 데이터의 수
 	int numImagesInTestFile;				///< 테스트데이터셋 파일 하나에 들어있는 데이터의 수
 
-	vector<uint8_t> *bufDataSet;			///< 데이터셋 데이터를 로드할 버퍼. 파일의 uint8_t타입 데이터를 버퍼에 올려 uint32_t타입으로 변환하기 위한 버퍼.
+	vector<uint8_t>* bufDataSet;			///< 데이터셋 데이터를 로드할 버퍼. 파일의 uint8_t타입 데이터를 버퍼에 올려 uint32_t타입으로 변환하기 위한 버퍼.
 };
 
 #endif /* IMAGEPACKDATASET_H_ */

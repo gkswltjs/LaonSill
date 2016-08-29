@@ -21,7 +21,7 @@
 template <typename Dtype>
 Network<Dtype>::Network(NetworkConfig<Dtype>* config)
 	: config(config) {
-	DataSet* dataSet = config->_dataSet;
+	DataSet<Dtype>* dataSet = config->_dataSet;
 	this->in_dim.rows = dataSet->getRows();
 	this->in_dim.cols = dataSet->getCols();
 	this->in_dim.channels = dataSet->getChannels();
@@ -64,7 +64,7 @@ Network<Dtype>::~Network() {
 
 template <typename Dtype>
 void Network<Dtype>::sgd(int epochs) {
-	DataSet* dataSet = config->_dataSet;
+	DataSet<Dtype>* dataSet = config->_dataSet;
 	vector<Evaluation*>& evaluations = config->_evaluations;
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
@@ -142,7 +142,7 @@ double Network<Dtype>::evaluateTestSet() {
 
 	return testResult;
 #else
-	DataSet* dataSet = config->_dataSet;
+	DataSet<Dtype>* dataSet = config->_dataSet;
 	vector<Evaluation*>& evaluations = config->_evaluations;
 	double cost = 0.0;
 
@@ -180,7 +180,7 @@ double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 template <typename Dtype>
 void Network<Dtype>::test() {
 	Util::train = false;
-	DataSet* dataSet = config->_dataSet;
+	DataSet<Dtype>* dataSet = config->_dataSet;
 	vector<Evaluation*>& evaluations = config->_evaluations;
 
 	Timer timer;
@@ -292,7 +292,7 @@ void Network<Dtype>::feedforward(const Dtype *input, const char *end) {
 
 template <typename Dtype>
 void Network<Dtype>::trainBatch(uint32_t batchIndex) {
-	DataSet* dataSet = config->_dataSet;
+	DataSet<Dtype>* dataSet = config->_dataSet;
 	InputLayer<Dtype>* inputLayer = config->_inputLayer;
 	vector<OutputLayer<Dtype>*> outputLayers = config->_outputLayers;
 
