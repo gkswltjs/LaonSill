@@ -20,21 +20,21 @@ PoolingLayer<Dtype>::PoolingLayer(Builder* builder)
 }
 
 template <typename Dtype>
-PoolingLayer<Dtype>::PoolingLayer(const string name, pool_dim pool_d, Pooling::Type poolingType)
+PoolingLayer<Dtype>::PoolingLayer(const string name, pool_dim pool_d, typename Pooling<Dtype>::Type poolingType)
 	: HiddenLayer<Dtype>(name) {
 	initialize(pool_d, poolingType);
 }
 
 template <typename Dtype>
 PoolingLayer<Dtype>::~PoolingLayer() {
-	PoolingFactory::destroy(pooling_fn);
+	PoolingFactory<Dtype>::destroy(pooling_fn);
 }
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::initialize(pool_dim pool_d, Pooling::Type poolingType) {
+void PoolingLayer<Dtype>::initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType) {
 	this->type = Layer<Dtype>::Pool;
 	this->pool_d = pool_d;
-	this->pooling_fn = PoolingFactory::create(poolingType, pool_d);
+	this->pooling_fn = PoolingFactory<Dtype>::create(poolingType, pool_d);
 }
 
 template <typename Dtype>
@@ -52,10 +52,10 @@ void PoolingLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>
 	HiddenLayer<Dtype>::_load(ifs, layerMap);
 
 	pool_dim pool_d;
-	Pooling::Type poolingType;
+	typename Pooling<Dtype>::Type poolingType;
 
 	ifs.read((char *)&pool_d, sizeof(pool_dim));
-	ifs.read((char *)&poolingType, sizeof(Pooling::Type));
+	ifs.read((char *)&poolingType, sizeof(typename Pooling<Dtype>::Type));
 
 	initialize(pool_d, poolingType);
 
@@ -80,7 +80,7 @@ void PoolingLayer<Dtype>::_clearShape() {
 
 #ifndef GPU_MODE
 template <typename Dtype>
-void PoolingLayer<Dtype>::initialize(pool_dim pool_d, Pooling::Type poolingType) {
+void PoolingLayer<Dtype>::initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType) {
 	this->type = Layer<Dtype>::Pool;
 
 	this->out_dim.rows = in_dim.rows / pool_d.rows;

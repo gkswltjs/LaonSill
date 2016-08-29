@@ -18,6 +18,7 @@
  * @brief Pooling 구현 클래스의 베이스 추상 클래스.
  * @details	Pooling 클래스를 상속받아 풀링을 구현하는 클래스를 생성할 수 있음.
  */
+template <typename Dtype>
 class Pooling {
 public:
 	/**
@@ -45,7 +46,7 @@ public:
 	 * @details 풀링 타입을 조회한다.
 	 * @return 풀링 타입
 	 */
-	Pooling::Type getType() const { return this->type; }
+	Type getType() const { return this->type; }
 
 #ifndef GPU_MODE
 	virtual void pool(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
@@ -60,8 +61,8 @@ public:
 	 * @param yDesc 출력값 y의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터
 	 * @param y 출력값 장치 메모리 포인터
 	 */
-	virtual void pool(const cudnnTensorDescriptor_t xDesc, const DATATYPE *x,
-			const cudnnTensorDescriptor_t yDesc, DATATYPE *y)=0;
+	virtual void pool(const cudnnTensorDescriptor_t xDesc, const Dtype* x,
+			const cudnnTensorDescriptor_t yDesc, Dtype* y)=0;
 	/**
 	 * @details 입력 x에 관한 gradient를 구한다.
 	 * @param yDesc 출력값 y의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터
@@ -71,16 +72,17 @@ public:
 	 * @param x 입력값 장치 메모리 포인터
 	 * @param dx 입력 x에 관한 gradient
 	 */
-	virtual void d_pool(const cudnnTensorDescriptor_t yDesc, const DATATYPE *y, const DATATYPE *dy,
-			const cudnnTensorDescriptor_t xDesc, const DATATYPE *x, DATATYPE *dx)=0;
+	virtual void d_pool(const cudnnTensorDescriptor_t yDesc, const Dtype* y, const Dtype* dy,
+			const cudnnTensorDescriptor_t xDesc, const Dtype* x, Dtype* dx)=0;
 
 #endif
 
 protected:
-	Pooling::Type type;							///< 풀링 타입
+	Type type;							///< 풀링 타입
 	cudnnPoolingDescriptor_t poolDesc;			///< cudnn 풀링 연산 정보 구조체
-	//const float alpha = 1.0f, beta = 0.0f;		///< cudnn 함수에서 사용하는 scaling factor, 다른 곳으로 옮겨야 함.
 
 };
+
+template class Pooling<float>;
 
 #endif /* POOLING_POOLING_H_ */

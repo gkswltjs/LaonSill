@@ -19,11 +19,12 @@ using namespace std;
  * @details 항상 커널사이즈 절반 크기의 padding이 적용된다.
  * @todo padding 관련 파라미터를 추가하고 파라미터에 따라 padding이 적용되도록 수정한다.
  */
-class MaxPooling : public Pooling {
+template <typename Dtype>
+class MaxPooling : public Pooling<Dtype> {
 #ifndef GPU_MODE
 public:
 	MaxPooling() {
-		this->type = Pooling::Max;
+		this->type = Pooling<Dtype>::Max;
 	}
 	virtual ~MaxPooling() {}
 
@@ -116,12 +117,12 @@ public:
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 */
 	MaxPooling(pool_dim pool_d) {
-		this->type = Pooling::Max;
+		this->type = Pooling<Dtype>::Max;
 
-		checkCUDNN(cudnnCreatePoolingDescriptor(&poolDesc));
+		checkCUDNN(cudnnCreatePoolingDescriptor(&this->poolDesc));
 
 		int pad = (pool_d.rows-1)/2;
-		checkCUDNN(cudnnSetPooling2dDescriptor(poolDesc,
+		checkCUDNN(cudnnSetPooling2dDescriptor(this->poolDesc,
 				CUDNN_POOLING_MAX,
 				CUDNN_PROPAGATE_NAN,
 				pool_d.rows, pool_d.cols,
@@ -132,19 +133,19 @@ public:
 	 * @details MaxPooling 소멸자
 	 */
 	virtual ~MaxPooling() {
-		checkCUDNN(cudnnDestroyPoolingDescriptor(poolDesc));
+		checkCUDNN(cudnnDestroyPoolingDescriptor(this->poolDesc));
 	}
 
-	void pool(const cudnnTensorDescriptor_t xDesc, const DATATYPE *x,
-			const cudnnTensorDescriptor_t yDesc, DATATYPE *y) {
+	void pool(const cudnnTensorDescriptor_t xDesc, const Dtype* x,
+			const cudnnTensorDescriptor_t yDesc, Dtype* y) {
 
-		checkCUDNN(cudnnPoolingForward(Cuda::cudnnHandle, poolDesc,
+		checkCUDNN(cudnnPoolingForward(Cuda::cudnnHandle, this->poolDesc,
 				&Cuda::alpha, xDesc, x, &Cuda::beta, yDesc, y));
 	}
 
-	void d_pool(const cudnnTensorDescriptor_t yDesc, const DATATYPE *y, const DATATYPE *dy,
-			const cudnnTensorDescriptor_t xDesc, const DATATYPE *x, DATATYPE *dx) {
-		checkCUDNN(cudnnPoolingBackward(Cuda::cudnnHandle, poolDesc,
+	void d_pool(const cudnnTensorDescriptor_t yDesc, const Dtype* y, const Dtype* dy,
+			const cudnnTensorDescriptor_t xDesc, const Dtype* x, Dtype* dx) {
+		checkCUDNN(cudnnPoolingBackward(Cuda::cudnnHandle, this->poolDesc,
 				&Cuda::alpha, yDesc, y, yDesc, dy, xDesc, x,
 				&Cuda::beta, xDesc, dx));
 	}
@@ -155,7 +156,7 @@ public:
 
 
 
-
+template class MaxPooling<float>;
 
 #endif /* POOLING_MAXPOOLING_H_ */
 

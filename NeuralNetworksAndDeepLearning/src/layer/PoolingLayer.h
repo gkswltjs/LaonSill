@@ -31,13 +31,13 @@ public:
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		pool_dim _poolDim;
-		Pooling::Type _poolingType;
+		typename Pooling<Dtype>::Type _poolingType;
 
 		Builder() {
 			_poolDim.cols = 0;
 			_poolDim.rows = 0;
 			_poolDim.stride = 0;
-			_poolingType = Pooling::Max;
+			_poolingType = Pooling<Dtype>::Max;
 		}
 		Builder* poolDim(uint32_t cols, uint32_t rows, uint32_t stride) {
 			this->_poolDim.cols = cols;
@@ -45,7 +45,7 @@ public:
 			this->_poolDim.stride = stride;
 			return this;
 		}
-		Builder* poolingType(Pooling::Type poolingType) {
+		Builder* poolingType(typename Pooling<Dtype>::Type poolingType) {
 			this->_poolingType = poolingType;
 			return this;
 		}
@@ -80,7 +80,7 @@ public:
 	 * @param name 레이어 이름 문자열 포인터
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 */
-	PoolingLayer(const string name, pool_dim pool_d, Pooling::Type poolingType);
+	PoolingLayer(const string name, pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
 	/**
 	 * @details PoolingLayer 소멸자
 	 */
@@ -88,7 +88,7 @@ public:
 
 
 protected:
-	void initialize(pool_dim pool_d, Pooling::Type poolingType);
+	void initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	virtual void _save(ofstream &ofs);
@@ -98,7 +98,7 @@ protected:
 
 protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
-	Pooling *pooling_fn;			///< 풀링 객체
+	Pooling<Dtype> *pooling_fn;			///< 풀링 객체
 
 #ifndef GPU_MODE
 	ucube pool_map;

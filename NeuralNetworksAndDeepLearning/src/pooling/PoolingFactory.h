@@ -22,17 +22,18 @@
  *          사용이 완료된 풀링 객체를 소멸시키는 역할을 함.
  * @todo (객체를 생성한 곳에서 삭제한다는 원칙에 따라 만들었으나 수정이 필요)
  */
+template <typename Dtype>
 class PoolingFactory {
 public:
 	PoolingFactory() {}
 	virtual ~PoolingFactory() {}
 
 #ifndef GPU_MODE
-	static Pooling *create(Pooling::Type poolingType) {
+	static Pooling *create(Pooling<Dtype>::Type poolingType) {
 		switch(poolingType) {
-		case Pooling::Max: return new MaxPooling();
-		case Pooling::Avg: return new AvgPooling();
-		case Pooling::None:
+		case Pooling<Dtype>::Max: return new MaxPooling<Dtype>();
+		case Pooling<Dtype>::Avg: return new AvgPooling<Dtype>();
+		case Pooling<Dtype>::None:
 		default: return 0;
 		}
 	}
@@ -43,10 +44,10 @@ public:
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 * @return 생성한 풀링 객체.
 	 */
-	static Pooling *create(Pooling::Type poolingType, pool_dim pool_d) {
+	static Pooling<Dtype>* create(typename Pooling<Dtype>::Type poolingType, pool_dim pool_d) {
 		switch(poolingType) {
-		case Pooling::Max: return new MaxPooling(pool_d);
-		case Pooling::Avg: return new AvgPooling(pool_d);
+		case Pooling<Dtype>::Max: return new MaxPooling<Dtype>(pool_d);
+		case Pooling<Dtype>::Avg: return new AvgPooling<Dtype>(pool_d);
 		default: return NULL;
 		}
 	}
@@ -55,12 +56,14 @@ public:
 	 * @details PoolingFactory에서 생성한 풀링 객체를 소멸.
 	 * @param pooling_fn 풀링 객체에 대한 포인터 참조자.
 	 */
-	static void destroy(Pooling *&pooling_fn) {
+	static void destroy(Pooling<Dtype>*& pooling_fn) {
 		if(pooling_fn) {
 			delete pooling_fn;
 			pooling_fn = NULL;
 		}
 	}
 };
+
+template class PoolingFactory<float>;
 
 #endif /* POOLING_POOLINGFACTORY_H_ */
