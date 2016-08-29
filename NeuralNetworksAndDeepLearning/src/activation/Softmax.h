@@ -21,7 +21,7 @@
  * @details Activation 클래스를 상속받아 Softmax 활성화를 구현.
  */
 template <typename Dtype>
-class Softmax : public Activation<float> {
+class Softmax : public Activation<Dtype> {
 public:
 	virtual ~Softmax() {}
 
@@ -65,7 +65,7 @@ public:
 
 #else
 	Softmax() {
-		this->type = Activation::Softmax;
+		this->type = Activation<Dtype>::Softmax;
 	}
 
 	void forward(const cudnnTensorDescriptor_t& desc, const Dtype* x, Dtype* y) {

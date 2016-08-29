@@ -19,11 +19,12 @@
 /**
  * @details
  */
-class CrossEntropyCost : public Cost {
+template <typename Dtype>
+class CrossEntropyCost : public Cost<Dtype> {
 
 public:
 	CrossEntropyCost() {
-		this->type = Cost::CrossEntropy;
+		this->type = Cost<Dtype>::CrossEntropy;
 	}
 	virtual ~CrossEntropyCost() {}
 
@@ -52,14 +53,14 @@ public:
 		//Util::printVec(delta, "result");
 	}
 #else
-	double forward(const DATATYPE* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) {
+	double forward(const Dtype* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) {
 		return 0.0;
 	}
 
-	void backward(const DATATYPE *z, const DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT size) {
+	void backward(const Dtype* z, const Dtype* activation, const uint32_t* target, Dtype* delta, uint32_t numLabels, uint32_t size) {
 		Cuda::refresh();
-		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(DATATYPE)*size, cudaMemcpyDeviceToDevice));
-		UINT i;
+		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*size, cudaMemcpyDeviceToDevice));
+		uint32_t i;
 		for(i = 0; i < size/numLabels; i++) {
 			delta[i*numLabels+target[i]]-=1;
 		}
@@ -67,6 +68,6 @@ public:
 #endif
 };
 
-
+template class CrossEntropyCost<float>;
 
 #endif /* COST_CROSSENTROPYCOST_H_ */

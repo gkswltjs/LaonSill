@@ -16,11 +16,11 @@
 
 
 
-
-class QuadraticCost : public Cost {
+template <typename Dtype>
+class QuadraticCost : public Cost<Dtype> {
 public:
 	QuadraticCost() {
-		this->type = Cost::Quadratic;
+		this->type = Cost<Dtype>::Quadratic;
 	}
 	virtual ~QuadraticCost() {}
 
@@ -33,15 +33,15 @@ public:
 		delta.slice(0) = activation.slice(0) - target;
 	}
 #else
-	double forward(const DATATYPE* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) {
+	double forward(const Dtype* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) {
 		//return 0.5*sum(square(*pA - *pY));
 		return 0.0;
 	}
-	void backward(const DATATYPE *z, const DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize) {
+	void backward(const Dtype* z, const Dtype* activation, const uint32_t* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize) {
 		/*
 		Cuda::refresh();
-		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(DATATYPE)*size, cudaMemcpyDeviceToDevice));
-		UINT i;
+		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*size, cudaMemcpyDeviceToDevice));
+		uint32_t i;
 		for(i = 0; i < size/numLabels; i++) {
 			delta[i*numLabels+target[i]]-=1;
 		}
@@ -50,5 +50,7 @@ public:
 #endif
 
 };
+
+template class QuadraticCost<float>;
 
 #endif /* COST_QUADRATICCOST_H_ */

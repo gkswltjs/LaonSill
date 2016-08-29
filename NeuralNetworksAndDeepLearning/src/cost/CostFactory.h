@@ -21,6 +21,7 @@
  *          사용이 완료된 Cost 객체를 소멸시키는 역할을 함.
  * @todo (객체를 생성한 곳에서 삭제한다는 원칙에 따라 만들었으나 수정이 필요)
  */
+template <typename Dtype>
 class CostFactory {
 public:
 	CostFactory() {}
@@ -31,11 +32,11 @@ public:
 	 * @param activationType 생성하고자 하는 Activation 객체의 타입.
 	 * @return 생성한 Activation 객체.
 	 */
-	static Cost *create(Cost::Type costType) {
+	static Cost<Dtype>* create(typename Cost<Dtype>::Type costType) {
 		switch(costType) {
-		case Cost::CrossEntropy: return new CrossEntropyCost();
-		case Cost::LogLikelihood: return new LogLikelihoodCost();
-		case Cost::Quadratic: return new QuadraticCost();
+		case Cost<Dtype>::CrossEntropy: return new CrossEntropyCost<Dtype>();
+		case Cost<Dtype>::LogLikelihood: return new LogLikelihoodCost<Dtype>();
+		case Cost<Dtype>::Quadratic: return new QuadraticCost<Dtype>();
 		default: return NULL;
 		}
 	}
@@ -44,12 +45,14 @@ public:
 	 * @details CostFactory에서 생성한 Cost 객체를 소멸.
 	 * @param cost_fn Cost 객체에 대한 포인터 참조자.
 	 */
-	static void destroy(Cost *&cost_fn) {
+	static void destroy(Cost<Dtype>*& cost_fn) {
 		if(cost_fn) {
 			delete cost_fn;
 			cost_fn = NULL;
 		}
 	}
 };
+
+template class CostFactory<float>;
 
 #endif /* COST_COSTFACTORY_H_ */

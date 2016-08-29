@@ -27,9 +27,9 @@ public:
 	public:
 		Builder() {
 			this->_activationType = Activation<Dtype>::Softmax;
-			this->_costType = Cost::LogLikelihood;
+			this->_costType = Cost<Dtype>::LogLikelihood;
 		}
-		Builder* costType(Cost::Type costType) {
+		Builder* costType(typename Cost<Dtype>::Type costType) {
 			OutputLayer<Dtype>::Builder::costType(costType);
 			return this;
 		}

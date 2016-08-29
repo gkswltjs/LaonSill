@@ -13,8 +13,8 @@
 #include "Cost.h"
 #include "../cuda/Cuda.h"
 
-
-class LogLikelihoodCost : public Cost {
+template <typename Dtype>
+class LogLikelihoodCost : public Cost<Dtype> {
 public:
 	LogLikelihoodCost();
 	virtual ~LogLikelihoodCost();
@@ -26,8 +26,8 @@ public:
 	/**
 	 * @details C = -ln(ayL)
 	 */
-	double forward(const DATATYPE* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize);
-	void backward(const DATATYPE *z, const DATATYPE *activation, const UINT *target, DATATYPE *delta, UINT numLabels, UINT batchsize);
+	double forward(const Dtype* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize);
+	void backward(const Dtype* z, const Dtype* activation, const uint32_t* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize);
 #endif
 
 

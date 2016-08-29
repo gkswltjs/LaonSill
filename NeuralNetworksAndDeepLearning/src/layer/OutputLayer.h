@@ -25,12 +25,12 @@ class OutputLayer : public FullyConnectedLayer<Dtype> {
 public:
 	class Builder : public FullyConnectedLayer<Dtype>::Builder {
 	public:
-		Cost::Type _costType;
+		typename Cost<Dtype>::Type _costType;
 
 		Builder() {
-			_costType = Cost::NoCost;
+			_costType = Cost<Dtype>::NoCost;
 		}
-		Builder* costType(Cost::Type costType) {
+		Builder* costType(typename Cost<Dtype>::Type costType) {
 			this->_costType = costType;
 			return this;
 		}
@@ -98,12 +98,12 @@ public:
 	 * @param costType 레이어 출력값에 대한 cost 계산 타입
 	 */
 	OutputLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType, Cost::Type costType)
+			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType, typename Cost<Dtype>::Type costType)
 		:FullyConnectedLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};
 	virtual ~OutputLayer() {
-		CostFactory::destroy(cost_fn);
+		CostFactory<Dtype>::destroy(cost_fn);
 	};
 
 	using FullyConnectedLayer<Dtype>::backpropagation;
@@ -120,9 +120,9 @@ public:
 
 
 protected:
-	void initialize(Cost::Type costType) {
+	void initialize(typename Cost<Dtype>::Type costType) {
 		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
-		this->cost_fn = CostFactory::create(costType);
+		this->cost_fn = CostFactory<Dtype>::create(costType);
 	}
 
 
@@ -144,13 +144,13 @@ protected:
 		FullyConnectedLayer<Dtype>::_load(ifs, layerMap);
 
 		OutputLayer<Dtype>::_shape(false);
-		//Cost::Type type;
+		//typename Cost<Dtype>::Type type;
 		//ifs.read((char *)&type, sizeof(int));
 		//initialize(type);
 	}
 
 protected:
-	Cost *cost_fn;				///< cost 객체
+	Cost<Dtype>* cost_fn;				///< cost 객체
 
 	SyncMem<uint32_t> _target;
 };

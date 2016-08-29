@@ -18,6 +18,7 @@
  * @brief	Cost 구현 클래스의 베이스 추상 클래스.
  * @details	Cost 클래스를 상속받아 Cost를 구현하는 클래스를 생성할 수 있음.
  */
+template <typename Dtype>
 class Cost {
 public:
 	Cost() {}
@@ -39,7 +40,7 @@ public:
 	 * @details 현재 Cost 객체의 타입을 조회.
 	 * @return 현재 Cost 객체 타입.
 	 */
-	Cost::Type getType() const { return type; }
+	Type getType() const { return type; }
 
 #ifndef GPU_MODE
 	virtual double fn(const rvec *pA, const rvec *pY) = 0;
@@ -52,7 +53,7 @@ public:
 	 * @return 계산된 cost값.
 	 * @todo 사용중이지 않기 때문에 사용시 정비가 필요, 현재 이 method의 결과는 무효함.
 	 */
-	virtual double forward(const DATATYPE* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) = 0;
+	virtual double forward(const Dtype* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) = 0;
 
 	/**
 	 * @details cost에 대해 activation 입력으로 미분 결과를 계산
@@ -63,11 +64,15 @@ public:
 	 * @param numLabels 정답값의 레이블 수.
 	 * @param batchsize 데이터 배치 수.
 	 */
-	virtual void backward(const DATATYPE *z, const DATATYPE *activation, const uint32_t *target, DATATYPE *delta, uint32_t numLabels, uint32_t batchsize) = 0;
+	virtual void backward(const Dtype* z, const Dtype* activation, const uint32_t* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize) = 0;
 #endif
 
 protected:
-	Cost::Type type;				///< 현재 Cost 객체의 Cost 타입.
+	Type type;				///< 현재 Cost 객체의 Cost 타입.
 };
+
+
+
+template class Cost<float>;
 
 #endif /* COST_COST_H_ */

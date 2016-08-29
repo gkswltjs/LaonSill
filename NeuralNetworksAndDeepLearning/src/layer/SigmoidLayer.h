@@ -23,12 +23,12 @@ class SigmoidLayer : public OutputLayer {
 public:
 	SigmoidLayer() { this->type = Layer::Sigmoid; }
 	SigmoidLayer(const string name, int n_in, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Cost::Type costType)
+			param_filler weight_filler, param_filler bias_filler, typename Cost<Dtype>::Type costType)
 		: OutputLayer(name, n_in, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, Activation::Sigmoid, costType) {
 		initialize();
 	}
 	SigmoidLayer(const string name, io_dim in_dim, io_dim out_dim, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Cost::Type costType)
+			param_filler weight_filler, param_filler bias_filler, typename Cost<Dtype>::Type costType)
 		: OutputLayer(name, in_dim, out_dim, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, Activation::Sigmoid, costType) {
 		initialize();
 	}
