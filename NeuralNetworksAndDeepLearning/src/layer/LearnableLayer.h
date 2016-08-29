@@ -17,7 +17,7 @@ public:
 	virtual void update() = 0;
 	virtual double sumSquareParamsData() = 0;
 	virtual double sumSquareParamsGrad() = 0;
-	virtual void scaleParamsGrad(DATATYPE scale) = 0;
+	virtual void scaleParamsGrad(float scale) = 0;
 };
 
 

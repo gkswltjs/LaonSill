@@ -18,17 +18,18 @@
  * @brief ReLU(Rectified Linear Unit) Activation 구현 클래스.
  * @details Activation 클래스를 상속받아 ReLU 활성화를 구현.
  */
-class ReLU : public Activation {
+template <typename Dtype>
+class ReLU : public Activation<Dtype> {
 public:
 	virtual ~ReLU() {}
 
 #ifndef GPU_MODE
 public:
 	ReLU() {
-		this->type = Activation::ReLU;
+		this->type = Activation<Dtype>::ReLU;
 	}
 	ReLU(io_dim activation_dim) {
-		this->type = Activation::TypeReLU;
+		this->type = Activation<Dtype>::TypeReLU;
 		zero.set_size(activation_dim.rows, activation_dim.cols, activation_dim.channels);
 		zero.zeros();
 	}
@@ -61,34 +62,17 @@ private:
 #else
 public:
 	ReLU() {
-		this->type = Activation::ReLU;
+		this->type = Activation<Dtype>::ReLU;
 		checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
 		checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0.0));
 	}
 
-	/*
-	void forward(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc) {
-		//float alpha = 1.0f, beta = 0.0f;
-		checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, activationDesc, &Cuda::alpha,
-					tensorDesc, z, &Cuda::beta, tensorDesc, activation));
-	}
-	*/
-
-	void forward(const cudnnTensorDescriptor_t& desc, const DATATYPE* x, DATATYPE* y) {
+	void forward(const cudnnTensorDescriptor_t& desc, const Dtype* x, Dtype* y) {
 		checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, activationDesc,
 				&Cuda::alpha, desc, x, &Cuda::beta, desc, y));
 	}
 
-	/*
-	void backward(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
-			cudnnTensorDescriptor_t &tensorDesc) {
-		//float alpha = 1.0f, beta = 0.0f;
-		checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, activationDesc, &Cuda::alpha,
-				tensorDesc, activation, tensorDesc, deltaInput,
-				tensorDesc, z, &Cuda::beta, tensorDesc, da));
-	}
-	*/
-	void backward(const cudnnTensorDescriptor_t& desc,  const DATATYPE *y, const DATATYPE *dy, const DATATYPE *x, DATATYPE *dx) {
+	void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy, const Dtype* x, Dtype* dx) {
 		checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, activationDesc,
 				&Cuda::alpha, desc, y, desc, dy, desc, x,
 				&Cuda::beta, desc, dx));
@@ -102,7 +86,7 @@ private:
 };
 
 
-
+template class ReLU<float>;
 
 
 

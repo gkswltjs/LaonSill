@@ -368,7 +368,7 @@ double Network<Dtype>::computeSumSquareParamsGrad() {
 }
 
 template <typename Dtype>
-void Network<Dtype>::scaleParamsGrad(DATATYPE scale) {
+void Network<Dtype>::scaleParamsGrad(float scale) {
 	uint32_t numLearnableLayers = config->_learnableLayers.size();
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
 		config->_learnableLayers[i]->scaleParamsGrad(scale);

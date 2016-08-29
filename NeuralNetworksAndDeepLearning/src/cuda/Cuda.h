@@ -78,19 +78,6 @@ static inline unsigned int RoundUp(unsigned int nominator, unsigned int denomina
 
 
 
-//typedef float DATATYPE;
-//void cuda_FillValues(DATATYPE* vec, int size, DATATYPE value);
-
-
-
-
-
-
-
-
-
-
-
 
 
 

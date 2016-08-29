@@ -58,7 +58,7 @@ public:
 			FullyConnectedLayer<Dtype>::Builder::biasFiller(biasFillerType, value);
 			return this;
 		}
-		Builder* activationType(Activation::Type activationType) {
+		Builder* activationType(typename Activation<Dtype>::Type activationType) {
 			FullyConnectedLayer<Dtype>::Builder::activationType(activationType);
 			return this;
 		}
@@ -98,7 +98,7 @@ public:
 	 * @param costType 레이어 출력값에 대한 cost 계산 타입
 	 */
 	OutputLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType, Cost::Type costType)
+			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType, Cost::Type costType)
 		:FullyConnectedLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};

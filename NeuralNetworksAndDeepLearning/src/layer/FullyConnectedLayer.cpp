@@ -24,14 +24,14 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer(Builder* builder)
 
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType)
+		param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType)
 	: HiddenLayer<Dtype>(name) {
 	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
+		param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType) {
 	Cuda::refresh();
 
 	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
@@ -45,7 +45,7 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_
 	this->weight_filler = weight_filler;
 	this->bias_filler = bias_filler;
 
-	this->activation_fn = ActivationFactory::create(activationType);
+	this->activation_fn = ActivationFactory<Dtype>::create(activationType);
 	this->scale = 1. / (1. - p_dropout);
 
 	this->_params.resize(2);
@@ -78,7 +78,7 @@ double FullyConnectedLayer<Dtype>::sumSquareParamsGrad() {
 }
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::scaleParamsGrad(DATATYPE scale) {
+void FullyConnectedLayer<Dtype>::scaleParamsGrad(float scale) {
 	for(uint32_t i = 0; i < _params.size(); i++) {
 		_params[i]->scale_device_grad(scale);
 	}
@@ -117,7 +117,7 @@ void FullyConnectedLayer<Dtype>::_load(ifstream& ifs, map<Layer<Dtype>*, Layer<D
 
 	uint32_t n_out = 0;
 	double p_dropout;
-	Activation::Type activationType;
+	typename Activation<Dtype>::Type activationType;
 	update_param weight_update_param, bias_update_param;
 	param_filler weight_filler, bias_filler;
 

@@ -80,7 +80,7 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
 
 	checkCudaErrors(cudaFree(d_onevec));
 
-	ActivationFactory::destory(activation_fn);
+	ActivationFactory<Dtype>::destory(activation_fn);
 }
 
 

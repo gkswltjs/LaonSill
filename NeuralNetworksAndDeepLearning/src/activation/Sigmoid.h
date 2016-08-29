@@ -18,14 +18,15 @@
  * @brief Sigmoid Activation 구현 클래스.
  * @details Activation 클래스를 상속받아 Sigmoid 활성화를 구현.
  */
-class Sigmoid : public Activation {
+template <typename Dtype>
+class Sigmoid : public Activation<Dtype> {
 public:
 	virtual ~Sigmoid() {}
 
 #ifndef GPU_MODE
 public:
 	Sigmoid() {
-		this->type = Activation::Sigmoid;
+		this->type = Activation<Dtype>::Sigmoid;
 	}
 	/*
 	void initialize_weight(int n_in, rmat &weight) {
@@ -65,35 +66,17 @@ public:
 #else
 public:
 	Sigmoid() {
-		this->type = Activation::Sigmoid;
+		this->type = Activation<Dtype>::Sigmoid;
 		checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
 		checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_SIGMOID, CUDNN_PROPAGATE_NAN, 0.0));
 	}
 
-	/*
-	void forward(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc) {
-		//float alpha = 1.0f, beta = 0.0f;
-		checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, activationDesc, &Cuda::alpha,
-				tensorDesc, z, &Cuda::beta, tensorDesc, activation));
-	}
-	*/
-
-	void forward(const cudnnTensorDescriptor_t& desc, const DATATYPE* x, DATATYPE* y) {
+	void forward(const cudnnTensorDescriptor_t& desc, const Dtype* x, Dtype* y) {
 		checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, activationDesc,
 				&Cuda::alpha, desc, x, &Cuda::beta, desc, y));
 	}
 
-	/*
-	void backward(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
-				cudnnTensorDescriptor_t &tensorDesc) {
-		//float alpha = 1.0f, beta = 0.0f;
-		checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, activationDesc, &Cuda::alpha,
-				tensorDesc, activation, tensorDesc, deltaInput,
-				tensorDesc, z, &Cuda::beta, tensorDesc, da));
-	}
-	*/
-
-	void backward(const cudnnTensorDescriptor_t& desc,  const DATATYPE *y, const DATATYPE *dy, const DATATYPE *x, DATATYPE *dx) {
+	void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy, const Dtype* x, Dtype* dx) {
 		checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, activationDesc,
 				&Cuda::alpha, desc, y, desc, dy, desc, x,
 				&Cuda::beta, desc, dx));
@@ -103,5 +86,8 @@ private:
 	cudnnActivationDescriptor_t activationDesc;			///< cudnn 활성화 관련 자료구조에 대한 포인터.
 
 };
+
+
+template class Sigmoid<float>;
 
 #endif /* ACTIVATION_SIGMOID_H_ */

@@ -38,7 +38,7 @@ public:
 		update_param _biasUpdateParam;
 		param_filler _weightFiller;
 		param_filler _biasFiller;
-		Activation::Type _activationType;
+		typename Activation<Dtype>::Type _activationType;
 
 		Builder() {
 			_filterDim.rows = 0;
@@ -52,7 +52,7 @@ public:
 			_biasUpdateParam.decay_mult = 0.0;
 			_weightFiller.type = ParamFillerType::Constant;
 			_biasFiller.type = ParamFillerType::Constant;
-			_activationType = Activation::NoActivation;
+			_activationType = Activation<Dtype>::NoActivation;
 		}
 		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters, uint32_t stride) {
 			_filterDim.rows = rows;
@@ -82,7 +82,7 @@ public:
 			this->_biasFiller.value = value;
 			return this;
 		}
-		Builder* activationType(Activation::Type activationType) {
+		Builder* activationType(typename Activation<Dtype>::Type activationType) {
 			this->_activationType = activationType;
 			return this;
 		}
@@ -121,7 +121,7 @@ public:
 	 * @param activationType 컨볼루션 결과에 적용할 활성화 타입
 	 */
 	ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType);
+			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType);
 	/**
 	 * @details ConvLayer 소멸자
 	 */
@@ -136,25 +136,18 @@ public:
 	filter_dim &get_filter_dim() { return this->filter_d; }
 
 
-
-
-
-
-
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType);
+			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType);
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	//virtual double _sumSquareGrad();
-	//virtual double _sumSquareParam();
 	virtual double sumSquareParamsData();
 	virtual double sumSquareParamsGrad();
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	virtual void update();
-	virtual void scaleParamsGrad(DATATYPE scale);
+	virtual void scaleParamsGrad(float scale);
 	virtual void _feedforward();
 	virtual void _backpropagation();
 
@@ -165,12 +158,16 @@ protected:
 
 protected:
 	filter_dim filter_d;							///< 컨볼루션 연산 관련 파라미터 구조체
-	Activation *activation_fn;						///< 활성화 객체
+	Activation<Dtype> *activation_fn;						///< 활성화 객체
 
 	update_param weight_update_param;				///< weight 갱신 관련 파라미터 구조체
 	update_param bias_update_param;					///< bias 갱신 관련 파라미터 구조체
 	param_filler weight_filler;						///< weight 초기화 관련 파라미터 구조체
 	param_filler bias_filler;						///< bias 초기화 관련 파라미터 구조체
+
+	Data<Dtype>* _preActivation;					///< 컨볼루션 결과에 대한 데이터
+	vector<Data<Dtype>*> _params;					///< 파리미터 데이터 (Filter, Bias 포함)
+	vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
 
 #ifndef GPU_MODE
 	rcube *filters;		// weights
@@ -183,23 +180,6 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	//Dtype *filters;								///< filter 호스트 메모리 포인터
-	//Dtype *biases;								///< bias 호스트 메모리 포인터
-
-	//Dtype *d_filters;							///< filter 장치 메모리 포인터
-	//Dtype *d_biases;								///< bias 장치 메모리 포인터
-
-	//Dtype *d_z;									///< filter map 장치 메모리 포인터
-	//Dtype *d_delta;								///< 네트워크 cost의 z(filter map)에 관한 gradient 장치 메모리 포인터
-	//Dtype *d_delta_weight;						///< 네트워크 cost의 weight(filter)에 관한 gradient 장치 메모리 포인터
-	//Dtype *d_delta_weight_prev;					///< 이전 업데이트의 네트워크 cost의 weight에 관한 graident 장치 메모리 포인터
-	//Dtype *d_delta_bias;							///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
-	//Dtype *d_delta_bias_prev;					///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
-
-	Data<Dtype>* _preActivation;
-	vector<Data<Dtype>*> _params;
-	vector<Data<Dtype>*> _paramsHistory;
-
 	cudnnTensorDescriptor_t biasTensorDesc;			///< cudnn bias 구조 정보 구조체
 	cudnnFilterDescriptor_t filterDesc;				///< cudnn filter 구조 정보 구조체
 	cudnnConvolutionDescriptor_t convDesc;			///< cudnn 컨볼루션 연산 정보 구조체
@@ -210,11 +190,6 @@ protected:
 	size_t workspaceSize;							///< cudnn forward, backward에 필요한 작업공간 GPU 메모리 사이즈
 	void *d_workspace;								///< cudnn forward, backward에 필요한 작업공간 장치 메모리 포인터
 #endif
-
-
-
-
-
 
 };
 

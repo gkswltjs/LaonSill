@@ -26,7 +26,7 @@ ConvLayer<Dtype>::ConvLayer(Builder* builder)
 
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType)
+		param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType)
 	: HiddenLayer<Dtype>(name) {
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
@@ -51,7 +51,7 @@ double ConvLayer<Dtype>::sumSquareParamsGrad() {
 }
 
 template <typename Dtype>
-void ConvLayer<Dtype>::scaleParamsGrad(DATATYPE scale) {
+void ConvLayer<Dtype>::scaleParamsGrad(float scale) {
 	for(uint32_t i = 0; i < this->_params.size(); i++) {
 		this->_params[i]->scale_device_grad(scale);
 	}
@@ -424,3 +424,19 @@ void ConvLayer<Dtype>::_save(ofstream &ofs) {
 #endif
 
 template class ConvLayer<float>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

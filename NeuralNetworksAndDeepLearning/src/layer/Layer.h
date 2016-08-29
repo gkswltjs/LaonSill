@@ -505,8 +505,6 @@ protected:
 	rcube input;
 	rcube output;
 #else
-	//Dtype* d_input;									///< 현재 레이어의 입력값 장치 메모리 포인터
-	//Dtype* d_output;									///< 현재 레이어의 출력값 장치 메모리 포인터
 	Data<Dtype>* _input;
 	Data<Dtype>* _output;
 
@@ -514,9 +512,7 @@ protected:
 	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 #endif
 
-
 	static const int LAYER_NAME_LENGTH = 32;
-
 };
 
 

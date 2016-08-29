@@ -35,7 +35,7 @@ public:
 		update_param _biasUpdateParam;
 		param_filler _weightFiller;
 		param_filler _biasFiller;
-		Activation::Type _activationType;
+		typename Activation<Dtype>::Type _activationType;
 
 		Builder() {
 			_nOut = 0;
@@ -46,7 +46,7 @@ public:
 			_biasUpdateParam.decay_mult = 0.0;
 			_weightFiller.type = ParamFillerType::Constant;
 			_biasFiller.type = ParamFillerType::Constant;
-			_activationType = Activation::NoActivation;
+			_activationType = Activation<Dtype>::NoActivation;
 		}
 		Builder* nOut(uint32_t nOut) {
 			this->_nOut = nOut;
@@ -76,7 +76,7 @@ public:
 			this->_biasFiller.value = value;
 			return this;
 		}
-		Builder* activationType(Activation::Type activationType) {
+		Builder* activationType(typename Activation<Dtype>::Type activationType) {
 			this->_activationType = activationType;
 			return this;
 		}
@@ -122,7 +122,7 @@ public:
 	 * @param activationType weighted sum에 적용할 활성화 타입
 	 */
 	FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType=Activation::NoActivation);
+			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType=Activation<Dtype>::NoActivation);
 	virtual ~FullyConnectedLayer();
 
 
@@ -135,7 +135,7 @@ public:
 
 private:
 	void initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType);
+			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType);
 
 protected:
 	virtual void _shape(bool recursive=true);
@@ -144,7 +144,7 @@ protected:
 	//virtual double _sumSquareParam();
 	virtual double sumSquareParamsData();
 	virtual double sumSquareParamsGrad();
-	virtual void scaleParamsGrad(DATATYPE scale);
+	virtual void scaleParamsGrad(float scale);
 	virtual void _save(ofstream& ofs);
 	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 	//virtual void _update(uint32_t n, uint32_t miniBatchSize);
@@ -170,7 +170,11 @@ protected:
 	param_filler weight_filler;				///< weight 초기화 관련 파라미터 구조체
 	param_filler bias_filler;				///< bias 초기화 관련 파라미터 구조체
 
-	Activation *activation_fn;				///< 활성화 객체
+	Activation<Dtype> *activation_fn;				///< 활성화 객체
+
+	Data<Dtype>* _preActivation;			///< weighted sum 결과에 대한 데이터
+	vector<Data<Dtype>*> _params;			///< 파라미터 데이터 (Weight, Bias 포함)
+	vector<Data<Dtype>*> _paramsHistory;	///< 이전 update에서 적용된 파라미터 그레디언트 데이터
 
 #ifndef GPU_MODE
 	rmat weight;
@@ -183,25 +187,7 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	//Dtype *weight;						///< weight 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
-	//Dtype *bias;						///< bias 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
-
-	//Dtype *d_weight;					///< weight 장치 메모리 포인터
-	//Dtype *d_bias;						///< bias 장치 메모리 포인터
-
-	//Dtype *d_z;							///< weighted sum 장치 메모리 포인터
-	//Dtype *d_delta;						///< 네트워크 cost의 z(weighted sum)에 관한 gradient 장치 메모리 포인터
-	//Dtype *d_delta_weight;				///< 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터
-	//Dtype *d_delta_weight_prev;		///< 이전 업데이트의 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
-	//Dtype *d_delta_bias;				///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
-	//Dtype *d_delta_bias_prev;			///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
-
-	Data<Dtype>* _preActivation;
-	vector<Data<Dtype>*> _params;
-	vector<Data<Dtype>*> _paramsHistory;
-
 	Dtype* d_onevec;						///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
-
 	Dtype* mask;							///< dropout 마스크 호스트 메모리 포인터
 	Dtype* d_mask;							///< dropout 마스크 장치 메모리 포인터
 	Dtype scale;							///< dropout 스케일 팩터

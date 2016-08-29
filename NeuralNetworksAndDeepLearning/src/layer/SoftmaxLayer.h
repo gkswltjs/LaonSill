@@ -26,7 +26,7 @@ public:
 	class Builder : public OutputLayer<Dtype>::Builder {
 	public:
 		Builder() {
-			this->_activationType = Activation::Softmax;
+			this->_activationType = Activation<Dtype>::Softmax;
 			this->_costType = Cost::LogLikelihood;
 		}
 		Builder* costType(Cost::Type costType) {
@@ -57,7 +57,7 @@ public:
 			OutputLayer<Dtype>::Builder::biasFiller(biasFillerType, value);
 			return this;
 		}
-		Builder* activationType(Activation::Type activationType) {
+		Builder* activationType(typename Activation<Dtype>::Type activationType) {
 			OutputLayer<Dtype>::Builder::activationType(activationType);
 			return this;
 		}

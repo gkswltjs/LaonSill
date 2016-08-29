@@ -25,7 +25,7 @@ template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler)
 	: OutputLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
-			Activation::Softmax, Cost::LogLikelihood) {
+			Activation<Dtype>::Softmax, Cost::LogLikelihood) {
 	initialize();
 }
 

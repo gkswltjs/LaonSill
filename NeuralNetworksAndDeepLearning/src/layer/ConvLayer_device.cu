@@ -41,12 +41,12 @@ ConvLayer<Dtype>::~ConvLayer() {
 	checkCUDNN(cudnnDestroyFilterDescriptor(filterDesc));
 	checkCUDNN(cudnnDestroyConvolutionDescriptor(convDesc));
 
-	ActivationFactory::destory(activation_fn);
+	ActivationFactory<Dtype>::destory(activation_fn);
 }
 
 template <typename Dtype>
 void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
+		param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType) {
 
 	this->type = Layer<Dtype>::Conv;
 	this->filter_d = filter_d;
@@ -103,7 +103,7 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 			pad, pad, filter_d.stride, filter_d.stride, 1, 1,
 			CUDNN_CROSS_CORRELATION));
 
-	this->activation_fn = ActivationFactory::create(activationType);
+	this->activation_fn = ActivationFactory<Dtype>::create(activationType);
 	//checkCudaErrors(cudaDeviceSynchronize());
 }
 
@@ -253,7 +253,7 @@ void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &l
 	HiddenLayer<Dtype>::_load(ifs, layerMap);
 
 	filter_dim filter_d;
-	Activation::Type activationType;
+	typename Activation<Dtype>::Type activationType;
 	update_param weight_update_param, bias_update_param;
 	param_filler weight_filler, bias_filler;
 
@@ -439,7 +439,7 @@ void ConvLayer<Dtype>::_backpropagation() {
 
 template ConvLayer<float>::~ConvLayer();
 template void ConvLayer<float>::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType);
+		param_filler weight_filler, param_filler bias_filler, typename Activation<float>::Type activationType);
 template void ConvLayer<float>::_shape(bool recursive);
 template void ConvLayer<float>::_clearShape();
 template void ConvLayer<float>::_save(ofstream &ofs);

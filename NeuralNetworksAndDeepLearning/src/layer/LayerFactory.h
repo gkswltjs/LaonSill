@@ -12,7 +12,15 @@
 
 #include <stddef.h>
 
+#include "../exception/Exception.h"
+#include "ConvLayer.h"
+#include "DepthConcatLayer.h"
+#include "FullyConnectedLayer.h"
+#include "InputLayer.h"
 #include "Layer.h"
+#include "LRNLayer.h"
+#include "PoolingLayer.h"
+#include "SoftmaxLayer.h"
 
 
 
@@ -36,8 +44,6 @@ public:
 	 * @return 생성한 레이어 객체.
 	 */
 	static Layer<Dtype>* create(typename Layer<Dtype>::Type layerType) {
-	//static Layer<Dtype>* create() {
-		/*
 		switch(layerType) {
 		case Layer<Dtype>::Input: return new InputLayer<Dtype>();
 		case Layer<Dtype>::FullyConnected: return new FullyConnectedLayer<Dtype>();
@@ -50,8 +56,7 @@ public:
 		case Layer<Dtype>::Softmax: return new SoftmaxLayer<Dtype>();
 		default: throw new Exception();
 		}
-		*/
-		return 0;
+		//return 0;
 	}
 
 

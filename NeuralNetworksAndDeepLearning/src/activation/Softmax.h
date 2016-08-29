@@ -20,7 +20,8 @@
  * @brief Softmax Activation 구현 클래스.
  * @details Activation 클래스를 상속받아 Softmax 활성화를 구현.
  */
-class Softmax : public Activation {
+template <typename Dtype>
+class Softmax : public Activation<float> {
 public:
 	virtual ~Softmax() {}
 
@@ -63,53 +64,26 @@ public:
 	}
 
 #else
-	Softmax() {// : num_label(10), batches(10) {
+	Softmax() {
 		this->type = Activation::Softmax;
-		//h_z = new DATATYPE[num_label*batches];
-		//h_activation = new DATATYPE[num_label*batches];
 	}
 
-	/*
-	void forward(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc) {
-		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
-			&Cuda::alpha, tensorDesc, z, &Cuda::beta, tensorDesc, activation));
-	}
-	*/
-
-	void forward(const cudnnTensorDescriptor_t& desc, const DATATYPE* x, DATATYPE* y) {
+	void forward(const cudnnTensorDescriptor_t& desc, const Dtype* x, Dtype* y) {
 		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
 				&Cuda::alpha, desc, x, &Cuda::beta, desc, y));
 	}
 
-	/*
-	void backward(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
-				cudnnTensorDescriptor_t &tensorDesc) {
-
-		checkCUDNN(cudnnSoftmaxBackward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
-				&Cuda::alpha, ))
-
-	}
-	*/
-
-	void backward(const cudnnTensorDescriptor_t& desc,  const DATATYPE *y, const DATATYPE *dy, const DATATYPE *x, DATATYPE *dx) {
+	void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy, const Dtype* x, Dtype* dx) {
 		checkCUDNN(cudnnSoftmaxBackward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
 				&Cuda::alpha, desc, y, desc, dy,
 				&Cuda::beta, desc, dx));
 	}
-
-	//DATATYPE *h_z;						///< (임시) 활성화 입력값 확인용 호스트 메모리 포인터.
-	//DATATYPE *h_activation;				///< (임시) 활성화 출력값 확인용 호스트 메모리 포인터.
-	//const int num_label;				///< (임시) 네트워크의 레이블 수.
-	//const int batches;					///< (임시) 네트워크의 batch 사이즈.
-
 #endif
-
-
 
 };
 
 
-
+template class Softmax<float>;
 
 
 #endif /* ACTIVATION_SOFTMAX_H_ */

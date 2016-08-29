@@ -23,6 +23,7 @@
  * @brief	Activation 구현 클래스의 베이스 추상 클래스.
  * @details	Activation 클래스를 상속받아 Activation을 구현하는 클래스를 생성할 수 있음.
  */
+template <typename Dtype>
 class Activation {
 public:
 	Activation() {};
@@ -39,8 +40,7 @@ public:
 		Softmax = 2,	// Activation에 Softmax 함수를 적용.
 		ReLU = 3		// Activation에 Rectified Linear Unit 함수를 적용.
 	};
-
-	Activation::Type getType() const { return type; }
+	Type getType() const { return type; }
 
 	/**
 	 * activation function에 따라 layer weight의 초기화하는 방법이 다름
@@ -69,8 +69,7 @@ public:
 	 * @param activation 활성화 함수를 적용한 출력값을 담고 있는 장치 메모리 포인터.
 	 * @param tensorDesc 입력값 z의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터.
 	 */
-	//virtual void activate(const DATATYPE *z, DATATYPE *activation, cudnnTensorDescriptor_t &tensorDesc)=0;
-	virtual void forward(const cudnnTensorDescriptor_t& desc, const DATATYPE* x, DATATYPE* y) = 0;
+	virtual void forward(const cudnnTensorDescriptor_t& desc, const Dtype* x, Dtype* y) = 0;
 
 	/**
 	 * @details 활성화 함수 출력값을 입력값에 대해 미분한 결과를 반환.
@@ -80,18 +79,17 @@ public:
 	 * @param da Cost를 z에 대해 미분한 결과를 담고 있는 장치 메모리 포인터.
 	 * @param tensorDesc activate, deltaInput, z, da의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터.
 	 */
-	//virtual void backward(const DATATYPE *activation, const DATATYPE *deltaInput, const DATATYPE *z, DATATYPE *da,
-	//		cudnnTensorDescriptor_t &tensorDesc) = 0;
-	virtual void backward(const cudnnTensorDescriptor_t& desc,  const DATATYPE *y, const DATATYPE *dy, const DATATYPE *x, DATATYPE *dx) = 0;
+	virtual void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy, const Dtype* x, Dtype* dx) = 0;
 
 #endif
 
 
 protected:
-	Type type;	///< 현재 Activation 객체의 Activation 타입.
+	Type type;			///< 현재 Activation 객체의 Activation 타입.
 
 };
 
 
+template class Activation<float>;
 
 #endif /* ACTIVATION_ACTIVATION_H_ */

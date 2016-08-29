@@ -161,7 +161,7 @@ protected:
 
 	double computeSumSquareParamsData();
 	double computeSumSquareParamsGrad();
-	void scaleParamsGrad(DATATYPE scale);
+	void scaleParamsGrad(float scale);
 
 
 	//double totalCost(const vector<const DataSample *> &dataSet, double lambda);
