@@ -21,7 +21,8 @@
  * @param vec The array to fill.
  * @param size The number of elements in the array.
  */
-__global__ void FillValues(DATATYPE *vec, int size, DATATYPE value)
+template <typename Dtype>
+__global__ void FillValues(Dtype *vec, int size, Dtype value)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
@@ -39,8 +40,9 @@ __global__ void FillValues(DATATYPE *vec, int size, DATATYPE value)
  * @param vec The array to fill.
  * @param size The number of elements in the array.
  */
-__global__ void Dropout(const int n, const DATATYPE* in, const DATATYPE* mask,
-		const unsigned int threashold, const float scale, DATATYPE *out)
+template <typename Dtype>
+__global__ void Dropout(const int n, const Dtype* in, const Dtype* mask,
+		const unsigned int threashold, const float scale, Dtype *out)
 {
 
 	CUDA_KERNEL_LOOP(index, n) {

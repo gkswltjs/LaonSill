@@ -122,12 +122,12 @@ public:
 	 * @param 데이터셋의 조회할 채널 index
 	 * @return 조회된 특정 채널의 평균값
 	 */
-	DATATYPE getDataSetMean(UINT channel);
+	float getDataSetMean(UINT channel);
 	/**
 	 * @details 네트워크에 등록된 데이터셋에 각 채널의 평균값을 설정한다.
 	 * @param dataSetMean 채널의 평균값을 담고 있는 배열의 포인터
 	 */
-	void setDataSetMean(DATATYPE *dataSetMean);
+	void setDataSetMean(float *dataSetMean);
 
 
 
@@ -138,7 +138,7 @@ public:
 	void feedforward(const rcube &input, const char *end=0);
 #else
 public:
-	void feedforward(const DATATYPE *input, const char *end=0);
+	void feedforward(const Dtype *input, const char *end=0);
 #endif
 */
 
@@ -206,12 +206,7 @@ protected:
 	//bool saveConfigured;						///< 네트워크 쓰기 설정 여부
 	double maxAccuracy;							///< 네트워크 평가 최대 정확도
 	double minCost;								///< 네트워크 평가 최소 cost
-	DATATYPE dataSetMean[3];					///< 네트워크 데이터셋 평균 배열
-	//DATATYPE clipGradientsLevel;				///< 학습 gradient의 L2 norm의 크기를 제한하는 기준값
-
-	//Data* trainData;
-	//DATATYPE* d_trainData;						///< 학습 데이터 장치 메모리 포인터
-	//UINT* d_trainLabel;							///< 학습 데이터 정답 장치 메모리 포인터
+	float dataSetMean[3];					///< 네트워크 데이터셋 평균 배열
 
 };
 

@@ -19,8 +19,9 @@
  * @param vec The array to fill.
  * @param size The number of elements in the array.
  */
-__global__ void Dropout_(const int n, const DATATYPE* in, const DATATYPE* mask,
-		const uint32_t threashold, const float scale, DATATYPE *out)
+template <typename Dtype>
+__global__ void Dropout_(const int n, const Dtype* in, const Dtype* mask,
+		const uint32_t threashold, const float scale, Dtype *out)
 {
 
 	CUDA_KERNEL_LOOP(index, n) {

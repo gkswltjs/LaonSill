@@ -14,7 +14,7 @@
  * @param diff The resulting gradient.
  */
 /*
-__global__ void SoftmaxLossBackprop(const uint32_t* label, int num_labels, int batch_size, DATATYPE *diff) {
+__global__ void SoftmaxLossBackprop(const uint32_t* label, int num_labels, int batch_size, Dtype *diff) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= batch_size)
 		return;
@@ -24,12 +24,12 @@ __global__ void SoftmaxLossBackprop(const uint32_t* label, int num_labels, int b
 }
 */
 
-
+template <typename Dtype>
 __global__ void SoftmaxLossBackprop(
-		const DATATYPE *z,
-		const DATATYPE *activation,
+		const Dtype *z,
+		const Dtype *activation,
 		const uint32_t *target,
-		DATATYPE *delta,
+		Dtype *delta,
 		uint32_t numLabels,
 		uint32_t batchsize) {
 

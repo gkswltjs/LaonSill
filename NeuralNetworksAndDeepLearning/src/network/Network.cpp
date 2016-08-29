@@ -169,7 +169,7 @@ double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 	double cost = outputLayer->cost(y);
 
 	networkOutput->print_data("networkOutput:");
-	const DATATYPE* output = networkOutput->host_data();
+	const Dtype* output = networkOutput->host_data();
 	for(int i = 0; i < config->_evaluations.size(); i++) {
 		config->_evaluations[i]->evaluate(numLabels, in_dim.batches, output, y);
 	}
@@ -284,7 +284,7 @@ int Network<Dtype>::testEvaluateResult(const rvec &output, const rvec &y) {
 #else
 
 /*
-void Network<Dtype>::feedforward(const DATATYPE *input, const char *end) {
+void Network<Dtype>::feedforward(const Dtype *input, const char *end) {
 	trainData->set_data(input);
 	config->_inputLayer->feedforward(0, trainData, end);
 }
@@ -333,7 +333,7 @@ void Network<Dtype>::clipGradients() {
 				", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
 	} else {
 		if(l2normParamsGrad > clipGradientsLevel) {
-			const DATATYPE scale_factor = clipGradientsLevel / (l2normParamsGrad*1);
+			const float scale_factor = clipGradientsLevel / (l2normParamsGrad*1);
 
 			cout << "Gradient clipping: scaling down gradients (L2 norm " << l2normParamsGrad <<
 					", Weight: " << l2normParamsData << " > " << clipGradientsLevel <<
@@ -382,7 +382,7 @@ void Network<Dtype>::shape(io_dim in_dim) {
 	}
 	config->_inputLayer->shape(0, this->in_dim);
 
-	//checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(DATATYPE)*config->_inputLayer->getInputSize()*this->in_dim.batches));
+	//checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(Dtype)*config->_inputLayer->getInputSize()*this->in_dim.batches));
 	//checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
 	//trainData->reshape({this->in_dim.batches, this->in_dim.channels, this->in_dim.rows, this->in_dim.cols});
 }
@@ -507,11 +507,11 @@ void Network<Dtype>::load(const char* filename) {
 }
 
 /*
-DATATYPE Network<Dtype>::getDataSetMean(UINT channel) {
+Dtype Network<Dtype>::getDataSetMean(UINT channel) {
 	return dataSetMean[channel];
 }
 
-void Network<Dtype>::setDataSetMean(DATATYPE *dataSetMean) {
+void Network<Dtype>::setDataSetMean(Dtype *dataSetMean) {
 	for(int i = 0; i < 3; i++) {
 		this->dataSetMean[i] = dataSetMean[i];
 	}
