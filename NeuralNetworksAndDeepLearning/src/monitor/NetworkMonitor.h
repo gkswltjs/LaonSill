@@ -12,7 +12,6 @@
 #include <iostream>
 
 #include "NetworkListener.h"
-#include "MonitorSet.h"
 #include <gnuplot-iostream.h>
 #include <cmath>
 #include <boost/tuple/tuple.hpp>

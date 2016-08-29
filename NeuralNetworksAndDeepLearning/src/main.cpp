@@ -60,8 +60,8 @@ void network_test() {
 	dataSet->load();
 	dataSet->zeroMean(true);
 
-	Evaluation* top1Evaluation = new Top1Evaluation();
-	Evaluation* top5Evaluation = new Top5Evaluation();
+	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
+	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
 	NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
 	NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
 

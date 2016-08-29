@@ -65,7 +65,7 @@ Network<Dtype>::~Network() {
 template <typename Dtype>
 void Network<Dtype>::sgd(int epochs) {
 	DataSet<Dtype>* dataSet = config->_dataSet;
-	vector<Evaluation*>& evaluations = config->_evaluations;
+	vector<Evaluation<Dtype>*>& evaluations = config->_evaluations;
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
 	const uint32_t trainDataSize = dataSet->getNumTrainData();
@@ -143,7 +143,7 @@ double Network<Dtype>::evaluateTestSet() {
 	return testResult;
 #else
 	DataSet<Dtype>* dataSet = config->_dataSet;
-	vector<Evaluation*>& evaluations = config->_evaluations;
+	vector<Evaluation<Dtype>*>& evaluations = config->_evaluations;
 	double cost = 0.0;
 
 	for(int i = 0; i < evaluations.size(); i++) {
@@ -181,7 +181,7 @@ template <typename Dtype>
 void Network<Dtype>::test() {
 	Util::train = false;
 	DataSet<Dtype>* dataSet = config->_dataSet;
-	vector<Evaluation*>& evaluations = config->_evaluations;
+	vector<Evaluation<Dtype>*>& evaluations = config->_evaluations;
 
 	Timer timer;
 	float numTestData = (float)dataSet->getNumTestData();

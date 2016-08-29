@@ -120,8 +120,8 @@ void SyncMem<Dtype>::add_host_mem(const Dtype* mem) {
 }
 
 template <>
-void SyncMem<DATATYPE>::add_device_mem(const DATATYPE* mem) {
-	DATATYPE* _mem = mutable_device_mem();
+void SyncMem<float>::add_device_mem(const float* mem) {
+	float* _mem = mutable_device_mem();
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(_size), &Cuda::alpha, mem, 1, _mem, 1));
 }
 
@@ -132,8 +132,8 @@ void SyncMem<Dtype>::scale_host_mem(const float scale) {
 }
 
 template <>
-void SyncMem<DATATYPE>::scale_device_mem(const float scale) {
-	DATATYPE* _mem = mutable_device_mem();
+void SyncMem<float>::scale_device_mem(const float scale) {
+	float* _mem = mutable_device_mem();
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(_size), &scale, _mem, 1));
 }
 
@@ -142,9 +142,9 @@ void SyncMem<DATATYPE>::scale_device_mem(const float scale) {
 //Dtype SyncMem<Dtype>::sumsq_host_mem() {}
 
 template <>
-double SyncMem<DATATYPE>::sumsq_device_mem() {
+double SyncMem<float>::sumsq_device_mem() {
 	float sumsq;
-	const DATATYPE* _mem = device_mem();
+	const float* _mem = device_mem();
 	checkCudaErrors(cublasSdot(Cuda::cublasHandle, _size, _mem, 1, _mem, 1, &sumsq));
 
 	// NaN test
@@ -222,9 +222,6 @@ void SyncMem<Dtype>::print(const string& head, const std::vector<uint32_t>& shap
 		cout << "shape size should be 4 ... " << endl;
 		exit(1);
 	}
-
-
-
 	checkDeviceMemAndUpdateHostMem(false);
 	const Dtype* data = _host_mem;
 

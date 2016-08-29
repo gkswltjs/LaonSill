@@ -197,7 +197,7 @@ protected:
 
 	//InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터
 	//vector<OutputLayer*> outputLayers;			///< 네트워크 출력 레이어 포인터 목록 벡터
-	//vector<Evaluation*> evaluations;			///< 네트워크 평가 객체 포인터 목록 벡터
+	//vector<Evaluation<Dtype>*> evaluations;			///< 네트워크 평가 객체 포인터 목록 벡터
 	//vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 목록 벡터
 
 	io_dim in_dim;								///< 네트워크 입력 데이터 구조 정보 구조체

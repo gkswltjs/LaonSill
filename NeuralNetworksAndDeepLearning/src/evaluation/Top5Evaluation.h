@@ -17,22 +17,18 @@
 
 
 
-
-
-
-
-
 /**
  * @brief 네트워크가 추정한 상위 5개와 정답의 일치율을 평가하는 Evaluation 클래스
  * @details
  */
-class Top5Evaluation : public Evaluation {
+template <typename Dtype>
+class Top5Evaluation : public Evaluation<Dtype> {
 
 public:
 	Top5Evaluation() {}
 	virtual ~Top5Evaluation() {}
 
-	virtual void evaluate(const int num_labels, const int batches, const DATATYPE *output, const UINT *y) {
+	virtual void evaluate(const int num_labels, const int batches, const Dtype *output, const uint32_t *y) {
 		labelScoreList.resize(num_labels);
 
 		//cout << "Top5Evaluation: " << endl;
@@ -52,7 +48,7 @@ public:
 			for(int i = 0; i < 5; i++) {
 				//cout << labelScoreList[i].label << ", ";
 				if(y[j] == labelScoreList[i].label) {
-					accurateCount++;
+					this->accurateCount++;
 					break;
 				}
 			}
@@ -67,11 +63,11 @@ private:
 	 * @details 레이블의 예측 순위를 구하기 위해 사용하는 내부 구조체.
 	 */
 	struct LabelScore {
-		UINT label;					///< 레이블 번호
-		DATATYPE score;				///< 해당 레이블에 대한 네트워크의 추정 스코어
+		uint32_t label;					///< 레이블 번호
+		Dtype score;				///< 해당 레이블에 대한 네트워크의 추정 스코어
 
 		LabelScore() {}
-		LabelScore(UINT label, DATATYPE score) : label(label), score(score) {}
+		LabelScore(uint32_t label, Dtype score) : label(label), score(score) {}
 
 		/**
 		 * @details vector 정렬을 위해 operator>를 재정의
@@ -82,5 +78,8 @@ private:
 	};
 	std::vector<LabelScore> labelScoreList;				///< 네트워크가 추정한 순위를 정렬하기 위한 버퍼
 };
+
+
+template class Top5Evaluation<float>;
 
 #endif /* TOP5EVALUATION_H_ */

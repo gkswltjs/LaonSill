@@ -172,7 +172,7 @@ public:
 	class Builder {
 	public:
 		DataSet<Dtype>* _dataSet;
-		vector<Evaluation*> _evaluations;
+		vector<Evaluation<Dtype>*> _evaluations;
 		vector<NetworkListener*> _networkListeners;
 		LayersConfig<Dtype>* _layersConfig;
 
@@ -191,7 +191,7 @@ public:
 			this->_epochs = 1;
 			this->_clipGradientsLevel = 35.0f;
 		}
-		Builder* evaluations(const vector<Evaluation*> evaluations) {
+		Builder* evaluations(const vector<Evaluation<Dtype>*> evaluations) {
 			this->_evaluations = evaluations;
 			return this;
 		}
@@ -306,7 +306,7 @@ public:
 	map<string, Layer<Dtype>*> _nameLayerMap;
 
 	DataSet<Dtype>* _dataSet;
-	vector<Evaluation*> _evaluations;
+	vector<Evaluation<Dtype>*> _evaluations;
 	vector<NetworkListener*> _networkListeners;
 	LayersConfig<Dtype>* _layersConfig;
 
@@ -321,7 +321,7 @@ public:
 
 	NetworkConfig() {}
 
-	NetworkConfig* evaluations(const vector<Evaluation*> evaluations) {
+	NetworkConfig* evaluations(const vector<Evaluation<Dtype>*> evaluations) {
 		this->_evaluations = evaluations;
 		return this;
 	}

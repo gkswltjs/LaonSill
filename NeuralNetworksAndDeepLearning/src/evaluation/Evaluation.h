@@ -21,6 +21,7 @@
  *          결과 통계값에는 예측 정확도, Cost값 등이 있을 수 있다.
  * @todo accurateCoutn, cost와 같은 구체적인 통계값에 대한 의존성을 구현 클래스로 옮겨야 한다.
  */
+template <typename Dtype>
 class Evaluation {
 public:
 	Evaluation() {
@@ -47,11 +48,13 @@ public:
 	 * @param output 네트워크가 추정 호스트 메모리 포인터
 	 * @param y 정답값 호스트 메모리 포인터
 	 */
-	virtual void evaluate(const int num_labels, const int batches, const DATATYPE *output, const UINT *y)=0;
+	virtual void evaluate(const int num_labels, const int batches, const Dtype* output, const uint32_t* y)=0;
 
 protected:
 	int accurateCount;			///< 네트워크 추정에서 정답을 맞춘 갯수
 	double cost;				///< 네트워크 추정의 전체 Cost의 합
 };
+
+template class Evaluation<float>;
 
 #endif /* EVALUATION_H_ */
