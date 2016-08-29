@@ -23,28 +23,29 @@
  *          input2: batch2-1(channel2-1-1/channel2-1-2)/batch2-2(channel2-2-1/channel2-2-2)
  *          output: batch1-1(channel1-1-1/channel1-1-2)/batch2-1(channel2-1-1/channel2-1-2)/batch1-2(channel1-2-1/channel1-2-2)/batch2-2(channel2-2-1/channel2-2-2)
  */
-class DepthConcatLayer : public HiddenLayer {
+template <typename Dtype>
+class DepthConcatLayer : public HiddenLayer<Dtype> {
 public:
-	class Builder : public HiddenLayer::Builder {
+	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		Builder() {}
 		virtual Builder* name(const string name) {
-			HiddenLayer::Builder::name(name);
+			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer::Builder::id(id);
+			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
-			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
 		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
-			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
-		Layer* build() {
+		Layer<Dtype>* build() {
 			return new DepthConcatLayer(this);
 		}
 	};
@@ -54,24 +55,24 @@ public:
 	DepthConcatLayer(const string name);
 	virtual ~DepthConcatLayer();
 
-	virtual void shape(UINT idx, io_dim in_dim);
-	virtual void reshape(UINT idx, io_dim in_dim);
+	virtual void shape(uint32_t idx, io_dim in_dim);
+	virtual void reshape(uint32_t idx, io_dim in_dim);
 
 protected:
 	void initialize();
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 	/**
 	 * @details 일반적인 concat과 달리 channel을 기준으로 조합하므로 재정의한다.
 	 */
-	virtual void _concat(UINT idx, Data* input);
+	virtual void _concat(uint32_t idx, Data<Dtype>* input);
 	/**
 	 * @details 일반적인 deconcat과 달리 channel을 기준으로 해체하므로 재정의한다.
 	 */
-	virtual void _deconcat(UINT idx, Data* next_delta_input, uint32_t offset);
+	virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset);
 	/**
 	 * @details _concat()에서 입력값이 합산되는 방식이 아니므로 합산에 대해
 	 *          scaling을 적용하는 기본 _scaleInput()을 재정의하여 scale하지 않도록 한다.

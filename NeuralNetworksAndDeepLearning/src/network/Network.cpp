@@ -18,24 +18,21 @@
 #include "../Util.h"
 
 
-Network::Network(NetworkConfig* config)
+template <typename Dtype>
+Network<Dtype>::Network(NetworkConfig<Dtype>* config)
 	: config(config) {
 	DataSet* dataSet = config->_dataSet;
 	this->in_dim.rows = dataSet->getRows();
 	this->in_dim.cols = dataSet->getCols();
 	this->in_dim.channels = dataSet->getChannels();
 	this->in_dim.batches = config->_batchSize;
-
-	//this->d_trainLabel = NULL;
-
-	//this->trainData = new Data();
 }
 
 /*
-Network::Network(NetworkListener *networkListener)
+Network<Dtype>::Network(NetworkListener *networkListener)
 	: Network(0, 0, 0, networkListener) {}
 
-Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
+Network<Dtype>::Network(InputLayer<Dtype>* inputLayer, OutputLayer<Dtype>*outputLayer, DataSet *dataSet, NetworkListener *networkListener) {
 	this->inputLayer = inputLayer;
 	if(outputLayer) this->outputLayers.push_back(outputLayer);
 	this->dataSet = dataSet;
@@ -52,8 +49,8 @@ Network::Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *data
 }
 */
 
-
-Network::~Network() {
+template <typename Dtype>
+Network<Dtype>::~Network() {
 	if(config->_inputLayer) {
 		delete config->_inputLayer;
 		config->_inputLayer = NULL;
@@ -65,8 +62,8 @@ Network::~Network() {
 }
 
 
-
-void Network::sgd(int epochs) {
+template <typename Dtype>
+void Network<Dtype>::sgd(int epochs) {
 	DataSet* dataSet = config->_dataSet;
 	vector<Evaluation*>& evaluations = config->_evaluations;
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
@@ -125,8 +122,8 @@ void Network::sgd(int epochs) {
 }
 
 
-
-double Network::evaluateTestSet() {
+template <typename Dtype>
+double Network<Dtype>::evaluateTestSet() {
 #ifndef GPU_MODE
 	int testResult = 0;
 	//bool printBak = Util::getPrint();
@@ -161,12 +158,13 @@ double Network::evaluateTestSet() {
 #endif
 }
 
-double Network::evaluateTestData(uint32_t batchIndex) {
+template <typename Dtype>
+double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 	config->_inputLayer->feedforward(config->_dataSet->getTestDataAt(batchIndex*in_dim.batches));
-	OutputLayer* outputLayer = config->_outputLayers[0];
+	OutputLayer<Dtype>* outputLayer = config->_outputLayers[0];
 
 	const uint32_t numLabels = outputLayer->getOutDimension().rows;
-	Data* networkOutput = outputLayer->getOutput();
+	Data<Dtype>* networkOutput = outputLayer->getOutput();
 	const uint32_t* y = config->_dataSet->getTestLabelAt(batchIndex*in_dim.batches);
 	double cost = outputLayer->cost(y);
 
@@ -179,7 +177,8 @@ double Network::evaluateTestData(uint32_t batchIndex) {
 	return cost;
 }
 
-void Network::test() {
+template <typename Dtype>
+void Network<Dtype>::test() {
 	Util::train = false;
 	DataSet* dataSet = config->_dataSet;
 	vector<Evaluation*>& evaluations = config->_evaluations;
@@ -199,14 +198,15 @@ void Network::test() {
 
 
 #ifndef GPU_MODE
-
-void Network::feedforward(const rcube &input, const char *end) {
+template <typename Dtype>
+void Network<Dtype>::feedforward(const rcube &input, const char *end) {
 	//cout << "feedforward()" << endl;
 	inputLayer->feedforward(0, input, end);
 
 }
 
-void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
+template <typename Dtype>
+void Network<Dtype>::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
 
 	int baseIndex = nthMiniBatch*miniBatchSize;
 	for(int i = 0; i < miniBatchSize; i++) {
@@ -219,7 +219,8 @@ void Network::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
 	//inputLayer->update(0, n, miniBatchSize);
 }
 
-void Network::backprop(const DataSample &dataSample) {
+template <typename Dtype>
+void Network<Dtype>::backprop(const DataSample &dataSample) {
 	//Timer timer;
 	//timer.start();
 	// feedforward
@@ -238,7 +239,7 @@ void Network::backprop(const DataSample &dataSample) {
 }
 
 /*
-double Network::totalCost(const vector<const DataSample *> &dataSet, double lambda) {
+double Network<Dtype>::totalCost(const vector<const DataSample *> &dataSet, double lambda) {
 	double cost = 0.0;
 	int dataSize = dataSet.size();
 
@@ -255,7 +256,7 @@ double Network::totalCost(const vector<const DataSample *> &dataSet, double lamb
 	return cost;
 }
 
-double Network::accuracy(const vector<const DataSample *> &dataSet) {
+double Network<Dtype>::accuracy(const vector<const DataSample *> &dataSet) {
 	int total = 0;
 	int dataSize = dataSet.size();
 	for(int i = 0; i < dataSize; i++) {
@@ -268,7 +269,8 @@ double Network::accuracy(const vector<const DataSample *> &dataSet) {
 }
 */
 
-int Network::testEvaluateResult(const rvec &output, const rvec &y) {
+template <typename Dtype>
+int Network<Dtype>::testEvaluateResult(const rvec &output, const rvec &y) {
 	//Util::printVec(&evaluateResult, "result");
 	//Util::printVec(y, "y");
 
@@ -282,16 +284,17 @@ int Network::testEvaluateResult(const rvec &output, const rvec &y) {
 #else
 
 /*
-void Network::feedforward(const DATATYPE *input, const char *end) {
+void Network<Dtype>::feedforward(const DATATYPE *input, const char *end) {
 	trainData->set_data(input);
 	config->_inputLayer->feedforward(0, trainData, end);
 }
 */
 
-void Network::trainBatch(uint32_t batchIndex) {
+template <typename Dtype>
+void Network<Dtype>::trainBatch(uint32_t batchIndex) {
 	DataSet* dataSet = config->_dataSet;
-	InputLayer* inputLayer = config->_inputLayer;
-	vector<OutputLayer*> outputLayers = config->_outputLayers;
+	InputLayer<Dtype>* inputLayer = config->_inputLayer;
+	vector<OutputLayer<Dtype>*> outputLayers = config->_outputLayers;
 
 	int baseIndex = batchIndex*in_dim.batches;
 
@@ -306,7 +309,8 @@ void Network::trainBatch(uint32_t batchIndex) {
 
 #endif
 
-void Network::applyUpdate() {
+template <typename Dtype>
+void Network<Dtype>::applyUpdate() {
 	clipGradients();
 
 	const uint32_t numLearnableLayers = config->_learnableLayers.size();
@@ -315,7 +319,8 @@ void Network::applyUpdate() {
 	}
 }
 
-void Network::clipGradients() {
+template <typename Dtype>
+void Network<Dtype>::clipGradients() {
 	const float clipGradientsLevel = config->_clipGradientsLevel;
 	const double sumsqParamsGrad = computeSumSquareParamsGrad();
 	const double sumsqParamsData = computeSumSquareParamsData();
@@ -341,7 +346,8 @@ void Network::clipGradients() {
 	}
 }
 
-double Network::computeSumSquareParamsData() {
+template <typename Dtype>
+double Network<Dtype>::computeSumSquareParamsData() {
 	uint32_t numLearnableLayers = config->_learnableLayers.size();
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
@@ -350,7 +356,8 @@ double Network::computeSumSquareParamsData() {
 	return sumsq;
 }
 
-double Network::computeSumSquareParamsGrad() {
+template <typename Dtype>
+double Network<Dtype>::computeSumSquareParamsGrad() {
 	uint32_t numLearnableLayers = config->_learnableLayers.size();
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
@@ -360,14 +367,16 @@ double Network::computeSumSquareParamsGrad() {
 	return sumsq;
 }
 
-void Network::scaleParamsGrad(DATATYPE scale) {
+template <typename Dtype>
+void Network<Dtype>::scaleParamsGrad(DATATYPE scale) {
 	uint32_t numLearnableLayers = config->_learnableLayers.size();
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
 		config->_learnableLayers[i]->scaleParamsGrad(scale);
 	}
 }
 
-void Network::shape(io_dim in_dim) {
+template <typename Dtype>
+void Network<Dtype>::shape(io_dim in_dim) {
 	if(in_dim.unitsize() > 0) {
 		this->in_dim = in_dim;
 	}
@@ -378,7 +387,8 @@ void Network::shape(io_dim in_dim) {
 	//trainData->reshape({this->in_dim.batches, this->in_dim.channels, this->in_dim.rows, this->in_dim.cols});
 }
 
-void Network::reshape(io_dim in_dim) {
+template <typename Dtype>
+void Network<Dtype>::reshape(io_dim in_dim) {
 	if(in_dim.unitsize() > 0) {
 		this->in_dim = in_dim;
 	}
@@ -386,21 +396,22 @@ void Network::reshape(io_dim in_dim) {
 }
 
 /*
-void Network::saveConfig(const char* savePrefix) {
+void Network<Dtype>::saveConfig(const char* savePrefix) {
 	strcpy(this->savePrefix, savePrefix);
 	this->saveConfigured = true;
 }
 */
 
-void Network::save(const char* filename) {
+template <typename Dtype>
+void Network<Dtype>::save(const char* filename) {
 	//if(saveConfigured && cost < minCost) {
 	//	minCost = cost;
 	//	char savePath[256];
 	//	sprintf(savePath, "%s%02d.network", savePrefix, i+1);
 	//	save(savePath);
 
-	InputLayer* inputLayer = config->_inputLayer;
-	vector<OutputLayer*>& outputLayers = config->_outputLayers;
+	InputLayer<Dtype>* inputLayer = config->_inputLayer;
+	vector<OutputLayer<Dtype>*>& outputLayers = config->_outputLayers;
 
 	Timer timer;
 	timer.start();
@@ -411,10 +422,10 @@ void Network::save(const char* filename) {
 
 	ofs.write((char *)&in_dim, sizeof(io_dim));
 	//ofs.write((char *)&inputLayerSize, sizeof(int));		// input layer size
-	//ofs.write((char *)&inputLayer, sizeof(Layer *));		// input layer address
+	//ofs.write((char *)&inputLayer, sizeof(Layer<Dtype>*));		// input layer address
 	ofs.write((char *)&outputLayerSize, sizeof(UINT));		// output layer size
 	for(UINT i = 0; i < outputLayers.size(); i++) {
-		ofs.write((char *)&outputLayers[i], sizeof(Layer *));
+		ofs.write((char *)&outputLayers[i], sizeof(Layer<Dtype>*));
 	}
 	inputLayer->save(0, ofs);
 	ofs.close();
@@ -422,9 +433,10 @@ void Network::save(const char* filename) {
 	cout << "time elapsed to save network: " << timer.stop(false) << endl;
 }
 
-void Network::load(const char* filename) {
-	InputLayer* inputLayer = config->_inputLayer;
-	vector<OutputLayer*>& outputLayers = config->_outputLayers;
+template <typename Dtype>
+void Network<Dtype>::load(const char* filename) {
+	InputLayer<Dtype>* inputLayer = config->_inputLayer;
+	vector<OutputLayer<Dtype>*>& outputLayers = config->_outputLayers;
 
 	ifstream ifs(filename, ios::in | ios::binary);
 	UINT outputLayerSize;
@@ -432,62 +444,62 @@ void Network::load(const char* filename) {
 	ifs.read((char *)&in_dim, sizeof(in_dim));
 	ifs.read((char *)&outputLayerSize, sizeof(UINT));
 	for(UINT i = 0; i < outputLayerSize; i++) {
-		OutputLayer *outputLayer;
-		ifs.read((char *)&outputLayer, sizeof(OutputLayer *));
+		OutputLayer<Dtype>* outputLayer;
+		ifs.read((char *)&outputLayer, sizeof(OutputLayer<Dtype>*));
 		outputLayers.push_back(outputLayer);
 	}
 
-	map<Layer *, Layer *> layerMap;
-	config->_inputLayer = new InputLayer();
+	map<Layer<Dtype>*, Layer<Dtype>*> layerMap;
+	config->_inputLayer = new InputLayer<Dtype>();
 	config->_inputLayer->load(ifs, layerMap);
 
 	// restore output layers of network
 	for(UINT i = 0; i < outputLayerSize; i++) {
-		outputLayers[i] = (OutputLayer *)layerMap.find((Layer *)outputLayers[i])->second;
+		outputLayers[i] = (OutputLayer<Dtype>*)layerMap.find((Layer<Dtype>*)outputLayers[i])->second;
 	}
 
 	/*
-	map<Layer *, Layer *> layerMap;
+	map<Layer<Dtype>*, Layer<Dtype>*> layerMap;
 	while(true) {
 		Layer::Type layerType;
 		ifs.read((char *)&layerType, sizeof(int));
-		Layer *address;
-		ifs.read((char *)&address, sizeof(Layer *));
+		Layer<Dtype>*address;
+		ifs.read((char *)&address, sizeof(Layer<Dtype>*));
 
 		if(address == 0) break;
 
-		Layer *layer = LayerFactory::create(layerType);
-		layerMap.insert(pair<Layer *, Layer *>(address, layer));
+		Layer<Dtype>*layer = LayerFactory<Dtype>::create(layerType);
+		layerMap.insert(pair<Layer<Dtype>*, Layer<Dtype>*>(address, layer));
 	}
 	cout << "map size: " << layerMap.size() << endl;
 
 	ifs.seekg(1000);
-	Layer *layerKey;
-	ifs.read((char *)&layerKey, sizeof(Layer *));
+	Layer<Dtype>*layerKey;
+	ifs.read((char *)&layerKey, sizeof(Layer<Dtype>*));
 
 	while(ifs) {
-		Layer *layer = layerMap.find(layerKey)->second;
+		Layer<Dtype>*layer = layerMap.find(layerKey)->second;
 		if(!layer) throw Exception();
 
 		layer->load(ifs, layerMap);
 
 		vector<next_layer_relation> &nextLayers = layer->getNextLayers();
 		for(UINT i = 0; i < nextLayers.size(); i++) {
-			Layer *nextLayer = nextLayers[i];
+			Layer<Dtype>*nextLayer = nextLayers[i];
 			nextLayers[i] = layerMap.find(nextLayer)->second;
 		}
 
 		// 학습된 네트워크를 load하는 경우 backward pass가 없으므로 불필요
-		//HiddenLayer *hiddenLayer = dynamic_cast<HiddenLayer *>(layer);
+		//HiddenLayer<Dtype>*hiddenLayer = dynamic_cast<HiddenLayer<Dtype>*>(layer);
 		//if(hiddenLayer) {
 		//	vector<prev_layer_relation> &prevLayers = hiddenLayer->getPrevLayers();
 		//	for(UINT i = 0; i < prevLayers.size(); i++) {
-		//		Layer *prevLayer = prevLayers[i];
-		//		prevLayers[i] = dynamic_cast<HiddenLayer *>(layerMap.find(prevLayer)->second);
+		//		Layer<Dtype>*prevLayer = prevLayers[i];
+		//		prevLayers[i] = dynamic_cast<HiddenLayer<Dtype>*>(layerMap.find(prevLayer)->second);
 		//	}
 		//}
 
-		ifs.read((char *)&layerKey, sizeof(Layer *));
+		ifs.read((char *)&layerKey, sizeof(Layer<Dtype>*));
 	}
 	*/
 
@@ -495,21 +507,22 @@ void Network::load(const char* filename) {
 }
 
 /*
-DATATYPE Network::getDataSetMean(UINT channel) {
+DATATYPE Network<Dtype>::getDataSetMean(UINT channel) {
 	return dataSetMean[channel];
 }
 
-void Network::setDataSetMean(DATATYPE *dataSetMean) {
+void Network<Dtype>::setDataSetMean(DATATYPE *dataSetMean) {
 	for(int i = 0; i < 3; i++) {
 		this->dataSetMean[i] = dataSetMean[i];
 	}
 }
 */
 
-Layer* Network::findLayer(const string name) {
+template <typename Dtype>
+Layer<Dtype>* Network<Dtype>::findLayer(const string name) {
 	//return config->_inputLayer->find(0, name);
-	map<string, Layer*>& nameLayerMap = config->_nameLayerMap;
-	map<string, Layer*>::iterator it = nameLayerMap.find(name);
+	map<string, Layer<Dtype>*>& nameLayerMap = config->_nameLayerMap;
+	typename map<string, Layer<Dtype>*>::iterator it = nameLayerMap.find(name);
 	if(it != nameLayerMap.end()) {
 		return it->second;
 	} else {
@@ -519,4 +532,4 @@ Layer* Network::findLayer(const string name) {
 
 
 
-
+template class Network<float>;

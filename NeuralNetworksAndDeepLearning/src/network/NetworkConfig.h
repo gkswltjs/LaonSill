@@ -24,15 +24,18 @@ class DataSet;
 
 using namespace std;
 
+
+
+template <typename Dtype>
 class LayersConfig {
 public:
 	class Builder {
 	public:
-		map<uint32_t, Layer::Builder*> _layerWise;
+		map<uint32_t, typename Layer<Dtype>::Builder*> _layerWise;
 
-		Builder* layer(/*uint32_t layerIndex, */Layer::Builder* layerBuilder) {
+		Builder* layer(typename Layer<Dtype>::Builder* layerBuilder) {
 			uint32_t layerIndex = layerBuilder->_id;
-			map<uint32_t, Layer::Builder*>::iterator it = _layerWise.find(layerIndex);
+			typename map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it = _layerWise.find(layerIndex);
 			if(it != _layerWise.end()) {
 				cout << "already contained layer index " << layerIndex << endl;
 				exit(1);
@@ -41,25 +44,25 @@ public:
 			}
 			return this;
 		}
-		LayersConfig* build() {
+		LayersConfig<Dtype>* build() {
 			cout << "LayersConfig::build() ... " << endl;
 
-			vector<Layer*> firstLayers;
-			vector<Layer*> lastLayers;
-			vector<Layer*> layers;
+			vector<Layer<Dtype>*> firstLayers;
+			vector<Layer<Dtype>*> lastLayers;
+			vector<Layer<Dtype>*> layers;
 			vector<LearnableLayer*> learnableLayers;
-			map<uint32_t, Layer*> idLayerMap;
+			map<uint32_t, Layer<Dtype>*> idLayerMap;
 
 			uint32_t layerSize = _layerWise.size();
 
 			//for(uint32_t i = 0; i < layerSize; i++) {
-			for(map<uint32_t, Layer::Builder*>::iterator it = _layerWise.begin(); it != _layerWise.end(); it++) {
-				//map<uint32_t, Layer::Builder*>::iterator it = _layerWise.find(i);
+			for(typename map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it = _layerWise.begin(); it != _layerWise.end(); it++) {
+				//map<uint32_t, Layer<Dtype>::Builder*>::iterator it = _layerWise.find(i);
 				//if(it == _layerWise.end()) {
 				//	cout << "no layer found for layer index " << i << endl;
 				//	exit(1);
 				//} else {
-					Layer* currentLayer = it->second->build();
+					Layer<Dtype>* currentLayer = it->second->build();
 					const int numNextLayers = currentLayer->getNextLayerSize();
 					const int numPrevLayers = currentLayer->getPrevLayerSize();
 					if(numNextLayers < 1 && numPrevLayers < 1) {
@@ -98,17 +101,17 @@ public:
 
 			// 생성된 레이어들의 prev, next 관계를 설정한다.
 			for(uint32_t i = 0; i < layers.size(); i++) {
-				Layer* currentLayer = layers[i];
+				Layer<Dtype>* currentLayer = layers[i];
 				for(uint32_t j = 0; j < currentLayer->getNextLayers().size(); j++) {
 					//currentLayer->getNextLayers()[j] = layers[(size_t)currentLayer->getNextLayers()[j]];
-					map<uint32_t, Layer*>::iterator it = idLayerMap.find((size_t)currentLayer->getNextLayers()[j]);
+					typename map<uint32_t, Layer<Dtype>*>::iterator it = idLayerMap.find((size_t)currentLayer->getNextLayers()[j]);
 					if(it != idLayerMap.end()) {
 						currentLayer->getNextLayers()[j] = it->second;
 					}
 				}
 				for(uint32_t j = 0; j < currentLayer->getPrevLayers().size(); j++) {
 					//currentLayer->getPrevLayers()[j] = layers[(size_t)currentLayer->getPrevLayers()[j]];
-					map<uint32_t, Layer*>::iterator it = idLayerMap.find((size_t)currentLayer->getPrevLayers()[j]);
+					typename map<uint32_t, Layer<Dtype>*>::iterator it = idLayerMap.find((size_t)currentLayer->getPrevLayers()[j]);
 					if(it != idLayerMap.end()) {
 						currentLayer->getPrevLayers()[j] = it->second;
 					}
@@ -121,36 +124,38 @@ public:
 				->layers(layers)
 				->learnableLayers(learnableLayers);
 		}
+
 	};
 
 
 
 
-	vector<Layer*> _firstLayers;
-	vector<Layer*> _lastLayers;
-	vector<Layer*> _layers;
+	vector<Layer<Dtype>*> _firstLayers;
+	vector<Layer<Dtype>*> _lastLayers;
+	vector<Layer<Dtype>*> _layers;
 	vector<LearnableLayer*> _learnableLayers;
 
 	LayersConfig(Builder* builder) {}
-	LayersConfig* firstLayers(vector<Layer*> firstLayers) {
+	LayersConfig<Dtype>* firstLayers(vector<Layer<Dtype>*> firstLayers) {
 		this->_firstLayers = firstLayers;
 		return this;
 	}
-	LayersConfig* lastLayers(vector<Layer*> lastLayers) {
+	LayersConfig<Dtype>* lastLayers(vector<Layer<Dtype>*> lastLayers) {
 		this->_lastLayers = lastLayers;
 		return this;
 	}
-	LayersConfig* layers(vector<Layer*> layers) {
+	LayersConfig<Dtype>* layers(vector<Layer<Dtype>*> layers) {
 		this->_layers = layers;
 		return this;
 	}
-	LayersConfig* learnableLayers(vector<LearnableLayer*> learnableLayers) {
+	LayersConfig<Dtype>* learnableLayers(vector<LearnableLayer*> learnableLayers) {
 		this->_learnableLayers = learnableLayers;
 		return this;
 	}
 };
 
 
+template class LayersConfig<float>;
 
 
 
@@ -161,8 +166,7 @@ public:
 
 
 
-
-
+template <typename Dtype>
 class NetworkConfig {
 public:
 	class Builder {
@@ -170,7 +174,7 @@ public:
 		DataSet* _dataSet;
 		vector<Evaluation*> _evaluations;
 		vector<NetworkListener*> _networkListeners;
-		LayersConfig* _layersConfig;
+		LayersConfig<Dtype>* _layersConfig;
 
 		uint32_t _batchSize;
 		uint32_t _epochs;
@@ -195,7 +199,7 @@ public:
 			this->_networkListeners = networkListeners;
 			return this;
 		}
-		Builder* layersConfig(LayersConfig* layersConfig) {
+		Builder* layersConfig(LayersConfig<Dtype>* layersConfig) {
 			this->_layersConfig = layersConfig;
 			return this;
 		}
@@ -232,10 +236,10 @@ public:
 			return this;
 		}
 		NetworkConfig* build() {
-			map<string, Layer*> nameLayerMap;
+			map<string, Layer<Dtype>*> nameLayerMap;
 			for(uint32_t i = 0; i < _layersConfig->_layers.size(); i++) {
 				const string& layerName = _layersConfig->_layers[i]->getName();
-				map<string, Layer*>::iterator it = nameLayerMap.find(layerName);
+				typename map<string, Layer<Dtype>*>::iterator it = nameLayerMap.find(layerName);
 				if(it != nameLayerMap.end()) {
 					cout << "layer name used more than once ... : " << layerName << endl;
 					exit(1);
@@ -243,25 +247,25 @@ public:
 				nameLayerMap[layerName] = _layersConfig->_layers[i];
 			}
 
-			vector<Layer*>& firstLayers = _layersConfig->_firstLayers;
+			vector<Layer<Dtype>*>& firstLayers = _layersConfig->_firstLayers;
 			if(firstLayers.size() != 1) {
 				cout << "too many first layers ... " << endl;
 				exit(1);
 			}
 
-			InputLayer* inputLayer = dynamic_cast<InputLayer*>(firstLayers[0]);
+			InputLayer<Dtype>* inputLayer = dynamic_cast<InputLayer<Dtype>*>(firstLayers[0]);
 			if(!inputLayer) {
 				cout << "no input layer ... " << endl;
 				exit(1);
 			}
 
-			vector<Layer*>& lastLayers = _layersConfig->_lastLayers;
+			vector<Layer<Dtype>*>& lastLayers = _layersConfig->_lastLayers;
 			if(lastLayers.size() < 1) {
 				cout << "no output layer ... " << endl;
 			}
-			vector<OutputLayer*> outputLayers;
+			vector<OutputLayer<Dtype>*> outputLayers;
 			for(uint32_t i = 0; i < lastLayers.size(); i++) {
-				OutputLayer* outputLayer = dynamic_cast<OutputLayer*>(lastLayers[i]);
+				OutputLayer<Dtype>* outputLayer = dynamic_cast<OutputLayer<Dtype>*>(lastLayers[i]);
 				if(!outputLayer) {
 					cout << "invalid output layer ... " << endl;
 					exit(1);
@@ -295,16 +299,16 @@ public:
 	};
 
 
-	InputLayer* _inputLayer;
-	vector<OutputLayer*> _outputLayers;
-	vector<Layer*> _layers;
+	InputLayer<Dtype>* _inputLayer;
+	vector<OutputLayer<Dtype>*> _outputLayers;
+	vector<Layer<Dtype>*> _layers;
 	vector<LearnableLayer*> _learnableLayers;
-	map<string, Layer*> _nameLayerMap;
+	map<string, Layer<Dtype>*> _nameLayerMap;
 
 	DataSet* _dataSet;
 	vector<Evaluation*> _evaluations;
 	vector<NetworkListener*> _networkListeners;
-	LayersConfig* _layersConfig;
+	LayersConfig<Dtype>* _layersConfig;
 
 	uint32_t _batchSize;
 	uint32_t _epochs;
@@ -357,15 +361,15 @@ public:
 		this->_weightDecay = weightDecay;
 		return this;
 	}
-	NetworkConfig* inputLayer(InputLayer* inputLayer) {
+	NetworkConfig* inputLayer(InputLayer<Dtype>* inputLayer) {
 		this->_inputLayer = inputLayer;
 		return this;
 	}
-	NetworkConfig* outputLayers(vector<OutputLayer*> outputLayers) {
+	NetworkConfig* outputLayers(vector<OutputLayer<Dtype>*> outputLayers) {
 		this->_outputLayers = outputLayers;
 		return this;
 	}
-	NetworkConfig* layers(vector<Layer*> layers) {
+	NetworkConfig* layers(vector<Layer<Dtype>*> layers) {
 		this->_layers = layers;
 		return this;
 	}
@@ -373,13 +377,15 @@ public:
 		this->_learnableLayers = learnableLayers;
 		return this;
 	}
-	NetworkConfig* nameLayerMap(map<string, Layer*> nameLayerMap) {
+	NetworkConfig* nameLayerMap(map<string, Layer<Dtype>*> nameLayerMap) {
 		this->_nameLayerMap = nameLayerMap;
 		return this;
 	}
 
 };
 
+
+template class NetworkConfig<float>;
 
 
 

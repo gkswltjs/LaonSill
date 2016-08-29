@@ -9,32 +9,35 @@
 
 //#define DEPTHCONCAT_LOG
 
-
-DepthConcatLayer::DepthConcatLayer() {
-	this->type = Layer::DepthConcat;
+template <typename Dtype>
+DepthConcatLayer<Dtype>::DepthConcatLayer() {
+	this->type = Layer<Dtype>::DepthConcat;
 }
 
-DepthConcatLayer::DepthConcatLayer(Builder* builder)
-	: HiddenLayer(builder) {
+template <typename Dtype>
+DepthConcatLayer<Dtype>::DepthConcatLayer(Builder* builder)
+	: HiddenLayer<Dtype>(builder) {
 	initialize();
 }
 
-DepthConcatLayer::DepthConcatLayer(const string name)
-	: HiddenLayer(name) {
+template <typename Dtype>
+DepthConcatLayer<Dtype>::DepthConcatLayer(const string name)
+	: HiddenLayer<Dtype>(name) {
 	initialize();
 }
 
+template <typename Dtype>
+DepthConcatLayer<Dtype>::~DepthConcatLayer() {}
 
-DepthConcatLayer::~DepthConcatLayer() {}
 
-
-void DepthConcatLayer::shape(UINT idx, io_dim in_dim) {
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::shape(uint32_t idx, io_dim in_dim) {
 	// DepthConcatLayer에서 필요로하는 output channel수만 카운트하고
 	// 나머지는 모두 상위 레이어의 shape()로 위임한다.
-	if (isFirstPrevLayerRequest(idx)) out_dim.channels = 0;
-	out_dim.channels += in_dim.channels;
+	if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
+	this->out_dim.channels += in_dim.channels;
 
-	HiddenLayer::shape(idx, in_dim);
+	HiddenLayer<Dtype>::shape(idx, in_dim);
 
 #ifdef DEPTHCONCAT_LOG
 	cout << "shape depthConcatLayer in_dim: " << this->in_dim.batches << "x" << this->in_dim.channels << "x" << this->in_dim.rows << "x" << this->in_dim.cols << endl;
@@ -42,10 +45,11 @@ void DepthConcatLayer::shape(UINT idx, io_dim in_dim) {
 #endif
 }
 
-void DepthConcatLayer::reshape(UINT idx, io_dim in_dim) {
-	if (isFirstPrevLayerRequest(idx)) out_dim.channels = 0;
-	out_dim.channels += in_dim.channels;
-	HiddenLayer::reshape(idx, in_dim);
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
+	if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
+	this->out_dim.channels += in_dim.channels;
+	HiddenLayer<Dtype>::reshape(idx, in_dim);
 
 #ifdef DEPTHCONCAT_LOG
 	cout << "reshape depthConcatLayer in_dim: " << this->in_dim.batches << "x" << this->in_dim.channels << "x" << this->in_dim.rows << "x" << this->in_dim.cols << endl;
@@ -53,43 +57,45 @@ void DepthConcatLayer::reshape(UINT idx, io_dim in_dim) {
 #endif
 }
 
-
-void DepthConcatLayer::_shape(bool recursive) {
-	in_dim.channels = out_dim.channels;
-	out_dim.rows = in_dim.rows;
-	out_dim.cols = in_dim.cols;
-	out_dim.batches = in_dim.batches;
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::_shape(bool recursive) {
+	this->in_dim.channels = this->out_dim.channels;
+	this->out_dim.rows = this->in_dim.rows;
+	this->out_dim.cols = this->in_dim.cols;
+	this->out_dim.batches = this->in_dim.batches;
 
 	if (recursive) {
-		HiddenLayer::_shape();
+		HiddenLayer<Dtype>::_shape();
 	}
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*in_dim.batchsize()));
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(Dtype)*in_dim.batchsize()));
 }
 
-void DepthConcatLayer::_clearShape() {
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::_clearShape() {
 	//checkCudaErrors(cudaFree(d_delta_input));
 	//d_delta_input = NULL;
 	offsetIndex = 0;
 	//out_dim.channels = 0;
 
-	HiddenLayer::_clearShape();
+	HiddenLayer<Dtype>::_clearShape();
 }
 
-void DepthConcatLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::_load(ifs, layerMap);
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
+	HiddenLayer<Dtype>::_load(ifs, layerMap);
 	initialize();
-	DepthConcatLayer::_shape(false);
+	DepthConcatLayer<Dtype>::_shape(false);
 }
 
 
-
-void DepthConcatLayer::propBackpropagation() {
-	HiddenLayer *hiddenLayer;
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::propBackpropagation() {
+	HiddenLayer<Dtype>*hiddenLayer;
 	uint32_t offset = 0;
-	for(UINT i = 0; i < prevLayers.size(); i++) {
-		hiddenLayer = dynamic_cast<HiddenLayer *>(prevLayers[i]);
+	for(uint32_t i = 0; i < this->prevLayers.size(); i++) {
+		hiddenLayer = dynamic_cast<HiddenLayer<Dtype>*>(this->prevLayers[i]);
 		if(i > 0) {
-			offset += prevLayers[i-1]->getOutDimension().batchsize();
+			offset += this->prevLayers[i-1]->getOutDimension().batchsize();
 		}
 
 		// !!! 대부분의 경우 _backpropagation에서 사용한 d_delta_input을 그대로 사용하므로 문제가 없지만
@@ -97,7 +103,7 @@ void DepthConcatLayer::propBackpropagation() {
 		// getter를 사용하여 이전 레이어에 d_delta_input을 전달해야 한다.
 		if(hiddenLayer) {
 			//_distGradToPrev(i, hiddenLayer);
-			hiddenLayer->backpropagation(id, getInput(), offset);
+			hiddenLayer->backpropagation(this->id, this->getInput(), offset);
 		}
 	}
 }
@@ -106,8 +112,9 @@ void DepthConcatLayer::propBackpropagation() {
 
 
 #ifndef GPU_MODE
-void DepthConcatLayer::initialize() {
-	this->type = Layer::DepthConcat;
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::initialize() {
+	this->type = Layer<Dtype>::DepthConcat;
 
 	this->offsetIndex = 0;
 	this->input.reset();
@@ -115,7 +122,8 @@ void DepthConcatLayer::initialize() {
 	this->delta_input.zeros();
 }
 
-void DepthConcatLayer::feedforward(UINT idx, const rcube &input, const char *end=0) {
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::feedforward(uint32_t idx, const rcube &input, const char *end=0) {
 	this->input = join_slices(this->input, input);
 	Util::printCube(this->input, "input:");
 
@@ -132,7 +140,8 @@ void DepthConcatLayer::feedforward(UINT idx, const rcube &input, const char *end
 	this->offsetIndex = 0;
 }
 
-void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer<Dtype>* next_layer) {
 	Util::printCube(delta_input, "delta_input:");
 	rcube w_next_delta(size(delta_input));
 	Util::convertCube(next_layer->getDeltaInput(), delta_input);
@@ -147,7 +156,7 @@ void DepthConcatLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 
 
 
-
+template class DepthConcatLayer<float>;
 
 
 

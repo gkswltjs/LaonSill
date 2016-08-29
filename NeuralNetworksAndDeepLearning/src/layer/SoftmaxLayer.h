@@ -20,63 +20,64 @@
  * @brief 소프트맥스 출력 레이어
  * @details 활성화 함수로 Softmax를, cost 함수로 LogLikelihood를 적용시킨 출력 레이어
  */
-class SoftmaxLayer : public OutputLayer {
+template <typename Dtype>
+class SoftmaxLayer : public OutputLayer<Dtype> {
 public:
-	class Builder : public OutputLayer::Builder {
+	class Builder : public OutputLayer<Dtype>::Builder {
 	public:
 		Builder() {
-			_activationType = Activation::Softmax;
-			_costType = Cost::LogLikelihood;
+			this->_activationType = Activation::Softmax;
+			this->_costType = Cost::LogLikelihood;
 		}
 		Builder* costType(Cost::Type costType) {
-			OutputLayer::Builder::costType(costType);
+			OutputLayer<Dtype>::Builder::costType(costType);
 			return this;
 		}
 		Builder* nOut(uint32_t nOut) {
-			OutputLayer::Builder::nOut(nOut);
+			OutputLayer<Dtype>::Builder::nOut(nOut);
 			return this;
 		}
 		Builder* pDropout(uint32_t pDropout) {
-			OutputLayer::Builder::pDropout(pDropout);
+			OutputLayer<Dtype>::Builder::pDropout(pDropout);
 			return this;
 		}
 		Builder* weightUpdateParam(double lr_mult, double decay_mult) {
-			OutputLayer::Builder::weightUpdateParam(lr_mult, decay_mult);
+			OutputLayer<Dtype>::Builder::weightUpdateParam(lr_mult, decay_mult);
 			return this;
 		}
 		Builder* biasUpdateParam(double lr_mult, double decay_mult) {
-			OutputLayer::Builder::biasUpdateParam(lr_mult, decay_mult);
+			OutputLayer<Dtype>::Builder::biasUpdateParam(lr_mult, decay_mult);
 			return this;
 		}
 		Builder* weightFiller(ParamFillerType weightFillerType, double value) {
-			OutputLayer::Builder::weightFiller(weightFillerType, value);
+			OutputLayer<Dtype>::Builder::weightFiller(weightFillerType, value);
 			return this;
 		}
 		Builder* biasFiller(ParamFillerType biasFillerType, double value) {
-			OutputLayer::Builder::biasFiller(biasFillerType, value);
+			OutputLayer<Dtype>::Builder::biasFiller(biasFillerType, value);
 			return this;
 		}
 		Builder* activationType(Activation::Type activationType) {
-			OutputLayer::Builder::activationType(activationType);
+			OutputLayer<Dtype>::Builder::activationType(activationType);
 			return this;
 		}
 		virtual Builder* name(const string name) {
-			OutputLayer::Builder::name(name);
+			OutputLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			OutputLayer::Builder::id(id);
+			OutputLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
-			OutputLayer::Builder::nextLayerIndices(nextLayerIndices);
+			OutputLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
 		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
-			OutputLayer::Builder::prevLayerIndices(prevLayerIndices);
+			OutputLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
-		Layer* build() {
+		Layer<Dtype>* build() {
 			return new SoftmaxLayer(this);
 		}
 	};
@@ -97,7 +98,7 @@ public:
 			param_filler weight_filler, param_filler bias_filler);
 	virtual ~SoftmaxLayer();
 
-	using OutputLayer::backpropagation;
+	using OutputLayer<Dtype>::backpropagation;
 	void backpropagation(const uint32_t* target);
 
 	/**
@@ -113,7 +114,7 @@ protected:
 protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 };
 

@@ -17,20 +17,20 @@
 //#define DATA_LOG
 
 
+template <typename Dtype>
+uint32_t Data<Dtype>::printConfig = 0;
 
-uint32_t Data::printConfig = 0;
 
-
-
-Data::Data() {
+template <typename Dtype>
+Data<Dtype>::Data() {
 	this->_shape.resize(SHAPE_SIZE);
 }
 
+template <typename Dtype>
+Data<Dtype>::~Data() {}
 
-Data::~Data() {}
-
-
-void Data::reshape(const vector<uint32_t>& shape) {
+template <typename Dtype>
+void Data<Dtype>::reshape(const vector<uint32_t>& shape) {
 	if(shape.size() != SHAPE_SIZE) {
 		cout << "invalid data shape ... " << endl;
 		exit(1);
@@ -44,55 +44,66 @@ void Data::reshape(const vector<uint32_t>& shape) {
 	_grad.reshape(_count);
 }
 
-const DATATYPE* Data::host_data() {
+template <typename Dtype>
+const Dtype* Data<Dtype>::host_data() {
 	return _data.host_mem();
 }
 
-const DATATYPE* Data::device_data() {
+template <typename Dtype>
+const Dtype* Data<Dtype>::device_data() {
 	return _data.device_mem();
 }
 
-const DATATYPE* Data::host_grad() {
+template <typename Dtype>
+const Dtype* Data<Dtype>::host_grad() {
 	return _grad.host_mem();
 }
 
-const DATATYPE* Data::device_grad() {
+template <typename Dtype>
+const Dtype* Data<Dtype>::device_grad() {
 	return _grad.device_mem();
 }
 
-DATATYPE* Data::mutable_host_data() {
+template <typename Dtype>
+Dtype* Data<Dtype>::mutable_host_data() {
 	return _data.mutable_host_mem();
 }
 
-DATATYPE* Data::mutable_device_data() {
+template <typename Dtype>
+Dtype* Data<Dtype>::mutable_device_data() {
 	return _data.mutable_device_mem();
 }
 
-DATATYPE* Data::mutable_host_grad() {
+template <typename Dtype>
+Dtype* Data<Dtype>::mutable_host_grad() {
 	return _grad.mutable_host_mem();
 }
 
-DATATYPE* Data::mutable_device_grad() {
+template <typename Dtype>
+Dtype* Data<Dtype>::mutable_device_grad() {
 	return _grad.mutable_device_mem();
 }
 
 
 
 
-
-void Data::reset_host_data() {
+template <typename Dtype>
+void Data<Dtype>::reset_host_data() {
 	_data.reset_host_mem();
 }
 
-void Data::reset_device_data() {
+template <typename Dtype>
+void Data<Dtype>::reset_device_data() {
 	_data.reset_device_mem();
 }
 
-void Data::reset_host_grad() {
+template <typename Dtype>
+void Data<Dtype>::reset_host_grad() {
 	_grad.reset_host_mem();
 }
 
-void Data::reset_device_grad() {
+template <typename Dtype>
+void Data<Dtype>::reset_device_grad() {
 	_grad.reset_device_mem();
 }
 
@@ -105,29 +116,34 @@ void Data::reset_device_grad() {
 
 
 
-
-void Data::set_host_data(const DATATYPE* data) {
+template <typename Dtype>
+void Data<Dtype>::set_host_data(const Dtype* data) {
 	_data.set_mem(data, SyncMemCopyType::HostToHost);
 }
 
-void Data::set_host_with_device_data(const DATATYPE* data) {
+template <typename Dtype>
+void Data<Dtype>::set_host_with_device_data(const Dtype* data) {
 	_data.set_mem(data, SyncMemCopyType::DeviceToHost);
 }
 
-void Data::set_device_with_host_data(const DATATYPE* data) {
+template <typename Dtype>
+void Data<Dtype>::set_device_with_host_data(const Dtype* data) {
 	_data.set_mem(data, SyncMemCopyType::HostToDevice);
 }
 
-void Data::set_device_data(const DATATYPE* data) {
+template <typename Dtype>
+void Data<Dtype>::set_device_data(const Dtype* data) {
 	_data.set_mem(data, SyncMemCopyType::DeviceToDevice);
 }
 
 
-void Data::set_host_grad(const DATATYPE* grad) {
+template <typename Dtype>
+void Data<Dtype>::set_host_grad(const Dtype* grad) {
 	_grad.set_mem(grad, SyncMemCopyType::HostToHost);
 }
 
-void Data::set_device_grad(const DATATYPE* grad) {
+template <typename Dtype>
+void Data<Dtype>::set_device_grad(const Dtype* grad) {
 	_grad.set_mem(grad, SyncMemCopyType::DeviceToDevice);
 }
 
@@ -135,50 +151,57 @@ void Data::set_device_grad(const DATATYPE* grad) {
 
 
 
-
-void Data::add_host_data(const DATATYPE* data) {
+template <typename Dtype>
+void Data<Dtype>::add_host_data(const Dtype* data) {
 	_data.add_host_mem(data);
 }
 
-void Data::add_device_data(const DATATYPE* data) {
+template <typename Dtype>
+void Data<Dtype>::add_device_data(const Dtype* data) {
 	_data.add_device_mem(data);
 }
 
-void Data::add_host_grad(const DATATYPE* grad) {
+template <typename Dtype>
+void Data<Dtype>::add_host_grad(const Dtype* grad) {
 	_grad.add_host_mem(grad);
 }
 
-void Data::add_device_grad(const DATATYPE* grad) {
+template <typename Dtype>
+void Data<Dtype>::add_device_grad(const Dtype* grad) {
 	_grad.add_device_mem(grad);
 }
 
 
 
-
-void Data::scale_host_data(const float scale) {
+template <typename Dtype>
+void Data<Dtype>::scale_host_data(const float scale) {
 	_data.scale_host_mem(scale);
 }
 
-void Data::scale_device_data(const float scale) {
+template <typename Dtype>
+void Data<Dtype>::scale_device_data(const float scale) {
 	_data.scale_device_mem(scale);
 }
 
-void Data::scale_host_grad(const float scale) {
+template <typename Dtype>
+void Data<Dtype>::scale_host_grad(const float scale) {
 	_grad.scale_host_mem(scale);
 }
 
-void Data::scale_device_grad(const float scale) {
+template <typename Dtype>
+void Data<Dtype>::scale_device_grad(const float scale) {
 	_grad.scale_device_mem(scale);
 }
 
 
 
-
-double Data::sumsq_device_data() {
+template <typename Dtype>
+double Data<Dtype>::sumsq_device_data() {
 	return _data.sumsq_device_mem();
 }
 
-double Data::sumsq_device_grad() {
+template <typename Dtype>
+double Data<Dtype>::sumsq_device_grad() {
 	return _grad.sumsq_device_mem();
 }
 
@@ -197,19 +220,26 @@ double Data::sumsq_device_grad() {
 
 
 
-
-void Data::print_data(const string& head) {
+template <typename Dtype>
+void Data<Dtype>::print_data(const string& head) {
 	if(printConfig) {
 		_data.print(head, _shape);
 	}
 }
 
-void Data::print_grad(const string& head) {
+template <typename Dtype>
+void Data<Dtype>::print_grad(const string& head) {
 	if(printConfig) {
 		_grad.print(head, _shape);
 	}
 }
 
+
+
+
+
+template class Data<float>;
+//template class Data<double>;
 
 
 

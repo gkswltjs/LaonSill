@@ -19,7 +19,7 @@ using namespace std;
 
 
 
-
+template <typename Dtype>
 class Data {
 public:
 	Data();
@@ -27,15 +27,15 @@ public:
 
 	void reshape(const vector<uint32_t>& shape);
 
-	const DATATYPE* host_data();
-	const DATATYPE* device_data();
-	const DATATYPE* host_grad();
-	const DATATYPE* device_grad();
+	const Dtype* host_data();
+	const Dtype* device_data();
+	const Dtype* host_grad();
+	const Dtype* device_grad();
 
-	DATATYPE* mutable_host_data();
-	DATATYPE* mutable_device_data();
-	DATATYPE* mutable_host_grad();
-	DATATYPE* mutable_device_grad();
+	Dtype* mutable_host_data();
+	Dtype* mutable_device_data();
+	Dtype* mutable_host_grad();
+	Dtype* mutable_device_grad();
 
 
 
@@ -45,14 +45,14 @@ public:
 	void set_host_grad(Data* grad, const uint32_t offset=0) { set_host_grad(grad->host_grad()+offset); }
 	void set_device_grad(Data* grad, const uint32_t offset=0) { set_device_grad(grad->device_grad()+offset); }
 
-	//void set_data(const DATATYPE* data, CopyType copyType);
-	void set_host_data(const DATATYPE* data);
-	void set_host_with_device_data(const DATATYPE* data);
-	void set_device_with_host_data(const DATATYPE* data);
-	void set_device_data(const DATATYPE* data);
+	//void set_data(const Dtype* data, CopyType copyType);
+	void set_host_data(const Dtype* data);
+	void set_host_with_device_data(const Dtype* data);
+	void set_device_with_host_data(const Dtype* data);
+	void set_device_data(const Dtype* data);
 
-	void set_host_grad(const DATATYPE* grad);
-	void set_device_grad(const DATATYPE* grad);
+	void set_host_grad(const Dtype* grad);
+	void set_device_grad(const Dtype* grad);
 
 
 	void reset_host_data();
@@ -66,10 +66,10 @@ public:
 	void add_host_grad(Data* grad, const uint32_t offset=0) { add_host_grad(grad->host_grad()+offset); }
 	void add_device_grad(Data* grad, const uint32_t offset=0) { add_device_grad(grad->device_grad()+offset); }
 
-	void add_host_data(const DATATYPE* data);
-	void add_device_data(const DATATYPE* data);
-	void add_host_grad(const DATATYPE* grad);
-	void add_device_grad(const DATATYPE* grad);
+	void add_host_data(const Dtype* data);
+	void add_device_data(const Dtype* data);
+	void add_host_grad(const Dtype* grad);
+	void add_device_grad(const Dtype* grad);
 
 
 	void scale_host_data(const float scale);
@@ -96,8 +96,8 @@ public:
 private:
 	vector<uint32_t> _shape;
 
-	SyncMem<DATATYPE> _data;
-	SyncMem<DATATYPE> _grad;
+	SyncMem<Dtype> _data;
+	SyncMem<Dtype> _grad;
 
 	size_t _count;
 

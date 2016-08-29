@@ -24,9 +24,10 @@
  *          'http://caffe.berkeleyvision.org/tutorial/layers.html'의 Local Response Normalization (LRN) 항목 참고
  *          (1+(α/n)∑ixi^2)^β의 수식으로 계산
  */
-class LRNLayer : public HiddenLayer {
+template <typename Dtype>
+class LRNLayer : public HiddenLayer<Dtype> {
 public:
-	class Builder : public HiddenLayer::Builder {
+	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		lrn_dim _lrnDim;
 		Builder() {}
@@ -38,22 +39,22 @@ public:
 			return this;
 		}
 		virtual Builder* name(const string name) {
-			HiddenLayer::Builder::name(name);
+			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer::Builder::id(id);
+			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
-			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
 		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
-			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
-		Layer* build() {
+		Layer<Dtype>* build() {
 			return new LRNLayer(this);
 		}
 	};
@@ -82,7 +83,7 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	virtual void _save(ofstream &ofs);
-	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 	virtual void _backpropagation();
 	virtual void _feedforward();
 

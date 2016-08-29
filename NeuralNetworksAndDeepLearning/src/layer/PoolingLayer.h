@@ -25,9 +25,10 @@
  *          padding에 관한 옵션을 제공하지 않고 있고
  *          GoogLeNet에 따라 Max 풀링의 경우 padding을 기본으로, Average 풀링의 경우 Non padding을 기본으로 하고 있다.
  */
-class PoolingLayer : public HiddenLayer {
+template <typename Dtype>
+class PoolingLayer : public HiddenLayer<Dtype> {
 public:
-	class Builder : public HiddenLayer::Builder {
+	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		pool_dim _poolDim;
 		Pooling::Type _poolingType;
@@ -49,22 +50,22 @@ public:
 			return this;
 		}
 		virtual Builder* name(const string name) {
-			HiddenLayer::Builder::name(name);
+			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer::Builder::id(id);
+			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
-			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
 		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
-			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
-		Layer* build() {
+		Layer<Dtype>* build() {
 			return new PoolingLayer(this);
 		}
 	};
@@ -91,7 +92,7 @@ protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	virtual void _save(ofstream &ofs);
-	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 	virtual void _backpropagation();
 	virtual void _feedforward();
 
@@ -104,7 +105,7 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	//DATATYPE *d_delta;				///< 다음 레이어에서 전달된 gradient 장치 메모리 포인터 (복수의 다음 레이어가 있는 경우 gradient를 누적하는 메모리)
+	//Dtype *d_delta;				///< 다음 레이어에서 전달된 gradient 장치 메모리 포인터 (복수의 다음 레이어가 있는 경우 gradient를 누적하는 메모리)
 #endif
 
 

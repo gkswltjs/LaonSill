@@ -41,10 +41,11 @@ using namespace std;
  *       (SGD, AdaDelta, AdaGrad, Adam, NAG ... )
  *       개별 파라미터를 각각 전달하는 형태이나 Network Param 형태의 구조체를 만들어 한 번에 전달하도록 수정해야 한다.
  */
+template <typename Dtype>
 class Network {
 public:
 	//Network(NetworkParam& networkParam);
-	Network(NetworkConfig* networkConfig);
+	Network(NetworkConfig<Dtype>* networkConfig);
 	/**
 	 * @details Network 생성자
 	 * @param networkListener 네트워크 상태 리스너
@@ -67,7 +68,7 @@ public:
 	 * @details 네트워크에 설정된 입력 레이어를 조회한다.
 	 * @return 네트워크에 설정된 입력 레이어
 	 */
-	InputLayer *getInputLayer() const { return this->config->_inputLayer; }
+	InputLayer<Dtype> *getInputLayer() const { return this->config->_inputLayer; }
 
 
 
@@ -115,7 +116,7 @@ public:
 	 * @param name 찾을 레이어의 이름
 	 * @return 찾은 레이어에 대한 포인터
 	 */
-	Layer* findLayer(const string name);
+	Layer<Dtype>* findLayer(const string name);
 	/**
 	 * @details 네트워크에 등록된 데이터셋 특정 채널의 평균값을 조회한다.
 	 * @param 데이터셋의 조회할 채널 index
@@ -191,7 +192,7 @@ protected:
 
 
 protected:
-	NetworkConfig* config;
+	NetworkConfig<Dtype>* config;
 	//DataSet *dataSet;							///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
 
 	//InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터

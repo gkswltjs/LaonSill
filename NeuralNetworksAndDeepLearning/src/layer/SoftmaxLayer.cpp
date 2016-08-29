@@ -10,30 +10,33 @@
 
 
 
-
-SoftmaxLayer::SoftmaxLayer() {
-	this->type = Layer::Softmax;
+template <typename Dtype>
+SoftmaxLayer<Dtype>::SoftmaxLayer() {
+	this->type = Layer<Dtype>::Softmax;
 }
 
-SoftmaxLayer::SoftmaxLayer(Builder* builder)
-	: OutputLayer(builder) {
+template <typename Dtype>
+SoftmaxLayer<Dtype>::SoftmaxLayer(Builder* builder)
+	: OutputLayer<Dtype>(builder) {
 	initialize();
 }
 
-SoftmaxLayer::SoftmaxLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+template <typename Dtype>
+SoftmaxLayer<Dtype>::SoftmaxLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler weight_filler, param_filler bias_filler)
-	: OutputLayer(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
+	: OutputLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler,
 			Activation::Softmax, Cost::LogLikelihood) {
 	initialize();
 }
 
-SoftmaxLayer::~SoftmaxLayer() {}
+template <typename Dtype>
+SoftmaxLayer<Dtype>::~SoftmaxLayer() {}
 
 
 
-
-void SoftmaxLayer::initialize() {
-	this->type = Layer::Softmax;
+template <typename Dtype>
+void SoftmaxLayer<Dtype>::initialize() {
+	this->type = Layer<Dtype>::Softmax;
 
 	//this->cost_fn = CostFactory::create(Cost::LogLikelihood);
 	//this->activation_fn = ActivationFactory::create(Activation::Softmax);
@@ -43,20 +46,23 @@ void SoftmaxLayer::initialize() {
 	//bias.zeros();
 }
 
-void SoftmaxLayer::_shape(bool recursive) {
+template <typename Dtype>
+void SoftmaxLayer<Dtype>::_shape(bool recursive) {
 	if(recursive) {
-		OutputLayer::_shape();
+		OutputLayer<Dtype>::_shape();
 	}
 }
 
-void SoftmaxLayer::_clearShape() {
-	OutputLayer::_clearShape();
+template <typename Dtype>
+void SoftmaxLayer<Dtype>::_clearShape() {
+	OutputLayer<Dtype>::_clearShape();
 }
 
-void SoftmaxLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	OutputLayer::_load(ifs, layerMap);
+template <typename Dtype>
+void SoftmaxLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
+	OutputLayer<Dtype>::_load(ifs, layerMap);
 	initialize();
-	SoftmaxLayer::_shape(false);
+	SoftmaxLayer<Dtype>::_shape(false);
 }
 
 
@@ -65,7 +71,8 @@ void SoftmaxLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 #ifndef GPU_MODE
-void SoftmaxLayer::cost(const rvec &target) {
+template <typename Dtype>
+void SoftmaxLayer<Dtype>::cost(const rvec &target) {
 	// delta
 	cost_fn->backward(z, output, target, delta);
 	Util::printVec(nabla_b, "bias:");
@@ -90,7 +97,7 @@ void SoftmaxLayer::cost(const rvec &target) {
 
 
 
-
+template class SoftmaxLayer<float>;
 
 
 

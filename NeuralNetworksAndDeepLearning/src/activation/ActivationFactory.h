@@ -10,11 +10,12 @@
 #ifndef ACTIVATION_ACTIVATIONFACTORY_H_
 #define ACTIVATION_ACTIVATIONFACTORY_H_
 
-#include "../layer/LayerConfig.h"
+#include <stddef.h>
+
 #include "Activation.h"
+#include "ReLU.h"
 #include "Sigmoid.h"
 #include "Softmax.h"
-#include "ReLU.h"
 
 
 
@@ -55,7 +56,7 @@ public:
 	 * @param activationType 생성하고자 하는 Activation 객체의 타입.
 	 * @return 생성한 Activation 객체.
 	 */
-	static Activation *create(Activation::Type activationType) {
+	static Activation* create(Activation::Type activationType) {
 		switch(activationType) {
 		case Activation::Sigmoid: return new Sigmoid();
 		case Activation::Softmax: return new Softmax();

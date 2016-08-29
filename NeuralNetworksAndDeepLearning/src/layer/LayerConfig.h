@@ -22,7 +22,6 @@
 //typedef unsigned int UINT;
 
 
-class Layer;
 
 
 

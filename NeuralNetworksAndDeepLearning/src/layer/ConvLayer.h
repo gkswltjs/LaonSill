@@ -28,9 +28,10 @@
  * @brief 컨볼루션 레이어
  * @details
  */
-class ConvLayer : public HiddenLayer, public LearnableLayer {
+template <typename Dtype>
+class ConvLayer : public HiddenLayer<Dtype>, public LearnableLayer {
 public:
-	class Builder : public HiddenLayer::Builder {
+	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		filter_dim _filterDim;
 		update_param _weightUpdateParam;
@@ -86,22 +87,22 @@ public:
 			return this;
 		}
 		virtual Builder* name(const string name) {
-			HiddenLayer::Builder::name(name);
+			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer::Builder::id(id);
+			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
-			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
 		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
-			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
-		Layer* build() {
+		Layer<Dtype>* build() {
 			return new ConvLayer(this);
 		}
 	};
@@ -151,7 +152,7 @@ protected:
 	virtual double sumSquareParamsData();
 	virtual double sumSquareParamsGrad();
 	virtual void _save(ofstream &ofs);
-	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	virtual void update();
 	virtual void scaleParamsGrad(DATATYPE scale);
 	virtual void _feedforward();
@@ -182,22 +183,22 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	//DATATYPE *filters;								///< filter 호스트 메모리 포인터
-	//DATATYPE *biases;								///< bias 호스트 메모리 포인터
+	//Dtype *filters;								///< filter 호스트 메모리 포인터
+	//Dtype *biases;								///< bias 호스트 메모리 포인터
 
-	//DATATYPE *d_filters;							///< filter 장치 메모리 포인터
-	//DATATYPE *d_biases;								///< bias 장치 메모리 포인터
+	//Dtype *d_filters;							///< filter 장치 메모리 포인터
+	//Dtype *d_biases;								///< bias 장치 메모리 포인터
 
-	//DATATYPE *d_z;									///< filter map 장치 메모리 포인터
-	//DATATYPE *d_delta;								///< 네트워크 cost의 z(filter map)에 관한 gradient 장치 메모리 포인터
-	//DATATYPE *d_delta_weight;						///< 네트워크 cost의 weight(filter)에 관한 gradient 장치 메모리 포인터
-	//DATATYPE *d_delta_weight_prev;					///< 이전 업데이트의 네트워크 cost의 weight에 관한 graident 장치 메모리 포인터
-	//DATATYPE *d_delta_bias;							///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
-	//DATATYPE *d_delta_bias_prev;					///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
+	//Dtype *d_z;									///< filter map 장치 메모리 포인터
+	//Dtype *d_delta;								///< 네트워크 cost의 z(filter map)에 관한 gradient 장치 메모리 포인터
+	//Dtype *d_delta_weight;						///< 네트워크 cost의 weight(filter)에 관한 gradient 장치 메모리 포인터
+	//Dtype *d_delta_weight_prev;					///< 이전 업데이트의 네트워크 cost의 weight에 관한 graident 장치 메모리 포인터
+	//Dtype *d_delta_bias;							///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
+	//Dtype *d_delta_bias_prev;					///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
 
-	Data* _preActivation;
-	vector<Data*> _params;
-	vector<Data*> _paramsHistory;
+	Data<Dtype>* _preActivation;
+	vector<Data<Dtype>*> _params;
+	vector<Data<Dtype>*> _paramsHistory;
 
 	cudnnTensorDescriptor_t biasTensorDesc;			///< cudnn bias 구조 정보 구조체
 	cudnnFilterDescriptor_t filterDesc;				///< cudnn filter 구조 정보 구조체

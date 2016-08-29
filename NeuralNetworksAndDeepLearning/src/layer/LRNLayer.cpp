@@ -9,45 +9,50 @@
 #include "../Util.h"
 
 
-
-LRNLayer::LRNLayer() {
-	this->type = Layer::LRN;
+template <typename Dtype>
+LRNLayer<Dtype>::LRNLayer() {
+	this->type = Layer<Dtype>::LRN;
 }
 
-LRNLayer::LRNLayer(Builder* builder) : HiddenLayer(builder) {
+template <typename Dtype>
+LRNLayer<Dtype>::LRNLayer(Builder* builder) : HiddenLayer<Dtype>(builder) {
 	initialize(builder->_lrnDim);
 }
 
-LRNLayer::LRNLayer(const string name, lrn_dim lrn_d) : HiddenLayer(name) {
+template <typename Dtype>
+LRNLayer<Dtype>::LRNLayer(const string name, lrn_dim lrn_d) : HiddenLayer<Dtype>(name) {
 	initialize(lrn_d);
 }
 
-void LRNLayer::_shape(bool recursive) {
-	out_dim = in_dim;
+template <typename Dtype>
+void LRNLayer<Dtype>::_shape(bool recursive) {
+	this->out_dim = this->in_dim;
 
 	if(recursive) {
-		HiddenLayer::_shape();
+		HiddenLayer<Dtype>::_shape();
 	}
 }
 
-void LRNLayer::_clearShape() {
-	HiddenLayer::_clearShape();
+template <typename Dtype>
+void LRNLayer<Dtype>::_clearShape() {
+	HiddenLayer<Dtype>::_clearShape();
 }
 
-
-void LRNLayer::_save(ofstream &ofs) {
-	HiddenLayer::_save(ofs);
+template <typename Dtype>
+void LRNLayer<Dtype>::_save(ofstream &ofs) {
+	HiddenLayer<Dtype>::_save(ofs);
 	ofs.write((char *)&lrn_d, sizeof(lrn_dim));
 }
 
-void LRNLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::_load(ifs, layerMap);
+template <typename Dtype>
+void LRNLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
+	HiddenLayer<Dtype>::_load(ifs, layerMap);
 
 	lrn_dim lrn_d;
 	ifs.read((char *)&lrn_d, sizeof(lrn_dim));
 
 	initialize(lrn_d);
-	LRNLayer::_shape(false);
+	LRNLayer<Dtype>::_shape(false);
 }
 
 
@@ -66,10 +71,10 @@ void LRNLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 #ifndef GPU_MODE
-LRNLayer::~LRNLayer() {}
+LRNLayer<Dtype>::~LRNLayer() {}
 
-void LRNLayer::initialize(lrn_dim lrn_d) {
-	this->type = Layer::LRN;
+void LRNLayer<Dtype>::initialize(lrn_dim lrn_d) {
+	this->type = Layer<Dtype>::LRN;
 
 	this->lrn_d = lrn_d;
 	this->z.set_size(size(input));
@@ -78,10 +83,10 @@ void LRNLayer::initialize(lrn_dim lrn_d) {
 }
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer::_feedforward() {
+void LRNLayer<Dtype>::_feedforward() {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
-	UINT i, j;
+	uint32_t i, j;
 	int top_pad = (lrn_d.local_size-1)/2;
 	int in_channel_idx;
 
@@ -96,7 +101,7 @@ void LRNLayer::_feedforward() {
 		temp.zeros();
 		for(j = 0; j < lrn_d.local_size; j++) {
 			in_channel_idx = i - top_pad + j;
-			if(in_channel_idx >= 0 && (UINT)in_channel_idx < this->input.n_slices) {
+			if(in_channel_idx >= 0 && (uint32_t)in_channel_idx < this->input.n_slices) {
 				temp += sq.slice(in_channel_idx);
 			}
 		}
@@ -112,10 +117,10 @@ void LRNLayer::_feedforward() {
 	propFeedforward(this->output, end);
 }
 
-void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+void LRNLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
-	UINT i, j;
+	uint32_t i, j;
 	int top_pad = (lrn_d.local_size-1)/2;
 	int in_channel_idx;
 	double c = -2*lrn_d.alpha*lrn_d.beta/lrn_d.local_size;
@@ -132,7 +137,7 @@ void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 		temp.zeros();
 		for(j = 0; j < lrn_d.local_size; j++) {
 			in_channel_idx = i - top_pad + j;
-			if(in_channel_idx >= 0 && (UINT)in_channel_idx < input.n_slices) {
+			if(in_channel_idx >= 0 && (uint32_t)in_channel_idx < input.n_slices) {
 				//Util::printMat(pow(z.slice(in_channel_idx), -lrn_d.beta-1), "pow");
 				//Util::printMat(input.slice(in_channel_idx), "input:");
 				//Util::printMat(w_next_delta.slice(in_channel_idx), "w_next_delta:");
@@ -152,6 +157,6 @@ void LRNLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 
 
 
-
+template class LRNLayer<float>;
 
 

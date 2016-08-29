@@ -13,18 +13,19 @@
 #ifndef LAYER_LAYER_H_
 #define LAYER_LAYER_H_
 
+#include <cudnn.h>
+#include <cstdint>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 
-#include "../Util.h"
-#include "LayerConfig.h"
 #include "../Data.h"
+#include "LayerConfig.h"
 
-
-class NetworkConfig;
+template <typename Dtype> class NetworkConfig;
 //#define PRINT_CALLSTACK
+
 
 
 
@@ -32,13 +33,9 @@ class NetworkConfig;
  * @brief 레이어 베이스 추상 클래스, 모든 레이어는 이 클래스를 상속받아 구현한다.
  * @details
  */
+template <typename Dtype>
 class Layer {
-
 public:
-	/**
-	 * @brief
-	 * @details
-	 */
 	class Builder {
 	public:
 		string _name;
@@ -48,6 +45,7 @@ public:
 		Builder() {
 			_name = "";
 		}
+		virtual ~Builder() {}
 		virtual Builder* name(const string name) {
 			this->_name = name;
 			return this;
@@ -60,8 +58,27 @@ public:
 			this->_nextLayerIndices = nextLayerIndices;
 			return this;
 		}
-		virtual Layer* build() = 0;
+		virtual Layer<Dtype>* build() = 0;
 	};
+
+
+
+	/**
+	 * @brief 레이어 타입 열거형
+	 * @details	지원하는 레이어 타입 열거,
+	 */
+	enum Type {
+		Input=0, 					// 입력 레이어
+		FullyConnected=1, 			// Fully Connected 레이어
+		Conv=2, 					// 컨볼루션 레이어
+		Pool=3, 					// 풀링 레이어
+		DepthConcat=4,				// Depth Concat 레이어
+		Inception=5, 				// 인셉션 레이어
+		LRN=6,						// Local Response Normaization 레이어
+		Sigmoid=7, 					// 시그모이드 레이어
+		Softmax=8					// 소프트맥스 레이어
+	};
+
 
 
 	////////////////////////////////////////////////////////////////////
@@ -88,21 +105,7 @@ public:
 	virtual ~Layer();
 
 
-	/**
-	 * @brief 레이어 타입 열거형
-	 * @details	지원하는 레이어 타입 열거,
-	 */
-	enum Type {
-		Input=0, 					// 입력 레이어
-		FullyConnected=1, 			// Fully Connected 레이어
-		Conv=2, 					// 컨볼루션 레이어
-		Pool=3, 					// 풀링 레이어
-		DepthConcat=4,				// Depth Concat 레이어
-		Inception=5, 				// 인셉션 레이어
-		LRN=6,						// Local Response Normaization 레이어
-		Sigmoid=7, 					// 시그모이드 레이어
-		Softmax=8					// 소프트맥스 레이어
-	};
+
 
 
 
@@ -124,17 +127,17 @@ public:
 	 * @biref 레이어의 타입을 조회한다.
 	 * @return 레이어 타입
 	 */
-	Layer::Type getType() const { return this->type; }
+	typename Layer<Dtype>::Type getType() const { return this->type; }
 	/**
 	 * @details 레이어에 연결된 다음 레이어 목록 벡터를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어 목록 벡터
 	 */
-	vector<Layer*>& getNextLayers() { return this->nextLayers; }
+	vector<Layer<Dtype>*>& getNextLayers() { return this->nextLayers; }
 	/**
 	 * @details 레이어에 연결된 이전 레이어 목록 벡터를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어 목록 벡터
 	 */
-	vector<Layer*>& getPrevLayers() { return this->prevLayers; }
+	vector<Layer<Dtype>*>& getPrevLayers() { return this->prevLayers; }
 	/**
 	 * @details 레이어에 연결된 다음 레이어의 수를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어의 수
@@ -163,15 +166,15 @@ public:
 	 * @details 레이어의 입력값 장치 포인터를 조회한다.
 	 * @return 레이어 입력값 장치 포인터
 	 */
-	virtual Data* getInput() { return this->_input; }
+	virtual Data<Dtype>* getInput() { return this->_input; }
 	/**
 	 * @details 레이어의 출력값 장치 포인터를 조회한다.
 	 * @return 레이어 출력값 장치 포인터
 	 */
-	virtual Data *getOutput() { return this->_output; }
+	virtual Data<Dtype>* getOutput() { return this->_output; }
 #endif
 
-	virtual void setNetworkConfig(NetworkConfig* networkConfig) { this->networkConfig = networkConfig; }
+	virtual void setNetworkConfig(NetworkConfig<Dtype>* networkConfig) { this->networkConfig = networkConfig; }
 
 
 
@@ -192,38 +195,38 @@ public:
 	 * @details 레이어에 이전 레이어를 추가한다.
 	 * @param prevLayer 현재 레이어에 연결할 이전 레이어의 정보 구조체
 	 */
-	void addPrevLayer(Layer* prevLayer);
+	void addPrevLayer(Layer<Dtype>* prevLayer);
 	/**
 	 * @details 레이어에 다음 레이어를 추가한다.
 	 * @param nextLayer 현재 레이어에 연결할 다음 레이어의 정보 구조체
 	 */
-	void addNextLayer(Layer* nextLayer);
+	void addNextLayer(Layer<Dtype>* nextLayer);
 	/**
 	 * @details 현재 레이어에 연결된 첫 이전 레이어 여부를 조회한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어 아이디
 	 * @return 현재 레이어에 연결된 첫 이전 레이어 여부
 	 */
-	bool isFirstPrevLayerRequest(UINT idx);
+	bool isFirstPrevLayerRequest(uint32_t idx);
 	/**
 	 * @details 현재 레이어에 연결된 마지막 이전 레이어 여부를 조회한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @return 현재 레이어에 연결된 마지막 이전 레이어 여부
 	 */
-	bool isLastPrevLayerRequest(UINT idx);
-	bool w_isLastPrevLayerRequest(UINT idx, const string method);
+	bool isLastPrevLayerRequest(uint32_t idx);
+	bool w_isLastPrevLayerRequest(uint32_t idx, const string method);
 	/**
 	 * @details 현재 레이어에 연결된 첫 다음 레이어 여부를 조회한다.
 	 * @param idx 현재 레이어에 연결된 다음 레이어 아이디
 	 * @return 현재 레이어에 연결된 첫 다음 레이어 여부
 	 */
-	bool isFirstNextLayerRequest(UINT idx);
+	bool isFirstNextLayerRequest(uint32_t idx);
 	/**
 	 * @details 현재 레이어에 연결된 마지막 다음 레이어 여부를 조회한다.
 	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
 	 * @return 현재 레이어에 연결된 마지막 다음 레이어 여부
 	 */
-	bool isLastNextLayerRequest(UINT idx);
-	bool w_isLastNextLayerRequest(UINT idx, const string method);
+	bool isLastNextLayerRequest(uint32_t idx);
+	bool w_isLastNextLayerRequest(uint32_t idx, const string method);
 
 	/**
 	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화하고
@@ -231,50 +234,50 @@ public:
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param in_dim 현재 레이어의 입력 데이터 구조정보
 	 */
-	virtual void shape(UINT idx, io_dim in_dim);
+	virtual void shape(uint32_t idx, io_dim in_dim);
 	/**
 	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param in_dim 새롭게 변경할 현재 레이어의 입력 데이터 구조정보
 	 */
-	virtual void reshape(UINT idx, io_dim in_dim);
+	virtual void reshape(uint32_t idx, io_dim in_dim);
 	/**
 	 * @details 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 clear하고 다음 레이어들에 대해 clearShape()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 */
-	virtual void clearShape(UINT idx);
+	virtual void clearShape(uint32_t idx);
 	/**
 	 * @details 학습 파라미터(weight, bias등)의 gradient에 대한 square sum값을 구하고
 	 *          다음 레이어들에 대해 sumSquareGrad()을 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @return 학습 파라미터 gradient에 대한 square sum값
 	 */
-	//virtual double sumSquareGrad(UINT idx);
+	//virtual double sumSquareGrad(uint32_t idx);
 	/**
 	 * @details 학습 파라미터(weight, bias등)에 대한 square sum값을 구하고 다음 레이어들에 대해 sumSquareParam()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @return 학습 파리미터에 대한 square sum값
 	 */
-	//virtual double sumSquareParam(UINT idx);
+	//virtual double sumSquareParam(uint32_t idx);
 	/**
 	 * @details 학습 파라미터의 gradient를 스케일링하고 다음 레이어들에 대해 scaleParam()을 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param 학습 파라미터 스케일링 팩터
 	 */
-	//virtual void scaleParam(UINT idx, DATATYPE scale_factor);
+	//virtual void scaleParam(uint32_t idx, Dtype scale_factor);
 	/**
 	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	virtual void save(UINT idx, ofstream &ofs);
+	virtual void save(uint32_t idx, ofstream &ofs);
 	/**
 	 * @details 현재 레이어의 메타정보를 스트림의 헤더에 쓰고 다음 레이어들에 대해 saveHeader()를 요청한다.
 	 *          입력 레이어 또는 내부 레이어가 있는 레이어(e.g 인셉션레이어)에서 사용한다.
 	 * @param  idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	virtual void saveHeader(UINT idx, ofstream &ofs);
+	virtual void saveHeader(uint32_t idx, ofstream &ofs);
 	/**
 	 * @details 현재 레이어를 스트림으로부터 읽어 들여 복구한다.
 	 *          - 레이어의 상속받은 상위 클래스 영역 읽기 및 초기화 (_shape() 포함, Layer 클래스 제외)
@@ -283,27 +286,27 @@ public:
 	 * @param ifs 레이어를 읽어들일 입력 스트림
 	 * @param layerMap
 	 */
-	virtual void load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	virtual void load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	/**
 	 * @details 계산된 gradient를 각 학습레이어에서 갱신하고 다음 레이어들에 대해 update()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param n 학습 데이터의 수
 	 * @param miniBatchSize 학습에 사용한 batch 사이즈
 	 */
-	//virtual void update(UINT idx, UINT n, UINT miniBatchSize);
+	//virtual void update(uint32_t idx, uint32_t n, uint32_t miniBatchSize);
 #ifndef GPU_MODE
 	/**
 	 * 주어진 입력 input에 대해 출력 activation을 계산
 	 * @param input: 레이어 입력 데이터 (이전 레이어의 activation)
 	 */
 	// sub class에서 구현이 없을 때에만 참조, 구현이 있을 경우 prop*() 함수를 참조
-	virtual void feedforward(UINT idx, const rcube &input, const char *end=0);
+	virtual void feedforward(uint32_t idx, const rcube &input, const char *end=0);
 	/**
 	 * @details batch단위로 누적된 gradient를 초기화하고 다음 레이어들에 대해 reset_nabla()를 요청한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @todo GPU_MODE에서 사용하지 않는다.
 	 */
-	virtual void reset_nabla(UINT idx);
+	virtual void reset_nabla(uint32_t idx);
 #else
 	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산하고 다음 레이어들에 대해 feedforward()를 요청한다.
@@ -311,7 +314,7 @@ public:
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
-	virtual void feedforward(UINT idx, Data* input, const char *end=0);
+	virtual void feedforward(uint32_t idx, Data<Dtype>* input, const char *end=0);
 #endif
 
 
@@ -329,13 +332,13 @@ protected:
 	 * @param ifs 레이어를 읽어들일 입력 스트림
 	 * @param layerMap 레이어 메타정보로부터 읽어 레이어 주소를 키, 레이어를 값으로 생성한 레이어 맵
 	 */
-	virtual void loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	virtual void loadNetwork(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	/**
 	 * @details 현재 레이어 로드 후 이전/다음 레이어 포인터 벡터에 로드된 레이어 포인터 값을 키로하여
 	 *          레이어맵의 실제 레이어 객체를 찾아서 이전/다음 레이어에 연결한다.
 	 * @param layerMap save당시 레이어의 주소를 키, 해당 레이어를 값으로 하는 맵
 	 */
-	virtual void updateLayerRelation(map<Layer *, Layer *> &layerMap);
+	virtual void updateLayerRelation(map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 
 
@@ -377,7 +380,7 @@ protected:
 	 * @details 학습 파라미터의 gradient를 스케일링한다.
 	 * @param scale_factor 학습 파라미터의 gradient를 스케일할 팩터
 	 */
-	//virtual void _scaleParam(DATATYPE scale_factor);
+	//virtual void _scaleParam(Dtype scale_factor);
 	/**
 	 * @details 현재 레이어를 스트림에 쓴다.
 	 * @param ofs 레이어를 쓸 출력 스트림
@@ -391,13 +394,13 @@ protected:
 	 * @param ifs 레이어를 읽어들일 입력 스트림
 	 * @param layerMap
 	 */
-	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
+	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	/**
 	 * @details 계산된 gradient를 각 학습레이어에서 갱신한다.
 	 * @param n 학습 데이터의 수
 	 * @param miniBatchSize 학습에 사용한 batch 사이즈
 	 */
-	//virtual void _update(UINT n, UINT miniBatchSize);
+	//virtual void _update(uint32_t n, uint32_t miniBatchSize);
 	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
@@ -410,7 +413,7 @@ protected:
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 idx
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 */
-	virtual void _concat(UINT idx, Data* input);
+	virtual void _concat(uint32_t idx, Data<Dtype>* input);
 	/**
 	 * @details 복수의 '이전' 레이어로부터의 입력들에 대해 branch의 수 기준으로 스케일링한다.
 	 *          _concat()이 입력 합산이 아닌 방식으로 구현된 경우 _scaleInput() 역시 적절히 재정의해야 한다.
@@ -455,7 +458,7 @@ protected:
 	 * @details 다음 레이어들에 대해 scaleParam() 메쏘드를 호출한다.
 	 * @param scale_factor 학습 파라미터의 gradient를 스케일할 팩터
 	 */
-	//void propScaleParam(DATATYPE scale_factor);
+	//void propScaleParam(Dtype scale_factor);
 	/**
 	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
 	 */
@@ -463,7 +466,7 @@ protected:
 	/**
 	 * @details 다음 레이어들에 대해 update() 메쏘드를 호출한다.
 	 */
-	//void propUpdate(UINT n, UINT miniBatchSize);
+	//void propUpdate(uint32_t n, uint32_t miniBatchSize);
 #ifndef GPU_MODE
 	/**
 	 * @details 다음 레이어들에 대해 feedforward() 메쏘드를 호출한다.
@@ -486,26 +489,26 @@ protected:
 
 
 protected:
-	Layer::Type type;									///< 레이어의 타입
+	Layer<Dtype>::Type type;							///< 레이어의 타입
 	int id;												///< 레이어의 고유 아이디
 	string name;										///< 레이어의 이름
 
-	NetworkConfig* networkConfig;
+	NetworkConfig<Dtype>* networkConfig;
 
 	io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
 	io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
 
-	vector<Layer*> prevLayers;							///< 현재 레이어의 이전(입력) 레이어 목록 벡터
-	vector<Layer*> nextLayers;							///< 현재 레이어의 다음(출력) 레이어 목록 벡터
+	vector<Layer<Dtype>*> prevLayers;					///< 현재 레이어의 이전(입력) 레이어 목록 벡터
+	vector<Layer<Dtype>*> nextLayers;					///< 현재 레이어의 다음(출력) 레이어 목록 벡터
 
 #ifndef GPU_MODE
 	rcube input;
 	rcube output;
 #else
-	//DATATYPE* d_input;									///< 현재 레이어의 입력값 장치 메모리 포인터
-	//DATATYPE* d_output;									///< 현재 레이어의 출력값 장치 메모리 포인터
-	Data* _input;
-	Data* _output;
+	//Dtype* d_input;									///< 현재 레이어의 입력값 장치 메모리 포인터
+	//Dtype* d_output;									///< 현재 레이어의 출력값 장치 메모리 포인터
+	Data<Dtype>* _input;
+	Data<Dtype>* _output;
 
 	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
@@ -515,8 +518,6 @@ protected:
 	static const int LAYER_NAME_LENGTH = 32;
 
 };
-
-
 
 
 

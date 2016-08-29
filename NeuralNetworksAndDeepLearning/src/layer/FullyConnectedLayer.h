@@ -24,9 +24,10 @@
  *          입력 레이어가 다차원인 경우(이미지의 경우 height x width x channel의 3차원) 1차원으로 flatten((height*width*channel) x 1 x 1)된다.
  *          출력 역시 1차원 flatten 결과이며 필요에 따라서 입력받는 레이어에서 다시 차원을 복구해야 한다.
  */
-class FullyConnectedLayer : public HiddenLayer, public LearnableLayer {
+template <typename Dtype>
+class FullyConnectedLayer : public HiddenLayer<Dtype>, public LearnableLayer {
 public:
-	class Builder : public HiddenLayer::Builder {
+	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		uint32_t _nOut;
 		double _pDropout;
@@ -80,25 +81,27 @@ public:
 			return this;
 		}
 		virtual Builder* name(const string name) {
-			HiddenLayer::Builder::name(name);
+			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer::Builder::id(id);
+			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
-			HiddenLayer::Builder::nextLayerIndices(nextLayerIndices);
+			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
 		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
-			HiddenLayer::Builder::prevLayerIndices(prevLayerIndices);
+			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
-		Layer* build() {
+		Layer<Dtype>* build() {
 			return new FullyConnectedLayer(this);
 		}
 	};
+
+
 
 	/**
 	 * @details FullyConnectedLayer 기본 생성자
@@ -106,6 +109,7 @@ public:
 	 */
 	FullyConnectedLayer();
 	FullyConnectedLayer(Builder* builder);
+
 	/**
 	 * @details FullyConnectedLayer 생성자
 	 * @param name 레이어의 이름 문자열 포인터
@@ -141,9 +145,9 @@ protected:
 	virtual double sumSquareParamsData();
 	virtual double sumSquareParamsGrad();
 	virtual void scaleParamsGrad(DATATYPE scale);
-	virtual void _save(ofstream &ofs);
-	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap);
-	//virtual void _update(UINT n, UINT miniBatchSize);
+	virtual void _save(ofstream& ofs);
+	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+	//virtual void _update(uint32_t n, uint32_t miniBatchSize);
 	virtual void update();
 	virtual void _feedforward();
 	virtual void _backpropagation();
@@ -179,28 +183,28 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	//DATATYPE *weight;						///< weight 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
-	//DATATYPE *bias;						///< bias 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
+	//Dtype *weight;						///< weight 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
+	//Dtype *bias;						///< bias 호스트 메모리 포인터 (초기화 및 읽기, 쓰기용)
 
-	//DATATYPE *d_weight;					///< weight 장치 메모리 포인터
-	//DATATYPE *d_bias;						///< bias 장치 메모리 포인터
+	//Dtype *d_weight;					///< weight 장치 메모리 포인터
+	//Dtype *d_bias;						///< bias 장치 메모리 포인터
 
-	//DATATYPE *d_z;							///< weighted sum 장치 메모리 포인터
-	//DATATYPE *d_delta;						///< 네트워크 cost의 z(weighted sum)에 관한 gradient 장치 메모리 포인터
-	//DATATYPE *d_delta_weight;				///< 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터
-	//DATATYPE *d_delta_weight_prev;		///< 이전 업데이트의 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
-	//DATATYPE *d_delta_bias;				///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
-	//DATATYPE *d_delta_bias_prev;			///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
+	//Dtype *d_z;							///< weighted sum 장치 메모리 포인터
+	//Dtype *d_delta;						///< 네트워크 cost의 z(weighted sum)에 관한 gradient 장치 메모리 포인터
+	//Dtype *d_delta_weight;				///< 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터
+	//Dtype *d_delta_weight_prev;		///< 이전 업데이트의 네트워크 cost의 weight에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
+	//Dtype *d_delta_bias;				///< 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터
+	//Dtype *d_delta_bias_prev;			///< 이전 업데이트의 네트워크 cost의 bias에 관한 gradient 장치 메모리 포인터 (momentum 계산용)
 
-	Data* _preActivation;
-	vector<Data*> _params;
-	vector<Data*> _paramsHistory;
+	Data<Dtype>* _preActivation;
+	vector<Data<Dtype>*> _params;
+	vector<Data<Dtype>*> _paramsHistory;
 
-	DATATYPE *d_onevec;						///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
+	Dtype* d_onevec;						///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
 
-	DATATYPE *mask;							///< dropout 마스크 호스트 메모리 포인터
-	DATATYPE *d_mask;						///< dropout 마스크 장치 메모리 포인터
-	DATATYPE scale;							///< dropout 스케일 팩터
+	Dtype* mask;							///< dropout 마스크 호스트 메모리 포인터
+	Dtype* d_mask;							///< dropout 마스크 장치 메모리 포인터
+	Dtype scale;							///< dropout 스케일 팩터
 #endif
 
 };

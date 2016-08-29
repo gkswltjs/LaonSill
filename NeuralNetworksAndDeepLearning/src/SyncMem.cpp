@@ -263,7 +263,8 @@ void SyncMem<Dtype>::print(const string& head, const std::vector<uint32_t>& shap
 
 
 
-template class SyncMem<DATATYPE>;
+template class SyncMem<float>;
+//template class SyncMem<double>;
 template class SyncMem<uint32_t>;
 
 

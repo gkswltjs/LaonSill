@@ -7,28 +7,42 @@
 
 
 
+/*
 #include "Layer.h"
 #include "LayerFactory.h"
 #include "../exception/Exception.h"
 #include "../network/NetworkConfig.h"
+*/
+
+#include "Layer.h"
+
+#include <stddef.h>
+#include <utility>
+
+#include "../exception/Exception.h"
+#include "Layer_device.cu"
+#include "LayerFactory.h"
 
 
-Layer::Layer(const string name) {
+template <typename Dtype>
+Layer<Dtype>::Layer(const string name) {
 	initialize(0, name);
 }
 
-Layer::Layer(Builder* builder) {
+template <typename Dtype>
+Layer<Dtype>::Layer(Builder* builder) {
 	for(uint32_t i = 0; i < builder->_nextLayerIndices.size(); i++) {
-		this->nextLayers.push_back((Layer*)((size_t)builder->_nextLayerIndices[i]));
+		this->nextLayers.push_back((Layer<Dtype>*)((size_t)builder->_nextLayerIndices[i]));
 	}
 	initialize(builder->_id, builder->_name);
 }
 
-Layer::~Layer() {
+template <typename Dtype>
+Layer<Dtype>::~Layer() {
 	// 다음 레이어들에 대해 소멸을 요청
 	// 현재의 레이어가 요청하는 다음 레이어에 대해 마지막 이전 레이어인 경우,
 	// 다음 레이어에 대해 소멸을 요청하게 된다. (multi-branch인 경우 복수의 소멸 요청을 피하기 위해)
-	for(UINT i = 0; i < nextLayers.size(); i++) {
+	for(uint32_t i = 0; i < nextLayers.size(); i++) {
 		if(nextLayers[i] && nextLayers[i]->isLastPrevLayerRequest(id)) {
 			delete nextLayers[i];
 		}
@@ -38,35 +52,40 @@ Layer::~Layer() {
 	_clearShape();
 }
 
-
-void Layer::addPrevLayer(Layer* prevLayer) {
+template <typename Dtype>
+void Layer<Dtype>::addPrevLayer(Layer<Dtype>* prevLayer) {
 	prevLayers.push_back(prevLayer);
 }
 
-void Layer::addNextLayer(Layer* nextLayer) {
+template <typename Dtype>
+void Layer<Dtype>::addNextLayer(Layer<Dtype>* nextLayer) {
 	nextLayers.push_back(nextLayer);
 }
 
-bool Layer::isFirstPrevLayerRequest(UINT idx) {
+template <typename Dtype>
+bool Layer<Dtype>::isFirstPrevLayerRequest(uint32_t idx) {
 	if(prevLayers.size() < 1) return true;
 	if(prevLayers[0]->getId() != idx) return false;
 	else return true;
 }
 
-bool Layer::isLastPrevLayerRequest(UINT idx) {
+template <typename Dtype>
+bool Layer<Dtype>::isLastPrevLayerRequest(uint32_t idx) {
 	uint32_t numPrevLayers = prevLayers.size();
 	if(numPrevLayers < 1) return true;
 	if(prevLayers[numPrevLayers-1]->getId() != idx) return false;
 	else return true;
 }
 
-bool Layer::isFirstNextLayerRequest(UINT idx) {
+template <typename Dtype>
+bool Layer<Dtype>::isFirstNextLayerRequest(uint32_t idx) {
 	if(nextLayers.size() < 1) return true;
 	if(nextLayers[0]->getId() != idx) return false;
 	else return true;
 }
 
-bool Layer::isLastNextLayerRequest(UINT idx) {
+template <typename Dtype>
+bool Layer<Dtype>::isLastNextLayerRequest(uint32_t idx) {
 	uint32_t numNextLayers = nextLayers.size();
 	if(numNextLayers < 1) return true;
 	if(nextLayers[numNextLayers-1]->getId() != idx) return false;
@@ -74,8 +93,8 @@ bool Layer::isLastNextLayerRequest(UINT idx) {
 }
 
 
-
-bool Layer::w_isLastPrevLayerRequest(UINT idx, const string method) {
+template <typename Dtype>
+bool Layer<Dtype>::w_isLastPrevLayerRequest(uint32_t idx, const string method) {
 #ifdef PRINT_CALLSTACK
 	cout << method << this->name << "-";
 #endif
@@ -87,7 +106,8 @@ bool Layer::w_isLastPrevLayerRequest(UINT idx, const string method) {
 	return result;
 }
 
-bool Layer::w_isLastNextLayerRequest(UINT idx, const string method) {
+template <typename Dtype>
+bool Layer<Dtype>::w_isLastNextLayerRequest(uint32_t idx, const string method) {
 #ifdef PRINT_CALLSTACK
 	cout << method << this->name << "-";
 #endif
@@ -99,7 +119,8 @@ bool Layer::w_isLastNextLayerRequest(UINT idx, const string method) {
 	return result;
 }
 
-void Layer::shape(UINT idx, io_dim in_dim) {
+template <typename Dtype>
+void Layer<Dtype>::shape(uint32_t idx, io_dim in_dim) {
 	if (!w_isLastPrevLayerRequest(idx, "Layer::shape()")) return;
 
 	this->in_dim = in_dim;
@@ -107,7 +128,8 @@ void Layer::shape(UINT idx, io_dim in_dim) {
 	propShape();
 }
 
-void Layer::reshape(UINT idx, io_dim in_dim) {
+template <typename Dtype>
+void Layer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
 	if (!w_isLastPrevLayerRequest(idx, "Layer::reshape()")) return;
 
 	this->in_dim = in_dim;
@@ -115,38 +137,43 @@ void Layer::reshape(UINT idx, io_dim in_dim) {
 	propReshape();
 }
 
-void Layer::clearShape(UINT idx) {
+template <typename Dtype>
+void Layer<Dtype>::clearShape(uint32_t idx) {
 	if (!w_isLastPrevLayerRequest(idx, "Layer::clearShape()")) return;
 
 	_clearShape();
 	propClearShape();
 }
 
-void Layer::save(UINT idx, ofstream &ofs) {
+template <typename Dtype>
+void Layer<Dtype>::save(uint32_t idx, ofstream &ofs) {
 	if(!w_isLastPrevLayerRequest(idx, "Layer::save()")) return;
 
 	_save(ofs);
 	propSave(ofs);
 }
 
-void Layer::saveHeader(UINT idx, ofstream &ofs) {
+template <typename Dtype>
+void Layer<Dtype>::saveHeader(uint32_t idx, ofstream &ofs) {
 	if(!w_isLastPrevLayerRequest(idx, "Layer::saveHeader()")) return;
 
-	Layer *p = this;
+	Layer<Dtype>* p = this;
 	ofs.write((char *)&type, sizeof(int));
-	ofs.write((char *)&p, sizeof(Layer *));
+	ofs.write((char *)&p, sizeof(Layer<Dtype>*));
 
 	//cout << "save header for " << name << ", type: " << (int)type << ", address: " << p << endl;
-	for(UINT i = 0; i < nextLayers.size(); i++) {
+	for(uint32_t i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i]->saveHeader(i, ofs);
 	}
 }
 
-void Layer::load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+template <typename Dtype>
+void Layer<Dtype>::load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
 	_load(ifs, layerMap);
 }
 
-void Layer::feedforward(UINT idx, Data* input, const char *end) {
+template <typename Dtype>
+void Layer<Dtype>::feedforward(uint32_t idx, Data<Dtype>* input, const char *end) {
 	_concat(idx, input);
 	if (!w_isLastPrevLayerRequest(idx, "Layer::feedforward()")) return;
 
@@ -155,62 +182,65 @@ void Layer::feedforward(UINT idx, Data* input, const char *end) {
 	propFeedforward(end);
 }
 
-void Layer::initialize(uint32_t id, const string name) {
+template <typename Dtype>
+void Layer<Dtype>::initialize(uint32_t id, const string name) {
 	this->id = id;
 	this->name = name;
-	this->_input = new Data();
-	this->_output = new Data();
+	this->_input = new Data<Dtype>();
+	this->_output = new Data<Dtype>();
 }
 
-void Layer::loadNetwork(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+template <typename Dtype>
+void Layer<Dtype>::loadNetwork(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
 	// fill layer map
 	while(true) {
-		Layer::Type layerType;
-		Layer *address;
+		typename Layer<Dtype>::Type layerType;
+		Layer<Dtype>* address;
 
 		ifs.read((char *)&layerType, sizeof(int));
-		ifs.read((char *)&address, sizeof(Layer *));
+		ifs.read((char *)&address, sizeof(Layer<Dtype>*));
 
 		//int loc = ifs.tellg();
 		//cout << loc << ", " << (int)layerType << endl;
 
 		if(address == 0) break;
-		if(layerType == Layer::Input) {
-			layerMap.insert(pair<Layer *, Layer *>(address, this));
+		if(layerType == Layer<Dtype>::Input) {
+			layerMap.insert(pair<Layer<Dtype>*, Layer<Dtype>*>(address, this));
 		}
 		else {
-			Layer *layer = LayerFactory::create(layerType);
-			layerMap.insert(pair<Layer *, Layer *>(address, layer));
+			Layer<Dtype>* layer = LayerFactory<Dtype>::create(layerType);
+			layerMap.insert(pair<Layer<Dtype>*, Layer<Dtype>*>(address, layer));
 			//cout << "created layer type: " << (int)layerType << ", address: " << layer << endl;
 		}
 	}
 	//cout << "map size: " << layerMap.size() << endl;
 
-	Layer *layerKey;
-	//ifs.read((char *)&layerKey, sizeof(Layer *));
+	Layer<Dtype>* layerKey;
+	//ifs.read((char *)&layerKey, sizeof(Layer<Dtype>*));
 	//initialize();
 
-	ifs.read((char *)&layerKey, sizeof(Layer *));
+	ifs.read((char *)&layerKey, sizeof(Layer<Dtype>*));
 	while(ifs && layerKey) {
-		Layer *layer = layerMap.find(layerKey)->second;
+		Layer<Dtype>* layer = layerMap.find(layerKey)->second;
 		if(!layer) throw Exception();
 
-		if(layer->getType() == Layer::Input) {
-			Layer::load(ifs, layerMap);
+		if(layer->getType() == Layer<Dtype>::Input) {
+			Layer<Dtype>::load(ifs, layerMap);
 		} else {
 			layer->load(ifs, layerMap);
 		}
-		ifs.read((char *)&layerKey, sizeof(Layer *));
+		ifs.read((char *)&layerKey, sizeof(Layer<Dtype>*));
 	}
 }
 
-void Layer::updateLayerRelation(map<Layer*, Layer*> &layerMap) {
-	for(UINT i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i] = layerMap.find((Layer*)nextLayers[i])->second;
+template <typename Dtype>
+void Layer<Dtype>::updateLayerRelation(map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
+	for(uint32_t i = 0; i < nextLayers.size(); i++) {
+		nextLayers[i] = layerMap.find((Layer<Dtype>*)nextLayers[i])->second;
 	}
 
 	// 학습된 네트워크를 load하는 경우 backward pass가 없으므로 불필요
-	//HiddenLayer *hiddenLayer = dynamic_cast<HiddenLayer *>(this);
+	//HiddenLayer<Dtype>* hiddenLayer = dynamic_cast<HiddenLayer<Dtype>*>(this);
 	//if(hiddenLayer) {
 		for(uint32_t i = 0; i < prevLayers.size(); i++) {
 			prevLayers[i] = layerMap.find(prevLayers[i])->second;
@@ -218,19 +248,21 @@ void Layer::updateLayerRelation(map<Layer*, Layer*> &layerMap) {
 	//}
 }
 
-void Layer::_reshape() {
+template <typename Dtype>
+void Layer<Dtype>::_reshape() {
 	// 이전의 input, output 설정과 관련된 memory 정리
 	_clearShape();
 	_shape();
 }
 
-void Layer::_feedforward() {
-	//checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+template <typename Dtype>
+void Layer<Dtype>::_feedforward() {
+	//checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(Dtype)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
 	_output->set_device_data(_input);
 }
 
-
-void Layer::_concat(UINT idx, Data* input) {
+template <typename Dtype>
+void Layer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 	//Util::printDeviceData(input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "input:");
 	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
 	input->print_data("input:");
@@ -238,7 +270,7 @@ void Layer::_concat(UINT idx, Data* input) {
 
 	// 첫번째 branch로부터의 input, 그대로 copy
 	if(isFirstPrevLayerRequest(idx)) {
-		//checkCudaErrors(cudaMemcpyAsync(d_input, input, sizeof(DATATYPE)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+		//checkCudaErrors(cudaMemcpyAsync(d_input, input, sizeof(Dtype)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
 		_input->set_device_data(input);
 	}
 	// 첫번째 이후의 branch로부터의 input, accumulate input
@@ -251,8 +283,8 @@ void Layer::_concat(UINT idx, Data* input) {
 	_input->print_data("d_input:");
 }
 
-
-void Layer::_scaleInput() {
+template <typename Dtype>
+void Layer<Dtype>::_scaleInput() {
 	if(prevLayers.size() > 1) {
 		float branchFactor = 1.0f / prevLayers.size();
 		//cout << this->name << "'s feedforward branch factor is " << branchFactor << endl;
@@ -261,34 +293,39 @@ void Layer::_scaleInput() {
 	}
 }
 
-void Layer::propShape() {
-	for(UINT i = 0; i < nextLayers.size(); i++) {
+template <typename Dtype>
+void Layer<Dtype>::propShape() {
+	for(uint32_t i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i]->shape(id, out_dim);
 	}
 }
 
-void Layer::propReshape() {
-	for(UINT i = 0; i < nextLayers.size(); i++) {
+template <typename Dtype>
+void Layer<Dtype>::propReshape() {
+	for(uint32_t i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i]->reshape(id, out_dim);
 	}
 }
 
-void Layer::propClearShape() {
-	for(UINT i = 0; i < nextLayers.size(); i++) {
+template <typename Dtype>
+void Layer<Dtype>::propClearShape() {
+	for(uint32_t i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i]->clearShape(id);
 	}
 }
 
-void Layer::propSave(ofstream &ofs) {
-	for(UINT i = 0; i < nextLayers.size(); i++) {
+template <typename Dtype>
+void Layer<Dtype>::propSave(ofstream &ofs) {
+	for(uint32_t i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i]->save(id, ofs);
 	}
 }
 
-void Layer::propFeedforward(const char *end) {
+template <typename Dtype>
+void Layer<Dtype>::propFeedforward(const char *end) {
 	if(end != 0 && name == end) return;
 
-	for(UINT i = 0; i < nextLayers.size(); i++) {
+	for(uint32_t i = 0; i < nextLayers.size(); i++) {
 		//_distDataToNext(i, nextLayers[i]);
 		nextLayers[i]->feedforward(id, this->getOutput(), end);
 	}
@@ -312,22 +349,22 @@ void Layer::propFeedforward(const char *end) {
 
 
 #ifndef GPU_MODE
-void Layer::_shape(bool recursive) {
+void Layer<Dtype>::_shape(bool recursive) {
 	cout << "Layer::_shape() is not implemented in CPU_MODE" << endl;
 	exit(1);
 }
 
-void Layer::_clearShape() {
+void Layer<Dtype>::_clearShape() {
 	cout << "Layer::_clearShape() is not implemented in CPU_MODE" << endl;
 	exit(1);
 }
 
-void Layer::_save(ofstream &ofs) {
+void Layer<Dtype>::_save(ofstream &ofs) {
 	cout << "Layer::_save() is not implemented in CPU_MODE" << endl;
 	exit(1);
 }
 
-void Layer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+void Layer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
 	cout << "Layer::_load() is not implemented in CPU_MODE" << endl;
 	exit(1);
 }
@@ -339,28 +376,7 @@ void Layer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+template class Layer<float>;
 
 
 

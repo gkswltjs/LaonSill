@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "../Util.h"
 #include "Layer.h"
-#include "LayerConfig.h"
 
 /**
  * @brief 입력 레이어 클래스
@@ -27,27 +27,29 @@
  *          입력 레이어의 경우 자신의 레이어값 읽기, 쓰기뿐 아니라 최초의 레이어로써 뒤에 연결된 모든 레이어의
  *          메타 정보를 읽기, 쓰기를 수행한다.
  */
-class InputLayer : public Layer {
+template <typename Dtype>
+class InputLayer : public Layer<Dtype> {
 public:
-	class Builder : public Layer::Builder {
+	class Builder : public Layer<Dtype>::Builder {
 	public:
 		Builder() {}
 		virtual Builder* name(const string name) {
-			Layer::Builder::name(name);
+			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			Layer::Builder::id(id);
+			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
-			Layer::Builder::nextLayerIndices(nextLayerIndices);
+			Layer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
-		Layer* build() {
+		Layer<Dtype>* build() {
 			return new InputLayer(this);
 		}
 	};
+
 
 
 	/**
@@ -61,10 +63,10 @@ public:
 	 * @details InputLayer 생성자
 	 * @param name 레이어의 이름 문자열
 	 */
-	InputLayer(const string name) : Layer(name) {
+	InputLayer(const string name) : Layer<Dtype>(name) {
 		initialize();
 	}
-	InputLayer(Builder* builder) : Layer(builder) {
+	InputLayer(Builder* builder) : Layer<Dtype>(builder) {
 		initialize();
 	}
 	/**
@@ -78,31 +80,31 @@ public:
 	 * @return batch size 1 기준의 입력 엘리먼트의 갯수
 	 */
 	int getInputSize() const {
-		return in_dim.rows*in_dim.cols*in_dim.channels;
+		return this->in_dim.rows*this->in_dim.cols*this->in_dim.channels;
 	}
 
-	using Layer::feedforward;
-	void feedforward(const DATATYPE* input, const char* end=0) {
+	using Layer<Dtype>::feedforward;
+	void feedforward(const Dtype* input, const char* end=0) {
 		//_input->set_data(input, Data::HostToDevice);
-		_input->set_device_with_host_data(input);
+		this->_input->set_device_with_host_data(input);
 
-		_feedforward();
-		propFeedforward(end);
+		this->_feedforward();
+		this->propFeedforward(end);
 	}
 
 protected:
 	void initialize() {
-		this->type = Layer::Input;
+		this->type = Layer<Dtype>::Input;
 	}
 
 	virtual void _shape(bool recursive=true) {
-		this->out_dim = in_dim;
+		this->out_dim = this->in_dim;
 		if(recursive) {
-			Layer::_shape();
+			Layer<Dtype>::_shape();
 		}
 	}
 	virtual void _clearShape() {
-		Layer::_clearShape();
+		Layer<Dtype>::_clearShape();
 	}
 	/**
 	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
@@ -112,24 +114,24 @@ protected:
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
 	virtual void _save(ofstream &ofs) {
-		saveHeader(0, ofs);
+		this->saveHeader(0, ofs);
 		// header boundary (dummy layer)
 		int type = 0;
-		Layer *layer = 0;
-		ofs.write((char *)&type, sizeof(int));
-		ofs.write((char *)&layer, sizeof(Layer *));
+		Layer<Dtype>* layer = 0;
+		ofs.write((char*)&type, sizeof(int));
+		ofs.write((char*)&layer, sizeof(Layer<Dtype>*));
 
-		Layer::_save(ofs);
+		Layer<Dtype>::_save(ofs);
 	}
-	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
+	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
 		initialize();
 		InputLayer::_shape(false);
-		loadNetwork(ifs, layerMap);
+		this->loadNetwork(ifs, layerMap);
 	}
 
 };
 
-
+template class InputLayer<float>;
 
 
 

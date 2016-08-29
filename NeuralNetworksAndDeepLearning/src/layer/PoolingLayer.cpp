@@ -8,33 +8,38 @@
 #include "PoolingLayer.h"
 
 
-PoolingLayer::PoolingLayer() {
-	this->type = Layer::Pool;
+template <typename Dtype>
+PoolingLayer<Dtype>::PoolingLayer() {
+	this->type = Layer<Dtype>::Pool;
 }
 
-PoolingLayer::PoolingLayer(Builder* builder)
-	: HiddenLayer(builder) {
+template <typename Dtype>
+PoolingLayer<Dtype>::PoolingLayer(Builder* builder)
+	: HiddenLayer<Dtype>(builder) {
 	initialize(builder->_poolDim, builder->_poolingType);
 }
 
-PoolingLayer::PoolingLayer(const string name, pool_dim pool_d, Pooling::Type poolingType)
-	: HiddenLayer(name) {
+template <typename Dtype>
+PoolingLayer<Dtype>::PoolingLayer(const string name, pool_dim pool_d, Pooling::Type poolingType)
+	: HiddenLayer<Dtype>(name) {
 	initialize(pool_d, poolingType);
 }
 
-PoolingLayer::~PoolingLayer() {
+template <typename Dtype>
+PoolingLayer<Dtype>::~PoolingLayer() {
 	PoolingFactory::destroy(pooling_fn);
 }
 
-void PoolingLayer::initialize(pool_dim pool_d, Pooling::Type poolingType) {
-	this->type = Layer::Pool;
+template <typename Dtype>
+void PoolingLayer<Dtype>::initialize(pool_dim pool_d, Pooling::Type poolingType) {
+	this->type = Layer<Dtype>::Pool;
 	this->pool_d = pool_d;
 	this->pooling_fn = PoolingFactory::create(poolingType, pool_d);
 }
 
-
-void PoolingLayer::_save(ofstream &ofs) {
-	HiddenLayer::_save(ofs);
+template <typename Dtype>
+void PoolingLayer<Dtype>::_save(ofstream &ofs) {
+	HiddenLayer<Dtype>::_save(ofs);
 
 	int poolingType = (int)pooling_fn->getType();
 
@@ -42,8 +47,9 @@ void PoolingLayer::_save(ofstream &ofs) {
 	ofs.write((char *)&poolingType, sizeof(int));
 }
 
-void PoolingLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer::_load(ifs, layerMap);
+template <typename Dtype>
+void PoolingLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
+	HiddenLayer<Dtype>::_load(ifs, layerMap);
 
 	pool_dim pool_d;
 	Pooling::Type poolingType;
@@ -53,19 +59,18 @@ void PoolingLayer::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 
 	initialize(pool_d, poolingType);
 
-	PoolingLayer::_shape(false);
+	PoolingLayer<Dtype>::_shape(false);
 }
 
-
-
-void PoolingLayer::_clearShape() {
+template <typename Dtype>
+void PoolingLayer<Dtype>::_clearShape() {
 	//checkCudaErrors(cudaFree(d_delta));
 	//checkCudaErrors(cudaFree(d_delta_input));
 
 	//d_delta = NULL;
 	//d_delta_input = 0;
 
-	HiddenLayer::_clearShape();
+	HiddenLayer<Dtype>::_clearShape();
 }
 
 
@@ -74,8 +79,9 @@ void PoolingLayer::_clearShape() {
 
 
 #ifndef GPU_MODE
-void PoolingLayer::initialize(pool_dim pool_d, Pooling::Type poolingType) {
-	this->type = Layer::Pool;
+template <typename Dtype>
+void PoolingLayer<Dtype>::initialize(pool_dim pool_d, Pooling::Type poolingType) {
+	this->type = Layer<Dtype>::Pool;
 
 	this->out_dim.rows = in_dim.rows / pool_d.rows;
 	this->out_dim.cols = in_dim.rows / pool_d.cols;
@@ -93,7 +99,8 @@ void PoolingLayer::initialize(pool_dim pool_d, Pooling::Type poolingType) {
 	this->delta_input.zeros();
 }
 
-void PoolingLayer::_feedforward(UINT idx, const rcube &input, const char *end=0) {
+template <typename Dtype>
+void PoolingLayer<Dtype>::_feedforward(uint32_t idx, const rcube &input, const char *end=0) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::convertCube(input, this->input);
@@ -102,7 +109,8 @@ void PoolingLayer::_feedforward(UINT idx, const rcube &input, const char *end=0)
 	propFeedforward(this->output, end);
 }
 
-void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
+template <typename Dtype>
+void PoolingLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer) {
 	// TODO w_next_delta를 모두 합하여 한 번에 d_pool하는 것이 연산적으로 유리, 수정 필요
 	rcube w_next_delta(size(output));
 
@@ -128,7 +136,7 @@ void PoolingLayer::backpropagation(UINT idx, HiddenLayer *next_layer) {
 
 
 
-
+template class PoolingLayer<float>;
 
 
 

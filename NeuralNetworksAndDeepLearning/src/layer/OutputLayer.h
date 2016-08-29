@@ -20,9 +20,10 @@
  * @details FullyConnectedLayer를 상속, 출력 레이어는 항상 FullyConnectedLayer만이 될 수 있다.
  *          cost() method를 구현한다.
  */
-class OutputLayer : public FullyConnectedLayer {
+template <typename Dtype>
+class OutputLayer : public FullyConnectedLayer<Dtype> {
 public:
-	class Builder : public FullyConnectedLayer::Builder {
+	class Builder : public FullyConnectedLayer<Dtype>::Builder {
 	public:
 		Cost::Type _costType;
 
@@ -34,54 +35,54 @@ public:
 			return this;
 		}
 		Builder* nOut(uint32_t nOut) {
-			FullyConnectedLayer::Builder::nOut(nOut);
+			FullyConnectedLayer<Dtype>::Builder::nOut(nOut);
 			return this;
 		}
 		Builder* pDropout(uint32_t pDropout) {
-			FullyConnectedLayer::Builder::pDropout(pDropout);
+			FullyConnectedLayer<Dtype>::Builder::pDropout(pDropout);
 			return this;
 		}
 		Builder* weightUpdateParam(double lr_mult, double decay_mult) {
-			FullyConnectedLayer::Builder::weightUpdateParam(lr_mult, decay_mult);
+			FullyConnectedLayer<Dtype>::Builder::weightUpdateParam(lr_mult, decay_mult);
 			return this;
 		}
 		Builder* biasUpdateParam(double lr_mult, double decay_mult) {
-			FullyConnectedLayer::Builder::biasUpdateParam(lr_mult, decay_mult);
+			FullyConnectedLayer<Dtype>::Builder::biasUpdateParam(lr_mult, decay_mult);
 			return this;
 		}
 		Builder* weightFiller(ParamFillerType weightFillerType, double value) {
-			FullyConnectedLayer::Builder::weightFiller(weightFillerType, value);
+			FullyConnectedLayer<Dtype>::Builder::weightFiller(weightFillerType, value);
 			return this;
 		}
 		Builder* biasFiller(ParamFillerType biasFillerType, double value) {
-			FullyConnectedLayer::Builder::biasFiller(biasFillerType, value);
+			FullyConnectedLayer<Dtype>::Builder::biasFiller(biasFillerType, value);
 			return this;
 		}
 		Builder* activationType(Activation::Type activationType) {
-			FullyConnectedLayer::Builder::activationType(activationType);
+			FullyConnectedLayer<Dtype>::Builder::activationType(activationType);
 			return this;
 		}
 		virtual Builder* name(const string name) {
-			FullyConnectedLayer::Builder::name(name);
+			FullyConnectedLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			FullyConnectedLayer::Builder::id(id);
+			FullyConnectedLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
-			FullyConnectedLayer::Builder::nextLayerIndices(nextLayerIndices);
+			FullyConnectedLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
 		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
-			FullyConnectedLayer::Builder::prevLayerIndices(prevLayerIndices);
+			FullyConnectedLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
-		Layer* build() = 0;
+		Layer<Dtype>* build() = 0;
 	};
 
 	OutputLayer() {}
-	OutputLayer(Builder* builder) : FullyConnectedLayer(builder) {
+	OutputLayer(Builder* builder) : FullyConnectedLayer<Dtype>(builder) {
 		initialize(builder->_costType);
 	}
 	/**
@@ -98,15 +99,14 @@ public:
 	 */
 	OutputLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler weight_filler, param_filler bias_filler, Activation::Type activationType, Cost::Type costType)
-		:FullyConnectedLayer(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
+		:FullyConnectedLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};
 	virtual ~OutputLayer() {
 		CostFactory::destroy(cost_fn);
 	};
 
-	//virtual void backpropagation(UINT idx, Data* next_input, uint32_t offset) {
-	using FullyConnectedLayer::backpropagation;
+	using FullyConnectedLayer<Dtype>::backpropagation;
 	virtual void backpropagation(const uint32_t* target) = 0;
 
 	/**
@@ -128,22 +128,22 @@ protected:
 
 	virtual void _shape(bool recursive=true) {
 		if(recursive) {
-			FullyConnectedLayer::_shape();
+			FullyConnectedLayer<Dtype>::_shape();
 		}
-		_target.reshape(out_dim.batches);
+		this->_target.reshape(this->out_dim.batches);
 	}
 	virtual void _clearShape() {
-		FullyConnectedLayer::_clearShape();
+		FullyConnectedLayer<Dtype>::_clearShape();
 	}
 	virtual void _save(ofstream &ofs) {
-		FullyConnectedLayer::_save(ofs);
+		FullyConnectedLayer<Dtype>::_save(ofs);
 		//int costType = (int)cost_fn->getType();
 		//ofs.write((char *)&costType, sizeof(int));
 	}
-	virtual void _load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-		FullyConnectedLayer::_load(ifs, layerMap);
+	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
+		FullyConnectedLayer<Dtype>::_load(ifs, layerMap);
 
-		OutputLayer::_shape(false);
+		OutputLayer<Dtype>::_shape(false);
 		//Cost::Type type;
 		//ifs.read((char *)&type, sizeof(int));
 		//initialize(type);
@@ -154,6 +154,10 @@ protected:
 
 	SyncMem<uint32_t> _target;
 };
+
+
+
+template class OutputLayer<float>;
 
 
 #endif /* LAYER_OUTPUTLAYER_H_ */
