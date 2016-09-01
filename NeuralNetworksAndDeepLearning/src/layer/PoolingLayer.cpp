@@ -64,12 +64,6 @@ void PoolingLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::_clearShape() {
-	//checkCudaErrors(cudaFree(d_delta));
-	//checkCudaErrors(cudaFree(d_delta_input));
-
-	//d_delta = NULL;
-	//d_delta_input = 0;
-
 	HiddenLayer<Dtype>::_clearShape();
 }
 

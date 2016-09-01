@@ -72,11 +72,7 @@ public:
 		if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
 
 		//_scaleGradient();
-
-
-		_activationBackward();
-
-
+		//_activationBackward();
 		_backpropagation();
 		propBackpropagation();
 	}
@@ -90,8 +86,6 @@ protected:
 	virtual void _backpropagation() {
 		this->_input->set_device_grad(this->_output);
 	}
-
-	virtual void _activationBackward() {}
 
 	virtual void _shape(bool recursive=true) {
 		if(recursive) {
@@ -109,22 +103,17 @@ protected:
 	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
 	 */
 	virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset) {
-		//Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
-		//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
 		next_delta_input->print_grad("next_delta_input:");
-		this->_output->print_grad("d_delta_output");
+		this->_output->print_grad("outputGrad");
 		// 첫번째 branch로부터의 backpropagation, 그대로 copy
 		if(this->isFirstNextLayerRequest(idx)) {
-			//checkCudaErrors(cudaMemcpyAsync(d_delta_output, next_delta_input, sizeof(Dtype)*out_dim.batchsize(), cudaMemcpyDeviceToDevice));
 			this->_output->set_device_grad(next_delta_input, offset);
 		}
 		// 첫번째 이후의 branch로부터의 backpropagation, accumulate gradient
 		else {
-			//checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()), &Cuda::alpha, next_delta_input, 1, d_delta_output, 1));
 			this->_output->add_device_grad(next_delta_input, offset);
 		}
-		//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
-		this->_output->print_grad("d_delta_output:");
+		this->_output->print_grad("outputGrad:");
 	}
 
 	/**
@@ -135,7 +124,6 @@ protected:
 		if(this->nextLayers.size() > 1) {
 			float branchFactor = 1.0f / this->nextLayers.size();
 			//cout << this->name << "'s backpropagation branch factor is " << branchFactor << endl;
-			//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(out_dim.batchsize()), &branchFactor, d_delta_output, 1));
 			this->_output->scale_device_grad(branchFactor);
 		}
 	}
@@ -148,9 +136,9 @@ protected:
 		for(uint32_t i = 0; i < this->prevLayers.size(); i++) {
 			hiddenLayer = dynamic_cast<HiddenLayer *>(this->prevLayers[i]);
 
-			// !!! 대부분의 경우 _backpropagation에서 사용한 d_delta_input을 그대로 사용하므로 문제가 없지만
-			// DepthConcatLayer와 같이 d_delta_input을 분배해야 하는 케이스가 있으므로 d_delta_input을 그대로 사용하지 말고
-			// getter를 사용하여 이전 레이어에 d_delta_input을 전달해야 한다.
+			// !!! 대부분의 경우 _backpropagation에서 사용한 inputGrad을 그대로 사용하므로 문제가 없지만
+			// DepthConcatLayer와 같이 inputGrad을 분배해야 하는 케이스가 있으므로 inputGrad을 그대로 사용하지 말고
+			// getter를 사용하여 이전 레이어에 inputGrad을 전달해야 한다.
 			if(hiddenLayer) {
 				//_distGradToPrev(i, hiddenLayer);
 				hiddenLayer->backpropagation(this->id, this->getInput(), 0);

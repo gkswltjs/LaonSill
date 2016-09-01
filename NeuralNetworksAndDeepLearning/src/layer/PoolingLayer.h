@@ -112,7 +112,6 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	//Dtype *d_delta;				///< 다음 레이어에서 전달된 gradient 장치 메모리 포인터 (복수의 다음 레이어가 있는 경우 gradient를 누적하는 메모리)
 #endif
 
 

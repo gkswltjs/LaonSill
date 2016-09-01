@@ -263,32 +263,24 @@ void Layer<Dtype>::_feedforward() {
 
 template <typename Dtype>
 void Layer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
-	//Util::printDeviceData(input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "input:");
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
-	input->print_data("input:");
-	_input->print_data("d_input:");
+	input->print_data("param input:");
+	_input->print_data("input:");
 
 	// 첫번째 branch로부터의 input, 그대로 copy
 	if(isFirstPrevLayerRequest(idx)) {
-		//checkCudaErrors(cudaMemcpyAsync(d_input, input, sizeof(Dtype)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
 		_input->set_device_data(input);
 	}
 	// 첫번째 이후의 branch로부터의 input, accumulate input
 	else {
-		//checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()),
-		//		&Cuda::alpha, input, 1, d_input, 1));
 		_input->add_device_data(input);
 	}
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
-	_input->print_data("d_input:");
+	_input->print_data("input:");
 }
 
 template <typename Dtype>
 void Layer<Dtype>::_scaleInput() {
 	if(prevLayers.size() > 1) {
 		float branchFactor = 1.0f / prevLayers.size();
-		//cout << this->name << "'s feedforward branch factor is " << branchFactor << endl;
-		//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.batchsize()), &branchFactor, d_input, 1));
 		_input->scale_device_data(branchFactor);
 	}
 }
@@ -326,7 +318,6 @@ void Layer<Dtype>::propFeedforward(const char *end) {
 	if(end != 0 && name == end) return;
 
 	for(uint32_t i = 0; i < nextLayers.size(); i++) {
-		//_distDataToNext(i, nextLayers[i]);
 		nextLayers[i]->feedforward(id, this->getOutput(), end);
 	}
 }

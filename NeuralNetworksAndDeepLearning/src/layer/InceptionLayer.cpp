@@ -489,7 +489,7 @@ void InceptionLayer::_backpropagation() {
 	lastLayer->backpropagation(0, d_delta_output);
 
 	//checkCudaErrors(cudaMemset(d_delta_input, 0, sizeof(DATATYPE)*in_dim.batchsize()));
-	//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
+	//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "delta_input:");
 
 	for(UINT i = 0; i < firstLayers.size(); i++) {
 		if (i == 0) {
@@ -499,7 +499,7 @@ void InceptionLayer::_backpropagation() {
 					&Cuda::alpha, firstLayers[i]->getDeltaInput(), 1, d_delta_input, 1));
 		}
 	}
-	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
+	Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "delta_input:");
 }
 #endif
 

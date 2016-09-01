@@ -59,9 +59,9 @@ public:
 		activation = 1.0 / (1.0 + exp(-1 * z));
 	}
 	void d_activate(const rcube &activation, rcube &da) {
-		Util::printCube(activation, "d_activate-activation:");
+		Util::printCube(activation, "activate-activation:");
 		da = activation % (1.0 - activation);
-		Util::printCube(da, "d_activate-da:");
+		Util::printCube(da, "activate-da:");
 	}
 #else
 public:

@@ -67,16 +67,11 @@ void DepthConcatLayer<Dtype>::_shape(bool recursive) {
 	if (recursive) {
 		HiddenLayer<Dtype>::_shape();
 	}
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(Dtype)*in_dim.batchsize()));
 }
 
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::_clearShape() {
-	//checkCudaErrors(cudaFree(d_delta_input));
-	//d_delta_input = NULL;
 	offsetIndex = 0;
-	//out_dim.channels = 0;
-
 	HiddenLayer<Dtype>::_clearShape();
 }
 
@@ -98,9 +93,9 @@ void DepthConcatLayer<Dtype>::propBackpropagation() {
 			offset += this->prevLayers[i-1]->getOutDimension().batchsize();
 		}
 
-		// !!! 대부분의 경우 _backpropagation에서 사용한 d_delta_input을 그대로 사용하므로 문제가 없지만
-		// DepthConcatLayer와 같이 d_delta_input을 분배해야 하는 케이스가 있으므로 d_delta_input을 그대로 사용하지 말고
-		// getter를 사용하여 이전 레이어에 d_delta_input을 전달해야 한다.
+		// !!! 대부분의 경우 _backpropagation에서 사용한 d_inputGrad을 그대로 사용하므로 문제가 없지만
+		// DepthConcatLayer와 같이 d_inputGrad을 분배해야 하는 케이스가 있으므로 d_inputGrad을 그대로 사용하지 말고
+		// getter를 사용하여 이전 레이어에 d_inputGrad을 전달해야 한다.
 		if(hiddenLayer) {
 			//_distGradToPrev(i, hiddenLayer);
 			hiddenLayer->backpropagation(this->id, this->getInput(), offset);

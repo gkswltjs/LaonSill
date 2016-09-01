@@ -34,15 +34,15 @@ void DepthConcatLayer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 	}
 	io_dim prev_out_dim = this->prevLayers[i]->getOutDimension();
 
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
+	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "input:");
 	//Util::printDeviceData(input, prev_out_dim.rows, prev_out_dim.cols, prev_out_dim.channels, prev_out_dim.batches, "input:");
-	this->_input->print_data("d_input:");
-	input->print_data("input:");
+	this->_input->print_data("inputData:");
+	input->print_data("param inputData:");
 
-	Dtype* d_input = this->_input->mutable_device_data();
-	const Dtype* prev_input = input->device_data();
+	Dtype* d_inputData = this->_input->mutable_device_data();
+	const Dtype* prev_inputData = input->device_data();
 	for(int i = 0; i < prev_out_dim.batches; i++) {
-		checkCudaErrors(cudaMemcpyAsync(d_input+this->in_dim.unitsize()*i+inBatchOffset, prev_input+prev_out_dim.unitsize()*i,
+		checkCudaErrors(cudaMemcpyAsync(d_inputData+this->in_dim.unitsize()*i+inBatchOffset, prev_inputData+prev_out_dim.unitsize()*i,
 				sizeof(Dtype)*prev_out_dim.unitsize(), cudaMemcpyDeviceToDevice));
 	}
 
@@ -68,14 +68,14 @@ void DepthConcatLayer<Dtype>::_deconcat(uint32_t idx, Data<Dtype>* next_delta_in
 	//	offsets[i] = offsets[i-1] + prevLayers[i-1]->getOutDimension().unitsize();
 	//}
 
-	//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
+	//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "delta_output:");
 	//Util::printDeviceData(next_delta_input, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "next_delta_input:");
-	this->_output->print_grad("d_delta_output:");
+	this->_output->print_grad("outputGrad:");
 	next_delta_input->print_grad("next_delta_input:");
 
 
 	const Dtype* d_next_delta_input = next_delta_input->device_grad();
-	Dtype* d_delta_output = this->_output->mutable_device_grad();
+	Dtype* d_outputGrad = this->_output->mutable_device_grad();
 	uint32_t layerOffset = 0;
 	for(int j = 0; j < this->prevLayers.size(); j++) {
 		if(j > 0) {
@@ -89,12 +89,11 @@ void DepthConcatLayer<Dtype>::_deconcat(uint32_t idx, Data<Dtype>* next_delta_in
 					&Cuda::alpha,
 					d_next_delta_input+this->out_dim.unitsize()*i+layerOffset,
 					1,
-					d_delta_output+layerOffset*2+this->prevLayers[j]->getOutDimension().unitsize()*i,
+					d_outputGrad+layerOffset*2+this->prevLayers[j]->getOutDimension().unitsize()*i,
 					1));
 		}
 	}
-	//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
-	this->_output->print_grad("d_delta_output:");
+	this->_output->print_grad("outputGrad:");
 }
 
 

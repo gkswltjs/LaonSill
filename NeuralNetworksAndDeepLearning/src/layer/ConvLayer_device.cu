@@ -263,17 +263,17 @@ void ConvLayer<Dtype>::update() {
 	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
 	float b_delta_scale = -bias_update_param.lr_mult/miniBatchSize;
 
-	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
-	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
+	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "delta_weight:");
+	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "filters:");
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(filter_d.size()), &param_scale, d_filters, 1));
-	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
+	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "filters:");
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.size()), &delta_scale, d_delta_weight, 1, d_filters, 1));
-	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
+	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "filters:");
 
-	Util::printDeviceData(d_delta_bias, 1, 1, filter_d.filters, 1, "d_delta_bias:");
-	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
+	Util::printDeviceData(d_delta_bias, 1, 1, filter_d.filters, 1, "delta_bias:");
+	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "biases:");
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.filters),	&b_delta_scale, d_delta_bias, 1, d_biases, 1));
-	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
+	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "biases:");
 	*/
 
 	int weight_size = filter_d.size();
@@ -283,9 +283,9 @@ void ConvLayer<Dtype>::update() {
 	Dtype learning_scale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
 	Dtype negative_one = -1.0;
 
-	Dtype* d_delta_weight = _params[Filter]->mutable_device_grad();
-	Dtype* d_filters = _params[Filter]->mutable_device_data();
-	Dtype* d_delta_weight_prev = _paramsHistory[Filter]->mutable_device_grad();
+	Dtype* d_filtersGrad = _params[Filter]->mutable_device_grad();
+	Dtype* d_filtersData = _params[Filter]->mutable_device_data();
+	Dtype* d_filtersHistoryGrad = _paramsHistory[Filter]->mutable_device_grad();
 
 
 	/*
@@ -301,26 +301,26 @@ void ConvLayer<Dtype>::update() {
 
 
 
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_delta_weight, 1));								// normalize by batch size
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &reg_scale, d_filters, 1, d_delta_weight, 1));					// regularize
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &momentum, d_delta_weight_prev, 1));								//
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &learning_scale, d_delta_weight, 1, d_delta_weight_prev, 1));	// momentum
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &negative_one, d_delta_weight_prev, 1, d_filters, 1));			// update
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_filtersGrad, 1));								// normalize by batch size
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &reg_scale, d_filtersData, 1, d_filtersGrad, 1));					// regularize
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &momentum, d_filtersHistoryGrad, 1));								//
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &learning_scale, d_filtersGrad, 1, d_filtersHistoryGrad, 1));	// momentum
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &negative_one, d_filtersHistoryGrad, 1, d_filtersData, 1));			// update
 
 
 	int bias_size = filter_d.filters;
 	Dtype reg_scale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
 	Dtype learning_scale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
 
-	Dtype* d_delta_bias = _params[Bias]->mutable_device_grad();
-	Dtype* d_biases = _params[Bias]->mutable_device_data();
-	Dtype* d_delta_bias_prev = _paramsHistory[Bias]->mutable_device_grad();
+	Dtype* d_biasesGrad = _params[Bias]->mutable_device_grad();
+	Dtype* d_biasesData = _params[Bias]->mutable_device_data();
+	Dtype* d_biasesHistoryGrad = _paramsHistory[Bias]->mutable_device_grad();
 
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_delta_bias, 1));								// normalize by batch size
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_biases, 1, d_delta_bias, 1));					// regularize
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_delta_bias_prev, 1));								//
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &learning_scale_b, d_delta_bias, 1, d_delta_bias_prev, 1));	// momentum
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_delta_bias_prev, 1, d_biases, 1));			// update
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_biasesGrad, 1));								// normalize by batch size
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_biasesData, 1, d_biasesGrad, 1));					// regularize
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_biasesHistoryGrad, 1));								//
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &learning_scale_b, d_biasesGrad, 1, d_biasesHistoryGrad, 1));	// momentum
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_biasesHistoryGrad, 1, d_biasesData, 1));			// update
 
 }
 
@@ -346,39 +346,25 @@ void ConvLayer<Dtype>::_feedforward() {
 	checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle,
 			&Cuda::alpha, this->inputTensorDesc, d_inputData, filterDesc, d_filtersData, convDesc, convFwdAlgo, d_workspace, workspaceSize,
 			&Cuda::beta, this->outputTensorDesc, d_preActivationData));
-	_preActivation->print_data("d_preActivationData:");
+	_preActivation->print_data("preActivationData:");
 
 
 	// Add bias to filtered input data
-	_params[Bias]->print_data("d_biasData:");
+	_params[Bias]->print_data("biasData:");
 	const Dtype* d_biasesData = _params[Bias]->device_data();
 	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
 			&Cuda::alpha, biasTensorDesc, d_biasesData,
 			&Cuda::alpha, this->outputTensorDesc, d_preActivationData));
-	_preActivation->print_data("d_preActivationData:");
+	_preActivation->print_data("preActivationData:");
 
 
 	// Activate filtered result
 	Dtype* d_output = this->_output->mutable_device_data();
 	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_output);
-	this->_output->print_data(this->name+string("d_output:"));
+	this->_output->print_data(this->name+string("output:"));
 }
 
 
-template <typename Dtype>
-void ConvLayer<Dtype>::_activationBackward() {
-	this->_output->print_grad("d_delta_output:");
-	this->_output->print_data("output:");
-
-	const Dtype* d_output = this->_output->device_data();
-	const Dtype* d_delta_output = this->_output->device_grad();
-	const Dtype* d_z = _preActivation->device_data();
-	Dtype* d_delta = _preActivation->mutable_device_grad();
-
-	activation_fn->backward(this->outputTensorDesc, d_output, d_delta_output, d_z, d_delta);
-	this->_input->print_data("d_inputData:");
-	_preActivation->print_grad("d_preActivationGrad:");
-}
 
 
 template <typename Dtype>
@@ -387,9 +373,9 @@ void ConvLayer<Dtype>::_backpropagation() {
 	//Cuda::refresh();
 
 	/*
-	//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
-	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
-	this->_output->print_grad("d_delta_output:");
+	//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "delta_output:");
+	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "output:");
+	this->_output->print_grad("delta_output:");
 	this->_output->print_data("output:");
 
 	const Dtype* d_output = this->_output->device_data();
@@ -399,17 +385,34 @@ void ConvLayer<Dtype>::_backpropagation() {
 
 	//activation_fn->backward(d_output, d_delta_output, d_z, d_delta, outputTensorDesc);
 	activation_fn->backward(this->outputTensorDesc, d_output, d_delta_output, d_z, d_delta);
-	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta:");
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
-	_preActivation->print_grad("d_delta:");
-	this->_input->print_data("d_input:");
+	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "delta:");
+	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "input:");
+	_preActivation->print_grad("delta:");
+	this->_input->print_data("input:");
 	*/
 
+	_computePreActivationGrad();
 	_computeFiltersGrad();
 	_computeBiasesGrad();
 	_computeInputGrad();
-
 }
+
+
+template <typename Dtype>
+void ConvLayer<Dtype>::_computePreActivationGrad() {
+	this->_output->print_grad("outputGrad:");
+	this->_output->print_data("outputData:");
+
+	const Dtype* d_outputData = this->_output->device_data();
+	const Dtype* d_outputGrad = this->_output->device_grad();
+	const Dtype* d_preActivationData = _preActivation->device_data();
+	Dtype* d_preActivationGrad = _preActivation->mutable_device_grad();
+
+	activation_fn->backward(this->outputTensorDesc, d_outputData, d_outputGrad, d_preActivationData, d_preActivationGrad);
+	this->_input->print_data("inputData:");
+	_preActivation->print_grad("preActivationGrad:");
+}
+
 
 
 template <typename Dtype>
@@ -435,7 +438,7 @@ void ConvLayer<Dtype>::_computeFiltersGrad() {
 	/*
 	if(this->name == "convLayer1") {
 		Data<Dtype>::printConfig = 1;
-		_params[Filter]->print_grad("d_filtersGrad:");
+		_params[Filter]->print_grad("filtersGrad:");
 		Data<Dtype>::printConfig = 0;
 	}
 	*/
@@ -467,7 +470,7 @@ void ConvLayer<Dtype>::_computeBiasesGrad() {
 	/*
 	if(this->name == "convLayer1") {
 		Data<Dtype>::printConfig = 1;
-		_preActivation->print_grad("d_preActivationGrad:");
+		_preActivation->print_grad("preActivationGrad:");
 		Data<Dtype>::printConfig = 0;
 	}
 	*/
@@ -479,7 +482,7 @@ void ConvLayer<Dtype>::_computeBiasesGrad() {
 	/*
 	if(this->name == "convLayer1") {
 		Data<Dtype>::printConfig = 1;
-		_params[Bias]->print_grad("d_biasesGrad:");
+		_params[Bias]->print_grad("biasesGrad:");
 		Data<Dtype>::printConfig = 0;
 	}
 	*/
@@ -494,8 +497,8 @@ void ConvLayer<Dtype>::_computeInputGrad() {
 	checkCUDNN(cudnnConvolutionBackwardData(Cuda::cudnnHandle,
 			&Cuda::alpha, filterDesc, d_filtersData, this->outputTensorDesc, d_preActivationGrad, convDesc, convBwdDataAlgo, d_workspace, workspaceSize,
 			&Cuda::beta, this->inputTensorDesc, d_inputGrad));
-	this->_input->print_grad("d_inputGrad:");
-	_params[Filter]->print_data("d_filtersData:");
+	this->_input->print_grad("inputGrad:");
+	_params[Filter]->print_data("filtersData:");
 
 	/*
 	//if(this->name == "inception_3a/conv5x5reduce") {
@@ -521,7 +524,6 @@ template void ConvLayer<float>::_save(ofstream &ofs);
 template void ConvLayer<float>::_load(ifstream &ifs, map<Layer<float>*, Layer<float>*> &layerMap);
 template void ConvLayer<float>::update();
 template void ConvLayer<float>::_feedforward();
-template void ConvLayer<float>::_activationBackward();
 template void ConvLayer<float>::_backpropagation();
 
 

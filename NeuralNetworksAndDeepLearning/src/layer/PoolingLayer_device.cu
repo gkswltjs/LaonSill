@@ -38,18 +38,18 @@ void PoolingLayer<Dtype>::_shape(bool recursive) {
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::_feedforward() {
-	this->_input->print_data("d_input:");
+	this->_input->print_data("inputData:");
 	const Dtype* d_inputData = this->_input->device_data();
 	Dtype* d_outputData = this->_output->mutable_device_data();
 	pooling_fn->forward(this->inputTensorDesc, d_inputData,
 			this->outputTensorDesc, d_outputData);
-	this->_output->print_data(this->name+string("/d_output:"));
+	this->_output->print_data(this->name+string("/outputData:"));
 }
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::_backpropagation() {
-	this->_output->print_data("d_outputData:");
-	this->_input->print_data("d_inputData:");
+	this->_output->print_data("outputData:");
+	this->_input->print_data("inputData:");
 	/*
 	if(this->_output->is_nan_grad()) {
 		cout << this->name << " output gradient nan ... " << endl;
@@ -63,7 +63,7 @@ void PoolingLayer<Dtype>::_backpropagation() {
 	pooling_fn->backward(this->outputTensorDesc, d_outputData, d_outputGrad,
 			this->inputTensorDesc, d_inputData, d_inputGrad);
 
-	this->_input->print_grad("d_delta_input:");
+	this->_input->print_grad("inputGrad:");
 }
 
 

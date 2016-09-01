@@ -51,9 +51,9 @@ public:
 		activation = arma::max(z, zero);
 	}
 	void d_activate(const rcube &activation, rcube &da) {
-		Util::printCube(activation, "d_activate-activation:");
+		Util::printCube(activation, "activate-activation:");
 		da = conv_to<rcube>::from(activation > zero);
-		Util::printCube(da, "d_activate-da:");
+		Util::printCube(da, "activate-da:");
 	}
 
 private:

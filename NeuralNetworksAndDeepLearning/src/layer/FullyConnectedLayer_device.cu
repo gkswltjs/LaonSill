@@ -65,21 +65,6 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
 	_paramsHistory.clear();
 
 	delete _preActivation;
-
-	//if(weight) delete [] weight;
-	//if(bias) delete [] bias;
-
-	//checkCudaErrors(cudaFree(d_weight));
-	//checkCudaErrors(cudaFree(d_bias));
-
-	//checkCudaErrors(cudaFree(d_z));
-	//checkCudaErrors(cudaFree(d_delta));
-	//checkCudaErrors(cudaFree(d_delta_input));
-	//checkCudaErrors(cudaFree(d_delta_weight));
-	//checkCudaErrors(cudaFree(d_delta_weight_prev));
-	//checkCudaErrors(cudaFree(d_delta_bias));
-	//checkCudaErrors(cudaFree(d_delta_bias_prev));
-
 	checkCudaErrors(cudaFree(d_onevec));
 
 	ActivationFactory<Dtype>::destory(activation_fn);
@@ -115,27 +100,8 @@ void FullyConnectedLayer<Dtype>::_shape(bool recursive) {
 	weight_filler.fill(_params[ParamType::Weight]->mutable_host_data(), u_out*u_in, u_in, u_out);
 	bias_filler.fill(_params[ParamType::Bias]->mutable_host_data(), u_out, u_in, u_out);
 
-	//Util::printData(weight, u_out, u_in, 1, 1, "weight:");
-	//Util::printData(bias, u_out, 1, 1, 1, "bias:");
 	_params[ParamType::Weight]->print_data("weight:");
 	_params[ParamType::Bias]->print_data("bias:");
-
-
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_weight, sizeof(Dtype)*u_out*u_in));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_bias, sizeof(Dtype)*u_out));
-
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(Dtype)*b_out));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(Dtype)*b_out));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(Dtype)*b_in));
-
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(Dtype)*u_out*u_in));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight_prev, sizeof(Dtype)*u_out*u_in));
-	//FillValues<<<RoundUp(u_out*u_in, BW), BW>>>(this->d_onevec, u_out*u_in, 0.0f);
-	//checkCudaErrors(cudaMemset(d_delta_weight_prev, 0, u_out*u_in*sizeof(Dtype)));
-
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(Dtype)*u_out));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias_prev, sizeof(Dtype)*u_out));
-	//checkCudaErrors(cudaMemset(d_delta_bias_prev, 0, u_out*sizeof(Dtype)));
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*this->in_dim.batches));
 	FillValues<<<RoundUp(this->in_dim.batches, BW), BW>>>(this->d_onevec, this->in_dim.batches, 1.0f);
@@ -154,20 +120,6 @@ void FullyConnectedLayer<Dtype>::_shape(bool recursive) {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_clearShape() {
-	//if(weight) delete [] weight;
-	//if(bias) delete [] bias;
-
-	//checkCudaErrors(cudaFree(d_weight));
-	//checkCudaErrors(cudaFree(d_bias));
-
-	//checkCudaErrors(cudaFree(d_z));
-	//checkCudaErrors(cudaFree(d_delta));
-	//checkCudaErrors(cudaFree(d_delta_input));
-	//checkCudaErrors(cudaFree(d_delta_weight));
-	//checkCudaErrors(cudaFree(d_delta_weight_prev));
-	//checkCudaErrors(cudaFree(d_delta_bias));
-	//checkCudaErrors(cudaFree(d_delta_bias_prev));
-
 	delete _params[0];
 	delete _params[1];
 	//_params.clear();
@@ -181,21 +133,6 @@ void FullyConnectedLayer<Dtype>::_clearShape() {
 
 	if(mask) delete [] mask;
 	checkCudaErrors(cudaFree(d_mask));
-
-	//weight = NULL;
-	//bias = NULL;
-
-	//d_weight = NULL;
-	//d_bias = NULL;
-
-	//d_z = NULL;
-	//d_delta = NULL;
-
-	//d_delta_weight = NULL;
-	//d_delta_weight_prev = NULL;
-	//d_delta_bias = NULL;
-	//d_delta_bias_prev = NULL;
-
 	HiddenLayer<Dtype>::_clearShape();
 }
 
@@ -212,19 +149,19 @@ void FullyConnectedLayer<Dtype>::update() {
 	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
 	float b_delta_scale = -bias_update_param.lr_mult/miniBatchSize;
 
-	Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
-	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
+	Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "delta_weight:");
+	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "weight:");
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(in_dim.rows*out_dim.rows), &param_scale, d_weight, 1));
-	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
+	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "weight:");
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(in_dim.rows*out_dim.rows),
 			&delta_scale, d_delta_weight, 1, d_weight, 1));
-	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
+	Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "weight:");
 
-	Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
-	Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "d_bias:");
+	Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "delta_bias:");
+	Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "bias:");
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(out_dim.rows),
 			&b_delta_scale, d_delta_bias, 1, d_bias, 1));
-	Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "d_bias:");
+	Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "bias:");
 	*/
 
 	int weight_size = this->in_dim.rows*this->out_dim.rows;
@@ -234,51 +171,44 @@ void FullyConnectedLayer<Dtype>::update() {
 	Dtype learning_scale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
 	Dtype negative_one = -1.0;
 
-	//Util::setPrint(true);
-	//Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
-	//Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
-	//Util::printDeviceData(d_delta_weight_prev, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight_prev:");
-	_params[ParamType::Weight]->print_grad("d_delta_weight:");
-	_params[ParamType::Weight]->print_data("d_weight:");
-	_paramsHistory[ParamType::Weight]->print_grad("d_delta_weight_prev:");
+	_params[ParamType::Weight]->print_grad("weightGrad:");
+	_params[ParamType::Weight]->print_data("weightData:");
+	_paramsHistory[ParamType::Weight]->print_grad("weightHistoryGrad:");
 
-	Dtype* d_delta_weight = _params[ParamType::Weight]->mutable_device_grad();
-	Dtype* d_weight = _params[ParamType::Weight]->mutable_device_data();
-	Dtype* d_delta_weight_prev = _paramsHistory[ParamType::Weight]->mutable_device_grad();
+	Dtype* d_weightGrad = _params[ParamType::Weight]->mutable_device_grad();
+	Dtype* d_weightData = _params[ParamType::Weight]->mutable_device_data();
+	Dtype* d_weightHistoryGrad = _paramsHistory[ParamType::Weight]->mutable_device_grad();
 
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_delta_weight, 1));								// normalize by batch size
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &reg_scale, d_weight, 1, d_delta_weight, 1));					// regularize
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &momentum, d_delta_weight_prev, 1));								//
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &learning_scale, d_delta_weight, 1, d_delta_weight_prev, 1));	// momentum
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &negative_one, d_delta_weight_prev, 1, d_weight, 1));			// update
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_weightGrad, 1));								// normalize by batch size
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &reg_scale, d_weightData, 1, d_weightGrad, 1));					// regularize
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &momentum, d_weightHistoryGrad, 1));								//
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &learning_scale, d_weightGrad, 1, d_weightHistoryGrad, 1));	// momentum
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &negative_one, d_weightHistoryGrad, 1, d_weightData, 1));			// update
 
-	//Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
-	//Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
-	//Util::printDeviceData(d_delta_weight_prev, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight_prev:");
-	_params[ParamType::Weight]->print_grad("d_delta_weight:");
-	_params[ParamType::Weight]->print_data("d_weight:");
-	_paramsHistory[ParamType::Weight]->print_grad("d_delta_weight_prev:");
+	_params[ParamType::Weight]->print_grad("weightGrad:");
+	_params[ParamType::Weight]->print_data("weightData:");
+	_paramsHistory[ParamType::Weight]->print_grad("weightHistoryGrad:");
 
 
 	int bias_size = this->out_dim.rows;
 	Dtype reg_scale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
 	Dtype learning_scale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
 
-	Dtype* d_delta_bias = _params[Bias]->mutable_device_grad();
-	Dtype* d_bias = _params[Bias]->mutable_device_data();
-	Dtype* d_delta_bias_prev = _paramsHistory[Bias]->mutable_device_grad();
+	Dtype* d_biasGrad = _params[Bias]->mutable_device_grad();
+	Dtype* d_biasData = _params[Bias]->mutable_device_data();
+	Dtype* d_biasHistoryGrad = _paramsHistory[Bias]->mutable_device_grad();
 
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_delta_bias, 1));								// normalize by batch size
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_bias, 1, d_delta_bias, 1));					// regularize
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_delta_bias_prev, 1));								//
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &learning_scale_b, d_delta_bias, 1, d_delta_bias_prev, 1));	// momentum
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_delta_bias_prev, 1, d_bias, 1));				// update
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_biasGrad, 1));								// normalize by batch size
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_biasData, 1, d_biasGrad, 1));					// regularize
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_biasHistoryGrad, 1));								//
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &learning_scale_b, d_biasGrad, 1, d_biasHistoryGrad, 1));	// momentum
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_biasHistoryGrad, 1, d_biasData, 1));				// update
 }
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_feedforward() {
-	_params[Weight]->print_data("d_weightData:");
-	this->_input->print_data("d_inputData:");
+	_params[Weight]->print_data("weightData:");
+	this->_input->print_data("inputData:");
 
 	// Apply weight to input data
 	const Dtype* d_weightData = _params[Weight]->device_data();
@@ -290,8 +220,8 @@ void FullyConnectedLayer<Dtype>::_feedforward() {
 			&Cuda::alpha, d_weightData, this->out_dim.rows, d_inputData, this->in_dim.rows,
 			&Cuda::beta, d_preActivationData, this->out_dim.rows));
 
-	_preActivation->print_data("d_preActivationData:");
-	_params[Bias]->print_data("d_biasData:");
+	_preActivation->print_data("preActivationData:");
+	_params[Bias]->print_data("biasData:");
 
 	// Add bias to weighted input data
 	const Dtype* d_biasData = _params[Bias]->device_data();
@@ -331,17 +261,7 @@ void FullyConnectedLayer<Dtype>::_feedforward() {
 	*/
 }
 
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_activationBackward() {
-	this->_output->print_data("output:");
 
-	const Dtype* d_y = this->_output->device_data();
-	const Dtype* d_dy = this->_output->device_grad();
-	const Dtype* d_x = this->_preActivation->device_data();
-	Dtype* d_dx = this->_preActivation->mutable_device_grad();
-
-	this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
-}
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_backpropagation() {
@@ -352,7 +272,7 @@ void FullyConnectedLayer<Dtype>::_backpropagation() {
 		Dropout<<<RoundUp(out_dim.batchsize(), BW), BW>>>(out_dim.batchsize(), d_delta_output, d_mask, 0, scale, d_delta_output);
 
 		Util::printData(mask, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/mask:"));
-		Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.batches, 1, 1, "d_delta_output:");
+		Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.batches, 1, 1, "delta_output:");
 		Util::setPrint(false);
 	}
 	*/
@@ -382,11 +302,27 @@ void FullyConnectedLayer<Dtype>::_backpropagation() {
 	}
 	*/
 
+	_computePreActivationGrad();
 	_computeWeightGrad();
 	_computeBiasGrad();
 	_computeInputGrad();
 
 }
+
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_computePreActivationGrad() {
+	this->_output->print_data("output:");
+
+	const Dtype* d_y = this->_output->device_data();
+	const Dtype* d_dy = this->_output->device_grad();
+	const Dtype* d_x = this->_preActivation->device_data();
+	Dtype* d_dx = this->_preActivation->mutable_device_grad();
+
+	this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
+}
+
+
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
@@ -402,9 +338,9 @@ void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
 
 	/*
 	Data<Dtype>::printConfig = 1;
-	this->_preActivation->print_grad("d_preActivationGrad:");
-	this->_input->print_data("d_inputData:");
-	this->_params[Weight]->print_grad("d_weightGrad");
+	this->_preActivation->print_grad("preActivationGrad:");
+	this->_input->print_data("inputData:");
+	this->_params[Weight]->print_grad("weightGrad");
 	Data<Dtype>::printConfig = 0;
 	*/
 
@@ -429,9 +365,9 @@ void FullyConnectedLayer<Dtype>::_computeBiasGrad() {
 			this->out_dim.rows, this->out_dim.batches,
 			&Cuda::alpha, d_preActivationGrad, this->out_dim.rows, d_onevec, 1,
 			&Cuda::beta, d_biasGrad, 1));
-	_params[Bias]->print_grad("d_biasGrad:");
-	_params[Weight]->print_data("d_weightData:");
-	_preActivation->print_grad("d_preActivationGrad");
+	_params[Bias]->print_grad("biasGrad:");
+	_params[Weight]->print_data("weightData:");
+	_preActivation->print_grad("preActivationGrad");
 }
 
 template <typename Dtype>
@@ -445,7 +381,7 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 			this->in_dim.rows, this->out_dim.batches, this->out_dim.rows,
 			&Cuda::alpha, d_weightData, this->out_dim.rows, d_preActivationGrad, this->out_dim.rows,
 			&Cuda::beta, d_inputGrad, this->in_dim.rows));
-	this->_input->print_grad("d_inputGrad:");
+	this->_input->print_grad("inputGrad:");
 
 	/*
 	if(this->_input->is_nan_grad()) {
@@ -466,7 +402,6 @@ template void FullyConnectedLayer<float>::_shape(bool recursive);
 template void FullyConnectedLayer<float>::_clearShape();
 template void FullyConnectedLayer<float>::update();
 template void FullyConnectedLayer<float>::_feedforward();
-template void FullyConnectedLayer<float>::_activationBackward();
 template void FullyConnectedLayer<float>::_backpropagation();
 
 
