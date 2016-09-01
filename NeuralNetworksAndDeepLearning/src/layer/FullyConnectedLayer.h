@@ -147,7 +147,12 @@ private:
 
 protected:
 	virtual void _feedforward();
+	virtual void _activationBackward();
 	virtual void _backpropagation();
+
+	void _computeWeightGrad();
+	void _computeBiasGrad();
+	void _computeInputGrad();
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();

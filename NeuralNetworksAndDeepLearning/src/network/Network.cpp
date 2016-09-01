@@ -352,6 +352,15 @@ double Network<Dtype>::computeSumSquareParamsData() {
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
 		sumsq += config->_learnableLayers[i]->sumSquareParamsData();
+		/*
+		float temp = config->_learnableLayers[i]->sumSquareParamsData();
+		if(isnan(temp)) {
+			Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
+			cout << layer->getName() << " computes sumsq nan at data ... " << endl;
+			exit(1);
+		}
+		sumsq += temp;
+		*/
 	}
 	return sumsq;
 }
@@ -361,8 +370,16 @@ double Network<Dtype>::computeSumSquareParamsGrad() {
 	uint32_t numLearnableLayers = config->_learnableLayers.size();
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
+		sumsq += config->_learnableLayers[i]->sumSquareParamsGrad();
+		/*
 		float temp = config->_learnableLayers[i]->sumSquareParamsGrad();
+		if(isnan(temp)) {
+			Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
+			cout << layer->getName() << " computes sumsq nan at grad ... " << endl;
+			exit(1);
+		}
 		sumsq += temp;
+		*/
 	}
 	return sumsq;
 }

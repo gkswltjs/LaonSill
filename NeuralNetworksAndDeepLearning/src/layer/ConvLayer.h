@@ -144,7 +144,12 @@ protected:
 			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType);
 
 	virtual void _feedforward();
+	virtual void _activationBackward();
 	virtual void _backpropagation();
+
+	void _computeFiltersGrad();
+	void _computeBiasesGrad();
+	void _computeInputGrad();
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();

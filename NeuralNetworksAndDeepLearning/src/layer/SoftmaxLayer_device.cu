@@ -34,23 +34,48 @@ __global__ void Dropout_(const int n, const Dtype* in, const Dtype* mask,
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
 	Util::printMessage("SoftmaxLayer::target()---"+string(this->name));
-
 	this->_target.set_mem(target, SyncMemCopyType::HostToDevice);
-	//_target.print("target:");
 
-	const Dtype* d_z = this->_preActivation->device_data();
-	const Dtype* d_output = this->_output->device_data();
-	const uint32_t* d_target = this->_target.device_mem();
-	//Dtype* d_delta = _preActivation->mutable_device_grad();
-	this->_output->reset_device_grad();
-	Dtype* d_delta = this->_output->mutable_device_grad();
-	this->cost_fn->backward(d_z, d_output, d_target, d_delta, this->out_dim.rows, this->out_dim.batches);
+	const Dtype* d_preActivationData = this->_preActivation->device_data();
+	const Dtype* d_outputData = this->_output->device_data();
+	const uint32_t* d_targetData = this->_target.device_mem();
 
-	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
-	this->_output->print_data("d_output:");
-	//_target.print("d_target:");
-	this->_output->print_grad("d_delta:");
+	// delta_output 구하는 단계를 넣을 경우, delta_output을 0으로 reset할 필요가 있음
+	// 0으로 reset한 후, target에 해당하는 element만 수정, (테스트 단계 임시로 여기서 reset)
+	//this->_output->reset_device_grad();
+	//Dtype* d_outputGrad = this->_output->mutable_device_grad();
+	Dtype* d_preActivationGrad = this->_preActivation->mutable_device_grad();
 
+	this->cost_fn->backward(d_preActivationData, d_outputData, d_targetData, d_preActivationGrad,
+			this->out_dim.rows, this->out_dim.batches);
+
+	/*
+	Data<Dtype>::printConfig = 1;
+	this->_output->print_data("d_outputData:");
+	this->_target.print("d_targetData:");
+	//this->_output->print_grad("d_delta:");
+	this->_preActivation->print_grad("d_preActivationGrad:");
+	Data<Dtype>::printConfig = 0;
+	*/
+
+
+	/*
+	if(this->_output->is_inf_grad()) {
+		cout << this->name << " output gradient inf ... skip this batch ... " << endl;
+		return;
+
+		//Data<Dtype>::printConfig = 1;
+		//this->_output->print_data("out:");
+		//this->_output->print_grad("deltaOut:");
+		//Data<Dtype>::printConfig = 0;
+		//exit(1);
+	}
+	*/
+
+
+
+
+	//OutputLayer<Dtype>::_activationBackward();
 	OutputLayer<Dtype>::_backpropagation();
 	OutputLayer<Dtype>::propBackpropagation();
 

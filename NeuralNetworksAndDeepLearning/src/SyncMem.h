@@ -109,6 +109,13 @@ public:
 	 */
 	double sumsq_device_mem();
 
+
+
+	bool is_nan_mem();
+	bool is_inf_mem();
+
+
+
 	/**
 	 * @details 메모리의 값을 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구

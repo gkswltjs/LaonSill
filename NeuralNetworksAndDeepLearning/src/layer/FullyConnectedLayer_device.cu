@@ -104,9 +104,9 @@ void FullyConnectedLayer<Dtype>::_shape(bool recursive) {
 
 	//weight = new Dtype[u_out*u_in];
 	//bias = new Dtype[u_out];
-	_params[ParamType::Weight]->reshape({1, 1, u_out*u_in, 1});
+	_params[ParamType::Weight]->reshape({1, 1, u_out, u_in});
 	_params[ParamType::Bias]->reshape({1, 1, u_out, 1});
-	_paramsHistory[ParamType::Weight]->reshape({1, 1, u_out*u_in, 1});
+	_paramsHistory[ParamType::Weight]->reshape({1, 1, u_out, u_in});
 	_paramsHistory[ParamType::Bias]->reshape({1, 1, u_out, 1});
 	_preActivation->reshape({this->out_dim.batches, 1, u_out, 1});
 
@@ -277,50 +277,39 @@ void FullyConnectedLayer<Dtype>::update() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_feedforward() {
-	//Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
-	_params[Weight]->print_data("d_weight:");
-	this->_input->print_data("d_input:");
+	_params[Weight]->print_data("d_weightData:");
+	this->_input->print_data("d_inputData:");
 
-	const Dtype* d_weight = _params[Weight]->device_data();
-	const Dtype* d_input = this->_input->device_data();
-	Dtype* d_z = _preActivation->mutable_device_data();
+	// Apply weight to input data
+	const Dtype* d_weightData = _params[Weight]->device_data();
+	const Dtype* d_inputData = this->_input->device_data();
+	Dtype* d_preActivationData = _preActivation->mutable_device_data();
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
 			this->out_dim.rows, this->out_dim.batches, this->in_dim.rows,
-			&Cuda::alpha,
-			d_weight, this->out_dim.rows,
-			d_input, this->in_dim.rows,
-			&Cuda::beta,
-			d_z, this->out_dim.rows));
+			&Cuda::alpha, d_weightData, this->out_dim.rows, d_inputData, this->in_dim.rows,
+			&Cuda::beta, d_preActivationData, this->out_dim.rows));
 
-	//Util::printDeviceData(d_z, out_dim.rows, out_dim.batches, 1, 1, "d_z:");
-	//Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "d_b:");
-	_preActivation->print_data("d_z:");
-	_params[Bias]->print_data("d_b:");
+	_preActivation->print_data("d_preActivationData:");
+	_params[Bias]->print_data("d_biasData:");
 
-	const Dtype* d_bias = _params[Bias]->device_data();
+	// Add bias to weighted input data
+	const Dtype* d_biasData = _params[Bias]->device_data();
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
 			this->out_dim.rows, this->out_dim.batches, 1,
 	    &Cuda::alpha,
-	    d_bias, this->out_dim.rows,
+	    d_biasData, this->out_dim.rows,
 	    d_onevec, 1,
 	    &Cuda::alpha,
-	    d_z, this->out_dim.rows));
+	    d_preActivationData, this->out_dim.rows));
 
-	Dtype* d_output = this->_output->mutable_device_data();
-	//const Dtype* h_output = _output->host_data();
-	//const Dtype* h_z = _preActivation->host_data();
+	// Activate weighted sum (+ bias)
+	Dtype* d_outputData = this->_output->mutable_device_data();
+	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_outputData);
 
-	activation_fn->forward(this->outputTensorDesc, d_z, d_output);
-
-	//Util::printDeviceData(d_z, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/d_z:"));
-	//Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/d_output:"));
-	_preActivation->print_data(this->name+string("/d_z:"));
-	this->_output->print_data(this->name+string("/d_output:"));
-
-
+	_preActivation->print_data(this->name+string("/d_preActivationData:"));
+	this->_output->print_data(this->name+string("/d_outputData:"));
 
 
 	/*
@@ -343,8 +332,19 @@ void FullyConnectedLayer<Dtype>::_feedforward() {
 }
 
 template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_activationBackward() {
+	this->_output->print_data("output:");
+
+	const Dtype* d_y = this->_output->device_data();
+	const Dtype* d_dy = this->_output->device_grad();
+	const Dtype* d_x = this->_preActivation->device_data();
+	Dtype* d_dx = this->_preActivation->mutable_device_grad();
+
+	this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
+}
+
+template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_backpropagation() {
-	Cuda::refresh();
 	/*
 	if(Util::train && p_dropout < 1.0f) {
 		//Util::setPrint(true);
@@ -356,7 +356,8 @@ void FullyConnectedLayer<Dtype>::_backpropagation() {
 		Util::setPrint(false);
 	}
 	*/
-	//Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, "output:");
+
+	/*
 	this->_output->print_data("output:");
 
 	const Dtype* d_output = this->_output->device_data();
@@ -364,67 +365,99 @@ void FullyConnectedLayer<Dtype>::_backpropagation() {
 	const Dtype* d_z = this->_preActivation->device_data();
 	Dtype* d_delta = this->_preActivation->mutable_device_grad();
 
-	//activation_fn->backward(d_output, d_delta_output, d_z, d_delta, outputTensorDesc);
 	this->activation_fn->backward(this->outputTensorDesc, d_output, d_delta_output, d_z, d_delta);
-
-	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
-	this->_preActivation->print_grad("d_delta:");
-
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.batches, 1, 1, "d_input:");
-	this->_input->print_data("d_input:");
-	const Dtype* d_input = this->_input->device_data();
-	Dtype* d_delta_weight = this->_params[Weight]->mutable_device_grad();
-
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T, this->out_dim.rows, this->in_dim.rows, this->out_dim.batches,
-			&Cuda::alpha, d_delta, this->out_dim.rows, d_input, this->in_dim.rows, &Cuda::beta, d_delta_weight, this->out_dim.rows));
-	//Util::printDeviceData(d_delta_weight, out_dim.rows, in_dim.rows, 1, 1, "d_delta_weight:");
-	_params[Weight]->print_grad("d_delta_weight:");
-
-	Dtype* d_delta_bias = _params[Bias]->mutable_device_grad();
-	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N, this->out_dim.rows, this->out_dim.batches,
-			&Cuda::alpha, d_delta, this->out_dim.rows, d_onevec, 1, &Cuda::beta, d_delta_bias, 1));
-	//Util::printDeviceData(d_delta_bias, out_dim.rows, 1, 1, 1, "d_delta_bias:");
-	_params[Bias]->print_grad("d_delta_bias:");
-
-	//Util::printDeviceData(d_weight, out_dim.rows, in_dim.rows, 1, 1, "d_weight:");
-	//Util::printDeviceData(d_delta, out_dim.rows, out_dim.batches, 1, 1, "d_delta:");
-	_params[Weight]->print_data("d_weight:");
-	_preActivation->print_grad("d_delta");
-
-	const Dtype* d_weight = _params[Weight]->device_data();
-	Dtype* d_delta_input = this->_input->mutable_device_grad();
-	//checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, in_dim.rows, out_dim.batches, out_dim.rows,
-			//&Cuda::alpha, d_weight, out_dim.rows, d_delta, out_dim.rows, &Cuda::beta, d_delta_input, in_dim.rows));
-
-	uint32_t status = cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, this->in_dim.rows, this->out_dim.batches, this->out_dim.rows,
-				&Cuda::alpha, d_weight, this->out_dim.rows, d_delta, this->out_dim.rows, &Cuda::beta, d_delta_input, this->in_dim.rows);
-	std::stringstream _error;
-	if (status != 0) {
-	  _error << "Cuda failure: " << status;
-	  FatalError(_error.str());
-	}
-
-
-	//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.batches, 1, 1, "d_delta_input:");
-	this->_input->print_grad("d_delta_input:");
+	*/
 
 	/*
-	 * rcube w_next_delta(size(output));
-	rcube sp;
-	activation_fn->backward(output, sp);
+	if(this->_preActivation->is_nan_grad()) {
+		cout << this->name << " _preActivation gradient nan ... " << endl;
 
-	// delta l = dC/dz
-	delta.slice(0) = w_next_delta.slice(0) % sp.slice(0);
+		Data<Dtype>::printConfig = 1;
+		this->_output->print_data("output:");
+		this->_output->print_grad("deltaOutput:");
+		this->_preActivation->print_data("preActivation:");
+		this->_preActivation->print_grad("delta:");
+		Data<Dtype>::printConfig = 0;
+		exit(1);
+	}
+	*/
 
-	nabla_b += delta.slice(0);
-	// delta lw = dC/dw
-	nabla_w += delta.slice(0)*input.slice(0).t();
+	_computeWeightGrad();
+	_computeBiasGrad();
+	_computeInputGrad();
 
-	// delta lx = dC/dx
-	delta_input.slice(0) = weight.t()*delta.slice(0);
-	//fc_layer->getWeight().t()*fc_layer->getDelta().slice(0)
-	 */
 }
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
+	// d(Cost)/d(Weight)
+	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	const Dtype* d_inputData = this->_input->device_data();
+	Dtype* d_weightGrad = this->_params[Weight]->mutable_device_grad();
+
+	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T,
+			this->out_dim.rows, this->in_dim.rows, this->out_dim.batches,
+			&Cuda::alpha, d_preActivationGrad, this->out_dim.rows, d_inputData, this->in_dim.rows,
+			&Cuda::beta, d_weightGrad, this->out_dim.rows));
+
+	/*
+	Data<Dtype>::printConfig = 1;
+	this->_preActivation->print_grad("d_preActivationGrad:");
+	this->_input->print_data("d_inputData:");
+	this->_params[Weight]->print_grad("d_weightGrad");
+	Data<Dtype>::printConfig = 0;
+	*/
+
+	/*
+	if(this->_params[Weight]->is_nan_grad()) {
+		cout << this->name << " _params weight gradient nan ... " << endl;
+		Data<Dtype>::printConfig = 1;
+		this->_params[Weight]->print_grad("deltaWeight:");
+		Data<Dtype>::printConfig = 0;
+		exit(1);
+	}
+	*/
+}
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_computeBiasGrad() {
+	// d(Cost)/d(Bias) (same as d_preActivationGrad)
+	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	Dtype* d_biasGrad = _params[Bias]->mutable_device_grad();
+
+	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N,
+			this->out_dim.rows, this->out_dim.batches,
+			&Cuda::alpha, d_preActivationGrad, this->out_dim.rows, d_onevec, 1,
+			&Cuda::beta, d_biasGrad, 1));
+	_params[Bias]->print_grad("d_biasGrad:");
+	_params[Weight]->print_data("d_weightData:");
+	_preActivation->print_grad("d_preActivationGrad");
+}
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_computeInputGrad() {
+	// d(Cost)/d(Input)
+	const Dtype* d_weightData = _params[Weight]->device_data();
+	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	Dtype* d_inputGrad = this->_input->mutable_device_grad();
+
+	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N,
+			this->in_dim.rows, this->out_dim.batches, this->out_dim.rows,
+			&Cuda::alpha, d_weightData, this->out_dim.rows, d_preActivationGrad, this->out_dim.rows,
+			&Cuda::beta, d_inputGrad, this->in_dim.rows));
+	this->_input->print_grad("d_inputGrad:");
+
+	/*
+	if(this->_input->is_nan_grad()) {
+		cout << this->name << " _input gradient nan ... " << endl;
+		Data<Dtype>::printConfig = 1;
+		this->_input->print_grad("deltaInput:");
+		Data<Dtype>::printConfig = 0;
+		exit(1);
+	}
+	*/
+}
+
 
 
 
@@ -433,6 +466,7 @@ template void FullyConnectedLayer<float>::_shape(bool recursive);
 template void FullyConnectedLayer<float>::_clearShape();
 template void FullyConnectedLayer<float>::update();
 template void FullyConnectedLayer<float>::_feedforward();
+template void FullyConnectedLayer<float>::_activationBackward();
 template void FullyConnectedLayer<float>::_backpropagation();
 
 

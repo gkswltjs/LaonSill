@@ -24,7 +24,7 @@ using namespace std;
 #define	LOG_WARN	2
 #define	LOG_ERROR	3
 
-#define LOG(fp, log_level, ...) log_print(fp, log_level, __FILE__, __LINE__, __func__, __VA_ARGS__ )
+#define LOG(fp, log_level, ...) log_print(fp, log_level, __FILE__, __LINE__, __func__, ##__VA_ARGS__ )
 void log_print(FILE *fp, int log_level, const char* filename, const int line, const char *func, char *fmt, ...);
 
 

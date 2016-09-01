@@ -25,16 +25,6 @@ ConvLayer<Dtype>::~ConvLayer() {
 
 	delete _preActivation;
 
-	//if(filters) delete [] filters;
-	//if(biases) delete [] biases;
-
-	//checkCudaErrors(cudaFree(d_z));
-	//checkCudaErrors(cudaFree(d_delta));
-	//checkCudaErrors(cudaFree(d_delta_input));
-	//checkCudaErrors(cudaFree(d_delta_weight));
-	//checkCudaErrors(cudaFree(d_delta_weight_prev));
-	//checkCudaErrors(cudaFree(d_delta_bias));
-	//checkCudaErrors(cudaFree(d_delta_bias_prev));
 	if(d_workspace) checkCudaErrors(cudaFree(d_workspace));
 
 	checkCUDNN(cudnnDestroyTensorDescriptor(biasTensorDesc));
@@ -57,19 +47,6 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 	this->bias_filler = bias_filler;
 
 	const int filter_size = filter_d.size();
-	//this->filters = new Dtype[filter_size];
-	//this->biases = new Dtype[filter_d.filters];
-
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_filters, sizeof(Dtype)*filter_size));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_biases, sizeof(Dtype)*filter_d.filters));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight, sizeof(Dtype)*filter_size));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_weight_prev, sizeof(Dtype)*filter_size));
-	//checkCudaErrors(cudaMemset(d_delta_weight_prev, 0, filter_size*sizeof(Dtype)));
-
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias, sizeof(Dtype)*filter_d.filters));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_bias_prev, sizeof(Dtype)*filter_d.filters));
-	//checkCudaErrors(cudaMemset(d_delta_bias_prev, 0, filter_d.filters*sizeof(Dtype)));
-
 
 	this->_params.resize(2);
 	this->_params[Filter] = new Data<Dtype>();
@@ -104,7 +81,6 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 			CUDNN_CROSS_CORRELATION));
 
 	this->activation_fn = ActivationFactory<Dtype>::create(activationType);
-	//checkCudaErrors(cudaDeviceSynchronize());
 }
 
 template <typename Dtype>
@@ -137,22 +113,20 @@ void ConvLayer<Dtype>::_shape(bool recursive) {
 	int b_in = this->in_dim.batchsize();
 	int b_out = this->out_dim.batchsize();
 
-	//weight_filler.fill(this->filters, filter_d.size(), filter_d.unitsize(), filter_d.filters);
-	//bias_filler.fill(this->biases, filter_d.filters, filter_d.unitsize(), filter_d.filters);
 	weight_filler.fill(_params[Filter]->mutable_host_data(), filter_d.size(), filter_d.unitsize(), filter_d.filters);
 	bias_filler.fill(_params[Bias]->mutable_host_data(), filter_d.filters, filter_d.unitsize(), filter_d.filters);
 
-	//Util::printData(this->filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, this->name+string("/filters:"));
-	//Util::printData(this->biases, filter_d.filters, 1, 1, 1, this->name+string("/biases:"));
+	/*
+	//if(this->name == "inception_3a/conv5x5") {
+	if(this->name == "convLayer2") {
+		cout << "shape()";
+		Data<Dtype>::printConfig = 1;
+		_params[Filter]->print_data(this->name+string("/filters:"));
+		_params[Bias]->print_data(this->name+string("/biases:"));
+		Data<Dtype>::printConfig = 0;
+	}
+	*/
 
-	_params[Filter]->print_data(this->name+string("/filters:"));
-	_params[Bias]->print_data(this->name+string("/biases:"));
-
-	//checkCudaErrors(cudaMemcpyAsync(this->d_filters, filters, sizeof(Dtype)*filter_d.size(), cudaMemcpyHostToDevice));
-	//checkCudaErrors(cudaMemcpyAsync(this->d_biases, biases, sizeof(Dtype)*filter_d.filters, cudaMemcpyHostToDevice));
-
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_z, sizeof(Dtype)*b_out));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(Dtype)*b_out));
 	_preActivation->reshape({this->out_dim.batches, this->out_dim.channels, this->out_dim.rows, this->out_dim.cols});
 
 	size_t convFwdWorkspaceSize;
@@ -200,14 +174,6 @@ void ConvLayer<Dtype>::_shape(bool recursive) {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_clearShape() {
-	//checkCudaErrors(cudaFree(d_z));
-	//checkCudaErrors(cudaFree(d_delta));
-	//checkCudaErrors(cudaFree(d_delta_input));
-
-	//d_z = 0;
-	//d_delta = 0;
-	//d_delta_input = 0;
-
 	delete _params[0];
 	delete _params[1];
 	//_params.clear();
@@ -321,6 +287,20 @@ void ConvLayer<Dtype>::update() {
 	Dtype* d_filters = _params[Filter]->mutable_device_data();
 	Dtype* d_delta_weight_prev = _paramsHistory[Filter]->mutable_device_grad();
 
+
+	/*
+	//if(this->name == "inception_3a/conv5x5") {
+	if(this->name == "convLayer2") {
+		cout << "update()" << endl;
+		Data<Dtype>::printConfig = 1;
+		_params[Filter]->print_data(this->name+string("/filters:"));
+		_params[Bias]->print_data(this->name+string("/biases:"));
+		Data<Dtype>::printConfig = 0;
+	}
+	*/
+
+
+
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_delta_weight, 1));								// normalize by batch size
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &reg_scale, d_filters, 1, d_delta_weight, 1));					// regularize
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &momentum, d_delta_weight_prev, 1));								//
@@ -346,45 +326,67 @@ void ConvLayer<Dtype>::update() {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_feedforward() {
-	//Util::setPrint(true);
-	//this->d_input = input;
-	//float alpha = 1.0f, beta = 0.0f;
 
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
-	//Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
-	this->_input->print_data("d_input:");
-	_params[Filter]->print_data("d_weight:");
+	/*
+	//if(this->name == "inception_3a/conv5x5") {
+	if(this->name == "convLayer2") {
+		cout << "feedforward()" << endl;
+		Data<Dtype>::printConfig = 1;
+		_params[Filter]->print_data(this->name+string("/filters:"));
+		_params[Bias]->print_data(this->name+string("/biases:"));
+		Data<Dtype>::printConfig = 0;
+	}
+	*/
 
-	const Dtype* d_filters = _params[Filter]->device_data();
-	const Dtype* d_input = this->_input->device_data();
-	Dtype* d_z = _preActivation->mutable_device_data();
+	// Apply filters to input data
+	const Dtype* d_inputData = this->_input->device_data();
+	const Dtype* d_filtersData = _params[Filter]->device_data();
+	Dtype* d_preActivationData = _preActivation->mutable_device_data();
 
 	checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle,
-			&Cuda::alpha, this->inputTensorDesc, d_input, filterDesc, d_filters, convDesc,
-			convFwdAlgo, d_workspace, workspaceSize, &Cuda::beta, this->outputTensorDesc, d_z));
-	//Util::printDeviceData(d_z, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_z:");
-	_preActivation->print_data("d_z:");
+			&Cuda::alpha, this->inputTensorDesc, d_inputData, filterDesc, d_filtersData, convDesc, convFwdAlgo, d_workspace, workspaceSize,
+			&Cuda::beta, this->outputTensorDesc, d_preActivationData));
+	_preActivation->print_data("d_preActivationData:");
 
-	//Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "d_biases:");
-	_params[Bias]->print_data("d_b:");
-	const Dtype* d_biases = _params[Bias]->device_data();
+
+	// Add bias to filtered input data
+	_params[Bias]->print_data("d_biasData:");
+	const Dtype* d_biasesData = _params[Bias]->device_data();
 	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
-			(void *)&Cuda::alpha, biasTensorDesc,	d_biases, (void *)&Cuda::alpha, this->outputTensorDesc, d_z));
-	Util::printDeviceData(d_z, this->out_dim.rows, this->out_dim.cols, this->out_dim.channels, this->out_dim.batches, "d_z:");
+			&Cuda::alpha, biasTensorDesc, d_biasesData,
+			&Cuda::alpha, this->outputTensorDesc, d_preActivationData));
+	_preActivation->print_data("d_preActivationData:");
 
+
+	// Activate filtered result
 	Dtype* d_output = this->_output->mutable_device_data();
-	activation_fn->forward(this->outputTensorDesc, d_z, d_output);
-
-	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
+	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_output);
 	this->_output->print_data(this->name+string("d_output:"));
-
 }
+
+
+template <typename Dtype>
+void ConvLayer<Dtype>::_activationBackward() {
+	this->_output->print_grad("d_delta_output:");
+	this->_output->print_data("output:");
+
+	const Dtype* d_output = this->_output->device_data();
+	const Dtype* d_delta_output = this->_output->device_grad();
+	const Dtype* d_z = _preActivation->device_data();
+	Dtype* d_delta = _preActivation->mutable_device_grad();
+
+	activation_fn->backward(this->outputTensorDesc, d_output, d_delta_output, d_z, d_delta);
+	this->_input->print_data("d_inputData:");
+	_preActivation->print_grad("d_preActivationGrad:");
+}
+
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_backpropagation() {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
-	Cuda::refresh();
+	//Cuda::refresh();
 
+	/*
 	//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_delta_output:");
 	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
 	this->_output->print_grad("d_delta_output:");
@@ -401,36 +403,109 @@ void ConvLayer<Dtype>::_backpropagation() {
 	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
 	_preActivation->print_grad("d_delta:");
 	this->_input->print_data("d_input:");
+	*/
 
-	const Dtype* d_input = this->_input->device_data();
-	Dtype* d_delta_weight = _params[Filter]->mutable_device_grad();
+	_computeFiltersGrad();
+	_computeBiasesGrad();
+	_computeInputGrad();
+
+}
+
+
+template <typename Dtype>
+void ConvLayer<Dtype>::_computeFiltersGrad() {
+	// d(Cost)/d(Filters)
+	const Dtype* d_inputData = this->_input->device_data();
+	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	Dtype* d_filtersGrad = _params[Filter]->mutable_device_grad();
+
+	/*
+	if(this->name == "convLayer1") {
+		Data<Dtype>::printConfig = 1;
+		_preActivation->print_grad("preActivationGrad:");
+		Data<Dtype>::printConfig = 0;
+	}
+	*/
+
 
 	checkCUDNN(cudnnConvolutionBackwardFilter(Cuda::cudnnHandle,
-			(void *)&Cuda::alpha, this->inputTensorDesc, d_input, this->outputTensorDesc, d_delta, convDesc, convBwdFilterAlgo,
-			d_workspace, workspaceSize,
-			(void *)&Cuda::beta, filterDesc, d_delta_weight));
-	//Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_delta_weight:");
-	_params[Filter]->print_grad("d_delta_weight:");
+			&Cuda::alpha, this->inputTensorDesc, d_inputData, this->outputTensorDesc, d_preActivationGrad, convDesc, convBwdFilterAlgo, d_workspace, workspaceSize,
+			&Cuda::beta, filterDesc, d_filtersGrad));
 
-	Dtype* d_delta_bias = _params[Bias]->mutable_device_grad();
+	/*
+	if(this->name == "convLayer1") {
+		Data<Dtype>::printConfig = 1;
+		_params[Filter]->print_grad("d_filtersGrad:");
+		Data<Dtype>::printConfig = 0;
+	}
+	*/
+
+	/*
+	if(_params[Filter]->is_nan_grad()) {
+		Data<Dtype>::printConfig = 1;
+		this->_input->print_data("input:");
+		_preActivation->print_grad("delta:");
+		_params[Filter]->print_grad("deltaWeight:");
+		Data<Dtype>::printConfig = 0;
+		exit(1);
+	}
+	*/
+	/*
+	if(this->_output->is_nan_grad()) {
+		cout << this->name << " output gradient nan ... " << endl;
+		exit(1);
+	}
+	*/
+}
+
+template <typename Dtype>
+void ConvLayer<Dtype>::_computeBiasesGrad() {
+	// d(Cost)/d(Biases)
+	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	Dtype* d_biasGrad = _params[Bias]->mutable_device_grad();
+
+	/*
+	if(this->name == "convLayer1") {
+		Data<Dtype>::printConfig = 1;
+		_preActivation->print_grad("d_preActivationGrad:");
+		Data<Dtype>::printConfig = 0;
+	}
+	*/
+
 	checkCUDNN(cudnnConvolutionBackwardBias(Cuda::cudnnHandle,
-			&Cuda::alpha, this->outputTensorDesc, d_delta, &Cuda::beta, biasTensorDesc, d_delta_bias));
-	//Util::printDeviceData(d_delta_bias, 1, 1, filter_d.filters, 1, "d_delta_bias:");
-	//Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
-	_params[Bias]->print_grad("d_delta_bias:");
-	_params[Filter]->print_data("d_weight:");
+			&Cuda::alpha, this->outputTensorDesc, d_preActivationGrad,
+			&Cuda::beta, biasTensorDesc, d_biasGrad));
 
-	const Dtype* d_filters = _params[Filter]->device_data();
-	Dtype* d_delta_input = this->_input->mutable_device_grad();
+	/*
+	if(this->name == "convLayer1") {
+		Data<Dtype>::printConfig = 1;
+		_params[Bias]->print_grad("d_biasesGrad:");
+		Data<Dtype>::printConfig = 0;
+	}
+	*/
+}
+
+template <typename Dtype>
+void ConvLayer<Dtype>::_computeInputGrad() {
+	// d(Cost)/d(Input)
+	const Dtype* d_filtersData = _params[Filter]->device_data();
+	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	Dtype* d_inputGrad = this->_input->mutable_device_grad();
 	checkCUDNN(cudnnConvolutionBackwardData(Cuda::cudnnHandle,
-			(void *)&Cuda::alpha, filterDesc, d_filters, this->outputTensorDesc, d_delta, convDesc, convBwdDataAlgo,
-			d_workspace, workspaceSize,
-			(void *)&Cuda::beta, this->inputTensorDesc, d_delta_input));
+			&Cuda::alpha, filterDesc, d_filtersData, this->outputTensorDesc, d_preActivationGrad, convDesc, convBwdDataAlgo, d_workspace, workspaceSize,
+			&Cuda::beta, this->inputTensorDesc, d_inputGrad));
+	this->_input->print_grad("d_inputGrad:");
+	_params[Filter]->print_data("d_filtersData:");
 
-	//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
-	//Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "d_filters:");
-	this->_input->print_grad("d_delta_input:");
-	_params[Filter]->print_data("d_filters:");
+	/*
+	//if(this->name == "inception_3a/conv5x5reduce") {
+	if(this->name == "inception_3a/conv1x1") {
+		double grad = _params[Filter]->sumsq_device_grad();
+		double data = _params[Filter]->sumsq_device_data();
+		//cout << "inception_3a/conv5x5reduce grad: " << grad << ", data:" << data << endl;
+		cout << "inception_3a/conv1x1 grad: " << grad << ", data:" << data << endl;
+	}
+	*/
 }
 
 
@@ -446,6 +521,7 @@ template void ConvLayer<float>::_save(ofstream &ofs);
 template void ConvLayer<float>::_load(ifstream &ifs, map<Layer<float>*, Layer<float>*> &layerMap);
 template void ConvLayer<float>::update();
 template void ConvLayer<float>::_feedforward();
+template void ConvLayer<float>::_activationBackward();
 template void ConvLayer<float>::_backpropagation();
 
 

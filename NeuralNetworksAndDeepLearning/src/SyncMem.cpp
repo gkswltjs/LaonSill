@@ -199,6 +199,35 @@ void SyncMem<Dtype>::checkMemValidity() {
 
 
 
+
+template <typename Dtype>
+bool SyncMem<Dtype>::is_nan_mem() {
+	checkDeviceMemAndUpdateHostMem(false);
+	const Dtype* data = _host_mem;
+
+	for(uint32_t i = 0; i < _size; i++) {
+		if(isnan(data[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+template <typename Dtype>
+bool SyncMem<Dtype>::is_inf_mem() {
+	checkDeviceMemAndUpdateHostMem(false);
+	const Dtype* data = _host_mem;
+
+	for(uint32_t i = 0; i < _size; i++) {
+		if(isinff(data[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
 template <typename Dtype>
 void SyncMem<Dtype>::print(const string& head) {
 	cout << "-------------------------------------" << endl;

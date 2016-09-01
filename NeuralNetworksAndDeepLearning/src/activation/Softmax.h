@@ -70,7 +70,8 @@ public:
 
 	void forward(const cudnnTensorDescriptor_t& desc, const Dtype* x, Dtype* y) {
 		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
-				&Cuda::alpha, desc, x, &Cuda::beta, desc, y));
+				&Cuda::alpha, desc, x,
+				&Cuda::beta, desc, y));
 	}
 
 	void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy, const Dtype* x, Dtype* dx) {

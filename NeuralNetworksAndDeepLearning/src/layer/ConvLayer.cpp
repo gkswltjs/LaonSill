@@ -46,6 +46,18 @@ double ConvLayer<Dtype>::sumSquareParamsGrad() {
 	double result = 0.0;
 	for(uint32_t i = 0; i < this->_params.size(); i++) {
 		result += this->_params[i]->sumsq_device_grad();
+		//float temp = this->_params[i]->sumsq_device_grad();
+		/*
+		if(isnan(temp) || isinff(temp) || (temp < 0.0000000001f && temp > -0.0000000001f)) {
+			//if(this->name =="inception_3a/conv5x5reduce") {
+				cout << "sumsq error .. " << endl;
+				Data<Dtype>::printConfig = 1;
+				this->_params[i]->print_grad(this->name+" sumsq params grad:");
+				Data<Dtype>::printConfig = 0;
+				exit(1);
+			//}
+		}*/
+		//result += temp;
 	}
 	return result;
 }

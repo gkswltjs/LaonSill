@@ -241,7 +241,7 @@ public:
 	inline uint32_t channels() const { return _shape[1]; }
 	/**
 	 * @details Data의 height shape를 조회한다.
-	 * @return Data의 height shape
+	 * @return Data의 height shaper
 	 */
 	inline uint32_t height() const { return _shape[2]; }
 	/**
@@ -249,6 +249,18 @@ public:
 	 * @return Data의 width shape
 	 */
 	inline uint32_t width() const { return _shape[3]; }
+
+
+
+
+	bool is_nan_data() { return _data.is_nan_mem(); }
+	bool is_nan_grad() { return _grad.is_nan_mem(); }
+	bool is_inf_data() { return _data.is_inf_mem(); }
+	bool is_inf_grad() { return _grad.is_inf_mem(); }
+
+
+
+
 
 	/**
 	 * @details 데이터를 shape에 따라 화면에 출력한다.

@@ -1,7 +1,4 @@
-#include <CImg.h>
-#include <stddef.h>
 #include <cstdint>
-#include <cstdlib>
 #include <iostream>
 #include <vector>
 
@@ -9,14 +6,13 @@
 #include "dataset/DataSet.h"
 #include "dataset/MockDataSet.h"
 #include "debug/Debug.h"
+#include "evaluation/Evaluation.h"
 #include "evaluation/Top1Evaluation.h"
 #include "evaluation/Top5Evaluation.h"
 #include "monitor/NetworkMonitor.h"
 #include "network/Network.h"
+#include "network/NetworkConfig.h"
 #include "Util.h"
-
-
-#include "layer/Layer.h"
 
 using namespace std;
 
@@ -43,19 +39,19 @@ void network_test() {
 	cout << "Cuda creation done ... " << endl;
 	Util::setPrint(false);
 
-	const uint32_t maxEpoch = 1000;
-	const uint32_t batchSize = 50;
+	const uint32_t maxEpoch = 100;
+	const uint32_t batchSize = 10;
 	const float baseLearningRate = 0.01f;
 	const float weightDecay = 0.0002f;
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 500.0f;
 
-	//DataSet* dataSet = new MockDataSet(28, 28, 1, 10, 10, 10);
-	//DataSet* dataSet = new MockDataSet(56, 56, 3, 10, 10, 10);
-	//DataSet* dataSet = new MnistDataSet(0.8);
-	//DataSet* dataSet = new MockDataSet(224, 224, 3, 100, 100, 100);
-	//DataSet* dataSet = createImageNet10CatDataSet();
-	//DataSet* dataSet = createImageNet100CatDataSet();
+	//DataSet<float>* dataSet = new MockDataSet<float>(28, 28, 1, 10, 10, 10);
+	//DataSet<float>* dataSet = new MockDataSet<float>(56, 56, 3, 10, 10, 10);
+	//DataSet<float>* dataSet = new MnistDataSet<float>(0.8);
+	//DataSet<float>* dataSet = new MockDataSet<float>(224, 224, 3, 100, 100, 100);
+	//DataSet<float>* dataSet = createImageNet10CatDataSet<float>();
+	//DataSet<float>* dataSet = createImageNet100CatDataSet<float>();
 	DataSet<float>* dataSet = createMnistDataSet<float>();
 	dataSet->load();
 	dataSet->zeroMean(true);
@@ -65,12 +61,12 @@ void network_test() {
 	NetworkListener* top1Listener = new NetworkMonitor(maxEpoch);
 	NetworkListener* top5Listener = new NetworkMonitor(maxEpoch);
 
-	//LayersConfig* layersConfig = createCNNSimpleLayersConfig();
+	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 	LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
-	//LayersConfig* layersConfig = createGoogLeNetLayersConfig();
-	//LayersConfig* layersConfig = createInceptionLayersConfig();
-	//LayersConfig* layersConfig = createGoogLeNetInception3ALayersConfig();
-	//LayersConfig* layersConfig = createGoogLeNetInception3ASimpleLayersConfig();
+	//LayersConfig<float>* layersConfig = createGoogLeNetLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createInceptionLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ASimpleLayersConfig<float>();
 
 	NetworkConfig<float>* networkConfig =
 			(new NetworkConfig<float>::Builder())

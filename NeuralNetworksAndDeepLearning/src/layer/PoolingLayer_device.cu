@@ -34,40 +34,35 @@ void PoolingLayer<Dtype>::_shape(bool recursive) {
 	if(recursive) {
 		HiddenLayer<Dtype>::_shape();
 	}
-
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta, sizeof(Dtype)*out_dim.batchsize()));
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(Dtype)*in_dim.batchsize()));
 }
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::_feedforward() {
-	//this->d_input = input;
-
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
 	this->_input->print_data("d_input:");
-	const Dtype* d_input = this->_input->device_data();
-	Dtype* d_output = this->_output->mutable_device_data();
-	pooling_fn->forward(this->inputTensorDesc, d_input, this->outputTensorDesc, d_output);
-
-	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, 1, 1, this->name+string("/d_output:"));
+	const Dtype* d_inputData = this->_input->device_data();
+	Dtype* d_outputData = this->_output->mutable_device_data();
+	pooling_fn->forward(this->inputTensorDesc, d_inputData,
+			this->outputTensorDesc, d_outputData);
 	this->_output->print_data(this->name+string("/d_output:"));
 }
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::_backpropagation() {
-	// backpropagate delta to delta_input
-	//Util::printDeviceData(d_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "d_output:");
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_input:");
-	this->_output->print_data("d_output:");
-	this->_input->print_data("d_input:");
+	this->_output->print_data("d_outputData:");
+	this->_input->print_data("d_inputData:");
+	/*
+	if(this->_output->is_nan_grad()) {
+		cout << this->name << " output gradient nan ... " << endl;
+		exit(1);
+	}
+	*/
+	const Dtype* d_outputData = this->_output->device_data();
+	const Dtype* d_outputGrad = this->_output->device_grad();
+	const Dtype* d_inputData = this->_input->device_data();
+	Dtype* d_inputGrad = this->_input->mutable_device_grad();
+	pooling_fn->backward(this->outputTensorDesc, d_outputData, d_outputGrad,
+			this->inputTensorDesc, d_inputData, d_inputGrad);
 
-	const Dtype* d_output = this->_output->device_data();
-	const Dtype* d_delta_output = this->_output->device_grad();
-	const Dtype* d_input = this->_input->device_data();
-	Dtype* d_delta_input = this->_input->mutable_device_grad();
-	pooling_fn->backward(this->outputTensorDesc, d_output, d_delta_output, this->inputTensorDesc, d_input, d_delta_input);
-
-	//Util::printDeviceData(d_delta_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "d_delta_input:");
 	this->_input->print_grad("d_delta_input:");
 }
 

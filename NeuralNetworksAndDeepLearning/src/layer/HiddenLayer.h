@@ -72,6 +72,11 @@ public:
 		if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
 
 		//_scaleGradient();
+
+
+		_activationBackward();
+
+
 		_backpropagation();
 		propBackpropagation();
 	}
@@ -85,6 +90,8 @@ protected:
 	virtual void _backpropagation() {
 		this->_input->set_device_grad(this->_output);
 	}
+
+	virtual void _activationBackward() {}
 
 	virtual void _shape(bool recursive=true) {
 		if(recursive) {
