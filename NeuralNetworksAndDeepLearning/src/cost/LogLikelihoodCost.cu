@@ -15,7 +15,7 @@
  * @param diff The resulting gradient.
  */
 
-
+/*
 template <typename Dtype>
 __global__ void SoftmaxLossBackprop(const uint32_t* label, int num_labels, int batch_size, Dtype *diff) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -25,8 +25,8 @@ __global__ void SoftmaxLossBackprop(const uint32_t* label, int num_labels, int b
 	// For each item in the batch, decrease the result of the label's value by 1
 	diff[idx * num_labels + label_value] -= 1.0f;
 }
+*/
 
-/*
 template <typename Dtype>
 __global__ void SoftmaxLossBackprop(
 		const Dtype *z,
@@ -48,7 +48,6 @@ __global__ void SoftmaxLossBackprop(
 	delta[idx * numLabels + targetValue] = -1.0/ayL;
 	//delta[idx * numLabels + targetValue] = -1.0/std::max(activation[idx*numLabels + targetValue], Dtype(FLT_MAX));
 }
-*/
 
 #endif
 
@@ -88,9 +87,10 @@ double LogLikelihoodCost<Dtype>::forward(const Dtype* output, const uint32_t* ta
 
 template <typename Dtype>
 void LogLikelihoodCost<Dtype>::backward(const Dtype *z, const Dtype *activation, const uint32_t *target, Dtype *delta, UINT numLabels, UINT batchsize) {
-	checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*numLabels*batchsize, cudaMemcpyDeviceToDevice));
-	//SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(z, activation, target, delta, numLabels, batchsize);
-	SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(target, numLabels, batchsize, delta);
+	//checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*numLabels*batchsize, cudaMemcpyDeviceToDevice));
+	//SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(target, numLabels, batchsize, delta);
+
+	SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(z, activation, target, delta, numLabels, batchsize);
 }
 
 

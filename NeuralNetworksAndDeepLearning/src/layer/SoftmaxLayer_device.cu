@@ -42,12 +42,17 @@ void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
 
 	// delta_output 구하는 단계를 넣을 경우, delta_output을 0으로 reset할 필요가 있음
 	// 0으로 reset한 후, target에 해당하는 element만 수정, (테스트 단계 임시로 여기서 reset)
-	//this->_output->reset_device_grad();
-	//Dtype* d_outputGrad = this->_output->mutable_device_grad();
-	Dtype* d_preActivationGrad = this->_preActivation->mutable_device_grad();
+	this->_output->reset_device_grad();
+	Dtype* d_outputGrad = this->_output->mutable_device_grad();
+	this->cost_fn->backward(d_preActivationData, d_outputData, d_targetData, d_outputGrad, this->out_dim.rows, this->out_dim.batches);
 
-	this->cost_fn->backward(d_preActivationData, d_outputData, d_targetData, d_preActivationGrad,
-			this->out_dim.rows, this->out_dim.batches);
+	//Dtype* d_preActivationGrad = this->_preActivation->mutable_device_grad();
+	//this->cost_fn->backward(d_preActivationData, d_outputData, d_targetData, d_preActivationGrad, this->out_dim.rows, this->out_dim.batches);
+
+
+
+
+
 
 	/*
 	Data<Dtype>::printConfig = 1;
@@ -75,7 +80,7 @@ void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
 
 
 
-	//OutputLayer<Dtype>::_activationBackward();
+	OutputLayer<Dtype>::_activationBackward();
 	OutputLayer<Dtype>::_backpropagation();
 	OutputLayer<Dtype>::propBackpropagation();
 
