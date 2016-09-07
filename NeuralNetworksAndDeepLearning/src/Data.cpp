@@ -206,6 +206,17 @@ double Data<Dtype>::sumsq_device_grad() {
 }
 
 
+template <typename Dtype>
+double Data<Dtype>::asum_device_data() {
+	return _data.asum_device_mem();
+}
+
+template <typename Dtype>
+double Data<Dtype>::asum_device_grad() {
+	return _grad.asum_device_mem();
+}
+
+
 
 
 

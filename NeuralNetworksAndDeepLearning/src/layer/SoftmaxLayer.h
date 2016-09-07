@@ -42,7 +42,7 @@ public:
 			OutputLayer<Dtype>::Builder::nOut(nOut);
 			return this;
 		}
-		Builder* pDropout(uint32_t pDropout) {
+		Builder* pDropout(double pDropout) {
 			OutputLayer<Dtype>::Builder::pDropout(pDropout);
 			return this;
 		}
@@ -100,7 +100,7 @@ public:
 	 * @param bias_filler bias 초기화 관련 파라미터 구조체
 	 */
 	SoftmaxLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler);
+			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler);
 	virtual ~SoftmaxLayer();
 
 	/**

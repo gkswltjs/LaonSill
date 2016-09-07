@@ -30,6 +30,10 @@ public:
 
 	void reshape(const vector<uint32_t>& shape);
 
+
+	size_t getCount() const { return _count; }
+
+
 	/**
 	 * @details 데이터의 수정할 수 없는 호스트 메모리 포인터 조회한다.
 	 * @return 데이터의 수정할 수 없는 호스트 메모리 포인터
@@ -229,6 +233,10 @@ public:
 	double sumsq_device_grad();
 
 
+	double asum_device_data();
+	double asum_device_grad();
+
+
 	/**
 	 * @details Data의 batch shape를 조회한다.
 	 * @return Data의 batch shape
@@ -257,6 +265,9 @@ public:
 	bool is_nan_grad() { return _grad.is_nan_mem(); }
 	bool is_inf_data() { return _data.is_inf_mem(); }
 	bool is_inf_grad() { return _grad.is_inf_mem(); }
+
+	uint32_t bound_data() { return _data.bound_mem(); }
+	uint32_t bound_grad() { return _grad.bound_mem(); }
 
 
 

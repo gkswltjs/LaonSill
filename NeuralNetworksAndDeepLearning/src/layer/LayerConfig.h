@@ -14,6 +14,7 @@
 #include <random>
 
 #include "../Util.h"
+#include "../Data.h"
 
 
 //typedef arma::fvec rvec;
@@ -149,12 +150,13 @@ struct update_param {
 /**
  * @brief 학습 파라미터 초기화 파라미터 구조체
  */
+template <typename Dtype>
 struct param_filler {
 	ParamFillerType type;	///< 파라미터 초기화 타입
-	double value;			///< 파라미터 초기화 관련 값
+	Dtype value;			///< 파라미터 초기화 관련 값
 
 	param_filler() {}
-	param_filler(ParamFillerType type, double value=0) {
+	param_filler(ParamFillerType type, Dtype value=0) {
 		this->type = type;
 		this->value = value;
 	}
@@ -220,30 +222,34 @@ struct param_filler {
 	 * @param n_in 레이어의 입력 노드 수
 	 * @param n_out 레이어의 출력 노드 수
 	 */
-	void fill(DATATYPE *param, int size, int n_in, int n_out) {
-		UINT i;
+	//void fill(DATATYPE *param, int size, int n_in, int n_out) {
+	void fill(Data<Dtype>* data) {
+		Dtype* mem = data->mutable_host_data();
 		switch(type) {
-		case ParamFillerType::Constant:
-		{
-			//memset(param, value, size);
-			for(int i = 0; i < size; i++) param[i] = value;
-		}
+		case ParamFillerType::Constant: {
+			size_t size = data->getCount();
+			for(uint32_t i = 0; i < size; i++) mem[i] = value;
 			break;
+		}
+		case ParamFillerType::Xavier: {
+			size_t size = data->getCount();
+			int fan_in = size / data->batches();
+			int fan_out = size / data->channels();
+			Dtype n = fan_in;
+			//Dtype n = (fan_in + fan_out)/Dtype(2);
+			//Dtype n = fan_out;
+			Dtype scale = sqrt(Dtype(3)/n);
 
-		// ret = Nd4j.randn(order, shape).divi(FastMath.sqrt(shape[0] + shape[1]));
-		// N(0, 1), {channel in, channel out, kernel x, kernel y},
-		case ParamFillerType::Xavier:
-		{
+
 			//float sd_xavier = sqrt(1.0f / (n_in+n_out));
 			//float sd_xavier = sqrt(3.0f / (n_out));
-
-			float sd_xavier = sqrt(3.0f / (n_in));
+			//float sd_xavier = sqrt(3.0f / (n_in));
 			//cout << "sd_xavier: " << sd_xavier << endl;
 			std::random_device rd_xavier;
 			std::mt19937 gen_xavier(rd_xavier());
 			//std::uni _distribution<DATATYPE> normal_dist(0.0, 1.0);
-			std::uniform_real_distribution<DATATYPE> unifrom_dist(-sd_xavier, sd_xavier);
-			for(i = 0; i < size; i++) param[i] = unifrom_dist(gen_xavier);
+			std::uniform_real_distribution<Dtype> unifrom_dist(-scale, scale);
+			for(uint32_t i = 0; i < size; i++) mem[i] = unifrom_dist(gen_xavier);
 
 			/*
 			std::random_device rd_xavier;
@@ -254,19 +260,20 @@ struct param_filler {
 			cout << "sd_xavier: " << sd_xavier << endl;
 			for(i = 0; i < size; i++) param[i] = normal_dist(gen_xavier);//*sd_xavier;
 			*/
-
-		}
 			break;
-		case ParamFillerType::Gaussian:
-		{
-			float sd_gaussian = sqrt(1.0f/n_out);
-			cout << "sd_gaussian: " << sd_gaussian << endl;
+		}
+		case ParamFillerType::Gaussian: {
+			size_t size = data->getCount();
+			int fan_in = size / data->batches();
+			int fan_out = size / data->channels();
+			Dtype scale = sqrt(1.0f/fan_out);
+			cout << "sd_gaussian: " << scale << endl;
 			std::random_device rd_gaussian;
 			std::mt19937 gen_gaussian(rd_gaussian());
-			std::normal_distribution<DATATYPE> normal_dist(0.0, sd_gaussian);
-			for(i = 0; i < size; i++) param[i] = normal_dist(gen_gaussian)*sd_gaussian;
-		}
+			std::normal_distribution<Dtype> normal_dist(0.0, scale);
+			for(uint32_t i = 0; i < size; i++) mem[i] = normal_dist(gen_gaussian)*scale;
 			break;
+		}
 		default:
 			break;
 		}

@@ -26,7 +26,7 @@ ConvLayer<Dtype>::ConvLayer(Builder* builder)
 
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType)
+		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType)
 	: HiddenLayer<Dtype>(name) {
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
@@ -45,7 +45,8 @@ template <typename Dtype>
 double ConvLayer<Dtype>::sumSquareParamsGrad() {
 	double result = 0.0;
 	for(uint32_t i = 0; i < this->_params.size(); i++) {
-		result += this->_params[i]->sumsq_device_grad();
+		double temp = this->_params[i]->sumsq_device_grad();
+		//temp /= _params[i]->getCount();
 		//float temp = this->_params[i]->sumsq_device_grad();
 		/*
 		if(isnan(temp) || isinff(temp) || (temp < 0.0000000001f && temp > -0.0000000001f)) {
@@ -57,7 +58,7 @@ double ConvLayer<Dtype>::sumSquareParamsGrad() {
 				exit(1);
 			//}
 		}*/
-		//result += temp;
+		result += temp;
 	}
 	return result;
 }
@@ -71,8 +72,13 @@ void ConvLayer<Dtype>::scaleParamsGrad(float scale) {
 
 
 
+template <typename Dtype>
+uint32_t ConvLayer<Dtype>::boundParams() {
+	uint32_t updateCount = _params[Filter]->bound_grad();
+	updateCount += _params[Bias]->bound_grad();
 
-
+	return updateCount;
+}
 
 
 #ifndef GPU_MODE

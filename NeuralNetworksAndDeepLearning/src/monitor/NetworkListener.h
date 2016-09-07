@@ -27,7 +27,14 @@ public:
 	 * @param cost epoch에서 계산된 cost값
 	 * @param accuracy epoch에서 계산된 정확도값
 	 */
-	virtual void epochComplete(float cost, float accuracy) = 0;
+	//virtual void epochComplete(float cost, float accuracy) = 0;
+
+	virtual void onCostComputed(const uint32_t index, const string name, const double cost) = 0;
+	virtual void onAccuracyComputed(const uint32_t index, const string name, const double accuracy) = 0;
+	virtual void onGradSumsqComputed(const uint32_t index, const string name, const double sumq) = 0;
+	virtual void onDataSumsqComputed(const uint32_t index, const string name, const double sumq) = 0;
+
+
 };
 
 #endif /* MONITOR_NETWORKLISTENER_H_ */

@@ -42,17 +42,28 @@ void LRNLayer<Dtype>::_feedforward() {
 
 template <typename Dtype>
 void LRNLayer<Dtype>::_backpropagation() {
-	this->_output->print_grad("outputGrad:");
+
 	const Dtype* d_outputData = this->_output->device_data();
 	const Dtype* d_outputGrad = this->_output->device_grad();
 	const Dtype* d_inputData = this->_input->device_data();
 	Dtype* d_inputGrad = this->_input->mutable_device_grad();
 	checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,
 			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
-			&Cuda::alpha, this->outputTensorDesc, d_outputData, this->outputTensorDesc, d_outputGrad, this->inputTensorDesc, d_inputData,
+			&Cuda::alpha, this->outputTensorDesc, d_outputData, this->outputTensorDesc, d_outputGrad,
+			this->inputTensorDesc, d_inputData,
 			&Cuda::beta, this->inputTensorDesc, d_inputGrad));
 
-	this->_input->print_grad("inputGrad:");
+	/*
+	if(this->_input->is_nan_grad()) {
+		Data<Dtype>::printConfig = 1;
+		this->_output->print_grad("outputGrad:");
+		this->_input->print_grad("inputGrad:");
+		Data<Dtype>::printConfig = 0;
+		exit(1);
+	}
+	*/
+
+
 }
 
 

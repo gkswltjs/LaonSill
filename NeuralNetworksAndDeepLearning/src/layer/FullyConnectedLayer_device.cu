@@ -97,8 +97,10 @@ void FullyConnectedLayer<Dtype>::_shape(bool recursive) {
 
 
 	//cout << this->name << ", fanin: " << u_out*u_in << endl;
-	weight_filler.fill(_params[ParamType::Weight]->mutable_host_data(), u_out*u_in, u_in, u_out);
-	bias_filler.fill(_params[ParamType::Bias]->mutable_host_data(), u_out, u_in, u_out);
+	//weight_filler.fill(_params[ParamType::Weight]->mutable_host_data(), u_out*u_in, u_in, u_out);
+	//bias_filler.fill(_params[ParamType::Bias]->mutable_host_data(), u_out, u_in, u_out);
+	weight_filler.fill(_params[ParamType::Weight]);
+	bias_filler.fill(_params[ParamType::Bias]);
 
 	_params[ParamType::Weight]->print_data("weight:");
 	_params[ParamType::Bias]->print_data("bias:");
@@ -114,8 +116,10 @@ void FullyConnectedLayer<Dtype>::_shape(bool recursive) {
 
 	checkCudaErrors(cudaDeviceSynchronize());
 
-	mask = new Dtype[b_out];
-	checkCudaErrors(Util::ucudaMalloc(&this->d_mask, sizeof(Dtype)*b_out));
+	//mask = new Dtype[b_out];
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_mask, sizeof(Dtype)*b_out));
+
+	_mask.reshape(b_out);
 }
 
 template <typename Dtype>
@@ -131,8 +135,8 @@ void FullyConnectedLayer<Dtype>::_clearShape() {
 	delete _preActivation;
 
 
-	if(mask) delete [] mask;
-	checkCudaErrors(cudaFree(d_mask));
+	//if(mask) delete [] mask;
+	//checkCudaErrors(cudaFree(d_mask));
 	HiddenLayer<Dtype>::_clearShape();
 }
 
@@ -164,6 +168,7 @@ void FullyConnectedLayer<Dtype>::update() {
 	Util::printDeviceData(d_bias, out_dim.rows, 1, 1, 1, "bias:");
 	*/
 
+	/*
 	int weight_size = this->in_dim.rows*this->out_dim.rows;
 	Dtype norm_scale = 1.0/this->in_dim.batches;
 	Dtype reg_scale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
@@ -203,7 +208,56 @@ void FullyConnectedLayer<Dtype>::update() {
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_biasHistoryGrad, 1));								//
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &learning_scale_b, d_biasGrad, 1, d_biasHistoryGrad, 1));	// momentum
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_biasHistoryGrad, 1, d_biasData, 1));				// update
+	*/
+
+
+	const uint32_t weightSize = this->in_dim.rows*this->out_dim.rows;
+	const Dtype regScale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
+	const Dtype learnScale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
+	_updateParam(weightSize, regScale, learnScale, _paramsHistory[Weight], _params[Weight]);
+
+	const uint32_t biasSize = this->out_dim.rows;
+	const Dtype regScale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
+	const Dtype learnScale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
+	_updateParam(biasSize, regScale_b, learnScale_b, _paramsHistory[Bias], _params[Bias]);
 }
+
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
+	const Dtype normScale = 1.0/this->in_dim.batches;
+	const Dtype momentum = this->networkConfig->_momentum;
+	const Dtype negativeOne = -1.0;
+
+	//Data<Dtype>::printConfig = 1;
+	data->print_grad("paramGrad:");
+	dataHistory->print_data("paramHistoryData:");
+	data->print_data("paramData:");
+
+	Dtype* d_paramGrad = data->mutable_device_grad();
+	Dtype* d_paramData = data->mutable_device_data();
+	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
+
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &normScale, d_paramGrad, 1));								// normalize by batch size
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &regScale, d_paramData, 1, d_paramGrad, 1));				// regularize
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &momentum, d_paramHistoryData, 1));						//
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &learnScale, d_paramGrad, 1, d_paramHistoryData, 1));		// momentum
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne, d_paramHistoryData, 1, d_paramData, 1));		// update
+
+	data->print_grad("paramGrad:");
+	dataHistory->print_data("paramHistoryData:");
+	data->print_data("paramData:");
+	//Data<Dtype>::printConfig = 0;
+}
+
+
+
+
+
+
+
+
+
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_feedforward() {
@@ -244,19 +298,21 @@ void FullyConnectedLayer<Dtype>::_feedforward() {
 
 	/*
 	// TODO skip when test
-	if(Util::train && p_dropout < 1.0f) {
-		int b_out = out_dim.batchsize();
-		for(int i = 0; i < b_out; i++) {
-			mask[i] = ((rand()/(RAND_MAX+1.0) > p_dropout)?1:0);
-		}
-		checkCudaErrors(cudaMemcpyAsync(d_mask, mask, sizeof(Dtype)*b_out, cudaMemcpyHostToDevice));
-		//FillOnes<<<RoundUp(in_dim.batches, BW), BW>>>(this->d_onevec, in_dim.batches);
-		Dropout<<<RoundUp(b_out, BW), BW>>>(b_out, d_output, d_mask, 0, scale, d_output);
+	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
+		int b_out = this->out_dim.batchsize();
+		Dtype* h_mask_mem = _mask.mutable_host_mem();
 
-		//Util::setPrint(true);
-		Util::printData(mask, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/mask:"));
-		Util::printDeviceData(d_output, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/d_output:"));
-		//Util::setPrint(false);
+		for(int i = 0; i < b_out; i++) {
+			h_mask_mem[i] = ((rand()/(RAND_MAX+1.0) > p_dropout)?1:0);
+		}
+		//checkCudaErrors(cudaMemcpyAsync(d_mask, mask, sizeof(Dtype)*b_out, cudaMemcpyHostToDevice));
+		//FillOnes<<<RoundUp(in_dim.batches, BW), BW>>>(this->d_onevec, in_dim.batches);
+
+		const Dtype* d_mask_mem = _mask.device_mem();
+		Dropout<<<RoundUp(b_out, BW), BW>>>(b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
+
+		_mask.print("mask:");
+		this->_output->print_data("outputData:");
 	}
 	*/
 }
@@ -265,17 +321,19 @@ void FullyConnectedLayer<Dtype>::_feedforward() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_backpropagation() {
-	/*
-	if(Util::train && p_dropout < 1.0f) {
-		//Util::setPrint(true);
-		Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.batches, 1, 1, "delta_input:");
-		Dropout<<<RoundUp(out_dim.batchsize(), BW), BW>>>(out_dim.batchsize(), d_delta_output, d_mask, 0, scale, d_delta_output);
 
-		Util::printData(mask, out_dim.rows, out_dim.batches, 1, 1, this->name+string("/mask:"));
-		Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.batches, 1, 1, "delta_output:");
-		Util::setPrint(false);
+	/*
+	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
+		this->_output->print_grad("outputGrad:");
+		const Dtype* d_mask_mem = _mask.device_mem();
+		Dtype* d_outputGrad = this->_output->mutable_device_grad();
+		Dropout<<<RoundUp(this->out_dim.batchsize(), BW), BW>>>(this->out_dim.batchsize(), d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
+
+		_mask.print("mask:");
+		this->_output->print_grad("outputGrad:");
 	}
 	*/
+
 
 	/*
 	this->_output->print_data("output:");
@@ -306,6 +364,14 @@ void FullyConnectedLayer<Dtype>::_backpropagation() {
 	_computeWeightGrad();
 	_computeBiasGrad();
 	_computeInputGrad();
+
+
+	if(_params[0]->is_nan_grad()) {
+		cout << this->name << " weight is nan grad ... " << endl;
+	}
+	if(_params[1]->is_nan_grad()) {
+		cout << this->name << " bias is nan grad ... " << endl;
+	}
 
 }
 
@@ -393,6 +459,37 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 	}
 	*/
 }
+
+
+
+template <typename Dtype>
+double FullyConnectedLayer<Dtype>::testParamAbnormality() {
+	const Dtype* weightGrad = _params[Weight]->host_grad();
+	const size_t count = _params[Weight]->getCount();
+
+	double mean = 0.0;
+	for(uint32_t i = 0; i < count; i++) {
+		mean += weightGrad[i];
+	}
+	mean /= count;
+
+	double sd = 0.0;
+	for(uint32_t i = 0; i < count; i++) {
+		sd += (weightGrad[i]-mean)*(weightGrad[i]-mean);
+	}
+	sd = sqrt(sd)/(count-1);
+
+	cout << this->name << ": mean: " << mean << ", sd: " << sd << endl;
+
+	for(uint32_t i = 0; i < count; i++) {
+		if(abs(weightGrad[i]-mean) > 10000*sd) {
+			return weightGrad[i];
+		}
+	}
+	return DBL_MAX;
+}
+
+
 
 
 

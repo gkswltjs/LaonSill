@@ -29,7 +29,7 @@
  * @details
  */
 template <typename Dtype>
-class ConvLayer : public HiddenLayer<Dtype>, public LearnableLayer {
+class ConvLayer : public HiddenLayer<Dtype>, public LearnableLayer<Dtype> {
 public:
 	/**
 	 * @brief 컨볼루션 레이어 객체 빌더
@@ -41,8 +41,8 @@ public:
 		filter_dim _filterDim;
 		update_param _weightUpdateParam;
 		update_param _biasUpdateParam;
-		param_filler _weightFiller;
-		param_filler _biasFiller;
+		param_filler<Dtype> _weightFiller;
+		param_filler<Dtype> _biasFiller;
 		typename Activation<Dtype>::Type _activationType;
 
 		Builder() {
@@ -126,7 +126,7 @@ public:
 	 * @param activationType 컨볼루션 결과에 적용할 활성화 타입
 	 */
 	ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType);
+			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 	/**
 	 * @details ConvLayer 소멸자
 	 */
@@ -139,9 +139,28 @@ public:
 	filter_dim &get_filter_dim() { return this->filter_d; }
 
 
+
+	//////////////////////////////////////////
+	// Learnable Layer Method
+	//////////////////////////////////////////
+	using HiddenLayer<Dtype>::getName;
+	virtual const string getName() { return this->name; }
+	virtual void update();
+	virtual double sumSquareParamsData();
+	virtual double sumSquareParamsGrad();
+	virtual void scaleParamsGrad(float scale);
+	virtual double testParamAbnormality();
+	virtual uint32_t boundParams();
+	//////////////////////////////////////////
+
+
+
+
+
+
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType);
+			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 
 	virtual void _feedforward();
 	virtual void _backpropagation();
@@ -156,14 +175,10 @@ protected:
 	virtual void _save(ofstream &ofs);
 	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
-	//////////////////////////////////////////
-	// Learnable Layer Method
-	//////////////////////////////////////////
-	virtual void update();
-	virtual double sumSquareParamsData();
-	virtual double sumSquareParamsGrad();
-	virtual void scaleParamsGrad(float scale);
-	//////////////////////////////////////////
+	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
+
+
+
 
 	enum ParamType {
 		Filter = 0,
@@ -176,12 +191,10 @@ protected:
 
 	update_param weight_update_param;				///< weight 갱신 관련 파라미터 구조체
 	update_param bias_update_param;					///< bias 갱신 관련 파라미터 구조체
-	param_filler weight_filler;						///< weight 초기화 관련 파라미터 구조체
-	param_filler bias_filler;						///< bias 초기화 관련 파라미터 구조체
+	param_filler<Dtype> weight_filler;						///< weight 초기화 관련 파라미터 구조체
+	param_filler<Dtype> bias_filler;						///< bias 초기화 관련 파라미터 구조체
 
-	Data<Dtype>* _preActivation;					///< 컨볼루션 결과에 대한 데이터
-	vector<Data<Dtype>*> _params;					///< 파리미터 데이터 (Filter, Bias 포함)
-	vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
+
 
 #ifndef GPU_MODE
 #else
@@ -195,6 +208,12 @@ protected:
 	size_t workspaceSize;							///< cudnn forward, backward에 필요한 작업공간 GPU 메모리 사이즈
 	void *d_workspace;								///< cudnn forward, backward에 필요한 작업공간 장치 메모리 포인터
 #endif
+
+public:
+	Data<Dtype>* _preActivation;					///< 컨볼루션 결과에 대한 데이터
+	vector<Data<Dtype>*> _params;					///< 파리미터 데이터 (Filter, Bias 포함)
+	vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
+
 
 };
 

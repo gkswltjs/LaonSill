@@ -22,6 +22,10 @@
 #include "../exception/Exception.h"
 #include "Layer_device.cu"
 #include "LayerFactory.h"
+#include "../network/NetworkConfig.h"
+
+
+
 
 
 template <typename Dtype>
@@ -177,8 +181,51 @@ void Layer<Dtype>::feedforward(uint32_t idx, Data<Dtype>* input, const char *end
 	_concat(idx, input);
 	if (!w_isLastPrevLayerRequest(idx, "Layer::feedforward()")) return;
 
+	/*
+	if(this->name == "inception_3a/depthConcat") {
+		Data<Dtype>::printConfig = 1;
+		this->_input->print_data("DepthConcat Concat ");
+		Data<Dtype>::printConfig = 0;
+		exit(1);
+	}
+	*/
+
+
 	//_scaleInput();
+	if(networkConfig->_status == NetworkStatus::Train) {
+		//cout << name << " input size is " << _input->sumsq_device_data()/_input->getCount() << endl;
+		//if(_input->is_nan_data()) {
+		//	cout << name << " input data is nan data ... " << endl;
+		//}
+	}
+
 	_feedforward();
+
+	if(networkConfig->_status == NetworkStatus::Train) {
+		//cout << name << " output size is " << _output->sumsq_device_data()/_output->getCount() << endl;
+		//if(_input->is_nan_data()) {
+		//	cout << name << " input data is nan data ... " << endl;
+		//}
+	}
+
+
+	/*
+	if(networkConfig->_status == NetworkStatus::Train && this->name == "softmaxLayer") {
+		if(_output->is_nan_data()) {
+			cout << name << " output data is nan data ... " << endl;
+			Data<Dtype>::printConfig = 1;
+			SoftmaxLayer<Dtype>* softmaxLayer = dynamic_cast<SoftmaxLayer<Dtype>*>(this);
+			softmaxLayer->_input->print_data("softmax input data: ");
+			softmaxLayer->_params[0]->print_data("softmax weight data: ");
+			softmaxLayer->_params[1]->print_data("softmax bias data: ");
+			softmaxLayer->_preActivation->print_data("softmax preActivation data: ");
+			softmaxLayer->_output->print_data("softmax output data: ");
+			Data<Dtype>::printConfig = 0;
+		}
+	}
+	*/
+
+
 	propFeedforward(end);
 }
 
@@ -257,8 +304,9 @@ void Layer<Dtype>::_reshape() {
 
 template <typename Dtype>
 void Layer<Dtype>::_feedforward() {
-	//checkCudaErrors(cudaMemcpyAsync(this->d_output, this->d_input, sizeof(Dtype)*in_dim.batchsize(), cudaMemcpyDeviceToDevice));
+	_input->print_data("input:");
 	_output->set_device_data(_input);
+	_output->print_data("output:");
 }
 
 template <typename Dtype>

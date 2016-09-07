@@ -13,8 +13,6 @@
 #include <cstring>
 
 
-bool Util::train = true;
-
 int Util::page = 0;
 int Util::start_page = 1000;
 int Util::end_page = 1500;
@@ -23,6 +21,7 @@ bool Util::print = false;
 size_t Util::cuda_mem = 0;
 int Util::alloc_cnt = 0;
 ostream *Util::outstream = &cout;
+//int Util::batchCount = 0;
 
 
 static const char *LEVEL_LABEL[4] = {"DEBUG","INFO ", "WARN ", "ERROR"};
@@ -173,7 +172,7 @@ void Util::printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT ch
 
 
 void Util::printMessage(string message) {
-	if(Util::print) {
+	if(true || Util::print) {
 		(*outstream) << message << endl;
 	}
 }

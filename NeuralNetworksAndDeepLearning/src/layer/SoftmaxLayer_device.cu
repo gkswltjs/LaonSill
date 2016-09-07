@@ -9,6 +9,7 @@
 #ifdef GPU_MODE
 
 #include "SoftmaxLayer.h"
+#include "../network/NetworkConfig.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // GPU Kernels
@@ -33,7 +34,15 @@ __global__ void Dropout_(const int n, const Dtype* in, const Dtype* mask,
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
-	Util::printMessage("SoftmaxLayer::target()---"+string(this->name));
+
+
+	//double asum = this->_output->asum_device_data() / this->out_dim.batches;
+	//cout << "asum of softmax output: " << asum << endl;
+
+
+
+
+	//Util::printMessage("SoftmaxLayer::target()---"+string(this->name));
 	this->_target.set_mem(target, SyncMemCopyType::HostToDevice);
 
 	const Dtype* d_preActivationData = this->_preActivation->device_data();
@@ -47,37 +56,28 @@ void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
 	this->cost_fn->backward(d_preActivationData, d_outputData, d_target, d_outputGrad, this->out_dim.rows, this->out_dim.batches);
 
 	//Dtype* d_preActivationGrad = this->_preActivation->mutable_device_grad();
-	//this->cost_fn->backward(d_preActivationData, d_outputData, d_targetData, d_preActivationGrad, this->out_dim.rows, this->out_dim.batches);
-
-
-
+	//this->cost_fn->backward(d_preActivationData, d_outputData, d_target, d_preActivationGrad, this->out_dim.rows, this->out_dim.batches);
 
 
 
 	/*
-	Data<Dtype>::printConfig = 1;
-	this->_output->print_data("outputData:");
-	this->_target.print("targetData:");
-	//this->_output->print_grad("delta:");
-	this->_preActivation->print_grad("preActivationGrad:");
-	Data<Dtype>::printConfig = 0;
-	*/
+	double output_cost_l2norm = this->_output->sumsq_device_grad();
+	output_cost_l2norm = sqrt(output_cost_l2norm);
+	cout << "output cost l2norm: " << output_cost_l2norm << endl;
 
-
-	/*
-	if(this->_output->is_inf_grad()) {
-		cout << this->name << " output gradient inf ... skip this batch ... " << endl;
-		return;
-
-		//Data<Dtype>::printConfig = 1;
-		//this->_output->print_data("out:");
-		//this->_output->print_grad("deltaOut:");
-		//Data<Dtype>::printConfig = 0;
-		//exit(1);
+	if(output_cost_l2norm > 10000) {
+		Data<Dtype>::printConfig = 1;
+		this->_output->print_grad("outputGrad:");
+		Data<Dtype>::printConfig = 0;
 	}
 	*/
 
 
+	if(this->networkConfig->_status == NetworkStatus::Train) {
+		if(this->_output->is_nan_grad()) {
+			cout << this->name << " output is nan grad ... " << endl;
+		}
+	}
 
 
 	//OutputLayer<Dtype>::_activationBackward();

@@ -73,13 +73,20 @@ void Network<Dtype>::sgd(int epochs) {
 
 	Timer timer1;
 	Timer timer2;
+
+
+	iterations = 0;
 	for(uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
-		Util::train = true;
+		config->_status = NetworkStatus::Train;
 
 		//dataSet->shuffleTrainDataSet();
 		timer1.start();
 		timer2.start();
 		for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
+			iterations++;
+
+			//Util::printMessage("iteration: " + to_string(iterations));
+
 			//if((batchIndex+1)%100 == 0) {
 			//	cout << "Minibatch " << batchIndex+1 << " started: " << timer2.stop(false) << endl;
 			//	timer2.start();
@@ -90,11 +97,19 @@ void Network<Dtype>::sgd(int epochs) {
 			inputLayer->reset_nabla(0);
 #endif
 			trainBatch(batchIndex);
+
+
+			//if(iterations >= 1000) {
+				//checkAbnormalParam();
+			//}
+
+
+
 			// UPDATE
 			applyUpdate();
 		}
-		Util::train = false;
 
+		config->_status = NetworkStatus::Test;
 		const uint32_t numTestData = dataSet->getNumTestData();
 		if(numTestData > 0) {
 			double cost = evaluateTestSet();
@@ -109,10 +124,19 @@ void Network<Dtype>::sgd(int epochs) {
 					", accuracy: " << accuracy << ", cost: " << cost <<
 					" :" << timer1.stop(false) << endl;
 
+			/*
 			for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
 				networkListeners[nl]->epochComplete(
 						evaluations[nl]->getCost()/numTestData,
 						(float)evaluations[nl]->getAccurateCount()/numTestData);
+			}
+			*/
+
+			for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
+				networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy", (double)evaluations[0]->getAccurateCount()/numTestData*100);
+				networkListeners[nl]->onAccuracyComputed(1, "top5_accuracy", (double)evaluations[1]->getAccurateCount()/numTestData*100);
+				//networkListeners[nl]->onCostComputed(0, "cost", evaluations[0]->getCost()/numTestData);
+				networkListeners[nl]->onCostComputed(0, "cost", cost);
 			}
 		}
 		else {
@@ -173,13 +197,14 @@ double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 	for(int i = 0; i < config->_evaluations.size(); i++) {
 		config->_evaluations[i]->evaluate(numLabels, in_dim.batches, output, y);
 	}
+	//cout << "cost at " << batchIndex << " " << cost << endl;
 
 	return cost;
 }
 
 template <typename Dtype>
 void Network<Dtype>::test() {
-	Util::train = false;
+	config->_status = NetworkStatus::Test;
 	DataSet<Dtype>* dataSet = config->_dataSet;
 	vector<Evaluation<Dtype>*>& evaluations = config->_evaluations;
 
@@ -311,10 +336,31 @@ void Network<Dtype>::trainBatch(uint32_t batchIndex) {
 
 template <typename Dtype>
 void Network<Dtype>::applyUpdate() {
+
+	/*
+	for(uint32_t i = 0; i < config->_layers.size()-1; i++) {
+		Layer<Dtype>* layer = config->_layers[i];
+		if(layer->_input->is_nan_data()) {
+			cout << layer->getName() << " input is nan data " << endl;
+		}
+	}
+	for(uint32_t i = config->_layers.size()-2; i >= 0; i--) {
+		Layer<Dtype>* layer = config->_layers[i];
+		if(layer->_input->is_nan_grad()) {
+			cout << layer->getName() << " input is nan grad " << endl;
+		}
+	}
+	cout << "------------------------" << endl;
+	*/
+
+	checkLearnableParamIsNan();
 	clipGradients();
 
 	const uint32_t numLearnableLayers = config->_learnableLayers.size();
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
+		//uint32_t updateCount = config->_learnableLayers[i]->boundParams();
+		//if(updateCount > 0) Util::printMessage(config->_learnableLayers[i]->getName() + " bounded params ... " + to_string(updateCount));
+
 		config->_learnableLayers[i]->update();
 	}
 }
@@ -329,8 +375,8 @@ void Network<Dtype>::clipGradients() {
 	const double l2normParamsData = std::sqrt(sumsqParamsData);
 
 	if(clipGradientsLevel < 0.0001) {
-		cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
-				", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
+		//cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
+		//		", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
 	} else {
 		if(l2normParamsGrad > clipGradientsLevel) {
 			const float scale_factor = clipGradientsLevel / (l2normParamsGrad*1);
@@ -351,16 +397,12 @@ double Network<Dtype>::computeSumSquareParamsData() {
 	uint32_t numLearnableLayers = config->_learnableLayers.size();
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		sumsq += config->_learnableLayers[i]->sumSquareParamsData();
-		/*
-		float temp = config->_learnableLayers[i]->sumSquareParamsData();
-		if(isnan(temp)) {
-			Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
-			cout << layer->getName() << " computes sumsq nan at data ... " << endl;
-			exit(1);
+		double temp = config->_learnableLayers[i]->sumSquareParamsData();
+		Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
+		if(layer) {
+			config->_networkListeners[0]->onDataSumsqComputed(i, layer->getName(), std::sqrt(temp));
 		}
 		sumsq += temp;
-		*/
 	}
 	return sumsq;
 }
@@ -370,7 +412,40 @@ double Network<Dtype>::computeSumSquareParamsGrad() {
 	uint32_t numLearnableLayers = config->_learnableLayers.size();
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		sumsq += config->_learnableLayers[i]->sumSquareParamsGrad();
+		double temp = config->_learnableLayers[i]->sumSquareParamsGrad();
+
+
+		//double l2norm = std::sqrt(temp);
+		//if(l2norm > config->_clipGradientsLevel) {}
+
+		Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
+		if(layer) {
+
+
+
+
+
+
+
+
+
+
+
+			config->_networkListeners[0]->onGradSumsqComputed(i, layer->getName(), std::sqrt(temp));
+			//cout << layer->getName() << ", grad l2-norm: " << std::sqrt(temp) << endl;
+			/*
+			if(layer->getName() == "conv1_7x7_s2") {
+				config->_networkListeners[0]->onGradSumsqComputed(0, layer->getName(), std::sqrt(temp));
+			}
+			else if(layer->getName() == "conv2_3x3") {
+				config->_networkListeners[0]->onGradSumsqComputed(1, layer->getName(), std::sqrt(temp));
+			}
+			else if(layer->getName() == "softmaxLayer") {
+				config->_networkListeners[0]->onGradSumsqComputed(2, layer->getName(), std::sqrt(temp));
+			}
+			*/
+		}
+		sumsq += temp;
 		/*
 		float temp = config->_learnableLayers[i]->sumSquareParamsGrad();
 		if(isnan(temp)) {
@@ -391,6 +466,114 @@ void Network<Dtype>::scaleParamsGrad(float scale) {
 		config->_learnableLayers[i]->scaleParamsGrad(scale);
 	}
 }
+
+
+
+
+
+template <typename Dtype>
+void Network<Dtype>::checkAbnormalParam() {
+	const uint32_t numLearnableLayers = config->_learnableLayers.size();
+	for(uint32_t i = 0; i < numLearnableLayers; i++) {
+		double testResult = config->_learnableLayers[i]->testParamAbnormality();
+
+		if(testResult < DBL_MAX-1) {
+
+			Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
+			cout << layer->getName() << " test failed ... : " << testResult << endl;
+
+			Data<Dtype>::printConfig = 1;
+
+			cout << "checkAbnormalParam ... " << endl;
+			FullyConnectedLayer<Dtype>* fullyConnectedLayer = dynamic_cast<FullyConnectedLayer<Dtype>*>(config->_learnableLayers[i]);
+			if(fullyConnectedLayer) {
+				fullyConnectedLayer->_params[0]->print_grad(fullyConnectedLayer->getName()+" at "+to_string(testResult));
+			} else {
+				ConvLayer<Dtype>* convLayer = dynamic_cast<ConvLayer<Dtype>*>(config->_learnableLayers[i]);
+				if(convLayer) {
+					convLayer->_params[0]->print_grad(convLayer->getName()+" at "+to_string(testResult));
+				}
+			}
+
+			cout << "print input, output of layers ... " << endl;
+			const uint32_t numLayers = config->_layers.size();
+			for(uint32_t j = 0; j < numLayers; j++) {
+				config->_layers[i]->_input->print_data(config->_layers[i]->getName()+": inputData:");
+				config->_layers[i]->_output->print_data(config->_layers[i]->getName()+": outputData:");
+				config->_layers[i]->_input->print_grad(config->_layers[i]->getName()+": inputGrad:");
+				config->_layers[i]->_output->print_grad(config->_layers[i]->getName()+": outputGrad:");
+			}
+
+			Data<Dtype>::printConfig = 0;
+
+			exit(1);
+		}
+	}
+}
+
+
+template <typename Dtype>
+void Network<Dtype>::checkLearnableParamIsNan() {
+
+	/*
+	const uint32_t numLayers = config->_layers.size();
+	for(uint32_t i = 0; i < numLayers; i++) {
+		Layer<Dtype>* layer = config->_layers[i];
+
+		if(layer) {
+			if(layer->_input->is_nan_data()) {
+				cout << layer->getName() << " input data is nan data ... " << endl;
+			}
+			if(layer->_output->is_nan_data()) {
+				cout << layer->getName() << " output data is nan data ... " << endl;
+			}
+		}
+	}
+
+
+	for(uint32_t i = numLayers-1; i >= 0; i++) {
+
+	}
+	*/
+
+
+
+	/*
+	const uint32_t numLearnableLayers = config->_learnableLayers.size();
+	for(uint32_t i = 0; i < numLearnableLayers; i++) {
+		FullyConnectedLayer<Dtype>* fullyConnectedLayer = dynamic_cast<FullyConnectedLayer<Dtype>*>(config->_learnableLayers[i]);
+		if(fullyConnectedLayer) {
+			if(fullyConnectedLayer->_params[0]->is_nan_grad()) {
+				cout << fullyConnectedLayer->getName() << " is nan grad ... " << endl;
+			}
+		} else {
+			ConvLayer<Dtype>* convLayer = dynamic_cast<ConvLayer<Dtype>*>(config->_learnableLayers[i]);
+			if(convLayer) {
+				if(convLayer->_params[0]->is_nan_grad()) {
+					cout << convLayer->getName() << " is nan grad ... " << endl;
+				}
+			}
+		}
+	}
+	*/
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template <typename Dtype>
 void Network<Dtype>::shape(io_dim in_dim) {

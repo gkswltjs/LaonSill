@@ -26,6 +26,13 @@ void DepthConcatLayer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 	// 이전 레이어들의 전달값을 batch 단위로 합쳐서 다음 레이어로 전달
 	// 한 batch내에서의 해당 이전 레이어 전달값의 offset 위치 계산
 
+	/*
+	Data<Dtype>::printConfig = 1;
+	input->print_data("DepthConcat Input " + to_string(idx));
+	Data<Dtype>::printConfig = 0;
+	*/
+
+
 	int inBatchOffset = 0;
 	int i = 0;
 	while(i < this->prevLayers.size() && this->prevLayers[i]->getId() != idx) {
@@ -34,8 +41,6 @@ void DepthConcatLayer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 	}
 	io_dim prev_out_dim = this->prevLayers[i]->getOutDimension();
 
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, "input:");
-	//Util::printDeviceData(input, prev_out_dim.rows, prev_out_dim.cols, prev_out_dim.channels, prev_out_dim.batches, "input:");
 	this->_input->print_data("inputData:");
 	input->print_data("param inputData:");
 
@@ -46,11 +51,12 @@ void DepthConcatLayer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 				sizeof(Dtype)*prev_out_dim.unitsize(), cudaMemcpyDeviceToDevice));
 	}
 
-	//Util::printDeviceData(d_input, in_dim.rows, in_dim.cols, in_dim.channels, in_dim.batches, this->name+string("/d_input:"));
-	this->_input->print_data(this->name+string("/d_input:"));
+	//input->print_data("input:");
+	//this->_input->print_data("inputData:");
 }
 
 
+/*
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::_deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset) {
 #ifdef DEPTHCONCAT_LOG
@@ -95,11 +101,51 @@ void DepthConcatLayer<Dtype>::_deconcat(uint32_t idx, Data<Dtype>* next_delta_in
 	}
 	this->_output->print_grad("outputGrad:");
 }
+*/
+
+
+
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::_backpropagation() {
+	const Dtype* d_outputGrad = this->_output->device_grad();
+	Dtype* d_inputGrad = this->_input->mutable_device_grad();
+
+	uint32_t unitOffset = 0;
+	uint32_t batchOffset = 0;
+
+	for(uint32_t prevLayerIndex = 0; prevLayerIndex < this->prevLayers.size(); prevLayerIndex++) {
+		if(prevLayerIndex > 0) {
+			unitOffset += this->prevLayers[prevLayerIndex-1]->getOutDimension().unitsize();
+			batchOffset += this->prevLayers[prevLayerIndex-1]->getOutDimension().batchsize();
+		}
+		for(uint32_t batchIndex = 0; batchIndex < this->out_dim.batches; batchIndex++) {
+			/*
+			checkCudaErrors(cublasSaxpy(Cuda::cublasHandle,
+					static_cast<int>(this->prevLayers[prevLayerIndex]->getOutDimension().unitsize()),
+					&Cuda::alpha,
+					d_outputGrad + this->out_dim.unitsize()*batchIndex + unitOffset,
+					1,
+					d_inputGrad + batchOffset + this->prevLayers[prevLayerIndex]->getOutDimension().unitsize()*batchIndex,
+					1));
+					*/
+
+			checkCudaErrors(cudaMemcpyAsync(
+					d_inputGrad + batchOffset + this->prevLayers[prevLayerIndex]->getOutDimension().unitsize()*batchIndex,
+					d_outputGrad + this->out_dim.unitsize()*batchIndex + unitOffset,
+					sizeof(Dtype)*this->prevLayers[prevLayerIndex]->getOutDimension().unitsize(),
+					cudaMemcpyDeviceToDevice));
+		}
+	}
+	this->_output->print_grad("outputGrad:");
+	this->_input->print_grad("inputGrad:");
+}
+
 
 
 template void DepthConcatLayer<float>::initialize();
 template void DepthConcatLayer<float>::_concat(uint32_t idx, Data<float>* input);
-template void DepthConcatLayer<float>::_deconcat(uint32_t idx, Data<float>* next_delta_input, uint32_t offset);
+template void DepthConcatLayer<float>::_backpropagation();
+//template void DepthConcatLayer<float>::_deconcat(uint32_t idx, Data<float>* next_delta_input, uint32_t offset);
 
 
 #endif

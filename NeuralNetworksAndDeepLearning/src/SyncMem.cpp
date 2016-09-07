@@ -9,9 +9,20 @@
 #include "cuda/Cuda.h"
 #include <cstring>
 #include <limits>
-
+#include <cmath>
+#include <cfloat>
 
 //#define SYNCMEM_LOG
+
+#define MEM_MAX (FLT_MAX / 10)
+
+
+
+template <typename Dtype>
+ostream *SyncMem<Dtype>::outstream = &cout;
+
+
+
 
 
 template <typename Dtype>
@@ -21,6 +32,14 @@ SyncMem<Dtype>::SyncMem() {
 	_host_mem = NULL;
 	_device_mem = NULL;
 
+
+
+	checkCudaErrors(Util::ucudaMalloc(&_d_int, sizeof(uint32_t)));
+	checkCudaErrors(Util::ucudaMalloc(&_d_bool, sizeof(bool)));
+
+
+
+
 	_host_mem_updated = false;
 	_device_mem_updated = false;
 }
@@ -29,6 +48,9 @@ template <typename Dtype>
 SyncMem<Dtype>::~SyncMem() {
 	if(_host_mem) delete [] _host_mem;
 	if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
+
+	if(_d_int) checkCudaErrors(cudaFree(_d_int));
+	if(_d_bool) checkCudaErrors(cudaFree(_d_bool));
 }
 
 template <typename Dtype>
@@ -157,6 +179,17 @@ double SyncMem<float>::sumsq_device_mem() {
 	return (double)sumsq;
 }
 
+template <>
+double SyncMem<float>::asum_device_mem() {
+	float asum;
+	const float* _mem = device_mem();
+	checkCudaErrors(cublasSasum(Cuda::cublasHandle, _size, _mem, 1, &asum));
+
+	return (double)asum;
+}
+
+
+
 
 template <typename Dtype>
 void SyncMem<Dtype>::checkDeviceMemAndUpdateHostMem(bool reset) {
@@ -198,8 +231,6 @@ void SyncMem<Dtype>::checkMemValidity() {
 }
 
 
-
-
 template <typename Dtype>
 bool SyncMem<Dtype>::is_nan_mem() {
 	checkDeviceMemAndUpdateHostMem(false);
@@ -226,12 +257,40 @@ bool SyncMem<Dtype>::is_inf_mem() {
 	return false;
 }
 
+/*
+template <>
+bool SyncMem<float>::bound_mem() {
+	//const float* d_mem = device_mem();
+	//float asum = 0;
+	//checkCudaErrors(cublasSasum(Cuda::cublasHandle, static_cast<int>(_size), d_mem, 1, &asum));
+	//float bound = 1000*(asum / _size);
+
+	float* h_mem = mutable_host_mem();
+	//double average = 0.0;
+	int updateCount = 0;
+	for(size_t i = 0; i < _size; i++) {
+		//if(std::abs(h_mem[i]) > bound) {
+			//h_mem[i] = (h_mem[i]>0)?bound:-bound;
+		if(h_mem[i] > 10) {
+			h_mem[i] = 10;
+			updateCount++;
+		}
+		//}
+	}
+	if(updateCount > 0) return true;
+	return false;
+	//cout << "bounded " << updateCount << " elements ... " << endl;
+}
+*/
+
+
+
 
 
 template <typename Dtype>
 void SyncMem<Dtype>::print(const string& head) {
-	cout << "-------------------------------------" << endl;
-	cout << "name: " << head << " of size: " << _size << endl;
+	(*outstream) << "-------------------------------------" << endl;
+	(*outstream) << "name: " << head << " of size: " << _size << endl;
 
 	// print()실행시 updated flag를 reset,
 	// mutable pointer 조회하여 계속 업데이트할 경우 print() 이후의 update가 반영되지 않음.
@@ -240,15 +299,15 @@ void SyncMem<Dtype>::print(const string& head) {
 	const Dtype* data = _host_mem;
 	const uint32_t printSize = std::min(10, (int)_size);
 	for(uint32_t i = 0; i < printSize; i++) {
-		cout << data[i] << ", ";
+		(*outstream) << data[i] << ", ";
 	}
-	cout << endl << "-------------------------------------" << endl;
+	(*outstream) << endl << "-------------------------------------" << endl;
 }
 
 template <typename Dtype>
 void SyncMem<Dtype>::print(const string& head, const std::vector<uint32_t>& shape) {
 	if(shape.size() != 4) {
-		cout << "shape size should be 4 ... " << endl;
+		(*outstream) << "shape size should be 4 ... " << endl;
 		exit(1);
 	}
 	checkDeviceMemAndUpdateHostMem(false);
@@ -263,9 +322,9 @@ void SyncMem<Dtype>::print(const string& head, const std::vector<uint32_t>& shap
 	const uint32_t channels = shape[1];
 	const uint32_t batches = shape[0];
 
-	cout << "-------------------------------------" << endl;
-	cout << "name: " << head << endl;
-	cout << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
+	(*outstream) << "-------------------------------------" << endl;
+	(*outstream) << "name: " << head << endl;
+	(*outstream) << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
 
 	UINT batchElem = rows*cols*channels;
 	UINT channelElem = rows*cols;
@@ -275,15 +334,15 @@ void SyncMem<Dtype>::print(const string& head, const std::vector<uint32_t>& shap
 				for(l = 0; l < cols; l++) {
 			//for(k = 0; k < std::min(10, (int)rows); k++) {
 			//	for(l = 0; l < std::min(10, (int)cols); l++) {
-					cout << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+					(*outstream) << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
 				}
-				cout << endl;
+				(*outstream) << endl;
 			}
-			cout << endl;
+			(*outstream) << endl;
 		}
-		cout << endl;
+		(*outstream) << endl;
 	}
-	cout << "-------------------------------------" << endl;
+	(*outstream) << "-------------------------------------" << endl;
 
 }
 

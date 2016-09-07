@@ -15,6 +15,7 @@
  * @param diff The resulting gradient.
  */
 
+
 /*
 template <typename Dtype>
 __global__ void SoftmaxLossBackprop(const uint32_t* label, int num_labels, int batch_size, Dtype *diff) {
@@ -45,6 +46,10 @@ __global__ void SoftmaxLossBackprop(
 	if(ayL < Dtype(FLT_MIN)) {
 		ayL = Dtype(FLT_MIN);
 	}
+	//if(ayL < 0.01f) {
+	//	ayL = 0.01f;
+	//}
+
 	delta[idx * numLabels + targetValue] = -1.0/ayL;
 	//delta[idx * numLabels + targetValue] = -1.0/std::max(activation[idx*numLabels + targetValue], Dtype(FLT_MAX));
 }

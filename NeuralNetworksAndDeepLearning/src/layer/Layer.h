@@ -430,8 +430,7 @@ protected:
 	vector<Layer<Dtype>*> prevLayers;					///< 현재 레이어의 이전(입력) 레이어 목록 벡터
 	vector<Layer<Dtype>*> nextLayers;					///< 현재 레이어의 다음(출력) 레이어 목록 벡터
 
-	Data<Dtype>* _input;								///< 레이어 입력 데이터 및 그레디언트
-	Data<Dtype>* _output;								///< 레이어 출력 데이터 및 그레디언트
+
 
 #ifndef GPU_MODE
 #else
@@ -440,6 +439,15 @@ protected:
 #endif
 
 	static const int LAYER_NAME_LENGTH = 32;
+
+
+
+
+
+
+public:
+	Data<Dtype>* _input;								///< 레이어 입력 데이터 및 그레디언트
+	Data<Dtype>* _output;								///< 레이어 출력 데이터 및 그레디언트
 };
 
 

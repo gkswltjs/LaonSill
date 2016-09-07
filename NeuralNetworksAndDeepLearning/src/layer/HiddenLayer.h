@@ -10,6 +10,7 @@
 #define LAYER_HIDDENLAYER_H_
 
 #include "Layer.h"
+//#include "../network/NetworkConfig.h"
 
 
 /**
@@ -50,14 +51,10 @@ public:
 	};
 
 
-	HiddenLayer() {}
-	HiddenLayer(Builder* builder) : Layer<Dtype>(builder) {
-		for(uint32_t i = 0; i < builder->_prevLayerIndices.size(); i++) {
-			this->prevLayers.push_back((Layer<Dtype>*)((size_t)builder->_prevLayerIndices[i]));
-		}
-	}
-	HiddenLayer(const string name) : Layer<Dtype>(name) {}
-	virtual ~HiddenLayer() {}
+	HiddenLayer();
+	HiddenLayer(Builder* builder);
+	HiddenLayer(const string name);
+	virtual ~HiddenLayer();
 
 
 	/**
@@ -67,34 +64,17 @@ public:
 	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
 	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
 	 */
-	virtual void backpropagation(uint32_t idx, Data<Dtype>* next_input, uint32_t offset) {
-		_deconcat(idx, next_input, offset);
-		if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
-
-		//_scaleGradient();
-		//_activationBackward();
-		_backpropagation();
-		propBackpropagation();
-	}
-
+	virtual void backpropagation(uint32_t idx, Data<Dtype>* next_input, uint32_t offset);
 
 protected:
 	/**
 	 * @details 네트워크 cost의 다음 레이어의 입력에 관한 gradient값을 전달 받아
 	 *          현재 레이어의 parameter(parameter가 있는 경우), input에 관한 gradient를 계산한다.
 	 */
-	virtual void _backpropagation() {
-		this->_input->set_device_grad(this->_output);
-	}
+	virtual void _backpropagation();
 
-	virtual void _shape(bool recursive=true) {
-		if(recursive) {
-			Layer<Dtype>::_shape();
-		}
-	}
-	virtual void _clearShape() {
-		Layer<Dtype>::_clearShape();
-	}
+	virtual void _shape(bool recursive=true);
+	virtual void _clearShape();
 
 	/**
 	 * @details 복수의 '다음' 레이어로부터의 gradient를 조합한다.
@@ -102,55 +82,19 @@ protected:
 	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
 	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
 	 */
-	virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset) {
-		next_delta_input->print_grad("next_delta_input:");
-		this->_output->print_grad("outputGrad");
-		// 첫번째 branch로부터의 backpropagation, 그대로 copy
-		if(this->isFirstNextLayerRequest(idx)) {
-			this->_output->set_device_grad(next_delta_input, offset);
-		}
-		// 첫번째 이후의 branch로부터의 backpropagation, accumulate gradient
-		else {
-			this->_output->add_device_grad(next_delta_input, offset);
-		}
-		this->_output->print_grad("outputGrad:");
-	}
+	virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset);
 
 	/**
 	 * @details 복수의 '다음' 레이어로부터의 gradient들에 대해 branch의 수 기준으로 스케일링한다.
 	 *          _deconcat()이 gradient합산이 아닌 방식으로 구현된 경우 _scaleGradient() 역시 적절히 재정의해야 한다.
 	 */
-	virtual void _scaleGradient() {
-		if(this->nextLayers.size() > 1) {
-			float branchFactor = 1.0f / this->nextLayers.size();
-			//cout << this->name << "'s backpropagation branch factor is " << branchFactor << endl;
-			this->_output->scale_device_grad(branchFactor);
-		}
-	}
+	virtual void _scaleGradient();
 
 	/**
 	 * @details 이전 레이어들에 대해 backpropagation() 메쏘드를 호출한다.
 	 */
-	virtual void propBackpropagation() {
-		HiddenLayer *hiddenLayer;
-		for(uint32_t i = 0; i < this->prevLayers.size(); i++) {
-			hiddenLayer = dynamic_cast<HiddenLayer *>(this->prevLayers[i]);
-
-			// !!! 대부분의 경우 _backpropagation에서 사용한 inputGrad을 그대로 사용하므로 문제가 없지만
-			// DepthConcatLayer와 같이 inputGrad을 분배해야 하는 케이스가 있으므로 inputGrad을 그대로 사용하지 말고
-			// getter를 사용하여 이전 레이어에 inputGrad을 전달해야 한다.
-			if(hiddenLayer) {
-				//_distGradToPrev(i, hiddenLayer);
-				hiddenLayer->backpropagation(this->id, this->getInput(), 0);
-			}
-		}
-	}
-
+	virtual void propBackpropagation();
 };
-
-
-
-template class HiddenLayer<float>;
 
 
 

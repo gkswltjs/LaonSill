@@ -109,10 +109,13 @@ public:
 	 */
 	double sumsq_device_mem();
 
+	double asum_device_mem();
+
 
 
 	bool is_nan_mem();
 	bool is_inf_mem();
+	uint32_t bound_mem();
 
 
 
@@ -127,6 +130,16 @@ public:
 	 * @param shape 출력 포맷 shape (batches, columns, rows, columns)
 	 */
 	void print(const string& head, const std::vector<uint32_t>& shape);
+
+
+
+	static void setOutstream(ostream *outstream) {
+		SyncMem<Dtype>::outstream = outstream;
+	}
+	static void setOutstream(string outfile) {
+		SyncMem<Dtype>::outstream = new ofstream(outfile.c_str(), ios::out | ios::binary);
+	}
+
 
 
 private:
@@ -158,6 +171,15 @@ private:
 
 	bool _host_mem_updated;					///< 호스트 메모리 변경 여부 플래그
 	bool _device_mem_updated;				///< 디바이스 메모리 변경 여부 플래그
+
+	static ostream *outstream;				///< 로그 출력 스트림
+
+
+	uint32_t* _d_int;						///< 임시
+	uint32_t _h_int;
+	bool* _d_bool;
+	bool _h_bool;
+
 
 };
 

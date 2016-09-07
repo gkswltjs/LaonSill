@@ -24,14 +24,14 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer(Builder* builder)
 
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType)
+		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType)
 	: HiddenLayer<Dtype>(name) {
 	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType) {
+		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType) {
 	Cuda::refresh();
 
 	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
@@ -72,7 +72,9 @@ template <typename Dtype>
 double FullyConnectedLayer<Dtype>::sumSquareParamsGrad() {
 	double result = 0.0;
 	for(uint32_t i = 0; i < _params.size(); i++) {
-		result += _params[i]->sumsq_device_grad();
+		double temp = _params[i]->sumsq_device_grad();
+		//temp /= _params[i]->getCount();
+		result += temp;
 	}
 	return result;
 }
@@ -98,8 +100,8 @@ void FullyConnectedLayer<Dtype>::_save(ofstream &ofs) {
 	ofs.write((char *)&activationType, sizeof(int));
 	ofs.write((char *)&weight_update_param, sizeof(update_param));
 	ofs.write((char *)&bias_update_param, sizeof(update_param));
-	ofs.write((char *)&weight_filler, sizeof(param_filler));
-	ofs.write((char *)&bias_filler, sizeof(param_filler));
+	ofs.write((char *)&weight_filler, sizeof(param_filler<Dtype>));
+	ofs.write((char *)&bias_filler, sizeof(param_filler<Dtype>));
 
 
 	//checkCudaErrors(cudaMemcpyAsync(weight, d_weight, sizeof(Dtype)*out_dim.unitsize()*in_dim.unitsize(), cudaMemcpyDeviceToHost));
@@ -119,15 +121,15 @@ void FullyConnectedLayer<Dtype>::_load(ifstream& ifs, map<Layer<Dtype>*, Layer<D
 	double p_dropout;
 	typename Activation<Dtype>::Type activationType;
 	update_param weight_update_param, bias_update_param;
-	param_filler weight_filler, bias_filler;
+	param_filler<Dtype> weight_filler, bias_filler;
 
 	ifs.read((char *)&n_out, sizeof(uint32_t));
 	ifs.read((char *)&p_dropout, sizeof(double));
 	ifs.read((char *)&activationType, sizeof(int));
 	ifs.read((char *)&weight_update_param, sizeof(update_param));
 	ifs.read((char *)&bias_update_param, sizeof(update_param));
-	ifs.read((char *)&weight_filler, sizeof(param_filler));
-	ifs.read((char *)&bias_filler, sizeof(param_filler));
+	ifs.read((char *)&weight_filler, sizeof(param_filler<Dtype>));
+	ifs.read((char *)&bias_filler, sizeof(param_filler<Dtype>));
 
 	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 	FullyConnectedLayer<Dtype>::_shape(false);
@@ -140,7 +142,13 @@ void FullyConnectedLayer<Dtype>::_load(ifstream& ifs, map<Layer<Dtype>*, Layer<D
 
 }
 
+template <typename Dtype>
+uint32_t FullyConnectedLayer<Dtype>::boundParams() {
+	uint32_t updateCount = _params[Weight]->bound_grad();
+	updateCount += _params[Bias]->bound_grad();
 
+	return updateCount;
+}
 
 
 

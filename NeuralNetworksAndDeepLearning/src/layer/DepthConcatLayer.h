@@ -77,7 +77,11 @@ protected:
 	/**
 	 * @details 일반적인 deconcat과 달리 channel을 기준으로 해체하므로 재정의한다.
 	 */
-	virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset);
+	//virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset);
+
+	virtual void _backpropagation();
+
+
 	/**
 	 * @details _concat()에서 입력값이 합산되는 방식이 아니므로 합산에 대해
 	 *          scaling을 적용하는 기본 _scaleInput()을 재정의하여 scale하지 않도록 한다.

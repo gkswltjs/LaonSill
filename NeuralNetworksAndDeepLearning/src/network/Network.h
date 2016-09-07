@@ -171,6 +171,13 @@ protected:
 	 */
 	double evaluateTestSet();
 
+
+
+	void checkAbnormalParam();
+	void checkLearnableParamIsNan();
+
+
+
 #ifndef GPU_MODE
 	int testEvaluateResult(const rvec &output, const rvec &y);
 #else
@@ -207,6 +214,10 @@ protected:
 	double maxAccuracy;							///< 네트워크 평가 최대 정확도
 	double minCost;								///< 네트워크 평가 최소 cost
 	float dataSetMean[3];					///< 네트워크 데이터셋 평균 배열
+
+
+
+	uint32_t iterations;
 
 };
 

@@ -1,0 +1,136 @@
+/*
+ * HiddenLayer.cpp
+ *
+ *  Created on: 2016. 9. 6.
+ *      Author: jhkim
+ */
+
+
+#include "HiddenLayer.h"
+#include "../network/NetworkConfig.h"
+
+
+
+template <typename Dtype>
+HiddenLayer<Dtype>::HiddenLayer() {}
+
+template <typename Dtype>
+HiddenLayer<Dtype>::HiddenLayer(Builder* builder) : Layer<Dtype>(builder) {
+	for(uint32_t i = 0; i < builder->_prevLayerIndices.size(); i++) {
+		this->prevLayers.push_back((Layer<Dtype>*)((size_t)builder->_prevLayerIndices[i]));
+	}
+}
+
+template <typename Dtype>
+HiddenLayer<Dtype>::HiddenLayer(const string name) : Layer<Dtype>(name) {}
+
+
+template <typename Dtype>
+HiddenLayer<Dtype>::~HiddenLayer() {}
+
+
+template <typename Dtype>
+void HiddenLayer<Dtype>::backpropagation(uint32_t idx, Data<Dtype>* next_input, uint32_t offset) {
+	_deconcat(idx, next_input, offset);
+	if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
+
+	// TODO branch들의 gradient합들에 대해서 scaling하고 있음 ...
+	//_scaleGradient();
+
+	/*
+	if(this->networkConfig->_status == NetworkStatus::Train) {
+		if(this->_output->is_nan_grad()) {
+			cout << this->name << " output is nan grad ... " << endl;
+		}
+	}
+	*/
+	_backpropagation();
+	/*
+	if(this->networkConfig->_status == NetworkStatus::Train && this->name == "conv1_7x7_s2") {
+		if(this->_input->is_nan_grad()) {
+			cout << this->name << " input data is nan grad ... " << endl;
+		}
+	}
+	*/
+
+
+	propBackpropagation();
+}
+
+
+
+template <typename Dtype>
+void HiddenLayer<Dtype>::_backpropagation() {
+	this->_input->set_device_grad(this->_output);
+}
+
+
+template <typename Dtype>
+void HiddenLayer<Dtype>::_shape(bool recursive) {
+	if(recursive) {
+		Layer<Dtype>::_shape();
+	}
+}
+
+template <typename Dtype>
+void HiddenLayer<Dtype>::_clearShape() {
+	Layer<Dtype>::_clearShape();
+}
+
+
+
+template <typename Dtype>
+void HiddenLayer<Dtype>::_deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset) {
+	next_delta_input->print_grad("next_delta_input:");
+	this->_output->print_grad("outputGrad");
+	// 첫번째 branch로부터의 backpropagation, 그대로 copy
+	if(this->isFirstNextLayerRequest(idx)) {
+		this->_output->set_device_grad(next_delta_input, offset);
+	}
+	// 첫번째 이후의 branch로부터의 backpropagation, accumulate gradient
+	else {
+		this->_output->add_device_grad(next_delta_input, offset);
+	}
+	this->_output->print_grad("outputGrad:");
+}
+
+
+template <typename Dtype>
+void HiddenLayer<Dtype>::_scaleGradient() {
+	if(this->nextLayers.size() > 1) {
+		float branchFactor = 1.0f / this->nextLayers.size();
+		//cout << this->name << "'s backpropagation branch factor is " << branchFactor << endl;
+		this->_output->print_grad("before scaling output grad: ");
+		this->_output->scale_device_grad(branchFactor);
+		this->_output->print_grad("after scaling output grad: ");
+	}
+}
+
+
+template <typename Dtype>
+void HiddenLayer<Dtype>::propBackpropagation() {
+	HiddenLayer *hiddenLayer;
+	for(uint32_t i = 0; i < this->prevLayers.size(); i++) {
+		hiddenLayer = dynamic_cast<HiddenLayer *>(this->prevLayers[i]);
+
+		// !!! 대부분의 경우 _backpropagation에서 사용한 inputGrad을 그대로 사용하므로 문제가 없지만
+		// DepthConcatLayer와 같이 inputGrad을 분배해야 하는 케이스가 있으므로 inputGrad을 그대로 사용하지 말고
+		// getter를 사용하여 이전 레이어에 inputGrad을 전달해야 한다.
+		if(hiddenLayer) {
+			//_distGradToPrev(i, hiddenLayer);
+			hiddenLayer->backpropagation(this->id, this->getInput(), 0);
+		}
+	}
+}
+
+
+
+
+template class HiddenLayer<float>;
+
+
+
+
+
+
+

@@ -50,7 +50,7 @@ public:
 			vector<Layer<Dtype>*> firstLayers;
 			vector<Layer<Dtype>*> lastLayers;
 			vector<Layer<Dtype>*> layers;
-			vector<LearnableLayer*> learnableLayers;
+			vector<LearnableLayer<Dtype>*> learnableLayers;
 			map<uint32_t, Layer<Dtype>*> idLayerMap;
 
 			uint32_t layerSize = _layerWise.size();
@@ -79,7 +79,7 @@ public:
 					}
 
 					// 학습 레이어 추가
-					LearnableLayer* learnableLayer = dynamic_cast<LearnableLayer*>(currentLayer);
+					LearnableLayer<Dtype>* learnableLayer = dynamic_cast<LearnableLayer<Dtype>*>(currentLayer);
 					if(learnableLayer) {
 						learnableLayers.push_back(learnableLayer);
 					}
@@ -129,11 +129,10 @@ public:
 
 
 
-
 	vector<Layer<Dtype>*> _firstLayers;
 	vector<Layer<Dtype>*> _lastLayers;
 	vector<Layer<Dtype>*> _layers;
-	vector<LearnableLayer*> _learnableLayers;
+	vector<LearnableLayer<Dtype>*> _learnableLayers;
 
 	LayersConfig(Builder* builder) {}
 	LayersConfig<Dtype>* firstLayers(vector<Layer<Dtype>*> firstLayers) {
@@ -148,7 +147,7 @@ public:
 		this->_layers = layers;
 		return this;
 	}
-	LayersConfig<Dtype>* learnableLayers(vector<LearnableLayer*> learnableLayers) {
+	LayersConfig<Dtype>* learnableLayers(vector<LearnableLayer<Dtype>*> learnableLayers) {
 		this->_learnableLayers = learnableLayers;
 		return this;
 	}
@@ -163,7 +162,10 @@ template class LayersConfig<float>;
 
 
 
-
+enum NetworkStatus {
+	Train = 0,
+	Test = 1
+};
 
 
 template <typename Dtype>
@@ -299,10 +301,16 @@ public:
 	};
 
 
+
+
+
+
+	NetworkStatus _status;
+
 	InputLayer<Dtype>* _inputLayer;
 	vector<OutputLayer<Dtype>*> _outputLayers;
 	vector<Layer<Dtype>*> _layers;
-	vector<LearnableLayer*> _learnableLayers;
+	vector<LearnableLayer<Dtype>*> _learnableLayers;
 	map<string, Layer<Dtype>*> _nameLayerMap;
 
 	DataSet<Dtype>* _dataSet;
@@ -373,7 +381,7 @@ public:
 		this->_layers = layers;
 		return this;
 	}
-	NetworkConfig* learnableLayers(vector<LearnableLayer*> learnableLayers) {
+	NetworkConfig* learnableLayers(vector<LearnableLayer<Dtype>*> learnableLayers) {
 		this->_learnableLayers = learnableLayers;
 		return this;
 	}

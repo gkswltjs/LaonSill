@@ -43,7 +43,7 @@ public:
 			FullyConnectedLayer<Dtype>::Builder::nOut(nOut);
 			return this;
 		}
-		Builder* pDropout(uint32_t pDropout) {
+		Builder* pDropout(double pDropout) {
 			FullyConnectedLayer<Dtype>::Builder::pDropout(pDropout);
 			return this;
 		}
@@ -103,7 +103,7 @@ public:
 	 * @param costType 레이어 출력값에 대한 cost 계산 타입
 	 */
 	OutputLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType, typename Cost<Dtype>::Type costType)
+			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType, typename Cost<Dtype>::Type costType)
 		:FullyConnectedLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};

@@ -213,9 +213,6 @@ public:
 		return cudaError;
 	}
 
-
-
-	static bool train;						///< 네트워크 트레인 상태 플래그, (임시)
 	static int page;						///< 디버깅용 (임시)
 	static int start_page;					///< 디버깅용 (임시)
 	static int end_page;					///< 디버깅용 (임시)
@@ -230,6 +227,7 @@ public:
 
 	static bool temp_flag;					///< 디버깅용 (임시)
 
+	//static int batchCount;
 
 
 private:

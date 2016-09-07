@@ -17,6 +17,12 @@
 #include "../cost/Cost.h"
 
 
+
+
+// for debug
+#include "../debug/GraphPlotter.h"
+
+
 /**
  * @brief Fully Connected (Inner Product) 레이어
  * @details 이전 레이어와 현재 레이어의 모든 노드들에 대해 연결성이 있고
@@ -25,7 +31,7 @@
  *          출력 역시 1차원 flatten 결과이며 필요에 따라서 입력받는 레이어에서 다시 차원을 복구해야 한다.
  */
 template <typename Dtype>
-class FullyConnectedLayer : public HiddenLayer<Dtype>, public LearnableLayer {
+class FullyConnectedLayer : public HiddenLayer<Dtype>, public LearnableLayer<Dtype> {
 public:
 	/**
 	 * @brief Fully Connected 레이어 객체 빌더
@@ -38,8 +44,8 @@ public:
 		double _pDropout;									///< dropout을 적용할 확율
 		update_param _weightUpdateParam;					///< weight 갱신 관련 파라미터 구조체
 		update_param _biasUpdateParam;						///< bias 갱신 관련 파라미터 구조체
-		param_filler _weightFiller;							///< weight 초기화 관련 파라미터 구조체
-		param_filler _biasFiller;							///< bias 초기화 관련 파라미터 구조체
+		param_filler<Dtype> _weightFiller;					///< weight 초기화 관련 파라미터 구조체
+		param_filler<Dtype> _biasFiller;					///< bias 초기화 관련 파라미터 구조체
 		typename Activation<Dtype>::Type _activationType;	///< weighted sum에 적용할 활성화 타입
 
 		Builder() {
@@ -57,7 +63,7 @@ public:
 			this->_nOut = nOut;
 			return this;
 		}
-		Builder* pDropout(uint32_t pDropout) {
+		Builder* pDropout(double pDropout) {
 			this->_pDropout = pDropout;
 			return this;
 		}
@@ -71,12 +77,12 @@ public:
 			this->_biasUpdateParam.decay_mult = decay_mult;
 			return this;
 		}
-		Builder* weightFiller(ParamFillerType weightFillerType, double value) {
+		Builder* weightFiller(ParamFillerType weightFillerType, Dtype value) {
 			this->_weightFiller.type = weightFillerType;
 			this->_weightFiller.value = value;
 			return this;
 		}
-		Builder* biasFiller(ParamFillerType paramFillerType, double value) {
+		Builder* biasFiller(ParamFillerType paramFillerType, Dtype value) {
 			this->_biasFiller.type = paramFillerType;
 			this->_biasFiller.value = value;
 			return this;
@@ -125,9 +131,26 @@ public:
 	 * @param activationType weighted sum에 적용할 활성화 타입
 	 */
 	FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType=Activation<Dtype>::NoActivation);
+			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType=Activation<Dtype>::NoActivation);
 	virtual ~FullyConnectedLayer();
 
+
+
+
+
+
+	//////////////////////////////////////////
+	// Learnable Layer Method
+	//////////////////////////////////////////
+	using HiddenLayer<Dtype>::getName;
+	virtual const string getName() { return this->name; }
+	virtual void update();
+	virtual double sumSquareParamsData();
+	virtual double sumSquareParamsGrad();
+	virtual void scaleParamsGrad(float scale);
+	virtual double testParamAbnormality();
+	virtual uint32_t boundParams();
+	//////////////////////////////////////////
 
 
 
@@ -143,7 +166,7 @@ private:
 	 * @param activationType weighted sum에 적용할 활성화 타입
 	 */
 	void initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler weight_filler, param_filler bias_filler, typename Activation<Dtype>::Type activationType);
+			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 
 protected:
 	virtual void _feedforward();
@@ -159,14 +182,10 @@ protected:
 	virtual void _save(ofstream& ofs);
 	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
-	//////////////////////////////////////////
-	// Learnable Layer Method
-	//////////////////////////////////////////
-	virtual void update();
-	virtual double sumSquareParamsData();
-	virtual double sumSquareParamsGrad();
-	virtual void scaleParamsGrad(float scale);
-	//////////////////////////////////////////
+	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
+
+
+
 
 	enum ParamType {
 		Weight = 0,
@@ -179,14 +198,12 @@ protected:
 	update_param weight_update_param;		///< weight 갱신 관련 파라미터 구조체
 	update_param bias_update_param;			///< bias 갱신 관련 파라미터 구조체
 
-	param_filler weight_filler;				///< weight 초기화 관련 파라미터 구조체
-	param_filler bias_filler;				///< bias 초기화 관련 파라미터 구조체
+	param_filler<Dtype> weight_filler;				///< weight 초기화 관련 파라미터 구조체
+	param_filler<Dtype> bias_filler;				///< bias 초기화 관련 파라미터 구조체
 
 	Activation<Dtype> *activation_fn;				///< 활성화 객체
 
-	Data<Dtype>* _preActivation;			///< weighted sum 결과에 대한 데이터
-	vector<Data<Dtype>*> _params;			///< 파라미터 데이터 (Weight, Bias 포함)
-	vector<Data<Dtype>*> _paramsHistory;	///< 이전 update에서 적용된 파라미터 그레디언트 데이터
+
 
 #ifndef GPU_MODE
 	rmat weight;
@@ -200,10 +217,24 @@ protected:
 	rcube delta_input;
 #else
 	Dtype* d_onevec;						///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
-	Dtype* mask;							///< dropout 마스크 호스트 메모리 포인터
-	Dtype* d_mask;							///< dropout 마스크 장치 메모리 포인터
+
+
+	//Dtype* mask;							///< dropout 마스크 호스트 메모리 포인터
+	//Dtype* d_mask;							///< dropout 마스크 장치 메모리 포인터
+	SyncMem<Dtype> _mask;
+
 	Dtype scale;							///< dropout 스케일 팩터
 #endif
+
+
+
+	//GraphPlotter gradPlotter;
+
+
+public:
+	Data<Dtype>* _preActivation;			///< weighted sum 결과에 대한 데이터
+	vector<Data<Dtype>*> _params;			///< 파라미터 데이터 (Weight, Bias 포함)
+	vector<Data<Dtype>*> _paramsHistory;	///< 이전 update에서 적용된 파라미터 그레디언트 데이터
 
 };
 
