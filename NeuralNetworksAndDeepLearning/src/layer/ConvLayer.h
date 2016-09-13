@@ -149,7 +149,7 @@ public:
 	virtual double sumSquareParamsData();
 	virtual double sumSquareParamsGrad();
 	virtual void scaleParamsGrad(float scale);
-	virtual double testParamAbnormality();
+	//virtual double testParamAbnormality();
 	virtual uint32_t boundParams();
 	//////////////////////////////////////////
 

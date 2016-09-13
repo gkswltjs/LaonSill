@@ -45,7 +45,10 @@ ImagePackDataSet<Dtype>::~ImagePackDataSet() {}
 
 template <typename Dtype>
 const Dtype* ImagePackDataSet<Dtype>::getTrainDataAt(int index) {
-	if(index >= this->numTrainData || index < 0) throw Exception();
+	if(index >= this->numTrainData || index < 0) {
+		cout << "invalid index for train data: numTrainData->" << this->numTrainData << ", index: " << index << endl;
+		exit(1);
+	}
 	int reqPage = index / numImagesInTrainFile;
 	if(reqPage != trainFileIndex) {
 		load(DataSet<Dtype>::Train, reqPage);
@@ -56,7 +59,10 @@ const Dtype* ImagePackDataSet<Dtype>::getTrainDataAt(int index) {
 
 template <typename Dtype>
 const uint32_t* ImagePackDataSet<Dtype>::getTrainLabelAt(int index) {
-	if(index >= this->numTrainData || index < 0) throw Exception();
+	if(index >= this->numTrainData || index < 0) {
+		cout << "invalid index for train label: numTrainData->" << this->numTrainData << ", index: " << index << endl;
+		exit(1);
+	}
 	int reqPage = index / numImagesInTrainFile;
 	if(reqPage != trainFileIndex) {
 		load(DataSet<Dtype>::Train, reqPage);
@@ -67,19 +73,28 @@ const uint32_t* ImagePackDataSet<Dtype>::getTrainLabelAt(int index) {
 
 template <typename Dtype>
 const Dtype* ImagePackDataSet<Dtype>::getValidationDataAt(int index) {
-	if(index >= this->numValidationData || index < 0) throw Exception();
+	if(index >= this->numValidationData || index < 0) {
+		cout << "invalid index for validation data: numValidationData->" << this->numValidationData << ", index: " << index << endl;
+		exit(1);
+	}
 	return &(*this->validationDataSet)[this->dataSize*index];
 }
 
 template <typename Dtype>
 const uint32_t* ImagePackDataSet<Dtype>::getValidationLabelAt(int index) {
-	if(index >= this->numValidationData || index < 0) throw Exception();
+	if(index >= this->numValidationData || index < 0) {
+		cout << "invalid index for validation label: numValidationData->" << this->numValidationData << ", index: " << index << endl;
+		exit(1);
+	}
 	return &(*this->validationLabelSet)[index];
 }
 
 template <typename Dtype>
 const Dtype* ImagePackDataSet<Dtype>::getTestDataAt(int index) {
-	if(index >= this->numTestData || index < 0) throw Exception();
+	if(index >= this->numTestData || index < 0) {
+		cout << "invalid index for test data: numTestData->" << this->numTestData << ", index: " << index << endl;
+		exit(1);
+	}
 	int reqPage = index / numImagesInTestFile;
 	if(reqPage != testFileIndex) {
 		load(DataSet<Dtype>::Test, reqPage);
@@ -90,7 +105,10 @@ const Dtype* ImagePackDataSet<Dtype>::getTestDataAt(int index) {
 
 template <typename Dtype>
 const uint32_t* ImagePackDataSet<Dtype>::getTestLabelAt(int index) {
-	if(index >= this->numTestData || index < 0) throw Exception();
+	if(index >= this->numTestData || index < 0) {
+		cout << "invalid index for test label: numTestData->" << this->numTestData << ", index: " << index << endl;
+		exit(1);
+	}
 	int reqPage = index / numImagesInTestFile;
 	if(reqPage != testFileIndex) {
 		load(DataSet<Dtype>::Test, reqPage);
@@ -265,6 +283,16 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 		fclose(lbfp);
 		return 0;
 	}
+
+	cout << data_path << ": " << endl;
+	cout << "\tlength->" << image_header.length << endl;
+	cout << "\theight->" << image_header.height << endl;
+	cout << "\twidth->" << image_header.width << endl;
+	cout << "\tchannel->" << image_header.channel << endl;
+
+	cout << label_path << ": " << endl;
+	cout << "\tlength->" << label_header.length << endl;
+
 
 	// Output dimensions
 	size_t width = image_header.width;

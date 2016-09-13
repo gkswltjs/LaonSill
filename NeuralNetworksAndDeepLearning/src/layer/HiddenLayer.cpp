@@ -34,26 +34,8 @@ void HiddenLayer<Dtype>::backpropagation(uint32_t idx, Data<Dtype>* next_input, 
 	_deconcat(idx, next_input, offset);
 	if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
 
-	// TODO branch들의 gradient합들에 대해서 scaling하고 있음 ...
 	//_scaleGradient();
-
-	/*
-	if(this->networkConfig->_status == NetworkStatus::Train) {
-		if(this->_output->is_nan_grad()) {
-			cout << this->name << " output is nan grad ... " << endl;
-		}
-	}
-	*/
 	_backpropagation();
-	/*
-	if(this->networkConfig->_status == NetworkStatus::Train && this->name == "conv1_7x7_s2") {
-		if(this->_input->is_nan_grad()) {
-			cout << this->name << " input data is nan grad ... " << endl;
-		}
-	}
-	*/
-
-
 	propBackpropagation();
 }
 

@@ -24,8 +24,8 @@ int gnuplot_test();
 
 int main_test(int argc, char** argv) {
 
-	gnuplot_test();
-	/*
+	//gnuplot_test();
+
 	int numCategory = atoi(argv[1]);
 	int numTrain = atoi(argv[2]);
 	int numTest = atoi(argv[3]);
@@ -33,7 +33,6 @@ int main_test(int argc, char** argv) {
 	int numImagesInTestFile = atoi(argv[5]);
 	int numChannels = atoi(argv[6]);
 	imagepacker_test(numCategory, numTrain, numTest, numImagesInTrainFile, numImagesInTestFile, numChannels);
-	*/
 
 	//"/home/jhkim/data/learning/mnist/train-images.idx3-ubyte",
 	//"/home/jhkim/data/learning/mnist/train-labels.idx1-ubyte",
@@ -363,6 +362,7 @@ void imagepacker_test(int numCategory,
 
 void imagepackdataset_test() {
 
+	/*
 	ImagePackDataSet<float> dataSet(
 			"/home/jhkim/image/ILSVRC2012/save/train_data",
 			"/home/jhkim/image/ILSVRC2012/save/train_label",
@@ -385,6 +385,7 @@ void imagepackdataset_test() {
 	cout << "done ... " << endl;
 
 	return;
+	*/
 
 }
 

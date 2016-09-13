@@ -13,6 +13,7 @@
 #include "FullyConnectedLayer.h"
 #include "../cost/CostFactory.h"
 #include "../SyncMem.h"
+#include "../dataset/DataSet.h"
 
 
 /**
@@ -117,7 +118,8 @@ public:
 	 * @param target 현재 입력 데이터에 대한 정답 레이블
 	 */
 	using FullyConnectedLayer<Dtype>::backpropagation;
-	virtual void backpropagation(const uint32_t* target) = 0;
+	//virtual void backpropagation(const uint32_t* target) = 0;
+	virtual void backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex) = 0;
 
 	/**
 	 * @details 출력레이어의 cost를 게산한다.
@@ -126,7 +128,8 @@ public:
 	 *       별도로 cost를 구하고 gradient를 다시 계산할 경우 효율적이지 못해서 cost에서 gradient까지 계산하게 되어있다.
 	 *       하지만 적절한 modularity를 달성하기 위해서 cost를 구하는 것과 gradient를 계산하는 것은 구분되어야 한다.
 	 */
-	virtual double cost(const uint32_t* target) = 0;
+	//virtual double cost(const uint32_t* target) = 0;
+	virtual double cost(DataSet<Dtype>* dataSet, const uint32_t baseIndex) = 0;
 
 
 protected:

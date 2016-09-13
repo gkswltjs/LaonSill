@@ -69,7 +69,7 @@ public:
 	 * @param mem 복사할 데이터 메모리 포인터
 	 * @param copyType 데이터를 복사할 SRC/DEST를 지정하는 열거형
 	 */
-	void set_mem(const Dtype* mem, SyncMemCopyType copyType);
+	void set_mem(const Dtype* mem, SyncMemCopyType copyType, const size_t offset=0, const size_t size=0);
 
 	/**
 	 * @details 호스트 메모리를 0으로 초기화한다.
@@ -160,6 +160,10 @@ private:
 	 * @details shape가 결정되어 메모리가 할당되었는지 확인
 	 */
 	void checkMemValidity();
+
+	void setHostMemUpdated();
+	void setDeviceMemUpdated();
+	void resetMemUpdated();
 
 
 

@@ -74,37 +74,55 @@ void DataSet<Dtype>::setMean(const vector<Dtype>& means) {
 
 template <typename Dtype>
 const Dtype* DataSet<Dtype>::getTrainDataAt(int index) {
-	if(index >= numTrainData) throw Exception();
+	if(index >= numTrainData) {
+		cout << "train data index over numTrainData ... " << endl;
+		exit(1);
+	}
 	return &(*trainDataSet)[dataSize*(*trainSetIndices)[index]];
 }
 
 template <typename Dtype>
 const uint32_t* DataSet<Dtype>::getTrainLabelAt(int index) {
-	if(index >= numTrainData) throw Exception();
+	if(index >= numTrainData) {
+		cout << "train label index over numTrainData ... " << endl;
+		exit(1);
+	}
 	return &(*trainLabelSet)[(*trainSetIndices)[index]];
 }
 
 template <typename Dtype>
 const Dtype* DataSet<Dtype>::getValidationDataAt(int index) {
-	if(index >= numValidationData) throw Exception();
+	if(index >= numValidationData) {
+		cout << "validation data index over numValidationData ... " << endl;
+		exit(1);
+	}
 	return &(*validationDataSet)[dataSize*(*validationSetIndices)[index]];
 }
 
 template <typename Dtype>
 const uint32_t* DataSet<Dtype>::getValidationLabelAt(int index) {
-	if(index >= numValidationData) throw Exception();
+	if(index >= numValidationData) {
+		cout << "validation label index over numValidationData ... " << endl;
+		exit(1);
+	}
 	return &(*validationLabelSet)[(*validationSetIndices)[index]];
 }
 
 template <typename Dtype>
 const Dtype* DataSet<Dtype>::getTestDataAt(int index) {
-	if(index >= numTestData) throw Exception();
+	if(index >= numTestData) {
+		cout << "test data index over numTestData ... " << endl;
+		exit(1);
+	}
 	return &(*testDataSet)[dataSize*(*testSetIndices)[index]];
 }
 
 template <typename Dtype>
 const uint32_t* DataSet<Dtype>::getTestLabelAt(int index) {
-	if(index >= numTestData) throw Exception();
+	if(index >= numTestData) {
+		cout << "test label index over numTestData ... " << endl;
+		exit(1);
+	}
 	return &(*testLabelSet)[(*testSetIndices)[index]];
 }
 
@@ -158,16 +176,43 @@ void DataSet<Dtype>::zeroMean(bool hasMean) {
 template <typename Dtype>
 void DataSet<Dtype>::shuffleTrainDataSet() {
 	random_shuffle(&(*trainSetIndices)[0], &(*trainSetIndices)[numTrainData]);
+
+	/*
+	auto seed = unsigned(time(0));
+	srand(seed);
+	random_shuffle(&trainDataSet[0], &trainDataSet[numTrainData]);
+
+	srand(seed);
+	random_shuffle(&trainLabelSet[0], &trainLabelSet[numTrainData]);
+	*/
 }
 
 template <typename Dtype>
 void DataSet<Dtype>::shuffleValidationDataSet() {
 	random_shuffle(&(*validationSetIndices)[0], &(*validationSetIndices)[numValidationData]);
+
+	/*
+	auto seed = unsigned(time(0));
+	srand(seed);
+	random_shuffle(&validationDataSet[0], &validationDataSet[numValidationData]);
+
+	srand(seed);
+	random_shuffle(&validationLabelSet[0], &validationLabelSet[numValidationData]);
+	*/
 }
 
 template <typename Dtype>
 void DataSet<Dtype>::shuffleTestDataSet() {
 	random_shuffle(&(*testSetIndices)[0], &(*testSetIndices)[numTestData]);
+
+	/*
+	auto seed = unsigned(time(0));
+	srand(seed);
+	random_shuffle(&testDataSet[0], &testDataSet[numTestData]);
+
+	srand(seed);
+	random_shuffle(&testLabelSet[0], &testLabelSet[numTestData]);
+	*/
 }
 
 

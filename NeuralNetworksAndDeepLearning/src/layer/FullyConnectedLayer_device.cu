@@ -89,9 +89,10 @@ void FullyConnectedLayer<Dtype>::_shape(bool recursive) {
 
 	//weight = new Dtype[u_out*u_in];
 	//bias = new Dtype[u_out];
-	_params[ParamType::Weight]->reshape({1, 1, u_out, u_in});
+	//_params[ParamType::Weight]->reshape({1, 1, u_out, u_in});
+	_params[ParamType::Weight]->reshape({u_out, u_in, 1, 1});
 	_params[ParamType::Bias]->reshape({1, 1, u_out, 1});
-	_paramsHistory[ParamType::Weight]->reshape({1, 1, u_out, u_in});
+	_paramsHistory[ParamType::Weight]->reshape({u_out, u_in, 1, 1});
 	_paramsHistory[ParamType::Bias]->reshape({1, 1, u_out, 1});
 	_preActivation->reshape({this->out_dim.batches, 1, u_out, 1});
 
@@ -261,6 +262,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_feedforward() {
+	/*
 	_params[Weight]->print_data("weightData:");
 	this->_input->print_data("inputData:");
 
@@ -294,9 +296,64 @@ void FullyConnectedLayer<Dtype>::_feedforward() {
 
 	_preActivation->print_data(this->name+string("/d_preActivationData:"));
 	this->_output->print_data(this->name+string("/d_outputData:"));
+	*/
+
+	_computeWeightedData();
+	_computeWeightBiasedData();
+	_computeActivatedData();
+
+	//_dropoutForward();
+
+}
 
 
-	/*
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_computeWeightedData() {
+	_params[Weight]->print_data("weightData:");
+	this->_input->print_data("inputData:");
+
+	// Apply weight to input data
+	const Dtype* d_weightData = _params[Weight]->device_data();
+	const Dtype* d_inputData = this->_input->device_data();
+	Dtype* d_preActivationData = _preActivation->mutable_device_data();
+
+	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
+			this->out_dim.rows, this->out_dim.batches, this->in_dim.rows,
+			&Cuda::alpha, d_weightData, this->out_dim.rows, d_inputData, this->in_dim.rows,
+			&Cuda::beta, d_preActivationData, this->out_dim.rows));
+}
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
+	_preActivation->print_data("preActivationData:");
+	_params[Bias]->print_data("biasData:");
+
+	// Add bias to weighted input data
+	const Dtype* d_biasData = _params[Bias]->device_data();
+	Dtype* d_preActivationData = _preActivation->mutable_device_data();
+
+	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
+			this->out_dim.rows, this->out_dim.batches, 1,
+		&Cuda::alpha,
+		d_biasData, this->out_dim.rows,
+		d_onevec, 1,
+		&Cuda::alpha,
+		d_preActivationData, this->out_dim.rows));
+}
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_computeActivatedData() {
+	// Activate weighted sum (+ bias)
+	const Dtype* d_preActivationData = _preActivation->mutable_device_data();
+	Dtype* d_outputData = this->_output->mutable_device_data();
+	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_outputData);
+
+	_preActivation->print_data(this->name+string("/d_preActivationData:"));
+	this->_output->print_data(this->name+string("/d_outputData:"));
+}
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_dropoutForward() {
 	// TODO skip when test
 	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
 		int b_out = this->out_dim.batchsize();
@@ -308,72 +365,54 @@ void FullyConnectedLayer<Dtype>::_feedforward() {
 		//checkCudaErrors(cudaMemcpyAsync(d_mask, mask, sizeof(Dtype)*b_out, cudaMemcpyHostToDevice));
 		//FillOnes<<<RoundUp(in_dim.batches, BW), BW>>>(this->d_onevec, in_dim.batches);
 
+
 		const Dtype* d_mask_mem = _mask.device_mem();
+		Dtype* d_outputData = this->_output->mutable_device_data();
+
 		Dropout<<<RoundUp(b_out, BW), BW>>>(b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
 
-		_mask.print("mask:");
+		//_mask.print("mask:");
 		this->_output->print_data("outputData:");
 	}
-	*/
 }
+
+
+
+
+
 
 
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_backpropagation() {
-
-	/*
-	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
-		this->_output->print_grad("outputGrad:");
-		const Dtype* d_mask_mem = _mask.device_mem();
-		Dtype* d_outputGrad = this->_output->mutable_device_grad();
-		Dropout<<<RoundUp(this->out_dim.batchsize(), BW), BW>>>(this->out_dim.batchsize(), d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
-
-		_mask.print("mask:");
-		this->_output->print_grad("outputGrad:");
-	}
-	*/
-
-
-	/*
-	this->_output->print_data("output:");
-
-	const Dtype* d_output = this->_output->device_data();
-	const Dtype* d_delta_output = this->_output->device_grad();
-	const Dtype* d_z = this->_preActivation->device_data();
-	Dtype* d_delta = this->_preActivation->mutable_device_grad();
-
-	this->activation_fn->backward(this->outputTensorDesc, d_output, d_delta_output, d_z, d_delta);
-	*/
-
-	/*
-	if(this->_preActivation->is_nan_grad()) {
-		cout << this->name << " _preActivation gradient nan ... " << endl;
-
-		Data<Dtype>::printConfig = 1;
-		this->_output->print_data("output:");
-		this->_output->print_grad("deltaOutput:");
-		this->_preActivation->print_data("preActivation:");
-		this->_preActivation->print_grad("delta:");
-		Data<Dtype>::printConfig = 0;
-		exit(1);
-	}
-	*/
+	//_dropoutBackward();
 
 	_computePreActivationGrad();
 	_computeWeightGrad();
 	_computeBiasGrad();
 	_computeInputGrad();
 
-
-	if(_params[0]->is_nan_grad()) {
-		cout << this->name << " weight is nan grad ... " << endl;
-	}
-	if(_params[1]->is_nan_grad()) {
-		cout << this->name << " bias is nan grad ... " << endl;
-	}
-
 }
+
+
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::_dropoutBackward() {
+	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
+		this->_output->print_grad("outputGrad:");
+		const Dtype* d_mask_mem = _mask.device_mem();
+		Dtype* d_outputGrad = this->_output->mutable_device_grad();
+		Dropout<<<RoundUp(this->out_dim.batchsize(), BW), BW>>>(this->out_dim.batchsize(), d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
+
+		//_mask.print("mask:");
+		this->_output->print_grad("outputGrad:");
+	}
+}
+
+
+
+
+
 
 
 template <typename Dtype>
@@ -386,6 +425,15 @@ void FullyConnectedLayer<Dtype>::_computePreActivationGrad() {
 	Dtype* d_dx = this->_preActivation->mutable_device_grad();
 
 	this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
+
+
+	//if(this->name == "softmaxLayer") {
+		//double sumsq = this->_preActivation->sumsq_device_grad();
+		//cout << "preActivation grad sumsq: " << sumsq << endl;
+	//	Data<Dtype>::printConfig = 1;
+	//	this->_preActivation->print_grad("preActivationGrad:");
+	//	Data<Dtype>::printConfig = 0;
+	//}
 }
 
 
@@ -461,7 +509,7 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 }
 
 
-
+/*
 template <typename Dtype>
 double FullyConnectedLayer<Dtype>::testParamAbnormality() {
 	const Dtype* weightGrad = _params[Weight]->host_grad();
@@ -488,7 +536,7 @@ double FullyConnectedLayer<Dtype>::testParamAbnormality() {
 	}
 	return DBL_MAX;
 }
-
+*/
 
 
 

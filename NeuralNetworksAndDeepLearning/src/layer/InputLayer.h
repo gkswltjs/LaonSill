@@ -18,6 +18,7 @@
 
 #include "../Util.h"
 #include "Layer.h"
+#include "../dataset/DataSet.h"
 
 /**
  * @brief 입력 레이어 클래스
@@ -61,33 +62,26 @@ public:
 	 * @details InputLayer 기본 생성자
 	 *          LayerFactory에서 객체 생성을 위해 name 파라미터가 없는 기본 생성자가 필요하다.
 	 */
-	InputLayer() {
-		initialize();
-	}
+	InputLayer();
 	/**
 	 * @details InputLayer 생성자
 	 * @param name 레이어의 이름 문자열
 	 */
-	InputLayer(const string name) : Layer<Dtype>(name) {
-		initialize();
-	}
-	InputLayer(Builder* builder) : Layer<Dtype>(builder) {
-		initialize();
-	}
+	InputLayer(const string name);
+	InputLayer(Builder* builder);
 	/**
 	 * @details InputLayer 소멸자
 	 */
-	virtual ~InputLayer() {}
+	virtual ~InputLayer();
 
 
 	/**
 	 * @details batch size 1 기준의 입력 엘리먼트의 갯수를 조회한다.
 	 * @return batch size 1 기준의 입력 엘리먼트의 갯수
 	 */
-	int getInputSize() const {
-		return this->in_dim.rows*this->in_dim.cols*this->in_dim.channels;
-	}
+	int getInputSize() const;
 
+	/*
 	using Layer<Dtype>::feedforward;
 	void feedforward(const Dtype* input, const char* end=0) {
 		//_input->set_data(input, Data::HostToDevice);
@@ -96,21 +90,15 @@ public:
 		this->_feedforward();
 		this->propFeedforward(end);
 	}
+	*/
+
+	using Layer<Dtype>::feedforward;
+	void feedforward(DataSet<Dtype>* dataSet, const uint32_t baseIndex, const char* end=0);
 
 protected:
-	void initialize() {
-		this->type = Layer<Dtype>::Input;
-	}
-
-	virtual void _shape(bool recursive=true) {
-		this->out_dim = this->in_dim;
-		if(recursive) {
-			Layer<Dtype>::_shape();
-		}
-	}
-	virtual void _clearShape() {
-		Layer<Dtype>::_clearShape();
-	}
+	void initialize();
+	virtual void _shape(bool recursive=true);
+	virtual void _clearShape();
 	/**
 	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
 	 *          입력 레이어의 경우 시작레이어이기 때문에 자신의 레이어를 쓸 뿐 아니라
@@ -118,25 +106,12 @@ protected:
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	virtual void _save(ofstream &ofs) {
-		this->saveHeader(0, ofs);
-		// header boundary (dummy layer)
-		int type = 0;
-		Layer<Dtype>* layer = 0;
-		ofs.write((char*)&type, sizeof(int));
-		ofs.write((char*)&layer, sizeof(Layer<Dtype>*));
-
-		Layer<Dtype>::_save(ofs);
-	}
-	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
-		initialize();
-		InputLayer::_shape(false);
-		this->loadNetwork(ifs, layerMap);
-	}
+	virtual void _save(ofstream &ofs);
+	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 };
 
-template class InputLayer<float>;
+
 
 
 

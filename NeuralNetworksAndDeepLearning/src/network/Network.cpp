@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <cfloat>
 
 #include "../dataset/DataSet.h"
 #include "../layer/LayerFactory.h"
@@ -79,18 +80,17 @@ void Network<Dtype>::sgd(int epochs) {
 	for(uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		config->_status = NetworkStatus::Train;
 
-		//dataSet->shuffleTrainDataSet();
+		dataSet->shuffleTrainDataSet();
 		timer1.start();
 		timer2.start();
 		for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
 			iterations++;
-
 			//Util::printMessage("iteration: " + to_string(iterations));
 
-			//if((batchIndex+1)%100 == 0) {
-			//	cout << "Minibatch " << batchIndex+1 << " started: " << timer2.stop(false) << endl;
-			//	timer2.start();
-			//}
+			if((batchIndex+1)%100 == 0) {
+				cout << "Minibatch " << batchIndex+1 << " started: " << timer2.stop(false) << endl;
+				timer2.start();
+			}
 			//cout << "Minibatch " << batchIndex+1 << " started: " << timer2.stop(false) << endl;
 			//timer2.start();
 #ifndef GPU_MODE
@@ -98,50 +98,73 @@ void Network<Dtype>::sgd(int epochs) {
 #endif
 			trainBatch(batchIndex);
 
-
 			//if(iterations >= 1000) {
 				//checkAbnormalParam();
 			//}
-
-
-
 			// UPDATE
 			applyUpdate();
-		}
 
-		config->_status = NetworkStatus::Test;
-		const uint32_t numTestData = dataSet->getNumTestData();
-		if(numTestData > 0) {
-			double cost = evaluateTestSet();
-			cost /= numTestData;
 
-			//const float cost = evaluations[0]->getCost() / numTestData;
-			const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
-			const float accuracy = (float)accurateCnt/numTestData;
+			if((batchIndex+1) % 500 == 0) {
+				config->_status = NetworkStatus::Test;
+				const uint32_t numTestData = dataSet->getNumTestData();
+				if(numTestData > 0) {
+					double cost = evaluateTestSet();
+					cost /= numTestData;
 
-			//save();
-			cout << "Epoch " << epochIndex+1 << " " << accurateCnt << " / " << numTestData <<
-					", accuracy: " << accuracy << ", cost: " << cost <<
-					" :" << timer1.stop(false) << endl;
+					//const float cost = evaluations[0]->getCost() / numTestData;
+					const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
+					const float accuracy = (float)accurateCnt/numTestData;
 
-			/*
-			for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
-				networkListeners[nl]->epochComplete(
-						evaluations[nl]->getCost()/numTestData,
-						(float)evaluations[nl]->getAccurateCount()/numTestData);
+					//save();
+					cout << "epoch: " << epochIndex+1 << ", iteration: " << epochIndex*numBatches+batchIndex+1 << " " << accurateCnt << " / " << numTestData <<
+							", accuracy: " << accuracy << ", cost: " << cost <<
+							" :" << timer1.stop(false) << endl;
+
+					for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
+						networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy", (double)evaluations[0]->getAccurateCount()/numTestData*100);
+						networkListeners[nl]->onAccuracyComputed(1, "top5_accuracy", (double)evaluations[1]->getAccurateCount()/numTestData*100);
+						//networkListeners[nl]->onCostComputed(0, "cost", evaluations[0]->getCost()/numTestData);
+						networkListeners[nl]->onCostComputed(0, "cost", cost);
+					}
+				}
+				config->_status = NetworkStatus::Train;
 			}
-			*/
 
-			for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
-				networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy", (double)evaluations[0]->getAccurateCount()/numTestData*100);
-				networkListeners[nl]->onAccuracyComputed(1, "top5_accuracy", (double)evaluations[1]->getAccurateCount()/numTestData*100);
-				//networkListeners[nl]->onCostComputed(0, "cost", evaluations[0]->getCost()/numTestData);
-				networkListeners[nl]->onCostComputed(0, "cost", cost);
+
+
+
+		}
+
+		/*
+		//if((epochIndex+1) % 1 == 0) {
+			config->_status = NetworkStatus::Test;
+			const uint32_t numTestData = dataSet->getNumTestData();
+			if(numTestData > 0) {
+				double cost = evaluateTestSet();
+				cost /= numTestData;
+
+				//const float cost = evaluations[0]->getCost() / numTestData;
+				const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
+				const float accuracy = (float)accurateCnt/numTestData;
+
+				//save();
+				cout << "Epoch " << epochIndex+1 << " " << accurateCnt << " / " << numTestData <<
+						", accuracy: " << accuracy << ", cost: " << cost <<
+						" :" << timer1.stop(false) << endl;
+
+				for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
+					networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy", (double)evaluations[0]->getAccurateCount()/numTestData*100);
+					networkListeners[nl]->onAccuracyComputed(1, "top5_accuracy", (double)evaluations[1]->getAccurateCount()/numTestData*100);
+					//networkListeners[nl]->onCostComputed(0, "cost", evaluations[0]->getCost()/numTestData);
+					networkListeners[nl]->onCostComputed(0, "cost", cost);
+				}
 			}
-		}
-		else {
-			cout << "Epoch " << epochIndex+1 << " complete: " << timer1.stop(false) << endl;
-		}
+			else {
+				cout << "Epoch " << epochIndex+1 << " complete: " << timer1.stop(false) << endl;
+			}
+		//}
+		 */
 	}
 }
 
@@ -175,6 +198,7 @@ double Network<Dtype>::evaluateTestSet() {
 	}
 
 	const uint32_t numBatches = dataSet->getNumTestData()/in_dim.batches;
+	//cout << "numTestData: " << dataSet->getNumTestData() << ", batches: " << in_dim.batches << ", numBatches: " << numBatches << endl;
 	for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
 		cost += evaluateTestData(batchIndex);
 	}
@@ -184,18 +208,23 @@ double Network<Dtype>::evaluateTestSet() {
 
 template <typename Dtype>
 double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
-	config->_inputLayer->feedforward(config->_dataSet->getTestDataAt(batchIndex*in_dim.batches));
+	const uint32_t baseIndex = batchIndex*in_dim.batches;
+
+	//config->_inputLayer->feedforward(config->_dataSet->getTestDataAt(batchIndex*in_dim.batches));
+	config->_inputLayer->feedforward(config->_dataSet, baseIndex);
 	OutputLayer<Dtype>* outputLayer = config->_outputLayers[0];
 
 	const uint32_t numLabels = outputLayer->getOutDimension().rows;
 	Data<Dtype>* networkOutput = outputLayer->getOutput();
-	const uint32_t* y = config->_dataSet->getTestLabelAt(batchIndex*in_dim.batches);
-	double cost = outputLayer->cost(y);
+
+	//const uint32_t* y = config->_dataSet->getTestLabelAt(batchIndex*in_dim.batches);
+	//double cost = outputLayer->cost(y);
+	double cost = outputLayer->cost(config->_dataSet, baseIndex);
 
 	networkOutput->print_data("networkOutput:");
 	const Dtype* output = networkOutput->host_data();
 	for(int i = 0; i < config->_evaluations.size(); i++) {
-		config->_evaluations[i]->evaluate(numLabels, in_dim.batches, output, y);
+		config->_evaluations[i]->evaluate(numLabels, in_dim.batches, output, config->_dataSet, baseIndex);
 	}
 	//cout << "cost at " << batchIndex << " " << cost << endl;
 
@@ -324,11 +353,13 @@ void Network<Dtype>::trainBatch(uint32_t batchIndex) {
 	int baseIndex = batchIndex*in_dim.batches;
 
 	// FORWARD PASS
-	config->_inputLayer->feedforward(dataSet->getTrainDataAt(baseIndex));
+	//config->_inputLayer->feedforward(dataSet->getTrainDataAt(baseIndex));
+	config->_inputLayer->feedforward(dataSet, baseIndex);
 
 	// BACKWARD PASS
 	for(UINT i = 0; i < outputLayers.size(); i++) {
-		outputLayers[i]->backpropagation(dataSet->getTrainLabelAt(baseIndex));
+		//outputLayers[i]->backpropagation(dataSet->getTrainLabelAt(baseIndex));
+		outputLayers[i]->backpropagation(dataSet, baseIndex);
 	}
 }
 
@@ -353,14 +384,11 @@ void Network<Dtype>::applyUpdate() {
 	cout << "------------------------" << endl;
 	*/
 
-	checkLearnableParamIsNan();
+	//checkLearnableParamIsNan();
 	clipGradients();
 
 	const uint32_t numLearnableLayers = config->_learnableLayers.size();
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		//uint32_t updateCount = config->_learnableLayers[i]->boundParams();
-		//if(updateCount > 0) Util::printMessage(config->_learnableLayers[i]->getName() + " bounded params ... " + to_string(updateCount));
-
 		config->_learnableLayers[i]->update();
 	}
 }
@@ -398,9 +426,13 @@ double Network<Dtype>::computeSumSquareParamsData() {
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
 		double temp = config->_learnableLayers[i]->sumSquareParamsData();
-		Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
-		if(layer) {
-			config->_networkListeners[0]->onDataSumsqComputed(i, layer->getName(), std::sqrt(temp));
+		//if(i >= numLearnableLayers-10) { // && i < numLearnableLayers-1) {
+		if(i < 0) {
+			config->_networkListeners[0]->onDataSumsqComputed(
+					//i-(numLearnableLayers-10),
+					i,
+					config->_learnableLayers[i]->getName(),
+					std::sqrt(temp));
 		}
 		sumsq += temp;
 	}
@@ -413,48 +445,14 @@ double Network<Dtype>::computeSumSquareParamsGrad() {
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
 		double temp = config->_learnableLayers[i]->sumSquareParamsGrad();
-
-
-		//double l2norm = std::sqrt(temp);
-		//if(l2norm > config->_clipGradientsLevel) {}
-
-		Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
-		if(layer) {
-
-
-
-
-
-
-
-
-
-
-
-			config->_networkListeners[0]->onGradSumsqComputed(i, layer->getName(), std::sqrt(temp));
-			//cout << layer->getName() << ", grad l2-norm: " << std::sqrt(temp) << endl;
-			/*
-			if(layer->getName() == "conv1_7x7_s2") {
-				config->_networkListeners[0]->onGradSumsqComputed(0, layer->getName(), std::sqrt(temp));
-			}
-			else if(layer->getName() == "conv2_3x3") {
-				config->_networkListeners[0]->onGradSumsqComputed(1, layer->getName(), std::sqrt(temp));
-			}
-			else if(layer->getName() == "softmaxLayer") {
-				config->_networkListeners[0]->onGradSumsqComputed(2, layer->getName(), std::sqrt(temp));
-			}
-			*/
+		if(i < 10) {
+			config->_networkListeners[0]->onGradSumsqComputed(
+					i,
+					config->_learnableLayers[i]->getName(),
+					std::sqrt(temp));
 		}
 		sumsq += temp;
-		/*
-		float temp = config->_learnableLayers[i]->sumSquareParamsGrad();
-		if(isnan(temp)) {
-			Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
-			cout << layer->getName() << " computes sumsq nan at grad ... " << endl;
-			exit(1);
-		}
-		sumsq += temp;
-		*/
+		//cout << config->_learnableLayers[i]->getName() << ", grad l2-norm: " << std::sqrt(temp) << endl;
 	}
 	return sumsq;
 }
@@ -470,7 +468,7 @@ void Network<Dtype>::scaleParamsGrad(float scale) {
 
 
 
-
+/*
 template <typename Dtype>
 void Network<Dtype>::checkAbnormalParam() {
 	const uint32_t numLearnableLayers = config->_learnableLayers.size();
@@ -510,6 +508,7 @@ void Network<Dtype>::checkAbnormalParam() {
 		}
 	}
 }
+*/
 
 
 template <typename Dtype>

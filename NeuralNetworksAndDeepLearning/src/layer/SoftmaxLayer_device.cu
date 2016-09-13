@@ -11,6 +11,7 @@
 #include "SoftmaxLayer.h"
 #include "../network/NetworkConfig.h"
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // GPU Kernels
 
@@ -20,30 +21,49 @@
  * @param vec The array to fill.
  * @param size The number of elements in the array.
  */
+/*
 template <typename Dtype>
 __global__ void Dropout_(const int n, const Dtype* in, const Dtype* mask,
-		const uint32_t threashold, const float scale, Dtype *out)
-{
-
+		const uint32_t threashold, const float scale, Dtype *out) {
 	CUDA_KERNEL_LOOP(index, n) {
 		//out[index] = in[index] * (mask[index] > threshold) * scale;
 		out[index] = in[index] * (mask[index]) * scale;
 	}
 }
-
+*/
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
+//void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
+void SoftmaxLayer<Dtype>::backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex) {
+	/*
+	double asum = this->_output->asum_device_data() / this->out_dim.batches;
+	cout << "asum of softmax output: " << asum << endl;
+	Data<Dtype>::printConfig = 1;
+	this->_output->print_data("outputData:");
+	for(uint32_t i = 0; i < this->out_dim.batches; i++) {
+		cout << target[i] << ", " << endl;
+	}
+	Data<Dtype>::printConfig = 0;
+	*/
+
+	/*
+	Data<Dtype>::printConfig = 1;
+	this->_output->print_data("network output: ");
+	Data<Dtype>::printConfig = 0;
+	*/
 
 
-	//double asum = this->_output->asum_device_data() / this->out_dim.batches;
-	//cout << "asum of softmax output: " << asum << endl;
+	//this->_target.set_mem(target, SyncMemCopyType::HostToDevice);
+	for(uint32_t i = 0; i < this->out_dim.batches; i++) {
+		//cout << *dataSet->getTrainLabelAt(baseIndex+i) << ", ";
+		this->_target.set_mem(dataSet->getTrainLabelAt(baseIndex+i), SyncMemCopyType::HostToDevice, i, 1);
+	}
+
+	//cout << endl;
+	//this->_target.print("backpropagation target");
+	//exit(1);
 
 
-
-
-	//Util::printMessage("SoftmaxLayer::target()---"+string(this->name));
-	this->_target.set_mem(target, SyncMemCopyType::HostToDevice);
 
 	const Dtype* d_preActivationData = this->_preActivation->device_data();
 	const Dtype* d_outputData = this->_output->device_data();
@@ -54,6 +74,11 @@ void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
 	this->_output->reset_device_grad();
 	Dtype* d_outputGrad = this->_output->mutable_device_grad();
 	this->cost_fn->backward(d_preActivationData, d_outputData, d_target, d_outputGrad, this->out_dim.rows, this->out_dim.batches);
+
+	//double networkSumsq = this->_output->sumsq_device_grad();
+	//cout << "networkSumsq: " << networkSumsq << endl;
+
+
 
 	//Dtype* d_preActivationGrad = this->_preActivation->mutable_device_grad();
 	//this->cost_fn->backward(d_preActivationData, d_outputData, d_target, d_preActivationGrad, this->out_dim.rows, this->out_dim.batches);
@@ -73,11 +98,13 @@ void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
 	*/
 
 
+	/*
 	if(this->networkConfig->_status == NetworkStatus::Train) {
 		if(this->_output->is_nan_grad()) {
 			cout << this->name << " output is nan grad ... " << endl;
 		}
 	}
+	*/
 
 
 	//OutputLayer<Dtype>::_activationBackward();
@@ -141,9 +168,20 @@ void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
 }
 
 template <typename Dtype>
-double SoftmaxLayer<Dtype>::cost(const uint32_t* target) {
+//double SoftmaxLayer<Dtype>::cost(const uint32_t* target) {
+double SoftmaxLayer<Dtype>::cost(DataSet<Dtype>* dataSet, const uint32_t baseIndex) {
 	// 편의상 HOST에서 계산, DEVICE 코드로 변환해야 함
-	this->_target.set_mem(target, SyncMemCopyType::HostToHost);
+	//this->_target.set_mem(target, SyncMemCopyType::HostToHost);
+	if(this->networkConfig->_status == NetworkStatus::Train) {
+		for(uint32_t i = 0; i < this->out_dim.batches; i++) {
+			this->_target.set_mem(dataSet->getTrainLabelAt(baseIndex+i), SyncMemCopyType::HostToHost, i, 1);
+		}
+	} else if(this->networkConfig->_status == NetworkStatus::Test) {
+		for(uint32_t i = 0; i < this->out_dim.batches; i++) {
+			this->_target.set_mem(dataSet->getTestLabelAt(baseIndex+i), SyncMemCopyType::HostToHost, i, 1);
+		}
+	}
+	//this->_target.print("cost target");
 
 	const Dtype* h_outputData = this->_output->host_data();
 	const uint32_t* h_target = this->_target.host_mem();
@@ -151,8 +189,10 @@ double SoftmaxLayer<Dtype>::cost(const uint32_t* target) {
 }
 
 
-template void SoftmaxLayer<float>::backpropagation(const uint32_t* target);
-template double SoftmaxLayer<float>::cost(const uint32_t* target);
+//template void SoftmaxLayer<float>::backpropagation(const uint32_t* target);
+template void SoftmaxLayer<float>::backpropagation(DataSet<float>* dataSet, const uint32_t baseIndex);
+//template double SoftmaxLayer<float>::cost(const uint32_t* target);
+template double SoftmaxLayer<float>::cost(DataSet<float>* dataSet, const uint32_t baseIndex);
 
 
 

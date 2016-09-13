@@ -128,7 +128,6 @@ void DepthConcatLayer<Dtype>::_backpropagation() {
 					d_inputGrad + batchOffset + this->prevLayers[prevLayerIndex]->getOutDimension().unitsize()*batchIndex,
 					1));
 					*/
-
 			checkCudaErrors(cudaMemcpyAsync(
 					d_inputGrad + batchOffset + this->prevLayers[prevLayerIndex]->getOutDimension().unitsize()*batchIndex,
 					d_outputGrad + this->out_dim.unitsize()*batchIndex + unitOffset,

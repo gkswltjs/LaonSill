@@ -47,7 +47,7 @@ public:
 	virtual void scaleParamsGrad(float scale) = 0;
 
 
-	virtual double testParamAbnormality() = 0;
+	//virtual double testParamAbnormality() = 0;
 	virtual uint32_t boundParams() = 0;
 
 protected:

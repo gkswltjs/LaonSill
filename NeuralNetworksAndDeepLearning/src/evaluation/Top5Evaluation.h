@@ -28,6 +28,7 @@ public:
 	Top5Evaluation() {}
 	virtual ~Top5Evaluation() {}
 
+	/*
 	virtual void evaluate(const int num_labels, const int batches, const Dtype *output, const uint32_t *y) {
 		labelScoreList.resize(num_labels);
 
@@ -55,6 +56,24 @@ public:
 			//cout << endl;
 		}
 		//exit(1);
+	}
+	*/
+
+	virtual void evaluate(const int num_labels, const int batches, const Dtype *output, DataSet<Dtype>* dataSet, const uint32_t baseIndex) {
+		labelScoreList.resize(num_labels);
+		for(int j = 0; j < batches; j++) {
+			for(int i = 0; i < num_labels; i++) {
+				labelScoreList[i].label = i;
+				labelScoreList[i].score = output[num_labels*j+i];
+			}
+			std::sort(labelScoreList.begin(), labelScoreList.end(), greater<LabelScore>());
+			for(int i = 0; i < 5; i++) {
+				if(*dataSet->getTestLabelAt(baseIndex+j) == labelScoreList[i].label) {
+					this->accurateCount++;
+					break;
+				}
+			}
+		}
 	}
 
 private:

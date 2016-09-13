@@ -127,8 +127,8 @@ void Data<Dtype>::set_host_with_device_data(const Dtype* data) {
 }
 
 template <typename Dtype>
-void Data<Dtype>::set_device_with_host_data(const Dtype* data) {
-	_data.set_mem(data, SyncMemCopyType::HostToDevice);
+void Data<Dtype>::set_device_with_host_data(const Dtype* data, const size_t offset, const size_t size) {
+	_data.set_mem(data, SyncMemCopyType::HostToDevice, offset, size);
 }
 
 template <typename Dtype>

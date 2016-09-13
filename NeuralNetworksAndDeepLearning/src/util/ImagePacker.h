@@ -26,6 +26,7 @@ struct category_t {
 	string name;				///< 카테고리 이름, 해당 디렉토리의 이름에 해당하는 값
 	vector<string> fileList;	///< 파일 이름 문자열 목록 벡터, 해당 디렉토리 내의 모든 이미지 이름 목록에 해당하는 값
 	int fileIndex;				///< 현재 해당 카테고리내에서 Pack된 파일의 수, 중복으로 pack하지 않기 위한 index
+	int sizePerCategory;
 
 	category_t() {
 		fileIndex = 0;
@@ -39,12 +40,21 @@ struct category_t {
 		if(end()) {	exit(1); }
 		return fileList[fileIndex++];
 	}
+
+	int getFileIndex() {
+		return fileIndex;
+	}
+
+	void setSizePerCategory(int sizePerCategory) {
+		this->sizePerCategory = sizePerCategory;
+	}
+
 	/**
 	 * @details 카테고리 내에 아직 pack되지 않은 파일이 있는지 여부를 확인한다.
 	 * @return 카테고리 내 pack되지 않은 파일의 존재 여부
 	 */
 	bool end() {
-		return (fileList.size() <= fileIndex);
+		return (fileList.size() <= fileIndex || sizePerCategory <= fileIndex);
 	}
 };
 
@@ -93,14 +103,18 @@ private:
 	 * @param fileList 카테고리 디렉토리 내의 모든 파일 이름을 읽어들일 문자열 목록 벡터
 	 */
 	void loadFilesInCategory(string categoryPath, vector<string>& fileList);
+
+
+	void writeCategoryLabelFile(string categoryLabelPath);
 	/**
 	 * @details 실제 pack을 수행한다.
 	 * @param dataPath 데이터 파일 경로 문자열
 	 * @param labelPath 데이터 정답 파일 경로 문자열
 	 * @param numImagesInFile 파일 하나에 포함될 이미지의 수
 	 * @param size 전체 데이터의 수
+	 * @param sizePerCategory 하나의 카테고리당 pack할 이미지의 수
 	 */
-	void _pack(string dataPath, string labelPath, int numImagesInFile, int size);
+	void _pack(string dataPath, string labelPath, int numImagesInFile, int size, int sizePerCategory);
 
 
 	string image_dir;						///< Pack 대상의 Root 경로 문자열

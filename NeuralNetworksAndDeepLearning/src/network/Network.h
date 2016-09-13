@@ -173,7 +173,7 @@ protected:
 
 
 
-	void checkAbnormalParam();
+	//void checkAbnormalParam();
 	void checkLearnableParamIsNan();
 
 

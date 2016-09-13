@@ -14,6 +14,9 @@
 #define EVALUATION_H_
 
 
+#include "../dataset/DataSet.h"
+
+
 /**
  * @brief Evaluation 최상위 추상클래스
  * @details 네트워크 추정과 정답을 이용하여 적절한 결과 통계값을 구하고자 할 때
@@ -48,7 +51,8 @@ public:
 	 * @param output 네트워크가 추정 호스트 메모리 포인터
 	 * @param y 정답값 호스트 메모리 포인터
 	 */
-	virtual void evaluate(const int num_labels, const int batches, const Dtype* output, const uint32_t* y)=0;
+	//virtual void evaluate(const int num_labels, const int batches, const Dtype* output, const uint32_t* y)=0;
+	virtual void evaluate(const int num_labels, const int batches, const Dtype* output, DataSet<Dtype>* dataSet, const uint32_t baseIndex)=0;
 
 protected:
 	int accurateCount;			///< 네트워크 추정에서 정답을 맞춘 갯수

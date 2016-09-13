@@ -1,13 +1,14 @@
 /*
- * GraphPlotter.h
+ * StatGraphPlotter.h
  *
  *  Created on: 2016. 9. 2.
  *      Author: jhkim
  */
 
-#ifndef GRAPHPLOTTER_H_
-#define GRAPHPLOTTER_H_
+#ifndef STATGRAPHPLOTTER_H_
+#define STATGRAPHPLOTTER_H_
 
+#include "StatLogger.h"
 #include <iostream>
 
 #include <gnuplot-iostream.h>
@@ -19,9 +20,9 @@
 using namespace std;
 
 
-class GraphPlotter {
+class StatGraphPlotter : public StatLogger {
 public:
-	GraphPlotter(uint32_t windowSize=500, uint32_t refreshFreq=1)
+	StatGraphPlotter(uint32_t windowSize=500, uint32_t refreshFreq=1)
 		: windowSize(windowSize), refreshFreq(refreshFreq) {
 		statMax = DBL_MIN;
 		statMin = DBL_MAX;
@@ -30,8 +31,8 @@ public:
 		statCount = 1;
 	}
 	/*
-	GraphPlotter(const vector<string>& statNameList, uint32_t windowSize=500, uint32_t refreshFreq=1)
-		: GraphPlotter(windowSize, refreshFreq) {
+	StatGraphPlotter(const vector<string>& statNameList, uint32_t windowSize=500, uint32_t refreshFreq=1)
+		: StatGraphPlotter(windowSize, refreshFreq) {
 
 		if(statCount != statNameList.size()) {
 			cout << "statCount != statNameList.size() ... " << endl;
@@ -41,7 +42,7 @@ public:
 		statList.resize(statCount);
 	}
 	*/
-	virtual ~GraphPlotter() {}
+	virtual ~StatGraphPlotter() {}
 
 	void addStat(const uint32_t statIndex, const string statName, const double stat) {
 		//cout << "statIndex: " << statIndex << ", statName: " << statName << ", stat: " << stat << endl;
@@ -94,7 +95,7 @@ public:
 
 		//int statItemSize = statList[statIndex].size();
 		int statItemSize = statCount;
-		plot << "set xrange [" << std::max(0, (int)(statItemSize-windowSize)) << ":" << statItemSize+5 << "]\nset yrange [" << std::max(0.0, 0.95*localStatMin) << ":" << 1.05*localStatMax << "]\n";
+		plot << "set xrange [" << std::max(0, (int)(statItemSize-windowSize)) << ":" << statItemSize+5 << "]\nset yrange [" << std::max(0.0, localStatMin) << ":" << localStatMax << "]\n";
 		plot << "plot ";
 		for(uint32_t i = 0; i < statList.size(); i++) {
 			plot << plot.file1d(statList[i]) << " with linespoints pt 1 title '"<< statNameList[i] << "'";
@@ -122,4 +123,4 @@ private:
 
 };
 
-#endif /* GRAPHPLOTTER_H_ */
+#endif /* STATGRAPHPLOTTER_H_ */

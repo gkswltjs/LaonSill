@@ -239,11 +239,8 @@ struct param_filler {
 			//Dtype n = (fan_in + fan_out)/Dtype(2);
 			//Dtype n = fan_out;
 			Dtype scale = sqrt(Dtype(3)/n);
+			cout << "fan_in: " << fan_in << ", fan_out: " << fan_out << ", scale: " << scale << endl;
 
-
-			//float sd_xavier = sqrt(1.0f / (n_in+n_out));
-			//float sd_xavier = sqrt(3.0f / (n_out));
-			//float sd_xavier = sqrt(3.0f / (n_in));
 			//cout << "sd_xavier: " << sd_xavier << endl;
 			std::random_device rd_xavier;
 			std::mt19937 gen_xavier(rd_xavier());
@@ -251,15 +248,14 @@ struct param_filler {
 			std::uniform_real_distribution<Dtype> unifrom_dist(-scale, scale);
 			for(uint32_t i = 0; i < size; i++) mem[i] = unifrom_dist(gen_xavier);
 
+
 			/*
 			std::random_device rd_xavier;
 			std::mt19937 gen_xavier(rd_xavier());
 			std::normal_distribution<DATATYPE> normal_dist(0.0, 1.0);
-			//float sd_xavier = sqrt(1.0f / (n_in+n_out));
-			float sd_xavier = sqrt(3.0f / n_in);
-			cout << "sd_xavier: " << sd_xavier << endl;
-			for(i = 0; i < size; i++) param[i] = normal_dist(gen_xavier);//*sd_xavier;
+			for(uint32_t i = 0; i < size; i++) mem[i] = normal_dist(gen_xavier)*scale;
 			*/
+
 			break;
 		}
 		case ParamFillerType::Gaussian: {

@@ -91,7 +91,7 @@ public:
 	 * @param index 조회하고자 하는 학습 데이터의 index
 	 * @return index번째 학습데이터에 대한 포인터.
 	 */
-	virtual const Dtype *getTrainDataAt(int index);
+	virtual const Dtype* getTrainDataAt(int index);
 	/**
 	 * @details index번째 학습데이터의 정답 레이블에 대한 포인터 조회.
 	 * @param index 조회하고자 하는 학습 데이터 정답 레이블의 index

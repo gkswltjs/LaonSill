@@ -18,11 +18,6 @@
 
 
 
-
-// for debug
-#include "../debug/GraphPlotter.h"
-
-
 /**
  * @brief Fully Connected (Inner Product) 레이어
  * @details 이전 레이어와 현재 레이어의 모든 노드들에 대해 연결성이 있고
@@ -148,7 +143,7 @@ public:
 	virtual double sumSquareParamsData();
 	virtual double sumSquareParamsGrad();
 	virtual void scaleParamsGrad(float scale);
-	virtual double testParamAbnormality();
+	//virtual double testParamAbnormality();
 	virtual uint32_t boundParams();
 	//////////////////////////////////////////
 
@@ -172,6 +167,10 @@ protected:
 	virtual void _feedforward();
 	virtual void _backpropagation();
 
+	void _computeWeightedData();
+	void _computeWeightBiasedData();
+	void _computeActivatedData();
+
 	void _computePreActivationGrad();
 	void _computeWeightGrad();
 	void _computeBiasGrad();
@@ -183,7 +182,8 @@ protected:
 	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
-
+	void _dropoutForward();
+	void _dropoutBackward();
 
 
 
@@ -228,7 +228,7 @@ protected:
 
 
 
-	//GraphPlotter gradPlotter;
+
 
 
 public:

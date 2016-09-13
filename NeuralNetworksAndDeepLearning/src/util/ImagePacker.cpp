@@ -79,6 +79,9 @@ void ImagePacker::load() {
 }
 
 void ImagePacker::loadFilesInCategory(string categoryPath, vector<string>& fileList) {
+	const char* suffix = ".1.JPEG";
+	const size_t suffixLength = strlen(suffix);
+
 	int fileCount = 0;
 	DIR *dir;
 	if((dir = opendir(categoryPath.c_str())) != NULL) {
@@ -87,7 +90,12 @@ void ImagePacker::loadFilesInCategory(string categoryPath, vector<string>& fileL
 		while(readdir_r(dir, &ent, &result) == 0) {
 			if(result == NULL) break;
 			if(ent.d_type == 8) {
-				fileList.push_back(ent.d_name);
+
+				size_t nameLength = strlen(ent.d_name);
+				if(strncmp(ent.d_name + nameLength - suffixLength, suffix, suffixLength) == 0) {
+					fileList.push_back(ent.d_name);
+				}
+
 			}
 		}
 		random_shuffle(&fileList[0], &fileList[fileList.size()]);
@@ -112,20 +120,37 @@ void ImagePacker::show() {
 
 void ImagePacker::pack() {
 	const string saveBase = image_dir+path_save;
-	ofstream ofsCategoryLabel((saveBase+"/category_label").c_str(), ios::out);
+
+	writeCategoryLabelFile(saveBase+"/category_label");
+
+	// for train
+	_pack(saveBase+"/train_data", saveBase+"/train_label", numImagesInTrainFile, numTrain, numTrain/numCategory);
+	// for test
+	_pack(saveBase+"/test_data", saveBase+"/test_label", numImagesInTestFile, numTest, numTest/numCategory);
+}
+
+
+void ImagePacker::writeCategoryLabelFile(string categoryLabelPath) {
+	ofstream ofsCategoryLabel(categoryLabelPath.c_str(), ios::out);
 	for(int i = 0; i < categoryList.size(); i++) {
 		ofsCategoryLabel << categoryList[i].name << "\t" << categoryList[i].id << endl;
 	}
 	ofsCategoryLabel.close();
-
-	// for train
-	_pack(saveBase+"/train_data", saveBase+"/train_label", numImagesInTrainFile, numTrain);
-	// for test
-	_pack(saveBase+"/test_data", saveBase+"/test_label", numImagesInTestFile, numTest);
 }
 
 
-void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, int size) {
+void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, int size, int sizePerCategory) {
+
+	srand((unsigned int)time(NULL));
+
+	for(uint32_t i = 0; i < numCategory; i++) {
+		categoryList[i].setSizePerCategory(sizePerCategory);
+	}
+
+
+
+
+
 	UByteImageDataset imageDataSet;
 	imageDataSet.magic = UBYTE_IMAGE_MAGIC;
 	imageDataSet.length = numImagesInFile;
@@ -140,6 +165,7 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 	ofstream *ofsLabel = 0;
 	int width = 0;
 	int height = 0;
+
 	for(int i = 0; i < size; i++) {
 		if(i%numImagesInFile == 0) {
 			if(ofsData) {
@@ -155,17 +181,22 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 			ofsData = new ofstream(dataFile.c_str(), ios::out | ios::binary);
 			if(i > 0) ofsData->write((char *)&imageDataSet, sizeof(UByteImageDataset));
 
-
 			string labelFile = labelPath+to_string(i/numImagesInFile);
 			ofsLabel = new ofstream(labelFile.c_str(), ios::out | ios::binary);
 			ofsLabel->write((char *)&labelDataSet, sizeof(UByteLabelDataset));
 		}
 
+		do {
+			categoryIndex = rand()%numCategory;
+		} while(categoryList[categoryIndex].end());
+
+			/*
 		while(categoryList[categoryIndex].end()) {
 			if(++categoryIndex >= numCategory) {
 				categoryIndex = 0;
 			}
 		}
+		*/
 
 		string imageFile = image_dir+path_crop+"/"+categoryList[categoryIndex].name+"/"+categoryList[categoryIndex].getCurrentFile();
 		//cout << i << ": imageFile: " << imageFile << endl;
@@ -194,7 +225,7 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 			for(int i = 0; i < numRepeat; i++) ofsData->write((char *)image.data(), sizeof(unsigned char)*width*height*image.spectrum());
 		}
 		else {
-			cout << "image invalid channel num ... " << endl;
+			cout << "image invalid channel num ... " << image.spectrum() << endl;
 			exit(1);
 		}
 
@@ -220,6 +251,12 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 		ofsLabel->close();
 		ofsLabel = 0;
 	}
+
+	cout << "Category Pack Stat: " << endl;
+	for(uint32_t i = 0; i < numCategory; i++) {
+		cout << "category " << i << ": " << categoryList[i].getFileIndex() << endl;
+	}
+
 }
 
 

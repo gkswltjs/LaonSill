@@ -32,16 +32,12 @@ SyncMem<Dtype>::SyncMem() {
 	_host_mem = NULL;
 	_device_mem = NULL;
 
-
-
 	checkCudaErrors(Util::ucudaMalloc(&_d_int, sizeof(uint32_t)));
 	checkCudaErrors(Util::ucudaMalloc(&_d_bool, sizeof(bool)));
 
-
-
-
-	_host_mem_updated = false;
-	_device_mem_updated = false;
+	//_host_mem_updated = false;
+	//_device_mem_updated = false;
+	resetMemUpdated();
 }
 
 template <typename Dtype>
@@ -85,37 +81,47 @@ const Dtype* SyncMem<Dtype>::device_mem() {
 template <typename Dtype>
 Dtype* SyncMem<Dtype>::mutable_host_mem() {
 	checkDeviceMemAndUpdateHostMem();
-	_host_mem_updated = true;
+	//_host_mem_updated = true;
+	setHostMemUpdated();
 	return _host_mem;
 }
 
 template <typename Dtype>
 Dtype* SyncMem<Dtype>::mutable_device_mem() {
 	checkHostMemAndUpdateDeviceMem();
-	_device_mem_updated = true;
+	//_device_mem_updated = true;
+	setDeviceMemUpdated();
 	return _device_mem;
 }
 
 template <typename Dtype>
-void SyncMem<Dtype>::set_mem(const Dtype* mem, SyncMemCopyType copyType) {
+void SyncMem<Dtype>::set_mem(const Dtype* mem, SyncMemCopyType copyType, const size_t offset, const size_t size) {
 	checkMemValidity();
+
+	size_t copySize;
+	if(size == 0) copySize = _size;
+	else copySize = size;
 
 	switch(copyType) {
 	case SyncMemCopyType::HostToHost:
-		std::memcpy(_host_mem, mem, sizeof(Dtype)*_size);
-		_host_mem_updated = true;
+		std::memcpy(_host_mem+offset, mem, sizeof(Dtype)*copySize);
+		//_host_mem_updated = true;
+		setHostMemUpdated();
 		break;
 	case SyncMemCopyType::HostToDevice:
-		checkCudaErrors(cudaMemcpyAsync(_device_mem, mem, sizeof(Dtype)*_size, cudaMemcpyHostToDevice));
-		_device_mem_updated = true;
+		checkCudaErrors(cudaMemcpyAsync(_device_mem+offset, mem, sizeof(Dtype)*copySize, cudaMemcpyHostToDevice));
+		//_device_mem_updated = true;
+		setDeviceMemUpdated();
 		break;
 	case SyncMemCopyType::DeviceToHost:
-		checkCudaErrors(cudaMemcpyAsync(_host_mem, mem, sizeof(Dtype)*_size, cudaMemcpyDeviceToHost));
-		_host_mem_updated = true;
+		checkCudaErrors(cudaMemcpyAsync(_host_mem+offset, mem, sizeof(Dtype)*copySize, cudaMemcpyDeviceToHost));
+		//_host_mem_updated = true;
+		setHostMemUpdated();
 		break;
 	case SyncMemCopyType::DeviceToDevice:
-		checkCudaErrors(cudaMemcpyAsync(_device_mem, mem, sizeof(Dtype)*_size, cudaMemcpyDeviceToDevice));
-		_device_mem_updated = true;
+		checkCudaErrors(cudaMemcpyAsync(_device_mem+offset, mem, sizeof(Dtype)*copySize, cudaMemcpyDeviceToDevice));
+		//_device_mem_updated = true;
+		setDeviceMemUpdated();
 		break;
 	}
 }
@@ -125,14 +131,16 @@ void SyncMem<Dtype>::reset_host_mem() {
 	// reset할 것이므로 device update 여부를 확인, sync과정이 필요없음.
 	checkMemValidity();
 	std::memset(_host_mem, 0, sizeof(Dtype)*_size);
-	_host_mem_updated = true;
+	//_host_mem_updated = true;
+	setHostMemUpdated();
 }
 
 template <typename Dtype>
 void SyncMem<Dtype>::reset_device_mem() {
 	checkMemValidity();
 	checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_size));
-	_device_mem_updated = true;
+	//_device_mem_updated = true;
+	setDeviceMemUpdated();
 }
 
 template <typename Dtype>
@@ -168,14 +176,6 @@ double SyncMem<float>::sumsq_device_mem() {
 	float sumsq;
 	const float* _mem = device_mem();
 	checkCudaErrors(cublasSdot(Cuda::cublasHandle, _size, _mem, 1, _mem, 1, &sumsq));
-
-	// NaN test
-	/*
-	if(isnan(sumsq)) {
-		sumsq = std::numeric_limits<float>::max();
-		print("data:");
-	}
-	*/
 	return (double)sumsq;
 }
 
@@ -184,7 +184,6 @@ double SyncMem<float>::asum_device_mem() {
 	float asum;
 	const float* _mem = device_mem();
 	checkCudaErrors(cublasSasum(Cuda::cublasHandle, _size, _mem, 1, &asum));
-
 	return (double)asum;
 }
 
@@ -199,7 +198,10 @@ void SyncMem<Dtype>::checkDeviceMemAndUpdateHostMem(bool reset) {
 		cout << "device mem is updated, updating host mem ... " << endl;
 #endif
 		checkCudaErrors(cudaMemcpyAsync(_host_mem, _device_mem, sizeof(Dtype)*_size, cudaMemcpyDeviceToHost));
-		if(reset) _device_mem_updated = false;
+		if(reset) {
+			//_device_mem_updated = false;
+			resetMemUpdated();
+		}
 	}
 
 }
@@ -212,7 +214,10 @@ void SyncMem<Dtype>::checkHostMemAndUpdateDeviceMem(bool reset) {
 		cout << "host mem is updated, updating device mem ... " << endl;
 #endif
 		checkCudaErrors(cudaMemcpyAsync(_device_mem, _host_mem, sizeof(Dtype)*_size, cudaMemcpyHostToDevice));
-		if(reset) _host_mem_updated = false;
+		if(reset) {
+			//_host_mem_updated = false;
+			resetMemUpdated();
+		}
 	}
 }
 
@@ -229,6 +234,27 @@ void SyncMem<Dtype>::checkMemValidity() {
 		//assert();
 	}
 }
+
+
+template <typename Dtype>
+void SyncMem<Dtype>::setHostMemUpdated() {
+	_device_mem_updated = false;
+	_host_mem_updated = true;
+}
+
+template <typename Dtype>
+void SyncMem<Dtype>::setDeviceMemUpdated() {
+	_host_mem_updated = false;
+	_device_mem_updated = true;
+}
+
+template <typename Dtype>
+void SyncMem<Dtype>::resetMemUpdated() {
+	_host_mem_updated = false;
+	_device_mem_updated = false;
+}
+
+
 
 
 template <typename Dtype>
@@ -297,7 +323,7 @@ void SyncMem<Dtype>::print(const string& head) {
 	// 강제로 flag를 reset하지 않도록 수정
 	checkDeviceMemAndUpdateHostMem(false);
 	const Dtype* data = _host_mem;
-	const uint32_t printSize = std::min(10, (int)_size);
+	const uint32_t printSize = std::min(100, (int)_size);
 	for(uint32_t i = 0; i < printSize; i++) {
 		(*outstream) << data[i] << ", ";
 	}

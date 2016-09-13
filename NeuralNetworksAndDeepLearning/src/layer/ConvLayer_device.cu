@@ -116,6 +116,11 @@ void ConvLayer<Dtype>::_shape(bool recursive) {
 	weight_filler.fill(_params[Filter]);
 	bias_filler.fill(_params[Bias]);
 
+
+	_params[Filter]->print_data(this->name + " filter: ");
+
+
+
 	_preActivation->reshape({this->out_dim.batches, this->out_dim.channels, this->out_dim.rows, this->out_dim.cols});
 
 	size_t convFwdWorkspaceSize;
@@ -358,8 +363,6 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
 
-
-
 	Dtype* d_paramGrad = data->mutable_device_grad();
 	Dtype* d_paramData = data->mutable_device_data();
 	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
@@ -370,14 +373,6 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &learnScale, d_paramGrad, 1, d_paramHistoryData, 1));	// momentum
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne, d_paramHistoryData, 1, d_paramData, 1));	// update
 
-
-	if(this->name == "inception_3a/conv5x5") {
-		//Data<Dtype>::printConfig = 1;
-		data->print_grad("paramGrad:");
-		//data->print_data("paramData:");
-		//dataHistory->print_data("paramHistoryData:");
-		//Data<Dtype>::printConfig = 0;
-	}
 }
 
 
@@ -488,13 +483,14 @@ void ConvLayer<Dtype>::_backpropagation() {
 	_computeInputGrad();
 
 
-
+	/*
 	if(_params[0]->is_nan_grad()) {
 		cout << this->name << " filter is nan grad ... " << endl;
 	}
 	if(_params[1]->is_nan_grad()) {
 		cout << this->name << " bias is nan grad ... " << endl;
 	}
+	*/
 }
 
 
@@ -567,7 +563,7 @@ void ConvLayer<Dtype>::_computeInputGrad() {
 
 
 
-
+/*
 template <typename Dtype>
 double ConvLayer<Dtype>::testParamAbnormality() {
 	const Dtype* weightGrad = _params[Filter]->host_grad();
@@ -595,7 +591,7 @@ double ConvLayer<Dtype>::testParamAbnormality() {
 	}
 	return DBL_MAX;
 }
-
+*/
 
 
 
