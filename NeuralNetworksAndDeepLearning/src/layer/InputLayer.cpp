@@ -43,7 +43,8 @@ void InputLayer<Dtype>::feedforward(DataSet<Dtype>* dataSet, const uint32_t base
 		for(uint32_t i = 0; i < this->in_dim.batches; i++) {
 			//cout << "baseIndex: " << baseIndex << ", inBatch: " << i << endl;
 			//cout << "src: " << baseIndex+i << ", dst: " << i*unitSize << ", size: " << unitSize << endl;
-			this->_input->set_device_with_host_data(dataSet->getTrainDataAt(baseIndex+i), i*unitSize, unitSize);
+			const Dtype* ptr = dataSet->getTrainDataAt(baseIndex+i);
+			this->_input->set_device_with_host_data(ptr, i*unitSize, unitSize);
 		}
 	} else if(this->networkConfig->_status == NetworkStatus::Test) {
 		for(uint32_t i = 0; i < this->in_dim.batches; i++) {

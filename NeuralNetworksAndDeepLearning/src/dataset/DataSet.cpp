@@ -178,6 +178,15 @@ void DataSet<Dtype>::shuffleTrainDataSet() {
 	random_shuffle(&(*trainSetIndices)[0], &(*trainSetIndices)[numTrainData]);
 
 	/*
+	cout << "trainSetIndices: " << endl;
+	for(uint32_t i = 0; i < numTrainData; i++) {
+		cout << "i: " << i << ", trainSetIndice: " << (*trainSetIndices)[i] << endl;
+	}
+	*/
+
+
+
+	/*
 	auto seed = unsigned(time(0));
 	srand(seed);
 	random_shuffle(&trainDataSet[0], &trainDataSet[numTrainData]);

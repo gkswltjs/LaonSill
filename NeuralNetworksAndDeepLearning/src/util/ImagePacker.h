@@ -30,6 +30,7 @@ struct category_t {
 
 	category_t() {
 		fileIndex = 0;
+		sizePerCategory = 0;
 	}
 
 	/**
@@ -45,8 +46,8 @@ struct category_t {
 		return fileIndex;
 	}
 
-	void setSizePerCategory(int sizePerCategory) {
-		this->sizePerCategory = sizePerCategory;
+	void addSizePerCategory(int sizePerCategory) {
+		this->sizePerCategory += sizePerCategory;
 	}
 
 	/**

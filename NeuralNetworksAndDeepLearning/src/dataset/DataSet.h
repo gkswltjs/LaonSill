@@ -129,7 +129,7 @@ public:
 	 * @details 학습데이터의 각 채널별 평균을 구하고 학습, 유효, 테스트 데이터에 대해 평균만큼 shift.
 	 * @param hasMean 이미 계산된 평균값이 있는지 여부, 미리 계산된 평균값이 있는 경우 다시 평균을 계산하지 않는다.
 	 */
-	void zeroMean(bool hasMean=false);
+	virtual void zeroMean(bool hasMean=false);
 
 	/**
 	 * @details 학습,유효,테스트 데이터를 메모리로 로드.
@@ -162,9 +162,9 @@ protected:
 	uint32_t channels;							///< 데이터의 channel값.
 	size_t dataSize;							///< 데이터셋 데이터 하나의 요소수 (rows*cols*channels)
 
-	uint32_t numTrainData;						///< 학습데이터의 수.
-	uint32_t numValidationData;					///< 유효데이터의 수.
-	uint32_t numTestData;						///< 테스트데이터의 수.
+	uint32_t numTrainData;						///< 전체 학습데이터의 수.
+	uint32_t numValidationData;					///< 전체 유효데이터의 수.
+	uint32_t numTestData;						///< 전체 테스트데이터의 수.
 
 	vector<Dtype>* trainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
 	vector<uint32_t>* trainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.

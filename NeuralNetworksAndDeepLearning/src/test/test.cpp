@@ -12,10 +12,13 @@
 #include <cmath>
 #include <cfloat>
 #include <boost/tuple/tuple.hpp>
+#include "../debug/Debug.h"
+#include "../dataset/DataSet.h"
 
 using namespace std;
 
 
+int imagePackerTest(int argc, char** argv);
 void imagepacker_test(int numCategory, int numTrain, int numTest, int numImagesInTrainFile, int numImagesInTestFile, int numChannels);
 void imagepackdataset_test();
 void xavier_test();
@@ -23,8 +26,22 @@ void mnist_test(const string data_path, const string label_path, const string da
 int gnuplot_test();
 
 int main_test(int argc, char** argv) {
+	//return imagePackerTest(argc, argv);
 
-	//gnuplot_test();
+
+	const uint32_t pageSize = 3000;
+	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
+	dataSet->load();
+
+	for(uint32_t i = 0; i < pageSize*5; i+=100) {
+		dataSet->getTrainDataAt(i%pageSize);
+	}
+}
+
+
+int imagePackerTest(int argc, char** argv) {
+
+	cout << "setSizePerCategory -> addSizePerCategory ... " << endl;
 
 	int numCategory = atoi(argv[1]);
 	int numTrain = atoi(argv[2]);
@@ -33,27 +50,6 @@ int main_test(int argc, char** argv) {
 	int numImagesInTestFile = atoi(argv[5]);
 	int numChannels = atoi(argv[6]);
 	imagepacker_test(numCategory, numTrain, numTest, numImagesInTrainFile, numImagesInTestFile, numChannels);
-
-	//"/home/jhkim/data/learning/mnist/train-images.idx3-ubyte",
-	//"/home/jhkim/data/learning/mnist/train-labels.idx1-ubyte",
-	//"/home/jhkim/data/learning/mnist/t10k-images.idx3-ubyte",
-	//"/home/jhkim/data/learning/mnist/t10k-labels.idx1-ubyte",
-	/*
-	mnist_test(
-			"/home/jhkim/data/learning/mnist/train-images.idx3-ubyte",
-			"/home/jhkim/data/learning/mnist/train-labels.idx1-ubyte",
-			"/home/jhkim/data/learning/mnist/train_data0",
-			"/home/jhkim/data/learning/mnist/train_label0");*/
-	/*
-	mnist_test(
-			"/home/jhkim/data/learning/mnist/t10k-images.idx3-ubyte",
-			"/home/jhkim/data/learning/mnist/t10k-labels.idx1-ubyte",
-			"/home/jhkim/data/learning/mnist/test_data0",
-			"/home/jhkim/data/learning/mnist/test_label0");
-			*/
-
-	//imagepackdataset_test();
-	//xavier_test();
 
 	return 0;
 }

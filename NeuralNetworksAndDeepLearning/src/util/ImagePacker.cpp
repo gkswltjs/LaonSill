@@ -144,11 +144,8 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 	srand((unsigned int)time(NULL));
 
 	for(uint32_t i = 0; i < numCategory; i++) {
-		categoryList[i].setSizePerCategory(sizePerCategory);
+		categoryList[i].addSizePerCategory(sizePerCategory);
 	}
-
-
-
 
 
 	UByteImageDataset imageDataSet;

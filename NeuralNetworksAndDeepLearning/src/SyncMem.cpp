@@ -110,6 +110,13 @@ void SyncMem<Dtype>::set_mem(const Dtype* mem, SyncMemCopyType copyType, const s
 		break;
 	case SyncMemCopyType::HostToDevice:
 		checkCudaErrors(cudaMemcpyAsync(_device_mem+offset, mem, sizeof(Dtype)*copySize, cudaMemcpyHostToDevice));
+		/*
+		cudaError_t status = cudaMemcpyAsync(_device_mem+offset, mem, sizeof(Dtype)*copySize, cudaMemcpyHostToDevice);
+		if (status != 0) {
+		  cout << "Cuda failure: " << status;
+		  //FatalError(_error.str());
+		}
+		*/
 		//_device_mem_updated = true;
 		setDeviceMemUpdated();
 		break;

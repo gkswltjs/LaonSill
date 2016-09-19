@@ -65,18 +65,30 @@ public:
 	virtual const uint32_t* getTestLabelAt(int index);
 
 
+
+	int load(typename DataSet<Dtype>::Type type, int page);
+
+	virtual void shuffleTrainDataSet();
+	virtual void shuffleValidationDataSet();
+	virtual void shuffleTestDataSet();
+
+
 #ifndef GPU_MODE
 protected:
 	int loadDataSetFromResource(string resources[2], DataSample *&dataSet);
 #else
 protected:
-	int load(typename DataSet<Dtype>::Type type, int page);
+
 	int loadDataSetFromResource(
 			string data_path,
 			string label_path,
 			vector<Dtype> *&dataSet,
 			vector<uint32_t> *&labelSet,
 			vector<uint32_t>*& setIndices);
+
+	virtual void zeroMean(bool hasMean=false, bool isTrain=true);
+
+
 #endif
 
 protected:
@@ -94,6 +106,43 @@ protected:
 	int numImagesInTestFile;				///< 테스트데이터셋 파일 하나에 들어있는 데이터의 수
 
 	vector<uint8_t>* bufDataSet;			///< 데이터셋 데이터를 로드할 버퍼. 파일의 uint8_t타입 데이터를 버퍼에 올려 uint32_t타입으로 변환하기 위한 버퍼.
+
+
+
+
+
+
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	struct thread_arg_t {
+		//typename DataSet<Dtype>::Type type;
+		void* context;
+		int page;
+	};
+
+
+
+	vector<Dtype>* frontTrainDataSet;
+	vector<uint32_t>* frontTrainLabelSet;
+	vector<Dtype>* backTrainDataSet;
+	vector<uint32_t>* backTrainLabelSet;
+
+
+
+	bool loading;
+
+	pthread_t bufThread;
+	thread_arg_t threadArg;
+	vector<Dtype>* secondTrainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
+	vector<uint32_t>* secondTrainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
+
+
+	static void* load_helper(void* context);
+
+
+	void swap();
+
 };
 
 #endif /* IMAGEPACKDATASET_H_ */

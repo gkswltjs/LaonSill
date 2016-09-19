@@ -63,23 +63,24 @@ void network_test() {
 	//DataSet<float>* dataSet = new MockDataSet<float>(224, 224, 3, 100, 100, 100);
 	//DataSet<float>* dataSet = createImageNet10CatDataSet<float>();
 	//DataSet<float>* dataSet = createImageNet100CatDataSet<float>();
-	DataSet<float>* dataSet = createImageNet1000CatDataSet2<float>();
-	//DataSet<float>* dataSet = createMnistDataSet<float>();
+	//DataSet<float>* dataSet = createImageNet1000DataSet<float>();
+	//DataSet<float>* dataSet = createImageNet10000DataSet<float>();
+	DataSet<float>* dataSet = createMnistDataSet<float>();
 	dataSet->load();
-	dataSet->zeroMean(true);
+	//dataSet->zeroMean(true);
 
 	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
 	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
 	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_ONLY);
 
-	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createInceptionLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfigTest<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ASimpleLayersConfig<float>();
-	LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createGoogLeNetInception5ALayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInceptionAuxLayersConfig<float>();
 
 

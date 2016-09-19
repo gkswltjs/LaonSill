@@ -104,8 +104,8 @@ void Network<Dtype>::sgd(int epochs) {
 			// UPDATE
 			applyUpdate();
 
-
-			if((batchIndex+1) % 500 == 0) {
+			/*
+			if((batchIndex+1) % 150 == 0) {
 				config->_status = NetworkStatus::Test;
 				const uint32_t numTestData = dataSet->getNumTestData();
 				if(numTestData > 0) {
@@ -130,13 +130,13 @@ void Network<Dtype>::sgd(int epochs) {
 				}
 				config->_status = NetworkStatus::Train;
 			}
+			*/
 
 
 
 
 		}
 
-		/*
 		//if((epochIndex+1) % 1 == 0) {
 			config->_status = NetworkStatus::Test;
 			const uint32_t numTestData = dataSet->getNumTestData();
@@ -164,7 +164,7 @@ void Network<Dtype>::sgd(int epochs) {
 				cout << "Epoch " << epochIndex+1 << " complete: " << timer1.stop(false) << endl;
 			}
 		//}
-		 */
+
 	}
 }
 
@@ -445,7 +445,8 @@ double Network<Dtype>::computeSumSquareParamsGrad() {
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
 		double temp = config->_learnableLayers[i]->sumSquareParamsGrad();
-		if(i < 10) {
+		//if(i < 10) {
+		if(i < 0) {
 			config->_networkListeners[0]->onGradSumsqComputed(
 					i,
 					config->_learnableLayers[i]->getName(),
