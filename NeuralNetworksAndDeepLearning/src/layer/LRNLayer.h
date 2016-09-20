@@ -35,7 +35,9 @@ public:
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		lrn_dim _lrnDim;
-		Builder() {}
+		Builder() {
+			this->type = Layer<Dtype>::LRN;
+		}
 		Builder* lrnDim(uint32_t local_size, double alpha, double beta, double k) {
 			this->_lrnDim.local_size = local_size;
 			this->_lrnDim.alpha = alpha;
@@ -61,6 +63,14 @@ public:
 		}
 		Layer<Dtype>* build() {
 			return new LRNLayer(this);
+		}
+		virtual void save(ofstream& ofs) {
+			HiddenLayer<Dtype>::Builder::save(ofs);
+			ofs.write((char*)&_lrnDim, sizeof(lrn_dim));
+		}
+		virtual void load(ifstream& ifs) {
+			HiddenLayer<Dtype>::Builder::load(ifs);
+			ifs.read((char*)&_lrnDim, sizeof(lrn_dim));
 		}
 	};
 	/**
@@ -90,8 +100,8 @@ protected:
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual void _save(ofstream &ofs);
-	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+	//virtual void _save(ofstream &ofs);
+	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 
 protected:

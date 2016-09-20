@@ -38,6 +38,7 @@ void LRNLayer<Dtype>::_clearShape() {
 	HiddenLayer<Dtype>::_clearShape();
 }
 
+/*
 template <typename Dtype>
 void LRNLayer<Dtype>::_save(ofstream &ofs) {
 	HiddenLayer<Dtype>::_save(ofs);
@@ -54,7 +55,7 @@ void LRNLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& la
 	initialize(lrn_d);
 	LRNLayer<Dtype>::_shape(false);
 }
-
+*/
 
 
 

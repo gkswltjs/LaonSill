@@ -38,7 +38,9 @@ public:
 	 */
 	class Builder : public Layer<Dtype>::Builder {
 	public:
-		Builder() {}
+		Builder() {
+			this->type = Layer<Dtype>::Input;
+		}
 		virtual Builder* name(const string name) {
 			Layer<Dtype>::Builder::name(name);
 			return this;
@@ -53,6 +55,12 @@ public:
 		}
 		Layer<Dtype>* build() {
 			return new InputLayer(this);
+		}
+		virtual void save(ofstream& ofs) {
+			Layer<Dtype>::Builder::save(ofs);
+		}
+		virtual void load(ifstream& ifs) {
+			Layer<Dtype>::Builder::load(ifs);
 		}
 	};
 
@@ -106,8 +114,8 @@ protected:
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	virtual void _save(ofstream &ofs);
-	virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+	//virtual void _save(ofstream &ofs);
+	//virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 };
 

@@ -50,9 +50,13 @@ public:
 	//virtual double testParamAbnormality() = 0;
 	virtual uint32_t boundParams() = 0;
 
+	virtual void saveParams(ofstream& ofs) = 0;
+	virtual void loadParams(ifstream& ifs) = 0;
+
 protected:
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
-		Dtype normScale = 1.0/this->in_dim.batches;
+		/*
+		const Dtype normScale = 1.0/this->in_dim.batches;
 		const Dtype momentum = this->networkConfig->_momentum;
 		const Dtype negativeOne = -1.0;
 
@@ -69,6 +73,7 @@ protected:
 		checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &momentum, d_paramHistoryData, 1));					//
 		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &learnScale, d_paramGrad, 1, d_paramHistoryData, 1));	// momentum
 		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne, d_paramHistoryData, 1, d_paramData, 1));	// update
+		*/
 	}
 
 

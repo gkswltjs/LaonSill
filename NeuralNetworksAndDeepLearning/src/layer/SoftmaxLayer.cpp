@@ -64,13 +64,14 @@ void SoftmaxLayer<Dtype>::_clearShape() {
 	OutputLayer<Dtype>::_clearShape();
 }
 
+/*
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
 	OutputLayer<Dtype>::_load(ifs, layerMap);
 	initialize();
 	SoftmaxLayer<Dtype>::_shape(false);
 }
-
+*/
 
 
 

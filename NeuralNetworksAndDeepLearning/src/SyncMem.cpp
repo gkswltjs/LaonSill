@@ -318,6 +318,21 @@ bool SyncMem<float>::bound_mem() {
 
 
 
+template <typename Dtype>
+void SyncMem<Dtype>::save(ofstream& ofs) {
+	const Dtype* ptr = host_mem();
+	ofs.write((char*)&_size, sizeof(size_t));
+	ofs.write((char*)ptr, sizeof(Dtype)*_size);
+}
+
+
+template <typename Dtype>
+void SyncMem<Dtype>::load(ifstream& ifs) {
+	Dtype* ptr = mutable_host_mem();
+	ifs.read((char*)&_size, sizeof(size_t));
+	ifs.read((char*)ptr, sizeof(Dtype)*_size);
+}
+
 
 
 template <typename Dtype>

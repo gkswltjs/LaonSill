@@ -80,6 +80,7 @@ void InputLayer<Dtype>::_clearShape() {
 	Layer<Dtype>::_clearShape();
 }
 
+/*
 template <typename Dtype>
 void InputLayer<Dtype>::_save(ofstream &ofs) {
 	this->saveHeader(0, ofs);
@@ -98,6 +99,7 @@ void InputLayer<Dtype>::_load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& 
 	InputLayer::_shape(false);
 	this->loadNetwork(ifs, layerMap);
 }
+*/
 
 
 template class InputLayer<float>;

@@ -80,6 +80,32 @@ uint32_t ConvLayer<Dtype>::boundParams() {
 	return updateCount;
 }
 
+template <typename Dtype>
+void ConvLayer<Dtype>::saveParams(ofstream& ofs) {
+	uint32_t numParams = _params.size();
+	ofs.write((char*)&numParams, sizeof(uint32_t));
+	for(uint32_t i = 0; i < numParams; i++) {
+		_params[i]->save(ofs);
+	}
+}
+
+
+template <typename Dtype>
+void ConvLayer<Dtype>::loadParams(ifstream& ifs) {
+	uint32_t numParams;
+	ifs.read((char*)&numParams, sizeof(uint32_t));
+	for(uint32_t i = 0; i < numParams; i++) {
+		_params[i]->load(ifs);
+	}
+}
+
+
+
+
+
+
+
+
 
 #ifndef GPU_MODE
 void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
@@ -419,6 +445,7 @@ void ConvLayer<Dtype>::update(uint32_t idx, uint32_t n, uint32_t miniBatchSize) 
 	propUpdate(n, miniBatchSize);
 }
 
+/*
 template <typename Dtype>
 void ConvLayer<Dtype>::_save(ofstream &ofs) {
 	HiddenLayer<Dtype>::_save(ofs);
@@ -439,6 +466,7 @@ void ConvLayer<Dtype>::_save(ofstream &ofs) {
 	}
 	biases.save(ofs, file_type::arma_binary);
 }
+*/
 #endif
 
 template class ConvLayer<float>;

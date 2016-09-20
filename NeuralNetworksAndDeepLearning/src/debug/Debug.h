@@ -65,8 +65,8 @@ DataSet<Dtype>* createImageNet10000DataSet() {
 			"/home/jhkim/image/ILSVRC2012/save/1000_30000_1000_3_1/train_data",
 			"/home/jhkim/image/ILSVRC2012/save/1000_30000_1000_3_1/train_label",
 			3,
-			"/home/jhkim/image/ILSVRC2012/save/1000_30000_1000_3_1/train_data",
-			"/home/jhkim/image/ILSVRC2012/save/1000_30000_1000_3_1/train_label",
+			"/home/jhkim/image/ILSVRC2012/save/1000_30000_1000_3_1/test_data",
+			"/home/jhkim/image/ILSVRC2012/save/1000_30000_1000_3_1/test_label",
 			1);
 	dataSet->setMean({0.47684615850, 0.45469805598, 0.41394191980});
 	return dataSet;

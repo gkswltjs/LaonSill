@@ -188,6 +188,7 @@ void ConvLayer<Dtype>::_clearShape() {
 	HiddenLayer<Dtype>::_clearShape();
 }
 
+/*
 template <typename Dtype>
 void ConvLayer<Dtype>::_save(ofstream &ofs) {
 	HiddenLayer<Dtype>::_save(ofs);
@@ -237,6 +238,7 @@ void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &l
 	//checkCudaErrors(cudaMemcpyAsync(d_filters, filters, sizeof(Dtype)*filter_d.size(), cudaMemcpyHostToDevice));
 	//checkCudaErrors(cudaMemcpyAsync(d_biases, biases, sizeof(Dtype)*filter_d.filters, cudaMemcpyHostToDevice));
 }
+*/
 
 template <typename Dtype>
 void ConvLayer<Dtype>::update() {
@@ -357,6 +359,7 @@ void ConvLayer<Dtype>::update() {
 
 
 
+
 template <typename Dtype>
 void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
 	const Dtype normScale = 1.0/this->in_dim.batches;
@@ -374,6 +377,7 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne, d_paramHistoryData, 1, d_paramData, 1));	// update
 
 }
+
 
 
 
@@ -598,17 +602,18 @@ double ConvLayer<Dtype>::testParamAbnormality() {
 
 
 
+
+
 template ConvLayer<float>::~ConvLayer();
 template void ConvLayer<float>::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler<float> weight_filler, param_filler<float> bias_filler, typename Activation<float>::Type activationType);
 template void ConvLayer<float>::_shape(bool recursive);
 template void ConvLayer<float>::_clearShape();
-template void ConvLayer<float>::_save(ofstream &ofs);
-template void ConvLayer<float>::_load(ifstream &ifs, map<Layer<float>*, Layer<float>*> &layerMap);
+//template void ConvLayer<float>::_save(ofstream &ofs);
+//template void ConvLayer<float>::_load(ifstream &ifs, map<Layer<float>*, Layer<float>*> &layerMap);
 template void ConvLayer<float>::update();
 template void ConvLayer<float>::_feedforward();
 template void ConvLayer<float>::_backpropagation();
-
 
 
 #endif

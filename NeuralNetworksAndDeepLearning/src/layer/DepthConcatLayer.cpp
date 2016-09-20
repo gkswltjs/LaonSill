@@ -75,12 +75,15 @@ void DepthConcatLayer<Dtype>::_clearShape() {
 	HiddenLayer<Dtype>::_clearShape();
 }
 
+
+/*
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
 	HiddenLayer<Dtype>::_load(ifs, layerMap);
 	initialize();
 	DepthConcatLayer<Dtype>::_shape(false);
 }
+*/
 
 
 template <typename Dtype>

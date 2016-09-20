@@ -217,8 +217,25 @@ double Data<Dtype>::asum_device_grad() {
 }
 
 
+template <typename Dtype>
+void Data<Dtype>::save(ofstream& ofs) {
+	// _shape
+	for(uint32_t i = 0; i < SHAPE_SIZE; i++) {
+		ofs.write((char*)&_shape[i], sizeof(uint32_t));
+	}
+	_data.save(ofs);
+	_grad.save(ofs);
+}
 
-
+template <typename Dtype>
+void Data<Dtype>::load(ifstream& ifs) {
+	// _shape
+	for(uint32_t i = 0; i < SHAPE_SIZE; i++) {
+		ifs.read((char*)&_shape[i], sizeof(uint32_t));
+	}
+	_data.load(ifs);
+	_grad.load(ifs);
+}
 
 
 

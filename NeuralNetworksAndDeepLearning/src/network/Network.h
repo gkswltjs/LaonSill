@@ -95,7 +95,7 @@ public:
 	 * @details 네트워크를 파일에 쓴다.
 	 * @param filename 네트워크를 쓸 파일의 경로
 	 */
-	void save(const char* filename);
+	void save();
 	/**
 	 * @details 네트워크를 파일로부터 읽는다.
 	 * @param filename 네트워크를 읽을 파일의 경로
@@ -211,13 +211,13 @@ protected:
 
 	//char savePrefix[200];						///< 네트워크 파일 쓰기 경로 prefix
 	//bool saveConfigured;						///< 네트워크 쓰기 설정 여부
-	double maxAccuracy;							///< 네트워크 평가 최대 정확도
-	double minCost;								///< 네트워크 평가 최소 cost
-	float dataSetMean[3];					///< 네트워크 데이터셋 평균 배열
+	//double maxAccuracy;							///< 네트워크 평가 최대 정확도
+	//double minCost;								///< 네트워크 평가 최소 cost
+	//float dataSetMean[3];						///< 네트워크 데이터셋 평균 배열
 
 
 
-	uint32_t iterations;
+	//uint32_t iterations;
 
 };
 

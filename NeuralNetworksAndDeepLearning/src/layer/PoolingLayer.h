@@ -39,6 +39,7 @@ public:
 		typename Pooling<Dtype>::Type _poolingType;		///< 풀링 타입
 
 		Builder() {
+			this->type = Layer<Dtype>::Pool;
 			_poolDim.cols = 0;
 			_poolDim.rows = 0;
 			_poolDim.stride = 0;
@@ -73,6 +74,16 @@ public:
 		Layer<Dtype>* build() {
 			return new PoolingLayer(this);
 		}
+		virtual void save(ofstream& ofs) {
+			HiddenLayer<Dtype>::Builder::save(ofs);
+			ofs.write((char*)&_poolDim, sizeof(pool_dim));
+			ofs.write((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
+		}
+		virtual void load(ifstream& ifs) {
+			HiddenLayer<Dtype>::Builder::load(ifs);
+			ifs.read((char*)&_poolDim, sizeof(pool_dim));
+			ifs.read((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
+		}
 	};
 
 	/**
@@ -100,8 +111,8 @@ protected:
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual void _save(ofstream &ofs);
-	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+	//virtual void _save(ofstream &ofs);
+	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체

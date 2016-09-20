@@ -33,7 +33,9 @@ public:
 	 */
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
-		Builder() {}
+		Builder() {
+			this->type = Layer<Dtype>::DepthConcat;
+		}
 		virtual Builder* name(const string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
@@ -53,6 +55,12 @@ public:
 		Layer<Dtype>* build() {
 			return new DepthConcatLayer(this);
 		}
+		virtual void save(ofstream& ofs) {
+			HiddenLayer<Dtype>::Builder::save(ofs);
+		}
+		virtual void load(ifstream& ifs) {
+			HiddenLayer<Dtype>::Builder::load(ifs);
+		}
 	};
 
 	DepthConcatLayer();
@@ -68,7 +76,7 @@ protected:
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 	/**
 	 * @details 일반적인 concat과 달리 channel을 기준으로 조합하므로 재정의한다.

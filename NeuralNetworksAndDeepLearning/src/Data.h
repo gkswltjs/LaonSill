@@ -271,6 +271,9 @@ public:
 
 
 
+	void save(ofstream& ofs);
+	void load(ifstream& ifs);
+
 
 
 	/**

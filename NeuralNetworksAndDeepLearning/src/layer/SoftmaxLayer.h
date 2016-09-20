@@ -32,6 +32,7 @@ public:
 	class Builder : public OutputLayer<Dtype>::Builder {
 	public:
 		Builder() {
+			this->type = Layer<Dtype>::Softmax;
 			this->_activationType = Activation<Dtype>::Softmax;
 			this->_costType = Cost<Dtype>::LogLikelihood;
 		}
@@ -86,6 +87,12 @@ public:
 		Layer<Dtype>* build() {
 			return new SoftmaxLayer(this);
 		}
+		virtual void save(ofstream& ofs) {
+			OutputLayer<Dtype>::Builder::save(ofs);
+		}
+		virtual void load(ifstream& ifs) {
+			OutputLayer<Dtype>::Builder::load(ifs);
+		}
 	};
 
 	SoftmaxLayer();
@@ -126,7 +133,7 @@ protected:
 protected:
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+	//void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 
 

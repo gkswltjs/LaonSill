@@ -224,6 +224,7 @@ void FullyConnectedLayer<Dtype>::update() {
 }
 
 
+
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
 	const Dtype normScale = 1.0/this->in_dim.batches;
@@ -250,6 +251,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 	data->print_data("paramData:");
 	//Data<Dtype>::printConfig = 0;
 }
+
 
 
 
@@ -542,13 +544,14 @@ double FullyConnectedLayer<Dtype>::testParamAbnormality() {
 
 
 
+
+
 template FullyConnectedLayer<float>::~FullyConnectedLayer();
 template void FullyConnectedLayer<float>::_shape(bool recursive);
 template void FullyConnectedLayer<float>::_clearShape();
 template void FullyConnectedLayer<float>::update();
 template void FullyConnectedLayer<float>::_feedforward();
 template void FullyConnectedLayer<float>::_backpropagation();
-
 
 
 #endif

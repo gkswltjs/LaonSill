@@ -119,6 +119,10 @@ public:
 
 
 
+	void save(ofstream& ofs);
+	void load(ifstream& ifs);
+
+
 	/**
 	 * @details 메모리의 값을 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구

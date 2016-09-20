@@ -88,7 +88,7 @@ void FullyConnectedLayer<Dtype>::scaleParamsGrad(float scale) {
 
 
 
-
+/*
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_save(ofstream &ofs) {
 	HiddenLayer<Dtype>::_save(ofs);
@@ -141,6 +141,7 @@ void FullyConnectedLayer<Dtype>::_load(ifstream& ifs, map<Layer<Dtype>*, Layer<D
 	ifs.read((char *)bias, sizeof(Dtype)*this->out_dim.unitsize());
 
 }
+*/
 
 template <typename Dtype>
 uint32_t FullyConnectedLayer<Dtype>::boundParams() {
@@ -149,6 +150,27 @@ uint32_t FullyConnectedLayer<Dtype>::boundParams() {
 
 	return updateCount;
 }
+
+
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::saveParams(ofstream& ofs) {
+	uint32_t numParams = _params.size();
+	ofs.write((char*)&numParams, sizeof(uint32_t));
+	for(uint32_t i = 0; i < numParams; i++) {
+		_params[i]->save(ofs);
+	}
+}
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::loadParams(ifstream& ifs) {
+	uint32_t numParams;
+	ifs.read((char*)&numParams, sizeof(uint32_t));
+	for(uint32_t i = 0; i < numParams; i++) {
+		_params[i]->load(ifs);
+	}
+}
+
 
 
 
@@ -241,6 +263,7 @@ void FullyConnectedLayer<Dtype>::initialize(double p_dropout, update_param weigh
 	this->activation_fn = ActivationFactory::create(activationType);
 }
 
+/*
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_save(ofstream &ofs) {
 	HiddenLayer<Dtype>::_save(ofs);
@@ -261,6 +284,7 @@ void FullyConnectedLayer<Dtype>::_save(ofstream &ofs) {
 	//bias.print("save-bias:");
 	bias.save(ofs, file_type::arma_binary);
 }
+*/
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_feedforward() {

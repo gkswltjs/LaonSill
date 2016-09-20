@@ -46,6 +46,7 @@ public:
 		typename Activation<Dtype>::Type _activationType;
 
 		Builder() {
+			this->type = Layer<Dtype>::Conv;
 			_filterDim.rows = 0;
 			_filterDim.cols = 0;
 			_filterDim.channels = 0;
@@ -110,6 +111,24 @@ public:
 		Layer<Dtype>* build() {
 			return new ConvLayer(this);
 		}
+		virtual void save(ofstream& ofs) {
+			HiddenLayer<Dtype>::Builder::save(ofs);
+			ofs.write((char*)&_filterDim, sizeof(filter_dim));
+			ofs.write((char*)&_weightUpdateParam, sizeof(update_param));
+			ofs.write((char*)&_biasUpdateParam, sizeof(update_param));
+			ofs.write((char*)&_weightFiller, sizeof(param_filler<Dtype>));
+			ofs.write((char*)&_biasFiller, sizeof(param_filler<Dtype>));
+			ofs.write((char*)&_activationType, sizeof(typename Activation<Dtype>::Type));
+		}
+		virtual void load(ifstream& ifs) {
+			HiddenLayer<Dtype>::Builder::load(ifs);
+			ifs.read((char*)&_filterDim, sizeof(filter_dim));
+			ifs.read((char*)&_weightUpdateParam, sizeof(update_param));
+			ifs.read((char*)&_biasUpdateParam, sizeof(update_param));
+			ifs.read((char*)&_weightFiller, sizeof(param_filler<Dtype>));
+			ifs.read((char*)&_biasFiller, sizeof(param_filler<Dtype>));
+			ifs.read((char*)&_activationType, sizeof(typename Activation<Dtype>::Type));
+		}
 	};
 	/**
 	 * @details ConvLayer 기본 생성자
@@ -151,6 +170,8 @@ public:
 	virtual void scaleParamsGrad(float scale);
 	//virtual double testParamAbnormality();
 	virtual uint32_t boundParams();
+	virtual void saveParams(ofstream& ofs);
+	virtual void loadParams(ifstream& ifs);
 	//////////////////////////////////////////
 
 
@@ -172,8 +193,8 @@ protected:
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	virtual void _save(ofstream &ofs);
-	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void _save(ofstream &ofs);
+	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
 

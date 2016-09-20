@@ -37,6 +37,7 @@ void PoolingLayer<Dtype>::initialize(pool_dim pool_d, typename Pooling<Dtype>::T
 	this->pooling_fn = PoolingFactory<Dtype>::create(poolingType, pool_d);
 }
 
+/*
 template <typename Dtype>
 void PoolingLayer<Dtype>::_save(ofstream &ofs) {
 	HiddenLayer<Dtype>::_save(ofs);
@@ -61,6 +62,7 @@ void PoolingLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>
 
 	PoolingLayer<Dtype>::_shape(false);
 }
+*/
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::_clearShape() {

@@ -19,6 +19,7 @@
 #include "../layer/OutputLayer.h"
 #include "../layer/LearnableLayer.h"
 #include "../monitor/NetworkListener.h"
+#include "../layer/LayerFactory.h"
 
 template <typename Dtype> class DataSet;
 
@@ -124,6 +125,33 @@ public:
 				->layers(layers)
 				->learnableLayers(learnableLayers);
 		}
+		void save(ofstream& ofs) {
+			uint32_t numLayers = _layerWise.size();
+			ofs.write((char*)&numLayers, sizeof(uint32_t));
+			for(typename map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it = _layerWise.begin(); it != _layerWise.end(); it++) {
+				it->second->save(ofs);
+			}
+		}
+		void load(ifstream& ifs) {
+			uint32_t numLayers;
+			ifs.read((char*)&numLayers, sizeof(uint32_t));
+
+			for(uint32_t i = 0; i < numLayers; i++) {
+				// create layer builder objects from stream
+				typename Layer<Dtype>::Type layerType;
+				ifs.read((char*)&layerType, sizeof(uint32_t));
+
+				typename Layer<Dtype>::Builder* layerBuilder = LayerBuilderFactory<Dtype>::create(layerType);
+				layerBuilder->load(ifs);
+
+				// add to layerWise
+				layer(layerBuilder);
+			}
+
+
+
+
+		}
 
 	};
 
@@ -133,8 +161,11 @@ public:
 	vector<Layer<Dtype>*> _lastLayers;
 	vector<Layer<Dtype>*> _layers;
 	vector<LearnableLayer<Dtype>*> _learnableLayers;
+	Builder* _builder;
 
-	LayersConfig(Builder* builder) {}
+	LayersConfig(Builder* builder) {
+		this->_builder = builder;
+	}
 	LayersConfig<Dtype>* firstLayers(vector<Layer<Dtype>*> firstLayers) {
 		this->_firstLayers = firstLayers;
 		return this;
@@ -150,6 +181,9 @@ public:
 	LayersConfig<Dtype>* learnableLayers(vector<LearnableLayer<Dtype>*> learnableLayers) {
 		this->_learnableLayers = learnableLayers;
 		return this;
+	}
+	void save(ofstream& ofs) {
+		this->_builder->save(ofs);
 	}
 };
 
@@ -171,6 +205,10 @@ enum NetworkStatus {
 template <typename Dtype>
 class NetworkConfig {
 public:
+	//static const string savePrefix = "network";
+	//const string configPostfix;// = ".config";
+	//const string paramPostfix;// = ".param";
+
 	class Builder {
 	public:
 		DataSet<Dtype>* _dataSet;
@@ -183,9 +221,9 @@ public:
 		float _baseLearningRate;
 		float _momentum;
 		float _weightDecay;
+		float _clipGradientsLevel;
 
 		string _savePathPrefix;
-		float _clipGradientsLevel;
 
 		Builder() {
 			this->_dataSet = NULL;
@@ -238,6 +276,14 @@ public:
 			return this;
 		}
 		NetworkConfig* build() {
+
+			//load()를 학습단계에서도 사용할 경우 ...
+			//테스트단계에서만 사용할 경우 dataSet 필요없음 ...
+			//if(_dataSet == NULL) {
+			//	cout << "dataSet should be set ... " << endl;
+			//	exit(1);
+			//}
+
 			map<string, Layer<Dtype>*> nameLayerMap;
 			for(uint32_t i = 0; i < _layersConfig->_layers.size(); i++) {
 				const string& layerName = _layersConfig->_layers[i]->getName();
@@ -275,7 +321,7 @@ public:
 				outputLayers.push_back(outputLayer);
 			}
 
-			NetworkConfig* networkConfig = (new NetworkConfig())
+			NetworkConfig* networkConfig = (new NetworkConfig(this))
 					->evaluations(_evaluations)
 					->networkListeners(_networkListeners)
 					->batchSize(_batchSize)
@@ -296,8 +342,70 @@ public:
 				_layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 			}
 
+
+
+
+
+			io_dim in_dim;
+			in_dim.rows = _dataSet->getRows();
+			in_dim.cols = _dataSet->getCols();
+			in_dim.channels = _dataSet->getChannels();
+			in_dim.batches = _batchSize;
+			inputLayer->shape(0, in_dim);
+
+
+
+
 			return networkConfig;
 		}
+		void save(ofstream& ofs) {
+			if(_savePathPrefix == "") {
+				cout << "save path not specified ... " << endl;
+				// TODO 죽이지 말고 사용자에게 save path를 입력받도록 하자 ...
+				exit(1);
+			}
+
+			// save primitives
+			ofs.write((char*)&_batchSize, sizeof(uint32_t));					//_batchSize
+			ofs.write((char*)&_epochs, sizeof(uint32_t));						//_epochs
+			ofs.write((char*)&_baseLearningRate, sizeof(float));				//_baseLearningRate
+			ofs.write((char*)&_momentum, sizeof(float));						//_momentum
+			ofs.write((char*)&_weightDecay, sizeof(float));						//_weightDecay
+			ofs.write((char*)&_clipGradientsLevel, sizeof(float));				//_clipGradientsLevel;
+
+			size_t savePathPrefixLength = _savePathPrefix.size();
+			ofs.write((char*)&savePathPrefixLength, sizeof(size_t));
+			ofs.write((char*)_savePathPrefix.c_str(), savePathPrefixLength);
+
+			_layersConfig->save(ofs);
+		}
+		void load(const string& path) {
+			ifstream ifs((path+".config").c_str(), ios::in | ios::binary);
+
+			ifs.read((char*)&_batchSize, sizeof(uint32_t));
+			ifs.read((char*)&_epochs, sizeof(uint32_t));
+			ifs.read((char*)&_baseLearningRate, sizeof(float));
+			ifs.read((char*)&_momentum, sizeof(float));
+			ifs.read((char*)&_weightDecay, sizeof(float));
+			ifs.read((char*)&_clipGradientsLevel, sizeof(float));
+
+			size_t savePathPrefixLength;
+			ifs.read((char*)&savePathPrefixLength, sizeof(size_t));
+
+			char* savePathPrefix_c = new char[savePathPrefixLength+1];
+			ifs.read(savePathPrefix_c, savePathPrefixLength);
+			savePathPrefix_c[savePathPrefixLength] = '\0';
+			_savePathPrefix = savePathPrefix_c;
+			delete [] savePathPrefix_c;
+
+			typename LayersConfig<Dtype>::Builder* layersBuilder = new typename LayersConfig<Dtype>::Builder();
+			layersBuilder->load(ifs);
+
+			_layersConfig = layersBuilder->build();
+
+			ifs.close();
+		}
+
 	};
 
 
@@ -327,7 +435,15 @@ public:
 	string _savePathPrefix;
 	float _clipGradientsLevel;
 
-	NetworkConfig() {}
+	// save & load를 위해서 builder도 일단 저장해 두자.
+	Builder* _builder;
+
+
+
+
+	NetworkConfig(Builder* builder) {
+		this->_builder = builder;
+	}
 
 	NetworkConfig* evaluations(const vector<Evaluation<Dtype>*> evaluations) {
 		this->_evaluations = evaluations;
@@ -390,6 +506,30 @@ public:
 		return this;
 	}
 
+	void save() {
+		// save config
+		ofstream configOfs((_savePathPrefix+".config").c_str(), ios::out | ios::binary);
+		_builder->save(configOfs);
+		configOfs.close();
+
+		// save learned params
+		ofstream paramOfs((_savePathPrefix+".param").c_str(), ios::out | ios::binary);
+		uint32_t numLearnableLayers = _learnableLayers.size();
+		for(uint32_t i = 0; i < numLearnableLayers; i++) {
+			_learnableLayers[i]->saveParams(paramOfs);
+		}
+		paramOfs.close();
+	}
+	void load() {
+		cout << _savePathPrefix+".param" << endl;
+
+		ifstream ifs((_savePathPrefix+".param").c_str(), ios::in | ios::binary);
+		uint32_t numLearnableLayers = _learnableLayers.size();
+		for(uint32_t i = 0; i < numLearnableLayers; i++) {
+			_learnableLayers[i]->loadParams(ifs);
+		}
+		ifs.close();
+	}
 };
 
 

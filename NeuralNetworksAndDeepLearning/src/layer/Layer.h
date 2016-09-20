@@ -40,17 +40,37 @@ template <typename Dtype>
 class Layer {
 public:
 	/**
+	 * @brief 레이어 타입 열거형
+	 * @details	지원하는 레이어 타입 열거,
+	 */
+	enum Type {
+		None=0,
+		Input, 					// 입력 레이어
+		FullyConnected, 		// Fully Connected 레이어
+		Conv, 					// 컨볼루션 레이어
+		Pool, 					// 풀링 레이어
+		DepthConcat,			// Depth Concat 레이어
+		Inception, 				// 인셉션 레이어
+		LRN,					// Local Response Normaization 레이어
+		Sigmoid, 				// 시그모이드 레이어
+		Softmax					// 소프트맥스 레이어
+	};
+
+
+	/**
 	 * @brief 레이어 객체 빌더
 	 * @details 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
 	 *          해당 파라미터를 만족하는 레이어 객체를 생성한다.
 	 */
 	class Builder {
 	public:
+		Type type;
 		string _name;							///< 레이어의 이름
 		uint32_t _id;							///< 레이어의 아이디
 		vector<uint32_t> _nextLayerIndices;		///< 레이어의 다음 레이어 아이디 목록
 
 		Builder() {
+			type = Layer<Dtype>::None;
 			_name = "";
 		}
 		virtual ~Builder() {}
@@ -67,23 +87,42 @@ public:
 			return this;
 		}
 		virtual Layer<Dtype>* build() = 0;
+		virtual void save(ofstream& ofs) {
+			ofs.write((char*)&type, sizeof(uint32_t));
+
+			size_t nameLength = _name.size();
+			ofs.write((char*)&nameLength, sizeof(size_t));
+			ofs.write((char*)_name.c_str(), nameLength);
+
+			ofs.write((char*)&_id, sizeof(uint32_t));
+			uint32_t numNextLayerIndices = _nextLayerIndices.size();
+			ofs.write((char*)&numNextLayerIndices, sizeof(uint32_t));
+			for(uint32_t i = 0; i < numNextLayerIndices; i++) {
+				ofs.write((char*)&_nextLayerIndices[i], sizeof(uint32_t));
+			}
+		}
+		virtual void load(ifstream& ifs) {
+
+			size_t nameLength;
+			ifs.read((char*)&nameLength, sizeof(size_t));
+			char* name_c = new char[nameLength+1];
+			ifs.read(name_c, nameLength);
+			name_c[nameLength] = '\0';
+			_name = name_c;
+			delete [] name_c;
+
+			ifs.read((char*)&_id, sizeof(uint32_t));
+			uint32_t numNextLayersIndices;
+			ifs.read((char*)&numNextLayersIndices, sizeof(uint32_t));
+			for(uint32_t i = 0; i < numNextLayersIndices; i++) {
+				uint32_t nextLayerIndice;
+				ifs.read((char*)&nextLayerIndice, sizeof(uint32_t));
+				_nextLayerIndices.push_back(nextLayerIndice);
+			}
+		}
 	};
 
-	/**
-	 * @brief 레이어 타입 열거형
-	 * @details	지원하는 레이어 타입 열거,
-	 */
-	enum Type {
-		Input=0, 					// 입력 레이어
-		FullyConnected=1, 			// Fully Connected 레이어
-		Conv=2, 					// 컨볼루션 레이어
-		Pool=3, 					// 풀링 레이어
-		DepthConcat=4,				// Depth Concat 레이어
-		Inception=5, 				// 인셉션 레이어
-		LRN=6,						// Local Response Normaization 레이어
-		Sigmoid=7, 					// 시그모이드 레이어
-		Softmax=8					// 소프트맥스 레이어
-	};
+
 
 
 	////////////////////////////////////////////////////////////////////
@@ -256,14 +295,14 @@ public:
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	virtual void save(uint32_t idx, ofstream &ofs);
+	//virtual void save(uint32_t idx, ofstream &ofs);
 	/**
 	 * @details 현재 레이어의 메타정보를 스트림의 헤더에 쓰고 다음 레이어들에 대해 saveHeader()를 요청한다.
 	 *          입력 레이어 또는 내부 레이어가 있는 레이어(e.g 인셉션레이어)에서 사용한다.
 	 * @param  idx 요청을 보낸 이전 레이어의 id
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	virtual void saveHeader(uint32_t idx, ofstream &ofs);
+	//virtual void saveHeader(uint32_t idx, ofstream &ofs);
 	/**
 	 * @details 현재 레이어를 스트림으로부터 읽어 들여 복구한다.
 	 *          - 레이어의 상속받은 상위 클래스 영역 읽기 및 초기화 (_shape() 포함, Layer 클래스 제외)
@@ -272,7 +311,7 @@ public:
 	 * @param ifs 레이어를 읽어들일 입력 스트림
 	 * @param layerMap
 	 */
-	virtual void load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 #ifndef GPU_MODE
 	/**
@@ -306,7 +345,7 @@ protected:
 	 * @param ifs 레이어를 읽어들일 입력 스트림
 	 * @param layerMap 레이어 메타정보로부터 읽어 레이어 주소를 키, 레이어를 값으로 생성한 레이어 맵
 	 */
-	virtual void loadNetwork(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void loadNetwork(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	/**
 	 * @details 현재 레이어 로드 후 이전/다음 레이어 포인터 벡터에 로드된 레이어 포인터 값을 키로하여
 	 *          레이어맵의 실제 레이어 객체를 찾아서 이전/다음 레이어에 연결한다.
@@ -344,7 +383,7 @@ protected:
 	 * @details 현재 레이어를 스트림에 쓴다.
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	virtual void _save(ofstream &ofs);
+	//virtual void _save(ofstream &ofs);
 	/**
 	 * @details 현재 레이어를 스트림으로부터 읽어 들여 복구한다.
 	 *          - 레이어의 상속받은 상위 클래스 영역 읽기 및 초기화 (_shape() 포함, Layer 클래스 제외)
@@ -353,7 +392,7 @@ protected:
 	 * @param ifs 레이어를 읽어들일 입력 스트림
 	 * @param layerMap
 	 */
-	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
@@ -400,7 +439,7 @@ protected:
 	/**
 	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
 	 */
-	void propSave(ofstream &ofs);
+	//void propSave(ofstream &ofs);
 
 #ifndef GPU_MODE
 	/**

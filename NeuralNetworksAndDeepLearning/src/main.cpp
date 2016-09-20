@@ -18,6 +18,7 @@ using namespace std;
 
 
 void network_test();
+void network_load();
 
 
 int main(int argc, char** argv) {
@@ -28,6 +29,7 @@ int main(int argc, char** argv) {
 	//Util::setOutstream("./log");
 
 	network_test();
+	//network_load();
 
 	cout << "end" << endl;
 	return 0;
@@ -39,9 +41,10 @@ void network_test() {
 	cout << "Cuda creation done ... " << endl;
 	Util::setPrint(false);
 
-	const uint32_t maxEpoch = 10000;
+	//const uint32_t maxEpoch = 10000;
+	const uint32_t maxEpoch = 10;
 	const uint32_t batchSize = 20;
-	const float baseLearningRate = 0.01f;
+	const float baseLearningRate = 0.005f;
 	const float weightDecay = 0.0002f;
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 0.0f;
@@ -63,9 +66,9 @@ void network_test() {
 	//DataSet<float>* dataSet = new MockDataSet<float>(224, 224, 3, 100, 100, 100);
 	//DataSet<float>* dataSet = createImageNet10CatDataSet<float>();
 	//DataSet<float>* dataSet = createImageNet100CatDataSet<float>();
-	//DataSet<float>* dataSet = createImageNet1000DataSet<float>();
+	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
 	//DataSet<float>* dataSet = createImageNet10000DataSet<float>();
-	DataSet<float>* dataSet = createMnistDataSet<float>();
+	//DataSet<float>* dataSet = createMnistDataSet<float>();
 	dataSet->load();
 	//dataSet->zeroMean(true);
 
@@ -73,16 +76,15 @@ void network_test() {
 	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
 	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_ONLY);
 
-	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createInceptionLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfigTest<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ASimpleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception5ALayersConfig<float>();
+	LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInceptionAuxLayersConfig<float>();
-
 
 	NetworkConfig<float>* networkConfig =
 			(new NetworkConfig<float>::Builder())
@@ -93,19 +95,45 @@ void network_test() {
 			->clipGradientsLevel(clipGradientsLevel)
 			->dataSet(dataSet)
 			->evaluations({top1Evaluation, top5Evaluation})
-			->networkListeners({networkListener})
 			->layersConfig(layersConfig)
+			->savePathPrefix("/home/jhkim/network")
+			->networkListeners({networkListener})
 			->build();
 
-
 	Network<float>* network = new Network<float>(networkConfig);
-	network->shape();
 	network->sgd(maxEpoch);
+	network->save();
 
 	Cuda::destroy();
 }
 
 
+void network_load() {
+	Cuda::create(0);
+	cout << "Cuda creation done ... " << endl;
+
+	//DataSet<float>* dataSet = createMnistDataSet<float>();
+	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
+	dataSet->load();
+
+	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
+	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
+
+	// save file 경로로 builder 생성,
+	NetworkConfig<float>::Builder* networkBuilder = new NetworkConfig<float>::Builder();
+	networkBuilder->load("/home/jhkim/network");
+	networkBuilder->dataSet(dataSet);
+	networkBuilder->evaluations({top1Evaluation, top5Evaluation});
+
+	NetworkConfig<float>* networkConfig = networkBuilder->build();
+	networkConfig->load();
+
+	Network<float>* network = new Network<float>(networkConfig);
+	//network->sgd(1);
+	network->test();
+
+	Cuda::destroy();
+}
 
 
 

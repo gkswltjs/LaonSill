@@ -149,6 +149,8 @@ void Layer<Dtype>::clearShape(uint32_t idx) {
 	propClearShape();
 }
 
+
+/*
 template <typename Dtype>
 void Layer<Dtype>::save(uint32_t idx, ofstream &ofs) {
 	if(!w_isLastPrevLayerRequest(idx, "Layer::save()")) return;
@@ -175,6 +177,7 @@ template <typename Dtype>
 void Layer<Dtype>::load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
 	_load(ifs, layerMap);
 }
+*/
 
 template <typename Dtype>
 void Layer<Dtype>::feedforward(uint32_t idx, Data<Dtype>* input, const char *end) {
@@ -194,6 +197,7 @@ void Layer<Dtype>::initialize(uint32_t id, const string name) {
 	this->_output = new Data<Dtype>();
 }
 
+/*
 template <typename Dtype>
 void Layer<Dtype>::loadNetwork(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
 	// fill layer map
@@ -236,6 +240,7 @@ void Layer<Dtype>::loadNetwork(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> 
 		ifs.read((char *)&layerKey, sizeof(Layer<Dtype>*));
 	}
 }
+*/
 
 template <typename Dtype>
 void Layer<Dtype>::updateLayerRelation(map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
@@ -311,12 +316,14 @@ void Layer<Dtype>::propClearShape() {
 	}
 }
 
+/*
 template <typename Dtype>
 void Layer<Dtype>::propSave(ofstream &ofs) {
 	for(uint32_t i = 0; i < nextLayers.size(); i++) {
 		nextLayers[i]->save(id, ofs);
 	}
 }
+*/
 
 template <typename Dtype>
 void Layer<Dtype>::propFeedforward(const char *end) {
@@ -355,6 +362,7 @@ void Layer<Dtype>::_clearShape() {
 	exit(1);
 }
 
+/*
 void Layer<Dtype>::_save(ofstream &ofs) {
 	cout << "Layer::_save() is not implemented in CPU_MODE" << endl;
 	exit(1);
@@ -364,6 +372,7 @@ void Layer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layer
 	cout << "Layer::_load() is not implemented in CPU_MODE" << endl;
 	exit(1);
 }
+*/
 
 #endif
 

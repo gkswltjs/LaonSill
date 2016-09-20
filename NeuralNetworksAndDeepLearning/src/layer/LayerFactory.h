@@ -75,6 +75,32 @@ public:
 
 };
 
+template <typename Dtype>
+class LayerBuilderFactory {
+public:
+	LayerBuilderFactory() {}
+	virtual ~LayerBuilderFactory() {}
+
+	static typename Layer<Dtype>::Builder* create(typename Layer<Dtype>::Type layerType) {
+		switch(layerType) {
+		case Layer<Dtype>::Input: return new typename InputLayer<Dtype>::Builder();
+		case Layer<Dtype>::FullyConnected: return new typename FullyConnectedLayer<Dtype>::Builder();
+		case Layer<Dtype>::Conv: return new typename ConvLayer<Dtype>::Builder();
+		case Layer<Dtype>::Pool: return new typename PoolingLayer<Dtype>::Builder();
+		case Layer<Dtype>::DepthConcat: return new typename DepthConcatLayer<Dtype>::Builder();
+		//case Layer<Dtype>::Inception: return new InceptionLayer<Dtype>();
+		case Layer<Dtype>::LRN: return new typename LRNLayer<Dtype>::Builder();
+		//case Layer<Dtype>::Sigmoid: return new SigmoidLayer<Dtype>();
+		case Layer<Dtype>::Softmax: return new typename SoftmaxLayer<Dtype>::Builder();
+		default: throw new Exception();
+		}
+		//return 0;
+	}
+};
+
+
+
+
 
 template class LayerFactory<float>;
 

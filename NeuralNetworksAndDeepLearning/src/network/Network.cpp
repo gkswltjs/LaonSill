@@ -76,7 +76,7 @@ void Network<Dtype>::sgd(int epochs) {
 	Timer timer2;
 
 
-	iterations = 0;
+	//iterations = 0;
 	for(uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		config->_status = NetworkStatus::Train;
 
@@ -84,7 +84,7 @@ void Network<Dtype>::sgd(int epochs) {
 		timer1.start();
 		timer2.start();
 		for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
-			iterations++;
+			//iterations++;
 			//Util::printMessage("iteration: " + to_string(iterations));
 
 			if((batchIndex+1)%100 == 0) {
@@ -603,13 +603,15 @@ void Network<Dtype>::saveConfig(const char* savePrefix) {
 */
 
 template <typename Dtype>
-void Network<Dtype>::save(const char* filename) {
+void Network<Dtype>::save() {
 	//if(saveConfigured && cost < minCost) {
 	//	minCost = cost;
 	//	char savePath[256];
 	//	sprintf(savePath, "%s%02d.network", savePrefix, i+1);
 	//	save(savePath);
 
+
+	/*
 	InputLayer<Dtype>* inputLayer = config->_inputLayer;
 	vector<OutputLayer<Dtype>*>& outputLayers = config->_outputLayers;
 
@@ -631,8 +633,16 @@ void Network<Dtype>::save(const char* filename) {
 	ofs.close();
 
 	cout << "time elapsed to save network: " << timer.stop(false) << endl;
+	*/
+
+
+	config->save();
+
 }
 
+
+
+/*
 template <typename Dtype>
 void Network<Dtype>::load(const char* filename) {
 	InputLayer<Dtype>* inputLayer = config->_inputLayer;
@@ -656,7 +666,7 @@ void Network<Dtype>::load(const char* filename) {
 	// restore output layers of network
 	for(UINT i = 0; i < outputLayerSize; i++) {
 		outputLayers[i] = (OutputLayer<Dtype>*)layerMap.find((Layer<Dtype>*)outputLayers[i])->second;
-	}
+	}*/
 
 	/*
 	map<Layer<Dtype>*, Layer<Dtype>*> layerMap;
@@ -702,9 +712,10 @@ void Network<Dtype>::load(const char* filename) {
 		ifs.read((char *)&layerKey, sizeof(Layer<Dtype>*));
 	}
 	*/
-
+/*
 	ifs.close();
 }
+*/
 
 /*
 Dtype Network<Dtype>::getDataSetMean(UINT channel) {

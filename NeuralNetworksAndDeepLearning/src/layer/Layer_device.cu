@@ -54,6 +54,9 @@ void Layer<Dtype>::_clearShape() {
 	outputTensorDesc = NULL;
 }
 
+
+
+/*
 template <typename Dtype>
 void Layer<Dtype>::_save(ofstream &ofs) {
 	Layer<Dtype>* address = this;
@@ -102,12 +105,12 @@ void Layer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layer
 	Layer::_shape(false);
 	updateLayerRelation(layerMap);
 }
-
+*/
 
 template void Layer<float>::_shape(bool recursive);
 template void Layer<float>::_clearShape();
-template void Layer<float>::_save(ofstream &ofs);
-template void Layer<float>::_load(ifstream &ifs, map<Layer<float>*, Layer<float>*> &layerMap);
+//template void Layer<float>::_save(ofstream &ofs);
+//template void Layer<float>::_load(ifstream &ifs, map<Layer<float>*, Layer<float>*> &layerMap);
 
 
 #endif

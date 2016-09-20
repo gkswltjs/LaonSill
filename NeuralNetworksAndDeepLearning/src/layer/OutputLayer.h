@@ -85,6 +85,14 @@ public:
 			return this;
 		}
 		Layer<Dtype>* build() = 0;
+		virtual void save(ofstream& ofs) {
+			FullyConnectedLayer<Dtype>::Builder::save(ofs);
+			ofs.write((char*)&_costType, sizeof(typename Cost<Dtype>::Type));
+		}
+		virtual void load(ifstream& ifs) {
+			FullyConnectedLayer<Dtype>::Builder::load(ifs);
+			ifs.read((char*)&_costType, sizeof(typename Cost<Dtype>::Type));
+		}
 	};
 
 	OutputLayer() {}
@@ -147,6 +155,8 @@ protected:
 	virtual void _clearShape() {
 		FullyConnectedLayer<Dtype>::_clearShape();
 	}
+
+	/*
 	virtual void _save(ofstream &ofs) {
 		FullyConnectedLayer<Dtype>::_save(ofs);
 		//int costType = (int)cost_fn->getType();
@@ -160,6 +170,7 @@ protected:
 		//ifs.read((char *)&type, sizeof(int));
 		//initialize(type);
 	}
+	*/
 
 protected:
 	Cost<Dtype>* cost_fn;				///< cost 객체
