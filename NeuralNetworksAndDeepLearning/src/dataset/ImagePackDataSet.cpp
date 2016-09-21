@@ -77,9 +77,6 @@ const Dtype* ImagePackDataSet<Dtype>::getTrainDataAt(int index) {
 	}
 
 	//cout << "requested train data at " << index << ", current file index: " << trainFileIndex << ", nextPage is: " << nextPage << endl;
-	//if(index == 136 || index == 135) {
-	//	cout << endl;
-	//}
 
 	// 다음 페이지를 요청하는 경우,
 	// 이미로 로드된 다음페이지를 현재 페이지로 스왑하고
@@ -466,6 +463,7 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 
 	for(size_t i = 0; i < dataSetSize; i++) {
 		(*dataSet)[i] = (*bufDataSet)[i]/255.0f;
+		//(*dataSet)[i] = (*bufDataSet)[i];
 	}
 
 	if (fread(&(*labelSet)[0], sizeof(uint32_t), label_header.length, lbfp) != label_header.length) {

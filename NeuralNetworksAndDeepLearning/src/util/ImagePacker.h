@@ -97,6 +97,9 @@ public:
 	 */
 	void pack();
 
+
+	void sample();
+
 private:
 	/**
 	 * @details 지정된 디렉토리내의 모든 파일을 메모리로 읽어 들인다.

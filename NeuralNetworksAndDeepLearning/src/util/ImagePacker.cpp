@@ -257,8 +257,113 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 }
 
 
+// 카테고리는 일단 100개만 있는 걸로 합시다.
+// char는 256, 사인 골치아픈거 생각하면 100까지만.
+void ImagePacker::sample() {
+	string dataPath = "/home/jhkim/image/ILSVRC2012/save/sample/train_data";
+	string labelPath = "/home/jhkim/image/ILSVRC2012/save/sample/train_label";
+
+	const int numCategory = 30;
+	const int numImagesInFile = 10;
+	const int size = 30;
+	categoryIndex = 0;
+
+	const uint32_t width = 2;
+	const uint32_t height = 2;
+	const uint32_t channel = 1;
+
+	const uint32_t imageSize = width*height*channel;
+	char buffer[imageSize];
 
 
+	UByteImageDataset imageDataSet;
+	imageDataSet.magic = UBYTE_IMAGE_MAGIC;
+	imageDataSet.length = numImagesInFile;
+
+	UByteLabelDataset labelDataSet;
+	labelDataSet.magic = UBYTE_LABEL_MAGIC;
+	labelDataSet.length = numImagesInFile;
+	labelDataSet.Swap();
+
+	int imagesInFileCount = 0;
+	ofstream *ofsData = 0;
+	ofstream *ofsLabel = 0;
+
+	for(int i = 0; i < size; i++) {
+		if(i%numImagesInFile == 0) {
+			if(ofsData) {
+				ofsData->close();
+				ofsData = 0;
+				ofsLabel->close();
+				ofsLabel = 0;
+				cout << "images in file: " << imagesInFileCount << endl;
+				imagesInFileCount = 0;
+			}
+			string dataFile = dataPath+to_string(i/numImagesInFile);
+			cout << "dataFile: " << dataFile << endl;
+			ofsData = new ofstream(dataFile.c_str(), ios::out | ios::binary);
+			if(i > 0) ofsData->write((char *)&imageDataSet, sizeof(UByteImageDataset));
+
+			string labelFile = labelPath+to_string(i/numImagesInFile);
+			ofsLabel = new ofstream(labelFile.c_str(), ios::out | ios::binary);
+			ofsLabel->write((char *)&labelDataSet, sizeof(UByteLabelDataset));
+		}
+
+		/*
+		do {
+			categoryIndex = rand()%numCategory;
+		} while(categoryList[categoryIndex].end());
+		*/
+
+		if(++categoryIndex >= numCategory) {
+			categoryIndex = 0;
+		}
+
+
+		for(uint32_t i = 0; i < imageSize; i++) {
+			buffer[i] = categoryIndex;
+		}
+
+
+		//string imageFile = image_dir+path_crop+"/"+categoryList[categoryIndex].name+"/"+categoryList[categoryIndex].getCurrentFile();
+		//CImg<unsigned char> image(imageFile.c_str());
+		// 첫 이미지일때 DataSet header에 width, height 지정,
+		if(i == 0) {
+			imageDataSet.width = width;
+			imageDataSet.height = height;
+			imageDataSet.channel = channel;
+			imageDataSet.Swap();
+			ofsData->write((char *)&imageDataSet, sizeof(UByteImageDataset));
+		}
+
+		// dataset에 주어진 channel수와 image의 channel수가 동일한 경우 channel수만큼 그대로 복사.
+		ofsData->write((char *)buffer, sizeof(unsigned char)*imageSize);
+
+		imagesInFileCount++;
+		ofsLabel->write((char *)&categoryIndex, sizeof(uint32_t));
+		//cout << "label: " << categoryIndex << endl;
+
+
+		if((i+1)%1000 == 0) {
+			cout << "processed " << (i+1) << "images ... " << endl;
+		}
+	}
+
+	if(ofsData) {
+		ofsData->close();
+		ofsData = 0;
+	}
+	if(ofsLabel) {
+		ofsLabel->close();
+		ofsLabel = 0;
+	}
+
+	cout << "Category Pack Stat: " << endl;
+	for(uint32_t i = 0; i < numCategory; i++) {
+		cout << "category " << i << ": " << categoryList[i].getFileIndex() << endl;
+	}
+
+}
 
 
 

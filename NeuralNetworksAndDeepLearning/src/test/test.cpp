@@ -28,14 +28,10 @@ int gnuplot_test();
 int main_test(int argc, char** argv) {
 	//return imagePackerTest(argc, argv);
 
+	ImagePacker ip("", 100, 30, 10, 10, 10, 1);
+	ip.sample();
 
-	const uint32_t pageSize = 3000;
-	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	dataSet->load();
 
-	for(uint32_t i = 0; i < pageSize*5; i+=100) {
-		dataSet->getTrainDataAt(i%pageSize);
-	}
 }
 
 
