@@ -49,10 +49,22 @@ ImagePackDataSet<Dtype>::ImagePackDataSet(
 
 	this->threadArg.context = this;
 	this->loading = false;
+
+	this->trainFileIndices = new vector<uint32_t>(numTrainFile);
+	std::iota(this->trainFileIndices->begin(), this->trainFileIndices->end(), 0);
 }
 
 template <typename Dtype>
-ImagePackDataSet<Dtype>::~ImagePackDataSet() {}
+ImagePackDataSet<Dtype>::~ImagePackDataSet() {
+	if(bufDataSet) delete bufDataSet;
+	if(frontTrainDataSet) delete frontTrainDataSet;
+	if(frontTrainLabelSet) delete frontTrainLabelSet;
+	if(backTrainDataSet) delete backTrainDataSet;
+	if(backTrainLabelSet) delete backTrainLabelSet;
+	if(secondTrainDataSet) delete secondTrainDataSet;
+	if(secondTrainLabelSet) delete secondTrainLabelSet;
+	if(trainFileIndices) delete trainFileIndices;
+}
 
 
 template <typename Dtype>
@@ -241,12 +253,8 @@ void* ImagePackDataSet<Dtype>::load_helper(void* arg) {
 	//int page_ = *(int*)page;
 	//load(DataSet<Dtype>::Train, page_);
 
-
-
-
 	thread_arg_t* arg_ = (thread_arg_t*)arg;
 	cout << "load train dataset page " << arg_->page << endl;
-
 
 	((ImagePackDataSet<Dtype>*)(arg_->context))->load(DataSet<Dtype>::Train, arg_->page);
 }
@@ -260,7 +268,9 @@ template <typename Dtype>
 int ImagePackDataSet<Dtype>::load(typename DataSet<Dtype>::Type type, int page) {
 	loading = true;
 
-	string pageSuffix = to_string(page);
+	int shuffledPage = (*this->trainFileIndices)[page];
+	cout << "load train dataset shuffled page " << shuffledPage << endl;
+	string pageSuffix = to_string(shuffledPage);
 	int numData = 0;
 	// train
 	switch(type) {
@@ -560,6 +570,7 @@ void ImagePackDataSet<Dtype>::zeroMean(bool hasMean, bool isTrain) {
 template <typename Dtype>
 void ImagePackDataSet<Dtype>::shuffleTrainDataSet() {
 	random_shuffle(&(*this->trainSetIndices)[0], &(*this->trainSetIndices)[numImagesInTrainFile]);
+	random_shuffle(&(*this->trainFileIndices)[0], &(*this->trainFileIndices)[numTrainFile]);
 	/*
 	cout << "trainSetIndices: " << endl;
 	for(uint32_t i = 0; i < numImagesInTrainFile; i++) {

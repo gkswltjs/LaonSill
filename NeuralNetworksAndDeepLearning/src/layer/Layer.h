@@ -351,7 +351,7 @@ protected:
 	 *          레이어맵의 실제 레이어 객체를 찾아서 이전/다음 레이어에 연결한다.
 	 * @param layerMap save당시 레이어의 주소를 키, 해당 레이어를 값으로 하는 맵
 	 */
-	virtual void updateLayerRelation(map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void updateLayerRelation(map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 
 

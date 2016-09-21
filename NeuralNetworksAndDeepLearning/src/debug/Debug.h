@@ -34,11 +34,11 @@ template <typename Dtype> class LayersConfig;
 template <typename Dtype>
 DataSet<Dtype>* createMnistDataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/home/jhkim/data/learning/mnist/train_data",
-			"/home/jhkim/data/learning/mnist/train_label",
+			"/data/mnist/train_data",
+			"/data/mnist/train_label",
 			1,
-			"/home/jhkim/data/learning/mnist/test_data",
-			"/home/jhkim/data/learning/mnist/test_label",
+			"/data/mnist/test_data",
+			"/data/mnist/test_label",
 			1);
 	dataSet->setMean({0.13066047740});
 	return dataSet;
@@ -50,11 +50,11 @@ DataSet<Dtype>* createMnistDataSet() {
 template <typename Dtype>
 DataSet<Dtype>* createSampleDataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/home/jhkim/image/ILSVRC2012/save/sample/train_data",
-			"/home/jhkim/image/ILSVRC2012/save/sample/train_label",
+			"/data/ILSVRC2012/save/sample/train_data",
+			"/data/ILSVRC2012/save/sample/train_label",
 			3,
-			"/home/jhkim/image/ILSVRC2012/save/sample/train_data",
-			"/home/jhkim/image/ILSVRC2012/save/sample/train_label",
+			"/data/ILSVRC2012/save/sample/train_data",
+			"/data/ILSVRC2012/save/sample/train_label",
 			1);
 	dataSet->setMean({0.0, 0.0, 0.0});
 	return dataSet;
@@ -63,11 +63,11 @@ DataSet<Dtype>* createSampleDataSet() {
 template <typename Dtype>
 DataSet<Dtype>* createImageNet1000DataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/home/jhkim/image/ILSVRC2012/save/1000/train_data",
-			"/home/jhkim/image/ILSVRC2012/save/1000/train_label",
+			"/data/ILSVRC2012/save/1000/train_data",
+			"/data/ILSVRC2012/save/1000/train_label",
 			1,
-			"/home/jhkim/image/ILSVRC2012/save/1000/test_data",
-			"/home/jhkim/image/ILSVRC2012/save/1000/test_label",
+			"/data/ILSVRC2012/save/1000/test_data",
+			"/data/ILSVRC2012/save/1000/test_label",
 			1);
 	dataSet->setMean({0.47684615850, 0.45469805598, 0.41394191980});
 	return dataSet;
@@ -76,11 +76,11 @@ DataSet<Dtype>* createImageNet1000DataSet() {
 template <typename Dtype>
 DataSet<Dtype>* createImageNet10000DataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/home/jhkim/image/ILSVRC2012/save/10000/train_data",
-			"/home/jhkim/image/ILSVRC2012/save/10000/train_label",
+			"/data/ILSVRC2012/save/10000/train_data",
+			"/data/ILSVRC2012/save/10000/train_label",
 			10,
-			"/home/jhkim/image/ILSVRC2012/save/10000/test_data",
-			"/home/jhkim/image/ILSVRC2012/save/10000/test_label",
+			"/data/ILSVRC2012/save/10000/test_data",
+			"/data/ILSVRC2012/save/10000/test_label",
 			1);
 	dataSet->setMean({0.47684615850, 0.45469805598, 0.41394191980});
 	return dataSet;
@@ -89,11 +89,11 @@ DataSet<Dtype>* createImageNet10000DataSet() {
 template <typename Dtype>
 DataSet<Dtype>* createImageNet50000DataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/home/jhkim/image/ILSVRC2012/save/50000/train_data",
-			"/home/jhkim/image/ILSVRC2012/save/50000/train_label",
+			"/data/ILSVRC2012/save/50000/train_data",
+			"/data/ILSVRC2012/save/50000/train_label",
 			1,
-			"/home/jhkim/image/ILSVRC2012/save/50000/test_data",
-			"/home/jhkim/image/ILSVRC2012/save/50000/test_label",
+			"/data/ILSVRC2012/save/50000/test_data",
+			"/data/ILSVRC2012/save/50000/test_label",
 			1);
 	dataSet->setMean({0.47684615850, 0.45469805598, 0.41394191980});
 	return dataSet;

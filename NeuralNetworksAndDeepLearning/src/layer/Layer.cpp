@@ -242,6 +242,7 @@ void Layer<Dtype>::loadNetwork(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> 
 }
 */
 
+/*
 template <typename Dtype>
 void Layer<Dtype>::updateLayerRelation(map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
 	for(uint32_t i = 0; i < nextLayers.size(); i++) {
@@ -256,6 +257,7 @@ void Layer<Dtype>::updateLayerRelation(map<Layer<Dtype>*, Layer<Dtype>*> &layerM
 		}
 	//}
 }
+*/
 
 template <typename Dtype>
 void Layer<Dtype>::_reshape() {
@@ -266,15 +268,15 @@ void Layer<Dtype>::_reshape() {
 
 template <typename Dtype>
 void Layer<Dtype>::_feedforward() {
-	_input->print_data("input:");
+	//_input->print_data("input:");
 	_output->set_device_data(_input);
-	_output->print_data("output:");
+	//_output->print_data("output:");
 }
 
 template <typename Dtype>
 void Layer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 	input->print_data("param input:");
-	_input->print_data("input:");
+	//_input->print_data("input:");
 
 	// 첫번째 branch로부터의 input, 그대로 copy
 	if(isFirstPrevLayerRequest(idx)) {
@@ -284,7 +286,7 @@ void Layer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 	else {
 		_input->add_device_data(input);
 	}
-	_input->print_data("input:");
+	//_input->print_data("input:");
 }
 
 template <typename Dtype>

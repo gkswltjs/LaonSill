@@ -129,6 +129,11 @@ protected:
 	vector<uint32_t>* backTrainLabelSet;
 
 
+	vector<uint32_t>* trainFileIndices;
+
+
+
+
 
 	bool loading;
 

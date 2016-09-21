@@ -105,7 +105,7 @@ void Network<Dtype>::sgd(int epochs) {
 			applyUpdate();
 
 
-			if((batchIndex+1) % 200 == 0) {
+			if((batchIndex+1) % 500 == 0) {
 				config->_status = NetworkStatus::Test;
 				const uint32_t numTestData = dataSet->getNumTestData();
 				if(numTestData > 0) {
@@ -571,7 +571,7 @@ void Network<Dtype>::checkLearnableParamIsNan() {
 
 
 
-
+/*
 template <typename Dtype>
 void Network<Dtype>::shape(io_dim in_dim) {
 	if(in_dim.unitsize() > 0) {
@@ -583,6 +583,7 @@ void Network<Dtype>::shape(io_dim in_dim) {
 	//checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
 	//trainData->reshape({this->in_dim.batches, this->in_dim.channels, this->in_dim.rows, this->in_dim.cols});
 }
+*/
 
 template <typename Dtype>
 void Network<Dtype>::reshape(io_dim in_dim) {
