@@ -44,7 +44,7 @@ void network_test() {
 	const uint32_t maxEpoch = 10000;
 	const uint32_t batchSize = 50;
 	const float baseLearningRate = 0.001f;
-	const float weightDecay = 0.001f;
+	const float weightDecay = 0.0002f;
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 0.0f;
 
@@ -65,8 +65,8 @@ void network_test() {
 	//DataSet<float>* dataSet = new MockDataSet<float>(224, 224, 3, 100, 100, 100);
 	//DataSet<float>* dataSet = createImageNet10CatDataSet<float>();
 	//DataSet<float>* dataSet = createImageNet100CatDataSet<float>();
-	//DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	DataSet<float>* dataSet = createImageNet10000DataSet<float>();
+	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
+	//DataSet<float>* dataSet = createImageNet10000DataSet<float>();
 	//DataSet<float>* dataSet = createImageNet50000DataSet<float>();
 	//DataSet<float>* dataSet = createMnistDataSet<float>();
 	//DataSet<float>* dataSet = createSampleDataSet<float>();
@@ -83,7 +83,7 @@ void network_test() {
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfigTest<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ASimpleLayersConfig<float>();
-	LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
+	LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInceptionAuxLayersConfig<float>();
 
 	NetworkConfig<float>* networkConfig =
@@ -99,6 +99,8 @@ void network_test() {
 			->savePathPrefix("/home/jhkim/network")
 			->networkListeners({networkListener})
 			->build();
+
+	Util::printVramInfo();
 
 	Network<float>* network = new Network<float>(networkConfig);
 	network->sgd(maxEpoch);

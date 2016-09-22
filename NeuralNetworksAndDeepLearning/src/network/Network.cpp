@@ -105,6 +105,7 @@ void Network<Dtype>::sgd(int epochs) {
 			applyUpdate();
 
 
+			/*
 			if((batchIndex+1) % 500 == 0) {
 				config->_status = NetworkStatus::Test;
 				const uint32_t numTestData = dataSet->getNumTestData();
@@ -130,9 +131,10 @@ void Network<Dtype>::sgd(int epochs) {
 				}
 				config->_status = NetworkStatus::Train;
 			}
+			*/
 		}
 
-		/*
+
 		//if((epochIndex+1) % 1 == 0) {
 			config->_status = NetworkStatus::Test;
 			const uint32_t numTestData = dataSet->getNumTestData();
@@ -160,7 +162,7 @@ void Network<Dtype>::sgd(int epochs) {
 				cout << "Epoch " << epochIndex+1 << " complete: " << timer1.stop(false) << endl;
 			}
 		//}
-		 */
+
 
 	}
 }

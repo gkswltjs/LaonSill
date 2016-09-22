@@ -68,7 +68,7 @@ public:
 	DepthConcatLayer(const string name);
 	virtual ~DepthConcatLayer();
 
-	virtual void shape(uint32_t idx, io_dim in_dim);
+	virtual void shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& prevLayerOutput);
 	virtual void reshape(uint32_t idx, io_dim in_dim);
 
 protected:

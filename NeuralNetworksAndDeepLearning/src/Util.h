@@ -213,6 +213,13 @@ public:
 		return cudaError;
 	}
 
+	static void printVramInfo() {
+		size_t free, total;
+		cudaMemGetInfo(&free, &total);
+		cout << ":::VRAM INFO:::" << endl;
+		cout << "FREE: << " << free/(1024*1024) << "MB of TOTAL " << total/(1024*1024) << "MB" << endl;
+	}
+
 	static int page;						///< 디버깅용 (임시)
 	static int start_page;					///< 디버깅용 (임시)
 	static int end_page;					///< 디버깅용 (임시)

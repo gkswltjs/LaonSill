@@ -35,6 +35,21 @@ int InputLayer<Dtype>::getInputSize() const {
 
 
 template <typename Dtype>
+void InputLayer<Dtype>::shape(uint32_t idx, io_dim in_dim) {
+	if (!Layer<Dtype>::w_isLastPrevLayerRequest(idx, "Layer::shape()")) return;
+
+	this->in_dim = in_dim;
+
+	// class member shared_ptr을 초기화하는 방법이 마땅하지 않아서 ...
+	shared_ptr<Data<Dtype>> _tmp_input(new Data<Dtype>());
+	this->_input = _tmp_input;
+
+	_shape();
+	Layer<Dtype>::propShape();
+}
+
+
+template <typename Dtype>
 void InputLayer<Dtype>::feedforward(DataSet<Dtype>* dataSet, const uint32_t baseIndex, const char* end) {
 	//_input->set_data(input, Data::HostToDevice);
 	const uint32_t unitSize = this->in_dim.unitsize();

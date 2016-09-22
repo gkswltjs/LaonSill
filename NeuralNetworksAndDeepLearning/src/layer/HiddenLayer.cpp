@@ -31,8 +31,11 @@ HiddenLayer<Dtype>::~HiddenLayer() {}
 
 template <typename Dtype>
 void HiddenLayer<Dtype>::backpropagation(uint32_t idx, Data<Dtype>* next_input, uint32_t offset) {
-	_deconcat(idx, next_input, offset);
-	if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
+
+	if(!Layer<Dtype>::isSharedOutput()) {
+		_deconcat(idx, next_input, offset);
+		if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
+	}
 
 	//_scaleGradient();
 	_backpropagation();
@@ -43,7 +46,7 @@ void HiddenLayer<Dtype>::backpropagation(uint32_t idx, Data<Dtype>* next_input, 
 
 template <typename Dtype>
 void HiddenLayer<Dtype>::_backpropagation() {
-	this->_input->set_device_grad(this->_output);
+	this->_input->set_device_grad(this->_output.get());
 }
 
 

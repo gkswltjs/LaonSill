@@ -46,8 +46,8 @@ void Layer<Dtype>::_clearShape() {
 	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 
-	delete _input;
-	delete _output;
+	//delete _input;
+	//delete _output;
 	_input = NULL;
 	_output = NULL;
 	inputTensorDesc = NULL;

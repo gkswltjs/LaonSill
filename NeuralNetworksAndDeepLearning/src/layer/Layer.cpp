@@ -34,7 +34,7 @@ Layer<Dtype>::Layer(const string name) {
 }
 
 template <typename Dtype>
-Layer<Dtype>::Layer(Builder* builder) {
+Layer<Dtype>::Layer(Builder* builder) : _output(new Data<Dtype>()) {
 	for(uint32_t i = 0; i < builder->_nextLayerIndices.size(); i++) {
 		this->nextLayers.push_back((Layer<Dtype>*)((size_t)builder->_nextLayerIndices[i]));
 	}
@@ -124,10 +124,21 @@ bool Layer<Dtype>::w_isLastNextLayerRequest(uint32_t idx, const string method) {
 }
 
 template <typename Dtype>
-void Layer<Dtype>::shape(uint32_t idx, io_dim in_dim) {
+void Layer<Dtype>::shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& prevLayerOutput) {
 	if (!w_isLastPrevLayerRequest(idx, "Layer::shape()")) return;
 
 	this->in_dim = in_dim;
+
+	// 이전 레이어의 output을 재활용할 수 있는 경우 (이전 레이어와 현재 레이어가 유일하게 연결된 경우)
+	if(isSharedInput()) {
+		this->_input = prevLayerOutput;
+	}
+	// 이전 레이어의 output을 재활용할 수 없는 경우, 신규로 _input에 Data 객체를 생성한다.
+	else {
+		shared_ptr<Data<Dtype>> _tmp_input(new Data<Dtype>());
+		this->_input = _tmp_input;
+	}
+
 	_shape();
 	propShape();
 }
@@ -181,8 +192,12 @@ void Layer<Dtype>::load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerM
 
 template <typename Dtype>
 void Layer<Dtype>::feedforward(uint32_t idx, Data<Dtype>* input, const char *end) {
-	_concat(idx, input);
-	if (!w_isLastPrevLayerRequest(idx, "Layer::feedforward()")) return;
+
+	// shared input이 아닌 경우,
+	if(!isSharedInput()) {
+		_concat(idx, input);
+		if (!w_isLastPrevLayerRequest(idx, "Layer::feedforward()")) return;
+	}
 
 	//_scaleInput();
 	_feedforward();
@@ -193,9 +208,30 @@ template <typename Dtype>
 void Layer<Dtype>::initialize(uint32_t id, const string name) {
 	this->id = id;
 	this->name = name;
-	this->_input = new Data<Dtype>();
-	this->_output = new Data<Dtype>();
+	//this->_input = new Data<Dtype>();
+	//this->_output = new Data<Dtype>();
 }
+
+
+template <typename Dtype>
+bool Layer<Dtype>::isSharedInput() {
+	if(prevLayers.size() == 1 && prevLayers[0]->getNextLayers().size() == 1) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+template <typename Dtype>
+bool Layer<Dtype>::isSharedOutput() {
+	if(nextLayers.size() == 1 && nextLayers[0]->getPrevLayers().size() == 1) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+
 
 /*
 template <typename Dtype>
@@ -269,7 +305,7 @@ void Layer<Dtype>::_reshape() {
 template <typename Dtype>
 void Layer<Dtype>::_feedforward() {
 	//_input->print_data("input:");
-	_output->set_device_data(_input);
+	_output->set_device_data(_input.get());
 	//_output->print_data("output:");
 }
 
@@ -300,7 +336,7 @@ void Layer<Dtype>::_scaleInput() {
 template <typename Dtype>
 void Layer<Dtype>::propShape() {
 	for(uint32_t i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i]->shape(id, out_dim);
+		nextLayers[i]->shape(id, out_dim, _output);
 	}
 }
 

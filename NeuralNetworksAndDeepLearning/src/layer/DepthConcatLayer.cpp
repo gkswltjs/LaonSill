@@ -31,13 +31,13 @@ DepthConcatLayer<Dtype>::~DepthConcatLayer() {}
 
 
 template <typename Dtype>
-void DepthConcatLayer<Dtype>::shape(uint32_t idx, io_dim in_dim) {
+void DepthConcatLayer<Dtype>::shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& prevLayerOutput) {
 	// DepthConcatLayer에서 필요로하는 output channel수만 카운트하고
 	// 나머지는 모두 상위 레이어의 shape()로 위임한다.
 	if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
 	this->out_dim.channels += in_dim.channels;
 
-	HiddenLayer<Dtype>::shape(idx, in_dim);
+	HiddenLayer<Dtype>::shape(idx, in_dim, prevLayerOutput);
 
 #ifdef DEPTHCONCAT_LOG
 	cout << "shape depthConcatLayer in_dim: " << this->in_dim.batches << "x" << this->in_dim.channels << "x" << this->in_dim.rows << "x" << this->in_dim.cols << endl;

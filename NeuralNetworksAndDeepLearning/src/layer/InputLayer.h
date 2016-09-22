@@ -103,6 +103,9 @@ public:
 	using Layer<Dtype>::feedforward;
 	void feedforward(DataSet<Dtype>* dataSet, const uint32_t baseIndex, const char* end=0);
 
+	using Layer<Dtype>::shape;
+	void shape(uint32_t idx, io_dim in_dim);
+
 protected:
 	void initialize();
 	virtual void _shape(bool recursive=true);

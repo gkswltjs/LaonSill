@@ -66,8 +66,8 @@ DataSet<Dtype>* createImageNet1000DataSet() {
 			"/data/ILSVRC2012/save/1000/train_data",
 			"/data/ILSVRC2012/save/1000/train_label",
 			1,
-			"/data/ILSVRC2012/save/1000/test_data",
-			"/data/ILSVRC2012/save/1000/test_label",
+			"/data/ILSVRC2012/save/1000/train_data",
+			"/data/ILSVRC2012/save/1000/train_label",
 			1);
 	dataSet->setMean({0.47684615850, 0.45469805598, 0.41394191980});
 	return dataSet;

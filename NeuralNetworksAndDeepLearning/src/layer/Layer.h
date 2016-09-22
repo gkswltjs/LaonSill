@@ -19,6 +19,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "../Data.h"
 #include "LayerConfig.h"
@@ -202,12 +203,12 @@ public:
 	 * @details 레이어의 입력값 장치 포인터를 조회한다.
 	 * @return 레이어 입력값 장치 포인터
 	 */
-	virtual Data<Dtype>* getInput() { return this->_input; }
+	virtual Data<Dtype>* getInput() { return this->_input.get(); }
 	/**
 	 * @details 레이어의 출력값 장치 포인터를 조회한다.
 	 * @return 레이어 출력값 장치 포인터
 	 */
-	virtual Data<Dtype>* getOutput() { return this->_output; }
+	virtual Data<Dtype>* getOutput() { return this->_output.get(); }
 
 	/**
 	 * @details 레이어에 네트워크 설정값을 설정한다.
@@ -278,7 +279,7 @@ public:
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 현재 레이어의 입력 데이터 구조정보
 	 */
-	virtual void shape(uint32_t idx, io_dim in_dim);
+	virtual void shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& prevLayerOutput);
 	/**
 	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
@@ -355,8 +356,8 @@ protected:
 
 
 
-
-
+	bool isSharedInput();
+	bool isSharedOutput();
 
 
 
@@ -485,8 +486,11 @@ protected:
 
 
 public:
-	Data<Dtype>* _input;								///< 레이어 입력 데이터 및 그레디언트
-	Data<Dtype>* _output;								///< 레이어 출력 데이터 및 그레디언트
+	//Data<Dtype>* _input;								///< 레이어 입력 데이터 및 그레디언트
+	//Data<Dtype>* _output;								///< 레이어 출력 데이터 및 그레디언트
+
+	shared_ptr<Data<Dtype>> _input;
+	shared_ptr<Data<Dtype>> _output;
 };
 
 
