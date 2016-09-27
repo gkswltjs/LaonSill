@@ -16,6 +16,10 @@
 #include "../Util.h"
 #include "../Data.h"
 
+#include <boost/random.hpp>
+#include <boost/math/special_functions/next.hpp>
+
+
 
 //typedef arma::fvec rvec;
 //typedef arma::fmat rmat;
@@ -241,12 +245,30 @@ struct param_filler {
 			Dtype scale = sqrt(Dtype(3)/n);
 			cout << "fan_in: " << fan_in << ", fan_out: " << fan_out << ", scale: " << scale << endl;
 
+
+			/*
 			//cout << "sd_xavier: " << sd_xavier << endl;
 			std::random_device rd_xavier;
 			std::mt19937 gen_xavier(rd_xavier());
 			//std::uni _distribution<DATATYPE> normal_dist(0.0, 1.0);
 			std::uniform_real_distribution<Dtype> unifrom_dist(-scale, scale);
 			for(uint32_t i = 0; i < size; i++) mem[i] = unifrom_dist(gen_xavier);
+			*/
+
+
+			typedef boost::mt19937 RNGType;
+			RNGType rng;
+			rng.seed(static_cast<unsigned int>(std::time(NULL)+getpid()));
+
+			// BOOST
+			boost::uniform_real<float> random_distribution(-scale, boost::math::nextafter<float>(scale, std::numeric_limits<float>::max()));
+			boost::variate_generator<RNGType, boost::uniform_real<float> > variate_generator(rng, random_distribution);
+			//variate_generator.engine().seed();
+			//variate_generator.distribution().reset();
+
+			for(uint32_t i = 0; i < size; ++i) {
+				mem[i] = variate_generator();
+			}
 
 
 			/*

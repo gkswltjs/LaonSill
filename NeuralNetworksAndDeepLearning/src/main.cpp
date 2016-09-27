@@ -43,6 +43,8 @@ void network_test() {
 
 	const uint32_t maxEpoch = 10000;
 	const uint32_t batchSize = 50;
+	const uint32_t testInterval = 200;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 20000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
 	const float weightDecay = 0.0002f;
 	const float momentum = 0.9f;
@@ -51,6 +53,8 @@ void network_test() {
 
 	cout << "maxEpoch: " << maxEpoch << endl;
 	cout << "batchSize: " << batchSize << endl;
+	cout << "testInterval: " << testInterval << endl;
+	cout << "saveInterval: " << saveInterval << endl;
 	cout << "baseLearningRate: " << baseLearningRate << endl;
 	cout << "weightDecay: " << weightDecay << endl;
 	cout << "momentum: " << momentum << endl;
@@ -65,8 +69,8 @@ void network_test() {
 	//DataSet<float>* dataSet = new MockDataSet<float>(224, 224, 3, 100, 100, 100);
 	//DataSet<float>* dataSet = createImageNet10CatDataSet<float>();
 	//DataSet<float>* dataSet = createImageNet100CatDataSet<float>();
-	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	//DataSet<float>* dataSet = createImageNet10000DataSet<float>();
+	//DataSet<float>* dataSet = createImageNet1000DataSet<float>();
+	DataSet<float>* dataSet = createImageNet10000DataSet<float>();
 	//DataSet<float>* dataSet = createImageNet50000DataSet<float>();
 	//DataSet<float>* dataSet = createMnistDataSet<float>();
 	//DataSet<float>* dataSet = createSampleDataSet<float>();
@@ -75,7 +79,7 @@ void network_test() {
 
 	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
 	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
-	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_ONLY);
+	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_AND_WRITE);
 
 	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
@@ -92,6 +96,8 @@ void network_test() {
 			->baseLearningRate(baseLearningRate)
 			->weightDecay(weightDecay)
 			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
 			->clipGradientsLevel(clipGradientsLevel)
 			->dataSet(dataSet)
 			->evaluations({top1Evaluation, top5Evaluation})

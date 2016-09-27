@@ -218,6 +218,8 @@ public:
 
 		uint32_t _batchSize;
 		uint32_t _epochs;
+		uint32_t _testInterval;
+		uint32_t _saveInterval;
 		float _baseLearningRate;
 		float _momentum;
 		float _weightDecay;
@@ -249,6 +251,14 @@ public:
 		}
 		Builder* epochs(uint32_t epochs) {
 			this->_epochs = epochs;
+			return this;
+		}
+		Builder* testInterval(uint32_t testInterval) {
+			this->_testInterval = testInterval;
+			return this;
+		}
+		Builder* saveInterval(uint32_t saveInterval) {
+			this->_saveInterval = saveInterval;
 			return this;
 		}
 		Builder* savePathPrefix(string savePathPrefix) {
@@ -326,6 +336,8 @@ public:
 					->networkListeners(_networkListeners)
 					->batchSize(_batchSize)
 					->epochs(_epochs)
+					->testInterval(_testInterval)
+					->saveInterval(_saveInterval)
 					->savePathPrefix(_savePathPrefix)
 					->clipGradientsLevel(_clipGradientsLevel)
 					->dataSet(_dataSet)
@@ -428,6 +440,9 @@ public:
 
 	uint32_t _batchSize;
 	uint32_t _epochs;
+	uint32_t _testInterval;
+	uint32_t _saveInterval;
+	uint32_t _iterations;
 	float _baseLearningRate;
 	float _momentum;
 	float _weightDecay;
@@ -443,6 +458,7 @@ public:
 
 	NetworkConfig(Builder* builder) {
 		this->_builder = builder;
+		this->_iterations = 0;
 	}
 
 	NetworkConfig* evaluations(const vector<Evaluation<Dtype>*> evaluations) {
@@ -459,6 +475,14 @@ public:
 	}
 	NetworkConfig* epochs(uint32_t epochs) {
 		this->_epochs = epochs;
+		return this;
+	}
+	NetworkConfig* testInterval(uint32_t testInterval) {
+		this->_testInterval = testInterval;
+		return this;
+	}
+	NetworkConfig* saveInterval(uint32_t saveInterval) {
+		this->_saveInterval = saveInterval;
 		return this;
 	}
 	NetworkConfig* savePathPrefix(string savePathPrefix) {
@@ -529,6 +553,14 @@ public:
 			_learnableLayers[i]->loadParams(ifs);
 		}
 		ifs.close();
+	}
+	bool doTest() {
+		if(_iterations % _testInterval == 0) return true;
+		else return false;
+	}
+	bool doSave() {
+		if(_iterations % _saveInterval == 0) return true;
+		else return false;
 	}
 };
 

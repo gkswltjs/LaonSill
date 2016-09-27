@@ -84,6 +84,7 @@ void Network<Dtype>::sgd(int epochs) {
 		timer1.start();
 		timer2.start();
 		for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
+			config->_iterations++;
 			//iterations++;
 			//Util::printMessage("iteration: " + to_string(iterations));
 
@@ -104,9 +105,7 @@ void Network<Dtype>::sgd(int epochs) {
 			// UPDATE
 			applyUpdate();
 
-
-			/*
-			if((batchIndex+1) % 500 == 0) {
+			if(config->doTest()) {
 				config->_status = NetworkStatus::Test;
 				const uint32_t numTestData = dataSet->getNumTestData();
 				if(numTestData > 0) {
@@ -131,10 +130,13 @@ void Network<Dtype>::sgd(int epochs) {
 				}
 				config->_status = NetworkStatus::Train;
 			}
-			*/
+
+			if(config->doSave()) {
+				save();
+			}
 		}
 
-
+		/*
 		//if((epochIndex+1) % 1 == 0) {
 			config->_status = NetworkStatus::Test;
 			const uint32_t numTestData = dataSet->getNumTestData();
@@ -162,7 +164,7 @@ void Network<Dtype>::sgd(int epochs) {
 				cout << "Epoch " << epochIndex+1 << " complete: " << timer1.stop(false) << endl;
 			}
 		//}
-
+		 */
 
 	}
 }
@@ -634,7 +636,6 @@ void Network<Dtype>::save() {
 
 	cout << "time elapsed to save network: " << timer.stop(false) << endl;
 	*/
-
 
 	config->save();
 

@@ -79,6 +79,8 @@ DataSet<Dtype>* createImageNet10000DataSet() {
 			"/data/ILSVRC2012/save/10000/train_data",
 			"/data/ILSVRC2012/save/10000/train_label",
 			10,
+			//"/data/ILSVRC2012/save/50000/test_data",
+			//"/data/ILSVRC2012/save/50000/test_label",
 			"/data/ILSVRC2012/save/10000/test_data",
 			"/data/ILSVRC2012/save/10000/test_label",
 			1);
@@ -418,7 +420,7 @@ LayersConfig<Dtype>* createGoogLeNetInception3ASimpleLayersConfig() {
 template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception3ALayersConfig() {
 	const float xavier_const = 1.0;
-	const float bias_const = 0.1;
+	const float bias_const = 0.2;
 
 	cout << endl;
 	LayersConfig<Dtype>* layersConfig =
@@ -4498,7 +4500,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5ALayersConfig() {
 
 template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
-	const float bias_const = 0.2;
+	const float bias_const = 0.1;
 
 	cout << endl;
 	LayersConfig<Dtype>* layersConfig =
