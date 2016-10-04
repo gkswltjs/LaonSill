@@ -43,7 +43,7 @@ void network_test() {
 
 	const uint32_t maxEpoch = 10000;
 	const uint32_t batchSize = 50;
-	const uint32_t testInterval = 200;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 20000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
 	const float weightDecay = 0.0002f;
@@ -70,24 +70,25 @@ void network_test() {
 	//DataSet<float>* dataSet = createImageNet10CatDataSet<float>();
 	//DataSet<float>* dataSet = createImageNet100CatDataSet<float>();
 	//DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	DataSet<float>* dataSet = createImageNet10000DataSet<float>();
+	//DataSet<float>* dataSet = createImageNet10000DataSet<float>();
 	//DataSet<float>* dataSet = createImageNet50000DataSet<float>();
-	//DataSet<float>* dataSet = createMnistDataSet<float>();
+	DataSet<float>* dataSet = createMnistDataSet<float>();
 	//DataSet<float>* dataSet = createSampleDataSet<float>();
 	dataSet->load();
 	//dataSet->zeroMean(true);
 
 	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
 	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
-	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_AND_WRITE);
+	//NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_AND_WRITE);
+	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::WRITE_ONLY);
 
 	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfigTest<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ASimpleLayersConfig<float>();
-	LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInceptionAuxLayersConfig<float>();
 
 	NetworkConfig<float>* networkConfig =
