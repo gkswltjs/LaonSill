@@ -17,6 +17,7 @@
 #include "../layer/HiddenLayer.h"
 #include "../layer/OutputLayer.h"
 #include "../Util.h"
+#include "../Worker.h"
 
 
 template <typename Dtype>
@@ -62,6 +63,16 @@ Network<Dtype>::~Network() {
 	//delete trainData;
 }
 
+template <typename Dtype>
+void Network<Dtype>::sgd_with_timer(int epochs) {
+	Timer timer;
+	timer.start();
+	sgd(epochs);
+
+    if (Worker<Dtype>::consumerIdx == 0)
+	    cout << "Total training time : " << timer.stop(false) << "us elapsed" << endl;
+}
+
 
 template <typename Dtype>
 void Network<Dtype>::sgd(int epochs) {
@@ -70,7 +81,7 @@ void Network<Dtype>::sgd(int epochs) {
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
 	const uint32_t trainDataSize = dataSet->getNumTrainData();
-	const uint32_t numBatches = trainDataSize / in_dim.batches;
+	const uint32_t numBatches = trainDataSize / in_dim.batches / Worker<Dtype>::gpuCount;
 
 	Timer timer1;
 	Timer timer2;
@@ -83,7 +94,14 @@ void Network<Dtype>::sgd(int epochs) {
 		dataSet->shuffleTrainDataSet();
 		timer1.start();
 		timer2.start();
-		for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
+
+        // GPU가 여러대 있는 경우에 한대의 GPU가 하나의 batch에 해당하는
+        // 데이터를 트레이닝한다.
+        // XXX: GPU 대수는 numBatches의 최소공약수라 가정한다. 
+        //      (나중에 고쳐야 한다.)
+		for(uint32_t batchTotalIndex = 0; batchTotalIndex < numBatches; batchTotalIndex++) {
+            uint32_t batchIndex = batchTotalIndex * Worker<Dtype>::gpuCount +
+                Worker<Dtype>::consumerIdx;
 			config->_iterations++;
 			//iterations++;
 			//Util::printMessage("iteration: " + to_string(iterations));
@@ -105,35 +123,58 @@ void Network<Dtype>::sgd(int epochs) {
 			// UPDATE
 			applyUpdate();
 
-			if(config->doTest()) {
-				config->_status = NetworkStatus::Test;
-				const uint32_t numTestData = dataSet->getNumTestData();
-				if(numTestData > 0) {
-					double cost = evaluateTestSet();
-					cost /= numTestData;
+            // 모든 worker에서 GPU 트레이닝이 끝나길 기다린다.
+            // XXX: 예쁘게.. 
+            if (atomic_fetch_sub(&Worker<Dtype>::runningThreadCnt, 1) == 1) {
+                // 마지막 쓰레드가 메모리를 갱신한다.
+                // XXX: 예쁘게
+                if (config->doTest()) {
+                    config->_status = NetworkStatus::Test;
+                    const uint32_t numTestData = dataSet->getNumTestData();
+                    if(numTestData > 0) {
+                        double cost = evaluateTestSet();
+                        cost /= numTestData;
 
-					//const float cost = evaluations[0]->getCost() / numTestData;
-					const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
-					const float accuracy = (float)accurateCnt/numTestData;
+                        //const float cost = evaluations[0]->getCost() / numTestData;
+                        const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
+                        const float accuracy = (float)accurateCnt/numTestData;
 
-					//save();
-					cout << "epoch: " << epochIndex+1 << ", iteration: " << epochIndex*numBatches+batchIndex+1 << " " << accurateCnt << " / " << numTestData <<
-							", accuracy: " << accuracy << ", cost: " << cost <<
-							" :" << timer1.stop(false) << endl;
+                        //save();
+                        
+                        cout << "epoch: " << epochIndex+1 << ", iteration: " 
+                            << epochIndex*numBatches+batchTotalIndex+1 << " " << accurateCnt << " / " 
+                            << numTestData << ", accuracy: " << accuracy << ", cost: " << cost 
+                            << " :" << timer1.stop(false) << endl;
+                        
 
-					for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
-						networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy", (double)evaluations[0]->getAccurateCount()/numTestData*100);
-						networkListeners[nl]->onAccuracyComputed(1, "top5_accuracy", (double)evaluations[1]->getAccurateCount()/numTestData*100);
-						//networkListeners[nl]->onCostComputed(0, "cost", evaluations[0]->getCost()/numTestData);
-						networkListeners[nl]->onCostComputed(0, "cost", cost);
-					}
-				}
-				config->_status = NetworkStatus::Train;
-			}
+                        for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
+                            networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy",
+                                (double)evaluations[0]->getAccurateCount()/numTestData*100);
+                            networkListeners[nl]->onAccuracyComputed(1, "top5_accuracy",
+                                (double)evaluations[1]->getAccurateCount()/numTestData*100);
+                            //networkListeners[nl]->onCostComputed(0, "cost", evaluations[0]->getCost()/numTestData);
+                            networkListeners[nl]->onCostComputed(0, "cost", cost);
+                        }
+                    }
+                    config->_status = NetworkStatus::Train;
+                }
 
-			if(config->doSave()) {
-				save();
-			}
+                if(config->doSave()) {
+                    save();
+                }
+
+                // XXX: 타이밍 이슈가 있을 수 있다.. 하지만... 많은 작업이
+                // 수행이 되기 때문에 괜찮을 것으로 판단된다.
+                unique_lock<mutex> commLock(Worker<Dtype>::commMutex);
+                atomic_store(&Worker<Dtype>::runningThreadCnt, Worker<Dtype>::gpuCount);
+                Worker<Dtype>::commCondV.notify_all();
+
+            } else {
+                // XXX: 일단 예제대로 unique_lock 썼으나... 좀 더 살펴보고
+                // 적절한 것으로 바꾸자.
+                unique_lock<mutex> commLock(Worker<Dtype>::commMutex);
+                Worker<Dtype>::commCondV.wait(commLock);
+            }
 		}
 
 		/*
@@ -389,7 +430,66 @@ void Network<Dtype>::applyUpdate() {
 	clipGradients();
 
 	const uint32_t numLearnableLayers = config->_learnableLayers.size();
-	for(uint32_t i = 0; i < numLearnableLayers; i++) {
+
+    // device 메모리를 host 메모리로 동기화 시킨다.
+    for (uint32_t i = 0; i < numLearnableLayers; i++) {
+        config->_learnableLayers[i]->syncMutableMem();
+    }
+
+
+    // 모든 worker에서 GPU 트레이닝이 끝나길 기다린다.
+    // XXX: 예쁘게.. 
+    if (atomic_fetch_sub(&Worker<Dtype>::runningThreadCnt, 1) == 1) {
+        typename vector<NetworkConfig<Dtype>*>::iterator iter; 
+        NetworkConfig<Dtype>* firstConfig;
+        // 마지막 쓰레드가 learnable layer들의 data를 갱신한다.
+
+        // (1) 변화된 부분을 첫번째 layer에 적용한다.
+        for (iter = Worker<Dtype>::configs.begin(); 
+            iter != Worker<Dtype>::configs.end(); ++iter) {
+            
+            if (iter == Worker<Dtype>::configs.begin()) {
+                firstConfig = (*iter);
+                continue;
+            }
+
+            for (uint32_t i = 0; i < numLearnableLayers; i++) {
+                LearnableLayer<Dtype>* firstLayer = firstConfig->_learnableLayers[i];
+                LearnableLayer<Dtype>* curLayer = (*iter)->_learnableLayers[i];
+
+                curLayer->applyChanges(firstLayer);
+            }
+        }
+
+        // (2) 첫번째 layer의 값을 다른 layer들에게 동기화 한다.
+        for (iter = Worker<Dtype>::configs.begin(); 
+            iter != Worker<Dtype>::configs.end(); ++iter) {
+            
+            if (iter == Worker<Dtype>::configs.begin()) {
+                firstConfig = (*iter);
+                continue;
+            }
+
+            for (uint32_t i = 0; i < numLearnableLayers; i++) {
+                LearnableLayer<Dtype>* firstLayer = firstConfig->_learnableLayers[i];
+                LearnableLayer<Dtype>* curLayer = (*iter)->_learnableLayers[i];
+
+                curLayer->syncParams(firstLayer);
+            }
+        }
+
+        unique_lock<mutex> commLock(Worker<Dtype>::commMutex);
+        atomic_store(&Worker<Dtype>::runningThreadCnt, Worker<Dtype>::gpuCount);
+
+        Worker<Dtype>::commCondV.notify_all();
+
+    } else {
+        unique_lock<mutex> commLock(Worker<Dtype>::commMutex);
+        Worker<Dtype>::commCondV.wait(commLock);
+    }
+
+    // 각 layer들을 갱신한다.
+	for (uint32_t i = 0; i < numLearnableLayers; i++) {
 		config->_learnableLayers[i]->update();
 	}
 }

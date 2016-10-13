@@ -8,58 +8,99 @@
 #include "Cuda.h"
 #include "../Util.h"
 
-int Cuda::gpuid = 0;
+//int Cuda::gpuid = 0;
+int Cuda::gpuCount;
 const float Cuda::alpha = 1.0f;
 const float Cuda::beta = 0.0f;
 
-cudnnHandle_t Cuda::cudnnHandle;
-cublasHandle_t Cuda::cublasHandle;
+vector<int> Cuda::availableGPU; // peer access가 가능한 GPU만 지원함.
+
+thread_local cudnnHandle_t Cuda::cudnnHandle;
+thread_local cublasHandle_t Cuda::cublasHandle;
+
 
 Cuda::Cuda() {}
 Cuda::~Cuda() {}
 
-void Cuda::create(int gpuid) {
-	int num_gpus;
+void Cuda::create(int usingGPUCount) {
+	int devGPUCount;	// 머신에서 제공하는 GPU 개수
+	int i, j;
 
 	Timer timer;
 	timer.start();
-	checkCudaErrors(cudaGetDeviceCount(&num_gpus));
-	if(gpuid < 0 || gpuid >= num_gpus) {
-		printf("ERROR: Invalid GPU ID %d (There are %d GPUs on this machine)\n", gpuid, num_gpus);
-	  exit(1);
+	checkCudaErrors(cudaGetDeviceCount(&devGPUCount));
+	if(devGPUCount == 0) {
+		printf("ERROR: There is zero GPUs on this machine\n");
+		exit(1);
 	}
-	//cout << "cudaGetDeviceCount: " << timer.stop(false) << endl;
-	timer.start();
-	Cuda::gpuid = gpuid;
-	checkCudaErrors(cudaSetDevice(Cuda::gpuid));
-	//cout << "cudaSetDevice: " << timer.stop(false) << endl;
 
-	timer.start();
-	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
-	//cout << "cublasCreate: " << timer.stop(false) << endl;
+	if(usingGPUCount > devGPUCount) {
+		printf("ERROR: Invalid GPU count %d (There are %d GPUs on this machine)\n", usingGPUCount, devGPUCount);
+		exit(1);
+	}
 
-	timer.start();
-	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
-	//cout << "cudnnCreate: " << timer.stop(false) << endl;
+	if(usingGPUCount <= 0) {
+		Cuda::gpuCount = devGPUCount;
+	} else {
+		Cuda::gpuCount = usingGPUCount;
+	}
+
+    // gpu가 하나이면 peer access 확인을 하지 않는다.
+    if (Cuda::gpuCount == 1) {
+        Cuda::availableGPU.push_back(0);
+        cout << "This machine uses 1 GPU" << endl;
+        return;
+    }
+
+    // gpu가 여러개이면 peer access 확인을 한다.
+    for (i = 0; i < Cuda::gpuCount; i++) {
+        bool canAccessAny = false;  // 하나라도 접근 가능하면 true, 
+                                    // 해당 기능이 있더라도 2개이상 peer access 기능이 없으면
+                                    // 기능이 없는것과 동일함.
+        int canAccess;
+        for (j = 0; j < Cuda::gpuCount; j++) {
+            if (i == j)
+                continue;
+
+            checkCudaErrors(cudaDeviceCanAccessPeer(&canAccess, i , j));
+            if (canAccess) {
+                canAccessAny = true;
+                break;
+            }
+        }
+
+        if (canAccessAny) {
+            Cuda::availableGPU.push_back(i);
+            cout << "GPU #" << i << " is added" << endl;
+        }
+    }
+
+    if (Cuda::availableGPU.size() < 1) {
+		printf("ERROR: No peer-accessible GPU on this machines.\n");
+        exit(0);
+    }
+
+    Cuda::gpuCount = Cuda::availableGPU.size();
+
+    for (i = 0; i < Cuda::availableGPU.size(); i++) {
+        checkCudaErrors(cudaSetDevice(Cuda::availableGPU[i]));
+        for (j = 0; j < Cuda::availableGPU.size(); j++) {
+            if (i == j)
+                continue;
+
+            checkCudaErrors(cudaDeviceEnablePeerAccess(Cuda::availableGPU[j], 0));
+        }
+    }
+
+    cout << "This machine uses " << Cuda::gpuCount << " GPUs." << endl;
 }
 
 void Cuda::destroy() {
-	checkCudaErrors(cudaSetDevice(Cuda::gpuid));
-	checkCudaErrors(cublasDestroy(Cuda::cublasHandle));
-	checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
+	return;
 }
 
 void Cuda::refresh() {
-	checkCudaErrors(cudaSetDevice(Cuda::gpuid));
+	/* deprecated function */
+	return;
 }
-
-
-
-
-
-
-
-
-
-
 

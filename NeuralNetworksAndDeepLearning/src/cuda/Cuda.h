@@ -13,6 +13,7 @@
 #include <sstream>
 #include <cudnn.h>
 #include <cublas_v2.h>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////////
 // Error handling
@@ -91,10 +92,10 @@ public:
 	virtual ~Cuda();
 
 	/**
-	 * @details 지정된 id이 Cuda 장치를 설정하고 cudnn, cublas 핸들을 생성.
-	 * @param gpuid Cuda를 사용할 장치의 id
+	 * @details 지정된 개수 만큼의 Cuda 장치를 설정하고 cudnn, cublas 핸들을 생성.
+	 * @param usingGPUCount Cuda를 사용할 장치 개수. 0을 입력하면 머신에 존재하는 모든 Cuda장치를 사용함.
 	 */
-	static void create(int gpuid);
+	static void create(int usingGPUCount);
 	/**
 	 * @details create()를 통해 생성한 Cuda관련 리소스를 정리.
 	 */
@@ -104,9 +105,13 @@ public:
 	 */
 	static void refresh();
 
-	static int gpuid;							///< Cuda를 사용할 장치의 id
-	static cudnnHandle_t cudnnHandle;			///< cudnn 라이브러리 컨텍스트 핸들.
-	static cublasHandle_t cublasHandle;			///< cublas 라이브러리 컨텍스트 핸들.
+	static int gpuid;				    ///< Cuda를 사용할 장치의 id
+	static int gpuCount;			    ///< Cuda를 사용할 장치 개수.
+    static std::vector<int> availableGPU;    ///< 사용가능한 GPU. (peer access가 가능한 GPU)
+	//static std::vector<cudnnHandle_t> cudnnHandles;	///< cudnn 라이브러리 컨텍스트 핸들.
+	//static std::vector<cublasHandle_t> cublasHandles;	///< cublas 라이브러리 컨텍스트 핸들.
+	static thread_local cudnnHandle_t cudnnHandle;			///< cudnn 라이브러리 컨텍스트 핸들.
+	static thread_local cublasHandle_t cublasHandle;			///< cublas 라이브러리 컨텍스트 핸들.
 
 	static const float alpha;
 	static const float beta;

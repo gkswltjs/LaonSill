@@ -186,6 +186,10 @@ private:
 	void initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 
+    void syncMutableMem();
+    void applyChanges(LearnableLayer<Dtype> *targetLayer);
+    void syncParams(LearnableLayer<Dtype> *targetLayer);
+
 protected:
 	virtual void _feedforward();
 	virtual void _backpropagation();
@@ -205,6 +209,7 @@ protected:
 	//virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
+    void _syncParam(Data<Dtype>* data);
 	void _dropoutForward();
 	void _dropoutBackward();
 

@@ -56,7 +56,6 @@ public:
 
 			uint32_t layerSize = _layerWise.size();
 
-			//for(uint32_t i = 0; i < layerSize; i++) {
 			for(typename map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it = _layerWise.begin(); it != _layerWise.end(); it++) {
 				//map<uint32_t, Layer<Dtype>::Builder*>::iterator it = _layerWise.find(i);
 				//if(it == _layerWise.end()) {
@@ -217,6 +216,7 @@ public:
 		LayersConfig<Dtype>* _layersConfig;
 
 		uint32_t _batchSize;
+		uint32_t _dop;	/* degree of parallel */
 		uint32_t _epochs;
 		uint32_t _testInterval;
 		uint32_t _saveInterval;
@@ -230,6 +230,7 @@ public:
 		Builder() {
 			this->_dataSet = NULL;
 			this->_batchSize = 1;
+			this->_dop = 1;
 			this->_epochs = 1;
 			this->_clipGradientsLevel = 35.0f;
 		}
@@ -247,6 +248,10 @@ public:
 		}
 		Builder* batchSize(uint32_t batchSize) {
 			this->_batchSize = batchSize;
+			return this;
+		}
+		Builder* dop(uint32_t dop) {
+			this->_dop = dop;
 			return this;
 		}
 		Builder* epochs(uint32_t epochs) {
@@ -335,6 +340,7 @@ public:
 					->evaluations(_evaluations)
 					->networkListeners(_networkListeners)
 					->batchSize(_batchSize)
+					->dop(_dop)
 					->epochs(_epochs)
 					->testInterval(_testInterval)
 					->saveInterval(_saveInterval)
@@ -354,19 +360,12 @@ public:
 				_layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 			}
 
-
-
-
-
 			io_dim in_dim;
 			in_dim.rows = _dataSet->getRows();
 			in_dim.cols = _dataSet->getCols();
 			in_dim.channels = _dataSet->getChannels();
 			in_dim.batches = _batchSize;
 			inputLayer->shape(0, in_dim);
-
-
-
 
 			return networkConfig;
 		}
@@ -439,6 +438,7 @@ public:
 	LayersConfig<Dtype>* _layersConfig;
 
 	uint32_t _batchSize;
+	uint32_t _dop;
 	uint32_t _epochs;
 	uint32_t _testInterval;
 	uint32_t _saveInterval;
@@ -471,6 +471,10 @@ public:
 	}
 	NetworkConfig* batchSize(uint32_t batchSize) {
 		this->_batchSize = batchSize;
+		return this;
+	}
+	NetworkConfig* dop(uint32_t dop) {
+		this->_dop = dop;
 		return this;
 	}
 	NetworkConfig* epochs(uint32_t epochs) {

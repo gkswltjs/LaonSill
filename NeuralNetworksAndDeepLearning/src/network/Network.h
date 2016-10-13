@@ -73,7 +73,11 @@ public:
 
 
 
-
+	/**
+	 * @details sgd()를 수행한다. 시간을 측정하기 위한 임시 함수.
+	 * @param epochs sgd를 수행할 최대 epoch
+	 */
+	void sgd_with_timer(int epochs);
 
 	/**
 	 * @details stochastic gradient descent를 수행한다.

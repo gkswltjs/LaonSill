@@ -50,7 +50,7 @@ struct io_dim {
     UINT rows;				///< 데이터의 행 수, 일반 1차원 데이터의 경우 한 데이터의 유효 엘리먼트의 수, 이미지와 같은 3차원 데이터의 경우 이미지의 height값을 따른다.
     UINT cols;				///< 데이터의 열 수, 일반 1차원 데이터의 경우 1, 이미지와 같은 3차원 데이터의 경우 이미지의 width값을 따른다.
     UINT channels;			///< 데이터의 채널 수, 일반 1차원 데이터의 경우 1, 이미지와 같은 3차원 데이터의 경우 RGB채널이 있는 경우 3, GrayScale인 경우 1의 값이 된다.
-    UINT batches;			///< 한 번에 학습하는 데이터의 수를 의미한다.
+    UINT batches;				///< 한 번에 학습하는 데이터의 수를 의미한다.
 
     //io_dim(UINT rows=1, UINT cols=1, UINT channels=1, UINT batches=1) {
     io_dim() {

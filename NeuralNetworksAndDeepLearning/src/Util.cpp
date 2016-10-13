@@ -160,8 +160,6 @@ void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, 
 
 void Util::printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT channels, UINT batches, string name) {
 	if(Util::print) {
-		Cuda::refresh();
-
 		DATATYPE *data = new DATATYPE[rows*cols*channels*batches];
 		checkCudaErrors(cudaMemcpyAsync(data, d_data, sizeof(DATATYPE)*rows*cols*channels*batches, cudaMemcpyDeviceToHost));
 		Util::printData(data, rows, cols, channels, batches, name);

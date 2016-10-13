@@ -13,6 +13,7 @@
 #include "network/Network.h"
 #include "network/NetworkConfig.h"
 #include "Util.h"
+#include "Worker.h"
 
 using namespace std;
 
@@ -41,77 +42,8 @@ void network_test() {
 	cout << "Cuda creation done ... " << endl;
 	Util::setPrint(false);
 
-	const uint32_t maxEpoch = 10000;
-	const uint32_t batchSize = 50;
-	const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 20000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.001f;
-	const float weightDecay = 0.0002f;
-	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
-
-
-	cout << "maxEpoch: " << maxEpoch << endl;
-	cout << "batchSize: " << batchSize << endl;
-	cout << "testInterval: " << testInterval << endl;
-	cout << "saveInterval: " << saveInterval << endl;
-	cout << "baseLearningRate: " << baseLearningRate << endl;
-	cout << "weightDecay: " << weightDecay << endl;
-	cout << "momentum: " << momentum << endl;
-	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
-
-	//SyncMem<float>::setOutstream("./mem");
-
-	//DataSet<float>* dataSet = new MockDataSet<float>(4, 4, 2, 20, 20, 10, MockDataSet<float>::NOTABLE_IMAGE);
-	//DataSet<float>* dataSet = new MockDataSet<float>(28, 28, 1, 100, 100, 10);
-	//DataSet<float>* dataSet = new MockDataSet<float>(56, 56, 3, 10, 10, 10);
-	//DataSet<float>* dataSet = new MnistDataSet<float>(0.8);
-	//DataSet<float>* dataSet = new MockDataSet<float>(224, 224, 3, 100, 100, 100);
-	//DataSet<float>* dataSet = createImageNet10CatDataSet<float>();
-	//DataSet<float>* dataSet = createImageNet100CatDataSet<float>();
-	//DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	//DataSet<float>* dataSet = createImageNet10000DataSet<float>();
-	//DataSet<float>* dataSet = createImageNet50000DataSet<float>();
-	DataSet<float>* dataSet = createMnistDataSet<float>();
-	//DataSet<float>* dataSet = createSampleDataSet<float>();
-	dataSet->load();
-	//dataSet->zeroMean(true);
-
-	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
-	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
-	//NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_AND_WRITE);
-	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::WRITE_ONLY);
-
-	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
-	LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfigTest<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ASimpleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInceptionAuxLayersConfig<float>();
-
-	NetworkConfig<float>* networkConfig =
-			(new NetworkConfig<float>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->clipGradientsLevel(clipGradientsLevel)
-			->dataSet(dataSet)
-			->evaluations({top1Evaluation, top5Evaluation})
-			->layersConfig(layersConfig)
-			->savePathPrefix("/home/jhkim/network")
-			->networkListeners({networkListener})
-			->build();
-
-	Util::printVramInfo();
-
-	Network<float>* network = new Network<float>(networkConfig);
-	network->sgd(maxEpoch);
-	network->save();
+	Worker<float>* worker = new Worker<float>(1);
+	worker->launchThread();
 
 	Cuda::destroy();
 }

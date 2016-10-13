@@ -53,6 +53,11 @@ public:
 	virtual void saveParams(ofstream& ofs) = 0;
 	virtual void loadParams(ifstream& ifs) = 0;
 
+    virtual void syncMutableMem() {}
+    virtual void applyChanges(LearnableLayer<Dtype> *targetLayer) {}
+    virtual void syncParams(LearnableLayer<Dtype> *targetLayer) {}
+
+
 protected:
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
 		/*
@@ -75,7 +80,6 @@ protected:
 		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne, d_paramHistoryData, 1, d_paramData, 1));	// update
 		*/
 	}
-
 
 };
 
