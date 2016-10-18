@@ -82,7 +82,7 @@ ArtisticStyle<Dtype>::ArtisticStyle(Network<Dtype> *network,
 
 
 
-	this->contentGrad.shape(this->network->config->_inputLayer->_output->getCount());
+	this->contentGrad.shape(this->network->getLayersConfig()->_inputLayer->_output->getCount());
 
 	// art, style image
 	this->a = new CImg<Dtype>(styleImagePath.c_str());
@@ -96,7 +96,7 @@ ArtisticStyle<Dtype>::ArtisticStyle(Network<Dtype> *network,
 		cout << "p and a image dimensions are not identical ... " << endl;
 		exit(-1);
 	}
-	this->styleGrad.shape(this->network->config->_inputLayer->_output->getCount());
+	this->styleGrad.shape(this->network->getLayersConfig()->_inputLayer->_output->getCount());
 
 
 
@@ -157,7 +157,7 @@ void ArtisticStyle<Dtype>::style() {
 	computeStyleRepresentationLayerResponses();
 #endif
 
-	InputLayer<Dtype>* inputLayer = network->config->_inputLayer;
+	InputLayer<Dtype>* inputLayer = network->getLayersConfig()->_inputLayer;
 	uint32_t i = 0;
 	while(true) {
 	//for(i = 0; i < 1000; ) {
@@ -255,7 +255,7 @@ void ArtisticStyle<Dtype>::computeContentRepresentationLayerResponses() {
 	// p 이미지의 buffer를 Data타입의 객체에 복사,
 	// feedforward()를 진행
 	Data<Dtype>* pdata = createDataFromCImg(p);
-	network->config->_inputLayer->feedforward(0, pdata, end.c_str());
+	network->getLayersConfig()->_inputLayer->feedforward(0, pdata, end.c_str());
 
 	// feedforward() 결과, 지정된 레이어의 response를 복사, 보관 (Content Loss계산용)
 	const uint32_t numContentRepLayers = contentRepLayers.size();
@@ -276,7 +276,7 @@ void ArtisticStyle<Dtype>::computeStyleRepresentationLayerResponses() {
 	//on();
 	//adata->print_data("adata:");
 	//off();
-	network->config->_inputLayer->feedforward(0, adata, end.c_str());
+	network->getLayersConfig()->_inputLayer->feedforward(0, adata, end.c_str());
 
 	// feedforward() 결과, 지정된 레이어의 response를 복사, 보관 (Style Loss계산용)
 	const uint32_t numStyleRepLayers = styleRepLayers.size();

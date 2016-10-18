@@ -23,7 +23,7 @@ void network_test();
 void network_load();
 
 // XXX: 임시...
-#define CONSUMER_THREAD_COUNT   (2)
+#define CONSUMER_THREAD_COUNT   (1)
 
 int main(int argc, char** argv) {
     // (1) 기본 설정
@@ -63,10 +63,13 @@ void network_test() {
 	const uint32_t testInterval = 1000000;			// 10000(목표 샘플수) / batchSize
 	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
 	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
+	const uint32_t stepSize = 100000;
 	const float baseLearningRate = 0.001f;
 	const float weightDecay = 0.0002f;
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 0.0f;
+	const float gamma = 0.1;
+	const LRPolicy lrPolicy = LRPolicy::Step;
 
 
 	cout << "batchSize: " << batchSize << endl;
@@ -92,7 +95,10 @@ void network_test() {
 			->momentum(momentum)
 			->testInterval(testInterval)
 			->saveInterval(saveInterval)
+			->stepSize(stepSize)
 			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->gamma(gamma)
 			->dataSet(dataSet)
 			->evaluations({top1Evaluation, top5Evaluation})
 			->savePathPrefix("/home/jhkim/network")
