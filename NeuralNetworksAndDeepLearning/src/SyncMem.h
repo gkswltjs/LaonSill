@@ -34,13 +34,20 @@ template <typename Dtype>
 class SyncMem {
 public:
 	SyncMem();
+	SyncMem(SyncMem<Dtype>& syncMem);
 	virtual ~SyncMem();
+
+	size_t getSize() {
+		return _size;
+	}
+
+
 
 	/**
 	 * @details 지정된 사이즈로 호스트와 디바이스에 메모리를 할당, 초기화한다.
 	 * @param size 할당할 메모리 사이즈
 	 */
-	void reshape(size_t size);
+	void shape(size_t size);
 
 	/**
 	 * @details 읽기 전용의 호스트 메모리 포인터를 조회한다.
@@ -91,6 +98,9 @@ public:
 	 * @param mem 더 할 디바이스 메모리의 포인터
 	 */
 	void add_device_mem(const Dtype* mem);
+
+	void sub_host_mem(const Dtype* mem);
+	void sub_device_mem(const Dtype* mem);
 
 	/**
 	 * @details 호스트 메모리의 값을 스케일링한다.

@@ -23,8 +23,8 @@ void Layer<Dtype>::_shape(bool recursive) {
 
 	//checkCudaErrors(Util::ucudaMalloc(&this->d_input, sizeof(Dtype)*in_dim.batchsize()));		//batch size 고려
 	//checkCudaErrors(Util::ucudaMalloc(&this->d_output, sizeof(Dtype)*out_dim.batchsize()));		//batch size 고려
-	_input->reshape({in_dim.batches, in_dim.channels, in_dim.rows, in_dim.cols});
-	_output->reshape({out_dim.batches, out_dim.channels, out_dim.rows, out_dim.cols});
+	_input->shape({in_dim.batches, in_dim.channels, in_dim.rows, in_dim.cols});
+	_output->shape({out_dim.batches, out_dim.channels, out_dim.rows, out_dim.cols});
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));

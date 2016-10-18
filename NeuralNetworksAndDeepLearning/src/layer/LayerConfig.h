@@ -26,7 +26,7 @@
 //typedef arma::fcube rcube;
 //typedef unsigned int UINT;
 
-
+typedef boost::mt19937 RNGType;
 
 
 
@@ -158,11 +158,13 @@ template <typename Dtype>
 struct param_filler {
 	ParamFillerType type;	///< 파라미터 초기화 타입
 	Dtype value;			///< 파라미터 초기화 관련 값
+	RNGType rng;
 
 	param_filler() {}
 	param_filler(ParamFillerType type, Dtype value=0) {
 		this->type = type;
 		this->value = value;
+		this->rng.seed(static_cast<unsigned int>(std::time(NULL)+getpid()));
 	}
 
 #ifndef GPU_MODE
@@ -256,9 +258,8 @@ struct param_filler {
 			*/
 
 
-			typedef boost::mt19937 RNGType;
-			RNGType rng;
-			rng.seed(static_cast<unsigned int>(std::time(NULL)+getpid()));
+			//RNGType rng;
+			//rng.seed(static_cast<unsigned int>(std::time(NULL)+getpid()));
 
 			// BOOST
 			boost::uniform_real<float> random_distribution(-scale, boost::math::nextafter<float>(scale, std::numeric_limits<float>::max()));
@@ -282,6 +283,19 @@ struct param_filler {
 		}
 		case ParamFillerType::Gaussian: {
 			size_t size = data->getCount();
+
+			//typedef boost::mt19937 RNGType;
+			//RNGType rng;
+			//rng.seed(static_cast<unsigned int>(std::time(NULL)+getpid()));
+
+			boost::normal_distribution<float> random_distribution(0, value);
+			boost::variate_generator<RNGType, boost::normal_distribution<float> >
+			variate_generator(rng, random_distribution);
+			for (uint32_t i = 0; i < size; ++i) {
+				mem[i] = variate_generator();
+			}
+
+			/*
 			int fan_in = size / data->batches();
 			int fan_out = size / data->channels();
 			Dtype scale = sqrt(1.0f/fan_out);
@@ -290,6 +304,7 @@ struct param_filler {
 			std::mt19937 gen_gaussian(rd_gaussian());
 			std::normal_distribution<Dtype> normal_dist(0.0, scale);
 			for(uint32_t i = 0; i < size; i++) mem[i] = normal_dist(gen_gaussian)*scale;
+			*/
 			break;
 		}
 		default:

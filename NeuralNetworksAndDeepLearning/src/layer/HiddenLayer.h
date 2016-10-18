@@ -84,12 +84,14 @@ public:
 	 */
 	virtual void backpropagation(uint32_t idx, Data<Dtype>* next_input, uint32_t offset);
 
+	virtual void _backpropagation();
+
 protected:
 	/**
 	 * @details 네트워크 cost의 다음 레이어의 입력에 관한 gradient값을 전달 받아
 	 *          현재 레이어의 parameter(parameter가 있는 경우), input에 관한 gradient를 계산한다.
 	 */
-	virtual void _backpropagation();
+
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();

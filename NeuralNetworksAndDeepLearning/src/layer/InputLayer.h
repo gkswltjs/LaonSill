@@ -100,7 +100,8 @@ public:
 	}
 	*/
 
-	using Layer<Dtype>::feedforward;
+	void feedforward(uint32_t idx, Data<Dtype>* input, const char *end=0);
+	//using Layer<Dtype>::feedforward;
 	void feedforward(DataSet<Dtype>* dataSet, const uint32_t baseIndex, const char* end=0);
 
 	using Layer<Dtype>::shape;

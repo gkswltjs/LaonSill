@@ -23,10 +23,10 @@ template <typename Dtype>
 Network<Dtype>::Network(NetworkConfig<Dtype>* config)
 	: config(config) {
 	DataSet<Dtype>* dataSet = config->_dataSet;
-	this->in_dim.rows = dataSet->getRows();
-	this->in_dim.cols = dataSet->getCols();
-	this->in_dim.channels = dataSet->getChannels();
-	this->in_dim.batches = config->_batchSize;
+	//this->in_dim.rows = dataSet->getRows();
+	//this->in_dim.cols = dataSet->getCols();
+	//this->in_dim.channels = dataSet->getChannels();
+	//this->in_dim.batches = config->_batchSize;
 }
 
 /*
@@ -70,7 +70,7 @@ void Network<Dtype>::sgd(int epochs) {
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
 	const uint32_t trainDataSize = dataSet->getNumTrainData();
-	const uint32_t numBatches = trainDataSize / in_dim.batches;
+	const uint32_t numBatches = trainDataSize / config->_inDim.batches;
 
 	Timer timer1;
 	Timer timer2;
@@ -116,7 +116,6 @@ void Network<Dtype>::sgd(int epochs) {
 					const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
 					const float accuracy = (float)accurateCnt/numTestData;
 
-					//save();
 					cout << "epoch: " << epochIndex+1 << ", iteration: " << epochIndex*numBatches+batchIndex+1 << " " << accurateCnt << " / " << numTestData <<
 							", accuracy: " << accuracy << ", cost: " << cost <<
 							" :" << timer1.stop(false) << endl;
@@ -198,7 +197,7 @@ double Network<Dtype>::evaluateTestSet() {
 		evaluations[i]->reset();
 	}
 
-	const uint32_t numBatches = dataSet->getNumTestData()/in_dim.batches;
+	const uint32_t numBatches = dataSet->getNumTestData()/config->_inDim.batches;
 	//cout << "numTestData: " << dataSet->getNumTestData() << ", batches: " << in_dim.batches << ", numBatches: " << numBatches << endl;
 	for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
 		cost += evaluateTestData(batchIndex);
@@ -209,7 +208,7 @@ double Network<Dtype>::evaluateTestSet() {
 
 template <typename Dtype>
 double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
-	const uint32_t baseIndex = batchIndex*in_dim.batches;
+	const uint32_t baseIndex = batchIndex*config->_inDim.batches;
 
 	//config->_inputLayer->feedforward(config->_dataSet->getTestDataAt(batchIndex*in_dim.batches));
 	config->_inputLayer->feedforward(config->_dataSet, baseIndex);
@@ -225,7 +224,7 @@ double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 	networkOutput->print_data("networkOutput:");
 	const Dtype* output = networkOutput->host_data();
 	for(int i = 0; i < config->_evaluations.size(); i++) {
-		config->_evaluations[i]->evaluate(numLabels, in_dim.batches, output, config->_dataSet, baseIndex);
+		config->_evaluations[i]->evaluate(numLabels, config->_inDim.batches, output, config->_dataSet, baseIndex);
 	}
 	//cout << "cost at " << batchIndex << " " << cost << endl;
 
@@ -351,7 +350,7 @@ void Network<Dtype>::trainBatch(uint32_t batchIndex) {
 	InputLayer<Dtype>* inputLayer = config->_inputLayer;
 	vector<OutputLayer<Dtype>*> outputLayers = config->_outputLayers;
 
-	int baseIndex = batchIndex*in_dim.batches;
+	int baseIndex = batchIndex*config->_inDim.batches;
 
 	// FORWARD PASS
 	//config->_inputLayer->feedforward(dataSet->getTrainDataAt(baseIndex));
@@ -592,9 +591,9 @@ void Network<Dtype>::shape(io_dim in_dim) {
 template <typename Dtype>
 void Network<Dtype>::reshape(io_dim in_dim) {
 	if(in_dim.unitsize() > 0) {
-		this->in_dim = in_dim;
+		this->config->_inDim = in_dim;
 	}
-	config->_inputLayer->reshape(0, this->in_dim);
+	config->_inputLayer->reshape(0, this->config->_inDim);
 }
 
 /*

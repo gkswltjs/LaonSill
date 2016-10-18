@@ -41,6 +41,14 @@ SyncMem<Dtype>::SyncMem() {
 }
 
 template <typename Dtype>
+SyncMem<Dtype>::SyncMem(SyncMem<Dtype>& syncMem) : SyncMem() {
+	shape(syncMem.getSize());
+	set_mem(syncMem.device_mem(), DeviceToDevice, 0, syncMem.getSize());
+}
+
+
+
+template <typename Dtype>
 SyncMem<Dtype>::~SyncMem() {
 	if(_host_mem) delete [] _host_mem;
 	if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
@@ -50,7 +58,7 @@ SyncMem<Dtype>::~SyncMem() {
 }
 
 template <typename Dtype>
-void SyncMem<Dtype>::reshape(size_t size) {
+void SyncMem<Dtype>::shape(size_t size) {
 	// reshape가 현 상태의 할당된 메모리보다 더 큰 메모리를 요구하는 경우에만 재할당한다.
 	if(size > _size) {
 		if(_host_mem) delete [] _host_mem;
@@ -161,6 +169,23 @@ void SyncMem<float>::add_device_mem(const float* mem) {
 	float* _mem = mutable_device_mem();
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(_size), &Cuda::alpha, mem, 1, _mem, 1));
 }
+
+
+template <typename Dtype>
+void SyncMem<Dtype>::sub_host_mem(const Dtype* mem) {
+	Dtype* _mem = mutable_host_mem();
+	for(uint32_t i = 0; i < _size; i++) _mem[i] -= mem[i];
+}
+
+
+template<>
+void SyncMem<float>::sub_device_mem(const float* mem) {
+	float* _mem = mutable_device_mem();
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(_size), &Cuda::negativeOne, mem, 1, _mem, 1));
+}
+
+
+
 
 template <typename Dtype>
 void SyncMem<Dtype>::scale_host_mem(const float scale) {
@@ -337,60 +362,65 @@ void SyncMem<Dtype>::load(ifstream& ifs) {
 
 template <typename Dtype>
 void SyncMem<Dtype>::print(const string& head) {
-	(*outstream) << "-------------------------------------" << endl;
-	(*outstream) << "name: " << head << " of size: " << _size << endl;
+	if(true) {
+		(*outstream) << "-------------------------------------" << endl;
+		(*outstream) << "name: " << head << " of size: " << _size << endl;
 
-	// print()실행시 updated flag를 reset,
-	// mutable pointer 조회하여 계속 업데이트할 경우 print() 이후의 update가 반영되지 않음.
-	// 강제로 flag를 reset하지 않도록 수정
-	checkDeviceMemAndUpdateHostMem(false);
-	const Dtype* data = _host_mem;
-	const uint32_t printSize = std::min(100, (int)_size);
-	for(uint32_t i = 0; i < printSize; i++) {
-		(*outstream) << data[i] << ", ";
+		// print()실행시 updated flag를 reset,
+		// mutable pointer 조회하여 계속 업데이트할 경우 print() 이후의 update가 반영되지 않음.
+		// 강제로 flag를 reset하지 않도록 수정
+		checkDeviceMemAndUpdateHostMem(false);
+		const Dtype* data = _host_mem;
+		const uint32_t printSize = std::min(64*3, (int)_size);
+		//const uint32_t printSize = (uint32_t)_size;
+		for(uint32_t i = 0; i < printSize; i++) {
+			(*outstream) << data[i] << ", ";
+		}
+		(*outstream) << endl << "-------------------------------------" << endl;
 	}
-	(*outstream) << endl << "-------------------------------------" << endl;
 }
 
 template <typename Dtype>
 void SyncMem<Dtype>::print(const string& head, const std::vector<uint32_t>& shape) {
-	if(shape.size() != 4) {
-		(*outstream) << "shape size should be 4 ... " << endl;
-		exit(1);
-	}
-	checkDeviceMemAndUpdateHostMem(false);
-	const Dtype* data = _host_mem;
+	if(true) {
+		if(shape.size() != 4) {
+			(*outstream) << "shape size should be 4 ... " << endl;
+			exit(1);
+		}
+		checkDeviceMemAndUpdateHostMem(false);
+		const Dtype* data = _host_mem;
 
 
 
-	UINT i,j,k,l;
+		UINT i,j,k,l;
 
-	const uint32_t rows = shape[2];
-	const uint32_t cols = shape[3];
-	const uint32_t channels = shape[1];
-	const uint32_t batches = shape[0];
+		const uint32_t rows = shape[2];
+		const uint32_t cols = shape[3];
+		const uint32_t channels = shape[1];
+		const uint32_t batches = shape[0];
 
-	(*outstream) << "-------------------------------------" << endl;
-	(*outstream) << "name: " << head << endl;
-	(*outstream) << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
+		(*outstream) << "-------------------------------------" << endl;
+		(*outstream) << "name: " << head << endl;
+		(*outstream) << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
 
-	UINT batchElem = rows*cols*channels;
-	UINT channelElem = rows*cols;
-	for(i = 0; i < batches; i++) {
-		for(j = 0; j < channels; j++) {
-			for(k = 0; k < rows; k++) {
-				for(l = 0; l < cols; l++) {
-			//for(k = 0; k < std::min(10, (int)rows); k++) {
-			//	for(l = 0; l < std::min(10, (int)cols); l++) {
-					(*outstream) << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+		UINT batchElem = rows*cols*channels;
+		UINT channelElem = rows*cols;
+		for(i = 0; i < batches; i++) {
+			for(j = 0; j < channels; j++) {
+				for(k = 0; k < rows; k++) {
+					for(l = 0; l < cols; l++) {
+				//for(k = 0; k < std::min(10, (int)rows); k++) {
+				//	for(l = 0; l < std::min(10, (int)cols); l++) {
+						(*outstream) << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+					}
+					(*outstream) << endl;
 				}
 				(*outstream) << endl;
 			}
 			(*outstream) << endl;
 		}
-		(*outstream) << endl;
+		(*outstream) << "-------------------------------------" << endl;
 	}
-	(*outstream) << "-------------------------------------" << endl;
 
 }
 

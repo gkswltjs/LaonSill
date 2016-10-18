@@ -90,11 +90,11 @@ void FullyConnectedLayer<Dtype>::_shape(bool recursive) {
 	//weight = new Dtype[u_out*u_in];
 	//bias = new Dtype[u_out];
 	//_params[ParamType::Weight]->reshape({1, 1, u_out, u_in});
-	_params[ParamType::Weight]->reshape({u_out, u_in, 1, 1});
-	_params[ParamType::Bias]->reshape({1, 1, u_out, 1});
-	_paramsHistory[ParamType::Weight]->reshape({u_out, u_in, 1, 1});
-	_paramsHistory[ParamType::Bias]->reshape({1, 1, u_out, 1});
-	_preActivation->reshape({this->out_dim.batches, 1, u_out, 1});
+	_params[ParamType::Weight]->shape({u_out, u_in, 1, 1});
+	_params[ParamType::Bias]->shape({1, 1, u_out, 1});
+	_paramsHistory[ParamType::Weight]->shape({u_out, u_in, 1, 1});
+	_paramsHistory[ParamType::Bias]->shape({1, 1, u_out, 1});
+	_preActivation->shape({this->out_dim.batches, 1, u_out, 1});
 
 
 	//cout << this->name << ", fanin: " << u_out*u_in << endl;
@@ -120,7 +120,7 @@ void FullyConnectedLayer<Dtype>::_shape(bool recursive) {
 	//mask = new Dtype[b_out];
 	//checkCudaErrors(Util::ucudaMalloc(&this->d_mask, sizeof(Dtype)*b_out));
 
-	_mask.reshape(b_out);
+	_mask.shape(b_out);
 }
 
 template <typename Dtype>
@@ -214,12 +214,14 @@ void FullyConnectedLayer<Dtype>::update() {
 
 	const uint32_t weightSize = this->in_dim.rows*this->out_dim.rows;
 	const Dtype regScale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
-	const Dtype learnScale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
+	//const Dtype learnScale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
+	const Dtype learnScale = this->networkConfig->getLearningRate() * weight_update_param.lr_mult;
 	_updateParam(weightSize, regScale, learnScale, _paramsHistory[Weight], _params[Weight]);
 
 	const uint32_t biasSize = this->out_dim.rows;
 	const Dtype regScale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
-	const Dtype learnScale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
+	//const Dtype learnScale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
+	const Dtype learnScale_b = this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
 	_updateParam(biasSize, regScale_b, learnScale_b, _paramsHistory[Bias], _params[Bias]);
 }
 

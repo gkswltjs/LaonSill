@@ -71,6 +71,9 @@ public:
 	virtual void shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& prevLayerOutput);
 	virtual void reshape(uint32_t idx, io_dim in_dim);
 
+
+	virtual void _backpropagation();
+
 protected:
 	void initialize();
 
@@ -87,7 +90,7 @@ protected:
 	 */
 	//virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset);
 
-	virtual void _backpropagation();
+
 
 
 	/**

@@ -170,7 +170,7 @@ public:
 	virtual void loadParams(ifstream& ifs);
 	//////////////////////////////////////////
 
-
+	virtual void _backpropagation();
 
 private:
 	/**
@@ -186,9 +186,11 @@ private:
 	void initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 
+
+
 protected:
 	virtual void _feedforward();
-	virtual void _backpropagation();
+
 
 	void _computeWeightedData();
 	void _computeWeightBiasedData();

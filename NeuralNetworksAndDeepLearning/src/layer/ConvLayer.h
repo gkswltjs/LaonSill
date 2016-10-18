@@ -175,7 +175,7 @@ public:
 	//////////////////////////////////////////
 
 
-
+	virtual void _backpropagation();
 
 
 
@@ -184,7 +184,7 @@ protected:
 			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 
 	virtual void _feedforward();
-	virtual void _backpropagation();
+
 
 	void _computePreActivationGrad();
 	void _computeFiltersGrad();

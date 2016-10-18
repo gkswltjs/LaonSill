@@ -25,7 +25,6 @@
 #include "../evaluation/Evaluation.h"
 #include "NetworkConfig.h"
 
-class DataSample;
 template <typename Dtype> class DataSet;
 
 using namespace std;
@@ -195,11 +194,13 @@ protected:
 
 
 
+public:
+	NetworkConfig<Dtype>* config;
 
 
 
 protected:
-	NetworkConfig<Dtype>* config;
+
 	//DataSet *dataSet;							///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
 
 	//InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터
@@ -207,7 +208,7 @@ protected:
 	//vector<Evaluation<Dtype>*> evaluations;			///< 네트워크 평가 객체 포인터 목록 벡터
 	//vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 목록 벡터
 
-	io_dim in_dim;								///< 네트워크 입력 데이터 구조 정보 구조체
+	//io_dim in_dim;								///< 네트워크 입력 데이터 구조 정보 구조체
 
 	//char savePrefix[200];						///< 네트워크 파일 쓰기 경로 prefix
 	//bool saveConfigured;						///< 네트워크 쓰기 설정 여부

@@ -91,11 +91,12 @@ public:
 
 
 
+	virtual void _backpropagation();
 
 protected:
 	void initialize(lrn_dim lrn_d);
 
-	virtual void _backpropagation();
+
 	virtual void _feedforward();
 
 	virtual void _shape(bool recursive=true);

@@ -150,7 +150,7 @@ protected:
 		if(recursive) {
 			FullyConnectedLayer<Dtype>::_shape();
 		}
-		this->_target.reshape(this->out_dim.batches);
+		this->_target.shape(this->out_dim.batches);
 	}
 	virtual void _clearShape() {
 		FullyConnectedLayer<Dtype>::_clearShape();

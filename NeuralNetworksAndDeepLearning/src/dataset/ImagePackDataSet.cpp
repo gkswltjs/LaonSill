@@ -211,7 +211,11 @@ void ImagePackDataSet<Dtype>::load() {
 	numTrainData = loadDataSetFromResource(filenames[0], trainDataSet, 0, 10000);
 	numTestData = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);
 #else
+	Timer timer;
+	timer.start();
 	int numTrainDataInFile = load(DataSet<Dtype>::Train, 0);
+	cout << "time for load file: " << timer.stop(false) << endl;
+
 	// train에 대해 load()할 경우 항상 back에 대해서 수행,
 	// 최초의 0page에 대한 load()의 경우 primary, front에 대한 것, 이를 조정해 준다.
 	this->trainDataSet = backTrainDataSet;
@@ -221,8 +225,8 @@ void ImagePackDataSet<Dtype>::load() {
 	backTrainDataSet = NULL;
 	backTrainLabelSet = NULL;
 
-	int numTestDataInFile = load(DataSet<Dtype>::Test, 0);
 
+	int numTestDataInFile = load(DataSet<Dtype>::Test, 0);
 	if(numTrainDataInFile <= 0 || numTestDataInFile <= 0) {
 		cout << "could not load resources ... " << endl;
 		exit(1);
@@ -237,7 +241,11 @@ void ImagePackDataSet<Dtype>::load() {
 	// 별도의 thread에서 수행하는 것이 바람직하나 최초에 second에 대한 설정이 필요해서
 	// 편의에 따라 main thread에서 load 수행함.
 	if(numTrainFile > 1) {
+
+		timer.start();
 		load(DataSet<Dtype>::Train, 1);
+		cout << "time for load file: " << timer.stop(false) << endl;
+
 		this->secondTrainDataSet = backTrainDataSet;
 		this->secondTrainLabelSet = backTrainLabelSet;
 	}

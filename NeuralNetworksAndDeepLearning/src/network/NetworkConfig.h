@@ -201,6 +201,15 @@ enum NetworkStatus {
 	Test = 1
 };
 
+enum LRPolicy {
+	Fixed = 0,
+	Step,
+	Exp,
+	Inv,
+	Multistep,
+	Poly
+};
+
 
 template <typename Dtype>
 class NetworkConfig {
@@ -220,12 +229,19 @@ public:
 		uint32_t _epochs;
 		uint32_t _testInterval;
 		uint32_t _saveInterval;
+		uint32_t _stepSize;					// update _baseLearningRate
 		float _baseLearningRate;
 		float _momentum;
 		float _weightDecay;
 		float _clipGradientsLevel;
+		float _gamma;
 
 		string _savePathPrefix;
+
+		LRPolicy _lrPolicy;
+
+		io_dim _inDim;
+
 
 		Builder() {
 			this->_dataSet = NULL;
@@ -261,12 +277,20 @@ public:
 			this->_saveInterval = saveInterval;
 			return this;
 		}
+		Builder* stepSize(uint32_t stepSize) {
+			this->_stepSize = stepSize;
+			return this;
+		}
 		Builder* savePathPrefix(string savePathPrefix) {
 			this->_savePathPrefix = savePathPrefix;
 			return this;
 		}
 		Builder* clipGradientsLevel(float clipGradientsLevel) {
 			this->_clipGradientsLevel = clipGradientsLevel;
+			return this;
+		}
+		Builder* gamma(float gamma) {
+			this->_gamma = gamma;
 			return this;
 		}
 		Builder* dataSet(DataSet<Dtype>* dataSet) {
@@ -283,6 +307,16 @@ public:
 		}
 		Builder* weightDecay(float weightDecay) {
 			this->_weightDecay = weightDecay;
+			return this;
+		}
+		Builder* lrPolicy(LRPolicy lrPolicy) {
+			this->_lrPolicy = lrPolicy;
+			return this;
+		}
+		Builder* inputShape(const vector<uint32_t>& inputShape) {
+			this->_inDim.rows = inputShape[0];
+			this->_inDim.cols = inputShape[1];
+			this->_inDim.channels = inputShape[2];
 			return this;
 		}
 		NetworkConfig* build() {
@@ -331,6 +365,14 @@ public:
 				outputLayers.push_back(outputLayer);
 			}
 
+			if(_dataSet) {
+				_inDim.rows = _dataSet->getRows();
+				_inDim.cols = _dataSet->getCols();
+				_inDim.channels = _dataSet->getChannels();
+			}
+			_inDim.batches = _batchSize;
+
+
 			NetworkConfig* networkConfig = (new NetworkConfig(this))
 					->evaluations(_evaluations)
 					->networkListeners(_networkListeners)
@@ -338,8 +380,10 @@ public:
 					->epochs(_epochs)
 					->testInterval(_testInterval)
 					->saveInterval(_saveInterval)
+					->stepSize(_stepSize)
 					->savePathPrefix(_savePathPrefix)
 					->clipGradientsLevel(_clipGradientsLevel)
+					->gamma(_gamma)
 					->dataSet(_dataSet)
 					->baseLearningRate(_baseLearningRate)
 					->momentum(_momentum)
@@ -348,25 +392,14 @@ public:
 					->outputLayers(outputLayers)
 					->layers(_layersConfig->_layers)
 					->learnableLayers(_layersConfig->_learnableLayers)
-					->nameLayerMap(nameLayerMap);
+					->nameLayerMap(nameLayerMap)
+					->lrPolicy(_lrPolicy)
+					->inDim(_inDim);
 
 			for(uint32_t i = 0; i < _layersConfig->_layers.size(); i++) {
 				_layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 			}
-
-
-
-
-
-			io_dim in_dim;
-			in_dim.rows = _dataSet->getRows();
-			in_dim.cols = _dataSet->getCols();
-			in_dim.channels = _dataSet->getChannels();
-			in_dim.batches = _batchSize;
-			inputLayer->shape(0, in_dim);
-
-
-
+			inputLayer->shape(0, _inDim);
 
 			return networkConfig;
 		}
@@ -380,14 +413,23 @@ public:
 			// save primitives
 			ofs.write((char*)&_batchSize, sizeof(uint32_t));					//_batchSize
 			ofs.write((char*)&_epochs, sizeof(uint32_t));						//_epochs
+			ofs.write((char*)&_testInterval, sizeof(uint32_t));
+			ofs.write((char*)&_saveInterval, sizeof(uint32_t));
+			ofs.write((char*)&_stepSize, sizeof(uint32_t));
+
 			ofs.write((char*)&_baseLearningRate, sizeof(float));				//_baseLearningRate
 			ofs.write((char*)&_momentum, sizeof(float));						//_momentum
 			ofs.write((char*)&_weightDecay, sizeof(float));						//_weightDecay
 			ofs.write((char*)&_clipGradientsLevel, sizeof(float));				//_clipGradientsLevel;
+			ofs.write((char*)&_gamma, sizeof(float));
+
+			ofs.write((char*)&_lrPolicy, sizeof(uint32_t));
 
 			size_t savePathPrefixLength = _savePathPrefix.size();
 			ofs.write((char*)&savePathPrefixLength, sizeof(size_t));
 			ofs.write((char*)_savePathPrefix.c_str(), savePathPrefixLength);
+
+			ofs.write((char*)&_inDim, sizeof(io_dim));
 
 			_layersConfig->save(ofs);
 		}
@@ -396,10 +438,17 @@ public:
 
 			ifs.read((char*)&_batchSize, sizeof(uint32_t));
 			ifs.read((char*)&_epochs, sizeof(uint32_t));
+			ifs.read((char*)&_testInterval, sizeof(uint32_t));
+			ifs.read((char*)&_saveInterval, sizeof(uint32_t));
+			ifs.read((char*)&_stepSize, sizeof(uint32_t));
+
 			ifs.read((char*)&_baseLearningRate, sizeof(float));
 			ifs.read((char*)&_momentum, sizeof(float));
 			ifs.read((char*)&_weightDecay, sizeof(float));
 			ifs.read((char*)&_clipGradientsLevel, sizeof(float));
+			ifs.read((char*)&_gamma, sizeof(float));
+
+			ifs.read((char*)&_lrPolicy, sizeof(uint32_t));
 
 			size_t savePathPrefixLength;
 			ifs.read((char*)&savePathPrefixLength, sizeof(size_t));
@@ -410,12 +459,35 @@ public:
 			_savePathPrefix = savePathPrefix_c;
 			delete [] savePathPrefix_c;
 
+
+			ifs.read((char*)&_inDim, sizeof(io_dim));
+
 			typename LayersConfig<Dtype>::Builder* layersBuilder = new typename LayersConfig<Dtype>::Builder();
 			layersBuilder->load(ifs);
 
 			_layersConfig = layersBuilder->build();
 
 			ifs.close();
+		}
+		void print() {
+			cout << "batchSize: " << _batchSize << endl;
+			cout << "epochs: " << _epochs << endl;
+			cout << "testInterval: " << _testInterval << endl;
+			cout << "saveInterval: " << _saveInterval << endl;
+			cout << "stepSize: " << _stepSize << endl;
+
+			cout << "baseLearningRate: " << _baseLearningRate << endl;
+			cout << "momentum: " << _momentum << endl;
+			cout << "weightDecay: " << _weightDecay << endl;
+			cout << "clipGradientsLevel: " << _clipGradientsLevel << endl;
+			cout << "gamma: " << _gamma << endl;
+
+			cout << "savePathPrefix: " << _savePathPrefix << endl;
+			cout << "lrPolicy: " << _lrPolicy << endl;
+
+			cout << "inDim->channels: " << _inDim.channels << endl;
+			cout << "inDim->rows: " << _inDim.rows << endl;
+			cout << "inDim->cols: " << _inDim.cols << endl;
 		}
 
 	};
@@ -426,6 +498,7 @@ public:
 
 
 	NetworkStatus _status;
+	LRPolicy _lrPolicy;
 
 	InputLayer<Dtype>* _inputLayer;
 	vector<OutputLayer<Dtype>*> _outputLayers;
@@ -443,12 +516,17 @@ public:
 	uint32_t _testInterval;
 	uint32_t _saveInterval;
 	uint32_t _iterations;
+	uint32_t _stepSize;
 	float _baseLearningRate;
 	float _momentum;
 	float _weightDecay;
+	float _clipGradientsLevel;
+	float _gamma;
 
 	string _savePathPrefix;
-	float _clipGradientsLevel;
+
+	io_dim _inDim;
+
 
 	// save & load를 위해서 builder도 일단 저장해 두자.
 	Builder* _builder;
@@ -485,12 +563,20 @@ public:
 		this->_saveInterval = saveInterval;
 		return this;
 	}
+	NetworkConfig* stepSize(uint32_t stepSize) {
+		this->_stepSize = stepSize;
+		return this;
+	}
 	NetworkConfig* savePathPrefix(string savePathPrefix) {
 		this->_savePathPrefix = savePathPrefix;
 		return this;
 	}
 	NetworkConfig* clipGradientsLevel(float clipGradientsLevel) {
 		this->_clipGradientsLevel = clipGradientsLevel;
+		return this;
+	}
+	NetworkConfig* gamma(float gamma) {
+		this->_gamma = gamma;
 		return this;
 	}
 	NetworkConfig* dataSet(DataSet<Dtype>* dataSet) {
@@ -529,28 +615,35 @@ public:
 		this->_nameLayerMap = nameLayerMap;
 		return this;
 	}
+	NetworkConfig* lrPolicy(LRPolicy lrPolicy) {
+		this->_lrPolicy = lrPolicy;
+		return this;
+	}
+	NetworkConfig* inDim(io_dim inDim) {
+		this->_inDim = inDim;
+		return this;
+	}
 
 	void save() {
 		// save config
-		ofstream configOfs((_savePathPrefix+".config").c_str(), ios::out | ios::binary);
+		ofstream configOfs((_savePathPrefix+to_string(_iterations)+".config").c_str(), ios::out | ios::binary);
 		_builder->save(configOfs);
 		configOfs.close();
 
 		// save learned params
-		ofstream paramOfs((_savePathPrefix+".param").c_str(), ios::out | ios::binary);
+		ofstream paramOfs((_savePathPrefix+to_string(_iterations)+".param").c_str(), ios::out | ios::binary);
 		uint32_t numLearnableLayers = _learnableLayers.size();
 		for(uint32_t i = 0; i < numLearnableLayers; i++) {
 			_learnableLayers[i]->saveParams(paramOfs);
 		}
 		paramOfs.close();
 	}
-	void load() {
-		cout << _savePathPrefix+".param" << endl;
-
+	void load(const string& end) {
 		ifstream ifs((_savePathPrefix+".param").c_str(), ios::in | ios::binary);
 		uint32_t numLearnableLayers = _learnableLayers.size();
 		for(uint32_t i = 0; i < numLearnableLayers; i++) {
 			_learnableLayers[i]->loadParams(ifs);
+			if(_learnableLayers[i]->getName() == end) break;
 		}
 		ifs.close();
 	}
@@ -561,6 +654,25 @@ public:
 	bool doSave() {
 		if(_iterations % _saveInterval == 0) return true;
 		else return false;
+	}
+	float getLearningRate() {
+		float rate;
+		switch(_lrPolicy) {
+		case Fixed: {
+			rate = _baseLearningRate;
+		}
+			break;
+		case Step: {
+			uint32_t currentStep = this->_iterations / this->_stepSize;
+			rate = _baseLearningRate * pow(_gamma, currentStep);
+		}
+			break;
+		default: {
+			cout << "not supported lr policy type ... " << endl;
+			exit(1);
+		}
+		}
+		return rate;
 	}
 };
 

@@ -51,14 +51,14 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 	this->_params.resize(2);
 	this->_params[Filter] = new Data<Dtype>();
 	this->_params[Bias] = new Data<Dtype>();
-	this->_params[Filter]->reshape({filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
-	this->_params[Bias]->reshape({filter_d.filters, 1, 1, 1});
+	this->_params[Filter]->shape({filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
+	this->_params[Bias]->shape({filter_d.filters, 1, 1, 1});
 
 	this->_paramsHistory.resize(2);
 	this->_paramsHistory[Filter] = new Data<Dtype>();
 	this->_paramsHistory[Bias] = new Data<Dtype>();
-	this->_paramsHistory[Filter]->reshape({filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
-	this->_paramsHistory[Bias]->reshape({filter_d.filters, 1, 1, 1});
+	this->_paramsHistory[Filter]->shape({filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
+	this->_paramsHistory[Bias]->shape({filter_d.filters, 1, 1, 1});
 
 	this->_preActivation = new Data<Dtype>();
 
@@ -121,7 +121,7 @@ void ConvLayer<Dtype>::_shape(bool recursive) {
 
 
 
-	_preActivation->reshape({this->out_dim.batches, this->out_dim.channels, this->out_dim.rows, this->out_dim.cols});
+	_preActivation->shape({this->out_dim.batches, this->out_dim.channels, this->out_dim.rows, this->out_dim.cols});
 
 	size_t convFwdWorkspaceSize;
 	size_t convBwdFilterWorkspaceSize;
@@ -347,12 +347,14 @@ void ConvLayer<Dtype>::update() {
 
 	const uint32_t weightSize = filter_d.size();
 	const Dtype regScale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
-	const Dtype learnScale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
+	//const Dtype learnScale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
+	const Dtype learnScale = this->networkConfig->getLearningRate() * weight_update_param.lr_mult;
 	_updateParam(weightSize, regScale, learnScale, _paramsHistory[Filter], _params[Filter]);
 
 	const uint32_t biasSize = filter_d.filters;
 	const Dtype regScale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
-	const Dtype learnScale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
+	//const Dtype learnScale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
+	const Dtype learnScale_b = this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
 	_updateParam(biasSize, regScale_b, learnScale_b, _paramsHistory[Bias], _params[Bias]);
 
 }

@@ -103,11 +103,14 @@ public:
 	virtual ~PoolingLayer();
 
 
+	virtual void _backpropagation();
+
+
 protected:
 	void initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
 
 	virtual void _feedforward();
-	virtual void _backpropagation();
+
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();

@@ -110,6 +110,7 @@ public:
 
 	static const float alpha;
 	static const float beta;
+	static const float negativeOne;
 
 };
 

@@ -26,10 +26,13 @@ void mnist_test(const string data_path, const string label_path, const string da
 int gnuplot_test();
 
 int main_test(int argc, char** argv) {
-	//return imagePackerTest(argc, argv);
+	return imagePackerTest(argc, argv);
 
-	ImagePacker ip("", 100, 30, 10, 10, 10, 1);
-	ip.sample();
+	//ImagePacker ip("/home/jhkim/image/ILSVRC2012", 10, 90, 10, 10, 10, 3);
+	//ip.load();
+	//ip.show();
+	//ip.pack();
+	//ip.sample();
 
 
 }

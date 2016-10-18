@@ -27,8 +27,31 @@ Data<Dtype>::Data() {
 }
 
 template <typename Dtype>
+Data<Dtype>::Data(const vector<uint32_t>& _shape) : Data() {
+	shape(_shape);
+}
+
+
+template <typename Dtype>
 Data<Dtype>::~Data() {}
 
+
+template <typename Dtype>
+void Data<Dtype>::shape(const vector<uint32_t>& shape) {
+	if(shape.size() != SHAPE_SIZE) {
+		cout << "invalid data shape ... " << endl;
+		exit(1);
+	}
+	_shape = shape;
+
+	_count = 1;
+	for(uint32_t i = 0; i < _shape.size(); i++) _count *= _shape[i];
+
+	_data.shape(_count);
+	_grad.shape(_count);
+}
+
+/*
 template <typename Dtype>
 void Data<Dtype>::reshape(const vector<uint32_t>& shape) {
 	if(shape.size() != SHAPE_SIZE) {
@@ -43,6 +66,7 @@ void Data<Dtype>::reshape(const vector<uint32_t>& shape) {
 	_data.reshape(_count);
 	_grad.reshape(_count);
 }
+*/
 
 template <typename Dtype>
 const Dtype* Data<Dtype>::host_data() {

@@ -26,12 +26,15 @@ template <typename Dtype>
 class Data {
 public:
 	Data();
+	Data(const vector<uint32_t>& shape);
 	virtual ~Data();
 
-	void reshape(const vector<uint32_t>& shape);
+	void shape(const vector<uint32_t>& shape);
+	//void reshape(const vector<uint32_t>& shape);
 
 
 	size_t getCount() const { return _count; }
+	const vector<uint32_t>& getShape() const { return _shape; }
 
 
 	/**
@@ -288,12 +291,12 @@ public:
 	void print_grad(const string& head);
 
 
+public:
+	SyncMem<Dtype> _data;				///< Data의 데이터
+	SyncMem<Dtype> _grad;				///< Data의 그레디언트
 
 private:
 	vector<uint32_t> _shape;			///< Data의 shape, Batches, Channels, Rows, Columns의 4차원 벡터로 구성
-
-	SyncMem<Dtype> _data;				///< Data의 데이터
-	SyncMem<Dtype> _grad;				///< Data의 그레디언트
 
 	size_t _count;						///< Data 메모리의 크기, 엘레먼트의 수 (Batches*Channels*Rows*Columns)
 

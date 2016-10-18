@@ -48,6 +48,11 @@ void InputLayer<Dtype>::shape(uint32_t idx, io_dim in_dim) {
 	Layer<Dtype>::propShape();
 }
 
+template <typename Dtype>
+void InputLayer<Dtype>::feedforward(uint32_t idx, Data<Dtype>* input, const char *end) {
+	Layer<Dtype>::feedforward(idx, input, end);
+}
+
 
 template <typename Dtype>
 void InputLayer<Dtype>::feedforward(DataSet<Dtype>* dataSet, const uint32_t baseIndex, const char* end) {
