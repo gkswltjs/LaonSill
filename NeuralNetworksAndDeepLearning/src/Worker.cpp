@@ -13,62 +13,159 @@
 #include "evaluation/Top1Evaluation.h"
 #include "evaluation/Top5Evaluation.h"
 #include "monitor/NetworkMonitor.h"
-#include "network/Network.h"
 #include "network/NetworkConfig.h"
 
 template<typename Dtype>
-vector<NetworkConfig<Dtype>*> Worker<Dtype>::configs;
+atomic<int> Worker<Dtype>::runningPeerCount;
+template<typename Dtype>
+mutex Worker<Dtype>::peerMutex;
+template<typename Dtype>
+condition_variable Worker<Dtype>::peerCondVar;
+template<typename Dtype>
+thread_local atomic<long> Worker<Dtype>::peerStep;
+template<typename Dtype>
+atomic<long> Worker<Dtype>::peerDoneStep;
 
 template<typename Dtype>
-atomic<int> Worker<Dtype>::runningThreadCnt;
+int Worker<Dtype>::consumerCount;
+template <typename Dtype>
+thread_local int Worker<Dtype>::consumerIdx;
+template<typename Dtype>
+volatile void* Worker<Dtype>::consumerJob;
 
 template<typename Dtype>
-mutex Worker<Dtype>::commMutex;
+mutex Worker<Dtype>::consumerMutex;
+template<typename Dtype>
+condition_variable Worker<Dtype>::consumerCondVar;
+template<typename Dtype>
+vector<ConsumerStatus::Type> Worker<Dtype>::consumerStatuses;
+template<typename Dtype>
+thread_local long Worker<Dtype>::consumerJobStep;
+template<typename Dtype>
+long Worker<Dtype>::consumerCurJobStep;
+template<typename Dtype>
+atomic<int> Worker<Dtype>::wakeupConsumerJobCount;
 
 template<typename Dtype>
-condition_variable Worker<Dtype>::commCondV;
-
+mutex Worker<Dtype>::producerMutex;
 template<typename Dtype>
-int Worker<Dtype>::gpuCount;
+condition_variable Worker<Dtype>::producerCondVar;
 
-template<typename Dtype>
-thread* Worker<Dtype>::producer;
-
-template<typename Dtype>
-vector<thread> Worker<Dtype>::consumers;
+template <typename Dtype>
+list<Job<Dtype>*> Worker<Dtype>::jobQueue;
+template <typename Dtype>
+mutex Worker<Dtype>::jobQueueMutex;
 
 template <typename Dtype>
 thread_local int Worker<Dtype>::gpuIdx;
 
-template <typename Dtype>
-thread_local int Worker<Dtype>::consumerIdx;
+template<typename Dtype>
+thread* Worker<Dtype>::producer;
+template<typename Dtype>
+vector<thread> Worker<Dtype>::consumers;
+
+template<typename Dtype>
+atomic<int> Worker<Dtype>::readyCount;
 
 template <typename Dtype>
-Worker<Dtype>::Worker(int gpuCount) {
-    if (gpuCount > Cuda::gpuCount) {
-        printf("ERROR: Invalid GPU count of Worker. (There are %d available GPU but requested"
-            " GPU count of Worker is %d\n", Cuda::gpuCount, gpuCount);
-        exit(1);
-    }
-	Worker<Dtype>::gpuCount = gpuCount;
+bool Worker<Dtype>::isReady() {
+    int readyCount = atomic_load(&Worker<Dtype>::readyCount);
+
+    if (readyCount < 1)     // 1 producer + N consumer >= 2
+        return false;
+
+    if (readyCount != Worker<Dtype>::consumerCount + 1)
+        return false;
+    
+    return true;
 }
 
-
-template <typename Dtype>
-Worker<Dtype>::~Worker() {
-
-}
-
+#define PRODUCER_PERIODIC_CHECK_MSEC_TIME   (3 * 1000)
 
 template <typename Dtype>
 void Worker<Dtype>::producer_thread() {
 	cout << "producer_thread starts" << endl;
+    atomic_fetch_add(&Worker<Dtype>::readyCount, 1); 
+
+    // (1) 서버가 준비 될때까지 대기 한다.
+    while (!Worker<Dtype>::isReady()) {
+        sleep(0);
+    }
+
+    // (2) 메인 루프
+    while (true) {
+        unique_lock<mutex> producerLock(Worker<Dtype>::producerMutex);
+        Worker<Dtype>::producerCondVar.wait_for(producerLock,
+            chrono::milliseconds(PRODUCER_PERIODIC_CHECK_MSEC_TIME));
+        producerLock.unlock();
+
+        // (2-1) 멈춘 Consumer Thread를 재개
+        //     더 최적화 할 수 있으나.. 그다지 성능향상이 필요없는 부분이라.. 대충짰음.
+        long peerDoneStep = atomic_load(&Worker<Dtype>::peerDoneStep);
+        for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
+            long peerStep = atomic_load(&Worker<Dtype>::peerStep);
+
+            if (peerStep < peerDoneStep) {
+                unique_lock<mutex> peerLock(Worker<Dtype>::peerMutex);
+                Worker<Dtype>::peerCondVar.notify_all();
+                peerLock.unlock();
+                break; 
+            }
+        }
+        
+        // (2-2) Consumer Thread가 종료 되었으면 job이 있는지 확인
+        bool canStartNewJob = true;
+        for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
+            if (Worker<Dtype>::consumerStatuses[i] == ConsumerStatus::Running) {
+                canStartNewJob = false;
+                break;
+            }
+        }
+
+        if (!canStartNewJob)
+            continue;
+
+        Job<Dtype>* job = popJob();
+        if (job == NULL)
+            continue;
+
+        // (2-3) consumer thread들을 깨운다.
+        Worker<Dtype>::consumerCurJobStep += 1L;
+
+        consumerJob = job;
+        atomic_store(&Worker<Dtype>::wakeupConsumerJobCount, 0);
+
+        atomic_store(&Worker<Dtype>::peerDoneStep, 0L);
+        atomic_store(&Worker<Dtype>::runningPeerCount, Worker<Dtype>::consumerCount);
+
+        unique_lock<mutex> consumerLock(Worker<Dtype>::consumerMutex);
+        Worker<Dtype>::consumerCondVar.notify_all();
+        consumerLock.unlock();
+
+        // (2-4) 혹시 안깨워진 consumer가 있는지 체크하고 깨운다.
+        while (atomic_load(&Worker<Dtype>::wakeupConsumerJobCount) <
+                Worker<Dtype>::consumerCount) {
+            consumerLock.lock();
+            Worker<Dtype>::consumerCondVar.notify_all();
+            consumerLock.unlock();
+            sleep(0);
+        }
+
+        // (2-5) 종료를 요청한 작업인 경우 종료 한다.
+        if (job->getType() == Job<Dtype>::HaltMachine)
+            break;
+    }
+
+    cout << "producer_thread ends" << endl;
 }
 
 template <typename Dtype>
 void Worker<Dtype>::consumer_thread(int consumerIdx, int gpuIdx) {
+    bool doLoop = true;
 	Worker<Dtype>::consumerIdx = consumerIdx;
 	Worker<Dtype>::gpuIdx = gpuIdx;
+    Worker<Dtype>::consumerJobStep = 0L;
+    atomic_fetch_add(&Worker<Dtype>::readyCount, 1); 
 
 	cout << "consumer_thread #" << consumerIdx << "(GPU:#" << gpuIdx << ") starts" << endl;
 
@@ -77,123 +174,175 @@ void Worker<Dtype>::consumer_thread(int consumerIdx, int gpuIdx) {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-	//const uint32_t maxEpoch = 10000;
-	//const uint32_t maxEpoch = 4;
-	const uint32_t maxEpoch = 2;
-    const uint32_t batchSize = 50;
-	//const uint32_t batchSize = 1000;
-	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
-	const uint32_t testInterval = 1000000;			// 10000(목표 샘플수) / batchSize
-	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
-	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.001f;
-	const float weightDecay = 0.0002f;
-	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
+    while (doLoop) {
+        unique_lock<mutex> consumerLock(Worker<Dtype>::consumerMutex);
+        Worker<Dtype>::consumerCondVar.wait(consumerLock,
+            [] { return (Worker<Dtype>::consumerCurJobStep == 
+                        Worker<Dtype>::consumerJobStep + 1L); });
+        consumerLock.unlock();
+        Worker<Dtype>::consumerJobStep += 1L;
+        atomic_fetch_add(&Worker<Dtype>::wakeupConsumerJobCount, 1);
+        atomic_store(&Worker<Dtype>::peerStep, 0L);
 
+        Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Running;
+        Job<Dtype>* job = (Job<Dtype>*)(Worker::consumerJob);
 
-	cout << "maxEpoch: " << maxEpoch << endl;
-	cout << "batchSize: " << batchSize << endl;
-	cout << "testInterval: " << testInterval << endl;
-	cout << "saveInterval: " << saveInterval << endl;
-	cout << "baseLearningRate: " << baseLearningRate << endl;
-	cout << "weightDecay: " << weightDecay << endl;
-	cout << "momentum: " << momentum << endl;
-	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
+        switch (job->getType()) {
+        case Job<Dtype>::BuildLayer:
+            buildLayer(job->getNetwork());
+            break;
+        case Job<Dtype>::TrainNetwork:
+            trainNetwork(job->getNetwork(), job->getArg1());
+            break;
+        case Job<Dtype>::CleanupLayer:
+            cleanupLayer(job->getNetwork());
+            break;
+        case Job<Dtype>::HaltMachine:
+            doLoop = false;
+            Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
+            break;
+        default:
+            assert(!"Invalid job type");
+        }
 
-	//SyncMem<float>::setOutstream("./mem");
-
-	//DataSet<float>* dataSet = new MockDataSet<float>(4, 4, 2, 20, 20, 10, MockDataSet<float>::NOTABLE_IMAGE);
-	//DataSet<float>* dataSet = new MockDataSet<float>(28, 28, 1, 100, 100, 10);
-	//DataSet<float>* dataSet = new MockDataSet<float>(56, 56, 3, 10, 10, 10);
-	//DataSet<float>* dataSet = new MnistDataSet<float>(0.8);
-	//DataSet<float>* dataSet = new MockDataSet<float>(224, 224, 3, 100, 100, 100);
-	//DataSet<float>* dataSet = createImageNet10CatDataSet<float>();
-	//DataSet<float>* dataSet = createImageNet100CatDataSet<float>();
-	//DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	//DataSet<float>* dataSet = createImageNet10000DataSet<float>();
-	//DataSet<float>* dataSet = createImageNet50000DataSet<float>();
-	DataSet<float>* dataSet = createMnistDataSet<float>();
-	//DataSet<float>* dataSet = createSampleDataSet<float>();
-	dataSet->load();
-	//dataSet->zeroMean(true);
-
-	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
-	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
-	//NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_AND_WRITE);
-	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::WRITE_ONLY);
-
-	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
-	LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfigTest<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ASimpleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInceptionAuxLayersConfig<float>();
-
-	NetworkConfig<float>* networkConfig =
-			(new NetworkConfig<float>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->clipGradientsLevel(clipGradientsLevel)
-			->dataSet(dataSet)
-			->evaluations({top1Evaluation, top5Evaluation})
-			->layersConfig(layersConfig)
-			->savePathPrefix("/home/jhkim/network")
-			->networkListeners({networkListener})
-			->build();
-
-	Util::printVramInfo();
-
-	Network<float>* network = new Network<float>(networkConfig);
-
-	//network->sgd(maxEpoch);
-	//network->sgd_with_timer(maxEpoch);
-	//network->save();
-    
-    //Worker<Dtype>::configs[consumerIdx] = networkConfig;
-    Worker<Dtype>::configs.push_back(networkConfig);    // 순서는 상관 없다.
-
-    cout << "configs count " << Worker<Dtype>::configs.size() << endl;
-
-    network->sgd_with_timer(maxEpoch);
-
-    if (consumerIdx == 0)
-        network->save();
+        Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
+    }
 
 	// 리소스 정리
 	checkCudaErrors(cublasDestroy(Cuda::cublasHandle));
 	checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
+
+	cout << "consumer_thread #" << consumerIdx << "(GPU:#" << gpuIdx << ") ends" << endl;
 }
 
 template <typename Dtype>
-void Worker<Dtype>::launchThread() {
-	int i;
+void Worker<Dtype>::launchThread(int consumerCount) {
+    // (1) Cuda를 생성한다.
+    Cuda::create(consumerCount);
+	cout << "Cuda creation done ... " << endl;
 
-    //Worker<Dtype>::configs.reserve(Worker<Dtype>::gpuCount);
-	// (1) producer 쓰레드를 생성한다.
+    // (2) Worker Count를 설정한다.
+    if (consumerCount > Cuda::gpuCount) {
+        printf("ERROR: Invalid GPU count of Worker. (There are %d available GPU but requested"
+            " GPU count of Worker is %d\n", Cuda::gpuCount, consumerCount);
+        exit(1);
+    }
+	Worker<Dtype>::consumerCount = consumerCount;
+    Worker<Dtype>::consumerCurJobStep = 0L;
+    Worker<Dtype>::consumerStatuses.assign(consumerCount, ConsumerStatus::Waiting);
+
+	// (3) producer 쓰레드를 생성한다.
 	producer = new thread(producer_thread);
+    cout << "launchThread GPUCount " << Worker<Dtype>::consumerCount << endl;
 
-    // (1-1) 임시작업: running Thread Cnt수를 GPU 개수만큼으로 설정한다.
-    atomic_store(&runningThreadCnt, Worker<Dtype>::gpuCount);
-
-    cout << "launchThread GPUCount " << Worker<Dtype>::gpuCount << endl;
-
-	// (2) consumer 쓰레드들을 생성한다.
-	for (i = 0; i < Worker<Dtype>::gpuCount; i++) {
+	// (4) consumer 쓰레드들을 생성한다.
+	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
 		consumers.push_back(thread(consumer_thread, i, Cuda::availableGPU[i]));
 	}
 
-	for (i = 0; i < Worker<Dtype>::gpuCount; i++) {
+    // XXX: 여기에서 input을 위한 쓰레드 생성을 기다려야 할 것으로 판단됨.
+
+    // (5) producer, consumer 쓰레드가 종료하기를 기다린다.
+	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
 		consumers[i].join();
 	}
 	producer->join();
 	free(producer);
+}
+
+template <typename Dtype>
+bool Worker<Dtype>::waitPeer() {
+    if (atomic_fetch_sub(&Worker<Dtype>::runningPeerCount, 1) == 1) {
+        atomic_store(&Worker<Dtype>::runningPeerCount, Worker<Dtype>::consumerCount);
+        return true; 
+    } else {
+        unique_lock<mutex> peerLock(Worker<Dtype>::peerMutex);
+        Worker<Dtype>::peerCondVar.wait(peerLock, []
+            { return (atomic_load(&Worker<Dtype>::peerDoneStep) ==
+                atomic_load(&Worker<Dtype>::peerStep) + 1L); });
+        peerLock.unlock();
+
+        atomic_fetch_add(&Worker<Dtype>::peerStep, 1L);
+        return false;
+    }
+}
+
+template <typename Dtype>
+void Worker<Dtype>::wakeupPeer() {
+    atomic_fetch_add(&Worker<Dtype>::peerStep, 1L);
+    atomic_fetch_add(&Worker<Dtype>::peerDoneStep, 1L);
+    unique_lock<mutex> peerLock(Worker<Dtype>::peerMutex);
+    Worker<Dtype>::peerCondVar.notify_all();
+    peerLock.unlock();
+}
+
+template <typename Dtype>
+void Worker<Dtype>::pushJob(Job<Dtype>* job) {
+    Worker<Dtype>::jobQueueMutex.lock();
+    Worker<Dtype>::jobQueue.push_back(job);
+    Worker<Dtype>::jobQueueMutex.unlock();
+
+    unique_lock<mutex> producerLock(Worker<Dtype>::producerMutex);
+    Worker<Dtype>::producerCondVar.notify_one();
+    producerLock.unlock();
+}
+
+template <typename Dtype>
+Job<Dtype>* Worker<Dtype>::popJob() {
+    Job<Dtype>* popedJob;
+    Worker<Dtype>::jobQueueMutex.lock();
+    
+    if (Worker<Dtype>::jobQueue.empty()) {
+        Worker<Dtype>::jobQueueMutex.unlock();
+        return NULL;
+    }
+
+    popedJob = Worker<Dtype>::jobQueue.front();
+    Worker<Dtype>::jobQueue.pop_front();
+    Worker<Dtype>::jobQueueMutex.unlock();
+
+    return popedJob;
+}
+
+template <typename Dtype>
+void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
+    // XXX: 현재는 CCN Double Layer만 생성하도록 되어 있다. 수정필요!!!
+    
+    // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
+	LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
+
+    // (2) network config 정보를 layer들에게 전달한다.
+    for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+        layersConfig->_layers[i]->setNetworkConfig(network->config);
+    }
+
+    // (3) shape 과정을 수행한다. 
+    io_dim in_dim;
+    in_dim.rows = network->config->_dataSet->getRows();
+    in_dim.cols = network->config->_dataSet->getCols();
+    in_dim.channels = network->config->_dataSet->getChannels();
+    in_dim.batches = network->config->_batchSize;
+    layersConfig->_inputLayer->shape(0, in_dim);
+
+    // (4) network에 layersConfig 정보를 등록한다.
+    network->setLayersConfig(layersConfig);
+}
+
+template <typename Dtype>
+void Worker<Dtype>::trainNetwork(Network<Dtype>* network, int maxEpochs) {
+    if (consumerIdx == 0)
+	    cout << "maxEpoch: " << maxEpochs << endl;
+
+    network->sgd_with_timer(maxEpochs);
+
+    // XXX: save() 함수 확인 다시하자.
+    //if (consumerIdx == 0)
+    //    network->save();
+}
+
+template <typename Dtype>
+void Worker<Dtype>::cleanupLayer(Network<Dtype>* network) {
+    delete network->getLayersConfig()->_inputLayer;
 }
 
 template class Worker<float>;

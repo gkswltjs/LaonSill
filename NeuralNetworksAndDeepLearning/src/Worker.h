@@ -15,10 +15,25 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <list>
+#include <chrono>
 
+#include "Job.h"
 #include "network/Network.h"
 
 using namespace std;
+
+class ConsumerStatus {
+public:
+    enum Type {
+        Waiting = 0,
+        Running,
+    };
+
+    ConsumerStatus () {};
+    virtual ~ConsumerStatus() {};
+};
+
 
 /**
  * @brief 각종 유틸리티 함수들을 정적으로 포함하는 클래스
@@ -27,44 +42,82 @@ using namespace std;
 template <typename Dtype>
 class Worker {
 public:
-	Worker() {}
-	Worker(int gpuCount);
-	virtual ~Worker();
+	Worker() {
+        Worker<Dtype>::readyCount = 0;
+        Worker<Dtype>::consumerCount = 0;
+    }
+	virtual ~Worker() {}
 
-    static atomic<int> runningThreadCnt; // XXX: 예쁘게.. 나중에..
-    static vector<NetworkConfig<Dtype>*> configs;    // XXX: 예쁘게.. 나중에..
-	static mutex commMutex;
-	static condition_variable commCondV;
+    /**
+     * Consumer간의 동기화를 지원하기 위한 변수들
+     *
+     *  작업 A,B가 있다. 각각의 작업은 A = {A1, A2, A3, ... An}, B = {B1, B2, ... Bn}로 나누어
+     * 작업이 수행이 될 수 있다. n개의 consumer들은 A1, A2에 대한 작업을 수행한다. B라는
+     * 작업은 모든 A라는 작업이 종료가 되고 수행이 되어야 한다. 이 때 n개의 consumer가 A라는
+     * 작업을 끝내고, B라는 작업을 수행하기 위한 동기화가 필요하다. 
+     */
+    static atomic<int> runningPeerCount;
+	static mutex peerMutex;
+	static condition_variable peerCondVar;
+	static thread_local atomic<long> peerStep;
+    static atomic<long> peerDoneStep;
 
-	static int gpuCount;
+    /**
+     * @return      마지막으로 깨어난 consumer는 true, 그 외에는 false를 반환
+     */
+    static bool waitPeer();
+    static void wakeupPeer();
+
+    /**
+     * consumer에 대한 정보를 담고 있는 변수들
+     */
+	static int consumerCount;
 	static thread_local int consumerIdx;
+    static volatile void* consumerJob;
+
+    /**
+     * consumer에 대한 job control을 위한 변수들
+     */
+	static mutex consumerMutex;
+	static condition_variable consumerCondVar;
+    static vector<ConsumerStatus::Type> consumerStatuses;
+    static thread_local long consumerJobStep;
+    static long consumerCurJobStep;
+    static atomic<int> wakeupConsumerJobCount;
+
+    /**
+     * producer에 대한 job control을 위한 변수들
+     */
+	static mutex producerMutex;
+	static condition_variable producerCondVar;
 
 	/**
 	 * @brief producer, consumer 쓰레드를 실행한다.
 	 * @param network producer 쓰레드가 담당할 network
-	 * @details
-	 * 			producer 쓰레드는 인자로 받은 network에서 정의된 작업을 수행한다.
-	 * 			정의된 작업은 현재는 network의 sgd()를 수행하는 것으로 한정되어 있다.
-	 * @todo
-	 * 		  	(1) 동작시킬 network를 전달하는 방식에 대해서 수정이 필요 하다.
-	 *        	현재는 1개의 네트워크를 전달하고, 그 네트워크가 수행해야할 모든 동작이 완료가 되면,
-	 *       	producer와 consumer가 종료되는 방식이다.
-	 *       	producer는 계속 살아 있고, 명령을 받으면 수행하는 형태로 수정이 필요하다.
-	 *	      	(2) 1개의 producer만 존재하지만, 여러개의 producer가 필요할 수 있다.
-	 *	      	성능을 보고 판단해야 한다.
-	 *	      	(3) 어떤 작업을 수행할 지에 대한 유연한 정의가 필요하다. (ex. job description)
 	 */
-	void launchThread();
+	static void launchThread(int consumerCount);
+
+    static void pushJob(Job<Dtype>* job);
+    static Job<Dtype>* popJob();
+
+    static list<Job<Dtype>*> jobQueue;
+    static mutex jobQueueMutex;
+
+    static atomic<int> readyCount;
+    static bool isReady();
 
 private:
 	static thread_local int gpuIdx;
+
+    static void buildLayer(Network<Dtype>* network);
+    static void trainNetwork(Network<Dtype>* network, int maxEpochs);
+    static void cleanupLayer(Network<Dtype>* network); 
 
 	static void producer_thread();
 	static void consumer_thread(int consumerIdx, int gpuIdx);
 
 	static thread* producer;
 	static vector<thread> consumers;
-
 };
 
 #endif /* WORKER_H_ */

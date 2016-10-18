@@ -30,6 +30,22 @@ Network<Dtype>::Network(NetworkConfig<Dtype>* config)
 	this->in_dim.batches = config->_batchSize;
 }
 
+template <typename Dtype>
+InputLayer<Dtype>* Network<Dtype>::getInputLayer() {
+    LayersConfig<Dtype>* layersConfig = config->layersConfigs[Worker<Dtype>::consumerIdx];
+    return dynamic_cast<InputLayer<Dtype>*>(layersConfig->_firstLayers[0]);
+}
+
+template <typename Dtype>
+LayersConfig<Dtype>* Network<Dtype>::getLayersConfig() {
+    return config->layersConfigs[Worker<Dtype>::consumerIdx];
+}
+
+template <typename Dtype>
+void Network<Dtype>::setLayersConfig(LayersConfig<Dtype>* layersConfig) {
+    config->layersConfigs[Worker<Dtype>::consumerIdx] = layersConfig;
+}
+
 /*
 Network<Dtype>::Network(NetworkListener *networkListener)
 	: Network(0, 0, 0, networkListener) {}
@@ -53,14 +69,15 @@ Network<Dtype>::Network(InputLayer<Dtype>* inputLayer, OutputLayer<Dtype>*output
 
 template <typename Dtype>
 Network<Dtype>::~Network() {
-	if(config->_inputLayer) {
-		delete config->_inputLayer;
-		config->_inputLayer = NULL;
-	}
-	//checkCudaErrors(cudaFree(d_trainLabel));
-	//checkCudaErrors(cudaFree(d_trainData));
-
-	//delete trainData;
+    /*
+    typename vector<LayersConfig<Dtype>*>::iterator iter;
+    for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end(); iter++) {
+        if ((*iter)->_inputLayer) {
+            delete (*iter)->_inputLayer;
+            (*iter)->_inputLayer = NULL;
+        }
+    }
+    */
 }
 
 template <typename Dtype>
@@ -81,14 +98,14 @@ void Network<Dtype>::sgd(int epochs) {
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
 	const uint32_t trainDataSize = dataSet->getNumTrainData();
-	const uint32_t numBatches = trainDataSize / in_dim.batches / Worker<Dtype>::gpuCount;
+	const uint32_t numBatches = trainDataSize / in_dim.batches / Worker<Dtype>::consumerCount;
 
 	Timer timer1;
 	Timer timer2;
 
 
 	//iterations = 0;
-	for(uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
+	for (uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		config->_status = NetworkStatus::Train;
 
 		dataSet->shuffleTrainDataSet();
@@ -99,15 +116,16 @@ void Network<Dtype>::sgd(int epochs) {
         // 데이터를 트레이닝한다.
         // XXX: GPU 대수는 numBatches의 최소공약수라 가정한다. 
         //      (나중에 고쳐야 한다.)
-		for(uint32_t batchTotalIndex = 0; batchTotalIndex < numBatches; batchTotalIndex++) {
-            uint32_t batchIndex = batchTotalIndex * Worker<Dtype>::gpuCount +
+		for (uint32_t batchTotalIndex = 0; batchTotalIndex < numBatches; batchTotalIndex++) {
+            uint32_t batchIndex = batchTotalIndex * Worker<Dtype>::consumerCount +
                 Worker<Dtype>::consumerIdx;
 			config->_iterations++;
 			//iterations++;
 			//Util::printMessage("iteration: " + to_string(iterations));
 
 			if((batchIndex+1)%100 == 0) {
-				cout << "Minibatch " << batchIndex+1 << " started: " << timer2.stop(false) << endl;
+				cout << "Minibatch " << batchIndex+1 << " started: " << timer2.stop(false)
+                    << endl;
 				timer2.start();
 			}
 			//cout << "Minibatch " << batchIndex+1 << " started: " << timer2.stop(false) << endl;
@@ -125,9 +143,8 @@ void Network<Dtype>::sgd(int epochs) {
 
             // 모든 worker에서 GPU 트레이닝이 끝나길 기다린다.
             // XXX: 예쁘게.. 
-            if (atomic_fetch_sub(&Worker<Dtype>::runningThreadCnt, 1) == 1) {
+            if (Worker<Dtype>::waitPeer()) {
                 // 마지막 쓰레드가 메모리를 갱신한다.
-                // XXX: 예쁘게
                 if (config->doTest()) {
                     config->_status = NetworkStatus::Test;
                     const uint32_t numTestData = dataSet->getNumTestData();
@@ -163,50 +180,9 @@ void Network<Dtype>::sgd(int epochs) {
                     save();
                 }
 
-                // XXX: 타이밍 이슈가 있을 수 있다.. 하지만... 많은 작업이
-                // 수행이 되기 때문에 괜찮을 것으로 판단된다.
-                unique_lock<mutex> commLock(Worker<Dtype>::commMutex);
-                atomic_store(&Worker<Dtype>::runningThreadCnt, Worker<Dtype>::gpuCount);
-                Worker<Dtype>::commCondV.notify_all();
-
-            } else {
-                // XXX: 일단 예제대로 unique_lock 썼으나... 좀 더 살펴보고
-                // 적절한 것으로 바꾸자.
-                unique_lock<mutex> commLock(Worker<Dtype>::commMutex);
-                Worker<Dtype>::commCondV.wait(commLock);
+                Worker<Dtype>::wakeupPeer();
             }
 		}
-
-		/*
-		//if((epochIndex+1) % 1 == 0) {
-			config->_status = NetworkStatus::Test;
-			const uint32_t numTestData = dataSet->getNumTestData();
-			if(numTestData > 0) {
-				double cost = evaluateTestSet();
-				cost /= numTestData;
-
-				//const float cost = evaluations[0]->getCost() / numTestData;
-				const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
-				const float accuracy = (float)accurateCnt/numTestData;
-
-				//save();
-				cout << "Epoch " << epochIndex+1 << " " << accurateCnt << " / " << numTestData <<
-						", accuracy: " << accuracy << ", cost: " << cost <<
-						" :" << timer1.stop(false) << endl;
-
-				for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
-					networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy", (double)evaluations[0]->getAccurateCount()/numTestData*100);
-					networkListeners[nl]->onAccuracyComputed(1, "top5_accuracy", (double)evaluations[1]->getAccurateCount()/numTestData*100);
-					//networkListeners[nl]->onCostComputed(0, "cost", evaluations[0]->getCost()/numTestData);
-					networkListeners[nl]->onCostComputed(0, "cost", cost);
-				}
-			}
-			else {
-				cout << "Epoch " << epochIndex+1 << " complete: " << timer1.stop(false) << endl;
-			}
-		//}
-		 */
-
 	}
 }
 
@@ -253,8 +229,8 @@ double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 	const uint32_t baseIndex = batchIndex*in_dim.batches;
 
 	//config->_inputLayer->feedforward(config->_dataSet->getTestDataAt(batchIndex*in_dim.batches));
-	config->_inputLayer->feedforward(config->_dataSet, baseIndex);
-	OutputLayer<Dtype>* outputLayer = config->_outputLayers[0];
+	getLayersConfig()->_inputLayer->feedforward(config->_dataSet, baseIndex);
+	OutputLayer<Dtype>* outputLayer = getLayersConfig()->_outputLayers[0];
 
 	const uint32_t numLabels = outputLayer->getOutDimension().rows;
 	Data<Dtype>* networkOutput = outputLayer->getOutput();
@@ -389,14 +365,14 @@ void Network<Dtype>::feedforward(const Dtype *input, const char *end) {
 template <typename Dtype>
 void Network<Dtype>::trainBatch(uint32_t batchIndex) {
 	DataSet<Dtype>* dataSet = config->_dataSet;
-	InputLayer<Dtype>* inputLayer = config->_inputLayer;
-	vector<OutputLayer<Dtype>*> outputLayers = config->_outputLayers;
+	InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
+	vector<OutputLayer<Dtype>*> outputLayers = getLayersConfig()->_outputLayers;
 
 	int baseIndex = batchIndex*in_dim.batches;
 
 	// FORWARD PASS
 	//config->_inputLayer->feedforward(dataSet->getTrainDataAt(baseIndex));
-	config->_inputLayer->feedforward(dataSet, baseIndex);
+	getLayersConfig()->_inputLayer->feedforward(dataSet, baseIndex);
 
 	// BACKWARD PASS
 	for(UINT i = 0; i < outputLayers.size(); i++) {
@@ -409,52 +385,32 @@ void Network<Dtype>::trainBatch(uint32_t batchIndex) {
 
 template <typename Dtype>
 void Network<Dtype>::applyUpdate() {
-
-	/*
-	for(uint32_t i = 0; i < config->_layers.size()-1; i++) {
-		Layer<Dtype>* layer = config->_layers[i];
-		if(layer->_input->is_nan_data()) {
-			cout << layer->getName() << " input is nan data " << endl;
-		}
-	}
-	for(uint32_t i = config->_layers.size()-2; i >= 0; i--) {
-		Layer<Dtype>* layer = config->_layers[i];
-		if(layer->_input->is_nan_grad()) {
-			cout << layer->getName() << " input is nan grad " << endl;
-		}
-	}
-	cout << "------------------------" << endl;
-	*/
-
-	//checkLearnableParamIsNan();
 	clipGradients();
-
-	const uint32_t numLearnableLayers = config->_learnableLayers.size();
+	const uint32_t numLearnableLayers = getLayersConfig()->_learnableLayers.size();
 
     // device 메모리를 host 메모리로 동기화 시킨다.
     for (uint32_t i = 0; i < numLearnableLayers; i++) {
-        config->_learnableLayers[i]->syncMutableMem();
+        getLayersConfig()->_learnableLayers[i]->syncMutableMem();
     }
 
 
     // 모든 worker에서 GPU 트레이닝이 끝나길 기다린다.
     // XXX: 예쁘게.. 
-    if (atomic_fetch_sub(&Worker<Dtype>::runningThreadCnt, 1) == 1) {
-        typename vector<NetworkConfig<Dtype>*>::iterator iter; 
-        NetworkConfig<Dtype>* firstConfig;
+    if (Worker<Dtype>::waitPeer()) {
+        typename vector<LayersConfig<Dtype>*>::iterator iter; 
+        LayersConfig<Dtype>* firstLayersConfig;
         // 마지막 쓰레드가 learnable layer들의 data를 갱신한다.
 
         // (1) 변화된 부분을 첫번째 layer에 적용한다.
-        for (iter = Worker<Dtype>::configs.begin(); 
-            iter != Worker<Dtype>::configs.end(); ++iter) {
+        for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end(); iter++) {
             
-            if (iter == Worker<Dtype>::configs.begin()) {
-                firstConfig = (*iter);
+            if (iter == config->layersConfigs.begin()) {
+                firstLayersConfig = (*iter);
                 continue;
             }
 
             for (uint32_t i = 0; i < numLearnableLayers; i++) {
-                LearnableLayer<Dtype>* firstLayer = firstConfig->_learnableLayers[i];
+                LearnableLayer<Dtype>* firstLayer = firstLayersConfig->_learnableLayers[i];
                 LearnableLayer<Dtype>* curLayer = (*iter)->_learnableLayers[i];
 
                 curLayer->applyChanges(firstLayer);
@@ -462,35 +418,25 @@ void Network<Dtype>::applyUpdate() {
         }
 
         // (2) 첫번째 layer의 값을 다른 layer들에게 동기화 한다.
-        for (iter = Worker<Dtype>::configs.begin(); 
-            iter != Worker<Dtype>::configs.end(); ++iter) {
-            
-            if (iter == Worker<Dtype>::configs.begin()) {
-                firstConfig = (*iter);
+        for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end(); iter++) {
+            if (iter == config->layersConfigs.begin()) {
                 continue;
             }
 
             for (uint32_t i = 0; i < numLearnableLayers; i++) {
-                LearnableLayer<Dtype>* firstLayer = firstConfig->_learnableLayers[i];
+                LearnableLayer<Dtype>* firstLayer = firstLayersConfig->_learnableLayers[i];
                 LearnableLayer<Dtype>* curLayer = (*iter)->_learnableLayers[i];
 
                 curLayer->syncParams(firstLayer);
             }
         }
 
-        unique_lock<mutex> commLock(Worker<Dtype>::commMutex);
-        atomic_store(&Worker<Dtype>::runningThreadCnt, Worker<Dtype>::gpuCount);
-
-        Worker<Dtype>::commCondV.notify_all();
-
-    } else {
-        unique_lock<mutex> commLock(Worker<Dtype>::commMutex);
-        Worker<Dtype>::commCondV.wait(commLock);
+        Worker<Dtype>::wakeupPeer();
     }
 
     // 각 layer들을 갱신한다.
 	for (uint32_t i = 0; i < numLearnableLayers; i++) {
-		config->_learnableLayers[i]->update();
+        getLayersConfig()->_learnableLayers[i]->update();
 	}
 }
 
@@ -503,11 +449,11 @@ void Network<Dtype>::clipGradients() {
 	const double l2normParamsGrad = std::sqrt(sumsqParamsGrad);
 	const double l2normParamsData = std::sqrt(sumsqParamsData);
 
-	if(clipGradientsLevel < 0.0001) {
+	if (clipGradientsLevel < 0.0001) {
 		//cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
 		//		", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
 	} else {
-		if(l2normParamsGrad > clipGradientsLevel) {
+		if (l2normParamsGrad > clipGradientsLevel) {
 			const float scale_factor = clipGradientsLevel / (l2normParamsGrad*1);
 
 			cout << "Gradient clipping: scaling down gradients (L2 norm " << l2normParamsGrad <<
@@ -515,24 +461,25 @@ void Network<Dtype>::clipGradients() {
 					") by scale factor " << scale_factor << endl;
 			scaleParamsGrad(scale_factor);
 		} else {
-			cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
-					", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
+			cout << "Gradient clipping: no scaling down gradients (L2 norm "
+                << l2normParamsGrad << ", Weight: " << l2normParamsData << " <= "
+                << clipGradientsLevel << ")" << endl;
 		}
 	}
 }
 
 template <typename Dtype>
 double Network<Dtype>::computeSumSquareParamsData() {
-	uint32_t numLearnableLayers = config->_learnableLayers.size();
+	uint32_t numLearnableLayers = getLayersConfig()->_learnableLayers.size();
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		double temp = config->_learnableLayers[i]->sumSquareParamsData();
+		double temp = getLayersConfig()->_learnableLayers[i]->sumSquareParamsData();
 		//if(i >= numLearnableLayers-10) { // && i < numLearnableLayers-1) {
 		if(i < 0) {
 			config->_networkListeners[0]->onDataSumsqComputed(
 					//i-(numLearnableLayers-10),
 					i,
-					config->_learnableLayers[i]->getName(),
+					getLayersConfig()->_learnableLayers[i]->getName(),
 					std::sqrt(temp));
 		}
 		sumsq += temp;
@@ -542,28 +489,28 @@ double Network<Dtype>::computeSumSquareParamsData() {
 
 template <typename Dtype>
 double Network<Dtype>::computeSumSquareParamsGrad() {
-	uint32_t numLearnableLayers = config->_learnableLayers.size();
+	uint32_t numLearnableLayers = getLayersConfig()->_learnableLayers.size();
 	double sumsq = 0.0;
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		double temp = config->_learnableLayers[i]->sumSquareParamsGrad();
+		double temp = getLayersConfig()->_learnableLayers[i]->sumSquareParamsGrad();
 		//if(i < 10) {
 		if(i < 0) {
 			config->_networkListeners[0]->onGradSumsqComputed(
 					i,
-					config->_learnableLayers[i]->getName(),
+					getLayersConfig()->_learnableLayers[i]->getName(),
 					std::sqrt(temp));
 		}
 		sumsq += temp;
-		//cout << config->_learnableLayers[i]->getName() << ", grad l2-norm: " << std::sqrt(temp) << endl;
+		//cout << getLayersConfig()->_learnableLayers[i]->getName() << ", grad l2-norm: " << std::sqrt(temp) << endl;
 	}
 	return sumsq;
 }
 
 template <typename Dtype>
 void Network<Dtype>::scaleParamsGrad(float scale) {
-	uint32_t numLearnableLayers = config->_learnableLayers.size();
+	uint32_t numLearnableLayers = getLayersConfig()->_learnableLayers.size();
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		config->_learnableLayers[i]->scaleParamsGrad(scale);
+		getLayersConfig()->_learnableLayers[i]->scaleParamsGrad(scale);
 	}
 }
 
@@ -573,35 +520,37 @@ void Network<Dtype>::scaleParamsGrad(float scale) {
 /*
 template <typename Dtype>
 void Network<Dtype>::checkAbnormalParam() {
-	const uint32_t numLearnableLayers = config->_learnableLayers.size();
+	const uint32_t numLearnableLayers = getLayersConfig()->_learnableLayers.size();
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		double testResult = config->_learnableLayers[i]->testParamAbnormality();
+		double testResult = getLayersConfig()->_learnableLayers[i]->testParamAbnormality();
 
 		if(testResult < DBL_MAX-1) {
 
-			Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(config->_learnableLayers[i]);
+			Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(getLayersConfig()->_learnableLayers[i]);
 			cout << layer->getName() << " test failed ... : " << testResult << endl;
 
 			Data<Dtype>::printConfig = 1;
 
 			cout << "checkAbnormalParam ... " << endl;
-			FullyConnectedLayer<Dtype>* fullyConnectedLayer = dynamic_cast<FullyConnectedLayer<Dtype>*>(config->_learnableLayers[i]);
+			FullyConnectedLayer<Dtype>* fullyConnectedLayer =
+            dynamic_cast<FullyConnectedLayer<Dtype>*>(getLayersConfig()->_learnableLayers[i]);
 			if(fullyConnectedLayer) {
 				fullyConnectedLayer->_params[0]->print_grad(fullyConnectedLayer->getName()+" at "+to_string(testResult));
 			} else {
-				ConvLayer<Dtype>* convLayer = dynamic_cast<ConvLayer<Dtype>*>(config->_learnableLayers[i]);
+				ConvLayer<Dtype>* convLayer =
+                dynamic_cast<ConvLayer<Dtype>*>(getLayersConfig()->_learnableLayers[i]);
 				if(convLayer) {
 					convLayer->_params[0]->print_grad(convLayer->getName()+" at "+to_string(testResult));
 				}
 			}
 
 			cout << "print input, output of layers ... " << endl;
-			const uint32_t numLayers = config->_layers.size();
+			const uint32_t numLayers = getLayersConfig()->_layers.size();
 			for(uint32_t j = 0; j < numLayers; j++) {
-				config->_layers[i]->_input->print_data(config->_layers[i]->getName()+": inputData:");
-				config->_layers[i]->_output->print_data(config->_layers[i]->getName()+": outputData:");
-				config->_layers[i]->_input->print_grad(config->_layers[i]->getName()+": inputGrad:");
-				config->_layers[i]->_output->print_grad(config->_layers[i]->getName()+": outputGrad:");
+				getLayersConfig()->_layers[i]->_input->print_data(getLayersConfig()->_layers[i]->getName()+": inputData:");
+				getLayersConfig()->_layers[i]->_output->print_data(getLayersConfig()->_layers[i]->getName()+": outputData:");
+				getLayersConfig()->_layers[i]->_input->print_grad(getLayersConfig()->_layers[i]->getName()+": inputGrad:");
+				getLayersConfig()->_layers[i]->_output->print_grad(getLayersConfig()->_layers[i]->getName()+": outputGrad:");
 			}
 
 			Data<Dtype>::printConfig = 0;
@@ -617,9 +566,9 @@ template <typename Dtype>
 void Network<Dtype>::checkLearnableParamIsNan() {
 
 	/*
-	const uint32_t numLayers = config->_layers.size();
+	const uint32_t numLayers = getLayersConfig()->_layers.size();
 	for(uint32_t i = 0; i < numLayers; i++) {
-		Layer<Dtype>* layer = config->_layers[i];
+		Layer<Dtype>* layer = getLayersConfig()->_layers[i];
 
 		if(layer) {
 			if(layer->_input->is_nan_data()) {
@@ -640,15 +589,16 @@ void Network<Dtype>::checkLearnableParamIsNan() {
 
 
 	/*
-	const uint32_t numLearnableLayers = config->_learnableLayers.size();
+	const uint32_t numLearnableLayers = getLayersConfig()->_learnableLayers.size();
 	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		FullyConnectedLayer<Dtype>* fullyConnectedLayer = dynamic_cast<FullyConnectedLayer<Dtype>*>(config->_learnableLayers[i]);
+		FullyConnectedLayer<Dtype>* fullyConnectedLayer =
+        dynamic_cast<FullyConnectedLayer<Dtype>*>(getLayersConfig()->_learnableLayers[i]);
 		if(fullyConnectedLayer) {
 			if(fullyConnectedLayer->_params[0]->is_nan_grad()) {
 				cout << fullyConnectedLayer->getName() << " is nan grad ... " << endl;
 			}
 		} else {
-			ConvLayer<Dtype>* convLayer = dynamic_cast<ConvLayer<Dtype>*>(config->_learnableLayers[i]);
+			ConvLayer<Dtype>* convLayer = dynamic_cast<ConvLayer<Dtype>*>(getLayersConfig()->_learnableLayers[i]);
 			if(convLayer) {
 				if(convLayer->_params[0]->is_nan_grad()) {
 					cout << convLayer->getName() << " is nan grad ... " << endl;
@@ -681,9 +631,9 @@ void Network<Dtype>::shape(io_dim in_dim) {
 	if(in_dim.unitsize() > 0) {
 		this->in_dim = in_dim;
 	}
-	config->_inputLayer->shape(0, this->in_dim);
+	getLayersConfig()->_inputLayer->shape(0, this->in_dim);
 
-	//checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(Dtype)*config->_inputLayer->getInputSize()*this->in_dim.batches));
+	//checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(Dtype)*getLayersConfig()->_inputLayer->getInputSize()*this->in_dim.batches));
 	//checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
 	//trainData->reshape({this->in_dim.batches, this->in_dim.channels, this->in_dim.rows, this->in_dim.cols});
 }
@@ -694,7 +644,7 @@ void Network<Dtype>::reshape(io_dim in_dim) {
 	if(in_dim.unitsize() > 0) {
 		this->in_dim = in_dim;
 	}
-	config->_inputLayer->reshape(0, this->in_dim);
+    getInputLayer()->reshape(0, this->in_dim);
 }
 
 /*
@@ -714,8 +664,8 @@ void Network<Dtype>::save() {
 
 
 	/*
-	InputLayer<Dtype>* inputLayer = config->_inputLayer;
-	vector<OutputLayer<Dtype>*>& outputLayers = config->_outputLayers;
+	InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
+	vector<OutputLayer<Dtype>*>& outputLayers = getLayersConfig()->_outputLayers;
 
 	Timer timer;
 	timer.start();
@@ -746,8 +696,8 @@ void Network<Dtype>::save() {
 /*
 template <typename Dtype>
 void Network<Dtype>::load(const char* filename) {
-	InputLayer<Dtype>* inputLayer = config->_inputLayer;
-	vector<OutputLayer<Dtype>*>& outputLayers = config->_outputLayers;
+	InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
+	vector<OutputLayer<Dtype>*>& outputLayers = getLayersConfig()->_outputLayers;
 
 	ifstream ifs(filename, ios::in | ios::binary);
 	UINT outputLayerSize;
@@ -761,8 +711,8 @@ void Network<Dtype>::load(const char* filename) {
 	}
 
 	map<Layer<Dtype>*, Layer<Dtype>*> layerMap;
-	config->_inputLayer = new InputLayer<Dtype>();
-	config->_inputLayer->load(ifs, layerMap);
+	getLayersConfig()->_inputLayer = new InputLayer<Dtype>();
+	getLayersConfig()->_inputLayer->load(ifs, layerMap);
 
 	// restore output layers of network
 	for(UINT i = 0; i < outputLayerSize; i++) {
@@ -832,8 +782,8 @@ void Network<Dtype>::setDataSetMean(Dtype *dataSetMean) {
 
 template <typename Dtype>
 Layer<Dtype>* Network<Dtype>::findLayer(const string name) {
-	//return config->_inputLayer->find(0, name);
-	map<string, Layer<Dtype>*>& nameLayerMap = config->_nameLayerMap;
+	//return getLayersConfig()->_inputLayer->find(0, name);
+	map<string, Layer<Dtype>*>& nameLayerMap = getLayersConfig()->_nameLayerMap;
 	typename map<string, Layer<Dtype>*>::iterator it = nameLayerMap.find(name);
 	if(it != nameLayerMap.end()) {
 		return it->second;
@@ -843,5 +793,5 @@ Layer<Dtype>* Network<Dtype>::findLayer(const string name) {
 }
 
 
-
 template class Network<float>;
+

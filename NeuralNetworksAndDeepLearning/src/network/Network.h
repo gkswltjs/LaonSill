@@ -23,10 +23,12 @@
 #include "../layer/OutputLayer.h"
 #include "../layer/LayerConfig.h"
 #include "../evaluation/Evaluation.h"
+#include "../Worker.h"
 #include "NetworkConfig.h"
 
 class DataSample;
 template <typename Dtype> class DataSet;
+template <typename Dtype> class LayersConfig;
 
 using namespace std;
 
@@ -44,6 +46,8 @@ using namespace std;
 template <typename Dtype>
 class Network {
 public:
+	NetworkConfig<Dtype>* config;
+
 	//Network(NetworkParam& networkParam);
 	Network(NetworkConfig<Dtype>* networkConfig);
 	/**
@@ -68,10 +72,10 @@ public:
 	 * @details 네트워크에 설정된 입력 레이어를 조회한다.
 	 * @return 네트워크에 설정된 입력 레이어
 	 */
-	InputLayer<Dtype> *getInputLayer() const { return this->config->_inputLayer; }
+	InputLayer<Dtype> *getInputLayer();
 
-
-
+    void setLayersConfig(LayersConfig<Dtype>* layersConfig);
+	LayersConfig<Dtype>* getLayersConfig();
 
 	/**
 	 * @details sgd()를 수행한다. 시간을 측정하기 위한 임시 함수.
@@ -203,7 +207,6 @@ protected:
 
 
 protected:
-	NetworkConfig<Dtype>* config;
 	//DataSet *dataSet;							///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
 
 	//InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터
