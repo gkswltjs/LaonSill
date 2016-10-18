@@ -173,9 +173,15 @@ public:
 	virtual void saveParams(ofstream& ofs);
 	virtual void loadParams(ifstream& ifs);
 	//////////////////////////////////////////
-
-
 	virtual void _backpropagation();
+	
+    //
+    void syncMutableMem();
+    void applyChanges(LearnableLayer<Dtype> *targetLayer);
+    void syncParams(LearnableLayer<Dtype> *targetLayer);
+
+
+
 
 
 
@@ -234,7 +240,6 @@ public:
 	Data<Dtype>* _preActivation;					///< 컨볼루션 결과에 대한 데이터
 	vector<Data<Dtype>*> _params;					///< 파리미터 데이터 (Filter, Bias 포함)
 	vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
-
 
 };
 

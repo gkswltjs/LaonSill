@@ -396,8 +396,6 @@ protected:
 	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
-	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
-	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
 	virtual void _feedforward();
 	/**

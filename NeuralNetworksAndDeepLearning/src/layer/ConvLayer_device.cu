@@ -12,6 +12,26 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 #include "../network/NetworkConfig.h"
+#include "cuda_runtime.h"
+#include <algorithm>
+
+/**
+ * dst array에 src array를 더한다.
+ *
+ * @param dst dst array, dst + src가 저장이 될 장소
+ * @param src src array
+ * @param N The number of elements in the array.
+ */
+template <typename Dtype>
+__global__ void AddArrayOfConvLayer(Dtype* dst, const Dtype* src, int N)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (idx >= N)
+		return;
+
+	dst[idx] = dst[idx] + src[idx];
+}
 
 template <typename Dtype>
 ConvLayer<Dtype>::~ConvLayer() {
@@ -241,7 +261,8 @@ void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &l
 */
 
 template <typename Dtype>
-void ConvLayer<Dtype>::update() {
+void ConvLayer<Dtype>::update() 
+{
 	//Util::setPrint(true);
 
 	//for(uint32_t32_t i = 0; i < filter_d.filters; i++) {
@@ -368,7 +389,8 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
 
-	Dtype* d_paramGrad = data->mutable_device_grad();
+    data->mutable_host_grad();
+	Dtype* d_paramGrad = data->mutable_device_grad();   // should update grad
 	Dtype* d_paramData = data->mutable_device_data();
 	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
 
@@ -380,7 +402,56 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 
 }
 
+template <typename Dtype>
+void ConvLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
+	const uint32_t weightSize = filter_d.size();
+	const uint32_t biasSize = filter_d.filters;
+    ConvLayer<Dtype>* _targetLayer = (ConvLayer<Dtype>*)targetLayer;
 
+    int blockSize = BW;
+    int gridSize = (weightSize + blockSize -1) / blockSize;
+
+    AddArrayOfConvLayer<<<gridSize, blockSize>>>(
+        _targetLayer->_params[Filter]->mutable_device_grad(),
+        _params[Filter]->device_grad(), weightSize);
+
+    gridSize = (biasSize + blockSize -1) / blockSize;
+
+    AddArrayOfConvLayer<<<gridSize, blockSize>>>(
+        _targetLayer->_params[Bias]->mutable_device_grad(),
+        _params[Bias]->device_grad(), biasSize);
+}
+
+template <typename Dtype>
+void ConvLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
+	const uint32_t weightSize = filter_d.size();
+	const uint32_t biasSize = filter_d.filters;
+    ConvLayer<Dtype>* _targetLayer = (ConvLayer<Dtype>*)targetLayer;
+
+    memcpy(_params[Filter]->mutable_host_grad(), _targetLayer->_params[Filter]->host_grad(),
+        weightSize);
+    memcpy(_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
+        biasSize);
+#if 0
+    for (uint32_t paramIdx = 0; paramIdx < weightSize; paramIdx++) {
+        _params[Filter]->mutable_host_grad()[paramIdx] = 
+            _targetLayer->_params[Filter]->host_grad()[paramIdx];
+    }
+
+    for (uint32_t paramIdx = 0; paramIdx < biasSize; paramIdx++) {
+        _params[Bias]->mutable_host_grad()[paramIdx] = 
+            _targetLayer->_params[Bias]->host_grad()[paramIdx];
+    }
+#endif
+}
+
+template <typename Dtype>
+void ConvLayer<Dtype>::syncMutableMem() {
+	_params[Filter]->mutable_device_grad();
+	_params[Filter]->host_grad();
+	_params[Bias]->mutable_device_grad();
+	_params[Bias]->host_data();
+}
 
 
 
@@ -448,7 +519,6 @@ void ConvLayer<Dtype>::_feedforward() {
 template <typename Dtype>
 void ConvLayer<Dtype>::_backpropagation() {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
-	//Cuda::refresh();
 
 	/*
 	//Util::printDeviceData(d_delta_output, out_dim.rows, out_dim.cols, out_dim.channels, out_dim.batches, "delta_output:");

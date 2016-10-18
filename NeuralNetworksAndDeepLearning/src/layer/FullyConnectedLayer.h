@@ -188,6 +188,10 @@ private:
 
 
 
+    void syncMutableMem();
+    void applyChanges(LearnableLayer<Dtype> *targetLayer);
+    void syncParams(LearnableLayer<Dtype> *targetLayer);
+
 protected:
 	virtual void _feedforward();
 

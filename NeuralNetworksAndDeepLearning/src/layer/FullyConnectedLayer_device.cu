@@ -9,7 +9,8 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 #include "../network/NetworkConfig.h"
-
+#include "cuda_runtime.h"
+#include <algorithm>
 
 #ifdef GPU_MODE
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -51,8 +52,23 @@ __global__ void Dropout(const int n, const Dtype* in, const Dtype* mask,
 	}
 }
 
+/**
+ * dst array에 src array를 더한다.
+ *
+ * @param dst dst array, dst + src가 저장이 될 장소
+ * @param src src array
+ * @param N The number of elements in the array.
+ */
+template <typename Dtype>
+__global__ void AddArrayOfFCLayer(Dtype* dst, const Dtype* src, int N)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
+	if (idx >= N)
+		return;
 
+	dst[idx] = dst[idx] + src[idx];
+}
 
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
@@ -238,6 +254,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 	dataHistory->print_data("paramHistoryData:");
 	data->print_data("paramData:");
 
+    data->mutable_host_grad();
 	Dtype* d_paramGrad = data->mutable_device_grad();
 	Dtype* d_paramData = data->mutable_device_data();
 	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
@@ -254,15 +271,58 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 	//Data<Dtype>::printConfig = 0;
 }
 
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
+    const uint32_t weightSize = this->in_dim.rows * this->out_dim.rows;
+    const uint32_t biasSize = this->out_dim.rows;
+    FullyConnectedLayer<Dtype>* _targetLayer = (FullyConnectedLayer<Dtype>*)targetLayer;
+
+    int blockSize = BW;
+    int gridSize;
+
+    gridSize = (weightSize + blockSize -1) / blockSize;
+
+    AddArrayOfFCLayer<<<gridSize, blockSize>>>(
+        _targetLayer->_params[Weight]->mutable_device_grad(),
+        _params[Weight]->device_grad(), weightSize);
+
+    gridSize = (biasSize + blockSize -1) / blockSize;
+
+    AddArrayOfFCLayer<<<gridSize, blockSize>>>(
+        _targetLayer->_params[Bias]->mutable_device_grad(),
+        _params[Bias]->device_grad(), biasSize);
+}
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
+    const uint32_t weightSize = this->in_dim.rows * this->out_dim.rows;
+    const uint32_t biasSize = this->out_dim.rows;
+    FullyConnectedLayer<Dtype>* _targetLayer = (FullyConnectedLayer<Dtype>*)targetLayer;
+
+    memcpy(_params[Weight]->mutable_host_grad(), _targetLayer->_params[Weight]->host_grad(),
+        weightSize);
+    memcpy(_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
+        biasSize);
+#if 0
+    for (uint32_t paramIdx = 0; paramIdx < weightSize; paramIdx++) {
+        _params[Weight]->mutable_host_grad()[paramIdx] = 
+            _targetLayer->_params[Weight]->host_grad()[paramIdx];
+    }
+    for (uint32_t paramIdx = 0; paramIdx < biasSize; paramIdx++) {
+        _params[Bias]->mutable_host_grad()[paramIdx] = 
+            _targetLayer->_params[Bias]->host_grad()[paramIdx];
+    }
+#endif
+}
 
 
-
-
-
-
-
-
-
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::syncMutableMem() {
+	_params[Weight]->mutable_device_grad();
+	_params[Weight]->host_grad();
+	_params[Bias]->mutable_device_grad();
+	_params[Bias]->host_grad();
+}
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_feedforward() {

@@ -23,9 +23,11 @@
 #include "../layer/OutputLayer.h"
 #include "../layer/LayerConfig.h"
 #include "../evaluation/Evaluation.h"
+#include "../Worker.h"
 #include "NetworkConfig.h"
 
 template <typename Dtype> class DataSet;
+template <typename Dtype> class LayersConfig;
 
 using namespace std;
 
@@ -67,9 +69,16 @@ public:
 	 * @details 네트워크에 설정된 입력 레이어를 조회한다.
 	 * @return 네트워크에 설정된 입력 레이어
 	 */
-	InputLayer<Dtype> *getInputLayer() const { return this->config->_inputLayer; }
+	InputLayer<Dtype> *getInputLayer();
 
+    void setLayersConfig(LayersConfig<Dtype>* layersConfig);
+	LayersConfig<Dtype>* getLayersConfig();
 
+	/**
+	 * @details sgd()를 수행한다. 시간을 측정하기 위한 임시 함수.
+	 * @param epochs sgd를 수행할 최대 epoch
+	 */
+	void sgd_with_timer(int epochs);
 
 
 

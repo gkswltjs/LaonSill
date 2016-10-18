@@ -424,6 +424,3 @@ template class Layer<float>;
 
 
 
-
-
-

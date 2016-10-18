@@ -32,7 +32,6 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string name, int n_out, do
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType) {
-	Cuda::refresh();
 
 	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
 	this->out_dim = io_dim(n_out, 1, 1, 1);

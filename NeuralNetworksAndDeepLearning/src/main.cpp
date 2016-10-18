@@ -13,83 +13,78 @@
 #include "network/Network.h"
 #include "network/NetworkConfig.h"
 #include "Util.h"
-#include "application/ArtisticStyle.h"
+#include "Worker.h"
+#include "Job.h"
 
 using namespace std;
 
 
 void network_test();
 void network_load();
-void artistic_style();
 
+// XXX: 임시...
+#define CONSUMER_THREAD_COUNT   (2)
 
 int main(int argc, char** argv) {
-	cout << "main 10000 samples " << endl;
+    // (1) 기본 설정
+	cout << "NN engine starts" << endl;
 	cout.precision(11);
 	cout.setf(ios::fixed);
 	Util::setOutstream(&cout);
-	//Util::setOutstream("./log");
+	Util::setPrint(false);
 
-	//network_test();
-	//network_load();
-	artistic_style();
+    // (2) 테스트를 위한 testThread
+    //     추후에는 없어질 예정.
+    thread testThread = thread(network_test);
 
-	cout << "end" << endl;
+    // (3) Producer&Consumer를 생성.
+    Worker<float>* worker = new Worker<float>();
+    worker->launchThread(CONSUMER_THREAD_COUNT);
+
+    // (4) 테스트 쓰레드 종료 확인
+    testThread.join();
+
+    // (5) 종료
+	cout << "NN engine ends" << endl;
 	return 0;
 }
 
-
 void network_test() {
-	Cuda::create(0);
-	cout << "Cuda creation done ... " << endl;
-	Util::setPrint(false);
 
-	const uint32_t maxEpoch = 10000;
-	const uint32_t batchSize = 20;
-	const uint32_t testInterval = 500;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 5000;			// 1000000 / batchSize
-	const uint32_t stepSize = 100000;
+    // (1) Worker의 준비가 될때까지 기다린다.
+    while (!Worker<float>::isReady()) {
+        sleep(1);
+    }
+
+    // (2) Network를 생성한다.
+    const uint32_t batchSize = 50;
+	//const uint32_t batchSize = 1000;
+	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 1000000;			// 10000(목표 샘플수) / batchSize
+	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
+	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
-	const float weightDecay = 0.00001f;
+	const float weightDecay = 0.0002f;
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 0.0f;
-	const float gamma = 0.1;
-	const LRPolicy lrPolicy = LRPolicy::Step;
-	const string savePathPrefix = "/home/jhkim/network_save/current/network";
 
-	//SyncMem<float>::setOutstream("./mem");
 
-	//DataSet<float>* dataSet = new MockDataSet<float>(4, 4, 2, 20, 20, 10, MockDataSet<float>::NOTABLE_IMAGE);
-	//DataSet<float>* dataSet = new MockDataSet<float>(28, 28, 1, 100, 100, 10);
-	//DataSet<float>* dataSet = new MockDataSet<float>(56, 56, 3, 10, 10, 10);
-	//DataSet<float>* dataSet = new MnistDataSet<float>(0.8);
-	//DataSet<float>* dataSet = new MockDataSet<float>(224, 224, 3, 100, 100, 100);
-	//DataSet<float>* dataSet = createImageNet10CatDataSet<float>();
-	//DataSet<float>* dataSet = createImageNet100CatDataSet<float>();
-	//DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	//DataSet<float>* dataSet = createImageNet50000DataSet<float>();
-	//DataSet<float>* dataSet = createMnistDataSet<float>();
-	//DataSet<float>* dataSet = createSampleDataSet<float>();
+	cout << "batchSize: " << batchSize << endl;
+	cout << "testInterval: " << testInterval << endl;
+	cout << "saveInterval: " << saveInterval << endl;
+	cout << "baseLearningRate: " << baseLearningRate << endl;
+	cout << "weightDecay: " << weightDecay << endl;
+	cout << "momentum: " << momentum << endl;
+	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
+
+	DataSet<float>* dataSet = createMnistDataSet<float>();
 	dataSet->load();
-	//dataSet->zeroMean(true);
 
 	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
 	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
-	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_AND_WRITE);
+	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::WRITE_ONLY);
 
-	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ALayersConfigTest<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception3ASimpleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createVGG19_2_NetLayersConfig<float>();
-	LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInceptionAuxLayersConfig<float>();
-
-	NetworkConfig<float>::Builder* networkBuilder =
+	NetworkConfig<float>* networkConfig =
 			(new NetworkConfig<float>::Builder())
 			->batchSize(batchSize)
 			->baseLearningRate(baseLearningRate)
@@ -97,26 +92,28 @@ void network_test() {
 			->momentum(momentum)
 			->testInterval(testInterval)
 			->saveInterval(saveInterval)
-			->stepSize(stepSize)
 			->clipGradientsLevel(clipGradientsLevel)
-			->lrPolicy(lrPolicy)
-			->gamma(gamma)
 			->dataSet(dataSet)
 			->evaluations({top1Evaluation, top5Evaluation})
-			->layersConfig(layersConfig)
-			->savePathPrefix(savePathPrefix)
-			->networkListeners({networkListener});
-	networkBuilder->print();
-	NetworkConfig<float>* networkConfig = networkBuilder->build();
-
+			->savePathPrefix("/home/jhkim/network")
+			->networkListeners({networkListener})
+			->build();
 
 	Util::printVramInfo();
 
 	Network<float>* network = new Network<float>(networkConfig);
-	network->sgd(maxEpoch);
-	network->save();
 
-	Cuda::destroy();
+    // (3) Job을 생성한다.
+    Job<float>* job1 = new Job<float>(Job<float>::BuildLayer, network, 0);
+    Job<float>* job2 = new Job<float>(Job<float>::TrainNetwork, network, 2);
+    Job<float>* job3 = new Job<float>(Job<float>::CleanupLayer, network, 0);
+    Job<float>* job4 = new Job<float>(Job<float>::HaltMachine, network, 0);
+
+    // (4) Job을 집어 넣는다.
+    Worker<float>::pushJob(job1);
+    Worker<float>::pushJob(job2);
+    Worker<float>::pushJob(job3);
+    Worker<float>::pushJob(job4);
 }
 
 
@@ -125,154 +122,24 @@ void network_load() {
 	cout << "Cuda creation done ... " << endl;
 
 	//DataSet<float>* dataSet = createMnistDataSet<float>();
-	DataSet<float>* dataSet = createImageNet10000DataSet<float>();
+	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
 	dataSet->load();
 
 	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
 	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
-	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_AND_WRITE);
 
 	// save file 경로로 builder 생성,
 	NetworkConfig<float>::Builder* networkBuilder = new NetworkConfig<float>::Builder();
-	networkBuilder->load("/home/jhkim/network_save/current/network");
+	networkBuilder->load("/home/jhkim/network");
 	networkBuilder->dataSet(dataSet);
 	networkBuilder->evaluations({top1Evaluation, top5Evaluation});
-	networkBuilder->networkListeners({networkListener});
-
-	networkBuilder->print();
 
 	NetworkConfig<float>* networkConfig = networkBuilder->build();
-	networkConfig->load("");
-
-	Util::printVramInfo();
+	networkConfig->load();
 
 	Network<float>* network = new Network<float>(networkConfig);
-	//network->sgd(10000);
-	//network->save();
+	//network->sgd(1);
 	network->test();
 
 	Cuda::destroy();
 }
-
-void artistic_style() {
-	Cuda::create(0);
-	cout << "Cuda creation done ... " << endl;
-	Util::setPrint(false);
-
-	//ArtisticStyle<float> artisticStyle;
-	//artisticStyle.test();
-
-	const uint32_t maxEpoch = 1000;
-	const uint32_t batchSize = 1;
-	const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 100;			// 1000000 / batchSize
-	const uint32_t stepSize = 100000;
-	const float baseLearningRate = 0.001f;
-	const float weightDecay = 0.0002f;
-	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
-	const float gamma = 0.96;
-	const LRPolicy lrPolicy = LRPolicy::Step;
-	const string savePathPrefix = "/home/jhkim/network_save/current/network";
-
-
-	/*
-	LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createVGG19NetLayersArtisticConfig<float>();
-	NetworkConfig<float>::Builder* networkBuilder =
-			(new NetworkConfig<float>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->stepSize(stepSize)
-			->clipGradientsLevel(clipGradientsLevel)
-			->lrPolicy(lrPolicy)
-			->gamma(gamma)
-			->inputShape({8, 8, 3})
-			//->inputShape({320, 320, 3})
-			->layersConfig(layersConfig)
-			->savePathPrefix(savePathPrefix);
-	networkBuilder->print();
-	NetworkConfig<float>* networkConfig = networkBuilder->build();
-	*/
-
-	LayersConfig<float>* layersConfig = createVGG19NetLayersArtisticConfig<float>();
-	NetworkConfig<float>::Builder* networkBuilder =
-			(new NetworkConfig<float>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->stepSize(stepSize)
-			->clipGradientsLevel(clipGradientsLevel)
-			->lrPolicy(lrPolicy)
-			->gamma(gamma)
-			//->inputShape({8, 8, 3})
-			//->inputShape({320, 320, 3})
-			->inputShape({448, 448, 3})
-			->layersConfig(layersConfig)
-			->savePathPrefix(savePathPrefix);
-			//->dataSet(dataSet)
-			//->evaluations({top1Evaluation, top5Evaluation})
-			//->networkListeners({networkListener});
-	networkBuilder->print();
-	NetworkConfig<float>* networkConfig = networkBuilder->build();
-	networkConfig->load("conv5_1");
-
-	/*
-	NetworkConfig<float>::Builder* networkBuilder = new NetworkConfig<float>::Builder();
-	networkBuilder->load("/home/jhkim/network_save/current/network");
-	networkBuilder->batchSize(1);
-	networkBuilder->inputShape({320, 320, 3});
-	networkBuilder->print();
-	NetworkConfig<float>* networkConfig = networkBuilder->build();
-	networkConfig->load();
-	*/
-
-	Util::printVramInfo();
-
-	Network<float>* network = new Network<float>(networkConfig);
-	//network->test();
-
-
-	ArtisticStyle<float> artisticStyle(
-			network,
-			//"/home/jhkim/image/artistic/tubingen_8.jpg",
-			//"/home/jhkim/image/artistic/starry_night_8.jpg",
-			"/home/jhkim/image/artistic/tubingen_448.jpg",
-			"/home/jhkim/image/artistic/eh2_448.jpg",
-			//"/home/jhkim/image/artistic/tubingen_448.jpg",
-			//"/home/jhkim/image/artistic/starry_night_448.jpg",
-			//"/home/jhkim/image/artistic/composition_320.jpg",
-			//"/home/jhkim/image/artistic/monk_320.jpg",
-			//"/home/jhkim/image/artistic/picasso_320.jpg",
-			//"/home/jhkim/image/artistic/simpson_320.jpg",
-			//"/home/jhkim/image/artistic/donelli_320.jpg",
-			{"conv3_2"},
-			{"conv4_1", "conv3_1", "conv2_1", "conv1_1"},
-			0.05,					// weight for content grad
-			0.00001,					// weight for style grad
-			-0.001,					// learning rate
-			"conv4_1",				// last layer name
-			true,
-			true
-			);
-	artisticStyle.style();
-	Cuda::destroy();
-}
-
-
-
-
-
-
-
-
-
-
-
