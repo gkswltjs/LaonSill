@@ -49,6 +49,28 @@ public:
 	virtual ~Worker() {}
 
     /**
+     * consumer에 대한 정보를 담고 있는 변수들
+     */
+	static int consumerCount;
+	static thread_local int consumerIdx;
+
+    /**
+     * @return      마지막으로 깨어난 consumer는 true, 그 외에는 false를 반환
+     */
+    static bool waitPeer();
+    static void wakeupPeer();
+
+	/**
+	 * @brief producer, consumer 쓰레드를 실행한다.
+	 * @param network producer 쓰레드가 담당할 network
+	 */
+	static void launchThread(int consumerCount);
+
+    static void pushJob(Job<Dtype>* job);
+
+    static bool isReady();
+private:
+    /**
      * Consumer간의 동기화를 지원하기 위한 변수들
      *
      *  작업 A,B가 있다. 각각의 작업은 A = {A1, A2, A3, ... An}, B = {B1, B2, ... Bn}로 나누어
@@ -63,19 +85,6 @@ public:
     static atomic<long> peerDoneStep;
 
     /**
-     * @return      마지막으로 깨어난 consumer는 true, 그 외에는 false를 반환
-     */
-    static bool waitPeer();
-    static void wakeupPeer();
-
-    /**
-     * consumer에 대한 정보를 담고 있는 변수들
-     */
-	static int consumerCount;
-	static thread_local int consumerIdx;
-    static volatile void* consumerJob;
-
-    /**
      * consumer에 대한 job control을 위한 변수들
      */
 	static mutex consumerMutex;
@@ -84,6 +93,7 @@ public:
     static thread_local long consumerJobStep;
     static long consumerCurJobStep;
     static atomic<int> wakeupConsumerJobCount;
+    static volatile void* consumerJob;
 
     /**
      * producer에 대한 job control을 위한 변수들
@@ -91,30 +101,21 @@ public:
 	static mutex producerMutex;
 	static condition_variable producerCondVar;
 
-	/**
-	 * @brief producer, consumer 쓰레드를 실행한다.
-	 * @param network producer 쓰레드가 담당할 network
-	 */
-	static void launchThread(int consumerCount);
-
-    static void pushJob(Job<Dtype>* job);
-    static Job<Dtype>* popJob();
-
     static list<Job<Dtype>*> jobQueue;
     static mutex jobQueueMutex;
 
     static atomic<int> readyCount;
-    static bool isReady();
 
-private:
 	static thread_local int gpuIdx;
+
+    static Job<Dtype>* popJob();
 
     static void buildLayer(Network<Dtype>* network);
     static void trainNetwork(Network<Dtype>* network, int maxEpochs);
     static void cleanupLayer(Network<Dtype>* network); 
 
-	static void producer_thread();
-	static void consumer_thread(int consumerIdx, int gpuIdx);
+	static void producerThread();
+	static void consumerThread(int consumerIdx, int gpuIdx);
 
 	static thread* producer;
 	static vector<thread> consumers;

@@ -287,7 +287,7 @@ void FullyConnectedLayer<Dtype>::_save(ofstream &ofs) {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_feedforward() {
-	if(!isLastPrevLayerRequest(idx)) throw Exception();
+	if (!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::printCube(input, "input:");
 	Util::convertCube(input, this->input);

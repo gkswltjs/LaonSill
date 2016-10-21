@@ -23,7 +23,7 @@ void network_test();
 void network_load();
 
 // XXX: 임시...
-#define CONSUMER_THREAD_COUNT   (1)
+const int CONSUMER_THREAD_COUNT = 2;
 
 int main(int argc, char** argv) {
     // (1) 기본 설정

@@ -37,11 +37,11 @@ template <typename Dtype> class LayersConfig;
 template <typename Dtype>
 DataSet<Dtype>* createMnistDataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/data/train_pack/mnist/train_data",
-			"/data/train_pack/mnist/train_label",
+			"/data/mnist/train_data",
+			"/data/mnist/train_label",
 			1,
-			"/data/train_pack/mnist/test_data",
-			"/data/train_pack/mnist/test_label",
+			"/data/mnist/test_data",
+			"/data/mnist/test_label",
 			1);
 	dataSet->setMean({0.13066047740});
 	return dataSet;
@@ -53,11 +53,11 @@ DataSet<Dtype>* createMnistDataSet() {
 template <typename Dtype>
 DataSet<Dtype>* createSampleDataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/data/train_pack/ILSVRC2012/save/sample/train_data",
-			"/data/train_pack/ILSVRC2012/save/sample/train_label",
+			"/data/ILSVRC2012/save/sample/train_data",
+			"/data/ILSVRC2012/save/sample/train_label",
 			3,
-			"/data/train_pack/ILSVRC2012/save/sample/train_data",
-			"/data/train_pack/ILSVRC2012/save/sample/train_label",
+			"/data/ILSVRC2012/save/sample/train_data",
+			"/data/ILSVRC2012/save/sample/train_label",
 			1);
 	dataSet->setMean({0.0, 0.0, 0.0});
 	return dataSet;

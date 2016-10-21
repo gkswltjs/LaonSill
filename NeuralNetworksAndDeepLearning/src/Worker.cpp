@@ -80,10 +80,10 @@ bool Worker<Dtype>::isReady() {
     return true;
 }
 
-#define PRODUCER_PERIODIC_CHECK_MSEC_TIME   (3 * 1000)
+const int PRODUCER_PERIODIC_CHECK_MSEC_TIME = 3 * 1000;
 
 template <typename Dtype>
-void Worker<Dtype>::producer_thread() {
+void Worker<Dtype>::producerThread() {
 	cout << "producer_thread starts" << endl;
     atomic_fetch_add(&Worker<Dtype>::readyCount, 1); 
 
@@ -160,7 +160,7 @@ void Worker<Dtype>::producer_thread() {
 }
 
 template <typename Dtype>
-void Worker<Dtype>::consumer_thread(int consumerIdx, int gpuIdx) {
+void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
     bool doLoop = true;
 	Worker<Dtype>::consumerIdx = consumerIdx;
 	Worker<Dtype>::gpuIdx = gpuIdx;
@@ -232,15 +232,13 @@ void Worker<Dtype>::launchThread(int consumerCount) {
     Worker<Dtype>::consumerStatuses.assign(consumerCount, ConsumerStatus::Waiting);
 
 	// (3) producer 쓰레드를 생성한다.
-	producer = new thread(producer_thread);
+	producer = new thread(producerThread);
     cout << "launchThread GPUCount " << Worker<Dtype>::consumerCount << endl;
 
 	// (4) consumer 쓰레드들을 생성한다.
 	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
-		consumers.push_back(thread(consumer_thread, i, Cuda::availableGPU[i]));
+		consumers.push_back(thread(consumerThread, i, Cuda::availableGPU[i]));
 	}
-
-    // XXX: 여기에서 input을 위한 쓰레드 생성을 기다려야 할 것으로 판단됨.
 
     // (5) producer, consumer 쓰레드가 종료하기를 기다린다.
 	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
