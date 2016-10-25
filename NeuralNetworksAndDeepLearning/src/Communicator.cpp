@@ -12,18 +12,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <string.h>
 #include <fcntl.h>
+#include <arpa/inet.h>
 
 #include "Communicator.h"
+#include "Worker.h"
 
-const int               LISTENER_PORT = 20077;
-const long              SELECT_TIMEVAL_SEC = 0;
-const long              SELECT_TIMEVAL_USEC = 500000;
+const int               Communicator::LISTENER_PORT = 20087;
+const long              SELECT_TIMEVAL_SEC = 0L;
+const long              SELECT_TIMEVAL_USEC = 500000L;
 
 int                     Communicator::sessCount;
 
@@ -39,18 +40,8 @@ mutex                   Communicator::freeSessIdMutex;
 map<int, int>           Communicator::fdToSessMap;
 mutex                   Communicator::fdToSessMutex;
 
-const int               MESSAGE_HEADER_SIZE = sizeof(int) * 2;
-
-const int               MESSAGE_DEFAULT_SIZE = 1452;
-// usual MTU size(1500) - IP header(20) - TCP header(20) - vpn header(8)
-// 물론 MTU 크기를 변경하면 더 큰값을 설정해도 된다..
-// 하지만.. 다른 네트워크의 MTU 크기가 작다면 성능상 문제가 발생할 수 밖에 없다.
-
-
-void Communicator::cleanupResources() {
-    assert (Communicator::listener != NULL);
-    delete Communicator::listener;
-}
+volatile bool           Communicator::halting = false;
+atomic<int>             Communicator::sessHaltCount;
 
 int Communicator::setSess(int newFd) {
     int sessId;
@@ -68,7 +59,6 @@ int Communicator::setSess(int newFd) {
     SessContext*& sessContext = Communicator::sessContext[sessId];
     sessContext->sessId = sessId;
     sessContext->fd = newFd;
-    sessContext->active = true;
     atomic_fetch_add(&Communicator::activeSessCount, 1);
 
     unique_lock<mutex> fdToSessLock(Communicator::fdToSessMutex);
@@ -107,6 +97,7 @@ void Communicator::releaseSess(int sessId) {
 
 void Communicator::wakeup(int sessId) {
     SessContext*& sessContext = Communicator::sessContext[sessId];
+    sessContext->active = true;
     unique_lock<mutex> sessLock(sessContext->sessMutex);
     sessContext->sessCondVar.notify_one();
 }
@@ -116,14 +107,6 @@ void Communicator::listenerThread() {
     int socketFd;
     int maxFdp1;
 
-    fd_set readFds, exceptFds;
-    struct timeval  selectTimeVal;
-
-    FD_ZERO(&readFds);
-    FD_ZERO(&exceptFds);
-    selectTimeVal.tv_sec = SELECT_TIMEVAL_SEC;
-    selectTimeVal.tv_usec = SELECT_TIMEVAL_USEC;
-
     socketFd = socket(AF_INET, SOCK_STREAM, 0);
     if (socketFd == -1) {
         assert(!"cannot create socket");
@@ -131,12 +114,14 @@ void Communicator::listenerThread() {
 
     // XXX: 일단 간단히 아무 이더넷카드를 쓸 수 있도록 하자.
     memset(&serverAddr, 0, sizeof(struct sockaddr_in));
-    serverAddr.sin_family = AF_UNIX;
-    serverAddr.sin_addr.s_addr = htons(INADDR_ANY);
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     serverAddr.sin_port = htons(LISTENER_PORT);
 
     // (1) bind
     if (bind(socketFd, (struct sockaddr*)&serverAddr, sizeof(struct sockaddr_in)) == -1) {
+        int err = errno;
+        cout << "bind failed. errno=" << err << endl;
         close(socketFd);
         assert(!"cannot bind socket");
     }
@@ -148,11 +133,23 @@ void Communicator::listenerThread() {
     }
 
     maxFdp1 = socketFd + 1;
-    FD_SET(socketFd, &readFds);
+
+    cout << "listener thread starts" << endl;
 
     // (3) main accept loop 
     while (true) {
-        int selectRet = select(maxFdp1, &readFds, 0, &exceptFds, &selectTimeVal);
+        struct timeval  selectTimeVal;
+        selectTimeVal.tv_sec = SELECT_TIMEVAL_SEC;
+        selectTimeVal.tv_usec = SELECT_TIMEVAL_USEC;
+
+        fd_set readFds;
+        FD_ZERO(&readFds);
+        FD_SET(socketFd, &readFds);
+
+        int selectRet = select(maxFdp1, &readFds, 0, 0, &selectTimeVal);
+
+        if (Communicator::halting)
+            break;
 
         if (selectRet == -1) {
             assert(!"cannot select socket");
@@ -174,9 +171,6 @@ void Communicator::listenerThread() {
             }
         }
   
-        if (selectRet == 0)
-            continue;
-
         // (3-2) handle new comers
         if (FD_ISSET(socketFd, &readFds)) {
             struct sockaddr_in newSockAddr;
@@ -186,60 +180,35 @@ void Communicator::listenerThread() {
                 assert(!"cannot accept socekt");
             }
 
+            cout << "accept. newFd=" << newFd << endl;
             int sessId = Communicator::setSess(newFd);
             if (sessId == -1) {
-                // XXX: should handle error.
+                // FIXME: should handle error.
                 //      session full 오류메세지를 클라이언트에게 전달해야 한다.
                 assert(!"not enough free session ID");
             }
+
+            cout << "get session. sessId=" << sessId << endl;
 
             Communicator::wakeup(sessId);
 
             selectRet--;
         }
 
-        if (selectRet == 0)
-            continue;
-
-        if (FD_ISSET(socketFd, &exceptFds)) {
-            assert(!"listen socket failed while select()");
-        }
+        // FIXME: exception에 대한 처리 필요
     }
-}
 
-void Communicator::serializeMsgHdr(MessageHeader msgHdr, char* msg) {
-    int offset = 0;
-    int networkMsgType = htonl(msgHdr.getMsgType());
-    int networkMsgLen = htonl(msgHdr.getMsgLen());
-
-    // @See: MessageHeader.h
-    memcpy((void*)((char*)msg + offset), (void*)&networkMsgType, sizeof(int));
-    offset += sizeof(int);
-    memcpy((void*)((char*)msg + offset), (void*)&networkMsgLen, sizeof(int));
-}
-
-void Communicator::deserializeMsgHdr(MessageHeader& msgHdr, char* msg) {
-    int msgType;
-    int msgLen;
-    int offset = 0;
-
-    // @See: MessageHeader.h
-    memcpy((void*)&msgType, (void*)((char*)msg + offset), sizeof(int));
-    offset += sizeof(int);
-    memcpy((void*)&msgLen, (void*)((char*)msg + offset), sizeof(int));
-
-    msgHdr.setMsgType((MessageHeader::MsgType)ntohl(msgType));
-    msgHdr.setMsgLen(ntohl(msgLen));
+    close(socketFd);
 }
 
 bool Communicator::handleWelcomeMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
 
-    replyMsgHdr.setMsgLen(MESSAGE_HEADER_SIZE);
-    replyMsgHdr.setMsgType(MessageHeader::WelcomReply);
+    replyMsgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
+    replyMsgHdr.setMsgType(MessageHeader::WelcomeReply);
 
-    assert(MESSAGE_HEADER_SIZE <= MESSAGE_DEFAULT_SIZE);
-    Communicator::serializeMsgHdr(replyMsgHdr, replyMsg);
+    assert(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE);
+    Serializer::serializeMsgHdr(replyMsgHdr, replyMsg);
 
     return true;
 }
@@ -247,13 +216,96 @@ bool Communicator::handleWelcomeMsg(MessageHeader recvMsgHdr, char* recvMsg,
 bool Communicator::handleHaltMachineMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
 
+    // (1) Worker Thread (Producer& Consumer)를 종료한다.
+    Job* haltJob = new Job(Job::HaltMachine, NULL, 0);
+    Worker<float>::pushJob(haltJob);
+
+    // (2) Listener, Session 쓰레드 들을 모두 종료한다.
+    Communicator::halt();       // threads will be eventually halt
+
     return false;
 }
 
 bool Communicator::handleGoodByeMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
-
+    // TODO: 아직 구현 안되었음..
     return false;
+}
+
+
+// CreateNetwork body packet 구성
+// |---------------------------------------------------------------|
+// | Not specified.. configuration information will be specified   | 
+// |                                                               |
+// |---------------------------------------------------------------|
+//
+// CreateNetworkReply body packet 구성
+// |------------------|
+// | Network Id       |
+// | int(4)           |
+// |------------------|
+bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMsg,
+    MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
+
+    // (1) create network.
+    int networkId = Worker<float>::createNetwork();
+
+    // (2) prepare header
+    int msgLen = MessageHeader::MESSAGE_HEADER_SIZE + sizeof(int);
+    replyMsgHdr.setMsgLen(msgLen);
+    replyMsgHdr.setMsgType(MessageHeader::CreateNetworkReply);
+
+    // (3) fill send buffer;
+    char *sendBuffer;
+    if (msgLen > MessageHeader::MESSAGE_DEFAULT_SIZE) {
+        replyBigMsg = (char*)malloc(msgLen);
+        assert(replyBigMsg != NULL);
+        sendBuffer = replyBigMsg;
+    } else {
+        sendBuffer = replyMsg;
+    }
+
+    int offset;
+    offset = Serializer::serializeMsgHdr(replyMsgHdr, sendBuffer);
+    offset = Serializer::serializeInt(networkId, offset, sendBuffer);
+
+    return true;
+}
+
+
+// PushJob body packet 구성
+// |---------+------------+-----------|
+// | JobType | Network Id | Argument1 |
+// | int(4)  | int(4)     | int(4)    |
+// |---------+------------+-----------|
+bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
+    MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
+    // XXX: 일일히 바꿔주지 말고, 예쁘게 deserialize할 수 있는 방법을 찾자.
+    // (1) read jobType, networkId, arg1
+    int temp;
+    int jobType, networkId, arg1;
+    int offset = MessageHeader::MESSAGE_HEADER_SIZE;
+
+    offset = Serializer::deserializeInt(jobType, offset, recvMsg);
+    offset = Serializer::deserializeInt(networkId, offset, recvMsg);
+    offset = Serializer::deserializeInt(arg1, offset, recvMsg);
+
+    // (2) network를 얻는다.
+    Network<float>* network = Worker<float>::getNetwork(networkId);
+    assert(network != NULL);
+
+    // (3) job을 생성하여 job queue에 넣는다.
+    Job* newJob = new Job((Job::JobType)jobType, network, arg1);
+    Worker<float>::pushJob(newJob);
+
+    // (4) reply
+    replyMsgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
+    replyMsgHdr.setMsgType(MessageHeader::PushJobReply);
+
+    assert(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE);
+    Serializer::serializeMsgHdr(replyMsgHdr, replyMsg);
+
+    return true;
 }
 
 void Communicator::sessThread(int sessId) {
@@ -270,21 +322,30 @@ void Communicator::sessThread(int sessId) {
 
     SessContext*& sessContext   = Communicator::sessContext[sessId];
 
-    recvMsg = (char*)malloc(MESSAGE_DEFAULT_SIZE);
+    recvMsg = (char*)malloc(MessageHeader::MESSAGE_DEFAULT_SIZE);
     assert(recvMsg != NULL);
-    replyMsg = (char*)malloc(MESSAGE_DEFAULT_SIZE);
+    replyMsg = (char*)malloc(MessageHeader::MESSAGE_DEFAULT_SIZE);
     assert(replyMsg != NULL);
+
+    cout << "sess thread #" << sessId << " starts" << endl;
 
     // thread main loop
     while (continueLoop) {
         int fd;
         unique_lock<mutex> sessLock(sessContext->sessMutex);
+
         sessContext->sessCondVar.wait(sessLock, 
             [&sessContext] { return (sessContext->active == true); });
         sessContext->running = true;
         sessLock.unlock();
 
         atomic_fetch_add(&Communicator::runningSessCount, 1);
+
+        if (Communicator::halting) {
+            atomic_fetch_add(&Communicator::sessHaltCount, 1);
+            break;
+        }
+
         fd = sessContext->fd;
         cout << "sess thread #" << sessId << " wakes up & handle socket fd=" << fd << endl;
         bool continueSocketCommLoop = true;
@@ -330,6 +391,18 @@ void Communicator::sessThread(int sessId) {
                     recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
                     replyMsgHdr, replyMsg, replyBigMsg);
                 break;
+            case MessageHeader::PushJob:
+                needReply = Communicator::handlePushJobMsg(
+                    recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
+                    replyMsgHdr, replyMsg, replyBigMsg);
+                break;
+
+            case MessageHeader::CreateNetwork:
+                needReply = Communicator::handleCreateNetworkMsg(
+                    recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
+                    replyMsgHdr, replyMsg, replyBigMsg);
+                break;
+
             case MessageHeader::HaltMachine:
                 needReply = Communicator::handleHaltMachineMsg(
                     recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
@@ -337,23 +410,25 @@ void Communicator::sessThread(int sessId) {
                 continueSocketCommLoop = false;
                 continueLoop = false;
                 break;
+
             case MessageHeader::GoodBye:
                 needReply = Communicator::handleGoodByeMsg(
                     recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
                     replyMsgHdr, replyMsg, replyBigMsg);
                 continueSocketCommLoop = false;
                 break;
+
             default:
                 assert(!"invalid message header");
                 break;
             }
 
             // (3) send reply if necessary
-            if (needReply) { 
+            if (needReply) {
                 replyRet = Communicator::sendMessage(fd, replyMsgHdr, 
                     (recvBigMsg == NULL ? replyMsg : replyBigMsg));
             }
-            assert(replyRet != Communicator::Success);
+            assert(replyRet == Communicator::Success);
 
             // (4) cleanup big msg resource
             if (recvBigMsg != NULL) {
@@ -381,18 +456,44 @@ void Communicator::sessThread(int sessId) {
 }
 
 void Communicator::launchThreads(int sessCount) {
+    // (1) 초기값 설정
     Communicator::sessCount = sessCount;
     atomic_store(&Communicator::activeSessCount, 0);
     atomic_store(&Communicator::runningSessCount, 0);
+    atomic_store(&Communicator::sessHaltCount, 0);
 
-    // (1) listener thread를 생성한다.
-    listener = new thread(listenerThread);
+    // (2) Worker의 준비가 될때까지 기다린다.
+    while (!Worker<float>::isReady()) {
+        sleep(1);
+    }
 
-    // (2) thread pool을 생성한다. 
+    // (3) listener thread를 생성한다.
+    Communicator::listener = new thread(listenerThread);
+
+    // (4) thread pool을 생성한다. 
+    for (int i = 0; i < sessCount; i++) {
+        Communicator::sessContext.push_back(new SessContext(i));
+        Communicator::freeSessIdList.push_back(i);
+    }
+
+    // XXX: 타이밍 이슈가 있음.. order 보호할 수 있는 무언가의 장치가 필요
+    sleep(1);
     for (int i = 0; i < sessCount; i++) {
         Communicator::threadPool.push_back(thread(sessThread, i));
-        Communicator::sessContext.push_back(new SessContext(i));
     }
+}
+
+void Communicator::joinThreads() {
+    Communicator::listener->join();
+    delete Communicator::listener;
+    Communicator::listener = NULL;
+
+    cout << "listener thread ends" << endl;
+
+    for (int i = 0; i < Communicator::sessCount; i++) {
+        Communicator::threadPool[i].join();
+    }
+    cout << "sess threads end" << endl;
 }
 
 // XXX: sender/receiver N:1 multiplex 모드로 구현해야 함.
@@ -403,7 +504,7 @@ Communicator::CommRetType Communicator::recvMessage(
 
     // (1) peek message & fill message header
     while (!skipMsgPeek) {
-        recvRet = recv(fd, buf, MESSAGE_HEADER_SIZE, MSG_PEEK);
+        recvRet = recv(fd, buf, MessageHeader::MESSAGE_HEADER_SIZE, MSG_PEEK);
 
         if (recvRet == 0)
             return Communicator::RecvPeerShutdown; 
@@ -422,22 +523,25 @@ Communicator::CommRetType Communicator::recvMessage(
             //return Communicator::RecvFailed;
         }
 
-        if (recvRet == MESSAGE_HEADER_SIZE)
+        if (recvRet == MessageHeader::MESSAGE_HEADER_SIZE)
             break;
     }
 
-    if (skipMsgPeek) {
-        Communicator::deserializeMsgHdr(msgHdr, buf); 
+    if (!skipMsgPeek) {
+        Serializer::deserializeMsgHdr(msgHdr, buf);
 
-        if (msgHdr.getMsgLen() > MESSAGE_DEFAULT_SIZE)
+        if (msgHdr.getMsgLen() > MessageHeader::MESSAGE_DEFAULT_SIZE)
             return Communicator::RecvOnlyHeader;
     }
+
+    cout << "recv Message. Hdr=" << (int)msgHdr.getMsgType() << ",Len=" <<
+        (int)msgHdr.getMsgLen() << endl;
 
     // (2) recv message
     int remain = msgHdr.getMsgLen();
     int offset = 0;
     while (remain != 0) {
-        assert(remain < 0);
+        assert(remain >= 0);
         recvRet = recv(fd, (void*)((char*)buf + offset), remain, 0);
 
         if (recvRet == 0)
@@ -464,14 +568,20 @@ Communicator::CommRetType Communicator::recvMessage(
     return Communicator::Success; 
 }
 
+/**
+ * @warning buf에는 이미 serialize 된 메세지가 들어 있어야 한다.
+ */
 Communicator::CommRetType Communicator::sendMessage(
     int fd, MessageHeader msgHdr, char* buf) {
     ssize_t sendRet;
     int remain = msgHdr.getMsgLen();
     int offset = 0;
 
+    cout << "send Message. Hdr=" << (int)msgHdr.getMsgType() << ",Len=" <<
+        (int)msgHdr.getMsgLen() << endl;
+
     while (remain != 0) {
-        assert(remain < 0);
+        assert(remain >= 0);
         sendRet = send(fd, (void*)((char*)buf + offset), remain, 0);
 
         if (sendRet == -1) {
@@ -493,4 +603,18 @@ Communicator::CommRetType Communicator::sendMessage(
     }
 
     return Communicator::Success; 
+}
+
+void Communicator::halt() {
+    Communicator::halting = true;
+
+    atomic_fetch_add(&Communicator::sessHaltCount, 1);
+
+    while (atomic_load(&Communicator::sessHaltCount) < Communicator::sessCount) {
+        for (int i = 0; i < Communicator::sessCount; i++) {
+            Communicator::wakeup(i);
+        }
+
+        sleep(1);
+    }
 }

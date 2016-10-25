@@ -9,38 +9,37 @@
 #ifndef JOB_H
 #define JOB_H 
 
-#include "network/Network.h"
+#include <atomic>
 
-template<typename Dtype> class Network;
+using namespace std;
 
-template <typename Dtype>
 class Job {
 public:
-    enum Type {
+    enum JobType : int {
         BuildLayer = 0,
         TrainNetwork,
         CleanupLayer,
         HaltMachine
     };
 
-    Job (Type type, Network<Dtype>* network, int arg1) {
-        this->type = type;
+    Job (JobType jobType, void* network, int arg1) {
+        this->jobType = jobType;
         this->network = network;
         this->arg1 = arg1;
     };
-    virtual ~Job() {};
+    virtual ~Job()                      {};
 
-    Type getType() const { return type; }
-    Network<Dtype>* getNetwork() const { return network; }
-    int getArg1() const { return arg1; }
+    JobType getType() const             { return jobType; }
+    void* getNetwork() const            { return network; }
+    int getArg1() const                 { return arg1; }
+
+    atomic<int>                         refCnt;
 
 private:
-    Type type;
-    Network<Dtype>* network;
-    int arg1;
+    JobType                             jobType;
+    void*                               network;
+    int                                 arg1;
     
 };
-
-template class Job<float>;
 
 #endif /* JOB_H */

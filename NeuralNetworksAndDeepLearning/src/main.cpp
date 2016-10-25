@@ -15,15 +15,17 @@
 #include "Util.h"
 #include "Worker.h"
 #include "Job.h"
+#include "Communicator.h"
+#include "Client.h"
 
 using namespace std;
 
-
-void network_test();
+#ifndef CLIENT_MODE
 void network_load();
 
 // XXX: 임시...
 const int CONSUMER_THREAD_COUNT = 2;
+const int SESS_THREAD_COUNT = 5;
 
 int main(int argc, char** argv) {
     // (1) 기본 설정
@@ -33,95 +35,19 @@ int main(int argc, char** argv) {
 	Util::setOutstream(&cout);
 	Util::setPrint(false);
 
-    // (2) 테스트를 위한 testThread
-    //     추후에는 없어질 예정.
-    thread testThread = thread(network_test);
+    // (2) Producer&Consumer를 생성.
+    Worker<float>::launchThreads(CONSUMER_THREAD_COUNT);
 
-    // (3) Producer&Consumer를 생성.
-    Worker<float>* worker = new Worker<float>();
-    worker->launchThread(CONSUMER_THREAD_COUNT);
+    // (3) Listener & Sess threads를 생성.
+    Communicator::launchThreads(SESS_THREAD_COUNT);
 
-    // (4) 테스트 쓰레드 종료 확인
-    testThread.join();
+    // (4) 종료
+    Worker<float>::joinThreads();
+    Communicator::joinThreads();
 
-    // (5) 종료
 	cout << "NN engine ends" << endl;
 	return 0;
 }
-
-void network_test() {
-
-    // (1) Worker의 준비가 될때까지 기다린다.
-    while (!Worker<float>::isReady()) {
-        sleep(1);
-    }
-
-    // (2) Network를 생성한다.
-    const uint32_t batchSize = 50;
-	//const uint32_t batchSize = 1000;
-	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
-	const uint32_t testInterval = 1000000;			// 10000(목표 샘플수) / batchSize
-	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
-	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
-	const uint32_t stepSize = 100000;
-	const float baseLearningRate = 0.001f;
-	const float weightDecay = 0.0002f;
-	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
-	const float gamma = 0.1;
-	const LRPolicy lrPolicy = LRPolicy::Step;
-
-
-	cout << "batchSize: " << batchSize << endl;
-	cout << "testInterval: " << testInterval << endl;
-	cout << "saveInterval: " << saveInterval << endl;
-	cout << "baseLearningRate: " << baseLearningRate << endl;
-	cout << "weightDecay: " << weightDecay << endl;
-	cout << "momentum: " << momentum << endl;
-	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
-
-	DataSet<float>* dataSet = createMnistDataSet<float>();
-	dataSet->load();
-
-	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
-	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
-	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::WRITE_ONLY);
-
-	NetworkConfig<float>* networkConfig =
-			(new NetworkConfig<float>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->stepSize(stepSize)
-			->clipGradientsLevel(clipGradientsLevel)
-			->lrPolicy(lrPolicy)
-			->gamma(gamma)
-			->dataSet(dataSet)
-			->evaluations({top1Evaluation, top5Evaluation})
-			->savePathPrefix("/home/jhkim/network")
-			->networkListeners({networkListener})
-			->build();
-
-	Util::printVramInfo();
-
-	Network<float>* network = new Network<float>(networkConfig);
-
-    // (3) Job을 생성한다.
-    Job<float>* job1 = new Job<float>(Job<float>::BuildLayer, network, 0);
-    Job<float>* job2 = new Job<float>(Job<float>::TrainNetwork, network, 2);
-    Job<float>* job3 = new Job<float>(Job<float>::CleanupLayer, network, 0);
-    Job<float>* job4 = new Job<float>(Job<float>::HaltMachine, network, 0);
-
-    // (4) Job을 집어 넣는다.
-    Worker<float>::pushJob(job1);
-    Worker<float>::pushJob(job2);
-    Worker<float>::pushJob(job3);
-    Worker<float>::pushJob(job4);
-}
-
 
 void network_load() {
 	Cuda::create(0);
@@ -149,3 +75,11 @@ void network_load() {
 
 	Cuda::destroy();
 }
+#else
+
+const char          SERVER_HOSTNAME[] = {"localhost"};
+int main(int argc, char** argv) {
+    Client::clientMain(SERVER_HOSTNAME, Communicator::LISTENER_PORT);
+	return 0;
+}
+#endif

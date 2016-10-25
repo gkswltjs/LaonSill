@@ -18,10 +18,12 @@
 #include <map>
 #include "SessContext.h"
 #include "MessageHeader.h"
+#include "Serializer.h"
 
 using namespace std;
 
 class Communicator {
+public:
     enum CommRetType : int {
         Success = 0,
         RecvOnlyHeader,         // Big Message
@@ -32,12 +34,18 @@ class Communicator {
         SendFailed,
     };
 
-public:
                                 Communicator() {}
     virtual                    ~Communicator() {}
-    static void                 launchThreads(int sessCount);
-    static void                 cleanupResources();
 
+    static const int            LISTENER_PORT;
+
+    static void                 launchThreads(int sessCount);
+    static void                 joinThreads();
+    static void                 halt();
+
+    static CommRetType          recvMessage(int fd, MessageHeader& msgHdr, char* buf,
+                                    bool skipMsgPeek);
+    static CommRetType          sendMessage(int fd, MessageHeader msgHdr, char* buf);
 private: 
     static int                  sessCount;
 
@@ -63,22 +71,24 @@ private:
     static void                 listenerThread();
     static void                 sessThread(int sessId);
 
-    static void                 serializeMsgHdr(MessageHeader msgHdr, char* msg);
-    static void                 deserializeMsgHdr(MessageHeader& msgHdr, char* msg);
-
     static bool                 handleWelcomeMsg(MessageHeader recvMsgHdr, char* recvMsg,
                                     MessageHeader& replyMsgHdr, char* replyMsg, 
                                     char*& replyBigMsg);
+    static bool 		        handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMsg,
+            						MessageHeader& replyMsgHdr, char* replyMsg,
+                                    char*& replyBigMsg);
+    static bool 				handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
+                					MessageHeader& replyMsgHdr, char* replyMsg,
+                                    char*& replyBigMsg);
     static bool                 handleHaltMachineMsg(MessageHeader recvMsgHdr, char* recvMsg,
-                                    MessageHeader& replyMsgHdr, char* replyMsg, 
+                                    MessageHeader& replyMsgHdr, char* replyMsg,
                                     char*& replyBigMsg);
     static bool                 handleGoodByeMsg(MessageHeader recvMsgHdr, char* recvMsg,
-                                    MessageHeader& replyMsgHdr, char* replyMsg, 
+                                    MessageHeader& replyMsgHdr, char* replyMsg,
                                     char*& replyBigMsg);
 
-    static CommRetType          recvMessage(int fd, MessageHeader& msgHdr, char* buf,
-                                    bool skipMsgPeek);
-    static CommRetType          sendMessage(int fd, MessageHeader msgHdr, char* buf);
+    static volatile bool        halting;
+    static atomic<int>          sessHaltCount;
 };
 
 #endif /* COMMUNICATOR_H */

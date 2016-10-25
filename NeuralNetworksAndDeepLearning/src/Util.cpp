@@ -46,7 +46,7 @@ void log_print(FILE *fp, int log_level, const char* filename, const int line, co
 		vsprintf(&log[log_index], fmt, list );
 		va_end(list);
 
-		fprintf(fp, log);
+		fprintf(fp, "%s", log);
 		fputc('\n', fp);
 
 		fflush(fp);

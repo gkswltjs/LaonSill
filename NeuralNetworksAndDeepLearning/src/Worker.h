@@ -21,6 +21,8 @@
 #include "Job.h"
 #include "network/Network.h"
 
+template <typename Dtype> class Network;
+
 using namespace std;
 
 class ConsumerStatus {
@@ -51,24 +53,27 @@ public:
     /**
      * consumer에 대한 정보를 담고 있는 변수들
      */
-	static int consumerCount;
-	static thread_local int consumerIdx;
+	static int                          consumerCount;
+	static thread_local int             consumerIdx;
 
     /**
      * @return      마지막으로 깨어난 consumer는 true, 그 외에는 false를 반환
      */
-    static bool waitPeer();
-    static void wakeupPeer();
+    static bool                         waitPeer();
+    static void                         wakeupPeer();
 
 	/**
 	 * @brief producer, consumer 쓰레드를 실행한다.
 	 * @param network producer 쓰레드가 담당할 network
 	 */
-	static void launchThread(int consumerCount);
+	static void                         launchThreads(int consumerCount);
+    static void                         joinThreads();
+    static void                         pushJob(Job* job);
+    static bool                         isReady();
 
-    static void pushJob(Job<Dtype>* job);
+    static int                          createNetwork();
+    static Network<Dtype>*              getNetwork(int networkId);
 
-    static bool isReady();
 private:
     /**
      * Consumer간의 동기화를 지원하기 위한 변수들
@@ -78,47 +83,51 @@ private:
      * 작업은 모든 A라는 작업이 종료가 되고 수행이 되어야 한다. 이 때 n개의 consumer가 A라는
      * 작업을 끝내고, B라는 작업을 수행하기 위한 동기화가 필요하다. 
      */
-    static atomic<int> runningPeerCount;
-	static mutex peerMutex;
-	static condition_variable peerCondVar;
-	static thread_local atomic<long> peerStep;
-    static atomic<long> peerDoneStep;
+    static atomic<int>                  runningPeerCount;
+	static mutex                        peerMutex;
+	static condition_variable           peerCondVar;
+	static thread_local atomic<long>    peerStep;
+    static atomic<long>                 peerDoneStep;
 
     /**
      * consumer에 대한 job control을 위한 변수들
      */
-	static mutex consumerMutex;
-	static condition_variable consumerCondVar;
+	static mutex                        consumerMutex;
+	static condition_variable           consumerCondVar;
     static vector<ConsumerStatus::Type> consumerStatuses;
-    static thread_local long consumerJobStep;
-    static long consumerCurJobStep;
-    static atomic<int> wakeupConsumerJobCount;
-    static volatile void* consumerJob;
+    static thread_local long            consumerJobStep;
+    static long                         consumerCurJobStep;
+    static atomic<int>                  wakeupConsumerJobCount;
+    static volatile void*               consumerJob;
 
     /**
      * producer에 대한 job control을 위한 변수들
      */
-	static mutex producerMutex;
-	static condition_variable producerCondVar;
+	static mutex                        producerMutex;
+	static condition_variable           producerCondVar;
 
-    static list<Job<Dtype>*> jobQueue;
-    static mutex jobQueueMutex;
+    static list<Job*>                   jobQueue;
+    static mutex                        jobQueueMutex;
 
-    static atomic<int> readyCount;
+    static atomic<int>                  readyCount;
 
-	static thread_local int gpuIdx;
+	static thread_local int             gpuIdx;
 
-    static Job<Dtype>* popJob();
+    static Job*                         popJob();
 
-    static void buildLayer(Network<Dtype>* network);
-    static void trainNetwork(Network<Dtype>* network, int maxEpochs);
-    static void cleanupLayer(Network<Dtype>* network); 
+    static void                         buildLayer(Network<Dtype>* network);
+    static void                         trainNetwork(Network<Dtype>* network, int maxEpochs);
+    static void                         cleanupLayer(Network<Dtype>* network); 
 
-	static void producerThread();
-	static void consumerThread(int consumerIdx, int gpuIdx);
+	static void                         producerThread();
+	static void                         consumerThread(int consumerIdx, int gpuIdx);
 
-	static thread* producer;
-	static vector<thread> consumers;
+	static thread*                      producer;
+	static vector<thread>               consumers;
+
+    static vector<Network<Dtype>*>      networks;
+    static int                          networkGenId;
+    static mutex                        networkMutex;
 };
 
 #endif /* WORKER_H_ */

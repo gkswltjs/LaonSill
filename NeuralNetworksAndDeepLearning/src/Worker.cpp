@@ -52,7 +52,7 @@ template<typename Dtype>
 condition_variable Worker<Dtype>::producerCondVar;
 
 template <typename Dtype>
-list<Job<Dtype>*> Worker<Dtype>::jobQueue;
+list<Job*> Worker<Dtype>::jobQueue;
 template <typename Dtype>
 mutex Worker<Dtype>::jobQueueMutex;
 
@@ -66,6 +66,13 @@ vector<thread> Worker<Dtype>::consumers;
 
 template<typename Dtype>
 atomic<int> Worker<Dtype>::readyCount;
+
+template<typename Dtype>
+vector<Network<Dtype>*> Worker<Dtype>::networks;
+template<typename Dtype>
+int Worker<Dtype>::networkGenId;
+template<typename Dtype>
+mutex Worker<Dtype>::networkMutex;
 
 template <typename Dtype>
 bool Worker<Dtype>::isReady() {
@@ -91,6 +98,8 @@ void Worker<Dtype>::producerThread() {
     while (!Worker<Dtype>::isReady()) {
         sleep(0);
     }
+
+    cout << "producer thread starts main loop" << endl;
 
     // (2) 메인 루프
     while (true) {
@@ -125,7 +134,7 @@ void Worker<Dtype>::producerThread() {
         if (!canStartNewJob)
             continue;
 
-        Job<Dtype>* job = popJob();
+        Job* job = popJob();
         if (job == NULL)
             continue;
 
@@ -152,7 +161,7 @@ void Worker<Dtype>::producerThread() {
         }
 
         // (2-5) 종료를 요청한 작업인 경우 종료 한다.
-        if (job->getType() == Job<Dtype>::HaltMachine)
+        if (job->getType() == Job::HaltMachine)
             break;
     }
 
@@ -174,6 +183,8 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
+	cout << "consumer_thread #" << consumerIdx << " starts main loop" << endl;
+
     while (doLoop) {
         unique_lock<mutex> consumerLock(Worker<Dtype>::consumerMutex);
         Worker<Dtype>::consumerCondVar.wait(consumerLock,
@@ -185,19 +196,19 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
         atomic_store(&Worker<Dtype>::peerStep, 0L);
 
         Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Running;
-        Job<Dtype>* job = (Job<Dtype>*)(Worker::consumerJob);
+        Job* job = (Job*)Worker::consumerJob;
 
         switch (job->getType()) {
-        case Job<Dtype>::BuildLayer:
-            buildLayer(job->getNetwork());
+        case Job::BuildLayer:
+            buildLayer((Network<Dtype>*)(job->getNetwork()));
             break;
-        case Job<Dtype>::TrainNetwork:
-            trainNetwork(job->getNetwork(), job->getArg1());
+        case Job::TrainNetwork:
+            trainNetwork((Network<Dtype>*)job->getNetwork(), job->getArg1());
             break;
-        case Job<Dtype>::CleanupLayer:
-            cleanupLayer(job->getNetwork());
+        case Job::CleanupLayer:
+            cleanupLayer((Network<Dtype>*)job->getNetwork());
             break;
-        case Job<Dtype>::HaltMachine:
+        case Job::HaltMachine:
             doLoop = false;
             Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
             break;
@@ -206,6 +217,11 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
         }
 
         Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
+        // resource 해제
+        if (atomic_fetch_sub(&job->refCnt, 1) == 1) {
+            delete job;
+            job = NULL;
+        }
     }
 
 	// 리소스 정리
@@ -216,7 +232,7 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
 }
 
 template <typename Dtype>
-void Worker<Dtype>::launchThread(int consumerCount) {
+void Worker<Dtype>::launchThreads(int consumerCount) {
     // (1) Cuda를 생성한다.
     Cuda::create(consumerCount);
 	cout << "Cuda creation done ... " << endl;
@@ -232,20 +248,26 @@ void Worker<Dtype>::launchThread(int consumerCount) {
     Worker<Dtype>::consumerStatuses.assign(consumerCount, ConsumerStatus::Waiting);
 
 	// (3) producer 쓰레드를 생성한다.
-	producer = new thread(producerThread);
+    Worker<Dtype>::producer = new thread(producerThread);
     cout << "launchThread GPUCount " << Worker<Dtype>::consumerCount << endl;
 
 	// (4) consumer 쓰레드들을 생성한다.
 	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
-		consumers.push_back(thread(consumerThread, i, Cuda::availableGPU[i]));
+		Worker<Dtype>::consumers.push_back(thread(consumerThread, i, Cuda::availableGPU[i]));
 	}
+}
 
-    // (5) producer, consumer 쓰레드가 종료하기를 기다린다.
+template <typename Dtype>
+void Worker<Dtype>::joinThreads() {
 	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
-		consumers[i].join();
+		Worker<Dtype>::consumers[i].join();
 	}
-	producer->join();
-	free(producer);
+    cout << "consumer threads end" << endl;
+
+	Worker<Dtype>::producer->join();
+	delete Worker<Dtype>::producer;
+    Worker<Dtype>::producer = NULL;
+    cout << "producer thread ends" << endl;
 }
 
 template <typename Dtype>
@@ -275,7 +297,7 @@ void Worker<Dtype>::wakeupPeer() {
 }
 
 template <typename Dtype>
-void Worker<Dtype>::pushJob(Job<Dtype>* job) {
+void Worker<Dtype>::pushJob(Job* job) {
     Worker<Dtype>::jobQueueMutex.lock();
     Worker<Dtype>::jobQueue.push_back(job);
     Worker<Dtype>::jobQueueMutex.unlock();
@@ -286,8 +308,8 @@ void Worker<Dtype>::pushJob(Job<Dtype>* job) {
 }
 
 template <typename Dtype>
-Job<Dtype>* Worker<Dtype>::popJob() {
-    Job<Dtype>* popedJob;
+Job* Worker<Dtype>::popJob() {
+    Job* popedJob;
     Worker<Dtype>::jobQueueMutex.lock();
     
     if (Worker<Dtype>::jobQueue.empty()) {
@@ -298,6 +320,8 @@ Job<Dtype>* Worker<Dtype>::popJob() {
     popedJob = Worker<Dtype>::jobQueue.front();
     Worker<Dtype>::jobQueue.pop_front();
     Worker<Dtype>::jobQueueMutex.unlock();
+
+    atomic_store(&popedJob->refCnt, Worker<Dtype>::consumerCount);
 
     return popedJob;
 }
@@ -341,6 +365,81 @@ void Worker<Dtype>::trainNetwork(Network<Dtype>* network, int maxEpochs) {
 template <typename Dtype>
 void Worker<Dtype>::cleanupLayer(Network<Dtype>* network) {
     delete network->getLayersConfig()->_inputLayer;
+}
+
+template <typename Dtype>
+int Worker<Dtype>::createNetwork() {
+    // XXX: network를 어떻게 구성할지에 대한 정보를 받아야 한다.
+    //      또한, 그 정보를 토대로 네트워크를 구성해야 한다.
+    //      Evaluation과 Dataset, Network Listener도 분리 시켜야 한다.
+    const uint32_t batchSize = 50;
+	//const uint32_t batchSize = 1000;
+	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 1000000;			// 10000(목표 샘플수) / batchSize
+	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
+	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
+	const uint32_t stepSize = 100000;
+	const float baseLearningRate = 0.001f;
+	const float weightDecay = 0.0002f;
+	const float momentum = 0.9f;
+	const float clipGradientsLevel = 0.0f;
+	const float gamma = 0.1;
+	const LRPolicy lrPolicy = LRPolicy::Step;
+
+
+	cout << "batchSize: " << batchSize << endl;
+	cout << "testInterval: " << testInterval << endl;
+	cout << "saveInterval: " << saveInterval << endl;
+	cout << "baseLearningRate: " << baseLearningRate << endl;
+	cout << "weightDecay: " << weightDecay << endl;
+	cout << "momentum: " << momentum << endl;
+	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
+
+	DataSet<Dtype>* dataSet = createMnistDataSet<Dtype>();
+	dataSet->load();
+
+	Evaluation<Dtype>* top1Evaluation = new Top1Evaluation<Dtype>();
+	Evaluation<Dtype>* top5Evaluation = new Top5Evaluation<Dtype>();
+	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::WRITE_ONLY);
+
+	NetworkConfig<Dtype>* networkConfig =
+			(new typename NetworkConfig<Dtype>::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
+			->stepSize(stepSize)
+			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->gamma(gamma)
+			->dataSet(dataSet)
+			->evaluations({top1Evaluation, top5Evaluation})
+			->savePathPrefix("/home/jhkim/network")
+			->networkListeners({networkListener})
+			->build();
+
+	Util::printVramInfo();
+
+
+    // 네트워크를 등록한다.
+    // TODO: 현재는 증가하는 방식으로만 등록을 시키고 있다. 
+    //      pool 형태로 돌려쓸 수 있도록 수정이 필요할지 고민해보자.
+	Network<Dtype>* network = new Network<Dtype>(networkConfig);
+    unique_lock<mutex> networkLock(Worker<Dtype>::networkMutex);
+    int networkId = Worker<Dtype>::networkGenId;
+    Worker<Dtype>::networks.push_back(network);
+    Worker<Dtype>::networkGenId += 1;
+    networkLock.unlock();
+
+    return networkId;
+}
+
+template <typename Dtype>
+Network<Dtype>* Worker<Dtype>::getNetwork(int networkId) {
+    assert(networkId < Worker::networks.size());
+    return Worker::networks[networkId];
 }
 
 template class Worker<float>;
