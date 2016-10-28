@@ -27,18 +27,18 @@ public:
         this->network = network;
         this->arg1 = arg1;
     };
-    virtual ~Job()                      {};
+    virtual        ~Job() {};
 
-    JobType getType() const             { return jobType; }
-    void* getNetwork() const            { return network; }
-    int getArg1() const                 { return arg1; }
+    JobType         getType() const { return jobType; }
+    void*           getNetwork() const { return network; }
+    int             getArg1() const { return arg1; }
 
-    atomic<int>                         refCnt;
+    atomic<int>     refCnt;
 
 private:
-    JobType                             jobType;
-    void*                               network;
-    int                                 arg1;
+    JobType         jobType;
+    void*           network;
+    int             arg1;
     
 };
 

@@ -534,9 +534,6 @@ Communicator::CommRetType Communicator::recvMessage(
             return Communicator::RecvOnlyHeader;
     }
 
-    cout << "recv Message. Hdr=" << (int)msgHdr.getMsgType() << ",Len=" <<
-        (int)msgHdr.getMsgLen() << endl;
-
     // (2) recv message
     int remain = msgHdr.getMsgLen();
     int offset = 0;
@@ -576,9 +573,6 @@ Communicator::CommRetType Communicator::sendMessage(
     ssize_t sendRet;
     int remain = msgHdr.getMsgLen();
     int offset = 0;
-
-    cout << "send Message. Hdr=" << (int)msgHdr.getMsgType() << ",Len=" <<
-        (int)msgHdr.getMsgLen() << endl;
 
     while (remain != 0) {
         assert(remain >= 0);

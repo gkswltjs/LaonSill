@@ -23,7 +23,7 @@ public:
         this->running = false;
         this->active = false;
     }
-    virtual ~SessContext() {}
+    virtual            ~SessContext() {}
     int                 sessId;
     mutex               sessMutex;
     condition_variable  sessCondVar;

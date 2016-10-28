@@ -17,8 +17,8 @@ using namespace std;
 
 class Client {
 public:
-    Client()            {}
-    virtual ~Client()   {}
+                        Client() {}
+    virtual            ~Client() {}
     static void         clientMain(const char* hostname, int portno);
 private:
     static void         pushJob(int fd, char* buf, int jobType, int networkId,

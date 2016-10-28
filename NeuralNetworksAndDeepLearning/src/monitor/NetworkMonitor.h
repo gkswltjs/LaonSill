@@ -19,6 +19,7 @@
 #include "../debug/StatLogger.h"
 #include "../debug/StatGraphPlotter.h"
 #include "../debug/StatFileWriter.h"
+#include "../param/Param.h"
 
 using namespace std;
 
@@ -55,10 +56,11 @@ public:
 		if(mode == WRITE_ONLY || mode == PLOT_AND_WRITE) {
 			const string postfix = now();
 
-			costLogger.push_back(new StatFileWriter("./cost_"+postfix+".csv"));
-			accuracyLogger.push_back(new StatFileWriter("./accuracy_"+postfix+".csv"));
-			gradSumsqLogger.push_back(new StatFileWriter("./gradSumsq_"+postfix+".csv"));
-			dataSumsqLogger.push_back(new StatFileWriter("./dataSumsq_"+postfix+".csv"));
+            cout << "CSV path : " << string(SPARAM(STATFILE_OUTPUT_DIR))+"./cost_"+postfix+".csv" << endl;
+			costLogger.push_back(new StatFileWriter(string(SPARAM(STATFILE_OUTPUT_DIR))+"./cost_"+postfix+".csv"));
+			accuracyLogger.push_back(new StatFileWriter(string(SPARAM(STATFILE_OUTPUT_DIR))+"./accuracy_"+postfix+".csv"));
+			gradSumsqLogger.push_back(new StatFileWriter(string(SPARAM(STATFILE_OUTPUT_DIR))+"./gradSumsq_"+postfix+".csv"));
+			dataSumsqLogger.push_back(new StatFileWriter(string(SPARAM(STATFILE_OUTPUT_DIR))+"./dataSumsq_"+postfix+".csv"));
 		}
 	}
 	virtual ~NetworkMonitor() {

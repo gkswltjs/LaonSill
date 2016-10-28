@@ -9,6 +9,46 @@ def checkParamProperty(paramDic, param, propertyName):
         print "ERROR: param %s does not have %s property" % (param, propertyName)
         exit(-1)
 
+# deprecated function..
+def getRangeValue(paramName, typeStr, value):
+    intList = ["uint8_t", "int8_t", "uint16_t", "int16_t",\
+              "uint32_t", "int32_t", "uint64_t", "int64_t"]
+    realList = ["float", "double", "long double"]
+   
+    try:
+        if typeStr in intList:
+            return int(value)
+        elif typeStr in realList:
+            return real(value)
+        else:
+            print "ERROR: only integer or real type has range value.\
+                param=%s, type=%s, range=%s" % (paramName, typeStr, value)
+            exit(-1)
+
+    except Exception as e:
+        print "ERROR: range value parsing failed. param=%s, type=%s, range=%s"\
+            % (paramName, typeStr, value)
+        exit(-1)
+
+# XXX:  we only considers Linux 64bit platform.
+def getValueSize(typeStr):
+    if typeStr in ["uint8_t", "int8_t"]:
+        return 1
+    elif typeStr in ["uint16_t", "int16_t"]:
+        return 2
+    elif typeStr in ["uint32_t", "int32_t"]:
+        return 4
+    elif typeStr in ["uint64_t", "int64_t"]:
+        return 8
+    elif typeStr in ["float"]:
+        return 4
+    elif typeStr in ["double"]:
+        return 8
+    elif typeStr in ["long double"]:
+        return 16
+    elif typeStr in ["bool"]:
+        return 1
+
 # (1) load paramDef.json
 try:
     jsonFile = open('paramDef.json', 'r')
@@ -28,7 +68,6 @@ for param in paramDic:
     checkParamProperty(paramDic, param, "MUTABLE")
     checkParamProperty(paramDic, param, "SCOPE")
     checkParamProperty(paramDic, param, "TYPE")
-    checkParamProperty(paramDic, param, "RANGE")
     checkParamProperty(paramDic, param, "DEFAULT")
 
 if not "SESS_COUNT" in paramDic:
@@ -50,10 +89,16 @@ headerTopSentences = [\
 "#define PARAM_H_",\
 "",\
 "#include <stdint.h>",\
+"#include <vector>",\
+"#include <string>",\
+'#include "ParamDef.h"',\
+'#include "ParamMgmt.h"',\
 "",\
-"#define SysParam(n)            Param::_##n",\
-"#define SessParam(n)           Param::_sess_##n",\
-"#define ParamDesc(n)           Param::_desc_##n",\
+"using namespace std;",\
+"",\
+"class ParamMgmt;",\
+"",\
+"#define SPARAM(n)              Param::_##n",\
 "",\
 "class Param {",\
 "public:",\
@@ -63,7 +108,7 @@ headerTopSentences = [\
 ]
 
 headerBottomSentences = [\
-"",\
+"    static void    fillParamDefMap(map<string, ParamDef*>& paramDefMap);\n",\
 "};",\
 "",\
 "#endif /* PARAM_H_ */"]
@@ -84,51 +129,54 @@ try:
         headerFile.write(line + "\n")
 
     for param in paramDic:
-        sessScope = False
+        # (1) parse parameter
+        desc = paramDic[param]["DESC"]
+        mandatory = paramDic[param]["MANDATORY"]
+        mutable = paramDic[param]["MUTABLE"]
 
+        sessScope = False
         if paramDic[param]["SCOPE"] == "SESSION":
             sessScope = True
 
-        if paramDic[param]["MUTABLE"] == True:
-            headerFile.write("    static volatile ")
-        else:
-            headerFile.write("    static ")
-
+        arrayString = ""
+        typeString = ""
         if paramDic[param]["TYPE"] in typeDic:
-            headerFile.write("%s " % typeDic[paramDic[param]["TYPE"]])
+            typeString = typeDic[paramDic[param]["TYPE"]]
         elif "CHAR" in paramDic[param]["TYPE"]:
             # XXX: needs error-check
             arrayCount = (int)(paramDic[param]["TYPE"].replace(")", "$")\
                                 .replace("(", "$").split("$")[1])
-            headerFile.write("char[%d] " % arrayCount)
+            typeString = "char"
+            arrayString = "[%d]" % arrayCount
         else:
             print "ERROR: invalid param type(%s) for param(%s)" %\
                 (paramDic[param]["TYPE"], param)
             exit(-1)
 
-        headerFile.write("_%s;\n" % param)
+        defaultValue = paramDic[param]["DEFAULT"]
 
+        # (2) generate parameter comment
+        headerFile.write('    // PARAM NAME : %s\n' % param)
+
+        # (3) generate system-scope variable
+        if sessScope == False:
+            if mutable == True:
+                headerFile.write("    static volatile %s _%s%s;\n"\
+                    % (typeString, param, arrayString))
+            else:
+                headerFile.write("    static %s _%s%s;\n"\
+                    % (typeString, param, arrayString))
+            
+        # (4) generate sess-scope variables
         if sessScope == True:
-            if paramDic[param]["MUTABLE"] == True:
-                headerFile.write("    static volatile thread_local ")
+            if mutable == True:
+                headerFile.write("    static volatile thread_local %s _%s%s;\n"\
+                    % (typeString, param, arrayString))
             else:
-                headerFile.write("    static thread_local ")
+                headerFile.write("    static thread_local %s _%s%s;\n"\
+                    % (typeString, param, arrayString))
 
-            if paramDic[param]["TYPE"] in typeDic:
-                headerFile.write("%s " % typeDic[paramDic[param]["TYPE"]])
-            elif "CHAR" in paramDic[param]["TYPE"]:
-                # XXX: needs error-check
-                arrayCount = (int)(paramDic[param]["TYPE"].replace(")", "$")\
-                                    .replace("(", "$").split("$")[1])
-                headerFile.write("char[%d] " % arrayCount)
-            else:
-                print "ERROR: invalid param type(%s) for param(%s)" %\
-                    (paramDic[param]["TYPE"], param)
-                exit(-1)
-
-            headerFile.write("_sess_%s;\n" % param)
-
-        headerFile.write('    static const char* _desc_%s;\n' % param)
+        headerFile.write('\n')
 
     for line in headerBottomSentences:
         headerFile.write(line + "\n")
@@ -155,6 +203,8 @@ sourceTopSentences = [\
 '#include "Param.h"',\
 ""]
 
+paramDefList = []
+
 try:
     sourceFile = open('Param.cpp', 'w+')
 
@@ -162,51 +212,86 @@ try:
         sourceFile.write(line + "\n")
 
     for param in paramDic:
-        sessScope = False
+        # (1) parse parameter
+        desc = paramDic[param]["DESC"]
+        mandatory = paramDic[param]["MANDATORY"]
+        mutable = paramDic[param]["MUTABLE"]
 
+        sessScope = False
         if paramDic[param]["SCOPE"] == "SESSION":
             sessScope = True
 
-        if paramDic[param]["MUTABLE"] == True:
-            sourceFile.write("volatile ")
-
+        typeString = ""
+        arrayString = ""
+        typeName = paramDic[param]["TYPE"]
         if paramDic[param]["TYPE"] in typeDic:
-            sourceFile.write("%s " % typeDic[paramDic[param]["TYPE"]])
+            typeString = typeDic[paramDic[param]["TYPE"]]
+            valueLen = getValueSize(typeString)
         elif "CHAR" in paramDic[param]["TYPE"]:
             # XXX: needs error-check
             arrayCount = (int)(paramDic[param]["TYPE"].replace(")", "$")\
                                 .replace("(", "$").split("$")[1])
-            sourceFile.write("char[%d] " % arrayCount)
+            typeString = "char"
+            arrayString = "[%d]" % arrayCount
+            valueLen = arrayCount
         else:
             print "ERROR: invalid param type(%s) for param(%s)" %\
                 (paramDic[param]["TYPE"], param)
             exit(-1)
 
-        sourceFile.write("Param::_%s = %s;\n" % (param, str(paramDic[param]["DEFAULT"])))
+        defaultValue = paramDic[param]["DEFAULT"]
 
+        # (2) generate parameter comment
+        sourceFile.write('// PARAM NAME : %s\n' % param)
+
+        if "char" in typeString:
+            defaultValueStr = '{"%s"}' % str(defaultValue)
+        else:
+            defaultValueStr = '%s' % str(defaultValue)
+
+        # (3) generate system-scope variable
+        if sessScope == False:
+            if mutable == True:
+                sourceFile.write("volatile %s Param::_%s%s = %s;\n\n"\
+                    % (typeString, param, arrayString, defaultValueStr))
+            else:
+                sourceFile.write("%s Param::_%s%s = %s;\n\n"\
+                    % (typeString, param, arrayString, defaultValueStr))
+
+        # (4) generate sess-scope variables
         if sessScope == True:
-            if paramDic[param]["MUTABLE"] == True:
-                sourceFile.write("volatile thread_local ")
+            if mutable == True:
+                sourceFile.write("volatile thread_local %s Param::_%s%s = %s;\n\n"\
+                    % (typeString, param, arrayString, defaultValueStr))
             else:
-                sourceFile.write("thread_local ")
+                sourceFile.write("thread_local %s Param::_%s%s = %s;\n\n"\
+                    % (typeString, param, arrayString, defaultValueStr))
 
-            if paramDic[param]["TYPE"] in typeDic:
-                sourceFile.write("%s " % typeDic[paramDic[param]["TYPE"]])
-            elif "CHAR" in paramDic[param]["TYPE"]:
-                # XXX: needs error-check
-                arrayCount = (int)(paramDic[param]["TYPE"].replace(")", "$")\
-                                    .replace("(", "$").split("$")[1])
-                sourceFile.write("char[%d] " % arrayCount)
-            else:
-                print "ERROR: invalid param type(%s) for param(%s)" %\
-                    (paramDic[param]["TYPE"], param)
-                exit(-1)
+        paramDefList.append((param, desc, str(defaultValue), typeName, mandatory,\
+            mutable, sessScope, valueLen))
 
-            sourceFile.write("Param::_sess_%s = %s;\n" %\
-                (param, str(paramDic[param]["DEFAULT"])))
 
-        sourceFile.write('const char* Param::_desc_%s = {"%s"};\n' %\
-            (param, paramDic[param]["DESC"]))
+    # (12) prepare fillParamDefMap func() 
+    sourceFile.write("void Param::fillParamDefMap(map<string, ParamDef*>& paramDefMap) {\n")
+    for paramDef in paramDefList:
+        if "CHAR" in typeString:
+            sourceFile.write(\
+                '    paramDefMap["%s"] =\
+                \n        new ParamDef("%s",\
+                \n        "%s", "%s", %s, %s, %s, (void*)Param::_%s, %s);\n'\
+                % (str(paramDef[0]), str(paramDef[1]), str(paramDef[2]), str(paramDef[3]),\
+                str(paramDef[4]).lower(), str(paramDef[5]).lower(), str(paramDef[6]).lower(),\
+                str(paramDef[0]), str(paramDef[7])))
+        else:
+            sourceFile.write(\
+                '    paramDefMap["%s"] =\
+                \n        new ParamDef("%s",\
+                \n        "%s", "%s", %s, %s, %s, (void*)&Param::_%s, %s);\n'\
+                % (str(paramDef[0]), str(paramDef[1]), str(paramDef[2]), str(paramDef[3]),\
+                str(paramDef[4]).lower(), str(paramDef[5]).lower(), str(paramDef[6]).lower(),\
+                str(paramDef[0]), str(paramDef[7])))
+            
+    sourceFile.write("}\n\n")
     
 except Exception as e:
     print str(e)

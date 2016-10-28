@@ -83,6 +83,7 @@ void Client::clientMain(const char* hostname, int portno) {
     }
 
     // (3-1) send welcome msg
+    cout << "send welcome msg" << endl;
     char* buf = (char*)malloc(MessageHeader::MESSAGE_DEFAULT_SIZE);
     assert(buf != NULL);
 
@@ -94,11 +95,13 @@ void Client::clientMain(const char* hostname, int portno) {
     assert(ret == Communicator::Success);
 
     // (3-2) recv welcome reply msg
+    cout << "recv welcome msg" << endl;
     ret = Communicator::recvMessage(sockFd, msgHdr, buf, false);
     assert(ret == Communicator::Success);
     assert(msgHdr.getMsgType() == MessageHeader::WelcomeReply);
 
     // (4-1) send create network msg
+    cout << "send create-network msg" << endl;
     msgHdr.setMsgType(MessageHeader::CreateNetwork);
     msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
     Serializer::serializeMsgHdr(msgHdr, buf);
@@ -112,19 +115,23 @@ void Client::clientMain(const char* hostname, int portno) {
     assert(msgHdr.getMsgType() == MessageHeader::CreateNetworkReply);
     int networkId;
     Serializer::deserializeInt(networkId, MessageHeader::MESSAGE_HEADER_SIZE, buf);
-    cout << "network ID :" << networkId << endl;
+    cout << "recv create-network msg & created network ID is " << networkId << endl;
 
     // (5-1) build layer
+    cout << "push build-layer job" << endl;
     Client::pushJob(sockFd, buf, (int)Job::BuildLayer, networkId, 0);
     
     // (5-2) train network
+    cout << "push train-network job" << endl;
     Client::pushJob(sockFd, buf, (int)Job::TrainNetwork, networkId, 2);
         // 2 means max epoch count
 
     // (5-3) cleanup layer
+    cout << "push cleanup-layer job" << endl;
     Client::pushJob(sockFd, buf, (int)Job::CleanupLayer, networkId, 0);
 
     // (6) send Halt Msg
+    cout << "send halt msg" << endl;
     msgHdr.setMsgType(MessageHeader::HaltMachine);
     msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
     Serializer::serializeMsgHdr(msgHdr, buf);

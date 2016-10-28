@@ -11,7 +11,7 @@ $ ./genParam.py
     nsight에서 파일 refresh 이후에 빌드를 하면 Param class가 고려된 makefile이 만들어 진다.
 
 * 파라미터 추가 방법
-paramDef.json 파일에 파라미터 이름과 그것의 7가지 속성을 json format에 맞게 기입한다. 
+paramDef.json 파일에 파라미터 이름과 그것의 6가지 속성을 json format에 맞게 기입한다. 
 
  - 2개 parameter(BEST_SOCCER_PLAYER_NAME, SOCCER_PLAYER_RETIRE_AGE) 추가 예제
 [paramDef.json]
@@ -23,7 +23,6 @@ paramDef.json 파일에 파라미터 이름과 그것의 7가지 속성을 json 
         "MUTABLE" : false,
         "SCOPE" : "SYSTEM",
         "TYPE" : "CHAR(128)",
-        "RANGE" : "",
         "DEFAULT" : "moonhoen lee" 
 },
 
@@ -34,14 +33,13 @@ paramDef.json 파일에 파라미터 이름과 그것의 7가지 속성을 json 
         "MUTABLE" : true,
         "SCOPE" : "SESSION",
         "TYPE" : "UINT32",
-        "RANGE" : "40~55",
         "DEFAULT" : 42 
 }
 
 }
 
 * 파라미터 설명
-총 7개의 파라미터가 있다. 설명은 아래와 같다:
+총 6개의 파라미터가 있다. 설명은 아래와 같다:
 (1) DESC : 파라미터에 대한 설명이며, 영어로 작성 한다.
            (문법적인 측면은 고려하지 말고, 이걸로 스트레스를 절대 받지 말자.
             구글번역기 돌려서 기입해도 무방하다.
@@ -53,12 +51,10 @@ paramDef.json 파일에 파라미터 이름과 그것의 7가지 속성을 json 
            다른 파라미터 값을 적용할 수 있다는 것을 의미.
 (5) TYPE : 파라미터 값의 타입을 정의.
            정수형으로는 INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64를 지원
-           실수형으로는 FLOAT, DOUBLE, LONDDOUBLE을 지원
+           실수형으로는 FLOAT, DOUBLE, LONGDOUBLE을 지원
            문자열형은 반드시 문자열 최대 길이를 명시해야 함. (ex. CHAR(32))
            그 외에 BOOL 형을 지원 (true/false)
-(6) RANGE : 값의 범위를 정의. 사용자가 잘못된 값을 사용하면 오류를 내기 위함
-            BOOL 형이나 문자열형의 경우에는 RANGE가 의미가 없기 때문에 ""으로 적어야 함.
-(7) DEFAULT : 기본 값을 정의. MANDATORY가 false이면 반드시 기본 값을 명시해야 함.
+(6) DEFAULT : 기본 값을 정의. MANDATORY가 false이면 반드시 기본 값을 명시해야 함.
               MANDATORY가 true이면 DEFAULT는 ""으로 적어야 함.
 
 ※ 주의사항
@@ -68,6 +64,3 @@ paramDef.json 파일에 파라미터 이름과 그것의 7가지 속성을 json 
 
 (2) Param.cpp, Param.h파일은 git에 관리되지 않아야 한다. genParam.py와 paramDef.json 파일만
   관리 되도록 주의한다.
-
-(3) SESS_COUNT 파라미터의 이름은 절대로 수정하면 안된다.
-    (이 파라미터를 기준으로 하여 Param.h, Param.cpp 파일을 생성하기 때문이다.)

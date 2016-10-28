@@ -2,7 +2,6 @@
 #include <iostream>
 #include <vector>
 
-#include "cuda/Cuda.h"
 #include "dataset/DataSet.h"
 #include "dataset/MockDataSet.h"
 #include "debug/Debug.h"
@@ -17,35 +16,38 @@
 #include "Job.h"
 #include "Communicator.h"
 #include "Client.h"
+#include "param/InitParam.h"
+#include "param/Param.h"
+
+#include "cuda/Cuda.h"
 
 using namespace std;
 
 #ifndef CLIENT_MODE
 void network_load();
 
-// XXX: 임시...
-const int CONSUMER_THREAD_COUNT = 2;
-const int SESS_THREAD_COUNT = 5;
-
 int main(int argc, char** argv) {
-    // (1) 기본 설정
-	cout << "NN engine starts" << endl;
+	cout << "SOOOA engine starts" << endl;
+    // (1) load init param
+    InitParam::init();
+
+    // (2) 기본 설정
 	cout.precision(11);
 	cout.setf(ios::fixed);
 	Util::setOutstream(&cout);
 	Util::setPrint(false);
 
-    // (2) Producer&Consumer를 생성.
-    Worker<float>::launchThreads(CONSUMER_THREAD_COUNT);
+    // (3) Producer&Consumer를 생성.
+    Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
 
-    // (3) Listener & Sess threads를 생성.
-    Communicator::launchThreads(SESS_THREAD_COUNT);
+    // (4) Listener & Sess threads를 생성.
+    Communicator::launchThreads(SPARAM(SESS_COUNT));
 
-    // (4) 종료
+    // (5) 종료
     Worker<float>::joinThreads();
     Communicator::joinThreads();
 
-	cout << "NN engine ends" << endl;
+	cout << "SOOOA engine ends" << endl;
 	return 0;
 }
 
@@ -62,7 +64,7 @@ void network_load() {
 
 	// save file 경로로 builder 생성,
 	NetworkConfig<float>::Builder* networkBuilder = new NetworkConfig<float>::Builder();
-	networkBuilder->load("/home/jhkim/network");
+	networkBuilder->load(SPARAM(NETWORK_SAVE_DIR));
 	networkBuilder->dataSet(dataSet);
 	networkBuilder->evaluations({top1Evaluation, top5Evaluation});
 

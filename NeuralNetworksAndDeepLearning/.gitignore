@@ -6,3 +6,5 @@
 /.project
 /DebugClient/
 /ReleaseClient/
+/src/param/Param.cpp
+/src/param/Param.h

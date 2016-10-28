@@ -14,6 +14,7 @@
 #include "evaluation/Top5Evaluation.h"
 #include "monitor/NetworkMonitor.h"
 #include "network/NetworkConfig.h"
+#include "param/Param.h"
 
 template<typename Dtype>
 atomic<int> Worker<Dtype>::runningPeerCount;
@@ -416,7 +417,7 @@ int Worker<Dtype>::createNetwork() {
 			->gamma(gamma)
 			->dataSet(dataSet)
 			->evaluations({top1Evaluation, top5Evaluation})
-			->savePathPrefix("/home/jhkim/network")
+			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
 			->networkListeners({networkListener})
 			->build();
 

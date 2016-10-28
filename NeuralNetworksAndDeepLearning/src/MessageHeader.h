@@ -39,18 +39,18 @@ public:
         HaltMachine = 100,
     };
 
-    MessageHeader()                     {}
-    virtual ~MessageHeader()            {}
+                MessageHeader() {}
+    virtual    ~MessageHeader() {}
 
-    int getMsgLen()                     { return this->msgLen; }
-    MsgType getMsgType()                { return this->msgType; }
+    int         getMsgLen() { return this->msgLen; }
+    MsgType     getMsgType() { return this->msgType; }
 
-    void setMsgType(MsgType msgType)    { this->msgType = msgType; }
-    void setMsgLen(int msgLen)          { this->msgLen = msgLen; }
+    void        setMsgType(MsgType msgType) { this->msgType = msgType; }
+    void        setMsgLen(int msgLen) { this->msgLen = msgLen; }
 
 private:
-    MsgType                             msgType;
-    int                                 msgLen;
+    MsgType     msgType;
+    int         msgLen;
 };
 
 #endif /* MESSAGEHEADER_H */
