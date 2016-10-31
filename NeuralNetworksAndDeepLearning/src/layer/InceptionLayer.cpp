@@ -17,6 +17,7 @@
 #include "../pooling/MaxPooling.h"
 #include "../network/Network.h"
 
+using namespace std;
 
 InceptionLayer::InceptionLayer() {
 	this->type = Layer::Inception;
@@ -311,7 +312,7 @@ void InceptionLayer::_shape(bool recursive) {
 
 	// TODO HiddenLayer에서 in_dim.batchsize()기준으로 생성...
 	// out_dim.batchsize()가 in_dim.batchsize() 대비 더 큰 경우를 따져봐야 한다.
-	//int workspaceSize = std::max(in_dim.batchsize(), out_dim.batchsize());
+	//int workspaceSize = max(in_dim.batchsize(), out_dim.batchsize());
 	//checkCudaErrors(Util::ucudaMalloc(&this->d_delta_input, sizeof(DATATYPE)*workspaceSize));
 }
 

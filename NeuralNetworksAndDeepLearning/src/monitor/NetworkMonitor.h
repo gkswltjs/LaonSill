@@ -9,20 +9,17 @@
 #ifndef MONITOR_NETWORKMONITOR_H_
 #define MONITOR_NETWORKMONITOR_H_
 
-#include <iostream>
-
 #include "NetworkListener.h"
 #include <gnuplot-iostream.h>
 #include <cmath>
 #include <cfloat>
 #include <boost/tuple/tuple.hpp>
+
+#include "../common.h"
 #include "../debug/StatLogger.h"
 #include "../debug/StatGraphPlotter.h"
 #include "../debug/StatFileWriter.h"
 #include "../param/Param.h"
-
-using namespace std;
-
 
 /**
  * @brief 네트워크 상태 모니터링 클래스
@@ -40,7 +37,7 @@ public:
 		if(mode != PLOT_ONLY &&
 				mode != WRITE_ONLY &&
 				mode != PLOT_AND_WRITE) {
-			cout << "invalid monitor mode ... " << endl;
+            std::cout << "invalid monitor mode ... " << std::endl;
 			exit(1);
 		}
 
@@ -54,13 +51,12 @@ public:
 			dataSumsqLogger.push_back(new StatGraphPlotter(250, 10));
 		}
 		if(mode == WRITE_ONLY || mode == PLOT_AND_WRITE) {
-			const string postfix = now();
+			const std::string postfix = now();
 
-            cout << "CSV path : " << string(SPARAM(STATFILE_OUTPUT_DIR))+"./cost_"+postfix+".csv" << endl;
-			costLogger.push_back(new StatFileWriter(string(SPARAM(STATFILE_OUTPUT_DIR))+"./cost_"+postfix+".csv"));
-			accuracyLogger.push_back(new StatFileWriter(string(SPARAM(STATFILE_OUTPUT_DIR))+"./accuracy_"+postfix+".csv"));
-			gradSumsqLogger.push_back(new StatFileWriter(string(SPARAM(STATFILE_OUTPUT_DIR))+"./gradSumsq_"+postfix+".csv"));
-			dataSumsqLogger.push_back(new StatFileWriter(string(SPARAM(STATFILE_OUTPUT_DIR))+"./dataSumsq_"+postfix+".csv"));
+			costLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"./cost_"+postfix+".csv"));
+			accuracyLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"./accuracy_"+postfix+".csv"));
+			gradSumsqLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"./gradSumsq_"+postfix+".csv"));
+			dataSumsqLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"./dataSumsq_"+postfix+".csv"));
 		}
 	}
 	virtual ~NetworkMonitor() {
@@ -76,22 +72,22 @@ public:
 		dataSumsqLogger.clear();
 	}
 
-	void onCostComputed(const uint32_t index, const string name, const double cost) {
+	void onCostComputed(const uint32_t index, const std::string name, const double cost) {
 		for(uint32_t i = 0; i < loggerSize; i++) {
 			costLogger[i]->addStat(index, name, cost);
 		}
 	}
-	void onAccuracyComputed(const uint32_t index, const string name, const double accuracy) {
+	void onAccuracyComputed(const uint32_t index, const std::string name, const double accuracy) {
 		for(uint32_t i = 0; i < loggerSize; i++) {
 			accuracyLogger[i]->addStat(index, name, accuracy);
 		}
 	}
-	void onGradSumsqComputed(const uint32_t index, const string name, const double sumsq) {
+	void onGradSumsqComputed(const uint32_t index, const std::string name, const double sumsq) {
 		for(uint32_t i = 0; i < loggerSize; i++) {
 			gradSumsqLogger[i]->addStat(index, name, sumsq);
 		}
 	}
-	void onDataSumsqComputed(const uint32_t index, const string name, const double sumsq) {
+	void onDataSumsqComputed(const uint32_t index, const std::string name, const double sumsq) {
 		for(uint32_t i = 0; i < loggerSize; i++) {
 			dataSumsqLogger[i]->addStat(index, name, sumsq);
 		}
@@ -99,26 +95,26 @@ public:
 
 
 private:
-	const string now() {
+	const std::string now() {
 		// current date/time based on current system
 		time_t now = time(0);
-		//cout << "Number of sec since January 1,1970:" << now << endl;
+		//std::cout << "Number of sec since January 1,1970:" << now << std::endl;
 		tm *ltm = localtime(&now);
 
 		// print various components of tm structure.
-		//cout << "Year" << 1900 + ltm→tm_year<<endl;
-		//cout << "Month: "<< 1 + ltm->tm_mon<< endl;
-		//cout << "Day: "<<  ltm->tm_mday << endl;
-		//cout << "Time: "<< 1 + ltm->tm_hour << ":";
-		//cout << 1 + ltm->tm_min << ":";
-		//cout << 1 + ltm->tm_sec << endl;
+		//std::cout << "Year" << 1900 + ltm→tm_year<<std::endl;
+		//std::cout << "Month: "<< 1 + ltm->tm_mon<< std::endl;
+		//std::cout << "Day: "<<  ltm->tm_mday << std::endl;
+		//std::cout << "Time: "<< 1 + ltm->tm_hour << ":";
+		//std::cout << 1 + ltm->tm_min << ":";
+		//std::cout << 1 + ltm->tm_sec << std::endl;
 
-		return to_string(1900+ltm->tm_year)+
-				to_string(1+ltm->tm_mon)+
-				to_string(ltm->tm_mday)+
-				to_string(1+ltm->tm_hour)+
-				to_string(1+ltm->tm_min)+
-				to_string(1+ltm->tm_sec);
+		return std::to_string(1900+ltm->tm_year)+
+				std::to_string(1+ltm->tm_mon)+
+				std::to_string(ltm->tm_mday)+
+				std::to_string(1+ltm->tm_hour)+
+				std::to_string(1+ltm->tm_min)+
+				std::to_string(1+ltm->tm_sec);
 
 	}
 
@@ -127,10 +123,10 @@ protected:
 	uint32_t mode;
 	uint32_t loggerSize;
 
-	vector<StatLogger*> accuracyLogger;
-	vector<StatLogger*> costLogger;
-	vector<StatLogger*> gradSumsqLogger;
-	vector<StatLogger*> dataSumsqLogger;
+    std::vector<StatLogger*> accuracyLogger;
+    std::vector<StatLogger*> costLogger;
+    std::vector<StatLogger*> gradSumsqLogger;
+    std::vector<StatLogger*> dataSumsqLogger;
 
 	/*
 	GraphPlotter accuracyPlotter;

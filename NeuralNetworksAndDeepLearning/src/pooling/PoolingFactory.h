@@ -9,6 +9,7 @@
 #ifndef POOLING_POOLINGFACTORY_H_
 #define POOLING_POOLINGFACTORY_H_
 
+#include "../common.h"
 #include "AvgPooling.h"
 #include "MaxPooling.h"
 

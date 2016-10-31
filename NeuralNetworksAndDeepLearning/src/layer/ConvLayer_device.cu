@@ -15,6 +15,8 @@
 #include "cuda_runtime.h"
 #include <algorithm>
 
+using namespace std;
+
 /**
  * dst array에 src array를 더한다.
  *
@@ -176,9 +178,9 @@ void ConvLayer<Dtype>::_shape(bool recursive) {
 			convBwdDataAlgo, &convBwdDataWorkspaceSize));
 
 	workspaceSize = 0;
-	workspaceSize = std::max(workspaceSize, convFwdWorkspaceSize);
-	workspaceSize = std::max(workspaceSize, convBwdFilterWorkspaceSize);
-	workspaceSize = std::max(workspaceSize, convBwdDataWorkspaceSize);
+	workspaceSize = max(workspaceSize, convFwdWorkspaceSize);
+	workspaceSize = max(workspaceSize, convBwdFilterWorkspaceSize);
+	workspaceSize = max(workspaceSize, convBwdDataWorkspaceSize);
 	//cout << workspaceSize << ", " << convFwdWorkspaceSize << ", " << convBwdFilterWorkspaceSize << ", " << convBwdDataWorkspaceSize << endl;
 
 	d_workspace = 0;

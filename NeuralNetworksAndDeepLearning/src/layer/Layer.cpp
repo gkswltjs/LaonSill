@@ -24,9 +24,7 @@
 #include "LayerFactory.h"
 #include "../network/NetworkConfig.h"
 
-
-
-
+using namespace std;
 
 template <typename Dtype>
 Layer<Dtype>::Layer(const string name) {

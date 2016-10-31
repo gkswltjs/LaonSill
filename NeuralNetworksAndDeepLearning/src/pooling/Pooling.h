@@ -12,7 +12,7 @@
 
 
 
-
+#include "../common.h"
 
 /**
  * @brief Pooling 구현 클래스의 베이스 추상 클래스.

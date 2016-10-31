@@ -14,6 +14,7 @@
 #define NETWORK_H_
 
 
+#include "../common.h"
 #include "../cost/Cost.h"
 #include "../activation/Activation.h"
 #include "../monitor/NetworkListener.h"
@@ -28,12 +29,6 @@
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
-
-using namespace std;
-
-
-
-
 
 /**
  * @brief 네트워크 기본 클래스
@@ -124,7 +119,7 @@ public:
 	 * @param name 찾을 레이어의 이름
 	 * @return 찾은 레이어에 대한 포인터
 	 */
-	Layer<Dtype>* findLayer(const string name);
+	Layer<Dtype>* findLayer(const std::string name);
 	/**
 	 * @details 네트워크에 등록된 데이터셋 특정 채널의 평균값을 조회한다.
 	 * @param 데이터셋의 조회할 채널 index
@@ -172,8 +167,8 @@ protected:
 	void scaleParamsGrad(float scale);
 
 
-	//double totalCost(const vector<const DataSample *> &dataSet, double lambda);
-	//double accuracy(const vector<const DataSample *> &dataSet);
+	//double totalCost(const std::vector<const DataSample *> &dataSet, double lambda);
+	//double accuracy(const std::vector<const DataSample *> &dataSet);
 	/**
 	 * @details 학습된 네트워크에 대해 전체 테스트셋으로 네트워크를 평가한다.
 	 */
@@ -213,9 +208,9 @@ protected:
 	//DataSet *dataSet;							///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
 
 	//InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터
-	//vector<OutputLayer*> outputLayers;			///< 네트워크 출력 레이어 포인터 목록 벡터
-	//vector<Evaluation<Dtype>*> evaluations;			///< 네트워크 평가 객체 포인터 목록 벡터
-	//vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 목록 벡터
+	//std::vector<OutputLayer*> outputLayers;			///< 네트워크 출력 레이어 포인터 목록 벡터
+	//std::vector<Evaluation<Dtype>*> evaluations;			///< 네트워크 평가 객체 포인터 목록 벡터
+	//std::vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 목록 벡터
 
 	//io_dim in_dim;								///< 네트워크 입력 데이터 구조 정보 구조체
 

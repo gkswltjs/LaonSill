@@ -10,6 +10,8 @@
 #include "LRNLayer.h"
 #include "../Util.h"
 
+using namespace std;
+
 template <typename Dtype>
 LRNLayer<Dtype>::~LRNLayer() {
 	checkCUDNN(cudnnDestroyLRNDescriptor(lrnDesc));

@@ -9,6 +9,7 @@
 #ifndef LAYER_DEPTHCONCATLAYER_H_
 #define LAYER_DEPTHCONCATLAYER_H_
 
+#include "../common.h"
 #include "HiddenLayer.h"
 #include "../exception/Exception.h"
 
@@ -36,7 +37,7 @@ public:
 		Builder() {
 			this->type = Layer<Dtype>::DepthConcat;
 		}
-		virtual Builder* name(const string name) {
+		virtual Builder* name(const std::string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
 		}
@@ -44,31 +45,31 @@ public:
 			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
-		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
 			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
 		Layer<Dtype>* build() {
 			return new DepthConcatLayer(this);
 		}
-		virtual void save(ofstream& ofs) {
+		virtual void save(std::ofstream& ofs) {
 			HiddenLayer<Dtype>::Builder::save(ofs);
 		}
-		virtual void load(ifstream& ifs) {
+		virtual void load(std::ifstream& ifs) {
 			HiddenLayer<Dtype>::Builder::load(ifs);
 		}
 	};
 
 	DepthConcatLayer();
 	DepthConcatLayer(Builder* builder);
-	DepthConcatLayer(const string name);
+	DepthConcatLayer(const std::string name);
 	virtual ~DepthConcatLayer();
 
-	virtual void shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& prevLayerOutput);
+	virtual void shape(uint32_t idx, io_dim in_dim, std::shared_ptr<Data<Dtype>>& prevLayerOutput);
 	virtual void reshape(uint32_t idx, io_dim in_dim);
 
 
@@ -116,7 +117,7 @@ protected:
 #ifndef GPU_MODE
 	rcube delta_input;
 	rcube delta_input_sub;
-	vector<int> offsets;
+    std::vector<int> offsets;
 #else
 	int offsetIndex;			///< 입력에 관한 gradient 호출한 횟수 카운터, getDeltaInput() 호출마다 증가되고 feedforward()가 수행될 때 reset된다.
 #endif

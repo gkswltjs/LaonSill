@@ -10,6 +10,7 @@
 #ifndef LAYER_OUTPUTLAYER_H_
 #define LAYER_OUTPUTLAYER_H_
 
+#include "../common.h"
 #include "FullyConnectedLayer.h"
 #include "../cost/CostFactory.h"
 #include "../SyncMem.h"
@@ -68,7 +69,7 @@ public:
 			FullyConnectedLayer<Dtype>::Builder::activationType(activationType);
 			return this;
 		}
-		virtual Builder* name(const string name) {
+		virtual Builder* name(const std::string name) {
 			FullyConnectedLayer<Dtype>::Builder::name(name);
 			return this;
 		}
@@ -76,20 +77,20 @@ public:
 			FullyConnectedLayer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			FullyConnectedLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
-		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
 			FullyConnectedLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
 		Layer<Dtype>* build() = 0;
-		virtual void save(ofstream& ofs) {
+		virtual void save(std::ofstream& ofs) {
 			FullyConnectedLayer<Dtype>::Builder::save(ofs);
 			ofs.write((char*)&_costType, sizeof(typename Cost<Dtype>::Type));
 		}
-		virtual void load(ifstream& ifs) {
+		virtual void load(std::ifstream& ifs) {
 			FullyConnectedLayer<Dtype>::Builder::load(ifs);
 			ifs.read((char*)&_costType, sizeof(typename Cost<Dtype>::Type));
 		}
@@ -111,7 +112,7 @@ public:
 	 * @param activationType weighted sum에 적용할 활성화 타입
 	 * @param costType 레이어 출력값에 대한 cost 계산 타입
 	 */
-	OutputLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	OutputLayer(const std::string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType, typename Cost<Dtype>::Type costType)
 		:FullyConnectedLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
@@ -157,12 +158,12 @@ protected:
 	}
 
 	/*
-	virtual void _save(ofstream &ofs) {
+	virtual void _save(std::ofstream &ofs) {
 		FullyConnectedLayer<Dtype>::_save(ofs);
 		//int costType = (int)cost_fn->getType();
 		//ofs.write((char *)&costType, sizeof(int));
 	}
-	virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
+	virtual void _load(std::ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
 		FullyConnectedLayer<Dtype>::_load(ifs, layerMap);
 
 		OutputLayer<Dtype>::_shape(false);

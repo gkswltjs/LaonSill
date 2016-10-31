@@ -13,7 +13,7 @@
 #ifndef EVALUATION_H_
 #define EVALUATION_H_
 
-
+#include "../common.h"
 #include "../dataset/DataSet.h"
 
 

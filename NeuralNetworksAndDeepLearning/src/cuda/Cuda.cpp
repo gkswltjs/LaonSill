@@ -8,6 +8,8 @@
 #include "Cuda.h"
 #include "../Util.h"
 
+using namespace std;
+
 //int Cuda::gpuid = 0;
 int Cuda::gpuCount;
 const float Cuda::alpha = 1.0f;

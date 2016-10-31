@@ -9,6 +9,7 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 
+using namespace std;
 
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer() {

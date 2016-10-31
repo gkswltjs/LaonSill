@@ -8,30 +8,27 @@
 #ifndef STATFILEWRITER_H_
 #define STATFILEWRITER_H_
 
+#include "../common.h"
 #include "StatLogger.h"
 #include <string>
-#include <iostream>
 #include <fstream>
-
-
-using namespace std;
 
 class StatFileWriter : public StatLogger {
 public:
-	StatFileWriter(const string& filename)
-		: outstream(filename.c_str(), ios::out | ios::binary) {
+	StatFileWriter(const std::string& filename)
+		: outstream(filename.c_str(), std::ios::out | std::ios::binary) {
 		initialized = false;
 	}
 	virtual ~StatFileWriter() {}
 
-	void addStat(const uint32_t statIndex, const string statName, const double stat) {
+	void addStat(const uint32_t statIndex, const std::string statName, const double stat) {
 
 		if(statIndex == statNameList.size()) {
 			statNameList.push_back(statName);
 			statList.push_back(stat);
 			return;
 		} else if(statIndex > statNameList.size()) {
-			cout << "invalid stat index ... " << endl;
+            std::cout << "invalid stat index ... " << std::endl;
 			exit(1);
 		}
 
@@ -54,7 +51,7 @@ private:
 			if(i < statNameList.size()-1) {
 				outstream << statNameList[i] << ",";
 			} else {
-				outstream << statNameList[i] << endl;
+				outstream << statNameList[i] << std::endl;
 			}
 		}
 	}
@@ -64,15 +61,15 @@ private:
 			if(i < statList.size()-1) {
 				outstream << statList[i] << ",";
 			} else {
-				outstream << statList[i] << endl;
+				outstream << statList[i] << std::endl;
 			}
 		}
 		statList.clear();
 	}
 
-	vector<string> statNameList;
-	vector<double> statList;
-	ofstream outstream;
+    std::vector<std::string> statNameList;
+    std::vector<double> statList;
+    std::ofstream outstream;
 
 	uint32_t statSize;
 	bool initialized;

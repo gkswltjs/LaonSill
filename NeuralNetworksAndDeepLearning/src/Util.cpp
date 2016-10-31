@@ -5,13 +5,14 @@
  *      Author: jhkim
  */
 
-#include "Util.h"
-#include "exception/Exception.h"
-
 #include <cstdlib>
 #include <stdarg.h>
 #include <cstring>
 
+#include "Util.h"
+#include "exception/Exception.h"
+
+using namespace std;
 
 int Util::page = 0;
 int Util::start_page = 1000;
@@ -137,8 +138,8 @@ void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, 
 			for(j = 0; j < channels; j++) {
 				for(k = 0; k < rows; k++) {
 					for(l = 0; l < cols; l++) {
-				//for(k = 0; k < std::min(10, (int)rows); k++) {
-				//	for(l = 0; l < std::min(10, (int)cols); l++) {
+				//for(k = 0; k < min(10, (int)rows); k++) {
+				//	for(l = 0; l < min(10, (int)cols); l++) {
 						(*outstream) << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
 					}
 					(*outstream) << endl;
@@ -148,7 +149,7 @@ void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, 
 			(*outstream) << endl;
 		}
 
-		//for(i = 0; i < std::min(10, (int)(rows*cols*channels*batches)); i++) {
+		//for(i = 0; i < min(10, (int)(rows*cols*channels*batches)); i++) {
 		//	(*outstream) << data[i] << ",";
 		//}
 		//(*outstream) << endl;

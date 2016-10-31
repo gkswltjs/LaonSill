@@ -9,6 +9,7 @@
 #ifndef COST_COSTFACTORY_H_
 #define COST_COSTFACTORY_H_
 
+#include "../common.h"
 #include "Cost.h"
 #include "CrossEntropyCost.h"
 #include "LogLikelihoodCost.h"

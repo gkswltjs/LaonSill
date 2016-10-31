@@ -11,6 +11,7 @@
 #include "../Util.h"
 #include "../exception/Exception.h"
 
+using namespace std;
 
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer() {

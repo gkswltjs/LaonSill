@@ -9,12 +9,8 @@
 #ifndef COST_CROSSENTROPYCOST_H_
 #define COST_CROSSENTROPYCOST_H_
 
-
+#include "../common.h"
 #include "Cost.h"
-
-
-
-
 
 /**
  * @details

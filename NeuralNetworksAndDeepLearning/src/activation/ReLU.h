@@ -10,8 +10,8 @@
 #ifndef ACTIVATION_RELU_H_
 #define ACTIVATION_RELU_H_
 
+#include "../common.h"
 #include "Activation.h"
-
 
 
 /**

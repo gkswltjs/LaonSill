@@ -10,6 +10,7 @@
 #define LAYER_INCEPTIONLAYER_H_
 
 
+#include "../common.h"
 
 #ifndef GPU_MODE
 #include "InputLayer.h"

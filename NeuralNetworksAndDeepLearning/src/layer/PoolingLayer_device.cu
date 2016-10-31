@@ -10,6 +10,8 @@
 
 #include "PoolingLayer.h"
 
+using namespace std;
+
 template <typename Dtype>
 void PoolingLayer<Dtype>::_shape(bool recursive) {
 	cudnnTensorDescriptor_t tempInputTensorDesc;

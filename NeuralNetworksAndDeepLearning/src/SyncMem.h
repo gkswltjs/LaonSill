@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <vector>
 
+#include "common.h"
 #include "Util.h"
 
 /**
@@ -129,29 +130,29 @@ public:
 
 
 
-	void save(ofstream& ofs);
-	void load(ifstream& ifs);
+	void save(std::ofstream& ofs);
+	void load(std::ifstream& ifs);
 
 
 	/**
 	 * @details 메모리의 값을 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
-	void print(const string& head);
+	void print(const std::string& head);
 	/**
 	 * @details 메모리의 값을 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 * @param shape 출력 포맷 shape (batches, columns, rows, columns)
 	 */
-	void print(const string& head, const std::vector<uint32_t>& shape);
+	void print(const std::string& head, const std::vector<uint32_t>& shape);
 
 
 
-	static void setOutstream(ostream *outstream) {
+	static void setOutstream(std::ostream *outstream) {
 		SyncMem<Dtype>::outstream = outstream;
 	}
-	static void setOutstream(string outfile) {
-		SyncMem<Dtype>::outstream = new ofstream(outfile.c_str(), ios::out | ios::binary);
+	static void setOutstream(std::string outfile) {
+		SyncMem<Dtype>::outstream = new std::ofstream(outfile.c_str(), std::ios::out | std::ios::binary);
 	}
 
 
@@ -190,7 +191,7 @@ private:
 	bool _host_mem_updated;					///< 호스트 메모리 변경 여부 플래그
 	bool _device_mem_updated;				///< 디바이스 메모리 변경 여부 플래그
 
-	static ostream *outstream;				///< 로그 출력 스트림
+	static std::ostream *outstream;				///< 로그 출력 스트림
 
 
 	uint32_t* _d_int;						///< 임시

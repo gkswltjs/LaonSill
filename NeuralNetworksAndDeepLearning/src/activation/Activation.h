@@ -10,14 +10,10 @@
 #ifndef ACTIVATION_ACTIVATION_H_
 #define ACTIVATION_ACTIVATION_H_
 
+#include "../common.h"
 #include "../layer/LayerConfig.h"
 #include "../cuda/Cuda.h"
 #include "../Util.h"
-
-
-
-
-
 
 /**
  * @brief	Activation 구현 클래스의 베이스 추상 클래스.

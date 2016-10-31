@@ -12,6 +12,7 @@
 #ifndef DATASET_MOCKDATASET_H_
 #define DATASET_MOCKDATASET_H_
 
+#include "../common.h"
 #include "DataSet.h"
 
 /**

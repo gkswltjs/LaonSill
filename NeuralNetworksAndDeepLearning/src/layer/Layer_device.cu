@@ -10,7 +10,8 @@
 
 #include "Layer.h"
 #include "../cuda/Cuda.h"
-#include <iostream>
+
+using namespace std;
 
 template <typename Dtype>
 void Layer<Dtype>::_shape(bool recursive) {

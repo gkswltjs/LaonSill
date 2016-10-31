@@ -5,8 +5,6 @@
  *      Author: jhkim
  */
 
-#include "ImagePacker.h"
-
 #include <CImg.h>
 #include <dirent.h>
 #include <algorithm>
@@ -14,11 +12,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <vector>
 
 #include "UByteImage.h"
+#include "ImagePacker.h"
 
 using namespace std;
 using namespace cimg_library;

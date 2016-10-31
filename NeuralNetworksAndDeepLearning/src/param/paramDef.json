@@ -38,6 +38,66 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "CHAR(1024)",
     "DEFAULT" : ""
+},
+
+"COLDLOG_DIR" : 
+{
+    "DESC" : "specify cold log directory. if it is not set, it will set to $SOOOA_HOME/log",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "CHAR(1024)",
+    "DEFAULT" : ""
+},
+
+"HOTLOG_DIR" : 
+{
+    "DESC" : "specify hot log directory. if it is not set, it will set to $SOOOA_HOME/log",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "CHAR(1024)",
+    "DEFAULT" : ""
+},
+
+"SYSLOG_DIR" : 
+{
+    "DESC" : "specify system log directory. if it is not set, it will set to $SOOOA_HOME/log",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "CHAR(1024)",
+    "DEFAULT" : ""
+},
+
+"COLDLOG_LEVEL" : 
+{
+    "DESC" : "specify level of cold log",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 2
+},
+
+"HOTLOG_LEVEL" : 
+{
+    "DESC" : "specify level of hot log",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 2
+},
+
+"SYSLOG_LEVEL" : 
+{
+    "DESC" : "specify level of system log",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 2
 }
 
 }

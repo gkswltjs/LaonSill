@@ -91,10 +91,10 @@ headerTopSentences = [\
 "#include <stdint.h>",\
 "#include <vector>",\
 "#include <string>",\
+"",\
+'#include "../common.h"',\
 '#include "ParamDef.h"',\
 '#include "ParamMgmt.h"',\
-"",\
-"using namespace std;",\
 "",\
 "class ParamMgmt;",\
 "",\
@@ -108,7 +108,7 @@ headerTopSentences = [\
 ]
 
 headerBottomSentences = [\
-"    static void    fillParamDefMap(map<string, ParamDef*>& paramDefMap);\n",\
+"    static void    fillParamDefMap(std::map<std::string, ParamDef*>& paramDefMap);\n",\
 "};",\
 "",\
 "#endif /* PARAM_H_ */"]
@@ -201,6 +201,9 @@ sourceTopSentences = [\
 " */",\
 "",\
 '#include "Param.h"',\
+"",\
+"using namespace std;",\
+"",\
 ""]
 
 paramDefList = []

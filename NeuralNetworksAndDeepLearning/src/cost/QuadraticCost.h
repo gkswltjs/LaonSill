@@ -11,7 +11,7 @@
 #define COST_QUADRATICCOST_H_
 
 
-
+#include "../common.h"
 #include "Cost.h"
 
 

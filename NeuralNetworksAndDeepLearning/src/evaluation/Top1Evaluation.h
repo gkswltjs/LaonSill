@@ -10,6 +10,7 @@
 #ifndef TOP1EVALUATION_H_
 #define TOP1EVALUATION_H_
 
+#include "../common.h"
 #include "Evaluation.h"
 #include <limits>
 
@@ -35,8 +36,8 @@ public:
 					maxIndex = i;
 				}
 				// cost
-				if(i == y[j]) this->cost += std::abs(output[num_labels*j+i]-1);
-				else this->cost += std::abs(output[num_labels*j+i]);
+				if(i == y[j]) this->cost += abs(output[num_labels*j+i]-1);
+				else this->cost += abs(output[num_labels*j+i]);
 			}
 			if(maxIndex == y[j]) this->accurateCount++;
 		}
@@ -54,8 +55,8 @@ public:
 					maxIndex = i;
 				}
 				// cost
-				if(i == *dataSet->getTestLabelAt(baseIndex+j)) this->cost += std::abs(output[num_labels*j+i]-1);
-				else this->cost += std::abs(output[num_labels*j+i]);
+				if(i == *dataSet->getTestLabelAt(baseIndex+j)) this->cost += abs(output[num_labels*j+i]-1);
+				else this->cost += abs(output[num_labels*j+i]);
 			}
 			if(maxIndex == *dataSet->getTestLabelAt(baseIndex+j)) this->accurateCount++;
 		}

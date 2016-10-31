@@ -13,11 +13,12 @@
 #include <chrono>
 #include <random>
 
-#include "../Util.h"
-#include "../Data.h"
-
 #include <boost/random.hpp>
 #include <boost/math/special_functions/next.hpp>
+
+#include "../common.h"
+#include "../Util.h"
+#include "../Data.h"
 
 
 
@@ -164,7 +165,7 @@ struct param_filler {
 	param_filler(ParamFillerType type, Dtype value=0) {
 		this->type = type;
 		this->value = value;
-		this->rng.seed(static_cast<unsigned int>(std::time(NULL)+getpid()));
+		this->rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
 	}
 
 #ifndef GPU_MODE
@@ -245,24 +246,26 @@ struct param_filler {
 			//Dtype n = (fan_in + fan_out)/Dtype(2);
 			//Dtype n = fan_out;
 			Dtype scale = sqrt(Dtype(3)/n);
-			cout << "fan_in: " << fan_in << ", fan_out: " << fan_out << ", scale: " << scale << endl;
+            std::cout << "fan_in: " << fan_in << ", fan_out: " << fan_out << ", scale: " <<
+                scale << std::endl;
 
 
 			/*
-			//cout << "sd_xavier: " << sd_xavier << endl;
-			std::random_device rd_xavier;
-			std::mt19937 gen_xavier(rd_xavier());
-			//std::uni _distribution<DATATYPE> normal_dist(0.0, 1.0);
-			std::uniform_real_distribution<Dtype> unifrom_dist(-scale, scale);
+			//std::cout << "sd_xavier: " << sd_xavier << std::endl;
+			random_device rd_xavier;
+			mt19937 gen_xavier(rd_xavier());
+			//uni _distribution<DATATYPE> normal_dist(0.0, 1.0);
+			uniform_real_distribution<Dtype> unifrom_dist(-scale, scale);
 			for(uint32_t i = 0; i < size; i++) mem[i] = unifrom_dist(gen_xavier);
 			*/
 
 
 			//RNGType rng;
-			//rng.seed(static_cast<unsigned int>(std::time(NULL)+getpid()));
+			//rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
 
 			// BOOST
-			boost::uniform_real<float> random_distribution(-scale, boost::math::nextafter<float>(scale, std::numeric_limits<float>::max()));
+			boost::uniform_real<float> random_distribution(-scale,
+                    boost::math::nextafter<float>(scale, std::numeric_limits<float>::max()));
 			boost::variate_generator<RNGType, boost::uniform_real<float> > variate_generator(rng, random_distribution);
 			//variate_generator.engine().seed();
 			//variate_generator.distribution().reset();
@@ -273,9 +276,9 @@ struct param_filler {
 
 
 			/*
-			std::random_device rd_xavier;
-			std::mt19937 gen_xavier(rd_xavier());
-			std::normal_distribution<DATATYPE> normal_dist(0.0, 1.0);
+			random_device rd_xavier;
+			mt19937 gen_xavier(rd_xavier());
+			normal_distribution<DATATYPE> normal_dist(0.0, 1.0);
 			for(uint32_t i = 0; i < size; i++) mem[i] = normal_dist(gen_xavier)*scale;
 			*/
 
@@ -286,7 +289,7 @@ struct param_filler {
 
 			//typedef boost::mt19937 RNGType;
 			//RNGType rng;
-			//rng.seed(static_cast<unsigned int>(std::time(NULL)+getpid()));
+			//rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
 
 			boost::normal_distribution<float> random_distribution(0, value);
 			boost::variate_generator<RNGType, boost::normal_distribution<float> >
@@ -299,10 +302,10 @@ struct param_filler {
 			int fan_in = size / data->batches();
 			int fan_out = size / data->channels();
 			Dtype scale = sqrt(1.0f/fan_out);
-			cout << "sd_gaussian: " << scale << endl;
-			std::random_device rd_gaussian;
-			std::mt19937 gen_gaussian(rd_gaussian());
-			std::normal_distribution<Dtype> normal_dist(0.0, scale);
+            std::cout << "sd_gaussian: " << scale << std::endl;
+			random_device rd_gaussian;
+			mt19937 gen_gaussian(rd_gaussian());
+			normal_distribution<Dtype> normal_dist(0.0, scale);
 			for(uint32_t i = 0; i < size; i++) mem[i] = normal_dist(gen_gaussian)*scale;
 			*/
 			break;

@@ -15,6 +15,9 @@
 #include "monitor/NetworkMonitor.h"
 #include "network/NetworkConfig.h"
 #include "param/Param.h"
+#include "log/ColdLog.h"
+
+using namespace std;
 
 template<typename Dtype>
 atomic<int> Worker<Dtype>::runningPeerCount;
@@ -100,7 +103,7 @@ void Worker<Dtype>::producerThread() {
         sleep(0);
     }
 
-    cout << "producer thread starts main loop" << endl;
+    COLD_LOG(ColdLog::INFO, true, "producer thread starts main loop");
 
     // (2) 메인 루프
     while (true) {

@@ -9,6 +9,8 @@
 #ifndef MESSAGEHEADER_H
 #define MESSAGEHEADER_H 
 
+#include "common.h"
+
 // Serialize시 packet 구성
 // |---------+--------+------------------------------------------|
 // | MsgType | MsgLen | MsgBody                                  |

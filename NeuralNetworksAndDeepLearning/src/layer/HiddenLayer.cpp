@@ -9,7 +9,7 @@
 #include "HiddenLayer.h"
 #include "../network/NetworkConfig.h"
 
-
+using namespace std;
 
 template <typename Dtype>
 HiddenLayer<Dtype>::HiddenLayer() {}

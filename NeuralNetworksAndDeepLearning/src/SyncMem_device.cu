@@ -89,7 +89,7 @@ uint32_t SyncMem<float>::bound_mem() {
 	//double average = 0.0;
 	int updateCount = 0;
 	for(size_t i = 0; i < _size; i++) {
-		//if(std::abs(h_mem[i]) > bound) {
+		//if(abs(h_mem[i]) > bound) {
 			//h_mem[i] = (h_mem[i]>0)?bound:-bound;
 		if(h_mem[i] > 10) {
 			h_mem[i] = 10;

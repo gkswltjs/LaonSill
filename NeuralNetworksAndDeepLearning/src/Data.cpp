@@ -5,16 +5,16 @@
  *      Author: jhkim
  */
 
-#include "Data.h"
-
 #include <string.h>
 #include <cstdlib>
-#include <iostream>
 #include <string>
 
 #include "cuda/Cuda.h"
 
+#include "Data.h"
+
 //#define DATA_LOG
+using namespace std;
 
 
 template <typename Dtype>

@@ -5,19 +5,18 @@
  *      Author: jhkim
  */
 
-#include "ImagePackDataSet.h"
-
 #include <stddef.h>
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <iostream>
 
 #include "../exception/Exception.h"
 #include "../util/UByteImage.h"
 #include "../Util.h"
+#include "ImagePackDataSet.h"
 
+using namespace std;
 
 template <typename Dtype>
 ImagePackDataSet<Dtype>::ImagePackDataSet(
@@ -51,7 +50,7 @@ ImagePackDataSet<Dtype>::ImagePackDataSet(
 	this->loading = false;
 
 	this->trainFileIndices = new vector<uint32_t>(numTrainFile);
-	std::iota(this->trainFileIndices->begin(), this->trainFileIndices->end(), 0);
+	iota(this->trainFileIndices->begin(), this->trainFileIndices->end(), 0);
 }
 
 template <typename Dtype>
@@ -461,7 +460,7 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 	if(!labelSet) labelSet = new vector<uint32_t>(label_header.length);
 	if(!setIndices) {
 		setIndices = new vector<uint32_t>(label_header.length);
-		std::iota(setIndices->begin(), setIndices->end(), 0);
+		iota(setIndices->begin(), setIndices->end(), 0);
 
 		/*
 		cout << "trainSetIndices: " << endl;
@@ -470,7 +469,7 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 		}
 		*/
 	}
-	//std::iota(setIndices->begin(), setIndices->end(), 0);
+	//iota(setIndices->begin(), setIndices->end(), 0);
 
 	if(fread(&(*bufDataSet)[0], sizeof(uint8_t), dataSetSize, imfp) != dataSetSize) {
 		printf("ERROR: Invalid dataset file (partial image dataset)\n");

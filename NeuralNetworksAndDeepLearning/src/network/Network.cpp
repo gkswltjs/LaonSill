@@ -7,7 +7,6 @@
 
 #include "Network.h"
 
-#include <iostream>
 #include <vector>
 #include <map>
 #include <cfloat>
@@ -19,6 +18,7 @@
 #include "../Util.h"
 #include "../Worker.h"
 
+using namespace std;
 
 template <typename Dtype>
 Network<Dtype>::Network(NetworkConfig<Dtype>* config)
@@ -444,8 +444,8 @@ void Network<Dtype>::clipGradients() {
 	const double sumsqParamsGrad = computeSumSquareParamsGrad();
 	const double sumsqParamsData = computeSumSquareParamsData();
 
-	const double l2normParamsGrad = std::sqrt(sumsqParamsGrad);
-	const double l2normParamsData = std::sqrt(sumsqParamsData);
+	const double l2normParamsGrad = sqrt(sumsqParamsGrad);
+	const double l2normParamsData = sqrt(sumsqParamsData);
 
 	if (clipGradientsLevel < 0.0001) {
 		//cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
@@ -478,7 +478,7 @@ double Network<Dtype>::computeSumSquareParamsData() {
 					//i-(numLearnableLayers-10),
 					i,
 					getLayersConfig()->_learnableLayers[i]->getName(),
-					std::sqrt(temp));
+					sqrt(temp));
 		}
 		sumsq += temp;
 	}
@@ -496,10 +496,10 @@ double Network<Dtype>::computeSumSquareParamsGrad() {
 			config->_networkListeners[0]->onGradSumsqComputed(
 					i,
 					getLayersConfig()->_learnableLayers[i]->getName(),
-					std::sqrt(temp));
+					sqrt(temp));
 		}
 		sumsq += temp;
-		//cout << getLayersConfig()->_learnableLayers[i]->getName() << ", grad l2-norm: " << std::sqrt(temp) << endl;
+		//cout << getLayersConfig()->_learnableLayers[i]->getName() << ", grad l2-norm: " << sqrt(temp) << endl;
 	}
 	return sumsq;
 }

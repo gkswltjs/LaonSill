@@ -10,10 +10,12 @@
 
 
 //#ifndef GPU_MODE
+
+#include "../common.h"
 #include "../network/Network.h"
 #include "../debug/StatGraphPlotter.h"
-#include <CImg.h>
 
+#include <CImg.h>
 using namespace cimg_library;
 
 
@@ -32,14 +34,14 @@ public:
 
 
 	ArtisticStyle(Network<Dtype> *network,
-			const string& contentImagePath,
-			const string& styleImagePath,
-			const vector<string>& contentRepLayers,
-			const vector<string>& styleRepLayers,
+			const std::string& contentImagePath,
+			const std::string& styleImagePath,
+			const std::vector<std::string>& contentRepLayers,
+			const std::vector<std::string>& styleRepLayers,
 			const float contentReconstructionFactor,
 			const float styleReconstructionFactor,
 			const float learningRate,
-			const string& end,
+			const std::string& end,
 			const bool plotContentCost,
 			const bool plotStyleCost);
 	virtual ~ArtisticStyle();
@@ -71,15 +73,15 @@ private:
 	Data<Dtype>* createDataFromCImg(CImg<Dtype>* cimg);
 	SyncMem<Dtype>* createGramMatrixFromData(Data<Dtype>* data);
 
-	HiddenLayer<Dtype>* findRepresentationLayer(const string& layerName);
+	HiddenLayer<Dtype>* findRepresentationLayer(const std::string& layerName);
 
 	SyncMem<Dtype>* flattenData(Data<Dtype>* data, const uint32_t height, const uint32_t width);
 	void unflattenData(SyncMem<Dtype>* mem, const uint32_t flattenHeight, const uint32_t flattenWidth, Data<Dtype>* data);
 
 
 
-	int findContentRepLayer(const string& layerName);
-	int findStyleRepLayer(const string& layerName);
+	int findContentRepLayer(const std::string& layerName);
+	int findStyleRepLayer(const std::string& layerName);
 
 
 
@@ -112,11 +114,11 @@ private:
 	uint32_t height;
 	uint32_t channel;
 
-	const vector<string> contentRepLayers;
-	const vector<string> styleRepLayers;
+	const std::vector<std::string> contentRepLayers;
+	const std::vector<std::string> styleRepLayers;
 
-	vector<SyncMem<Dtype>*> contentRepLayerResps;		// feature map
-	vector<SyncMem<Dtype>*> styleRepLayerResps;			// gram matrix of feature map
+    std::vector<SyncMem<Dtype>*> contentRepLayerResps;		// feature map
+    std::vector<SyncMem<Dtype>*> styleRepLayerResps;			// gram matrix of feature map
 
 	SyncMem<Dtype> contentGrad;
 	SyncMem<Dtype> styleGrad;
@@ -128,7 +130,7 @@ private:
 
 	//float mean[3];
 
-	const string end;
+	const std::string end;
 
 
 	StatGraphPlotter contentCostLogger;

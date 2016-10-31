@@ -10,6 +10,7 @@
 #ifndef LAYER_POOLINGLAYER_H_
 #define LAYER_POOLINGLAYER_H_
 
+#include "../common.h"
 #include "HiddenLayer.h"
 #include "../pooling/Pooling.h"
 #include "../pooling/PoolingFactory.h"
@@ -55,7 +56,7 @@ public:
 			this->_poolingType = poolingType;
 			return this;
 		}
-		virtual Builder* name(const string name) {
+		virtual Builder* name(const std::string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
 		}
@@ -63,23 +64,23 @@ public:
 			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
-		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
 			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
 		Layer<Dtype>* build() {
 			return new PoolingLayer(this);
 		}
-		virtual void save(ofstream& ofs) {
+		virtual void save(std::ofstream& ofs) {
 			HiddenLayer<Dtype>::Builder::save(ofs);
 			ofs.write((char*)&_poolDim, sizeof(pool_dim));
 			ofs.write((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
 		}
-		virtual void load(ifstream& ifs) {
+		virtual void load(std::ifstream& ifs) {
 			HiddenLayer<Dtype>::Builder::load(ifs);
 			ifs.read((char*)&_poolDim, sizeof(pool_dim));
 			ifs.read((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
@@ -96,7 +97,7 @@ public:
 	 * @param name 레이어 이름 문자열 포인터
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 */
-	PoolingLayer(const string name, pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
+	PoolingLayer(const std::string name, pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
 	/**
 	 * @details PoolingLayer 소멸자
 	 */
@@ -114,8 +115,8 @@ protected:
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	//virtual void _save(ofstream &ofs);
-	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+	//virtual void _save(std::ofstream &ofs);
+	//virtual void _load(std::ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체

@@ -9,6 +9,7 @@
 #ifndef SOFTMAXLAYER_H_
 #define SOFTMAXLAYER_H_
 
+#include "../common.h"
 #include "OutputLayer.h"
 #include "../cost/LogLikelihoodCost.h"
 #include "../activation/Softmax.h"
@@ -68,7 +69,7 @@ public:
 			OutputLayer<Dtype>::Builder::activationType(activationType);
 			return this;
 		}
-		virtual Builder* name(const string name) {
+		virtual Builder* name(const std::string name) {
 			OutputLayer<Dtype>::Builder::name(name);
 			return this;
 		}
@@ -76,21 +77,21 @@ public:
 			OutputLayer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			OutputLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
-		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
 			OutputLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
 		Layer<Dtype>* build() {
 			return new SoftmaxLayer(this);
 		}
-		virtual void save(ofstream& ofs) {
+		virtual void save(std::ofstream& ofs) {
 			OutputLayer<Dtype>::Builder::save(ofs);
 		}
-		virtual void load(ifstream& ifs) {
+		virtual void load(std::ifstream& ifs) {
 			OutputLayer<Dtype>::Builder::load(ifs);
 		}
 	};
@@ -107,7 +108,7 @@ public:
 	 * @param weight_filler weight 초기화 관련 파라미터 구조체
 	 * @param bias_filler bias 초기화 관련 파라미터 구조체
 	 */
-	SoftmaxLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
+	SoftmaxLayer(const std::string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler);
 	virtual ~SoftmaxLayer();
 

@@ -12,12 +12,10 @@
 
 //#include "layer/LayerConfig.h"
 #include <string>
-#include <iostream>
 #include <fstream>
 #include "cuda/Cuda.h"
 
-using namespace std;
-
+#include "common.h"
 
 #define	LOG_DEBUG	0
 #define	LOG_INFO	1
@@ -62,14 +60,15 @@ static cudaError_t ucudaMalloc(
 	static size_t cuda_mem = 0;
 
 	if(size > 1*1024*1024) {
-		outstream << endl;
+        outstream << std::endl;
 	}
 
 	cudaError_t cudaError = cudaMalloc(devPtr, size);
 	cuda_mem += size;
 	size_t free, total;
 	cudaMemGetInfo(&free, &total);
-	outstream << "allocated: " << cuda_mem/(1024*1024) << "mb, free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+    outstream << "allocated: " << cuda_mem/(1024*1024) << "mb, free: << " << free/(1024*1024)
+    << "mb free of total " << total/(1024*1024) << "mb" << std::endl;
 	return cudaError;
 }
 */
@@ -105,25 +104,25 @@ public:
 	 * @param vector 출력할 벡터
 	 * @param name 출력에 사용할 레이블
 	 */
-	static void printVec(const rvec &vector, string name);
+	static void printVec(const rvec &vector, std::string name);
 	/**
 	 * @details rmat 타입의 행렬을 메타정보와 함께 설정된 출력 스트림에 출력한다.
 	 * @param matrix 출력할 행렬
 	 * @param name 출력에 사용할 레이블
 	 */
-	static void printMat(const rmat &matrix, string name);
+	static void printMat(const rmat &matrix, std::string name);
 	/**
 	 * @details rcube 타입의 3차원 행렬을 메타정보와 함께 설정된 출력 스트림에 출력한다.
 	 * @param c 출력할 3차원 행렬
 	 * @param name 출력에 사용할 레이블
 	 */
-	static void printCube(const rcube &c, string name);
+	static void printCube(const rcube &c, std::string name);
 	/**
 	 * @details ucube 타입의 3차원 행렬을 메타정보와 함께 설정된 출력 스트림에 출력한다.
 	 * @param c 출력할 3차원 행렬
 	 * @param name 출력에 사용할 레이블
 	 */
-	static void printUCube(const ucube &c, string name);
+	static void printUCube(const ucube &c, std::string name);
 #endif
 	/**
 	 * @details 호스트의 메모리를 지정된 데이터 구조로 메타정보와 함께 설정된 출력 스트림에 출력한다.
@@ -134,7 +133,8 @@ public:
 	 * @param batches 데이터 배열을 해석할 batch값
 	 * @param nane 출력에 사용할 레이블
 	 */
-	static void printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, UINT batches, string name);
+	static void printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels, UINT batches,
+                        std::string name);
 	/**
 	 * @details 장치의 메모리를 지정된 데이터 구조로 메타정보와 함께 설정된 출력 스트림에 출력한다.
 	 * @param data 출력할 데이터 장치 배열 포인터
@@ -144,12 +144,13 @@ public:
 	 * @param batches 데이터 배열을 해석할 batch값
 	 * @param nane 출력에 사용할 레이블
 	 */
-	static void printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT channels, UINT batches, string name);
+	static void printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT channels,
+            UINT batches, std::string name);
 	/**
 	 * @details 주어진 메세지를 설정된 출력 스트림에 출력한다.
 	 * @param message 설정된 출력 스트림에 출력할 메세지
 	 */
-	static void printMessage(string message);
+	static void printMessage(std::string message);
 	/**
 	 * @details 설정된 출력 스트림 출력 여부 플래그를 조회한다.
 	 * @return 설정된 출력 스트림 출력 여부
@@ -164,15 +165,15 @@ public:
 	 * @details 로그를 출력할 스트림을 설정한다.
 	 * @param outstream 로그를 출력할 스트림
 	 */
-	static void setOutstream(ostream *outstream) {
+	static void setOutstream(std::ostream *outstream) {
 		Util::outstream = outstream;
 	}
 	/**
 	 * @details 로그를 출력할 파일을 설정한다.
 	 * @param outfile 로그를 출력할 파일 경로
 	 */
-	static void setOutstream(string outfile) {
-		Util::outstream = new ofstream(outfile.c_str(), ios::out | ios::binary);
+	static void setOutstream(std::string outfile) {
+		Util::outstream = new std::ofstream(outfile.c_str(), std::ios::out | std::ios::binary);
 	}
 
 #ifndef GPU_MODE
@@ -201,23 +202,26 @@ public:
 	  size_t   size
 	) {
 		//if(size > 1024*1024) {
-		//	(*outstream) << endl;
+		//	(*outstream) << std::endl;
 		//}
 
 		cudaError_t cudaError = cudaMalloc(devPtr, size);
 		cuda_mem += size;
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
-		//(*outstream) << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
-		//cout << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " << total/(1024*1024) << "mb" << endl;
+		//(*outstream) << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total
+        //" << total/(1024*1024) << "mb" << std::endl;
+		//std::cout << ++alloc_cnt << "-free: << " << free/(1024*1024) << "mb free of total " <<
+        //total/(1024*1024) << "mb" << std::endl;
 		return cudaError;
 	}
 
 	static void printVramInfo() {
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
-		cout << ":::VRAM INFO:::" << endl;
-		cout << "FREE: << " << free/(1024*1024) << "MB of TOTAL " << total/(1024*1024) << "MB" << endl;
+        std::cout << ":::VRAM INFO:::" << std::endl;
+        std::cout << "FREE: << " << free/(1024*1024) << "MB of TOTAL " << total/(1024*1024) << "MB"
+            << std::endl;
 	}
 
 	static int page;						///< 디버깅용 (임시)
@@ -241,7 +245,7 @@ private:
 	static bool print;						///< 로그 출력 여부 플래그
 	static size_t cuda_mem;
 	static int alloc_cnt;
-	static ostream *outstream;				///< 로그 출력 스트림
+	static std::ostream *outstream;				///< 로그 출력 스트림
 
 };
 
@@ -282,7 +286,7 @@ public:
 	long stop(bool print=true) {
 		t2 = clock();
 		long elapsed = t2 - t1;
-		if(print) cout << "total " << elapsed << "ms elapsed ... " << endl;
+		if(print) std::cout << "total " << elapsed << "ms elapsed ... " << std::endl;
 		return elapsed;
 	}
 

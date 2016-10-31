@@ -9,13 +9,12 @@
 #define DEEPDREAM_H_
 
 #ifndef GPU_MODE
-#include "../network/Network.h"
 #include <CImg.h>
 
+#include "../common.h"
+#include "../network/Network.h"
+
 using namespace cimg_library;
-
-
-
 
 class DeepDream {
 public:

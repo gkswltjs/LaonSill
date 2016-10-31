@@ -7,6 +7,8 @@
 
 #include "DepthConcatLayer.h"
 
+using namespace std;
+
 //#define DEPTHCONCAT_LOG
 
 template <typename Dtype>

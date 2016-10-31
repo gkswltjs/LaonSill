@@ -9,8 +9,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include <iostream>
-
 #include "ParamMgmt.h"
 #include "Param.h"
 

@@ -14,8 +14,7 @@
 #include <string>
 #include <vector>
 
-
-using namespace std;
+#include "../common.h"
 
 /**
  * @brief 한 카테고리에 해당하는 파일목록 자료구조
@@ -23,8 +22,8 @@ using namespace std;
  */
 struct category_t {
 	int id;						///< 카테고리 아이디, 데이터셋상에서 레이블에 해당하는 값
-	string name;				///< 카테고리 이름, 해당 디렉토리의 이름에 해당하는 값
-	vector<string> fileList;	///< 파일 이름 문자열 목록 벡터, 해당 디렉토리 내의 모든 이미지 이름 목록에 해당하는 값
+    std::string name;				///< 카테고리 이름, 해당 디렉토리의 이름에 해당하는 값
+    std::vector<std::string> fileList;	///< 파일 이름 문자열 목록 벡터, 해당 디렉토리 내의 모든 이미지 이름 목록에 해당하는 값
 	int fileIndex;				///< 현재 해당 카테고리내에서 Pack된 파일의 수, 중복으로 pack하지 않기 위한 index
 	int sizePerCategory;
 
@@ -37,7 +36,7 @@ struct category_t {
 	 * @details 카테고리 내에 아직 pack되지 않은 다음 파일의 이름을 조회한다.
 	 * @return 카테고리 내 pack되지 않은 다음 파일의 이름
 	 */
-	string getCurrentFile() {
+    std::string getCurrentFile() {
 		if(end()) {	exit(1); }
 		return fileList[fileIndex++];
 	}
@@ -76,7 +75,7 @@ public:
 	 * @param numImagesInTestFile 테스트 파일 하나에 포함될 이미지의 수
 	 * @param numChannels 대상 이미지의 채널 수
 	 */
-	ImagePacker(string image_dir,
+	ImagePacker(std::string image_dir,
 			int numCategory,
 			int numTrain,
 			int numTest,
@@ -106,10 +105,10 @@ private:
 	 * @param categoryPath 카테고리에 해당하는 디렉토리의 경로
 	 * @param fileList 카테고리 디렉토리 내의 모든 파일 이름을 읽어들일 문자열 목록 벡터
 	 */
-	void loadFilesInCategory(string categoryPath, vector<string>& fileList);
+	void loadFilesInCategory(std::string categoryPath, std::vector<std::string>& fileList);
 
 
-	void writeCategoryLabelFile(string categoryLabelPath);
+	void writeCategoryLabelFile(std::string categoryLabelPath);
 	/**
 	 * @details 실제 pack을 수행한다.
 	 * @param dataPath 데이터 파일 경로 문자열
@@ -118,15 +117,15 @@ private:
 	 * @param size 전체 데이터의 수
 	 * @param sizePerCategory 하나의 카테고리당 pack할 이미지의 수
 	 */
-	void _pack(string dataPath, string labelPath, int numImagesInFile, int size, int sizePerCategory);
+	void _pack(std::string dataPath, std::string labelPath, int numImagesInFile, int size, int sizePerCategory);
 
 
-	string image_dir;						///< Pack 대상의 Root 경로 문자열
+    std::string image_dir;						///< Pack 대상의 Root 경로 문자열
 
-	static const string path_crop;			///< "crop"
-	static const string path_save;			///< "save"
+	static const std::string path_crop;			///< "crop"
+	static const std::string path_save;			///< "save"
 
-	vector<category_t> categoryList;		///< Pack 대상의 카테고리와 카테고리의 이미지 파일 정보 목록 벡터
+    std::vector<category_t> categoryList;		///< Pack 대상의 카테고리와 카테고리의 이미지 파일 정보 목록 벡터
 	int numCategory;						///< pack 대상의 카테고리 수
 	int numTrain;							///< 학습 이미지 수
 	int numTest;							///< 테스트 이미지 수

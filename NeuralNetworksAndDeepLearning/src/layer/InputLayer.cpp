@@ -9,6 +9,8 @@
 #include "InputLayer.h"
 #include "../network/NetworkConfig.h"
 
+using namespace std;
+
 template <typename Dtype>
 InputLayer<Dtype>::InputLayer() {
 	initialize();

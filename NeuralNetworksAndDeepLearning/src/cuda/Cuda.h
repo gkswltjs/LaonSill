@@ -9,11 +9,12 @@
 #ifndef CUDA_H_
 #define CUDA_H_
 
-#include <iostream>
 #include <sstream>
 #include <cudnn.h>
 #include <cublas_v2.h>
 #include <vector>
+
+#include "../common.h"
 
 //////////////////////////////////////////////////////////////////////////////
 // Error handling

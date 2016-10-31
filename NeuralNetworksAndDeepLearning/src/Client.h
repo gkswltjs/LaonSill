@@ -11,9 +11,8 @@
 
 #include <sys/socket.h>
 
+#include "common.h"
 #include "Job.h"
-
-using namespace std;
 
 class Client {
 public:

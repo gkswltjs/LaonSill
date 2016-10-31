@@ -7,6 +7,7 @@
 
 #include "PoolingLayer.h"
 
+using namespace std;
 
 template <typename Dtype>
 PoolingLayer<Dtype>::PoolingLayer() {

@@ -6,9 +6,7 @@
  * @details
  */
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
 #include <errno.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -21,6 +19,8 @@
 #include "Communicator.h"
 #include "Serializer.h"
 #include "MessageHeader.h"
+
+using namespace std;
 
 const int MAX_RETRY_SECOND = 128;
 int Client::connectRetry(int sockFd, const struct sockaddr *sockAddr, socklen_t sockLen) {

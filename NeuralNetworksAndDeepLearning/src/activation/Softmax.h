@@ -9,12 +9,8 @@
 #ifndef ACTIVATION_SOFTMAX_H_
 #define ACTIVATION_SOFTMAX_H_
 
+#include "../common.h"
 #include "Activation.h"
-
-
-
-
-
 
 /**
  * @brief Softmax Activation 구현 클래스.

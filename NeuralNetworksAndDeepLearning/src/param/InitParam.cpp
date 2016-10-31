@@ -6,12 +6,11 @@
  * @details
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
+#include <limits.h>
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -224,7 +223,7 @@ void InitParam::loadParam(const char* line, int len) {
 }
 
 const char* SOOOA_HOME_ENVNAME = "SOOOA_HOME";
-const char* IPARAM_FILENAME  = {".soooa.conf"};
+const char* IPARAM_FILENAME  = {"soooa.conf"};
 void InitParam::load() {
     char* initParamPrefixPath = getenv(SOOOA_HOME_ENVNAME);
     if (initParamPrefixPath == NULL) {
@@ -232,7 +231,7 @@ void InitParam::load() {
         exit(-1);
     }
 
-    char initParamPath[1024];
+    char initParamPath[PATH_MAX];
     sprintf(initParamPath, "%s/%s", initParamPrefixPath, IPARAM_FILENAME);
 
     FILE* fp = fopen(initParamPath, "r");

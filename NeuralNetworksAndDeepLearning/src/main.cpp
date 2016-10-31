@@ -1,7 +1,9 @@
 #include <cstdint>
-#include <iostream>
 #include <vector>
 
+#include "cuda/Cuda.h"
+
+#include "common.h"
 #include "dataset/DataSet.h"
 #include "dataset/MockDataSet.h"
 #include "debug/Debug.h"
@@ -18,8 +20,7 @@
 #include "Client.h"
 #include "param/InitParam.h"
 #include "param/Param.h"
-
-#include "cuda/Cuda.h"
+#include "log/ColdLog.h"
 
 using namespace std;
 
@@ -30,6 +31,10 @@ int main(int argc, char** argv) {
 	cout << "SOOOA engine starts" << endl;
     // (1) load init param
     InitParam::init();
+
+    ColdLog::init();
+
+    COLD_LOG(ColdLog::INFO, true, "Cold Log ver %d starts", 1);
 
     // (2) 기본 설정
 	cout.precision(11);
@@ -46,6 +51,8 @@ int main(int argc, char** argv) {
     // (5) 종료
     Worker<float>::joinThreads();
     Communicator::joinThreads();
+
+    ColdLog::destroy();
 
 	cout << "SOOOA engine ends" << endl;
 	return 0;

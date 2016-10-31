@@ -11,11 +11,8 @@
 #ifndef POOLING_AVGPOOLING_H_
 #define POOLING_AVGPOOLING_H_
 
+#include "../common.h"
 #include "Pooling.h"
-
-using namespace std;
-
-
 
 
 /**

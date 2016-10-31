@@ -7,8 +7,7 @@
 
 #include "SoftmaxLayer.h"
 
-
-
+using namespace std;
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer() {

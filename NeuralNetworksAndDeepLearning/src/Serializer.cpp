@@ -8,7 +8,10 @@
 
 #include <string.h>
 #include <arpa/inet.h>
+
 #include "Serializer.h"
+
+using namespace std;
 
 int Serializer::serializeInt(int data, int offset, char* msg) {
     int temp;

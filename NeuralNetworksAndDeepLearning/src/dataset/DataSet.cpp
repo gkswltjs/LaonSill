@@ -7,6 +7,8 @@
 
 #include "DataSet.h"
 
+using namespace std;
+
 template <typename Dtype>
 DataSet<Dtype>::DataSet() {
 	mean[0] = 0;
@@ -38,7 +40,7 @@ DataSet<Dtype>::DataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_
 	trainDataSet = new vector<Dtype>(this->dataSize*numTrainData);
 	trainLabelSet = new vector<uint32_t>(numTrainData);
 	trainSetIndices = new vector<uint32_t>(numTrainData);
-	std::iota(trainSetIndices->begin(), trainSetIndices->end(), 0);
+	iota(trainSetIndices->begin(), trainSetIndices->end(), 0);
 
 	testDataSet = new vector<Dtype>(this->dataSize*numTestData);
 	testLabelSet = new vector<uint32_t>(numTestData);

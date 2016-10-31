@@ -22,9 +22,8 @@
 #include <map>
 #include <string>
 
+#include "../common.h"
 #include "ParamDef.h"
-
-using namespace std;
 
 class ParamMgmt {
 public:
@@ -47,20 +46,20 @@ public:
                                     ParamMgmt() {}
     virtual                        ~ParamMgmt() {}
     static void                     initParamDefMap();
-    static bool                     isParamExist(string paramName);
+    static bool                     isParamExist(std::string paramName);
 
-    static void                     getValue(string paramName, void* value);
-    static void                     setValue(string paramName, void* value);
-    static char*                    getDesc(string paramName);
-    static bool                     isMandatory(string paramName);
-    static bool                     isMutable(string paramName);
-    static bool                     isSessScope(string paramName);
-    static char*                    getTypeName(string paramName);
-    static ParamType                getParamType(string paramName);
-    static char*                    getDefaultValue(string paramName);
+    static void                     getValue(std::string paramName, void* value);
+    static void                     setValue(std::string paramName, void* value);
+    static char*                    getDesc(std::string paramName);
+    static bool                     isMandatory(std::string paramName);
+    static bool                     isMutable(std::string paramName);
+    static bool                     isSessScope(std::string paramName);
+    static char*                    getTypeName(std::string paramName);
+    static ParamType                getParamType(std::string paramName);
+    static char*                    getDefaultValue(std::string paramName);
 
 private:
-    static map<string, ParamDef*>   paramDefMap;
+    static std::map<std::string, ParamDef*>   paramDefMap;
 };
 
 #endif /* PARAMMGMT_H */

@@ -10,6 +10,7 @@
 #ifndef LAYER_SIGMOIDLAYER_H_
 #define LAYER_SIGMOIDLAYER_H_
 
+#include "../common.h"
 #include "OutputLayer.h"
 #include "../cost/Cost.h"
 #include "../activation/Sigmoid.h"

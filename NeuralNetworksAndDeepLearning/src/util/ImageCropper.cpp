@@ -17,7 +17,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 
 using namespace std;
 using namespace cimg_library;
@@ -26,7 +25,7 @@ namespace fs = boost::filesystem;
 
 const char *ImageCropper::path_original = "original";
 const char *ImageCropper::path_crop = "crop";
-const int ImageCropper::system_num_cores = std::thread::hardware_concurrency();
+const int ImageCropper::system_num_cores = thread::hardware_concurrency();
 mutex ImageCropper::barrier;
 
 
@@ -222,7 +221,7 @@ void ImageCropper::foreachFile(const char* full_path, const char* dir_name, cons
 		while(file_name[fnj++] != 0);
 
 		//cout << "crop file: " << crop_file_name << endl;
-		//std::lock_guard<std::mutex> block_threads_until_finish_this_job(barrier);
+		//lock_guard<mutex> block_threads_until_finish_this_job(barrier);
 		(image.get_crop(x0, y0, x1, y1, 1)).save_jpeg(crop_file_name, 100);
 	}
 }

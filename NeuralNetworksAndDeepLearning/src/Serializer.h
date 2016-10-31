@@ -9,6 +9,7 @@
 #ifndef SERIALIZER_H
 #define SERIALIZER_H 
 
+#include "common.h"
 #include "MessageHeader.h"
 
 class Serializer {

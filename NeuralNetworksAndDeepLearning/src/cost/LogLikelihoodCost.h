@@ -10,8 +10,10 @@
 #ifndef COST_LOGLIKELIHOODCOST_H_
 #define COST_LOGLIKELIHOODCOST_H_
 
-#include "Cost.h"
 #include "../cuda/Cuda.h"
+
+#include "../common.h"
+#include "Cost.h"
 
 
 /**

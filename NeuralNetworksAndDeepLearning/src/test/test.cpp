@@ -1,22 +1,20 @@
-#include <iostream>
-
 #include "../dataset/ImagePackDataSet.h"
 #include "../util/ImagePacker.h"
 #include "../Util.h"
 
 #include <boost/math/special_functions/next.hpp>
 #include <boost/random.hpp>
-#include <iostream>
 
 #include <gnuplot-iostream.h>
 #include <cmath>
 #include <cfloat>
 #include <boost/tuple/tuple.hpp>
+
+#include "../common.h"
 #include "../debug/Debug.h"
 #include "../dataset/DataSet.h"
 
 using namespace std;
-
 
 int imagePackerTest(int argc, char** argv);
 void imagepacker_test(int numCategory, int numTrain, int numTest, int numImagesInTrainFile, int numImagesInTestFile, int numChannels);
@@ -60,16 +58,16 @@ int gnuplot_test() {
 
 	Gnuplot gp;
 
-	std::vector<std::pair<double, double> > xy_pts_A;
+	vector<pair<double, double> > xy_pts_A;
 	for(double x=-2; x<2; x+=0.01) {
 		double y = x*x*x;
-		xy_pts_A.push_back(std::make_pair(x, y));
+		xy_pts_A.push_back(make_pair(x, y));
 	}
 
-	std::vector<std::pair<double, double> > xy_pts_B;
+	vector<pair<double, double> > xy_pts_B;
 	for(double alpha=0; alpha<1; alpha+=1.0/24.0) {
 		double theta = alpha*2.0*3.14159;
-		xy_pts_B.push_back(std::make_pair(cos(theta), sin(theta)));
+		xy_pts_B.push_back(make_pair(cos(theta), sin(theta)));
 	}
 
 	gp << "set xrange [-2:2]\nset yrange [-2:2]\n";
@@ -78,13 +76,13 @@ int gnuplot_test() {
 	// (e.g. "gp.file1d(pts, 'mydata.dat')"), then the named file will be created
 	// and won't be deleted (this is useful when creating a script).
 	gp << "plot" << gp.file1d(xy_pts_A) << "with lines title 'cubic',"
-		<< gp.file1d(xy_pts_B) << "with points title 'circle'" << std::endl;
+		<< gp.file1d(xy_pts_B) << "with points title 'circle'" << endl;
 
 #ifdef _WIN32
 	// For Windows, prompt for a keystroke before the Gnuplot object goes out of scope so that
 	// the gnuplot window doesn't get closed.
-	std::cout << "Press enter to exit." << std::endl;
-	std::cin.get();
+	cout << "Press enter to exit." << endl;
+	cin.get();
 #endif
 	/*
 	Gnuplot gp;
@@ -96,18 +94,18 @@ int gnuplot_test() {
 	// environment variable.
 
 	// Gnuplot vectors (i.e. arrows) require four columns: (x,y,dx,dy)
-	std::vector<boost::tuple<double, double, double, double> > pts_A;
+	vector<boost::tuple<double, double, double, double> > pts_A;
 
 	// You can also use a separate container for each column, like so:
-	std::vector<double> pts_B_x;
-	std::vector<double> pts_B_y;
-	std::vector<double> pts_B_dx;
-	std::vector<double> pts_B_dy;
+	vector<double> pts_B_x;
+	vector<double> pts_B_y;
+	vector<double> pts_B_dx;
+	vector<double> pts_B_dy;
 
 	// You could also use:
-	//   std::vector<std::vector<double> >
-	//   boost::tuple of four std::vector's
-	//   std::vector of std::tuple (if you have C++11)
+	//   vector<vector<double> >
+	//   boost::tuple of four vector's
+	//   vector of tuple (if you have C++11)
 	//   arma::mat (with the Armadillo library)
 	//   blitz::Array<blitz::TinyVector<double, 4>, 1> (with the Blitz++ library)
 	// ... or anything of that sort
@@ -137,8 +135,8 @@ int gnuplot_test() {
 #ifdef _WIN32
 	// For Windows, prompt for a keystroke before the Gnuplot object goes out of scope so that
 	// the gnuplot window doesn't get closed.
-	std::cout << "Press enter to exit." << std::endl;
-	std::cin.get();
+	cout << "Press enter to exit." << endl;
+	cin.get();
 #endif
 */
 
@@ -313,10 +311,10 @@ void xavier_test() {
 	float max = -100;
 	float min = 100;
 	float sd_xavier = -0.5;
-	std::random_device rd_xavier;
-	std::mt19937 gen_xavier(rd_xavier());
-	//std::uni _distribution<DATATYPE> normal_dist(0.0, 1.0);
-	std::uniform_real_distribution<DATATYPE> unifrom_dist(-sd_xavier, sd_xavier);
+	random_device rd_xavier;
+	mt19937 gen_xavier(rd_xavier());
+	//uni _distribution<DATATYPE> normal_dist(0.0, 1.0);
+	uniform_real_distribution<DATATYPE> unifrom_dist(-sd_xavier, sd_xavier);
 	for(int i = 0; i < size; i++) {
 		float g = unifrom_dist(gen_xavier);
 		//cout << g << endl;

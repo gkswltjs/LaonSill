@@ -9,6 +9,7 @@
 #ifndef LAYER_HIDDENLAYER_H_
 #define LAYER_HIDDENLAYER_H_
 
+#include "../common.h"
 #include "Layer.h"
 //#include "../network/NetworkConfig.h"
 
@@ -28,10 +29,10 @@ public:
 	 */
 	class Builder : public Layer<Dtype>::Builder {
 	public:
-		vector<uint32_t> _prevLayerIndices;
+        std::vector<uint32_t> _prevLayerIndices;
 
 		Builder() {}
-		virtual Builder* name(const string name) {
+		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
@@ -39,16 +40,16 @@ public:
 			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			Layer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
-		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
 			this->_prevLayerIndices = prevLayerIndices;
 			return this;
 		}
 		Layer<Dtype>* build() = 0;
-		virtual void save(ofstream& ofs) {
+		virtual void save(std::ofstream& ofs) {
 			Layer<Dtype>::Builder::save(ofs);
 			uint32_t numPrevLayerIndices = _prevLayerIndices.size();
 			ofs.write((char*)&numPrevLayerIndices, sizeof(uint32_t));
@@ -56,7 +57,7 @@ public:
 				ofs.write((char*)&_prevLayerIndices[i], sizeof(uint32_t));
 			}
 		}
-		virtual void load(ifstream& ifs) {
+		virtual void load(std::ifstream& ifs) {
 			Layer<Dtype>::Builder::load(ifs);
 			uint32_t numPrevLayerIndices;
 			ifs.read((char*)&numPrevLayerIndices, sizeof(uint32_t));
@@ -71,7 +72,7 @@ public:
 
 	HiddenLayer();
 	HiddenLayer(Builder* builder);
-	HiddenLayer(const string name);
+	HiddenLayer(const std::string name);
 	virtual ~HiddenLayer();
 
 

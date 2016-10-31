@@ -7,6 +7,7 @@
 
 #include "DeepDream.h"
 
+using namespace std;
 
 #ifndef GPU_MODE
 DeepDream::DeepDream(Network *network, const char *base_img, UINT iter_n, UINT octave_n,
@@ -30,8 +31,8 @@ DeepDream::~DeepDream() {}
 
 void printImage(const char *head, DATATYPE *data, int w, int h, int c, bool force=false) {
 	if(force || true) {
-		int width = std::min(5, w);
-		int height = std::min(5, h);
+		int width = min(5, w);
+		int height = min(5, h);
 
 		cout << head << "-" << w << "x" << h << "x" << c << endl;
 		for(int i = 0; i < height; i++) {
@@ -188,7 +189,7 @@ void DeepDream::make_step(CImg<DATATYPE>& src, DATATYPE *d_src, const char *end,
 	// apply normalizedascent step to the input image
 	double g_sum = 0.0f;
 	for(int i = 0; i < input_b_outsize; i++) {
-		g_sum += std::abs(g[i]);
+		g_sum += abs(g[i]);
 	}
 	float g_coef = (float)(step_size/(g_sum / input_b_outsize));
 	for(int i = 0; i < input_b_outsize; i++) {

@@ -13,7 +13,7 @@
 #include <mutex>
 #include <condition_variable>
 
-using namespace std;
+#include "common.h"
 
 class SessContext {
 public:
@@ -23,13 +23,13 @@ public:
         this->running = false;
         this->active = false;
     }
-    virtual            ~SessContext() {}
-    int                 sessId;
-    mutex               sessMutex;
-    condition_variable  sessCondVar;
-    int                 fd;
-    bool                running;
-    bool                active;     // should be run
+    virtual                    ~SessContext() {}
+    int                         sessId;
+    std::mutex                  sessMutex;
+    std::condition_variable     sessCondVar;
+    int                         fd;
+    bool                        running;
+    bool                        active;     // should be run
 };
 
 #endif /* SESSCONTEXT_H */

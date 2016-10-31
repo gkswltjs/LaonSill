@@ -15,12 +15,12 @@
 
 #include <cudnn.h>
 #include <cstdint>
-#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 #include <memory>
 
+#include "../common.h"
 #include "../Data.h"
 #include "LayerConfig.h"
 
@@ -44,7 +44,7 @@ public:
 	 * @brief 레이어 타입 열거형
 	 * @details	지원하는 레이어 타입 열거,
 	 */
-	enum Type {
+	enum Type: int {
 		None=0,
 		Input, 					// 입력 레이어
 		FullyConnected, 		// Fully Connected 레이어
@@ -66,16 +66,16 @@ public:
 	class Builder {
 	public:
 		Type type;
-		string _name;							///< 레이어의 이름
+        std::string _name;							///< 레이어의 이름
 		uint32_t _id;							///< 레이어의 아이디
-		vector<uint32_t> _nextLayerIndices;		///< 레이어의 다음 레이어 아이디 목록
+        std::vector<uint32_t> _nextLayerIndices;		///< 레이어의 다음 레이어 아이디 목록
 
 		Builder() {
 			type = Layer<Dtype>::None;
 			_name = "";
 		}
 		virtual ~Builder() {}
-		virtual Builder* name(const string name) {
+		virtual Builder* name(const std::string name) {
 			this->_name = name;
 			return this;
 		}
@@ -83,12 +83,12 @@ public:
 			this->_id = id;
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			this->_nextLayerIndices = nextLayerIndices;
 			return this;
 		}
 		virtual Layer<Dtype>* build() = 0;
-		virtual void save(ofstream& ofs) {
+		virtual void save(std::ofstream& ofs) {
 			ofs.write((char*)&type, sizeof(uint32_t));
 
 			size_t nameLength = _name.size();
@@ -102,7 +102,7 @@ public:
 				ofs.write((char*)&_nextLayerIndices[i], sizeof(uint32_t));
 			}
 		}
-		virtual void load(ifstream& ifs) {
+		virtual void load(std::ifstream& ifs) {
 
 			size_t nameLength;
 			ifs.read((char*)&nameLength, sizeof(size_t));
@@ -143,7 +143,7 @@ public:
 	 * @details 레이어 클래스 생성자
 	 * @param name 레이어 이름에 대한 문자열 포인터
 	 */
-	Layer(const string name);
+	Layer(const std::string name);
 	/**
 	 * @details 레이어 클래스 소멸자
 	 */
@@ -163,7 +163,7 @@ public:
 	 * @details 레이어의 이름을 조회한다.
 	 * @return 레이어 이름
 	 */
-	const string getName() const { return name; }
+	const std::string getName() const { return name; }
 	/**
 	 * @biref 레이어의 타입을 조회한다.
 	 * @return 레이어 타입
@@ -173,12 +173,12 @@ public:
 	 * @details 레이어에 연결된 다음 레이어 목록 벡터를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어 목록 벡터
 	 */
-	vector<Layer<Dtype>*>& getNextLayers() { return this->nextLayers; }
+    std::vector<Layer<Dtype>*>& getNextLayers() { return this->nextLayers; }
 	/**
 	 * @details 레이어에 연결된 이전 레이어 목록 벡터를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어 목록 벡터
 	 */
-	vector<Layer<Dtype>*>& getPrevLayers() { return this->prevLayers; }
+    std::vector<Layer<Dtype>*>& getPrevLayers() { return this->prevLayers; }
 	/**
 	 * @details 레이어에 연결된 다음 레이어의 수를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어의 수
@@ -252,7 +252,7 @@ public:
 	 * @param method 이 method를 호출한 method의 이름
 	 * @return 현재 레이어에 연결된 마지막 이전 레이어 여부
 	 */
-	bool w_isLastPrevLayerRequest(uint32_t idx, const string method);
+	bool w_isLastPrevLayerRequest(uint32_t idx, const std::string method);
 	/**
 	 * @details 현재 레이어에 연결된 첫 다음 레이어 여부를 조회한다.
 	 * @param idx 현재 레이어에 연결된 다음 레이어 아이디
@@ -271,7 +271,7 @@ public:
 	 *          테스트를 통과했는지 통과하지 못했는지를 화면에 출력한다.
 	 * @param idx 요청을 보낸 다음 레이어의 id
 	 */
-	bool w_isLastNextLayerRequest(uint32_t idx, const string method);
+	bool w_isLastNextLayerRequest(uint32_t idx, const std::string method);
 
 	/**
 	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화하고
@@ -279,7 +279,7 @@ public:
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 현재 레이어의 입력 데이터 구조정보
 	 */
-	virtual void shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& prevLayerOutput);
+	virtual void shape(uint32_t idx, io_dim in_dim, std::shared_ptr<Data<Dtype>>& prevLayerOutput);
 	/**
 	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
@@ -296,14 +296,14 @@ public:
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	//virtual void save(uint32_t idx, ofstream &ofs);
+	//virtual void save(uint32_t idx, std:ofstream &ofs);
 	/**
 	 * @details 현재 레이어의 메타정보를 스트림의 헤더에 쓰고 다음 레이어들에 대해 saveHeader()를 요청한다.
 	 *          입력 레이어 또는 내부 레이어가 있는 레이어(e.g 인셉션레이어)에서 사용한다.
 	 * @param  idx 요청을 보낸 이전 레이어의 id
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	//virtual void saveHeader(uint32_t idx, ofstream &ofs);
+	//virtual void saveHeader(uint32_t idx, std:ofstream &ofs);
 	/**
 	 * @details 현재 레이어를 스트림으로부터 읽어 들여 복구한다.
 	 *          - 레이어의 상속받은 상위 클래스 영역 읽기 및 초기화 (_shape() 포함, Layer 클래스 제외)
@@ -312,7 +312,7 @@ public:
 	 * @param ifs 레이어를 읽어들일 입력 스트림
 	 * @param layerMap
 	 */
-	//virtual void load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 #ifndef GPU_MODE
 	/**
@@ -340,19 +340,19 @@ protected:
 	 * @details 레이어를 초기화한다.
 	 * @param name 레이어의 이름 문자열 포인터
 	 */
-	void initialize(uint32_t id, const string name);
+	void initialize(uint32_t id, const std::string name);
 	/**
 	 * @details 레이어 메타정보로부터 레이어 구성을 로드한다.
 	 * @param ifs 레이어를 읽어들일 입력 스트림
 	 * @param layerMap 레이어 메타정보로부터 읽어 레이어 주소를 키, 레이어를 값으로 생성한 레이어 맵
 	 */
-	//virtual void loadNetwork(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void loadNetwork(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	/**
 	 * @details 현재 레이어 로드 후 이전/다음 레이어 포인터 벡터에 로드된 레이어 포인터 값을 키로하여
 	 *          레이어맵의 실제 레이어 객체를 찾아서 이전/다음 레이어에 연결한다.
 	 * @param layerMap save당시 레이어의 주소를 키, 해당 레이어를 값으로 하는 맵
 	 */
-	//virtual void updateLayerRelation(map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void updateLayerRelation(std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 
 
@@ -384,7 +384,7 @@ protected:
 	 * @details 현재 레이어를 스트림에 쓴다.
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	//virtual void _save(ofstream &ofs);
+	//virtual void _save(std:ofstream &ofs);
 	/**
 	 * @details 현재 레이어를 스트림으로부터 읽어 들여 복구한다.
 	 *          - 레이어의 상속받은 상위 클래스 영역 읽기 및 초기화 (_shape() 포함, Layer 클래스 제외)
@@ -393,7 +393,7 @@ protected:
 	 * @param ifs 레이어를 읽어들일 입력 스트림
 	 * @param layerMap
 	 */
-	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void _load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
 	 */
@@ -438,7 +438,7 @@ protected:
 	/**
 	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
 	 */
-	//void propSave(ofstream &ofs);
+	//void propSave(std:ofstream &ofs);
 
 #ifndef GPU_MODE
 	/**
@@ -458,15 +458,15 @@ protected:
 protected:
 	Layer<Dtype>::Type type;							///< 레이어의 타입
 	int id;												///< 레이어의 고유 아이디
-	string name;										///< 레이어의 이름
+    std::string name;										///< 레이어의 이름
 
 	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
 	io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
 	io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
 
-	vector<Layer<Dtype>*> prevLayers;					///< 현재 레이어의 이전(입력) 레이어 목록 벡터
-	vector<Layer<Dtype>*> nextLayers;					///< 현재 레이어의 다음(출력) 레이어 목록 벡터
+    std::vector<Layer<Dtype>*> prevLayers;					///< 현재 레이어의 이전(입력) 레이어 목록 벡터
+    std::vector<Layer<Dtype>*> nextLayers;					///< 현재 레이어의 다음(출력) 레이어 목록 벡터
 
 
 
@@ -487,8 +487,8 @@ public:
 	//Data<Dtype>* _input;								///< 레이어 입력 데이터 및 그레디언트
 	//Data<Dtype>* _output;								///< 레이어 출력 데이터 및 그레디언트
 
-	shared_ptr<Data<Dtype>> _input;
-	shared_ptr<Data<Dtype>> _output;
+    std::shared_ptr<Data<Dtype>> _input;
+    std::shared_ptr<Data<Dtype>> _output;
 };
 
 

@@ -10,6 +10,8 @@
 
 #include "DepthConcatLayer.h"
 
+using namespace std;
+
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::initialize() {
 	this->type = Layer<Dtype>::DepthConcat;

@@ -8,17 +8,15 @@
 #ifndef STATGRAPHPLOTTER_H_
 #define STATGRAPHPLOTTER_H_
 
-#include "StatLogger.h"
-#include <iostream>
-
-#include <gnuplot-iostream.h>
-#include <boost/tuple/tuple.hpp>
 #include <cmath>
 #include <cfloat>
 
+#include <boost/tuple/tuple.hpp>
 
-using namespace std;
+#include <gnuplot-iostream.h>
 
+#include "../common.h"
+#include "StatLogger.h"
 
 class StatGraphPlotter : public StatLogger {
 public:
@@ -31,11 +29,11 @@ public:
 		statCount = 1;
 	}
 	/*
-	StatGraphPlotter(const vector<string>& statNameList, uint32_t windowSize=500, uint32_t refreshFreq=1)
+	StatGraphPlotter(const std::vector<std::string>& statNameList, uint32_t windowSize=500, uint32_t refreshFreq=1)
 		: StatGraphPlotter(windowSize, refreshFreq) {
 
 		if(statCount != statNameList.size()) {
-			cout << "statCount != statNameList.size() ... " << endl;
+            std::cout << "statCount != statNameList.size() ... " << std::endl;
 			exit(1);
 		}
 		this->statNameList = statNameList;
@@ -44,8 +42,9 @@ public:
 	*/
 	virtual ~StatGraphPlotter() {}
 
-	void addStat(const uint32_t statIndex, const string statName, const double stat) {
-		//cout << "statIndex: " << statIndex << ", statName: " << statName << ", stat: " << stat << endl;
+	void addStat(const uint32_t statIndex, const std::string statName, const double stat) {
+		//std::cout << "statIndex: " << statIndex << ", statName: " << statName << ", stat: "
+        //<< stat << std::endl;
 
 
 		if(stat > statMax) statMax = stat;
@@ -53,7 +52,7 @@ public:
 
 		// 새로운 아이템 index 등장, 추가
 		if(statIndex == statList.size()) {
-			statList.push_back(vector<boost::tuple<int, double>>());
+			statList.push_back(std::vector<boost::tuple<int, double>>());
 			//statList[statIndex].push_back(boost::make_tuple(statList[statIndex].size(), stat));
 			statList[statIndex].push_back(boost::make_tuple(0, stat));
 			statNameList.push_back(statName);
@@ -61,7 +60,7 @@ public:
 		}
 		// 연속되지 않은 새로운 아이템 index 등장, error로 처리
 		else if(statIndex > statList.size()) {
-			cout << "invalid stat index ... " << endl;
+            std::cout << "invalid stat index ... " << std::endl;
 			exit(1);
 		}
 
@@ -95,21 +94,22 @@ public:
 
 		//int statItemSize = statList[statIndex].size();
 		int statItemSize = statCount;
-		plot << "set xrange [" << std::max(0, (int)(statItemSize-windowSize)) << ":" << statItemSize+5 << "]\nset yrange [" << std::max(0.0, localStatMin) << ":" << localStatMax << "]\n";
+		plot << "set xrange [" << std::max(0, (int)(statItemSize-windowSize)) << ":" <<
+            statItemSize+5 << "]\nset yrange [" << std::max(0.0, localStatMin) << ":" << localStatMax << "]\n";
 		plot << "plot ";
 		for(uint32_t i = 0; i < statList.size(); i++) {
 			plot << plot.file1d(statList[i]) << " with linespoints pt 1 title '"<< statNameList[i] << "'";
 			if(i < statList.size()-1) plot << ",";
-			else plot << endl;
+			else plot << std::endl;
 		}
 
-		//cout << "drawed graph ... " << endl;
+		//std::cout << "drawed graph ... " << std::endl;
 	}
 
 
 private:
-	vector<vector<boost::tuple<int, double>>> statList;
-	vector<string> statNameList;
+    std::vector<std::vector<boost::tuple<int, double>>> statList;
+    std::vector<std::string> statNameList;
 	Gnuplot plot;
 
 	double statMax;

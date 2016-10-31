@@ -9,6 +9,7 @@
 #define LEARNABLELAYER_H_
 
 
+#include "../common.h"
 #include "../cuda/Cuda.h"
 #include "../Data.h"
 
@@ -21,7 +22,7 @@ class LearnableLayer {
 public:
 	virtual ~LearnableLayer() {}
 
-	virtual const string getName() = 0;
+	virtual const std::string getName() = 0;
 
 
 
@@ -50,8 +51,8 @@ public:
 	//virtual double testParamAbnormality() = 0;
 	virtual uint32_t boundParams() = 0;
 
-	virtual void saveParams(ofstream& ofs) = 0;
-	virtual void loadParams(ifstream& ifs) = 0;
+	virtual void saveParams(std::ofstream& ofs) = 0;
+	virtual void loadParams(std::ifstream& ifs) = 0;
 
     virtual void syncMutableMem() {}
     virtual void applyChanges(LearnableLayer<Dtype> *targetLayer) {}

@@ -9,10 +9,10 @@
 #ifndef POOLING_MAXPOOLING_H_
 #define POOLING_MAXPOOLING_H_
 
-#include "Pooling.h"
 #include <limits>
 
-using namespace std;
+#include "../common.h"
+#include "Pooling.h"
 
 /**
  * @brief 최대 풀링을 구현한 Pooling 클래스

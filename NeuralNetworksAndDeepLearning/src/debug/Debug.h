@@ -9,8 +9,8 @@
 #define DEBUG_H_
 
 #include <cstdint>
-#include <iostream>
 
+#include "../common.h"
 #include "../activation/Activation.h"
 #include "../dataset/DataSet.h"
 #include "../dataset/ImagePackDataSet.h"
@@ -226,7 +226,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception3ASimpleLayersConfig() {
 	const float bias_const = 0.05;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -423,7 +423,7 @@ LayersConfig<Dtype>* createGoogLeNetInception3ALayersConfig() {
 	const float xavier_const = 1.0;
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -602,7 +602,7 @@ LayersConfig<Dtype>* createGoogLeNetInception3ALayersConfigTest() {
 	const float xavier_const = 1.0;
 	const float bias_const = 0.1;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -784,7 +784,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception3BLayersConfig() {
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -1056,7 +1056,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception4ALayersConfig() {
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -1411,7 +1411,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception4BLayersConfig() {
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -1850,7 +1850,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception4CLayersConfig() {
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -2378,7 +2378,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception4DLayersConfig() {
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -3697,7 +3697,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception5ALayersConfig() {
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -4503,7 +4503,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 	const float bias_const = 0.1;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -5380,7 +5380,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createVGG19_1_NetLayersConfig() {
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -5467,7 +5467,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createVGG19_2_NetLayersConfig() {
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -5585,7 +5585,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 	const float weight_const = 0.01f;
 	const float bias_const = 0.1f;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -5904,7 +5904,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 		const float bias_const = 0.1f;
 		const uint32_t poolKernel = 2;
 
-		cout << endl;
+        std::cout << std::endl;
 		LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -6225,7 +6225,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createGoogLeNetInceptionAuxLayersConfig() {
 	const float bias_const = 0.2;
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -7278,7 +7278,7 @@ LayersConfig<Dtype>* createGoogLeNetLayersConfig() {
 	const float bias_const = 0.05;
 
 
-	cout << endl;
+    std::cout << std::endl;
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())

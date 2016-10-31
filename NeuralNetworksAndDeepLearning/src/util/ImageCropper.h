@@ -14,13 +14,15 @@
 #include <string>
 #include <mutex>
 
+#include "../common.h"
+
 /**
  * @brief Directory와 해당 Directory 내의 작업대상 이미지 이름 문자열 목록을 저장하는 구조체
  */
 struct DirTaskArg_t {
 	char dir_path[256];							///< 대상 이미지들을 포함하는 디렉토리 경로
 	char dir_name[32];							///< 대상 이미지들을 포함하는 디렉토리 이름
-	std::vector<std::string> file_name_list;	///< 디렉토리 내의 이미지 파일 이름 목록 벡터
+    std::vector<std::string> file_name_list;	///< 디렉토리 내의 이미지 파일 이름 목록 벡터
 };
 
 

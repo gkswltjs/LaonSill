@@ -14,6 +14,7 @@
 #include <map>
 #include <string>
 
+#include "../common.h"
 #include "../activation/Activation.h"
 #include "../Util.h"
 #include "HiddenLayer.h"
@@ -92,7 +93,7 @@ public:
 			this->_activationType = activationType;
 			return this;
 		}
-		virtual Builder* name(const string name) {
+		virtual Builder* name(const std::string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
 		}
@@ -100,18 +101,18 @@ public:
 			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
-		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
 			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
 		Layer<Dtype>* build() {
 			return new ConvLayer(this);
 		}
-		virtual void save(ofstream& ofs) {
+		virtual void save(std::ofstream& ofs) {
 			HiddenLayer<Dtype>::Builder::save(ofs);
 			ofs.write((char*)&_filterDim, sizeof(filter_dim));
 			ofs.write((char*)&_weightUpdateParam, sizeof(update_param));
@@ -120,7 +121,7 @@ public:
 			ofs.write((char*)&_biasFiller, sizeof(param_filler<Dtype>));
 			ofs.write((char*)&_activationType, sizeof(typename Activation<Dtype>::Type));
 		}
-		virtual void load(ifstream& ifs) {
+		virtual void load(std::ifstream& ifs) {
 			HiddenLayer<Dtype>::Builder::load(ifs);
 			ifs.read((char*)&_filterDim, sizeof(filter_dim));
 			ifs.read((char*)&_weightUpdateParam, sizeof(update_param));
@@ -144,7 +145,7 @@ public:
 	 * @param bias_filler bias 초기화 관련 파라미터 구조체
 	 * @param activationType 컨볼루션 결과에 적용할 활성화 타입
 	 */
-	ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
+	ConvLayer(const std::string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 	/**
 	 * @details ConvLayer 소멸자
@@ -163,15 +164,15 @@ public:
 	// Learnable Layer Method
 	//////////////////////////////////////////
 	using HiddenLayer<Dtype>::getName;
-	virtual const string getName() { return this->name; }
+	virtual const std::string getName() { return this->name; }
 	virtual void update();
 	virtual double sumSquareParamsData();
 	virtual double sumSquareParamsGrad();
 	virtual void scaleParamsGrad(float scale);
 	//virtual double testParamAbnormality();
 	virtual uint32_t boundParams();
-	virtual void saveParams(ofstream& ofs);
-	virtual void loadParams(ifstream& ifs);
+	virtual void saveParams(std::ofstream& ofs);
+	virtual void loadParams(std::ifstream& ifs);
 	//////////////////////////////////////////
 	virtual void _backpropagation();
 	
@@ -199,8 +200,8 @@ protected:
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	//virtual void _save(ofstream &ofs);
-	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+	//virtual void _save(std::ofstream &ofs);
+	//virtual void _load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
 
@@ -238,8 +239,8 @@ protected:
 
 public:
 	Data<Dtype>* _preActivation;					///< 컨볼루션 결과에 대한 데이터
-	vector<Data<Dtype>*> _params;					///< 파리미터 데이터 (Filter, Bias 포함)
-	vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
+    std::vector<Data<Dtype>*> _params;					///< 파리미터 데이터 (Filter, Bias 포함)
+    std::vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
 
 };
 

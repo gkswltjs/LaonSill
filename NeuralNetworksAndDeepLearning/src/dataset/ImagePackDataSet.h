@@ -16,9 +16,8 @@
 #include <vector>
 #include <string>
 
+#include "../common.h"
 #include "DataSet.h"
-
-using namespace std;
 
 
 /**
@@ -46,11 +45,11 @@ public:
 	 * @param numTestFile 테스트데이터셋 파일의 수.
 	 */
 	ImagePackDataSet(
-			string trainImage,
-			string trainLabel,
+			std::string trainImage,
+			std::string trainLabel,
 			uint32_t numTrainFile,
-			string testImage,
-			string testLabel,
+			std::string testImage,
+			std::string testLabel,
 			uint32_t numTestFile
 			);
 	virtual ~ImagePackDataSet();
@@ -75,16 +74,16 @@ public:
 
 #ifndef GPU_MODE
 protected:
-	int loadDataSetFromResource(string resources[2], DataSample *&dataSet);
+	int loadDataSetFromResource(std::string resources[2], DataSample *&dataSet);
 #else
 protected:
 
 	int loadDataSetFromResource(
-			string data_path,
-			string label_path,
-			vector<Dtype> *&dataSet,
-			vector<uint32_t> *&labelSet,
-			vector<uint32_t>*& setIndices);
+			std::string data_path,
+			std::string label_path,
+			std::vector<Dtype> *&dataSet,
+			std::vector<uint32_t> *&labelSet,
+			std::vector<uint32_t>*& setIndices);
 
 	virtual void zeroMean(bool hasMean=false, bool isTrain=true);
 
@@ -92,11 +91,11 @@ protected:
 #endif
 
 protected:
-	const string trainImage;				///< 학습데이터셋 파일 경로
-	const string trainLabel;				///< 학습데이터셋 정답레이블 파일 경로
+	const std::string trainImage;				///< 학습데이터셋 파일 경로
+	const std::string trainLabel;				///< 학습데이터셋 정답레이블 파일 경로
 	const int numTrainFile;					///< 학습데이터셋 파일 수
-	const string testImage;					///< 테스트데이터셋 파일 경로
-	const string testLabel;					///< 테스트데이터셋 정답레이블 파일 경로
+	const std::string testImage;					///< 테스트데이터셋 파일 경로
+	const std::string testLabel;					///< 테스트데이터셋 정답레이블 파일 경로
 	const int numTestFile;					///< 테스트데이터셋 파일 수
 	//const double validationSetRatio;		///< 학습데이터셋의 유효데이터 비율
 
@@ -105,7 +104,7 @@ protected:
 	int numImagesInTrainFile;				///< 학습데이터셋 파일 하나에 들어있는 데이터의 수
 	int numImagesInTestFile;				///< 테스트데이터셋 파일 하나에 들어있는 데이터의 수
 
-	vector<uint8_t>* bufDataSet;			///< 데이터셋 데이터를 로드할 버퍼. 파일의 uint8_t타입 데이터를 버퍼에 올려 uint32_t타입으로 변환하기 위한 버퍼.
+    std::vector<uint8_t>* bufDataSet;			///< 데이터셋 데이터를 로드할 버퍼. 파일의 uint8_t타입 데이터를 버퍼에 올려 uint32_t타입으로 변환하기 위한 버퍼.
 
 
 
@@ -123,13 +122,13 @@ protected:
 
 
 
-	vector<Dtype>* frontTrainDataSet;
-	vector<uint32_t>* frontTrainLabelSet;
-	vector<Dtype>* backTrainDataSet;
-	vector<uint32_t>* backTrainLabelSet;
+    std::vector<Dtype>* frontTrainDataSet;
+    std::vector<uint32_t>* frontTrainLabelSet;
+    std::vector<Dtype>* backTrainDataSet;
+    std::vector<uint32_t>* backTrainLabelSet;
 
 
-	vector<uint32_t>* trainFileIndices;
+    std::vector<uint32_t>* trainFileIndices;
 
 
 
@@ -139,8 +138,8 @@ protected:
 
 	pthread_t bufThread;
 	thread_arg_t threadArg;
-	vector<Dtype>* secondTrainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
-	vector<uint32_t>* secondTrainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
+    std::vector<Dtype>* secondTrainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
+    std::vector<uint32_t>* secondTrainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
 
 
 	static void* load_helper(void* context);

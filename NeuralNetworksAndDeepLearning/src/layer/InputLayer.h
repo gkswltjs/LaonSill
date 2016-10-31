@@ -11,11 +11,11 @@
 #define LAYER_INPUTLAYER_H_
 
 #include <cstdint>
-#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 
+#include "../common.h"
 #include "../Util.h"
 #include "Layer.h"
 #include "../dataset/DataSet.h"
@@ -41,7 +41,7 @@ public:
 		Builder() {
 			this->type = Layer<Dtype>::Input;
 		}
-		virtual Builder* name(const string name) {
+		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
@@ -49,17 +49,17 @@ public:
 			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			Layer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
 		Layer<Dtype>* build() {
 			return new InputLayer(this);
 		}
-		virtual void save(ofstream& ofs) {
+		virtual void save(std::ofstream& ofs) {
 			Layer<Dtype>::Builder::save(ofs);
 		}
-		virtual void load(ifstream& ifs) {
+		virtual void load(std::ifstream& ifs) {
 			Layer<Dtype>::Builder::load(ifs);
 		}
 	};
@@ -75,7 +75,7 @@ public:
 	 * @details InputLayer 생성자
 	 * @param name 레이어의 이름 문자열
 	 */
-	InputLayer(const string name);
+	InputLayer(const std::string name);
 	InputLayer(Builder* builder);
 	/**
 	 * @details InputLayer 소멸자
@@ -118,8 +118,8 @@ protected:
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
 	 * @param ofs 레이어를 쓸 출력 스트림
 	 */
-	//virtual void _save(ofstream &ofs);
-	//virtual void _load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+	//virtual void _save(std::ofstream &ofs);
+	//virtual void _load(std::ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 };
 

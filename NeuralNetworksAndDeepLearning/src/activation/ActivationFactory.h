@@ -12,12 +12,11 @@
 
 #include <stddef.h>
 
+#include "../common.h"
 #include "Activation.h"
 #include "ReLU.h"
 #include "Sigmoid.h"
 #include "Softmax.h"
-
-
 
 
 /**

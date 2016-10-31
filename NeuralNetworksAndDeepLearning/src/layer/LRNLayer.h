@@ -9,6 +9,7 @@
 #ifndef LAYER_LRNLAYER_H_
 #define LAYER_LRNLAYER_H_
 
+#include "../common.h"
 #include "HiddenLayer.h"
 #include "LayerConfig.h"
 #include "../exception/Exception.h"
@@ -45,7 +46,7 @@ public:
 			this->_lrnDim.k = k;
 			return this;
 		}
-		virtual Builder* name(const string name) {
+		virtual Builder* name(const std::string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
 		}
@@ -53,22 +54,22 @@ public:
 			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const vector<uint32_t>& nextLayerIndices) {
+		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
 			return this;
 		}
-		virtual Builder* prevLayerIndices(const vector<uint32_t>& prevLayerIndices) {
+		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
 			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
 		Layer<Dtype>* build() {
 			return new LRNLayer(this);
 		}
-		virtual void save(ofstream& ofs) {
+		virtual void save(std::ofstream& ofs) {
 			HiddenLayer<Dtype>::Builder::save(ofs);
 			ofs.write((char*)&_lrnDim, sizeof(lrn_dim));
 		}
-		virtual void load(ifstream& ifs) {
+		virtual void load(std::ifstream& ifs) {
 			HiddenLayer<Dtype>::Builder::load(ifs);
 			ifs.read((char*)&_lrnDim, sizeof(lrn_dim));
 		}
@@ -83,7 +84,7 @@ public:
 	 * @param 레이어 이름 문자열
 	 * @param lrn_d LRN 연산 관련 파라미터 구조체
 	 */
-	LRNLayer(const string name, lrn_dim lrn_d);
+	LRNLayer(const std::string name, lrn_dim lrn_d);
 	/**
 	 * @details LRNLayer 소멸자
 	 */
@@ -101,8 +102,8 @@ protected:
 
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	//virtual void _save(ofstream &ofs);
-	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+	//virtual void _save(std::ofstream &ofs);
+	//virtual void _load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 
 protected:

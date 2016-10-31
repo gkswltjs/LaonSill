@@ -2,6 +2,7 @@
 #include "LogLikelihoodCost.h"
 #include <cfloat>
 
+using namespace std;
 
 #ifdef GPU_MODE
 
@@ -51,7 +52,7 @@ __global__ void SoftmaxLossBackprop(
 	//}
 
 	delta[idx * numLabels + targetValue] = -1.0/ayL;
-	//delta[idx * numLabels + targetValue] = -1.0/std::max(activation[idx*numLabels + targetValue], Dtype(FLT_MAX));
+	//delta[idx * numLabels + targetValue] = -1.0/max(activation[idx*numLabels + targetValue], Dtype(FLT_MAX));
 }
 
 #endif
@@ -85,7 +86,7 @@ template <typename Dtype>
 double LogLikelihoodCost<Dtype>::forward(const Dtype* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) {
 	double cost = 0.0;
 	for(uint32_t batchIndex = 0; batchIndex < batchsize; batchIndex++) {
-		cost -= std::log(std::max(output[batchIndex*numLabels+target[batchIndex]], Dtype(FLT_MIN)));
+		cost -= log(max(output[batchIndex*numLabels+target[batchIndex]], Dtype(FLT_MIN)));
 	}
 	return cost;
 }

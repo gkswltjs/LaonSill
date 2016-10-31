@@ -11,12 +11,9 @@
 #include <cstdint>
 #include <vector>
 
+#include "common.h"
 #include "Util.h"
 #include "SyncMem.h"
-
-using namespace std;
-
-
 
 /**
  * @brief Layer 특정 단계에서의 data, gradient를 pair로 warpping, util method를 제공하는 클래스
@@ -26,15 +23,15 @@ template <typename Dtype>
 class Data {
 public:
 	Data();
-	Data(const vector<uint32_t>& shape);
+	Data(const std::vector<uint32_t>& shape);
 	virtual ~Data();
 
-	void shape(const vector<uint32_t>& shape);
-	//void reshape(const vector<uint32_t>& shape);
+	void shape(const std::vector<uint32_t>& shape);
+	//void reshape(const std::vector<uint32_t>& shape);
 
 
 	size_t getCount() const { return _count; }
-	const vector<uint32_t>& getShape() const { return _shape; }
+	const std::vector<uint32_t>& getShape() const { return _shape; }
 
 
 	/**
@@ -274,8 +271,8 @@ public:
 
 
 
-	void save(ofstream& ofs);
-	void load(ifstream& ifs);
+	void save(std::ofstream& ofs);
+	void load(std::ifstream& ifs);
 
 
 
@@ -283,12 +280,12 @@ public:
 	 * @details 데이터를 shape에 따라 화면에 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
-	void print_data(const string& head);
+	void print_data(const std::string& head);
 	/**
 	 * @details 그레디언트를 shape에 따라 화면에 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
-	void print_grad(const string& head);
+	void print_grad(const std::string& head);
 
 
 public:
@@ -296,7 +293,7 @@ public:
 	SyncMem<Dtype> _grad;				///< Data의 그레디언트
 
 private:
-	vector<uint32_t> _shape;			///< Data의 shape, Batches, Channels, Rows, Columns의 4차원 벡터로 구성
+    std::vector<uint32_t> _shape;			///< Data의 shape, Batches, Channels, Rows, Columns의 4차원 벡터로 구성
 
 	size_t _count;						///< Data 메모리의 크기, 엘레먼트의 수 (Batches*Channels*Rows*Columns)
 

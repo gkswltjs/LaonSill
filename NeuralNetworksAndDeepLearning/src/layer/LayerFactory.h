@@ -12,6 +12,7 @@
 
 #include <stddef.h>
 
+#include "../common.h"
 #include "../exception/Exception.h"
 #include "ConvLayer.h"
 #include "DepthConcatLayer.h"

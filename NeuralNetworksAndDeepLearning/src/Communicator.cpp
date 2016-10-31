@@ -6,11 +6,9 @@
  * @details
  */
 
-#include <iostream>
 #include <assert.h>
 #include <sys/socket.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/select.h>
@@ -21,6 +19,8 @@
 
 #include "Communicator.h"
 #include "Worker.h"
+
+using namespace std;
 
 const int               Communicator::LISTENER_PORT = 20087;
 const long              SELECT_TIMEVAL_SEC = 0L;

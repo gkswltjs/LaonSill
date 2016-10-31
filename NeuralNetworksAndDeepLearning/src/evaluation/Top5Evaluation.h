@@ -9,11 +9,12 @@
 #ifndef TOP5EVALUATION_H_
 #define TOP5EVALUATION_H_
 
+#include <limits>
 #include <cmath>
 
+#include "../common.h"
 #include "../Util.h"
 #include "Evaluation.h"
-#include <limits>
 
 
 
@@ -41,7 +42,7 @@ public:
 			}
 
 			//cout << "prediction: ";
-			std::sort(labelScoreList.begin(), labelScoreList.end(), greater<LabelScore>());
+            std::sort(labelScoreList.begin(), labelScoreList.end(), std::greater<LabelScore>());
 			//for(int i = 0; i < labelScoreList.size(); i++) {
 			//	cout << i << ": " << labelScoreList[i].label << ", " << labelScoreList[i].score << endl;
 			//}
@@ -66,7 +67,7 @@ public:
 				labelScoreList[i].label = i;
 				labelScoreList[i].score = output[num_labels*j+i];
 			}
-			std::sort(labelScoreList.begin(), labelScoreList.end(), greater<LabelScore>());
+            std::sort(labelScoreList.begin(), labelScoreList.end(), std::greater<LabelScore>());
 			for(int i = 0; i < 5; i++) {
 				if(*dataSet->getTestLabelAt(baseIndex+j) == labelScoreList[i].label) {
 					this->accurateCount++;
@@ -95,7 +96,7 @@ private:
 			return (this->score > right.score);
 		}
 	};
-	std::vector<LabelScore> labelScoreList;				///< 네트워크가 추정한 순위를 정렬하기 위한 버퍼
+    std::vector<LabelScore> labelScoreList;				///< 네트워크가 추정한 순위를 정렬하기 위한 버퍼
 };
 
 
