@@ -21,6 +21,7 @@
 #include "param/InitParam.h"
 #include "param/Param.h"
 #include "log/ColdLog.h"
+#include "log/SysLog.h"
 
 using namespace std;
 
@@ -33,8 +34,9 @@ int main(int argc, char** argv) {
     InitParam::init();
 
     ColdLog::init();
+    SysLog::init();
 
-    COLD_LOG(ColdLog::INFO, true, "Cold Log ver %d starts", 1);
+    SYS_LOG("Logging system is initialized...");
 
     // (2) 기본 설정
 	cout.precision(11);
@@ -53,6 +55,7 @@ int main(int argc, char** argv) {
     Communicator::joinThreads();
 
     ColdLog::destroy();
+    SysLog::destroy();
 
 	cout << "SOOOA engine ends" << endl;
 	return 0;

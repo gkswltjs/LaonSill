@@ -11,12 +11,10 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <pthread.h>
 
 #include "ColdLog.h"
 #include "../param/Param.h"
@@ -52,8 +50,6 @@ void ColdLog::init() {
     ColdLog::fp = fopen(coldLogFilePath, "a");
 
     ColdLog::logLevel = SPARAM(COLDLOG_LEVEL);
-
-    cout << "log level : " << ColdLog::logLevel << endl;
 }
 
 void ColdLog::destroy() {

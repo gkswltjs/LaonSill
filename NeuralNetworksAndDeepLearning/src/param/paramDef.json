@@ -78,26 +78,6 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 2
-},
-
-"HOTLOG_LEVEL" : 
-{
-    "DESC" : "specify level of hot log",
-    "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SYSTEM",
-    "TYPE" : "INT32",
-    "DEFAULT" : 2
-},
-
-"SYSLOG_LEVEL" : 
-{
-    "DESC" : "specify level of system log",
-    "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SYSTEM",
-    "TYPE" : "INT32",
-    "DEFAULT" : 2
 }
 
 }

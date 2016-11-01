@@ -9,9 +9,30 @@
 #ifndef SYSLOG_H
 #define SYSLOG_H 
 
+#include <mutex>
+
 #include "../common.h"
 
-class SysLog {
+#define SYS_LOG(fmt, args...)                                                       \
+    do {                                                                            \
+        std::unique_lock<std::mutex>  logLock(SysLog::logMutex);                    \
+        SysLog::writeLogHeader(__FILE__,__LINE__);                                  \
+        fprintf(SysLog::fp, fmt, ##args);                                           \
+        fprintf(SysLog::fp, "\n");                                                  \
+        logLock.unlock();                                                           \
+        fflush(SysLog::fp);                                                         \
+    } while (0)
 
+class SysLog {
+public:
+                        SysLog() {}
+    virtual            ~SysLog() {}
+    static void         init();
+    static void         destroy();
+    static FILE*        fp;
+    static std::mutex   logMutex;
+    static void         writeLogHeader(const char* fileName, int lineNum);
+private:
+    static const char*  sysLogFileName;
 };
 #endif /* SYSLOG_H */
