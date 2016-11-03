@@ -2,7 +2,7 @@
 
 "SESS_COUNT" : 
 {
-    "DESC" : "specify session thread count",
+    "DESC" : "specify session thread count.",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -12,7 +12,7 @@
 
 "CONSUMER_COUNT" : 
 {
-    "DESC" : "specify consumer thread count",
+    "DESC" : "specify consumer thread count.",
     "MANDATORY" : false,
     "MUTABLE" : true,
     "SCOPE" : "SESSION",
@@ -22,7 +22,7 @@
 
 "NETWORK_SAVE_DIR" : 
 {
-    "DESC" : "specify network save directory",
+    "DESC" : "specify network save directory.",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -32,7 +32,7 @@
 
 "STATFILE_OUTPUT_DIR" : 
 {
-    "DESC" : "specify statfile output directory",
+    "DESC" : "specify statfile output directory.",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -42,7 +42,7 @@
 
 "COLDLOG_DIR" : 
 {
-    "DESC" : "specify cold log directory. if it is not set, it will set to $SOOOA_HOME/log",
+    "DESC" : "specify cold log directory. if it is not set, it will set to $SOOOA_HOME/log.",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -52,7 +52,7 @@
 
 "HOTLOG_DIR" : 
 {
-    "DESC" : "specify hot log directory. if it is not set, it will set to $SOOOA_HOME/log",
+    "DESC" : "specify hot log directory. if it is not set, it will set to $SOOOA_HOME/log.",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -62,7 +62,7 @@
 
 "SYSLOG_DIR" : 
 {
-    "DESC" : "specify system log directory. if it is not set, it will set to $SOOOA_HOME/log",
+    "DESC" : "specify system log directory. if it is not set, it will set to $SOOOA_HOME/log.",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -78,6 +78,46 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 2
+},
+
+"HOTLOG_BUFFERSIZE" : 
+{
+    "DESC" : "specify buffer size of hot log. Note that total used memory is HOTLOG_BUFFERSIZE * thread count.",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT64",
+    "DEFAULT" : 4194304
+},
+
+"HOTLOG_SLOTSIZE" : 
+{
+    "DESC" : "specify slot size of hot log. It should be least common divisor of HOTLOG_BUFFERSIZE and the greatest common divisor of 512",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT64",
+    "DEFAULT" : 512
+},
+
+"HOTLOG_FLUSH_SLOTCOUNT" : 
+{
+    "DESC" : "specify flushing slot count of hot log.",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT32",
+    "DEFAULT" : 2048
+},
+
+"HOTLOG_FLUSH_CYCLE_MSEC" : 
+{
+    "DESC" : "A Hot Log Flusher flushes regularly. This parameter indicates its cycle time(ms).",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT32",
+    "DEFAULT" : 3000
 }
 
 }

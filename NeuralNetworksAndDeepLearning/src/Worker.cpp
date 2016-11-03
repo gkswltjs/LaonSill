@@ -16,6 +16,7 @@
 #include "network/NetworkConfig.h"
 #include "param/Param.h"
 #include "log/ColdLog.h"
+#include "log/HotLog.h"
 
 using namespace std;
 
@@ -97,6 +98,8 @@ template <typename Dtype>
 void Worker<Dtype>::producerThread() {
 	cout << "producer_thread starts" << endl;
     atomic_fetch_add(&Worker<Dtype>::readyCount, 1); 
+    
+    HotLog::initForThread();
 
     // (1) 서버가 준비 될때까지 대기 한다.
     while (!Worker<Dtype>::isReady()) {
@@ -104,6 +107,11 @@ void Worker<Dtype>::producerThread() {
     }
 
     COLD_LOG(ColdLog::INFO, true, "producer thread starts main loop");
+
+    HOT_LOG(2);
+
+    for (int i = 0; i < 80000; i++)
+        HOT_LOG(1, i, "Hello", 1.3 * (double)i, true);
 
     // (2) 메인 루프
     while (true) {
@@ -169,6 +177,7 @@ void Worker<Dtype>::producerThread() {
             break;
     }
 
+    HotLog::markExit();
     cout << "producer_thread ends" << endl;
 }
 
@@ -180,7 +189,10 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
     Worker<Dtype>::consumerJobStep = 0L;
     atomic_fetch_add(&Worker<Dtype>::readyCount, 1); 
 
+    HotLog::initForThread();
+
 	cout << "consumer_thread #" << consumerIdx << "(GPU:#" << gpuIdx << ") starts" << endl;
+    HOT_LOG(1, 7, "Consu", 37.8, false);
 
 	// 리소스 초기화
 	checkCudaErrors(cudaSetDevice(gpuIdx));
@@ -232,6 +244,7 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
 	checkCudaErrors(cublasDestroy(Cuda::cublasHandle));
 	checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
 
+    HotLog::markExit();
 	cout << "consumer_thread #" << consumerIdx << "(GPU:#" << gpuIdx << ") ends" << endl;
 }
 

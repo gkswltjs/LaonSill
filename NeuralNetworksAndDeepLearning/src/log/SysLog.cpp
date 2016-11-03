@@ -15,8 +15,8 @@
 #include <sys/syscall.h>
 
 #include "../param/Param.h"
-#include "SysLog.h"
 #include "../FileMgmt.h"
+#include "SysLog.h"
 
 using namespace std;
 

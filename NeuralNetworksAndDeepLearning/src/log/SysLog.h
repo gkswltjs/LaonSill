@@ -15,12 +15,18 @@
 
 #define SYS_LOG(fmt, args...)                                                       \
     do {                                                                            \
-        std::unique_lock<std::mutex>  logLock(SysLog::logMutex);                    \
-        SysLog::writeLogHeader(__FILE__,__LINE__);                                  \
-        fprintf(SysLog::fp, fmt, ##args);                                           \
-        fprintf(SysLog::fp, "\n");                                                  \
-        logLock.unlock();                                                           \
-        fflush(SysLog::fp);                                                         \
+        if (SysLog::fp) {                                                           \
+            std::unique_lock<std::mutex>  logLock(SysLog::logMutex);                \
+            SysLog::writeLogHeader(__FILE__,__LINE__);                              \
+            fprintf(SysLog::fp, fmt, ##args);                                       \
+            fprintf(SysLog::fp, "\n");                                              \
+            logLock.unlock();                                                       \
+            fflush(SysLog::fp);                                                     \
+        } else {                                                                    \
+            fprintf(stderr, fmt, ##args);                                           \
+            fprintf(stderr, "\n");                                                  \
+            fflush(stderr);                                                         \
+        }                                                                           \
     } while (0)
 
 class SysLog {

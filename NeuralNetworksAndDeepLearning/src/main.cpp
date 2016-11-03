@@ -22,6 +22,7 @@
 #include "param/Param.h"
 #include "log/ColdLog.h"
 #include "log/SysLog.h"
+#include "log/HotLog.h"
 
 using namespace std;
 
@@ -33,8 +34,12 @@ int main(int argc, char** argv) {
     // (1) load init param
     InitParam::init();
 
-    ColdLog::init();
     SysLog::init();
+    ColdLog::init();
+    HotLog::init();
+
+    // consumer thread + producer thread
+    HotLog::launchThread(SPARAM(CONSUMER_COUNT) + 1);
 
     SYS_LOG("Logging system is initialized...");
 
@@ -54,6 +59,7 @@ int main(int argc, char** argv) {
     Worker<float>::joinThreads();
     Communicator::joinThreads();
 
+    HotLog::destroy();
     ColdLog::destroy();
     SysLog::destroy();
 

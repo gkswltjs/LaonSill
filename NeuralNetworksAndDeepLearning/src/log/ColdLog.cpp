@@ -4,6 +4,9 @@
  * @author mhlee
  * @brief 
  * @details
+ * @todo
+ *  (1) TODO: need file size limitation function
+ *  (2) TODO: need archive function
  */
 
 #include <limits.h>
