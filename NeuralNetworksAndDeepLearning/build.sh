@@ -23,6 +23,10 @@ fi
 
 dop=$1
 
+if [ ! -d bin ]; then
+    mkdir bin
+fi
+
 echo "[generate parameter]"
 cd src/param
 ./genParam.py
