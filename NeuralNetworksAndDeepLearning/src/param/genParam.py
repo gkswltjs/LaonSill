@@ -249,6 +249,8 @@ try:
 
         if "char" in typeString:
             defaultValueStr = '{"%s"}' % str(defaultValue)
+        elif 'bool' in typeString:
+            defaultValueStr = '%s' % str(defaultValue).lower()
         else:
             defaultValueStr = '%s' % str(defaultValue)
 

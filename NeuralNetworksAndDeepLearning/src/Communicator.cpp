@@ -19,7 +19,9 @@
 
 #include "Communicator.h"
 #include "Worker.h"
+#include "param/Param.h"
 #include "log/ColdLog.h"
+#include "log/SysLog.h"
 
 using namespace std;
 

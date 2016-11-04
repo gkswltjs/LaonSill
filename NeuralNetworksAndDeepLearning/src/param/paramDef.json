@@ -118,6 +118,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "UINT32",
     "DEFAULT" : 3000
+},
+
+"SLEEP_WHEN_ASSERTED" : 
+{
+    "DESC" : "A Hot Log Flusher flushes regularly. This parameter indicates its cycle time(ms).",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
 }
 
 }
