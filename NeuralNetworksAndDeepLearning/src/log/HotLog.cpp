@@ -124,7 +124,7 @@ void HotLog::doFlush(bool force) {
         aioCount++;
 
         if (isWrapAround) {
-            HotLog::flushCBs[aioCount] = &context->aiocb;
+            HotLog::flushCBs[aioCount] = &context->aiocbWA;
             aioCount++;
         }
     }
@@ -227,8 +227,9 @@ void HotLog::flusherThread(int contextCount) {
     // (5) 모든 리소스를 정리한다.
     // XXX: check whether erase() call destructor of container or not
     typename vector<HotLogContext*>::iterator iter = HotLog::contextArray.begin();
-    for (; iter != HotLog::contextArray.end(); ) {
-        iter = HotLog::contextArray.erase(iter);
+    typename vector<HotLogContext*>::iterator iterTmp;
+    for (; iter != HotLog::contextArray.end(); iter++) {
+        delete (*iter);
     }
 
     assert(HotLog::flushCBs);

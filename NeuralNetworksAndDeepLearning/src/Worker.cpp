@@ -17,6 +17,7 @@
 #include "param/Param.h"
 #include "log/ColdLog.h"
 #include "log/HotLog.h"
+#include "log/SysLog.h"
 
 using namespace std;
 
@@ -96,7 +97,7 @@ const int PRODUCER_PERIODIC_CHECK_MSEC_TIME = 3 * 1000;
 
 template <typename Dtype>
 void Worker<Dtype>::producerThread() {
-	cout << "producer_thread starts" << endl;
+    COLD_LOG(ColdLog::INFO, true, "producer thread starts");
     atomic_fetch_add(&Worker<Dtype>::readyCount, 1); 
     
     HotLog::initForThread();
@@ -105,13 +106,6 @@ void Worker<Dtype>::producerThread() {
     while (!Worker<Dtype>::isReady()) {
         sleep(0);
     }
-
-    COLD_LOG(ColdLog::INFO, true, "producer thread starts main loop");
-
-    HOT_LOG(2);
-
-    for (int i = 0; i < 80000; i++)
-        HOT_LOG(1, i, "Hello", 1.3 * (double)i, true);
 
     // (2) 메인 루프
     while (true) {
@@ -177,8 +171,8 @@ void Worker<Dtype>::producerThread() {
             break;
     }
 
+    COLD_LOG(ColdLog::INFO, true, "producer thread ends");
     HotLog::markExit();
-    cout << "producer_thread ends" << endl;
 }
 
 template <typename Dtype>
@@ -191,15 +185,12 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
 
     HotLog::initForThread();
 
-	cout << "consumer_thread #" << consumerIdx << "(GPU:#" << gpuIdx << ") starts" << endl;
-    HOT_LOG(1, 7, "Consu", 37.8, false);
+    COLD_LOG(ColdLog::INFO, true, "consumer thread #%d (GPU:#%d) starts", consumerIdx, gpuIdx);
 
 	// 리소스 초기화
 	checkCudaErrors(cudaSetDevice(gpuIdx));
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
-
-	cout << "consumer_thread #" << consumerIdx << " starts main loop" << endl;
 
     while (doLoop) {
         unique_lock<mutex> consumerLock(Worker<Dtype>::consumerMutex);
@@ -245,19 +236,20 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
 	checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
 
     HotLog::markExit();
-	cout << "consumer_thread #" << consumerIdx << "(GPU:#" << gpuIdx << ") ends" << endl;
+    COLD_LOG(ColdLog::INFO, true, "consumer thread #%d (GPU:#%d) ends", consumerIdx, gpuIdx);
 }
 
 template <typename Dtype>
 void Worker<Dtype>::launchThreads(int consumerCount) {
     // (1) Cuda를 생성한다.
     Cuda::create(consumerCount);
-	cout << "Cuda creation done ... " << endl;
+    COLD_LOG(ColdLog::INFO, true, "CUDA is initialized");
 
     // (2) Worker Count를 설정한다.
     if (consumerCount > Cuda::gpuCount) {
-        printf("ERROR: Invalid GPU count of Worker. (There are %d available GPU but requested"
-            " GPU count of Worker is %d\n", Cuda::gpuCount, consumerCount);
+        SYS_LOG("ERROR: Invalid GPU count of Worker. ");
+        SYS_LOG("There are %d available GPU but requested GPU count of Worker is %d.",
+            Cuda::gpuCount, consumerCount);
         exit(1);
     }
 	Worker<Dtype>::consumerCount = consumerCount;
@@ -266,7 +258,6 @@ void Worker<Dtype>::launchThreads(int consumerCount) {
 
 	// (3) producer 쓰레드를 생성한다.
     Worker<Dtype>::producer = new thread(producerThread);
-    cout << "launchThread GPUCount " << Worker<Dtype>::consumerCount << endl;
 
 	// (4) consumer 쓰레드들을 생성한다.
 	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
@@ -279,12 +270,10 @@ void Worker<Dtype>::joinThreads() {
 	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
 		Worker<Dtype>::consumers[i].join();
 	}
-    cout << "consumer threads end" << endl;
 
 	Worker<Dtype>::producer->join();
 	delete Worker<Dtype>::producer;
     Worker<Dtype>::producer = NULL;
-    cout << "producer thread ends" << endl;
 }
 
 template <typename Dtype>
@@ -369,8 +358,7 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
 
 template <typename Dtype>
 void Worker<Dtype>::trainNetwork(Network<Dtype>* network, int maxEpochs) {
-    if (consumerIdx == 0)
-	    cout << "maxEpoch: " << maxEpochs << endl;
+    COLD_LOG(ColdLog::INFO, (consumerIdx == 0), "training network starts(maxEpoch: %d).", maxEpochs);
 
     network->sgd_with_timer(maxEpochs);
 
@@ -402,7 +390,6 @@ int Worker<Dtype>::createNetwork() {
 	const float clipGradientsLevel = 0.0f;
 	const float gamma = 0.1;
 	const LRPolicy lrPolicy = LRPolicy::Step;
-
 
 	cout << "batchSize: " << batchSize << endl;
 	cout << "testInterval: " << testInterval << endl;

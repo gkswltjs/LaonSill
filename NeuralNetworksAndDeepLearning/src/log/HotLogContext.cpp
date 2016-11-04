@@ -38,7 +38,6 @@ HotLogContext::HotLogContext(int fd) {
 }
 
 HotLogContext::~HotLogContext() {
-    cout << "~HotLogContext() is called" << endl;
     assert(this->fd != -1);
     close(this->fd);
 
@@ -93,7 +92,7 @@ void HotLogContext::updateMem(uint64_t len) {
  * @return              flush 할 로그가 있으면 true, 없으면 false
  */
 bool HotLogContext::fillFlushInfo(bool force, bool& isWrapAround) {
-    uint64_t diskOffset, diskSize, diskOffsetWA, diskSizeWA;
+    uint64_t flushOffset, flushSize, flushOffsetWA, flushSizeWA;
     int     logOffset = this->logOffset;
 
     // (1) 플러시할 영역이 있는지를 확인
@@ -103,40 +102,40 @@ bool HotLogContext::fillFlushInfo(bool force, bool& isWrapAround) {
     // (2) wrap around 여부를 결정
     if ((this->diskOffset == 0UL) || (logOffset == 0UL))
         isWrapAround = false;
-    else if (logOffset < this->diskOffset)
+    else if (logOffset <= this->diskOffset)
         isWrapAround = true;
     else
         isWrapAround = false;
 
     // (3) 플러싱할 영역을 계산
     uint64_t releaseSize = 0UL;
-    uint64_t ioSize = 0UL;
+    uint64_t flushTotalSize = 0UL;
     if (isWrapAround) {
-        diskOffset = this->diskGenNum * SPARAM(HOTLOG_BUFFERSIZE) + this->diskOffset;
-        diskSize = SPARAM(HOTLOG_BUFFERSIZE) - this->diskOffset;
-        releaseSize += diskSize;
-        ioSize += diskSize;
-        assert(diskSize > 0UL);
-        diskOffsetWA = (this->diskGenNum + 1UL) * SPARAM(HOTLOG_BUFFERSIZE);
+        flushOffset = this->diskGenNum * SPARAM(HOTLOG_BUFFERSIZE) + this->diskOffset;
+        flushSize = SPARAM(HOTLOG_BUFFERSIZE) - this->diskOffset;
+        releaseSize += flushSize;
+        flushTotalSize += flushSize;
+        assert(flushSize > 0UL);
+        flushOffsetWA = (this->diskGenNum + 1UL) * SPARAM(HOTLOG_BUFFERSIZE);
         if (force)
-            diskSizeWA = ALIGNUP(logOffset, SPARAM(HOTLOG_SLOTSIZE));
+            flushSizeWA = ALIGNUP(logOffset, SPARAM(HOTLOG_SLOTSIZE));
         else
-            diskSizeWA = ALIGNDOWN(logOffset, SPARAM(HOTLOG_SLOTSIZE));
+            flushSizeWA = ALIGNDOWN(logOffset, SPARAM(HOTLOG_SLOTSIZE));
         releaseSize += ALIGNDOWN(logOffset, SPARAM(HOTLOG_SLOTSIZE));
-        ioSize += diskSizeWA;
+        flushTotalSize += flushSizeWA;
     } else {
-        diskOffset = this->diskGenNum * SPARAM(HOTLOG_BUFFERSIZE) + this->diskOffset;
-        diskSize = logOffset - this->diskOffset;
+        flushOffset = this->diskGenNum * SPARAM(HOTLOG_BUFFERSIZE) + this->diskOffset;
+        flushSize = logOffset - this->diskOffset;
         if (force)
-            diskSize = ALIGNUP(diskSize, SPARAM(HOTLOG_SLOTSIZE));
+            flushSize = ALIGNUP(flushSize, SPARAM(HOTLOG_SLOTSIZE));
         else
-            diskSize = ALIGNDOWN(diskSize, SPARAM(HOTLOG_SLOTSIZE));
-        releaseSize += ALIGNDOWN(diskSize, SPARAM(HOTLOG_SLOTSIZE));
-        ioSize += diskSize;
+            flushSize = ALIGNDOWN(flushSize, SPARAM(HOTLOG_SLOTSIZE));
+        releaseSize += ALIGNDOWN(flushSize, SPARAM(HOTLOG_SLOTSIZE));
+        flushTotalSize += flushSize;
     }
 
     // (4) flush 여부를 결정하고, 반환
-    if (ioSize == 0UL)
+    if (flushTotalSize == 0UL)
         return false;
 
     if ((!force) &&
@@ -147,16 +146,16 @@ bool HotLogContext::fillFlushInfo(bool force, bool& isWrapAround) {
     // (5) fill aiocb
     this->aiocb.aio_fildes = this->fd;
     this->aiocb.aio_buf = (char*)(this->buffer + this->diskOffset);
-    this->aiocb.aio_nbytes = diskSize;
-    this->aiocb.aio_offset = diskOffset;
+    this->aiocb.aio_nbytes = flushSize;
+    this->aiocb.aio_offset = flushOffset;
     this->aiocb.aio_lio_opcode = LIO_WRITE;
     this->aiocb.aio_sigevent.sigev_notify = SIGEV_NONE;
 
     if (isWrapAround) {
         this->aiocbWA.aio_fildes = this->fd;
         this->aiocbWA.aio_buf = this->buffer;
-        this->aiocbWA.aio_nbytes = diskSizeWA;
-        this->aiocbWA.aio_offset = diskOffsetWA;
+        this->aiocbWA.aio_nbytes = flushSizeWA;
+        this->aiocbWA.aio_offset = flushOffsetWA;
         this->aiocbWA.aio_lio_opcode = LIO_WRITE;
         this->aiocbWA.aio_sigevent.sigev_notify = SIGEV_NONE;
     }
@@ -167,10 +166,11 @@ bool HotLogContext::fillFlushInfo(bool force, bool& isWrapAround) {
     //     I/O의 용도로 활용중인 버퍼를 오염시킬 수 있기 때문이다.
     //     remainSize를 위해서 this->releaseSize에 반환할 releaseSize를 저장해 놓는다.
     this->releaseSize = releaseSize;
-    this->diskOffset = ALIGNDOWN(logOffset, SPARAM(HOTLOG_SLOTSIZE));
+    this->diskOffset = ALIGNDOWN(logOffset, SPARAM(HOTLOG_SLOTSIZE)) % SPARAM(HOTLOG_BUFFERSIZE);
 
-    if (isWrapAround)
-        this->diskGenNum += 1;  
+    if (isWrapAround || this->diskOffset == 0UL) {
+        this->diskGenNum += 1;
+    }
 
     return true;
 }

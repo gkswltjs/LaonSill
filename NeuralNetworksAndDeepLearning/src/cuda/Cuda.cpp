@@ -7,6 +7,8 @@
 
 #include "Cuda.h"
 #include "../Util.h"
+#include "../log/ColdLog.h"
+#include "../log/SysLog.h"
 
 using namespace std;
 
@@ -33,12 +35,13 @@ void Cuda::create(int usingGPUCount) {
 	timer.start();
 	checkCudaErrors(cudaGetDeviceCount(&devGPUCount));
 	if(devGPUCount == 0) {
-		printf("ERROR: There is zero GPUs on this machine\n");
+        SYS_LOG("ERROR: There is zero GPUs on this machine");
 		exit(1);
 	}
 
 	if(usingGPUCount > devGPUCount) {
-		printf("ERROR: Invalid GPU count %d (There are %d GPUs on this machine)\n", usingGPUCount, devGPUCount);
+        SYS_LOG("ERROR: Invalid GPU count %d (There are %d GPUs on this machine)",
+            usingGPUCount, devGPUCount);
 		exit(1);
 	}
 
@@ -51,7 +54,7 @@ void Cuda::create(int usingGPUCount) {
     // gpu가 하나이면 peer access 확인을 하지 않는다.
     if (Cuda::gpuCount == 1) {
         Cuda::availableGPU.push_back(0);
-        cout << "This machine uses 1 GPU" << endl;
+        SYS_LOG("This machine uses 1 GPU");
         return;
     }
 
@@ -74,12 +77,12 @@ void Cuda::create(int usingGPUCount) {
 
         if (canAccessAny) {
             Cuda::availableGPU.push_back(i);
-            cout << "GPU #" << i << " is added" << endl;
+            SYS_LOG("GPU #%d is added", i);
         }
     }
 
     if (Cuda::availableGPU.size() < 1) {
-		printf("ERROR: No peer-accessible GPU on this machines.\n");
+        SYS_LOG("ERROR: No peer-accessible GPU on this machines.");
         exit(0);
     }
 
@@ -95,7 +98,7 @@ void Cuda::create(int usingGPUCount) {
         }
     }
 
-    cout << "This machine uses " << Cuda::gpuCount << " GPUs." << endl;
+    SYS_LOG("This machine uses %d GPUs.", Cuda::gpuCount);
 }
 
 void Cuda::destroy() {

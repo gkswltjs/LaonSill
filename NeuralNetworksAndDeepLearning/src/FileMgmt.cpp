@@ -65,7 +65,6 @@ int FileMgmt::openFile(const char* path, int flag) {
         assert(0);
     }
 
-    perror("open file");
     return fd;
 }
 

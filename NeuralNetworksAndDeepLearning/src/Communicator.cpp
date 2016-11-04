@@ -19,6 +19,7 @@
 
 #include "Communicator.h"
 #include "Worker.h"
+#include "log/ColdLog.h"
 
 using namespace std;
 
@@ -121,20 +122,21 @@ void Communicator::listenerThread() {
     // (1) bind
     if (bind(socketFd, (struct sockaddr*)&serverAddr, sizeof(struct sockaddr_in)) == -1) {
         int err = errno;
-        cout << "bind failed. errno=" << err << endl;
+        COLD_LOG(ColdLog::ERROR, true, "bind() failed. errno=%d", err);
         close(socketFd);
-        assert(!"cannot bind socket");
+        assert(0);
     }
 
     // (2) listen
     if (listen(socketFd, SOMAXCONN) == -1) {
         close(socketFd);
-        assert(!"cannot listen socket");
+        COLD_LOG(ColdLog::ERROR, true, "listen() failed.");
+        assert(0);
     }
 
     maxFdp1 = socketFd + 1;
 
-    cout << "listener thread starts" << endl;
+    COLD_LOG(ColdLog::INFO, true, "listener thread starts");
 
     // (3) main accept loop 
     while (true) {
@@ -152,7 +154,8 @@ void Communicator::listenerThread() {
             break;
 
         if (selectRet == -1) {
-            assert(!"cannot select socket");
+            COLD_LOG(ColdLog::ERROR, true, "select() failed.");
+            assert(0);
         }
 
         // (3-1) check & wakeup hang session thread
@@ -177,18 +180,20 @@ void Communicator::listenerThread() {
             socklen_t newSockAddrLen = sizeof(newSockAddr);
             int newFd = accept(socketFd, (struct sockaddr *)&newSockAddr, &newSockAddrLen);
             if (newFd == -1) {
-                assert(!"cannot accept socekt");
+                COLD_LOG(ColdLog::ERROR, true, "accept() failed.");
+                assert(0);
             }
 
-            cout << "accept. newFd=" << newFd << endl;
+            COLD_LOG(ColdLog::INFO, true, "accept socket. newFd=%d", newFd);
             int sessId = Communicator::setSess(newFd);
             if (sessId == -1) {
                 // FIXME: should handle error.
                 //      session full 오류메세지를 클라이언트에게 전달해야 한다.
-                assert(!"not enough free session ID");
+                COLD_LOG(ColdLog::WARNING, true, "not enough free session ID");
+                assert(0);
             }
 
-            cout << "get session. sessId=" << sessId << endl;
+            COLD_LOG(ColdLog::INFO, true, "get session. session ID=%d", sessId);
 
             Communicator::wakeup(sessId);
 
@@ -327,7 +332,7 @@ void Communicator::sessThread(int sessId) {
     replyMsg = (char*)malloc(MessageHeader::MESSAGE_DEFAULT_SIZE);
     assert(replyMsg != NULL);
 
-    cout << "sess thread #" << sessId << " starts" << endl;
+    COLD_LOG(ColdLog::INFO, true, "session thread #%d starts", sessId);
 
     // thread main loop
     while (continueLoop) {
@@ -347,7 +352,8 @@ void Communicator::sessThread(int sessId) {
         }
 
         fd = sessContext->fd;
-        cout << "sess thread #" << sessId << " wakes up & handle socket fd=" << fd << endl;
+        COLD_LOG(ColdLog::INFO, true, "session thread #%d wakes up & handle socket(fd=%d)",
+                sessId, fd);
         bool continueSocketCommLoop = true;
 
         // set nonblock socket
@@ -356,13 +362,13 @@ void Communicator::sessThread(int sessId) {
         flag = fcntl(fd, F_GETFL, 0);
         if (flag == -1) {
             int err = errno;
-            cout << "fcntl(get flag) is failed. errno=" << err << endl;
-            assert(!"fcntl(get flag) is failed");
+            COLD_LOG(ColdLog::ERROR, true, "fcntl(get flag) is failed. errno=%d", err);
+            assert(0);
         }
         if (fcntl(fd, F_SETFL, flag | O_NONBLOCK) == -1) {
             int err = errno;
-            cout << "fcntl(set flag) is failed. errno=" << err << endl;
-            assert(!"fcntl(set flag) is failed");
+            COLD_LOG(ColdLog::ERROR, true, "fcntl(set flag) is failed. errno=%d", err);
+            assert(0);
         }
 
         // XXX: 소스 정리 하자.. depth가 너무 깊다.
@@ -453,6 +459,8 @@ void Communicator::sessThread(int sessId) {
     assert(replyMsg != NULL);
     free(replyMsg);
     replyMsg = NULL;
+
+    COLD_LOG(ColdLog::INFO, true, "session thread #%d ends", sessId);
 }
 
 void Communicator::launchThreads(int sessCount) {
@@ -488,12 +496,9 @@ void Communicator::joinThreads() {
     delete Communicator::listener;
     Communicator::listener = NULL;
 
-    cout << "listener thread ends" << endl;
-
     for (int i = 0; i < Communicator::sessCount; i++) {
         Communicator::threadPool[i].join();
     }
-    cout << "sess threads end" << endl;
 }
 
 // XXX: sender/receiver N:1 multiplex 모드로 구현해야 함.
@@ -518,9 +523,8 @@ Communicator::CommRetType Communicator::recvMessage(
             if (err == ECONNREFUSED)
                 return Communicator::RecvConnRefused;
 
-            cout << "Recv failed. errno=" << err << endl;
-            assert(!"Recv failed.");
-            //return Communicator::RecvFailed;
+            COLD_LOG(ColdLog::ERROR, true, "recv(peek message) failed. errno=%d", err);
+            assert(0);
         }
 
         if (recvRet == MessageHeader::MESSAGE_HEADER_SIZE)
@@ -553,8 +557,8 @@ Communicator::CommRetType Communicator::recvMessage(
             if (err == ECONNREFUSED)
                 return Communicator::RecvConnRefused;
 
-            cout << "Recv failed. errno=" << err << endl;
-            assert(!"Recv failed.");
+            COLD_LOG(ColdLog::ERROR, true, "recv() failed. errno=%d", err);
+            assert(0);
             //return Communicator::RecvFailed;
         }
 
@@ -587,9 +591,8 @@ Communicator::CommRetType Communicator::sendMessage(
             if (err == ECONNRESET)
                 return Communicator::SendConnResetByPeer;
 
-            cout << "Send failed. errno=" << err << endl;
-            assert(!"Send failed.");
-            //return Communicator::SendFailed;
+            COLD_LOG(ColdLog::ERROR, true, "send() failed. errno=%d", err);
+            assert(0);
         }
 
         remain -= sendRet;
