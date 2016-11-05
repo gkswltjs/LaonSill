@@ -40,14 +40,6 @@ public:
 			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
-			Layer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
-			return this;
-		}
-		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
-			this->_prevLayerIndices = prevLayerIndices;
-			return this;
-		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
 			this->_inputs = inputs;
 			return this;
@@ -112,13 +104,13 @@ protected:
 	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
 	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
 	 */
-	virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset);
+	//virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset);
 
 	/**
 	 * @details 복수의 '다음' 레이어로부터의 gradient들에 대해 branch의 수 기준으로 스케일링한다.
 	 *          _deconcat()이 gradient합산이 아닌 방식으로 구현된 경우 _scaleGradient() 역시 적절히 재정의해야 한다.
 	 */
-	virtual void _scaleGradient();
+	//virtual void _scaleGradient();
 
 	/**
 	 * @details 이전 레이어들에 대해 backpropagation() 메쏘드를 호출한다.

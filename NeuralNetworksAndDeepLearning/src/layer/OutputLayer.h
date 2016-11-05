@@ -77,14 +77,6 @@ public:
 			FullyConnectedLayer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
-			FullyConnectedLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
-			return this;
-		}
-		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
-			FullyConnectedLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
-			return this;
-		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
 			this->_inputs = inputs;
 			return this;

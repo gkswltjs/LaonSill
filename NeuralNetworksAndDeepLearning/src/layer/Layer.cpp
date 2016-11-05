@@ -33,9 +33,9 @@ Layer<Dtype>::Layer(const string name) {
 
 template <typename Dtype>
 Layer<Dtype>::Layer(Builder* builder) /*:_output(new Data<Dtype>())*/ {
-	for(uint32_t i = 0; i < builder->_nextLayerIndices.size(); i++) {
-		this->nextLayers.push_back((Layer<Dtype>*)((size_t)builder->_nextLayerIndices[i]));
-	}
+	//for(uint32_t i = 0; i < builder->_nextLayerIndices.size(); i++) {
+	//	this->nextLayers.push_back((Layer<Dtype>*)((size_t)builder->_nextLayerIndices[i]));
+	//}
 
 	this->_inputs = builder->_inputs;
 	this->_outputs = builder->_outputs;
@@ -48,16 +48,17 @@ Layer<Dtype>::~Layer() {
 	// 다음 레이어들에 대해 소멸을 요청
 	// 현재의 레이어가 요청하는 다음 레이어에 대해 마지막 이전 레이어인 경우,
 	// 다음 레이어에 대해 소멸을 요청하게 된다. (multi-branch인 경우 복수의 소멸 요청을 피하기 위해)
-	for(uint32_t i = 0; i < nextLayers.size(); i++) {
-		if(nextLayers[i] && nextLayers[i]->isLastPrevLayerRequest(id)) {
-			delete nextLayers[i];
-		}
-	}
-	nextLayers.clear();
+	//for(uint32_t i = 0; i < nextLayers.size(); i++) {
+	//	if(nextLayers[i] && nextLayers[i]->isLastPrevLayerRequest(id)) {
+	//		delete nextLayers[i];
+	//	}
+	//}
+	//nextLayers.clear();
 
 	_clearShape();
 }
 
+/*
 template <typename Dtype>
 void Layer<Dtype>::addPrevLayer(Layer<Dtype>* prevLayer) {
 	prevLayers.push_back(prevLayer);
@@ -124,6 +125,7 @@ bool Layer<Dtype>::w_isLastNextLayerRequest(uint32_t idx, const string method) {
 #endif
 	return result;
 }
+*/
 
 template <typename Dtype>
 //void Layer<Dtype>::shape(uint32_t idx, io_dim in_dim, Data<Dtype>* prevLayerOutput) {
@@ -150,19 +152,19 @@ void Layer<Dtype>::shape() {
 
 template <typename Dtype>
 void Layer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
-	if (!w_isLastPrevLayerRequest(idx, "Layer::reshape()")) return;
+	//if (!w_isLastPrevLayerRequest(idx, "Layer::reshape()")) return;
 
 	this->in_dim = in_dim;
 	_reshape();
-	propReshape();
+	//propReshape();
 }
 
 template <typename Dtype>
 void Layer<Dtype>::clearShape(uint32_t idx) {
-	if (!w_isLastPrevLayerRequest(idx, "Layer::clearShape()")) return;
+	//if (!w_isLastPrevLayerRequest(idx, "Layer::clearShape()")) return;
 
 	_clearShape();
-	propClearShape();
+	//propClearShape();
 }
 
 
@@ -218,6 +220,7 @@ void Layer<Dtype>::initialize(uint32_t id, const string name) {
 }
 
 
+/*
 template <typename Dtype>
 bool Layer<Dtype>::isSharedInput() {
 	if(prevLayers.size() == 1 && prevLayers[0]->getNextLayers().size() == 1) {
@@ -235,6 +238,7 @@ bool Layer<Dtype>::isSharedOutput() {
 		return false;
 	}
 }
+*/
 
 
 
@@ -312,6 +316,7 @@ void Layer<Dtype>::_feedforward() {
 	_outputData[0]->set_device_data(_inputData[0]);
 }
 
+/*
 template <typename Dtype>
 void Layer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 	input->print_data("param input:");
@@ -327,7 +332,9 @@ void Layer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 	}
 	//_inputData[0]->print_data("input:");
 }
+*/
 
+/*
 template <typename Dtype>
 void Layer<Dtype>::_scaleInput() {
 	if(prevLayers.size() > 1) {
@@ -335,6 +342,7 @@ void Layer<Dtype>::_scaleInput() {
 		_inputData[0]->scale_device_data(branchFactor);
 	}
 }
+*/
 
 /*
 template <typename Dtype>
@@ -345,6 +353,7 @@ void Layer<Dtype>::propShape() {
 }
 */
 
+/*
 template <typename Dtype>
 void Layer<Dtype>::propReshape() {
 	for(uint32_t i = 0; i < nextLayers.size(); i++) {
@@ -358,6 +367,7 @@ void Layer<Dtype>::propClearShape() {
 		nextLayers[i]->clearShape(id);
 	}
 }
+*/
 
 /*
 template <typename Dtype>

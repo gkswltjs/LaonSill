@@ -45,14 +45,6 @@ public:
 			HiddenLayer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
-			HiddenLayer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
-			return this;
-		}
-		virtual Builder* prevLayerIndices(const std::vector<uint32_t>& prevLayerIndices) {
-			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
-			return this;
-		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
 			this->_inputs = inputs;
 			return this;
@@ -93,7 +85,7 @@ protected:
 	/**
 	 * @details 일반적인 concat과 달리 channel을 기준으로 조합하므로 재정의한다.
 	 */
-	virtual void _concat(uint32_t idx, Data<Dtype>* input);
+	//virtual void _concat(uint32_t idx, Data<Dtype>* input);
 	/**
 	 * @details 일반적인 deconcat과 달리 channel을 기준으로 해체하므로 재정의한다.
 	 */

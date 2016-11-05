@@ -16,9 +16,9 @@ HiddenLayer<Dtype>::HiddenLayer() {}
 
 template <typename Dtype>
 HiddenLayer<Dtype>::HiddenLayer(Builder* builder) : Layer<Dtype>(builder) {
-	for(uint32_t i = 0; i < builder->_prevLayerIndices.size(); i++) {
-		this->prevLayers.push_back((Layer<Dtype>*)((size_t)builder->_prevLayerIndices[i]));
-	}
+	//for(uint32_t i = 0; i < builder->_prevLayerIndices.size(); i++) {
+	//	this->prevLayers.push_back((Layer<Dtype>*)((size_t)builder->_prevLayerIndices[i]));
+	//}
 }
 
 template <typename Dtype>
@@ -63,7 +63,7 @@ void HiddenLayer<Dtype>::_clearShape() {
 }
 
 
-
+/*
 template <typename Dtype>
 void HiddenLayer<Dtype>::_deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset) {
 	next_delta_input->print_grad("next_delta_input:");
@@ -78,8 +78,9 @@ void HiddenLayer<Dtype>::_deconcat(uint32_t idx, Data<Dtype>* next_delta_input, 
 	}
 	this->_outputData[0]->print_grad("outputGrad:");
 }
+*/
 
-
+/*
 template <typename Dtype>
 void HiddenLayer<Dtype>::_scaleGradient() {
 	if(this->nextLayers.size() > 1) {
@@ -90,6 +91,7 @@ void HiddenLayer<Dtype>::_scaleGradient() {
 		this->_outputData[0]->print_grad("after scaling output grad: ");
 	}
 }
+*/
 
 /*
 template <typename Dtype>

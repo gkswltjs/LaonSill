@@ -65,21 +65,19 @@ public:
             typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
 			for (it = _layerWise.begin(); it != _layerWise.end(); it++) {
                 Layer<Dtype>* currentLayer = it->second->build();
-                const int numNextLayers = currentLayer->getNextLayerSize();
-                const int numPrevLayers = currentLayer->getPrevLayerSize();
 
-                if (numNextLayers < 1 && numPrevLayers < 1) {
-                    std::cout << "layer " << currentLayer->getName() << " has no layer relations ... "
-                        << std::endl;
-                    exit(1);
+                		// 시작 레이어 추가
+                InputLayer<Dtype>* inputLayer =
+                		dynamic_cast<InputLayer<Dtype>*>(currentLayer);
+                if (inputLayer) {
+                	firstLayers.push_back(currentLayer);
                 }
 
-                if (numPrevLayers < 1) {
-                    //std::cout << "firstLayer: " << currentLayer->getName() << std::endl;
-                    firstLayers.push_back(currentLayer);
-                } else if (numNextLayers < 1) {
-                    //std::cout << "lastLayer: " << currentLayer->getName() << std::endl;
-                    lastLayers.push_back(currentLayer);
+                		// 끝 레이어 추가
+                OutputLayer<Dtype>* outputLayer =
+                		dynamic_cast<OutputLayer<Dtype>*>(currentLayer);
+                if (outputLayer) {
+                	lastLayers.push_back(currentLayer);
                 }
 
                 		// 학습 레이어 추가
@@ -89,6 +87,7 @@ public:
                     learnableLayers.push_back(learnableLayer);
                 }
 
+                		// 일반 레이어 추가
                 layers.push_back(currentLayer);
                 idLayerMap[it->first] = currentLayer;
 			}
@@ -106,6 +105,7 @@ public:
 			const uint32_t layerSize = layers.size();
 
 			// 생성된 레이어들의 prev, next 관계를 설정한다.
+			/*
 			for(uint32_t i = 0; i < layerSize; i++) {
 				Layer<Dtype>* currentLayer = layers[i];
 				for(uint32_t j = 0; j < currentLayer->getNextLayers().size(); j++) {
@@ -123,6 +123,7 @@ public:
 					}
 				}
 			}
+			*/
 
 			// 레이어 이름으로 레이어 객체를 찾을 수 있도록 이름-레이어 맵을 생성
             std::map<std::string, Layer<Dtype>*> nameLayerMap;

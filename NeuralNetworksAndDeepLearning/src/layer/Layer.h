@@ -68,7 +68,6 @@ public:
 		Type type;
         std::string _name;							///< 레이어의 이름
 		uint32_t _id;								///< 레이어의 아이디
-        std::vector<uint32_t> _nextLayerIndices;		///< 레이어의 다음 레이어 아이디 목록
 
         std::vector<std::string> _inputs;
         std::vector<std::string> _outputs;
@@ -84,10 +83,6 @@ public:
 		}
 		virtual Builder* id(uint32_t id) {
 			this->_id = id;
-			return this;
-		}
-		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
-			this->_nextLayerIndices = nextLayerIndices;
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
@@ -108,11 +103,13 @@ public:
 			ofs.write((char*)_name.c_str(), nameLength);
 
 			ofs.write((char*)&_id, sizeof(uint32_t));
+			/*
 			uint32_t numNextLayerIndices = _nextLayerIndices.size();
 			ofs.write((char*)&numNextLayerIndices, sizeof(uint32_t));
 			for(uint32_t i = 0; i < numNextLayerIndices; i++) {
 				ofs.write((char*)&_nextLayerIndices[i], sizeof(uint32_t));
 			}
+			*/
 		}
 		virtual void load(std::ifstream& ifs) {
 
@@ -125,6 +122,7 @@ public:
 			delete [] name_c;
 
 			ifs.read((char*)&_id, sizeof(uint32_t));
+			/*
 			uint32_t numNextLayersIndices;
 			ifs.read((char*)&numNextLayersIndices, sizeof(uint32_t));
 			for(uint32_t i = 0; i < numNextLayersIndices; i++) {
@@ -132,6 +130,7 @@ public:
 				ifs.read((char*)&nextLayerIndice, sizeof(uint32_t));
 				_nextLayerIndices.push_back(nextLayerIndice);
 			}
+			*/
 		}
 	};
 
@@ -185,22 +184,22 @@ public:
 	 * @details 레이어에 연결된 다음 레이어 목록 벡터를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어 목록 벡터
 	 */
-    std::vector<Layer<Dtype>*>& getNextLayers() { return this->nextLayers; }
+    //std::vector<Layer<Dtype>*>& getNextLayers() { return this->nextLayers; }
 	/**
 	 * @details 레이어에 연결된 이전 레이어 목록 벡터를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어 목록 벡터
 	 */
-    std::vector<Layer<Dtype>*>& getPrevLayers() { return this->prevLayers; }
+    //std::vector<Layer<Dtype>*>& getPrevLayers() { return this->prevLayers; }
 	/**
 	 * @details 레이어에 연결된 다음 레이어의 수를 조회한다.
 	 * @return 레이어에 연결된 다음 레이어의 수
 	 */
-	int getNextLayerSize() const { return this->nextLayers.size(); }
+	//int getNextLayerSize() const { return this->nextLayers.size(); }
 	/**
 	 * @details 레이어에 연결된 이전 레이어의 수를 조회한다.
 	 * @return 레이어에 연결된 이전 레이어의 수
 	 */
-	int getPrevLayerSize() const { return this->prevLayers.size(); }
+	//int getPrevLayerSize() const { return this->prevLayers.size(); }
 
 	std::vector<std::string>& getInputs() { return this->_inputs; }
 	std::vector<std::string>& getOutputs() { return this->_outputs; }
@@ -261,24 +260,24 @@ public:
 	 * @details 레이어에 이전 레이어를 추가한다.
 	 * @param prevLayer 현재 레이어에 연결할 이전 레이어의 정보 구조체
 	 */
-	void addPrevLayer(Layer<Dtype>* prevLayer);
+	//void addPrevLayer(Layer<Dtype>* prevLayer);
 	/**
 	 * @details 레이어에 다음 레이어를 추가한다.
 	 * @param nextLayer 현재 레이어에 연결할 다음 레이어의 정보 구조체
 	 */
-	void addNextLayer(Layer<Dtype>* nextLayer);
+	//void addNextLayer(Layer<Dtype>* nextLayer);
 	/**
 	 * @details 현재 레이어에 연결된 첫 이전 레이어 여부를 조회한다.
 	 * @param idx 현재 레이어에 연결된 이전 레이어 아이디
 	 * @return 현재 레이어에 연결된 첫 이전 레이어 여부
 	 */
-	bool isFirstPrevLayerRequest(uint32_t idx);
+	//bool isFirstPrevLayerRequest(uint32_t idx);
 	/**
 	 * @details 현재 레이어에 연결된 마지막 이전 레이어 여부를 조회한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @return 현재 레이어에 연결된 마지막 이전 레이어 여부
 	 */
-	bool isLastPrevLayerRequest(uint32_t idx);
+	//bool isLastPrevLayerRequest(uint32_t idx);
 	/**
 	 * @details isLastPrevLayerRequest()의 Logging버전 (임시 method)
 	 *          어떤 레이어의 어떤 method에 대해 테스트하고 있는지,
@@ -287,26 +286,26 @@ public:
 	 * @param method 이 method를 호출한 method의 이름
 	 * @return 현재 레이어에 연결된 마지막 이전 레이어 여부
 	 */
-	bool w_isLastPrevLayerRequest(uint32_t idx, const std::string method);
+	//bool w_isLastPrevLayerRequest(uint32_t idx, const std::string method);
 	/**
 	 * @details 현재 레이어에 연결된 첫 다음 레이어 여부를 조회한다.
 	 * @param idx 현재 레이어에 연결된 다음 레이어 아이디
 	 * @return 현재 레이어에 연결된 첫 다음 레이어 여부
 	 */
-	bool isFirstNextLayerRequest(uint32_t idx);
+	//bool isFirstNextLayerRequest(uint32_t idx);
 	/**
 	 * @details 현재 레이어에 연결된 마지막 다음 레이어 여부를 조회한다.
 	 * @param idx 요청을 보낸 다음 레이어의 id
 	 * @return 현재 레이어에 연결된 마지막 다음 레이어 여부
 	 */
-	bool isLastNextLayerRequest(uint32_t idx);
+	//bool isLastNextLayerRequest(uint32_t idx);
 	/**
 	 * @details isLastNextLayerRequest()의 Logging버전 (임시 method)
 	 *          어떤 레이어의 어떤 method에 대해 테스트하고 있는지,
 	 *          테스트를 통과했는지 통과하지 못했는지를 화면에 출력한다.
 	 * @param idx 요청을 보낸 다음 레이어의 id
 	 */
-	bool w_isLastNextLayerRequest(uint32_t idx, const std::string method);
+	//bool w_isLastNextLayerRequest(uint32_t idx, const std::string method);
 
 	/**
 	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화하고
@@ -393,8 +392,8 @@ protected:
 
 
 
-	bool isSharedInput();
-	bool isSharedOutput();
+	//bool isSharedInput();
+	//bool isSharedOutput();
 
 
 
@@ -440,12 +439,12 @@ protected:
 	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 idx
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 */
-	virtual void _concat(uint32_t idx, Data<Dtype>* input);
+	//virtual void _concat(uint32_t idx, Data<Dtype>* input);
 	/**
 	 * @details 복수의 '이전' 레이어로부터의 입력들에 대해 branch의 수 기준으로 스케일링한다.
 	 *          _concat()이 입력 합산이 아닌 방식으로 구현된 경우 _scaleInput() 역시 적절히 재정의해야 한다.
 	 */
-	virtual void _scaleInput();
+	//virtual void _scaleInput();
 
 
 
@@ -505,8 +504,8 @@ protected:
 	io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
 	io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
 
-    std::vector<Layer<Dtype>*> prevLayers;				///< 현재 레이어의 이전(입력) 레이어 목록 벡터
-    std::vector<Layer<Dtype>*> nextLayers;				///< 현재 레이어의 다음(출력) 레이어 목록 벡터
+    //std::vector<Layer<Dtype>*> prevLayers;				///< 현재 레이어의 이전(입력) 레이어 목록 벡터
+    //std::vector<Layer<Dtype>*> nextLayers;				///< 현재 레이어의 다음(출력) 레이어 목록 벡터
 
     std::vector<std::string> _inputs;					///< 레이어 입력 데이터 이름 목록 벡터
     std::vector<std::string> _outputs;					///< 레이어 출력 데이터 이름 목록 벡터

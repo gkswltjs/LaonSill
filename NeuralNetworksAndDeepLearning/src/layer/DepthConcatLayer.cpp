@@ -50,7 +50,7 @@ void DepthConcatLayer<Dtype>::shape() {
 
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
-	if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
+	//if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
 	this->out_dim.channels += in_dim.channels;
 	HiddenLayer<Dtype>::reshape(idx, in_dim);
 
@@ -93,6 +93,7 @@ template <typename Dtype>
 void DepthConcatLayer<Dtype>::propBackpropagation() {
 	HiddenLayer<Dtype>*hiddenLayer;
 	uint32_t offset = 0;
+	/*
 	for(uint32_t i = 0; i < this->prevLayers.size(); i++) {
 		hiddenLayer = dynamic_cast<HiddenLayer<Dtype>*>(this->prevLayers[i]);
 		if(i > 0) {
@@ -106,6 +107,7 @@ void DepthConcatLayer<Dtype>::propBackpropagation() {
 			//hiddenLayer->backpropagation(this->id, this->getInput(), offset);
 		}
 	}
+	*/
 }
 
 

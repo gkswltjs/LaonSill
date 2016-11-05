@@ -45,8 +45,6 @@ void Layer<Dtype>::_shape(bool recursive) {
 
 template <typename Dtype>
 void Layer<Dtype>::_clearShape() {
-	//checkCudaErrors(cudaFree(d_input));
-	//checkCudaErrors(cudaFree(d_output));
 	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 
@@ -58,64 +56,8 @@ void Layer<Dtype>::_clearShape() {
 	outputTensorDesc = NULL;
 }
 
-
-
-/*
-template <typename Dtype>
-void Layer<Dtype>::_save(ofstream &ofs) {
-	Layer<Dtype>* address = this;
-	uint32_t nextLayerSize = nextLayers.size();
-	uint32_t prevLayerSize = prevLayers.size();
-
-	ofs.write((char *)&address, sizeof(Layer<Dtype>*));							// layer address
-	ofs.write((char *)&id, sizeof(int));									// layer id
-	ofs.write(name.c_str(), LAYER_NAME_LENGTH);								// layer name
-	ofs.write((char *)&in_dim, sizeof(io_dim));								// layer in_dim
-	ofs.write((char *)&out_dim, sizeof(io_dim));							// layer out_dim
-	ofs.write((char *)&nextLayerSize, sizeof(uint32_t));						// layer next layer size
-	for(uint32_t i = 0; i < nextLayerSize; i++) {								// layer next layers
-		ofs.write((char *)&nextLayers[i], sizeof(Layer<Dtype>*));
-	}
-	ofs.write((char *)&prevLayerSize, sizeof(uint32_t));						// layer prev layer size
-	for(uint32_t i = 0; i < prevLayers.size(); i++) {							// layer prev layers
-		ofs.write((char *)&prevLayers[i], sizeof(Layer<Dtype>*));
-	}
-}
-
-template <typename Dtype>
-void Layer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
-	int layerId;
-	char name[LAYER_NAME_LENGTH];
-	uint32_t nextLayerSize, prevLayerSize;
-
-	ifs.read((char *)&layerId, sizeof(int));
-	ifs.read(name, LAYER_NAME_LENGTH);
-	ifs.read((char *)&in_dim, sizeof(io_dim));
-	ifs.read((char *)&out_dim, sizeof(io_dim));
-	ifs.read((char *)&nextLayerSize, sizeof(uint32_t));
-	for(uint32_t i = 0; i < nextLayerSize; i++) {
-		Layer<Dtype>* nextLayer;
-		ifs.read((char *)&nextLayer, sizeof(Layer<Dtype>*));
-		nextLayers.push_back(nextLayer);
-	}
-	ifs.read((char *)&prevLayerSize, sizeof(uint32_t));
-	for(uint32_t i = 0; i < prevLayerSize; i++) {
-		Layer<Dtype>* prevLayer;
-		ifs.read((char *)&prevLayer, sizeof(Layer<Dtype>*));
-		prevLayers.push_back(prevLayer);
-	}
-	initialize(layerId, name);
-
-	Layer::_shape(false);
-	updateLayerRelation(layerMap);
-}
-*/
-
 template void Layer<float>::_shape(bool recursive);
 template void Layer<float>::_clearShape();
-//template void Layer<float>::_save(ofstream &ofs);
-//template void Layer<float>::_load(ifstream &ifs, map<Layer<float>*, Layer<float>*> &layerMap);
-
 
 #endif
 

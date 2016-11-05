@@ -55,10 +55,6 @@ public:
 			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
-		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
-			Layer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
-			return this;
-		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
 			Layer<Dtype>::Builder::inputs(inputs);
 			return this;
