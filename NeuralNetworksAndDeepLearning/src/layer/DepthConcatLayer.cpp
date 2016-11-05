@@ -33,13 +33,14 @@ DepthConcatLayer<Dtype>::~DepthConcatLayer() {}
 
 
 template <typename Dtype>
-void DepthConcatLayer<Dtype>::shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& prevLayerOutput) {
+//void DepthConcatLayer<Dtype>::shape(uint32_t idx, io_dim in_dim, Data<Dtype>* prevLayerOutput) {
+void DepthConcatLayer<Dtype>::shape() {
 	// DepthConcatLayer에서 필요로하는 output channel수만 카운트하고
 	// 나머지는 모두 상위 레이어의 shape()로 위임한다.
-	if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
-	this->out_dim.channels += in_dim.channels;
+	//if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
+	//this->out_dim.channels += in_dim.channels;
 
-	HiddenLayer<Dtype>::shape(idx, in_dim, prevLayerOutput);
+	//HiddenLayer<Dtype>::shape(idx, in_dim, prevLayerOutput);
 
 #ifdef DEPTHCONCAT_LOG
 	cout << "shape depthConcatLayer in_dim: " << this->in_dim.batches << "x" << this->in_dim.channels << "x" << this->in_dim.rows << "x" << this->in_dim.cols << endl;
@@ -102,8 +103,7 @@ void DepthConcatLayer<Dtype>::propBackpropagation() {
 		// DepthConcatLayer와 같이 d_inputGrad을 분배해야 하는 케이스가 있으므로 d_inputGrad을 그대로 사용하지 말고
 		// getter를 사용하여 이전 레이어에 d_inputGrad을 전달해야 한다.
 		if(hiddenLayer) {
-			//_distGradToPrev(i, hiddenLayer);
-			hiddenLayer->backpropagation(this->id, this->getInput(), offset);
+			//hiddenLayer->backpropagation(this->id, this->getInput(), offset);
 		}
 	}
 }

@@ -7,7 +7,7 @@
 
 #include "ArtisticStyle.h"
 
-//#ifndef GPU_MODE
+#ifndef GPU_MODE
 
 
 #include <stdint.h>
@@ -1500,7 +1500,7 @@ void ArtisticStyle::gramMatrix(DATATYPE* f, const int N, const int M, DATATYPE* 
 
 template class ArtisticStyle<float>;
 
-//#endif
+#endif
 
 
 

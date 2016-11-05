@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,10 @@
 #include "../monitor/NetworkListener.h"
 #include "../layer/LayerFactory.h"
 #include "../Worker.h"
+#include "../log/ColdLog.h"
+
+
+using namespace std;
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class Worker;
@@ -33,6 +38,7 @@ public:
 	class Builder {
 	public:
         std::map<uint32_t, typename Layer<Dtype>::Builder*> _layerWise;
+
 
 		Builder* layer(typename Layer<Dtype>::Builder* layerBuilder) {
 			uint32_t layerIndex = layerBuilder->_id;
@@ -55,13 +61,13 @@ public:
             std::vector<LearnableLayer<Dtype>*> learnableLayers;
             std::map<uint32_t, Layer<Dtype>*> idLayerMap;
 
-			uint32_t layerSize = _layerWise.size();
+            // (1) Layer Builder의 설정대로 Layer들을 생성한다.
             typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
-
 			for (it = _layerWise.begin(); it != _layerWise.end(); it++) {
                 Layer<Dtype>* currentLayer = it->second->build();
                 const int numNextLayers = currentLayer->getNextLayerSize();
                 const int numPrevLayers = currentLayer->getPrevLayerSize();
+
                 if (numNextLayers < 1 && numPrevLayers < 1) {
                     std::cout << "layer " << currentLayer->getName() << " has no layer relations ... "
                         << std::endl;
@@ -76,13 +82,12 @@ public:
                     lastLayers.push_back(currentLayer);
                 }
 
-                // 학습 레이어 추가
+                		// 학습 레이어 추가
                 LearnableLayer<Dtype>* learnableLayer =
                     dynamic_cast<LearnableLayer<Dtype>*>(currentLayer);
                 if (learnableLayer) {
                     learnableLayers.push_back(learnableLayer);
                 }
-
 
                 layers.push_back(currentLayer);
                 idLayerMap[it->first] = currentLayer;
@@ -97,8 +102,11 @@ public:
 				exit(1);
 			}
 
+
+			const uint32_t layerSize = layers.size();
+
 			// 생성된 레이어들의 prev, next 관계를 설정한다.
-			for(uint32_t i = 0; i < layers.size(); i++) {
+			for(uint32_t i = 0; i < layerSize; i++) {
 				Layer<Dtype>* currentLayer = layers[i];
 				for(uint32_t j = 0; j < currentLayer->getNextLayers().size(); j++) {
 					typename std::map<uint32_t, Layer<Dtype>*>::iterator it =
@@ -116,11 +124,12 @@ public:
 				}
 			}
 
+			// 레이어 이름으로 레이어 객체를 찾을 수 있도록 이름-레이어 맵을 생성
             std::map<std::string, Layer<Dtype>*> nameLayerMap;
-			for(uint32_t i = 0; i < layers.size(); i++) {
+			for (uint32_t i = 0; i < layerSize; i++) {
 				const std::string& layerName = layers[i]->getName();
 				typename std::map<std::string, Layer<Dtype>*>::iterator it = nameLayerMap.find(layerName);
-				if(it != nameLayerMap.end()) {
+				if (it != nameLayerMap.end()) {
                     std::cout << "layer name used more than once ... : " << layerName <<
                         std::endl;
 					exit(1);
@@ -128,14 +137,36 @@ public:
 				nameLayerMap[layerName] = layers[i];
 			}
 
+			// 레이어의 입,출력 데이터 이름으로부터 유일한 데이터를 생성, 이름-데이터 맵을 생성
+			cout << "update layer data to unique objects ... " << endl;
+			std::map<std::string, Data<Dtype>*> layerDataMap;
+			for (uint32_t i = 0; i < layerSize; i++) {
+				std::vector<std::string> dataNameVec;
+				Layer<Dtype>* layer = layers[i];
+				cout << "\tfor layer " << layer->getName() << endl;
+				cout << "\tinput data: " << layer->getInputs().size() << endl;
+				_updateLayerData(layerDataMap, layer->getInputs(), layer->getInputData());
+				cout << "\toutput data: " << layer->getOutputs().size() << endl;
+				_updateLayerData(layerDataMap, layer->getOutputs(), layer->getOutputData());
+			}
+
+			// 레이어 호출 순서에 따라 순서 재조정
+			// 의존성이 해결된 레이어를 앞에 배치하여 순차적으로 호출시 적절한 결과를 보장하도록 함
+			cout << "ordering layers ... " << endl;
+			std::vector<Layer<Dtype>*> olayers;
+			_orderLayers(layers, olayers);
+
+
 			return (new LayersConfig(this))
 				->firstLayers(firstLayers)
 				->lastLayers(lastLayers)
-				->layers(layers)
+				->layers(olayers)
 				->learnableLayers(learnableLayers)
-                ->nameLayerMap(nameLayerMap);
+                ->nameLayerMap(nameLayerMap)
+                ->layerDataMap(layerDataMap);
 
 		}
+
 		void save(std::ofstream& ofs) {
 			uint32_t numLayers = _layerWise.size();
 			ofs.write((char*)&numLayers, sizeof(uint32_t));
@@ -162,8 +193,67 @@ public:
 			}
 		}
 
+
+	private:
+		void _updateLayerData(std::map<std::string, Data<Dtype>*>& dataMap,
+				std::vector<std::string>& dataNameVec, std::vector<Data<Dtype>*>& layerDataVec) {
+			for (uint32_t i = 0; i < dataNameVec.size(); i++) {
+				typename std::map<std::string, Data<Dtype>*>::iterator it = dataMap.find(dataNameVec[i]);
+				if (it == dataMap.end()) {
+					Data<Dtype>* data = new Data<Dtype>();
+					dataMap[dataNameVec[i]] = data;
+					layerDataVec.push_back(data);
+					cout << "\t\tfor data " << dataNameVec[i] << ": insert new ... " << endl;
+				} else {
+					layerDataVec.push_back(it->second);
+					cout << "\t\tfor data " << dataNameVec[i] << ": refer old ... " << endl;
+				}
+			}
+		}
+
+		void _orderLayers(std::vector<Layer<Dtype>*>& tempLayers, std::vector<Layer<Dtype>*>& layers) {
+
+			std::set<std::string> dataSet;
+			while (tempLayers.size() > 0) {
+				for (uint32_t i = 0; i < tempLayers.size(); i++) {
+					InputLayer<Dtype>* inputLayer = dynamic_cast<InputLayer<Dtype>*>(tempLayers[i]);
+					if (inputLayer) {
+					// 입력 레이어인 경우,
+					//if (tempLayers[i]->getInputsSize() < 1) {
+						cout << tempLayers[i]->getName() << " is input layer ... insert ... " << endl;
+						layers.push_back(tempLayers[i]);
+						dataSet.insert(tempLayers[i]->getOutputs().begin(), tempLayers[i]->getOutputs().end());
+						tempLayers.erase(tempLayers.begin()+i);
+						break;
+					} else {
+						// 앞선 레이어가 출력한 데이터가 현재 레이어의 모든 입력 데이터를 커버해야 처리한다.
+						if (_isSetContainsAll(dataSet, tempLayers[i]->getInputs())) {
+							cout << tempLayers[i]->getName() << "'s all input data have processed ... insert ... " << endl;
+							layers.push_back(tempLayers[i]);
+							dataSet.insert(tempLayers[i]->getOutputs().begin(), tempLayers[i]->getOutputs().end());
+							tempLayers.erase(tempLayers.begin()+i);
+							break;
+						} else {
+							cout << tempLayers[i]->getName() << "'s not all input data have processed ... skip ... " << endl;
+						}
+					}
+				}
+			}
+		}
+
+		bool _isSetContainsAll(std::set<std::string>& dataSet, std::vector<std::string>& inputs) {
+			for (uint32_t i = 0; i < inputs.size(); i++) {
+				typename std::set<std::string>::iterator it = dataSet.find(inputs[i]);
+				// has input not contained in set
+				if(it == dataSet.end()) {
+					return false;
+				}
+			}
+			return true;
+		}
 	};
 
+	std::map<std::string, Data<Dtype>*> _layerDataMap;
     std::vector<Layer<Dtype>*> _firstLayers;
     std::vector<Layer<Dtype>*> _lastLayers;
     std::vector<Layer<Dtype>*> _layers;
@@ -206,6 +296,10 @@ public:
 	}
 	LayersConfig* nameLayerMap(std::map<std::string, Layer<Dtype>*> nameLayerMap) {
 		this->_nameLayerMap = nameLayerMap;
+		return this;
+	}
+	LayersConfig* layerDataMap(std::map<std::string, Data<Dtype>*> layerDataMap) {
+		this->_layerDataMap = layerDataMap;
 		return this;
 	}
 	void save(std::ofstream& ofs) {

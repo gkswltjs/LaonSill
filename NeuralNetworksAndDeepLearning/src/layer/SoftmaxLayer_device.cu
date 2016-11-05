@@ -34,7 +34,6 @@ __global__ void Dropout_(const int n, const Dtype* in, const Dtype* mask,
 */
 
 template <typename Dtype>
-//void SoftmaxLayer<Dtype>::backpropagation(const uint32_t* target) {
 void SoftmaxLayer<Dtype>::backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex) {
 	/*
 	double asum = this->_output->asum_device_data() / this->out_dim.batches;
@@ -67,13 +66,13 @@ void SoftmaxLayer<Dtype>::backpropagation(DataSet<Dtype>* dataSet, const uint32_
 
 
 	const Dtype* d_preActivationData = this->_preActivation->device_data();
-	const Dtype* d_outputData = this->_output->device_data();
+	const Dtype* d_outputData = this->_outputData[0]->device_data();
 	const uint32_t* d_target = this->_target.device_mem();
 
 	// delta_output 구하는 단계를 넣을 경우, delta_output을 0으로 reset할 필요가 있음
 	// 0으로 reset한 후, target에 해당하는 element만 수정, (테스트 단계 임시로 여기서 reset)
-	this->_output->reset_device_grad();
-	Dtype* d_outputGrad = this->_output->mutable_device_grad();
+	this->_outputData[0]->reset_device_grad();
+	Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
 	this->cost_fn->backward(d_preActivationData, d_outputData, d_target, d_outputGrad, this->out_dim.rows, this->out_dim.batches);
 
 	//double networkSumsq = this->_output->sumsq_device_grad();
@@ -110,7 +109,7 @@ void SoftmaxLayer<Dtype>::backpropagation(DataSet<Dtype>* dataSet, const uint32_
 
 	//OutputLayer<Dtype>::_activationBackward();
 	OutputLayer<Dtype>::_backpropagation();
-	OutputLayer<Dtype>::propBackpropagation();
+	//OutputLayer<Dtype>::propBackpropagation();
 
 
 	//_output->reset_device_grad();
@@ -184,7 +183,7 @@ double SoftmaxLayer<Dtype>::cost(DataSet<Dtype>* dataSet, const uint32_t baseInd
 	}
 	//this->_target.print("cost target");
 
-	const Dtype* h_outputData = this->_output->host_data();
+	const Dtype* h_outputData = this->_outputData[0]->host_data();
 	const uint32_t* h_target = this->_target.host_mem();
 	return this->cost_fn->forward(h_outputData, h_target, this->out_dim.rows, this->out_dim.batches);
 }

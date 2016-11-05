@@ -67,8 +67,11 @@ public:
 	public:
 		Type type;
         std::string _name;							///< 레이어의 이름
-		uint32_t _id;							///< 레이어의 아이디
+		uint32_t _id;								///< 레이어의 아이디
         std::vector<uint32_t> _nextLayerIndices;		///< 레이어의 다음 레이어 아이디 목록
+
+        std::vector<std::string> _inputs;
+        std::vector<std::string> _outputs;
 
 		Builder() {
 			type = Layer<Dtype>::None;
@@ -87,6 +90,15 @@ public:
 			this->_nextLayerIndices = nextLayerIndices;
 			return this;
 		}
+		virtual Builder* inputs(const std::vector<std::string>& inputs) {
+			this->_inputs = inputs;
+			return this;
+		}
+		virtual Builder* outputs(const std::vector<std::string>& outputs) {
+			this->_outputs = outputs;
+			return this;
+		}
+
 		virtual Layer<Dtype>* build() = 0;
 		virtual void save(std::ofstream& ofs) {
 			ofs.write((char*)&type, sizeof(uint32_t));
@@ -189,26 +201,49 @@ public:
 	 * @return 레이어에 연결된 이전 레이어의 수
 	 */
 	int getPrevLayerSize() const { return this->prevLayers.size(); }
+
+	std::vector<std::string>& getInputs() { return this->_inputs; }
+	std::vector<std::string>& getOutputs() { return this->_outputs; }
+	uint32_t getInputsSize() const { return this->_inputs.size(); }
+	uint32_t getOutputsSize() const { return this->_outputs.size(); }
+
+	std::vector<Data<Dtype>*>& getInputData() { return this->_inputData; }
+	std::vector<Data<Dtype>*>& getOutputData() { return this->_outputData; }
+
+
+
 	/**
 	 * @details 레이어의 입력 데이터 구조정보를 담고 있는 구조체를 조회한다.
 	 * @return 레이어의 입력 데이터 구조정보를 담고 있는 구조체
 	 */
 	io_dim getInDimension() const { return this->in_dim; }
+
+	void setInDimension(io_dim in_dim) { this->in_dim = in_dim; }
+	void setInDimension(const std::vector<uint32_t>& shape) {
+		this->in_dim.batches = shape[0];
+		this->in_dim.channels = shape[1];
+		this->in_dim.rows = shape[2];
+		this->in_dim.cols = shape[3];
+	}
+
 	/**
 	 * @details 레이어의 출력 데이터 구조정보를 담고 있는 구조체를 조회한다.
 	 * @return 레이어의 출력 데이터 구조정보를 담고 있는 구조체
 	 */
 	io_dim getOutDimension() const { return this->out_dim; }
+
+	void setOutDimension(io_dim out_dim) { this->out_dim = out_dim; }
+
 	/**
 	 * @details 레이어의 입력값 장치 포인터를 조회한다.
 	 * @return 레이어 입력값 장치 포인터
 	 */
-	virtual Data<Dtype>* getInput() { return this->_input.get(); }
+	virtual Data<Dtype>* getInput() { return this->_inputData[0]; }
 	/**
 	 * @details 레이어의 출력값 장치 포인터를 조회한다.
 	 * @return 레이어 출력값 장치 포인터
 	 */
-	virtual Data<Dtype>* getOutput() { return this->_output.get(); }
+	virtual Data<Dtype>* getOutput() { return this->_outputData[0]; }
 
 	/**
 	 * @details 레이어에 네트워크 설정값을 설정한다.
@@ -279,7 +314,8 @@ public:
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 현재 레이어의 입력 데이터 구조정보
 	 */
-	virtual void shape(uint32_t idx, io_dim in_dim, std::shared_ptr<Data<Dtype>>& prevLayerOutput);
+	//virtual void shape(uint32_t idx, io_dim in_dim, Data<Dtype>* prevLayerOutput);
+	virtual void shape();
 	/**
 	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
@@ -328,7 +364,8 @@ public:
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
-	virtual void feedforward(uint32_t idx, Data<Dtype>* input, const char *end=0);
+	//virtual void feedforward(uint32_t idx, Data<Dtype>* input, const char* end=0);
+	virtual void feedforward();
 #endif
 
 
@@ -358,7 +395,6 @@ protected:
 
 	bool isSharedInput();
 	bool isSharedOutput();
-
 
 
 
@@ -426,7 +462,7 @@ protected:
 	/**
 	 * @details 다음 레이어들에 대해 shape() 메쏘드를 호출한다.
 	 */
-	void propShape();
+	//void propShape();
 	/**
 	 * @details 다음 레이어들에 대해 reshape() 메쏘드를 호출한다.
 	 */
@@ -450,23 +486,32 @@ protected:
 	 * @details 다음 레이어들에 대해 feedforward() 메쏘드를 호출한다.
 	 * @param end feedforward 중단 레이어의 이름 (0인 경우 최종 output레이어가 중단 레이어)
 	 */
-	void propFeedforward(const char *end=0);
+	//void propFeedforward(const char *end=0);
 #endif
 
+
+public:
+	std::vector<Data<Dtype>*> _inputData;				///< 레이어 입력 데이터 목록 벡터
+	std::vector<Data<Dtype>*> _outputData;				///< 레이어 출력 데이터 목록 벡터
 
 
 protected:
 	Layer<Dtype>::Type type;							///< 레이어의 타입
 	int id;												///< 레이어의 고유 아이디
-    std::string name;										///< 레이어의 이름
+    std::string name;									///< 레이어의 이름
 
 	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
 	io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
 	io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
 
-    std::vector<Layer<Dtype>*> prevLayers;					///< 현재 레이어의 이전(입력) 레이어 목록 벡터
-    std::vector<Layer<Dtype>*> nextLayers;					///< 현재 레이어의 다음(출력) 레이어 목록 벡터
+    std::vector<Layer<Dtype>*> prevLayers;				///< 현재 레이어의 이전(입력) 레이어 목록 벡터
+    std::vector<Layer<Dtype>*> nextLayers;				///< 현재 레이어의 다음(출력) 레이어 목록 벡터
+
+    std::vector<std::string> _inputs;					///< 레이어 입력 데이터 이름 목록 벡터
+    std::vector<std::string> _outputs;					///< 레이어 출력 데이터 이름 목록 벡터
+
+
 
 
 
@@ -487,8 +532,8 @@ public:
 	//Data<Dtype>* _input;								///< 레이어 입력 데이터 및 그레디언트
 	//Data<Dtype>* _output;								///< 레이어 출력 데이터 및 그레디언트
 
-    std::shared_ptr<Data<Dtype>> _input;
-    std::shared_ptr<Data<Dtype>> _output;
+    //std::shared_ptr<Data<Dtype>> _input;
+    //std::shared_ptr<Data<Dtype>> _output;
 };
 
 

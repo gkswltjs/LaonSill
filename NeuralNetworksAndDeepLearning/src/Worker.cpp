@@ -335,7 +335,7 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
     // XXX: 현재는 CCN Double Layer만 생성하도록 되어 있다. 수정필요!!!
     
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* layersConfig = createCNNDoubleLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 
     // (2) network config 정보를 layer들에게 전달한다.
     for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
@@ -348,7 +348,13 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
     in_dim.cols = network->config->_dataSet->getCols();
     in_dim.channels = network->config->_dataSet->getChannels();
     in_dim.batches = network->config->_batchSize;
-    layersConfig->_inputLayer->shape(0, in_dim);
+    layersConfig->_inputLayer->setInDimension(in_dim);
+
+    for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+    	layersConfig->_layers[i]->shape();
+    	//in_dim = layersConfig->_layers[i-1]->getOutDimension();
+    }
+    //layersConfig->_inputLayer->shape(0, in_dim);
 
     // (4) network에 layersConfig 정보를 등록한다.
     network->setLayersConfig(layersConfig);
@@ -379,7 +385,7 @@ int Worker<Dtype>::createNetwork() {
     const uint32_t batchSize = 50;
 	//const uint32_t batchSize = 1000;
 	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
-	const uint32_t testInterval = 1000000;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
 	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
 	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
 	const uint32_t stepSize = 100000;
@@ -404,7 +410,7 @@ int Worker<Dtype>::createNetwork() {
 
 	Evaluation<Dtype>* top1Evaluation = new Top1Evaluation<Dtype>();
 	Evaluation<Dtype>* top5Evaluation = new Top5Evaluation<Dtype>();
-	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::WRITE_ONLY);
+	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_ONLY);
 
 	NetworkConfig<Dtype>* networkConfig =
 			(new typename NetworkConfig<Dtype>::Builder())

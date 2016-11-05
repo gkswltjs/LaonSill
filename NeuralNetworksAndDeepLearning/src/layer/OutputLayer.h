@@ -85,6 +85,14 @@ public:
 			FullyConnectedLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
+		virtual Builder* inputs(const std::vector<std::string>& inputs) {
+			this->_inputs = inputs;
+			return this;
+		}
+		virtual Builder* outputs(const std::vector<std::string>& outputs) {
+			this->_outputs = outputs;
+			return this;
+		}
 		Layer<Dtype>* build() = 0;
 		virtual void save(std::ofstream& ofs) {
 			FullyConnectedLayer<Dtype>::Builder::save(ofs);
@@ -127,7 +135,6 @@ public:
 	 * @param target 현재 입력 데이터에 대한 정답 레이블
 	 */
 	using FullyConnectedLayer<Dtype>::backpropagation;
-	//virtual void backpropagation(const uint32_t* target) = 0;
 	virtual void backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex) = 0;
 
 	/**

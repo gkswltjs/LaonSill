@@ -30,23 +30,23 @@ HiddenLayer<Dtype>::~HiddenLayer() {}
 
 
 template <typename Dtype>
-void HiddenLayer<Dtype>::backpropagation(uint32_t idx, Data<Dtype>* next_input, uint32_t offset) {
+void HiddenLayer<Dtype>::backpropagation() {
 
-	if(!Layer<Dtype>::isSharedOutput()) {
-		_deconcat(idx, next_input, offset);
-		if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
-	}
+	//if(!Layer<Dtype>::isSharedOutput()) {
+	//	_deconcat(idx, next_input, offset);
+	//	if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
+	//}
 
 	//_scaleGradient();
 	_backpropagation();
-	propBackpropagation();
+	//propBackpropagation();
 }
 
 
 
 template <typename Dtype>
 void HiddenLayer<Dtype>::_backpropagation() {
-	this->_input->set_device_grad(this->_output.get());
+	this->_inputData[0]->set_device_grad(this->_outputData[0]);
 }
 
 
@@ -67,16 +67,16 @@ void HiddenLayer<Dtype>::_clearShape() {
 template <typename Dtype>
 void HiddenLayer<Dtype>::_deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset) {
 	next_delta_input->print_grad("next_delta_input:");
-	this->_output->print_grad("outputGrad");
+	this->_outputData[0]->print_grad("outputGrad");
 	// 첫번째 branch로부터의 backpropagation, 그대로 copy
 	if(this->isFirstNextLayerRequest(idx)) {
-		this->_output->set_device_grad(next_delta_input, offset);
+		this->_outputData[0]->set_device_grad(next_delta_input, offset);
 	}
 	// 첫번째 이후의 branch로부터의 backpropagation, accumulate gradient
 	else {
-		this->_output->add_device_grad(next_delta_input, offset);
+		this->_outputData[0]->add_device_grad(next_delta_input, offset);
 	}
-	this->_output->print_grad("outputGrad:");
+	this->_outputData[0]->print_grad("outputGrad:");
 }
 
 
@@ -85,13 +85,13 @@ void HiddenLayer<Dtype>::_scaleGradient() {
 	if(this->nextLayers.size() > 1) {
 		float branchFactor = 1.0f / this->nextLayers.size();
 		//cout << this->name << "'s backpropagation branch factor is " << branchFactor << endl;
-		this->_output->print_grad("before scaling output grad: ");
-		this->_output->scale_device_grad(branchFactor);
-		this->_output->print_grad("after scaling output grad: ");
+		this->_outputData[0]->print_grad("before scaling output grad: ");
+		this->_outputData[0]->scale_device_grad(branchFactor);
+		this->_outputData[0]->print_grad("after scaling output grad: ");
 	}
 }
 
-
+/*
 template <typename Dtype>
 void HiddenLayer<Dtype>::propBackpropagation() {
 	HiddenLayer *hiddenLayer;
@@ -107,6 +107,7 @@ void HiddenLayer<Dtype>::propBackpropagation() {
 		}
 	}
 }
+*/
 
 
 

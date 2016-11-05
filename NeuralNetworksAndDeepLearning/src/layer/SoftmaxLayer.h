@@ -85,6 +85,14 @@ public:
 			OutputLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
+		virtual Builder* inputs(const std::vector<std::string>& inputs) {
+			this->_inputs = inputs;
+			return this;
+		}
+		virtual Builder* outputs(const std::vector<std::string>& outputs) {
+			this->_outputs = outputs;
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new SoftmaxLayer(this);
 		}
@@ -118,7 +126,6 @@ public:
 	 * @param target 현재 입력 데이터에 대한 정답 레이블
 	 */
 	using OutputLayer<Dtype>::backpropagation;
-	//void backpropagation(const uint32_t* target);
 	void backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex);
 
 	/**

@@ -32,10 +32,14 @@ Layer<Dtype>::Layer(const string name) {
 }
 
 template <typename Dtype>
-Layer<Dtype>::Layer(Builder* builder) : _output(new Data<Dtype>()) {
+Layer<Dtype>::Layer(Builder* builder) /*:_output(new Data<Dtype>())*/ {
 	for(uint32_t i = 0; i < builder->_nextLayerIndices.size(); i++) {
 		this->nextLayers.push_back((Layer<Dtype>*)((size_t)builder->_nextLayerIndices[i]));
 	}
+
+	this->_inputs = builder->_inputs;
+	this->_outputs = builder->_outputs;
+
 	initialize(builder->_id, builder->_name);
 }
 
@@ -122,11 +126,13 @@ bool Layer<Dtype>::w_isLastNextLayerRequest(uint32_t idx, const string method) {
 }
 
 template <typename Dtype>
-void Layer<Dtype>::shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& prevLayerOutput) {
-	if (!w_isLastPrevLayerRequest(idx, "Layer::shape()")) return;
+//void Layer<Dtype>::shape(uint32_t idx, io_dim in_dim, Data<Dtype>* prevLayerOutput) {
+void Layer<Dtype>::shape() {
+	//if (!w_isLastPrevLayerRequest(idx, "Layer::shape()")) return;
 
-	this->in_dim = in_dim;
+	//this->in_dim = in_dim;
 
+	/*
 	// 이전 레이어의 output을 재활용할 수 있는 경우 (이전 레이어와 현재 레이어가 유일하게 연결된 경우)
 	if(isSharedInput()) {
 		this->_input = prevLayerOutput;
@@ -136,9 +142,10 @@ void Layer<Dtype>::shape(uint32_t idx, io_dim in_dim, shared_ptr<Data<Dtype>>& p
 		shared_ptr<Data<Dtype>> _tmp_input(new Data<Dtype>());
 		this->_input = _tmp_input;
 	}
+	*/
 
 	_shape();
-	propShape();
+	//propShape();
 }
 
 template <typename Dtype>
@@ -189,17 +196,17 @@ void Layer<Dtype>::load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerM
 */
 
 template <typename Dtype>
-void Layer<Dtype>::feedforward(uint32_t idx, Data<Dtype>* input, const char *end) {
+void Layer<Dtype>::feedforward() {
 
 	// shared input이 아닌 경우,
-	if(!isSharedInput()) {
-		_concat(idx, input);
-		if (!w_isLastPrevLayerRequest(idx, "Layer::feedforward()")) return;
-	}
+	//if(!isSharedInput()) {
+	//	_concat(idx, input);
+	//	if (!w_isLastPrevLayerRequest(idx, "Layer::feedforward()")) return;
+	//}
 
 	//_scaleInput();
 	_feedforward();
-	propFeedforward(end);
+	//propFeedforward(end);
 }
 
 template <typename Dtype>
@@ -302,9 +309,7 @@ void Layer<Dtype>::_reshape() {
 
 template <typename Dtype>
 void Layer<Dtype>::_feedforward() {
-	//_input->print_data("input:");
-	_output->set_device_data(_input.get());
-	//_output->print_data("output:");
+	_outputData[0]->set_device_data(_inputData[0]);
 }
 
 template <typename Dtype>
@@ -314,29 +319,31 @@ void Layer<Dtype>::_concat(uint32_t idx, Data<Dtype>* input) {
 
 	// 첫번째 branch로부터의 input, 그대로 copy
 	if(isFirstPrevLayerRequest(idx)) {
-		_input->set_device_data(input);
+		_inputData[0]->set_device_data(input);
 	}
 	// 첫번째 이후의 branch로부터의 input, accumulate input
 	else {
-		_input->add_device_data(input);
+		_inputData[0]->add_device_data(input);
 	}
-	//_input->print_data("input:");
+	//_inputData[0]->print_data("input:");
 }
 
 template <typename Dtype>
 void Layer<Dtype>::_scaleInput() {
 	if(prevLayers.size() > 1) {
 		float branchFactor = 1.0f / prevLayers.size();
-		_input->scale_device_data(branchFactor);
+		_inputData[0]->scale_device_data(branchFactor);
 	}
 }
 
+/*
 template <typename Dtype>
 void Layer<Dtype>::propShape() {
 	for(uint32_t i = 0; i < nextLayers.size(); i++) {
-		nextLayers[i]->shape(id, out_dim, _output);
+		//nextLayers[i]->shape(id, out_dim, _outputData[0]);
 	}
 }
+*/
 
 template <typename Dtype>
 void Layer<Dtype>::propReshape() {
@@ -361,6 +368,7 @@ void Layer<Dtype>::propSave(ofstream &ofs) {
 }
 */
 
+/*
 template <typename Dtype>
 void Layer<Dtype>::propFeedforward(const char *end) {
 	if(end != 0 && name == end) return;
@@ -369,7 +377,7 @@ void Layer<Dtype>::propFeedforward(const char *end) {
 		nextLayers[i]->feedforward(id, this->getOutput(), end);
 	}
 }
-
+*/
 
 
 

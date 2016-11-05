@@ -38,8 +38,14 @@ public:
 	 */
 	class Builder : public Layer<Dtype>::Builder {
 	public:
+		std::vector<uint32_t> _shape;
+
 		Builder() {
 			this->type = Layer<Dtype>::Input;
+		}
+		virtual Builder* shape(const std::vector<uint32_t>& shape) {
+			this->_shape = shape;
+			return this;
 		}
 		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);
@@ -51,6 +57,14 @@ public:
 		}
 		virtual Builder* nextLayerIndices(const std::vector<uint32_t>& nextLayerIndices) {
 			Layer<Dtype>::Builder::nextLayerIndices(nextLayerIndices);
+			return this;
+		}
+		virtual Builder* inputs(const std::vector<std::string>& inputs) {
+			Layer<Dtype>::Builder::inputs(inputs);
+			return this;
+		}
+		virtual Builder* outputs(const std::vector<std::string>& outputs) {
+			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		Layer<Dtype>* build() {
@@ -89,23 +103,14 @@ public:
 	 */
 	int getInputSize() const;
 
-	/*
+	//void feedforward(uint32_t idx, Data<Dtype>* input, const char* end=0);
+	void feedforward();
 	using Layer<Dtype>::feedforward;
-	void feedforward(const Dtype* input, const char* end=0) {
-		//_input->set_data(input, Data::HostToDevice);
-		this->_input->set_device_with_host_data(input);
-
-		this->_feedforward();
-		this->propFeedforward(end);
-	}
-	*/
-
-	void feedforward(uint32_t idx, Data<Dtype>* input, const char *end=0);
-	//using Layer<Dtype>::feedforward;
 	void feedforward(DataSet<Dtype>* dataSet, const uint32_t baseIndex, const char* end=0);
 
-	using Layer<Dtype>::shape;
-	void shape(uint32_t idx, io_dim in_dim);
+	//using Layer<Dtype>::shape;
+	//void shape(uint32_t idx, io_dim in_dim);
+	void shape();
 
 protected:
 	void initialize();

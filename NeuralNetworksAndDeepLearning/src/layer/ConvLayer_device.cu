@@ -107,6 +107,8 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_shape(bool recursive) {
+	this->setInDimension(this->_inputData[0]->getShape());
+
 	cudnnTensorDescriptor_t tempInputTensorDesc;
 	checkCUDNN(cudnnCreateTensorDescriptor(&tempInputTensorDesc));
 	checkCUDNN(cudnnSetTensor4dDescriptor(tempInputTensorDesc,
@@ -469,28 +471,8 @@ void ConvLayer<Dtype>::syncMutableMem() {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_feedforward() {
-
-
-	if(this->name == "inception_3a/conv5x5") {
-		//Data<Dtype>::printConfig = 1;
-		this->_input->print_data("inputData");
-		//Data<Dtype>::printConfig = 0;
-	}
-
-
-	/*
-	//if(this->name == "inception_3a/conv5x5") {
-	if(this->name == "convLayer2") {
-		cout << "feedforward()" << endl;
-		Data<Dtype>::printConfig = 1;
-		_params[Filter]->print_data(this->name+string("/filters:"));
-		_params[Bias]->print_data(this->name+string("/biases:"));
-		Data<Dtype>::printConfig = 0;
-	}
-	*/
-
 	// Apply filters to input data
-	const Dtype* d_inputData = this->_input->device_data();
+	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	const Dtype* d_filtersData = _params[Filter]->device_data();
 	Dtype* d_preActivationData = _preActivation->mutable_device_data();
 
@@ -510,9 +492,9 @@ void ConvLayer<Dtype>::_feedforward() {
 
 
 	// Activate filtered result
-	Dtype* d_output = this->_output->mutable_device_data();
+	Dtype* d_output = this->_outputData[0]->mutable_device_data();
 	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_output);
-	this->_output->print_data(this->name+string("output:"));
+	this->_outputData[0]->print_data(this->name+string("output:"));
 }
 
 
@@ -574,11 +556,11 @@ void ConvLayer<Dtype>::_backpropagation() {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_computePreActivationGrad() {
-	this->_output->print_grad("outputGrad:");
-	this->_output->print_data("outputData:");
+	this->_outputData[0]->print_grad("outputGrad:");
+	this->_outputData[0]->print_data("outputData:");
 
-	const Dtype* d_outputData = this->_output->device_data();
-	const Dtype* d_outputGrad = this->_output->device_grad();
+	const Dtype* d_outputData = this->_outputData[0]->device_data();
+	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	const Dtype* d_preActivationData = _preActivation->device_data();
 	Dtype* d_preActivationGrad = _preActivation->mutable_device_grad();
 
@@ -589,11 +571,11 @@ void ConvLayer<Dtype>::_computePreActivationGrad() {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_computeFiltersGrad() {
-	this->_input->print_data("inputData:");
+	this->_inputData[0]->print_data("inputData:");
 	this->_preActivation->print_grad("preActivationGrad:");
 
 	// d(Cost)/d(Filters)
-	const Dtype* d_inputData = this->_input->device_data();
+	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
 	Dtype* d_filtersGrad = _params[Filter]->mutable_device_grad();
 
@@ -620,11 +602,11 @@ void ConvLayer<Dtype>::_computeInputGrad() {
 	// d(Cost)/d(Input)
 	const Dtype* d_filtersData = _params[Filter]->device_data();
 	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
-	Dtype* d_inputGrad = this->_input->mutable_device_grad();
+	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 	checkCUDNN(cudnnConvolutionBackwardData(Cuda::cudnnHandle,
 			&Cuda::alpha, filterDesc, d_filtersData, this->outputTensorDesc, d_preActivationGrad, convDesc, convBwdDataAlgo, d_workspace, workspaceSize,
 			&Cuda::beta, this->inputTensorDesc, d_inputGrad));
-	this->_input->print_grad("inputGrad:");
+	this->_inputData[0]->print_grad("inputGrad:");
 	_params[Filter]->print_data("filtersData:");
 
 	/*

@@ -53,6 +53,14 @@ public:
 			HiddenLayer<Dtype>::Builder::prevLayerIndices(prevLayerIndices);
 			return this;
 		}
+		virtual Builder* inputs(const std::vector<std::string>& inputs) {
+			this->_inputs = inputs;
+			return this;
+		}
+		virtual Builder* outputs(const std::vector<std::string>& outputs) {
+			this->_outputs = outputs;
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new DepthConcatLayer(this);
 		}
@@ -69,7 +77,7 @@ public:
 	DepthConcatLayer(const std::string name);
 	virtual ~DepthConcatLayer();
 
-	virtual void shape(uint32_t idx, io_dim in_dim, std::shared_ptr<Data<Dtype>>& prevLayerOutput);
+	virtual void shape();
 	virtual void reshape(uint32_t idx, io_dim in_dim);
 
 

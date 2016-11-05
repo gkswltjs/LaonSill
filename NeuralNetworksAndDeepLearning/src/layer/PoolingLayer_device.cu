@@ -14,6 +14,8 @@ using namespace std;
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::_shape(bool recursive) {
+	this->setInDimension(this->_inputData[0]->getShape());
+
 	cudnnTensorDescriptor_t tempInputTensorDesc;
 	checkCUDNN(cudnnCreateTensorDescriptor(&tempInputTensorDesc));
 	checkCUDNN(cudnnSetTensor4dDescriptor(tempInputTensorDesc,
@@ -40,32 +42,32 @@ void PoolingLayer<Dtype>::_shape(bool recursive) {
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::_feedforward() {
-	this->_input->print_data("inputData:");
-	const Dtype* d_inputData = this->_input->device_data();
-	Dtype* d_outputData = this->_output->mutable_device_data();
+	this->_inputData[0]->print_data("inputData:");
+	const Dtype* d_inputData = this->_inputData[0]->device_data();
+	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 	pooling_fn->forward(this->inputTensorDesc, d_inputData,
 			this->outputTensorDesc, d_outputData);
-	this->_output->print_data(this->name+string("/outputData:"));
+	this->_outputData[0]->print_data(this->name+string("/outputData:"));
 }
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::_backpropagation() {
-	this->_output->print_data("outputData:");
-	this->_input->print_data("inputData:");
+	this->_outputData[0]->print_data("outputData:");
+	this->_inputData[0]->print_data("inputData:");
 	/*
 	if(this->_output->is_nan_grad()) {
 		cout << this->name << " output gradient nan ... " << endl;
 		exit(1);
 	}
 	*/
-	const Dtype* d_outputData = this->_output->device_data();
-	const Dtype* d_outputGrad = this->_output->device_grad();
-	const Dtype* d_inputData = this->_input->device_data();
-	Dtype* d_inputGrad = this->_input->mutable_device_grad();
+	const Dtype* d_outputData = this->_outputData[0]->device_data();
+	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
+	const Dtype* d_inputData = this->_inputData[0]->device_data();
+	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 	pooling_fn->backward(this->outputTensorDesc, d_outputData, d_outputGrad,
 			this->inputTensorDesc, d_inputData, d_inputGrad);
 
-	this->_input->print_grad("inputGrad:");
+	this->_inputData[0]->print_grad("inputGrad:");
 }
 
 

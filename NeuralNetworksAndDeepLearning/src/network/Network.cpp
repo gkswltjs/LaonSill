@@ -224,11 +224,16 @@ double Network<Dtype>::evaluateTestSet() {
 
 template <typename Dtype>
 double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
+	LayersConfig<Dtype>* layersConfig = getLayersConfig();
+	InputLayer<Dtype>* inputLayer = layersConfig->_inputLayer;
+	OutputLayer<Dtype>* outputLayer = layersConfig->_outputLayers[0];
 	const uint32_t baseIndex = batchIndex*config->_inDim.batches;
 
-	//config->_inputLayer->feedforward(config->_dataSet->getTestDataAt(batchIndex*in_dim.batches));
-	getLayersConfig()->_inputLayer->feedforward(config->_dataSet, baseIndex);
-	OutputLayer<Dtype>* outputLayer = getLayersConfig()->_outputLayers[0];
+	// FEEDFORWARD
+	inputLayer->feedforward(config->_dataSet, baseIndex);
+	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->feedforward();
+	}
 
 	const uint32_t numLabels = outputLayer->getOutDimension().rows;
 	Data<Dtype>* networkOutput = outputLayer->getOutput();
@@ -262,7 +267,8 @@ void Network<Dtype>::test() {
 
 	if(dataSet->getNumTestData() > 0) {
 		timer.start();
-		cout << accurateCnt << " / " << numTestData << ", accuracy: " << accuracy << ", cost: " << cost << " :" << timer.stop(false) << endl;
+		cout << accurateCnt << " / " << numTestData << ", accuracy: " << accuracy <<
+				", cost: " << cost << " :" << timer.stop(false) << endl;
 	}
 }
 
@@ -353,29 +359,36 @@ int Network<Dtype>::testEvaluateResult(const rvec &output, const rvec &y) {
 }
 #else
 
-/*
-void Network<Dtype>::feedforward(const Dtype *input, const char *end) {
-	trainData->set_data(input);
-	config->_inputLayer->feedforward(0, trainData, end);
-}
-*/
 
 template <typename Dtype>
 void Network<Dtype>::trainBatch(uint32_t batchIndex) {
+	LayersConfig<Dtype>* layersConfig = getLayersConfig();
+
 	DataSet<Dtype>* dataSet = config->_dataSet;
-	InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
+	InputLayer<Dtype>* inputLayer = layersConfig->_inputLayer;
 	vector<OutputLayer<Dtype>*> outputLayers = getLayersConfig()->_outputLayers;
 
 	int baseIndex = batchIndex*config->_inDim.batches;
 
 	// FORWARD PASS
-	//config->_inputLayer->feedforward(dataSet->getTrainDataAt(baseIndex));
-	getLayersConfig()->_inputLayer->feedforward(dataSet, baseIndex);
+	inputLayer->feedforward(dataSet, baseIndex);
+	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->feedforward();
+	}
 
 	// BACKWARD PASS
-	for(UINT i = 0; i < outputLayers.size(); i++) {
-		//outputLayers[i]->backpropagation(dataSet->getTrainLabelAt(baseIndex));
+	for (uint32_t i = 0; i < outputLayers.size(); i++) {
 		outputLayers[i]->backpropagation(dataSet, baseIndex);
+	}
+	for (uint32_t i = layersConfig->_layers.size()-1; i > 0; i--) {
+		OutputLayer<Dtype>* outputLayer =
+				dynamic_cast<OutputLayer<Dtype>*>(layersConfig->_layers[i]);
+		if (outputLayer) continue;
+		HiddenLayer<Dtype>* hiddenLayer =
+				dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[i]);
+		if (hiddenLayer) {
+			hiddenLayer->backpropagation();
+		}
 	}
 }
 

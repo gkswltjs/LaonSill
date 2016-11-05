@@ -49,6 +49,7 @@ public:
 	 * @param size 할당할 메모리 사이즈
 	 */
 	void shape(size_t size);
+	void reshape(size_t size);
 
 	/**
 	 * @details 읽기 전용의 호스트 메모리 포인터를 조회한다.

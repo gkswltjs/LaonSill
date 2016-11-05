@@ -84,6 +84,15 @@ public:
 	Util() {}
 	virtual ~Util() {}
 
+	template<class T>
+	static void clearVector(std::vector<T*>& vec) {
+		const uint32_t vecSize = vec.size();
+		for(uint32_t i = 0; i < vecSize; i++) {
+			delete vec[i];
+		}
+		vec.clear();
+	}
+
 	/**
 	 * @details 최대, 최소 구간의 임의의 수를 생성한다.
 	 * @param min 생성할 난수의 최소값

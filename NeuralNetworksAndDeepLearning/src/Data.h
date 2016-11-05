@@ -27,7 +27,7 @@ public:
 	virtual ~Data();
 
 	void shape(const std::vector<uint32_t>& shape);
-	//void reshape(const std::vector<uint32_t>& shape);
+	void reshape(const std::vector<uint32_t>& shape);
 
 
 	size_t getCount() const { return _count; }

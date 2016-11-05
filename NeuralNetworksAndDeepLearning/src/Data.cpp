@@ -24,6 +24,7 @@ uint32_t Data<Dtype>::printConfig = 0;
 template <typename Dtype>
 Data<Dtype>::Data() {
 	this->_shape.resize(SHAPE_SIZE);
+	this->_count = 0;
 }
 
 template <typename Dtype>
@@ -36,9 +37,28 @@ template <typename Dtype>
 Data<Dtype>::~Data() {}
 
 
+bool isValidShapeSize(const vector<uint32_t>& shape, const uint32_t shapeSize) {
+	return shape.size() == shapeSize;
+}
+
+bool isValidShapeValue(const vector<uint32_t>& shape) {
+	for (uint32_t i = 0; i < shape.size(); i++) {
+		if(shape[i] <= 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+
 template <typename Dtype>
 void Data<Dtype>::shape(const vector<uint32_t>& shape) {
-	if(shape.size() != SHAPE_SIZE) {
+	if (!isValidShapeSize(shape, SHAPE_SIZE)) {
+		cout << "invalid data shape ... " << endl;
+		exit(1);
+	}
+	if (!isValidShapeValue(shape)) {
 		cout << "invalid data shape ... " << endl;
 		exit(1);
 	}
@@ -51,10 +71,13 @@ void Data<Dtype>::shape(const vector<uint32_t>& shape) {
 	_grad.shape(_count);
 }
 
-/*
 template <typename Dtype>
 void Data<Dtype>::reshape(const vector<uint32_t>& shape) {
-	if(shape.size() != SHAPE_SIZE) {
+	if (!isValidShapeSize(shape, SHAPE_SIZE)) {
+		cout << "invalid data shape ... " << endl;
+		exit(1);
+	}
+	if (!isValidShapeValue(shape)) {
 		cout << "invalid data shape ... " << endl;
 		exit(1);
 	}
@@ -66,7 +89,7 @@ void Data<Dtype>::reshape(const vector<uint32_t>& shape) {
 	_data.reshape(_count);
 	_grad.reshape(_count);
 }
-*/
+
 
 template <typename Dtype>
 const Dtype* Data<Dtype>::host_data() {

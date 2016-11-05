@@ -55,8 +55,16 @@ void log_print(FILE *fp, int log_level, const char* filename, const int line, co
 }
 
 
-
-
+/*
+template<class T>
+void Util::clearVector(std::vector<T*>& vec) {
+	const uint32_t vecSize = vec.size();
+	for(uint32_t i = 0; i < vecSize; i++) {
+		delete vec[i];
+	}
+	vec.clear();
+}
+*/
 
 int Util::random(int min, int max)
 {

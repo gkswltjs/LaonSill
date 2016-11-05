@@ -9,7 +9,7 @@
 #define ARTISTICSTYLE_H_
 
 
-//#ifndef GPU_MODE
+#ifndef GPU_MODE
 
 #include "../common.h"
 #include "../network/Network.h"
@@ -144,6 +144,6 @@ private:
 	const bool plotStyleCost;
 };
 
-//#endif
+#endif
 
 #endif /* ARTISTICSTYLE_H_ */
