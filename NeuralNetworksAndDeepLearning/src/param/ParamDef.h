@@ -13,7 +13,7 @@
 
 #include "../common.h"
 
-#define PARAMDEF_DESC_MAXSIZE           (128)
+#define PARAMDEF_DESC_MAXSIZE           (256)
 #define PARAMDEF_DEFAULTVALUE_MAXSIZE   (128)
 #define PARAMDEF_TYPENAME_MAXSIZE       (32)
 
@@ -32,6 +32,7 @@ public:
     }
     virtual    ~ParamDef() {}
 
+    // use "string" instead of "fixed char array"?
     char        desc[PARAMDEF_DESC_MAXSIZE];
     char        defaultValue[PARAMDEF_DEFAULTVALUE_MAXSIZE];
     char        typeName[PARAMDEF_TYPENAME_MAXSIZE];

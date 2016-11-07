@@ -1,0 +1,41 @@
+{
+
+"TEST_PERF1" : 
+{
+    "DESC"          : "test performance 1",
+    "SCOPE"         : "JOB",
+    "USETIME"       : true,
+    "USEAVGTIME"    : true,
+    "USEMAXTIME"    : true,
+    "ARGS"          : 
+    [
+        ["IntegerPerf", "UINT32", "specify integer test value"],
+        ["DoublePerf", "DOUBLE", "specify double test value"]
+    ]
+},
+
+"TEST_PERF2" : 
+{
+    "DESC"          : "test performance 2",
+    "SCOPE"         : "SYSTEM",
+    "USETIME"       : false,
+    "USEAVGTIME"    : false,
+    "USEMAXTIME"    : false,
+    "ARGS"          : []
+},
+
+"TEST_PERF3" : 
+{
+    "DESC"          : "test performance 3",
+    "SCOPE"         : "SYSTEM",
+    "USETIME"       : true,
+    "USEAVGTIME"    : true,
+    "USEMAXTIME"    : true,
+    "ARGS"          : 
+    [
+        ["IntegerPerf", "UINT32", "specify integer test value"],
+        ["DoublePerf", "DOUBLE", "specify double test value"]
+    ]
+}
+
+}
