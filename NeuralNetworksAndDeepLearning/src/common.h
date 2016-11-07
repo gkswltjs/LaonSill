@@ -19,4 +19,6 @@
 #define ALIGNUP(x, n)               ((~(n-1))&((x)+(n-1)))
 #define ALIGNDOWN(x, n)             ((~(n-1))&(x))
 
+#define Nop() 						do {} while(0)
+
 #endif /* COMMON_H_ */

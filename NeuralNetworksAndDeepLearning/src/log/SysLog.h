@@ -33,7 +33,7 @@
 
 #define SASSERT(cond, fmt, args...)                                                 \
     do {                                                                            \
-        if (!cond) {                                                                 \
+        if (!cond) {                                                                \
             if (SysLog::fp) {                                                       \
                 std::unique_lock<std::mutex>  logLock(SysLog::logMutex);            \
                 SysLog::writeLogHeader(__FILE__,__LINE__);                          \
@@ -56,6 +56,12 @@
                 assert(0);                                                          \
         }                                                                           \
     } while (0)
+
+#ifdef DEBUG_MODE
+#define SASSUME(cond, fmt, args...)			SASSERT(cond, fmt, ##args)
+#else
+#define SASSUME(cond, fmt, args...)			Nop()
+#endif
 
 class SysLog {
 public:
