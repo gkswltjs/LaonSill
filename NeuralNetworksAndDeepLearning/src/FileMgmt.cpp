@@ -1,12 +1,11 @@
 /**
  * @file FileMgmt.cpp
  * @date 2016-10-31
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
 
-#include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -36,9 +35,9 @@ void FileMgmt::checkDir(const char* path) {
             char    errBuf[ERROR_BUFFER_SIZE];
             // XXX: we only consider XSI-compliant version
             // XXX: we do not consider strerror_r() makes an error again...
-            assert(strerror_r(err, errBuf, ERROR_BUFFER_SIZE) == 0);
+            SASSERT0(strerror_r(err, errBuf, ERROR_BUFFER_SIZE) == 0);
             SYS_LOG("checkDir() is failed. path=%s,errno=%d,reason=%s", path, err, errBuf);
-            assert(0);
+            SASSERT0(0);
         }
     }
 }
@@ -59,10 +58,10 @@ int FileMgmt::openFile(const char* path, int flag) {
     if (fd == -1) {
         int     err = errno;
         char    errBuf[ERROR_BUFFER_SIZE];
-        assert(strerror_r(err, errBuf, ERROR_BUFFER_SIZE) == 0);
+        SASSERT0(strerror_r(err, errBuf, ERROR_BUFFER_SIZE) == 0);
         SYS_LOG("openFile() is failed. path=%s,flag=%d,errno=%d,reason=%s",
             path, flag, err, errBuf);
-        assert(0);
+        SASSERT0(0);
     }
 
     return fd;
@@ -72,9 +71,9 @@ void FileMgmt::makeDir(const char* path) {
     if (mkdir(path, 0700) == -1) {
         int     err = errno;
         char    errBuf[ERROR_BUFFER_SIZE];
-        assert(strerror_r(err, errBuf, ERROR_BUFFER_SIZE) == 0);
+        SASSERT0(strerror_r(err, errBuf, ERROR_BUFFER_SIZE) == 0);
         SYS_LOG("makeDir() is failed. path=%s,errno=%d,reason=%s", path, err, errBuf);
 
-        assert(0);
+        SASSERT0(0);
     }
 }

@@ -23,6 +23,7 @@
 #include "log/ColdLog.h"
 #include "log/SysLog.h"
 #include "log/HotLog.h"
+#include "perf/Perf.h"
 
 using namespace std;
 
@@ -30,9 +31,13 @@ using namespace std;
 void network_load();
 
 int main(int argc, char** argv) {
+    struct timespec startTime;
 	cout << "SOOOA engine starts" << endl;
+
+    SPERF_START(SERVER_RUNNING_TIME, &startTime);
     // (1) load init param
     InitParam::init();
+    Perf::init();
 
     SysLog::init();
     ColdLog::init();
@@ -63,7 +68,9 @@ int main(int argc, char** argv) {
     ColdLog::destroy();
     SysLog::destroy();
 
+    SPERF_END(SERVER_RUNNING_TIME, startTime);
 	cout << "SOOOA engine ends" << endl;
+    cout << "server running time : " << SPERF_TIME(SERVER_RUNNING_TIME) << endl;
 	return 0;
 }
 

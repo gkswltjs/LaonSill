@@ -1,13 +1,12 @@
 /**
  * @file InitParam.cpp
  * @date 2016-10-27
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
 
 #include <stdlib.h>
-#include <assert.h>
 #include <unistd.h>
 #include <limits.h>
 
@@ -17,6 +16,7 @@
 #include "InitParam.h"
 #include "Param.h"
 #include "ParamMgmt.h"
+#include "../log/SysLog.h"
 
 using namespace std;
 
@@ -42,7 +42,7 @@ bool InitParam::isWhiteSpace(char c) {
 const int DECIMAL_BASE = 10;
 void InitParam::setParam(const char* paramName, const char* paramValue) {
     string strParamName = string(paramName);
-    assert(ParamMgmt::isParamExist(strParamName));
+    SASSERT(ParamMgmt::isParamExist(strParamName), "");
 
     ParamMgmt::ParamType paramType = ParamMgmt::getParamType(strParamName);
 
@@ -112,7 +112,7 @@ void InitParam::setParam(const char* paramName, const char* paramValue) {
         } else if (strcmp(paramValue, "FALSE") == 0) {
             value = false;
         } else {
-            assert(!"invalid value");
+            SASSERT(false, "invalid value");
         }
         ParamMgmt::setValue(strParamName, &value);
         break;
@@ -125,7 +125,7 @@ void InitParam::setParam(const char* paramName, const char* paramValue) {
     
 
     default:
-        assert(!"invalid type!!!");
+        SASSERT(false, "invalid type!!!");
     }
 }
 
@@ -143,7 +143,7 @@ void InitParam::loadParam(const char* line, int len) {
 
         // found comment
         if (line[i] == '#') {
-            assert(!foundParamName);
+            SASSERT(!foundParamName, "");
             break;
         }
 
@@ -176,7 +176,7 @@ void InitParam::loadParam(const char* line, int len) {
                 i++;
                 break;
             } else {
-                assert(!isWhiteSpace(line[i]));
+                SASSERT(!isWhiteSpace(line[i]), "");
             }
         }
     }
@@ -216,7 +216,7 @@ void InitParam::loadParam(const char* line, int len) {
         }
     }
 
-    assert(paramValueOffset > 0);
+    SASSERT(paramValueOffset > 0, "");
 
     // (4) set param value
     InitParam::setParam(paramName, paramValue);
@@ -235,7 +235,7 @@ void InitParam::load() {
     sprintf(initParamPath, "%s/%s", initParamPrefixPath, IPARAM_FILENAME);
 
     FILE* fp = fopen(initParamPath, "r");
-    assert(fp);
+    SASSERT(fp, "");
 
     char* line = NULL;
     size_t len = 0;

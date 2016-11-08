@@ -48,6 +48,15 @@ cp decodeHotLog.py ../../bin/.
 cp hotCodeDef.json ../../bin/.
 cd ../..
 
+echo "[generate performance]"
+cd src/perf
+./genPerf.py
+if [ "$?" -ne 0 ]; then
+    echo "ERROR: build stopped"
+    exit -1
+fi
+cd ../..
+
 if [ "$buildDebug" -eq 1 ]; then
     echo "[build Debug (server)]"
     cd Debug

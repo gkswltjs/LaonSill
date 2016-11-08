@@ -2,7 +2,7 @@
  * Worker.cpp
  *
  *  Created on: 2016. 10. 5.
- *      Author: mhlee
+ *      Author: moonhoen lee
  */
 
 #include "cuda/Cuda.h"
@@ -220,7 +220,7 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
             Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
             break;
         default:
-            assert(!"Invalid job type");
+            SASSERT(false, "Invalid job type");
         }
 
         Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
@@ -442,7 +442,9 @@ int Worker<Dtype>::createNetwork() {
 
 template <typename Dtype>
 Network<Dtype>* Worker<Dtype>::getNetwork(int networkId) {
-    assert(networkId < Worker::networks.size());
+    SASSERT((networkId < Worker::networks.size()),
+        "invalid networkId. networkId=%d, total network count=%d",
+        networkId, (int)(Worker::networks.size()));
     return Worker::networks[networkId];
 }
 

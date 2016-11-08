@@ -1,7 +1,7 @@
 /**
  * @file ColdLog.cpp
  * @date 2016-10-30
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  * @todo
@@ -22,6 +22,7 @@
 #include "ColdLog.h"
 #include "../param/Param.h"
 #include "../FileMgmt.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -38,25 +39,25 @@ void ColdLog::init() {
     char coldLogDir[PATH_MAX];
 
     if (strcmp(SPARAM(COLDLOG_DIR), "") == 0) {
-        assert(sprintf(coldLogDir, "%s/log", getenv(SOOOA_HOME_ENVNAME)) != -1);
-        assert(sprintf(coldLogFilePath, "%s/log/%s", getenv(SOOOA_HOME_ENVNAME),
-                    ColdLog::coldLogFileName) != -1);
+        SASSERT0((sprintf(coldLogDir, "%s/log", getenv(SOOOA_HOME_ENVNAME)) != -1));
+        SASSERT0((sprintf(coldLogFilePath, "%s/log/%s", getenv(SOOOA_HOME_ENVNAME),
+                        ColdLog::coldLogFileName) != -1));
     } else {
-        assert(sprintf(coldLogDir, "%s", SPARAM(COLDLOG_DIR)) != -1);
-        assert(sprintf(coldLogFilePath, "%s/%s", SPARAM(COLDLOG_DIR),
-            ColdLog::coldLogFileName) != -1);
+        SASSERT0((sprintf(coldLogDir, "%s", SPARAM(COLDLOG_DIR)) != -1));
+        SASSERT0((sprintf(coldLogFilePath, "%s/%s", SPARAM(COLDLOG_DIR),
+            ColdLog::coldLogFileName) != -1));
     }
 
     FileMgmt::checkDir(coldLogDir);
 
-    assert(ColdLog::fp == NULL);
+    SASSERT0(!ColdLog::fp);
     ColdLog::fp = fopen(coldLogFilePath, "a");
 
     ColdLog::logLevel = SPARAM(COLDLOG_LEVEL);
 }
 
 void ColdLog::destroy() {
-    assert(ColdLog::fp);
+    SASSERT(ColdLog::fp, "");
     fflush(ColdLog::fp);
     fclose(ColdLog::fp);
     ColdLog::fp = NULL;
@@ -73,7 +74,7 @@ const char* ColdLog::getLogLevelStr(ColdLog::LogLevel logLevel) {
     case ColdLog::ERROR:
         return "ERR";
     default:
-        assert(0);
+        SASSERT(0, "");
     }
 
     return "";      // meaningless
@@ -85,11 +86,11 @@ void ColdLog::writeLogHeader(ColdLog::LogLevel level, const char* fileName, int 
     struct tm*          tmPtr;
     char                filePath[PATH_MAX];
 
-    assert(ColdLog::fp);
+    SASSERT(ColdLog::fp, "");
 
     gettimeofday(&val, NULL);
     tmPtr = localtime(&val.tv_sec);
-    assert(strlen(fileName) > SMART_FILENAME_OFFSET);
+    SASSERT(strlen(fileName) > SMART_FILENAME_OFFSET, "");
     strcpy(filePath, fileName + SMART_FILENAME_OFFSET); // in order to get rid of "../src/"
 
     fprintf(ColdLog::fp, "[%s|%04d/%02d/%02d %02d:%02d:%02d.%06ld@%s:%d(%d/%d)] ",

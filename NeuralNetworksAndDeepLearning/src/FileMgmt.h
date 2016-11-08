@@ -1,7 +1,7 @@
 /**
  * @file FileMgmt.h
  * @date 2016-10-31
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */

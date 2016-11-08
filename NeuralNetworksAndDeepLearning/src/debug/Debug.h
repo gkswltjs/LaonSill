@@ -197,7 +197,11 @@ LayersConfig<Dtype>* createCNNDoubleLayersConfig() {
 			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
 					->id(5)
 					->name("fullyConnectedLayer1")
+#if 0
 					->nOut(100)
+#else
+					->nOut(4000)
+#endif 
 					->pDropout(0.4)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)

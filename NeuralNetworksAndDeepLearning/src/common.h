@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include <assert.h>
 #include <limits.h>
+#include <unistd.h>
+#include <time.h>
 
 #include <iostream>
 

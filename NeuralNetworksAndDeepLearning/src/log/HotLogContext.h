@@ -1,7 +1,7 @@
 /**
  * @file HotLogContext.h
  * @date 2016-11-01
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */

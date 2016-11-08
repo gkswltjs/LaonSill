@@ -1,7 +1,7 @@
 /**
  * @file Communicator.h
  * @date 2016-10-19
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */

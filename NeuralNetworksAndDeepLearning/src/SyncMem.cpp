@@ -264,7 +264,6 @@ void SyncMem<Dtype>::checkMemValidity() {
 
 		cout << "assign mem before using ... " << endl;
 		exit(1);
-		//assert();
 	}
 }
 

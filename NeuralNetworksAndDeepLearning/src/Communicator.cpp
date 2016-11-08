@@ -1,12 +1,11 @@
 /**
  * @file Communicator.cpp
  * @date 2016-10-19
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
 
-#include <assert.h>
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,7 +77,7 @@ void Communicator::releaseFd(int sessId) {
     fdToSessLock.unlock();
 
     if (close(sessContext->fd) == -1)
-        assert(!"close fd failed");
+        SASSERT(false, "close fd failed");
 }
 
 void Communicator::releaseSess(int sessId) {
@@ -112,7 +111,7 @@ void Communicator::listenerThread() {
 
     socketFd = socket(AF_INET, SOCK_STREAM, 0);
     if (socketFd == -1) {
-        assert(!"cannot create socket");
+        SASSERT(false, "cannot create socket");
     }
 
     // XXX: 일단 간단히 아무 이더넷카드를 쓸 수 있도록 하자.
@@ -126,14 +125,14 @@ void Communicator::listenerThread() {
         int err = errno;
         COLD_LOG(ColdLog::ERROR, true, "bind() failed. errno=%d", err);
         close(socketFd);
-        assert(0);
+        SASSERT(false, "bind() failed. err=%d", err);
     }
 
     // (2) listen
     if (listen(socketFd, SOMAXCONN) == -1) {
         close(socketFd);
         COLD_LOG(ColdLog::ERROR, true, "listen() failed.");
-        assert(0);
+        SASSERT(false, "listen() failed");
     }
 
     maxFdp1 = socketFd + 1;
@@ -157,7 +156,7 @@ void Communicator::listenerThread() {
 
         if (selectRet == -1) {
             COLD_LOG(ColdLog::ERROR, true, "select() failed.");
-            assert(0);
+            SASSERT(false, "select() failed");
         }
 
         // (3-1) check & wakeup hang session thread
@@ -183,7 +182,7 @@ void Communicator::listenerThread() {
             int newFd = accept(socketFd, (struct sockaddr *)&newSockAddr, &newSockAddrLen);
             if (newFd == -1) {
                 COLD_LOG(ColdLog::ERROR, true, "accept() failed.");
-                assert(0);
+                SASSERT(false, "accept() failed");
             }
 
             COLD_LOG(ColdLog::INFO, true, "accept socket. newFd=%d", newFd);
@@ -192,7 +191,8 @@ void Communicator::listenerThread() {
                 // FIXME: should handle error.
                 //      session full 오류메세지를 클라이언트에게 전달해야 한다.
                 COLD_LOG(ColdLog::WARNING, true, "not enough free session ID");
-                assert(0);
+                SASSERT(false, "not enough free session ID."
+                    "This should be handled in the future");
             }
 
             COLD_LOG(ColdLog::INFO, true, "get session. session ID=%d", sessId);
@@ -214,7 +214,7 @@ bool Communicator::handleWelcomeMsg(MessageHeader recvMsgHdr, char* recvMsg,
     replyMsgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
     replyMsgHdr.setMsgType(MessageHeader::WelcomeReply);
 
-    assert(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE);
+    SASSERT(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE, "");
     Serializer::serializeMsgHdr(replyMsgHdr, replyMsg);
 
     return true;
@@ -266,7 +266,7 @@ bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMs
     char *sendBuffer;
     if (msgLen > MessageHeader::MESSAGE_DEFAULT_SIZE) {
         replyBigMsg = (char*)malloc(msgLen);
-        assert(replyBigMsg != NULL);
+        SASSERT(replyBigMsg, "");
         sendBuffer = replyBigMsg;
     } else {
         sendBuffer = replyMsg;
@@ -299,7 +299,7 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
 
     // (2) network를 얻는다.
     Network<float>* network = Worker<float>::getNetwork(networkId);
-    assert(network != NULL);
+    SASSUME0(network);
 
     // (3) job을 생성하여 job queue에 넣는다.
     Job* newJob = new Job((Job::JobType)jobType, network, arg1);
@@ -309,7 +309,7 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
     replyMsgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
     replyMsgHdr.setMsgType(MessageHeader::PushJobReply);
 
-    assert(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE);
+    SASSERT(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE, "");
     Serializer::serializeMsgHdr(replyMsgHdr, replyMsg);
 
     return true;
@@ -330,9 +330,9 @@ void Communicator::sessThread(int sessId) {
     SessContext*& sessContext   = Communicator::sessContext[sessId];
 
     recvMsg = (char*)malloc(MessageHeader::MESSAGE_DEFAULT_SIZE);
-    assert(recvMsg != NULL);
+    SASSERT0(recvMsg);
     replyMsg = (char*)malloc(MessageHeader::MESSAGE_DEFAULT_SIZE);
-    assert(replyMsg != NULL);
+    SASSERT0(replyMsg);
 
     COLD_LOG(ColdLog::INFO, true, "session thread #%d starts", sessId);
 
@@ -360,17 +360,17 @@ void Communicator::sessThread(int sessId) {
 
         // set nonblock socket
         int flag;
-        assert(fd != -1);
+        SASSERT(fd != -1, "");
         flag = fcntl(fd, F_GETFL, 0);
         if (flag == -1) {
             int err = errno;
             COLD_LOG(ColdLog::ERROR, true, "fcntl(get flag) is failed. errno=%d", err);
-            assert(0);
+            SASSERT(0, "");
         }
         if (fcntl(fd, F_SETFL, flag | O_NONBLOCK) == -1) {
             int err = errno;
             COLD_LOG(ColdLog::ERROR, true, "fcntl(set flag) is failed. errno=%d", err);
-            assert(0);
+            SASSERT(0, "");
         }
 
         // XXX: 소스 정리 하자.. depth가 너무 깊다.
@@ -379,17 +379,17 @@ void Communicator::sessThread(int sessId) {
             // (1) 메세지를 받는다.
             bool useBigRecvMsg = false;
             recvRet = Communicator::recvMessage(fd, recvMsgHdr, recvMsg, false);
-            assert((recvRet == Communicator::Success) ||
-                (recvRet == Communicator::RecvOnlyHeader));
+            SASSERT((recvRet == Communicator::Success) ||
+                (recvRet == Communicator::RecvOnlyHeader), "");
 
             if (recvRet == Communicator::RecvOnlyHeader) {
                 recvBigMsg = (char*)malloc(recvMsgHdr.getMsgLen());
-                assert(recvBigMsg != NULL);
+                SASSERT0(recvBigMsg);
                 useBigRecvMsg = true;
                 recvRet = Communicator::recvMessage(fd, recvMsgHdr, recvBigMsg, true);
             }
 
-            assert(recvRet == Communicator::Success);
+            SASSERT(recvRet == Communicator::Success, "");
 
             // (2) 메세지를 처리한다.
             bool needReply;
@@ -427,7 +427,7 @@ void Communicator::sessThread(int sessId) {
                 break;
 
             default:
-                assert(!"invalid message header");
+                SASSERT(!"invalid message header", "");
                 break;
             }
 
@@ -436,7 +436,7 @@ void Communicator::sessThread(int sessId) {
                 replyRet = Communicator::sendMessage(fd, replyMsgHdr, 
                     (recvBigMsg == NULL ? replyMsg : replyBigMsg));
             }
-            assert(replyRet == Communicator::Success);
+            SASSERT(replyRet == Communicator::Success, "");
 
             // (4) cleanup big msg resource
             if (recvBigMsg != NULL) {
@@ -454,11 +454,11 @@ void Communicator::sessThread(int sessId) {
         Communicator::releaseSess(sessId);
     }
 
-    assert(recvMsg != NULL);
+    SASSERT0(recvMsg);
     free(recvMsg);
     recvMsg = NULL;
 
-    assert(replyMsg != NULL);
+    SASSERT0(replyMsg);
     free(replyMsg);
     replyMsg = NULL;
 
@@ -526,7 +526,7 @@ Communicator::CommRetType Communicator::recvMessage(
                 return Communicator::RecvConnRefused;
 
             COLD_LOG(ColdLog::ERROR, true, "recv(peek message) failed. errno=%d", err);
-            assert(0);
+            SASSERT(0, "");
         }
 
         if (recvRet == MessageHeader::MESSAGE_HEADER_SIZE)
@@ -544,7 +544,7 @@ Communicator::CommRetType Communicator::recvMessage(
     int remain = msgHdr.getMsgLen();
     int offset = 0;
     while (remain != 0) {
-        assert(remain >= 0);
+        SASSERT(remain >= 0, "");
         recvRet = recv(fd, (void*)((char*)buf + offset), remain, 0);
 
         if (recvRet == 0)
@@ -560,7 +560,7 @@ Communicator::CommRetType Communicator::recvMessage(
                 return Communicator::RecvConnRefused;
 
             COLD_LOG(ColdLog::ERROR, true, "recv() failed. errno=%d", err);
-            assert(0);
+            SASSERT(0, "");
             //return Communicator::RecvFailed;
         }
 
@@ -581,7 +581,7 @@ Communicator::CommRetType Communicator::sendMessage(
     int offset = 0;
 
     while (remain != 0) {
-        assert(remain >= 0);
+        SASSERT(remain >= 0, "");
         sendRet = send(fd, (void*)((char*)buf + offset), remain, 0);
 
         if (sendRet == -1) {
@@ -594,7 +594,7 @@ Communicator::CommRetType Communicator::sendMessage(
                 return Communicator::SendConnResetByPeer;
 
             COLD_LOG(ColdLog::ERROR, true, "send() failed. errno=%d", err);
-            assert(0);
+            SASSERT(0, "");
         }
 
         remain -= sendRet;

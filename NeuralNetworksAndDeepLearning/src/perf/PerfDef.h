@@ -1,7 +1,7 @@
 /**
  * @file PerfDef.h
  * @date 2016-11-07
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
@@ -16,20 +16,36 @@
 #include "../common.h"
 #include "PerfArgDef.h"
 
+#define PERFDEF_DESC_MAXSIZE                (256)
+
 class PerfDef {
 public: 
-    PerfDef(bool jobScope, bool useTime, bool useAvgTime, bool useMaxTime) {
+    PerfDef(const char* desc, bool jobScope, bool useTime, bool useAvgTime, bool useMaxTime,
+        void* countPtr, void* timePtr, void* avgTimePtr, void* maxTimePtr, int argCount) {
+        strcpy(this->desc, desc);
         this->jobScope = jobScope;
         this->useTime = useTime;
         this->useAvgTime = useAvgTime;
         this->useMaxTime = useMaxTime;
+        this->countPtr = countPtr;
+        this->timePtr = timePtr;
+        this->avgTimePtr = avgTimePtr;
+        this->maxTimePtr = maxTimePtr;
+        this->argCount = argCount;
     }
     virtual ~PerfDef() {}
 
-    bool jobScope;
-    bool useTime;
-    bool useAvgTime;
-    bool useMaxTime;
+    bool    jobScope;
+    bool    useTime;
+    bool    useAvgTime;
+    bool    useMaxTime;
+    char    desc[PERFDEF_DESC_MAXSIZE];
+    void*   countPtr;
+    void*   timePtr;
+    void*   avgTimePtr;
+    void*   maxTimePtr;
+    int     argCount;
+
     std::vector<PerfArgDef*> argArray;
 
     void addArgs(PerfArgDef* argDef) {

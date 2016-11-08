@@ -1,7 +1,7 @@
 /**
  * @file HotLogContext.cpp
  * @date 2016-11-02
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "HotLogContext.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -21,16 +22,15 @@ HotLogContext::HotLogContext(int fd) {
     this->diskOffset = 0UL;
     this->diskGenNum = 0UL;    
 
-    assert(fd != -1);       // fd를 이미 할당이 되어 들어온다.
     this->fd = fd;
 
-    assert(SPARAM(HOTLOG_SLOTSIZE) > 0);
-    assert(SPARAM(HOTLOG_SLOTSIZE) % 512 == 0);
-    assert(SPARAM(HOTLOG_BUFFERSIZE) > 0);
-    assert(SPARAM(HOTLOG_BUFFERSIZE) % SPARAM(HOTLOG_SLOTSIZE) == 0);
+    SASSERT0(SPARAM(HOTLOG_SLOTSIZE) > 0);
+    SASSERT0(SPARAM(HOTLOG_SLOTSIZE) % 512 == 0);
+    SASSERT0(SPARAM(HOTLOG_BUFFERSIZE) > 0);
+    SASSERT0(SPARAM(HOTLOG_BUFFERSIZE) % SPARAM(HOTLOG_SLOTSIZE) == 0);
 
     this->buffer = (char*)valloc(SPARAM(HOTLOG_BUFFERSIZE));
-    assert(this->buffer);   // XXX: needs error handling
+    SASSERT0(this->buffer);   // XXX: needs error handling
     memset(this->buffer, 0x00, SPARAM(HOTLOG_BUFFERSIZE));
 
     this->failCount = 0;
@@ -38,10 +38,10 @@ HotLogContext::HotLogContext(int fd) {
 }
 
 HotLogContext::~HotLogContext() {
-    assert(this->fd != -1);
+    SASSERT0(this->fd != -1);
     close(this->fd);
 
-    assert(this->buffer); 
+    SASSERT0(this->buffer); 
     free(this->buffer);
     this->buffer = NULL;
 }
@@ -115,7 +115,7 @@ bool HotLogContext::fillFlushInfo(bool force, bool& isWrapAround) {
         flushSize = SPARAM(HOTLOG_BUFFERSIZE) - this->diskOffset;
         releaseSize += flushSize;
         flushTotalSize += flushSize;
-        assert(flushSize > 0UL);
+        SASSERT0(flushSize > 0UL);
         flushOffsetWA = (this->diskGenNum + 1UL) * SPARAM(HOTLOG_BUFFERSIZE);
         if (force)
             flushSizeWA = ALIGNUP(logOffset, SPARAM(HOTLOG_SLOTSIZE));

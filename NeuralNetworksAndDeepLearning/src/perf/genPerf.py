@@ -9,6 +9,23 @@ def checkParamProperty(perfDic, perf, propertyName):
         print "ERROR: perf %s does not have %s property" % (perf, propertyName)
         exit(-1)
 
+# XXX:  we only considers Linux 64bit platform.
+def getValueSize(typeStr):
+    if typeStr in ["uint8_t", "int8_t"]:
+        return 1
+    elif typeStr in ["uint16_t", "int16_t"]:
+        return 2
+    elif typeStr in ["uint32_t", "int32_t"]:
+        return 4
+    elif typeStr in ["uint64_t", "int64_t"]:
+        return 8
+    elif typeStr in ["float"]:
+        return 4
+    elif typeStr in ["double"]:
+        return 8
+    elif typeStr in ["long double"]:
+        return 16
+
 # (1) load perfDef.json
 try:
     jsonFile = open('perfDef.json', 'r')
@@ -34,7 +51,7 @@ for perf in perfDic:
 headerTopSentences = [\
 "/**",\
 " * @file PerfList.h",\
-" * @author mhlee",\
+" * @author moonhoen lee",\
 " * @brief performance list module",\
 " * @warning",\
 " *  The file is auto-generated.",\
@@ -45,6 +62,8 @@ headerTopSentences = [\
 "#define PERFLIST_H_",\
 "",\
 "#include <stdint.h>",\
+"#include <time.h>",\
+"",\
 "#include <vector>",\
 "#include <map>",\
 "#include <string>",\
@@ -52,6 +71,8 @@ headerTopSentences = [\
 '#include "../common.h"',\
 '#include "PerfArgDef.h"',\
 '#include "PerfDef.h"',\
+'#include "../param/Param.h"',\
+'#include "../log/SysLog.h"',\
 "",\
 "class PerfList {",\
 "public:",\
@@ -127,6 +148,24 @@ try:
             headerFile.write("    static %s %s _%s_%s;\n" %\
                 (volStr, newArg[1], perf, newArg[0]))
 
+        # (4) generate functions
+        headerFile.write("    static void mark%s(" % perf)
+        isFirst = True
+        for newArg in newArgList:
+            if isFirst == True:
+                isFirst = False 
+            else:
+                headerFile.write(", ") 
+            headerFile.write("%s %s" % (newArg[1], newArg[0]))
+        headerFile.write(");\n")
+
+        headerFile.write("    static void start%s(struct timespec* startTime);\n" % perf)
+
+        headerFile.write("    static void end%s(struct timespec startTime" % perf)
+        for newArg in newArgList:
+            headerFile.write(", %s %s" % (newArg[1], newArg[0]))
+        headerFile.write(");\n")
+
         headerFile.write('\n')
 
     for line in headerBottomSentences:
@@ -143,7 +182,7 @@ finally:
 sourceTopSentences = [\
 "/**",\
 " * @file PerfList.cpp",\
-" * @author mhlee",\
+" * @author moonhoen lee",\
 " * @brief performance list module",\
 " * @warning",\
 " *  The file is auto-generated.",\
@@ -213,8 +252,90 @@ try:
             sourceFile.write("%s %s PerfList::_%s_%s = 0;\n" %\
                 (volStr, newArg[1], perf, newArg[0]))
 
+        # (4) generate functions
+        # (4-1) mark function
+        sourceFile.write("void PerfList::mark%s(" % perf)
+        isFirst = True
+        for newArg in newArgList:
+            if isFirst == True:
+                isFirst = False 
+            else:
+                sourceFile.write(", ") 
+            sourceFile.write("%s %s" % (newArg[1], newArg[0]))
+        sourceFile.write(") {\n")
+        if useTime == True:
+            sourceFile.write('    SASSERT(false, "you should use SPERF_START() or SPERF_END(). perf name=%s",')
+            sourceFile.write('"%s");\n' % perf) 
+        else:
+            sourceFile.write('    PerfList::_%sCount += 1L;\n' % perf)
+            for newArg in newArgList:
+                sourceFile.write("    PerfList::_%s_%s = %s;\n" % (perf, newArg[0], newArg[0]));
+        sourceFile.write('}\n\n')
+
+        # (4-2) start function
+        sourceFile.write("void PerfList::start%s(struct timespec* startTime) {\n" % perf)
+
+        if useTime == False:
+            sourceFile.write('    SASSERT(false, "you should use SPERF_MARK(). perf name=%s",')
+            sourceFile.write('"%s");\n' % perf)
+        else:
+            if jobScope == True:
+                sourceFile.write('    if (SPARAM(JOBSCOPE_CLOCKTYPE) == 0)\n')
+                sourceFile.write('        clock_gettime(CLOCK_THREAD_CPUTIME_ID, startTime);\n')
+                sourceFile.write('    else if (SPARAM(JOBSCOPE_CLOCKTYPE) == 1)\n')
+                sourceFile.write('        clock_gettime(CLOCK_MONOTONIC, startTime);\n')
+                sourceFile.write('    else if (SPARAM(JOBSCOPE_CLOCKTYPE) == 2)\n')
+                sourceFile.write('        clock_gettime(CLOCK_MONOTONIC_COARSE, startTime);\n')
+                sourceFile.write('    else\n')
+                sourceFile.write('        SASSERT(false, "invalid clock type. clock type=%d"')
+                sourceFile.write(', (int)SPARAM(JOBSCOPE_CLOCKTYPE));\n')
+            else:
+                sourceFile.write('    clock_gettime(CLOCK_REALTIME, startTime);\n')
+        sourceFile.write('}\n\n')
+
+        # (4-3) end function
+        sourceFile.write("void PerfList::end%s(struct timespec startTime" % perf)
+        for newArg in newArgList:
+            sourceFile.write(", %s %s" % (newArg[1], newArg[0]))
+        sourceFile.write(") {\n")
+
+        if useTime == False:
+            sourceFile.write('    SASSERT(false, "you should use SPERF_MARK(). perf name=%s",')
+            sourceFile.write('"%s");\n' % perf)
+        else:
+            sourceFile.write('    struct timespec endTime;\n')
+            if jobScope == True:
+                sourceFile.write('    if (SPARAM(JOBSCOPE_CLOCKTYPE) == 0)\n')
+                sourceFile.write('        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &endTime);\n')
+                sourceFile.write('    else if (SPARAM(JOBSCOPE_CLOCKTYPE) == 1)\n')
+                sourceFile.write('        clock_gettime(CLOCK_MONOTONIC, &endTime);\n')
+                sourceFile.write('    else if (SPARAM(JOBSCOPE_CLOCKTYPE) == 2)\n')
+                sourceFile.write('        clock_gettime(CLOCK_MONOTONIC_COARSE, &endTime);\n')
+                sourceFile.write('    else\n')
+                sourceFile.write('        SASSERT(false, "invalid clock type. clock type=%d"')
+                sourceFile.write(', (int)SPARAM(JOBSCOPE_CLOCKTYPE));\n')
+            else:
+                sourceFile.write('    clock_gettime(CLOCK_REALTIME, &endTime);\n')
+
+            sourceFile.write('    PerfList::_%sCount += 1L;\n' % perf)
+            sourceFile.write('    double elapsed = (endTime.tv_sec - startTime.tv_sec)') 
+            sourceFile.write('\n        + (endTime.tv_nsec - startTime.tv_nsec) / 1000000000.0;\n')
+            sourceFile.write('    PerfList::_%sTime += elapsed;\n' % perf)
+
+            if useAvgTime == True:
+                sourceFile.write('    PerfList::_%sAvgTime = PerfList::_%sTime /\
+(double)PerfList::_%sCount;\n' % (perf, perf, perf))
+
+            if useMaxTime == True:
+                sourceFile.write('    if (elapsed > PerfList::_%sMaxTime)\n' % perf)
+                sourceFile.write('        PerfList::_%sMaxTime = elapsed;\n' % perf)
+
+            for newArg in newArgList:
+                sourceFile.write("    PerfList::_%s_%s = %s;\n" % (perf, newArg[0], newArg[0]));
+        sourceFile.write('}\n\n')
+
         sourceFile.write('\n')
-        perfDefList.append((perf, jobScope, useTime, useAvgTime, useMaxTime, newArgList))
+        perfDefList.append((perf, desc, jobScope, useTime, useAvgTime, useMaxTime, newArgList))
 
     # (12) prepare fillPerfDefMap func() 
     sourceFile.write("void PerfList::fillPerfDefMap(map<string, PerfDef*>& perfDefMap) {\n")
@@ -225,13 +346,32 @@ try:
             isFirst = False
         else:
             sourceFile.write('\n')
-        sourceFile.write('    PerfDef* perfDef%s = new PerfDef(%s, %s, %s, %s);\n'\
-            % (str(perfDef[0]), str(perfDef[1]).lower(), str(perfDef[2]).lower(),\
-                str(perfDef[3]).lower(), str(perfDef[4]).lower()))
+        sourceFile.write('    PerfDef* perfDef%s = new PerfDef("%s", %s, %s, %s, %s,\
+\n        (void*)&PerfList::_%sCount'\
+            % (str(perfDef[0]), str(perfDef[1]), str(perfDef[2]).lower(),\
+                str(perfDef[3]).lower(), str(perfDef[4]).lower(),\
+                str(perfDef[5]).lower(), str(perfDef[0])))
+        if perfDef[3] == True:  # useTime
+            sourceFile.write(', (void*)&PerfList::_%sTime,' % str(perfDef[0]))
+        else:
+            sourceFile.write(', NULL,')
+
+        if perfDef[4] == True:  # useAvgTime
+            sourceFile.write('\n        (void*)&PerfList::_%sAvgTime,' % str(perfDef[0]))
+        else:
+            sourceFile.write('\n        NULL,')
+       
+        if perfDef[5] == True:  # useMaxTime
+            sourceFile.write('\n        (void*)&PerfList::_%sMaxTime,' % str(perfDef[0]))
+        else:
+            sourceFile.write('\n        NULL,')
+        sourceFile.write('%d);\n' % len(perfDef[6]))
         
-        for newArg in perfDef[5]:
-            sourceFile.write('    perfDef%s->addArgs(new PerfArgDef("%s", "%s", "%s"));\n'\
-                % (str(perfDef[0]), str(newArg[0]), str(newArg[1]), str(newArg[2])))
+        for newArg in perfDef[6]:
+            sourceFile.write('    perfDef%s->addArgs(new PerfArgDef("%s", "%s", "%s",\
+\n        (void*)&PerfList::_%s_%s, %d));\n'\
+                % (str(perfDef[0]), str(newArg[0]), str(newArg[1]), str(newArg[2]),\
+str(perfDef[0]), str(newArg[0]), getValueSize(str(newArg[1]))))
         sourceFile.write('    perfDefMap["%s"] = perfDef%s;\n'\
             % (str(perfDef[0]), str(perfDef[0])))
             

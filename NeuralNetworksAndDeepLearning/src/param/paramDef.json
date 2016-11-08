@@ -128,6 +128,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : false
+},
+
+"JOBSCOPE_CLOCKTYPE" : 
+{
+    "DESC" : "specify clocktype of job-scope SPERF module. 0: CLOCK_THREAD_CPUTIME_ID, 1: CLOCK_MONOTONIC, 2: CLOCK_MONOTONIC_COARSE",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 0
 }
 
 }

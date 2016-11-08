@@ -1,7 +1,7 @@
 /**
  * @file HotLog.cpp
  * @date 2016-10-30
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
@@ -49,9 +49,9 @@ void HotLog::init() {
     char hotLogDir[PATH_MAX];
 
     if (strcmp(SPARAM(HOTLOG_DIR), "") == 0) {
-        assert(sprintf(hotLogDir, "%s/log", getenv(SOOOA_HOME_ENVNAME)) != -1);
+        SASSERT0((sprintf(hotLogDir, "%s/log", getenv(SOOOA_HOME_ENVNAME)) != -1));
     } else {
-        assert(sprintf(hotLogDir, "%s", SPARAM(HOTLOG_DIR)) != -1);
+        SASSERT0((sprintf(hotLogDir, "%s", SPARAM(HOTLOG_DIR)) != -1));
     }
 
     FileMgmt::checkDir(hotLogDir);
@@ -69,14 +69,15 @@ int HotLog::initForThread() {
     int     tid = (int)gettid() - pid;
 
     if (strcmp(SPARAM(SYSLOG_DIR), "") == 0) {
-        assert(sprintf(hotLogFilePath, "%s/log/hot.%d.%d", getenv(SOOOA_HOME_ENVNAME),
-                        pid, tid) != -1);
+        SASSERT(sprintf(hotLogFilePath, "%s/log/hot.%d.%d", getenv(SOOOA_HOME_ENVNAME),
+                        pid, tid) != -1, "");
     } else {
-        assert(sprintf(hotLogFilePath, "%s/hot.%d.%d", SPARAM(HOTLOG_DIR), pid, tid) != -1);
+        SASSERT(sprintf(hotLogFilePath, "%s/hot.%d.%d",
+                    SPARAM(HOTLOG_DIR), pid, tid) != -1, "");
     }
 
     int fd = FileMgmt::openFile(hotLogFilePath, O_CREAT|O_TRUNC|O_RDWR|O_DIRECT);
-    assert(fd != -1);
+    SASSERT(fd != -1, "");
 
     // (2) contextArray에 자신의 fd를 추가한다.
     HotLogContext* newContext = new HotLogContext(fd);
@@ -145,12 +146,12 @@ void HotLog::doFlush(bool force) {
             SYS_LOG("lio_listio() EAGAIN error. please check AIO_MAX. "
                     "current max AIO count=%d, issued AIO count=%d",
                     (HotLog::contextGenId * 2), aioCount);
-            assert(0);
+            SASSERT(0, "");
         } else if (errno == EINVAL) {
             SYS_LOG("lio_listio() EINVAL error. please check AIO_LISTIO_MAX. "
                     "current max AIO count=%d, issued AIO count=%d",
                     (HotLog::contextGenId * 2), aioCount);
-            assert(0);
+            SASSERT(0, "");
         } else if (errno == EINTR) {
             // XXX: aio_suspend()
             COLD_LOG(ColdLog::WARNING, true, "lio_listio() EINTR error. call aio_suspend()");
@@ -161,7 +162,7 @@ void HotLog::doFlush(bool force) {
                     break;
 
                 err = errno;
-                assert(ret == -1);
+                SASSERT(ret == -1, "");
 
                 if (err == EINTR) {
                     // XXX: is it right?
@@ -170,7 +171,7 @@ void HotLog::doFlush(bool force) {
                     // ENOSYS는 생각하지 않겠다. glibc 2.1이상을 쓰도록 명시하자.
                     // EAGAIN is called when timeout is specified
                     COLD_LOG(ColdLog::ERROR, true, "lio_suspend() failed. errno=%d", err);
-                    assert(0);
+                    SASSERT(0, "");
                 }
             }
         } else if (errno == EIO) {
@@ -180,10 +181,10 @@ void HotLog::doFlush(bool force) {
                 COLD_LOG(ColdLog::ERROR, (aioErr != 0),
                     "lio_listio() occurs an error. error code=%d", aioErr);
             }
-            assert(0);
+            SASSERT(0, "");
         } else {
             COLD_LOG(ColdLog::ERROR, true, "lio_listio() failed. errno=%d", err);
-            assert(0);
+            SASSERT(0, "");
         }
     }
 
@@ -207,7 +208,7 @@ void HotLog::flusherThread(int contextCount) {
     // (2) AIO control blocks 구조체를 생성한다.
     //     wrap around까지 고려해서 contextCount * 2개 만큼을 할당한다.
     HotLog::flushCBs = (struct aiocb**)malloc(sizeof(struct aiocb*) * contextCount * 2);
-    assert(HotLog::flushCBs);
+    SASSERT(HotLog::flushCBs, "");
 
     // (3) main loop
     //     특정 값(SPARAM(HOTLOG_FLUSH_THRESHOLD) * SPARAM(HOTLOG_BUFFERSIZE)) 이상 
@@ -232,6 +233,6 @@ void HotLog::flusherThread(int contextCount) {
         delete (*iter);
     }
 
-    assert(HotLog::flushCBs);
+    SASSERT(HotLog::flushCBs, "");
     free(HotLog::flushCBs);
 }

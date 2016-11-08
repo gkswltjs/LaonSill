@@ -1,7 +1,7 @@
 /**
  * @file MessageHeader.h
  * @date 2016-10-20
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */

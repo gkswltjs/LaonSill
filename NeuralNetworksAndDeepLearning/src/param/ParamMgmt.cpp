@@ -1,7 +1,7 @@
 /**
  * @file ParamMgmt.cpp
  * @date 2016-10-27
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
@@ -11,6 +11,7 @@
 
 #include "ParamMgmt.h"
 #include "Param.h"
+#include "../log/SysLog.h"
 
 using namespace std;
 
@@ -27,41 +28,49 @@ bool ParamMgmt::isParamExist(string paramName) {
 }
 
 void ParamMgmt::getValue(string paramName, void* value) {
+    SASSUME(ParamMgmt::isParamExist(paramName), "paramName=%s", paramName.c_str());
     ParamDef* paramDef = ParamMgmt::paramDefMap[paramName];
     memcpy(value, paramDef->valuePt, paramDef->valueLen);
 }
 
 void ParamMgmt::setValue(string paramName, void* value) {
+    SASSUME(ParamMgmt::isParamExist(paramName), "paramName=%s", paramName.c_str());
     ParamDef* paramDef = ParamMgmt::paramDefMap[paramName];
     memcpy(paramDef->valuePt, value, paramDef->valueLen);
 }
 
 char* ParamMgmt::getDesc(string paramName) {
+    SASSUME(ParamMgmt::isParamExist(paramName), "paramName=%s", paramName.c_str());
     ParamDef* paramDef = ParamMgmt::paramDefMap[paramName];
     return paramDef->desc;
 }
 
 bool ParamMgmt::isMandatory(string paramName) {
+    SASSUME(ParamMgmt::isParamExist(paramName), "paramName=%s", paramName.c_str());
     ParamDef* paramDef = ParamMgmt::paramDefMap[paramName];
     return paramDef->isMandatory;
 }
 
 bool ParamMgmt::isMutable(string paramName) {
+    SASSUME(ParamMgmt::isParamExist(paramName), "paramName=%s", paramName.c_str());
     ParamDef* paramDef = ParamMgmt::paramDefMap[paramName];
     return paramDef->isMutable;
 }
 
 bool ParamMgmt::isSessScope(string paramName) {
+    SASSUME(ParamMgmt::isParamExist(paramName), "paramName=%s", paramName.c_str());
     ParamDef* paramDef = ParamMgmt::paramDefMap[paramName];
     return paramDef->isSessScope;
 }
 
 char* ParamMgmt::getTypeName(string paramName) {
+    SASSUME(ParamMgmt::isParamExist(paramName), "paramName=%s", paramName.c_str());
     ParamDef* paramDef = ParamMgmt::paramDefMap[paramName];
     return paramDef->typeName;
 }
 
 ParamMgmt::ParamType ParamMgmt::getParamType(string paramName) {
+    SASSUME(ParamMgmt::isParamExist(paramName), "paramName=%s", paramName.c_str());
     ParamDef* paramDef = ParamMgmt::paramDefMap[paramName];
 
     if (strcmp(paramDef->typeName, "UINT8") == 0)
@@ -95,12 +104,13 @@ ParamMgmt::ParamType ParamMgmt::getParamType(string paramName) {
         return ParamMgmt::STRING;
 
     else {
-        assert(0);
-        return ParamType::MAX;      // meaningless
+        SASSERT(false, "typeName=%s", paramDef->typeName);
+        return ParamMgmt::MAX;      // meaningless
     }
 }
 
 char* ParamMgmt::getDefaultValue(string paramName) {
+    SASSUME(ParamMgmt::isParamExist(paramName), "paramName=%s", paramName.c_str());
     ParamDef* paramDef = ParamMgmt::paramDefMap[paramName];
     return paramDef->defaultValue;
 }

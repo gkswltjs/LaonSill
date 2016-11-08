@@ -50,7 +50,7 @@ for hotCode in hotCodeDic:
 headerTopSentences = [\
 "/**",\
 " * @file HotCode.h",\
-" * @author mhlee",\
+" * @author moonhoen lee",\
 " * @brief hot code module",\
 " * @warning",\
 " *  The file is auto-generated.",\
@@ -159,7 +159,7 @@ finally:
 sourceTopSentences = [\
 "/**",\
 " * @file HotCode.cpp",\
-" * @author mhlee",\
+" * @author moonhoen lee",\
 " * @brief hot code module",\
 " * @warning",\
 " *  The file is auto-generated.",\

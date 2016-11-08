@@ -1,5 +1,29 @@
 {
 
+"SERVER_RUNNING_TIME" :
+{
+    "DESC"          : "specify server running time",
+    "SCOPE"         : "SYSTEM",
+    "USETIME"       : true,
+    "USEAVGTIME"    : false,
+    "USEMAXTIME"    : false,
+    "ARGS"          : []
+},
+
+"NETWORK_TRAINING_TESTTIME" :
+{
+    "DESC"          : "specify network training time",
+    "SCOPE"         : "JOB",
+    "USETIME"       : true,
+    "USEAVGTIME"    : false,
+    "USEMAXTIME"    : false,
+    "ARGS"          : 
+    [
+        ["EpochCount", "UINT32", "specify epoch count"]
+    ]
+
+},
+
 "TEST_PERF1" : 
 {
     "DESC"          : "test performance 1",
