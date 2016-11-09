@@ -34,7 +34,7 @@
 
 #define SASSERT(cond, fmt, args...)                                                 \
     do {                                                                            \
-        if (!(cond)) {                                                                \
+        if (!(cond)) {                                                              \
             if (SysLog::fp) {                                                       \
                 std::unique_lock<std::mutex>  logLock(SysLog::logMutex);            \
                 SysLog::writeLogHeader(__FILE__,__LINE__);                          \
@@ -59,7 +59,7 @@
     } while (0)
 #define SASSERT0(cond)                                                              \
     do {                                                                            \
-        if (!(cond)) {                                                                \
+        if (!(cond)) {                                                              \
             if (SysLog::fp) {                                                       \
                 std::unique_lock<std::mutex>  logLock(SysLog::logMutex);            \
                 SysLog::writeLogHeader(__FILE__,__LINE__);                          \

@@ -18,6 +18,7 @@
 #include "../Util.h"
 #include "../Worker.h"
 #include "../perf/Perf.h"
+#include "../log/StdOutLog.h"
 
 using namespace std;
 
@@ -88,7 +89,8 @@ void Network<Dtype>::sgd_with_timer(int epochs) {
 	sgd(epochs);
 
     SPERF_END(NETWORK_TRAINING_TESTTIME, startTime, epochs);
-    cout << "Total Training Time : " << SPERF_TIME(NETWORK_TRAINING_TESTTIME) << endl;
+    STDOUT_BLOCK(cout << "Total Training Time : " << SPERF_TIME(NETWORK_TRAINING_TESTTIME)
+                    << endl;);
 }
 
 

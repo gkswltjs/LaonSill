@@ -1,11 +1,12 @@
 본 문서는 Log 모듈의 간략한 소개 및 사용방법을 기술한다.
 
 * Log모듈 소개
- 3가지 로깅 모듈을 지원하고 있고, 각각의 특성은 아래와 같다:
+ 4가지 로깅 모듈을 지원하고 있고, 각각의 특성은 아래와 같다:
   - SYS_LOG : 시스템에 중대한 영향을 미치는 중요한 로그를 남긴다.
                ex. critical error, 시스템 시작, 종료
   - COLD_LOG : 일반적인 로깅 시스템. 쉽게 사용할 수 있게 되어 있다.
   - HOT_LOG : 속도에 중점을 둔 로깅 시스템이다. 사용하기 어렵다.
+  - STDOUT_BLOCK, STDOUT_LOG : 콘솔 출력을 위한 로깅 시스템이다.
 
 * SYS_LOG
   - SYS_LOG(fmt, arg1, arg2, ...);
@@ -34,6 +35,12 @@
   - SPARAM(HOTLOG_SLOTSIZE)는 disk I/O를 관리하기 위한 메모리 슬롯의 크기를 나타낸다.
   - SPARAM(HOTLOG_FLUSH_SLOTCOUNT)는 몇개의 메모리 슬롯을 기준으로 flush를 할지를 나타낸다.
   - SPARAM(HOTLOG_FLUSH_CYCLE_MSEC)은 어느 주기(msec)로 플러시를 체크하고 수행하지를 나타낸다.
+
+* STDOUT_BLOCK
+  - 사용법 : STDOUT_BLOCK(cout << "hello world : " << abc << endl);
+
+* STDOUT_LOG
+  - 사용법 : STDOUT_LOG("Hello World : %d\n", abc);
 
 * HOT_LOG에서 HotCode 클래스 생성방법
   - hotCodeDef.json 파일에 필요한 이벤트ID와 그것의 속성(FMT, ARGS)를 지정한다.
