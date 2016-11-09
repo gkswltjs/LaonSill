@@ -75,7 +75,7 @@ void InputLayer<Dtype>::feedforward(DataSet<Dtype>* dataSet, const uint32_t base
 		}
 	}
 
-	this->_feedforward();
+	Layer<Dtype>::feedforward();
 	//this->propFeedforward(end);
 }
 
@@ -87,6 +87,9 @@ void InputLayer<Dtype>::initialize() {
 template <typename Dtype>
 void InputLayer<Dtype>::_shape(bool recursive) {
 	this->out_dim = this->in_dim;
+	this->_inputs.insert(this->_inputs.begin(), this->_outputs[0]);
+	this->_inputData.insert(this->_inputData.begin(), this->_outputData[0]);
+
 	if(recursive) {
 		Layer<Dtype>::_shape();
 	}

@@ -27,6 +27,7 @@ LRNLayer<Dtype>::LRNLayer(const string name, lrn_dim lrn_d) : HiddenLayer<Dtype>
 
 template <typename Dtype>
 void LRNLayer<Dtype>::_shape(bool recursive) {
+	this->setInDimension(this->_inputData[0]->getShape());
 	this->out_dim = this->in_dim;
 
 	if(recursive) {

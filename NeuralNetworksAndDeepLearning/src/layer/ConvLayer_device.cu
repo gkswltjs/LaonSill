@@ -212,176 +212,20 @@ void ConvLayer<Dtype>::_clearShape() {
 	HiddenLayer<Dtype>::_clearShape();
 }
 
-/*
-template <typename Dtype>
-void ConvLayer<Dtype>::_save(ofstream &ofs) {
-	HiddenLayer<Dtype>::_save(ofs);
-
-	int activationType = (int)activation_fn->getType();
-
-	ofs.write((char *)&filter_d, sizeof(filter_dim));
-	ofs.write((char *)&activationType, sizeof(int));
-	ofs.write((char *)&weight_update_param, sizeof(update_param));
-	ofs.write((char *)&bias_update_param, sizeof(update_param));
-	ofs.write((char *)&weight_filler, sizeof(param_filler<Dtype>));
-	ofs.write((char *)&bias_filler, sizeof(param_filler<Dtype>));
-
-
-	const Dtype* filters = _params[Filter]->host_data();
-	const Dtype* biases = _params[Bias]->host_data();
-	//checkCudaErrors(cudaMemcpyAsync(filters, d_filters, sizeof(Dtype)*filter_d.size(), cudaMemcpyDeviceToHost));
-	//checkCudaErrors(cudaMemcpyAsync(biases, d_biases, sizeof(Dtype)*filter_d.filters, cudaMemcpyDeviceToHost));
-	ofs.write((char *)filters, sizeof(Dtype)*filter_d.size());
-	ofs.write((char *)biases, sizeof(Dtype)*filter_d.filters);
-}
 
 template <typename Dtype>
-void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
-	HiddenLayer<Dtype>::_load(ifs, layerMap);
-
-	filter_dim filter_d;
-	typename Activation<Dtype>::Type activationType;
-	update_param weight_update_param, bias_update_param;
-	param_filler<Dtype> weight_filler, bias_filler;
-
-	ifs.read((char *)&filter_d, sizeof(filter_dim));
-	ifs.read((char *)&activationType, sizeof(int));
-	ifs.read((char *)&weight_update_param, sizeof(update_param));
-	ifs.read((char *)&bias_update_param, sizeof(update_param));
-	ifs.read((char *)&weight_filler, sizeof(param_filler<Dtype>));
-	ifs.read((char *)&bias_filler, sizeof(param_filler<Dtype>));
-
-	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
-	ConvLayer<Dtype>::_shape(false);
-
-	Dtype* filters = _params[Filter]->mutable_host_data();
-	Dtype* biases = _params[Bias]->mutable_host_data();
-	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
-	ifs.read((char *)filters, sizeof(Dtype)*filter_d.size());
-	ifs.read((char *)biases, sizeof(Dtype)*filter_d.filters);
-	//checkCudaErrors(cudaMemcpyAsync(d_filters, filters, sizeof(Dtype)*filter_d.size(), cudaMemcpyHostToDevice));
-	//checkCudaErrors(cudaMemcpyAsync(d_biases, biases, sizeof(Dtype)*filter_d.filters, cudaMemcpyHostToDevice));
-}
-*/
-
-template <typename Dtype>
-void ConvLayer<Dtype>::update() 
-{
-	//Util::setPrint(true);
-
-	//for(uint32_t32_t i = 0; i < filter_d.filters; i++) {
-	//	filters[i] = (1-eta*lambda/n)*filters[i] - (eta/miniBatchSize)*nabla_w[i];
-	//}
-	//biases -= eta/miniBatchSize*nabla_b;
-
-	/*
-	for(uint32_t i = 0; i < filter_d.filters; i++) {
-		filters[i] = (1-weight_update_param.lr_mult*weight_update_param.decay_mult/n)*filters[i] - (weight_update_param.lr_mult/miniBatchSize)*nabla_w[i];
-	}
-	biases -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
-	*/
-
-	/*
-	float delta_scale = -weight_update_param.lr_mult/miniBatchSize;
-	float param_scale = 1-weight_update_param.lr_mult*weight_update_param.decay_mult/n;
-	float b_delta_scale = -bias_update_param.lr_mult/miniBatchSize;
-
-	Util::printDeviceData(d_delta_weight, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "delta_weight:");
-	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "filters:");
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(filter_d.size()), &param_scale, d_filters, 1));
-	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "filters:");
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.size()), &delta_scale, d_delta_weight, 1, d_filters, 1));
-	Util::printDeviceData(d_filters, filter_d.rows, filter_d.cols, filter_d.channels, filter_d.filters, "filters:");
-
-	Util::printDeviceData(d_delta_bias, 1, 1, filter_d.filters, 1, "delta_bias:");
-	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "biases:");
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(filter_d.filters),	&b_delta_scale, d_delta_bias, 1, d_biases, 1));
-	Util::printDeviceData(d_biases, 1, 1, filter_d.filters, 1, "biases:");
-	*/
-
-
-
-	/*
-	if(Util::batchCount > 1000) {
-		const Dtype* filtersGrad = this->_params[Filter]->host_grad();
-		const uint32_t filtersCount = this->_params[Filter]->getCount();
-		double avg = 0.0;
-		for(uint32_t i = 0; i < filtersCount; i++) {
-			avg += filtersGrad[i];
-		}
-		avg /= filtersCount;
-		for(uint32_t i = 0; i < filtersCount; i++) {
-			if(filtersGrad[i] > 1000*avg) {
-				Data<Dtype>::printConfig = 1;
-				this->_params[Filter]->print_grad(this->name + to_string(i));
-
-				for(int j = 0; j < networkConfig->layers.size(); j++) {
-					Data<Dtype> input = networkConfig->layers[j]->getInput();
-					Data<Dtype> output = networkConfig->layers[j]->getOutput();
-
-					input->print_data(this->name + "inputData:");
-					input->print_grad(this->name + "inputGrad:");
-
-					output->print_data(this->name + "outputData:");
-					output->print_grad(this->name + "outputGrad:");
-				}
-				Data<Dtype>::printConfig = 0;
-				//exit(1);
-			}
-		}
-	}
-	*/
-
-
-
-
-	/*
-	int weight_size = filter_d.size();
-	Dtype norm_scale = 1.0/this->in_dim.batches;
-	Dtype reg_scale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
-	Dtype momentum = this->networkConfig->_momentum;
-	Dtype learning_scale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
-	Dtype negative_one = -1.0;
-
-	Dtype* d_filtersGrad = _params[Filter]->mutable_device_grad();
-	Dtype* d_filtersData = _params[Filter]->mutable_device_data();
-	Dtype* d_filtersHistoryGrad = _paramsHistory[Filter]->mutable_device_grad();
-
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &norm_scale, d_filtersGrad, 1));								// normalize by batch size
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &reg_scale, d_filtersData, 1, d_filtersGrad, 1));					// regularize
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(weight_size), &momentum, d_filtersHistoryGrad, 1));								//
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &learning_scale, d_filtersGrad, 1, d_filtersHistoryGrad, 1));	// momentum
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(weight_size), &negative_one, d_filtersHistoryGrad, 1, d_filtersData, 1));			// update
-
-
-	int bias_size = filter_d.filters;
-	Dtype reg_scale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
-	Dtype learning_scale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
-
-	Dtype* d_biasesGrad = _params[Bias]->mutable_device_grad();
-	Dtype* d_biasesData = _params[Bias]->mutable_device_data();
-	Dtype* d_biasesHistoryGrad = _paramsHistory[Bias]->mutable_device_grad();
-
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &norm_scale, d_biasesGrad, 1));								// normalize by batch size
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &reg_scale_b, d_biasesData, 1, d_biasesGrad, 1));					// regularize
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(bias_size), &momentum, d_biasesHistoryGrad, 1));								//
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &learning_scale_b, d_biasesGrad, 1, d_biasesHistoryGrad, 1));	// momentum
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(bias_size), &negative_one, d_biasesHistoryGrad, 1, d_biasesData, 1));			// update
-	*/
-
-
+void ConvLayer<Dtype>::update() {
+	// update filters ...
 	const uint32_t weightSize = filter_d.size();
 	const Dtype regScale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
-	//const Dtype learnScale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
 	const Dtype learnScale = this->networkConfig->getLearningRate() * weight_update_param.lr_mult;
 	_updateParam(weightSize, regScale, learnScale, _paramsHistory[Filter], _params[Filter]);
 
+	// update biases ...
 	const uint32_t biasSize = filter_d.filters;
 	const Dtype regScale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
-	//const Dtype learnScale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
 	const Dtype learnScale_b = this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
 	_updateParam(biasSize, regScale_b, learnScale_b, _paramsHistory[Bias], _params[Bias]);
-
 }
 
 
@@ -471,6 +315,14 @@ void ConvLayer<Dtype>::syncMutableMem() {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_feedforward() {
+	_computeFiltersConvolutionData();
+	_computeActivationData();
+}
+
+
+
+template <typename Dtype>
+void ConvLayer<Dtype>::_computeFiltersConvolutionData() {
 	// Apply filters to input data
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	const Dtype* d_filtersData = _params[Filter]->device_data();
@@ -485,18 +337,22 @@ void ConvLayer<Dtype>::_feedforward() {
 	// Add bias to filtered input data
 	_params[Bias]->print_data("biasData:");
 	const Dtype* d_biasesData = _params[Bias]->device_data();
+
 	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
 			&Cuda::alpha, biasTensorDesc, d_biasesData,
 			&Cuda::alpha, this->outputTensorDesc, d_preActivationData));
 	_preActivation->print_data("preActivationData:");
+}
 
-
+template <typename Dtype>
+void ConvLayer<Dtype>::_computeActivationData() {
 	// Activate filtered result
+	const Dtype* d_preActivationData = _preActivation->device_data();
 	Dtype* d_output = this->_outputData[0]->mutable_device_data();
+
 	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_output);
 	this->_outputData[0]->print_data(this->name+string("output:"));
 }
-
 
 
 

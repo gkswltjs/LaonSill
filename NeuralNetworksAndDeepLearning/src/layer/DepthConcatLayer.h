@@ -46,11 +46,11 @@ public:
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			this->_inputs = inputs;
+			HiddenLayer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			this->_outputs = outputs;
+			HiddenLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		Layer<Dtype>* build() {
@@ -79,20 +79,10 @@ protected:
 	void initialize();
 
 	virtual void _shape(bool recursive=true);
+	virtual void _feedforward();
+
 	virtual void _clearShape();
 	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
-
-	/**
-	 * @details 일반적인 concat과 달리 channel을 기준으로 조합하므로 재정의한다.
-	 */
-	//virtual void _concat(uint32_t idx, Data<Dtype>* input);
-	/**
-	 * @details 일반적인 deconcat과 달리 channel을 기준으로 해체하므로 재정의한다.
-	 */
-	//virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset);
-
-
-
 
 	/**
 	 * @details _concat()에서 입력값이 합산되는 방식이 아니므로 합산에 대해
@@ -104,14 +94,6 @@ protected:
 	 *          scaling을 적용하는 기본 대_scaleGradient()를 재정의하여 scale하지 않도록 한다.
 	 */
 	virtual void _scaleGradient() {};
-	/**
-	 * @details 입력 그레디언트 전체를 이전 레이어에 전달하는 것이 아니라
-	 *          이전 레이어의 출력 사이즈에 따라 입력 그레디언트를 나누어줘야 하므로
-	 *          propBackpropagation()을 재정의한다.
-	 */
-	virtual void propBackpropagation();
-
-
 
 protected:
 #ifndef GPU_MODE
@@ -119,7 +101,6 @@ protected:
 	rcube delta_input_sub;
     std::vector<int> offsets;
 #else
-	int offsetIndex;			///< 입력에 관한 gradient 호출한 횟수 카운터, getDeltaInput() 호출마다 증가되고 feedforward()가 수행될 때 reset된다.
 #endif
 };
 

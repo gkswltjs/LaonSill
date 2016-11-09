@@ -14,6 +14,7 @@
 #include "../activation/Activation.h"
 #include "../dataset/DataSet.h"
 #include "../dataset/ImagePackDataSet.h"
+#include "../dataset/MockDataSet.h"
 #include "../layer/ConvLayer.h"
 #include "../layer/DepthConcatLayer.h"
 #include "../layer/FullyConnectedLayer.h"
@@ -22,6 +23,7 @@
 #include "../layer/LRNLayer.h"
 #include "../layer/PoolingLayer.h"
 #include "../layer/SoftmaxLayer.h"
+#include "../layer/SplitLayer.h"
 #include "../network/NetworkConfig.h"
 #include "../pooling/Pooling.h"
 
@@ -48,7 +50,18 @@ DataSet<Dtype>* createMnistDataSet() {
 
 }
 
-
+template <typename Dtype>
+DataSet<Dtype>* createMockDataSet() {
+	DataSet<Dtype>* dataSet = new MockDataSet<Dtype>(
+			224,
+			224,
+			3,
+			10,
+			10,
+			1000);
+	dataSet->setMean({0.0, 0.0, 0.0});
+	return dataSet;
+}
 
 template <typename Dtype>
 DataSet<Dtype>* createSampleDataSet() {
@@ -81,7 +94,7 @@ DataSet<Dtype>* createImageNet10000DataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
 			"/data/train_pack/ILSVRC2012/save/10000/train_data",
 			"/data/train_pack/ILSVRC2012/save/10000/train_label",
-			50,
+			40,
 			"/data/train_pack/ILSVRC2012/save/10000/test_data",
 			"/data/train_pack/ILSVRC2012/save/10000/test_label",
 			1);
@@ -114,8 +127,7 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->id(0)
 					->name("inputLayer")
 					//->nextLayerIndices({1})
-					->inputs({"data"})
-					->outputs({"data"}))
+					->outputs({"data", "label"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
 					->name("convLayer1")
@@ -148,7 +160,7 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.0)
 					//->prevLayerIndices({2})
-					->inputs({"pool1/3x3_s1"})
+					->inputs({"pool1/3x3_s1", "label"})
 					->outputs({"prob"}))
 			->build();
 
@@ -249,7 +261,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(0)
 					->name("input")
 					->outputs({"data"})
-					//->nextLayerIndices({1})
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
@@ -262,8 +273,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->activationType(Activation<Dtype>::ReLU)
 					->inputs({"data"})
 					->outputs({"conv1/7x7_s2"})
-					//->prevLayerIndices({0})
-					//->nextLayerIndices({2})
 					)
 			->layer((new typename PoolingLayer<Dtype>::Builder())
 					->id(2)
@@ -272,8 +281,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->poolingType(Pooling<Dtype>::Max)
 					->inputs({"conv1/7x7_s2"})
 					->outputs({"pool1/3x3_s2"})
-					//->prevLayerIndices({1})
-					//->nextLayerIndices({3})
 					)
 			->layer((new typename LRNLayer<Dtype>::Builder())
 					->id(3)
@@ -281,8 +288,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->lrnDim(5, 0.0001, 0.75, 2.0)
 					->inputs({"pool1/3x3_s2"})
 					->outputs({"pool1/norm1"})
-					//->prevLayerIndices({2})
-					//->nextLayerIndices({4})
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(4)
@@ -295,8 +300,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->activationType(Activation<Dtype>::ReLU)
 					->inputs({"pool1/norm1"})
 					->outputs({"conv2/3x3_reduce"})
-					//->prevLayerIndices({3})
-					//->nextLayerIndices({5})
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(5)
@@ -309,8 +312,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->activationType(Activation<Dtype>::ReLU)
 					->inputs({"conv2/3x3_reduce"})
 					->outputs({"conv2/3x3"})
-					//->prevLayerIndices({4})
-					//->nextLayerIndices({6})
 					)
 			->layer((new typename LRNLayer<Dtype>::Builder())
 					->id(6)
@@ -318,8 +319,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->lrnDim(5, 0.0001, 0.75, 2.0)
 					->inputs({"conv2/3x3"})
 					->outputs({"conv2/norm2"})
-					//->prevLayerIndices({5})
-					//->nextLayerIndices({7})
 					)
 			->layer((new typename PoolingLayer<Dtype>::Builder())
 					->id(7)
@@ -328,10 +327,15 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->poolingType(Pooling<Dtype>::Max)
 					->inputs({"conv2/norm2"})
 					->outputs({"pool2/3x3_s2"})
-					//->prevLayerIndices({6})
-					//->nextLayerIndices({8, 9, 11, 13})
 					)
-
+					/*
+			->layer((new typename SplitLayer<Dtype>::Builder())
+					->id()
+					->name("split2")
+					->inputs({"pool2/3x3_s2"})
+					->outputs({"pool2/3x3_s2_0", "pool2/3x3_s2_1", "pool2/3x3_s2_2", "pool2/3x3_s2_3"})
+					)
+					*/
 			//INCEPTION 3A
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(8)
@@ -344,8 +348,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->activationType(Activation<Dtype>::ReLU)
 					->inputs({"pool2/3x3_s2"})
 					->outputs({"inception_3a/1x1"})
-					//->prevLayerIndices({7})
-					//->nextLayerIndices({15})
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(9)
@@ -358,14 +360,11 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->activationType(Activation<Dtype>::ReLU)
 					->inputs({"pool2/3x3_s2"})
 					->outputs({"inception_3a/3x3_reduce"})
-					//->prevLayerIndices({7})
-					//->nextLayerIndices({10})
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(10)
 					->name("inception_3a/3x3")
 					->filterDim(3, 3, 96, 128, 1)
-					//->filterDim(3, 3, 96, 64, 1)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.03)
@@ -373,8 +372,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->activationType(Activation<Dtype>::ReLU)
 					->inputs({"inception_3a/3x3_reduce"})
 					->outputs({"inception_3a/3x3"})
-					//->prevLayerIndices({9})
-					//->nextLayerIndices({15})
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(11)
@@ -387,14 +384,11 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->activationType(Activation<Dtype>::ReLU)
 					->inputs({"pool2/3x3_s2"})
 					->outputs({"inception_3a/5x5_reduce"})
-					//->prevLayerIndices({7})
-					//->nextLayerIndices({12})
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(12)
 					->name("inception_3a/5x5")
 					->filterDim(3, 3, 16, 32, 1)
-					//->filterDim(3, 3, 16, 64, 1)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -402,8 +396,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->activationType(Activation<Dtype>::ReLU)
 					->inputs({"inception_3a/5x5_reduce"})
 					->outputs({"inception_3a/5x5"})
-					//->prevLayerIndices({11})
-					//->nextLayerIndices({15})
 					)
 			->layer((new typename PoolingLayer<Dtype>::Builder())
 					->id(13)
@@ -412,14 +404,11 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->poolingType(Pooling<Dtype>::Max)
 					->inputs({"pool2/3x3_s2"})
 					->outputs({"inception_3a/pool"})
-					//->prevLayerIndices({7})
-					//->nextLayerIndices({14})
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(14)
 					->name("inception_3a/pool_proj")
 					->filterDim(1, 1, 192, 32, 1)
-					//->filterDim(3, 3, 192, 64, 1)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -427,8 +416,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->activationType(Activation<Dtype>::ReLU)
 					->inputs({"inception_3a/pool"})
 					->outputs({"inception_3a/pool_proj"})
-					//->prevLayerIndices({13})
-					//->nextLayerIndices({15})
 					)
 			->layer((new typename DepthConcatLayer<Dtype>::Builder())
 					->id(15)
@@ -436,11 +423,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->inputs({"inception_3a/1x1", "inception_3a/3x3",
 								"inception_3a/5x5", "inception_3a/pool_proj"})
 					->outputs({"inception_3a/output"})
-					//->prevLayerIndices({8, 10, 12, 14})
-					//->nextLayerIndices({16, 17, 19, 21})
 					)
-
-
 			//INCEPTION 3B
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(16)
@@ -2061,128 +2044,6 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 }
 
 
-template <typename Dtype>
-LayersConfig<Dtype>* createInceptionLayersConfig() {
-	uint32_t layerId = 0;
-	const uint32_t ic = 1;
-	const uint32_t oc_cv1x1 = 1;
-	const uint32_t oc_cv3x3reduce = 1;
-	const uint32_t oc_cv3x3 = 2;
-	const uint32_t oc_cv5x5reduce = 1;
-	const uint32_t oc_cv5x5 = 3;
-	const uint32_t oc_cp = 2;
-
-
-	LayersConfig<Dtype>* layersConfig =
-			(new typename LayersConfig<Dtype>::Builder())
-			->layer((new typename InputLayer<Dtype>::Builder())
-					->id(0)
-					->name("input")
-					//->nextLayerIndices({1, 2, 4, 6})
-					)
-
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(1)
-					->name("inception_3a/conv1x1")
-					->filterDim(1, 1, ic, oc_cv1x1, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					//->prevLayerIndices({0})
-					//->nextLayerIndices({8})
-					)
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(2)
-					->name("inception_3a/conv3x3reduce")
-					->filterDim(1, 1, ic, oc_cv3x3reduce, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					//->prevLayerIndices({0})
-					//->nextLayerIndices({3})
-					)
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(3)
-					->name("inception_3a/conv3x3")
-					->filterDim(3, 3, oc_cv3x3reduce, oc_cv3x3, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					//->prevLayerIndices({2})
-					//->nextLayerIndices({8})
-					)
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(4)
-					->name("inception_3a/conv5x5reduce")
-					->filterDim(3, 3, ic, oc_cv5x5reduce, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					//->prevLayerIndices({0})
-					//->nextLayerIndices({5})
-					)
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(5)
-					->name("inception_3a/conv5x5")
-					->filterDim(3, 3, oc_cv5x5reduce, oc_cv5x5, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					//->prevLayerIndices({4})
-					//->nextLayerIndices({8})
-					)
-			->layer((new typename PoolingLayer<Dtype>::Builder())
-					->id(6)
-					->name("inception_3a/pool3x3")
-					->poolDim(3, 3, 1)
-					->poolingType(Pooling<Dtype>::Max)
-					//->prevLayerIndices({0})
-					//->nextLayerIndices({7})
-					)
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(7)
-					->name("inception_3a/convProjection")
-					->filterDim(3, 3, ic, oc_cp, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					//->prevLayerIndices({6})
-					//->nextLayerIndices({8})
-					)
-			->layer((new typename DepthConcatLayer<Dtype>::Builder())
-					->id(8)
-					->name("inception_3a/depthConcat")
-					//->prevLayerIndices({1, 3, 5, 7})
-					//->nextLayerIndices({9})
-					)
-			->layer((new typename SoftmaxLayer<Dtype>::Builder())
-					->id(9)
-					->name("softmaxLayer")
-					->nOut(10)
-					->pDropout(0.4)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.0)
-					//->prevLayerIndices({8})
-					)
-			->build();
-
-	return layersConfig;
-
-}
 
 
 #endif /* DEBUG_H_ */

@@ -15,14 +15,10 @@ template <typename Dtype>
 HiddenLayer<Dtype>::HiddenLayer() {}
 
 template <typename Dtype>
-HiddenLayer<Dtype>::HiddenLayer(Builder* builder) : Layer<Dtype>(builder) {
-	//for(uint32_t i = 0; i < builder->_prevLayerIndices.size(); i++) {
-	//	this->prevLayers.push_back((Layer<Dtype>*)((size_t)builder->_prevLayerIndices[i]));
-	//}
-}
+HiddenLayer<Dtype>::HiddenLayer(Builder* builder) : Layer<Dtype>(builder) {}
 
 template <typename Dtype>
-HiddenLayer<Dtype>::HiddenLayer(const string name) : Layer<Dtype>(name) {}
+HiddenLayer<Dtype>::HiddenLayer(const string& name) : Layer<Dtype>(name) {}
 
 
 template <typename Dtype>

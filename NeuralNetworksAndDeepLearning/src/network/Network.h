@@ -132,20 +132,6 @@ public:
 	 */
 	void setDataSetMean(float *dataSetMean);
 
-
-
-
-/*
-#ifndef GPU_MODE
-public:
-	void feedforward(const rcube &input, const char *end=0);
-#else
-public:
-	void feedforward(const Dtype *input, const char *end=0);
-#endif
-*/
-
-
 protected:
 	/**
 	 * @details 배치단위의 학습이 종료된 후 학습된 내용을 적절한 정규화 과정을 거쳐 네트워크에 반영한다.
@@ -177,7 +163,16 @@ protected:
 
 
 	//void checkAbnormalParam();
-	void checkLearnableParamIsNan();
+	//void checkLearnableParamIsNan();
+
+
+
+
+	void _feedforward(uint32_t batchIndex);
+	void _backpropagation(uint32_t batchIndex);
+
+
+
 
 
 

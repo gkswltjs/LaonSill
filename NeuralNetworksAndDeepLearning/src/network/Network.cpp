@@ -225,21 +225,15 @@ double Network<Dtype>::evaluateTestSet() {
 template <typename Dtype>
 double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
-	InputLayer<Dtype>* inputLayer = layersConfig->_inputLayer;
 	OutputLayer<Dtype>* outputLayer = layersConfig->_outputLayers[0];
-	const uint32_t baseIndex = batchIndex*config->_inDim.batches;
+	int baseIndex = batchIndex*config->_inDim.batches;
 
-	// FEEDFORWARD
-	inputLayer->feedforward(config->_dataSet, baseIndex);
-	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
-		layersConfig->_layers[i]->feedforward();
-	}
+	_feedforward(batchIndex);
 
 	const uint32_t numLabels = outputLayer->getOutDimension().rows;
-	Data<Dtype>* networkOutput = outputLayer->getOutput();
+	Data<Dtype>* networkOutput = outputLayer->_outputData[0];
 
-	//const uint32_t* y = config->_dataSet->getTestLabelAt(batchIndex*in_dim.batches);
-	//double cost = outputLayer->cost(y);
+
 	double cost = outputLayer->cost(config->_dataSet, baseIndex);
 
 	networkOutput->print_data("networkOutput:");
@@ -362,34 +356,8 @@ int Network<Dtype>::testEvaluateResult(const rvec &output, const rvec &y) {
 
 template <typename Dtype>
 void Network<Dtype>::trainBatch(uint32_t batchIndex) {
-	LayersConfig<Dtype>* layersConfig = getLayersConfig();
-
-	DataSet<Dtype>* dataSet = config->_dataSet;
-	InputLayer<Dtype>* inputLayer = layersConfig->_inputLayer;
-	vector<OutputLayer<Dtype>*> outputLayers = getLayersConfig()->_outputLayers;
-
-	int baseIndex = batchIndex*config->_inDim.batches;
-
-	// FORWARD PASS
-	inputLayer->feedforward(dataSet, baseIndex);
-	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
-		layersConfig->_layers[i]->feedforward();
-	}
-
-	// BACKWARD PASS
-	for (uint32_t i = 0; i < outputLayers.size(); i++) {
-		outputLayers[i]->backpropagation(dataSet, baseIndex);
-	}
-	for (uint32_t i = layersConfig->_layers.size()-1; i > 0; i--) {
-		OutputLayer<Dtype>* outputLayer =
-				dynamic_cast<OutputLayer<Dtype>*>(layersConfig->_layers[i]);
-		if (outputLayer) continue;
-		HiddenLayer<Dtype>* hiddenLayer =
-				dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[i]);
-		if (hiddenLayer) {
-			hiddenLayer->backpropagation();
-		}
-	}
+	_feedforward(batchIndex);
+	_backpropagation(batchIndex);
 }
 
 #endif
@@ -573,68 +541,6 @@ void Network<Dtype>::checkAbnormalParam() {
 */
 
 
-template <typename Dtype>
-void Network<Dtype>::checkLearnableParamIsNan() {
-
-	/*
-	const uint32_t numLayers = getLayersConfig()->_layers.size();
-	for(uint32_t i = 0; i < numLayers; i++) {
-		Layer<Dtype>* layer = getLayersConfig()->_layers[i];
-
-		if(layer) {
-			if(layer->_input->is_nan_data()) {
-				cout << layer->getName() << " input data is nan data ... " << endl;
-			}
-			if(layer->_output->is_nan_data()) {
-				cout << layer->getName() << " output data is nan data ... " << endl;
-			}
-		}
-	}
-
-
-	for(uint32_t i = numLayers-1; i >= 0; i++) {
-
-	}
-	*/
-
-
-
-	/*
-	const uint32_t numLearnableLayers = getLayersConfig()->_learnableLayers.size();
-	for(uint32_t i = 0; i < numLearnableLayers; i++) {
-		FullyConnectedLayer<Dtype>* fullyConnectedLayer =
-        dynamic_cast<FullyConnectedLayer<Dtype>*>(getLayersConfig()->_learnableLayers[i]);
-		if(fullyConnectedLayer) {
-			if(fullyConnectedLayer->_params[0]->is_nan_grad()) {
-				cout << fullyConnectedLayer->getName() << " is nan grad ... " << endl;
-			}
-		} else {
-			ConvLayer<Dtype>* convLayer = dynamic_cast<ConvLayer<Dtype>*>(getLayersConfig()->_learnableLayers[i]);
-			if(convLayer) {
-				if(convLayer->_params[0]->is_nan_grad()) {
-					cout << convLayer->getName() << " is nan grad ... " << endl;
-				}
-			}
-		}
-	}
-	*/
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
 template <typename Dtype>
@@ -804,5 +710,88 @@ Layer<Dtype>* Network<Dtype>::findLayer(const string name) {
 }
 
 
+template <typename Dtype>
+void Network<Dtype>::_feedforward(uint32_t batchIndex) {
+	LayersConfig<Dtype>* layersConfig = getLayersConfig();
+	InputLayer<Dtype>* inputLayer = layersConfig->_inputLayer;
+	int baseIndex = batchIndex*config->_inDim.batches;
+
+	// reset multi-branch data before feedforward
+	//for (uint32_t i = 0; i < layersConfig->_multiBranchDataVec.size(); i++) {
+	//	layersConfig->_multiBranchDataVec[i]->reset_device_data();
+	//}
+
+	inputLayer->feedforward(config->_dataSet, baseIndex);
+	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->feedforward();
+	}
+}
+
+
+template <typename Dtype>
+void Network<Dtype>::_backpropagation(uint32_t batchIndex) {
+	LayersConfig<Dtype>* layersConfig = getLayersConfig();
+	DataSet<Dtype>* dataSet = config->_dataSet;
+	vector<OutputLayer<Dtype>*> outputLayers = layersConfig->_outputLayers;
+	int baseIndex = batchIndex*config->_inDim.batches;
+
+	// reset multi-branch grad before backpropagation
+	//for (uint32_t i = 0; i < layersConfig->_multiBranchGradVec.size(); i++) {
+	//	layersConfig->_multiBranchGradVec[i]->reset_device_grad();
+	//}
+
+	for (int i = layersConfig->_layers.size()-1; i >= 0; i--) {
+		OutputLayer<Dtype>* outputLayer =
+				dynamic_cast<OutputLayer<Dtype>*>(layersConfig->_layers[i]);
+		if (outputLayer) {
+			outputLayer->backpropagation(dataSet, baseIndex);
+		}
+
+		HiddenLayer<Dtype>* hiddenLayer =
+				dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[i]);
+		if (hiddenLayer) {
+			hiddenLayer->backpropagation();
+		}
+	}
+}
+
+
+
 template class Network<float>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

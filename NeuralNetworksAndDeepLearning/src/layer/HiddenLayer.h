@@ -41,11 +41,11 @@ public:
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			this->_inputs = inputs;
+			Layer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			this->_outputs = outputs;
+			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		Layer<Dtype>* build() = 0;
@@ -72,7 +72,7 @@ public:
 
 	HiddenLayer();
 	HiddenLayer(Builder* builder);
-	HiddenLayer(const std::string name);
+	HiddenLayer(const std::string& name);
 	virtual ~HiddenLayer();
 
 

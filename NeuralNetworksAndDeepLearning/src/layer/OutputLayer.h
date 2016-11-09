@@ -78,11 +78,11 @@ public:
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			this->_inputs = inputs;
+			FullyConnectedLayer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			this->_outputs = outputs;
+			FullyConnectedLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		Layer<Dtype>* build() = 0;

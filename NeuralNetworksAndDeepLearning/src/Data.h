@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 #include "common.h"
 #include "Util.h"
@@ -23,6 +24,7 @@ template <typename Dtype>
 class Data {
 public:
 	Data();
+	Data(Data<Dtype>* data, uint32_t type);
 	Data(const std::vector<uint32_t>& shape);
 	virtual ~Data();
 
@@ -31,6 +33,13 @@ public:
 
 
 	size_t getCount() const { return _count; }
+	size_t getCountByAxis(uint32_t axis) const {
+		size_t count = 1;
+		for (uint32_t i = axis; i < _shape.size(); i++) {
+			count *= _shape[i];
+		}
+		return count;
+	}
 	const std::vector<uint32_t>& getShape() const { return _shape; }
 
 
@@ -261,13 +270,13 @@ public:
 
 
 
-	bool is_nan_data() { return _data.is_nan_mem(); }
-	bool is_nan_grad() { return _grad.is_nan_mem(); }
-	bool is_inf_data() { return _data.is_inf_mem(); }
-	bool is_inf_grad() { return _grad.is_inf_mem(); }
+	bool is_nan_data() { return _data->is_nan_mem(); }
+	bool is_nan_grad() { return _grad->is_nan_mem(); }
+	bool is_inf_data() { return _data->is_inf_mem(); }
+	bool is_inf_grad() { return _grad->is_inf_mem(); }
 
-	uint32_t bound_data() { return _data.bound_mem(); }
-	uint32_t bound_grad() { return _grad.bound_mem(); }
+	uint32_t bound_data() { return _data->bound_mem(); }
+	uint32_t bound_grad() { return _grad->bound_mem(); }
 
 
 
@@ -289,8 +298,9 @@ public:
 
 
 public:
-	SyncMem<Dtype> _data;				///< Data의 데이터
-	SyncMem<Dtype> _grad;				///< Data의 그레디언트
+	//std::shared_ptr<Data<Dtype>> _input;
+	std::shared_ptr<SyncMem<Dtype>> _data;				///< Data의 데이터
+	std::shared_ptr<SyncMem<Dtype>> _grad;				///< Data의 그레디언트
 
 private:
     std::vector<uint32_t> _shape;			///< Data의 shape, Batches, Channels, Rows, Columns의 4차원 벡터로 구성

@@ -27,7 +27,7 @@
 using namespace std;
 
 template <typename Dtype>
-Layer<Dtype>::Layer(const string name) {
+Layer<Dtype>::Layer(const string& name) {
 	initialize(0, name);
 }
 

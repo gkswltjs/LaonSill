@@ -31,6 +31,10 @@ DepthConcatLayer<Dtype>::DepthConcatLayer(const string name)
 template <typename Dtype>
 DepthConcatLayer<Dtype>::~DepthConcatLayer() {}
 
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::initialize() {
+	this->type = Layer<Dtype>::DepthConcat;
+}
 
 template <typename Dtype>
 //void DepthConcatLayer<Dtype>::shape(uint32_t idx, io_dim in_dim, Data<Dtype>* prevLayerOutput) {
@@ -40,7 +44,16 @@ void DepthConcatLayer<Dtype>::shape() {
 	//if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
 	//this->out_dim.channels += in_dim.channels;
 
-	//HiddenLayer<Dtype>::shape(idx, in_dim, prevLayerOutput);
+
+	this->out_dim.channels = 0;
+	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+		this->out_dim.channels += this->_inputData[i]->getShape()[1];
+	}
+	this->out_dim.batches = this->_inputData[0]->getShape()[0];
+	this->out_dim.rows = this->_inputData[0]->getShape()[2];
+	this->out_dim.cols = this->_inputData[0]->getShape()[3];
+
+	HiddenLayer<Dtype>::shape();
 
 #ifdef DEPTHCONCAT_LOG
 	cout << "shape depthConcatLayer in_dim: " << this->in_dim.batches << "x" << this->in_dim.channels << "x" << this->in_dim.rows << "x" << this->in_dim.cols << endl;
@@ -62,53 +75,73 @@ void DepthConcatLayer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
 
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::_shape(bool recursive) {
-	this->in_dim.channels = this->out_dim.channels;
-	this->out_dim.rows = this->in_dim.rows;
-	this->out_dim.cols = this->in_dim.cols;
-	this->out_dim.batches = this->in_dim.batches;
+	this->in_dim = this->out_dim;
 
 	if (recursive) {
 		HiddenLayer<Dtype>::_shape();
 	}
 }
 
+
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::_feedforward() {
+	uint32_t batchOffset = 0;
+	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+		batchOffset += this->_inputData[i]->getCountByAxis(1);
+	}
+
+	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
+	const uint32_t batchSize = this->_inputData[0]->getShape()[0];
+	uint32_t inBatchOffset = 0;
+	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+		const Dtype* d_inputData = this->_inputData[i]->device_data();
+		const uint32_t inputCountByChannel = this->_inputData[i]->getCountByAxis(1);
+		if (i > 0) {
+			inBatchOffset += this->_inputData[i-1]->getCountByAxis(1);
+		}
+		for (uint32_t j = 0; j < batchSize; j++) {
+			checkCudaErrors(cudaMemcpyAsync(
+					d_outputData+batchOffset*j+inBatchOffset,
+					d_inputData+inputCountByChannel*j,
+					inputCountByChannel,
+					cudaMemcpyDeviceToDevice));
+		}
+	}
+}
+
+
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::_backpropagation() {
+	uint32_t batchOffset = 0;
+	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+		batchOffset += this->_inputData[i]->getCountByAxis(1);
+	}
+
+	const Dtype* d_outputData = this->_outputData[0]->device_data();
+	const uint32_t batchSize = this->_inputData[0]->getShape()[0];
+	uint32_t inBatchOffset = 0;
+	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+		Dtype* d_inputData = this->_inputData[i]->mutable_device_data();
+		const uint32_t inputCountByChannel = this->_inputData[i]->getCountByAxis(1);
+		if (i > 0) {
+			inBatchOffset += this->_inputData[i-1]->getCountByAxis(1);
+		}
+		for (uint32_t j = 0; j < batchSize; j++) {
+			checkCudaErrors(cudaMemcpyAsync(
+					d_inputData+inputCountByChannel*j,
+					d_outputData+batchOffset*j+inBatchOffset,
+					inputCountByChannel,
+					cudaMemcpyDeviceToDevice));
+		}
+	}
+}
+
+
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::_clearShape() {
-	offsetIndex = 0;
 	HiddenLayer<Dtype>::_clearShape();
 }
 
-
-/*
-template <typename Dtype>
-void DepthConcatLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap) {
-	HiddenLayer<Dtype>::_load(ifs, layerMap);
-	initialize();
-	DepthConcatLayer<Dtype>::_shape(false);
-}
-*/
-
-
-template <typename Dtype>
-void DepthConcatLayer<Dtype>::propBackpropagation() {
-	HiddenLayer<Dtype>*hiddenLayer;
-	uint32_t offset = 0;
-	/*
-	for(uint32_t i = 0; i < this->prevLayers.size(); i++) {
-		hiddenLayer = dynamic_cast<HiddenLayer<Dtype>*>(this->prevLayers[i]);
-		if(i > 0) {
-			offset += this->prevLayers[i-1]->getOutDimension().batchsize();
-		}
-
-		// !!! 대부분의 경우 _backpropagation에서 사용한 d_inputGrad을 그대로 사용하므로 문제가 없지만
-		// DepthConcatLayer와 같이 d_inputGrad을 분배해야 하는 케이스가 있으므로 d_inputGrad을 그대로 사용하지 말고
-		// getter를 사용하여 이전 레이어에 d_inputGrad을 전달해야 한다.
-		if(hiddenLayer) {
-			//hiddenLayer->backpropagation(this->id, this->getInput(), offset);
-		}
-	}
-	*/
-}
 
 
 

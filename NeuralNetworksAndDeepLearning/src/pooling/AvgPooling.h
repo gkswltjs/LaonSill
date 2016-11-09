@@ -114,12 +114,11 @@ public:
 	 */
 	AvgPooling(pool_dim pool_d) {
 		this->type = Pooling<Dtype>::Avg;
-		//this->alpha = 1.0f;
-		//this->beta = 0.0f;
 
 		checkCUDNN(cudnnCreatePoolingDescriptor(&this->poolDesc));
 
-		int pad = (pool_d.rows-1)/2;
+		//int pad = (pool_d.rows-1)/2;
+		int pad = 0;
 		checkCUDNN(cudnnSetPooling2dDescriptor(this->poolDesc,
 				CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING,
 				CUDNN_PROPAGATE_NAN,

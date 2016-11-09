@@ -6,10 +6,6 @@
  * @details
  */
 
-
-
-
-
 #ifndef LAYER_LAYER_H_
 #define LAYER_LAYER_H_
 
@@ -54,7 +50,8 @@ public:
 		Inception, 				// 인셉션 레이어
 		LRN,					// Local Response Normaization 레이어
 		Sigmoid, 				// 시그모이드 레이어
-		Softmax					// 소프트맥스 레이어
+		Softmax,				// 소프트맥스 레이어
+		Split					//
 	};
 
 
@@ -154,7 +151,7 @@ public:
 	 * @details 레이어 클래스 생성자
 	 * @param name 레이어 이름에 대한 문자열 포인터
 	 */
-	Layer(const std::string name);
+	Layer(const std::string& name);
 	/**
 	 * @details 레이어 클래스 소멸자
 	 */
@@ -181,35 +178,20 @@ public:
 	 */
 	typename Layer<Dtype>::Type getType() const { return this->type; }
 	/**
-	 * @details 레이어에 연결된 다음 레이어 목록 벡터를 조회한다.
-	 * @return 레이어에 연결된 다음 레이어 목록 벡터
+	 * @brief 레이어의 입력 데이터 이름 목록을 조회한다.
+	 * @return 레이어 입력 데이터 이름 목록
 	 */
-    //std::vector<Layer<Dtype>*>& getNextLayers() { return this->nextLayers; }
-	/**
-	 * @details 레이어에 연결된 이전 레이어 목록 벡터를 조회한다.
-	 * @return 레이어에 연결된 다음 레이어 목록 벡터
-	 */
-    //std::vector<Layer<Dtype>*>& getPrevLayers() { return this->prevLayers; }
-	/**
-	 * @details 레이어에 연결된 다음 레이어의 수를 조회한다.
-	 * @return 레이어에 연결된 다음 레이어의 수
-	 */
-	//int getNextLayerSize() const { return this->nextLayers.size(); }
-	/**
-	 * @details 레이어에 연결된 이전 레이어의 수를 조회한다.
-	 * @return 레이어에 연결된 이전 레이어의 수
-	 */
-	//int getPrevLayerSize() const { return this->prevLayers.size(); }
-
 	std::vector<std::string>& getInputs() { return this->_inputs; }
 	std::vector<std::string>& getOutputs() { return this->_outputs; }
 	uint32_t getInputsSize() const { return this->_inputs.size(); }
 	uint32_t getOutputsSize() const { return this->_outputs.size(); }
 
+	/**
+	 * @brief 레이어의 입력 데이터 목록을 조회한다.
+	 * @return 레이어 입력 데이터 목록
+	 */
 	std::vector<Data<Dtype>*>& getInputData() { return this->_inputData; }
 	std::vector<Data<Dtype>*>& getOutputData() { return this->_outputData; }
-
-
 
 	/**
 	 * @details 레이어의 입력 데이터 구조정보를 담고 있는 구조체를 조회한다.
@@ -234,78 +216,10 @@ public:
 	void setOutDimension(io_dim out_dim) { this->out_dim = out_dim; }
 
 	/**
-	 * @details 레이어의 입력값 장치 포인터를 조회한다.
-	 * @return 레이어 입력값 장치 포인터
-	 */
-	virtual Data<Dtype>* getInput() { return this->_inputData[0]; }
-	/**
-	 * @details 레이어의 출력값 장치 포인터를 조회한다.
-	 * @return 레이어 출력값 장치 포인터
-	 */
-	virtual Data<Dtype>* getOutput() { return this->_outputData[0]; }
-
-	/**
 	 * @details 레이어에 네트워크 설정값을 설정한다.
 	 * @param networkConfig 네트워크 설정값 객체
 	 */
 	virtual void setNetworkConfig(NetworkConfig<Dtype>* networkConfig) { this->networkConfig = networkConfig; }
-
-
-
-
-	////////////////////////////////////////////////////////////////////
-	//
-	////////////////////////////////////////////////////////////////////
-	/**
-	 * @details 레이어에 이전 레이어를 추가한다.
-	 * @param prevLayer 현재 레이어에 연결할 이전 레이어의 정보 구조체
-	 */
-	//void addPrevLayer(Layer<Dtype>* prevLayer);
-	/**
-	 * @details 레이어에 다음 레이어를 추가한다.
-	 * @param nextLayer 현재 레이어에 연결할 다음 레이어의 정보 구조체
-	 */
-	//void addNextLayer(Layer<Dtype>* nextLayer);
-	/**
-	 * @details 현재 레이어에 연결된 첫 이전 레이어 여부를 조회한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어 아이디
-	 * @return 현재 레이어에 연결된 첫 이전 레이어 여부
-	 */
-	//bool isFirstPrevLayerRequest(uint32_t idx);
-	/**
-	 * @details 현재 레이어에 연결된 마지막 이전 레이어 여부를 조회한다.
-	 * @param idx 요청을 보낸 이전 레이어의 id
-	 * @return 현재 레이어에 연결된 마지막 이전 레이어 여부
-	 */
-	//bool isLastPrevLayerRequest(uint32_t idx);
-	/**
-	 * @details isLastPrevLayerRequest()의 Logging버전 (임시 method)
-	 *          어떤 레이어의 어떤 method에 대해 테스트하고 있는지,
-	 *          테스트를 통과했는지 통과하지 못했는지를 화면에 출력한다.
-	 * @param idx 요청을 보낸 이전 레이어의 id
-	 * @param method 이 method를 호출한 method의 이름
-	 * @return 현재 레이어에 연결된 마지막 이전 레이어 여부
-	 */
-	//bool w_isLastPrevLayerRequest(uint32_t idx, const std::string method);
-	/**
-	 * @details 현재 레이어에 연결된 첫 다음 레이어 여부를 조회한다.
-	 * @param idx 현재 레이어에 연결된 다음 레이어 아이디
-	 * @return 현재 레이어에 연결된 첫 다음 레이어 여부
-	 */
-	//bool isFirstNextLayerRequest(uint32_t idx);
-	/**
-	 * @details 현재 레이어에 연결된 마지막 다음 레이어 여부를 조회한다.
-	 * @param idx 요청을 보낸 다음 레이어의 id
-	 * @return 현재 레이어에 연결된 마지막 다음 레이어 여부
-	 */
-	//bool isLastNextLayerRequest(uint32_t idx);
-	/**
-	 * @details isLastNextLayerRequest()의 Logging버전 (임시 method)
-	 *          어떤 레이어의 어떤 method에 대해 테스트하고 있는지,
-	 *          테스트를 통과했는지 통과하지 못했는지를 화면에 출력한다.
-	 * @param idx 요청을 보낸 다음 레이어의 id
-	 */
-	//bool w_isLastNextLayerRequest(uint32_t idx, const std::string method);
 
 	/**
 	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화하고
@@ -326,28 +240,7 @@ public:
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 */
 	virtual void clearShape(uint32_t idx);
-	/**
-	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
-	 * @param idx 요청을 보낸 이전 레이어의 id
-	 * @param ofs 레이어를 쓸 출력 스트림
-	 */
-	//virtual void save(uint32_t idx, std:ofstream &ofs);
-	/**
-	 * @details 현재 레이어의 메타정보를 스트림의 헤더에 쓰고 다음 레이어들에 대해 saveHeader()를 요청한다.
-	 *          입력 레이어 또는 내부 레이어가 있는 레이어(e.g 인셉션레이어)에서 사용한다.
-	 * @param  idx 요청을 보낸 이전 레이어의 id
-	 * @param ofs 레이어를 쓸 출력 스트림
-	 */
-	//virtual void saveHeader(uint32_t idx, std:ofstream &ofs);
-	/**
-	 * @details 현재 레이어를 스트림으로부터 읽어 들여 복구한다.
-	 *          - 레이어의 상속받은 상위 클래스 영역 읽기 및 초기화 (_shape() 포함, Layer 클래스 제외)
-	 *          - 현재 클래스 영역 읽기 및 초기화 (_shape() 포함)
-	 *          읽기에 대해서 최초 레이어 (입력 레이어)에서 글로벌하게 진행.
-	 * @param ifs 레이어를 읽어들일 입력 스트림
-	 * @param layerMap
-	 */
-	//virtual void load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
+
 
 #ifndef GPU_MODE
 	/**
@@ -377,26 +270,6 @@ protected:
 	 * @param name 레이어의 이름 문자열 포인터
 	 */
 	void initialize(uint32_t id, const std::string name);
-	/**
-	 * @details 레이어 메타정보로부터 레이어 구성을 로드한다.
-	 * @param ifs 레이어를 읽어들일 입력 스트림
-	 * @param layerMap 레이어 메타정보로부터 읽어 레이어 주소를 키, 레이어를 값으로 생성한 레이어 맵
-	 */
-	//virtual void loadNetwork(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
-	/**
-	 * @details 현재 레이어 로드 후 이전/다음 레이어 포인터 벡터에 로드된 레이어 포인터 값을 키로하여
-	 *          레이어맵의 실제 레이어 객체를 찾아서 이전/다음 레이어에 연결한다.
-	 * @param layerMap save당시 레이어의 주소를 키, 해당 레이어를 값으로 하는 맵
-	 */
-	//virtual void updateLayerRelation(std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
-
-
-
-	//bool isSharedInput();
-	//bool isSharedOutput();
-
-
-
 
 	////////////////////////////////////////////////////////////////////
 	// prop 계열의 method (레이어 연결을 따라 연쇄 호출되는 method) 들에 대해
@@ -416,20 +289,6 @@ protected:
 	 */
 	virtual void _clearShape();
 	/**
-	 * @details 현재 레이어를 스트림에 쓴다.
-	 * @param ofs 레이어를 쓸 출력 스트림
-	 */
-	//virtual void _save(std:ofstream &ofs);
-	/**
-	 * @details 현재 레이어를 스트림으로부터 읽어 들여 복구한다.
-	 *          - 레이어의 상속받은 상위 클래스 영역 읽기 및 초기화 (_shape() 포함, Layer 클래스 제외)
-	 *          - 현재 클래스 영역 읽기 및 초기화 (_shape() 포함)
-	 *          읽기에 대해서 최초 레이어 (입력 레이어)에서 글로벌하게 진행.
-	 * @param ifs 레이어를 읽어들일 입력 스트림
-	 * @param layerMap
-	 */
-	//virtual void _load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
-	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
 	 */
 	virtual void _feedforward();
@@ -448,12 +307,6 @@ protected:
 
 
 
-
-
-
-
-
-
 	////////////////////////////////////////////////////////////////////
 	// 이전, 이후 레이어로의 method 호출을 담당하는 호출 propagation method들
 	////////////////////////////////////////////////////////////////////
@@ -465,11 +318,11 @@ protected:
 	/**
 	 * @details 다음 레이어들에 대해 reshape() 메쏘드를 호출한다.
 	 */
-	void propReshape();
+	//void propReshape();
 	/**
 	 * @details 다음 레이어들에 대해 clearShape() 메쏘드를 호출한다.
 	 */
-	void propClearShape();
+	//void propClearShape();
 	/**
 	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
 	 */
@@ -490,6 +343,9 @@ protected:
 
 
 public:
+	std::vector<std::string> _inputs;					///< 레이어 입력 데이터 이름 목록 벡터
+	std::vector<std::string> _outputs;					///< 레이어 출력 데이터 이름 목록 벡터
+
 	std::vector<Data<Dtype>*> _inputData;				///< 레이어 입력 데이터 목록 벡터
 	std::vector<Data<Dtype>*> _outputData;				///< 레이어 출력 데이터 목록 벡터
 
@@ -507,8 +363,7 @@ protected:
     //std::vector<Layer<Dtype>*> prevLayers;				///< 현재 레이어의 이전(입력) 레이어 목록 벡터
     //std::vector<Layer<Dtype>*> nextLayers;				///< 현재 레이어의 다음(출력) 레이어 목록 벡터
 
-    std::vector<std::string> _inputs;					///< 레이어 입력 데이터 이름 목록 벡터
-    std::vector<std::string> _outputs;					///< 레이어 출력 데이터 이름 목록 벡터
+
 
 
 

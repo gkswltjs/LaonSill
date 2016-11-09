@@ -20,13 +20,12 @@
 #include "../layer/InputLayer.h"
 #include "../layer/OutputLayer.h"
 #include "../layer/LearnableLayer.h"
+#include "../layer/SplitLayer.h"
 #include "../monitor/NetworkListener.h"
 #include "../layer/LayerFactory.h"
 #include "../Worker.h"
 #include "../log/ColdLog.h"
 
-
-using namespace std;
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class Worker;
@@ -41,6 +40,7 @@ public:
 
 
 		Builder* layer(typename Layer<Dtype>::Builder* layerBuilder) {
+			// id 중복이 없도록 id-layer의 맵에 레이어를 추가한다.
 			uint32_t layerIndex = layerBuilder->_id;
 			typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
             it = _layerWise.find(layerIndex);
@@ -61,7 +61,7 @@ public:
             std::vector<LearnableLayer<Dtype>*> learnableLayers;
             std::map<uint32_t, Layer<Dtype>*> idLayerMap;
 
-            // (1) Layer Builder의 설정대로 Layer들을 생성한다.
+            		// (1) 전체 레이어에 대해 Layer Builder의 설정대로 Layer들을 생성한다.
             typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
 			for (it = _layerWise.begin(); it != _layerWise.end(); it++) {
                 Layer<Dtype>* currentLayer = it->second->build();
@@ -101,61 +101,132 @@ public:
 				exit(1);
 			}
 
-
 			const uint32_t layerSize = layers.size();
 
-			// 생성된 레이어들의 prev, next 관계를 설정한다.
-			/*
-			for(uint32_t i = 0; i < layerSize; i++) {
-				Layer<Dtype>* currentLayer = layers[i];
-				for(uint32_t j = 0; j < currentLayer->getNextLayers().size(); j++) {
-					typename std::map<uint32_t, Layer<Dtype>*>::iterator it =
-                        idLayerMap.find((size_t)currentLayer->getNextLayers()[j]);
-					if(it != idLayerMap.end()) {
-						currentLayer->getNextLayers()[j] = it->second;
-					}
-				}
-				for(uint32_t j = 0; j < currentLayer->getPrevLayers().size(); j++) {
-					typename std::map<uint32_t, Layer<Dtype>*>::iterator it =
-                        idLayerMap.find((size_t)currentLayer->getPrevLayers()[j]);
-					if(it != idLayerMap.end()) {
-						currentLayer->getPrevLayers()[j] = it->second;
-					}
-				}
-			}
-			*/
-
-			// 레이어 이름으로 레이어 객체를 찾을 수 있도록 이름-레이어 맵을 생성
+			// (2) 레이어 이름으로 레이어 객체를 찾을 수 있도록 이름-레이어 맵을 생성
             std::map<std::string, Layer<Dtype>*> nameLayerMap;
 			for (uint32_t i = 0; i < layerSize; i++) {
 				const std::string& layerName = layers[i]->getName();
 				typename std::map<std::string, Layer<Dtype>*>::iterator it = nameLayerMap.find(layerName);
 				if (it != nameLayerMap.end()) {
-                    std::cout << "layer name used more than once ... : " << layerName <<
-                        std::endl;
+					std::cout << "layer name used more than once ... : " << layerName << std::endl;
 					exit(1);
 				}
 				nameLayerMap[layerName] = layers[i];
 			}
 
 			// 레이어의 입,출력 데이터 이름으로부터 유일한 데이터를 생성, 이름-데이터 맵을 생성
-			cout << "update layer data to unique objects ... " << endl;
+			std::cout << "update layer data to unique objects ... " << std::endl;
 			std::map<std::string, Data<Dtype>*> layerDataMap;
 			for (uint32_t i = 0; i < layerSize; i++) {
 				std::vector<std::string> dataNameVec;
 				Layer<Dtype>* layer = layers[i];
-				cout << "\tfor layer " << layer->getName() << endl;
-				cout << "\tinput data: " << layer->getInputs().size() << endl;
+				std::cout << "\tfor layer " << layer->getName() << std::endl;
+				std::cout << "\tinput data: " << layer->getInputs().size() << std::endl;
 				_updateLayerData(layerDataMap, layer->getInputs(), layer->getInputData());
-				cout << "\toutput data: " << layer->getOutputs().size() << endl;
+				std::cout << "\toutput data: " << layer->getOutputs().size() << std::endl;
 				_updateLayerData(layerDataMap, layer->getOutputs(), layer->getOutputData());
 			}
 
+			///////////////////////////////////////////////////////////////////////////////////
+			// 레이어 아이디로 multi branch의 input data, output grad인지 조회할 수 있는 맵 생성
+			std::map<std::string, uint32_t> outputDataCountMap;
+			std::map<std::string, uint32_t> inputGradCountMap;
+			for (uint32_t i = 0; i < layerSize; i++) {
+				Layer<Dtype>* layer = layers[i];
+				std::vector<std::string>& inputs = layer->_inputs;
+				std::vector<std::string>& outputs = layer->_outputs;
+
+				for (uint32_t j = 0; j < outputs.size(); j++) {
+					outputDataCountMap[outputs[j]] = outputDataCountMap[outputs[j]]+1;
+				}
+				for (uint32_t j = 0; j < inputs.size(); j++) {
+					inputGradCountMap[inputs[j]] = inputGradCountMap[inputs[j]]+1;
+				}
+			}
+
+			typename std::map<std::string, uint32_t>::iterator odcmItr;
+			for (odcmItr = outputDataCountMap.begin(); odcmItr != outputDataCountMap.end(); odcmItr++) {
+				if (odcmItr->second > 1) {
+					std::cout << "output data multi branch is not allowed ... " << std::endl;
+					exit(1);
+				}
+			}
+
+			typename std::map<std::string, uint32_t>::iterator igcmItr;
+			for (igcmItr = inputGradCountMap.begin(); igcmItr != inputGradCountMap.end(); igcmItr++) {
+				if (igcmItr->second > 1) {
+					std::cout << "Split Layer for data " << igcmItr->first <<
+							" will be added ... " << std::endl;
+				}
+			}
+
+
+			std::cout << "Adjusting Split Layers ... " << std::endl;
+			std::map<std::string, SplitLayer<Dtype>*> dataSplitLayerMap;
+			typename std::map<std::string, SplitLayer<Dtype>*>::iterator dataSplitLayerMapItr;
+			for (uint32_t i = 0; i < layerSize; i++) {
+				Layer<Dtype>* layer = layers[i];
+				std::vector<std::string>& inputs = layer->_inputs;
+				for (uint32_t j = 0; j < inputs.size(); j++) {
+					if (inputGradCountMap[inputs[j]] > 1) {
+						std::cout << "input data " << inputs[j] << " of layer " <<
+								layer->getName() << " has multi branch " << std::endl;
+
+						const std::string& dataName = inputs[j];
+						const std::string splitLayerName = dataName+"-split";
+						Data<Dtype>* inputData = layerDataMap[dataName];
+
+						dataSplitLayerMapItr = dataSplitLayerMap.find(splitLayerName);
+						SplitLayer<Dtype>* splitLayer = 0;
+						if (dataSplitLayerMapItr == dataSplitLayerMap.end()) {
+							std::cout << "SplitLayer for data " << dataName << " has not been created yet ... " << std::endl;
+							std::cout << "Creating Split Layer " << splitLayerName << " ... " << std::endl;
+
+							splitLayer = new SplitLayer<Dtype>(splitLayerName);
+							dataSplitLayerMap[splitLayerName] = splitLayer;
+							splitLayer->_inputs.push_back(dataName);
+							splitLayer->_inputData.push_back(inputData);
+							layers.push_back(splitLayer);
+						} else {
+							std::cout << "SplitLayer for data " << dataName << " is already created ... " << std::endl;
+							splitLayer = dataSplitLayerMapItr->second;
+						}
+
+						// SplitLayer 업데이트
+						const uint32_t splitDataIndex = splitLayer->_outputs.size();
+						const std::string splitDataName = dataName+"-"+std::to_string(splitDataIndex);
+						splitLayer->_outputs.push_back(splitDataName);
+
+						std::cout << splitDataIndex << "th SplitLayer Ouput updated with " << splitDataName << std::endl;
+
+						Data<Dtype>* data = new Data<Dtype>(inputData, 1);
+						splitLayer->_outputData.push_back(data);
+						layerDataMap[splitDataName] = data;
+
+						// Post SplitLayer Layer 업데이트
+						inputs[j] = splitDataName;
+						layer->_inputData[j] = data;
+					}
+				}
+			}
+
+
+
 			// 레이어 호출 순서에 따라 순서 재조정
 			// 의존성이 해결된 레이어를 앞에 배치하여 순차적으로 호출시 적절한 결과를 보장하도록 함
-			cout << "ordering layers ... " << endl;
+			// XXX: 내부적으로 layers vector를 변경시키므로 call by value하든지 다른 수단이 필요.
+			// 이후로 사용하지 않으면 되나 이상해 보임.
+			std::cout << "ordering layers ... " << std::endl;
 			std::vector<Layer<Dtype>*> olayers;
 			_orderLayers(layers, olayers);
+
+
+			std::cout << "final layer order: " << std::endl;
+			for (uint32_t i = 0; i < olayers.size(); i++) {
+				std::cout << i << ": " << olayers[i]->getName() << std::endl;
+			}
+
 
 
 			return (new LayersConfig(this))
@@ -165,7 +236,6 @@ public:
 				->learnableLayers(learnableLayers)
                 ->nameLayerMap(nameLayerMap)
                 ->layerDataMap(layerDataMap);
-
 		}
 
 		void save(std::ofstream& ofs) {
@@ -204,10 +274,10 @@ public:
 					Data<Dtype>* data = new Data<Dtype>();
 					dataMap[dataNameVec[i]] = data;
 					layerDataVec.push_back(data);
-					cout << "\t\tfor data " << dataNameVec[i] << ": insert new ... " << endl;
+					std::cout << "\t\tfor data " << dataNameVec[i] << ": insert new ... " << std::endl;
 				} else {
 					layerDataVec.push_back(it->second);
-					cout << "\t\tfor data " << dataNameVec[i] << ": refer old ... " << endl;
+					std::cout << "\t\tfor data " << dataNameVec[i] << ": refer old ... " << std::endl;
 				}
 			}
 		}
@@ -221,7 +291,7 @@ public:
 					if (inputLayer) {
 					// 입력 레이어인 경우,
 					//if (tempLayers[i]->getInputsSize() < 1) {
-						cout << tempLayers[i]->getName() << " is input layer ... insert ... " << endl;
+						std::cout << tempLayers[i]->getName() << " is input layer ... insert ... " << std::endl;
 						layers.push_back(tempLayers[i]);
 						dataSet.insert(tempLayers[i]->getOutputs().begin(), tempLayers[i]->getOutputs().end());
 						tempLayers.erase(tempLayers.begin()+i);
@@ -229,13 +299,13 @@ public:
 					} else {
 						// 앞선 레이어가 출력한 데이터가 현재 레이어의 모든 입력 데이터를 커버해야 처리한다.
 						if (_isSetContainsAll(dataSet, tempLayers[i]->getInputs())) {
-							cout << tempLayers[i]->getName() << "'s all input data have processed ... insert ... " << endl;
+							std::cout << tempLayers[i]->getName() << "'s all input data have processed ... insert ... " << std::endl;
 							layers.push_back(tempLayers[i]);
 							dataSet.insert(tempLayers[i]->getOutputs().begin(), tempLayers[i]->getOutputs().end());
 							tempLayers.erase(tempLayers.begin()+i);
 							break;
 						} else {
-							cout << tempLayers[i]->getName() << "'s not all input data have processed ... skip ... " << endl;
+							std::cout << tempLayers[i]->getName() << "'s not all input data have processed ... skip ... " << std::endl;
 						}
 					}
 				}
@@ -259,8 +329,11 @@ public:
     std::vector<Layer<Dtype>*> _lastLayers;
     std::vector<Layer<Dtype>*> _layers;
     std::vector<LearnableLayer<Dtype>*> _learnableLayers;
-    InputLayer<Dtype>* _inputLayer;
     std::vector<OutputLayer<Dtype>*> _outputLayers;
+    InputLayer<Dtype>* _inputLayer;
+    //std::vector<Data<Dtype>*> _multiBranchDataVec;
+    //std::vector<Data<Dtype>*> _multiBranchGradVec;
+
     std::map<std::string, Layer<Dtype>*> _nameLayerMap;
 	Builder* _builder;
 
@@ -269,12 +342,12 @@ public:
 	LayersConfig(Builder* builder) {
 		this->_builder = builder;
 	}
-	LayersConfig<Dtype>* firstLayers(std::vector<Layer<Dtype>*> firstLayers) {
+	LayersConfig<Dtype>* firstLayers(std::vector<Layer<Dtype>*>& firstLayers) {
 		this->_firstLayers = firstLayers;
         this->_inputLayer = dynamic_cast<InputLayer<Dtype>*>(firstLayers[0]);
 		return this;
 	}
-	LayersConfig<Dtype>* lastLayers(std::vector<Layer<Dtype>*> lastLayers) {
+	LayersConfig<Dtype>* lastLayers(std::vector<Layer<Dtype>*>& lastLayers) {
 		this->_lastLayers = lastLayers;
         typename std::vector<Layer<Dtype>*>::iterator iter;
         for (iter = lastLayers.begin(); iter != lastLayers.end(); iter++) {
@@ -287,22 +360,32 @@ public:
         }
 		return this;
 	}
-	LayersConfig<Dtype>* layers(std::vector<Layer<Dtype>*> layers) {
+	LayersConfig<Dtype>* layers(std::vector<Layer<Dtype>*>& layers) {
 		this->_layers = layers;
 		return this;
 	}
-	LayersConfig<Dtype>* learnableLayers(std::vector<LearnableLayer<Dtype>*> learnableLayers) {
+	LayersConfig<Dtype>* learnableLayers(std::vector<LearnableLayer<Dtype>*>& learnableLayers) {
 		this->_learnableLayers = learnableLayers;
 		return this;
 	}
-	LayersConfig* nameLayerMap(std::map<std::string, Layer<Dtype>*> nameLayerMap) {
+	LayersConfig* nameLayerMap(std::map<std::string, Layer<Dtype>*>& nameLayerMap) {
 		this->_nameLayerMap = nameLayerMap;
 		return this;
 	}
-	LayersConfig* layerDataMap(std::map<std::string, Data<Dtype>*> layerDataMap) {
+	LayersConfig* layerDataMap(std::map<std::string, Data<Dtype>*>& layerDataMap) {
 		this->_layerDataMap = layerDataMap;
 		return this;
 	}
+	/*
+	LayersConfig* multiBranchDataVec(std::vector<Data<Dtype>*>& multiBranchDataVec) {
+		this->_multiBranchDataVec = multiBranchDataVec;
+		return this;
+	}
+	LayersConfig* multiBranchGradVec(std::vector<Data<Dtype>*>& multiBranchGradVec) {
+		this->_multiBranchGradVec = multiBranchGradVec;
+		return this;
+	}
+	*/
 	void save(std::ofstream& ofs) {
 		this->_builder->save(ofs);
 	}
