@@ -27,6 +27,7 @@
         std::unique_lock<std::mutex> logLock(StdOutLog::logMutex);          \
         StdOutLog::writeLogHeader();                                        \
         fprintf(stdout, fmt, ##args);                                       \
+        fprintf(stdout, "\n");                                              \
         logLock.unlock();                                                   \
         fflush(stdout);                                                     \
     } while (0)                                                             

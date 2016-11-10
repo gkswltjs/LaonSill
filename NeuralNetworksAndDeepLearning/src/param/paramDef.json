@@ -138,6 +138,36 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 0
+},
+
+"VERSION_MAJOR" : 
+{
+    "DESC" : "specify major version number",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 0
+},
+
+"VERSION_MINOR" : 
+{
+    "DESC" : "specify minor version number",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1
+},
+
+"VERSION_PATCH" : 
+{
+    "DESC" : "specify minor version number",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 0
 }
 
 }

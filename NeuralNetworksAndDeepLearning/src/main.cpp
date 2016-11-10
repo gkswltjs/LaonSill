@@ -1,7 +1,11 @@
 #include <cstdint>
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 #include "cuda/Cuda.h"
+
+#include "3rd_party/jsoncpp/json/json.h"
 
 #include "common.h"
 #include "dataset/DataSet.h"
@@ -31,48 +35,165 @@ using namespace std;
 #ifndef CLIENT_MODE
 void network_load();
 
+void printUsageAndExit(char* prog) {
+    fprintf(stderr, "Usage: %s [-v] [-d | -f jobFilePath]\n", prog);
+    exit(EXIT_FAILURE);
+}
+
+void developerMain() {
+    // TODO: 
+    STDOUT_LOG("enter developerMain()");
+    STDOUT_LOG("exit developerMain()");
+}
+
+void loadJobFile(const char* fileName, Json::Value& rootValue) {
+    filebuf fb;
+    if (fb.open(fileName, ios::in) == NULL) {
+        fprintf(stderr, "ERROR: cannot open %s\n", fileName);
+        exit(EXIT_FAILURE);
+    }
+
+    istream is(&fb);
+    Json::Reader reader;
+    bool parse = reader.parse(is, rootValue);
+
+    if (!parse) {
+        fprintf(stderr, "ERROR: invalid json-format file.\n");
+        fprintf(stderr, "%s\n", reader.getFormattedErrorMessages().c_str());
+        fb.close();
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(int argc, char** argv) {
+    int     opt;
+    bool    useDeveloperMode = false; 
+    bool    useSingleJobMode = false;
+    char*   singleJobFilePath;
+
+    // (1) 옵션을 읽는다.
+    while ((opt = getopt(argc, argv, "vdf:")) != -1) {
+        switch (opt) {
+        case 'v':
+            printf("%s version %d.%d.%d\n", argv[0], SPARAM(VERSION_MAJOR),
+                SPARAM(VERSION_MINOR), SPARAM(VERSION_PATCH));
+            exit(EXIT_SUCCESS);
+        case 'd':
+            if (useSingleJobMode)
+                printUsageAndExit(argv[0]);
+            useDeveloperMode = true;
+            break;
+        case 'f':
+            if (useDeveloperMode)
+                printUsageAndExit(argv[0]);
+            useSingleJobMode = true;
+            singleJobFilePath = optarg;
+            break;
+        default:    /* ? */
+            printUsageAndExit(argv[0]);
+            break; 
+        }
+    }
+
+    // COMMENT: 만약 이후에 인자를 받고 싶다면 optind를 기준으로 인자를 받으면 된다.
+    //  ex. Usage: %s [-d | -f jobFilePath] hostPort 와 같은 식이라면
+    //  hostPort = atoi(argv[optind]);로 인자값을 받으면 된다.
+    //  개인적으로 host port와 같은 정보는 SPARAM으로 정의하는 것을 더 선호한다.
+
+    // (2) 서버 시작 시간 측정을 시작한다.
     struct timespec startTime;
+    SPERF_START(SERVER_RUNNING_TIME, &startTime);
 	STDOUT_BLOCK(cout << "SOOOA engine starts" << endl;);
 
-    SPERF_START(SERVER_RUNNING_TIME, &startTime);
-    // (1) load init param
+    // (3) 파라미터, 로깅 모듈을 초기화 한다.
     InitParam::init();
     Perf::init();
-
     SysLog::init();
     ColdLog::init();
-    HotLog::init();
 
-    // consumer thread + producer thread
-    HotLog::launchThread(SPARAM(CONSUMER_COUNT) + 1);
-
+    if (!useDeveloperMode) {
+        HotLog::init();
+    	HotLog::launchThread(SPARAM(CONSUMER_COUNT) + 1);
+    }
     SYS_LOG("Logging system is initialized...");
 
-    // (2) 기본 설정
+    // (4) 뉴럴 네트워크 관련 기본 설정을 한다.
+    //     TODO: SPARAM의 인자로 대체하자.
 	cout.precision(11);
 	cout.setf(ios::fixed);
 	Util::setOutstream(&cout);
 	Util::setPrint(false);
 
-    // (3) Producer&Consumer를 생성.
-    Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
+    // (5) 모드에 따른 동작을 수행한다.
+    if (useDeveloperMode) {
+        // (5-A-1) Cuda를 생성한다.
+        Cuda::create(SPARAM(CONSUMER_COUNT));
+        COLD_LOG(ColdLog::INFO, true, "CUDA is initialized");
 
-    // (4) Listener & Sess threads를 생성.
-    Communicator::launchThreads(SPARAM(SESS_COUNT));
+        // (5-A-2) DeveloperMain()함수를 호출한다.
+        developerMain();
 
-    // (5) 종료
-    Worker<float>::joinThreads();
-    Communicator::joinThreads();
+        // (5-A-3) 자원을 해제 한다.
+        Cuda::destroy();
+    } else if (useSingleJobMode) {
+        // TODO: 아직 만들다 말았음
+        // (5-B-1) Job File(JSON format)을 로딩한다.
+        Json::Value rootValue;
+        loadJobFile(singleJobFilePath, rootValue);
 
-    HotLog::destroy();
+        // (5-B-2) Producer&Consumer를 생성.
+        Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
+        
+        // (5-B-3) Network를 생성한다.
+        // TODO: Network configuration에 대한 정의 필요
+        // XXX: 1개의 Network만 있다고 가정하고 있음.
+        string networkConf = rootValue.get("Network", "").asString();
+        int networkId = Worker<float>::createNetwork();
+        Network<float>* network = Worker<float>::getNetwork(networkId); 
+        SASSUME0(network);
+        
+        // (5-B-4) Job을 생성한다.
+        // TODO: Job configuration에 대한 정의 필요
+        Json::Value jobConfList = rootValue["Job"];
+        for (int jobIndex = 0; jobIndex < jobConfList.size(); jobIndex++) {
+            Json::Value jobConf = jobConfList[jobIndex];
+            SASSUME0(jobConf.size() == 2);
+            
+            Job* newJob = new Job((Job::JobType)(jobConf[0].asInt()), network,
+                                (jobConf[1].asInt()));
+            Worker<float>::pushJob(newJob);
+        }
+        
+        // (5-B-5) Worker Thread (Producer& Consumer)를 종료를 요청한다.
+        Job* haltJob = new Job(Job::HaltMachine, NULL, 0);
+        Worker<float>::pushJob(haltJob);
+
+        // (5-B-6) Producer&Consumer를 종료를 기다린다.
+        Worker<float>::joinThreads();
+    } else {
+        // (5-C-1) Producer&Consumer를 생성.
+        Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
+
+        // (5-C-2) Listener & Sess threads를 생성.
+        Communicator::launchThreads(SPARAM(SESS_COUNT));
+
+        // (5-C-3) 각각의 쓰레드들의 종료를 기다린다.
+        Worker<float>::joinThreads();
+        Communicator::joinThreads();
+    }
+
+    // (6) 로깅 관련 모듈이 점유했던 자원을 해제한다.
+    if (!useDeveloperMode)
+        HotLog::destroy();
     ColdLog::destroy();
     SysLog::destroy();
 
+    // (7) 서버 종료 시간을 측정하고, 계산하여 서버 실행 시간을 출력한다.
     SPERF_END(SERVER_RUNNING_TIME, startTime);
-	STDOUT_BLOCK(cout << "SOOOA engine ends" << endl;);
     STDOUT_LOG("server running time : %lf\n", SPERF_TIME(SERVER_RUNNING_TIME));
-	return 0;
+	STDOUT_BLOCK(cout << "SOOOA engine ends" << endl;);
+
+	exit(EXIT_SUCCESS);
 }
 
 void network_load() {
@@ -101,11 +222,12 @@ void network_load() {
 
 	Cuda::destroy();
 }
+
 #else
 
 const char          SERVER_HOSTNAME[] = {"localhost"};
 int main(int argc, char** argv) {
     Client::clientMain(SERVER_HOSTNAME, Communicator::LISTENER_PORT);
-	return 0;
+	exit(EXIT_SUCCESS);
 }
 #endif
