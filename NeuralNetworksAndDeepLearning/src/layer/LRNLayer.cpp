@@ -6,7 +6,7 @@
  */
 
 #include "LRNLayer.h"
-#include "../Util.h"
+#include "Util.h"
 
 using namespace std;
 

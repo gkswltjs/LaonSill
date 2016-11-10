@@ -8,14 +8,14 @@
 
 #ifndef GPU_MODE
 #include "InceptionLayer.h"
-#include "../exception/Exception.h"
-#include "../layer/ConvLayer.h"
-#include "../layer/PoolingLayer.h"
-#include "../layer/DepthConcatLayer.h"
-#include "../activation/ReLU.h"
-#include "../activation/Sigmoid.h"
-#include "../pooling/MaxPooling.h"
-#include "../network/Network.h"
+#include "Exception.h"
+#include "ConvLayer.h"
+#include "PoolingLayer.h"
+#include "DepthConcatLayer.h"
+#include "ReLU.h"
+#include "Sigmoid.h"
+#include "MaxPooling.h"
+#include "Network.h"
 
 using namespace std;
 

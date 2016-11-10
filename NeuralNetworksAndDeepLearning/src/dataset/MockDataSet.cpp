@@ -5,9 +5,10 @@
  *      Author: jhkim
  */
 
-#include "MockDataSet.h"
-#include "../Util.h"
 #include <random>
+
+#include "MockDataSet.h"
+#include "Util.h"
 
 using namespace std;
 

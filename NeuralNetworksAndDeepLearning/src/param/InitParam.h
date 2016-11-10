@@ -9,7 +9,7 @@
 #ifndef INITPARAM_H
 #define INITPARAM_H 
 
-#include "../common.h"
+#include "common.h"
 
 class InitParam {
 public:

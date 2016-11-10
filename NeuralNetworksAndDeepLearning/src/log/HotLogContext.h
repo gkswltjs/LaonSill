@@ -15,7 +15,7 @@
 
 #include <atomic>
 
-#include "../param/Param.h"
+#include "Param.h"
 
 class HotLogContext {
 public: 

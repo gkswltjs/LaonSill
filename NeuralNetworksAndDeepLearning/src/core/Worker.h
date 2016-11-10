@@ -20,7 +20,7 @@
 
 #include "common.h"
 #include "Job.h"
-#include "network/Network.h"
+#include "Network.h"
 
 template <typename Dtype> class Network;
 

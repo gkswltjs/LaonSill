@@ -14,7 +14,7 @@
 #include <thread>
 #include <condition_variable>
 
-#include "../common.h"
+#include "common.h"
 #include "HotLogContext.h"
 #include "HotCode.h"
 

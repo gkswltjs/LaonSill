@@ -19,8 +19,8 @@
 
 #include <chrono>
 
-#include "../param/Param.h"
-#include "../FileMgmt.h"
+#include "Param.h"
+#include "FileMgmt.h"
 #include "HotLog.h"
 #include "SysLog.h"
 #include "ColdLog.h"

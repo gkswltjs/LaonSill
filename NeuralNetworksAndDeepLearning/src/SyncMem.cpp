@@ -5,12 +5,13 @@
  *      Author: jhkim
  */
 
-#include "SyncMem.h"
-#include "cuda/Cuda.h"
 #include <cstring>
 #include <limits>
 #include <cmath>
 #include <cfloat>
+
+#include "SyncMem.h"
+#include "Cuda.h"
 
 //#define SYNCMEM_LOG
 

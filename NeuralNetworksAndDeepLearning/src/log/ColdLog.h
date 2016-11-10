@@ -11,7 +11,7 @@
 
 #include <mutex>
 
-#include "../common.h"
+#include "common.h"
 
 // XXX: 아무리 cold log지만 너무 lock이 긴게 아닌지... 
 //      나중에 고민 해보자.

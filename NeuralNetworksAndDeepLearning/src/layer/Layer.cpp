@@ -19,10 +19,10 @@
 #include <stddef.h>
 #include <utility>
 
-#include "../exception/Exception.h"
+#include "Exception.h"
 #include "Layer_device.cu"
 #include "LayerFactory.h"
-#include "../network/NetworkConfig.h"
+#include "NetworkConfig.h"
 
 using namespace std;
 

@@ -1,6 +1,7 @@
 
-#include "LogLikelihoodCost.h"
 #include <cfloat>
+
+#include "LogLikelihoodCost.h"
 
 using namespace std;
 

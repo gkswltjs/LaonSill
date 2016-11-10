@@ -16,8 +16,8 @@
 #include <execinfo.h>
 #include <cxxabi.h>
 
-#include "../param/Param.h"
-#include "../FileMgmt.h"
+#include "Param.h"
+#include "FileMgmt.h"
 #include "SysLog.h"
 
 using namespace std;

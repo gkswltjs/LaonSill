@@ -9,8 +9,7 @@
 #include <cstdlib>
 #include <string>
 
-#include "cuda/Cuda.h"
-
+#include "Cuda.h"
 #include "Data.h"
 
 //#define DATA_LOG

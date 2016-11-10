@@ -7,7 +7,7 @@
  */
 
 #include "Perf.h"
-#include "../log/SysLog.h"
+#include "SysLog.h"
 
 using namespace std;
 

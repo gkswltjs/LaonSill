@@ -12,7 +12,7 @@
 #include <string>
 #include <map>
 
-#include "../common.h"
+#include "common.h"
 #include "PerfList.h"
 
 #define SPERF_MARK(name, args...)               PerfList::mark##name(##args)      

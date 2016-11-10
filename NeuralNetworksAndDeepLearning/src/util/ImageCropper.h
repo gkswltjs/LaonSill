@@ -14,7 +14,7 @@
 #include <string>
 #include <mutex>
 
-#include "../common.h"
+#include "common.h"
 
 /**
  * @brief Directory와 해당 Directory 내의 작업대상 이미지 이름 문자열 목록을 저장하는 구조체

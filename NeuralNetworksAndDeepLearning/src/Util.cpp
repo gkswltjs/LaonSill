@@ -10,7 +10,7 @@
 #include <cstring>
 
 #include "Util.h"
-#include "exception/Exception.h"
+#include "Exception.h"
 
 using namespace std;
 

@@ -8,8 +8,8 @@
 
 #include "ConvLayer.h"
 #include "FullyConnectedLayer.h"
-#include "../Util.h"
-#include "../exception/Exception.h"
+#include "Util.h"
+#include "Exception.h"
 
 using namespace std;
 

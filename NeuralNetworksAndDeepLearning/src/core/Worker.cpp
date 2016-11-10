@@ -5,19 +5,19 @@
  *      Author: moonhoen lee
  */
 
-#include "cuda/Cuda.h"
+#include "Cuda.h"
 #include "Worker.h"
 
-#include "debug/Debug.h"
-#include "evaluation/Evaluation.h"
-#include "evaluation/Top1Evaluation.h"
-#include "evaluation/Top5Evaluation.h"
-#include "monitor/NetworkMonitor.h"
-#include "network/NetworkConfig.h"
-#include "param/Param.h"
-#include "log/ColdLog.h"
-#include "log/HotLog.h"
-#include "log/SysLog.h"
+#include "Debug.h"
+#include "Evaluation.h"
+#include "Top1Evaluation.h"
+#include "Top5Evaluation.h"
+#include "NetworkMonitor.h"
+#include "NetworkConfig.h"
+#include "Param.h"
+#include "ColdLog.h"
+#include "HotLog.h"
+#include "SysLog.h"
 
 using namespace std;
 

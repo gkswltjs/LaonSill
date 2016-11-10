@@ -12,7 +12,7 @@
 #ifndef MONITOR_NETWORKLISTENER_H_
 #define MONITOR_NETWORKLISTENER_H_
 
-#include "../common.h"
+#include "common.h"
 
 /**
  * @brief 네트워크 내부 이벤트 리스너 기본 추상 클래스

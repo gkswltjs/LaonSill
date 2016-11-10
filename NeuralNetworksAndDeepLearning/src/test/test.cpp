@@ -1,6 +1,6 @@
-#include "../dataset/ImagePackDataSet.h"
-#include "../util/ImagePacker.h"
-#include "../Util.h"
+#include "ImagePackDataSet.h"
+#include "ImagePacker.h"
+#include "Util.h"
 
 #include <boost/math/special_functions/next.hpp>
 #include <boost/random.hpp>
@@ -10,9 +10,9 @@
 #include <cfloat>
 #include <boost/tuple/tuple.hpp>
 
-#include "../common.h"
-#include "../debug/Debug.h"
-#include "../dataset/DataSet.h"
+#include "common.h"
+#include "Debug.h"
+#include "DataSet.h"
 
 using namespace std;
 

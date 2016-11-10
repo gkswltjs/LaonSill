@@ -6,16 +6,13 @@
  * @details
  */
 
-
 #ifndef LAYER_SIGMOIDLAYER_H_
 #define LAYER_SIGMOIDLAYER_H_
 
-#include "../common.h"
+#include "common.h"
 #include "OutputLayer.h"
-#include "../cost/Cost.h"
-#include "../activation/Sigmoid.h"
-
-
+#include "Cost.h"
+#include "Sigmoid.h"
 
 #ifndef GPU_MODE
 

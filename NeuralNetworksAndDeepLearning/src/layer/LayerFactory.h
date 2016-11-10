@@ -9,11 +9,10 @@
 #ifndef LAYER_LAYERFACTORY_H_
 #define LAYER_LAYERFACTORY_H_
 
-
 #include <stddef.h>
 
-#include "../common.h"
-#include "../exception/Exception.h"
+#include "common.h"
+#include "Exception.h"
 #include "ConvLayer.h"
 #include "DepthConcatLayer.h"
 #include "FullyConnectedLayer.h"
@@ -22,10 +21,6 @@
 #include "LRNLayer.h"
 #include "PoolingLayer.h"
 #include "SoftmaxLayer.h"
-
-
-
-
 
 /**
  * @brief 주어진 레이어 타입에 따라 레이어 객체를 생성하여 반환

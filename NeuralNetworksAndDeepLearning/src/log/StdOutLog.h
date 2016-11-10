@@ -9,9 +9,9 @@
 #ifndef STDOUTLOG_H
 #define STDOUTLOG_H 
 
-#include "../common.h"
-
 #include <mutex>
+
+#include "common.h"
 
 #define STDOUT_BLOCK(stmt)                                                  \
     do {                                                                    \

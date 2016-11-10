@@ -6,25 +6,20 @@
  * @details
  */
 
-
-
-
-
 #ifndef NETWORK_H_
 #define NETWORK_H_
 
-
-#include "../common.h"
-#include "../cost/Cost.h"
-#include "../activation/Activation.h"
-#include "../monitor/NetworkListener.h"
-#include "../layer/Layer.h"
-#include "../layer/InputLayer.h"
-#include "../layer/HiddenLayer.h"
-#include "../layer/OutputLayer.h"
-#include "../layer/LayerConfig.h"
-#include "../evaluation/Evaluation.h"
-#include "../Worker.h"
+#include "common.h"
+#include "Cost.h"
+#include "Activation.h"
+#include "NetworkListener.h"
+#include "Layer.h"
+#include "InputLayer.h"
+#include "HiddenLayer.h"
+#include "OutputLayer.h"
+#include "LayerConfig.h"
+#include "Evaluation.h"
+#include "Worker.h"
 #include "NetworkConfig.h"
 
 template <typename Dtype> class DataSet;

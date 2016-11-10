@@ -9,9 +9,9 @@
 #define LEARNABLELAYER_H_
 
 
-#include "../common.h"
-#include "../cuda/Cuda.h"
-#include "../Data.h"
+#include "common.h"
+#include "Cuda.h"
+#include "Data.h"
 
 /**
  * @brief 학습하는 레이어에서 구현해야하는 베이스 추상 클래스,

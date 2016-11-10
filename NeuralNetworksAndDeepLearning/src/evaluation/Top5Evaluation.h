@@ -12,11 +12,9 @@
 #include <limits>
 #include <cmath>
 
-#include "../common.h"
-#include "../Util.h"
+#include "common.h"
+#include "Util.h"
 #include "Evaluation.h"
-
-
 
 /**
  * @brief 네트워크가 추정한 상위 5개와 정답의 일치율을 평가하는 Evaluation 클래스

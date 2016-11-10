@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "../common.h"
+#include "common.h"
 
 /**
  * @brief 한 카테고리에 해당하는 파일목록 자료구조

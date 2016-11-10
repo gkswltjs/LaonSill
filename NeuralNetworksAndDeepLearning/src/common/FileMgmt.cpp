@@ -13,7 +13,7 @@
 #include <fcntl.h>
 
 #include "FileMgmt.h"
-#include "log/SysLog.h"
+#include "SysLog.h"
 
 using namespace std;
 

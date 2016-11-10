@@ -10,7 +10,7 @@
 #ifndef EXCEPTION_EXCEPTION_H_
 #define EXCEPTION_EXCEPTION_H_
 
-#include "../common.h"
+#include "common.h"
 
 /**
  * @brief 예외 클래스

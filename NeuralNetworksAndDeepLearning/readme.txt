@@ -11,7 +11,9 @@
 (3) CIMG include 경로
  - INC_PATH_CIMG 환경변수에 저장
 
-(4) SOOOA_HOME
+(4) SOOOA_HOME 경로 설정
+
+(5) SOOOA_SOURCE_PATH 경로 설정
 
 ※ 이 외에도 추가할 설정이 있을 수 있다. 그때 그때 추가하고 문서도 갱신하도록
 하자.
@@ -25,6 +27,7 @@
  export INC_PATH_GNUPLOT="/home/monhoney/git/gnuplot_iostream/gnuplot-iostream"
  export INC_PATH_CIMG="/home/monhoney/git/cImg/CImg"
  export SOOOA_HOME="/home/monhoney/SOOOA_HOME"
+ export SOOOA_SOURCE_PATH="/home/monhoney/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src"
 
 (3) env.sh의 환경변수를 적용한다.
  $ source env.sh

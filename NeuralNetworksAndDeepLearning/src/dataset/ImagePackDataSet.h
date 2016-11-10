@@ -16,7 +16,7 @@
 #include <vector>
 #include <string>
 
-#include "../common.h"
+#include "common.h"
 #include "DataSet.h"
 
 

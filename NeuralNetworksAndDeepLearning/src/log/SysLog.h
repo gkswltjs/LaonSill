@@ -11,8 +11,8 @@
 
 #include <mutex>
 
-#include "../common.h"
-#include "../param/Param.h"
+#include "common.h"
+#include "Param.h"
 
 #define SYS_LOG(fmt, args...)                                                       \
     do {                                                                            \

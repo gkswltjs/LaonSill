@@ -20,8 +20,8 @@
 #include <vector>
 #include <memory>
 
-#include "../common.h"
-#include "../Data.h"
+#include "common.h"
+#include "Data.h"
 #include "LayerConfig.h"
 
 template <typename Dtype> class NetworkConfig;

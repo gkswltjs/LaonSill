@@ -11,7 +11,7 @@
 
 #include <string.h>
 
-#include "../common.h"
+#include "common.h"
 
 #define PERFARGDEF_ARGNAME_MAXSIZE          (64)
 #define PERFARGDEF_DESC_MAXSIZE             (256)

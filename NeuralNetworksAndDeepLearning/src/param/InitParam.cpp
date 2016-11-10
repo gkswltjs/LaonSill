@@ -16,7 +16,7 @@
 #include "InitParam.h"
 #include "Param.h"
 #include "ParamMgmt.h"
-#include "../log/SysLog.h"
+#include "SysLog.h"
 
 using namespace std;
 

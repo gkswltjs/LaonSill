@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "../common.h"
+#include "common.h"
 #include "PerfArgDef.h"
 
 #define PERFDEF_DESC_MAXSIZE                (256)

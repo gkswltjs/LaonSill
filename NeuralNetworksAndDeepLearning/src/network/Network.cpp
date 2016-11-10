@@ -5,20 +5,19 @@
  *      Author: jhkim
  */
 
-#include "Network.h"
-
 #include <vector>
 #include <map>
 #include <cfloat>
 
-#include "../dataset/DataSet.h"
-#include "../layer/LayerFactory.h"
-#include "../layer/HiddenLayer.h"
-#include "../layer/OutputLayer.h"
-#include "../Util.h"
-#include "../Worker.h"
-#include "../perf/Perf.h"
-#include "../log/StdOutLog.h"
+#include "DataSet.h"
+#include "LayerFactory.h"
+#include "HiddenLayer.h"
+#include "OutputLayer.h"
+#include "Util.h"
+#include "Worker.h"
+#include "Perf.h"
+#include "StdOutLog.h"
+#include "Network.h"
 
 using namespace std;
 

@@ -11,8 +11,8 @@
 #ifndef COST_COST_H_
 #define COST_COST_H_
 
-#include "../common.h"
-#include "../Util.h"
+#include "common.h"
+#include "Util.h"
 
 
 /**

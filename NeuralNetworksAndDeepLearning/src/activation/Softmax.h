@@ -9,7 +9,7 @@
 #ifndef ACTIVATION_SOFTMAX_H_
 #define ACTIVATION_SOFTMAX_H_
 
-#include "../common.h"
+#include "common.h"
 #include "Activation.h"
 
 /**

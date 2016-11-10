@@ -8,7 +8,7 @@
 #ifndef STATLOGGER_H_
 #define STATLOGGER_H_
 
-#include "../common.h"
+#include "common.h"
 
 class StatLogger {
 public:

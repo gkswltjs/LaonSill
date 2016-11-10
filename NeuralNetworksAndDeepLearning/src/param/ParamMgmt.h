@@ -22,7 +22,7 @@
 #include <map>
 #include <string>
 
-#include "../common.h"
+#include "common.h"
 #include "ParamDef.h"
 
 class ParamMgmt {

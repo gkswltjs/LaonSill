@@ -6,9 +6,9 @@
  */
 
 #include "Cuda.h"
-#include "../Util.h"
-#include "../log/ColdLog.h"
-#include "../log/SysLog.h"
+#include "Util.h"
+#include "ColdLog.h"
+#include "SysLog.h"
 
 using namespace std;
 

@@ -11,7 +11,7 @@
 
 #include <string.h>
 
-#include "../common.h"
+#include "common.h"
 
 #define PARAMDEF_DESC_MAXSIZE           (256)
 #define PARAMDEF_DEFAULTVALUE_MAXSIZE   (128)
