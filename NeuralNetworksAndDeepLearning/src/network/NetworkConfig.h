@@ -27,7 +27,7 @@
 #include "../log/ColdLog.h"
 
 
-template <typename Dtype> class DataSet;
+//template <typename Dtype> class DataSet;
 template <typename Dtype> class Worker;
 
 
@@ -331,8 +331,6 @@ public:
     std::vector<LearnableLayer<Dtype>*> _learnableLayers;
     std::vector<OutputLayer<Dtype>*> _outputLayers;
     InputLayer<Dtype>* _inputLayer;
-    //std::vector<Data<Dtype>*> _multiBranchDataVec;
-    //std::vector<Data<Dtype>*> _multiBranchGradVec;
 
     std::map<std::string, Layer<Dtype>*> _nameLayerMap;
 	Builder* _builder;
@@ -424,7 +422,7 @@ public:
 
 	class Builder {
 	public:
-		DataSet<Dtype>* _dataSet;
+		//DataSet<Dtype>* _dataSet;
         std::vector<Evaluation<Dtype>*> _evaluations;
         std::vector<NetworkListener*> _networkListeners;
         std::vector<LayersConfig<Dtype>*> layersConfigs;
@@ -445,11 +443,11 @@ public:
 
 		LRPolicy _lrPolicy;
 
-		io_dim _inDim;
+		//io_dim _inDim;
 
 
 		Builder() {
-			this->_dataSet = NULL;
+			//this->_dataSet = NULL;
 			this->_batchSize = 1;
 			this->_dop = 1;
 			this->_epochs = 1;
@@ -499,10 +497,10 @@ public:
 			this->_gamma = gamma;
 			return this;
 		}
-		Builder* dataSet(DataSet<Dtype>* dataSet) {
-			this->_dataSet = dataSet;
-			return this;
-		}
+		//Builder* dataSet(DataSet<Dtype>* dataSet) {
+		//	this->_dataSet = dataSet;
+		//	return this;
+		//}
 		Builder* baseLearningRate(float baseLearningRate) {
 			this->_baseLearningRate = baseLearningRate;
 			return this;
@@ -519,12 +517,12 @@ public:
 			this->_lrPolicy = lrPolicy;
 			return this;
 		}
-		Builder* inputShape(const std::vector<uint32_t>& inputShape) {
-			this->_inDim.rows = inputShape[0];
-			this->_inDim.cols = inputShape[1];
-			this->_inDim.channels = inputShape[2];
-			return this;
-		}
+		//Builder* inputShape(const std::vector<uint32_t>& inputShape) {
+		//	this->_inDim.rows = inputShape[0];
+		//	this->_inDim.cols = inputShape[1];
+		//	this->_inDim.channels = inputShape[2];
+		//	return this;
+		//}
 		NetworkConfig* build() {
 
 			//load()를 학습단계에서도 사용할 경우 ...
@@ -533,12 +531,12 @@ public:
 			//	std::cout << "dataSet should be set ... " << std::endl;
 			//	exit(1);
 			//}
-			if (_dataSet) {
-				_inDim.rows = _dataSet->getRows();
-				_inDim.cols = _dataSet->getCols();
-				_inDim.channels = _dataSet->getChannels();
-			}
-			_inDim.batches = _batchSize;
+			//if (_dataSet) {
+			//	_inDim.rows = _dataSet->getRows();
+			//	_inDim.cols = _dataSet->getCols();
+			//	_inDim.channels = _dataSet->getChannels();
+			//}
+			//_inDim.batches = _batchSize;
 
 			NetworkConfig* networkConfig = (new NetworkConfig(this))
 					->evaluations(_evaluations)
@@ -553,11 +551,11 @@ public:
 					->clipGradientsLevel(_clipGradientsLevel)
 					->lrPolicy(_lrPolicy)
 					->gamma(_gamma)
-					->dataSet(_dataSet)
+					//->dataSet(_dataSet)
 					->baseLearningRate(_baseLearningRate)
 					->momentum(_momentum)
-					->weightDecay(_weightDecay)
-					->inDim(_inDim);
+					->weightDecay(_weightDecay);
+					//->inDim(_inDim);
 
             networkConfig->layersConfigs.assign(Worker<Dtype>::consumerCount, NULL);
 
@@ -634,9 +632,9 @@ public:
             std::cout << "savePathPrefix: " << _savePathPrefix << std::endl;
             std::cout << "lrPolicy: " << _lrPolicy << std::endl;
 
-            std::cout << "inDim->channels: " << _inDim.channels << std::endl;
-            std::cout << "inDim->rows: " << _inDim.rows << std::endl;
-            std::cout << "inDim->cols: " << _inDim.cols << std::endl;
+            //std::cout << "inDim->channels: " << _inDim.channels << std::endl;
+            //std::cout << "inDim->rows: " << _inDim.rows << std::endl;
+            //std::cout << "inDim->cols: " << _inDim.cols << std::endl;
 		}
 
 	};
@@ -649,7 +647,7 @@ public:
 	NetworkStatus _status;
 	LRPolicy _lrPolicy;
 	
-	DataSet<Dtype>* _dataSet;
+	//DataSet<Dtype>* _dataSet;
     std::vector<Evaluation<Dtype>*> _evaluations;
     std::vector<NetworkListener*> _networkListeners;
     std::vector<LayersConfig<Dtype>*> layersConfigs;
@@ -669,7 +667,7 @@ public:
 
     std::string _savePathPrefix;
 
-	io_dim _inDim;
+	//io_dim _inDim;
 
 
 	// save & load를 위해서 builder도 일단 저장해 두자.
@@ -727,10 +725,10 @@ public:
 		this->_gamma = gamma;
 		return this;
 	}
-	NetworkConfig* dataSet(DataSet<Dtype>* dataSet) {
-		this->_dataSet = dataSet;
-		return this;
-	}
+	//NetworkConfig* dataSet(DataSet<Dtype>* dataSet) {
+	//	this->_dataSet = dataSet;
+	//	return this;
+	//}
 	NetworkConfig* baseLearningRate(float baseLearningRate) {
 		this->_baseLearningRate = baseLearningRate;
 		return this;
@@ -765,10 +763,10 @@ public:
 		this->_lrPolicy = lrPolicy;
 		return this;
 	}
-	NetworkConfig* inDim(io_dim inDim) {
-		this->_inDim = inDim;
-		return this;
-	}
+	//NetworkConfig* inDim(io_dim inDim) {
+	//	this->_inDim = inDim;
+	//	return this;
+	//}
 
 	void save() {
 		// save config

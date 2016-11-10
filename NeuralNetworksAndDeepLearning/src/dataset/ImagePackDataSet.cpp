@@ -36,7 +36,7 @@ ImagePackDataSet<Dtype>::ImagePackDataSet(
 	this->trainFileIndex = 0;
 	this->testFileIndex = 0;
 	this->bufDataSet = NULL;
-
+	this->bufLabelSet = NULL;
 
 	this->frontTrainDataSet = NULL;
 	this->frontTrainLabelSet = NULL;
@@ -56,6 +56,7 @@ ImagePackDataSet<Dtype>::ImagePackDataSet(
 template <typename Dtype>
 ImagePackDataSet<Dtype>::~ImagePackDataSet() {
 	if(bufDataSet) delete bufDataSet;
+	if(bufLabelSet) delete bufLabelSet;
 	if(frontTrainDataSet) delete frontTrainDataSet;
 	if(frontTrainLabelSet) delete frontTrainLabelSet;
 	if(backTrainDataSet) delete backTrainDataSet;

@@ -23,7 +23,7 @@ using namespace std;
 template <typename Dtype>
 Network<Dtype>::Network(NetworkConfig<Dtype>* config)
 	: config(config) {
-	DataSet<Dtype>* dataSet = config->_dataSet;
+	//DataSet<Dtype>* dataSet = config->_dataSet;
 	//this->in_dim.rows = dataSet->getRows();
 	//this->in_dim.cols = dataSet->getCols();
 	//this->in_dim.channels = dataSet->getChannels();
@@ -93,12 +93,12 @@ void Network<Dtype>::sgd_with_timer(int epochs) {
 
 template <typename Dtype>
 void Network<Dtype>::sgd(int epochs) {
-	DataSet<Dtype>* dataSet = config->_dataSet;
+	DataSet<Dtype>* dataSet = getLayersConfig()->_inputLayer->_dataSet;
 	vector<Evaluation<Dtype>*>& evaluations = config->_evaluations;
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
 	const uint32_t trainDataSize = dataSet->getNumTrainData();
-	const uint32_t numBatches = trainDataSize / config->_inDim.batches / Worker<Dtype>::consumerCount;
+	const uint32_t numBatches = trainDataSize / config->_batchSize / Worker<Dtype>::consumerCount;
 
 	Timer timer1;
 	Timer timer2;
@@ -205,7 +205,7 @@ double Network<Dtype>::evaluateTestSet() {
 
 	return testResult;
 #else
-	DataSet<Dtype>* dataSet = config->_dataSet;
+	DataSet<Dtype>* dataSet = getLayersConfig()->_inputLayer->_dataSet;
 	vector<Evaluation<Dtype>*>& evaluations = config->_evaluations;
 	double cost = 0.0;
 
@@ -213,7 +213,7 @@ double Network<Dtype>::evaluateTestSet() {
 		evaluations[i]->reset();
 	}
 
-	const uint32_t numBatches = dataSet->getNumTestData()/config->_inDim.batches;
+	const uint32_t numBatches = dataSet->getNumTestData()/config->_batchSize;
 	//cout << "numTestData: " << dataSet->getNumTestData() << ", batches: " << in_dim.batches << ", numBatches: " << numBatches << endl;
 	for(uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
 		cost += evaluateTestData(batchIndex);
@@ -226,7 +226,7 @@ template <typename Dtype>
 double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
 	OutputLayer<Dtype>* outputLayer = layersConfig->_outputLayers[0];
-	int baseIndex = batchIndex*config->_inDim.batches;
+	int baseIndex = batchIndex*config->_batchSize;
 
 	_feedforward(batchIndex);
 
@@ -238,10 +238,11 @@ double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 
 	networkOutput->print_data("networkOutput:");
 	const Dtype* output = networkOutput->host_data();
+	DataSet<Dtype>* dataSet = layersConfig->_inputLayer->_dataSet;
 	for(int i = 0; i < config->_evaluations.size(); i++) {
-		config->_evaluations[i]->evaluate(numLabels, config->_inDim.batches, output, config->_dataSet, baseIndex);
+		config->_evaluations[i]->evaluate(numLabels, config->_batchSize,
+				output, dataSet, baseIndex);
 	}
-	//cout << "cost at " << batchIndex << " " << cost << endl;
 
 	return cost;
 }
@@ -249,7 +250,7 @@ double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 template <typename Dtype>
 void Network<Dtype>::test() {
 	config->_status = NetworkStatus::Test;
-	DataSet<Dtype>* dataSet = config->_dataSet;
+	DataSet<Dtype>* dataSet = getLayersConfig()->_inputLayer->_dataSet;
 	vector<Evaluation<Dtype>*>& evaluations = config->_evaluations;
 
 	Timer timer;
@@ -558,10 +559,10 @@ void Network<Dtype>::shape(io_dim in_dim) {
 
 template <typename Dtype>
 void Network<Dtype>::reshape(io_dim in_dim) {
-	if(in_dim.unitsize() > 0) {
-		this->config->_inDim = in_dim;
-	}
-    getInputLayer()->reshape(0, this->config->_inDim);
+	//if(in_dim.unitsize() > 0) {
+	//	this->config->_inDim = in_dim;
+	//}
+    //getInputLayer()->reshape(0, this->config->_inDim);
 }
 
 /*
@@ -714,9 +715,9 @@ template <typename Dtype>
 void Network<Dtype>::_feedforward(uint32_t batchIndex) {
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
 	InputLayer<Dtype>* inputLayer = layersConfig->_inputLayer;
-	int baseIndex = batchIndex*config->_inDim.batches;
+	int baseIndex = batchIndex*config->_batchSize;
 
-	inputLayer->feedforward(config->_dataSet, baseIndex);
+	inputLayer->feedforward(baseIndex);
 	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->feedforward();
 	}

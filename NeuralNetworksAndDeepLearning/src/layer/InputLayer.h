@@ -39,12 +39,22 @@ public:
 	class Builder : public Layer<Dtype>::Builder {
 	public:
 		std::vector<uint32_t> _shape;
+		std::string _source;
+		std::string _sourceType;
 
 		Builder() {
 			this->type = Layer<Dtype>::Input;
 		}
 		virtual Builder* shape(const std::vector<uint32_t>& shape) {
 			this->_shape = shape;
+			return this;
+		}
+		virtual Builder* source(const std::string& source) {
+			this->_source = source;
+			return this;
+		}
+		virtual Builder* sourceType(const std::string& sourceType) {
+			this->_sourceType = sourceType;
 			return this;
 		}
 		virtual Builder* name(const std::string name) {
@@ -102,7 +112,7 @@ public:
 	//void feedforward(uint32_t idx, Data<Dtype>* input, const char* end=0);
 	void feedforward();
 	using Layer<Dtype>::feedforward;
-	void feedforward(DataSet<Dtype>* dataSet, const uint32_t baseIndex, const char* end=0);
+	void feedforward(const uint32_t baseIndex, const char* end=0);
 
 	//using Layer<Dtype>::shape;
 	//void shape(uint32_t idx, io_dim in_dim);
@@ -112,15 +122,12 @@ protected:
 	void initialize();
 	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	/**
-	 * @details 현재 레이어를 스트림에 쓰고 다음 레이어들에 대해 save()를 요청한다.
-	 *          입력 레이어의 경우 시작레이어이기 때문에 자신의 레이어를 쓸 뿐 아니라
-	 *          연결된 이 후의 레이어들의 메타 정보를 기록하는 역할도 한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 index
-	 * @param ofs 레이어를 쓸 출력 스트림
-	 */
-	//virtual void _save(std::ofstream &ofs);
-	//virtual void _load(std::ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
+
+
+
+
+public:
+	DataSet<Dtype>* _dataSet;
 
 };
 

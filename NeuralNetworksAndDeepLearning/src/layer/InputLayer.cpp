@@ -8,6 +8,7 @@
 
 #include "InputLayer.h"
 #include "../network/NetworkConfig.h"
+#include "../dataset/ImagePackDataSet.h"
 
 using namespace std;
 
@@ -23,6 +24,22 @@ InputLayer<Dtype>::InputLayer(const string name) : Layer<Dtype>(name) {
 
 template <typename Dtype>
 InputLayer<Dtype>::InputLayer(Builder* builder) : Layer<Dtype>(builder) {
+
+	if (builder->_sourceType == "ImagePack") {
+		_dataSet = new ImagePackDataSet<Dtype>(
+				builder->_source+"/train_data",
+				builder->_source+"/train_label",
+				1,
+				builder->_source+"/test_data",
+				builder->_source+"/test_label",
+				1);
+		_dataSet->setMean({0.13066047740});
+		_dataSet->load();
+	} else {
+		cout << "Unsuppored Input Source Type: " << builder->_sourceType;
+		exit(1);
+	}
+
 	initialize();
 }
 
@@ -37,18 +54,13 @@ int InputLayer<Dtype>::getInputSize() const {
 
 
 template <typename Dtype>
-//void InputLayer<Dtype>::shape(uint32_t idx, io_dim in_dim) {
 void InputLayer<Dtype>::shape() {
-	//if (!Layer<Dtype>::w_isLastPrevLayerRequest(idx, "Layer::shape()")) return;
-
-	//this->in_dim = in_dim;
-
-	// class member shared_ptr을 초기화하는 방법이 마땅하지 않아서 ...
-	//shared_ptr<Data<Dtype>> _tmp_input(new Data<Dtype>());
-	//this->_input = _tmp_input;
+	this->in_dim.batches = this->networkConfig->_batchSize;
+	this->in_dim.channels = this->_dataSet->getChannels();
+	this->in_dim.rows = this->_dataSet->getRows();
+	this->in_dim.cols = this->_dataSet->getCols();
 
 	_shape();
-	//Layer<Dtype>::propShape();
 }
 
 template <typename Dtype>
@@ -58,33 +70,33 @@ void InputLayer<Dtype>::feedforward() {
 
 
 template <typename Dtype>
-void InputLayer<Dtype>::feedforward(DataSet<Dtype>* dataSet, const uint32_t baseIndex, const char* end) {
+void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 	const uint32_t unitSize = this->in_dim.unitsize();
 
 	if (this->networkConfig->_status == NetworkStatus::Train) {
 		// data
 		for (uint32_t i = 0; i < this->in_dim.batches; i++) {
-			const Dtype* ptr = dataSet->getTrainDataAt(baseIndex+i);
+			const Dtype* ptr = _dataSet->getTrainDataAt(baseIndex+i);
 			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
 		}
 
 		// label
 		if (this->_inputs.size() > 1) {
 			for (uint32_t i = 0; i < this->in_dim.batches; i++) {
-				const Dtype* ptr = dataSet->getTrainLabelAt(baseIndex+i);
+				const Dtype* ptr = _dataSet->getTrainLabelAt(baseIndex+i);
 				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
 			}
 		}
 
 	} else if (this->networkConfig->_status == NetworkStatus::Test) {
 		for(uint32_t i = 0; i < this->in_dim.batches; i++) {
-			const Dtype* ptr = dataSet->getTestDataAt(baseIndex+i);
+			const Dtype* ptr = _dataSet->getTestDataAt(baseIndex+i);
 			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
 		}
 
 		if (this->_inputs.size() > 1) {
 			for (uint32_t i = 0; i < this->in_dim.batches; i++) {
-				const Dtype* ptr = dataSet->getTestLabelAt(baseIndex+i);
+				const Dtype* ptr = _dataSet->getTestLabelAt(baseIndex+i);
 				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
 			}
 		}

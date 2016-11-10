@@ -335,8 +335,8 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
     // XXX: 현재는 CCN Double Layer만 생성하도록 되어 있다. 수정필요!!!
     
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
-	LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
 
     // (2) network config 정보를 layer들에게 전달한다.
     for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
@@ -344,12 +344,12 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
     }
 
     // (3) shape 과정을 수행한다. 
-    io_dim in_dim;
-    in_dim.rows = network->config->_dataSet->getRows();
-    in_dim.cols = network->config->_dataSet->getCols();
-    in_dim.channels = network->config->_dataSet->getChannels();
-    in_dim.batches = network->config->_batchSize;
-    layersConfig->_inputLayer->setInDimension(in_dim);
+    //io_dim in_dim;
+    //in_dim.rows = network->config->_dataSet->getRows();
+    //in_dim.cols = network->config->_dataSet->getCols();
+    //in_dim.channels = network->config->_dataSet->getChannels();
+    //in_dim.batches = network->config->_batchSize;
+    //layersConfig->_inputLayer->setInDimension(in_dim);
 
     for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
     	layersConfig->_layers[i]->shape();
@@ -419,8 +419,8 @@ int Worker<Dtype>::createNetwork() {
 
 	//DataSet<Dtype>* dataSet = createMnistDataSet<Dtype>();
 	//DataSet<Dtype>* dataSet = createMockDataSet<Dtype>();
-	DataSet<Dtype>* dataSet = createImageNet10000DataSet<Dtype>();
-	dataSet->load();
+	//DataSet<Dtype>* dataSet = createImageNet10000DataSet<Dtype>();
+	//dataSet->load();
 
 	Evaluation<Dtype>* top1Evaluation = new Top1Evaluation<Dtype>();
 	Evaluation<Dtype>* top5Evaluation = new Top5Evaluation<Dtype>();
@@ -438,7 +438,7 @@ int Worker<Dtype>::createNetwork() {
 			->clipGradientsLevel(clipGradientsLevel)
 			->lrPolicy(lrPolicy)
 			->gamma(gamma)
-			->dataSet(dataSet)
+			//->dataSet(dataSet)
 			->evaluations({top1Evaluation, top5Evaluation})
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
 			->networkListeners({networkListener})

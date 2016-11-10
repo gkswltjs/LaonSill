@@ -72,7 +72,7 @@ void network_load() {
 	// save file 경로로 builder 생성,
 	NetworkConfig<float>::Builder* networkBuilder = new NetworkConfig<float>::Builder();
 	networkBuilder->load(SPARAM(NETWORK_SAVE_DIR));
-	networkBuilder->dataSet(dataSet);
+	//networkBuilder->dataSet(dataSet);
 	networkBuilder->evaluations({top1Evaluation, top5Evaluation});
 
 	NetworkConfig<float>* networkConfig = networkBuilder->build();
