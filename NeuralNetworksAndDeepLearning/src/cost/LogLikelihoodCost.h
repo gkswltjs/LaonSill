@@ -36,11 +36,13 @@ public:
 	/**
 	 * @details C = -ln(ayL)
 	 */
-	double forward(const Dtype* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize);
+	double forward(const Dtype* output, const Dtype* target,
+			const uint32_t numLabels, const uint32_t batchsize);
 	/**
 	 * @details dC/da = -1/ayL
 	 */
-	void backward(const Dtype* z, const Dtype* activation, const uint32_t* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize);
+	void backward(const Dtype* z, const Dtype* activation,
+			const Dtype* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize);
 #endif
 
 

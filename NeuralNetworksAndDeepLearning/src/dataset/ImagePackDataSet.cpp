@@ -115,7 +115,7 @@ const Dtype* ImagePackDataSet<Dtype>::getTrainDataAt(int index) {
 }
 
 template <typename Dtype>
-const uint32_t* ImagePackDataSet<Dtype>::getTrainLabelAt(int index) {
+const Dtype* ImagePackDataSet<Dtype>::getTrainLabelAt(int index) {
 	if(index >= this->numTrainData || index < 0) {
 		cout << "invalid index for train label: numTrainData->" << this->numTrainData << ", index: " << index << endl;
 		exit(1);
@@ -160,7 +160,7 @@ const Dtype* ImagePackDataSet<Dtype>::getValidationDataAt(int index) {
 }
 
 template <typename Dtype>
-const uint32_t* ImagePackDataSet<Dtype>::getValidationLabelAt(int index) {
+const Dtype* ImagePackDataSet<Dtype>::getValidationLabelAt(int index) {
 	if(index >= this->numValidationData || index < 0) {
 		cout << "invalid index for validation label: numValidationData->" << this->numValidationData << ", index: " << index << endl;
 		exit(1);
@@ -183,7 +183,7 @@ const Dtype* ImagePackDataSet<Dtype>::getTestDataAt(int index) {
 }
 
 template <typename Dtype>
-const uint32_t* ImagePackDataSet<Dtype>::getTestLabelAt(int index) {
+const Dtype* ImagePackDataSet<Dtype>::getTestLabelAt(int index) {
 	if(index >= this->numTestData || index < 0) {
 		cout << "invalid index for test label: numTestData->" << this->numTestData << ", index: " << index << endl;
 		exit(1);
@@ -376,7 +376,7 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 		string data_path,
 		string label_path,
 		vector<Dtype>*& dataSet,
-		vector<uint32_t>*& labelSet,
+		vector<Dtype>*& labelSet,
 		vector<uint32_t>*& setIndices) {
 
 	FILE* imfp = fopen(data_path.c_str(), "rb");
@@ -457,19 +457,13 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 	size_t dataSetSize = ((size_t)image_header.length)*this->dataSize;
 	if(!dataSet) dataSet = new vector<Dtype>(dataSetSize);
 	if(!bufDataSet) bufDataSet = new vector<uint8_t>(dataSetSize);
-	if(!labelSet) labelSet = new vector<uint32_t>(label_header.length);
+	if(!labelSet) labelSet = new vector<Dtype>(label_header.length);
+	if(!bufLabelSet) bufLabelSet = new vector<uint32_t>(label_header.length);
+
 	if(!setIndices) {
 		setIndices = new vector<uint32_t>(label_header.length);
 		iota(setIndices->begin(), setIndices->end(), 0);
-
-		/*
-		cout << "trainSetIndices: " << endl;
-		for(uint32_t i = 0; i < label_header.length; i++) {
-			cout << "i: " << i << ", trainSetIndice: " << (*setIndices)[i] << endl;
-		}
-		*/
 	}
-	//iota(setIndices->begin(), setIndices->end(), 0);
 
 	if(fread(&(*bufDataSet)[0], sizeof(uint8_t), dataSetSize, imfp) != dataSetSize) {
 		printf("ERROR: Invalid dataset file (partial image dataset)\n");
@@ -478,17 +472,22 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 		return 0;
 	}
 
-	for(size_t i = 0; i < dataSetSize; i++) {
+	for (size_t i = 0; i < dataSetSize; i++) {
 		(*dataSet)[i] = (*bufDataSet)[i]/255.0f;
 		//(*dataSet)[i] = (*bufDataSet)[i];
 	}
 
-	if (fread(&(*labelSet)[0], sizeof(uint32_t), label_header.length, lbfp) != label_header.length) {
+	if (fread(&(*bufLabelSet)[0], sizeof(uint32_t), label_header.length, lbfp) != label_header.length) {
 		printf("ERROR: Invalid dataset file (partial label dataset)\n");
 		fclose(imfp);
 		fclose(lbfp);
 		return 0;
 	}
+
+	for (size_t i = 0; i < label_header.length; i++) {
+		(*labelSet)[i] = (*bufLabelSet)[i];
+	}
+
 
 	fclose(imfp);
 	fclose(lbfp);
@@ -511,7 +510,7 @@ void ImagePackDataSet<Dtype>::swap() {
 	}
 
 	vector<Dtype>* tempDataSet = frontTrainDataSet;
-	vector<uint32_t>* tempLabelSet = frontTrainLabelSet;
+	vector<Dtype>* tempLabelSet = frontTrainLabelSet;
 
 	frontTrainDataSet = backTrainDataSet;
 	frontTrainLabelSet = backTrainLabelSet;

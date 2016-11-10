@@ -57,11 +57,11 @@ public:
 	virtual void load();
 
 	virtual const Dtype* getTrainDataAt(int index);
-	virtual const uint32_t* getTrainLabelAt(int index);
+	virtual const Dtype* getTrainLabelAt(int index);
 	virtual const Dtype* getValidationDataAt(int index);
-	virtual const uint32_t* getValidationLabelAt(int index);
+	virtual const Dtype* getValidationLabelAt(int index);
 	virtual const Dtype* getTestDataAt(int index);
-	virtual const uint32_t* getTestLabelAt(int index);
+	virtual const Dtype* getTestLabelAt(int index);
 
 
 
@@ -82,7 +82,7 @@ protected:
 			std::string data_path,
 			std::string label_path,
 			std::vector<Dtype> *&dataSet,
-			std::vector<uint32_t> *&labelSet,
+			std::vector<Dtype> *&labelSet,
 			std::vector<uint32_t>*& setIndices);
 
 	virtual void zeroMean(bool hasMean=false, bool isTrain=true);
@@ -105,6 +105,7 @@ protected:
 	int numImagesInTestFile;				///< 테스트데이터셋 파일 하나에 들어있는 데이터의 수
 
     std::vector<uint8_t>* bufDataSet;			///< 데이터셋 데이터를 로드할 버퍼. 파일의 uint8_t타입 데이터를 버퍼에 올려 uint32_t타입으로 변환하기 위한 버퍼.
+    std::vector<uint32_t>* bufLabelSet;
 
 
 
@@ -123,9 +124,9 @@ protected:
 
 
     std::vector<Dtype>* frontTrainDataSet;
-    std::vector<uint32_t>* frontTrainLabelSet;
+    std::vector<Dtype>* frontTrainLabelSet;
     std::vector<Dtype>* backTrainDataSet;
-    std::vector<uint32_t>* backTrainLabelSet;
+    std::vector<Dtype>* backTrainLabelSet;
 
 
     std::vector<uint32_t>* trainFileIndices;
@@ -139,7 +140,7 @@ protected:
 	pthread_t bufThread;
 	thread_arg_t threadArg;
     std::vector<Dtype>* secondTrainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
-    std::vector<uint32_t>* secondTrainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
+    std::vector<Dtype>* secondTrainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
 
 
 	static void* load_helper(void* context);

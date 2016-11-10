@@ -126,8 +126,8 @@ public:
 	 *          히든 레이어와 달리 출력 레이어는 Cost와 target값을 통해 gradient가 계산된다.
 	 * @param target 현재 입력 데이터에 대한 정답 레이블
 	 */
-	using FullyConnectedLayer<Dtype>::backpropagation;
-	virtual void backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex) = 0;
+	//using FullyConnectedLayer<Dtype>::backpropagation;
+	//virtual void backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex) = 0;backpropagation
 
 	/**
 	 * @details 출력레이어의 cost를 게산한다.
@@ -137,7 +137,7 @@ public:
 	 *       하지만 적절한 modularity를 달성하기 위해서 cost를 구하는 것과 gradient를 계산하는 것은 구분되어야 한다.
 	 */
 	//virtual double cost(const uint32_t* target) = 0;
-	virtual double cost(DataSet<Dtype>* dataSet, const uint32_t baseIndex) = 0;
+	virtual double cost() = 0;
 
 
 protected:
@@ -150,7 +150,7 @@ protected:
 		if(recursive) {
 			FullyConnectedLayer<Dtype>::_shape();
 		}
-		this->_target.shape(this->out_dim.batches);
+		//this->_target.shape(this->out_dim.batches);
 	}
 	virtual void _clearShape() {
 		FullyConnectedLayer<Dtype>::_clearShape();
@@ -175,7 +175,7 @@ protected:
 protected:
 	Cost<Dtype>* cost_fn;				///< cost 객체
 
-	SyncMem<uint32_t> _target;
+	//SyncMem<uint32_t> _target;
 };
 
 

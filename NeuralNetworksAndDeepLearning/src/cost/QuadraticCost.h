@@ -33,11 +33,13 @@ public:
 		delta.slice(0) = activation.slice(0) - target;
 	}
 #else
-	double forward(const Dtype* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) {
+	double forward(const Dtype* output, const Dtype* target,
+			const uint32_t numLabels, const uint32_t batchsize) {
 		//return 0.5*sum(square(*pA - *pY));
 		return 0.0;
 	}
-	void backward(const Dtype* z, const Dtype* activation, const uint32_t* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize) {
+	void backward(const Dtype* z, const Dtype* activation, const Dtype* target,
+			Dtype* delta, uint32_t numLabels, uint32_t batchsize) {
 		/*
 		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*size, cudaMemcpyDeviceToDevice));
 		uint32_t i;

@@ -38,12 +38,12 @@ DataSet<Dtype>::DataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_
 	this->numTestData = numTestData;
 
 	trainDataSet = new vector<Dtype>(this->dataSize*numTrainData);
-	trainLabelSet = new vector<uint32_t>(numTrainData);
+	trainLabelSet = new vector<Dtype>(numTrainData);
 	trainSetIndices = new vector<uint32_t>(numTrainData);
 	iota(trainSetIndices->begin(), trainSetIndices->end(), 0);
 
 	testDataSet = new vector<Dtype>(this->dataSize*numTestData);
-	testLabelSet = new vector<uint32_t>(numTestData);
+	testLabelSet = new vector<Dtype>(numTestData);
 	testSetIndices = new vector<uint32_t>(numTestData);
 	iota(testSetIndices->begin(), testSetIndices->end(), 0);
 
@@ -84,7 +84,7 @@ const Dtype* DataSet<Dtype>::getTrainDataAt(int index) {
 }
 
 template <typename Dtype>
-const uint32_t* DataSet<Dtype>::getTrainLabelAt(int index) {
+const Dtype* DataSet<Dtype>::getTrainLabelAt(int index) {
 	if(index >= numTrainData) {
 		cout << "train label index over numTrainData ... " << endl;
 		exit(1);
@@ -102,7 +102,7 @@ const Dtype* DataSet<Dtype>::getValidationDataAt(int index) {
 }
 
 template <typename Dtype>
-const uint32_t* DataSet<Dtype>::getValidationLabelAt(int index) {
+const Dtype* DataSet<Dtype>::getValidationLabelAt(int index) {
 	if(index >= numValidationData) {
 		cout << "validation label index over numValidationData ... " << endl;
 		exit(1);
@@ -120,7 +120,7 @@ const Dtype* DataSet<Dtype>::getTestDataAt(int index) {
 }
 
 template <typename Dtype>
-const uint32_t* DataSet<Dtype>::getTestLabelAt(int index) {
+const Dtype* DataSet<Dtype>::getTestLabelAt(int index) {
 	if(index >= numTestData) {
 		cout << "test label index over numTestData ... " << endl;
 		exit(1);
@@ -178,58 +178,17 @@ void DataSet<Dtype>::zeroMean(bool hasMean) {
 template <typename Dtype>
 void DataSet<Dtype>::shuffleTrainDataSet() {
 	random_shuffle(&(*trainSetIndices)[0], &(*trainSetIndices)[numTrainData]);
-
-	/*
-	cout << "trainSetIndices: " << endl;
-	for(uint32_t i = 0; i < numTrainData; i++) {
-		cout << "i: " << i << ", trainSetIndice: " << (*trainSetIndices)[i] << endl;
-	}
-	*/
-
-
-
-	/*
-	auto seed = unsigned(time(0));
-	srand(seed);
-	random_shuffle(&trainDataSet[0], &trainDataSet[numTrainData]);
-
-	srand(seed);
-	random_shuffle(&trainLabelSet[0], &trainLabelSet[numTrainData]);
-	*/
 }
 
 template <typename Dtype>
 void DataSet<Dtype>::shuffleValidationDataSet() {
 	random_shuffle(&(*validationSetIndices)[0], &(*validationSetIndices)[numValidationData]);
-
-	/*
-	auto seed = unsigned(time(0));
-	srand(seed);
-	random_shuffle(&validationDataSet[0], &validationDataSet[numValidationData]);
-
-	srand(seed);
-	random_shuffle(&validationLabelSet[0], &validationLabelSet[numValidationData]);
-	*/
 }
 
 template <typename Dtype>
 void DataSet<Dtype>::shuffleTestDataSet() {
 	random_shuffle(&(*testSetIndices)[0], &(*testSetIndices)[numTestData]);
-
-	/*
-	auto seed = unsigned(time(0));
-	srand(seed);
-	random_shuffle(&testDataSet[0], &testDataSet[numTestData]);
-
-	srand(seed);
-	random_shuffle(&testLabelSet[0], &testLabelSet[numTestData]);
-	*/
 }
-
-
-
-
-
 
 
 template class DataSet<float>;

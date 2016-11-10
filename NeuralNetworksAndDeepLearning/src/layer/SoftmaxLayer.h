@@ -117,15 +117,14 @@ public:
 	 *          히든 레이어와 달리 출력 레이어는 Cost와 target값을 통해 gradient가 계산된다.
 	 * @param target 현재 입력 데이터에 대한 정답 레이블
 	 */
-	using OutputLayer<Dtype>::backpropagation;
-	void backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex);
+	virtual void backpropagation();
 
 	/**
 	 * @details 출력 레이어의 출력값과 데이터에 대한 정답으로 cost를 계산한다.
 	 * @param target 데이터에 대한 정답 장치 메모리 포인터
 	 */
 	//double cost(const uint32_t *target);
-	double cost(DataSet<Dtype>* dataSet, const uint32_t baseIndex);
+	virtual double cost();
 
 protected:
 	void initialize();

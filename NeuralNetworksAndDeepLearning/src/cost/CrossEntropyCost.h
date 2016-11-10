@@ -49,15 +49,19 @@ public:
 		//Util::printVec(delta, "result");
 	}
 #else
-	double forward(const Dtype* output, const uint32_t* target, const uint32_t numLabels, const uint32_t batchsize) {
+	double forward(const Dtype* output, const Dtype* target,
+			const uint32_t numLabels, const uint32_t batchsize) {
 		return 0.0;
 	}
 
-	void backward(const Dtype* z, const Dtype* activation, const uint32_t* target, Dtype* delta, uint32_t numLabels, uint32_t size) {
+	void backward(const Dtype* z, const Dtype* activation, const Dtype* target,
+			Dtype* delta, uint32_t numLabels, uint32_t size) {
 		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*size, cudaMemcpyDeviceToDevice));
 		uint32_t i;
+		uint32_t label;
 		for(i = 0; i < size/numLabels; i++) {
-			delta[i*numLabels+target[i]]-=1;
+			label = static_cast<uint32_t>(target[i]+0.1);
+			delta[i*numLabels+label]-=1;
 		}
 	}
 #endif

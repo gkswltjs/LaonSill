@@ -234,7 +234,7 @@ double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 	Data<Dtype>* networkOutput = outputLayer->_outputData[0];
 
 
-	double cost = outputLayer->cost(config->_dataSet, baseIndex);
+	double cost = outputLayer->cost();
 
 	networkOutput->print_data("networkOutput:");
 	const Dtype* output = networkOutput->host_data();
@@ -716,11 +716,6 @@ void Network<Dtype>::_feedforward(uint32_t batchIndex) {
 	InputLayer<Dtype>* inputLayer = layersConfig->_inputLayer;
 	int baseIndex = batchIndex*config->_inDim.batches;
 
-	// reset multi-branch data before feedforward
-	//for (uint32_t i = 0; i < layersConfig->_multiBranchDataVec.size(); i++) {
-	//	layersConfig->_multiBranchDataVec[i]->reset_device_data();
-	//}
-
 	inputLayer->feedforward(config->_dataSet, baseIndex);
 	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->feedforward();
@@ -731,22 +726,8 @@ void Network<Dtype>::_feedforward(uint32_t batchIndex) {
 template <typename Dtype>
 void Network<Dtype>::_backpropagation(uint32_t batchIndex) {
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
-	DataSet<Dtype>* dataSet = config->_dataSet;
-	vector<OutputLayer<Dtype>*> outputLayers = layersConfig->_outputLayers;
-	int baseIndex = batchIndex*config->_inDim.batches;
-
-	// reset multi-branch grad before backpropagation
-	//for (uint32_t i = 0; i < layersConfig->_multiBranchGradVec.size(); i++) {
-	//	layersConfig->_multiBranchGradVec[i]->reset_device_grad();
-	//}
 
 	for (int i = layersConfig->_layers.size()-1; i >= 0; i--) {
-		OutputLayer<Dtype>* outputLayer =
-				dynamic_cast<OutputLayer<Dtype>*>(layersConfig->_layers[i]);
-		if (outputLayer) {
-			outputLayer->backpropagation(dataSet, baseIndex);
-		}
-
 		HiddenLayer<Dtype>* hiddenLayer =
 				dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[i]);
 		if (hiddenLayer) {

@@ -97,31 +97,31 @@ public:
 	 * @param index 조회하고자 하는 학습 데이터 정답 레이블의 index
 	 * @return index번째 학습데이터 정답 레이블에 대한 포인터.
 	 */
-	virtual const uint32_t *getTrainLabelAt(int index);
+	virtual const Dtype* getTrainLabelAt(int index);
 	/**
 	 * @details index번째 유효데이터에 대한 포인터 조회.
 	 * @param index 조회하고자 하는 유효 데이터의 index
 	 * @return index번째 유효데이터에 대한 포인터.
 	 */
-	virtual const Dtype *getValidationDataAt(int index);
+	virtual const Dtype* getValidationDataAt(int index);
 	/**
 	 * @details index번째 유효데이터의 정답 레이블에 대한 포인터 조회.
 	 * @param index 조회하고자 하는 유효 데이터 정답 레이블의 index
 	 * @return index번째 유효데이터 정답 레이블에 대한 포인터.
 	 */
-	virtual const uint32_t *getValidationLabelAt(int index);
+	virtual const Dtype* getValidationLabelAt(int index);
 	/**
 	 * @details index번째 테스트데이터에 대한 포인터 조회.
 	 * @param index 조회하고자 하는 테스트데이터의 index
 	 * @return index번째 테스트데이터에 대한 포인터.
 	 */
-	virtual const Dtype *getTestDataAt(int index);
+	virtual const Dtype* getTestDataAt(int index);
 	/**
 	 * @details index번째 테스트데이터의 정답 레이블에 대한 포인터 조회.
 	 * @param index 조회하고자 하는 테스트데이터 정답 레이블의 index
 	 * @return index번째 테스트데이터 정답 레이블에 대한 포인터.
 	 */
-	virtual const uint32_t *getTestLabelAt(int index);
+	virtual const Dtype* getTestLabelAt(int index);
 
 
 
@@ -167,15 +167,15 @@ protected:
 	uint32_t numTestData;						///< 전체 테스트데이터의 수.
 
     std::vector<Dtype>* trainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
-    std::vector<uint32_t>* trainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
+    std::vector<Dtype>* trainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
     std::vector<uint32_t>* trainSetIndices;			///< 학습셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
 
     std::vector<Dtype>* validationDataSet;			///< 유효데이터셋 벡터에 대한 포인터.
-    std::vector<uint32_t>* validationLabelSet;		///< 유효데이터셋의 정답 레이블 벡터에 대한 포인터.
+    std::vector<Dtype>* validationLabelSet;		///< 유효데이터셋의 정답 레이블 벡터에 대한 포인터.
     std::vector<uint32_t>* validationSetIndices;		///< 유효셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
 
     std::vector<Dtype>* testDataSet;					///< 테스트데이터셋 벡터에 대한 포인터.
-    std::vector<uint32_t>* testLabelSet;				///< 테스트데이터셋의 정답 레이블 벡터에 대한 포인터.
+    std::vector<Dtype>* testLabelSet;				///< 테스트데이터셋의 정답 레이블 벡터에 대한 포인터.
     std::vector<uint32_t>* testSetIndices;			///< 테스트셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
 
 	Dtype mean[3];								///< 학습데이터셋의 각 채널별 평균값을 저장하는 배열.

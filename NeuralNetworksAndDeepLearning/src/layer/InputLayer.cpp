@@ -59,24 +59,37 @@ void InputLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void InputLayer<Dtype>::feedforward(DataSet<Dtype>* dataSet, const uint32_t baseIndex, const char* end) {
-	//_input->set_data(input, Data::HostToDevice);
 	const uint32_t unitSize = this->in_dim.unitsize();
 
-	if(this->networkConfig->_status == NetworkStatus::Train) {
-		for(uint32_t i = 0; i < this->in_dim.batches; i++) {
-			//cout << "baseIndex: " << baseIndex << ", inBatch: " << i << endl;
-			//cout << "src: " << baseIndex+i << ", dst: " << i*unitSize << ", size: " << unitSize << endl;
+	if (this->networkConfig->_status == NetworkStatus::Train) {
+		// data
+		for (uint32_t i = 0; i < this->in_dim.batches; i++) {
 			const Dtype* ptr = dataSet->getTrainDataAt(baseIndex+i);
 			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
 		}
-	} else if(this->networkConfig->_status == NetworkStatus::Test) {
+
+		// label
+		if (this->_inputs.size() > 1) {
+			for (uint32_t i = 0; i < this->in_dim.batches; i++) {
+				const Dtype* ptr = dataSet->getTrainLabelAt(baseIndex+i);
+				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
+			}
+		}
+
+	} else if (this->networkConfig->_status == NetworkStatus::Test) {
 		for(uint32_t i = 0; i < this->in_dim.batches; i++) {
-			this->_inputData[0]->set_device_with_host_data(dataSet->getTestDataAt(baseIndex+i), i*unitSize, unitSize);
+			const Dtype* ptr = dataSet->getTestDataAt(baseIndex+i);
+			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
+		}
+
+		if (this->_inputs.size() > 1) {
+			for (uint32_t i = 0; i < this->in_dim.batches; i++) {
+				const Dtype* ptr = dataSet->getTestLabelAt(baseIndex+i);
+				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
+			}
 		}
 	}
-
 	Layer<Dtype>::feedforward();
-	//this->propFeedforward(end);
 }
 
 template <typename Dtype>
@@ -87,8 +100,17 @@ void InputLayer<Dtype>::initialize() {
 template <typename Dtype>
 void InputLayer<Dtype>::_shape(bool recursive) {
 	this->out_dim = this->in_dim;
-	this->_inputs.insert(this->_inputs.begin(), this->_outputs[0]);
-	this->_inputData.insert(this->_inputData.begin(), this->_outputData[0]);
+
+	for (uint32_t i = 0; i < this->_outputs.size(); i++) {
+		//this->_inputs.insert(this->_inputs.begin(), this->_outputs[0]);
+		//this->_inputData.insert(this->_inputData.begin(), this->_outputData[0]);
+		this->_inputs.push_back(this->_outputs[i]);
+		this->_inputData.push_back(this->_outputData[i]);
+	}
+
+	if (this->_outputs.size() > 1) {
+		this->_inputData[1]->shape({this->in_dim.batches, 1, 1, 1});
+	}
 
 	if(recursive) {
 		Layer<Dtype>::_shape();
