@@ -6,9 +6,9 @@
  */
 
 #include "FullyConnectedLayer.h"
-#include "../Util.h"
-#include "../exception/Exception.h"
-#include "../network/NetworkConfig.h"
+#include "Util.h"
+#include "Exception.h"
+#include "NetworkConfig.h"
 #include "cuda_runtime.h"
 #include <algorithm>
 

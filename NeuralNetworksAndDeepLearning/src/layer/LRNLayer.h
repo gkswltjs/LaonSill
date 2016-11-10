@@ -9,10 +9,10 @@
 #ifndef LAYER_LRNLAYER_H_
 #define LAYER_LRNLAYER_H_
 
-#include "../common.h"
+#include "common.h"
 #include "HiddenLayer.h"
 #include "LayerConfig.h"
-#include "../exception/Exception.h"
+#include "Exception.h"
 
 
 

@@ -1,7 +1,7 @@
 /**
  * @file Worker.h
  * @date 2016/10/5
- * @author mhlee
+ * @author moonhoen lee
  * @brief 병렬작업을 위한 worker 쓰레드를 관리
  * @details
  * @todo
@@ -20,7 +20,7 @@
 
 #include "common.h"
 #include "Job.h"
-#include "network/Network.h"
+#include "Network.h"
 
 template <typename Dtype> class Network;
 

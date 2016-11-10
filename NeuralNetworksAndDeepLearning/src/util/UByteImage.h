@@ -9,7 +9,7 @@
 #ifndef UBYTEIMAGE_H_
 #define UBYTEIMAGE_H_
 
-#include "../common.h"
+#include "common.h"
 
 #define UBYTE_IMAGE_MAGIC 2051
 #define UBYTE_LABEL_MAGIC 2049

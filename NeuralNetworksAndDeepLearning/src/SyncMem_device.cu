@@ -6,9 +6,9 @@
  */
 
 #include <math_functions.hpp>
-#include "SyncMem.h"
 #include <cfloat>
 
+#include "SyncMem.h"
 
 //#define SYNCMEM_LOG
 

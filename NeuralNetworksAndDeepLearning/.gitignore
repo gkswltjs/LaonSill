@@ -8,3 +8,7 @@
 /ReleaseClient/
 /src/param/Param.cpp
 /src/param/Param.h
+/src/log/HotCode.h
+/src/log/HotCode.cpp
+/src/perf/PerfList.h
+/src/perf/PerfList.cpp

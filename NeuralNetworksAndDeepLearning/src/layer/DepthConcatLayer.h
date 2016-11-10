@@ -9,9 +9,9 @@
 #ifndef LAYER_DEPTHCONCATLAYER_H_
 #define LAYER_DEPTHCONCATLAYER_H_
 
-#include "../common.h"
+#include "common.h"
 #include "HiddenLayer.h"
-#include "../exception/Exception.h"
+#include "Exception.h"
 
 
 

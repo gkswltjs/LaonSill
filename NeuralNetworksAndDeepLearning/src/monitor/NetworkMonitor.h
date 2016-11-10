@@ -15,11 +15,11 @@
 #include <cfloat>
 #include <boost/tuple/tuple.hpp>
 
-#include "../common.h"
-#include "../debug/StatLogger.h"
-#include "../debug/StatGraphPlotter.h"
-#include "../debug/StatFileWriter.h"
-#include "../param/Param.h"
+#include "common.h"
+#include "StatLogger.h"
+#include "StatGraphPlotter.h"
+#include "StatFileWriter.h"
+#include "Param.h"
 
 /**
  * @brief 네트워크 상태 모니터링 클래스

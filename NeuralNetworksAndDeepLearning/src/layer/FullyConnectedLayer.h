@@ -9,13 +9,13 @@
 #ifndef LAYER_FULLYCONNECTEDLAYER_H_
 #define LAYER_FULLYCONNECTEDLAYER_H_
 
-#include "../common.h"
+#include "common.h"
 #include "HiddenLayer.h"
 #include "LearnableLayer.h"
 #include "LayerConfig.h"
-#include "../activation/Activation.h"
-#include "../activation/ActivationFactory.h"
-#include "../cost/Cost.h"
+#include "Activation.h"
+#include "ActivationFactory.h"
+#include "Cost.h"
 
 
 

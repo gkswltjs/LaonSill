@@ -10,15 +10,11 @@
 #ifndef LAYER_POOLINGLAYER_H_
 #define LAYER_POOLINGLAYER_H_
 
-#include "../common.h"
+#include "common.h"
 #include "HiddenLayer.h"
-#include "../pooling/Pooling.h"
-#include "../pooling/PoolingFactory.h"
-#include "../exception/Exception.h"
-
-
-
-
+#include "Pooling.h"
+#include "PoolingFactory.h"
+#include "Exception.h"
 
 /**
  * @brief 풀링 레이어

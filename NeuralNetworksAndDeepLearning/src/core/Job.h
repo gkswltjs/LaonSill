@@ -1,7 +1,7 @@
 /**
  * @file Job.h
  * @date 2016-10-14
- * @author mhlee
+ * @author moonhoen lee
  * @brief 서버가 수행해야 할 작업을 명시한다.
  * @details
  */

@@ -5,18 +5,19 @@
  *      Author: jhkim
  */
 
-#include "Network.h"
-
 #include <vector>
 #include <map>
 #include <cfloat>
 
-#include "../dataset/DataSet.h"
-#include "../layer/LayerFactory.h"
-#include "../layer/HiddenLayer.h"
-#include "../layer/OutputLayer.h"
-#include "../Util.h"
-#include "../Worker.h"
+#include "DataSet.h"
+#include "LayerFactory.h"
+#include "HiddenLayer.h"
+#include "OutputLayer.h"
+#include "Util.h"
+#include "Worker.h"
+#include "Perf.h"
+#include "StdOutLog.h"
+#include "Network.h"
 
 using namespace std;
 
@@ -82,12 +83,13 @@ Network<Dtype>::~Network() {
 
 template <typename Dtype>
 void Network<Dtype>::sgd_with_timer(int epochs) {
-	Timer timer;
-	timer.start();
+    struct timespec startTime;
+    SPERF_START(NETWORK_TRAINING_TESTTIME, &startTime);
 	sgd(epochs);
 
-    if (Worker<Dtype>::consumerIdx == 0)
-	    cout << "Total training time : " << timer.stop(false) << "us elapsed" << endl;
+    SPERF_END(NETWORK_TRAINING_TESTTIME, startTime, epochs);
+    STDOUT_BLOCK(cout << "Total Training Time : " << SPERF_TIME(NETWORK_TRAINING_TESTTIME)
+                    << endl;);
 }
 
 

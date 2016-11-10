@@ -7,7 +7,7 @@
 
 
 #include "HiddenLayer.h"
-#include "../network/NetworkConfig.h"
+#include "NetworkConfig.h"
 
 using namespace std;
 

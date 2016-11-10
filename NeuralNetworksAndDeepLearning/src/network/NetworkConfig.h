@@ -14,17 +14,16 @@
 #include <string>
 #include <vector>
 
-#include "../common.h"
-#include "../evaluation/Evaluation.h"
-#include "../layer/Layer.h"
-#include "../layer/InputLayer.h"
-#include "../layer/OutputLayer.h"
-#include "../layer/LearnableLayer.h"
-#include "../layer/SplitLayer.h"
-#include "../monitor/NetworkListener.h"
-#include "../layer/LayerFactory.h"
-#include "../Worker.h"
-#include "../log/ColdLog.h"
+#include "common.h"
+#include "Evaluation.h"
+#include "Layer.h"
+#include "InputLayer.h"
+#include "OutputLayer.h"
+#include "LearnableLayer.h"
+#include "SplitLayer.h"
+#include "LayerFactory.h"
+#include "NetworkListener.h"
+#include "Worker.h"
 
 
 //template <typename Dtype> class DataSet;

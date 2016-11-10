@@ -11,8 +11,8 @@
 #ifndef GPU_MODE
 #include <CImg.h>
 
-#include "../common.h"
-#include "../network/Network.h"
+#include "common.h"
+#include "Network.h"
 
 using namespace cimg_library;
 

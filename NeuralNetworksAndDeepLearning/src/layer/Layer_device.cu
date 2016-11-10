@@ -5,11 +5,10 @@
  *      Author: jhkim
  */
 
-
 #ifdef GPU_MODE
 
 #include "Layer.h"
-#include "../cuda/Cuda.h"
+#include "Cuda.h"
 
 using namespace std;
 

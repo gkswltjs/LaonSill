@@ -10,11 +10,11 @@
 #ifndef LAYER_OUTPUTLAYER_H_
 #define LAYER_OUTPUTLAYER_H_
 
-#include "../common.h"
+#include "common.h"
 #include "FullyConnectedLayer.h"
-#include "../cost/CostFactory.h"
-#include "../SyncMem.h"
-#include "../dataset/DataSet.h"
+#include "CostFactory.h"
+#include "SyncMem.h"
+#include "DataSet.h"
 
 
 /**

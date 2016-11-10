@@ -14,16 +14,12 @@
 #include <map>
 #include <string>
 
-#include "../common.h"
-#include "../activation/Activation.h"
-#include "../Util.h"
+#include "common.h"
+#include "Activation.h"
+#include "Util.h"
 #include "HiddenLayer.h"
 #include "LearnableLayer.h"
 #include "LayerConfig.h"
-
-
-
-
 
 /**
  * @brief 컨볼루션 레이어

@@ -1,7 +1,7 @@
 /**
  * @file ColdLog.h
  * @date 2016-10-30
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
@@ -11,11 +11,13 @@
 
 #include <mutex>
 
-#include "../common.h"
+#include "common.h"
 
 // XXX: 아무리 cold log지만 너무 lock이 긴게 아닌지... 
 //      나중에 고민 해보자.
-// XXX: logLock unlock 할필요 없어보이긴 한데.. 일단 해도자.
+// XXX: logLock unlock 할필요 없어보이긴 한데.. 일단 해두자.
+// XXX: fflush 타이밍을 고민해보자.
+// fflush() is thread-safe
 #define COLD_LOG(level, cond, fmt, args...)                                             \
     do {                                                                                \
         if ((level >= ColdLog::logLevel) && (cond)) {                                   \
@@ -24,6 +26,7 @@
             fprintf(ColdLog::fp, fmt, ##args);                                          \
             fprintf(ColdLog::fp, "\n");                                                 \
             logLock.unlock();                                                           \
+            fflush(ColdLog::fp);                                                        \
         }                                                                               \
     } while (0)
 

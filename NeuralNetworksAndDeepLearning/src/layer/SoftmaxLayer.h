@@ -9,14 +9,11 @@
 #ifndef SOFTMAXLAYER_H_
 #define SOFTMAXLAYER_H_
 
-#include "../common.h"
+#include "common.h"
 #include "OutputLayer.h"
-#include "../cost/LogLikelihoodCost.h"
-#include "../activation/Softmax.h"
-#include "../exception/Exception.h"
-
-
-
+#include "LogLikelihoodCost.h"
+#include "Softmax.h"
+#include "Exception.h"
 
 /**
  * @brief 소프트맥스 출력 레이어

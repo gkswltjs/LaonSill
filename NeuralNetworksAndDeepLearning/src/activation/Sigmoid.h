@@ -11,7 +11,7 @@
 #ifndef ACTIVATION_SIGMOID_H_
 #define ACTIVATION_SIGMOID_H_
 
-#include "../common.h"
+#include "common.h"
 #include "Activation.h"
 
 

@@ -11,9 +11,9 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "../exception/Exception.h"
-#include "../util/UByteImage.h"
-#include "../Util.h"
+#include "Exception.h"
+#include "UByteImage.h"
+#include "Util.h"
 #include "ImagePackDataSet.h"
 
 using namespace std;

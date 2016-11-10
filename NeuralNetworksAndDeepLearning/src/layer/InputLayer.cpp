@@ -7,8 +7,8 @@
 
 
 #include "InputLayer.h"
-#include "../network/NetworkConfig.h"
-#include "../dataset/ImagePackDataSet.h"
+#include "NetworkConfig.h"
+#include "ImagePackDataSet.h"
 
 using namespace std;
 

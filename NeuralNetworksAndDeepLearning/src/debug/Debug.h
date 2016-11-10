@@ -10,22 +10,22 @@
 
 #include <cstdint>
 
-#include "../common.h"
-#include "../activation/Activation.h"
-#include "../dataset/DataSet.h"
-#include "../dataset/ImagePackDataSet.h"
-#include "../dataset/MockDataSet.h"
-#include "../layer/ConvLayer.h"
-#include "../layer/DepthConcatLayer.h"
-#include "../layer/FullyConnectedLayer.h"
-#include "../layer/InputLayer.h"
-#include "../layer/LayerConfig.h"
-#include "../layer/LRNLayer.h"
-#include "../layer/PoolingLayer.h"
-#include "../layer/SoftmaxLayer.h"
-#include "../layer/SplitLayer.h"
-#include "../network/NetworkConfig.h"
-#include "../pooling/Pooling.h"
+#include "common.h"
+#include "Activation.h"
+#include "DataSet.h"
+#include "MockDataSet.h"
+#include "ImagePackDataSet.h"
+#include "ConvLayer.h"
+#include "DepthConcatLayer.h"
+#include "FullyConnectedLayer.h"
+#include "InputLayer.h"
+#include "LayerConfig.h"
+#include "LRNLayer.h"
+#include "PoolingLayer.h"
+#include "SoftmaxLayer.h"
+#include "SplitLayer.h"
+#include "NetworkConfig.h"
+#include "Pooling.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;

@@ -5,7 +5,6 @@
  *      Author: jhkim
  */
 
-#include "ArtisticStyle.h"
 
 #ifndef GPU_MODE
 
@@ -14,8 +13,9 @@
 #include <vector>
 //#include <CImg.h>
 
-#include "../Data.h"
-#include "../layer/InputLayer.h"
+#include "ArtisticStyle.h"
+#include "Data.h"
+#include "InputLayer.h"
 
 using namespace std;
 using namespace cimg_library;

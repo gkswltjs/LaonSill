@@ -15,7 +15,7 @@
 
 #include <gnuplot-iostream.h>
 
-#include "../common.h"
+#include "common.h"
 #include "StatLogger.h"
 
 class StatGraphPlotter : public StatLogger {

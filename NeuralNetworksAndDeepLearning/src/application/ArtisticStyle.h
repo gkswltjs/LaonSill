@@ -11,9 +11,9 @@
 
 #ifndef GPU_MODE
 
-#include "../common.h"
-#include "../network/Network.h"
-#include "../debug/StatGraphPlotter.h"
+#include "common.h"
+#include "Network.h"
+#include "StatGraphPlotter.h"
 
 #include <CImg.h>
 using namespace cimg_library;

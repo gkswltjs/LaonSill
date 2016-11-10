@@ -9,13 +9,9 @@
 #ifndef POOLING_POOLINGFACTORY_H_
 #define POOLING_POOLINGFACTORY_H_
 
-#include "../common.h"
+#include "common.h"
 #include "AvgPooling.h"
 #include "MaxPooling.h"
-
-
-
-
 
 /**
  * @brief 주어진 풀링 타입에 따라 풀링 객체를 생성하여 반환

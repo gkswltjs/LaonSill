@@ -9,7 +9,7 @@
 #ifndef LAYER_HIDDENLAYER_H_
 #define LAYER_HIDDENLAYER_H_
 
-#include "../common.h"
+#include "common.h"
 #include "Layer.h"
 //#include "../network/NetworkConfig.h"
 

@@ -11,7 +11,7 @@
 
 #include <limits>
 
-#include "../common.h"
+#include "common.h"
 #include "Pooling.h"
 
 /**

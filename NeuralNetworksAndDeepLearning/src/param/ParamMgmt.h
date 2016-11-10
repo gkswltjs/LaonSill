@@ -1,7 +1,7 @@
 /**
  * @file ParamMgmt.h
  * @date 2016-10-27
- * @author mhlee
+ * @author moonhoen lee
  * @brief 파라미터를 관리하는 클래스
  * @details
  *  (1) hot area에서 사용이 되는 파라미터는 그 값의 읽기 성능이 중요하다.
@@ -22,7 +22,7 @@
 #include <map>
 #include <string>
 
-#include "../common.h"
+#include "common.h"
 #include "ParamDef.h"
 
 class ParamMgmt {

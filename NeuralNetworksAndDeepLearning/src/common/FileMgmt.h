@@ -1,7 +1,7 @@
 /**
  * @file FileMgmt.h
  * @date 2016-10-31
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
@@ -13,10 +13,11 @@
 
 class FileMgmt {
 public: 
-    FileMgmt() {}
-    virtual ~FileMgmt() {}
+                FileMgmt() {}
+    virtual    ~FileMgmt() {}
 
     static void checkDir(const char* path);
+    static int  openFile(const char* path, int flag);
 private:
     static void makeDir(const char* path);
 };

@@ -13,8 +13,8 @@
 //#include "layer/LayerConfig.h"
 #include <string>
 #include <fstream>
-#include "cuda/Cuda.h"
 
+#include "Cuda.h"
 #include "common.h"
 
 #define	LOG_DEBUG	0

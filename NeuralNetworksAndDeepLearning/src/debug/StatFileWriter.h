@@ -8,10 +8,11 @@
 #ifndef STATFILEWRITER_H_
 #define STATFILEWRITER_H_
 
-#include "../common.h"
-#include "StatLogger.h"
 #include <string>
 #include <fstream>
+
+#include "common.h"
+#include "StatLogger.h"
 
 class StatFileWriter : public StatLogger {
 public:

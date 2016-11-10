@@ -13,9 +13,9 @@
 #include <vector>
 #include <algorithm>
 
-#include "../common.h"
-#include "../Util.h"
-#include "../exception/Exception.h"
+#include "common.h"
+#include "Util.h"
+#include "Exception.h"
 
 template <typename Dtype>
 class DataSet {

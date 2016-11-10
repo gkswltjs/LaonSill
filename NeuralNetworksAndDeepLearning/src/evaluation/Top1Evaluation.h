@@ -6,13 +6,13 @@
  * @details
  */
 
-
 #ifndef TOP1EVALUATION_H_
 #define TOP1EVALUATION_H_
 
-#include "../common.h"
-#include "Evaluation.h"
 #include <limits>
+
+#include "common.h"
+#include "Evaluation.h"
 
 /**
  * @brief 네트워크 1위 추정과 정답의 일치율을 평가하는 Evaluation 클래스

@@ -16,9 +16,9 @@
 #include <boost/random.hpp>
 #include <boost/math/special_functions/next.hpp>
 
-#include "../common.h"
-#include "../Util.h"
-#include "../Data.h"
+#include "common.h"
+#include "Util.h"
+#include "Data.h"
 
 
 

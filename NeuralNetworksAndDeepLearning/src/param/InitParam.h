@@ -1,7 +1,7 @@
 /**
  * @file InitParam.h
  * @date 2016-10-27
- * @author mhlee
+ * @author moonhoen lee
  * @brief 
  * @details
  */
@@ -9,7 +9,7 @@
 #ifndef INITPARAM_H
 #define INITPARAM_H 
 
-#include "../common.h"
+#include "common.h"
 
 class InitParam {
 public:

@@ -78,7 +78,7 @@ if not "SESS_COUNT" in paramDic:
 headerTopSentences = [\
 "/**",\
 " * @file Param.h",\
-" * @author mhlee",\
+" * @author moonhoen lee",\
 " * @brief parameter mgmt module",\
 " * @warning",\
 " *  The file is auto-generated.",\
@@ -193,7 +193,7 @@ finally:
 sourceTopSentences = [\
 "/**",\
 " * @file Param.cpp",\
-" * @author mhlee",\
+" * @author moonhoen lee",\
 " * @brief parameter mgmt module",\
 " * @warning",\
 " *  The file is auto-generated.",\
@@ -249,6 +249,8 @@ try:
 
         if "char" in typeString:
             defaultValueStr = '{"%s"}' % str(defaultValue)
+        elif 'bool' in typeString:
+            defaultValueStr = '%s' % str(defaultValue).lower()
         else:
             defaultValueStr = '%s' % str(defaultValue)
 

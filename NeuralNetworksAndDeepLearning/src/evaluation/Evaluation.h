@@ -6,16 +6,11 @@
  * @details
  */
 
-
-
-
-
 #ifndef EVALUATION_H_
 #define EVALUATION_H_
 
-#include "../common.h"
-#include "../dataset/DataSet.h"
-
+#include "common.h"
+#include "DataSet.h"
 
 /**
  * @brief Evaluation 최상위 추상클래스

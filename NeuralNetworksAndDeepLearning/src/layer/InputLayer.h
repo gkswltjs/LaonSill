@@ -15,10 +15,10 @@
 #include <string>
 #include <vector>
 
-#include "../common.h"
-#include "../Util.h"
+#include "common.h"
+#include "Util.h"
 #include "Layer.h"
-#include "../dataset/DataSet.h"
+#include "DataSet.h"
 
 /**
  * @brief 입력 레이어 클래스

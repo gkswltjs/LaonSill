@@ -14,7 +14,7 @@
 #include <cublas_v2.h>
 #include <vector>
 
-#include "../common.h"
+#include "common.h"
 
 //////////////////////////////////////////////////////////////////////////////
 // Error handling
