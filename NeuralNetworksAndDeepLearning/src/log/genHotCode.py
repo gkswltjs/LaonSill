@@ -64,7 +64,7 @@ headerTopSentences = [\
 "#include <vector>",\
 "#include <string>",\
 "",\
-'#include "../common.h"',\
+'#include "common.h"',\
 '#include "HotLog.h"',\
 "",\
 "class HotLog;",\

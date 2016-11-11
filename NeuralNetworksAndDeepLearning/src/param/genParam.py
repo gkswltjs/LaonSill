@@ -92,7 +92,7 @@ headerTopSentences = [\
 "#include <vector>",\
 "#include <string>",\
 "",\
-'#include "../common.h"',\
+'#include "common.h"',\
 '#include "ParamDef.h"',\
 '#include "ParamMgmt.h"',\
 "",\

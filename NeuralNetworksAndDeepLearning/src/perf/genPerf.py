@@ -68,11 +68,11 @@ headerTopSentences = [\
 "#include <map>",\
 "#include <string>",\
 "",\
-'#include "../common.h"',\
+'#include "common.h"',\
 '#include "PerfArgDef.h"',\
 '#include "PerfDef.h"',\
-'#include "../param/Param.h"',\
-'#include "../log/SysLog.h"',\
+'#include "Param.h"',\
+'#include "SysLog.h"',\
 "",\
 "class PerfList {",\
 "public:",\
