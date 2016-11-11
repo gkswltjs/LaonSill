@@ -76,7 +76,7 @@
 									<listOptionValue builtIn="false" value="boost_iostreams"/>
 									<listOptionValue builtIn="false" value="X11"/>
 								</option>
-								<option id="nvcc.linker.option.paths.516465820" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths"/>
+								<option id="nvcc.linker.option.paths.516465820" name="Library search path (-L)" superClass="nvcc.linker.option.paths"/>
 								<option id="nvcc.linker.option.other.1447413546" name="Other options (-Xlinker [option])" superClass="nvcc.linker.option.other" valueType="stringList">
 									<listOptionValue builtIn="false" value="--export-dynamic"/>
 								</option>
@@ -362,12 +362,12 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278" name="ReleaseClient" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
+				<configuration artifactExtension="" artifactName="${ProjName}Client" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.VCErrorParser;org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278" name="ReleaseClient" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
 					<folderInfo id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278." name="/" resourcePath="">
-						<toolChain id="com.nvidia.cuda.ide.toolchain.eight_zero.1671286897" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
+						<toolChain errorParsers="" id="com.nvidia.cuda.ide.toolchain.eight_zero.1671286897" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
 							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.1162047805" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Release" id="com.nvidia.cuda.ide.builder.2142201615" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
-							<tool commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets  ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.compiler.base.1035527359" name="NVCC Compiler" superClass="nvcc.compiler.base">
+							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Release" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="com.nvidia.cuda.ide.builder.2142201615" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
+							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets  ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.1035527359" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.1815451746" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}&quot;"/>
@@ -411,7 +411,7 @@
 								<inputType id="nvcc.compiler.input.cpp.1070225711" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.1078164640" superClass="nvcc.compiler.input.c"/>
 							</tool>
-							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.linker.base.1432334495" name="NVCC Linker" superClass="nvcc.linker.base">
+							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="nvcc.errorParser;org.eclipse.cdt.core.GLDErrorParser" id="nvcc.linker.base.1432334495" name="NVCC Linker" superClass="nvcc.linker.base">
 								<option id="nvcc.linker.option.libs.1455820643" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="cudart"/>
 									<listOptionValue builtIn="false" value="cublas"/>
@@ -430,7 +430,7 @@
 								</inputType>
 							</tool>
 							<tool id="nvcc.archiver.base.2038434582" name="NVCC Archiver" superClass="nvcc.archiver.base"/>
-							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" id="com.nvidia.host.assembler.1779346791" name="Host Assembler" superClass="com.nvidia.host.assembler">
+							<tool command="as" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GASErrorParser" id="com.nvidia.host.assembler.1779346791" name="Host Assembler" superClass="com.nvidia.host.assembler">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1493429866" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>

@@ -23,6 +23,8 @@ fi
 
 dop=$1
 
+cd $NN_HOME
+
 if [ ! -d bin ]; then
     mkdir bin
 fi
@@ -75,7 +77,7 @@ if [ "$buildDebug" -eq 1 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp NeuralNetworksAndDeepLearning ../bin/SoooaClient
+    cp NeuralNetworksAndDeepLearningClient ../bin/SoooaClient
     cd ..
 fi
 
@@ -97,6 +99,6 @@ if [ "$buildRelease" -eq 1 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp NeuralNetworksAndDeepLearning ../bin/SoooaClient
+    cp NeuralNetworksAndDeepLearningClient ../bin/SoooaClient
     cd ..
 fi
