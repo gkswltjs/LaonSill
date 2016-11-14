@@ -73,6 +73,8 @@ public:
     static int                                  createNetwork();
     static Network<Dtype>*                      getNetwork(int networkId);
 
+    static bool                                 useWorker;
+
 private:
     /**
      * Consumer간의 동기화를 지원하기 위한 변수들

@@ -33,9 +33,9 @@ template<typename Dtype>
 atomic<long> Worker<Dtype>::peerDoneStep;
 
 template<typename Dtype>
-int Worker<Dtype>::consumerCount;
+int Worker<Dtype>::consumerCount = 1;
 template <typename Dtype>
-thread_local int Worker<Dtype>::consumerIdx;
+thread_local int Worker<Dtype>::consumerIdx = 0;
 template<typename Dtype>
 volatile void* Worker<Dtype>::consumerJob;
 
@@ -79,6 +79,9 @@ template<typename Dtype>
 int Worker<Dtype>::networkGenId;
 template<typename Dtype>
 mutex Worker<Dtype>::networkMutex;
+
+template<typename Dtype>
+bool Worker<Dtype>::useWorker = false;
 
 template <typename Dtype>
 bool Worker<Dtype>::isReady() {
@@ -245,6 +248,8 @@ void Worker<Dtype>::launchThreads(int consumerCount) {
     Cuda::create(consumerCount);
     COLD_LOG(ColdLog::INFO, true, "CUDA is initialized");
 
+    Worker<Dtype>::useWorker = true;
+
     // (2) Worker Count를 설정한다.
     if (consumerCount > Cuda::gpuCount) {
         SYS_LOG("ERROR: Invalid GPU count of Worker. ");
@@ -278,6 +283,10 @@ void Worker<Dtype>::joinThreads() {
 
 template <typename Dtype>
 bool Worker<Dtype>::waitPeer() {
+    // XXX: 아래의 코드는 오직 1개의 GPU를 사용하는 developer mode에서만 유효하다.
+    if (!useWorker)
+        return false;
+
     if (atomic_fetch_sub(&Worker<Dtype>::runningPeerCount, 1) == 1) {
         atomic_store(&Worker<Dtype>::runningPeerCount, Worker<Dtype>::consumerCount);
         return true; 
