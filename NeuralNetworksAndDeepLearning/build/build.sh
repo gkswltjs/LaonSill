@@ -23,7 +23,7 @@ fi
 
 dop=$1
 
-cd $NN_HOME
+cd $SOOOA_BUILD_PATH
 
 if [ ! -d bin ]; then
     mkdir bin
@@ -59,46 +59,62 @@ if [ "$?" -ne 0 ]; then
 fi
 cd ../..
 
+echo "[generate auto-makefile]"
+cd build
+./genMakefile.py
+if [ "$?" -ne 0 ]; then
+    echo "ERROR: generate auto-makefile failed"
+    exit -1
+fi
+cd ..
+
 if [ "$buildDebug" -eq 1 ]; then
     echo "[build Debug (server)]"
-    cd Debug
+    cd DebugGen
     make -j$dop all
     if [ "$?" -ne 0 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp NeuralNetworksAndDeepLearning ../bin/SoooaServer
+    cp SoooaServerDebug ../bin/SoooaServerDebug
     cd ..
 
     echo "[build Debug (client)]"
-    cd DebugClient
+    cd DebugClientGen
     make -j$dop all
     if [ "$?" -ne 0 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp NeuralNetworksAndDeepLearningClient ../bin/SoooaClient
+    cp SoooaClientDebug ../bin/SoooaClientDebug
     cd ..
 fi
 
 if [ "$buildRelease" -eq 1 ]; then
     echo "[build Release (server)]"
-    cd Release
+    cd ReleaseGen
     make -j$dop all
     if [ "$?" -ne 0 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp NeuralNetworksAndDeepLearning ../bin/SoooaServer
+    cp SoooaServer ../bin/SoooaServer
     cd ..
 
     echo "[build Release (client)]"
-    cd ReleaseClient
+    cd ReleaseClientGen
     make -j$dop all
     if [ "$?" -ne 0 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp NeuralNetworksAndDeepLearningClient ../bin/SoooaClient
+    cp SoooaClient ../bin/SoooaClient
     cd ..
 fi
+
+echo "[remove build directory]"
+rm -rf DebugGen
+rm -rf DebugClientGen
+rm -rf ReleaseGen
+rm -rf ReleaseClientGen
+

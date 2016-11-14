@@ -168,6 +168,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 0
+},
+
+"BASE_DATA_DIR" : 
+{
+    "DESC" : "specify base data directory.",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "CHAR(1024)",
+    "DEFAULT" : "/data/train_pack/"
 }
 
 }

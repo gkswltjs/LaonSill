@@ -26,6 +26,7 @@
 #include "SplitLayer.h"
 #include "NetworkConfig.h"
 #include "Pooling.h"
+#include "Param.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -39,11 +40,11 @@ template <typename Dtype> class LayersConfig;
 template <typename Dtype>
 DataSet<Dtype>* createMnistDataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/data/train_pack/mnist/train_data",
-			"/data/train_pack/mnist/train_label",
+			std::string(SPARAM(BASE_DATA_DIR)) + std::string("/mnist/train_data"),
+			std::string(SPARAM(BASE_DATA_DIR)) + std::string("/mnist/train_label"),
 			1,
-			"/data/train_pack/mnist/test_data",
-			"/data/train_pack/mnist/test_label",
+			std::string(SPARAM(BASE_DATA_DIR)) + std::string("/mnist/test_data"),
+			std::string(SPARAM(BASE_DATA_DIR)) + std::string("/mnist/test_label"),
 			1);
 	dataSet->setMean({0.13066047740});
 	return dataSet;
@@ -66,11 +67,15 @@ DataSet<Dtype>* createMockDataSet() {
 template <typename Dtype>
 DataSet<Dtype>* createSampleDataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/data/train_pack/ILSVRC2012/save/sample/train_data",
-			"/data/train_pack/ILSVRC2012/save/sample/train_label",
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/sample/train_data"),
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/sample/train_label"),
 			3,
-			"/data/train_pack/ILSVRC2012/save/sample/train_data",
-			"/data/train_pack/ILSVRC2012/save/sample/train_label",
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/sample/train_data"),
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/sample/train_label"),
 			1);
 	dataSet->setMean({0.0, 0.0, 0.0});
 	return dataSet;
@@ -79,11 +84,15 @@ DataSet<Dtype>* createSampleDataSet() {
 template <typename Dtype>
 DataSet<Dtype>* createImageNet1000DataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/data/train_pack/ILSVRC2012/save/1000/train_data",
-			"/data/train_pack/ILSVRC2012/save/1000/train_label",
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/1000/train_data"),
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/1000/train_label"),
 			1,
-			"/data/train_pack/ILSVRC2012/save/1000/test_data",
-			"/data/train_pack/ILSVRC2012/save/1000/test_label",
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/1000/test_data"),
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/1000/test_label"),
 			1);
 	dataSet->setMean({0.47684615850, 0.45469805598, 0.41394191980});
 	return dataSet;
@@ -92,11 +101,15 @@ DataSet<Dtype>* createImageNet1000DataSet() {
 template <typename Dtype>
 DataSet<Dtype>* createImageNet10000DataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/data/train_pack/ILSVRC2012/save/10000/train_data",
-			"/data/train_pack/ILSVRC2012/save/10000/train_label",
+			std::string(SPARAM(BASE_DATA_DIR)) 
+                + std::string("/ILSVRC2012/save/10000/train_data"),
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/10000/train_label"),
 			40,
-			"/data/train_pack/ILSVRC2012/save/10000/test_data",
-			"/data/train_pack/ILSVRC2012/save/10000/test_label",
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/10000/test_data"),
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/10000/test_label"),
 			1);
 	dataSet->setMean({0.47684615850, 0.45469805598, 0.41394191980});
 	return dataSet;
@@ -105,11 +118,15 @@ DataSet<Dtype>* createImageNet10000DataSet() {
 template <typename Dtype>
 DataSet<Dtype>* createImageNet50000DataSet() {
 	DataSet<Dtype>* dataSet = new ImagePackDataSet<Dtype>(
-			"/data/train_pack/ILSVRC2012/save/50000/train_data",
-			"/data/train_pack/ILSVRC2012/save/50000/train_label",
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/50000/train_data"),
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/50000/train_label"),
 			1,
-			"/data/train_pack/ILSVRC2012/save/50000/test_data",
-			"/data/train_pack/ILSVRC2012/save/50000/test_label",
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/50000/test_data"),
+			std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ILSVRC2012/save/50000/test_label"),
 			1);
 	dataSet->setMean({0.47684615850, 0.45469805598, 0.41394191980});
 	return dataSet;
@@ -127,7 +144,8 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->id(0)
 					->name("inputLayer")
 					->outputs({"data", "label"})
-					->source("/data/train_pack/mnist")
+					->source(std::string(SPARAM(BASE_DATA_DIR))
+                        + std::string("/mnist"))
 					->sourceType("ImagePack")
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
