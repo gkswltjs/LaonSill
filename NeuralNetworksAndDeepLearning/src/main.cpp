@@ -228,6 +228,7 @@ void network_load() {
 const char          SERVER_HOSTNAME[] = {"localhost"};
 int main(int argc, char** argv) {
     Client::clientMain(SERVER_HOSTNAME, Communicator::LISTENER_PORT);
+    asdasdasd
 	exit(EXIT_SUCCESS);
 }
 #endif
