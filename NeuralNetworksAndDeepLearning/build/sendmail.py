@@ -12,9 +12,8 @@ import datetime
 
 sentence = "12fvdk3rdd4h4dsfnq3fjsme35mfeejjklltxxzabjcda"
 dop = "4"
-#toList = ["monhoney@laonbud.com", "jhkim@laonbud.com", "grandsys@laonbud.com",\
-#    "twone315@laonbud.com"]
-toList = ["monhoney@laonbud.com"]
+toList = ["monhoney@laonbud.com", "jhkim@laonbud.com", "grandsys@laonbud.com",\
+    "twone315@laonbud.com"]
 
 ###########################################################################################
 # Codes
