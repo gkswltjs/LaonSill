@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
 
 void network_load() {
 	Cuda::create(0);
-	cout << "Cuda creation done ... " << endl;
+	STDOUT_BLOCK(cout << "Cuda creation done ... " << endl);
 
 	//DataSet<float>* dataSet = createMnistDataSet<float>();
 	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
