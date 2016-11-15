@@ -24,6 +24,11 @@ fi
 dop=$1
 
 cd $SOOOA_BUILD_PATH
+git pull
+if [ "$?" -ne 0 ]; then
+    echo "ERROR: git pull failed"
+    exit -1
+fi
 
 if [ ! -d bin ]; then
     mkdir bin
