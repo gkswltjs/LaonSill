@@ -24,6 +24,8 @@ fi
 dop=$1
 
 cd $SOOOA_BUILD_PATH
+
+echo "[update to the latest source]"
 git pull
 if [ "$?" -ne 0 ]; then
     echo "ERROR: git pull failed"
