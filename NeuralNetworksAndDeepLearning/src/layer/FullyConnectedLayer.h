@@ -172,6 +172,7 @@ public:
 	//////////////////////////////////////////
 
 	virtual void _backpropagation();
+	virtual void shape();
 
 private:
 	/**
@@ -186,6 +187,7 @@ private:
 	 */
 	void initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
+
 
 
 
@@ -206,7 +208,7 @@ protected:
 	void _computeBiasGrad();
 	void _computeInputGrad();
 
-	virtual void _shape(bool recursive=true);
+
 	virtual void _clearShape();
 	//virtual void _save(std::ofstream& ofs);
 	//virtual void _load(std::ifstream& ifs, std::map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
@@ -223,6 +225,7 @@ protected:
 	};
 
 protected:
+	uint32_t n_out;
 	double p_dropout;						///< dropout을 적용할 확율
 
 	update_param weight_update_param;		///< weight 갱신 관련 파라미터 구조체
@@ -246,6 +249,9 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
+	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
+
 	Dtype* d_onevec;						///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
 
 

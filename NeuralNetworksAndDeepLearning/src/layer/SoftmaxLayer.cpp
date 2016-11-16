@@ -42,36 +42,17 @@ SoftmaxLayer<Dtype>::~SoftmaxLayer() {}
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::initialize() {
 	this->type = Layer<Dtype>::Softmax;
-
-	//this->cost_fn = CostFactory::create(Cost<Dtype>::LogLikelihood);
-	//this->activation_fn = ActivationFactory::create(Activation::Softmax);
-	//this->activation_fn->initialize_weight(in_dim.size(), weight);
-
-	//weight.zeros();
-	//bias.zeros();
 }
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::_shape(bool recursive) {
-	if(recursive) {
-		OutputLayer<Dtype>::_shape();
-	}
+void SoftmaxLayer<Dtype>::shape() {
+	OutputLayer<Dtype>::shape();
 }
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::_clearShape() {
 	OutputLayer<Dtype>::_clearShape();
 }
-
-/*
-template <typename Dtype>
-void SoftmaxLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
-	OutputLayer<Dtype>::_load(ifs, layerMap);
-	initialize();
-	SoftmaxLayer<Dtype>::_shape(false);
-}
-*/
-
 
 
 

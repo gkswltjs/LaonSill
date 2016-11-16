@@ -21,7 +21,8 @@ uint32_t Data<Dtype>::printConfig = 0;
 
 
 template <typename Dtype>
-Data<Dtype>::Data() {
+Data<Dtype>::Data(const std::string& name) {
+	this->_name = name;
 	this->_shape.resize(SHAPE_SIZE);
 	this->_count = 0;
 
@@ -33,7 +34,8 @@ Data<Dtype>::Data() {
 }
 
 template <typename Dtype>
-Data<Dtype>::Data(Data<Dtype>* data, uint32_t type) {
+Data<Dtype>::Data(const std::string& name, Data<Dtype>* data, uint32_t type) {
+	this->_name = name;
 	this->_shape.resize(SHAPE_SIZE);
 	this->_count = 0;
 
@@ -49,7 +51,7 @@ Data<Dtype>::Data(Data<Dtype>* data, uint32_t type) {
 }
 
 template <typename Dtype>
-Data<Dtype>::Data(const vector<uint32_t>& _shape) : Data() {
+Data<Dtype>::Data(const std::string& name, const vector<uint32_t>& _shape) : Data(name) {
 	shape(_shape);
 }
 
@@ -324,10 +326,28 @@ void Data<Dtype>::print_data(const string& head) {
 }
 
 template <typename Dtype>
+void Data<Dtype>::print_data() {
+	print_data(_name+"-data");
+}
+
+template <typename Dtype>
+void Data<Dtype>::print_data_flatten() {
+	if (printConfig) {
+		_data->print(_name+"-data");
+	}
+}
+
+
+template <typename Dtype>
 void Data<Dtype>::print_grad(const string& head) {
 	if(printConfig) {
 		_grad->print(head, _shape);
 	}
+}
+
+template <typename Dtype>
+void Data<Dtype>::print_grad() {
+	print_grad(_name+"-grad");
 }
 
 

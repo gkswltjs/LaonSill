@@ -88,6 +88,8 @@ public:
 
 	virtual void _backpropagation();
 
+	virtual void shape();
+
 protected:
 	/**
 	 * @details 네트워크 cost의 다음 레이어의 입력에 관한 gradient값을 전달 받아
@@ -95,7 +97,7 @@ protected:
 	 */
 
 
-	virtual void _shape(bool recursive=true);
+	//virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
 	/**

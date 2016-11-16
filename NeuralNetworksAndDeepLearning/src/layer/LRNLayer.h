@@ -91,6 +91,7 @@ public:
 	virtual ~LRNLayer();
 
 
+	virtual void shape();
 
 	virtual void _backpropagation();
 
@@ -100,7 +101,7 @@ protected:
 
 	virtual void _feedforward();
 
-	virtual void _shape(bool recursive=true);
+
 	virtual void _clearShape();
 	//virtual void _save(std::ofstream &ofs);
 	//virtual void _load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
@@ -113,6 +114,8 @@ protected:
 	rcube delta_input;
 	rcube z;	// beta powered 전의 weighted sum 상태의 norm term
 #else
+	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 	cudnnLRNDescriptor_t lrnDesc;				///< cudnn LRN 연산 정보 구조체
 #endif
 

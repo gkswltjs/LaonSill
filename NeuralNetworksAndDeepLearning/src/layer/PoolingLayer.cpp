@@ -29,6 +29,8 @@ PoolingLayer<Dtype>::PoolingLayer(const string name, pool_dim pool_d, typename P
 template <typename Dtype>
 PoolingLayer<Dtype>::~PoolingLayer() {
 	PoolingFactory<Dtype>::destroy(pooling_fn);
+	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 }
 
 template <typename Dtype>
@@ -36,6 +38,9 @@ void PoolingLayer<Dtype>::initialize(pool_dim pool_d, typename Pooling<Dtype>::T
 	this->type = Layer<Dtype>::Pool;
 	this->pool_d = pool_d;
 	this->pooling_fn = PoolingFactory<Dtype>::create(poolingType, pool_d);
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
 /*

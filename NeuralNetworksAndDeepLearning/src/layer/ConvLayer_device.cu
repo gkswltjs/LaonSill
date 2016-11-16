@@ -49,6 +49,8 @@ ConvLayer<Dtype>::~ConvLayer() {
 
 	if(d_workspace) checkCudaErrors(cudaFree(d_workspace));
 
+	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(biasTensorDesc));
 	checkCUDNN(cudnnDestroyFilterDescriptor(filterDesc));
 	checkCUDNN(cudnnDestroyConvolutionDescriptor(convDesc));
@@ -71,20 +73,21 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 	const int filter_size = filter_d.size();
 
 	this->_params.resize(2);
-	this->_params[Filter] = new Data<Dtype>();
-	this->_params[Bias] = new Data<Dtype>();
+	this->_params[Filter] = new Data<Dtype>("Filter");
+	this->_params[Bias] = new Data<Dtype>("Bias");
 	this->_params[Filter]->shape({filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
 	this->_params[Bias]->shape({filter_d.filters, 1, 1, 1});
 
 	this->_paramsHistory.resize(2);
-	this->_paramsHistory[Filter] = new Data<Dtype>();
-	this->_paramsHistory[Bias] = new Data<Dtype>();
+	this->_paramsHistory[Filter] = new Data<Dtype>("FilterHistory");
+	this->_paramsHistory[Bias] = new Data<Dtype>("BiasHistory");
 	this->_paramsHistory[Filter]->shape({filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
 	this->_paramsHistory[Bias]->shape({filter_d.filters, 1, 1, 1});
 
-	this->_preActivation = new Data<Dtype>();
+	this->_preActivation = new Data<Dtype>("PreActivation");
 
-
+	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&biasTensorDesc));
 	checkCUDNN(cudnnCreateFilterDescriptor(&filterDesc));
 	checkCUDNN(cudnnCreateConvolutionDescriptor(&convDesc));
@@ -106,7 +109,138 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 }
 
 template <typename Dtype>
-void ConvLayer<Dtype>::_shape(bool recursive) {
+void ConvLayer<Dtype>::shape() {
+	Layer<Dtype>::_adjustInputShape();
+
+	if (!Layer<Dtype>::_isInputShapeChanged(0))
+		return;
+
+	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
+	uint32_t batches 	= inputShape[0];
+	uint32_t channels 	= inputShape[1];
+	uint32_t rows 		= inputShape[2];
+	uint32_t cols 		= inputShape[3];
+
+	checkCUDNN(cudnnSetTensor4dDescriptor(
+			this->inputTensorDesc,
+			CUDNN_TENSOR_NCHW,
+			CUDNN_DATA_FLOAT,
+			batches, channels, rows, cols));
+
+	int n = 0, c = 0, h = 0, w = 0;
+	checkCUDNN(cudnnGetConvolution2dForwardOutputDim(
+			convDesc,
+			this->inputTensorDesc,
+			filterDesc,
+			&n, &c, &h, &w));
+
+	checkCUDNN(cudnnSetTensor4dDescriptor(
+			this->outputTensorDesc,
+			CUDNN_TENSOR_NCHW,
+			CUDNN_DATA_FLOAT,
+			n, c, h, w));
+
+	const uint32_t obatches = static_cast<uint32_t>(n);
+	const uint32_t ochannels = static_cast<uint32_t>(c);
+	const uint32_t orows = static_cast<uint32_t>(h);
+	const uint32_t ocols = static_cast<uint32_t>(w);
+
+	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
+			this->name.c_str(), obatches, ochannels, orows, ocols);
+
+	this->_inputShape[0] = inputShape;
+	this->_preActivation->shape({obatches, ochannels, orows, ocols});
+	this->_outputData[0]->shape({obatches, ochannels, orows, ocols});
+
+
+	//int u_in = this->in_dim.unitsize();
+	//int u_out = this->out_dim.unitsize();
+	//int b_in = this->in_dim.batchsize();
+	//int b_out = this->out_dim.batchsize();
+	int u_in = channels * rows * cols;
+	int u_out = c * h * w;
+	int b_in = batches * channels * rows * cols;
+	int b_out = n * c * h * w;
+
+	weight_filler.fill(_params[Filter]);
+	bias_filler.fill(_params[Bias]);
+
+
+	size_t convFwdWorkspaceSize;
+	size_t convBwdFilterWorkspaceSize;
+	size_t convBwdDataWorkspaceSize;
+
+	// forward algorithm
+	checkCUDNN(cudnnGetConvolutionForwardAlgorithm(
+			Cuda::cudnnHandle,
+			this->inputTensorDesc,
+			filterDesc,
+			convDesc,
+			this->outputTensorDesc,
+			CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
+			8<<20,
+			&convFwdAlgo));
+
+	checkCUDNN(cudnnGetConvolutionForwardWorkspaceSize(
+			Cuda::cudnnHandle,
+			this->inputTensorDesc,
+			filterDesc,
+			convDesc,
+			this->outputTensorDesc,
+			convFwdAlgo,
+			&convFwdWorkspaceSize));
+
+	// backward filter algorithm
+	checkCUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(
+			Cuda::cudnnHandle,
+			this->inputTensorDesc,
+			this->outputTensorDesc,
+			convDesc,
+			filterDesc,
+			CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
+			8<<20,
+			&convBwdFilterAlgo));
+
+	checkCUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(
+			Cuda::cudnnHandle,
+			this->inputTensorDesc,
+			this->outputTensorDesc,
+			convDesc,
+			filterDesc,
+			convBwdFilterAlgo,
+			&convBwdFilterWorkspaceSize));
+
+	// backward data algorithm
+	checkCUDNN(cudnnGetConvolutionBackwardDataAlgorithm(
+			Cuda::cudnnHandle,
+			filterDesc,
+			this->outputTensorDesc,
+			convDesc,
+			this->inputTensorDesc,
+			CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
+			8<<20,
+			&convBwdDataAlgo));
+
+	checkCUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(
+			Cuda::cudnnHandle,
+			filterDesc,
+			this->outputTensorDesc,
+			convDesc,
+			this->inputTensorDesc,
+			convBwdDataAlgo,
+			&convBwdDataWorkspaceSize));
+
+	workspaceSize = 0;
+	workspaceSize = max(workspaceSize, convFwdWorkspaceSize);
+	workspaceSize = max(workspaceSize, convBwdFilterWorkspaceSize);
+	workspaceSize = max(workspaceSize, convBwdDataWorkspaceSize);
+
+	d_workspace = 0;
+	if(workspaceSize > 0) {
+		checkCudaErrors(Util::ucudaMalloc(&d_workspace, workspaceSize));
+	}
+
+	/*
 	this->setInDimension(this->_inputData[0]->getShape());
 
 	cudnnTensorDescriptor_t tempInputTensorDesc;
@@ -190,6 +324,7 @@ void ConvLayer<Dtype>::_shape(bool recursive) {
 		//cout << "workspaceSize: " << workspaceSize << endl;
 		checkCudaErrors(Util::ucudaMalloc(&d_workspace, workspaceSize));
 	}
+	*/
 }
 
 template <typename Dtype>
@@ -233,7 +368,8 @@ void ConvLayer<Dtype>::update() {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
-	const Dtype normScale = 1.0/this->in_dim.batches;
+	const uint32_t batches = this->_inputData[0]->getShape(0);
+	const Dtype normScale = 1.0/batches;
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
 
@@ -328,20 +464,25 @@ void ConvLayer<Dtype>::_computeFiltersConvolutionData() {
 	const Dtype* d_filtersData = _params[Filter]->device_data();
 	Dtype* d_preActivationData = _preActivation->mutable_device_data();
 
+	this->_inputData[0]->print_data();
+	_params[Filter]->print_data();
+
 	checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle,
 			&Cuda::alpha, this->inputTensorDesc, d_inputData, filterDesc, d_filtersData, convDesc, convFwdAlgo, d_workspace, workspaceSize,
 			&Cuda::beta, this->outputTensorDesc, d_preActivationData));
-	_preActivation->print_data("preActivationData:");
 
+	_preActivation->print_data();
 
 	// Add bias to filtered input data
-	_params[Bias]->print_data("biasData:");
+	_params[Bias]->print_data();
+
 	const Dtype* d_biasesData = _params[Bias]->device_data();
 
 	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
 			&Cuda::alpha, biasTensorDesc, d_biasesData,
 			&Cuda::alpha, this->outputTensorDesc, d_preActivationData));
-	_preActivation->print_data("preActivationData:");
+
+	_preActivation->print_data();
 }
 
 template <typename Dtype>
@@ -350,8 +491,11 @@ void ConvLayer<Dtype>::_computeActivationData() {
 	const Dtype* d_preActivationData = _preActivation->device_data();
 	Dtype* d_output = this->_outputData[0]->mutable_device_data();
 
+	_preActivation->print_data();
+
 	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_output);
-	this->_outputData[0]->print_data(this->name+string("output:"));
+
+	this->_outputData[0]->print_data();
 }
 
 
@@ -519,7 +663,7 @@ double ConvLayer<Dtype>::testParamAbnormality() {
 template ConvLayer<float>::~ConvLayer();
 template void ConvLayer<float>::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler<float> weight_filler, param_filler<float> bias_filler, typename Activation<float>::Type activationType);
-template void ConvLayer<float>::_shape(bool recursive);
+template void ConvLayer<float>::shape();
 template void ConvLayer<float>::_clearShape();
 //template void ConvLayer<float>::_save(ofstream &ofs);
 //template void ConvLayer<float>::_load(ifstream &ifs, map<Layer<float>*, Layer<float>*> &layerMap);

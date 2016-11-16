@@ -19,6 +19,7 @@
 #include "DepthConcatLayer.h"
 #include "FullyConnectedLayer.h"
 #include "InputLayer.h"
+#include "RoIInputLayer.h"
 #include "LayerConfig.h"
 #include "LRNLayer.h"
 #include "PoolingLayer.h"
@@ -129,6 +130,7 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->outputs({"data", "label"})
 					->source("/data/train_pack/mnist")
 					->sourceType("ImagePack")
+					//->sourceType("Mock")
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
@@ -139,8 +141,6 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.2)
 					->activationType(Activation<Dtype>::ReLU)
-					//->prevLayerIndices({0})
-					//->nextLayerIndices({2})
 					->inputs({"data"})
 					->outputs({"conv1/3x3_s2"}))
 			->layer((new typename PoolingLayer<Dtype>::Builder())
@@ -148,8 +148,6 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->name("poolingLayer1")
 					->poolDim(3, 3, 1)
 					->poolingType(Pooling<Dtype>::Max)
-					//->prevLayerIndices({1})
-					//->nextLayerIndices({3})
 					->inputs({"conv1/3x3_s2"})
 					->outputs({"pool1/3x3_s1"}))
 			->layer((new typename SoftmaxLayer<Dtype>::Builder())
@@ -161,13 +159,59 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.0)
-					//->prevLayerIndices({2})
 					->inputs({"pool1/3x3_s1", "label"})
 					->outputs({"prob"}))
 			->build();
 
 	return layersConfig;
 }
+
+
+
+template <typename Dtype>
+LayersConfig<Dtype>* createFrcnnLayersConfig() {
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename RoIInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("inputLayer")
+					->numClasses(21)
+					->outputs({"data", "im_info", "gt_boxes"})
+					)
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("convLayer1")
+					->filterDim(3, 3, 1, 2, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1/3x3_s2"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(2)
+					->name("poolingLayer1")
+					->poolDim(3, 3, 1)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"conv1/3x3_s2"})
+					->outputs({"pool1/3x3_s1"}))
+			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+					->id(3)
+					->name("softmaxLayer")
+					->nOut(10)
+					->pDropout(0.4)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->inputs({"pool1/3x3_s1", "label"})
+					->outputs({"prob"}))
+			->build();
+
+	return layersConfig;
+}
+
 
 
 template <typename Dtype>

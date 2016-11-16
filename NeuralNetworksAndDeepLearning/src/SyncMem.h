@@ -149,6 +149,7 @@ public:
 
 
 
+
 	static void setOutstream(std::ostream *outstream) {
 		SyncMem<Dtype>::outstream = outstream;
 	}
@@ -185,6 +186,7 @@ private:
 
 private:
 	size_t _size;							///< 할당된 메모리의 크기
+	size_t _reserved;
 
 	Dtype* _host_mem;						///< 호스트 메모리 포인터
 	Dtype* _device_mem;						///< 디바이스 메모리 포인터

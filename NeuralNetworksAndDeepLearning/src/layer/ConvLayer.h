@@ -171,11 +171,15 @@ public:
 	virtual void loadParams(std::ifstream& ifs);
 	//////////////////////////////////////////
 	virtual void _backpropagation();
+	virtual void shape();
+
+
 	
     //
     void syncMutableMem();
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);
+
 
 
 
@@ -196,7 +200,7 @@ protected:
 	void _computeBiasesGrad();
 	void _computeInputGrad();
 
-	virtual void _shape(bool recursive=true);
+
 	virtual void _clearShape();
 	//virtual void _save(std::ofstream &ofs);
 	//virtual void _load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
@@ -224,6 +228,8 @@ protected:
 
 #ifndef GPU_MODE
 #else
+	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t biasTensorDesc;			///< cudnn bias 구조 정보 구조체
 	cudnnFilterDescriptor_t filterDesc;				///< cudnn filter 구조 정보 구조체
 	cudnnConvolutionDescriptor_t convDesc;			///< cudnn 컨볼루션 연산 정보 구조체

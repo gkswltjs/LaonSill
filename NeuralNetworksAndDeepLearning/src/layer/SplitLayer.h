@@ -51,10 +51,11 @@ public:
 	SplitLayer(Builder* builder);
 	virtual ~SplitLayer();
 
+	virtual void shape();
 
 private:
 	void initialize();
-	virtual void _shape(bool recursive=true);
+
 	virtual void _feedforward();
 	virtual void _backpropagation();
 

@@ -35,9 +35,10 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_
 		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType) {
 
 	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
-	this->out_dim = io_dim(n_out, 1, 1, 1);
+	//this->out_dim = io_dim(n_out, 1, 1, 1);
 	this->type = Layer<Dtype>::FullyConnected;
 
+	this->n_out = n_out;
 	this->p_dropout = p_dropout;
 
 	this->weight_update_param = weight_update_param;
@@ -49,14 +50,17 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_
 	this->scale = 1. / (1. - p_dropout);
 
 	this->_params.resize(2);
-	this->_params[ParamType::Weight] = new Data<Dtype>();			// weight
-	this->_params[ParamType::Bias] = new Data<Dtype>();			// bias
+	this->_params[ParamType::Weight] = new Data<Dtype>("Weight");			// weight
+	this->_params[ParamType::Bias] = new Data<Dtype>("Bias");			// bias
 
 	this->_paramsHistory.resize(2);
-	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>();	// weight history
-	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(); 	// bias history
+	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>("WeightHistory");	// weight history
+	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>("BiasHistory"); 	// bias history
 
-	this->_preActivation = new Data<Dtype>();						// weighted sum (pre activation)
+	this->_preActivation = new Data<Dtype>("PreActivation");					// weighted sum (pre activation)
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
 template <typename Dtype>

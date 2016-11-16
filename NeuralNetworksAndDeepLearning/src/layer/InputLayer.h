@@ -102,25 +102,16 @@ public:
 	 */
 	virtual ~InputLayer();
 
-
-	/**
-	 * @details batch size 1 기준의 입력 엘리먼트의 갯수를 조회한다.
-	 * @return batch size 1 기준의 입력 엘리먼트의 갯수
-	 */
-	int getInputSize() const;
-
 	//void feedforward(uint32_t idx, Data<Dtype>* input, const char* end=0);
 	void feedforward();
 	using Layer<Dtype>::feedforward;
 	void feedforward(const uint32_t baseIndex, const char* end=0);
 
-	//using Layer<Dtype>::shape;
-	//void shape(uint32_t idx, io_dim in_dim);
 	void shape();
 
 protected:
 	void initialize();
-	virtual void _shape(bool recursive=true);
+	//virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
 

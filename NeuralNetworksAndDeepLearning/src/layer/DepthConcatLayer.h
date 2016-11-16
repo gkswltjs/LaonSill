@@ -70,7 +70,7 @@ public:
 	virtual ~DepthConcatLayer();
 
 	virtual void shape();
-	virtual void reshape(uint32_t idx, io_dim in_dim);
+	//virtual void reshape(uint32_t idx, io_dim in_dim);
 
 
 	virtual void _backpropagation();
@@ -78,7 +78,7 @@ public:
 protected:
 	void initialize();
 
-	virtual void _shape(bool recursive=true);
+	//virtual void _shape(bool recursive=true);
 	virtual void _feedforward();
 
 	virtual void _clearShape();

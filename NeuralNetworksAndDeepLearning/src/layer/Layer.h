@@ -194,28 +194,6 @@ public:
 	std::vector<Data<Dtype>*>& getOutputData() { return this->_outputData; }
 
 	/**
-	 * @details 레이어의 입력 데이터 구조정보를 담고 있는 구조체를 조회한다.
-	 * @return 레이어의 입력 데이터 구조정보를 담고 있는 구조체
-	 */
-	io_dim getInDimension() const { return this->in_dim; }
-
-	void setInDimension(io_dim in_dim) { this->in_dim = in_dim; }
-	void setInDimension(const std::vector<uint32_t>& shape) {
-		this->in_dim.batches = shape[0];
-		this->in_dim.channels = shape[1];
-		this->in_dim.rows = shape[2];
-		this->in_dim.cols = shape[3];
-	}
-
-	/**
-	 * @details 레이어의 출력 데이터 구조정보를 담고 있는 구조체를 조회한다.
-	 * @return 레이어의 출력 데이터 구조정보를 담고 있는 구조체
-	 */
-	io_dim getOutDimension() const { return this->out_dim; }
-
-	void setOutDimension(io_dim out_dim) { this->out_dim = out_dim; }
-
-	/**
 	 * @details 레이어에 네트워크 설정값을 설정한다.
 	 * @param networkConfig 네트워크 설정값 객체
 	 */
@@ -234,7 +212,7 @@ public:
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 새롭게 변경할 현재 레이어의 입력 데이터 구조정보
 	 */
-	virtual void reshape(uint32_t idx, io_dim in_dim);
+	//virtual void reshape(uint32_t idx, io_dim in_dim);
 	/**
 	 * @details 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 clear하고 다음 레이어들에 대해 clearShape()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
@@ -279,7 +257,7 @@ protected:
 	 * @details 현재 레이어의 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화한다.
 	 * @param recursive 상위 레이어에 대해서 _shape()를 재귀적으로 호출할 것인지 여부
 	 */
-	virtual void _shape(bool recursive=true);
+	//virtual void _shape(bool recursive=true);
 	/**
 	 * @details 이미 shape가 구성된 레이어의 shape를 변경한다.
 	 */
@@ -307,26 +285,12 @@ protected:
 
 
 
-	////////////////////////////////////////////////////////////////////
-	// 이전, 이후 레이어로의 method 호출을 담당하는 호출 propagation method들
-	////////////////////////////////////////////////////////////////////
+	void _adjustInputShape();
+	bool _isInputShapeChanged(uint32_t index);
 
-	/**
-	 * @details 다음 레이어들에 대해 shape() 메쏘드를 호출한다.
-	 */
-	//void propShape();
-	/**
-	 * @details 다음 레이어들에 대해 reshape() 메쏘드를 호출한다.
-	 */
-	//void propReshape();
-	/**
-	 * @details 다음 레이어들에 대해 clearShape() 메쏘드를 호출한다.
-	 */
-	//void propClearShape();
-	/**
-	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
-	 */
-	//void propSave(std:ofstream &ofs);
+
+
+
 
 #ifndef GPU_MODE
 	/**
@@ -357,11 +321,13 @@ protected:
 
 	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
-	io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
-	io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
+	//io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
+	//io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
 
-    //std::vector<Layer<Dtype>*> prevLayers;				///< 현재 레이어의 이전(입력) 레이어 목록 벡터
-    //std::vector<Layer<Dtype>*> nextLayers;				///< 현재 레이어의 다음(출력) 레이어 목록 벡터
+    //std::vector<Layer<Dtype>*> prevLayers;			///< 현재 레이어의 이전(입력) 레이어 목록 벡터
+    //std::vector<Layer<Dtype>*> nextLayers;			///< 현재 레이어의 다음(출력) 레이어 목록 벡터
+
+	std::vector<std::vector<uint32_t>> _inputShape;
 
 
 
@@ -371,8 +337,8 @@ protected:
 
 #ifndef GPU_MODE
 #else
-	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
-	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
+	//cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	//cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 #endif
 
 	static const int LAYER_NAME_LENGTH = 32;

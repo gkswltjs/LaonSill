@@ -61,12 +61,13 @@ SyncMem<Dtype>::~SyncMem() {
 
 template <typename Dtype>
 void SyncMem<Dtype>::shape(size_t size) {
-	// reshape가 현 상태의 할당된 메모리보다 더 큰 메모리를 요구하는 경우에만 재할당한다.
-	_host_mem = new Dtype[size];
-	memset(_host_mem, 0, sizeof(Dtype)*size);
+	_reserved = (size_t)(size*1.2f);
 
-	checkCudaErrors(Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*size));
-	checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*size));
+	_host_mem = new Dtype[_reserved];
+	memset(_host_mem, 0, sizeof(Dtype)*_reserved);
+
+	checkCudaErrors(Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved));
+	checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_reserved));
 
 	_size = size;
 }
@@ -74,7 +75,7 @@ void SyncMem<Dtype>::shape(size_t size) {
 template <typename Dtype>
 void SyncMem<Dtype>::reshape(size_t size) {
 	// reshape가 현 상태의 할당된 메모리보다 더 큰 메모리를 요구하는 경우에만 재할당한다.
-	if (size > _size) {
+	if (size > _reserved) {
 		if(_host_mem) delete [] _host_mem;
 		if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
 		shape(size);
@@ -389,6 +390,7 @@ void SyncMem<Dtype>::print(const string& head) {
 	}
 }
 
+
 template <typename Dtype>
 void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape) {
 	if(true) {
@@ -410,7 +412,9 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape) {
 
 		(*outstream) << "-------------------------------------" << endl;
 		(*outstream) << "name: " << head << endl;
-		(*outstream) << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
+		//(*outstream) << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
+		(*outstream) << "batches x channels x rows x cols: " << batches << " x " <<
+				channels << " x " << rows << " x " << cols << endl;
 
 		UINT batchElem = rows*cols*channels;
 		UINT channelElem = rows*cols;

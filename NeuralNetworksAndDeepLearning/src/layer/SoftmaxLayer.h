@@ -116,6 +116,8 @@ public:
 	 */
 	virtual void backpropagation();
 
+	virtual void shape();
+
 	/**
 	 * @details 출력 레이어의 출력값과 데이터에 대한 정답으로 cost를 계산한다.
 	 * @param target 데이터에 대한 정답 장치 메모리 포인터
@@ -127,7 +129,7 @@ protected:
 	void initialize();
 
 protected:
-	virtual void _shape(bool recursive=true);
+
 	virtual void _clearShape();
 	//void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 

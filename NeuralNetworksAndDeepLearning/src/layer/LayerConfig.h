@@ -246,8 +246,8 @@ struct param_filler {
 			//Dtype n = (fan_in + fan_out)/Dtype(2);
 			//Dtype n = fan_out;
 			Dtype scale = sqrt(Dtype(3)/n);
-            std::cout << "fan_in: " << fan_in << ", fan_out: " << fan_out << ", scale: " <<
-                scale << std::endl;
+            //std::cout << "fan_in: " << fan_in << ", fan_out: " << fan_out << ", scale: " <<
+            //   scale << std::endl;
 
 
 			/*

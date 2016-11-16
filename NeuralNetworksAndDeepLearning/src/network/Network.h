@@ -108,7 +108,7 @@ public:
 	 * @details 네트워크가 이미 입력 데이터 구조 정보가 설정된 상태에서 이를 변경한다.
 	 * @param in_dim 네트워크의 변경할 입력 데이터 구조 정보 구조체
 	 */
-	void reshape(io_dim in_dim=io_dim(0,0,0,0));
+	//void reshape(io_dim in_dim=io_dim(0,0,0,0));
 	/**
 	 * @details 네트워크 내부의 레이어를 이름으로 찾는다.
 	 * @param name 찾을 레이어의 이름

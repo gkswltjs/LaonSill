@@ -355,7 +355,6 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
 
     for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
     	layersConfig->_layers[i]->shape();
-    	//in_dim = layersConfig->_layers[i-1]->getOutDimension();
     }
     //layersConfig->_inputLayer->shape(0, in_dim);
 
@@ -438,7 +437,6 @@ int Worker<Dtype>::createNetwork() {
 			->clipGradientsLevel(clipGradientsLevel)
 			->lrPolicy(lrPolicy)
 			->gamma(gamma)
-			//->dataSet(dataSet)
 			->evaluations({top1Evaluation, top5Evaluation})
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
 			->networkListeners({networkListener})

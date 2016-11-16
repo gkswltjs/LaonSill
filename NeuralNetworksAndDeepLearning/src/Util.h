@@ -107,6 +107,8 @@ public:
 	 */
 	static int pack4BytesToInt(unsigned char *buffer);
 
+	static uint32_t vecCountByAxis(const std::vector<uint32_t>& vec, const uint32_t axis);
+
 #ifndef GPU_MODE
 	/**
 	 * @details rvec 타입의 벡터를 메타정보와 함께 설정된 출력 스트림에 출력한다.

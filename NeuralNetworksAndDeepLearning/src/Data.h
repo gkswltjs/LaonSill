@@ -23,9 +23,9 @@
 template <typename Dtype>
 class Data {
 public:
-	Data();
-	Data(Data<Dtype>* data, uint32_t type);
-	Data(const std::vector<uint32_t>& shape);
+	Data(const std::string& name);
+	Data(const std::string& name, Data<Dtype>* data, uint32_t type);
+	Data(const std::string& name, const std::vector<uint32_t>& shape);
 	virtual ~Data();
 
 	void shape(const std::vector<uint32_t>& shape);
@@ -40,6 +40,7 @@ public:
 		}
 		return count;
 	}
+	uint32_t getShape(uint32_t axis) { return _shape[axis]; }
 	const std::vector<uint32_t>& getShape() const { return _shape; }
 
 
@@ -290,17 +291,21 @@ public:
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
 	void print_data(const std::string& head);
+	void print_data();
+	void print_data_flatten();
 	/**
 	 * @details 그레디언트를 shape에 따라 화면에 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
 	void print_grad(const std::string& head);
+	void print_grad();
 
 
 public:
 	//std::shared_ptr<Data<Dtype>> _input;
 	std::shared_ptr<SyncMem<Dtype>> _data;				///< Data의 데이터
 	std::shared_ptr<SyncMem<Dtype>> _grad;				///< Data의 그레디언트
+	std::string _name;
 
 private:
     std::vector<uint32_t> _shape;			///< Data의 shape, Batches, Channels, Rows, Columns의 4차원 벡터로 구성

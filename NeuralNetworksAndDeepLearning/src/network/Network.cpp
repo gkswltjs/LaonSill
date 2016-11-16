@@ -163,7 +163,6 @@ void Network<Dtype>::sgd(int epochs) {
                             << numTestData << ", accuracy: " << accuracy << ", cost: " << cost 
                             << " :" << timer1.stop(false) << endl;
                         
-
                         for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
                             networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy",
                                 (double)evaluations[0]->getAccurateCount()/numTestData*100);
@@ -232,7 +231,8 @@ double Network<Dtype>::evaluateTestData(uint32_t batchIndex) {
 
 	_feedforward(batchIndex);
 
-	const uint32_t numLabels = outputLayer->getOutDimension().rows;
+	//const uint32_t numLabels = outputLayer->getOutDimension().rows;
+	const uint32_t numLabels = outputLayer->_outputData[0]->getShape(2);
 	Data<Dtype>* networkOutput = outputLayer->_outputData[0];
 
 
@@ -547,25 +547,13 @@ void Network<Dtype>::checkAbnormalParam() {
 
 /*
 template <typename Dtype>
-void Network<Dtype>::shape(io_dim in_dim) {
-	if(in_dim.unitsize() > 0) {
-		this->in_dim = in_dim;
-	}
-	getLayersConfig()->_inputLayer->shape(0, this->in_dim);
-
-	//checkCudaErrors(Util::ucudaMalloc(&d_trainData, sizeof(Dtype)*getLayersConfig()->_inputLayer->getInputSize()*this->in_dim.batches));
-	//checkCudaErrors(Util::ucudaMalloc(&d_trainLabel, sizeof(UINT)*this->in_dim.batches));
-	//trainData->reshape({this->in_dim.batches, this->in_dim.channels, this->in_dim.rows, this->in_dim.cols});
-}
-*/
-
-template <typename Dtype>
 void Network<Dtype>::reshape(io_dim in_dim) {
 	//if(in_dim.unitsize() > 0) {
 	//	this->config->_inDim = in_dim;
 	//}
     //getInputLayer()->reshape(0, this->config->_inDim);
 }
+*/
 
 /*
 void Network<Dtype>::saveConfig(const char* savePrefix) {

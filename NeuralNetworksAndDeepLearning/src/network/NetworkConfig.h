@@ -199,7 +199,7 @@ public:
 
 						std::cout << splitDataIndex << "th SplitLayer Ouput updated with " << splitDataName << std::endl;
 
-						Data<Dtype>* data = new Data<Dtype>(inputData, 1);
+						Data<Dtype>* data = new Data<Dtype>(splitDataName, inputData, 1);
 						splitLayer->_outputData.push_back(data);
 						layerDataMap[splitDataName] = data;
 
@@ -221,12 +221,20 @@ public:
 			_orderLayers(layers, olayers);
 
 
-			std::cout << "final layer order: " << std::endl;
+			std::cout << "final layer configuration: " << std::endl;
 			for (uint32_t i = 0; i < olayers.size(); i++) {
 				std::cout << i << ": " << olayers[i]->getName() << std::endl;
+				std::cout << "\t-inputData: ";
+				for (uint32_t j = 0; j < olayers[i]->_inputData.size(); j++) {
+					std::cout << olayers[i]->_inputData[j]->_name << ", ";
+				}
+				std::cout << std::endl;
+				std::cout << "\t-outputData: ";
+				for (uint32_t j = 0; j < olayers[i]->_outputData.size(); j++) {
+					std::cout << olayers[i]->_outputData[j]->_name << ", ";
+				}
+				std::cout << std::endl;
 			}
-
-
 
 			return (new LayersConfig(this))
 				->firstLayers(firstLayers)
@@ -270,7 +278,7 @@ public:
 			for (uint32_t i = 0; i < dataNameVec.size(); i++) {
 				typename std::map<std::string, Data<Dtype>*>::iterator it = dataMap.find(dataNameVec[i]);
 				if (it == dataMap.end()) {
-					Data<Dtype>* data = new Data<Dtype>();
+					Data<Dtype>* data = new Data<Dtype>(dataNameVec[i]);
 					dataMap[dataNameVec[i]] = data;
 					layerDataVec.push_back(data);
 					std::cout << "\t\tfor data " << dataNameVec[i] << ": insert new ... " << std::endl;

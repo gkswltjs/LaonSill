@@ -14,6 +14,8 @@ using namespace std;
 
 template <typename Dtype>
 LRNLayer<Dtype>::~LRNLayer() {
+	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 	checkCUDNN(cudnnDestroyLRNDescriptor(lrnDesc));
 }
 
@@ -22,6 +24,8 @@ void LRNLayer<Dtype>::initialize(lrn_dim lrn_d) {
 	this->type = Layer<Dtype>::LRN;
 	this->lrn_d = lrn_d;
 
+	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 	checkCUDNN(cudnnCreateLRNDescriptor(&lrnDesc));
 	checkCUDNN(cudnnSetLRNDescriptor(lrnDesc, lrn_d.local_size, lrn_d.alpha, lrn_d.beta, lrn_d.k));
 }

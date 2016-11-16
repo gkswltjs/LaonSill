@@ -121,6 +121,10 @@ public:
 		CostFactory<Dtype>::destroy(cost_fn);
 	};
 
+	virtual void shape() {
+		FullyConnectedLayer<Dtype>::shape();
+	}
+
 	/**
 	 * @details 히든 레이어의 backpropagation()을 override
 	 *          히든 레이어와 달리 출력 레이어는 Cost와 target값을 통해 gradient가 계산된다.
@@ -146,12 +150,7 @@ protected:
 		this->cost_fn = CostFactory<Dtype>::create(costType);
 	}
 
-	virtual void _shape(bool recursive=true) {
-		if(recursive) {
-			FullyConnectedLayer<Dtype>::_shape();
-		}
-		//this->_target.shape(this->out_dim.batches);
-	}
+
 	virtual void _clearShape() {
 		FullyConnectedLayer<Dtype>::_clearShape();
 	}

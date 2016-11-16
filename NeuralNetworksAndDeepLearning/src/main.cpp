@@ -43,6 +43,82 @@ void printUsageAndExit(char* prog) {
 void developerMain() {
     // TODO: 
     STDOUT_LOG("enter developerMain()");
+
+    checkCudaErrors(cudaSetDevice(0));
+	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
+
+
+
+    const uint32_t maxEpoch = 100;
+    const uint32_t batchSize = 50;
+ 	//const uint32_t batchSize = 1000;
+ 	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
+ 	const uint32_t testInterval = 200;			// 10000(목표 샘플수) / batchSize
+ 	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
+ 	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
+ 	const uint32_t stepSize = 100000;
+ 	const float baseLearningRate = 0.001f;
+ 	const float weightDecay = 0.0002f;
+ 	const float momentum = 0.9f;
+ 	const float clipGradientsLevel = 0.0f;
+ 	const float gamma = 0.1;
+ 	const LRPolicy lrPolicy = LRPolicy::Step;
+
+ 	cout << "batchSize: " << batchSize << endl;
+ 	cout << "testInterval: " << testInterval << endl;
+ 	cout << "saveInterval: " << saveInterval << endl;
+ 	cout << "baseLearningRate: " << baseLearningRate << endl;
+ 	cout << "weightDecay: " << weightDecay << endl;
+ 	cout << "momentum: " << momentum << endl;
+ 	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
+
+ 	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
+ 	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
+ 	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_ONLY);
+
+ 	NetworkConfig<float>* networkConfig =
+ 			(new typename NetworkConfig<float>::Builder())
+ 			->batchSize(batchSize)
+ 			->baseLearningRate(baseLearningRate)
+ 			->weightDecay(weightDecay)
+ 			->momentum(momentum)
+ 			->testInterval(testInterval)
+ 			->saveInterval(saveInterval)
+ 			->stepSize(stepSize)
+ 			->clipGradientsLevel(clipGradientsLevel)
+ 			->lrPolicy(lrPolicy)
+ 			->gamma(gamma)
+ 			//->dataSet(dataSet)
+ 			->evaluations({top1Evaluation, top5Evaluation})
+ 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+ 			->networkListeners({networkListener})
+ 			->build();
+
+ 	Util::printVramInfo();
+
+
+    // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
+	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
+
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
+	}
+
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->shape();
+	}
+
+
+ 	Network<float>* network = new Network<float>(networkConfig);
+ 	network->setLayersConfig(layersConfig);
+
+ 	network->sgd_with_timer(maxEpoch);
+
+
+
     STDOUT_LOG("exit developerMain()");
 }
 
@@ -67,6 +143,7 @@ void loadJobFile(const char* fileName, Json::Value& rootValue) {
 
 int main(int argc, char** argv) {
     int     opt;
+
     bool    useDeveloperMode = false; 
     bool    useSingleJobMode = false;
     char*   singleJobFilePath;

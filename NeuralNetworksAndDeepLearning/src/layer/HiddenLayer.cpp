@@ -47,10 +47,8 @@ void HiddenLayer<Dtype>::_backpropagation() {
 
 
 template <typename Dtype>
-void HiddenLayer<Dtype>::_shape(bool recursive) {
-	if(recursive) {
-		Layer<Dtype>::_shape();
-	}
+void HiddenLayer<Dtype>::shape() {
+	Layer<Dtype>::shape();
 }
 
 template <typename Dtype>
