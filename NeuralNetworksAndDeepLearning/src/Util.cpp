@@ -88,7 +88,8 @@ uint32_t Util::vecCountByAxis(const vector<uint32_t>& vec, const uint32_t axis) 
 
 	uint32_t count = 1;
 	for (uint32_t i = axis; i < vecSize; i++) {
-		count *= vec[i];
+		if (vec[i] > 0)
+			count *= vec[i];
 	}
 	return count;
 }

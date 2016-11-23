@@ -69,17 +69,15 @@ public:
 	DepthConcatLayer(const std::string name);
 	virtual ~DepthConcatLayer();
 
-	virtual void shape();
-	//virtual void reshape(uint32_t idx, io_dim in_dim);
-
-
-	virtual void _backpropagation();
+	virtual void reshape();
+	virtual void feedforward();
+	virtual void backpropagation();
 
 protected:
 	void initialize();
 
 	//virtual void _shape(bool recursive=true);
-	virtual void _feedforward();
+
 
 	virtual void _clearShape();
 	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);

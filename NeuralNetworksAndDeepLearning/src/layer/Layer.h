@@ -51,7 +51,10 @@ public:
 		LRN,					// Local Response Normaization 레이어
 		Sigmoid, 				// 시그모이드 레이어
 		Softmax,				// 소프트맥스 레이어
-		Split					//
+		Split,					//
+		AnchorTarget,			//
+		Reshape,				//
+		SmoothL1Loss,
 	};
 
 
@@ -205,8 +208,7 @@ public:
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 현재 레이어의 입력 데이터 구조정보
 	 */
-	//virtual void shape(uint32_t idx, io_dim in_dim, Data<Dtype>* prevLayerOutput);
-	virtual void shape();
+	virtual void reshape();
 	/**
 	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
@@ -234,7 +236,6 @@ public:
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
-	//virtual void feedforward(uint32_t idx, Data<Dtype>* input, const char* end=0);
 	virtual void feedforward();
 #endif
 
@@ -258,18 +259,12 @@ protected:
 	 * @param recursive 상위 레이어에 대해서 _shape()를 재귀적으로 호출할 것인지 여부
 	 */
 	//virtual void _shape(bool recursive=true);
-	/**
-	 * @details 이미 shape가 구성된 레이어의 shape를 변경한다.
-	 */
-	virtual void _reshape();
+
 	/**
 	 * @details 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 clear한다.
 	 */
 	virtual void _clearShape();
-	/**
-	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
-	 */
-	virtual void _feedforward();
+
 	/**
 	 * @details 복수의 '이전' 레이어로부터의 입력을 조합한다.
 	 *          조합은 입력의 합으로 한다.
@@ -285,7 +280,7 @@ protected:
 
 
 
-	void _adjustInputShape();
+	bool _adjustInputShape();
 	bool _isInputShapeChanged(uint32_t index);
 
 

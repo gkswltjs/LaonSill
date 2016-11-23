@@ -84,13 +84,16 @@ struct io_dim {
  *       상속받지 않고 별도의 필드를 정의하는 것이 바람직해 보인다.
  */
 struct filter_dim : public io_dim {
-	UINT filters;			///< 컨볼루션 결과 출력 채널(필터)의 수
-	UINT stride;			///< 컨볼루션을 적용할 stride 크기
+	uint32_t filters;			///< 컨볼루션 결과 출력 채널(필터)의 수
+	uint32_t pad;
+	uint32_t stride;			///< 컨볼루션을 적용할 stride 크기
 
-	//filter_dim(UINT rows=1, UINT cols=1, UINT channels=1, UINT filters=1, UINT stride=1) : io_dim(rows, cols, channels) {
+	//filter_dim(uint32_t rows=1, uint32_t cols=1, uint32_t channels=1, uint32_t filters=1, uint32_t stride=1) : io_dim(rows, cols, channels) {
 	filter_dim() {}
-	filter_dim(UINT rows, UINT cols, UINT channels, UINT filters, UINT stride) : io_dim(rows, cols, channels, 1) {
+	filter_dim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
+			uint32_t pad, uint32_t stride) : io_dim(rows, cols, channels, 1) {
 		this->filters = filters;
+		this->pad = pad;
 		this->stride = stride;
 	}
 	/**
@@ -105,15 +108,17 @@ struct filter_dim : public io_dim {
  * @todo padding 적용을 위한 필드를 추가해야 함
  */
 struct pool_dim {
-	UINT rows;				///< 풀링 커널의 height 값
-	UINT cols;				///< 풀링 커널의 width 값
-	UINT stride;			///< 풀링을 적용할 stride 크기
+	uint32_t rows;				///< 풀링 커널의 height 값
+	uint32_t cols;				///< 풀링 커널의 width 값
+	uint32_t pad;
+	uint32_t stride;			///< 풀링을 적용할 stride 크기
 
-	//pool_dim(UINT rows=1, UINT cols=1, UINT stride=1) {
+	//pool_dim(uint32_t rows=1, uint32_t cols=1, uint32_t stride=1) {
 	pool_dim() {}
-	pool_dim(UINT rows, UINT cols, UINT stride) {
+	pool_dim(uint32_t rows, uint32_t cols, uint32_t pad, uint32_t stride) {
 		this->rows = rows;
 		this->cols = cols;
+		this->pad = pad;
 		this->stride = stride;
 	}
 };

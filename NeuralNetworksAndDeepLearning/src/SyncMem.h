@@ -145,7 +145,7 @@ public:
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 * @param shape 출력 포맷 shape (batches, columns, rows, columns)
 	 */
-	void print(const std::string& head, const std::vector<uint32_t>& shape);
+	void print(const std::string& head, const std::vector<uint32_t>& shape, const bool cmo=true);
 
 
 

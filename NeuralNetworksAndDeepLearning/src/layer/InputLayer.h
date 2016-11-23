@@ -103,11 +103,11 @@ public:
 	virtual ~InputLayer();
 
 	//void feedforward(uint32_t idx, Data<Dtype>* input, const char* end=0);
-	void feedforward();
+	virtual void feedforward();
 	using Layer<Dtype>::feedforward;
-	void feedforward(const uint32_t baseIndex, const char* end=0);
+	virtual void feedforward(const uint32_t baseIndex, const char* end=0);
 
-	void shape();
+	void reshape();
 
 protected:
 	void initialize();

@@ -1,3 +1,4 @@
+#if 0
 #include "ImagePackDataSet.h"
 #include "ImagePacker.h"
 #include "Util.h"
@@ -382,6 +383,7 @@ void imagepackdataset_test() {
 
 }
 
+#endif
 
 
 

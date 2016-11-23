@@ -121,8 +121,8 @@ public:
 		CostFactory<Dtype>::destroy(cost_fn);
 	};
 
-	virtual void shape() {
-		FullyConnectedLayer<Dtype>::shape();
+	virtual void reshape() {
+		FullyConnectedLayer<Dtype>::reshape();
 	}
 
 	/**

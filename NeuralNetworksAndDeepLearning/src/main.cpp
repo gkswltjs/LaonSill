@@ -89,7 +89,6 @@ void developerMain() {
  			->clipGradientsLevel(clipGradientsLevel)
  			->lrPolicy(lrPolicy)
  			->gamma(gamma)
- 			//->dataSet(dataSet)
  			->evaluations({top1Evaluation, top5Evaluation})
  			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
  			->networkListeners({networkListener})
@@ -108,7 +107,7 @@ void developerMain() {
 	}
 
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-		layersConfig->_layers[i]->shape();
+		layersConfig->_layers[i]->reshape();
 	}
 
 
@@ -196,7 +195,7 @@ int main(int argc, char** argv) {
 
     // (4) 뉴럴 네트워크 관련 기본 설정을 한다.
     //     TODO: SPARAM의 인자로 대체하자.
-	cout.precision(11);
+	cout.precision(5);
 	cout.setf(ios::fixed);
 	Util::setOutstream(&cout);
 	Util::setPrint(false);

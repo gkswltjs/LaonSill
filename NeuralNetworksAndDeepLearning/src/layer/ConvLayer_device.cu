@@ -100,16 +100,16 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
 			filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols));
 
-	int pad = (filter_d.rows-1)/2;
+	//int pad = (filter_d.rows-1)/2;
 	checkCUDNN(cudnnSetConvolution2dDescriptor(convDesc,
-			pad, pad, filter_d.stride, filter_d.stride, 1, 1,
+			filter_d.pad, filter_d.pad, filter_d.stride, filter_d.stride, 1, 1,
 			CUDNN_CROSS_CORRELATION));
 
 	this->activation_fn = ActivationFactory<Dtype>::create(activationType);
 }
 
 template <typename Dtype>
-void ConvLayer<Dtype>::shape() {
+void ConvLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
 
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
@@ -450,7 +450,9 @@ void ConvLayer<Dtype>::syncMutableMem() {
 
 
 template <typename Dtype>
-void ConvLayer<Dtype>::_feedforward() {
+void ConvLayer<Dtype>::feedforward() {
+	reshape();
+
 	_computeFiltersConvolutionData();
 	_computeActivationData();
 }
@@ -493,7 +495,8 @@ void ConvLayer<Dtype>::_computeActivationData() {
 
 	_preActivation->print_data();
 
-	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_output);
+	if (activation_fn)
+		activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_output);
 
 	this->_outputData[0]->print_data();
 }
@@ -501,7 +504,7 @@ void ConvLayer<Dtype>::_computeActivationData() {
 
 
 template <typename Dtype>
-void ConvLayer<Dtype>::_backpropagation() {
+void ConvLayer<Dtype>::backpropagation() {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
 
 	/*
@@ -663,13 +666,13 @@ double ConvLayer<Dtype>::testParamAbnormality() {
 template ConvLayer<float>::~ConvLayer();
 template void ConvLayer<float>::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler<float> weight_filler, param_filler<float> bias_filler, typename Activation<float>::Type activationType);
-template void ConvLayer<float>::shape();
+template void ConvLayer<float>::reshape();
 template void ConvLayer<float>::_clearShape();
 //template void ConvLayer<float>::_save(ofstream &ofs);
 //template void ConvLayer<float>::_load(ifstream &ifs, map<Layer<float>*, Layer<float>*> &layerMap);
 template void ConvLayer<float>::update();
-template void ConvLayer<float>::_feedforward();
-template void ConvLayer<float>::_backpropagation();
+template void ConvLayer<float>::feedforward();
+template void ConvLayer<float>::backpropagation();
 
 
 #endif

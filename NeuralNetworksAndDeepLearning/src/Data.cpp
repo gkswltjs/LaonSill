@@ -319,9 +319,9 @@ void Data<Dtype>::load(ifstream& ifs) {
 
 
 template <typename Dtype>
-void Data<Dtype>::print_data(const string& head) {
+void Data<Dtype>::print_data(const string& head, const bool cmo) {
 	if(printConfig) {
-		_data->print(head, _shape);
+		_data->print(head, _shape, cmo);
 	}
 }
 
@@ -349,6 +349,91 @@ template <typename Dtype>
 void Data<Dtype>::print_grad() {
 	print_grad(_name+"-grad");
 }
+
+
+
+template <typename Dtype>
+void Data<Dtype>::fill_host_with_1d_vec(const vector<int>& array,
+			const vector<uint32_t>& transpose) {
+	assert(array.size() > 0);
+	const uint32_t dim1 = array.size();
+
+	Dtype* dataPtr = mutable_host_data();
+	const uint32_t batchSize = _shape[1]*_shape[2]*_shape[3];
+	const uint32_t heightSize = _shape[2]*_shape[3];
+	const uint32_t widthSize = _shape[3];
+
+	const uint32_t tBatchSize = _shape[transpose[1]]*_shape[transpose[2]]*_shape[transpose[3]];
+	const uint32_t tHeightSize = _shape[transpose[2]]*_shape[transpose[3]];
+	const uint32_t tWidthSize = _shape[transpose[3]];
+
+	uint32_t s[4];
+	uint32_t& ts0 = s[transpose[0]];
+	uint32_t& ts1 = s[transpose[1]];
+	uint32_t& ts2 = s[transpose[2]];
+	uint32_t& ts3 = s[transpose[3]];
+
+	// batch
+	for (s[0] = 0; s[0] < _shape[0]; s[0]++) {
+		// height
+		for (s[1] = 0; s[1] < _shape[1]; s[1]++) {
+			// width
+			for (s[2] = 0; s[2] < _shape[2]; s[2]++) {
+				// Anchors
+				for (s[3] = 0; s[3] < _shape[3]; s[3]++) {
+					dataPtr[ts0*tBatchSize+ts1*tHeightSize+ts2*tWidthSize+ts3]
+							= Dtype(array[s[0]*batchSize+s[1]*heightSize+s[2]*widthSize+s[3]]);
+				}
+			}
+		}
+	}
+}
+
+template <typename Dtype>
+void Data<Dtype>::fill_host_with_2d_vec(const vector<vector<float>>& array,
+		const vector<uint32_t>& transpose) {
+	assert(array.size() > 0);
+	const uint32_t dim1 = array.size();
+	const uint32_t dim2 = array[0].size();
+
+	assert(_shape[3]%dim2 == 0);
+
+	const uint32_t tBatchSize = _shape[transpose[1]]*_shape[transpose[2]]*_shape[transpose[3]];
+	const uint32_t tHeightSize = _shape[transpose[2]]*_shape[transpose[3]];
+	const uint32_t tWidthSize = _shape[transpose[3]];
+
+	Dtype* dataPtr = mutable_host_data();
+	const uint32_t shape3 = _shape[3] / dim2;
+	const uint32_t batchSize = _shape[1]*_shape[2]*shape3;
+	const uint32_t heightSize = _shape[2]*shape3;
+	const uint32_t widthSize = shape3;
+
+	uint32_t s[4];
+	uint32_t& ts0 = s[transpose[0]];
+	uint32_t& ts1 = s[transpose[1]];
+	uint32_t& ts2 = s[transpose[2]];
+	uint32_t& ts3 = s[transpose[3]];
+
+	uint32_t q, r;
+	// batch
+	for (s[0] = 0; s[0] < _shape[0]; s[0]++) {
+		// height
+		for (s[1] = 0; s[1] < _shape[1]; s[1]++) {
+			// width
+			for (s[2] = 0; s[2] < _shape[2]; s[2]++) {
+				// Anchors
+				for (s[3] = 0; s[3] < _shape[3]; s[3]++) {
+					q = s[3] / dim2;
+					r = s[3] % dim2;
+					dataPtr[ts0*tBatchSize+ts1*tHeightSize+ts2*tWidthSize+ts3] =
+							array[s[0]*batchSize+s[1]*heightSize+s[2]*widthSize+q][r];
+				}
+			}
+		}
+	}
+}
+
+
 
 
 

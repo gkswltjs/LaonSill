@@ -48,6 +48,7 @@ public:
 			_filterDim.cols = 0;
 			_filterDim.channels = 0;
 			_filterDim.filters = 0;
+			_filterDim.pad = 0;
 			_filterDim.stride = 0;
 			_weightUpdateParam.lr_mult = 1.0;
 			_weightUpdateParam.decay_mult = 0.0;
@@ -57,11 +58,13 @@ public:
 			_biasFiller.type = ParamFillerType::Constant;
 			_activationType = Activation<Dtype>::NoActivation;
 		}
-		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters, uint32_t stride) {
+		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
+				uint32_t pad, uint32_t stride) {
 			_filterDim.rows = rows;
 			_filterDim.cols = cols;
 			_filterDim.channels = channels;
 			_filterDim.filters = filters;
+			_filterDim.pad = pad;
 			_filterDim.stride = stride;
 			return this;
 		}
@@ -170,8 +173,10 @@ public:
 	virtual void saveParams(std::ofstream& ofs);
 	virtual void loadParams(std::ifstream& ifs);
 	//////////////////////////////////////////
-	virtual void _backpropagation();
-	virtual void shape();
+
+	virtual void reshape();
+	virtual void feedforward();
+	virtual void backpropagation();
 
 
 	
@@ -190,7 +195,7 @@ protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 
-	virtual void _feedforward();
+
 
 	void _computeFiltersConvolutionData();
 	void _computeActivationData();

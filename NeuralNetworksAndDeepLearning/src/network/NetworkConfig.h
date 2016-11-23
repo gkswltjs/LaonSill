@@ -293,6 +293,7 @@ public:
 
 			std::set<std::string> dataSet;
 			while (tempLayers.size() > 0) {
+				bool found = false;
 				for (uint32_t i = 0; i < tempLayers.size(); i++) {
 					InputLayer<Dtype>* inputLayer = dynamic_cast<InputLayer<Dtype>*>(tempLayers[i]);
 					if (inputLayer) {
@@ -302,6 +303,7 @@ public:
 						layers.push_back(tempLayers[i]);
 						dataSet.insert(tempLayers[i]->getOutputs().begin(), tempLayers[i]->getOutputs().end());
 						tempLayers.erase(tempLayers.begin()+i);
+						found = true;
 						break;
 					} else {
 						// 앞선 레이어가 출력한 데이터가 현재 레이어의 모든 입력 데이터를 커버해야 처리한다.
@@ -310,11 +312,16 @@ public:
 							layers.push_back(tempLayers[i]);
 							dataSet.insert(tempLayers[i]->getOutputs().begin(), tempLayers[i]->getOutputs().end());
 							tempLayers.erase(tempLayers.begin()+i);
+							found = true;
 							break;
 						} else {
 							std::cout << tempLayers[i]->getName() << "'s not all input data have processed ... skip ... " << std::endl;
 						}
 					}
+				}
+				if (!found) {
+					std::cout << "no input layer or not all layer can find input data ... " << std::endl;
+					exit(1);
 				}
 			}
 		}

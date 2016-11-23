@@ -15,8 +15,11 @@
 
 struct BboxTransformUtil {
 public:
-	static void bboxTransofrm(const std::vector<std::vector<uint32_t>>& ex_rois,
-			const std::vector<std::vector<uint32_t>>& gt_rois, std::vector<std::vector<float>>& result) {
+	template <typename Dtype>
+	static void bboxTransform(const std::vector<std::vector<Dtype>>& ex_rois,
+			const std::vector<std::vector<Dtype>>& gt_rois,
+			std::vector<std::vector<float>>& result,
+			const uint32_t resultOffset = 0) {
 		assert(ex_rois.size() == gt_rois.size());
 
 		float ex_width, ex_height, ex_ctr_x, ex_ctr_y;
@@ -34,11 +37,10 @@ public:
 			 gt_ctr_x = gt_rois[i][0] + 0.5f * gt_width;
 			 gt_ctr_y = gt_rois[i][1] + 0.5f * gt_height;
 
-			 // result[i][0] for label
-			 result[i][1] = (gt_ctr_x - ex_ctr_x) / ex_width;
-			 result[i][2] = (gt_ctr_y - ex_ctr_y) / ex_height;
-			 result[i][3] = std::log(gt_width / ex_width);
-			 result[i][4] = std::log(gt_height / ex_height);
+			 result[i][resultOffset+0] = (gt_ctr_x - ex_ctr_x) / ex_width;
+			 result[i][resultOffset+1] = (gt_ctr_y - ex_ctr_y) / ex_height;
+			 result[i][resultOffset+2] = std::log(gt_width / ex_width);
+			 result[i][resultOffset+3] = std::log(gt_height / ex_height);
 		}
 	}
 };

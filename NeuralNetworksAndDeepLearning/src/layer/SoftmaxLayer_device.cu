@@ -48,7 +48,7 @@ void SoftmaxLayer<Dtype>::backpropagation() {
 	this->cost_fn->backward(d_preActivationData, d_outputData, d_target,
 			d_outputGrad, out_rows, batches);
 
-	OutputLayer<Dtype>::_backpropagation();
+	OutputLayer<Dtype>::backpropagation();
 }
 
 template <typename Dtype>

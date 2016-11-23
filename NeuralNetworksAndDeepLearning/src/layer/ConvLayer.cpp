@@ -217,7 +217,7 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 }
 
 template <typename Dtype>
-void ConvLayer<Dtype>::_feedforward() {
+void ConvLayer<Dtype>::feedforward() {
 
 	// 현재 CONV 레이어의 경우 여러 레이어로 값이 전달되지 않기 때문에 무의미하다.
 	// 다만 backpropagation에서 delta값을 합으로 할당하기 때문에 어쨌든 0로 init은 반드시 해야 함.

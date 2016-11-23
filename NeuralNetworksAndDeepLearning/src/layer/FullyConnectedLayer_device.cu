@@ -94,7 +94,7 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
 
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::shape() {
+void FullyConnectedLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
 
 	// 배치수가 변경되는 경우는 허용하도록 하자.
@@ -336,42 +336,8 @@ void FullyConnectedLayer<Dtype>::syncMutableMem() {
 }
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_feedforward() {
-	/*
-	_params[Weight]->print_data("weightData:");
-	this->_input->print_data("inputData:");
-
-	// Apply weight to input data
-	const Dtype* d_weightData = _params[Weight]->device_data();
-	const Dtype* d_inputData = this->_input->device_data();
-	Dtype* d_preActivationData = _preActivation->mutable_device_data();
-
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
-			this->out_dim.rows, this->out_dim.batches, this->in_dim.rows,
-			&Cuda::alpha, d_weightData, this->out_dim.rows, d_inputData, this->in_dim.rows,
-			&Cuda::beta, d_preActivationData, this->out_dim.rows));
-
-	_preActivation->print_data("preActivationData:");
-	_params[Bias]->print_data("biasData:");
-
-	// Add bias to weighted input data
-	const Dtype* d_biasData = _params[Bias]->device_data();
-
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
-			this->out_dim.rows, this->out_dim.batches, 1,
-	    &Cuda::alpha,
-	    d_biasData, this->out_dim.rows,
-	    d_onevec, 1,
-	    &Cuda::alpha,
-	    d_preActivationData, this->out_dim.rows));
-
-	// Activate weighted sum (+ bias)
-	Dtype* d_outputData = this->_output->mutable_device_data();
-	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_outputData);
-
-	_preActivation->print_data(this->name+string("/d_preActivationData:"));
-	this->_output->print_data(this->name+string("/d_outputData:"));
-	*/
+void FullyConnectedLayer<Dtype>::feedforward() {
+	reshape();
 
 	//Data<Dtype>::printConfig = true;
 	_computeWeightedData();
@@ -470,7 +436,7 @@ void FullyConnectedLayer<Dtype>::_dropoutForward() {
 
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_backpropagation() {
+void FullyConnectedLayer<Dtype>::backpropagation() {
 	//_dropoutBackward();
 
 	_computePreActivationGrad();
@@ -628,11 +594,11 @@ double FullyConnectedLayer<Dtype>::testParamAbnormality() {
 
 
 template FullyConnectedLayer<float>::~FullyConnectedLayer();
-template void FullyConnectedLayer<float>::shape();
+template void FullyConnectedLayer<float>::reshape();
 template void FullyConnectedLayer<float>::_clearShape();
 template void FullyConnectedLayer<float>::update();
-template void FullyConnectedLayer<float>::_feedforward();
-template void FullyConnectedLayer<float>::_backpropagation();
+template void FullyConnectedLayer<float>::feedforward();
+template void FullyConnectedLayer<float>::backpropagation();
 
 
 #endif

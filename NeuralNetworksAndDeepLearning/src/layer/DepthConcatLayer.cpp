@@ -37,7 +37,7 @@ void DepthConcatLayer<Dtype>::initialize() {
 }
 
 template <typename Dtype>
-void DepthConcatLayer<Dtype>::shape() {
+void DepthConcatLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
 
 	// 입력 데이터의 shape가 변경된 것이 있는 지 확인
@@ -105,7 +105,9 @@ void DepthConcatLayer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
 
 
 template <typename Dtype>
-void DepthConcatLayer<Dtype>::_feedforward() {
+void DepthConcatLayer<Dtype>::feedforward() {
+	reshape();
+
 	uint32_t batchOffset = 0;
 	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
 		batchOffset += this->_inputData[i]->getCountByAxis(1);
@@ -132,7 +134,7 @@ void DepthConcatLayer<Dtype>::_feedforward() {
 
 
 template <typename Dtype>
-void DepthConcatLayer<Dtype>::_backpropagation() {
+void DepthConcatLayer<Dtype>::backpropagation() {
 	uint32_t batchOffset = 0;
 	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
 		batchOffset += this->_inputData[i]->getCountByAxis(1);

@@ -91,15 +91,15 @@ public:
 	virtual ~LRNLayer();
 
 
-	virtual void shape();
-
-	virtual void _backpropagation();
+	virtual void reshape();
+	virtual void feedforward();
+	virtual void backpropagation();
 
 protected:
 	void initialize(lrn_dim lrn_d);
 
 
-	virtual void _feedforward();
+
 
 
 	virtual void _clearShape();

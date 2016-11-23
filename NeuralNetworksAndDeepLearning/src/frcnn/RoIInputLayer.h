@@ -8,6 +8,8 @@
 #ifndef ROIINPUTLAYER_H_
 #define ROIINPUTLAYER_H_
 
+#include <opencv2/highgui/highgui.hpp>
+
 #include "frcnn_common.h"
 #include "DataSet.h"
 #include "InputLayer.h"
@@ -21,9 +23,15 @@ public:
 	 * @details 입력 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
 	 *          해당 파라미터를 만족하는 레이어 입력 객체를 생성한다.
 	 */
-	class Builder : public Layer<Dtype>::Builder {
+	class Builder : public InputLayer<Dtype>::Builder {
 	public:
 		uint32_t _numClasses;
+		uint32_t _imsPerBatch;
+		uint32_t _trainBatchSize;
+		uint32_t _trainMaxSize;
+		float _trainFgFraction;
+		std::vector<uint32_t> _trainScales;
+		std::vector<float> _pixelMeans;
 
 		Builder() {
 			this->type = Layer<Dtype>::Input;
@@ -48,6 +56,30 @@ public:
 			this->_numClasses = numClasses;
 			return this;
 		}
+		virtual Builder* imsPerBatch(const uint32_t imsPerBatch) {
+			this->_imsPerBatch = imsPerBatch;
+			return this;
+		}
+		virtual Builder* trainBatchSize(const uint32_t trainBatchSize) {
+			this->_trainBatchSize = trainBatchSize;
+			return this;
+		}
+		virtual Builder* trainMaxSize(const uint32_t trainMaxSize) {
+			this->_trainMaxSize = trainMaxSize;
+			return this;
+		}
+		virtual Builder* trainFgFraction(const float trainFgFraction) {
+			this->_trainFgFraction = trainFgFraction;
+			return this;
+		}
+		virtual Builder* trainScales(const std::vector<uint32_t>& trainScales) {
+			this->_trainScales = trainScales;
+			return this;
+		}
+		virtual Builder* pixelMeans(const std::vector<float>& pixelMeans) {
+			this->_pixelMeans = pixelMeans;
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new RoIInputLayer(this);
 		}
@@ -64,10 +96,13 @@ public:
 	virtual ~RoIInputLayer();
 
 
-	void feedforward();
-	using Layer<Dtype>::feedforward;
-	void feedforward(const uint32_t baseIndex, const char* end=0);
-	void shape();
+	virtual void feedforward();
+	using InputLayer<Dtype>::feedforward;
+	virtual void feedforward(const uint32_t baseIndex, const char* end=0);
+
+
+
+	void reshape();
 
 private:
 	void initialize();
@@ -79,13 +114,31 @@ private:
 	bool isValidRoidb(RoIDB& roidb);
 	void filterRoidb(std::vector<RoIDB>& roidb);
 
+	void shuffleRoidbInds();
+	void getNextMiniBatch();
+	void getNextMiniBatchInds(std::vector<uint32_t>& inds);
+	void getMiniBatch(const std::vector<RoIDB>& roidb);
+	void getImageBlob(const std::vector<RoIDB>& roidb, const std::vector<uint32_t>& scaleInds,
+			std::vector<float>& imScales);
+	float prepImForBlob(cv::Mat& im, const std::vector<float>& pixelMeans,
+			const uint32_t targetSize, const uint32_t maxSize);
+	void imListToBlob(std::vector<cv::Mat>& ims);
+
 
 public:
-	//DataSet<Dtype>* _dataSet;
 	std::vector<std::vector<float>> bboxMeans;
 	std::vector<std::vector<float>> bboxStds;
 	IMDB* imdb;
 
+	uint32_t numClasses;
+	uint32_t imsPerBatch;
+	uint32_t trainBatchSize;
+	uint32_t trainMaxSize;
+	float trainFgFraction;
+	std::vector<uint32_t> trainScales;
+	std::vector<float> pixelMeans;
+	std::vector<uint32_t> perm;
+	uint32_t cur;
 };
 
 #endif /* ROIINPUTLAYER_H_ */

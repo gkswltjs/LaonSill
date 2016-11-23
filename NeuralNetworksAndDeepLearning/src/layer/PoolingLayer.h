@@ -39,12 +39,14 @@ public:
 			this->type = Layer<Dtype>::Pool;
 			_poolDim.cols = 0;
 			_poolDim.rows = 0;
+			_poolDim.pad = 0;
 			_poolDim.stride = 0;
 			_poolingType = Pooling<Dtype>::Max;
 		}
-		Builder* poolDim(uint32_t cols, uint32_t rows, uint32_t stride) {
+		Builder* poolDim(uint32_t cols, uint32_t rows, uint32_t pad, uint32_t stride) {
 			this->_poolDim.cols = cols;
 			this->_poolDim.rows = rows;
+			this->_poolDim.pad = pad;
 			this->_poolDim.stride = stride;
 			return this;
 		}
@@ -100,16 +102,13 @@ public:
 	virtual ~PoolingLayer();
 
 
-	virtual void shape();
-	virtual void _backpropagation();
+	virtual void reshape();
+	virtual void feedforward();
+	virtual void backpropagation();
 
 
 protected:
 	void initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
-
-	virtual void _feedforward();
-
-
 
 	virtual void _clearShape();
 	//virtual void _save(std::ofstream &ofs);

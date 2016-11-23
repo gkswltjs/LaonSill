@@ -116,7 +116,7 @@ public:
 	 */
 	virtual void backpropagation();
 
-	virtual void shape();
+	virtual void reshape();
 
 	/**
 	 * @details 출력 레이어의 출력값과 데이터에 대한 정답으로 cost를 계산한다.

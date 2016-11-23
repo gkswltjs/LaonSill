@@ -26,7 +26,7 @@ LRNLayer<Dtype>::LRNLayer(const string name, lrn_dim lrn_d) : HiddenLayer<Dtype>
 }
 
 template <typename Dtype>
-void LRNLayer<Dtype>::shape() {
+void LRNLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
 
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
@@ -114,7 +114,7 @@ void LRNLayer<Dtype>::initialize(lrn_dim lrn_d) {
 }
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer<Dtype>::_feedforward() {
+void LRNLayer<Dtype>::feedforward() {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	uint32_t i, j;

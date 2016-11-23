@@ -337,8 +337,9 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
     // XXX: 현재는 CCN Double Layer만 생성하도록 되어 있다. 수정필요!!!
     
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createFrcnnLayersConfig<float>();
 
     // (2) network config 정보를 layer들에게 전달한다.
     for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
@@ -353,9 +354,9 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
     //in_dim.batches = network->config->_batchSize;
     //layersConfig->_inputLayer->setInDimension(in_dim);
 
-    for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-    	layersConfig->_layers[i]->shape();
-    }
+    //for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+    //	layersConfig->_layers[i]->reshape();
+    //}
     //layersConfig->_inputLayer->shape(0, in_dim);
 
     // (4) network에 layersConfig 정보를 등록한다.
@@ -394,7 +395,7 @@ int Worker<Dtype>::createNetwork() {
     // XXX: network를 어떻게 구성할지에 대한 정보를 받아야 한다.
     //      또한, 그 정보를 토대로 네트워크를 구성해야 한다.
     //      Evaluation과 Dataset, Network Listener도 분리 시켜야 한다.
-    const uint32_t batchSize = 50;
+    const uint32_t batchSize = 1;
 	//const uint32_t batchSize = 1000;
 	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
 	const uint32_t testInterval = 200;			// 10000(목표 샘플수) / batchSize

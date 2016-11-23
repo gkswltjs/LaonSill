@@ -102,7 +102,7 @@ void PoolingLayer<Dtype>::initialize(pool_dim pool_d, typename Pooling<Dtype>::T
 }
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::_feedforward(uint32_t idx, const rcube &input, const char *end=0) {
+void PoolingLayer<Dtype>::feedforward(uint32_t idx, const rcube &input, const char *end=0) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::convertCube(input, this->input);

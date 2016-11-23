@@ -60,18 +60,8 @@ Layer<Dtype>::~Layer() {
 
 
 template <typename Dtype>
-void Layer<Dtype>::shape() {}
+void Layer<Dtype>::reshape() {}
 
-/*
-template <typename Dtype>
-void Layer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
-	//if (!w_isLastPrevLayerRequest(idx, "Layer::reshape()")) return;
-
-	this->in_dim = in_dim;
-	_reshape();
-	//propReshape();
-}
-*/
 
 template <typename Dtype>
 void Layer<Dtype>::clearShape(uint32_t idx) {
@@ -113,16 +103,7 @@ void Layer<Dtype>::load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerM
 
 template <typename Dtype>
 void Layer<Dtype>::feedforward() {
-
-	// shared input이 아닌 경우,
-	//if(!isSharedInput()) {
-	//	_concat(idx, input);
-	//	if (!w_isLastPrevLayerRequest(idx, "Layer::feedforward()")) return;
-	//}
-
-	//_scaleInput();
-	_feedforward();
-	//propFeedforward(end);
+	_outputData[0]->set_device_data(_inputData[0]);
 }
 
 template <typename Dtype>
@@ -134,21 +115,10 @@ void Layer<Dtype>::initialize(uint32_t id, const string name) {
 	//checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
-template <typename Dtype>
-void Layer<Dtype>::_reshape() {
-	// 이전의 input, output 설정과 관련된 memory 정리
-	_clearShape();
-	//_shape();
-}
-
-template <typename Dtype>
-void Layer<Dtype>::_feedforward() {
-	_outputData[0]->set_device_data(_inputData[0]);
-}
 
 
 template <typename Dtype>
-void Layer<Dtype>::_adjustInputShape() {
+bool Layer<Dtype>::_adjustInputShape() {
 	const uint32_t inputSize = _inputData.size();
 
 	// 입력 shape가 입력 데이터만큼 할당되지 않은 경우 해당 사이즈만큼 재할당
@@ -157,7 +127,9 @@ void Layer<Dtype>::_adjustInputShape() {
 		for (uint32_t i = 0; i < inputSize; i++) {
 			_inputShape[i].resize(4);
 		}
-	}
+		return true;
+	} else
+		return false;
 }
 
 

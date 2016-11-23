@@ -19,7 +19,7 @@
 #include <vector>
 
 
-struct RoIDBUtil {
+class RoIDBUtil {
 public:
 	static void addBboxRegressionTargets(std::vector<RoIDB>& roidb,
 			std::vector<std::vector<float>>& means, std::vector<std::vector<float>>& stds) {
@@ -48,7 +48,7 @@ public:
 			std::vector<std::vector<float>>& targets = roidb[i].bbox_targets;
 			std::vector<uint32_t> clsInds;
 			for (uint32_t j = 1; j < numClasses; j++) {
-				np_where_s(targets, static_cast<float>(j), 0, clsInds);
+				np_where_s(targets, static_cast<float>(j), (uint32_t)0, clsInds);
 
 				for (uint32_t k = 0; k < clsInds.size(); k++) {
 					targets[k][1] = (targets[k][1] - means[j][0]) / stds[j][0];
@@ -84,7 +84,7 @@ public:
 		// Find which gt ROI each ex ROI has max overlap with:
 		// this will be the ex ROI's gt target
 		std::vector<uint32_t> gt_assignment;
-		np_argmax(ex_gt_overlaps, gt_assignment);
+		np_argmax(ex_gt_overlaps, 1, gt_assignment);
 		std::vector<uint32_t> gt_rois_inds;
 		std::vector<std::vector<uint32_t>> gt_rois;
 		py_arrayElemsWithArrayInds(gt_inds, gt_assignment, gt_rois_inds);
@@ -108,7 +108,7 @@ public:
 			targets[i][0] = roidb.max_classes[i];
 		}
 		print2dArray("targets", targets);
-		BboxTransformUtil::bboxTransofrm(ex_rois, gt_rois, targets);
+		BboxTransformUtil::bboxTransform(ex_rois, gt_rois, targets, 1);
 		print2dArray("targets", targets);
 
 		roidb.print();
@@ -130,9 +130,26 @@ public:
 		}
 	}
 
-	static float iou(const std::vector<uint32_t>& box1, const std::vector<uint32_t>& box2) {
+	static void bboxOverlaps(const std::vector<std::vector<float>>& ex,
+			const std::vector<std::vector<float>>& gt,
+			std::vector<std::vector<float>>& result) {
+
+		const uint32_t numEx = ex.size();
+		const uint32_t numGt = gt.size();
+
+		result.resize(numEx);
+		for (uint32_t i = 0; i < numEx; i++) {
+			result[i].resize(numGt);
+			for (uint32_t j = 0; j < numGt; j++) {
+				result[i][j] = iou(ex[i], gt[j]);
+			}
+		}
+	}
+
+	template <typename Dtype>
+	static float iou(const std::vector<Dtype>& box1, const std::vector<Dtype>& box2) {
 		float iou = 0.0f;
-		uint32_t left, right, top, bottom;
+		Dtype left, right, top, bottom;
 		left = std::max(box1[0], box2[0]);
 		right = std::min(box1[2], box2[2]);
 		top = std::max(box1[1], box2[1]);
@@ -140,9 +157,9 @@ public:
 
 		if(left < right &&
 				top < bottom) {
-			float i = (right-left)*(bottom-top);
-			float u = (box1[2]-box1[0])*(box1[3]-box1[1]) +
-					(box2[2]-box2[0])*(box2[3]-box2[1]) - i;
+			float i = float((right-left)*(bottom-top));
+			float u = float((box1[2]-box1[0])*(box1[3]-box1[1]) +
+					(box2[2]-box2[0])*(box2[3]-box2[1]) - i);
 			iou = i/u;
 		}
 		return iou;

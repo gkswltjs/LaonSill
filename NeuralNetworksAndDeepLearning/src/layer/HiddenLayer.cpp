@@ -27,28 +27,12 @@ HiddenLayer<Dtype>::~HiddenLayer() {}
 
 template <typename Dtype>
 void HiddenLayer<Dtype>::backpropagation() {
-
-	//if(!Layer<Dtype>::isSharedOutput()) {
-	//	_deconcat(idx, next_input, offset);
-	//	if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
-	//}
-
-	//_scaleGradient();
-	_backpropagation();
-	//propBackpropagation();
-}
-
-
-
-template <typename Dtype>
-void HiddenLayer<Dtype>::_backpropagation() {
 	this->_inputData[0]->set_device_grad(this->_outputData[0]);
 }
 
-
 template <typename Dtype>
-void HiddenLayer<Dtype>::shape() {
-	Layer<Dtype>::shape();
+void HiddenLayer<Dtype>::reshape() {
+	Layer<Dtype>::reshape();
 }
 
 template <typename Dtype>

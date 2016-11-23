@@ -45,8 +45,8 @@ void SoftmaxLayer<Dtype>::initialize() {
 }
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::shape() {
-	OutputLayer<Dtype>::shape();
+void SoftmaxLayer<Dtype>::reshape() {
+	OutputLayer<Dtype>::reshape();
 }
 
 template <typename Dtype>

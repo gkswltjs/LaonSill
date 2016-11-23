@@ -171,8 +171,9 @@ public:
 	virtual void loadParams(std::ifstream& ifs);
 	//////////////////////////////////////////
 
-	virtual void _backpropagation();
-	virtual void shape();
+	virtual void backpropagation();
+	virtual void reshape();
+	virtual void feedforward();
 
 private:
 	/**
@@ -196,7 +197,7 @@ private:
     void syncParams(LearnableLayer<Dtype> *targetLayer);
 
 protected:
-	virtual void _feedforward();
+
 
 
 	void _computeWeightedData();

@@ -36,16 +36,19 @@ InputLayer<Dtype>::InputLayer(Builder* builder) : Layer<Dtype>(builder) {
 				builder->_source+"/test_label",
 				1);
 		_dataSet->setMean({0.13066047740});
+		_dataSet->load();
 	} else if (builder->_sourceType == "Mock") {
 		_dataSet = new MockDataSet<Dtype>(
 				4, 4, 3, 10, 10, 10
 				);
-
-	} else {
+		_dataSet->load();
+	}
+	/*
+	else {
 		cout << "Unsuppored Input Source Type: " << builder->_sourceType;
 		exit(1);
 	}
-	_dataSet->load();
+	*/
 
 	initialize();
 }
@@ -55,7 +58,7 @@ InputLayer<Dtype>::~InputLayer() {}
 
 
 template <typename Dtype>
-void InputLayer<Dtype>::shape() {
+void InputLayer<Dtype>::reshape() {
 	// 입력 레이어는 출력 데이터를 입력 데이터와 공유
 	// xxx: 레이어 명시적으로 초기화할 수 있는 위치를 만들어 옮길 것.
 	if (this->_inputData.size() < 1) {
@@ -160,8 +163,6 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 
 			this->_inputData[1]->print_data("label");
 		}
-
-
 
 	} else if (this->networkConfig->_status == NetworkStatus::Test) {
 		for(uint32_t i = 0; i < batches; i++) {

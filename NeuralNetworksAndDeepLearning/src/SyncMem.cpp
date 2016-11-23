@@ -392,7 +392,7 @@ void SyncMem<Dtype>::print(const string& head) {
 
 
 template <typename Dtype>
-void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape) {
+void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape, const bool cmo) {
 	if(true) {
 		if(shape.size() != 4) {
 			(*outstream) << "shape size should be 4 ... " << endl;
@@ -401,9 +401,7 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape) {
 		checkDeviceMemAndUpdateHostMem(false);
 		const Dtype* data = _host_mem;
 
-
-
-		UINT i,j,k,l;
+		uint32_t i,j,k,l;
 
 		const uint32_t rows = shape[2];
 		const uint32_t cols = shape[3];
@@ -412,25 +410,40 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape) {
 
 		(*outstream) << "-------------------------------------" << endl;
 		(*outstream) << "name: " << head << endl;
-		//(*outstream) << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
 		(*outstream) << "batches x channels x rows x cols: " << batches << " x " <<
 				channels << " x " << rows << " x " << cols << endl;
 
-		UINT batchElem = rows*cols*channels;
-		UINT channelElem = rows*cols;
-		for(i = 0; i < batches; i++) {
-			for(j = 0; j < channels; j++) {
-				for(k = 0; k < rows; k++) {
-					for(l = 0; l < cols; l++) {
-				//for(k = 0; k < min(10, (int)rows); k++) {
-				//	for(l = 0; l < min(10, (int)cols); l++) {
-						(*outstream) << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+		const uint32_t batchElem = rows*cols*channels;
+		const uint32_t channelElem = rows*cols;
+
+		if (cmo) {
+			for(i = 0; i < batches; i++) {
+				for(j = 0; j < channels; j++) {
+					for(k = 0; k < rows; k++) {
+						for(l = 0; l < cols; l++) {
+					//for(k = 0; k < min(10, (int)rows); k++) {
+					//	for(l = 0; l < min(10, (int)cols); l++) {
+							(*outstream) << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+						}
+						(*outstream) << endl;
 					}
 					(*outstream) << endl;
 				}
 				(*outstream) << endl;
 			}
-			(*outstream) << endl;
+		} else {
+			for(i = 0; i < batches; i++) {
+				for(j = 0; j < channels; j++) {
+					for(k = 0; k < rows; k++) {
+						for(l = 0; l < cols; l++) {
+							(*outstream) << data[i*batchElem + j*channelElem + k*cols + l] << ", ";
+						}
+						(*outstream) << endl;
+					}
+					(*outstream) << endl;
+				}
+				(*outstream) << endl;
+			}
 		}
 		(*outstream) << "-------------------------------------" << endl;
 	}

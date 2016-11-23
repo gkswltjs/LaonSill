@@ -13,7 +13,7 @@
 using namespace std;
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::shape() {
+void PoolingLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
 
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
@@ -83,7 +83,9 @@ void PoolingLayer<Dtype>::shape() {
 }
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::_feedforward() {
+void PoolingLayer<Dtype>::feedforward() {
+	reshape();
+
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
@@ -96,7 +98,7 @@ void PoolingLayer<Dtype>::_feedforward() {
 }
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::_backpropagation() {
+void PoolingLayer<Dtype>::backpropagation() {
 	this->_outputData[0]->print_data();
 	this->_inputData[0]->print_data();
 	/*
@@ -116,9 +118,9 @@ void PoolingLayer<Dtype>::_backpropagation() {
 }
 
 
-template void PoolingLayer<float>::shape();
-template void PoolingLayer<float>::_feedforward();
-template void PoolingLayer<float>::_backpropagation();
+template void PoolingLayer<float>::reshape();
+template void PoolingLayer<float>::feedforward();
+template void PoolingLayer<float>::backpropagation();
 
 #endif
 

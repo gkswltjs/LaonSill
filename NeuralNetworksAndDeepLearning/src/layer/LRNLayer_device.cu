@@ -33,8 +33,8 @@ void LRNLayer<Dtype>::initialize(lrn_dim lrn_d) {
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
 template <typename Dtype>
-void LRNLayer<Dtype>::_feedforward() {
-	this->_inputData[0]->print_data("inputData:");
+void LRNLayer<Dtype>::feedforward() {
+	reshape();
 
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
@@ -47,7 +47,7 @@ void LRNLayer<Dtype>::_feedforward() {
 }
 
 template <typename Dtype>
-void LRNLayer<Dtype>::_backpropagation() {
+void LRNLayer<Dtype>::backpropagation() {
 
 	const Dtype* d_outputData = this->_outputData[0]->device_data();
 	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
@@ -75,8 +75,8 @@ void LRNLayer<Dtype>::_backpropagation() {
 
 template LRNLayer<float>::~LRNLayer();
 template void LRNLayer<float>::initialize(lrn_dim lrn_d);
-template void LRNLayer<float>::_feedforward();
-template void LRNLayer<float>::_backpropagation();
+template void LRNLayer<float>::feedforward();
+template void LRNLayer<float>::backpropagation();
 
 #endif
 

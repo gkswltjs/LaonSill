@@ -41,7 +41,7 @@ void SplitLayer<Dtype>::initialize() {
 }
 
 template <typename Dtype>
-void SplitLayer<Dtype>::shape() {
+void SplitLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
 
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
@@ -88,14 +88,16 @@ void SplitLayer<Dtype>::shape() {
 }
 
 template <typename Dtype>
-void SplitLayer<Dtype>::_feedforward() {
+void SplitLayer<Dtype>::feedforward() {
+	reshape();
+
 	for (uint32_t i = 0; i < this->_outputs.size(); i++) {
 		this->_outputData[i]->set_device_data(this->_inputData[0]);
 	}
 }
 
 template <typename Dtype>
-void SplitLayer<Dtype>::_backpropagation() {
+void SplitLayer<Dtype>::backpropagation() {
 	this->_inputData[0]->reset_device_grad();
 
 	for (uint32_t i = 0; i < this->_outputs.size(); i++) {

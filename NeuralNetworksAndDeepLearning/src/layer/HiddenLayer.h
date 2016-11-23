@@ -83,12 +83,8 @@ public:
 	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
 	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
 	 */
-	//virtual void backpropagation(uint32_t idx, Data<Dtype>* next_input, uint32_t offset);
 	virtual void backpropagation();
-
-	virtual void _backpropagation();
-
-	virtual void shape();
+	virtual void reshape();
 
 protected:
 	/**

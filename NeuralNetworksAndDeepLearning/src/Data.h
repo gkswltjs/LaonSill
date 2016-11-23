@@ -290,7 +290,7 @@ public:
 	 * @details 데이터를 shape에 따라 화면에 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
-	void print_data(const std::string& head);
+	void print_data(const std::string& head, const bool cmo=true);
 	void print_data();
 	void print_data_flatten();
 	/**
@@ -299,6 +299,13 @@ public:
 	 */
 	void print_grad(const std::string& head);
 	void print_grad();
+
+
+	void fill_host_with_1d_vec(const std::vector<int>& array,
+			const std::vector<uint32_t>& transpose);
+	void fill_host_with_2d_vec(const std::vector<std::vector<float>>& array,
+			const std::vector<uint32_t>& transpose);
+
 
 
 public:
