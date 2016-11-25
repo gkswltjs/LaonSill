@@ -69,6 +69,7 @@ if p.returncode == 0:
     buildResult += "============= Build Details =============\n"
     buildResult += sout
     buildResult += "============= Build Details =============\n\n\n"
+    isSuccess = True
 else:
     print 'fail'
     buildResult = "%s Buildi result : fail\n\n\n" % datetime.datetime.now()
@@ -82,6 +83,13 @@ else:
     buildResult += "============= Build Details =============\n"
     buildResult += sout
     buildResult += "============= Build Details =============\n\n\n"
+    isSuccess = False
+
+subject = "daily build(%s)" % datetime.datetime.today().strftime("%Y-%m-%d")
+if isSuccess == True:
+    subject = subject + ":Success"
+else:
+    subject = subject + ":Fail"
 
 send_email("developer@laonbud.com", simpleDecode(sentence), toList,\
-    "daily build(%s)" % datetime.datetime.today().strftime("%Y-%m-%d"), buildResult)
+    subject, buildResult)
