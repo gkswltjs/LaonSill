@@ -19,7 +19,7 @@
 #include "common.h"
 #include "SessContext.h"
 #include "MessageHeader.h"
-#include "Serializer.h"
+#include "MsgSerializer.h"
 
 class Communicator {
 public:

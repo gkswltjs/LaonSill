@@ -13,6 +13,8 @@
 
 (4) SOOOA_HOME, SOOOA_SOURCE_PATH, SOOOA_BUILD_PATH 경로 설정
 
+(5) SDL설치
+
 ※ 이 외에도 추가할 설정이 있을 수 있다. 그때 그때 추가하고 문서도 갱신하도록
 하자.
 

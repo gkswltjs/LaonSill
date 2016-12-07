@@ -215,7 +215,7 @@ bool Communicator::handleWelcomeMsg(MessageHeader recvMsgHdr, char* recvMsg,
     replyMsgHdr.setMsgType(MessageHeader::WelcomeReply);
 
     SASSERT(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE, "");
-    Serializer::serializeMsgHdr(replyMsgHdr, replyMsg);
+    MsgSerializer::serializeMsgHdr(replyMsgHdr, replyMsg);
 
     return true;
 }
@@ -273,8 +273,8 @@ bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMs
     }
 
     int offset;
-    offset = Serializer::serializeMsgHdr(replyMsgHdr, sendBuffer);
-    offset = Serializer::serializeInt(networkId, offset, sendBuffer);
+    offset = MsgSerializer::serializeMsgHdr(replyMsgHdr, sendBuffer);
+    offset = MsgSerializer::serializeInt(networkId, offset, sendBuffer);
 
     return true;
 }
@@ -293,9 +293,9 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
     int jobType, networkId, arg1;
     int offset = MessageHeader::MESSAGE_HEADER_SIZE;
 
-    offset = Serializer::deserializeInt(jobType, offset, recvMsg);
-    offset = Serializer::deserializeInt(networkId, offset, recvMsg);
-    offset = Serializer::deserializeInt(arg1, offset, recvMsg);
+    offset = MsgSerializer::deserializeInt(jobType, offset, recvMsg);
+    offset = MsgSerializer::deserializeInt(networkId, offset, recvMsg);
+    offset = MsgSerializer::deserializeInt(arg1, offset, recvMsg);
 
     // (2) network를 얻는다.
     Network<float>* network = Worker<float>::getNetwork(networkId);
@@ -310,7 +310,7 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
     replyMsgHdr.setMsgType(MessageHeader::PushJobReply);
 
     SASSERT(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE, "");
-    Serializer::serializeMsgHdr(replyMsgHdr, replyMsg);
+    MsgSerializer::serializeMsgHdr(replyMsgHdr, replyMsg);
 
     return true;
 }
@@ -534,7 +534,7 @@ Communicator::CommRetType Communicator::recvMessage(
     }
 
     if (!skipMsgPeek) {
-        Serializer::deserializeMsgHdr(msgHdr, buf);
+        MsgSerializer::deserializeMsgHdr(msgHdr, buf);
 
         if (msgHdr.getMsgLen() > MessageHeader::MESSAGE_DEFAULT_SIZE)
             return Communicator::RecvOnlyHeader;

@@ -1,5 +1,5 @@
 /**
- * @file Serializer.h
+ * @file MsgSerializer.h
  * @date 2016-10-25
  * @author moonhoen lee
  * @brief 
@@ -12,10 +12,10 @@
 #include "common.h"
 #include "MessageHeader.h"
 
-class Serializer {
+class MsgSerializer {
 public:
-                Serializer() {}
-    virtual    ~Serializer() {}
+                MsgSerializer() {}
+    virtual    ~MsgSerializer() {}
    
     static int  serializeInt(int data, int offset, char* msg);
     static int  deserializeInt(int& data, int offset, char* msg);

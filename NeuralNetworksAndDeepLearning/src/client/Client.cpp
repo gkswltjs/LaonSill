@@ -17,7 +17,7 @@
 
 #include "Client.h"
 #include "Communicator.h"
-#include "Serializer.h"
+#include "MsgSerializer.h"
 #include "MessageHeader.h"
 
 using namespace std;
@@ -45,10 +45,10 @@ void Client::pushJob(int fd, char* buf, int jobType, int networkId, int arg1) {
     msgHdr.setMsgType(MessageHeader::PushJob);
     msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE + sizeof(int) * 3);
 
-    int bufOffset = Serializer::serializeMsgHdr(msgHdr, buf);
-    bufOffset = Serializer::serializeInt(jobType, bufOffset, buf);
-    bufOffset = Serializer::serializeInt(networkId, bufOffset, buf);
-    bufOffset = Serializer::serializeInt(arg1, bufOffset, buf);
+    int bufOffset = MsgSerializer::serializeMsgHdr(msgHdr, buf);
+    bufOffset = MsgSerializer::serializeInt(jobType, bufOffset, buf);
+    bufOffset = MsgSerializer::serializeInt(networkId, bufOffset, buf);
+    bufOffset = MsgSerializer::serializeInt(arg1, bufOffset, buf);
     Communicator::CommRetType ret = Communicator::sendMessage(fd, msgHdr, buf);
     assert(ret == Communicator::Success);
 
@@ -90,7 +90,7 @@ void Client::clientMain(const char* hostname, int portno) {
     MessageHeader msgHdr;
     msgHdr.setMsgType(MessageHeader::Welcome);
     msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
-    Serializer::serializeMsgHdr(msgHdr, buf);
+    MsgSerializer::serializeMsgHdr(msgHdr, buf);
     Communicator::CommRetType ret = Communicator::sendMessage(sockFd, msgHdr, buf);
     assert(ret == Communicator::Success);
 
@@ -104,7 +104,7 @@ void Client::clientMain(const char* hostname, int portno) {
     cout << "send create-network msg" << endl;
     msgHdr.setMsgType(MessageHeader::CreateNetwork);
     msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
-    Serializer::serializeMsgHdr(msgHdr, buf);
+    MsgSerializer::serializeMsgHdr(msgHdr, buf);
     ret = Communicator::sendMessage(sockFd, msgHdr, buf);
     assert(ret == Communicator::Success);
 
@@ -114,7 +114,7 @@ void Client::clientMain(const char* hostname, int portno) {
     assert(ret == Communicator::Success);
     assert(msgHdr.getMsgType() == MessageHeader::CreateNetworkReply);
     int networkId;
-    Serializer::deserializeInt(networkId, MessageHeader::MESSAGE_HEADER_SIZE, buf);
+    MsgSerializer::deserializeInt(networkId, MessageHeader::MESSAGE_HEADER_SIZE, buf);
     cout << "recv create-network msg & created network ID is " << networkId << endl;
 
     // (5-1) build layer
@@ -134,7 +134,7 @@ void Client::clientMain(const char* hostname, int portno) {
     cout << "send halt msg" << endl;
     msgHdr.setMsgType(MessageHeader::HaltMachine);
     msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
-    Serializer::serializeMsgHdr(msgHdr, buf);
+    MsgSerializer::serializeMsgHdr(msgHdr, buf);
     ret = Communicator::sendMessage(sockFd, msgHdr, buf);
     assert(ret == Communicator::Success);
 

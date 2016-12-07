@@ -6,6 +6,8 @@
 #include "cuda/Cuda.h"
 
 #include "jsoncpp/json/json.h"
+#include "ale_interface.hpp"
+#include <SDL.h>
 
 #include "common.h"
 #include "DataSet.h"
@@ -36,7 +38,7 @@ using namespace std;
 void network_load();
 
 void printUsageAndExit(char* prog) {
-    fprintf(stderr, "Usage: %s [-v] [-d | -f jobFilePath]\n", prog);
+    fprintf(stderr, "Usage: %s [-v] [-d | -f jobFilePath | -a romFilePath]\n", prog);
     exit(EXIT_FAILURE);
 }
 
@@ -69,25 +71,33 @@ int main(int argc, char** argv) {
     int     opt;
     bool    useDeveloperMode = false; 
     bool    useSingleJobMode = false;
+    bool    useRLMode = false;
     char*   singleJobFilePath;
+    char*   romFilePath;
 
     // (1) 옵션을 읽는다.
-    while ((opt = getopt(argc, argv, "vdf:")) != -1) {
+    while ((opt = getopt(argc, argv, "vdf:a:")) != -1) {
         switch (opt) {
         case 'v':
             printf("%s version %d.%d.%d\n", argv[0], SPARAM(VERSION_MAJOR),
                 SPARAM(VERSION_MINOR), SPARAM(VERSION_PATCH));
             exit(EXIT_SUCCESS);
         case 'd':
-            if (useSingleJobMode)
+            if (useSingleJobMode | useRLMode)
                 printUsageAndExit(argv[0]);
             useDeveloperMode = true;
             break;
         case 'f':
-            if (useDeveloperMode)
+            if (useDeveloperMode | useRLMode)
                 printUsageAndExit(argv[0]);
             useSingleJobMode = true;
             singleJobFilePath = optarg;
+            break;
+        case 'a':
+            if (useDeveloperMode | useSingleJobMode)
+                printUsageAndExit(argv[0]);
+            useRLMode = true;
+            romFilePath = optarg;
             break;
         default:    /* ? */
             printUsageAndExit(argv[0]);
@@ -170,14 +180,52 @@ int main(int argc, char** argv) {
 
         // (5-B-6) Producer&Consumer를 종료를 기다린다.
         Worker<float>::joinThreads();
+    } else if (useRLMode) {
+        // (5-C-1)
+        ALEInterface ale;
+
+        // Get & Set the desired settings
+        ale.setInt("random_seed", 123);
+        //The default is already 0.25, this is just an example
+        ale.setFloat("repeat_action_probability", 0.25);
+
+        ale.setBool("display_screen", true);
+        ale.setBool("sound", true);
+
+        // Load the ROM file. (Also resets the system for new settings to
+        // take effect.)
+        ale.loadROM(romFilePath);
+
+        ALEScreen screen = ale.getScreen();
+        cout << "width : " << screen.width() << ", height : " << screen.height() << endl;
+        sleep(2);
+
+        // Get the vector of legal actions
+        ActionVect legal_actions = ale.getLegalActionSet();
+
+        // Play 10 episodes
+        for (int episode=0; episode<10; episode++) {
+            float totalReward = 0;
+            while (!ale.game_over()) {
+                Action a = legal_actions[rand() % legal_actions.size()];
+                // Apply the action and get the resulting reward
+                float reward = ale.act(a);
+                totalReward += reward;
+
+                cout << "frame : " << ale.getFrameNumber() << ",reward : " << reward << endl;
+            }
+            cout << "Episode " << episode << " ended with score: " << totalReward << endl;
+            ale.reset_game();
+        }
+
     } else {
-        // (5-C-1) Producer&Consumer를 생성.
+        // (5-D-1) Producer&Consumer를 생성.
         Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
 
-        // (5-C-2) Listener & Sess threads를 생성.
+        // (5-D-2) Listener & Sess threads를 생성.
         Communicator::launchThreads(SPARAM(SESS_COUNT));
 
-        // (5-C-3) 각각의 쓰레드들의 종료를 기다린다.
+        // (5-D-3) 각각의 쓰레드들의 종료를 기다린다.
         Worker<float>::joinThreads();
         Communicator::joinThreads();
     }
