@@ -51,7 +51,7 @@ void Atari::run(char* romFilePath) {
     ColourPalette colourPalette;
     colourPalette.setPalette("standard", "");
 
-    int allocSize = sizeof(float) * screenWidth * screenHeight * 3;
+    int allocSize = sizeof(float) * screenWidth * screenHeight * 4;
     float *img = (float*)malloc(allocSize);
     SASSERT0(img != NULL);
 
@@ -79,13 +79,25 @@ void Atari::run(char* romFilePath) {
 
             // fill img
             //  이 방법이 최선일까?
-            int imgOffset = 0;
+            // (1) assign image[i] = image[i+1]  for i = 0..2
+            //    (I do not use memmove(). It is very dangerous function as far as i know)
             for (int i = 0; i < 3; i++) {
+                int srcIndex = (i + 1) * screenWidth * screenHeight;
+                int dstIndex = i * screenWidth * screenHeight;
+                int copySize = screenWidth * screenHeight * sizeof(float);
+                memcpy((void*)&img[dstIndex], (void*)&img[srcIndex], copySize);
+            }
+
+            // (2) fill image[3]
+            //     by column major order
+            int imgOffset = 3 * screenWidth * screenHeight;
+            for (int i = 0; i < screenHeight; i++) {
                 for (int j = 0; j < screenWidth; j++) {
-                    for (int k = 0; k < screenHeight; k++) {
-                        img[imgOffset] = (float)imgData2(j, k, 0, i) / 255.0;
-                        imgOffset++;
-                    }
+                    // [ITU BT.709] RGB to Luminance
+                    img[imgOffset] = ((float)imgData2(j, i, 0, 0) * 0.2126 +  
+                                      (float)imgData2(j, i, 0, 1) * 0.7152 + 
+                                      (float)imgData2(j, i, 0, 2) * 0.0722) / 255.0;
+                    imgOffset++;
                 }
             }
 

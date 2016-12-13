@@ -207,7 +207,7 @@
     "MUTABLE" : true,
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
-    "DEFAULT" : 3 
+    "DEFAULT" : 4 
 },
 
 "DQN_REPLAY_MEMORY_ELEM_COUNT" : 
