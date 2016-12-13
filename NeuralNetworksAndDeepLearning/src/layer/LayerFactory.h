@@ -39,7 +39,7 @@ public:
 	 * @param layerType 생성하고자 하는 레이어 객체의 타입.
 	 * @return 생성한 레이어 객체.
 	 */
-	static Layer<Dtype>* create(typename Layer<Dtype>::Type layerType) {
+	static Layer<Dtype>* create(typename Layer<Dtype>::LayerType layerType) {
 		switch(layerType) {
 		case Layer<Dtype>::Input: return new InputLayer<Dtype>();
 		case Layer<Dtype>::FullyConnected: return new FullyConnectedLayer<Dtype>();
@@ -77,7 +77,7 @@ public:
 	LayerBuilderFactory() {}
 	virtual ~LayerBuilderFactory() {}
 
-	static typename Layer<Dtype>::Builder* create(typename Layer<Dtype>::Type layerType) {
+	static typename Layer<Dtype>::Builder* create(typename Layer<Dtype>::LayerType layerType) {
 		switch(layerType) {
 		case Layer<Dtype>::Input: return new typename InputLayer<Dtype>::Builder();
 		case Layer<Dtype>::FullyConnected: return new typename FullyConnectedLayer<Dtype>::Builder();

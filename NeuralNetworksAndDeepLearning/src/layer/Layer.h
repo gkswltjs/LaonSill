@@ -40,9 +40,10 @@ public:
 	 * @brief 레이어 타입 열거형
 	 * @details	지원하는 레이어 타입 열거,
 	 */
-	enum Type: int {
-		None=0,
+	enum LayerType : int {
+		None = 0,
 		Input, 					// 입력 레이어
+        ALEInput,               // ALE 입력 레이어
 		FullyConnected, 		// Fully Connected 레이어
 		Conv, 					// 컨볼루션 레이어
 		Pool, 					// 풀링 레이어
@@ -62,7 +63,7 @@ public:
 	 */
 	class Builder {
 	public:
-		Type type;
+		LayerType type;
         std::string _name;							///< 레이어의 이름
 		uint32_t _id;								///< 레이어의 아이디
 
@@ -176,7 +177,7 @@ public:
 	 * @biref 레이어의 타입을 조회한다.
 	 * @return 레이어 타입
 	 */
-	typename Layer<Dtype>::Type getType() const { return this->type; }
+	typename Layer<Dtype>::LayerType getType() const { return this->type; }
 	/**
 	 * @brief 레이어의 입력 데이터 이름 목록을 조회한다.
 	 * @return 레이어 입력 데이터 이름 목록
@@ -351,7 +352,7 @@ public:
 
 
 protected:
-	Layer<Dtype>::Type type;							///< 레이어의 타입
+	Layer<Dtype>::LayerType type;					    ///< 레이어의 타입
 	int id;												///< 레이어의 고유 아이디
     std::string name;									///< 레이어의 이름
 

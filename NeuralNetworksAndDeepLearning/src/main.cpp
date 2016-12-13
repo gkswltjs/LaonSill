@@ -6,8 +6,6 @@
 #include "cuda/Cuda.h"
 
 #include "jsoncpp/json/json.h"
-#include "ale_interface.hpp"
-#include <SDL.h>
 
 #include "common.h"
 #include "DataSet.h"
@@ -31,6 +29,7 @@
 #include "HotLog.h"
 #include "StdOutLog.h"
 #include "Perf.h"
+#include "Atari.h"
 
 using namespace std;
 
@@ -181,43 +180,7 @@ int main(int argc, char** argv) {
         // (5-B-6) Producer&Consumer를 종료를 기다린다.
         Worker<float>::joinThreads();
     } else if (useRLMode) {
-        // (5-C-1)
-        ALEInterface ale;
-
-        // Get & Set the desired settings
-        ale.setInt("random_seed", 123);
-        //The default is already 0.25, this is just an example
-        ale.setFloat("repeat_action_probability", 0.25);
-
-        ale.setBool("display_screen", true);
-        ale.setBool("sound", true);
-
-        // Load the ROM file. (Also resets the system for new settings to
-        // take effect.)
-        ale.loadROM(romFilePath);
-
-        ALEScreen screen = ale.getScreen();
-        cout << "width : " << screen.width() << ", height : " << screen.height() << endl;
-        sleep(2);
-
-        // Get the vector of legal actions
-        ActionVect legal_actions = ale.getLegalActionSet();
-
-        // Play 10 episodes
-        for (int episode=0; episode<10; episode++) {
-            float totalReward = 0;
-            while (!ale.game_over()) {
-                Action a = legal_actions[rand() % legal_actions.size()];
-                // Apply the action and get the resulting reward
-                float reward = ale.act(a);
-                totalReward += reward;
-
-                cout << "frame : " << ale.getFrameNumber() << ",reward : " << reward << endl;
-            }
-            cout << "Episode " << episode << " ended with score: " << totalReward << endl;
-            ale.reset_game();
-        }
-
+        Atari::run(romFilePath);
     } else {
         // (5-D-1) Producer&Consumer를 생성.
         Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));

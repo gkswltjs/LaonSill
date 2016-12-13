@@ -251,7 +251,7 @@ public:
 
 			for(uint32_t i = 0; i < numLayers; i++) {
 				// create layer builder objects from stream
-				typename Layer<Dtype>::Type layerType;
+				typename Layer<Dtype>::LayerType layerType;
 				ifs.read((char*)&layerType, sizeof(uint32_t));
 
 				typename Layer<Dtype>::Builder* layerBuilder =
