@@ -27,6 +27,7 @@
 #include "NetworkConfig.h"
 #include "Pooling.h"
 #include "Param.h"
+#include "ALEInputLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -132,7 +133,73 @@ DataSet<Dtype>* createImageNet50000DataSet() {
 	return dataSet;
 }
 
+template <typename Dtype>
+LayersConfig<Dtype>* createDQNLayersConfig() {
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename ALEInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("inputLayer")
+					->outputs({"data", "label"})
+					)
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("convLayer1")
+					->filterDim(8, 8, 4, 32, 4)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1/8x8"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(2)
+					->name("convLayer2")
+					->filterDim(4, 4, 32, 64, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv1/8x8"})
+					->outputs({"conv2/4x4"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(3)
+					->name("convLayer3")
+					->filterDim(3, 3, 64, 64, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv2/4x4"})
+					->outputs({"conv3/3x3"}))
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(4)
+					->name("fullyConnectedLayer1")
+					->nOut(512)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"conv3/3x3"})
+					->outputs({"fc1"}))
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(5)
+					->name("fullyConnectedLayer2")
+					->nOut(4)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->inputs({"fc1"})
+					->outputs({"fc2"}))
+			->build();
 
+	return layersConfig;
+}
 
 
 

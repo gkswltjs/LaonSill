@@ -26,6 +26,8 @@
 #include "Worker.h"
 
 
+#define SKIP_INPUT_AND_OUTPUT_LAYER     1
+
 //template <typename Dtype> class DataSet;
 template <typename Dtype> class Worker;
 
@@ -65,7 +67,7 @@ public:
 			for (it = _layerWise.begin(); it != _layerWise.end(); it++) {
                 Layer<Dtype>* currentLayer = it->second->build();
 
-                		// 시작 레이어 추가
+                // 시작 레이어 추가
                 InputLayer<Dtype>* inputLayer =
                 		dynamic_cast<InputLayer<Dtype>*>(currentLayer);
                 if (inputLayer) {
@@ -91,14 +93,17 @@ public:
                 idLayerMap[it->first] = currentLayer;
 			}
 
+#ifndef SKIP_INPUT_AND_OUTPUT_LAYER
 			if(firstLayers.size() < 1) {
                 std::cout << "no input layer ... " << std::endl;
 				exit(1);
 			}
+
 			if(lastLayers.size() < 1) {
                 std::cout << "no output layer ... " << std::endl;
 				exit(1);
 			}
+#endif
 
 			const uint32_t layerSize = layers.size();
 
@@ -222,12 +227,13 @@ public:
 
 
 			std::cout << "final layer order: " << std::endl;
+
+
 			for (uint32_t i = 0; i < olayers.size(); i++) {
 				std::cout << i << ": " << olayers[i]->getName() << std::endl;
 			}
 
-
-
+#ifndef SKIP_INPUT_AND_OUTPUT_LAYER
 			return (new LayersConfig(this))
 				->firstLayers(firstLayers)
 				->lastLayers(lastLayers)
@@ -235,6 +241,13 @@ public:
 				->learnableLayers(learnableLayers)
                 ->nameLayerMap(nameLayerMap)
                 ->layerDataMap(layerDataMap);
+#else
+			return (new LayersConfig(this))
+				->layers(olayers)
+				->learnableLayers(learnableLayers)
+                ->nameLayerMap(nameLayerMap)
+                ->layerDataMap(layerDataMap);
+#endif
 		}
 
 		void save(std::ofstream& ofs) {

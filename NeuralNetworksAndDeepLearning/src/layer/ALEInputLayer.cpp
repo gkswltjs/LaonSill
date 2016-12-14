@@ -79,10 +79,13 @@ void ALEInputLayer<Dtype>::insertFrameInfo(Dtype* img, int action, Dtype reward,
     int copySize = this->stateSlots[this->stateSlotHead]->getDataSize();
     memcpy((void*)this->stateSlots[this->stateSlotHead]->data, (void*)img, copySize);
 
-    this->rmSlots[this->rmSlotHead]->fill(
-        this->stateSlots[this->rmSlotHead], action, reward, this->lastState, term);
+    if (this->lastState != NULL) {
+        this->rmSlots[this->rmSlotHead]->fill(
+            this->stateSlots[this->rmSlotHead], action, reward, this->lastState, term);
+        this->rmSlotHead = (this->rmSlotHead + 1) % this->rmSlotCnt;
+    }
 
-    this->rmSlotHead = (this->rmSlotHead + 1) % this->rmSlotCnt;
+    this->lastState = this->stateSlots[this->stateSlotHead];
     this->stateSlotHead = (this->stateSlotHead + 1) % this->stateSlotCnt;
 }
 
@@ -98,13 +101,14 @@ void ALEInputLayer<Dtype>::prepareInputData() {
         SASSERT0(this->preparedData != NULL);
         SASSERT0(this->preparedLabel == NULL);
 
-        allocSize = inputDataCount * sizeof(Dtype);
+        allocSize = inputDataCount * this->chCnt * sizeof(Dtype);
         this->preparedLabel = (Dtype*)malloc(allocSize);
         SASSERT0(this->preparedLabel != NULL);
     }
 
     srand(time(NULL));
 
+    Dtype zero = 0.0;
     for (int i = 0; i < inputDataCount; i++) {
         int index = rand() % this->rmSlotCnt;
         int action = this->rmSlots[index]->action1;
@@ -117,9 +121,17 @@ void ALEInputLayer<Dtype>::prepareInputData() {
         memcpy((void*)&this->preparedData[preparedDataOffset],
             (void*)state1->data, state1->getDataSize());
 
-        int preparedLabelOffset = i; // 1 label
-        memcpy((void*)&this->preparedLabel[preparedLabelOffset],
-            (void*)&reward1, sizeof(Dtype));
+        for (int j = 0; j < this->chCnt; j++) {
+            int preparedLabelOffset = this->chCnt * i + j;
+
+            if (j == action) {
+                memcpy((void*)&this->preparedLabel[preparedLabelOffset],
+                    (void*)&reward1, sizeof(Dtype));
+            } else {
+                memcpy((void*)&this->preparedLabel[preparedLabelOffset],
+                    (void*)&zero, sizeof(Dtype));
+            }
+        }
     }
 }
 
@@ -134,7 +146,8 @@ void ALEInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end
     int batchSize = this->in_dim.batches;
 
     this->_inputData[0]->set_device_with_host_data(this->preparedData, 0, unitSize * batchSize);
-    this->_inputData[1]->set_device_with_host_data(this->preparedLabel, 0, batchSize);
+    this->_inputData[1]->set_device_with_host_data(this->preparedLabel, 0, this->chCnt * batchSize);
+    // output : FullyConnectedLayer. 
 
 	Layer<Dtype>::feedforward();
 }
@@ -192,7 +205,7 @@ void ALEInputLayer<Dtype>::_shape(bool recursive) {
     }
 
 	if (this->_outputs.size() > 1) {
-		this->_inputData[1]->shape({this->in_dim.batches, 1, 1, 1});
+		this->_inputData[1]->shape({this->in_dim.batches, 1, (unsigned int)this->chCnt, 1});
 	}
 
 	if(recursive) {

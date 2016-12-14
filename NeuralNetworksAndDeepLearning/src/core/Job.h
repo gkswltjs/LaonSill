@@ -16,10 +16,17 @@
 class Job {
 public:
     enum JobType : int {
+        // belows will be deprecated
         BuildLayer = 0,
         TrainNetwork,
         CleanupLayer,
-        HaltMachine
+
+        // DQN related jobs
+        BuildDQNLayer,
+        BuildDQNPrimeLayer,
+
+
+        HaltMachine,
     };
 
     Job (JobType jobType, void* network, int arg1) {

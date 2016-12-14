@@ -218,6 +218,9 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
         case Job::CleanupLayer:
             cleanupLayer((Network<Dtype>*)job->getNetwork());
             break;
+        case Job::BuildDQNLayer:
+            buildDQNLayer((Network<Dtype>*)job->getNetwork());
+            break;
         case Job::HaltMachine:
             doLoop = false;
             Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
@@ -369,6 +372,40 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
     //layersConfig->_inputLayer->shape(0, in_dim);
 
     // (4) network에 layersConfig 정보를 등록한다.
+    network->setLayersConfig(layersConfig);
+}
+
+template<typename Dtype>
+void Worker<Dtype>::buildDQNLayer(Network<Dtype>* network) {
+    // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
+    cout << "[DEBUG]create DQN layers config" << endl;
+
+	LayersConfig<float>* layersConfig = createDQNLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
+
+    cout << "[DEBUG]set network config" << endl;
+    // (2) network config 정보를 layer들에게 전달한다.
+    for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+        layersConfig->_layers[i]->setNetworkConfig(network->config);
+    }
+
+    // (3) shape 과정을 수행한다. 
+    //io_dim in_dim;
+    //in_dim.rows = network->config->_dataSet->getRows();
+    //in_dim.cols = network->config->_dataSet->getCols();
+    //in_dim.channels = network->config->_dataSet->getChannels();
+    //in_dim.batches = network->config->_batchSize;
+    //layersConfig->_inputLayer->setInDimension(in_dim);
+
+    cout << "[DEBUG]do shape" << endl;
+    for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+    	layersConfig->_layers[i]->shape();
+    	//in_dim = layersConfig->_layers[i-1]->getOutDimension();
+    }
+    //layersConfig->_inputLayer->shape(0, in_dim);
+
+    // (4) network에 layersConfig 정보를 등록한다.
+    cout << "[DEBUG]register layersconfig into network" << endl;
     network->setLayersConfig(layersConfig);
 }
 

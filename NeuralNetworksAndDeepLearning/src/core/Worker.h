@@ -117,6 +117,7 @@ private:
     static Job*                                 popJob();
 
     static void                                 buildLayer(Network<Dtype>* network);
+    static void                                 buildDQNLayer(Network<Dtype>* network);
     static void                                 trainNetwork(Network<Dtype>* network, int maxEpochs);
     static void                                 cleanupLayer(Network<Dtype>* network); 
 

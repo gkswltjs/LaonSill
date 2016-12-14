@@ -8,10 +8,12 @@
 
 #ifndef ATARI_H
 #define ATARI_H 
+
 class Atari {
 public: 
-    Atari() {}
-    virtual ~Atari() {}
-    static void run(char* romFilePath);
+                    Atari() {}
+    virtual        ~Atari() {}
+
+    static void     run(char* romFilePath);
 };
 #endif /* ATARI_H */

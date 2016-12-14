@@ -62,6 +62,9 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 
 	this->type = Layer<Dtype>::Conv;
 	this->filter_d = filter_d;
+    cout << "[DEBUG] filter_d. rows:" << filter_d.rows << ",cols:" << filter_d.cols <<
+        ",channels:" << filter_d.channels << ",filters:" << filter_d.filters <<
+        ",stride:" << filter_d.stride << endl;
 
 	this->weight_update_param = weight_update_param;
 	this->bias_update_param = bias_update_param;
@@ -103,6 +106,8 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 			CUDNN_CROSS_CORRELATION));
 
 	this->activation_fn = ActivationFactory<Dtype>::create(activationType);
+
+    cout << "[DEBUG]conv layer is initialized.." << endl;
 }
 
 template <typename Dtype>

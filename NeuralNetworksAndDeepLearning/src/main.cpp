@@ -180,7 +180,13 @@ int main(int argc, char** argv) {
         // (5-B-6) Producer&Consumer를 종료를 기다린다.
         Worker<float>::joinThreads();
     } else if (useRLMode) {
+        // (5-C-1) Producer&Consumer를 생성.
+        Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
+
+        // (5-C-3) Layer를 생성한다.
         Atari::run(romFilePath);
+
+        Worker<float>::joinThreads();
     } else {
         // (5-D-1) Producer&Consumer를 생성.
         Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
