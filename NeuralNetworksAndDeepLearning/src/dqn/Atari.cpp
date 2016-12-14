@@ -6,17 +6,12 @@
  * @details
  */
 
-#define USE_OPENCV              1
 //#define SHOW_OPENCV_WINDOW      1
 #define USE_RESTRICT_ACTION     1
 
 #include <SDL.h>
 
-#ifdef USE_OPENCV
 #include <opencv2/opencv.hpp>
-#else
-#include <CImg.h>
-#endif
 
 #include "ale_interface.hpp"
 #include "common/ColourPalette.hpp"
@@ -50,7 +45,6 @@ void Atari::run(char* romFilePath) {
     int screenWidth = screen.width();
     int screenHeight = screen.height();
 
-#ifdef USE_OPENCV
     cv::Mat imgData(screenHeight, screenWidth, CV_8UC3);
     cv::Mat imgData2;
     cv::Mat imgData3;
@@ -58,13 +52,7 @@ void Atari::run(char* romFilePath) {
     cv::namedWindow("test image");
     cv::namedWindow("test image2");
 #endif  /* ifdef SHOW_OPENCV_WINDOWS */
-#else
-    cimg_library::CImg<pixel_t> imgData(screenWidth, screenHeight, 1, 3);
-    cimg_library::CImg<pixel_t> imgData2(84, 84, 1, 3);
 
-    cimg_library::CImgDisplay imgDisplay(imgData, "Original Image");
-    cimg_library::CImgDisplay imgDisplay2(imgData2, "Scaled Image");
-#endif
     pixel_t *imgPixels = (pixel_t*)malloc(sizeof(pixel_t) * screenWidth * screenHeight * 3); 
     SASSERT0(imgPixels != NULL);
     ColourPalette colourPalette;
@@ -93,31 +81,20 @@ void Atari::run(char* romFilePath) {
                 for (int j = 0; j < screenHeight; j++) {
                     int r, g, b;
                     colourPalette.getRGB(screen.get(j, i), r, g, b);
-#ifdef USE_OPENCV
+
                     // BGR
                     imgData.at<cv::Vec3b>(j, i)[0] = b;
                     imgData.at<cv::Vec3b>(j, i)[1] = g;
                     imgData.at<cv::Vec3b>(j, i)[2] = r;
-#else
-                    imgData(i, j, 0, 0) = r;
-                    imgData(i, j, 0, 1) = g;
-                    imgData(i, j, 0, 2) = b;
-#endif
                 }
             }
        
-#ifdef USE_OPENCV
             cv::resize(imgData, imgData2, cv::Size(84, 84));
             cv::cvtColor(imgData2, imgData3, CV_BGR2GRAY);
 #ifdef SHOW_OPENCV_WINDOW
             cv::imshow("test image", imgData2);
             cv::imshow("test image2", imgData3);
             cv::waitKey(1);
-#endif
-#else
-            imgData2 = imgData;
-            // resize to 84 * 84 * 1(Z axis) * 3(RGB) with linear interploation type(3)
-            imgData2.resize(84, 84, 1, 3, 3);
 #endif
 
             // fill img
@@ -136,25 +113,11 @@ void Atari::run(char* romFilePath) {
             int imgOffset = 3 * screenWidth * screenHeight;
             for (int i = 0; i < screenHeight; i++) {
                 for (int j = 0; j < screenWidth; j++) {
-                    // [ITU BT.709] RGB to Luminance
-#ifdef USE_OPENCV
                     img[imgOffset] = (float)(imgData3.at<unsigned char>(i, j)) / 255.0;
-#else
-                    img[imgOffset] = ((float)imgData2(j, i, 0, 0) * 0.2126 +  
-                                      (float)imgData2(j, i, 0, 1) * 0.7152 + 
-                                      (float)imgData2(j, i, 0, 2) * 0.0722) / 255.0;
-#endif
                     imgOffset++;
                 }
             }
 
-#ifdef USE_OPENCV
-
-#else
-            imgDisplay = imgData;
-            imgDisplay2 = imgData2;
-#endif
-           
 #ifndef USE_RESTRICT_ACTION
             Action a = legal_actions[rand() % legal_actions.size()];
             // Apply the action and get the resulting reward
@@ -187,9 +150,7 @@ void Atari::run(char* romFilePath) {
         ale.reset_game();
     }
 
-#ifdef USE_OPENCV
 #ifdef SHOW_OPENCV_WINDOW
     cv::destroyWindow("test image");
-#endif
 #endif
 }
