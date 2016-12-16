@@ -20,6 +20,9 @@ public:
     static int  serializeInt(int data, int offset, char* msg);
     static int  deserializeInt(int& data, int offset, char* msg);
 
+    static int  serializeFloat(float data, int offset, char* msg);
+    static int  deserializeFloat(float& data, int offset, char* msg);
+
     static int  serializeMsgHdr(MessageHeader msgHdr, char* msg);
     static int  deserializeMsgHdr(MessageHeader& msgHdr, char* msg);
 };

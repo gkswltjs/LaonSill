@@ -21,8 +21,15 @@ void AtariNN::createNetwork() {
 }
 
 void AtariNN::buildDQNLayer() {
-    Job* newJob = new Job(Job::BuildDQNLayer, this->network, this->networkId);
+    Job* newJob = new Job(Job::BuildDQNNetwork);
     Worker<float>::pushJob(newJob);
-
 }
 
+void AtariNN::feedForward(int batchSize) {
+    Job* newJob = new Job(Job::FeedForwardDQNNetwork);
+    Worker<float>::pushJob(newJob);
+}
+
+void AtariNN::fillInputData(int imgCount, float* img, int action, float reward, bool term) {
+    //Job* newJob = new Job(Job::InsertFrameInfoDQNNetwork, this->network, 
+}

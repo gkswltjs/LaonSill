@@ -29,6 +29,28 @@ int MsgSerializer::deserializeInt(int& data, int offset, char* msg) {
     return offset + sizeof(int);
 }
 
+int MsgSerializer::serializeFloat(float data, int offset, char* msg) {
+    // XXX: float는 architecture마다 다를 수 있다.
+    //      일단 표준인 IEEE 754-1985를 따른다고 가정하고 코딩하였다.
+    //      float를 int로 캐스팅하면 float value가 truncate되기 때문에
+    //      포인터로 넘겨주는 방식으로 구현하였다.
+    int temp;
+    temp = htonl(*(int*)&data);
+    memcpy((void*)(msg + offset), (void*)&temp, sizeof(int));
+   
+    return offset + sizeof(int);
+}
+
+int MsgSerializer::deserializeFloat(float& data, int offset, char* msg) {
+    int     temp;
+    float   tempFloatData;
+    memcpy((void*)&temp, (void*)(msg + offset), sizeof(int));
+    *(int*)&tempFloatData = ntohl(temp);
+    data = tempFloatData;
+   
+    return offset + sizeof(int);
+}
+
 int MsgSerializer::serializeMsgHdr(MessageHeader msgHdr, char* msg) {
     // @See: MessageHeader.h
     int offset = 0;

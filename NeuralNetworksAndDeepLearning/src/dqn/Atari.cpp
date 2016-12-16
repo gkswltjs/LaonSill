@@ -120,7 +120,7 @@ void Atari::run(char* romFilePath) {
 
 #ifndef USE_RESTRICT_ACTION
             Action a = legal_actions[rand() % legal_actions.size()];
-            // Apply the action and get the resulting reward
+            // Apply action & get resulting reward
 #else
             // 0 for noop, 1 for fire, 3 for right, 4 for left, action size = 4
             int actionIndex = rand() % 4;

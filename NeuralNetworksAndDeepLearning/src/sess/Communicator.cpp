@@ -224,7 +224,7 @@ bool Communicator::handleHaltMachineMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
 
     // (1) Worker Thread (Producer& Consumer)를 종료한다.
-    Job* haltJob = new Job(Job::HaltMachine, NULL, 0);
+    Job* haltJob = new Job(Job::HaltMachine);
     Worker<float>::pushJob(haltJob);
 
     // (2) Listener, Session 쓰레드 들을 모두 종료한다.
@@ -281,31 +281,77 @@ bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMs
 
 
 // PushJob body packet 구성
-// |---------+------------+-----------|
-// | JobType | Network Id | Argument1 |
-// | int(4)  | int(4)     | int(4)    |
-// |---------+------------+-----------|
+// +---------+------------+-------------------+----------+
+// | JobType | JobElemCnt | JobElemTypes      | JobElems |
+// | int(4)  | int(4)     | int(4)*JobElemCnt | variable |
+// +---------+------------+-------------------+----------+
 bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
-    // XXX: 일일히 바꿔주지 말고, 예쁘게 deserialize할 수 있는 방법을 찾자.
-    // (1) read jobType, networkId, arg1
-    int temp;
-    int jobType, networkId, arg1;
-    int offset = MessageHeader::MESSAGE_HEADER_SIZE;
+    // (1) create job
+    int             jobType;
+    int             jobElemCnt;
+    int             offset = MessageHeader::MESSAGE_HEADER_SIZE;
 
     offset = MsgSerializer::deserializeInt(jobType, offset, recvMsg);
-    offset = MsgSerializer::deserializeInt(networkId, offset, recvMsg);
-    offset = MsgSerializer::deserializeInt(arg1, offset, recvMsg);
+    offset = MsgSerializer::deserializeInt(jobElemCnt, offset, recvMsg);
 
-    // (2) network를 얻는다.
-    Network<float>* network = Worker<float>::getNetwork(networkId);
-    SASSUME0(network);
+    Job* newJob = new Job((Job::JobType)jobType);
 
-    // (3) job을 생성하여 job queue에 넣는다.
-    Job* newJob = new Job((Job::JobType)jobType, network, arg1);
+    int *jobElemTypes = NULL;
+    if (jobElemCnt > 0) {
+        jobElemTypes = (int*)malloc(sizeof(int) * jobElemCnt);
+        SASSERT0(jobElemTypes != NULL);
+    }
+
+    for (int i = 0 ; i < jobElemCnt; i++) {
+        offset = MsgSerializer::deserializeInt(jobElemTypes[i], offset, recvMsg);
+    }
+
+    // FIXME: should split source :)
+    int         tempArrayCount;
+    int         tempInt;
+    float       tempFloat;
+    float      *tempFloatArray = NULL;
+    for (int i = 0; i < jobElemCnt; i++) {
+        switch ((Job::JobElemType)jobElemTypes[i]) {
+            case Job::IntType:
+                offset = MsgSerializer::deserializeInt(tempInt, offset, recvMsg);
+                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], 1, (void*)&tempInt);
+                break;
+
+            case Job::FloatType:
+                offset = MsgSerializer::deserializeFloat(tempFloat, offset, recvMsg);
+                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], 1, (void*)&tempFloat);
+                break;
+
+            case Job::FloatArrayType:
+                offset = MsgSerializer::deserializeInt(tempArrayCount, offset, recvMsg);
+                SASSERT0(tempFloatArray == NULL);
+                tempFloatArray = (float*)malloc(sizeof(float) * tempArrayCount);
+                SASSERT0(tempFloatArray != NULL);
+
+                for (int j = 0; j < tempArrayCount; j++) {
+                    offset = MsgSerializer::deserializeFloat(tempFloatArray[j], offset,
+                            recvMsg);
+                }
+                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
+                    (void*)tempFloatArray);
+                free(tempFloatArray);
+                break;
+
+            default:
+                SASSERT(false, "invalid job elem type. elem type=%d", jobElemTypes[i]);
+                break;
+        }
+    }
+
+    if (jobElemTypes != NULL)
+        free(jobElemTypes);
+
+    // (2) job을 job queue에 넣는다.
     Worker<float>::pushJob(newJob);
 
-    // (4) reply
+    // (3) reply
     replyMsgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
     replyMsgHdr.setMsgType(MessageHeader::PushJobReply);
 

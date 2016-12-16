@@ -11,42 +11,108 @@
 
 #include <atomic>
 
-#include "common.h"
+/*
+ * Job Description
+ * +--------------+-----------------+------------------------------+--------------------+
+ * | JobType(int) | JobElemCnt(int) | JobElemTypes(int*JobElemCnt) | JobElems(variable) |
+ * +--------------+-----------------+------------------------------+--------------------+
+ */
 
 class Job {
 public:
+    enum JobElemType : int {
+        IntType = 0,                // int
+        FloatType,              // float
+        FloatArrayType,         // length(int) + (float * length)
+        ElemTypeMax
+    };
+
     enum JobType : int {
         // belows will be deprecated
-        BuildLayer = 0,
+        BuildNetwork = 0,
+        /*
+         *  [Job Elem Schema for BuildLayer]
+         * +------------------+
+         * | network Id (int) |
+         * +------------------+
+         */
         TrainNetwork,
-        CleanupLayer,
+        /*
+         *  [Job Elem Schema for TrainNetwork]
+         * +------------------+-------------------+
+         * | network Id (int) | batch count (int) |
+         * +------------------+-------------------+
+         */
+        CleanupNetwork,
+        /*
+         *  [Job Elem Schema for CleanupLayer]
+         * +------------------+
+         * | network Id (int) |
+         * +------------------+
+         */
 
         // DQN related jobs
-        BuildDQNLayer,
-        BuildDQNPrimeLayer,
+        BuildDQNNetwork,
+        /*
+         *  [Job Elem Schema for CleanupLayer]
+         * +------------------+
+         * | network Id (int) |
+         * +------------------+
+         */
 
+        PushDQNInput,
+        /*
+         *  [Job Elem Schema for CleanupLayer]
+         * +------------------+------------------------+
+         * | network Id (int) | ....
+         * +------------------+
+         */
+
+        FeedForwardDQNNetwork,
 
         HaltMachine,
+        TypeMax
     };
 
-    Job (JobType jobType, void* network, int arg1) {
-        this->jobType = jobType;
-        this->network = network;
-        this->arg1 = arg1;
-    };
-    virtual            ~Job() {};
+    typedef struct JobElemDef_s {
+        JobElemType     elemType;
+        int             elemOffset;
+        int             arrayCount;
+    } JobElemDef;
 
-    JobType             getType() const { return jobType; }
-    void*               getNetwork() const { return network; }
-    int                 getArg1() const { return arg1; }
+                        Job(JobType jobType, int jobElemCnt, JobElemType *jobElemTypes,
+                            char *jobElemValues);
 
-    std::atomic<int>    refCnt;
+                        Job(JobType jobType);   // for incremental build
+
+    virtual            ~Job();
+
+    // for incremental build
+    void                addJobElem(JobElemType jobElemType, int arrayCount, void* dataPtr);    
+
+    JobType             getType() const { return this->jobType; }
+    int                 getJobElemCount() const { return this->jobElemCnt; }
+    int                 getIntValue(int elemIdx);
+    float               getFloatValue(int elemIdx);
+    float              *getFloatArray(int elemIdx);
+    float               getFloatArrayValue(int elemIdx, int arrayIdx);
+    JobElemDef          getJobElemDef(int elemIdx);
+
+    int                 getJobSize();
+
+    std::atomic<int>    refCnt;     // for multiple consumer
 
 private:
     JobType             jobType;
-    void*               network;
-    int                 arg1;
-    
+    int                 jobElemCnt;
+    JobElemDef         *jobElemDefs;
+    char               *jobElemValues;
+
+    int                 getJobElemValueSize();
+    bool                isVaildElemIdx(int elemIdx);
+    bool                isValidElemValue(JobElemType elemType, int elemIdx);
+    bool                isValidElemArrayValue(JobElemType elemType, int elemIdx,
+                            int arrayIdx);
 };
 
 #endif /* JOB_H */

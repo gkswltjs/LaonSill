@@ -116,10 +116,12 @@ private:
 
     static Job*                                 popJob();
 
-    static void                                 buildLayer(Network<Dtype>* network);
-    static void                                 buildDQNLayer(Network<Dtype>* network);
+    static void                                 buildNetwork(Network<Dtype>* network);
+    static void                                 buildDQNNetwork(Network<Dtype>* network);
     static void                                 trainNetwork(Network<Dtype>* network, int maxEpochs);
-    static void                                 cleanupLayer(Network<Dtype>* network); 
+    static void                                 cleanupNetwork(Network<Dtype>* network); 
+    static void                                 feedForwardDQNNetwork(Network<Dtype>* network,
+                                                    int batchSize);
 
 	static void                                 producerThread();
 	static void                                 consumerThread(int consumerIdx, int gpuIdx);

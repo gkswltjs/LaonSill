@@ -145,6 +145,8 @@ int main(int argc, char** argv) {
         // (5-A-3) 자원을 해제 한다.
         Cuda::destroy();
     } else if (useSingleJobMode) {
+        // FIXME: we do not support this mode until declaration of job type is done
+#if 0
         // TODO: 아직 만들다 말았음
         // (5-B-1) Job File(JSON format)을 로딩한다.
         Json::Value rootValue;
@@ -172,9 +174,10 @@ int main(int argc, char** argv) {
                                 (jobConf[1].asInt()));
             Worker<float>::pushJob(newJob);
         }
+#endif
         
         // (5-B-5) Worker Thread (Producer& Consumer)를 종료를 요청한다.
-        Job* haltJob = new Job(Job::HaltMachine, NULL, 0);
+        Job* haltJob = new Job(Job::HaltMachine);
         Worker<float>::pushJob(haltJob);
 
         // (5-B-6) Producer&Consumer를 종료를 기다린다.

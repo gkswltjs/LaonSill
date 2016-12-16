@@ -208,18 +208,32 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
         Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Running;
         Job* job = (Job*)Worker::consumerJob;
 
+        // FIXME: make ugly source be pretty T_T
+        Network<Dtype>* network;
+        int maxEpochCount;
+        int batchSize;
         switch (job->getType()) {
-        case Job::BuildLayer:
-            buildLayer((Network<Dtype>*)(job->getNetwork()));
+        case Job::BuildNetwork:
+            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+            buildNetwork(network);
             break;
         case Job::TrainNetwork:
-            trainNetwork((Network<Dtype>*)job->getNetwork(), job->getArg1());
+            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+            maxEpochCount = job->getIntValue(1);
+            trainNetwork(network, maxEpochCount);
             break;
-        case Job::CleanupLayer:
-            cleanupLayer((Network<Dtype>*)job->getNetwork());
+        case Job::CleanupNetwork:
+            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+            cleanupNetwork(network);
             break;
-        case Job::BuildDQNLayer:
-            buildDQNLayer((Network<Dtype>*)job->getNetwork());
+        case Job::BuildDQNNetwork:
+            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+            buildDQNNetwork(network);
+            break;
+        case Job::FeedForwardDQNNetwork:
+            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+            batchSize = job->getIntValue(1); 
+            feedForwardDQNNetwork(network, batchSize);
             break;
         case Job::HaltMachine:
             doLoop = false;
@@ -345,7 +359,7 @@ Job* Worker<Dtype>::popJob() {
 }
 
 template <typename Dtype>
-void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
+void Worker<Dtype>::buildNetwork(Network<Dtype>* network) {
     // XXX: 현재는 CCN Double Layer만 생성하도록 되어 있다. 수정필요!!!
     
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
@@ -376,7 +390,7 @@ void Worker<Dtype>::buildLayer(Network<Dtype>* network) {
 }
 
 template<typename Dtype>
-void Worker<Dtype>::buildDQNLayer(Network<Dtype>* network) {
+void Worker<Dtype>::buildDQNNetwork(Network<Dtype>* network) {
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
 	LayersConfig<float>* layersConfig = createDQNLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
@@ -416,7 +430,7 @@ void Worker<Dtype>::trainNetwork(Network<Dtype>* network, int maxEpochs) {
 }
 
 template <typename Dtype>
-void Worker<Dtype>::cleanupLayer(Network<Dtype>* network) {
+void Worker<Dtype>::cleanupNetwork(Network<Dtype>* network) {
 	LayersConfig<Dtype>* layersConfig = network->getLayersConfig();
 	const uint32_t layerSize = layersConfig->_layers.size();
 	for(uint32_t i = 0; i < layerSize; i++) {
@@ -429,6 +443,15 @@ void Worker<Dtype>::cleanupLayer(Network<Dtype>* network) {
 			it != layersConfig->_layerDataMap.end(); it++) {
 		delete it->second;
 	}
+}
+
+template<typename Dtype>
+void Worker<Dtype>::feedForwardDQNNetwork(Network<Dtype>* network, int batchSize) {
+	LayersConfig<Dtype>* layersConfig = network->getLayersConfig();
+
+    // TODO: needs reshape() in order to change batch size
+
+    //network->_feedforward(0);   
 }
 
 template <typename Dtype>
