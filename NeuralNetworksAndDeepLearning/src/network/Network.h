@@ -15,6 +15,7 @@
 #include "NetworkListener.h"
 #include "Layer.h"
 #include "InputLayer.h"
+#include "ALEInputLayer.h"
 #include "HiddenLayer.h"
 #include "OutputLayer.h"
 #include "LayerConfig.h"
@@ -60,6 +61,12 @@ public:
 	 * @return 네트워크에 설정된 입력 레이어
 	 */
 	InputLayer<Dtype> *getInputLayer();
+
+	/**
+	 * @details 네트워크에 설정된 ALE 입력 레이어를 조회한다.
+	 * @return 네트워크에 설정된 ALE 입력 레이어
+	 */
+	ALEInputLayer<Dtype> *getALEInputLayer();
 
     void setLayersConfig(LayersConfig<Dtype>* layersConfig);
 	LayersConfig<Dtype>* getLayersConfig();

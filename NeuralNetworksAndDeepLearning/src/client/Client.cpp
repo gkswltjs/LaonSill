@@ -50,6 +50,7 @@ void Client::pushJob(int fd, char* buf, Job* job) {
     //     TODO: float array의 경우에 많은 데이터를 일일히 serialize하는 것에 대한 
     //     코스트가 크기 때문에 serialize를 하지 않는 옵션을 만들어야 한다.
     int bufOffset = MsgSerializer::serializeMsgHdr(msgHdr, buf);
+    bufOffset = MsgSerializer::serializeInt((int)job->getJobID(), bufOffset, buf);
     bufOffset = MsgSerializer::serializeInt((int)job->getType(), bufOffset, buf);
     bufOffset = MsgSerializer::serializeInt(job->getJobElemCount(), bufOffset, buf);
 

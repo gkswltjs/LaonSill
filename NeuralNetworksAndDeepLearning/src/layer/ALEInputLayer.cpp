@@ -75,13 +75,14 @@ void ALEInputLayer<Dtype>::shape() {
 }
 
 template<typename Dtype>
-void ALEInputLayer<Dtype>::insertFrameInfo(Dtype* img, int action, Dtype reward, bool term) {
+void ALEInputLayer<Dtype>::insertFrameInput(Dtype lastReward, int lastAction, bool lastTerm,
+        Dtype* state) {
     int copySize = this->stateSlots[this->stateSlotHead]->getDataSize();
-    memcpy((void*)this->stateSlots[this->stateSlotHead]->data, (void*)img, copySize);
+    memcpy((void*)this->stateSlots[this->stateSlotHead]->data, (void*)state, copySize);
 
     if (this->lastState != NULL) {
-        this->rmSlots[this->rmSlotHead]->fill(
-            this->stateSlots[this->rmSlotHead], action, reward, this->lastState, term);
+        this->rmSlots[this->rmSlotHead]->fill(this->stateSlots[this->rmSlotHead], lastAction,
+                                            lastReward, this->lastState, lastTerm);
         this->rmSlotHead = (this->rmSlotHead + 1) % this->rmSlotCnt;
     }
 

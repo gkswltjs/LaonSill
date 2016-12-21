@@ -38,6 +38,12 @@ InputLayer<Dtype>* Network<Dtype>::getInputLayer() {
 }
 
 template <typename Dtype>
+ALEInputLayer<Dtype>* Network<Dtype>::getALEInputLayer() {
+    LayersConfig<Dtype>* layersConfig = config->layersConfigs[Worker<Dtype>::consumerIdx];
+    return dynamic_cast<ALEInputLayer<Dtype>*>(layersConfig->_firstLayers[0]);
+}
+
+template <typename Dtype>
 LayersConfig<Dtype>* Network<Dtype>::getLayersConfig() {
     return config->layersConfigs[Worker<Dtype>::consumerIdx];
 }

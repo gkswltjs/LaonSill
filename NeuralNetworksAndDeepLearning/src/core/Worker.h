@@ -122,6 +122,9 @@ private:
     static void                                 cleanupNetwork(Network<Dtype>* network); 
     static void                                 feedForwardDQNNetwork(Network<Dtype>* network,
                                                     int batchSize);
+    static void                                 pushDQNInput(Network<Dtype>* network,
+                                                    Dtype lastReward, int lastAction, int lastTerm,
+                                                    Dtype* state);
 
 	static void                                 producerThread();
 	static void                                 consumerThread(int consumerIdx, int gpuIdx);

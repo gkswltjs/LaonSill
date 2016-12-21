@@ -15,9 +15,8 @@
 using namespace std;
 
 void AtariNN::createNetwork() {
+    // XXX: 이것도 Worker에서 수행하도록 변경하자.
     this->networkId = Worker<float>::createNetwork();
-    this->network = Worker<float>::getNetwork(this->networkId); 
-    SASSUME0(this->network);
 }
 
 void AtariNN::buildDQNLayer() {
@@ -30,6 +29,13 @@ void AtariNN::feedForward(int batchSize) {
     Worker<float>::pushJob(newJob);
 }
 
-void AtariNN::fillInputData(int imgCount, float* img, int action, float reward, bool term) {
-    //Job* newJob = new Job(Job::InsertFrameInfoDQNNetwork, this->network, 
+void AtariNN::pushData(float lastReward, int lastAction, int lastTerm, float* state) {
+    Job* newJob = new Job(Job::PushDQNInput);
+    newJob->addJobElem(Job::IntType, 1, (void*)&this->networkId);
+    newJob->addJobElem(Job::FloatType, 1, (void*)&lastReward);
+    newJob->addJobElem(Job::IntType, 1, (void*)&lastAction);
+    newJob->addJobElem(Job::IntType, 1, (void*)&lastTerm);
+    newJob->addJobElem(Job::FloatArrayType, 4 * 84 * 84, (void*)state);
+
+    Worker<float>::pushJob(newJob);
 }

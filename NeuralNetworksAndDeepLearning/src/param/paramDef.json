@@ -218,6 +218,26 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 1000
+},
+
+"BROKER_ADHOC_SESS_STARTS" : 
+{
+    "DESC" : "specify start number of adhoc session of broker module",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 100000 
+},
+
+"BROKER_ADHOC_SESS_COUNT" : 
+{
+    "DESC" : "specify adhoc session count of broker module",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000
 }
 
 }

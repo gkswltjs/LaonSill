@@ -11,9 +11,17 @@
 #include "SysLog.h"
 #include "ColdLog.h"
 
+using namespace std;
+
+atomic<int> Job::jobIDGen;
+
+void Job::init() {
+    atomic_store(&Job::jobIDGen, 0);
+}
+
 Job::Job(Job::JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
     char *jobElemValues) {
-    SASSERT0(jobType < Job::ElemTypeMax);
+    SASSERT0(jobType < Job::JobTypeMax);
     this->jobType = jobType;
     this->jobElemCnt = jobElemCnt;
  
@@ -64,6 +72,9 @@ Job::Job(Job::JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
     } else {
         this->jobElemValues = NULL;
     }
+
+    this->jobID = Job::genJobID();
+    this->taskIDGen = 0;
 }
 
 Job::Job(Job::JobType jobType) {
@@ -72,6 +83,8 @@ Job::Job(Job::JobType jobType) {
     this->jobElemCnt = 0;
     this->jobElemDefs = NULL;
     this->jobElemValues = NULL;
+    this->jobID = Job::genJobID();
+    atomic_store(&this->taskIDGen, 0);
 }
 
 Job::~Job() {
@@ -229,8 +242,8 @@ int Job::getJobElemValueSize() {
 }
 
 int Job::getJobSize() {
-    // metasize = size of (jobtype + jobElemCnt + jobElemtTypes)
-    int metaSize = sizeof(int) * (2 + this->jobElemCnt);
+    // metasize = size of (jobID + jobtype + jobElemCnt + jobElemtTypes)
+    int metaSize = sizeof(int) * (3 + this->jobElemCnt);
 
     // total size = metasize + size of jobelems
     int totalSize = metaSize + this->getJobElemValueSize();
@@ -283,4 +296,16 @@ bool Job::isValidElemArrayValue(Job::JobElemType elemType, int elemIdx, int arra
     }
 
     return true;
+}
+
+int Job::genJobID() {
+   return atomic_fetch_add(&Job::jobIDGen, 1); 
+}
+
+int Job::genTaskID() {
+    return atomic_fetch_add(&this->taskIDGen, 1);
+}
+
+int Job::getJobID() {
+    return this->jobID;
 }

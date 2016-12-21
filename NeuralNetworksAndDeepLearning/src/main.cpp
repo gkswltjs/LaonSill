@@ -30,6 +30,8 @@
 #include "StdOutLog.h"
 #include "Perf.h"
 #include "Atari.h"
+#include "Broker.h"
+#include "test.h"
 
 using namespace std;
 
@@ -68,36 +70,52 @@ void loadJobFile(const char* fileName, Json::Value& rootValue) {
 
 int main(int argc, char** argv) {
     int     opt;
+
+    // 모드가 하나만 더 추가되면 그냥 enum type으로 모드를 정의하도록 하자.
     bool    useDeveloperMode = false; 
     bool    useSingleJobMode = false;
     bool    useRLMode = false;
+    bool    useTestMode = false;
     char*   singleJobFilePath;
     char*   romFilePath;
+    char*   testItemName;
 
     // (1) 옵션을 읽는다.
-    while ((opt = getopt(argc, argv, "vdf:a:")) != -1) {
+    while ((opt = getopt(argc, argv, "vdf:a:t:")) != -1) {
         switch (opt) {
         case 'v':
             printf("%s version %d.%d.%d\n", argv[0], SPARAM(VERSION_MAJOR),
                 SPARAM(VERSION_MINOR), SPARAM(VERSION_PATCH));
             exit(EXIT_SUCCESS);
+
         case 'd':
-            if (useSingleJobMode | useRLMode)
+            if (useSingleJobMode | useRLMode | useTestMode)
                 printUsageAndExit(argv[0]);
             useDeveloperMode = true;
             break;
+
         case 'f':
-            if (useDeveloperMode | useRLMode)
+            if (useDeveloperMode | useRLMode | useTestMode)
                 printUsageAndExit(argv[0]);
             useSingleJobMode = true;
             singleJobFilePath = optarg;
             break;
+
         case 'a':
-            if (useDeveloperMode | useSingleJobMode)
+            if (useDeveloperMode | useSingleJobMode | useTestMode)
                 printUsageAndExit(argv[0]);
             useRLMode = true;
             romFilePath = optarg;
             break;
+
+        case 't':
+            if (useSingleJobMode | useDeveloperMode | useRLMode)
+                printUsageAndExit(argv[0]);
+            useTestMode = true;
+            testItemName = optarg;
+            checkTestItem(testItemName);
+            break;
+
         default:    /* ? */
             printUsageAndExit(argv[0]);
             break; 
@@ -114,11 +132,13 @@ int main(int argc, char** argv) {
     SPERF_START(SERVER_RUNNING_TIME, &startTime);
 	STDOUT_BLOCK(cout << "SOOOA engine starts" << endl;);
 
-    // (3) 파라미터, 로깅 모듈을 초기화 한다.
+    // (3) 파라미터, 로깅, job 모듈을 초기화 한다.
     InitParam::init();
     Perf::init();
     SysLog::init();
     ColdLog::init();
+    Job::init();
+    Broker::init();
 
     if (!useDeveloperMode) {
         HotLog::init();
@@ -190,14 +210,33 @@ int main(int argc, char** argv) {
         Atari::run(romFilePath);
 
         Worker<float>::joinThreads();
-    } else {
+    } else if (useTestMode) {
         // (5-D-1) Producer&Consumer를 생성.
         Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
 
         // (5-D-2) Listener & Sess threads를 생성.
         Communicator::launchThreads(SPARAM(SESS_COUNT));
 
-        // (5-D-3) 각각의 쓰레드들의 종료를 기다린다.
+        // (5-D-3) 테스트를 실행한다.
+        runTest(testItemName);
+
+        // (5-D-4) release resources 
+        Job* haltJob = new Job(Job::HaltMachine);
+        Worker<float>::pushJob(haltJob);
+
+        Communicator::halt();       // threads will be eventually halt
+
+        // (5-D-5) 각각의 쓰레드들의 종료를 기다린다.
+        Worker<float>::joinThreads();
+        Communicator::joinThreads();
+    } else {
+        // (5-E-1) Producer&Consumer를 생성.
+        Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
+
+        // (5-E-2) Listener & Sess threads를 생성.
+        Communicator::launchThreads(SPARAM(SESS_COUNT));
+
+        // (5-E-3) 각각의 쓰레드들의 종료를 기다린다.
         Worker<float>::joinThreads();
         Communicator::joinThreads();
     }
@@ -207,6 +246,7 @@ int main(int argc, char** argv) {
         HotLog::destroy();
     ColdLog::destroy();
     SysLog::destroy();
+    Broker::destroy();
 
     // (7) 서버 종료 시간을 측정하고, 계산하여 서버 실행 시간을 출력한다.
     SPERF_END(SERVER_RUNNING_TIME, startTime);

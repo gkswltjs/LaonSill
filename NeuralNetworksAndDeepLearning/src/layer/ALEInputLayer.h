@@ -109,7 +109,7 @@ private:
     DQNState<Dtype>        *lastState;
 
 public:
-    void insertFrameInfo(Dtype* img, int action, Dtype reward, bool term);
+    void insertFrameInput(Dtype lastReward, int lastAction, bool lastTerm, Dtype* state);
     void prepareInputData();
 };
 

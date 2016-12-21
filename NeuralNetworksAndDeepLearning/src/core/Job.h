@@ -13,9 +13,11 @@
 
 /*
  * Job Description
- * +--------------+-----------------+------------------------------+--------------------+
- * | JobType(int) | JobElemCnt(int) | JobElemTypes(int*JobElemCnt) | JobElems(variable) |
- * +--------------+-----------------+------------------------------+--------------------+
+ * +------------+--------------+-----------------+------------------------------+
+ * | JobID(int) | JobType(int) | JobElemCnt(int) | JobElemTypes(int*JobElemCnt) |
+ * +----------------------------------------------------------------------------+
+ * | JobElems(variable) |
+ * +--------------------+
  */
 
 class Job {
@@ -31,7 +33,7 @@ public:
         // belows will be deprecated
         BuildNetwork = 0,
         /*
-         *  [Job Elem Schema for BuildLayer]
+         *  [Job Elem Schema for BuildNetwork]
          * +------------------+
          * | network Id (int) |
          * +------------------+
@@ -45,7 +47,7 @@ public:
          */
         CleanupNetwork,
         /*
-         *  [Job Elem Schema for CleanupLayer]
+         *  [Job Elem Schema for CleanupNetwork]
          * +------------------+
          * | network Id (int) |
          * +------------------+
@@ -54,7 +56,7 @@ public:
         // DQN related jobs
         BuildDQNNetwork,
         /*
-         *  [Job Elem Schema for CleanupLayer]
+         *  [Job Elem Schema for BuildDQNNetwork]
          * +------------------+
          * | network Id (int) |
          * +------------------+
@@ -63,15 +65,17 @@ public:
         PushDQNInput,
         /*
          *  [Job Elem Schema for CleanupLayer]
-         * +------------------+------------------------+
-         * | network Id (int) | ....
-         * +------------------+
+         * +----------------------------------------------------------+
+         * | network Id (int) | reward t-1 (float) | action t-1 (int) |
+         * |----------------------------------------------------------+
+         * | term t-1 (int) | state t (float array, 4 * 84 * 84) |
+         * +-----------------------------------------------------+
          */
 
         FeedForwardDQNNetwork,
 
         HaltMachine,
-        TypeMax
+        JobTypeMax
     };
 
     typedef struct JobElemDef_s {
@@ -102,6 +106,12 @@ public:
 
     std::atomic<int>    refCnt;     // for multiple consumer
 
+    static int          genJobID();
+    int                 genTaskID();
+
+    int                 getJobID();
+    static void         init();
+
 private:
     JobType             jobType;
     int                 jobElemCnt;
@@ -113,6 +123,12 @@ private:
     bool                isValidElemValue(JobElemType elemType, int elemIdx);
     bool                isValidElemArrayValue(JobElemType elemType, int elemIdx,
                             int arrayIdx);
+
+
+    static std::atomic<int>         jobIDGen;
+    std::atomic<int>                taskIDGen;
+
+    int                             jobID;
 };
 
 #endif /* JOB_H */

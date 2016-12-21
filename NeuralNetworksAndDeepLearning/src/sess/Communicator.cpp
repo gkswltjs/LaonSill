@@ -281,17 +281,19 @@ bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMs
 
 
 // PushJob body packet 구성
-// +---------+------------+-------------------+----------+
-// | JobType | JobElemCnt | JobElemTypes      | JobElems |
-// | int(4)  | int(4)     | int(4)*JobElemCnt | variable |
-// +---------+------------+-------------------+----------+
+// +--------+---------+------------+-------------------+----------+
+// | JobID  | JobType | JobElemCnt | JobElemTypes      | JobElems |
+// | int(4) | int(4)  | int(4)     | int(4)*JobElemCnt | variable |
+// +--------+---------+------------+-------------------+----------+
 bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
     // (1) create job
+    int             jobID;
     int             jobType;
     int             jobElemCnt;
     int             offset = MessageHeader::MESSAGE_HEADER_SIZE;
 
+    offset = MsgSerializer::deserializeInt(jobID, offset, recvMsg);
     offset = MsgSerializer::deserializeInt(jobType, offset, recvMsg);
     offset = MsgSerializer::deserializeInt(jobElemCnt, offset, recvMsg);
 

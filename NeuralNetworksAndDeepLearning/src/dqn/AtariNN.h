@@ -20,14 +20,10 @@ public:
     virtual                    ~AtariNN() {}
 
     int                         networkId;
-    Network<float>             *network;
     void                        buildDQNLayer();
     void                        createNetwork();
     void                        feedForward(int batchSize);
-    void                        fillInputData(int imgCount, float* img, int action,
-                                    float reward, bool term);
-
-    ALEInputLayer<float>       *inputLayer;
-    FullyConnectedLayer<float> *outputLayer;
+    void                        pushData(float lastReward, int lastAction, int lastTerm,
+                                    float* state);
 };
 #endif /* ATARINN_H */

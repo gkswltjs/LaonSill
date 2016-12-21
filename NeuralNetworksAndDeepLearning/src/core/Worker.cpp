@@ -18,6 +18,7 @@
 #include "ColdLog.h"
 #include "HotLog.h"
 #include "SysLog.h"
+#include "ALEInputLayer.h"
 
 using namespace std;
 
@@ -230,6 +231,13 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
             network = Worker<Dtype>::getNetwork(job->getIntValue(0));
             buildDQNNetwork(network);
             break;
+
+        case Job::PushDQNInput:
+            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+            // TODO: not implemented yet
+            //pushDQNInput();
+            break;
+
         case Job::FeedForwardDQNNetwork:
             network = Worker<Dtype>::getNetwork(job->getIntValue(0));
             batchSize = job->getIntValue(1); 
@@ -416,6 +424,15 @@ void Worker<Dtype>::buildDQNNetwork(Network<Dtype>* network) {
 
     // (4) network에 layersConfig 정보를 등록한다.
     network->setLayersConfig(layersConfig);
+}
+
+template<typename Dtype>
+void Worker<Dtype>::pushDQNInput(Network<Dtype>* network, Dtype lastReward, int lastAction,
+    int lastTerm, Dtype* state) {
+
+    // (1) ALE input layer에 데이터를 넣는다.
+    ALEInputLayer<Dtype>* inputLayer = network->getALEInputLayer();
+    inputLayer->insertFrameInput(lastReward, lastAction, (bool)lastTerm, state);
 }
 
 template <typename Dtype>
