@@ -17,6 +17,7 @@ public:
     static bool runTest();
 private:
     static bool runSimplePubSubTest();
+    static bool runBlockingPubSubTest();
 };
 
 #endif /* BROKERTEST_H */
