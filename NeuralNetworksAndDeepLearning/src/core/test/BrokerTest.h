@@ -15,7 +15,8 @@ public:
     virtual ~BrokerTest() {}
 
     static bool runTest();
-
+private:
+    static bool runSimplePubSubTest();
 };
 
 #endif /* BROKERTEST_H */

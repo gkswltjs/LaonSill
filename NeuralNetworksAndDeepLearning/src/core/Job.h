@@ -64,7 +64,7 @@ public:
 
         PushDQNInput,
         /*
-         *  [Job Elem Schema for CleanupLayer]
+         *  [Job Elem Schema for PushQNInput]
          * +----------------------------------------------------------+
          * | network Id (int) | reward t-1 (float) | action t-1 (int) |
          * |----------------------------------------------------------+
@@ -75,6 +75,15 @@ public:
         FeedForwardDQNNetwork,
 
         HaltMachine,
+
+
+        TestJob,
+        /*
+         *  [Job Elem Schema for TestJob]
+         * +------------------------------------------------------+
+         * | A (int) | B (float) | C (float array, 100) | D (int) |
+         * +------------------------------------------------------+
+         */
         JobTypeMax
     };
 

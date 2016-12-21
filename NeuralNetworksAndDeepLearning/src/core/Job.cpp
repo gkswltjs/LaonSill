@@ -134,7 +134,13 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     }
 
     int elemValueSize = elemCnt * elemSize;
-    this->jobElemValues = (char*)malloc(tempJobElemValueSize + elemValueSize);
+
+    if (jobElemType == Job::FloatArrayType) {
+        // array size만큼을 고려해 줘야 한다.
+        this->jobElemValues = (char*)malloc(tempJobElemValueSize + elemValueSize + sizeof(int));
+    } else {
+        this->jobElemValues = (char*)malloc(tempJobElemValueSize + elemValueSize);
+    }
     SASSERT0(this->jobElemValues != NULL);
 
     // restore previous backup to new jobElemDefs & jobElemValues
@@ -175,19 +181,25 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
 //       이 부분에 대해서 논의를 하고, 그에 따른 구현을 수행하자.
 //       지금은 assert로 걸어 두었다.
 int Job::getIntValue(int elemIdx) {
-    bool isValid = isValidElemValue(Job::IntType, elemIdx);
+    int     intVal;
+    bool    isValid = isValidElemValue(Job::IntType, elemIdx);
     SASSUME0(isValid == true);
 
     int elemOffset = this->jobElemDefs[elemIdx].elemOffset;
-    return (int)(this->jobElemValues[elemOffset]);
+    memcpy((void*)&intVal, (void*)&this->jobElemValues[elemOffset], sizeof(int));
+
+    return intVal;
 }
 
 float Job::getFloatValue(int elemIdx) {
-    bool isValid = isValidElemValue(Job::FloatType, elemIdx);
+    float   floatVal;
+    bool    isValid = isValidElemValue(Job::FloatType, elemIdx);
     SASSUME0(isValid == true);
 
     int elemOffset = this->jobElemDefs[elemIdx].elemOffset;
-    return (float)(this->jobElemValues[elemOffset]);
+    memcpy((void*)&floatVal, (void*)&this->jobElemValues[elemOffset], sizeof(float));
+
+    return floatVal;
 }
 
 float *Job::getFloatArray(int elemIdx) {
