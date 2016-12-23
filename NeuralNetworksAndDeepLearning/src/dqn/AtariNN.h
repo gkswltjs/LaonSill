@@ -16,14 +16,22 @@ template <typename Dtype> class Network;
 
 class AtariNN {
 public: 
-                                AtariNN() {}
-    virtual                    ~AtariNN() {}
+                AtariNN(int rowCount, int colCount, int channelCount);
+    virtual    ~AtariNN() {}
 
-    int                         networkId;
-    void                        buildDQNLayer();
-    void                        createNetwork();
-    void                        feedForward(int batchSize);
-    void                        pushData(float lastReward, int lastAction, int lastTerm,
-                                    float* state);
+    int         dqnImageLearnerID;
+    int         networkQID;
+    int         networkQHeadID;
+
+    void        buildDQNNetworks();
+    void        createDQNImageLearner();
+    void        feedForward(int batchSize);
+    void        pushData(float lastReward, int lastAction, int lastTerm,
+                    float* state);
+
+private:
+    int         rowCount;
+    int         colCount;
+    int         channelCount;
 };
 #endif /* ATARINN_H */

@@ -66,10 +66,10 @@ void Atari::run(char* romFilePath) {
     ActionVect legal_actions = ale.getLegalActionSet();
 
     // create network
-    AtariNN *nn = new AtariNN();
+    AtariNN *nn = new AtariNN(84, 84, 4);
 
-    nn->createNetwork();
-    nn->buildDQNLayer();
+    nn->createDQNImageLearner();
+    nn->buildDQNNetworks();
 
     // Play 10 episodes
     for (int episode = 0; episode < 10; episode++) {

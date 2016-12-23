@@ -180,36 +180,6 @@
     "DEFAULT" : "/data/train_pack/"
 },
 
-"ALE_INPUT_ROW_COUNT" : 
-{
-    "DESC" : "specify row count of ALE screen",
-    "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SYSTEM",
-    "TYPE" : "INT32",
-    "DEFAULT" : 84
-},
-
-"ALE_INPUT_COL_COUNT" : 
-{
-    "DESC" : "specify column count of ALE screen",
-    "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SYSTEM",
-    "TYPE" : "INT32",
-    "DEFAULT" : 84
-},
-
-"ALE_INPUT_CHANNEL_COUNT" : 
-{
-    "DESC" : "specify channel count of ALE screen",
-    "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SYSTEM",
-    "TYPE" : "INT32",
-    "DEFAULT" : 4 
-},
-
 "DQN_REPLAY_MEMORY_ELEM_COUNT" : 
 {
     "DESC" : "specify elem count of replay memory structure of deep Q network algorithm",

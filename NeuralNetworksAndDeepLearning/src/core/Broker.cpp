@@ -53,7 +53,7 @@ void Broker::destroy() {
  *      publisher의 부하가 많은 수 있기 때문에 이 부분에 대한 설계를 고민해야 한다.
  *      (예를들어서 background 관리 쓰레드가 깨워준다던지..)
  */
-Broker::BrokerRetType Broker::publish(int jobID, int taskID, Job *content) {
+Broker::BrokerRetType Broker::publishEx(int jobID, int taskID, Job *content) {
     // (1) content를 집어 넣는다.
     uint64_t key = MAKE_JOBTASK_KEY(jobID, taskID);
     unique_lock<mutex> contentLock(Broker::contentMutex);
@@ -83,6 +83,12 @@ Broker::BrokerRetType Broker::publish(int jobID, int taskID, Job *content) {
     } else {
         waiterLock.unlock();
     }
+
+    return Broker::Success;
+}
+
+Broker::BrokerRetType Broker::publish(int jobID, Job *content) {
+    return Broker::publishEx(jobID, 0, content);
 }
 
 /**
@@ -91,7 +97,7 @@ Broker::BrokerRetType Broker::publish(int jobID, int taskID, Job *content) {
  * content Lock을 잡고, waiter lock 혹은 adhocSess lock을 잡도록 되어 있다.
  * 순서가 바뀌면 안된다.
  */
-Broker::BrokerRetType Broker::subscribe(int jobID, int taskID, Job **content,
+Broker::BrokerRetType Broker::subscribeEx(int jobID, int taskID, Job **content,
         Broker::BrokerAccessType access) {
     SASSERT0(access < BrokerAccessTypeMax);
 
@@ -146,8 +152,18 @@ Broker::BrokerRetType Broker::subscribe(int jobID, int taskID, Job **content,
 
     SASSERT0(adhocSess->found == true);
 
+    SASSERT0(Broker::contentMap[key] != NULL);
+    (*content) = (Job*)Broker::contentMap[key];
+
     // (6) adhoc sess를 반환한다.
     Broker::releaseAdhocSessID(sessID);
+
+    return Broker::Success;
+}
+
+Broker::BrokerRetType Broker::subscribe(int jobID, Job **content,
+        Broker::BrokerAccessType access) {
+    return Broker::subscribeEx(jobID, 0, content, access);
 }
 
 /*

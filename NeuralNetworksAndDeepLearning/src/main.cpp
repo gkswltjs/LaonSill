@@ -32,6 +32,7 @@
 #include "Atari.h"
 #include "Broker.h"
 #include "test.h"
+#include "DQNImageLearner.h"
 
 using namespace std;
 
@@ -39,7 +40,8 @@ using namespace std;
 void network_load();
 
 void printUsageAndExit(char* prog) {
-    fprintf(stderr, "Usage: %s [-v] [-d | -f jobFilePath | -a romFilePath]\n", prog);
+    fprintf(stderr,
+        "Usage: %s [-v] [-d | -f jobFilePath | -a romFilePath | -t testItemName]\n", prog);
     exit(EXIT_FAILURE);
 }
 
@@ -71,11 +73,13 @@ void loadJobFile(const char* fileName, Json::Value& rootValue) {
 int main(int argc, char** argv) {
     int     opt;
 
+    // 처음 생각했던 것보다 실행모드의 개수가 늘었다.
     // 모드가 하나만 더 추가되면 그냥 enum type으로 모드를 정의하도록 하자.
     bool    useDeveloperMode = false; 
     bool    useSingleJobMode = false;
     bool    useRLMode = false;
     bool    useTestMode = false;
+
     char*   singleJobFilePath;
     char*   romFilePath;
     char*   testItemName;
@@ -139,6 +143,7 @@ int main(int argc, char** argv) {
     ColdLog::init();
     Job::init();
     Broker::init();
+    DQNImageLearner<float>::init();
 
     if (!useDeveloperMode) {
         HotLog::init();

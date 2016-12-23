@@ -74,7 +74,7 @@ Job::Job(Job::JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
     }
 
     this->jobID = Job::genJobID();
-    this->taskIDGen = 0;
+    atomic_store(&this->taskIDGen, 1);
 }
 
 Job::Job(Job::JobType jobType) {
@@ -84,7 +84,7 @@ Job::Job(Job::JobType jobType) {
     this->jobElemDefs = NULL;
     this->jobElemValues = NULL;
     this->jobID = Job::genJobID();
-    atomic_store(&this->taskIDGen, 0);
+    atomic_store(&this->taskIDGen, 1);
 }
 
 Job::~Job() {
@@ -320,4 +320,18 @@ int Job::genTaskID() {
 
 int Job::getJobID() {
     return this->jobID;
+}
+
+bool Job::hasPubJob() {
+    if (this->jobType == Job::CreateDQNImageLearner)
+        return true;
+
+    return false;
+}
+
+Job::JobType Job::getPubJobType() {
+    if (this->jobType == Job::CreateDQNImageLearner)
+        return Job::CreateDQNImageLearnerResult;
+
+    return Job::JobTypeMax;     // meaningless
 }

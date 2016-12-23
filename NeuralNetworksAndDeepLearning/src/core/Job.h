@@ -53,21 +53,37 @@ public:
          * +------------------+
          */
 
-        // DQN related jobs
-        BuildDQNNetwork,
+        CreateDQNImageLearner,
         /*
-         *  [Job Elem Schema for BuildDQNNetwork]
-         * +------------------+
-         * | network Id (int) |
-         * +------------------+
+         *  [Job Elem Schema for CreateDQNImage]
+         * +-----------------+--------------------+---------------------+
+         * | row count (int) | column count (int) | channel count (int) |
+         * +-----------------+--------------------+---------------------+
          */
 
-        PushDQNInput,
+        CreateDQNImageLearnerResult,
         /*
-         *  [Job Elem Schema for PushQNInput]
-         * +----------------------------------------------------------+
-         * | network Id (int) | reward t-1 (float) | action t-1 (int) |
-         * |----------------------------------------------------------+
+         *  [Job Elem Schema for CreateDQNImageResult]
+         * +----------------------------+--------------------+-------------------------+
+         * | DQN Image learner ID (int) | network Q ID (int) | network Q head ID (int) |
+         * +----------------------------+--------------------+-------------------------+
+         */
+
+        // DQN related jobs
+        BuildDQNNetworks,
+        /*
+         *  [Job Elem Schema for BuildDQNNetwork]
+         * +----------------------------+--------------------+-------------------------+
+         * | DQN Image learner ID (int) | network Q ID (int) | network Q head ID (int) |
+         * +----------------------------+--------------------+-------------------------+
+         */
+
+        PushDQNImageInput,
+        /*
+         *  [Job Elem Schema for PushDQNImageInput]
+         * +--------------------------------------------------------------------+
+         * | DQN Image learner Id (int) | reward t-1 (float) | action t-1 (int) |
+         * |--------------------------------------------------------------------+
          * | term t-1 (int) | state t (float array, 4 * 84 * 84) |
          * +-----------------------------------------------------+
          */
@@ -120,6 +136,9 @@ public:
 
     int                 getJobID();
     static void         init();
+
+    bool                hasPubJob();
+    JobType             getPubJobType();
 
 private:
     JobType             jobType;

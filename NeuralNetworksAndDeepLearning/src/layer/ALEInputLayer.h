@@ -17,6 +17,7 @@
 #include "Layer.h"
 #include "DQNState.h"
 #include "DQNTransition.h"
+#include "DQNImageLearner.h"
 
 template <typename Dtype>
 class ALEInputLayer : public Layer<Dtype> {
@@ -89,28 +90,20 @@ protected:
 	virtual void _clearShape();
 
 public:
+    void setInputCount(int rows, int cols, int channels);
+
     int                     rowCnt;     // scaled row count of ALE screen
     int                     colCnt;     // scaled column count of ALE screen
     int                     chCnt;      // channel count of ALE screen
 
 private:
-    DQNTransition<Dtype>  **rmSlots;    // replay memory slots
-    DQNState<Dtype>       **stateSlots; // saved state slots for replay memory slots
-
-    int                     rmSlotCnt;      // element count of replay memory
-    int                     stateSlotCnt;   // element count of replay memory
-
-    int                     rmSlotHead; // circular queue head for replay memory slots
-    int                     stateSlotHead;  // circular queue head for saved state slots
-
     Dtype                  *preparedData;
     Dtype                  *preparedLabel;
-
-    DQNState<Dtype>        *lastState;
+    int                     allocBatchSize;
 
 public:
-    void insertFrameInput(Dtype lastReward, int lastAction, bool lastTerm, Dtype* state);
-    void prepareInputData();
+    void allocInputData();
+    void fillInputData(DQNImageLearner<Dtype> *dqnImage);
 };
 
 #endif /* ALEINPUTLAYER_H */

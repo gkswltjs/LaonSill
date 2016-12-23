@@ -21,6 +21,7 @@
 #include "common.h"
 #include "Job.h"
 #include "Network.h"
+#include "DQNImageLearner.h"
 
 template <typename Dtype> class Network;
 
@@ -67,7 +68,7 @@ public:
 	 */
 	static void                                 launchThreads(int consumerCount);
     static void                                 joinThreads();
-    static void                                 pushJob(Job* job);
+    static int                                  pushJob(Job* job);
     static bool                                 isReady();
 
     static int                                  createNetwork();
@@ -116,15 +117,20 @@ private:
 
     static Job*                                 popJob();
 
+    // XXX: 아래의 것들은 다른 파일로 분리하자. 
+    //      폴더를 만들어서 기능별로 분리하면 예쁠꺼 같다.
     static void                                 buildNetwork(Network<Dtype>* network);
     static void                                 buildDQNNetwork(Network<Dtype>* network);
-    static void                                 trainNetwork(Network<Dtype>* network, int maxEpochs);
+    static void                                 trainNetwork(Network<Dtype>* network,
+                                                    int maxEpochs);
     static void                                 cleanupNetwork(Network<Dtype>* network); 
+    static void                                 createDQNImageLearner(Job* job);
     static void                                 feedForwardDQNNetwork(Network<Dtype>* network,
                                                     int batchSize);
-    static void                                 pushDQNInput(Network<Dtype>* network,
-                                                    Dtype lastReward, int lastAction, int lastTerm,
-                                                    Dtype* state);
+    static void                                 pushDQNImageInput(Network<Dtype>* network,
+                                                    DQNImageLearner<Dtype>* dqnImage,
+                                                    Dtype lastReward, int lastAction,
+                                                    int lastTerm, Dtype* state);
 
 	static void                                 producerThread();
 	static void                                 consumerThread(int consumerIdx, int gpuIdx);
@@ -132,9 +138,19 @@ private:
 	static std::thread*                         producer;
 	static std::vector<std::thread>             consumers;
 
-    static std::vector<Network<Dtype>*>         networks;
+    // XXX: 여기 아래의 것들은 각자의 모듈에 위치하도록 수정하자!!!!
+    //      ㅠ_ㅠ
+    static std::vector<Network<Dtype>*>         networks;   // XXX: map으로 바꿔야 한다.
+                                                            //      원소가 제거될 수 있기때문.
+                                                                           
     static int                                  networkGenId;
     static std::mutex                           networkMutex;
+
+    static std::map<int, Job*>                  reqPubJobMap;
+    static std::mutex                           reqPubJobMapMutex;
+
+    static std::vector<DQNImageLearner<Dtype>*>        dqnImageLearners;
+    static std::mutex                           dqnImageLearnerMutex;
 };
 
 #endif /* WORKER_H_ */

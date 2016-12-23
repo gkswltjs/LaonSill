@@ -33,7 +33,7 @@ bool BrokerTest::runSimplePubSubTest() {
 
     // (2) publish
     Broker::BrokerRetType retType;
-    retType = Broker::publish(testJob->getJobID(), 0, testJob);
+    retType = Broker::publish(testJob->getJobID(), testJob);
     if (retType != Broker::Success) {
         STDOUT_LOG("publish failed. ret type=%d", (int)retType);
         return false;
@@ -41,7 +41,7 @@ bool BrokerTest::runSimplePubSubTest() {
 
     // (3) subscribe
     Job *subscribedJob = NULL;
-    retType = Broker::subscribe(testJob->getJobID(), 0, &subscribedJob, Broker::Blocking);
+    retType = Broker::subscribe(testJob->getJobID(), &subscribedJob, Broker::Blocking);
     if (retType != Broker::Success) {
         STDOUT_LOG("subscribe failed. ret type=%d", (int)retType);
         return false;
@@ -101,7 +101,7 @@ static void pubLateThread() {
     sleep(2); 
 
     Broker::BrokerRetType retType;
-    retType = Broker::publish(testJob->getJobID(), 0, testJob);
+    retType = Broker::publish(testJob->getJobID(), testJob);
     if (retType != Broker::Success) {
         STDOUT_LOG("publish failed. ret type=%d", (int)retType);
     }
@@ -117,7 +117,7 @@ bool BrokerTest::runBlockingPubSubTest() {
     pubThread->join();
     delete pubThread;
 
-    retType = Broker::subscribe(1, 0, &subscribedJob, Broker::Blocking);
+    retType = Broker::subscribe(1, &subscribedJob, Broker::Blocking);
     if (retType != Broker::Success) {
         STDOUT_LOG("subscribe failed. ret type=%d", (int)retType);
 
@@ -161,15 +161,6 @@ bool BrokerTest::runBlockingPubSubTest() {
     }
 
     delete subscribedJob;
-    return true;
-
-fail_ret:
-    pubThread->join();
-    delete pubThread;
-
-    if (subscribedJob != NULL)
-        delete subscribedJob;
-
     return true;
 }
 

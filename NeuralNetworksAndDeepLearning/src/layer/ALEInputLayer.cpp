@@ -6,9 +6,6 @@
  * @details
  */
 
-#include <stdlib.h>
-#include <time.h>
-
 #include "common.h"
 #include "ALEInputLayer.h"
 #include "NetworkConfig.h"
@@ -32,20 +29,6 @@ ALEInputLayer<Dtype>::ALEInputLayer(Builder* builder) : Layer<Dtype>(builder) {
 
 template<typename Dtype>
 ALEInputLayer<Dtype>::~ALEInputLayer() {
-    SASSERT0(this->rmSlots != NULL);
-    for (int i = 0; i < this->rmSlotCnt; i++) {
-        SASSERT0(this->rmSlots[i] != NULL);
-        delete this->rmSlots[i];
-    }
-    free(this->rmSlots);
-
-    SASSERT0(this->stateSlots != NULL);
-    for (int i = 0; i < this->stateSlotCnt; i++) {
-        SASSERT0(this->stateSlots[i] != NULL);
-        delete this->stateSlots[i];
-    }
-    free(this->stateSlots);
-
     if (this->preparedData)
         free(this->preparedData);
 
@@ -59,69 +42,69 @@ int ALEInputLayer<Dtype>::getInputSize() const {
 }
 
 template<typename Dtype>
+void ALEInputLayer<Dtype>::setInputCount(int rows, int cols, int channels) {
+    this->rowCnt = rows;
+    this->colCnt = cols;
+    this->chCnt = channels;
+}
+
+template<typename Dtype>
 void ALEInputLayer<Dtype>::shape() {
-
-    SASSERT(this->networkConfig->_batchSize <= this->rmSlotCnt,
-        "batch size should be less than replay memory slot count."
-        " batch size=%d, replay memory slot count=%d",
-        this->networkConfig->_batchSize, this->rmSlotCnt);
-
     this->in_dim.batches = this->networkConfig->_batchSize;
     this->in_dim.channels = this->chCnt;
     this->in_dim.rows = this->rowCnt;
     this->in_dim.cols = this->colCnt;
 
+    cout << "rows:" << this->in_dim.rows << ",cols:" << this->in_dim.cols <<
+        ",channels:" << this->in_dim.channels << ",batches:" << this->in_dim.batches
+        << endl;
+
     _shape();
 }
 
 template<typename Dtype>
-void ALEInputLayer<Dtype>::insertFrameInput(Dtype lastReward, int lastAction, bool lastTerm,
-        Dtype* state) {
-    int copySize = this->stateSlots[this->stateSlotHead]->getDataSize();
-    memcpy((void*)this->stateSlots[this->stateSlotHead]->data, (void*)state, copySize);
-
-    if (this->lastState != NULL) {
-        this->rmSlots[this->rmSlotHead]->fill(this->stateSlots[this->rmSlotHead], lastAction,
-                                            lastReward, this->lastState, lastTerm);
-        this->rmSlotHead = (this->rmSlotHead + 1) % this->rmSlotCnt;
-    }
-
-    this->lastState = this->stateSlots[this->stateSlotHead];
-    this->stateSlotHead = (this->stateSlotHead + 1) % this->stateSlotCnt;
-}
-
-template<typename Dtype>
-void ALEInputLayer<Dtype>::prepareInputData() {
-    int inputDataCount = this->in_dim.batches;
+void ALEInputLayer<Dtype>::allocInputData() {
+    int batchSize = this->in_dim.batches;
 	const uint32_t unitSize = this->in_dim.unitsize();
 
-    if (this->preparedData == NULL) {
-        int allocSize = unitSize * inputDataCount * sizeof(Dtype);
+    if (batchSize > this->allocBatchSize) {
+        if (this->preparedData != NULL) {
+            free(this->preparedData);
+            free(this->preparedLabel);
+        }
+
+        this->allocBatchSize = batchSize;
+
+        int allocSize = unitSize * this->allocBatchSize * sizeof(Dtype);
         this->preparedData = (Dtype*)malloc(allocSize);
-
         SASSERT0(this->preparedData != NULL);
-        SASSERT0(this->preparedLabel == NULL);
 
-        allocSize = inputDataCount * this->chCnt * sizeof(Dtype);
+        allocSize = this->allocBatchSize * this->chCnt * sizeof(Dtype);
         this->preparedLabel = (Dtype*)malloc(allocSize);
         SASSERT0(this->preparedLabel != NULL);
     }
+}
 
-    srand(time(NULL));
+template<typename Dtype>
+void ALEInputLayer<Dtype>::fillInputData(DQNImageLearner<Dtype> *dqnImage) {
+    int inputDataCount = this->in_dim.batches;
+
+    allocInputData();
 
     Dtype zero = 0.0;
     for (int i = 0; i < inputDataCount; i++) {
-        int index = rand() % this->rmSlotCnt;
-        int action = this->rmSlots[index]->action1;
+        DQNTransition<Dtype>    *rmSlot = dqnImage->getRandomRMSlot();
 
-        Dtype reward1 = this->rmSlots[index]->reward1;
-        DQNState<Dtype>* state1 = this->rmSlots[index]->state1;
-        Dtype maxQ2 = this->rmSlots[index]->maxQ2;
+        int action = rmSlot->action1;
+        Dtype reward1 = rmSlot->reward1;
+        DQNState<Dtype>* state1 = rmSlot->state1;
+        Dtype maxQ2 = rmSlot->maxQ2;
 
         int preparedDataOffset = i * state1->getDataCount();
         memcpy((void*)&this->preparedData[preparedDataOffset],
             (void*)state1->data, state1->getDataSize());
 
+        // Label데이터를 action으로 부터 생성한다.
         for (int j = 0; j < this->chCnt; j++) {
             int preparedLabelOffset = this->chCnt * i + j;
 
@@ -157,43 +140,13 @@ template<typename Dtype>
 void ALEInputLayer<Dtype>::initialize() {
     this->type = Layer<Dtype>::ALEInput;
 
-    this->rowCnt    = SPARAM(ALE_INPUT_ROW_COUNT);
-    this->colCnt    = SPARAM(ALE_INPUT_COL_COUNT);
-    this->chCnt     = SPARAM(ALE_INPUT_CHANNEL_COUNT);
-    this->rmSlotCnt = SPARAM(DQN_REPLAY_MEMORY_ELEM_COUNT);
-
-    int rmSlotAllocSize = sizeof(DQNTransition<Dtype>*) * this->rmSlotCnt;
-    this->rmSlots = (DQNTransition<Dtype>**)malloc(rmSlotAllocSize);
-    SASSERT0(this->rmSlots != NULL);
-
-    for (int i = 0; i < this->rmSlotCnt; i++) {
-        this->rmSlots[i] = new DQNTransition<Dtype>();
-        SASSERT0(this->rmSlots[i] != NULL);
-    }
-    this->rmSlotHead = 0;
-
-    // DQNTransition은 replay memory size만큼 존재 한다.
-    // DQNTransition은 연이은 2개의 DQNState로 구성이 된다.
-    // 따라서 DQNState는 replay memory size + 1 만큼 존재 한다.
-    this->stateSlotCnt = this->rmSlotCnt + 1;
-
-    int stateSlotAllocSize = sizeof(DQNState<Dtype>*) * this->stateSlotCnt;
-    this->stateSlots = (DQNState<Dtype>**)malloc(stateSlotAllocSize);
-
-    for (int i = 0; i < this->stateSlotCnt; i++) {
-        this->stateSlots[i] = new DQNState<Dtype>(this->rowCnt, this->colCnt, this->chCnt);
-        SASSERT0(this->stateSlots[i] != NULL);
-    }
-    this->stateSlotHead = 0;
-
-    // 아래의 구조체는 초기화(initialize())함수에서 할당하지 않는다.
+    // 아래의 구조체는 초기화(init())함수에서 할당하지 않는다.
     // 왜냐하면 networkConfig의 batch size정보가 있어야 할당크기를 정할 수 있는데
     // networkConfig 정보가 채워지는 타이밍이 초기화 이전이기 때문이다.
     // 혹시 바꿀 수 있을지 논의해보자.
     this->preparedData = NULL;
     this->preparedLabel = NULL;
-
-    this->lastState = NULL;
+    this->allocBatchSize = 0;
 }
 
 template<typename Dtype>

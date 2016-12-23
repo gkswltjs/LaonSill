@@ -19,6 +19,7 @@
 #include "HotLog.h"
 #include "SysLog.h"
 #include "ALEInputLayer.h"
+#include "Broker.h"
 
 using namespace std;
 
@@ -83,6 +84,17 @@ mutex Worker<Dtype>::networkMutex;
 
 template<typename Dtype>
 bool Worker<Dtype>::useWorker = false;
+
+template<typename Dtype>
+map<int, Job*> Worker<Dtype>::reqPubJobMap;
+template<typename Dtype>
+mutex Worker<Dtype>::reqPubJobMapMutex;
+
+template<typename Dtype>
+vector<DQNImageLearner<Dtype>*> Worker<Dtype>::dqnImageLearners;
+template<typename Dtype>
+mutex Worker<Dtype>::dqnImageLearnerMutex;
+
 
 template <typename Dtype>
 bool Worker<Dtype>::isReady() {
@@ -210,45 +222,66 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
         Job* job = (Job*)Worker::consumerJob;
 
         // FIXME: make ugly source be pretty T_T
+        DQNImageLearner<Dtype> *learner;
         Network<Dtype>* network;
         int maxEpochCount;
         int batchSize;
         switch (job->getType()) {
-        case Job::BuildNetwork:
-            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-            buildNetwork(network);
-            break;
-        case Job::TrainNetwork:
-            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-            maxEpochCount = job->getIntValue(1);
-            trainNetwork(network, maxEpochCount);
-            break;
-        case Job::CleanupNetwork:
-            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-            cleanupNetwork(network);
-            break;
-        case Job::BuildDQNNetwork:
-            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-            buildDQNNetwork(network);
-            break;
+            case Job::BuildNetwork:
+                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+                buildNetwork(network);
+                break;
 
-        case Job::PushDQNInput:
-            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-            // TODO: not implemented yet
-            //pushDQNInput();
-            break;
+            case Job::TrainNetwork:
+                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+                maxEpochCount = job->getIntValue(1);
+                trainNetwork(network, maxEpochCount);
+                break;
 
-        case Job::FeedForwardDQNNetwork:
-            network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-            batchSize = job->getIntValue(1); 
-            feedForwardDQNNetwork(network, batchSize);
-            break;
-        case Job::HaltMachine:
-            doLoop = false;
-            Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
-            break;
-        default:
-            SASSERT(false, "Invalid job type");
+            case Job::CleanupNetwork:
+                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+                cleanupNetwork(network);
+                break;
+
+            /* DQN related Jobs */
+            case Job::CreateDQNImageLearner:
+                createDQNImageLearner(job);
+                break;
+
+            case Job::BuildDQNNetworks:
+                // (1) get learner
+                // TODO:
+
+                // (2) build Q Network
+                cout << "[DEBUG] build Q Network" << endl;
+                network = Worker<Dtype>::getNetwork(job->getIntValue(1));
+                buildDQNNetwork(network);
+
+                // (3) build Q head Network
+                cout << "[DEBUG] build Q head Network" << endl;
+                network = Worker<Dtype>::getNetwork(job->getIntValue(2));
+                buildDQNNetwork(network);
+                break;
+
+            case Job::PushDQNImageInput:
+                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+                // TODO: not implemented yet
+                //pushDQNInput();
+                break;
+
+            case Job::FeedForwardDQNNetwork:
+                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
+                batchSize = job->getIntValue(1); 
+                feedForwardDQNNetwork(network, batchSize);
+                break;
+
+            case Job::HaltMachine:
+                doLoop = false;
+                Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
+                break;
+
+            default:
+                SASSERT(false, "Invalid job type");
         }
 
         Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
@@ -337,14 +370,30 @@ void Worker<Dtype>::wakeupPeer() {
 }
 
 template <typename Dtype>
-void Worker<Dtype>::pushJob(Job* job) {
+int Worker<Dtype>::pushJob(Job* job) {
+    int pubJobID = -1;
+
+    // (1) pubJob이 있는 경우에 pubJob을 생성하고 pubJob ID를 할당받는다.
+    if (job->hasPubJob()) {
+        Job* pubJob = new Job(job->getPubJobType());
+        unique_lock<mutex> reqPubJobMapLock(Worker<Dtype>::reqPubJobMapMutex); 
+        Worker<Dtype>::reqPubJobMap[job->getJobID()] = pubJob; 
+        // subscriber will deallocate pubJob
+        reqPubJobMapLock.unlock();
+        pubJobID = pubJob->getJobID();
+    }
+
+    // (2) job queue에 job을 넣는다.
     Worker<Dtype>::jobQueueMutex.lock();
     Worker<Dtype>::jobQueue.push_back(job);
     Worker<Dtype>::jobQueueMutex.unlock();
 
+    // (3) 프로듀서에게 새로운 잡이 추가되었음을 알려준다.
     unique_lock<mutex> producerLock(Worker<Dtype>::producerMutex);
     Worker<Dtype>::producerCondVar.notify_one();
     producerLock.unlock();
+
+    return pubJobID;
 }
 
 template <typename Dtype>
@@ -398,12 +447,49 @@ void Worker<Dtype>::buildNetwork(Network<Dtype>* network) {
 }
 
 template<typename Dtype>
+void Worker<Dtype>::createDQNImageLearner(Job* job) {
+    // (1) Learner을 생성한다.
+    int rowCount = job->getIntValue(0);
+    int colCount = job->getIntValue(1);
+    int channelCount = job->getIntValue(2);
+
+    DQNImageLearner<Dtype>* learner = new DQNImageLearner<Dtype>(rowCount, colCount, channelCount);
+   
+    unique_lock<mutex> learnerLock(Worker<Dtype>::dqnImageLearnerMutex);
+    dqnImageLearners.push_back(learner);
+    learnerLock.unlock();
+
+    // (2) Q Network와 Q head Network를 생성한다.
+    int netQID = createNetwork();
+    int netQHeadID = createNetwork();
+
+    // (3) pubJob을 reqPubJobMap으로부터 얻는다.
+    SASSUME0(job->hasPubJob());
+    unique_lock<mutex> reqPubJobMapLock(Worker<Dtype>::reqPubJobMapMutex); 
+    Job *pubJob = Worker<Dtype>::reqPubJobMap[job->getJobID()];
+    SASSUME0(pubJob != NULL);
+    Worker<Dtype>::reqPubJobMap.erase(job->getJobID());
+    reqPubJobMapLock.unlock();
+    SASSUME0(pubJob->getType() == job->getPubJobType());
+
+    // (4) pubJob에 elem을 채운다.
+    int learnerID = learner->getID();
+    pubJob->addJobElem(Job::IntType, 1, (void*)&learnerID);
+    pubJob->addJobElem(Job::IntType, 1, (void*)&netQID);
+    pubJob->addJobElem(Job::IntType, 1, (void*)&netQHeadID);
+
+    // (5) pubJob을 publish한다.
+    Broker::publish(pubJob->getJobID(), pubJob);
+}
+
+template<typename Dtype>
 void Worker<Dtype>::buildDQNNetwork(Network<Dtype>* network) {
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
 	LayersConfig<float>* layersConfig = createDQNLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
 
     // (2) network config 정보를 layer들에게 전달한다.
+    cout << "[DEBUG] create DQNLayersConfig done.." << endl;
     for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
         layersConfig->_layers[i]->setNetworkConfig(network->config);
     }
@@ -416,6 +502,7 @@ void Worker<Dtype>::buildDQNNetwork(Network<Dtype>* network) {
     //in_dim.batches = network->config->_batchSize;
     //layersConfig->_inputLayer->setInDimension(in_dim);
 
+    cout << "[DEBUG] do shape.." << endl;
     for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
     	layersConfig->_layers[i]->shape();
     	//in_dim = layersConfig->_layers[i-1]->getOutDimension();
@@ -423,16 +510,17 @@ void Worker<Dtype>::buildDQNNetwork(Network<Dtype>* network) {
     //layersConfig->_inputLayer->shape(0, in_dim);
 
     // (4) network에 layersConfig 정보를 등록한다.
+    cout << "[DEBUG] set layers config.." << endl;
     network->setLayersConfig(layersConfig);
 }
 
 template<typename Dtype>
-void Worker<Dtype>::pushDQNInput(Network<Dtype>* network, Dtype lastReward, int lastAction,
-    int lastTerm, Dtype* state) {
+void Worker<Dtype>::pushDQNImageInput(Network<Dtype>* network, DQNImageLearner<Dtype>* dqnImage,
+    Dtype lastReward, int lastAction, int lastTerm, Dtype* state) {
 
     // (1) ALE input layer에 데이터를 넣는다.
     ALEInputLayer<Dtype>* inputLayer = network->getALEInputLayer();
-    inputLayer->insertFrameInput(lastReward, lastAction, (bool)lastTerm, state);
+    inputLayer->fillInputData(dqnImage);
 }
 
 template <typename Dtype>
@@ -531,6 +619,7 @@ int Worker<Dtype>::createNetwork() {
     // 네트워크를 등록한다.
     // TODO: 현재는 증가하는 방식으로만 등록을 시키고 있다. 
     //      pool 형태로 돌려쓸 수 있도록 수정이 필요할지 고민해보자.
+    // XXX: make network generate its network ID by itself when it is created
 	Network<Dtype>* network = new Network<Dtype>(networkConfig);
     unique_lock<mutex> networkLock(Worker<Dtype>::networkMutex);
     int networkId = Worker<Dtype>::networkGenId;
