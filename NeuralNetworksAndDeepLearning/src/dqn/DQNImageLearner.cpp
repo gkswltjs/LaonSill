@@ -16,6 +16,10 @@ using namespace std;
 
 template<typename Dtype>
 atomic<int> DQNImageLearner<Dtype>::dqnIDGen;
+template<typename Dtype>
+map<int, DQNImageLearner<Dtype>*> DQNImageLearner<Dtype>::learnerIDMap;
+template<typename Dtype>
+mutex DQNImageLearner<Dtype>::learnerIDMapMutex;
 
 template<typename Dtype>
 DQNImageLearner<Dtype>::DQNImageLearner(int rowCnt, int colCnt, int chCnt) {
@@ -51,6 +55,10 @@ DQNImageLearner<Dtype>::DQNImageLearner(int rowCnt, int colCnt, int chCnt) {
     this->lastState = NULL;
 
     this->dqnID = atomic_fetch_add(&DQNImageLearner<Dtype>::dqnIDGen, 1);
+
+    unique_lock<mutex> learnerLock(DQNImageLearner<Dtype>::learnerIDMapMutex);
+    DQNImageLearner<Dtype>::learnerIDMap[this->dqnID] = this;
+    learnerLock.unlock();
 }
 
 template<typename Dtype>
@@ -68,10 +76,15 @@ DQNImageLearner<Dtype>::~DQNImageLearner() {
         delete this->stateSlots[i];
     }
     free(this->stateSlots);
+
+    unique_lock<mutex> learnerLock(DQNImageLearner<Dtype>::learnerIDMapMutex);
+    DQNImageLearner<Dtype>::learnerIDMap.erase(this->dqnID);
+    learnerLock.unlock();
 }
 
 template<typename Dtype>
-void DQNImageLearner<Dtype>::fillRM(Dtype lastReward, int lastAction, bool lastTerm, Dtype* state) {
+void DQNImageLearner<Dtype>::fillRM(Dtype lastReward, int lastAction, bool lastTerm,
+    Dtype* state) {
     int copySize = this->stateSlots[this->stateSlotHead]->getDataSize();
     memcpy((void*)this->stateSlots[this->stateSlotHead]->data, (void*)state, copySize);
 
@@ -96,6 +109,17 @@ DQNTransition<Dtype>* DQNImageLearner<Dtype>::getRandomRMSlot() {
 template<typename Dtype>
 void DQNImageLearner<Dtype>::init() {
     atomic_store(&DQNImageLearner<Dtype>::dqnIDGen, 0);
+}
+
+template<typename Dtype>
+DQNImageLearner<Dtype>* DQNImageLearner<Dtype>::getLearnerFromID(int dqnID) {
+    DQNImageLearner<Dtype>* learner;
+
+    unique_lock<mutex> learnerLock(DQNImageLearner<Dtype>::learnerIDMapMutex);
+    learner = DQNImageLearner<Dtype>::learnerIDMap[dqnID];
+    learnerLock.unlock();
+
+    return learner;
 }
 
 template class DQNImageLearner<float>;

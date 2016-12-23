@@ -15,6 +15,9 @@ using namespace std;
 
 atomic<int> Job::jobIDGen;
 
+map<int, Job*> Job::reqPubJobMap;
+mutex Job::reqPubJobMapMutex;
+
 void Job::init() {
     atomic_store(&Job::jobIDGen, 0);
 }

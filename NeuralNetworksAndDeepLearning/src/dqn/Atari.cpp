@@ -147,6 +147,7 @@ void Atari::run(char* romFilePath) {
             totalReward += reward;
         }
         cout << "Episode " << episode << " ended with score: " << totalReward << endl;
+        sleep(3);
         ale.reset_game();
     }
 

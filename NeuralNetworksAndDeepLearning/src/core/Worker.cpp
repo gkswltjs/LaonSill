@@ -9,10 +9,6 @@
 #include "Worker.h"
 
 #include "Debug.h"
-#include "Evaluation.h"
-#include "Top1Evaluation.h"
-#include "Top5Evaluation.h"
-#include "NetworkMonitor.h"
 #include "NetworkConfig.h"
 #include "Param.h"
 #include "ColdLog.h"
@@ -20,6 +16,8 @@
 #include "SysLog.h"
 #include "ALEInputLayer.h"
 #include "Broker.h"
+#include "DQNWork.h"
+#include "LegacyWork.h"
 
 using namespace std;
 
@@ -76,25 +74,7 @@ template<typename Dtype>
 atomic<int> Worker<Dtype>::readyCount;
 
 template<typename Dtype>
-vector<Network<Dtype>*> Worker<Dtype>::networks;
-template<typename Dtype>
-int Worker<Dtype>::networkGenId;
-template<typename Dtype>
-mutex Worker<Dtype>::networkMutex;
-
-template<typename Dtype>
 bool Worker<Dtype>::useWorker = false;
-
-template<typename Dtype>
-map<int, Job*> Worker<Dtype>::reqPubJobMap;
-template<typename Dtype>
-mutex Worker<Dtype>::reqPubJobMapMutex;
-
-template<typename Dtype>
-vector<DQNImageLearner<Dtype>*> Worker<Dtype>::dqnImageLearners;
-template<typename Dtype>
-mutex Worker<Dtype>::dqnImageLearnerMutex;
-
 
 template <typename Dtype>
 bool Worker<Dtype>::isReady() {
@@ -221,58 +201,34 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
         Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Running;
         Job* job = (Job*)Worker::consumerJob;
 
-        // FIXME: make ugly source be pretty T_T
-        DQNImageLearner<Dtype> *learner;
-        Network<Dtype>* network;
-        int maxEpochCount;
-        int batchSize;
         switch (job->getType()) {
             case Job::BuildNetwork:
-                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-                buildNetwork(network);
+                LegacyWork<Dtype>::buildNetwork(job);
                 break;
 
             case Job::TrainNetwork:
-                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-                maxEpochCount = job->getIntValue(1);
-                trainNetwork(network, maxEpochCount);
+                LegacyWork<Dtype>::trainNetwork(job);
                 break;
 
             case Job::CleanupNetwork:
-                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-                cleanupNetwork(network);
+                LegacyWork<Dtype>::cleanupNetwork(job);
                 break;
 
             /* DQN related Jobs */
             case Job::CreateDQNImageLearner:
-                createDQNImageLearner(job);
+                DQNWork<Dtype>::createDQNImageLearner(job);
                 break;
 
             case Job::BuildDQNNetworks:
-                // (1) get learner
-                // TODO:
-
-                // (2) build Q Network
-                cout << "[DEBUG] build Q Network" << endl;
-                network = Worker<Dtype>::getNetwork(job->getIntValue(1));
-                buildDQNNetwork(network);
-
-                // (3) build Q head Network
-                cout << "[DEBUG] build Q head Network" << endl;
-                network = Worker<Dtype>::getNetwork(job->getIntValue(2));
-                buildDQNNetwork(network);
+                DQNWork<Dtype>::buildDQNNetworks(job);
                 break;
 
             case Job::PushDQNImageInput:
-                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-                // TODO: not implemented yet
-                //pushDQNInput();
+                DQNWork<Dtype>::pushDQNImageInput(job);
                 break;
 
             case Job::FeedForwardDQNNetwork:
-                network = Worker<Dtype>::getNetwork(job->getIntValue(0));
-                batchSize = job->getIntValue(1); 
-                feedForwardDQNNetwork(network, batchSize);
+                DQNWork<Dtype>::feedForwardDQNNetwork(job);
                 break;
 
             case Job::HaltMachine:
@@ -376,8 +332,8 @@ int Worker<Dtype>::pushJob(Job* job) {
     // (1) pubJob이 있는 경우에 pubJob을 생성하고 pubJob ID를 할당받는다.
     if (job->hasPubJob()) {
         Job* pubJob = new Job(job->getPubJobType());
-        unique_lock<mutex> reqPubJobMapLock(Worker<Dtype>::reqPubJobMapMutex); 
-        Worker<Dtype>::reqPubJobMap[job->getJobID()] = pubJob; 
+        unique_lock<mutex> reqPubJobMapLock(Job::reqPubJobMapMutex); 
+        Job::reqPubJobMap[job->getJobID()] = pubJob; 
         // subscriber will deallocate pubJob
         reqPubJobMapLock.unlock();
         pubJobID = pubJob->getJobID();
@@ -413,229 +369,6 @@ Job* Worker<Dtype>::popJob() {
     atomic_store(&popedJob->refCnt, Worker<Dtype>::consumerCount);
 
     return popedJob;
-}
-
-template <typename Dtype>
-void Worker<Dtype>::buildNetwork(Network<Dtype>* network) {
-    // XXX: 현재는 CCN Double Layer만 생성하도록 되어 있다. 수정필요!!!
-    
-    // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
-
-    // (2) network config 정보를 layer들에게 전달한다.
-    for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-        layersConfig->_layers[i]->setNetworkConfig(network->config);
-    }
-
-    // (3) shape 과정을 수행한다. 
-    //io_dim in_dim;
-    //in_dim.rows = network->config->_dataSet->getRows();
-    //in_dim.cols = network->config->_dataSet->getCols();
-    //in_dim.channels = network->config->_dataSet->getChannels();
-    //in_dim.batches = network->config->_batchSize;
-    //layersConfig->_inputLayer->setInDimension(in_dim);
-
-    for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-    	layersConfig->_layers[i]->shape();
-    	//in_dim = layersConfig->_layers[i-1]->getOutDimension();
-    }
-    //layersConfig->_inputLayer->shape(0, in_dim);
-
-    // (4) network에 layersConfig 정보를 등록한다.
-    network->setLayersConfig(layersConfig);
-}
-
-template<typename Dtype>
-void Worker<Dtype>::createDQNImageLearner(Job* job) {
-    // (1) Learner을 생성한다.
-    int rowCount = job->getIntValue(0);
-    int colCount = job->getIntValue(1);
-    int channelCount = job->getIntValue(2);
-
-    DQNImageLearner<Dtype>* learner = new DQNImageLearner<Dtype>(rowCount, colCount, channelCount);
-   
-    unique_lock<mutex> learnerLock(Worker<Dtype>::dqnImageLearnerMutex);
-    dqnImageLearners.push_back(learner);
-    learnerLock.unlock();
-
-    // (2) Q Network와 Q head Network를 생성한다.
-    int netQID = createNetwork();
-    int netQHeadID = createNetwork();
-
-    // (3) pubJob을 reqPubJobMap으로부터 얻는다.
-    SASSUME0(job->hasPubJob());
-    unique_lock<mutex> reqPubJobMapLock(Worker<Dtype>::reqPubJobMapMutex); 
-    Job *pubJob = Worker<Dtype>::reqPubJobMap[job->getJobID()];
-    SASSUME0(pubJob != NULL);
-    Worker<Dtype>::reqPubJobMap.erase(job->getJobID());
-    reqPubJobMapLock.unlock();
-    SASSUME0(pubJob->getType() == job->getPubJobType());
-
-    // (4) pubJob에 elem을 채운다.
-    int learnerID = learner->getID();
-    pubJob->addJobElem(Job::IntType, 1, (void*)&learnerID);
-    pubJob->addJobElem(Job::IntType, 1, (void*)&netQID);
-    pubJob->addJobElem(Job::IntType, 1, (void*)&netQHeadID);
-
-    // (5) pubJob을 publish한다.
-    Broker::publish(pubJob->getJobID(), pubJob);
-}
-
-template<typename Dtype>
-void Worker<Dtype>::buildDQNNetwork(Network<Dtype>* network) {
-    // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* layersConfig = createDQNLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
-
-    // (2) network config 정보를 layer들에게 전달한다.
-    cout << "[DEBUG] create DQNLayersConfig done.." << endl;
-    for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-        layersConfig->_layers[i]->setNetworkConfig(network->config);
-    }
-
-    // (3) shape 과정을 수행한다. 
-    //io_dim in_dim;
-    //in_dim.rows = network->config->_dataSet->getRows();
-    //in_dim.cols = network->config->_dataSet->getCols();
-    //in_dim.channels = network->config->_dataSet->getChannels();
-    //in_dim.batches = network->config->_batchSize;
-    //layersConfig->_inputLayer->setInDimension(in_dim);
-
-    cout << "[DEBUG] do shape.." << endl;
-    for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-    	layersConfig->_layers[i]->shape();
-    	//in_dim = layersConfig->_layers[i-1]->getOutDimension();
-    }
-    //layersConfig->_inputLayer->shape(0, in_dim);
-
-    // (4) network에 layersConfig 정보를 등록한다.
-    cout << "[DEBUG] set layers config.." << endl;
-    network->setLayersConfig(layersConfig);
-}
-
-template<typename Dtype>
-void Worker<Dtype>::pushDQNImageInput(Network<Dtype>* network, DQNImageLearner<Dtype>* dqnImage,
-    Dtype lastReward, int lastAction, int lastTerm, Dtype* state) {
-
-    // (1) ALE input layer에 데이터를 넣는다.
-    ALEInputLayer<Dtype>* inputLayer = network->getALEInputLayer();
-    inputLayer->fillInputData(dqnImage);
-}
-
-template <typename Dtype>
-void Worker<Dtype>::trainNetwork(Network<Dtype>* network, int maxEpochs) {
-    COLD_LOG(ColdLog::INFO, (consumerIdx == 0), "training network starts(maxEpoch: %d).", maxEpochs);
-
-    network->sgd_with_timer(maxEpochs);
-
-    // XXX: save() 함수 확인 다시하자.
-    //if (consumerIdx == 0)
-    //    network->save();
-}
-
-template <typename Dtype>
-void Worker<Dtype>::cleanupNetwork(Network<Dtype>* network) {
-	LayersConfig<Dtype>* layersConfig = network->getLayersConfig();
-	const uint32_t layerSize = layersConfig->_layers.size();
-	for(uint32_t i = 0; i < layerSize; i++) {
-		delete layersConfig->_layers[i];
-	}
-
-	// clean up layer data
-	typename std::map<std::string, Data<Dtype>*>::iterator it;
-	for (it = layersConfig->_layerDataMap.begin();
-			it != layersConfig->_layerDataMap.end(); it++) {
-		delete it->second;
-	}
-}
-
-template<typename Dtype>
-void Worker<Dtype>::feedForwardDQNNetwork(Network<Dtype>* network, int batchSize) {
-	LayersConfig<Dtype>* layersConfig = network->getLayersConfig();
-
-    // TODO: needs reshape() in order to change batch size
-
-    //network->_feedforward(0);   
-}
-
-template <typename Dtype>
-int Worker<Dtype>::createNetwork() {
-    // XXX: network를 어떻게 구성할지에 대한 정보를 받아야 한다.
-    //      또한, 그 정보를 토대로 네트워크를 구성해야 한다.
-    //      Evaluation과 Dataset, Network Listener도 분리 시켜야 한다.
-    const uint32_t batchSize = 50;
-	//const uint32_t batchSize = 1000;
-	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
-	const uint32_t testInterval = 200;			// 10000(목표 샘플수) / batchSize
-	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
-	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
-	const uint32_t stepSize = 100000;
-	const float baseLearningRate = 0.001f;
-	const float weightDecay = 0.0002f;
-	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
-	const float gamma = 0.1;
-	const LRPolicy lrPolicy = LRPolicy::Step;
-
-	cout << "batchSize: " << batchSize << endl;
-	cout << "testInterval: " << testInterval << endl;
-	cout << "saveInterval: " << saveInterval << endl;
-	cout << "baseLearningRate: " << baseLearningRate << endl;
-	cout << "weightDecay: " << weightDecay << endl;
-	cout << "momentum: " << momentum << endl;
-	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
-
-	//DataSet<Dtype>* dataSet = createMnistDataSet<Dtype>();
-	//DataSet<Dtype>* dataSet = createMockDataSet<Dtype>();
-	//DataSet<Dtype>* dataSet = createImageNet10000DataSet<Dtype>();
-	//dataSet->load();
-
-	Evaluation<Dtype>* top1Evaluation = new Top1Evaluation<Dtype>();
-	Evaluation<Dtype>* top5Evaluation = new Top5Evaluation<Dtype>();
-	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_ONLY);
-
-	NetworkConfig<Dtype>* networkConfig =
-			(new typename NetworkConfig<Dtype>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->stepSize(stepSize)
-			->clipGradientsLevel(clipGradientsLevel)
-			->lrPolicy(lrPolicy)
-			->gamma(gamma)
-			//->dataSet(dataSet)
-			->evaluations({top1Evaluation, top5Evaluation})
-			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
-			->networkListeners({networkListener})
-			->build();
-
-	Util::printVramInfo();
-
-
-    // 네트워크를 등록한다.
-    // TODO: 현재는 증가하는 방식으로만 등록을 시키고 있다. 
-    //      pool 형태로 돌려쓸 수 있도록 수정이 필요할지 고민해보자.
-    // XXX: make network generate its network ID by itself when it is created
-	Network<Dtype>* network = new Network<Dtype>(networkConfig);
-    unique_lock<mutex> networkLock(Worker<Dtype>::networkMutex);
-    int networkId = Worker<Dtype>::networkGenId;
-    Worker<Dtype>::networks.push_back(network);
-    Worker<Dtype>::networkGenId += 1;
-    networkLock.unlock();
-
-    return networkId;
-}
-
-template <typename Dtype>
-Network<Dtype>* Worker<Dtype>::getNetwork(int networkId) {
-    SASSERT((networkId < Worker::networks.size()),
-        "invalid networkId. networkId=%d, total network count=%d",
-        networkId, (int)(Worker::networks.size()));
-    return Worker::networks[networkId];
 }
 
 template class Worker<float>;

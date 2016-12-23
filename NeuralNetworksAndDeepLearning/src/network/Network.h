@@ -28,10 +28,13 @@ template <typename Dtype> class LayersConfig;
 
 /**
  * @brief 네트워크 기본 클래스
- * @details 실제 작업이 일어나는 링크드 형식의 레이어 목록을 래핑하고 사용자 인터페이스를 제공한다.
- * @todo sgd 형태의 네트워크를 기본으로 하고 있으나 다양한 형태의 네트워크 최적화 기법을 적용할 수 있도록 수정되어야 한다.
+ * @details 실제 작업이 일어나는 링크드 형식의 레이어 목록을 래핑하고 사용자 인터페이스를 
+ * 제공한다.
+ * @todo sgd 형태의 네트워크를 기본으로 하고 있으나 다양한 형태의 네트워크 최적화 기법을 
+ * 적용할 수 있도록 수정되어야 한다.
  *       (SGD, AdaDelta, AdaGrad, Adam, NAG ... )
- *       개별 파라미터를 각각 전달하는 형태이나 Network Param 형태의 구조체를 만들어 한 번에 전달하도록 수정해야 한다.
+ *       개별 파라미터를 각각 전달하는 형태이나 Network Param 형태의 구조체를 만들어 한 번에 
+ *       전달하도록 수정해야 한다.
  */
 template <typename Dtype>
 class Network {
@@ -50,11 +53,14 @@ public:
 	 * @param dataSet 학습 및 테스트용 데이터셋
 	 * @param networkListener 네트워크 상태 리스너
 	 */
-	//Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet, NetworkListener *networkListener);
+	//Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet,
+    //        NetworkListener *networkListener);
 	/**
 	 * @details Network 소멸자
 	 */
 	virtual ~Network();
+
+    static void init();
 
 	/**
 	 * @details 네트워크에 설정된 입력 레이어를 조회한다.
@@ -136,7 +142,8 @@ public:
 
 protected:
 	/**
-	 * @details 배치단위의 학습이 종료된 후 학습된 내용을 적절한 정규화 과정을 거쳐 네트워크에 반영한다.
+	 * @details 배치단위의 학습이 종료된 후 학습된 내용을 적절한 정규화 과정을 거쳐 네트워크에
+     *          반영한다.
 	 * @param nthMiniBatch 한 epoch내에서 종료된 batch의 index
 	 */
 	void trainBatch(uint32_t batchIndex);
@@ -202,12 +209,13 @@ public:
 
 protected:
 
-	//DataSet *dataSet;							///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
+	//DataSet *dataSet;				///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
 
 	//InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터
-	//std::vector<OutputLayer*> outputLayers;			///< 네트워크 출력 레이어 포인터 목록 벡터
-	//std::vector<Evaluation<Dtype>*> evaluations;			///< 네트워크 평가 객체 포인터 목록 벡터
-	//std::vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 목록 벡터
+	//std::vector<OutputLayer*> outputLayers;		///< 네트워크 출력 레이어 포인터 목록 벡터
+	//std::vector<Evaluation<Dtype>*> evaluations;		///< 네트워크 평가 객체 포인터 목록 벡터
+	//std::vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 
+                                                         //목록 벡터
 
 	//io_dim in_dim;								///< 네트워크 입력 데이터 구조 정보 구조체
 
@@ -221,51 +229,16 @@ protected:
 
 	//uint32_t iterations;
 
+public:
+    int                                     getNetworkID() { return this->networkID; }
+    static Network<Dtype>*                  getNetworkFromID(int networkID);
+
+private:
+    int                                     networkID;
+    static std::atomic<int>                 networkIDGen;
+    static std::map<int, Network<Dtype>*>   networkIDMap;
+    static std::mutex                       networkIDMapMutex;
 };
 
 
 #endif /* NETWORK_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

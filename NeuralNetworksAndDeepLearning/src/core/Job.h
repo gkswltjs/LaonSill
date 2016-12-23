@@ -10,6 +10,8 @@
 #define JOB_H 
 
 #include <atomic>
+#include <map>
+#include <mutex>
 
 /*
  * Job Description
@@ -139,6 +141,9 @@ public:
 
     bool                hasPubJob();
     JobType             getPubJobType();
+
+    static std::map<int, Job*>      reqPubJobMap;
+    static std::mutex   reqPubJobMapMutex;
 
 private:
     JobType             jobType;

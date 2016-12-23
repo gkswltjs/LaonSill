@@ -21,6 +21,7 @@
 #include "Param.h"
 #include "ColdLog.h"
 #include "SysLog.h"
+#include "LegacyWork.h"
 
 using namespace std;
 
@@ -255,7 +256,7 @@ bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMs
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
 
     // (1) create network.
-    int networkId = Worker<float>::createNetwork();
+    int networkId = LegacyWork<float>::createNetwork();
 
     // (2) prepare header
     int msgLen = MessageHeader::MESSAGE_HEADER_SIZE + sizeof(int);

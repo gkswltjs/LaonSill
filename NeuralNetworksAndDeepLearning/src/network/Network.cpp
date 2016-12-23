@@ -21,6 +21,13 @@
 
 using namespace std;
 
+template<typename Dtype>
+atomic<int>         Network<Dtype>::networkIDGen;
+template<typename Dtype>
+map<int, Network<Dtype>*> Network<Dtype>::networkIDMap;
+template<typename Dtype>
+mutex Network<Dtype>::networkIDMapMutex;
+
 template <typename Dtype>
 Network<Dtype>::Network(NetworkConfig<Dtype>* config)
 	: config(config) {
@@ -29,6 +36,24 @@ Network<Dtype>::Network(NetworkConfig<Dtype>* config)
 	//this->in_dim.cols = dataSet->getCols();
 	//this->in_dim.channels = dataSet->getChannels();
 	//this->in_dim.batches = config->_batchSize;
+    //
+    this->networkID = atomic_fetch_add(&Network<Dtype>::networkIDGen, 1);
+    unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
+    Network<Dtype>::networkIDMap[this->networkID] = this;
+}
+
+template<typename Dtype>
+void Network<Dtype>::init() {
+    atomic_store(&Network<Dtype>::networkIDGen, 0);
+}
+
+template<typename Dtype>
+Network<Dtype>* Network<Dtype>::getNetworkFromID(int networkID) {
+    Network<Dtype>* network;
+    unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
+    network = Network<Dtype>::networkIDMap[networkID];
+    lock.unlock();
+    return network;
 }
 
 template <typename Dtype>
@@ -85,6 +110,8 @@ Network<Dtype>::~Network() {
         }
     }
     */
+    unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
+    Network<Dtype>::networkIDMap.erase(this->networkID);
 }
 
 template <typename Dtype>

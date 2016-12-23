@@ -10,6 +10,8 @@
 #define DQN_H 
 
 #include <atomic>
+#include <mutex>
+#include <map>
 
 #include "DQNTransition.h"
 #include "DQNState.h"
@@ -17,7 +19,6 @@
 template<typename Dtype>
 class DQNImageLearner {
 public: 
-    DQNImageLearner() {}
     DQNImageLearner(int rowCnt, int colCnt, int chCnt);
     virtual ~DQNImageLearner();
 
@@ -31,6 +32,10 @@ public:
     static void             init();
     int                     getID() { return this->dqnID; }
 
+    static std::map<int, DQNImageLearner<Dtype>*>   learnerIDMap;
+    static std::mutex       learnerIDMapMutex;
+
+    static DQNImageLearner<Dtype>*  getLearnerFromID(int dqnID);
 private:
     DQNTransition<Dtype>  **rmSlots;    // replay memory slots
     DQNState<Dtype>       **stateSlots; // saved state slots for replay memory slots

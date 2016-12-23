@@ -143,6 +143,7 @@ int main(int argc, char** argv) {
     ColdLog::init();
     Job::init();
     Broker::init();
+    Network<float>::init();
     DQNImageLearner<float>::init();
 
     if (!useDeveloperMode) {
