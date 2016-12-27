@@ -223,8 +223,8 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
                 DQNWork<Dtype>::buildDQNNetworks(job);
                 break;
 
-            case Job::PushDQNImageInput:
-                DQNWork<Dtype>::pushDQNImageInput(job);
+            case Job::StepDQNImageLearner:
+                DQNWork<Dtype>::stepDQNImageLearner(job);
                 break;
 
             case Job::FeedForwardDQNNetwork:

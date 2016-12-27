@@ -50,7 +50,7 @@ void ALEInputLayer<Dtype>::setInputCount(int rows, int cols, int channels) {
 
 template<typename Dtype>
 void ALEInputLayer<Dtype>::shape() {
-    this->in_dim.batches = this->networkConfig->_batchSize;
+	this->in_dim.batches = this->networkConfig->_batchSize;
     this->in_dim.channels = this->chCnt;
     this->in_dim.rows = this->rowCnt;
     this->in_dim.cols = this->colCnt;
@@ -76,12 +76,16 @@ void ALEInputLayer<Dtype>::allocInputData() {
         this->allocBatchSize = batchSize;
 
         int allocSize = unitSize * this->allocBatchSize * sizeof(Dtype);
+        cout << "[DEBUG] allocSize = " << allocSize << endl;
         this->preparedData = (Dtype*)malloc(allocSize);
         SASSERT0(this->preparedData != NULL);
 
         allocSize = this->allocBatchSize * this->chCnt * sizeof(Dtype);
+        cout << "[DEBUG] allocSize = " << allocSize << endl;
         this->preparedLabel = (Dtype*)malloc(allocSize);
         SASSERT0(this->preparedLabel != NULL);
+
+        cout << "[DEBUG] alloc ends" << endl;
     }
 }
 
@@ -129,8 +133,10 @@ void ALEInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end
 	const uint32_t unitSize = this->in_dim.unitsize();
     int batchSize = this->in_dim.batches;
 
-    this->_inputData[0]->set_device_with_host_data(this->preparedData, 0, unitSize * batchSize);
-    this->_inputData[1]->set_device_with_host_data(this->preparedLabel, 0, this->chCnt * batchSize);
+    this->_inputData[0]->set_device_with_host_data(this->preparedData, 0,
+        unitSize * batchSize);
+    this->_inputData[1]->set_device_with_host_data(this->preparedLabel, 0,
+        this->chCnt * batchSize);
     // output : FullyConnectedLayer. 
 
 	Layer<Dtype>::feedforward();

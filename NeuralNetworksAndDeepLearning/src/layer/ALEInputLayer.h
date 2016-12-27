@@ -19,6 +19,8 @@
 #include "DQNTransition.h"
 #include "DQNImageLearner.h"
 
+template<typename Dtype> class DQNImageLearner;
+
 template <typename Dtype>
 class ALEInputLayer : public Layer<Dtype> {
 public:

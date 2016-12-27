@@ -22,7 +22,7 @@ public:
     static void     buildDQNNetworks(Job* job);
     static void     createDQNImageLearner(Job* job);
     static void     feedForwardDQNNetwork(Job* job);
-    static void     pushDQNImageInput(Job* job);
+    static void     stepDQNImageLearner(Job* job);
 
 private:
     static void     buildDQNNetwork(DQNImageLearner<Dtype>* learner, Network<Dtype>* network);

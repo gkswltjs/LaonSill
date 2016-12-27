@@ -16,7 +16,7 @@ template <typename Dtype> class Network;
 
 class AtariNN {
 public: 
-                AtariNN(int rowCount, int colCount, int channelCount);
+                AtariNN(int rowCount, int colCount, int channelCount, int actionCount);
     virtual    ~AtariNN() {}
 
     int         dqnImageLearnerID;
@@ -26,12 +26,12 @@ public:
     void        buildDQNNetworks();
     void        createDQNImageLearner();
     void        feedForward(int batchSize);
-    void        pushData(float lastReward, int lastAction, int lastTerm,
-                    float* state);
+    int         stepNetwork(float lastReward, int lastAction, int lastTerm, float* state);
 
 private:
     int         rowCount;
     int         colCount;
     int         channelCount;
+    int         actionCount;
 };
 #endif /* ATARINN_H */

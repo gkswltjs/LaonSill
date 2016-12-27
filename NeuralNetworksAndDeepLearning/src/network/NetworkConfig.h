@@ -98,12 +98,12 @@ public:
                 std::cout << "no input layer ... " << std::endl;
 				exit(1);
 			}
+#endif
 
 			if(lastLayers.size() < 1) {
                 std::cout << "no output layer ... " << std::endl;
 				exit(1);
 			}
-#endif
 
 			const uint32_t layerSize = layers.size();
 
@@ -243,6 +243,7 @@ public:
                 ->layerDataMap(layerDataMap);
 #else
 			return (new LayersConfig(this))
+				->lastLayers(lastLayers)
 				->layers(olayers)
 				->learnableLayers(learnableLayers)
                 ->nameLayerMap(nameLayerMap)

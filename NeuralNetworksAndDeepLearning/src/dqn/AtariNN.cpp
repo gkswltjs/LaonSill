@@ -15,10 +15,11 @@
 
 using namespace std;
 
-AtariNN::AtariNN(int rowCount, int colCount, int channelCount) {
-    this->rowCount = rowCount;
-    this->colCount = colCount;
-    this->channelCount = channelCount;
+AtariNN::AtariNN(int rowCount, int colCount, int channelCount, int actionCount) {
+    this->rowCount      = rowCount;
+    this->colCount      = colCount;
+    this->channelCount  = channelCount;
+    this->actionCount   = actionCount;
 }
 
 void AtariNN::createDQNImageLearner() {
@@ -27,6 +28,7 @@ void AtariNN::createDQNImageLearner() {
     job->addJobElem(Job::IntType, 1, (void*)&this->rowCount);
     job->addJobElem(Job::IntType, 1, (void*)&this->colCount);
     job->addJobElem(Job::IntType, 1, (void*)&this->channelCount);
+    job->addJobElem(Job::IntType, 1, (void*)&this->actionCount);
 
     // (2) push job & get pub-job(job result) ID
     int pubJobID = Worker<float>::pushJob(job);
@@ -48,6 +50,7 @@ void AtariNN::createDQNImageLearner() {
 void AtariNN::buildDQNNetworks() {
     // (1) create job
     Job* job = new Job(Job::BuildDQNNetworks);
+    job->addJobElem(Job::IntType, 1, (void*)&this->dqnImageLearnerID);
     job->addJobElem(Job::IntType, 1, (void*)&this->networkQID);
     job->addJobElem(Job::IntType, 1, (void*)&this->networkQHeadID);
 
@@ -56,17 +59,35 @@ void AtariNN::buildDQNNetworks() {
 }
 
 void AtariNN::feedForward(int batchSize) {
-    Job* newJob = new Job(Job::FeedForwardDQNNetwork);
-    Worker<float>::pushJob(newJob);
+    Job* job = new Job(Job::FeedForwardDQNNetwork);
+    Worker<float>::pushJob(job);
 }
 
-void AtariNN::pushData(float lastReward, int lastAction, int lastTerm, float* state) {
-    Job* newJob = new Job(Job::PushDQNImageInput);
-    newJob->addJobElem(Job::IntType, 1, (void*)&this->dqnImageLearnerID);
-    newJob->addJobElem(Job::FloatType, 1, (void*)&lastReward);
-    newJob->addJobElem(Job::IntType, 1, (void*)&lastAction);
-    newJob->addJobElem(Job::IntType, 1, (void*)&lastTerm);
-    newJob->addJobElem(Job::FloatArrayType, 4 * 84 * 84, (void*)state);
+int AtariNN::stepNetwork(float lastReward, int lastAction, int lastTerm, float* state) {
+    // (1) push StepDQNImageLearner Job
+    Job* job = new Job(Job::StepDQNImageLearner);
+    job->addJobElem(Job::IntType, 1, (void*)&this->dqnImageLearnerID);
+    job->addJobElem(Job::IntType, 1, (void*)&this->networkQID);
+    job->addJobElem(Job::IntType, 1, (void*)&this->networkQHeadID);
+    job->addJobElem(Job::FloatType, 1, (void*)&lastReward);
+    job->addJobElem(Job::IntType, 1, (void*)&lastAction);
+    job->addJobElem(Job::IntType, 1, (void*)&lastTerm);
+    int stateCount = this->rowCount * this->colCount * this->channelCount;
+    job->addJobElem(Job::FloatArrayType, stateCount, (void*)state);
 
-    Worker<float>::pushJob(newJob);
+    // (2) push job & get pub-job(job result) ID
+    int pubJobID = Worker<float>::pushJob(job);
+
+    // (3) subscribe pub-job(job result)
+    SASSERT0(pubJobID != -1);
+    Job *pubJob;
+    Broker::subscribe(pubJobID, &pubJob, Broker::Blocking);
+
+    // (4) handle job result
+    int action = pubJob->getIntValue(0);
+
+    // (5) cleanup resource
+    delete pubJob;
+
+    return action;
 }

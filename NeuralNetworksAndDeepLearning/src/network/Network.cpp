@@ -63,12 +63,6 @@ InputLayer<Dtype>* Network<Dtype>::getInputLayer() {
 }
 
 template <typename Dtype>
-ALEInputLayer<Dtype>* Network<Dtype>::getALEInputLayer() {
-    LayersConfig<Dtype>* layersConfig = config->layersConfigs[Worker<Dtype>::consumerIdx];
-    return dynamic_cast<ALEInputLayer<Dtype>*>(layersConfig->_firstLayers[0]);
-}
-
-template <typename Dtype>
 LayersConfig<Dtype>* Network<Dtype>::getLayersConfig() {
     return config->layersConfigs[Worker<Dtype>::consumerIdx];
 }
@@ -756,6 +750,38 @@ void Network<Dtype>::_feedforward(uint32_t batchIndex) {
 	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->feedforward();
 	}
+}
+
+template <typename Dtype>
+vector<Data<Dtype>*>& Network<Dtype>::feedForwardDQNNetwork(int batchCount,
+        DQNImageLearner<Dtype> *learner) {
+	LayersConfig<Dtype>* layersConfig = getLayersConfig();
+	ALEInputLayer<Dtype>* inputLayer = (ALEInputLayer<Dtype>*)layersConfig->_layers[0];
+
+    // (1) change batch size
+    cout << "[DEBUG] do shape()" << endl;
+    this->config->_batchSize = batchCount;
+    inputLayer->shape();
+
+    // (2) feed forward
+    cout << "[DEBUG] fill input data()" << endl;
+    inputLayer->fillInputData(learner);
+    cout << "[DEBUG] do feed forward()" << endl;
+	inputLayer->feedforward(0);
+    cout << "[DEBUG] do feed forwards()" << endl;
+	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->feedforward();
+	}
+
+    // (3) return last layer's output data
+    cout << "[DEBUG] return output data()" << endl;
+    int lastLayerIndex = layersConfig->_layers.size() - 1;
+    return layersConfig->_layers[lastLayerIndex]->getOutputData();
+}
+
+template<typename Dtype>
+void Network<Dtype>::backPropagateDQNNetwork(int batchCount) {
+
 }
 
 

@@ -22,9 +22,11 @@
 #include "Evaluation.h"
 #include "Worker.h"
 #include "NetworkConfig.h"
+#include "DQNImageLearner.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
+template <typename Dtype> class DQNImageLearner;
 
 /**
  * @brief 네트워크 기본 클래스
@@ -67,12 +69,6 @@ public:
 	 * @return 네트워크에 설정된 입력 레이어
 	 */
 	InputLayer<Dtype> *getInputLayer();
-
-	/**
-	 * @details 네트워크에 설정된 ALE 입력 레이어를 조회한다.
-	 * @return 네트워크에 설정된 ALE 입력 레이어
-	 */
-	ALEInputLayer<Dtype> *getALEInputLayer();
 
     void setLayersConfig(LayersConfig<Dtype>* layersConfig);
 	LayersConfig<Dtype>* getLayersConfig();
@@ -140,6 +136,14 @@ public:
 	 */
 	void setDataSetMean(float *dataSetMean);
 
+    /**
+     * DQN related functions
+     */
+    std::vector<Data<Dtype>*>& feedForwardDQNNetwork(int batchCount,
+        DQNImageLearner<Dtype> *learner);
+    void backPropagateDQNNetwork(int batchCount);
+
+
 protected:
 	/**
 	 * @details 배치단위의 학습이 종료된 후 학습된 내용을 적절한 정규화 과정을 거쳐 네트워크에
@@ -176,12 +180,8 @@ protected:
 
 
 
-
 	void _feedforward(uint32_t batchIndex);
 	void _backpropagation(uint32_t batchIndex);
-
-
-
 
 
 

@@ -34,7 +34,9 @@ public:
 		NoCost,				// Cost를 사용하지 않음. Undefined.
 		CrossEntropy, 		// Cost에 CrossEntropy 함수를 적용.
 		LogLikelihood, 		// Cost에 LogLikelihood 함수를 적용.
-		Quadratic			// Cost에 Quadratic 함수를 적용.
+		Quadratic,			// Cost에 Quadratic 함수를 적용.
+        DQN                 // Cost에 DQN용 함수를 사용. 실제로 유클리디안 로스와 동일
+                            //  이름을 바꿀지 고민해보자.
 	};
 
 	/**
@@ -45,7 +47,8 @@ public:
 
 #ifndef GPU_MODE
 	virtual double fn(const rvec *pA, const rvec *pY) = 0;
-	virtual void d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta) = 0;
+	virtual void d_cost(const rcube &z, const rcube &activation, const rvec &target,
+        rcube &delta) = 0;
 #else
 	/**
 	 * @details activation값와 정답값을 이용하여 cost를 계산.
@@ -54,7 +57,8 @@ public:
 	 * @return 계산된 cost값.
 	 * @todo 사용중이지 않기 때문에 사용시 정비가 필요, 현재 이 method의 결과는 무효함.
 	 */
-	virtual double forward(const Dtype* output, const Dtype* target, const uint32_t numLabels, const uint32_t batchsize) = 0;
+	virtual double forward(const Dtype* output, const Dtype* target, const uint32_t numLabels,
+        const uint32_t batchsize) = 0;
 
 	/**
 	 * @details cost에 대해 activation 입력으로 미분 결과를 계산
@@ -65,7 +69,8 @@ public:
 	 * @param numLabels 정답값의 레이블 수.
 	 * @param batchsize 데이터 배치 수.
 	 */
-	virtual void backward(const Dtype* z, const Dtype* activation, const Dtype* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize) = 0;
+	virtual void backward(const Dtype* z, const Dtype* activation, const Dtype* target,
+        Dtype* delta, uint32_t numLabels, uint32_t batchsize) = 0;
 #endif
 
 protected:

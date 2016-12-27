@@ -1,26 +1,21 @@
 /**
- * @file SoftmaxLayer.h
- * @date 2016/8/1
- * @author jhkim
- * @brief
+ * @file DQNOutputLayer.h
+ * @date 2016-12-26
+ * @author moonhoen lee
+ * @brief 
  * @details
  */
 
-#ifndef SOFTMAXLAYER_H_
-#define SOFTMAXLAYER_H_
+#ifndef DQNOUTPUTLAYER_H
+#define DQNOUTPUTLAYER_H 
 
 #include "common.h"
 #include "OutputLayer.h"
-#include "LogLikelihoodCost.h"
-#include "Softmax.h"
+#include "DQNCost.h"
 #include "Exception.h"
 
-/**
- * @brief 소프트맥스 출력 레이어
- * @details 활성화 함수로 Softmax를, cost 함수로 LogLikelihood를 적용시킨 출력 레이어
- */
 template <typename Dtype>
-class SoftmaxLayer : public OutputLayer<Dtype> {
+class DQNOutputLayer : public OutputLayer<Dtype> {
 public:
 	/**
 	 * @brief 소프트맥스 출력 레이어 객체 빌더
@@ -31,8 +26,8 @@ public:
 	public:
 		Builder() {
 			this->type = Layer<Dtype>::Softmax;
-			this->_activationType = Activation<Dtype>::Softmax;
-			this->_costType = Cost<Dtype>::LogLikelihood;
+			this->_activationType = Activation<Dtype>::NoActivation;
+			this->_costType = Cost<Dtype>::DQN;
 		}
 		Builder* costType(typename Cost<Dtype>::Type costType) {
 			OutputLayer<Dtype>::Builder::costType(costType);
@@ -83,7 +78,7 @@ public:
 			return this;
 		}
 		Layer<Dtype>* build() {
-			return new SoftmaxLayer(this);
+			return new DQNOutputLayer(this);
 		}
 		virtual void save(std::ofstream& ofs) {
 			OutputLayer<Dtype>::Builder::save(ofs);
@@ -93,10 +88,10 @@ public:
 		}
 	};
 
-	SoftmaxLayer();
-	SoftmaxLayer(Builder* builder);
+	DQNOutputLayer();
+	DQNOutputLayer(Builder* builder);
 	/**
-	 * @details SoftmaxLayer 생성자
+	 * @details DQNOutputLayer 생성자
 	 * @param name 레이어의 이름 문자열 포인터
 	 * @param n_out 출력 노드의 수
 	 * @param p_dropout dropout을 적용할 확율
@@ -105,10 +100,10 @@ public:
 	 * @param weight_filler weight 초기화 관련 파라미터 구조체
 	 * @param bias_filler bias 초기화 관련 파라미터 구조체
 	 */
-	SoftmaxLayer(const std::string name, int n_out, double p_dropout,
+	DQNOutputLayer(const std::string name, int n_out, double p_dropout,
         update_param weight_update_param, update_param bias_update_param,
         param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler);
-	virtual ~SoftmaxLayer();
+	virtual ~DQNOutputLayer();
 
 	/**
 	 * @details 히든 레이어의 backpropagation()을 override
@@ -139,4 +134,4 @@ protected:
 
 
 
-#endif /* SOFTMAXLAYER_H_ */
+#endif /* DQNOUTPUTLAYER_H */

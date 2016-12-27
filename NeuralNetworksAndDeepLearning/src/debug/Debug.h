@@ -28,6 +28,7 @@
 #include "Pooling.h"
 #include "Param.h"
 #include "ALEInputLayer.h"
+#include "DQNOutputLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -186,16 +187,16 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 					->activationType(Activation<Dtype>::Type::ReLU)
 					->inputs({"conv3/3x3"})
 					->outputs({"fc1"}))
-			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+			->layer((new typename DQNOutputLayer<Dtype>::Builder())
 					->id(5)
-					->name("fullyConnectedLayer2")
+					->name("DQNOutputLayer2")
 					->nOut(4)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.2)
 					->inputs({"fc1"})
-					->outputs({"fc2"}))
+					->outputs({"dqn1"}))
 			->build();
 
 	return layersConfig;

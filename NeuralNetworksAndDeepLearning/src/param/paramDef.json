@@ -187,7 +187,27 @@
     "MUTABLE" : true,
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
-    "DEFAULT" : 1000
+    "DEFAULT" : 50
+},
+
+"DQN_DEFAULT_EPSILON_VALUE" : 
+{
+    "DESC" : "specify default epsilon value of deep Q network algorithm",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "FLOAT",
+    "DEFAULT" : 0.2
+},
+
+"DQN_DEFAULT_GAMMA_VALUE" : 
+{
+    "DESC" : "specify default gamma value of deep Q network algorithm",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "FLOAT",
+    "DEFAULT" : 0.9
 },
 
 "BROKER_ADHOC_SESS_STARTS" : 

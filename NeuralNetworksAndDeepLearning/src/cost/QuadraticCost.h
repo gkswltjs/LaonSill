@@ -41,7 +41,8 @@ public:
 	void backward(const Dtype* z, const Dtype* activation, const Dtype* target,
 			Dtype* delta, uint32_t numLabels, uint32_t batchsize) {
 		/*
-		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*size, cudaMemcpyDeviceToDevice));
+		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*size,
+            cudaMemcpyDeviceToDevice));
 		uint32_t i;
 		for(i = 0; i < size/numLabels; i++) {
 			delta[i*numLabels+target[i]]-=1;

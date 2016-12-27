@@ -52,7 +52,8 @@ public:
 		LRN,					// Local Response Normaization 레이어
 		Sigmoid, 				// 시그모이드 레이어
 		Softmax,				// 소프트맥스 레이어
-		Split					//
+		Split,					//
+        DQNOutput               // DQN Output 레이어
 	};
 
 

@@ -326,7 +326,8 @@ int Job::getJobID() {
 }
 
 bool Job::hasPubJob() {
-    if (this->jobType == Job::CreateDQNImageLearner)
+    if ((this->jobType == Job::CreateDQNImageLearner) ||
+        (this->jobType == Job::StepDQNImageLearner))
         return true;
 
     return false;
@@ -335,6 +336,9 @@ bool Job::hasPubJob() {
 Job::JobType Job::getPubJobType() {
     if (this->jobType == Job::CreateDQNImageLearner)
         return Job::CreateDQNImageLearnerResult;
+
+    if (this->jobType == Job::StepDQNImageLearner)
+        return Job::StepDQNImageLearnerResult;
 
     return Job::JobTypeMax;     // meaningless
 }

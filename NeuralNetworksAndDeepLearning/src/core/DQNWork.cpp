@@ -23,9 +23,10 @@ void DQNWork<Dtype>::createDQNImageLearner(Job* job) {
     int rowCount = job->getIntValue(0);
     int colCount = job->getIntValue(1);
     int channelCount = job->getIntValue(2);
+    int actionCount = job->getIntValue(3);
 
     DQNImageLearner<Dtype>* learner =
-        new DQNImageLearner<Dtype>(rowCount, colCount, channelCount);
+        new DQNImageLearner<Dtype>(rowCount, colCount, channelCount, actionCount);
    
     // (2) Q Network와 Q head Network를 생성한다.
     int netQID = LegacyWork<Dtype>::createNetwork();
@@ -84,17 +85,50 @@ void DQNWork<Dtype>::buildDQNNetworks(Job* job) {
     buildDQNNetwork(learner, networkQ);
 
     // (3) build Q head Network
-    //  XXX: Hang when building Q head network. Fix it!!!
     int netQHeadID = job->getIntValue(2);
     Network<Dtype>* networkQHead = Network<Dtype>::getNetworkFromID(netQHeadID);
     buildDQNNetwork(learner, networkQHead);
 }
 
 template<typename Dtype>
-void DQNWork<Dtype>::pushDQNImageInput(Job* job) {
-    Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
+void DQNWork<Dtype>::stepDQNImageLearner(Job* job) {
+    // (1) get learner
+    int learnerID = job->getIntValue(0);
+    DQNImageLearner<Dtype>* learner = DQNImageLearner<Dtype>::getLearnerFromID(learnerID);
 
-    // TODO: implementation!!!
+    // (2) get Q & Q head Network
+    int netQID = job->getIntValue(1);
+    Network<Dtype>* networkQ = Network<Dtype>::getNetworkFromID(netQID);
+    int netQHeadID = job->getIntValue(2);
+    Network<Dtype>* networkQHead = Network<Dtype>::getNetworkFromID(netQHeadID);
+
+    // (3) fill replay memory
+    Dtype lastReward = job->getFloatValue(3);
+    int lastAction = job->getIntValue(4);
+    int lastTerm = job->getIntValue(5);
+    float* state = job->getFloatArray(6);
+    learner->fillRM(lastReward, lastAction, lastTerm, state);
+
+    // (4) choose action
+    int action = learner->chooseAction(networkQ);
+
+
+    // TODO: 트레이닝!!!
+
+    // (5) pubJob을 reqPubJobMap으로부터 얻는다.
+    SASSUME0(job->hasPubJob());
+    unique_lock<mutex> reqPubJobMapLock(Job::reqPubJobMapMutex); 
+    Job *pubJob = Job::reqPubJobMap[job->getJobID()];
+    SASSUME0(pubJob != NULL);
+    Job::reqPubJobMap.erase(job->getJobID());
+    reqPubJobMapLock.unlock();
+    SASSUME0(pubJob->getType() == job->getPubJobType());
+
+    // (6) pubJob에 elem을 채운다.
+    pubJob->addJobElem(Job::IntType, 1, (void*)&action);
+
+    // (7) pubJob을 publish한다.
+    Broker::publish(pubJob->getJobID(), pubJob);
 }
 
 template<typename Dtype>

@@ -15,16 +15,20 @@
 
 #include "DQNTransition.h"
 #include "DQNState.h"
+#include "Network.h"
+
+template<typename Dtype> class Network;
 
 template<typename Dtype>
 class DQNImageLearner {
 public: 
-    DQNImageLearner(int rowCnt, int colCnt, int chCnt);
+    DQNImageLearner(int rowCnt, int colCnt, int chCnt, int actionCnt);
     virtual ~DQNImageLearner();
 
-    int                     rowCnt;     // scaled row count of ALE screen
-    int                     colCnt;     // scaled column count of ALE screen
-    int                     chCnt;      // channel count of ALE screen
+    int                     rowCnt;     // scaled row count
+    int                     colCnt;     // scaled column count
+    int                     chCnt;      // channel count
+    int                     actionCnt;  // available action count
     void                    fillRM(Dtype lastReward, int lastAction, bool lastTerm,
                                 Dtype* state);
     DQNTransition<Dtype>   *getRandomRMSlot();
@@ -36,6 +40,8 @@ public:
     static std::mutex       learnerIDMapMutex;
 
     static DQNImageLearner<Dtype>*  getLearnerFromID(int dqnID);
+
+    int                     chooseAction(Network<Dtype>* netQ);
 private:
     DQNTransition<Dtype>  **rmSlots;    // replay memory slots
     DQNState<Dtype>       **stateSlots; // saved state slots for replay memory slots
@@ -50,5 +56,11 @@ private:
 
     int                     dqnID;
     static std::atomic<int> dqnIDGen;
+
+    float                   epsilon;
+    float                   gamma;
+
+    int                     rmReadyCountDown;
+    bool                    isRMReady();
 };
 #endif /* DQN_H */

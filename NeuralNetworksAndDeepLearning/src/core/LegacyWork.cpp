@@ -142,7 +142,6 @@ int LegacyWork<Dtype>::createNetwork() {
 
 	Util::printVramInfo();
 
-
     // 네트워크를 등록한다.
     // TODO: 현재는 증가하는 방식으로만 등록을 시키고 있다. 
     //      pool 형태로 돌려쓸 수 있도록 수정이 필요할지 고민해보자.

@@ -14,6 +14,7 @@
 #include "CrossEntropyCost.h"
 #include "LogLikelihoodCost.h"
 #include "QuadraticCost.h"
+#include "DQNCost.h"
 
 
 /**
@@ -38,6 +39,7 @@ public:
 		case Cost<Dtype>::CrossEntropy: return new CrossEntropyCost<Dtype>();
 		case Cost<Dtype>::LogLikelihood: return new LogLikelihoodCost<Dtype>();
 		case Cost<Dtype>::Quadratic: return new QuadraticCost<Dtype>();
+        case Cost<Dtype>::DQN: return new DQNCost<Dtype>();
 		default: return NULL;
 		}
 	}

@@ -61,6 +61,8 @@ public:
          * +-----------------+--------------------+---------------------+
          * | row count (int) | column count (int) | channel count (int) |
          * +-----------------+--------------------+---------------------+
+         * | avilable action count (int) | 
+         * +-----------------------------+
          */
 
         CreateDQNImageLearnerResult,
@@ -80,14 +82,24 @@ public:
          * +----------------------------+--------------------+-------------------------+
          */
 
-        PushDQNImageInput,
+        StepDQNImageLearner,
         /*
-         *  [Job Elem Schema for PushDQNImageInput]
-         * +--------------------------------------------------------------------+
-         * | DQN Image learner Id (int) | reward t-1 (float) | action t-1 (int) |
-         * |--------------------------------------------------------------------+
-         * | term t-1 (int) | state t (float array, 4 * 84 * 84) |
-         * +-----------------------------------------------------+
+         *  [Job Elem Schema for StepDQNImageLearner]
+         * +----------------------------+--------------------+-------------------------+
+         * | DQN Image learner ID (int) | network Q ID (int) | network Q head ID (int) |
+         * +---------------------------------------------------------------------------+
+         * | reward t-1 (float) | action t-1 (int) | term t-1 (int) |
+         * +--------------------------------------------------------+
+         * | state t (float array, 4 * 84 * 84) |
+         * +------------------------------------+
+         */
+
+        StepDQNImageLearnerResult,
+        /*
+         *  [Job Elem Schema for StepDQNImageLearnerResult]
+         * +--------------+
+         * | action (int) |
+         * +--------------+
          */
 
         FeedForwardDQNNetwork,

@@ -250,7 +250,8 @@ void FullyConnectedLayer<Dtype>::update() {
 
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
+void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale,
+    const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
 	const Dtype normScale = 1.0/this->in_dim.batches;
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
@@ -265,11 +266,16 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 	Dtype* d_paramData = data->mutable_device_data();
 	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
 
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &normScale, d_paramGrad, 1));								// normalize by batch size
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &regScale, d_paramData, 1, d_paramGrad, 1));				// regularize
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &momentum, d_paramHistoryData, 1));						//
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &learnScale, d_paramGrad, 1, d_paramHistoryData, 1));		// momentum
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne, d_paramHistoryData, 1, d_paramData, 1));		// update
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &normScale,
+        d_paramGrad, 1));								// normalize by batch size
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &regScale,
+        d_paramData, 1, d_paramGrad, 1));				// regularize
+	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &momentum,
+        d_paramHistoryData, 1));						//
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &learnScale,
+        d_paramGrad, 1, d_paramHistoryData, 1));		// momentum
+	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne,
+        d_paramHistoryData, 1, d_paramData, 1));		// update
 
 	data->print_grad("paramGrad:");
 	dataHistory->print_data("paramHistoryData:");
@@ -413,13 +419,19 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeActivatedData() {
-	// Activate weighted sum (+ bias)
-	const Dtype* d_preActivationData = _preActivation->mutable_device_data();
-	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
-	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_outputData);
+    // Activate weighted sum (+ bias)
+    if (activation_fn) {
+        const Dtype* d_preActivationData = _preActivation->device_data();
+        Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
+        activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_outputData);
+    } else {
+        this->_outputData[0]->set_device_data(_preActivation);
+    }
 
+    //Data<Dtype>::printConfig = true;
 	_preActivation->print_data(this->name+string("/d_preActivationData:"));
 	this->_outputData[0]->print_data(this->name+string("/d_outputData:"));
+    //Data<Dtype>::printConfig = false;
 }
 
 template <typename Dtype>
@@ -439,7 +451,8 @@ void FullyConnectedLayer<Dtype>::_dropoutForward() {
 		const Dtype* d_mask_mem = _mask.device_mem();
 		Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
-		Dropout<<<RoundUp(b_out, BW), BW>>>(b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
+		Dropout<<<RoundUp(b_out, BW), BW>>>(b_out, d_outputData, d_mask_mem, 0, scale,
+            d_outputData);
 
 		//_mask.print("mask:");
 		this->_outputData[0]->print_data("outputData:");
@@ -472,41 +485,36 @@ void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 		this->_outputData[0]->print_grad("outputGrad:");
 		const Dtype* d_mask_mem = _mask.device_mem();
 		Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
-		Dropout<<<RoundUp(this->out_dim.batchsize(), BW), BW>>>(this->out_dim.batchsize(), d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
+		Dropout<<<RoundUp(this->out_dim.batchsize(), BW), BW>>>(this->out_dim.batchsize(),
+            d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
 
 		//_mask.print("mask:");
 		this->_outputData[0]->print_grad("outputGrad:");
 	}
 }
 
-
-
-
-
-
-
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computePreActivationGrad() {
-	this->_outputData[0]->print_data("output:");
+    if (activation_fn) {
+        const Dtype* d_y = this->_outputData[0]->device_data();
+        const Dtype* d_dy = this->_outputData[0]->device_grad();
+        const Dtype* d_x = this->_preActivation->device_data();
+        Dtype* d_dx = this->_preActivation->mutable_device_grad();
+        this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
+    }
+    else {
+        this->_preActivation->set_device_grad(this->_outputData[0]);
+    }
 
-	const Dtype* d_y = this->_outputData[0]->device_data();
-	const Dtype* d_dy = this->_outputData[0]->device_grad();
-	const Dtype* d_x = this->_preActivation->device_data();
-	Dtype* d_dx = this->_preActivation->mutable_device_grad();
 
-	this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
-
-
-	//if(this->name == "softmaxLayer") {
-		//double sumsq = this->_preActivation->sumsq_device_grad();
-		//cout << "preActivation grad sumsq: " << sumsq << endl;
-	//	Data<Dtype>::printConfig = 1;
-	//	this->_preActivation->print_grad("preActivationGrad:");
-	//	Data<Dtype>::printConfig = 0;
-	//}
+    //if(this->name == "softmaxLayer") {
+        //double sumsq = this->_preActivation->sumsq_device_grad();
+        //cout << "preActivation grad sumsq: " << sumsq << endl;
+    //  Data<Dtype>::printConfig = 1;
+    //  this->_preActivation->print_grad("preActivationGrad:");
+    //  Data<Dtype>::printConfig = 0;
+    //}
 }
-
-
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
@@ -517,8 +525,8 @@ void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T,
 			this->out_dim.rows, this->in_dim.rows, this->out_dim.batches,
-			&Cuda::alpha, d_preActivationGrad, this->out_dim.rows, d_inputData, this->in_dim.rows,
-			&Cuda::beta, d_weightGrad, this->out_dim.rows));
+			&Cuda::alpha, d_preActivationGrad, this->out_dim.rows, d_inputData,
+            this->in_dim.rows, &Cuda::beta, d_weightGrad, this->out_dim.rows));
 
 	/*
 	Data<Dtype>::printConfig = 1;
@@ -563,8 +571,8 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N,
 			this->in_dim.rows, this->out_dim.batches, this->out_dim.rows,
-			&Cuda::alpha, d_weightData, this->out_dim.rows, d_preActivationGrad, this->out_dim.rows,
-			&Cuda::beta, d_inputGrad, this->in_dim.rows));
+			&Cuda::alpha, d_weightData, this->out_dim.rows, d_preActivationGrad,
+            this->out_dim.rows, &Cuda::beta, d_inputGrad, this->in_dim.rows));
 	this->_inputData[0]->print_grad("inputGrad:");
 
 	/*

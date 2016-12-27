@@ -112,9 +112,12 @@ public:
 	 * @param activationType weighted sum에 적용할 활성화 타입
 	 * @param costType 레이어 출력값에 대한 cost 계산 타입
 	 */
-	OutputLayer(const std::string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType, typename Cost<Dtype>::Type costType)
-		:FullyConnectedLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType) {
+	OutputLayer(const std::string name, int n_out, double p_dropout,
+        update_param weight_update_param, update_param bias_update_param,
+        param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler,
+        typename Activation<Dtype>::Type activationType, typename Cost<Dtype>::Type costType)
+		:FullyConnectedLayer<Dtype>(name, n_out, p_dropout, weight_update_param,
+            bias_update_param, weight_filler, bias_filler, activationType) {
 		initialize(costType);
 	};
 	virtual ~OutputLayer() {
@@ -127,14 +130,16 @@ public:
 	 * @param target 현재 입력 데이터에 대한 정답 레이블
 	 */
 	//using FullyConnectedLayer<Dtype>::backpropagation;
-	//virtual void backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex) = 0;backpropagation
+	//virtual void backpropagation(DataSet<Dtype>* dataSet, const uint32_t baseIndex) = 0;
 
 	/**
 	 * @details 출력레이어의 cost를 게산한다.
 	 * @param target 현재 cost를 구한 데이터에 대한 정답 장치 메모리 포인터
 	 * @todo softmax-loglikelihood의 경우 아주 단순한 형태여서
-	 *       별도로 cost를 구하고 gradient를 다시 계산할 경우 효율적이지 못해서 cost에서 gradient까지 계산하게 되어있다.
-	 *       하지만 적절한 modularity를 달성하기 위해서 cost를 구하는 것과 gradient를 계산하는 것은 구분되어야 한다.
+	 *       별도로 cost를 구하고 gradient를 다시 계산할 경우 효율적이지 못해서 cost에서 
+     *       gradient까지 계산하게 되어있다.
+	 *       하지만 적절한 modularity를 달성하기 위해서 cost를 구하는 것과 gradient를 계산하는 
+     *       것은 구분되어야 한다.
 	 */
 	//virtual double cost(const uint32_t* target) = 0;
 	virtual double cost() = 0;
@@ -184,43 +189,3 @@ template class OutputLayer<float>;
 
 
 #endif /* LAYER_OUTPUTLAYER_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

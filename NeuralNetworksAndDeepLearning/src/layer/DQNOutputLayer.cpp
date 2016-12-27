@@ -1,27 +1,28 @@
-/*
- * SoftmaxLayer.cpp
- *
- *  Created on: 2016. 8. 1.
- *      Author: jhkim
+/**
+ * @file DQNOutputLayer.cpp
+ * @date 2016-12-26
+ * @author moonhoen lee
+ * @brief 
+ * @details
  */
 
-#include "SoftmaxLayer.h"
+#include "DQNOutputLayer.h"
 
 using namespace std;
 
 template <typename Dtype>
-SoftmaxLayer<Dtype>::SoftmaxLayer() {
-	this->type = Layer<Dtype>::Softmax;
+DQNOutputLayer<Dtype>::DQNOutputLayer() {
+	this->type = Layer<Dtype>::DQNOutput;
 }
 
 template <typename Dtype>
-SoftmaxLayer<Dtype>::SoftmaxLayer(Builder* builder)
+DQNOutputLayer<Dtype>::DQNOutputLayer(Builder* builder)
 	: OutputLayer<Dtype>(builder) {
 	initialize();
 }
 
 template <typename Dtype>
-SoftmaxLayer<Dtype>::SoftmaxLayer(
+DQNOutputLayer<Dtype>::DQNOutputLayer(
 		const string name,
 		int n_out,
 		double p_dropout,
@@ -30,19 +31,19 @@ SoftmaxLayer<Dtype>::SoftmaxLayer(
 		param_filler<Dtype> weight_filler,
 		param_filler<Dtype> bias_filler)
 	: OutputLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param,
-            weight_filler, bias_filler, Activation<Dtype>::Softmax,
-            Cost<Dtype>::LogLikelihood) {
+            weight_filler, bias_filler, Activation<Dtype>::NoActivation,
+            Cost<Dtype>::DQN) {
 	initialize();
 }
 
 template <typename Dtype>
-SoftmaxLayer<Dtype>::~SoftmaxLayer() {}
+DQNOutputLayer<Dtype>::~DQNOutputLayer() {}
 
 
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::initialize() {
-	this->type = Layer<Dtype>::Softmax;
+void DQNOutputLayer<Dtype>::initialize() {
+	this->type = Layer<Dtype>::DQNOutput;
 
 	//this->cost_fn = CostFactory::create(Cost<Dtype>::LogLikelihood);
 	//this->activation_fn = ActivationFactory::create(Activation::Softmax);
@@ -53,23 +54,23 @@ void SoftmaxLayer<Dtype>::initialize() {
 }
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::_shape(bool recursive) {
+void DQNOutputLayer<Dtype>::_shape(bool recursive) {
 	if(recursive) {
 		OutputLayer<Dtype>::_shape();
 	}
 }
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::_clearShape() {
+void DQNOutputLayer<Dtype>::_clearShape() {
 	OutputLayer<Dtype>::_clearShape();
 }
 
 /*
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
+void DQNOutputLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
 	OutputLayer<Dtype>::_load(ifs, layerMap);
 	initialize();
-	SoftmaxLayer<Dtype>::_shape(false);
+	DQNOutputLayer<Dtype>::_shape(false);
 }
 */
 
@@ -79,7 +80,7 @@ void SoftmaxLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>
 
 #ifndef GPU_MODE
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::cost(const rvec &target) {
+void DQNOutputLayer<Dtype>::cost(const rvec &target) {
 	// delta
 	cost_fn->backward(z, output, target, delta);
 	Util::printVec(nabla_b, "bias:");
@@ -104,7 +105,7 @@ void SoftmaxLayer<Dtype>::cost(const rvec &target) {
 
 
 
-template class SoftmaxLayer<float>;
+template class DQNOutputLayer<float>;
 
 
 

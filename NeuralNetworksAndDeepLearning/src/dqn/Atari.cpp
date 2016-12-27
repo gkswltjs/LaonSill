@@ -25,6 +25,9 @@ using namespace std;
 //using namespace cimg_library;
 //using namespace cv;
 
+#define LEARNING_START      8 
+#define SKIP_FRAME          1
+
 void Atari::run(char* romFilePath) {
     // (5-C-1)
     ALEInterface ale;
@@ -66,10 +69,20 @@ void Atari::run(char* romFilePath) {
     ActionVect legal_actions = ale.getLegalActionSet();
 
     // create network
-    AtariNN *nn = new AtariNN(84, 84, 4);
+#ifndef USE_RESTRICT_ACTION
+    AtariNN *nn = new AtariNN(84, 84, 4, legal_actions.size());
+#else
+    AtariNN *nn = new AtariNN(84, 84, 4, 4);
+#endif
 
     nn->createDQNImageLearner();
     nn->buildDQNNetworks();
+
+    int lastAction = 0;
+    int lastTerm = 0;
+    float lastReward = 0.0;
+
+    int step = 0;
 
     // Play 10 episodes
     for (int episode = 0; episode < 10; episode++) {
@@ -118,13 +131,18 @@ void Atari::run(char* romFilePath) {
                 }
             }
 
+            int actionIndex;
+            if (((step > LEARNING_START) && (step % SKIP_FRAME == 0)) || (lastTerm == 1)) {
+                actionIndex = nn->stepNetwork(lastReward, lastAction, lastTerm, img);
+                cout << "[DEBUG]action index : " << actionIndex << endl;
+            } else 
+                actionIndex = 0;
+
+            Action a;
 #ifndef USE_RESTRICT_ACTION
-            Action a = legal_actions[rand() % legal_actions.size()];
-            // Apply action & get resulting reward
+            a = legal_actions[actionIndex];
 #else
             // 0 for noop, 1 for fire, 3 for right, 4 for left, action size = 4
-            int actionIndex = rand() % 4;
-            Action a;
 
             switch(actionIndex) {
             case 0:
@@ -141,14 +159,21 @@ void Atari::run(char* romFilePath) {
                 a = legal_actions[4];
                 break;
             }
-
 #endif
             float reward = ale.act(a);
             totalReward += reward;
+
+            lastReward = reward;
+            lastTerm = 0;
+            lastAction = actionIndex;
+            step++;
         }
+
+        lastReward = 0.0;
+        lastTerm = 1;
         cout << "Episode " << episode << " ended with score: " << totalReward << endl;
-        sleep(3);
         ale.reset_game();
+        step++;
     }
 
 #ifdef SHOW_OPENCV_WINDOW
