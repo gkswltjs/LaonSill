@@ -210,6 +210,26 @@
     "DEFAULT" : 0.9
 },
 
+"DQN_DEFAULT_MINI_BATCH_COUNT" : 
+{
+    "DESC" : "specify default mini batch count of deep Q network algorithm",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 40
+},
+
+"DQN_DEFAULT_SYNC_NETWORKS_PERIOD" : 
+{
+    "DESC" : "specify default period of sync networks of deep Q network algorithm",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 10
+},
+
 "BROKER_ADHOC_SESS_STARTS" : 
 {
     "DESC" : "specify start number of adhoc session of broker module",

@@ -132,7 +132,4 @@ public:
 };
 
 
-
-
-
 #endif /* LAYER_INPUTLAYER_H_ */

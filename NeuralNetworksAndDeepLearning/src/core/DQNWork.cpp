@@ -64,7 +64,8 @@ void DQNWork<Dtype>::buildDQNNetwork(DQNImageLearner<Dtype>* learner,
 
     // (3) shape 과정을 수행한다. 
     ALEInputLayer<Dtype>* inputLayer = (ALEInputLayer<Dtype>*)layersConfig->_layers[0];
-    inputLayer->setInputCount(learner->rowCnt, learner->colCnt, learner->chCnt);
+    inputLayer->setInputCount(learner->rowCnt, learner->colCnt, learner->chCnt,
+        learner->actionCnt);
     for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
     	layersConfig->_layers[i]->shape();
     }
@@ -112,8 +113,15 @@ void DQNWork<Dtype>::stepDQNImageLearner(Job* job) {
     // (4) choose action
     int action = learner->chooseAction(networkQ);
 
-
-    // TODO: 트레이닝!!!
+    // (5) train network Q
+    if (learner->isReady()) {
+        learner->syncNetworks(networkQ, networkQHead);
+        learner->prepareActiveRMSlots();
+        learner->forwardMiniBatch(networkQHead, false);
+        learner->updateQLabelValues();
+        learner->forwardMiniBatch(networkQ, true);
+        learner->backwardMiniBatch(networkQ);
+    }
 
     // (5) pubJob을 reqPubJobMap으로부터 얻는다.
     SASSUME0(job->hasPubJob());

@@ -66,6 +66,26 @@ DQNImageLearner<Dtype>::DQNImageLearner(int rowCnt, int colCnt, int chCnt, int a
     unique_lock<mutex> learnerLock(DQNImageLearner<Dtype>::learnerIDMapMutex);
     DQNImageLearner<Dtype>::learnerIDMap[this->dqnID] = this;
     learnerLock.unlock();
+
+    int maxQHeadValueAllocSize = SPARAM(DQN_DEFAULT_MINI_BATCH_COUNT) * sizeof(Dtype);
+    this->maxQHeadValues = (Dtype*)malloc(maxQHeadValueAllocSize);
+    SASSERT0(this->maxQHeadValues != NULL);
+
+    int qLabelValueAllocSize = SPARAM(DQN_DEFAULT_MINI_BATCH_COUNT) * sizeof(Dtype);
+    this->qLabelValues = (Dtype*)malloc(qLabelValueAllocSize);
+    SASSERT0(this->qLabelValues != NULL);
+
+    int activeRMSlotAllocSize =
+        SPARAM(DQN_DEFAULT_MINI_BATCH_COUNT) * sizeof(DQNTransition<Dtype>*);
+    this->activeRMSlots = (DQNTransition<Dtype>**)malloc(activeRMSlotAllocSize);
+    SASSERT0(this->activeRMSlots != NULL);
+
+    for (int i = 0; i < SPARAM(DQN_DEFAULT_MINI_BATCH_COUNT); i++) {
+        this->activeRMSlots[i] = new DQNTransition<Dtype>();     
+        SASSERT0(this->activeRMSlots[i] != NULL);
+    }
+
+    this->learningCnt = 0;
 }
 
 template<typename Dtype>
@@ -87,6 +107,18 @@ DQNImageLearner<Dtype>::~DQNImageLearner() {
     unique_lock<mutex> learnerLock(DQNImageLearner<Dtype>::learnerIDMapMutex);
     DQNImageLearner<Dtype>::learnerIDMap.erase(this->dqnID);
     learnerLock.unlock();
+
+    SASSERT0(this->maxQHeadValues != NULL);
+    free(this->maxQHeadValues);
+
+    SASSERT0(this->qLabelValues != NULL);
+    free(this->qLabelValues);
+
+    SASSERT0(this->activeRMSlots != NULL);
+    for (int i = 0; i < SPARAM(DQN_DEFAULT_MINI_BATCH_COUNT); i++) {
+        delete this->activeRMSlots[i];
+    }
+    free(this->activeRMSlots);
 }
 
 template<typename Dtype>
@@ -98,6 +130,10 @@ void DQNImageLearner<Dtype>::fillRM(Dtype lastReward, int lastAction, bool lastT
     if (this->lastState != NULL) {
         this->rmSlots[this->rmSlotHead]->fill(this->stateSlots[this->rmSlotHead],
             lastAction, lastReward, this->lastState, lastTerm);
+
+        // active RM Slots의 첫번째 원소는 가장 최신에 삽입된 RM이다.
+        // 나중에 feed forawrd를 할때에 이 데이터를 활용.
+        this->activeRMSlots[0] = this->rmSlots[this->rmSlotHead];
         this->rmSlotHead = (this->rmSlotHead + 1) % this->rmSlotCnt;
     }
 
@@ -106,6 +142,7 @@ void DQNImageLearner<Dtype>::fillRM(Dtype lastReward, int lastAction, bool lastT
 
     if (this->rmReadyCountDown != 0)
         this->rmReadyCountDown -= 1;
+
 }
 
 template<typename Dtype>
@@ -146,10 +183,8 @@ int DQNImageLearner<Dtype>::chooseAction(Network<Dtype>* netQ) {
         useRandomPolicy = true;
     }
 
-    if (!isRMReady())
+    if (!isReady())
         useRandomPolicy = true;
-
-    cout << "[DEBUG] random policy : " << useRandomPolicy << endl;
 
     // (2) choose action
     int action;
@@ -158,16 +193,15 @@ int DQNImageLearner<Dtype>::chooseAction(Network<Dtype>* netQ) {
     } else {
         vector<Data<Dtype>*> outputData;
 
-        cout << "[DEBUG] feed forward DQN Network" << endl;
-        outputData = netQ->feedForwardDQNNetwork(1, this);
+        outputData = netQ->feedForwardDQNNetwork(1, this, true);
 
         action = 0;
         const Dtype *output = outputData[0]->host_data();
         Dtype maxQVal = output[0];
         for (int i = 1; i < this->actionCnt; i++) {
-            if (maxQVal < output[0]) {
+            if (maxQVal < output[i]) {
                 action = i;
-                maxQVal = output[0];
+                maxQVal = output[i];
             }
         }
     }
@@ -176,11 +210,70 @@ int DQNImageLearner<Dtype>::chooseAction(Network<Dtype>* netQ) {
 }
 
 template<typename Dtype>
-bool DQNImageLearner<Dtype>::isRMReady() {
+bool DQNImageLearner<Dtype>::isReady() {
     if (this->rmReadyCountDown == 0)
         return true;
     else
         return false;
+}
+
+template<typename Dtype>
+void DQNImageLearner<Dtype>::prepareActiveRMSlots() {
+    for (int i = 0; i < SPARAM(DQN_DEFAULT_MINI_BATCH_COUNT); i++)
+        this->activeRMSlots[i] = this->getRandomRMSlot();
+}
+
+template<typename Dtype>
+void DQNImageLearner<Dtype>::forwardMiniBatch(Network<Dtype>* network, bool isNetQ) {
+    int miniBatchCount = SPARAM(DQN_DEFAULT_MINI_BATCH_COUNT);
+    vector<Data<Dtype>*> outputData;
+
+    outputData = network->feedForwardDQNNetwork(miniBatchCount, this, isNetQ);
+
+    if (!isNetQ) {
+        const Dtype *output = outputData[0]->host_data();
+
+        for (int i = 0; i < miniBatchCount; i++) {
+            int baseIndex = i * this->actionCnt;
+            Dtype maxQVal = output[baseIndex];
+            for (int j = 1; j < this->actionCnt; j++) {
+                int index = baseIndex + j;
+                if (maxQVal < output[index]) {
+                    maxQVal = output[index];
+                }
+            }
+
+            this->maxQHeadValues[i] = maxQVal;
+        }
+    }
+}
+
+template<typename Dtype>
+void DQNImageLearner<Dtype>::updateQLabelValues() {
+    for (int i = 0; i < SPARAM(DQN_DEFAULT_MINI_BATCH_COUNT); i++) {
+        DQNTransition<Dtype> *rmSlot = this->activeRMSlots[i];
+        Dtype maxQHeadValue = this->maxQHeadValues[i];
+
+        if (rmSlot->term == 1) {
+            this->qLabelValues[i] = rmSlot->reward1;
+        } else {
+            this->qLabelValues[i] = rmSlot->reward1 + (Dtype)this->gamma * maxQHeadValue;
+        }
+    }
+}
+
+template<typename Dtype>
+void DQNImageLearner<Dtype>::backwardMiniBatch(Network<Dtype>* network) {
+    network->backPropagateDQNNetwork(this);
+}
+
+template<typename Dtype>
+void DQNImageLearner<Dtype>::syncNetworks(Network<Dtype>* netQ, Network<Dtype>* netQHead) {
+    this->learningCnt++;
+
+    if (this->learningCnt % SPARAM(DQN_DEFAULT_SYNC_NETWORKS_PERIOD) == 0) {
+        netQ->syncNetwork(netQHead);
+    }
 }
 
 template class DQNImageLearner<float>;

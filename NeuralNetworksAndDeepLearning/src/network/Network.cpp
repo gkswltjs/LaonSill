@@ -411,7 +411,8 @@ void Network<Dtype>::applyUpdate() {
         // 마지막 쓰레드가 learnable layer들의 data를 갱신한다.
 
         // (1) 변화된 부분을 첫번째 layer에 적용한다.
-        for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end(); iter++) {
+        for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end();
+            iter++) {
             
             if (iter == config->layersConfigs.begin()) {
                 firstLayersConfig = (*iter);
@@ -427,7 +428,8 @@ void Network<Dtype>::applyUpdate() {
         }
 
         // (2) 첫번째 layer의 값을 다른 layer들에게 동기화 한다.
-        for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end(); iter++) {
+        for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end();
+            iter++) {
             if (iter == config->layersConfigs.begin()) {
                 continue;
             }
@@ -447,6 +449,45 @@ void Network<Dtype>::applyUpdate() {
 	for (uint32_t i = 0; i < numLearnableLayers; i++) {
         getLayersConfig()->_learnableLayers[i]->update();
 	}
+}
+
+/**
+ * XXX: 데이터 분산과 관련된 LayersConfigs까지는 고려하지 않았음.
+ */
+template <typename Dtype>
+void Network<Dtype>::syncNetwork(Network<Dtype>* target) {
+    // LL : learnable layer
+	const uint32_t srcLLCnt = this->getLayersConfig()->_learnableLayers.size();
+	const uint32_t dstLLCnt = target->getLayersConfig()->_learnableLayers.size();
+
+    SASSUME((srcLLCnt == dstLLCnt),
+        "learnable layer count of target & source network should be same."
+        " learnable layer count of source=%d, learnable layer count of target=%d.",
+        srcLLCnt, dstLLCnt);
+
+    // LCs : Layers Configs
+    const int srcLCsCnt = this->config->layersConfigs.size();
+    const int dstLCsCnt = target->config->layersConfigs.size();
+    SASSUME((srcLCsCnt == dstLCsCnt),
+        "layers configs count of target & source network should be same."
+        " layers configs count of target network=%d,"
+        " layers configs count of target network=%d.", srcLCsCnt, dstLCsCnt);
+
+    for (int i =0; i < srcLCsCnt; i++) {
+        for (uint32_t j = 0; j < srcLLCnt; j++) {
+            // LC : Layers Config
+            LayersConfig<Dtype>* srcLC = this->config->layersConfigs[i];
+            LayersConfig<Dtype>* dstLC = target->config->layersConfigs[i];
+
+            // (1) device 메모리를 host 메모리로 동기화 한다.
+            srcLC->_learnableLayers[i]->syncMutableMem();
+            dstLC->_learnableLayers[i]->syncMutableMem();
+
+            // (2) source network layer의 파라미터 값을 dest network layer의 파라미터 
+            //    값으로 동기화 한다.
+            dstLC->_learnableLayers[i]->syncParams(srcLC->_learnableLayers[i]);
+        }
+    }
 }
 
 template <typename Dtype>
@@ -752,38 +793,58 @@ void Network<Dtype>::_feedforward(uint32_t batchIndex) {
 	}
 }
 
+/*
+ * @brief       이 함수는 아래의 조건들에 따라서 3가지 동작을 수행한다.
+ *              (1) batchCount == 1
+ *                - Q network에서 feedforward를 수행
+ *                - 결과물을 반환
+ *
+ *              (2) (batchCount > 1) & isNetQ == false : 
+ *                - Q Head Network에서 feedforward를 수행
+ *                - 결과값을 반환
+ *
+ *              (3) (batchCount > 1) & isNetQ == true :
+ *                - Q network에서 feedforward를 수행
+ *                - 결과값을 반환하지만 caller에서 사용하지 않음
+ *                  (결과값은 backward 과정에서 활용)
+ *                - (1)과 (3)은 함수의 도작만 본다면 batchCount 외에는 동일
+ */
 template <typename Dtype>
 vector<Data<Dtype>*>& Network<Dtype>::feedForwardDQNNetwork(int batchCount,
-        DQNImageLearner<Dtype> *learner) {
+        DQNImageLearner<Dtype> *learner, bool isNetQ) {
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
 	ALEInputLayer<Dtype>* inputLayer = (ALEInputLayer<Dtype>*)layersConfig->_layers[0];
 
     // (1) change batch size
-    cout << "[DEBUG] do shape()" << endl;
     this->config->_batchSize = batchCount;
     inputLayer->shape();
 
     // (2) feed forward
-    cout << "[DEBUG] fill input data()" << endl;
-    inputLayer->fillInputData(learner);
-    cout << "[DEBUG] do feed forward()" << endl;
-	inputLayer->feedforward(0);
-    cout << "[DEBUG] do feed forwards()" << endl;
+    inputLayer->fillData(learner, isNetQ);
+	inputLayer->feedforward(0);     // XXX: mini batch의 개수가 1이다. 
+                                    //      그래서 batch index값을 0으로만 넣고 있다.
+                                    //      여러개의 mini batch를 가질 수 있도록 수정하자.
+
 	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->feedforward();
 	}
 
     // (3) return last layer's output data
-    cout << "[DEBUG] return output data()" << endl;
     int lastLayerIndex = layersConfig->_layers.size() - 1;
     return layersConfig->_layers[lastLayerIndex]->getOutputData();
 }
 
 template<typename Dtype>
-void Network<Dtype>::backPropagateDQNNetwork(int batchCount) {
+void Network<Dtype>::backPropagateDQNNetwork(DQNImageLearner<Dtype> *learner) {
+	LayersConfig<Dtype>* layersConfig = getLayersConfig();
+	ALEInputLayer<Dtype>* inputLayer = (ALEInputLayer<Dtype>*)layersConfig->_layers[0];
+    
+    // (1) fill input layer's label
+    inputLayer->fillLabel(learner);
 
+    // (2) do back propagation
+    _backpropagation(0);
 }
-
 
 template <typename Dtype>
 void Network<Dtype>::_backpropagation(uint32_t batchIndex) {

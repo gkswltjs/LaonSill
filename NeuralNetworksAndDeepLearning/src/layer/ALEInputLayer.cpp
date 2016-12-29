@@ -8,6 +8,7 @@
 
 #include "common.h"
 #include "ALEInputLayer.h"
+#include "InputLayer.h"
 #include "NetworkConfig.h"
 
 using namespace std;
@@ -18,12 +19,12 @@ ALEInputLayer<Dtype>::ALEInputLayer() {
 }
 
 template<typename Dtype>
-ALEInputLayer<Dtype>::ALEInputLayer(const string name) : Layer<Dtype>(name) {
+ALEInputLayer<Dtype>::ALEInputLayer(const string name) : InputLayer<Dtype>(name) {
     initialize();
 }
 
 template<typename Dtype>
-ALEInputLayer<Dtype>::ALEInputLayer(Builder* builder) : Layer<Dtype>(builder) {
+ALEInputLayer<Dtype>::ALEInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
 	initialize();
 }
 
@@ -42,10 +43,11 @@ int ALEInputLayer<Dtype>::getInputSize() const {
 }
 
 template<typename Dtype>
-void ALEInputLayer<Dtype>::setInputCount(int rows, int cols, int channels) {
+void ALEInputLayer<Dtype>::setInputCount(int rows, int cols, int channels, int actions) {
     this->rowCnt = rows;
     this->colCnt = cols;
     this->chCnt = channels;
+    this->actionCnt = actions;
 }
 
 template<typename Dtype>
@@ -54,10 +56,6 @@ void ALEInputLayer<Dtype>::shape() {
     this->in_dim.channels = this->chCnt;
     this->in_dim.rows = this->rowCnt;
     this->in_dim.cols = this->colCnt;
-
-    cout << "rows:" << this->in_dim.rows << ",cols:" << this->in_dim.cols <<
-        ",channels:" << this->in_dim.channels << ",batches:" << this->in_dim.batches
-        << endl;
 
     _shape();
 }
@@ -76,50 +74,12 @@ void ALEInputLayer<Dtype>::allocInputData() {
         this->allocBatchSize = batchSize;
 
         int allocSize = unitSize * this->allocBatchSize * sizeof(Dtype);
-        cout << "[DEBUG] allocSize = " << allocSize << endl;
         this->preparedData = (Dtype*)malloc(allocSize);
         SASSERT0(this->preparedData != NULL);
 
-        allocSize = this->allocBatchSize * this->chCnt * sizeof(Dtype);
-        cout << "[DEBUG] allocSize = " << allocSize << endl;
+        allocSize = this->allocBatchSize * this->actionCnt * sizeof(Dtype);
         this->preparedLabel = (Dtype*)malloc(allocSize);
         SASSERT0(this->preparedLabel != NULL);
-
-        cout << "[DEBUG] alloc ends" << endl;
-    }
-}
-
-template<typename Dtype>
-void ALEInputLayer<Dtype>::fillInputData(DQNImageLearner<Dtype> *dqnImage) {
-    int inputDataCount = this->in_dim.batches;
-
-    allocInputData();
-
-    Dtype zero = 0.0;
-    for (int i = 0; i < inputDataCount; i++) {
-        DQNTransition<Dtype>    *rmSlot = dqnImage->getRandomRMSlot();
-
-        int action = rmSlot->action1;
-        Dtype reward1 = rmSlot->reward1;
-        DQNState<Dtype>* state1 = rmSlot->state1;
-        Dtype maxQ2 = rmSlot->maxQ2;
-
-        int preparedDataOffset = i * state1->getDataCount();
-        memcpy((void*)&this->preparedData[preparedDataOffset],
-            (void*)state1->data, state1->getDataSize());
-
-        // Label데이터를 action으로 부터 생성한다.
-        for (int j = 0; j < this->chCnt; j++) {
-            int preparedLabelOffset = this->chCnt * i + j;
-
-            if (j == action) {
-                memcpy((void*)&this->preparedLabel[preparedLabelOffset],
-                    (void*)&reward1, sizeof(Dtype));
-            } else {
-                memcpy((void*)&this->preparedLabel[preparedLabelOffset],
-                    (void*)&zero, sizeof(Dtype));
-            }
-        }
     }
 }
 
@@ -176,6 +136,57 @@ void ALEInputLayer<Dtype>::_shape(bool recursive) {
 template<typename Dtype>
 void ALEInputLayer<Dtype>::_clearShape() {
     Layer<Dtype>::_clearShape();
+}
+
+template<typename Dtype>
+void ALEInputLayer<Dtype>::fillData(DQNImageLearner<Dtype> *learner, bool useState1) {
+    int inputDataCount = this->in_dim.batches;
+
+    allocInputData();
+    DQNTransition<Dtype> **rmSlots = learner->getActiveRMSlots();
+    for (int i = 0; i < inputDataCount; i++) {
+        DQNTransition<Dtype> *rmSlot = rmSlots[i];
+
+        int action = rmSlot->action1;
+        Dtype reward1 = rmSlot->reward1;
+        DQNState<Dtype>* state;
+        if (useState1)
+            state = rmSlot->state1;
+        else
+            state = rmSlot->state2;
+
+        int dataIndex = i * state->getDataCount();
+        memcpy((void*)&this->preparedData[dataIndex], (void*)state->data,
+            state->getDataSize());
+    }
+}
+
+template<typename Dtype>
+void ALEInputLayer<Dtype>::fillLabel(DQNImageLearner<Dtype> *learner) {
+    int inputDataCount = this->in_dim.batches;
+
+    Dtype zero = 0.0;
+    Dtype *qLabelValues = learner->getQLabelValues();
+    DQNTransition<Dtype> **rmSlots = learner->getActiveRMSlots();
+
+    for (int i = 0; i < inputDataCount; i++) {
+        DQNTransition<Dtype> *rmSlot = rmSlots[i];
+        Dtype qLabelValue = qLabelValues[i];
+
+        int action = rmSlot->action1;
+
+        // Label데이터를 action으로 부터 생성한다.
+        for (int j = 0; j < this->actionCnt; j++) {
+            int labelIndex = this->actionCnt * i + j;
+
+            if (j == action) {
+                memcpy((void*)&this->preparedLabel[labelIndex], (void*)&qLabelValue,
+                    sizeof(Dtype));
+            } else {
+                memcpy((void*)&this->preparedLabel[labelIndex], (void*)&zero, sizeof(Dtype));
+            }
+        }
+    }
 }
 
 template class ALEInputLayer<float>;

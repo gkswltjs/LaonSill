@@ -30,7 +30,6 @@ public:
     int                 action1; 
     Dtype               reward1;
     DQNState<Dtype>    *state2;
-    Dtype               maxQ2; 
     bool                term;
 };
 #endif /* DQNTRANSITION_H */

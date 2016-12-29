@@ -132,10 +132,9 @@ void Atari::run(char* romFilePath) {
             }
 
             int actionIndex;
-            if (((step > LEARNING_START) && (step % SKIP_FRAME == 0)) || (lastTerm == 1)) {
+            if (((step > LEARNING_START) && (step % SKIP_FRAME == 0)) || (lastTerm == 1))
                 actionIndex = nn->stepNetwork(lastReward, lastAction, lastTerm, img);
-                cout << "[DEBUG]action index : " << actionIndex << endl;
-            } else 
+            else 
                 actionIndex = 0;
 
             Action a;

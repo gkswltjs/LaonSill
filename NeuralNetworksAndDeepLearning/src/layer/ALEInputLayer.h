@@ -22,9 +22,9 @@
 template<typename Dtype> class DQNImageLearner;
 
 template <typename Dtype>
-class ALEInputLayer : public Layer<Dtype> {
+class ALEInputLayer : public InputLayer<Dtype> {
 public:
-	class Builder : public Layer<Dtype>::Builder {
+	class Builder : public InputLayer<Dtype>::Builder {
 	public:
 		std::vector<uint32_t> _shape;
 		std::string _source;
@@ -92,11 +92,12 @@ protected:
 	virtual void _clearShape();
 
 public:
-    void setInputCount(int rows, int cols, int channels);
+    void setInputCount(int rows, int cols, int channels, int actionCnt);
 
     int                     rowCnt;     // scaled row count of ALE screen
     int                     colCnt;     // scaled column count of ALE screen
     int                     chCnt;      // channel count of ALE screen
+    int                     actionCnt;
 
 private:
     Dtype                  *preparedData;
@@ -105,7 +106,8 @@ private:
 
 public:
     void allocInputData();
-    void fillInputData(DQNImageLearner<Dtype> *dqnImage);
+    void fillData(DQNImageLearner<Dtype> *learner, bool useState1);
+    void fillLabel(DQNImageLearner<Dtype> *learner);
 };
 
 #endif /* ALEINPUTLAYER_H */

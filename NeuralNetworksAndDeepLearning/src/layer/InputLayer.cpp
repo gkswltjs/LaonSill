@@ -36,8 +36,8 @@ InputLayer<Dtype>::InputLayer(Builder* builder) : Layer<Dtype>(builder) {
 		_dataSet->setMean({0.13066047740});
 		_dataSet->load();
 	} else {
-		cout << "Unsuppored Input Source Type: " << builder->_sourceType;
-		exit(1);
+		//cout << "Unsupported Input Source Type: " << builder->_sourceType;
+		//exit(1);
 	}
 
 	initialize();
@@ -157,10 +157,3 @@ void InputLayer<Dtype>::_load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& 
 
 
 template class InputLayer<float>;
-
-
-
-
-
-
-

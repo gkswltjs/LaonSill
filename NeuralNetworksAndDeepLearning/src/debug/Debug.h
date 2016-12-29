@@ -142,6 +142,7 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 					->id(0)
 					->name("inputLayer")
 					->outputs({"data", "label"})
+					->sourceType("ALE")
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
@@ -195,7 +196,7 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.2)
-					->inputs({"fc1"})
+					->inputs({"fc1", "label"})
 					->outputs({"dqn1"}))
 			->build();
 

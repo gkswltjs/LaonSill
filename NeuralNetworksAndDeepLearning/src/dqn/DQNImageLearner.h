@@ -42,6 +42,16 @@ public:
     static DQNImageLearner<Dtype>*  getLearnerFromID(int dqnID);
 
     int                     chooseAction(Network<Dtype>* netQ);
+    void                    forwardMiniBatch(Network<Dtype>* network, bool isNetQ);
+    void                    updateQLabelValues();
+    void                    backwardMiniBatch(Network<Dtype>* network); 
+    void                    syncNetworks(Network<Dtype>* netQ, Network<Dtype>* netQHead);
+    bool                    isReady();
+    void                    prepareActiveRMSlots(); 
+    DQNTransition<Dtype>**  getActiveRMSlots() { return this->activeRMSlots; }
+    Dtype*                  getMaxQHeadValues() { return this->maxQHeadValues; }
+    Dtype*                  getQLabelValues() { return this->qLabelValues; }
+
 private:
     DQNTransition<Dtype>  **rmSlots;    // replay memory slots
     DQNState<Dtype>       **stateSlots; // saved state slots for replay memory slots
@@ -61,6 +71,11 @@ private:
     float                   gamma;
 
     int                     rmReadyCountDown;
-    bool                    isRMReady();
+
+    Dtype                  *maxQHeadValues;
+    Dtype                  *qLabelValues;
+    DQNTransition<Dtype>  **activeRMSlots;    // randomly choosed Replay Memory Slots
+
+    int                     learningCnt;
 };
 #endif /* DQN_H */

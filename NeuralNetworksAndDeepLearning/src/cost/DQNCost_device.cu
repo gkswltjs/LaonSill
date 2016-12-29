@@ -49,7 +49,7 @@ template <typename Dtype>
 double DQNCost<Dtype>::forward(const Dtype* output, const Dtype* target,
     const uint32_t numLabels, const uint32_t batchsize) {
 	double cost = 0.0;
-	uint32_t label;
+
 
 	for (uint32_t batchIndex = 0; batchIndex < batchsize; batchIndex++) {
         for (uint32_t labelIndex = 0; labelIndex < numLabels; labelIndex++) {

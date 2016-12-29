@@ -139,9 +139,11 @@ public:
     /**
      * DQN related functions
      */
+    void syncNetwork(Network<Dtype>* target);
     std::vector<Data<Dtype>*>& feedForwardDQNNetwork(int batchCount,
-        DQNImageLearner<Dtype> *learner);
-    void backPropagateDQNNetwork(int batchCount);
+        DQNImageLearner<Dtype> *learner, bool isNetQ);
+    void backPropagateDQNNetwork(DQNImageLearner<Dtype> *learner);
+
 
 
 protected:
