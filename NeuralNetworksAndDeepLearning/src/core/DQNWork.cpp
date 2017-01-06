@@ -52,6 +52,15 @@ void DQNWork<Dtype>::createDQNImageLearner(Job* job) {
 }
 
 template<typename Dtype>
+void DQNWork<Dtype>::cleanupDQNImageLearner(Job* job) {
+    int learnerID = job->getIntValue(0);
+    DQNImageLearner<Dtype>* learner = DQNImageLearner<Dtype>::getLearnerFromID(learnerID);
+    SASSERT0(learner != NULL);
+    delete learner;
+    learner = NULL;
+}
+
+template<typename Dtype>
 void DQNWork<Dtype>::buildDQNNetwork(DQNImageLearner<Dtype>* learner,
     Network<Dtype>* network) {
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
@@ -79,6 +88,7 @@ void DQNWork<Dtype>::buildDQNNetworks(Job* job) {
     // (1) get learner
     int learnerID = job->getIntValue(0);
     DQNImageLearner<Dtype>* learner = DQNImageLearner<Dtype>::getLearnerFromID(learnerID);
+    SASSERT0(learner != NULL);
 
     // (2) build Q Network
     int netQID = job->getIntValue(1);
@@ -137,11 +147,6 @@ void DQNWork<Dtype>::stepDQNImageLearner(Job* job) {
 
     // (7) pubJob을 publish한다.
     Broker::publish(pubJob->getJobID(), pubJob);
-}
-
-template<typename Dtype>
-void DQNWork<Dtype>::feedForwardDQNNetwork(Job* job) {
-    // TODO: needs reshape() in order to change batch size
 }
 
 template class DQNWork<float>;

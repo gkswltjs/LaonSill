@@ -29,6 +29,9 @@ void InitParam::init() {
     InitParam::load();
 }
 
+void InitParam::destroy() {
+    ParamMgmt::cleanupParamDefMap();
+}
 
 bool InitParam::isWhiteSpace(char c) {
     if ((c == ' ') || (c == '\t') || (c == '\r') || (c == '\n'))

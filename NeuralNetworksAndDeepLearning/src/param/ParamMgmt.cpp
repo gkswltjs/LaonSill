@@ -21,6 +21,17 @@ void ParamMgmt::initParamDefMap() {
     Param::fillParamDefMap(paramDefMap);
 }
 
+void ParamMgmt::cleanupParamDefMap() {
+    map<string, ParamDef*>::iterator iter;
+    for (iter = ParamMgmt::paramDefMap.begin();
+        iter != ParamMgmt::paramDefMap.end(); iter++) {
+       
+        ParamDef* paramDef = (ParamDef*)iter->second;
+        delete paramDef;
+        iter->second = NULL;
+    }
+}
+
 bool ParamMgmt::isParamExist(string paramName) {
     if (ParamMgmt::paramDefMap.find(paramName) == ParamMgmt::paramDefMap.end())
         return false;

@@ -25,7 +25,7 @@ public:
 
     void        buildDQNNetworks();
     void        createDQNImageLearner();
-    void        feedForward(int batchSize);
+    void        cleanupDQNImageLearner();
     int         stepNetwork(float lastReward, int lastAction, int lastTerm, float* state);
 
 private:

@@ -17,6 +17,7 @@ public:
     virtual            ~InitParam() {}
 
     static void         init();
+    static void         destroy();
 
 private:
     static bool         isWhiteSpace(char c);

@@ -259,6 +259,7 @@ int main(int argc, char** argv) {
     STDOUT_LOG("server running time : %lf\n", SPERF_TIME(SERVER_RUNNING_TIME));
 	STDOUT_BLOCK(cout << "SOOOA engine ends" << endl;);
 
+    InitParam::destroy();
 	exit(EXIT_SUCCESS);
 }
 

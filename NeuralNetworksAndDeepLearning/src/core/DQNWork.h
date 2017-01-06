@@ -21,7 +21,7 @@ public:
 
     static void     buildDQNNetworks(Job* job);
     static void     createDQNImageLearner(Job* job);
-    static void     feedForwardDQNNetwork(Job* job);
+    static void     cleanupDQNImageLearner(Job* job);
     static void     stepDQNImageLearner(Job* job);
 
 private:

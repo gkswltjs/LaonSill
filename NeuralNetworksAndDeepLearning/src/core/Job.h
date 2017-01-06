@@ -57,12 +57,20 @@ public:
 
         CreateDQNImageLearner,
         /*
-         *  [Job Elem Schema for CreateDQNImage]
+         *  [Job Elem Schema for CreateDQNImageLearner]
          * +-----------------+--------------------+---------------------+
          * | row count (int) | column count (int) | channel count (int) |
          * +-----------------+--------------------+---------------------+
          * | avilable action count (int) | 
          * +-----------------------------+
+         */
+
+        CleanupDQNImageLearner,
+        /*
+         *  [Job Elem Schema for CleanupDQNImageLearner]
+         * +----------------------------+
+         * | DQN Image learner ID (int) |
+         * +----------------------------+
          */
 
         CreateDQNImageLearnerResult,
@@ -102,9 +110,13 @@ public:
          * +--------------+
          */
 
-        FeedForwardDQNNetwork,
-
         HaltMachine,
+        /*
+         *  [Job Elem Schema for HaltMachine]
+         * +------+
+         * | None |
+         * +------+
+         */
 
 
         TestJob,

@@ -85,7 +85,7 @@ void Atari::run(char* romFilePath) {
     int step = 0;
 
     // Play 10 episodes
-    for (int episode = 0; episode < 10; episode++) {
+    for (int episode = 0; episode < 10000000; episode++) {
         float totalReward = 0;
         while (!ale.game_over()) {
             screen = ale.getScreen();
@@ -175,7 +175,15 @@ void Atari::run(char* romFilePath) {
         step++;
     }
 
+    SASSERT0(img != NULL);
+    free(img);
+
+    SASSERT0(imgPixels != NULL);
+    free(imgPixels);
+
 #ifdef SHOW_OPENCV_WINDOW
     cv::destroyWindow("test image");
 #endif
+
+    nn->cleanupDQNImageLearner();
 }

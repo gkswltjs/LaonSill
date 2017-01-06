@@ -91,9 +91,11 @@ Job::Job(Job::JobType jobType) {
 }
 
 Job::~Job() {
-    if (this->jobElemDefs != NULL) {
+    if (this->jobElemDefs != NULL)
         free(this->jobElemDefs);
-    }
+
+    if (this->jobElemValues != NULL)
+        free(this->jobElemValues);
 }
 
 void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr) {

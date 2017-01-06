@@ -46,6 +46,7 @@ public:
                                     ParamMgmt() {}
     virtual                        ~ParamMgmt() {}
     static void                     initParamDefMap();
+    static void                     cleanupParamDefMap();
     static bool                     isParamExist(std::string paramName);
 
     static void                     getValue(std::string paramName, void* value);

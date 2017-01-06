@@ -217,6 +217,10 @@ void Layer<Dtype>::initialize(uint32_t id, const string name) {
 	this->name = name;
 	//this->_input = new Data<Dtype>();
 	//this->_output = new Data<Dtype>();
+#ifdef GPU_MODE
+	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
+#endif
 }
 
 
