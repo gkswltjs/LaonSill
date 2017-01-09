@@ -20,7 +20,7 @@ ConvLayer<Dtype>::ConvLayer() {
 
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+: HiddenLayer<Dtype>(builder) {
 	initialize(builder->_filterDim, builder->_weightUpdateParam, builder->_biasUpdateParam,
 			builder->_weightFiller, builder->_biasFiller, builder->_activationType);
 }
@@ -28,7 +28,7 @@ ConvLayer<Dtype>::ConvLayer(Builder* builder)
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType)
-	: HiddenLayer<Dtype>(name) {
+: HiddenLayer<Dtype>(name) {
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
 }
 
@@ -81,10 +81,17 @@ uint32_t ConvLayer<Dtype>::boundParams() {
 	return updateCount;
 }
 
+
+template <typename Dtype>
+uint32_t ConvLayer<Dtype>::numParams() {
+	return this->_params.size();
+}
+
+
 template <typename Dtype>
 void ConvLayer<Dtype>::saveParams(ofstream& ofs) {
 	uint32_t numParams = _params.size();
-	ofs.write((char*)&numParams, sizeof(uint32_t));
+	//ofs.write((char*)&numParams, sizeof(uint32_t));
 	for(uint32_t i = 0; i < numParams; i++) {
 		_params[i]->save(ofs);
 	}
@@ -97,6 +104,32 @@ void ConvLayer<Dtype>::loadParams(ifstream& ifs) {
 	ifs.read((char*)&numParams, sizeof(uint32_t));
 	for(uint32_t i = 0; i < numParams; i++) {
 		_params[i]->load(ifs);
+	}
+}
+
+template <typename Dtype>
+void ConvLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
+	typename map<string, Data<Dtype>*>::iterator it;
+
+	//char tempName[80];
+	for (uint32_t i = 0; i < this->_params.size(); i++) {
+
+		// XXX: so temporal ~~~
+		//Util::refineParamName(this->_params[i]->_name.c_str(), tempName);
+		//string refinedName(tempName);
+		//cout << "refineName: " << refinedName << ", ";
+
+		cout << "looking for " << this->_params[i]->_name;
+		it = dataMap.find(this->_params[i]->_name.c_str());
+		if (it == dataMap.end()) {
+			cout << " ... could not find ... " << endl;
+			continue;
+		}
+		cout << " ... found ... " << endl;
+
+		this->_params[i]->reshapeLike(it->second);
+		this->_params[i]->set_device_with_host_data(it->second->host_data());
+		//this->_paramsInitialized[i] = true;
 	}
 }
 
@@ -217,7 +250,7 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 }
 
 template <typename Dtype>
-void ConvLayer<Dtype>::_feedforward() {
+void ConvLayer<Dtype>::feedforward() {
 
 	// 현재 CONV 레이어의 경우 여러 레이어로 값이 전달되지 않기 때문에 무의미하다.
 	// 다만 backpropagation에서 delta값을 합으로 할당하기 때문에 어쨌든 0로 init은 반드시 해야 함.

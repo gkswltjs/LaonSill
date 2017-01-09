@@ -47,6 +47,10 @@ public:
         //<< stat << std::endl;
 
 
+		// XXX: 그래프 스케일이 너무커져서 일시적으로 제한.
+		//double stat = std::min(0.5, tstat);
+
+
 		if(stat > statMax) statMax = stat;
 		if(stat < statMin) statMin = stat;
 
@@ -95,7 +99,8 @@ public:
 		//int statItemSize = statList[statIndex].size();
 		int statItemSize = statCount;
 		plot << "set xrange [" << std::max(0, (int)(statItemSize-windowSize)) << ":" <<
-            statItemSize+5 << "]\nset yrange [" << std::max(0.0, localStatMin) << ":" << localStatMax << "]\n";
+            //statItemSize+5 << "]\nset yrange [" << std::max(0.0, localStatMin) << ":" << localStatMax << "]\n";
+			statItemSize+5 << "]\nset yrange [" << 0.0 << ":" << localStatMax << "]\n";
 		plot << "plot ";
 		for(uint32_t i = 0; i < statList.size(); i++) {
 			plot << plot.file1d(statList[i]) << " with linespoints pt 1 title '"<< statNameList[i] << "'";

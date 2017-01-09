@@ -36,14 +36,12 @@ public:
 			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new SplitLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			Layer<Dtype>::Builder::save(ofs);
-		}
-		virtual void load(std::ifstream& ifs) {
-			Layer<Dtype>::Builder::load(ifs);
 		}
 	};
 
@@ -51,12 +49,14 @@ public:
 	SplitLayer(Builder* builder);
 	virtual ~SplitLayer();
 
+	virtual void reshape();
+	virtual void feedforward();
 
 private:
 	void initialize();
-	virtual void _shape(bool recursive=true);
-	virtual void _feedforward();
-	virtual void _backpropagation();
+
+
+	virtual void backpropagation();
 
 };
 

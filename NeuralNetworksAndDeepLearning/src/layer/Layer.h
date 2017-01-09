@@ -53,7 +53,19 @@ public:
 		Sigmoid, 				// 시그모이드 레이어
 		Softmax,				// 소프트맥스 레이어
 		Split,					//
-        DQNOutput               // DQN Output 레이어
+        DQNOutput,               // DQN Output 레이어
+
+		Reshape,				//
+		SmoothL1Loss,
+		SoftmaxWithLoss,
+
+		AnchorTarget,			//
+		Proposal,				//
+		ProposalTarget,			//
+		RoIPooling,				//
+		RoIInput,
+		RoITestInput,
+		FrcnnTestOutput,
 	};
 
 
@@ -70,6 +82,9 @@ public:
 
         std::vector<std::string> _inputs;
         std::vector<std::string> _outputs;
+
+        std::vector<bool> _propDown;
+
 
 		Builder() {
 			type = Layer<Dtype>::None;
@@ -92,45 +107,12 @@ public:
 			this->_outputs = outputs;
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			this->_propDown = propDown;
+			return this;
+		}
 
 		virtual Layer<Dtype>* build() = 0;
-		virtual void save(std::ofstream& ofs) {
-			ofs.write((char*)&type, sizeof(uint32_t));
-
-			size_t nameLength = _name.size();
-			ofs.write((char*)&nameLength, sizeof(size_t));
-			ofs.write((char*)_name.c_str(), nameLength);
-
-			ofs.write((char*)&_id, sizeof(uint32_t));
-			/*
-			uint32_t numNextLayerIndices = _nextLayerIndices.size();
-			ofs.write((char*)&numNextLayerIndices, sizeof(uint32_t));
-			for(uint32_t i = 0; i < numNextLayerIndices; i++) {
-				ofs.write((char*)&_nextLayerIndices[i], sizeof(uint32_t));
-			}
-			*/
-		}
-		virtual void load(std::ifstream& ifs) {
-
-			size_t nameLength;
-			ifs.read((char*)&nameLength, sizeof(size_t));
-			char* name_c = new char[nameLength+1];
-			ifs.read(name_c, nameLength);
-			name_c[nameLength] = '\0';
-			_name = name_c;
-			delete [] name_c;
-
-			ifs.read((char*)&_id, sizeof(uint32_t));
-			/*
-			uint32_t numNextLayersIndices;
-			ifs.read((char*)&numNextLayersIndices, sizeof(uint32_t));
-			for(uint32_t i = 0; i < numNextLayersIndices; i++) {
-				uint32_t nextLayerIndice;
-				ifs.read((char*)&nextLayerIndice, sizeof(uint32_t));
-				_nextLayerIndices.push_back(nextLayerIndice);
-			}
-			*/
-		}
 	};
 
 
@@ -196,28 +178,6 @@ public:
 	std::vector<Data<Dtype>*>& getOutputData() { return this->_outputData; }
 
 	/**
-	 * @details 레이어의 입력 데이터 구조정보를 담고 있는 구조체를 조회한다.
-	 * @return 레이어의 입력 데이터 구조정보를 담고 있는 구조체
-	 */
-	io_dim getInDimension() const { return this->in_dim; }
-
-	void setInDimension(io_dim in_dim) { this->in_dim = in_dim; }
-	void setInDimension(const std::vector<uint32_t>& shape) {
-		this->in_dim.batches = shape[0];
-		this->in_dim.channels = shape[1];
-		this->in_dim.rows = shape[2];
-		this->in_dim.cols = shape[3];
-	}
-
-	/**
-	 * @details 레이어의 출력 데이터 구조정보를 담고 있는 구조체를 조회한다.
-	 * @return 레이어의 출력 데이터 구조정보를 담고 있는 구조체
-	 */
-	io_dim getOutDimension() const { return this->out_dim; }
-
-	void setOutDimension(io_dim out_dim) { this->out_dim = out_dim; }
-
-	/**
 	 * @details 레이어에 네트워크 설정값을 설정한다.
 	 * @param networkConfig 네트워크 설정값 객체
 	 */
@@ -229,14 +189,13 @@ public:
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 현재 레이어의 입력 데이터 구조정보
 	 */
-	//virtual void shape(uint32_t idx, io_dim in_dim, Data<Dtype>* prevLayerOutput);
-	virtual void shape();
+	virtual void reshape();
 	/**
 	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 새롭게 변경할 현재 레이어의 입력 데이터 구조정보
 	 */
-	virtual void reshape(uint32_t idx, io_dim in_dim);
+	//virtual void reshape(uint32_t idx, io_dim in_dim);
 	/**
 	 * @details 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 clear하고 다음 레이어들에 대해 clearShape()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
@@ -258,7 +217,6 @@ public:
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
-	//virtual void feedforward(uint32_t idx, Data<Dtype>* input, const char* end=0);
 	virtual void feedforward();
 #endif
 
@@ -281,19 +239,13 @@ protected:
 	 * @details 현재 레이어의 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화한다.
 	 * @param recursive 상위 레이어에 대해서 _shape()를 재귀적으로 호출할 것인지 여부
 	 */
-	virtual void _shape(bool recursive=true);
-	/**
-	 * @details 이미 shape가 구성된 레이어의 shape를 변경한다.
-	 */
-	virtual void _reshape();
+	//virtual void _shape(bool recursive=true);
+
 	/**
 	 * @details 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 clear한다.
 	 */
 	virtual void _clearShape();
-	/**
-	 * @details 레이어 입력값을 전달받아 출력값을 계산한다.
-	 */
-	virtual void _feedforward();
+
 	/**
 	 * @details 복수의 '이전' 레이어로부터의 입력을 조합한다.
 	 *          조합은 입력의 합으로 한다.
@@ -309,26 +261,12 @@ protected:
 
 
 
-	////////////////////////////////////////////////////////////////////
-	// 이전, 이후 레이어로의 method 호출을 담당하는 호출 propagation method들
-	////////////////////////////////////////////////////////////////////
+	bool _adjustInputShape();
+	bool _isInputShapeChanged(uint32_t index);
 
-	/**
-	 * @details 다음 레이어들에 대해 shape() 메쏘드를 호출한다.
-	 */
-	//void propShape();
-	/**
-	 * @details 다음 레이어들에 대해 reshape() 메쏘드를 호출한다.
-	 */
-	//void propReshape();
-	/**
-	 * @details 다음 레이어들에 대해 clearShape() 메쏘드를 호출한다.
-	 */
-	//void propClearShape();
-	/**
-	 * @details 다음 레이어들에 대해 save() 메쏘드를 호출한다.
-	 */
-	//void propSave(std:ofstream &ofs);
+
+
+
 
 #ifndef GPU_MODE
 	/**
@@ -351,30 +289,34 @@ public:
 	std::vector<Data<Dtype>*> _inputData;				///< 레이어 입력 데이터 목록 벡터
 	std::vector<Data<Dtype>*> _outputData;				///< 레이어 출력 데이터 목록 벡터
 
-
 protected:
 	Layer<Dtype>::LayerType type;					    ///< 레이어의 타입
+
 	int id;												///< 레이어의 고유 아이디
-    std::string name;									///< 레이어의 이름
+	std::string name;									///< 레이어의 이름
+
+protected:
+
 
 	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
-	io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
-	io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
+	//io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
+	//io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
 
-    //std::vector<Layer<Dtype>*> prevLayers;				///< 현재 레이어의 이전(입력) 레이어 목록 벡터
-    //std::vector<Layer<Dtype>*> nextLayers;				///< 현재 레이어의 다음(출력) 레이어 목록 벡터
+    //std::vector<Layer<Dtype>*> prevLayers;			///< 현재 레이어의 이전(입력) 레이어 목록 벡터
+    //std::vector<Layer<Dtype>*> nextLayers;			///< 현재 레이어의 다음(출력) 레이어 목록 벡터
 
+	std::vector<std::vector<uint32_t>> _inputShape;
 
-
+	std::vector<bool> _propDown;
 
 
 
 
 #ifndef GPU_MODE
 #else
-	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
-	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
+	//cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	//cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 #endif
 
 	static const int LAYER_NAME_LENGTH = 32;

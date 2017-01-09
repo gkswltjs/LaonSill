@@ -53,7 +53,9 @@ public:
 			_biasUpdateParam.lr_mult = 1.0;
 			_biasUpdateParam.decay_mult = 0.0;
 			_weightFiller.type = ParamFillerType::Constant;
+			_weightFiller.value = 0.0f;
 			_biasFiller.type = ParamFillerType::Constant;
+			_biasFiller.value = 0.0f;
 			_activationType = Activation<Dtype>::NoActivation;
 		}
 		Builder* nOut(uint32_t nOut) {
@@ -104,28 +106,12 @@ public:
 			HiddenLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new FullyConnectedLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			HiddenLayer<Dtype>::Builder::save(ofs);
-			ofs.write((char*)&_nOut, sizeof(uint32_t));
-			ofs.write((char*)&_pDropout, sizeof(double));
-			ofs.write((char*)&_weightUpdateParam, sizeof(update_param));
-			ofs.write((char*)&_biasUpdateParam, sizeof(update_param));
-			ofs.write((char*)&_weightFiller, sizeof(param_filler<Dtype>));
-			ofs.write((char*)&_biasFiller, sizeof(param_filler<Dtype>));
-			ofs.write((char*)&_activationType, sizeof(typename Activation<Dtype>::Type));
-		}
-		virtual void load(std::ifstream& ifs) {
-			HiddenLayer<Dtype>::Builder::load(ifs);
-			ifs.read((char*)&_nOut, sizeof(uint32_t));
-			ifs.read((char*)&_pDropout, sizeof(double));
-			ifs.read((char*)&_weightUpdateParam, sizeof(update_param));
-			ifs.read((char*)&_biasUpdateParam, sizeof(update_param));
-			ifs.read((char*)&_weightFiller, sizeof(param_filler<Dtype>));
-			ifs.read((char*)&_biasFiller, sizeof(param_filler<Dtype>));
-			ifs.read((char*)&_activationType, sizeof(typename Activation<Dtype>::Type));
 		}
 	};
 
@@ -167,11 +153,15 @@ public:
 	virtual void scaleParamsGrad(float scale);
 	//virtual double testParamAbnormality();
 	virtual uint32_t boundParams();
+	virtual uint32_t numParams();
 	virtual void saveParams(std::ofstream& ofs);
 	virtual void loadParams(std::ifstream& ifs);
+	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
 	//////////////////////////////////////////
 
-	virtual void _backpropagation();
+	virtual void backpropagation();
+	virtual void reshape();
+	virtual void feedforward();
 
 private:
 	/**
@@ -189,12 +179,13 @@ private:
 
 
 
+
     void syncMutableMem();
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);
 
 protected:
-	virtual void _feedforward();
+
 
 
 	void _computeWeightedData();
@@ -206,10 +197,8 @@ protected:
 	void _computeBiasGrad();
 	void _computeInputGrad();
 
-	virtual void _shape(bool recursive=true);
+
 	virtual void _clearShape();
-	//virtual void _save(std::ofstream& ofs);
-	//virtual void _load(std::ifstream& ifs, std::map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
 	void _dropoutForward();
@@ -223,6 +212,7 @@ protected:
 	};
 
 protected:
+	uint32_t n_out;
 	double p_dropout;						///< dropout을 적용할 확율
 
 	update_param weight_update_param;		///< weight 갱신 관련 파라미터 구조체
@@ -246,6 +236,9 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
+	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
+
 	Dtype* d_onevec;						///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
 
 
@@ -264,7 +257,15 @@ protected:
 public:
 	Data<Dtype>* _preActivation;			///< weighted sum 결과에 대한 데이터
     std::vector<Data<Dtype>*> _params;			///< 파라미터 데이터 (Weight, Bias 포함)
+    std::vector<bool> _paramsInitialized;
+
     std::vector<Data<Dtype>*> _paramsHistory;	///< 이전 update에서 적용된 파라미터 그레디언트 데이터
+
+
+
+
+
+    uint32_t tempCnt;
 
 };
 

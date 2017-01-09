@@ -17,7 +17,6 @@
 #include "InputLayer.h"
 #include "ALEInputLayer.h"
 #include "HiddenLayer.h"
-#include "OutputLayer.h"
 #include "LayerConfig.h"
 #include "Evaluation.h"
 #include "Worker.h"
@@ -48,15 +47,7 @@ public:
 	 * @param networkListener 네트워크 상태 리스너
 	 */
 	//Network(NetworkListener *networkListener=0);
-	/**
-	 * @details Network 생성자
-	 * @param inputLayer 입력 레이어
-	 * @param outputLayer 출력 레이어
-	 * @param dataSet 학습 및 테스트용 데이터셋
-	 * @param networkListener 네트워크 상태 리스너
-	 */
-	//Network(InputLayer *inputLayer, OutputLayer *outputLayer, DataSet *dataSet,
-    //        NetworkListener *networkListener);
+
 	/**
 	 * @details Network 소멸자
 	 */
@@ -108,6 +99,7 @@ public:
 	 * @param filename 네트워크를 읽을 파일의 경로
 	 */
 	void load(const char* filename);
+	void loadPretrainedWeights();
 	/**
 	 * @details 네트워크의 입력 데이터 구조 정보를 설정한다.
 	 * @param in_dim 네트워크의 입력 데이터 구조 정보 구조체
@@ -117,7 +109,7 @@ public:
 	 * @details 네트워크가 이미 입력 데이터 구조 정보가 설정된 상태에서 이를 변경한다.
 	 * @param in_dim 네트워크의 변경할 입력 데이터 구조 정보 구조체
 	 */
-	void reshape(io_dim in_dim=io_dim(0,0,0,0));
+	//void reshape(io_dim in_dim=io_dim(0,0,0,0));
 	/**
 	 * @details 네트워크 내부의 레이어를 이름으로 찾는다.
 	 * @param name 찾을 레이어의 이름
@@ -185,6 +177,8 @@ protected:
 	void _feedforward(uint32_t batchIndex);
 	void _backpropagation(uint32_t batchIndex);
 
+	void saveProposalTargets(std::ofstream& ofs);
+
 
 
 #ifndef GPU_MODE
@@ -197,7 +191,7 @@ protected:
 	 * @param y 데이터의 정답 호스트 메모리 포인터
 	 */
 	//void evaluateTestData(const int num_labels, Data* output, const UINT *y);
-	double evaluateTestData(uint32_t batchIndex);
+	double evaluateTestData(uint32_t batchIndex, std::vector<double>& costList);
 #endif
 
 
@@ -207,29 +201,6 @@ protected:
 public:
 	NetworkConfig<Dtype>* config;
 
-
-
-protected:
-
-	//DataSet *dataSet;				///< 학습 및 테스트 데이터를 갖고 있는 데이터셋 객체
-
-	//InputLayer *inputLayer;						///< 네트워크 입력 레이어 포인터
-	//std::vector<OutputLayer*> outputLayers;		///< 네트워크 출력 레이어 포인터 목록 벡터
-	//std::vector<Evaluation<Dtype>*> evaluations;		///< 네트워크 평가 객체 포인터 목록 벡터
-	//std::vector<NetworkListener*> networkListeners;	///< 네트워크 이벤트 리스너 객체 포인터 
-                                                         //목록 벡터
-
-	//io_dim in_dim;								///< 네트워크 입력 데이터 구조 정보 구조체
-
-	//char savePrefix[200];						///< 네트워크 파일 쓰기 경로 prefix
-	//bool saveConfigured;						///< 네트워크 쓰기 설정 여부
-	//double maxAccuracy;							///< 네트워크 평가 최대 정확도
-	//double minCost;								///< 네트워크 평가 최소 cost
-	//float dataSetMean[3];						///< 네트워크 데이터셋 평균 배열
-
-
-
-	//uint32_t iterations;
 
 public:
     int                                     getNetworkID() { return this->networkID; }

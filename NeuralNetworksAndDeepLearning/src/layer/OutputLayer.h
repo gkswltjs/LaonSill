@@ -85,15 +85,11 @@ public:
 			FullyConnectedLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			FullyConnectedLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() = 0;
-		virtual void save(std::ofstream& ofs) {
-			FullyConnectedLayer<Dtype>::Builder::save(ofs);
-			ofs.write((char*)&_costType, sizeof(typename Cost<Dtype>::Type));
-		}
-		virtual void load(std::ifstream& ifs) {
-			FullyConnectedLayer<Dtype>::Builder::load(ifs);
-			ifs.read((char*)&_costType, sizeof(typename Cost<Dtype>::Type));
-		}
 	};
 
 	OutputLayer() {}
@@ -124,6 +120,10 @@ public:
 		CostFactory<Dtype>::destroy(cost_fn);
 	};
 
+	virtual void reshape() {
+		FullyConnectedLayer<Dtype>::reshape();
+	}
+
 	/**
 	 * @details 히든 레이어의 backpropagation()을 override
 	 *          히든 레이어와 달리 출력 레이어는 Cost와 target값을 통해 gradient가 계산된다.
@@ -151,31 +151,11 @@ protected:
 		this->cost_fn = CostFactory<Dtype>::create(costType);
 	}
 
-	virtual void _shape(bool recursive=true) {
-		if(recursive) {
-			FullyConnectedLayer<Dtype>::_shape();
-		}
-		//this->_target.shape(this->out_dim.batches);
-	}
+
 	virtual void _clearShape() {
 		FullyConnectedLayer<Dtype>::_clearShape();
 	}
 
-	/*
-	virtual void _save(std::ofstream &ofs) {
-		FullyConnectedLayer<Dtype>::_save(ofs);
-		//int costType = (int)cost_fn->getType();
-		//ofs.write((char *)&costType, sizeof(int));
-	}
-	virtual void _load(std::ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
-		FullyConnectedLayer<Dtype>::_load(ifs, layerMap);
-
-		OutputLayer<Dtype>::_shape(false);
-		//typename Cost<Dtype>::Type type;
-		//ifs.read((char *)&type, sizeof(int));
-		//initialize(type);
-	}
-	*/
 
 protected:
 	Cost<Dtype>* cost_fn;				///< cost 객체

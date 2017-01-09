@@ -48,25 +48,11 @@ public:
 			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			Layer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() = 0;
-		virtual void save(std::ofstream& ofs) {
-			Layer<Dtype>::Builder::save(ofs);
-			uint32_t numPrevLayerIndices = _prevLayerIndices.size();
-			ofs.write((char*)&numPrevLayerIndices, sizeof(uint32_t));
-			for(uint32_t i = 0; i < numPrevLayerIndices; i++) {
-				ofs.write((char*)&_prevLayerIndices[i], sizeof(uint32_t));
-			}
-		}
-		virtual void load(std::ifstream& ifs) {
-			Layer<Dtype>::Builder::load(ifs);
-			uint32_t numPrevLayerIndices;
-			ifs.read((char*)&numPrevLayerIndices, sizeof(uint32_t));
-			for(uint32_t i = 0; i < numPrevLayerIndices; i++) {
-				uint32_t prevLayerIndice;
-				ifs.read((char*)&prevLayerIndice, sizeof(uint32_t));
-				_prevLayerIndices.push_back(prevLayerIndice);
-			}
-		}
 	};
 
 
@@ -83,10 +69,8 @@ public:
 	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
 	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
 	 */
-	//virtual void backpropagation(uint32_t idx, Data<Dtype>* next_input, uint32_t offset);
 	virtual void backpropagation();
-
-	virtual void _backpropagation();
+	virtual void reshape();
 
 protected:
 	/**
@@ -95,7 +79,7 @@ protected:
 	 */
 
 
-	virtual void _shape(bool recursive=true);
+	//virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
 	/**

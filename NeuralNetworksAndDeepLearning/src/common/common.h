@@ -23,4 +23,10 @@
 
 #define Nop() 						do {} while(0)
 
+
+
+
+
+#define TEST_MODE					0
+
 #endif /* COMMON_H_ */

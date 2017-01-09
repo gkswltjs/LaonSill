@@ -29,6 +29,8 @@ PoolingLayer<Dtype>::PoolingLayer(const string name, pool_dim pool_d, typename P
 template <typename Dtype>
 PoolingLayer<Dtype>::~PoolingLayer() {
 	PoolingFactory<Dtype>::destroy(pooling_fn);
+	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 }
 
 template <typename Dtype>
@@ -36,6 +38,9 @@ void PoolingLayer<Dtype>::initialize(pool_dim pool_d, typename Pooling<Dtype>::T
 	this->type = Layer<Dtype>::Pool;
 	this->pool_d = pool_d;
 	this->pooling_fn = PoolingFactory<Dtype>::create(poolingType, pool_d);
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
 /*
@@ -97,7 +102,7 @@ void PoolingLayer<Dtype>::initialize(pool_dim pool_d, typename Pooling<Dtype>::T
 }
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::_feedforward(uint32_t idx, const rcube &input, const char *end=0) {
+void PoolingLayer<Dtype>::feedforward(uint32_t idx, const rcube &input, const char *end=0) {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::convertCube(input, this->input);

@@ -23,23 +23,29 @@
 template <typename Dtype>
 class Data {
 public:
-	Data();
-	Data(Data<Dtype>* data, uint32_t type);
-	Data(const std::vector<uint32_t>& shape);
+	Data(const std::string& name, const bool hostOnly=false);
+	Data(Data<Dtype>* data, const bool hostOnly=false);
+	Data(const std::string& name, Data<Dtype>* data, uint32_t type, const bool hostOnly=false);
+	Data(const std::string& name, const std::vector<uint32_t>& shape, const bool hostOnly=false);
 	virtual ~Data();
 
-	void shape(const std::vector<uint32_t>& shape);
+	//void shape(const std::vector<uint32_t>& shape);
 	void reshape(const std::vector<uint32_t>& shape);
+	void reshapeInfer(const std::vector<int>& shape);
+	void reshapeLike(const Data<Dtype>* data);
 
 
 	size_t getCount() const { return _count; }
-	size_t getCountByAxis(uint32_t axis) const {
+	size_t getCountByAxis(uint32_t axis, uint32_t end=0) const {
+		if (end == 0) end = _shape.size();
+
 		size_t count = 1;
-		for (uint32_t i = axis; i < _shape.size(); i++) {
+		for (uint32_t i = axis; i < end; i++) {
 			count *= _shape[i];
 		}
 		return count;
 	}
+	uint32_t getShape(uint32_t axis) { return _shape[axis]; }
 	const std::vector<uint32_t>& getShape() const { return _shape; }
 
 
@@ -147,7 +153,7 @@ public:
 	/**
 	 * @details 데이터의 호스트 메모리를 0으로 초기화한다.
 	 */
-	void reset_host_data();
+	void reset_host_data(const bool setZero=true, const Dtype value=0.0);
 	/**
 	 * @details 데이터의 디바이스 메모리를 0으로 초기화한다.
 	 */
@@ -186,6 +192,27 @@ public:
 	 * @param offset data의 포인터에 대한 offset
 	 */
 	void add_device_grad(Data* grad, const uint32_t offset=0) { add_device_grad(grad->device_grad()+offset); }
+
+
+
+	void sub_host_data(Data* data) {
+		_data->sub_host_mem(data->_data->host_mem());
+	}
+	void sub_device_data(Data* data) {
+		_data->sub_device_mem(data->_data->device_mem());
+	}
+	void sub_host_grad(Data* data) {
+		_grad->sub_host_mem(data->_grad->host_mem());
+	}
+	void sub_device_grad(Data* data) {
+		_grad->sub_device_mem(data->_grad->device_mem());
+	}
+
+
+
+
+
+
 
 	/**
 	 * @details 데이터의 호스트 메모리에 주어진 로우 호스트 포인터의 메모리 값을 더한다.
@@ -267,6 +294,8 @@ public:
 	 */
 	inline uint32_t width() const { return _shape[3]; }
 
+	inline uint32_t numAxes() const { return _shape.size(); }
+
 
 
 
@@ -280,32 +309,71 @@ public:
 
 
 
+	void share_data(Data<Dtype>* data);
+	void share_grad(Data<Dtype>* data);
+
+
+	void save(const std::string& filename);
 	void save(std::ofstream& ofs);
+	void load(const std::string& filename);
 	void load(std::ifstream& ifs);
 
 
 
+	void print();
 	/**
 	 * @details 데이터를 shape에 따라 화면에 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
-	void print_data(const std::string& head);
+	void print_data(const std::string& head, const std::vector<uint32_t>& shape = {},
+			const bool cmo=true);
+	void print_data(const std::vector<uint32_t>& shape = {}, const bool cmo=true);
+	void print_data_flatten();
 	/**
 	 * @details 그레디언트를 shape에 따라 화면에 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
-	void print_grad(const std::string& head);
+	void print_grad(const std::string& head, const std::vector<uint32_t>& shape = {},
+			const bool cmo=true);
+	void print_grad(const std::vector<uint32_t>& shape = {}, const bool cmo=true);
+
+	void fill_host_with_1d_vec(const std::vector<int>& array,
+			const std::vector<uint32_t>& transpose={0, 1, 2, 3});
+	void fill_host_with_1d_vec(const std::vector<uint32_t>& array,
+			const std::vector<uint32_t>& transpose={0, 1, 2, 3});
+
+	void fill_host_with_2d_vec(const std::vector<std::vector<float>>& array,
+			const std::vector<uint32_t>& transpose={0, 1, 2, 3});
+
+
+
+	Data<Dtype>* range(const std::vector<int>& startIndex, const std::vector<int>& endIndex);
+	void transpose(const std::vector<uint32_t>& t);
+
+
+	bool compareData(Data<Dtype>* data, const Dtype error = Dtype(0.001));
+	static bool compareData(Data<Dtype>* data1, Data<Dtype>* data2,
+			const Dtype error = Dtype(0.001));
+
+	bool compareGrad(Data<Dtype>* data, const Dtype error = Dtype(0.001));
+	static bool compareGrad(Data<Dtype>* data1,	Data<Dtype>* data2,
+			const Dtype error = Dtype(0.001));
+
 
 
 public:
 	//std::shared_ptr<Data<Dtype>> _input;
 	std::shared_ptr<SyncMem<Dtype>> _data;				///< Data의 데이터
 	std::shared_ptr<SyncMem<Dtype>> _grad;				///< Data의 그레디언트
+	std::string _name;
 
 private:
     std::vector<uint32_t> _shape;			///< Data의 shape, Batches, Channels, Rows, Columns의 4차원 벡터로 구성
 
 	size_t _count;						///< Data 메모리의 크기, 엘레먼트의 수 (Batches*Channels*Rows*Columns)
+
+
+	bool _hostOnly;
 
 	const static uint32_t SHAPE_SIZE = 4;
 

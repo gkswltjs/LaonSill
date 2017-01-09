@@ -34,10 +34,14 @@ template <typename Dtype>
 void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
 		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType) {
 
+	this->tempCnt = 0;
+
+
 	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
-	this->out_dim = io_dim(n_out, 1, 1, 1);
+	//this->out_dim = io_dim(n_out, 1, 1, 1);
 	this->type = Layer<Dtype>::FullyConnected;
 
+	this->n_out = n_out;
 	this->p_dropout = p_dropout;
 
 	this->weight_update_param = weight_update_param;
@@ -49,14 +53,22 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_
 	this->scale = 1. / (1. - p_dropout);
 
 	this->_params.resize(2);
-	this->_params[ParamType::Weight] = new Data<Dtype>();			// weight
-	this->_params[ParamType::Bias] = new Data<Dtype>();			// bias
+	this->_params[ParamType::Weight] = new Data<Dtype>(this->name + "_weight");		// weight
+	this->_params[ParamType::Bias] = new Data<Dtype>(this->name + "_bias");			// bias
+
+	this->_paramsInitialized.resize(2);
+	this->_paramsInitialized[ParamType::Weight] = false;
+	this->_paramsInitialized[ParamType::Bias] = false;
+
 
 	this->_paramsHistory.resize(2);
-	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>();	// weight history
-	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(); 	// bias history
+	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(this->name + "_weight_history");	// weight history
+	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history"); 	// bias history
 
-	this->_preActivation = new Data<Dtype>();						// weighted sum (pre activation)
+	this->_preActivation = new Data<Dtype>("PreActivation");					// weighted sum (pre activation)
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
 template <typename Dtype>
@@ -88,60 +100,6 @@ void FullyConnectedLayer<Dtype>::scaleParamsGrad(float scale) {
 
 
 
-/*
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_save(ofstream &ofs) {
-	HiddenLayer<Dtype>::_save(ofs);
-
-	int activationType = (int)activation_fn->getType();
-
-	ofs.write((char *)&this->out_dim.rows, sizeof(uint32_t));
-	ofs.write((char *)&p_dropout, sizeof(double));
-	ofs.write((char *)&activationType, sizeof(int));
-	ofs.write((char *)&weight_update_param, sizeof(update_param));
-	ofs.write((char *)&bias_update_param, sizeof(update_param));
-	ofs.write((char *)&weight_filler, sizeof(param_filler<Dtype>));
-	ofs.write((char *)&bias_filler, sizeof(param_filler<Dtype>));
-
-
-	//checkCudaErrors(cudaMemcpyAsync(weight, d_weight, sizeof(Dtype)*out_dim.unitsize()*in_dim.unitsize(), cudaMemcpyDeviceToHost));
-	//checkCudaErrors(cudaMemcpyAsync(bias, d_bias, sizeof(Dtype)*out_dim.unitsize(), cudaMemcpyDeviceToHost));
-
-	const Dtype* weight = _params[ParamType::Weight]->host_data();
-	const Dtype* bias = _params[ParamType::Bias]->host_data();
-	ofs.write((char *)weight, sizeof(Dtype)*this->out_dim.unitsize()*this->in_dim.unitsize());
-	ofs.write((char *)bias, sizeof(Dtype)*this->out_dim.unitsize());
-}
-
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_load(ifstream& ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
-	HiddenLayer<Dtype>::_load(ifs, layerMap);
-
-	uint32_t n_out = 0;
-	double p_dropout;
-	typename Activation<Dtype>::Type activationType;
-	update_param weight_update_param, bias_update_param;
-	param_filler<Dtype> weight_filler, bias_filler;
-
-	ifs.read((char *)&n_out, sizeof(uint32_t));
-	ifs.read((char *)&p_dropout, sizeof(double));
-	ifs.read((char *)&activationType, sizeof(int));
-	ifs.read((char *)&weight_update_param, sizeof(update_param));
-	ifs.read((char *)&bias_update_param, sizeof(update_param));
-	ifs.read((char *)&weight_filler, sizeof(param_filler<Dtype>));
-	ifs.read((char *)&bias_filler, sizeof(param_filler<Dtype>));
-
-	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
-	FullyConnectedLayer<Dtype>::_shape(false);
-
-	Dtype* weight = _params[ParamType::Weight]->mutable_host_data();
-	Dtype* bias = _params[ParamType::Bias]->mutable_host_data();
-	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
-	ifs.read((char *)weight, sizeof(Dtype)*this->out_dim.unitsize()*this->in_dim.unitsize());
-	ifs.read((char *)bias, sizeof(Dtype)*this->out_dim.unitsize());
-
-}
-*/
 
 template <typename Dtype>
 uint32_t FullyConnectedLayer<Dtype>::boundParams() {
@@ -151,12 +109,16 @@ uint32_t FullyConnectedLayer<Dtype>::boundParams() {
 	return updateCount;
 }
 
+template <typename Dtype>
+uint32_t FullyConnectedLayer<Dtype>::numParams() {
+	return this->_params.size();
+}
 
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::saveParams(ofstream& ofs) {
 	uint32_t numParams = _params.size();
-	ofs.write((char*)&numParams, sizeof(uint32_t));
+	//ofs.write((char*)&numParams, sizeof(uint32_t));
 	for(uint32_t i = 0; i < numParams; i++) {
 		_params[i]->save(ofs);
 	}
@@ -168,6 +130,32 @@ void FullyConnectedLayer<Dtype>::loadParams(ifstream& ifs) {
 	ifs.read((char*)&numParams, sizeof(uint32_t));
 	for(uint32_t i = 0; i < numParams; i++) {
 		_params[i]->load(ifs);
+	}
+}
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
+	typename map<string, Data<Dtype>*>::iterator it;
+
+	//char tempName[80];
+	for (uint32_t i = 0; i < this->_params.size(); i++) {
+
+		// XXX: so temporal ~~~
+		//Util::refineParamName(this->_params[i]->_name.c_str(), tempName);
+		//string refinedName(tempName);
+		//cout << "refineName: " << refinedName << ", ";
+
+		cout << "looking for " << this->_params[i]->_name;
+		it = dataMap.find(this->_params[i]->_name.c_str());
+		if (it == dataMap.end()) {
+			cout << " ... could not find ... " << endl;
+			continue;
+		}
+		cout << " ... found ... " << endl;
+
+		this->_params[i]->reshapeLike(it->second);
+		this->_params[i]->set_device_with_host_data(it->second->host_data());
+		this->_paramsInitialized[i] = true;
 	}
 }
 
@@ -287,7 +275,7 @@ void FullyConnectedLayer<Dtype>::_save(ofstream &ofs) {
 */
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_feedforward() {
+void FullyConnectedLayer<Dtype>::feedforward() {
 	if (!isLastPrevLayerRequest(idx)) throw Exception();
 
 	Util::printCube(input, "input:");

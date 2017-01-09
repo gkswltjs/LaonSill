@@ -53,14 +53,12 @@ public:
 			HiddenLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new DepthConcatLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			HiddenLayer<Dtype>::Builder::save(ofs);
-		}
-		virtual void load(std::ifstream& ifs) {
-			HiddenLayer<Dtype>::Builder::load(ifs);
 		}
 	};
 
@@ -69,17 +67,15 @@ public:
 	DepthConcatLayer(const std::string name);
 	virtual ~DepthConcatLayer();
 
-	virtual void shape();
-	virtual void reshape(uint32_t idx, io_dim in_dim);
-
-
-	virtual void _backpropagation();
+	virtual void reshape();
+	virtual void feedforward();
+	virtual void backpropagation();
 
 protected:
 	void initialize();
 
-	virtual void _shape(bool recursive=true);
-	virtual void _feedforward();
+	//virtual void _shape(bool recursive=true);
+
 
 	virtual void _clearShape();
 	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);

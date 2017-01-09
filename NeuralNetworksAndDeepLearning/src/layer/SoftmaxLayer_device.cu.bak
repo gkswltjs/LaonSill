@@ -34,6 +34,9 @@ __global__ void Dropout_(const int n, const Dtype* in, const Dtype* mask,
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::backpropagation() {
+	const uint32_t batches = this->_inputData[0]->getShape(0);
+	const uint32_t out_rows = this->_outputData[0]->getShape(2);
+
 	const Dtype* d_preActivationData = this->_preActivation->device_data();
 	const Dtype* d_outputData = this->_outputData[0]->device_data();
 	const Dtype* d_target = this->_inputData[1]->device_data();
@@ -43,14 +46,17 @@ void SoftmaxLayer<Dtype>::backpropagation() {
 	this->_outputData[0]->reset_device_grad();
 	Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
 	this->cost_fn->backward(d_preActivationData, d_outputData, d_target,
-			d_outputGrad, this->out_dim.rows, this->out_dim.batches);
+			d_outputGrad, out_rows, batches);
 
-	OutputLayer<Dtype>::_backpropagation();
+	OutputLayer<Dtype>::backpropagation();
 }
 
 template <typename Dtype>
 //double SoftmaxLayer<Dtype>::cost(const uint32_t* target) {
 double SoftmaxLayer<Dtype>::cost() {
+	const uint32_t batches = this->_inputData[0]->getShape(0);
+	const uint32_t out_rows = this->_outputData[0]->getShape(2);
+
 	// 편의상 HOST에서 계산, DEVICE 코드로 변환해야 함
 	//this->_target.set_mem(target, SyncMemCopyType::HostToHost);
 
@@ -61,7 +67,7 @@ double SoftmaxLayer<Dtype>::cost() {
 
 	const Dtype* h_outputData = this->_outputData[0]->host_data();
 	const Dtype* h_target = this->_inputData[1]->host_data();
-	return this->cost_fn->forward(h_outputData, h_target, this->out_dim.rows, this->out_dim.batches);
+	return this->cost_fn->forward(h_outputData, h_target, out_rows, batches);
 }
 
 

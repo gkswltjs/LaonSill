@@ -15,10 +15,12 @@ template <typename Dtype>
 HiddenLayer<Dtype>::HiddenLayer() {}
 
 template <typename Dtype>
-HiddenLayer<Dtype>::HiddenLayer(Builder* builder) : Layer<Dtype>(builder) {}
+HiddenLayer<Dtype>::HiddenLayer(Builder* builder)
+: Layer<Dtype>(builder) {}
 
 template <typename Dtype>
-HiddenLayer<Dtype>::HiddenLayer(const string& name) : Layer<Dtype>(name) {}
+HiddenLayer<Dtype>::HiddenLayer(const string& name)
+: Layer<Dtype>(name) {}
 
 
 template <typename Dtype>
@@ -27,30 +29,12 @@ HiddenLayer<Dtype>::~HiddenLayer() {}
 
 template <typename Dtype>
 void HiddenLayer<Dtype>::backpropagation() {
-
-	//if(!Layer<Dtype>::isSharedOutput()) {
-	//	_deconcat(idx, next_input, offset);
-	//	if (!this->w_isLastNextLayerRequest(idx, "HiddenLayer::backpropagation()")) return;
-	//}
-
-	//_scaleGradient();
-	_backpropagation();
-	//propBackpropagation();
-}
-
-
-
-template <typename Dtype>
-void HiddenLayer<Dtype>::_backpropagation() {
 	this->_inputData[0]->set_device_grad(this->_outputData[0]);
 }
 
-
 template <typename Dtype>
-void HiddenLayer<Dtype>::_shape(bool recursive) {
-	if(recursive) {
-		Layer<Dtype>::_shape();
-	}
+void HiddenLayer<Dtype>::reshape() {
+	Layer<Dtype>::reshape();
 }
 
 template <typename Dtype>

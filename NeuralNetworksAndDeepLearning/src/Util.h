@@ -13,6 +13,7 @@
 //#include "layer/LayerConfig.h"
 #include <string>
 #include <fstream>
+#include <fstream>
 
 #include "Cuda.h"
 #include "common.h"
@@ -75,6 +76,8 @@ static cudaError_t ucudaMalloc(
 
 
 
+
+
 /**
  * @brief 각종 유틸리티 함수들을 정적으로 포함하는 클래스
  * @details
@@ -106,6 +109,12 @@ public:
 	 * @return pack한 정수값
 	 */
 	static int pack4BytesToInt(unsigned char *buffer);
+
+	static uint32_t vecCountByAxis(const std::vector<uint32_t>& vec, const uint32_t axis=0);
+
+	static void saveStringToFstream(std::ofstream& ofs, const std::string& str);
+	static void loadStringFromFstream(std::ifstream& ifs, std::string& str);
+
 
 #ifndef GPU_MODE
 	/**
@@ -160,6 +169,10 @@ public:
 	 * @param message 설정된 출력 스트림에 출력할 메세지
 	 */
 	static void printMessage(std::string message);
+
+	static void refineParamName(const char* namePtr, char* tempName);
+
+
 	/**
 	 * @details 설정된 출력 스트림 출력 여부 플래그를 조회한다.
 	 * @return 설정된 출력 스트림 출력 여부
@@ -249,12 +262,20 @@ public:
 
 	//static int batchCount;
 
+	static std::string imagePath;
+
+
 
 private:
 	static bool print;						///< 로그 출력 여부 플래그
 	static size_t cuda_mem;
 	static int alloc_cnt;
 	static std::ostream *outstream;				///< 로그 출력 스트림
+
+
+
+
+
 
 };
 

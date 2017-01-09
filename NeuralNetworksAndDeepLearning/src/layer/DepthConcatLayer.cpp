@@ -37,14 +37,35 @@ void DepthConcatLayer<Dtype>::initialize() {
 }
 
 template <typename Dtype>
-//void DepthConcatLayer<Dtype>::shape(uint32_t idx, io_dim in_dim, Data<Dtype>* prevLayerOutput) {
-void DepthConcatLayer<Dtype>::shape() {
-	// DepthConcatLayer에서 필요로하는 output channel수만 카운트하고
-	// 나머지는 모두 상위 레이어의 shape()로 위임한다.
-	//if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
-	//this->out_dim.channels += in_dim.channels;
+void DepthConcatLayer<Dtype>::reshape() {
+	Layer<Dtype>::_adjustInputShape();
 
+	// 입력 데이터의 shape가 변경된 것이 있는 지 확인
+	bool inputShapeReshaped = false;
+	const uint32_t inputSize = this->_inputData.size();
+	for (uint32_t i = 0; i < inputSize; i++) {
+		if (Layer<Dtype>::_isInputShapeChanged(i)) {
+			inputShapeReshaped = true;
+			this->_inputShape[i] = this->_inputData[i]->getShape();
+		}
+	}
 
+	if (!inputShapeReshaped) {
+		return;
+	}
+
+	uint32_t batches 	= this->_inputShape[0][0];
+	uint32_t channels 	= 0;
+	uint32_t rows 		= this->_inputShape[0][2];
+	uint32_t cols 		= this->_inputShape[0][3];
+
+	for (uint32_t i = 0; i < this->_inputData.size(); i++) {
+		channels += this->_inputData[i]->getShape()[1];
+	}
+
+	this->_outputData[0]->reshape({batches, channels, rows, cols});
+
+	/*
 	this->out_dim.channels = 0;
 	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
 		this->out_dim.channels += this->_inputData[i]->getShape()[1];
@@ -55,12 +76,20 @@ void DepthConcatLayer<Dtype>::shape() {
 
 	HiddenLayer<Dtype>::shape();
 
+	this->in_dim = this->out_dim;
+
+	if (recursive) {
+		HiddenLayer<Dtype>::_shape();
+	}
+	*/
+
 #ifdef DEPTHCONCAT_LOG
 	cout << "shape depthConcatLayer in_dim: " << this->in_dim.batches << "x" << this->in_dim.channels << "x" << this->in_dim.rows << "x" << this->in_dim.cols << endl;
 	cout << "shape depthConcatLayer out_dim: " << this->out_dim.batches << "x" << this->out_dim.channels << "x" << this->out_dim.rows << "x" << this->out_dim.cols << endl;
 #endif
 }
 
+/*
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
 	//if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
@@ -72,19 +101,13 @@ void DepthConcatLayer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
 	cout << "reshape depthConcatLayer out_dim: " << this->out_dim.batches << "x" << this->out_dim.channels << "x" << this->out_dim.rows << "x" << this->out_dim.cols << endl;
 #endif
 }
-
-template <typename Dtype>
-void DepthConcatLayer<Dtype>::_shape(bool recursive) {
-	this->in_dim = this->out_dim;
-
-	if (recursive) {
-		HiddenLayer<Dtype>::_shape();
-	}
-}
+*/
 
 
 template <typename Dtype>
-void DepthConcatLayer<Dtype>::_feedforward() {
+void DepthConcatLayer<Dtype>::feedforward() {
+	reshape();
+
 	uint32_t batchOffset = 0;
 	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
 		batchOffset += this->_inputData[i]->getCountByAxis(1);
@@ -111,7 +134,7 @@ void DepthConcatLayer<Dtype>::_feedforward() {
 
 
 template <typename Dtype>
-void DepthConcatLayer<Dtype>::_backpropagation() {
+void DepthConcatLayer<Dtype>::backpropagation() {
 	uint32_t batchOffset = 0;
 	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
 		batchOffset += this->_inputData[i]->getCountByAxis(1);

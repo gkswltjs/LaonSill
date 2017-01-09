@@ -31,8 +31,8 @@ public:
 	static const int WRITE_ONLY = 1;
 	static const int PLOT_AND_WRITE = 2;
 
-	NetworkMonitor(int mode = PLOT_ONLY)
-		: mode(mode) {
+	NetworkMonitor(const std::string name, int mode = PLOT_ONLY)
+		: name(name), mode(mode) {
 
 		if(mode != PLOT_ONLY &&
 				mode != WRITE_ONLY &&
@@ -53,10 +53,10 @@ public:
 		if(mode == WRITE_ONLY || mode == PLOT_AND_WRITE) {
 			const std::string postfix = now();
 
-			costLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"./cost_"+postfix+".csv"));
-			accuracyLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"./accuracy_"+postfix+".csv"));
-			gradSumsqLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"./gradSumsq_"+postfix+".csv"));
-			dataSumsqLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"./dataSumsq_"+postfix+".csv"));
+			costLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_cost_"+postfix+".csv"));
+			accuracyLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_accuracy_"+postfix+".csv"));
+			gradSumsqLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_gradSumsq_"+postfix+".csv"));
+			dataSumsqLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_dataSumsq_"+postfix+".csv"));
 		}
 	}
 	virtual ~NetworkMonitor() {
@@ -120,6 +120,7 @@ private:
 
 
 protected:
+	std::string name;
 	uint32_t mode;
 	uint32_t loggerSize;
 

@@ -121,12 +121,12 @@ public:
 
 		checkCUDNN(cudnnCreatePoolingDescriptor(&this->poolDesc));
 
-		int pad = (pool_d.rows-1)/2;
+		//int pad = (pool_d.rows-1)/2;
 		checkCUDNN(cudnnSetPooling2dDescriptor(this->poolDesc,
 				CUDNN_POOLING_MAX,
 				CUDNN_PROPAGATE_NAN,
 				pool_d.rows, pool_d.cols,
-				pad, pad,
+				pool_d.pad, pool_d.pad,
 				pool_d.stride, pool_d.stride));
 	}
 	/**

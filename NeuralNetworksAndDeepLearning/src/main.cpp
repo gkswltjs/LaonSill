@@ -37,7 +37,6 @@
 using namespace std;
 
 #ifndef CLIENT_MODE
-void network_load();
 
 void printUsageAndExit(char* prog) {
     fprintf(stderr,
@@ -48,6 +47,80 @@ void printUsageAndExit(char* prog) {
 void developerMain() {
     // TODO: 
     STDOUT_LOG("enter developerMain()");
+
+    checkCudaErrors(cudaSetDevice(0));
+	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
+
+
+
+    const uint32_t maxEpoch = 100;
+    const uint32_t batchSize = 50;
+ 	//const uint32_t batchSize = 1000;
+ 	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
+ 	const uint32_t testInterval = 200;			// 10000(목표 샘플수) / batchSize
+ 	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
+ 	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
+ 	const uint32_t stepSize = 100000;
+ 	const float baseLearningRate = 0.001f;
+ 	const float weightDecay = 0.0002f;
+ 	const float momentum = 0.9f;
+ 	const float clipGradientsLevel = 0.0f;
+ 	const float gamma = 0.1;
+ 	const LRPolicy lrPolicy = LRPolicy::Step;
+
+ 	cout << "batchSize: " << batchSize << endl;
+ 	cout << "testInterval: " << testInterval << endl;
+ 	cout << "saveInterval: " << saveInterval << endl;
+ 	cout << "baseLearningRate: " << baseLearningRate << endl;
+ 	cout << "weightDecay: " << weightDecay << endl;
+ 	cout << "momentum: " << momentum << endl;
+ 	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
+
+ 	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
+ 	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
+ 	NetworkListener* networkListener = new NetworkMonitor("main_loss", NetworkMonitor::PLOT_ONLY);
+
+ 	NetworkConfig<float>* networkConfig =
+ 			(new typename NetworkConfig<float>::Builder())
+ 			->batchSize(batchSize)
+ 			->baseLearningRate(baseLearningRate)
+ 			->weightDecay(weightDecay)
+ 			->momentum(momentum)
+ 			->testInterval(testInterval)
+ 			->saveInterval(saveInterval)
+ 			->stepSize(stepSize)
+ 			->clipGradientsLevel(clipGradientsLevel)
+ 			->lrPolicy(lrPolicy)
+ 			->gamma(gamma)
+ 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+ 			->networkListeners({networkListener})
+ 			->build();
+
+ 	Util::printVramInfo();
+
+
+    // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
+	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
+
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
+	}
+
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->reshape();
+	}
+
+
+ 	Network<float>* network = new Network<float>(networkConfig);
+ 	network->setLayersConfig(layersConfig);
+
+ 	network->sgd_with_timer(maxEpoch);
+
+
+
     STDOUT_LOG("exit developerMain()");
 }
 
@@ -73,8 +146,10 @@ void loadJobFile(const char* fileName, Json::Value& rootValue) {
 int main(int argc, char** argv) {
     int     opt;
 
+
     // 처음 생각했던 것보다 실행모드의 개수가 늘었다.
     // 모드가 하나만 더 추가되면 그냥 enum type으로 모드를 정의하도록 하자.
+
     bool    useDeveloperMode = false; 
     bool    useSingleJobMode = false;
     bool    useRLMode = false;
@@ -154,7 +229,7 @@ int main(int argc, char** argv) {
 
     // (4) 뉴럴 네트워크 관련 기본 설정을 한다.
     //     TODO: SPARAM의 인자로 대체하자.
-	cout.precision(11);
+	cout.precision(7);
 	cout.setf(ios::fixed);
 	Util::setOutstream(&cout);
 	Util::setPrint(false);
@@ -263,32 +338,7 @@ int main(int argc, char** argv) {
 	exit(EXIT_SUCCESS);
 }
 
-void network_load() {
-	Cuda::create(0);
-	STDOUT_BLOCK(cout << "Cuda creation done ... " << endl);
 
-	//DataSet<float>* dataSet = createMnistDataSet<float>();
-	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	dataSet->load();
-
-	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
-	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
-
-	// save file 경로로 builder 생성,
-	NetworkConfig<float>::Builder* networkBuilder = new NetworkConfig<float>::Builder();
-	networkBuilder->load(SPARAM(NETWORK_SAVE_DIR));
-	//networkBuilder->dataSet(dataSet);
-	networkBuilder->evaluations({top1Evaluation, top5Evaluation});
-
-	NetworkConfig<float>* networkConfig = networkBuilder->build();
-	networkConfig->load();
-
-	Network<float>* network = new Network<float>(networkConfig);
-	//network->sgd(1);
-	network->test();
-
-	Cuda::destroy();
-}
 
 #else
 

@@ -30,6 +30,7 @@ ostream *SyncMem<Dtype>::outstream = &cout;
 template <typename Dtype>
 SyncMem<Dtype>::SyncMem() {
 	_size = 0;
+	_reserved = 0;
 
 	_host_mem = NULL;
 	_device_mem = NULL;
@@ -44,7 +45,7 @@ SyncMem<Dtype>::SyncMem() {
 
 template <typename Dtype>
 SyncMem<Dtype>::SyncMem(SyncMem<Dtype>& syncMem) : SyncMem() {
-	shape(syncMem.getSize());
+	reshape(syncMem.getSize());
 	set_mem(syncMem.device_mem(), DeviceToDevice, 0, syncMem.getSize());
 }
 
@@ -59,28 +60,36 @@ SyncMem<Dtype>::~SyncMem() {
 	if(_d_bool) checkCudaErrors(cudaFree(_d_bool));
 }
 
+/*
 template <typename Dtype>
 void SyncMem<Dtype>::shape(size_t size) {
-	// reshape가 현 상태의 할당된 메모리보다 더 큰 메모리를 요구하는 경우에만 재할당한다.
-	_host_mem = new Dtype[size];
-	memset(_host_mem, 0, sizeof(Dtype)*size);
+	_reserved = (size_t)(size*1.2f);
 
-	checkCudaErrors(Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*size));
-	checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*size));
+	_host_mem = new Dtype[_reserved];
+	memset(_host_mem, 0, sizeof(Dtype)*_reserved);
+
+	checkCudaErrors(Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved));
+	checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_reserved));
 
 	_size = size;
 }
+*/
 
 template <typename Dtype>
 void SyncMem<Dtype>::reshape(size_t size) {
 	// reshape가 현 상태의 할당된 메모리보다 더 큰 메모리를 요구하는 경우에만 재할당한다.
-	if (size > _size) {
+	if (size > _reserved) {
 		if(_host_mem) delete [] _host_mem;
 		if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
-		shape(size);
-	} else {
-		_size = size;
+
+		_reserved = (size_t)(size*1.2f);
+		_host_mem = new Dtype[_reserved];
+		memset(_host_mem, 0, sizeof(Dtype)*_reserved);
+
+		checkCudaErrors(Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved));
+		checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_reserved));
 	}
+	_size = size;
 }
 
 
@@ -152,10 +161,18 @@ void SyncMem<Dtype>::set_mem(const Dtype* mem, SyncMemCopyType copyType, const s
 }
 
 template <typename Dtype>
-void SyncMem<Dtype>::reset_host_mem() {
+void SyncMem<Dtype>::reset_host_mem(const bool setZero, const Dtype value) {
 	// reset할 것이므로 device update 여부를 확인, sync과정이 필요없음.
 	checkMemValidity();
-	memset(_host_mem, 0, sizeof(Dtype)*_size);
+
+	if (setZero)
+		memset(_host_mem, 0, sizeof(Dtype)*_size);
+	else {
+		for (size_t i = 0; i < _size; i++) {
+			_host_mem[i] = value;
+		}
+	}
+
 	//_host_mem_updated = true;
 	setHostMemUpdated();
 }
@@ -180,6 +197,12 @@ void SyncMem<float>::add_device_mem(const float* mem) {
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(_size), &Cuda::alpha, mem, 1, _mem, 1));
 }
 
+template <>
+void SyncMem<int>::add_device_mem(const int* mem) {
+	assert(false &&
+			"SyncMem<int>::add_device_mem() is not supported ... ");
+}
+
 
 template <typename Dtype>
 void SyncMem<Dtype>::sub_host_mem(const Dtype* mem) {
@@ -193,6 +216,14 @@ void SyncMem<float>::sub_device_mem(const float* mem) {
 	float* _mem = mutable_device_mem();
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(_size), &Cuda::negativeOne, mem, 1, _mem, 1));
 }
+
+template<>
+void SyncMem<int>::sub_device_mem(const int* mem) {
+	assert(false &&
+			"SyncMem<int>::sub_device_mem() is not supported ... ");
+}
+
+
 
 
 
@@ -209,6 +240,15 @@ void SyncMem<float>::scale_device_mem(const float scale) {
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(_size), &scale, _mem, 1));
 }
 
+template <>
+void SyncMem<int>::scale_device_mem(const float scale) {
+	assert(false &&
+			"SyncMem<int>::scale_device_mem() is not supported ... ");
+}
+
+
+
+
 
 //template <typename Dtype>
 //Dtype SyncMem<Dtype>::sumsq_host_mem() {}
@@ -222,11 +262,24 @@ double SyncMem<float>::sumsq_device_mem() {
 }
 
 template <>
+double SyncMem<int>::sumsq_device_mem() {
+	assert(false &&
+			"SyncMem<int>::sumsq_device_mem() is not supported ... ");
+}
+
+
+template <>
 double SyncMem<float>::asum_device_mem() {
 	float asum;
 	const float* _mem = device_mem();
 	checkCudaErrors(cublasSasum(Cuda::cublasHandle, _size, _mem, 1, &asum));
 	return (double)asum;
+}
+
+template <>
+double SyncMem<int>::asum_device_mem() {
+	assert(false &&
+			"SyncMem<int>::asum_device_mem() is not supported ... ");
 }
 
 
@@ -267,6 +320,7 @@ void SyncMem<Dtype>::checkHostMemAndUpdateDeviceMem(bool reset) {
 
 template <typename Dtype>
 void SyncMem<Dtype>::checkMemValidity() {
+	/*
 	if(_size == 0 ||
 			_host_mem == NULL ||
 			_device_mem == NULL) {
@@ -274,6 +328,11 @@ void SyncMem<Dtype>::checkMemValidity() {
 		cout << "assign mem before using ... " << endl;
 		exit(1);
 	}
+	*/
+	assert(_size > 0 &&
+			_host_mem != NULL &&
+			_device_mem != NULL &&
+			"assign mem before using ... ");
 }
 
 
@@ -355,16 +414,22 @@ bool SyncMem<float>::bound_mem() {
 template <typename Dtype>
 void SyncMem<Dtype>::save(ofstream& ofs) {
 	const Dtype* ptr = host_mem();
-	ofs.write((char*)&_size, sizeof(size_t));
+	//ofs.write((char*)&_size, sizeof(size_t));
 	ofs.write((char*)ptr, sizeof(Dtype)*_size);
 }
 
 
 template <typename Dtype>
 void SyncMem<Dtype>::load(ifstream& ifs) {
-	Dtype* ptr = mutable_host_mem();
-	ifs.read((char*)&_size, sizeof(size_t));
-	ifs.read((char*)ptr, sizeof(Dtype)*_size);
+
+	// size와 reshape 관련은 Data에서 처리하여 생략------------
+	//size_t size;
+	//ifs.read((char*)&size, sizeof(size_t));
+	//reshape(size);
+	// --------------------------------------------
+
+	Dtype* ptr = this->mutable_host_mem();
+	ifs.read((char*)ptr, sizeof(Dtype)*this->_size);
 }
 
 
@@ -389,8 +454,9 @@ void SyncMem<Dtype>::print(const string& head) {
 	}
 }
 
+
 template <typename Dtype>
-void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape) {
+void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape, const bool cmo) {
 	if(true) {
 		if(shape.size() != 4) {
 			(*outstream) << "shape size should be 4 ... " << endl;
@@ -399,9 +465,7 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape) {
 		checkDeviceMemAndUpdateHostMem(false);
 		const Dtype* data = _host_mem;
 
-
-
-		UINT i,j,k,l;
+		uint32_t i,j,k,l;
 
 		const uint32_t rows = shape[2];
 		const uint32_t cols = shape[3];
@@ -410,23 +474,42 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape) {
 
 		(*outstream) << "-------------------------------------" << endl;
 		(*outstream) << "name: " << head << endl;
-		(*outstream) << "rows x cols x channels x batches: " << rows << " x " << cols << " x " << channels << " x " << batches << endl;
+		(*outstream) << "batches x channels x rows x cols: " << batches << " x " <<
+				channels << " x " << rows << " x " << cols << endl;
 
-		UINT batchElem = rows*cols*channels;
-		UINT channelElem = rows*cols;
-		for(i = 0; i < batches; i++) {
-			for(j = 0; j < channels; j++) {
-				for(k = 0; k < rows; k++) {
-					for(l = 0; l < cols; l++) {
-				//for(k = 0; k < min(10, (int)rows); k++) {
-				//	for(l = 0; l < min(10, (int)cols); l++) {
-						(*outstream) << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+		const uint32_t batchElem = rows*cols*channels;
+		const uint32_t channelElem = rows*cols;
+
+		if (cmo) {
+			for(i = 0; i < batches; i++) {
+				for(j = 0; j < channels; j++) {
+					for(k = 0; k < rows; k++) {
+						for(l = 0; l < cols; l++) {
+					//for(k = 0; k < min(10, (int)rows); k++) {
+					//	for(l = 0; l < min(10, (int)cols); l++) {
+							(*outstream) << data[i*batchElem + j*channelElem + l*rows + k] << ", ";
+						}
+						(*outstream) << endl;
 					}
 					(*outstream) << endl;
 				}
 				(*outstream) << endl;
 			}
-			(*outstream) << endl;
+		} else {
+			for(i = 0; i < batches; i++) {
+				for(j = 0; j < channels; j++) {
+					(*outstream) << "[" << i << "x" << j << "]" << endl;
+
+					for(k = 0; k < rows; k++) {
+						for(l = 0; l < cols; l++) {
+							(*outstream) << data[i*batchElem + j*channelElem + k*cols + l] << ", ";
+						}
+						(*outstream) << endl;
+					}
+					(*outstream) << endl;
+				}
+				(*outstream) << endl;
+			}
 		}
 		(*outstream) << "-------------------------------------" << endl;
 	}
@@ -438,6 +521,7 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape) {
 template class SyncMem<float>;
 //template class SyncMem<double>;
 template class SyncMem<uint32_t>;
+template class SyncMem<int>;
 
 
 

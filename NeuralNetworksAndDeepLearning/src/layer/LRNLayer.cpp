@@ -26,13 +26,41 @@ LRNLayer<Dtype>::LRNLayer(const string name, lrn_dim lrn_d) : HiddenLayer<Dtype>
 }
 
 template <typename Dtype>
-void LRNLayer<Dtype>::_shape(bool recursive) {
+void LRNLayer<Dtype>::reshape() {
+	Layer<Dtype>::_adjustInputShape();
+
+	if (!Layer<Dtype>::_isInputShapeChanged(0))
+		return;
+
+	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
+	uint32_t batches 	= inputShape[0];
+	uint32_t channels	= inputShape[1];
+	uint32_t rows 		= inputShape[2];
+	uint32_t cols 		= inputShape[3];
+
+	this->_inputShape[0] = inputShape;
+	this->_outputData[0]->reshape(inputShape);
+
+	checkCUDNN(cudnnSetTensor4dDescriptor(
+			this->inputTensorDesc,
+			CUDNN_TENSOR_NCHW,
+			CUDNN_DATA_FLOAT,
+			batches, channels, rows, cols));
+
+	checkCUDNN(cudnnSetTensor4dDescriptor(
+			this->outputTensorDesc,
+			CUDNN_TENSOR_NCHW,
+			CUDNN_DATA_FLOAT,
+			batches, channels, rows, cols));
+
+	/*
 	this->setInDimension(this->_inputData[0]->getShape());
 	this->out_dim = this->in_dim;
 
 	if(recursive) {
 		HiddenLayer<Dtype>::_shape();
 	}
+	*/
 }
 
 template <typename Dtype>
@@ -86,7 +114,7 @@ void LRNLayer<Dtype>::initialize(lrn_dim lrn_d) {
 }
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
-void LRNLayer<Dtype>::_feedforward() {
+void LRNLayer<Dtype>::feedforward() {
 	if(!isLastPrevLayerRequest(idx)) throw Exception();
 
 	uint32_t i, j;

@@ -39,12 +39,14 @@ public:
 			this->type = Layer<Dtype>::Pool;
 			_poolDim.cols = 0;
 			_poolDim.rows = 0;
+			_poolDim.pad = 0;
 			_poolDim.stride = 0;
 			_poolingType = Pooling<Dtype>::Max;
 		}
-		Builder* poolDim(uint32_t cols, uint32_t rows, uint32_t stride) {
+		Builder* poolDim(uint32_t cols, uint32_t rows, uint32_t pad, uint32_t stride) {
 			this->_poolDim.cols = cols;
 			this->_poolDim.rows = rows;
+			this->_poolDim.pad = pad;
 			this->_poolDim.stride = stride;
 			return this;
 		}
@@ -68,18 +70,12 @@ public:
 			HiddenLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new PoolingLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			HiddenLayer<Dtype>::Builder::save(ofs);
-			ofs.write((char*)&_poolDim, sizeof(pool_dim));
-			ofs.write((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
-		}
-		virtual void load(std::ifstream& ifs) {
-			HiddenLayer<Dtype>::Builder::load(ifs);
-			ifs.read((char*)&_poolDim, sizeof(pool_dim));
-			ifs.read((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
 		}
 	};
 
@@ -100,19 +96,15 @@ public:
 	virtual ~PoolingLayer();
 
 
-	virtual void _backpropagation();
+	virtual void reshape();
+	virtual void feedforward();
+	virtual void backpropagation();
 
 
 protected:
 	void initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
 
-	virtual void _feedforward();
-
-
-	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
-	//virtual void _save(std::ofstream &ofs);
-	//virtual void _load(std::ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
@@ -123,6 +115,8 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
+	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 #endif
 
 

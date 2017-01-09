@@ -48,20 +48,25 @@ public:
 			_filterDim.cols = 0;
 			_filterDim.channels = 0;
 			_filterDim.filters = 0;
+			_filterDim.pad = 0;
 			_filterDim.stride = 0;
 			_weightUpdateParam.lr_mult = 1.0;
 			_weightUpdateParam.decay_mult = 0.0;
 			_biasUpdateParam.lr_mult = 1.0;
 			_biasUpdateParam.decay_mult = 0.0;
 			_weightFiller.type = ParamFillerType::Constant;
+			_weightFiller.value = 0.0f;
 			_biasFiller.type = ParamFillerType::Constant;
+			_biasFiller.value = 0.0f;
 			_activationType = Activation<Dtype>::NoActivation;
 		}
-		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters, uint32_t stride) {
+		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
+				uint32_t pad, uint32_t stride) {
 			_filterDim.rows = rows;
 			_filterDim.cols = cols;
 			_filterDim.channels = channels;
 			_filterDim.filters = filters;
+			_filterDim.pad = pad;
 			_filterDim.stride = stride;
 			return this;
 		}
@@ -105,27 +110,15 @@ public:
 			HiddenLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
+
 		Layer<Dtype>* build() {
 			return new ConvLayer(this);
 		}
-		virtual void save(std::ofstream& ofs) {
-			HiddenLayer<Dtype>::Builder::save(ofs);
-			ofs.write((char*)&_filterDim, sizeof(filter_dim));
-			ofs.write((char*)&_weightUpdateParam, sizeof(update_param));
-			ofs.write((char*)&_biasUpdateParam, sizeof(update_param));
-			ofs.write((char*)&_weightFiller, sizeof(param_filler<Dtype>));
-			ofs.write((char*)&_biasFiller, sizeof(param_filler<Dtype>));
-			ofs.write((char*)&_activationType, sizeof(typename Activation<Dtype>::Type));
-		}
-		virtual void load(std::ifstream& ifs) {
-			HiddenLayer<Dtype>::Builder::load(ifs);
-			ifs.read((char*)&_filterDim, sizeof(filter_dim));
-			ifs.read((char*)&_weightUpdateParam, sizeof(update_param));
-			ifs.read((char*)&_biasUpdateParam, sizeof(update_param));
-			ifs.read((char*)&_weightFiller, sizeof(param_filler<Dtype>));
-			ifs.read((char*)&_biasFiller, sizeof(param_filler<Dtype>));
-			ifs.read((char*)&_activationType, sizeof(typename Activation<Dtype>::Type));
-		}
+
 	};
 	/**
 	 * @details ConvLayer 기본 생성자
@@ -167,10 +160,17 @@ public:
 	virtual void scaleParamsGrad(float scale);
 	//virtual double testParamAbnormality();
 	virtual uint32_t boundParams();
+	virtual uint32_t numParams();
 	virtual void saveParams(std::ofstream& ofs);
 	virtual void loadParams(std::ifstream& ifs);
+	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
 	//////////////////////////////////////////
-	virtual void _backpropagation();
+
+	virtual void reshape();
+	virtual void feedforward();
+	virtual void backpropagation();
+
+
 	
     //
     void syncMutableMem();
@@ -182,11 +182,12 @@ public:
 
 
 
+
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
 			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 
-	virtual void _feedforward();
+
 
 	void _computeFiltersConvolutionData();
 	void _computeActivationData();
@@ -196,15 +197,10 @@ protected:
 	void _computeBiasesGrad();
 	void _computeInputGrad();
 
-	virtual void _shape(bool recursive=true);
+
 	virtual void _clearShape();
-	//virtual void _save(std::ofstream &ofs);
-	//virtual void _load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
-
-
-
 
 	enum ParamType {
 		Filter = 0,
@@ -224,6 +220,8 @@ protected:
 
 #ifndef GPU_MODE
 #else
+	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t biasTensorDesc;			///< cudnn bias 구조 정보 구조체
 	cudnnFilterDescriptor_t filterDesc;				///< cudnn filter 구조 정보 구조체
 	cudnnConvolutionDescriptor_t convDesc;			///< cudnn 컨볼루션 연산 정보 구조체
@@ -240,6 +238,7 @@ public:
     std::vector<Data<Dtype>*> _params;					///< 파리미터 데이터 (Filter, Bias 포함)
     std::vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
 
+    //std::vector<bool> _paramsInitialized;
 };
 
 
