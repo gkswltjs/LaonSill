@@ -30,6 +30,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
@@ -149,6 +150,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
@@ -265,6 +267,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
@@ -383,6 +386,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
@@ -402,8 +406,8 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
+									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
-									<listOptionValue builtIn="false" value="&quot;${INC_PATH_GNUPLOT}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/include/SDL"/>
 								</option>
 								<option id="nvcc.compiler.deviceDebug.196805054" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug" value="true" valueType="boolean"/>

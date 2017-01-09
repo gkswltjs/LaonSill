@@ -158,7 +158,7 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
 					->name("convLayer1")
-					->filterDim(8, 8, 4, 32, 4)
+					->filterDim(8, 8, 4, 32, 3, 4)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -169,7 +169,7 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(2)
 					->name("convLayer2")
-					->filterDim(4, 4, 32, 64, 2)
+					->filterDim(4, 4, 32, 64, 1, 2)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -180,7 +180,7 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(3)
 					->name("convLayer3")
-					->filterDim(3, 3, 64, 64, 1)
+					->filterDim(3, 3, 64, 64, 1, 1)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -1378,7 +1378,6 @@ LayersConfig<Dtype>* createFrcnnTestOneShotLayersConfig() {
 
 	return layersConfig;
 }
-*/
 
 
 template <typename Dtype>

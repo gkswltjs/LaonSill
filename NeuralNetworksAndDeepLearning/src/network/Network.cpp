@@ -884,7 +884,7 @@ vector<Data<Dtype>*>& Network<Dtype>::feedForwardDQNNetwork(int batchCount,
 
     // (1) change batch size
     this->config->_batchSize = batchCount;
-    inputLayer->shape();
+    inputLayer->reshape();
 
     // (2) feed forward
     inputLayer->fillData(learner, isNetQ);

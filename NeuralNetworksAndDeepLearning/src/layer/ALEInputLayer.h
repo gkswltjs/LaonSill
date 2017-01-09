@@ -64,12 +64,6 @@ public:
 		Layer<Dtype>* build() {
 			return new ALEInputLayer(this);
 		}
-		virtual void save(std::ofstream& ofs) {
-			Layer<Dtype>::Builder::save(ofs);
-		}
-		virtual void load(std::ifstream& ifs) {
-			Layer<Dtype>::Builder::load(ifs);
-		}
 	};
 
     ALEInputLayer();
@@ -78,17 +72,14 @@ public:
 
     virtual ~ALEInputLayer();
 
-	int getInputSize() const;
-
 	void feedforward();
 	using Layer<Dtype>::feedforward;
 	void feedforward(const uint32_t baseIndex, const char* end=0);
 
-	void shape();
+	void reshape();
 
 protected:
 	void initialize();
-	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 
 public:

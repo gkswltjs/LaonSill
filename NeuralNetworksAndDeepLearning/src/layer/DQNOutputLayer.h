@@ -80,12 +80,6 @@ public:
 		Layer<Dtype>* build() {
 			return new DQNOutputLayer(this);
 		}
-		virtual void save(std::ofstream& ofs) {
-			OutputLayer<Dtype>::Builder::save(ofs);
-		}
-		virtual void load(std::ifstream& ifs) {
-			OutputLayer<Dtype>::Builder::load(ifs);
-		}
 	};
 
 	DQNOutputLayer();
@@ -123,7 +117,6 @@ protected:
 	void initialize();
 
 protected:
-	virtual void _shape(bool recursive=true);
 	virtual void _clearShape();
 	//void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 

@@ -40,10 +40,14 @@ void DQNOutputLayer<Dtype>::backpropagation() {
 	// 0으로 reset한 후, target에 해당하는 element만 수정, (테스트 단계 임시로 여기서 reset)
 	this->_outputData[0]->reset_device_grad();
 	Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
-	this->cost_fn->backward(d_preActivationData, d_outputData, d_target,
-			d_outputGrad, this->out_dim.rows, this->out_dim.batches);
 
-	OutputLayer<Dtype>::_backpropagation();
+    int batchSize = this->_outputData[0]->getShape(0);
+    int rowSize = this->_outputData[0]->getShape(2);
+
+	this->cost_fn->backward(d_preActivationData, d_outputData, d_target, 
+        d_outputGrad, rowSize, batchSize);
+
+	OutputLayer<Dtype>::backpropagation();
 }
 
 template <typename Dtype>
@@ -59,7 +63,10 @@ double DQNOutputLayer<Dtype>::cost() {
 
 	const Dtype* h_outputData = this->_outputData[0]->host_data();
 	const Dtype* h_target = this->_inputData[1]->host_data();
-	return this->cost_fn->forward(h_outputData, h_target, this->out_dim.rows, this->out_dim.batches);
+
+    int batchSize = this->_outputData[0]->getShape(0);
+    int rowSize = this->_outputData[0]->getShape(2);
+	return this->cost_fn->forward(h_outputData, h_target, rowSize, batchSize);
 }
 
 

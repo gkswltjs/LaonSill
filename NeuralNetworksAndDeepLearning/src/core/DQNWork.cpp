@@ -76,7 +76,7 @@ void DQNWork<Dtype>::buildDQNNetwork(DQNImageLearner<Dtype>* learner,
     inputLayer->setInputCount(learner->rowCnt, learner->colCnt, learner->chCnt,
         learner->actionCnt);
     for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-    	layersConfig->_layers[i]->shape();
+    	layersConfig->_layers[i]->reshape();
     }
 
     // (4) network에 layersConfig 정보를 등록한다.

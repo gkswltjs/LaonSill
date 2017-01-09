@@ -54,13 +54,6 @@ void DQNOutputLayer<Dtype>::initialize() {
 }
 
 template <typename Dtype>
-void DQNOutputLayer<Dtype>::_shape(bool recursive) {
-	if(recursive) {
-		OutputLayer<Dtype>::_shape();
-	}
-}
-
-template <typename Dtype>
 void DQNOutputLayer<Dtype>::_clearShape() {
 	OutputLayer<Dtype>::_clearShape();
 }

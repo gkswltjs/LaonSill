@@ -38,11 +38,6 @@ ALEInputLayer<Dtype>::~ALEInputLayer() {
 }
 
 template<typename Dtype>
-int ALEInputLayer<Dtype>::getInputSize() const {
-    return this->in_dim.rows * this->in_dim.cols * this->in_dim.channels;
-}
-
-template<typename Dtype>
 void ALEInputLayer<Dtype>::setInputCount(int rows, int cols, int channels, int actions) {
     this->rowCnt = rows;
     this->colCnt = cols;
@@ -50,20 +45,70 @@ void ALEInputLayer<Dtype>::setInputCount(int rows, int cols, int channels, int a
     this->actionCnt = actions;
 }
 
-template<typename Dtype>
-void ALEInputLayer<Dtype>::shape() {
-	this->in_dim.batches = this->networkConfig->_batchSize;
-    this->in_dim.channels = this->chCnt;
-    this->in_dim.rows = this->rowCnt;
-    this->in_dim.cols = this->colCnt;
+template <typename Dtype>
+void ALEInputLayer<Dtype>::reshape() {
+	// 입력 레이어는 출력 데이터를 입력 데이터와 공유
+	// xxx: 레이어 명시적으로 초기화할 수 있는 위치를 만들어 옮길 것.
+	if (this->_inputData.size() < 1) {
+		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
+			this->_inputs.push_back(this->_outputs[i]);
+			this->_inputData.push_back(this->_outputData[i]);
+		}
+	}
 
-    _shape();
+	Layer<Dtype>::_adjustInputShape();
+
+	const uint32_t inputSize = this->_inputData.size();
+	for (uint32_t i = 0; i < inputSize; i++) {
+		if (!Layer<Dtype>::_isInputShapeChanged(i))
+			continue;
+
+		// 데이터
+		if (i == 0) {
+			uint32_t batches = this->networkConfig->_batchSize;
+			uint32_t channels = this->chCnt;
+			uint32_t rows = this->rowCnt;
+			uint32_t cols = this->colCnt;
+
+			this->_inputShape[0][0] = batches;
+			this->_inputShape[0][1] = channels;
+			this->_inputShape[0][2] = rows;
+			this->_inputShape[0][3] = cols;
+
+			this->_inputData[0]->reshape(this->_inputShape[0]);
+
+#if INPUTLAYER_LOG
+			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
+					this->name.c_str(), batches, channels, rows, cols);
+#endif
+		}
+		// 레이블
+		else if (i == 1) {
+			uint32_t batches = this->networkConfig->_batchSize;
+			uint32_t channels = this->chCnt;
+			uint32_t rows = 1;
+			uint32_t cols = 1;
+
+			this->_inputShape[1][0] = batches;
+			this->_inputShape[1][1] = channels;
+			this->_inputShape[1][2] = rows;
+			this->_inputShape[1][3] = cols;
+
+			this->_inputData[1]->reshape({batches, channels, rows, cols});
+
+#if INPUTLAYER_LOG
+			printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
+					this->name.c_str(), batches, channels, rows, cols);
+#endif
+		}
+	}
 }
 
 template<typename Dtype>
 void ALEInputLayer<Dtype>::allocInputData() {
-    int batchSize = this->in_dim.batches;
-	const uint32_t unitSize = this->in_dim.unitsize();
+	const vector<uint32_t>& inputShape = this->_inputShape[0];
+	const uint32_t batchSize = inputShape[0];
+	const uint32_t unitSize = Util::vecCountByAxis(inputShape, 1);
 
     if (batchSize > this->allocBatchSize) {
         if (this->preparedData != NULL) {
@@ -85,21 +130,23 @@ void ALEInputLayer<Dtype>::allocInputData() {
 
 template<typename Dtype>
 void ALEInputLayer<Dtype>::feedforward() {
-    Layer<Dtype>::feedforward();
+	//Layer<Dtype>::feedforward();
+	cout << "unsupported ... " << endl;
+	exit(1);
 }
 
 template<typename Dtype>
 void ALEInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
-	const uint32_t unitSize = this->in_dim.unitsize();
-    int batchSize = this->in_dim.batches;
+    reshape();
+
+	const vector<uint32_t>& inputShape = this->_inputShape[0];
+	const uint32_t batchSize = inputShape[0];
+	const uint32_t unitSize = Util::vecCountByAxis(inputShape, 1);
 
     this->_inputData[0]->set_device_with_host_data(this->preparedData, 0,
         unitSize * batchSize);
     this->_inputData[1]->set_device_with_host_data(this->preparedLabel, 0,
         this->chCnt * batchSize);
-    // output : FullyConnectedLayer. 
-
-	Layer<Dtype>::feedforward();
 }
 
 template<typename Dtype>
@@ -116,31 +163,15 @@ void ALEInputLayer<Dtype>::initialize() {
 }
 
 template<typename Dtype>
-void ALEInputLayer<Dtype>::_shape(bool recursive) {
-    this->out_dim = this->in_dim;
-
-    for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-		this->_inputs.push_back(this->_outputs[i]);
-		this->_inputData.push_back(this->_outputData[i]);
-    }
-
-	if (this->_outputs.size() > 1) {
-		this->_inputData[1]->shape({this->in_dim.batches, 1, (unsigned int)this->chCnt, 1});
-	}
-
-	if(recursive) {
-		Layer<Dtype>::_shape();
-	}
-}
-
-template<typename Dtype>
 void ALEInputLayer<Dtype>::_clearShape() {
     Layer<Dtype>::_clearShape();
 }
 
 template<typename Dtype>
 void ALEInputLayer<Dtype>::fillData(DQNImageLearner<Dtype> *learner, bool useState1) {
-    int inputDataCount = this->in_dim.batches;
+	const vector<uint32_t>& inputShape = this->_inputShape[0];
+	const uint32_t batchSize = inputShape[0];
+    int inputDataCount = batchSize;
 
     allocInputData();
     DQNTransition<Dtype> **rmSlots = learner->getActiveRMSlots();
@@ -163,7 +194,9 @@ void ALEInputLayer<Dtype>::fillData(DQNImageLearner<Dtype> *learner, bool useSta
 
 template<typename Dtype>
 void ALEInputLayer<Dtype>::fillLabel(DQNImageLearner<Dtype> *learner) {
-    int inputDataCount = this->in_dim.batches;
+	const vector<uint32_t>& inputShape = this->_inputShape[0];
+	const uint32_t batchSize = inputShape[0];
+    int inputDataCount = batchSize;
 
     Dtype zero = 0.0;
     Dtype *qLabelValues = learner->getQLabelValues();
