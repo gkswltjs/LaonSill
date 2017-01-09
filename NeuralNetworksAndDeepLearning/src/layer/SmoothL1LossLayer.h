@@ -58,7 +58,8 @@ public:
 			return this;
 		}
 		/*
-		virtual Builder* normalizationMode(const typename LossLayer<Dtype>::NormalizationMode normalizationMode) {
+		virtual Builder* normalizationMode(
+            const typename LossLayer<Dtype>::NormalizationMode normalizationMode) {
 			LossLayer<Dtype>::Builder::normalizationMode(normalizationMode);
 			return this;
 		}
@@ -114,35 +115,4 @@ private:
 	uint32_t tempCnt;
 };
 
-
 #endif /* SMOOTHL1LOSSLAYER_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

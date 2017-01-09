@@ -17,7 +17,8 @@
 #include "SyncMem.h"
 
 /**
- * @brief Layer 특정 단계에서의 data, gradient를 pair로 warpping, util method를 제공하는 클래스
+ * @brief Layer 특정 단계에서의 data, gradient를 pair로 warpping, util method를 제공하는
+ *       클래스
  * @details Layer의 입력, 출력, Parameter에 해당하는 data와 gradient에 적용
  */
 template <typename Dtype>
@@ -25,8 +26,10 @@ class Data {
 public:
 	Data(const std::string& name, const bool hostOnly=false);
 	Data(Data<Dtype>* data, const bool hostOnly=false);
-	Data(const std::string& name, Data<Dtype>* data, uint32_t type, const bool hostOnly=false);
-	Data(const std::string& name, const std::vector<uint32_t>& shape, const bool hostOnly=false);
+	Data(const std::string& name, Data<Dtype>* data, uint32_t type,
+        const bool hostOnly=false);
+	Data(const std::string& name, const std::vector<uint32_t>& shape,
+        const bool hostOnly=false);
 	virtual ~Data();
 
 	//void shape(const std::vector<uint32_t>& shape);
@@ -96,47 +99,56 @@ public:
 	 * @param data 복사할 Data
 	 * @param offset data의 포인터에 대한 offset
 	 */
-	void set_host_data(Data* data, const uint32_t offset=0) { set_host_data(data->host_data()+offset); }
+	void set_host_data(Data* data, const uint32_t offset=0) { 
+        set_host_data(data->host_data()+offset);
+    }
 	/**
 	 * @details 데이터의 디바이스 메모리에 _count만큼 값을 복사한다.
 	 * @param data 복사할 Data
 	 * @param offset data의 포인터에 대한 offset
 	 */
-	void set_device_data(Data* data, const uint32_t offset=0) { set_device_data(data->device_data()+offset); }
+	void set_device_data(Data* data, const uint32_t offset=0) {
+        set_device_data(data->device_data()+offset);
+    }
 	/**
 	 * @details 그레디언트의 호스트 메모리에 _count만큼 값을 복사한다.
 	 * @param grad 복사할 Data
 	 * @param offset grad의 포인터에 대한 offset
 	 */
-	void set_host_grad(Data* grad, const uint32_t offset=0) { set_host_grad(grad->host_grad()+offset); }
+	void set_host_grad(Data* grad, const uint32_t offset=0) {
+        set_host_grad(grad->host_grad()+offset);
+    }
 	/**
 	 * @details 그레디언트의 디바이스 메모리에 _count만큼 값을 복사한다.
 	 * @param grad 복사할 Data
 	 * @param offset grad의 포인터에 대한 offset
 	 */
-	void set_device_grad(Data* grad, const uint32_t offset=0) { set_device_grad(grad->device_grad()+offset); }
-
+	void set_device_grad(Data* grad, const uint32_t offset=0) {
+        set_device_grad(grad->device_grad()+offset);
+    }
 	/**
 	 * @details 데이터의 호스트 메모리에 _count만큼 값을 복사한다.
 	 * @param data 복사할 로우 데이터의 포인터
 	 */
 	void set_host_data(const Dtype* data);
 	/**
-	 * @details 데이터의 호스트 메모리에 _count만큼 주어진 디바이스 메모리 포인터로부터 값을 복사한다.
+	 * @details 데이터의 호스트 메모리에 _count만큼 주어진 디바이스 메모리 포인터로부터 값을
+     *         복사한다.
 	 * @param data 복사할 로우 디바이스 데이터의 포인터
 	 */
 	void set_host_with_device_data(const Dtype* data);
 	/**
-	 * @details 데이터의 디바이스 메모리에 _count만큼 주어진 호스트 메모리 포인터로부터 값을 복사한다.
+	 * @details 데이터의 디바이스 메모리에 _count만큼 주어진 호스트 메모리 포인터로부터 값을
+     *         복사한다.
 	 * @param data 복사할 로우 호스트 데이터의 포인터
 	 */
-	void set_device_with_host_data(const Dtype* data, const size_t offset=0, const size_t size=0);
+	void set_device_with_host_data(const Dtype* data, const size_t offset=0,
+        const size_t size=0);
 	/**
 	 * @details 데이터의 디바이스 메모리에 _count만큼 값을 복사한다.
 	 * @param data 복사할 로우 디바이스 데이터의 포인터
 	 */
 	void set_device_data(const Dtype* data);
-
 
 	/**
 	 * @details 그레디언트의 호스트 메모리에 _count만큼 값을 복사한다.
@@ -148,7 +160,6 @@ public:
 	 * @param data 복사할 로우 디바이스 데이터의 포인터
 	 */
 	void set_device_grad(const Dtype* grad);
-
 
 	/**
 	 * @details 데이터의 호스트 메모리를 0으로 초기화한다.
@@ -173,27 +184,33 @@ public:
 	 * @param data 더 할 Data
 	 * @param offset data의 포인터에 대한 offset
 	 */
-	void add_host_data(Data* data, const uint32_t offset=0) { add_host_data(data->host_data()+offset); }
+	void add_host_data(Data* data, const uint32_t offset=0) {
+        add_host_data(data->host_data()+offset);
+    }
 	/**
 	 * @details 데이터의 디바이스 메모리에 주어진 Data의 값을 더한다.
 	 * @param data 더 할 Data
 	 * @param offset data의 포인터에 대한 offset
 	 */
-	void add_device_data(Data* data, const uint32_t offset=0) { add_device_data(data->device_data()+offset); }
+	void add_device_data(Data* data, const uint32_t offset=0) {
+        add_device_data(data->device_data()+offset);
+    }
 	/**
 	 * @details 그레디언트의 호스트 메모리에 주어진 Data의 값을 더한다.
 	 * @param grad 더 할 Data
 	 * @param offset data의 포인터에 대한 offset
 	 */
-	void add_host_grad(Data* grad, const uint32_t offset=0) { add_host_grad(grad->host_grad()+offset); }
+	void add_host_grad(Data* grad, const uint32_t offset=0) {
+        add_host_grad(grad->host_grad()+offset);
+    }
 	/**
 	 * @details 그레디언트의 디바이스 메모리에 주어진 Data의 값을 더한다.
 	 * @param grad 더 할 Data
 	 * @param offset data의 포인터에 대한 offset
 	 */
-	void add_device_grad(Data* grad, const uint32_t offset=0) { add_device_grad(grad->device_grad()+offset); }
-
-
+	void add_device_grad(Data* grad, const uint32_t offset=0) {
+        add_device_grad(grad->device_grad()+offset);
+    }
 
 	void sub_host_data(Data* data) {
 		_data->sub_host_mem(data->_data->host_mem());
@@ -207,13 +224,6 @@ public:
 	void sub_device_grad(Data* data) {
 		_grad->sub_device_mem(data->_grad->device_mem());
 	}
-
-
-
-
-
-
-
 	/**
 	 * @details 데이터의 호스트 메모리에 주어진 로우 호스트 포인터의 메모리 값을 더한다.
 	 * @param data 더 할 로우 호스트 메모리 포인터
@@ -230,7 +240,8 @@ public:
 	 */
 	void add_host_grad(const Dtype* grad);
 	/**
-	 * @details 그레디언트의 디바이스 메모리에 주어진 로우 디바이스 포인터의 메모리 값을 더한다.
+	 * @details 그레디언트의 디바이스 메모리에 주어진 로우 디바이스 포인터의 메모리 값을
+     *         더한다.
 	 * @param grad 더 할 로우 디바이스 메모리 포인터
 	 */
 	void add_device_grad(const Dtype* grad);
@@ -256,7 +267,6 @@ public:
 	 */
 	void scale_device_grad(const float scale);
 
-
 	/**
 	 * @details 데이터의 디바이스 메모리의 제곱합을 구한다.
 	 * @param 데이터의 디바이스 메모리 제곱합
@@ -268,10 +278,8 @@ public:
 	 */
 	double sumsq_device_grad();
 
-
 	double asum_device_data();
 	double asum_device_grad();
-
 
 	/**
 	 * @details Data의 batch shape를 조회한다.
@@ -296,9 +304,6 @@ public:
 
 	inline uint32_t numAxes() const { return _shape.size(); }
 
-
-
-
 	bool is_nan_data() { return _data->is_nan_mem(); }
 	bool is_nan_grad() { return _grad->is_nan_mem(); }
 	bool is_inf_data() { return _data->is_inf_mem(); }
@@ -307,18 +312,13 @@ public:
 	uint32_t bound_data() { return _data->bound_mem(); }
 	uint32_t bound_grad() { return _grad->bound_mem(); }
 
-
-
 	void share_data(Data<Dtype>* data);
 	void share_grad(Data<Dtype>* data);
-
 
 	void save(const std::string& filename);
 	void save(std::ofstream& ofs);
 	void load(const std::string& filename);
 	void load(std::ifstream& ifs);
-
-
 
 	void print();
 	/**
@@ -345,11 +345,8 @@ public:
 	void fill_host_with_2d_vec(const std::vector<std::vector<float>>& array,
 			const std::vector<uint32_t>& transpose={0, 1, 2, 3});
 
-
-
 	Data<Dtype>* range(const std::vector<int>& startIndex, const std::vector<int>& endIndex);
 	void transpose(const std::vector<uint32_t>& t);
-
 
 	bool compareData(Data<Dtype>* data, const Dtype error = Dtype(0.001));
 	static bool compareData(Data<Dtype>* data1, Data<Dtype>* data2,
@@ -359,8 +356,6 @@ public:
 	static bool compareGrad(Data<Dtype>* data1,	Data<Dtype>* data2,
 			const Dtype error = Dtype(0.001));
 
-
-
 public:
 	//std::shared_ptr<Data<Dtype>> _input;
 	std::shared_ptr<SyncMem<Dtype>> _data;				///< Data의 데이터
@@ -368,10 +363,11 @@ public:
 	std::string _name;
 
 private:
-    std::vector<uint32_t> _shape;			///< Data의 shape, Batches, Channels, Rows, Columns의 4차원 벡터로 구성
+    std::vector<uint32_t> _shape;   ///< Data의 shape, Batches, Channels, Rows, Columns의 
+                                    /// 4차원 벡터로 구성
 
-	size_t _count;						///< Data 메모리의 크기, 엘레먼트의 수 (Batches*Channels*Rows*Columns)
-
+	size_t _count;				    ///< Data 메모리의 크기, 엘레먼트의 수 
+                                    /// (Batches*Channels*Rows*Columns)
 
 	bool _hostOnly;
 
@@ -380,7 +376,5 @@ private:
 public:
 	static uint32_t printConfig;
 };
-
-
 
 #endif /* DATA_H_ */

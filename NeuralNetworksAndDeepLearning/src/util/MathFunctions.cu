@@ -1,9 +1,6 @@
 #include "MathFunctions.h"
 #include "Cuda.h"
 
-
-
-
 template <typename Dtype>
 void soooa_set(const int N, const Dtype alpha, Dtype* Y) {
   if (alpha == 0) {
@@ -183,23 +180,8 @@ void soooa_gpu_asum<double>(const int n, const double* x, double* y) {
 	checkCudaErrors(cublasDasum(Cuda::cublasHandle, n, x, 1, y));
 }
 
-
-
-
-
-
-
-
-
-
 void soooa_gpu_memcpy(const size_t N, const void* X, void* Y) {
   if (X != Y) {
 	  checkCudaErrors(cudaMemcpy(Y, X, N, cudaMemcpyDefault));  // NOLINT(caffe/alt_fn)
   }
 }
-
-
-
-
-
-

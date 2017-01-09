@@ -44,10 +44,12 @@ int main() {
 using namespace std;
 
 int imagePackerTest(int argc, char** argv);
-void imagepacker_test(int numCategory, int numTrain, int numTest, int numImagesInTrainFile, int numImagesInTestFile, int numChannels);
+void imagepacker_test(int numCategory, int numTrain, int numTest, int numImagesInTrainFile,
+    int numImagesInTestFile, int numChannels);
 void imagepackdataset_test();
 void xavier_test();
-void mnist_test(const string data_path, const string label_path, const string dataFile, const string labelFile);
+void mnist_test(const string data_path, const string label_path, const string dataFile,
+    const string labelFile);
 int gnuplot_test();
 
 int main_test(int argc, char** argv) {
@@ -73,7 +75,8 @@ int imagePackerTest(int argc, char** argv) {
 	int numImagesInTrainFile = atoi(argv[4]);
 	int numImagesInTestFile = atoi(argv[5]);
 	int numChannels = atoi(argv[6]);
-	imagepacker_test(numCategory, numTrain, numTest, numImagesInTrainFile, numImagesInTestFile, numChannels);
+	imagepacker_test(numCategory, numTrain, numTest, numImagesInTrainFile,
+                     numImagesInTestFile, numChannels);
 
 	return 0;
 }
@@ -206,7 +209,8 @@ struct UByteLabelDatasetLocal {
 };
 
 
-void mnist_test(const string data_path, const string label_path, const string dataFile, const string labelFile) {
+void mnist_test(const string data_path, const string label_path, const string dataFile,
+    const string labelFile) {
 	FILE *imfp = fopen(data_path.c_str(), "rb");
 	FILE *lbfp = fopen(label_path.c_str(), "rb");
 	UByteImageDatasetLocal image_header;
@@ -244,7 +248,8 @@ void mnist_test(const string data_path, const string label_path, const string da
 		exit(1);
 	}
 	if (image_header.length != label_header.length) {
-		printf("ERROR: Dataset file mismatch (number of images does not match the number of labels)\n");
+		printf("ERROR: Dataset file mismatch "
+               "(number of images does not match the number of labels)\n");
 		fclose(imfp);
 		fclose(lbfp);
 		exit(1);
@@ -279,22 +284,6 @@ void mnist_test(const string data_path, const string label_path, const string da
 
 	fclose(imfp);
 	fclose(lbfp);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	UByteImageDataset imageDataSet;
 	imageDataSet.magic = image_header.magic;
@@ -368,7 +357,8 @@ void imagepacker_test(int numCategory,
 			"numChannels: " << numChannels << endl;
 
 	Timer timer;
-	ImagePacker imagePacker("/home/jhkim/image/ILSVRC2012", numCategory, numTrain, numTest, numImagesInTrainFile, numImagesInTestFile, numChannels);
+	ImagePacker imagePacker("/home/jhkim/image/ILSVRC2012", numCategory, numTrain, numTest,
+                            numImagesInTrainFile, numImagesInTestFile, numChannels);
 	cout << "start to load ... " << endl;
 	timer.start();
 	imagePacker.load();
@@ -410,21 +400,3 @@ void imagepackdataset_test() {
 }
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

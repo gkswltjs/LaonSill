@@ -24,7 +24,6 @@ enum SyncMemCopyType {
 	DeviceToDevice=3		// 디바이스에서 디바이스 복사
 };
 
-
 /**
  * @brief 동기화된 호스트, 디바이스 메모리 클래스
  * @details 읽기만 수행할 경우 non_mutable getter를 통해 포인터를 조회할 것
@@ -41,8 +40,6 @@ public:
 	size_t getSize() {
 		return _size;
 	}
-
-
 
 	/**
 	 * @details 지정된 사이즈로 호스트와 디바이스에 메모리를 할당, 초기화한다.
@@ -78,7 +75,8 @@ public:
 	 * @param mem 복사할 데이터 메모리 포인터
 	 * @param copyType 데이터를 복사할 SRC/DEST를 지정하는 열거형
 	 */
-	void set_mem(const Dtype* mem, SyncMemCopyType copyType, const size_t offset=0, const size_t size=0);
+	void set_mem(const Dtype* mem, SyncMemCopyType copyType, const size_t offset=0,
+        const size_t size=0);
 
 	/**
 	 * @details 호스트 메모리를 0으로 초기화한다.
@@ -120,20 +118,14 @@ public:
 	 * @return 디바이스 메모리 값의 제곱합
 	 */
 	double sumsq_device_mem();
-
 	double asum_device_mem();
-
-
 
 	bool is_nan_mem();
 	bool is_inf_mem();
 	uint32_t bound_mem();
 
-
-
 	void save(std::ofstream& ofs);
 	void load(std::ifstream& ifs);
-
 
 	/**
 	 * @details 메모리의 값을 출력한다.
@@ -145,19 +137,16 @@ public:
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 * @param shape 출력 포맷 shape (batches, columns, rows, columns)
 	 */
-	void print(const std::string& head, const std::vector<uint32_t>& shape, const bool cmo=true);
-
-
-
+	void print(const std::string& head, const std::vector<uint32_t>& shape,
+        const bool cmo=true);
 
 	static void setOutstream(std::ostream *outstream) {
 		SyncMem<Dtype>::outstream = outstream;
 	}
 	static void setOutstream(std::string outfile) {
-		SyncMem<Dtype>::outstream = new std::ofstream(outfile.c_str(), std::ios::out | std::ios::binary);
+		SyncMem<Dtype>::outstream = new std::ofstream(outfile.c_str(),
+            std::ios::out | std::ios::binary);
 	}
-
-
 
 private:
 	/**
@@ -182,8 +171,6 @@ private:
 	void setDeviceMemUpdated();
 	void resetMemUpdated();
 
-
-
 private:
 	size_t _size;							///< 할당된 메모리의 크기
 	size_t _reserved;
@@ -201,8 +188,6 @@ private:
 	uint32_t _h_int;
 	bool* _d_bool;
 	bool _h_bool;
-
-
 };
 
 #endif /* SYNCMEM_H_ */

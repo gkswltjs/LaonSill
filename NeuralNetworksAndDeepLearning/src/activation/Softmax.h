@@ -27,22 +27,6 @@ public:
 		this->type = Activation::Softmax;
 	}
 
-
-	/*
-	void initialize_weight(int n_in, rmat &weight) {
-		// TODO for debug
-		//weight.randn();
-		//weight *= sqrt(1.0/n_in);
-		weight.zeros();
-	}
-	void initialize_weight(int n_in, rcube &weight) {
-		// TODO for debug
-		//weight.randn();
-		//weight *= sqrt(1.0/n_in);
-		weight.zeros();
-	}
-	*/
-
 	void forward(const rcube &z, rcube &activation) {
 		// TODO softmax는 output layer only,
 		// vector형태의 output을 전제
@@ -65,13 +49,16 @@ public:
 	}
 
 	void forward(const cudnnTensorDescriptor_t& desc, const Dtype* x, Dtype* y) {
-		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+		checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE,
+                CUDNN_SOFTMAX_MODE_INSTANCE,
 				&Cuda::alpha, desc, x,
 				&Cuda::beta, desc, y));
 	}
 
-	void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy, const Dtype* x, Dtype* dx) {
-		checkCUDNN(cudnnSoftmaxBackward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_INSTANCE,
+	void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy,
+        const Dtype* x, Dtype* dx) {
+		checkCUDNN(cudnnSoftmaxBackward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE,
+                CUDNN_SOFTMAX_MODE_INSTANCE,
 				&Cuda::alpha, desc, y, desc, dy,
 				&Cuda::beta, desc, dx));
 	}
@@ -79,8 +66,6 @@ public:
 
 };
 
-
 template class Softmax<float>;
-
 
 #endif /* ACTIVATION_SOFTMAX_H_ */

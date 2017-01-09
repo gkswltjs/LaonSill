@@ -77,15 +77,6 @@ void Network<Dtype>::setLayersConfig(LayersConfig<Dtype>* layersConfig) {
 
 template <typename Dtype>
 Network<Dtype>::~Network() {
-    /*
-    typename vector<LayersConfig<Dtype>*>::iterator iter;
-    for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end(); iter++) {
-        if ((*iter)->_inputLayer) {
-            delete (*iter)->_inputLayer;
-            (*iter)->_inputLayer = NULL;
-        }
-    }
-    */
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
     Network<Dtype>::networkIDMap.erase(this->networkID);
 }
@@ -117,11 +108,8 @@ void Network<Dtype>::sgd(int epochs) {
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
 	const uint32_t trainDataSize = dataSet->getNumTrainData();
-	const uint32_t numBatches = trainDataSize / config->_batchSize / Worker<Dtype>::consumerCount;
-
-	Timer timer1;
-	Timer timer2;
-
+	const uint32_t numBatches = 
+        trainDataSize / config->_batchSize / Worker<Dtype>::consumerCount;
 
 	//iterations = 0;
 	for (uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
@@ -131,8 +119,6 @@ void Network<Dtype>::sgd(int epochs) {
 		cout << "epochIndex: " << epochIndex << ", epochs: " << epochs << endl;
 
 		dataSet->shuffleTrainDataSet();
-		timer1.start();
-		timer2.start();
 
         // GPU가 여러대 있는 경우에 한대의 GPU가 하나의 batch에 해당하는
         // 데이터를 트레이닝한다.
@@ -146,7 +132,8 @@ void Network<Dtype>::sgd(int epochs) {
 
 
 #if SAVE_PROPOSAL_TARGET_LAYER
-		ofstream ofs(config->_savePathPrefix + "/proposal_target_layer.ptl", ios::out | ios::binary);
+		ofstream ofs(config->_savePathPrefix + "/proposal_target_layer.ptl",
+            ios::out | ios::binary);
 		const uint32_t numData = numBatches*5;
 		ofs.write((char*)&numData, sizeof(uint32_t));
 #endif
@@ -156,13 +143,6 @@ void Network<Dtype>::sgd(int epochs) {
                 Worker<Dtype>::consumerIdx;
 			config->_iterations++;
 
-			/*
-			if((batchIndex+1)%100 == 0) {
-				cout << "Minibatch " << batchIndex+1 <<
-						" started: " << timer2.stop(false) << endl;
-				timer2.start();
-			}
-			*/
 #ifndef GPU_MODE
 			inputLayer->reset_nabla(0);
 #endif
@@ -204,9 +184,6 @@ void Network<Dtype>::sgd(int epochs) {
 					}
 					cout << endl;
 
-
-
-
                     //const uint32_t numTestData = dataSet->getNumTestData();
                     //if(numTestData > 0) {
                     //    double cost = evaluateTestSet();
@@ -214,28 +191,29 @@ void Network<Dtype>::sgd(int epochs) {
 
                         /*
                         cout << "epoch: " << epochIndex+1 <<
-                        		", iteration: " << epochIndex*numBatches+batchTotalIndex+1 << " " <<
-                        		accurateCnt << " / " << numTestData <<
-                        		", accuracy: " << accuracy <<
-                        		", cost: " << cost <<
-                        		" :" << timer1.stop(false) << endl;
-                        		*/
+                            ", iteration: " << epochIndex*numBatches+batchTotalIndex+1 <<
+                                " " << accurateCnt << " / " << numTestData <<
+                            ", accuracy: " << accuracy << ", cost: " << cost <<
+                            " :" << timer1.stop(false) << endl;
+                            */
                         /*
                         //const float cost = evaluations[0]->getCost() / numTestData;
                         const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
                         const float accuracy = (float)accurateCnt/numTestData;
                         
                         cout << "epoch: " << epochIndex+1 << ", iteration: " 
-                            << epochIndex*numBatches+batchTotalIndex+1 << " " << accurateCnt << " / " 
-                            << numTestData << ", accuracy: " << accuracy << ", cost: " << cost 
-                            << " :" << timer1.stop(false) << endl;
+                            << epochIndex*numBatches+batchTotalIndex+1 << " " << 
+                            accurateCnt << " / " << numTestData << ", accuracy: " << 
+                            accuracy << ", cost: " << cost << " :" << timer1.stop(false) << 
+                            endl;
                         
                         for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
                             networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy",
                                 (double)evaluations[0]->getAccurateCount()/numTestData*100);
                             networkListeners[nl]->onAccuracyComputed(1, "top5_accuracy",
                                 (double)evaluations[1]->getAccurateCount()/numTestData*100);
-                            //networkListeners[nl]->onCostComputed(0, "cost", evaluations[0]->getCost()/numTestData);
+                            //networkListeners[nl]->onCostComputed(0, "cost",
+                            //  evaluations[0]->getCost()/numTestData);
                             networkListeners[nl]->onCostComputed(0, "cost", cost);
                         }
                         */
@@ -425,7 +403,8 @@ double Network<Dtype>::accuracy(const vector<const DataSample *> &dataSet) {
 		const DataSample *dataSample = dataSet[i];
 		Util::printVec(dataSample->getData(), "data");
 		Util::printVec(dataSample->getTarget(), "target");
-		total += testEvaluateResult(feedforward(dataSample->getData()), dataSample->getTarget());
+		total += testEvaluateResult(feedforward(dataSample->getData()),
+                                    dataSample->getTarget());
 	}
 	return total/(double)dataSize;
 }
@@ -564,8 +543,9 @@ void Network<Dtype>::clipGradients() {
 	const double l2normParamsData = sqrt(sumsqParamsData);
 
 	if (clipGradientsLevel < 0.0001) {
-		//cout << "Gradient clipping: no scaling down gradients (L2 norm " << l2normParamsGrad <<
-		//		", Weight: " << l2normParamsData << " <= " << clipGradientsLevel << ")" << endl;
+		//cout << "Gradient clipping: no scaling down gradients (L2 norm " << 
+        //  l2normParamsGrad << ", Weight: " << l2normParamsData << " <= " << 
+        //  clipGradientsLevel << ")" << endl;
 	} else {
 		if (l2normParamsGrad > clipGradientsLevel) {
 			const float scale_factor = clipGradientsLevel / (l2normParamsGrad*1);
@@ -615,7 +595,8 @@ double Network<Dtype>::computeSumSquareParamsGrad() {
 					sqrt(temp));
 		}
 		sumsq += temp;
-		//cout << getLayersConfig()->_learnableLayers[i]->getName() << ", grad l2-norm: " << sqrt(temp) << endl;
+		//cout << getLayersConfig()->_learnableLayers[i]->getName() << ", grad l2-norm: " <<
+        //  sqrt(temp) << endl;
 	}
 	return sumsq;
 }
@@ -628,47 +609,10 @@ void Network<Dtype>::scaleParamsGrad(float scale) {
 	}
 }
 
-
-
-
-
 template <typename Dtype>
 void Network<Dtype>::save() {
-	//if(saveConfigured && cost < minCost) {
-	//	minCost = cost;
-	//	char savePath[256];
-	//	sprintf(savePath, "%s%02d.network", savePrefix, i+1);
-	//	save(savePath);
-
-
-	/*
-	InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
-	vector<OutputLayer<Dtype>*>& outputLayers = getLayersConfig()->_outputLayers;
-
-	Timer timer;
-	timer.start();
-
-	ofstream ofs(filename, ios::out | ios::binary);
-	//int inputLayerSize = 1;
-	int outputLayerSize = outputLayers.size();
-
-	ofs.write((char *)&in_dim, sizeof(io_dim));
-	//ofs.write((char *)&inputLayerSize, sizeof(int));		// input layer size
-	//ofs.write((char *)&inputLayer, sizeof(Layer<Dtype>*));		// input layer address
-	ofs.write((char *)&outputLayerSize, sizeof(UINT));		// output layer size
-	for(UINT i = 0; i < outputLayers.size(); i++) {
-		ofs.write((char *)&outputLayers[i], sizeof(Layer<Dtype>*));
-	}
-	inputLayer->save(0, ofs);
-	ofs.close();
-
-	cout << "time elapsed to save network: " << timer.stop(false) << endl;
-	*/
-
 	config->save();
 }
-
-
 
 template <typename Dtype>
 void Network<Dtype>::loadPretrainedWeights() {
@@ -717,66 +661,12 @@ void Network<Dtype>::loadPretrainedWeights() {
 
 			dataMap[dataName] = data;
 			cout << data->_name << " is set to " << dataName << endl;
-
-			/*
-			// 별도의 weight name을 지정하지 않은 경우 전체 weights load
-			if (weightsMap.size() < 1) {
-				dataMap[data->_name] = data;
-
-				cout << data->_name << " is set to " << data->_name << endl;
-			}
-			// 별도의 weight name을 지정한 경우 weights update
-			else {
-				map<string, string>::iterator it;
-				it = weightsMap.find(data->_name);
-				if (it == weightsMap.end()) {
-					dataMap[data->_name] = data;
-					cout << data->_name << " is set to " << data->_name << endl;
-				} else {
-					dataMap[it->second] = data;
-					cout << data->_name << " is set to " << it->second << endl;
-				}
-			}
-			*/
-
-			/*
-			// 별도의 weight name을 지정하지 않은 경우 전체 weights load
-			if (config->_weightsArgs[i].weights.size() < 1) {
-				dataMap[data->_name] = data;
-			}
-			// 별도의 weight name을 지정한 경우 weights update
-			else {
-				uint32_t k;
-				for (k = 0; k < config->_weightsArgs[i].weights.size(); k++) {
-					if (data->_name == config->_weightsArgs[i].weights[k]) {
-						dataMap[data->_name] = data;
-						break;
-					}
-				}
-
-				if (k == config->_weightsArgs[i].weights.size()) {
-					delete data;
-					data = 0;
-				}
-			}
-			*/
-
-
 		}
 		cout << "--------------------------------------" << endl;
 		Data<float>::printConfig = false;
 		ifs.close();
 	}
 
-
-
-
-
-
-
-
-
-
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
 	vector<LearnableLayer<Dtype>*> learnableLayers = layersConfig->_learnableLayers;
 	const uint32_t numLearnableLayers = learnableLayers.size();
@@ -791,48 +681,6 @@ void Network<Dtype>::loadPretrainedWeights() {
 	dataMap.clear();
 
 }
-
-
-
-/*
-template <typename Dtype>
-void Network<Dtype>::loadPretrainedWeights() {
-	if (config->_weightsPath == "") return;
-
-	// load data list from model file
-	map<std::string, Data<float>*> dataMap;
-	ifstream ifs(config->_weightsPath, std::ios::in | std::ios::binary);
-
-	uint32_t numData;
-	ifs.read((char*)&numData, sizeof(uint32_t));
-
-	Data<float>::printConfig = true;
-	cout << "Load Pretrained Weights ... ----------" << endl;
-	for (uint32_t i = 0; i < numData; i++) {
-		Data<float>* data = new Data<float>("");
-		data->load(ifs);
-		dataMap[data->_name] = data;
-		data->print();
-	}
-	cout << "--------------------------------------" << endl;
-	Data<float>::printConfig = false;
-	ifs.close();
-
-	LayersConfig<Dtype>* layersConfig = getLayersConfig();
-	vector<LearnableLayer<Dtype>*> learnableLayers = layersConfig->_learnableLayers;
-	const uint32_t numLearnableLayers = learnableLayers.size();
-
-	for (uint32_t i = 0; i < numLearnableLayers; i++) {
-		learnableLayers[i]->loadParams(dataMap);
-	}
-
-	map<std::string, Data<float>*>::iterator it;
-	for (it = dataMap.begin(); it != dataMap.end(); it++)
-		delete it->second;
-	dataMap.clear();
-}
-*/
-
 
 template <typename Dtype>
 Layer<Dtype>* Network<Dtype>::findLayer(const string name) {
@@ -845,7 +693,6 @@ Layer<Dtype>* Network<Dtype>::findLayer(const string name) {
 		return 0;
 	}
 }
-
 
 template <typename Dtype>
 void Network<Dtype>::_feedforward(uint32_t batchIndex) {
@@ -934,13 +781,12 @@ void Network<Dtype>::_backpropagation(uint32_t batchIndex) {
 	}
 }
 
-
-
 template <typename Dtype>
 void Network<Dtype>::saveProposalTargets(ofstream& ofs) {
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
 
-	typename map<string, Layer<Dtype>*>::iterator it = layersConfig->_nameLayerMap.find("roi-data");
+	typename map<string, Layer<Dtype>*>::iterator it =
+        layersConfig->_nameLayerMap.find("roi-data");
 	assert(it != layersConfig->_nameLayerMap.end());
 
 	Layer<Dtype>* proposalTargetLayer = it->second;
@@ -955,6 +801,5 @@ void Network<Dtype>::saveProposalTargets(ofstream& ofs) {
 	//proposalTargetLayer->_outputData[0]->print_data({}, false);
 	//Data<Dtype>::printConfig = false;
 }
-
 
 template class Network<float>;

@@ -20,7 +20,8 @@
  * @brief 풀링 레이어
  * @details Max 풀링, Average 풀링 제공
  *          padding에 관한 옵션을 제공하지 않고 있고
- *          GoogLeNet에 따라 Max 풀링의 경우 padding을 기본으로, Average 풀링의 경우 Non padding을 기본으로 하고 있다.
+ *          GoogLeNet에 따라 Max 풀링의 경우 padding을 기본으로, Average 풀링의 경우 
+ *          Non padding을 기본으로 하고 있다.
  */
 template <typename Dtype>
 class PoolingLayer : public HiddenLayer<Dtype> {
@@ -89,7 +90,8 @@ public:
 	 * @param name 레이어 이름 문자열 포인터
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 */
-	PoolingLayer(const std::string name, pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
+	PoolingLayer(const std::string name, pool_dim pool_d,
+                 typename Pooling<Dtype>::Type poolingType);
 	/**
 	 * @details PoolingLayer 소멸자
 	 */
@@ -104,8 +106,6 @@ public:
 protected:
 	void initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
 
-	virtual void _clearShape();
-
 protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
 	Pooling<Dtype> *pooling_fn;			///< 풀링 객체
@@ -115,8 +115,8 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
-	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t outputTensorDesc;	///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 #endif
 
 

@@ -25,9 +25,6 @@ public:
 
 	virtual const std::string getName() = 0;
 
-
-
-
 	/**
 	 * @details 학습한 파라미터 그레디언트를 파라미터에 업데이트한다.
 	 */
@@ -64,7 +61,8 @@ public:
 
 
 protected:
-	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
+	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
+            Data<Dtype>* dataHistory, Data<Dtype>* data) {
 		/*
 		const Dtype normScale = 1.0/this->in_dim.batches;
 		const Dtype momentum = this->networkConfig->_momentum;
@@ -78,17 +76,18 @@ protected:
 		Dtype* d_paramData = data->mutable_device_data();
 		Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
 
-		checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &normScale, d_paramGrad, 1));							// normalized by batch size
-		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &regScale, d_paramData, 1, d_paramGrad, 1));			// regularize
-		checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &momentum, d_paramHistoryData, 1));					//
-		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &learnScale, d_paramGrad, 1, d_paramHistoryData, 1));	// momentum
-		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne, d_paramHistoryData, 1, d_paramData, 1));	// update
+		checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), 
+            &normScale, d_paramGrad, 1)); // normalized by batch size
+		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
+            &regScale, d_paramData, 1, d_paramGrad, 1)); // regularize
+		checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
+            &momentum, d_paramHistoryData, 1));					//
+		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), 
+            &learnScale, d_paramGrad, 1, d_paramHistoryData, 1));	// momentum
+		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), 
+            &negativeOne, d_paramHistoryData, 1, d_paramData, 1));	// update
 		*/
 	}
-
-
 };
-
-
 
 #endif /* LEARNABLELAYER_H_ */

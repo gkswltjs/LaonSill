@@ -141,8 +141,9 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     int elemValueSize = elemCnt * elemSize;
 
     if (jobElemType == Job::FloatArrayType) {
+        int arrayAllocSize = tempJobElemValueSize + elemValueSize + sizeof(int);
         // array size만큼을 고려해 줘야 한다.
-        this->jobElemValues = (char*)malloc(tempJobElemValueSize + elemValueSize + sizeof(int));
+        this->jobElemValues = (char*)malloc(arrayAllocSize);
     } else {
         this->jobElemValues = (char*)malloc(tempJobElemValueSize + elemValueSize);
     }

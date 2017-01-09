@@ -31,8 +31,6 @@ void Cuda::create(int usingGPUCount) {
 	int devGPUCount;	// 머신에서 제공하는 GPU 개수
 	int i, j;
 
-	Timer timer;
-	timer.start();
 	checkCudaErrors(cudaGetDeviceCount(&devGPUCount));
 	if(devGPUCount == 0) {
         SYS_LOG("ERROR: There is zero GPUs on this machine");

@@ -46,8 +46,10 @@ public:
 	Type getType() const { return this->type; }
 
 #ifndef GPU_MODE
-	virtual void forward(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
-	virtual void backward(const pool_dim &pool_d, const rcube &input, ucube &pool_map, rcube &output)=0;
+	virtual void forward(const pool_dim &pool_d, const rcube &input, ucube &pool_map,
+        rcube &output)=0;
+	virtual void backward(const pool_dim &pool_d, const rcube &input, ucube &pool_map,
+        rcube &output)=0;
 #else
 	cudnnPoolingDescriptor_t getPoolDesc() const { return poolDesc; }
 
@@ -69,8 +71,8 @@ public:
 	 * @param x 입력 데이터 장치 메모리 포인터
 	 * @param dx 입력 그레디언트 장치 메모리 포인터
 	 */
-	virtual void backward(const cudnnTensorDescriptor_t yDesc, const Dtype* y, const Dtype* dy,
-			const cudnnTensorDescriptor_t xDesc, const Dtype* x, Dtype* dx)=0;
+	virtual void backward(const cudnnTensorDescriptor_t yDesc, const Dtype* y, 
+        const Dtype* dy, const cudnnTensorDescriptor_t xDesc, const Dtype* x, Dtype* dx)=0;
 
 #endif
 

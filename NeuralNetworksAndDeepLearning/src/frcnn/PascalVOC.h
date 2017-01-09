@@ -30,7 +30,8 @@ using namespace cv;
 class PascalVOC : public IMDB {
 public:
 	PascalVOC(const std::string& imageSet, const std::string& year,
-			const std::string& devkitPath, const std::vector<float>& pixelMeans) : IMDB("voc_" + year + "_" + imageSet) {
+			const std::string& devkitPath, const std::vector<float>& pixelMeans)
+        : IMDB("voc_" + year + "_" + imageSet) {
 
 		this->year = year;
 		this->imageSet = imageSet;
@@ -59,7 +60,8 @@ public:
 	}
 
 	void loadImageSetIndex() {
-		std::string imageSetFile = this->dataPath + "/ImageSets/Main/" + this->imageSet + ".txt";
+		std::string imageSetFile =
+            this->dataPath + "/ImageSets/Main/" + this->imageSet + ".txt";
 
 		std::ifstream ifs(imageSetFile.c_str(), std::ios::in);
 		if (!ifs.is_open()) {
@@ -91,19 +93,14 @@ public:
 	}
 
 	void loadPascalAnnotation(const uint32_t index, RoIDB& roidb) {
-		const std::string filename = this->dataPath + "/Annotations/" + imageIndex[index] + ".xml";
+		const std::string filename =
+            this->dataPath + "/Annotations/" + imageIndex[index] + ".xml";
 		Annotation annotation;
 		readAnnotation(filename, annotation);
 
-		//roidb.image = this->dataPath + "/JPEGImages/" + index + this->imageExt;
 		roidb.image = imagePathAt(index);
 		roidb.width = annotation.size.width;
 		roidb.height = annotation.size.height;
-
-
-
-
-
 
 		roidb.mat = cv::imread(roidb.image);
 #if TEST_MODE
@@ -132,20 +129,15 @@ public:
 				// imPtr: target, reordered as rgb
 				// tempImPtr: source, ordered as bgr
 				// pixelMeans: ordered as rgb
-				imPtr[rowUnit + colUnit + 0] = tempImPtr[rowUnit + colUnit + 2] - pixelMeans[0];
-				imPtr[rowUnit + colUnit + 1] = tempImPtr[rowUnit + colUnit + 1] - pixelMeans[1];
-				imPtr[rowUnit + colUnit + 2] = tempImPtr[rowUnit + colUnit + 0] - pixelMeans[2];
+				imPtr[rowUnit + colUnit + 0] =
+                    tempImPtr[rowUnit + colUnit + 2] - pixelMeans[0];
+				imPtr[rowUnit + colUnit + 1] =
+                    tempImPtr[rowUnit + colUnit + 1] - pixelMeans[1];
+				imPtr[rowUnit + colUnit + 2] =
+                    tempImPtr[rowUnit + colUnit + 0] - pixelMeans[2];
 #endif
 			}
 		}
-
-
-
-
-
-
-
-
 
 		const uint32_t numObjs = annotation.objects.size();
 
@@ -202,13 +194,14 @@ public:
 		sizeElement->FirstChildElement("depth")->QueryIntText((int*)&annotation.size.depth);
 
 		// object
-		for (tinyxml2::XMLElement* objectElement = annotationNode->FirstChildElement("object");
-				objectElement != 0;
+		for (tinyxml2::XMLElement* objectElement = 
+                annotationNode->FirstChildElement("object"); objectElement != 0;
 				objectElement = objectElement->NextSiblingElement("object")) {
 			Object object;
 			object.name = objectElement->FirstChildElement("name")->GetText();
 			object.label = convertClassToInd(object.name);
-			objectElement->FirstChildElement("difficult")->QueryIntText((int*)&object.difficult);
+			objectElement->FirstChildElement("difficult")
+                         ->QueryIntText((int*)&object.difficult);
 
 			tinyxml2::XMLElement* bndboxElement = objectElement->FirstChildElement("bndbox");
 			bndboxElement->FirstChildElement("xmin")->QueryIntText((int*)&object.xmin);
@@ -280,12 +273,9 @@ private:
 	const uint32_t numClasses = 21;
 	std::vector<std::string> classes;
 
-
 	std::vector<cv::Mat> matList;
 
 	std::vector<float> pixelMeans;
 };
-
-
 
 #endif /* PASCALVOC_H_ */

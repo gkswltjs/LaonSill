@@ -27,47 +27,18 @@ public:
 	Top5Evaluation() {}
 	virtual ~Top5Evaluation() {}
 
-	/*
-	virtual void evaluate(const int num_labels, const int batches, const Dtype *output, const uint32_t *y) {
-		labelScoreList.resize(num_labels);
-
-		//cout << "Top5Evaluation: " << endl;
-		for(int j = 0; j < batches; j++) {
-			//cout << "result for batch " << j << "- target: " << y[j] << endl;
-			for(int i = 0; i < num_labels; i++) {
-				labelScoreList[i].label = i;
-				labelScoreList[i].score = output[num_labels*j+i];
-			}
-
-			//cout << "prediction: ";
-            std::sort(labelScoreList.begin(), labelScoreList.end(), std::greater<LabelScore>());
-			//for(int i = 0; i < labelScoreList.size(); i++) {
-			//	cout << i << ": " << labelScoreList[i].label << ", " << labelScoreList[i].score << endl;
-			//}
-
-			for(int i = 0; i < 5; i++) {
-				//cout << labelScoreList[i].label << ", ";
-				if(y[j] == labelScoreList[i].label) {
-					this->accurateCount++;
-					break;
-				}
-			}
-			//cout << endl;
-		}
-		//exit(1);
-	}
-	*/
-
-	virtual void evaluate(const int num_labels, const int batches, const Dtype *output, DataSet<Dtype>* dataSet, const uint32_t baseIndex) {
+	virtual void evaluate(const int num_labels, const int batches, const Dtype *output,
+        DataSet<Dtype>* dataSet, const uint32_t baseIndex) {
 		labelScoreList.resize(num_labels);
 		for(int j = 0; j < batches; j++) {
 			for(int i = 0; i < num_labels; i++) {
 				labelScoreList[i].label = i;
 				labelScoreList[i].score = output[num_labels*j+i];
 			}
-            std::sort(labelScoreList.begin(), labelScoreList.end(), std::greater<LabelScore>());
-			for(int i = 0; i < 5; i++) {
-				if(*dataSet->getTestLabelAt(baseIndex+j) == labelScoreList[i].label) {
+            std::sort(labelScoreList.begin(), labelScoreList.end(),
+                      std::greater<LabelScore>());
+			for (int i = 0; i < 5; i++) {
+				if (*dataSet->getTestLabelAt(baseIndex+j) == labelScoreList[i].label) {
 					this->accurateCount++;
 					break;
 				}
@@ -94,9 +65,8 @@ private:
 			return (this->score > right.score);
 		}
 	};
-    std::vector<LabelScore> labelScoreList;				///< 네트워크가 추정한 순위를 정렬하기 위한 버퍼
+    std::vector<LabelScore> labelScoreList;	 ///< 네트워크가 추정한 순위를 정렬하기 위한 버퍼
 };
-
 
 template class Top5Evaluation<float>;
 

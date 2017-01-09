@@ -178,39 +178,20 @@ void FullyConnectedLayer<Dtype>::reshape() {
 }
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_clearShape() {
-	delete _params[0];
-	delete _params[1];
-	//_params.clear();
-
-	delete _paramsHistory[0];
-	delete _paramsHistory[1];
-	//_paramsHistory.clear();
-
-	delete _preActivation;
-
-
-	//if(mask) delete [] mask;
-	//checkCudaErrors(cudaFree(d_mask));
-	HiddenLayer<Dtype>::_clearShape();
-}
-
-
-template <typename Dtype>
 void FullyConnectedLayer<Dtype>::update() {
 	const uint32_t in_rows = this->_inputShape[0][2];
 	const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
 	const uint32_t weightSize = in_rows * out_rows;
 	const Dtype regScale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
-	//const Dtype learnScale = this->networkConfig->_baseLearningRate * weight_update_param.lr_mult;
-	const Dtype learnScale = this->networkConfig->getLearningRate() * weight_update_param.lr_mult;
+	const Dtype learnScale = 
+        this->networkConfig->getLearningRate() * weight_update_param.lr_mult;
 	_updateParam(weightSize, regScale, learnScale, _paramsHistory[Weight], _params[Weight]);
 
 	const uint32_t biasSize = out_rows;
 	const Dtype regScale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
-	//const Dtype learnScale_b = this->networkConfig->_baseLearningRate * bias_update_param.lr_mult;
-	const Dtype learnScale_b = this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
+	const Dtype learnScale_b = 
+        this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
 	_updateParam(biasSize, regScale_b, learnScale_b, _paramsHistory[Bias], _params[Bias]);
 }
 
@@ -426,7 +407,6 @@ void FullyConnectedLayer<Dtype>::_dropoutForward() {
 		const Dtype* d_mask_mem = _mask.device_mem();
 		Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
-		//Dropout<<<RoundUp(b_out, BW), BW>>>(b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
 		Dropout<<<SOOOA_GET_BLOCKS(b_out), SOOOA_CUDA_NUM_THREADS>>>(
 				b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
 	}
@@ -461,7 +441,6 @@ void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 		const Dtype* d_mask_mem = _mask.device_mem();
 		Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
 
-		//Dropout<<<RoundUp(batchSize, BW), BW>>>(batchSize, d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
 		Dropout<<<SOOOA_GET_BLOCKS(batchSize), SOOOA_CUDA_NUM_THREADS>>>(
 				batchSize, d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
 
@@ -562,56 +541,10 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 	*/
 }
 
-
-/*
-template <typename Dtype>
-double FullyConnectedLayer<Dtype>::testParamAbnormality() {
-	const Dtype* weightGrad = _params[Weight]->host_grad();
-	const size_t count = _params[Weight]->getCount();
-
-	double mean = 0.0;
-	for(uint32_t i = 0; i < count; i++) {
-		mean += weightGrad[i];
-	}
-	mean /= count;
-
-	double sd = 0.0;
-	for(uint32_t i = 0; i < count; i++) {
-		sd += (weightGrad[i]-mean)*(weightGrad[i]-mean);
-	}
-	sd = sqrt(sd)/(count-1);
-
-	cout << this->name << ": mean: " << mean << ", sd: " << sd << endl;
-
-	for(uint32_t i = 0; i < count; i++) {
-		if(abs(weightGrad[i]-mean) > 10000*sd) {
-			return weightGrad[i];
-		}
-	}
-	return DBL_MAX;
-}
-*/
-
-
-
-
-
-
-
 template FullyConnectedLayer<float>::~FullyConnectedLayer();
 template void FullyConnectedLayer<float>::reshape();
-template void FullyConnectedLayer<float>::_clearShape();
 template void FullyConnectedLayer<float>::update();
 template void FullyConnectedLayer<float>::feedforward();
 template void FullyConnectedLayer<float>::backpropagation();
 
-
 #endif
-
-
-
-
-
-
-
-

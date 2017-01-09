@@ -35,13 +35,15 @@ void setup() {
 	dataNames = {"rpn_rois", "gt_boxes", "rois", "labels", "bbox_targets",
 			"bbox_inside_weights", "bbox_outside_weights"};
 
-	ProposalTargetLayer<float>::Builder* builder = new typename ProposalTargetLayer<float>::Builder();
+	ProposalTargetLayer<float>::Builder* builder =
+        new typename ProposalTargetLayer<float>::Builder();
 	builder
 		->id(1)
 		->name("roi-data")
 		->numClasses(21)
 		->inputs({"rpn_rois", "gt_boxes"})
-		->outputs({"rois", "labels", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"});
+		->outputs({"rois", "labels", "bbox_targets", "bbox_inside_weights",
+                   "bbox_outside_weights"});
 
 	layer = dynamic_cast<ProposalTargetLayer<float>*>(builder->build());
 

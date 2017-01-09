@@ -96,10 +96,6 @@ inline int SOOOA_GET_BLOCKS(const int N) {
   return (N + SOOOA_CUDA_NUM_THREADS - 1) / SOOOA_CUDA_NUM_THREADS;
 }
 
-
-
-
-
 #define CUDA_KERNEL_LOOP(i, n) 										\
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; 			\
 		i < (n); 													\
@@ -108,14 +104,6 @@ inline int SOOOA_GET_BLOCKS(const int N) {
 
 // CUDA: check for error after kernel execution and exit loudly if there is one.
 #define CUDA_POST_KERNEL_CHECK CUDA_CHECK(cudaPeekAtLastError())
-
-
-
-
-
-
-
-
 
 // Block width for CUDA kernels
 #define BW 128
@@ -128,14 +116,10 @@ static inline unsigned int RoundUp(unsigned int nominator, unsigned int denomina
 	return (nominator + denominator - 1) / denominator;
 }
 
-
-
-
-
-
 /**
  * @brief Cuda 라이브러리 사용에 필요한 핸들을 생성하여 전역으로 관리하는 클래스.
- * @detail Cuda 장치를 설정하고 cudnn, cublas 관련 핸들을 전역으로 생성, 삭제, 리프레시 하는 역할을 함.
+ * @detail Cuda 장치를 설정하고 cudnn, cublas 관련 핸들을 전역으로 생성, 삭제, 리프레시
+ *        하는 역할을 함.
  */
 class Cuda {
 public:
@@ -144,7 +128,8 @@ public:
 
 	/**
 	 * @details 지정된 개수 만큼의 Cuda 장치를 설정하고 cudnn, cublas 핸들을 생성.
-	 * @param usingGPUCount Cuda를 사용할 장치 개수. 0을 입력하면 머신에 존재하는 모든 Cuda장치를 사용함.
+	 * @param usingGPUCount Cuda를 사용할 장치 개수. 0을 입력하면 머신에 존재하는 모든
+     *                      Cuda장치를 사용함.
 	 */
 	static void create(int usingGPUCount);
 	/**
@@ -159,10 +144,8 @@ public:
 	static int gpuid;				    ///< Cuda를 사용할 장치의 id
 	static int gpuCount;			    ///< Cuda를 사용할 장치 개수.
     static std::vector<int> availableGPU;    ///< 사용가능한 GPU. (peer access가 가능한 GPU)
-	//static std::vector<cudnnHandle_t> cudnnHandles;	///< cudnn 라이브러리 컨텍스트 핸들.
-	//static std::vector<cublasHandle_t> cublasHandles;	///< cublas 라이브러리 컨텍스트 핸들.
-	static thread_local cudnnHandle_t cudnnHandle;			///< cudnn 라이브러리 컨텍스트 핸들.
-	static thread_local cublasHandle_t cublasHandle;			///< cublas 라이브러리 컨텍스트 핸들.
+	static thread_local cudnnHandle_t cudnnHandle;		///< cudnn 라이브러리 컨텍스트 핸들.
+	static thread_local cublasHandle_t cublasHandle;	///< cublas 라이브러리 컨텍스트 핸들.
 
 	static const float alpha;
 	static const float beta;

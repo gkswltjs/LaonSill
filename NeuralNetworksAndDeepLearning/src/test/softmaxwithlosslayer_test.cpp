@@ -31,7 +31,8 @@ void setup() {
 	npzName = "/home/jkim/Documents/np_array/softmaxwithlosslayer.npz";
 	dataNames = {"rpn_cls_score_reshape", "rpn_labels", "rpn_cls_loss"};
 
-	SoftmaxWithLossLayer<float>::Builder* builder = new typename SoftmaxWithLossLayer<float>::Builder();
+	SoftmaxWithLossLayer<float>::Builder* builder =
+        new typename SoftmaxWithLossLayer<float>::Builder();
 	builder
 		->id(1)
 		->name("rpn_loss_cls")

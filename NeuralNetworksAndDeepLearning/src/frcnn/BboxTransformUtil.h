@@ -104,10 +104,14 @@ public:
 			for (uint32_t j = 0; j < numClasses; j++) {
 				deltaElemIndex = i*numDeltaElems + j*4;
 
-				//dx = deltaPtr[deltaElemIndex + 0]*TRAIN_BBOX_NORMALIZE_STDS[0]+TRAIN_BBOX_NORMALIZE_MEANS[0];
-				//dy = deltaPtr[deltaElemIndex + 1]*TRAIN_BBOX_NORMALIZE_STDS[1]+TRAIN_BBOX_NORMALIZE_MEANS[1];
-				//dw = deltaPtr[deltaElemIndex + 2]*TRAIN_BBOX_NORMALIZE_STDS[2]+TRAIN_BBOX_NORMALIZE_MEANS[2];
-				//dh = deltaPtr[deltaElemIndex + 3]*TRAIN_BBOX_NORMALIZE_STDS[3]+TRAIN_BBOX_NORMALIZE_MEANS[3];
+				//dx = deltaPtr[deltaElemIndex + 0]*TRAIN_BBOX_NORMALIZE_STDS[0]+
+                //  TRAIN_BBOX_NORMALIZE_MEANS[0];
+				//dy = deltaPtr[deltaElemIndex + 1]*TRAIN_BBOX_NORMALIZE_STDS[1]+
+                //  TRAIN_BBOX_NORMALIZE_MEANS[1];
+				//dw = deltaPtr[deltaElemIndex + 2]*TRAIN_BBOX_NORMALIZE_STDS[2]+
+                //  TRAIN_BBOX_NORMALIZE_MEANS[2];
+				//dh = deltaPtr[deltaElemIndex + 3]*TRAIN_BBOX_NORMALIZE_STDS[3]+
+                //  TRAIN_BBOX_NORMALIZE_MEANS[3];
 
 				dx = deltaPtr[deltaElemIndex + 0];
 				dy = deltaPtr[deltaElemIndex + 1];
@@ -125,7 +129,6 @@ public:
 				//predBox[j*4 + 3] = predCtrY + 0.5 * predH;
 				predBox[j*4 + 2] = predCtrX + 0.5 * predW - 1.0;
 				predBox[j*4 + 3] = predCtrY + 0.5 * predH - 1.0;
-
 
 #if BBOXTRANSFORMUTIL_LOG
 				dxs[j] = dx;
@@ -221,43 +224,4 @@ public:
 	}
 };
 
-
-
-
 #endif /* BBOXTRANSFORMUTIL_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

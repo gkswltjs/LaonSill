@@ -53,24 +53,6 @@ void DQNOutputLayer<Dtype>::initialize() {
 	//bias.zeros();
 }
 
-template <typename Dtype>
-void DQNOutputLayer<Dtype>::_clearShape() {
-	OutputLayer<Dtype>::_clearShape();
-}
-
-/*
-template <typename Dtype>
-void DQNOutputLayer<Dtype>::_load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap) {
-	OutputLayer<Dtype>::_load(ifs, layerMap);
-	initialize();
-	DQNOutputLayer<Dtype>::_shape(false);
-}
-*/
-
-
-
-
-
 #ifndef GPU_MODE
 template <typename Dtype>
 void DQNOutputLayer<Dtype>::cost(const rvec &target) {
@@ -89,22 +71,7 @@ void DQNOutputLayer<Dtype>::cost(const rvec &target) {
 
 	propBackpropagation();
 }
+
 #endif
 
-
-
-
-
-
-
-
 template class DQNOutputLayer<float>;
-
-
-
-
-
-
-
-
-

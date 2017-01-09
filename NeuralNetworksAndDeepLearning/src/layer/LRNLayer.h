@@ -14,16 +14,14 @@
 #include "LayerConfig.h"
 #include "Exception.h"
 
-
-
-
-
 /**
  * @brief Local Response Normalization 레이어
- * @details 입력값의 row x column 상의 값들에 대해 인접 채널의 동일 위치값들을 이용(ACROSS CHANNEL)하여 정규화하는 레이어
- *          (WITHIN CHANNEL과 같이 한 채널 내에서 정규화하는 방법도 있으나 아직 사용하지 않아 별도 파라미터로 기능을 제공하지 않음)
- *          'http://caffe.berkeleyvision.org/tutorial/layers.html'의 Local Response Normalization (LRN) 항목 참고
- *          (1+(α/n)∑ixi^2)^β의 수식으로 계산
+ * @details 입력값의 row x column 상의 값들에 대해 인접 채널의 동일 위치값들을 
+ *          이용(ACROSS CHANNEL)하여 정규화하는 레이어 
+ *          (WITHIN CHANNEL과 같이 한 채널 내에서 정규화하는 방법도 있으나 아직 사용하지 않아
+ *           별도 파라미터로 기능을 제공하지 않음)
+ *          'http://caffe.berkeleyvision.org/tutorial/layers.html'의 Local Response 
+ *          Normalization (LRN) 항목 참고 (1+(α/n)∑ixi^2)^β의 수식으로 계산
  */
 template <typename Dtype>
 class LRNLayer : public HiddenLayer<Dtype> {
@@ -94,9 +92,6 @@ public:
 protected:
 	void initialize(lrn_dim lrn_d);
 
-	virtual void _clearShape();
-
-
 protected:
 	lrn_dim lrn_d;								///< LRN 연산 관련 파라미터 구조체
 
@@ -104,12 +99,11 @@ protected:
 	rcube delta_input;
 	rcube z;	// beta powered 전의 weighted sum 상태의 norm term
 #else
-	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
-	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t outputTensorDesc;	///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 	cudnnLRNDescriptor_t lrnDesc;				///< cudnn LRN 연산 정보 구조체
 #endif
 
 };
-
 
 #endif /* LAYER_LRNLAYER_H_ */

@@ -127,46 +127,4 @@ private:
 
 };
 
-
 #endif /* GENERATEANCHORSUTIL_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

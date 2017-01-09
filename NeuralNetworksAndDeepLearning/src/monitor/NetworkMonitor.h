@@ -50,13 +50,20 @@ public:
 			gradSumsqLogger.push_back(new StatGraphPlotter(250, 10));
 			dataSumsqLogger.push_back(new StatGraphPlotter(250, 10));
 		}
-		if(mode == WRITE_ONLY || mode == PLOT_AND_WRITE) {
+		if (mode == WRITE_ONLY || mode == PLOT_AND_WRITE) {
 			const std::string postfix = now();
 
-			costLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_cost_"+postfix+".csv"));
-			accuracyLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_accuracy_"+postfix+".csv"));
-			gradSumsqLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_gradSumsq_"+postfix+".csv"));
-			dataSumsqLogger.push_back(new StatFileWriter(std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_dataSumsq_"+postfix+".csv"));
+			costLogger.push_back(new StatFileWriter(
+                std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_cost_"+postfix+".csv"));
+			accuracyLogger.push_back(new StatFileWriter(
+                std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_accuracy_"+postfix+
+                ".csv"));
+			gradSumsqLogger.push_back(new StatFileWriter(
+                std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_gradSumsq_"+postfix+
+                ".csv"));
+			dataSumsqLogger.push_back(new StatFileWriter(
+                std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_dataSumsq_"+postfix+
+                ".csv"));
 		}
 	}
 	virtual ~NetworkMonitor() {
@@ -73,26 +80,28 @@ public:
 	}
 
 	void onCostComputed(const uint32_t index, const std::string name, const double cost) {
-		for(uint32_t i = 0; i < loggerSize; i++) {
+		for (uint32_t i = 0; i < loggerSize; i++) {
 			costLogger[i]->addStat(index, name, cost);
 		}
 	}
-	void onAccuracyComputed(const uint32_t index, const std::string name, const double accuracy) {
-		for(uint32_t i = 0; i < loggerSize; i++) {
+	void onAccuracyComputed(const uint32_t index, const std::string name,
+        const double accuracy) {
+		for (uint32_t i = 0; i < loggerSize; i++) {
 			accuracyLogger[i]->addStat(index, name, accuracy);
 		}
 	}
-	void onGradSumsqComputed(const uint32_t index, const std::string name, const double sumsq) {
-		for(uint32_t i = 0; i < loggerSize; i++) {
+	void onGradSumsqComputed(const uint32_t index, const std::string name,
+        const double sumsq) {
+		for (uint32_t i = 0; i < loggerSize; i++) {
 			gradSumsqLogger[i]->addStat(index, name, sumsq);
 		}
 	}
-	void onDataSumsqComputed(const uint32_t index, const std::string name, const double sumsq) {
-		for(uint32_t i = 0; i < loggerSize; i++) {
+	void onDataSumsqComputed(const uint32_t index, const std::string name,
+        const double sumsq) {
+		for (uint32_t i = 0; i < loggerSize; i++) {
 			dataSumsqLogger[i]->addStat(index, name, sumsq);
 		}
 	}
-
 
 private:
 	const std::string now() {
@@ -117,7 +126,6 @@ private:
 				std::to_string(1+ltm->tm_sec);
 
 	}
-
 
 protected:
 	std::string name;
@@ -145,30 +153,3 @@ protected:
 };
 
 #endif /* MONITOR_NETWORKMONITOR_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

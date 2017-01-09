@@ -82,7 +82,8 @@ ArtisticStyle<Dtype>::ArtisticStyle(Network<Dtype> *network,
 
 
 
-	this->contentGrad.shape(this->network->getLayersConfig()->_inputLayer->_output->getCount());
+	this->contentGrad.shape(
+        this->network->getLayersConfig()->_inputLayer->_output->getCount());
 
 	// art, style image
 	this->a = new CImg<Dtype>(styleImagePath.c_str());
@@ -104,7 +105,8 @@ ArtisticStyle<Dtype>::ArtisticStyle(Network<Dtype> *network,
 	this->xdata = new Data<Dtype>();
 	this->xdata->shape({1, channel, height, width});
 
-	this->x = new CImg<Dtype>(this->xdata->mutable_host_data(), width, height, 1, channel, true);
+	this->x = new CImg<Dtype>(this->xdata->mutable_host_data(), width, height, 1, channel,
+                              true);
 	this->xdata->set_host_data(this->p->data());
 	//this->x->noise(0.1);
 	//this->x->noise(10);
@@ -177,10 +179,10 @@ void ArtisticStyle<Dtype>::style() {
 
 			int repLayerIndex = -1;
 			if((repLayerIndex = findContentRepLayer(repLayer->getName())) >= 0) {
-				//cout << "found representation layer in content representation layers ... " << endl;
+				//cout << "found repr layer in content representation layers ... " << endl;
 				contentCost += computeContentLossGradientAt(repLayerIndex);
 			} else if((repLayerIndex = findStyleRepLayer(repLayer->getName())) >= 0) {
-				//cout << "found representation layer in style representation layers ... " << endl;
+				//cout << "found repr layer in style representation layers ... " << endl;
 				styleCost += computeStyleLossGradientAt(repLayerIndex);
 			}
 			//on();
@@ -197,7 +199,8 @@ void ArtisticStyle<Dtype>::style() {
 		if(plotStyleCost) styleCostLogger.addStat(0, "style_cost", styleCost);
 		//cout << "contentCost: " << contentCost << endl;
 
-		//styleGrad.add_device_mem(network->config->_inputLayer->getNextLayers()[0]->_input->_grad.device_mem());
+		//styleGrad.add_device_mem(
+        //  network->config->_inputLayer->getNextLayers()[0]->_input->_grad.device_mem());
 		const Dtype* grad_device = inputLayer->getNextLayers()[0]->_input->_grad.device_mem();
 		Dtype* xdata_device = xdata->mutable_device_data();
 
@@ -207,7 +210,8 @@ void ArtisticStyle<Dtype>::style() {
 		//xdata->print_data("inputData:");
 		//off();
 
-		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(xdata->getCount()), &learningRate, grad_device, 1, xdata_device, 1));
+		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(xdata->getCount()),
+                                    &learningRate, grad_device, 1, xdata_device, 1));
 		//on();
 		//xdata->print_data("inputData:");
 		//off();
@@ -219,9 +223,11 @@ void ArtisticStyle<Dtype>::style() {
 			//xdata->host_data();
 			//xdata->_data.print("xdata:");
 
-			//contentLoss->set_mem(xresp->device_mem(), SyncMemCopyType::DeviceToDevice, 0, xresp->getSize());
+			//contentLoss->set_mem(xresp->device_mem(), SyncMemCopyType::DeviceToDevice, 
+            //                     0, xresp->getSize());
 			// xdataTemp device mem을 update한 후,
-			xdataTemp.set_mem(xdata->device_data(), SyncMemCopyType::DeviceToDevice, 0, xdata->getCount());
+			xdataTemp.set_mem(xdata->device_data(), SyncMemCopyType::DeviceToDevice, 0,
+                              xdata->getCount());
 			//xdataTemp.host_mem();
 			//xdataTemp.print("xdataTemp before:");
 			//xTempDisp->resize(*xTemp, true).display(*xTemp);
@@ -262,7 +268,8 @@ void ArtisticStyle<Dtype>::computeContentRepresentationLayerResponses() {
 	for(uint32_t i = 0; i < numContentRepLayers; i++) {
 		//Layer<Dtype>* contentRepLayer = network->findLayer(contentRepLayers[i]);
 		Layer<Dtype>* contentRepLayer = findRepresentationLayer(contentRepLayers[i]);
-		SyncMem<Dtype>* contentRepLayerResp = new SyncMem<Dtype>(contentRepLayer->_output->_data);
+		SyncMem<Dtype>* contentRepLayerResp = 
+            new SyncMem<Dtype>(contentRepLayer->_output->_data);
 		contentRepLayerResps.push_back(contentRepLayerResp);
 	}
 	delete pdata;
@@ -283,9 +290,10 @@ void ArtisticStyle<Dtype>::computeStyleRepresentationLayerResponses() {
 	for(uint32_t i = 0; i < numStyleRepLayers; i++) {
 		//Layer<Dtype>* styleRepLayer = network->findLayer(styleRepLayers[i]);
 		Layer<Dtype>* styleRepLayer = findRepresentationLayer(styleRepLayers[i]);
-		//cout << "compute style representation at layer " << styleRepLayer->getName() << endl;
+		//cout << "compute style repr at layer " << styleRepLayer->getName() << endl;
 
-		SyncMem<Dtype>* styleRepLayerResp = createGramMatrixFromData(styleRepLayer->_output.get());
+		SyncMem<Dtype>* styleRepLayerResp =
+            createGramMatrixFromData(styleRepLayer->_output.get());
 
 		// layer feature map으로부터 gram matrix가 제대로 생성되는지 확인할 것.
 		//on();
@@ -316,7 +324,8 @@ double ArtisticStyle<Dtype>::computeContentLossGradientAt(const int contentLayer
 	//cost->shape(contentRepLayer->_output->_grad.getSize());
 
 
-	contentLoss->set_mem(xresp->device_mem(), SyncMemCopyType::DeviceToDevice, 0, xresp->getSize());
+	contentLoss->set_mem(xresp->device_mem(), SyncMemCopyType::DeviceToDevice, 0,
+                         xresp->getSize());
 	contentLoss->sub_device_mem(presp->device_mem());
 
 
@@ -350,9 +359,11 @@ double ArtisticStyle<Dtype>::computeContentLossGradientAt(const int contentLayer
 
 	//contentLoss->print("contentLoss: ");
 	// content loss를 계산하고 contentRepLayer에 넘겨 backpropagation ...
-	// shared input이 아니어서 강제로 contentLoss를 contentRepLayer의 output grad에 copy해줘야 한다.
+	// shared input이 아니어서 강제로 contentLoss를 contentRepLayer의 output grad에 copy한다.
 	if(contentRepLayerName == end) {
-		contentRepLayer->_output->_grad.set_mem(contentLoss->device_mem(), SyncMemCopyType::DeviceToDevice, 0, contentLoss->getSize());
+		contentRepLayer->_output->_grad.set_mem(contentLoss->device_mem(),
+                                                SyncMemCopyType::DeviceToDevice, 0,
+                                                contentLoss->getSize());
 	} else {
 		contentRepLayer->_output->_grad.add_device_mem(contentLoss->device_mem());
 	}
@@ -372,11 +383,13 @@ double ArtisticStyle<Dtype>::computeStyleLossGradientAt(const int styleLayerInde
 
 	// 1. Style Loss를 계산할 레이어 찾기.
 	HiddenLayer<Dtype>* styleRepLayer = findRepresentationLayer(styleRepLayerName);
-	//cout << "style representation layer " << styleRepLayer->getName() << " of index " << styleLayerIndex << endl;
+	//cout << "style repr layer " << styleRepLayer->getName() << " of index " << 
+    //      styleLayerIndex << endl;
 
 	// 6. Loss Gradient계산에 필요한 상수 nl과 ml
 	const uint32_t nl = styleRepLayer->_output->channels();
-	const uint32_t ml = styleRepLayer->_output->height()*styleRepLayer->_output->width();		// number of feature map elements
+    // number of feature map elements
+	const uint32_t ml = styleRepLayer->_output->height()*styleRepLayer->_output->width();
 
 	// 2. 해당 레이어에 대해 미리 계산해둔 Style Image (Art Image)에 대한 Response 데이터
 	SyncMem<Dtype>* aresp = styleRepLayerResps[styleLayerIndex];
@@ -398,7 +411,7 @@ double ArtisticStyle<Dtype>::computeStyleLossGradientAt(const int styleLayerInde
 	//styleRepLayer->_output->print_data("styleRepLayer_output:");
 	//off();
 
-	// 5. Style Loss를 저장할 SyncMem 객체 생성 (해당 레이어의 Output Grad와 동일한 shape를 가짐)
+	// 5. Style Loss를 저장할 SyncMem 객체 생성 (레이어의 Output Grad와 동일한 shape를 가짐)
 	//SyncMem<Dtype>* styleLoss = new SyncMem<Dtype>();
 	//styleLoss->shape(styleRepLayer->_output->_grad.getSize());
 
@@ -432,7 +445,8 @@ double ArtisticStyle<Dtype>::computeStyleLossGradientAt(const int styleLayerInde
 	//size_t denom = ml;
 	//denom *= nl*nl*ml*styleRepLayers.size();
 	//double scale = styleReconstructionFactor/denom;
-	//cout << "factor: " << styleReconstructionFactor << ", nl: " << nl << ", ml: " << ml << ", denom: " << denom << ", scale: " << scale << endl;
+	//cout << "factor: " << styleReconstructionFactor << ", nl: " << nl << ", ml: " << ml <<
+    //  ", denom: " << denom << ", scale: " << scale << endl;
 	//gemmResult->scale_device_mem(scale);
 
 	Data<Dtype>* gemmResultd = new Data<Dtype>(styleRepLayer->_output->getShape());
@@ -473,7 +487,9 @@ double ArtisticStyle<Dtype>::computeStyleLossGradientAt(const int styleLayerInde
 
 
 	if(styleRepLayerName == end) {
-		styleRepLayer->_output->_grad.set_mem(gemmResultd->_data.device_mem(), SyncMemCopyType::DeviceToDevice, 0, gemmResultd->_data.getSize());
+		styleRepLayer->_output->_grad.set_mem(gemmResultd->_data.device_mem(),
+                                              SyncMemCopyType::DeviceToDevice, 0,
+                                              gemmResultd->_data.getSize());
 	} else {
 		styleRepLayer->_output->_grad.add_device_mem(gemmResultd->_data.device_mem());
 	}
@@ -489,54 +505,6 @@ double ArtisticStyle<Dtype>::computeStyleLossGradientAt(const int styleLayerInde
 
 	return styleCost;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
 

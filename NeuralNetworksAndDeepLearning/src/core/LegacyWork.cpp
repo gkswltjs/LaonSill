@@ -105,8 +105,8 @@ int LegacyWork<Dtype>::createNetwork() {
 
 #if FRCNN_TRAIN
 	vector<WeightsArg> weightsArgs(1);
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/vgg_cnn_m_1024_full_10000of_30000.param";
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/frcnn_full_fullof_180000.param";
+	//weightsArgs[0].weightsPath = 
+    //  "/home/jkim/Dev/SOOOA_HOME/network/vgg_cnn_m_1024_full_10000of_30000.param";
 
 	// frcnn 전체 네트워크 파라미터
 	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/network80000.param.bak";
@@ -125,7 +125,8 @@ int LegacyWork<Dtype>::createNetwork() {
 	weightsArgs[0].weightsMap["conv5_filter"] = "conv5:rpn_filter";
 	weightsArgs[0].weightsMap["conv5_bias"] = "conv5:rpn_bias";
 
-	weightsArgs[1].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/frcnn_detect_stage1_980000.param";
+	weightsArgs[1].weightsPath = 
+        "/home/jkim/Dev/SOOOA_HOME/network/frcnn_detect_stage1_980000.param";
 	weightsArgs[1].weightsMap["conv1_filter"] = "conv1:detect_filter";
 	weightsArgs[1].weightsMap["conv1_bias"] = "conv1:detect_bias";
 	weightsArgs[1].weightsMap["conv2_filter"] = "conv2:detect_filter";
@@ -138,18 +139,14 @@ int LegacyWork<Dtype>::createNetwork() {
 	weightsArgs[1].weightsMap["conv5_bias"] = "conv5:detect_bias";
 	*/
 
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/frcnn_rpn_50of_30000.param";
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/frcnn_detect_stage1_980000.param";
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/frcnn_rpn_stage2_20000.param";
-	const vector<string> lossLayers = {"rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"};
+	const vector<string> lossLayers = 
+        {"rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"};
 	//const vector<string> lossLayers = {"rpn_loss_cls", "rpn_loss_bbox"};
 	//const vector<string> lossLayers = {"loss_cls", "loss_bbox"};
 	//const NetworkPhase phase = NetworkPhase::TestPhase;
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 #else
 	vector<WeightsArg> weightsArgs(1);
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/frcnn_full_100of_20000.param";
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/frcnn_full_50of_10000.param";
 	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/network540000.param.bak";
 	const vector<string> lossLayers = {};
 	const NetworkPhase phase = NetworkPhase::TestPhase;
@@ -157,8 +154,6 @@ int LegacyWork<Dtype>::createNetwork() {
 	const uint32_t batchSize = 1;
 	const uint32_t testInterval = 5000;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 10000;		// 1000000 / batchSize
-	//const uint32_t testInterval = 10000000;		// 10000(목표 샘플수) / batchSize
-	//const uint32_t saveInterval = 50000000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
 
 	const uint32_t stepSize = 100000;
@@ -215,9 +210,6 @@ int LegacyWork<Dtype>::createNetwork() {
 	Util::printVramInfo();
 
     // 네트워크를 등록한다.
-    // TODO: 현재는 증가하는 방식으로만 등록을 시키고 있다. 
-    //      pool 형태로 돌려쓸 수 있도록 수정이 필요할지 고민해보자.
-    // XXX: make network generate its network ID by itself when it is created
 	Network<Dtype>* network = new Network<Dtype>(networkConfig);
 
     return network->getNetworkID();

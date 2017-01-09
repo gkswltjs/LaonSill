@@ -48,12 +48,16 @@ enum class ParamFillerType {
  * @brief 데이터의 구조정보를 정의하는 구조체
  */
 struct io_dim {
-    UINT rows;				///< 데이터의 행 수, 일반 1차원 데이터의 경우 한 데이터의 유효 엘리먼트의 수, 이미지와 같은 3차원 데이터의 경우 이미지의 height값을 따른다.
-    UINT cols;				///< 데이터의 열 수, 일반 1차원 데이터의 경우 1, 이미지와 같은 3차원 데이터의 경우 이미지의 width값을 따른다.
-    UINT channels;			///< 데이터의 채널 수, 일반 1차원 데이터의 경우 1, 이미지와 같은 3차원 데이터의 경우 RGB채널이 있는 경우 3, GrayScale인 경우 1의 값이 된다.
-    UINT batches;				///< 한 번에 학습하는 데이터의 수를 의미한다.
+    UINT rows;				///< 데이터의 행 수, 일반 1차원 데이터의 경우 한 데이터의 유효 
+                            ///  엘리먼트의 수, 이미지와 같은 3차원 데이터의 경우 이미지의 
+                            //   height값을 따른다.
+    UINT cols;				///< 데이터의 열 수, 일반 1차원 데이터의 경우 1, 이미지와 같은 
+                            ///  3차원 데이터의 경우 이미지의 width값을 따른다.
+    UINT channels;			///< 데이터의 채널 수, 일반 1차원 데이터의 경우 1, 이미지와 같은 
+                            ///  3차원 데이터의 경우 RGB채널이 있는 경우 3, GrayScale인 경우 
+                            ///  1의 값이 된다.
+    UINT batches;	        ///< 한 번에 학습하는 데이터의 수를 의미한다.
 
-    //io_dim(UINT rows=1, UINT cols=1, UINT channels=1, UINT batches=1) {
     io_dim() {
 
     }
@@ -80,7 +84,8 @@ struct io_dim {
 
 /**
  * @brief 컨볼루션 연산을 정의하는 파라미터 구조체
- * @todo io_dim의 구조를 따르는 면이 있어(row, colum, channel...) 상속받았으나 batch값은 적합하지 않음.
+ * @todo io_dim의 구조를 따르는 면이 있어(row, colum, channel...) 상속받았으나 batch값은 
+ *       적합하지 않음.
  *       상속받지 않고 별도의 필드를 정의하는 것이 바람직해 보인다.
  */
 struct filter_dim : public io_dim {
@@ -88,7 +93,6 @@ struct filter_dim : public io_dim {
 	uint32_t pad;
 	uint32_t stride;			///< 컨볼루션을 적용할 stride 크기
 
-	//filter_dim(uint32_t rows=1, uint32_t cols=1, uint32_t channels=1, uint32_t filters=1, uint32_t stride=1) : io_dim(rows, cols, channels) {
 	filter_dim() {}
 	filter_dim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
 			uint32_t pad, uint32_t stride) : io_dim(rows, cols, channels, 1) {
@@ -270,8 +274,9 @@ struct param_filler {
 
 			// BOOST
 			boost::uniform_real<float> random_distribution(-scale,
-                    boost::math::nextafter<float>(scale, std::numeric_limits<float>::max()));
-			boost::variate_generator<RNGType, boost::uniform_real<float> > variate_generator(rng, random_distribution);
+                boost::math::nextafter<float>(scale, std::numeric_limits<float>::max()));
+			boost::variate_generator<RNGType, boost::uniform_real<float> > 
+                variate_generator(rng, random_distribution);
 			//variate_generator.engine().seed();
 			//variate_generator.distribution().reset();
 
@@ -348,40 +353,4 @@ struct prev_layer_relation {
 };
 */
 
-
-
-
-
-
-
-
 #endif /* LAYERCONFIG_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -69,7 +69,8 @@ public:
 	Sigmoid() {
 		this->type = Activation<Dtype>::Sigmoid;
 		checkCUDNN(cudnnCreateActivationDescriptor(&activationDesc));
-		checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_SIGMOID, CUDNN_PROPAGATE_NAN, 0.0));
+		checkCUDNN(cudnnSetActivationDescriptor(activationDesc, CUDNN_ACTIVATION_SIGMOID,
+                                                CUDNN_PROPAGATE_NAN, 0.0));
 	}
 
 	void forward(const cudnnTensorDescriptor_t& desc, const Dtype* x, Dtype* y) {
@@ -77,17 +78,17 @@ public:
 				&Cuda::alpha, desc, x, &Cuda::beta, desc, y));
 	}
 
-	void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy, const Dtype* x, Dtype* dx) {
+	void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy,
+        const Dtype* x, Dtype* dx) {
 		checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, activationDesc,
 				&Cuda::alpha, desc, y, desc, dy, desc, x,
 				&Cuda::beta, desc, dx));
 	}
 #endif
 private:
-	cudnnActivationDescriptor_t activationDesc;			///< cudnn 활성화 관련 자료구조에 대한 포인터.
-
+	cudnnActivationDescriptor_t activationDesc;
+    ///< cudnn 활성화 관련 자료구조에 대한 포인터.
 };
-
 
 template class Sigmoid<float>;
 

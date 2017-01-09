@@ -181,7 +181,8 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
 
     HotLog::initForThread();
 
-    COLD_LOG(ColdLog::INFO, true, "consumer thread #%d (GPU:#%d) starts", consumerIdx, gpuIdx);
+    COLD_LOG(ColdLog::INFO, true, "consumer thread #%d (GPU:#%d) starts", consumerIdx,
+        gpuIdx);
 
 	// 리소스 초기화
 	checkCudaErrors(cudaSetDevice(gpuIdx));

@@ -110,7 +110,10 @@ void Client::clientMain(const char* hostname, int portno) {
     serverAddr.sin_family = AF_INET;
     memcpy((char*)&serverAddr.sin_addr.s_addr, (char*)server->h_addr, server->h_length);
     serverAddr.sin_port = htons(portno);
-    if (Client::connectRetry(sockFd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
+
+    int connectRetry = Client::connectRetry(sockFd, (struct sockaddr*)&serverAddr,
+                                            sizeof(serverAddr));
+    if (connectRetry == -1) {
         printf("ERROR: connect failed\n");
         exit(0);
     }

@@ -120,15 +120,17 @@ public:
             std::map<std::string, Layer<Dtype>*> nameLayerMap;
 			for (uint32_t i = 0; i < layerSize; i++) {
 				const std::string& layerName = layers[i]->getName();
-				typename std::map<std::string, Layer<Dtype>*>::iterator it = nameLayerMap.find(layerName);
+				typename std::map<std::string, Layer<Dtype>*>::iterator it =
+                    nameLayerMap.find(layerName);
 				if (it != nameLayerMap.end()) {
-					std::cout << "layer name used more than once ... : " << layerName << std::endl;
+					std::cout << "layer name used more than once ... : " <<
+                        layerName << std::endl;
 					exit(1);
 				}
 				nameLayerMap[layerName] = layers[i];
 			}
 
-			// 레이어의 입,출력 데이터 이름으로부터 유일한 데이터를 생성, 이름-데이터 맵을 생성
+			// 레이어의 입출력 데이터 이름으로부터 유일한 데이터를 생성, 이름-데이터 맵을 생성
 			std::cout << "update layer data to unique objects ... " << std::endl;
 			std::map<std::string, Data<Dtype>*> layerDataMap;
 			for (uint32_t i = 0; i < layerSize; i++) {
@@ -141,8 +143,8 @@ public:
 				_updateLayerData(layerDataMap, layer->getOutputs(), layer->getOutputData());
 			}
 
-			///////////////////////////////////////////////////////////////////////////////////
-			// 레이어 아이디로 multi branch의 input data, output grad인지 조회할 수 있는 맵 생성
+			//////////////////////////////////////////////////////////////////////////////////
+			// 레이어 아이디로 multi branch의 input data, output grad인지 조회하는 맵 생성
 			std::map<std::string, uint32_t> outputDataCountMap;
 			std::map<std::string, uint32_t> inputGradCountMap;
 			for (uint32_t i = 0; i < layerSize; i++) {
@@ -159,7 +161,8 @@ public:
 			}
 
 			typename std::map<std::string, uint32_t>::iterator odcmItr;
-			for (odcmItr = outputDataCountMap.begin(); odcmItr != outputDataCountMap.end(); odcmItr++) {
+			for (odcmItr = outputDataCountMap.begin(); odcmItr != outputDataCountMap.end();
+                odcmItr++) {
 				if (odcmItr->second > 1) {
 					std::cout << "output data multi branch is not allowed ... " << std::endl;
 					exit(1);
@@ -167,7 +170,8 @@ public:
 			}
 
 			typename std::map<std::string, uint32_t>::iterator igcmItr;
-			for (igcmItr = inputGradCountMap.begin(); igcmItr != inputGradCountMap.end(); igcmItr++) {
+			for (igcmItr = inputGradCountMap.begin(); igcmItr != inputGradCountMap.end();
+                igcmItr++) {
 				if (igcmItr->second > 1) {
 					std::cout << "Split Layer for data " << igcmItr->first <<
 							" will be added ... " << std::endl;
@@ -193,8 +197,10 @@ public:
 						dataSplitLayerMapItr = dataSplitLayerMap.find(splitLayerName);
 						SplitLayer<Dtype>* splitLayer = 0;
 						if (dataSplitLayerMapItr == dataSplitLayerMap.end()) {
-							std::cout << "SplitLayer for data " << dataName << " has not been created yet ... " << std::endl;
-							std::cout << "Creating Split Layer " << splitLayerName << " ... " << std::endl;
+							std::cout << "SplitLayer for data " << dataName <<
+                                " has not been created yet ... " << std::endl;
+							std::cout << "Creating Split Layer " << splitLayerName <<
+                                " ... " << std::endl;
 
 							splitLayer = new SplitLayer<Dtype>(splitLayerName);
 							dataSplitLayerMap[splitLayerName] = splitLayer;
@@ -202,16 +208,19 @@ public:
 							splitLayer->_inputData.push_back(inputData);
 							layers.push_back(splitLayer);
 						} else {
-							std::cout << "SplitLayer for data " << dataName << " is already created ... " << std::endl;
+							std::cout << "SplitLayer for data " << dataName <<
+                                " is already created ... " << std::endl;
 							splitLayer = dataSplitLayerMapItr->second;
 						}
 
 						// SplitLayer 업데이트
 						const uint32_t splitDataIndex = splitLayer->_outputs.size();
-						const std::string splitDataName = dataName+"-"+std::to_string(splitDataIndex);
+						const std::string splitDataName =
+                            dataName+"-"+std::to_string(splitDataIndex);
 						splitLayer->_outputs.push_back(splitDataName);
 
-						std::cout << splitDataIndex << "th SplitLayer Ouput updated with " << splitDataName << std::endl;
+						std::cout << splitDataIndex << "th SplitLayer Ouput updated with " <<
+                            splitDataName << std::endl;
 
 						Data<Dtype>* data = new Data<Dtype>(splitDataName, inputData, 0);
 						splitLayer->_outputData.push_back(data);
@@ -224,11 +233,9 @@ public:
 				}
 			}
 
-
-
 			// 레이어 호출 순서에 따라 순서 재조정
-			// 의존성이 해결된 레이어를 앞에 배치하여 순차적으로 호출시 적절한 결과를 보장하도록 함
-			// XXX: 내부적으로 layers vector를 변경시키므로 call by value하든지 다른 수단이 필요.
+			// 의존성이 해결된 레이어를 앞에 배치하여 순차적으로 호출시 적절한 결과를 보장 함
+			// XXX: 내부적으로 layers vector를 변경시켜서 call by value하든지 다른 수단 필요.
 			// 이후로 사용하지 않으면 되나 이상해 보임.
 			std::cout << "ordering layers ... " << std::endl;
 			std::vector<Layer<Dtype>*> olayers;
@@ -258,90 +265,77 @@ public:
                 ->layerDataMap(layerDataMap);
 		}
 
-		/*
-		void save(std::ofstream& ofs) {
-			uint32_t numLayers = _layerWise.size();
-			ofs.write((char*)&numLayers, sizeof(uint32_t));
-            typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
-			for (it = _layerWise.begin(); it != _layerWise.end(); it++) {
-				it->second->save(ofs);
-			}
-		}
-		void load(std::ifstream& ifs) {
-			uint32_t numLayers;
-			ifs.read((char*)&numLayers, sizeof(uint32_t));
-
-			for(uint32_t i = 0; i < numLayers; i++) {
-				// create layer builder objects from stream
-				typename Layer<Dtype>::LayerType layerType;
-				ifs.read((char*)&layerType, sizeof(uint32_t));
-
-				typename Layer<Dtype>::Builder* layerBuilder =
-                    LayerBuilderFactory<Dtype>::create(layerType);
-				layerBuilder->load(ifs);
-
-				// add to layerWise
-				layer(layerBuilder);
-			}
-		}
-		*/
-
-
 	private:
 		void _updateLayerData(std::map<std::string, Data<Dtype>*>& dataMap,
-				std::vector<std::string>& dataNameVec, std::vector<Data<Dtype>*>& layerDataVec) {
+				std::vector<std::string>& dataNameVec,
+                std::vector<Data<Dtype>*>& layerDataVec) {
 			for (uint32_t i = 0; i < dataNameVec.size(); i++) {
-				typename std::map<std::string, Data<Dtype>*>::iterator it = dataMap.find(dataNameVec[i]);
+				typename std::map<std::string, Data<Dtype>*>::iterator it =
+                    dataMap.find(dataNameVec[i]);
 				if (it == dataMap.end()) {
 					Data<Dtype>* data = new Data<Dtype>(dataNameVec[i]);
 					dataMap[dataNameVec[i]] = data;
 					layerDataVec.push_back(data);
-					std::cout << "\t\tfor data " << dataNameVec[i] << ": insert new ... " << std::endl;
+					std::cout << "\t\tfor data " << dataNameVec[i] <<
+                        ": insert new ... " << std::endl;
 				} else {
 					layerDataVec.push_back(it->second);
-					std::cout << "\t\tfor data " << dataNameVec[i] << ": refer old ... " << std::endl;
+					std::cout << "\t\tfor data " << dataNameVec[i] <<
+                        ": refer old ... " << std::endl;
 				}
 			}
 		}
 
-		void _orderLayers(std::vector<Layer<Dtype>*>& tempLayers, std::vector<Layer<Dtype>*>& layers) {
+		void _orderLayers(std::vector<Layer<Dtype>*>& tempLayers,
+            std::vector<Layer<Dtype>*>& layers) {
 
 			std::set<std::string> dataSet;
 			while (tempLayers.size() > 0) {
 				bool found = false;
 				for (uint32_t i = 0; i < tempLayers.size(); i++) {
-					InputLayer<Dtype>* inputLayer = dynamic_cast<InputLayer<Dtype>*>(tempLayers[i]);
+					InputLayer<Dtype>* inputLayer =
+                        dynamic_cast<InputLayer<Dtype>*>(tempLayers[i]);
 					if (inputLayer) {
 					// 입력 레이어인 경우,
 					//if (tempLayers[i]->getInputsSize() < 1) {
-						std::cout << tempLayers[i]->getName() << " is input layer ... insert ... " << std::endl;
+						std::cout << tempLayers[i]->getName() <<
+                            " is input layer ... insert ... " << std::endl;
 						layers.push_back(tempLayers[i]);
-						dataSet.insert(tempLayers[i]->getOutputs().begin(), tempLayers[i]->getOutputs().end());
+						dataSet.insert(tempLayers[i]->getOutputs().begin(),
+                            tempLayers[i]->getOutputs().end());
 						tempLayers.erase(tempLayers.begin()+i);
 						found = true;
 						break;
 					} else {
-						// 앞선 레이어가 출력한 데이터가 현재 레이어의 모든 입력 데이터를 커버해야 처리한다.
+						// 앞선 레이어가 출력한 데이터가 현재 레이어의 모든 입력 데이터를
+                        // 커버해야 처리한다.
 						if (_isSetContainsAll(dataSet, tempLayers[i]->getInputs())) {
-							std::cout << tempLayers[i]->getName() << "'s all input data have processed ... insert ... " << std::endl;
+							std::cout << tempLayers[i]->getName() <<
+                                "'s all input data have processed ... insert ... " <<
+                                std::endl;
 							layers.push_back(tempLayers[i]);
-							dataSet.insert(tempLayers[i]->getOutputs().begin(), tempLayers[i]->getOutputs().end());
+							dataSet.insert(tempLayers[i]->getOutputs().begin(),
+                                           tempLayers[i]->getOutputs().end());
 							tempLayers.erase(tempLayers.begin()+i);
 							found = true;
 							break;
 						} else {
-							std::cout << tempLayers[i]->getName() << "'s not all input data have processed ... skip ... " << std::endl;
+							std::cout << tempLayers[i]->getName() <<
+                                "'s not all input data have processed ... skip ... " <<
+                                std::endl;
 						}
 					}
 				}
 				if (!found) {
-					std::cout << "no input layer or not all layer can find input data ... " << std::endl;
+					std::cout << "no input layer or not all layer can find input data ... " <<
+                        std::endl;
 					exit(1);
 				}
 			}
 		}
 
-		bool _isSetContainsAll(std::set<std::string>& dataSet, std::vector<std::string>& inputs) {
+		bool _isSetContainsAll(std::set<std::string>& dataSet,
+            std::vector<std::string>& inputs) {
 			for (uint32_t i = 0; i < inputs.size(); i++) {
 				typename std::set<std::string>::iterator it = dataSet.find(inputs[i]);
 				// has input not contained in set
@@ -399,7 +393,8 @@ public:
 		this->_layers = layers;
 		return this;
 	}
-	LayersConfig<Dtype>* learnableLayers(std::vector<LearnableLayer<Dtype>*>& learnableLayers) {
+	LayersConfig<Dtype>* learnableLayers(
+        std::vector<LearnableLayer<Dtype>*>& learnableLayers) {
 		this->_learnableLayers = learnableLayers;
 		return this;
 	}
@@ -411,31 +406,9 @@ public:
 		this->_layerDataMap = layerDataMap;
 		return this;
 	}
-	/*
-	LayersConfig* multiBranchDataVec(std::vector<Data<Dtype>*>& multiBranchDataVec) {
-		this->_multiBranchDataVec = multiBranchDataVec;
-		return this;
-	}
-	LayersConfig* multiBranchGradVec(std::vector<Data<Dtype>*>& multiBranchGradVec) {
-		this->_multiBranchGradVec = multiBranchGradVec;
-		return this;
-	}
-	*/
-	/*
-	void save(std::ofstream& ofs) {
-		this->_builder->save(ofs);
-	}
-	*/
 };
 
-
 template class LayersConfig<float>;
-
-
-
-
-
-
 
 enum NetworkStatus {
 	Train = 0,
@@ -460,9 +433,6 @@ enum LRPolicy {
 template <typename Dtype>
 class NetworkConfig {
 public:
-	//static const std::string savePrefix = "network";
-	//const std::string configPostfix;// = ".config";
-	//const std::string paramPostfix;// = ".param";
 
 	class Builder {
 	public:
@@ -503,12 +473,6 @@ public:
 			this->_clipGradientsLevel = 35.0f;
 			this->_phase = NetworkPhase::TrainPhase;
 		}
-		/*
-		Builder* evaluations(const std::vector<std::vector<std::string>>& evaluations) {
-			this->_evaluations = evaluations;
-			return this;
-		}
-		*/
 		Builder* networkListeners(const std::vector<NetworkListener*> networkListeners) {
 			this->_networkListeners = networkListeners;
 			return this;
@@ -557,10 +521,6 @@ public:
 			this->_gamma = gamma;
 			return this;
 		}
-		//Builder* dataSet(DataSet<Dtype>* dataSet) {
-		//	this->_dataSet = dataSet;
-		//	return this;
-		//}
 		Builder* baseLearningRate(float baseLearningRate) {
 			this->_baseLearningRate = baseLearningRate;
 			return this;
@@ -586,39 +546,6 @@ public:
 			return this;
 		}
 		NetworkConfig* build() {
-
-			//load()를 학습단계에서도 사용할 경우 ...
-			//테스트단계에서만 사용할 경우 dataSet 필요없음 ...
-			//if(_dataSet == NULL) {
-			//	std::cout << "dataSet should be set ... " << std::endl;
-			//	exit(1);
-			//}
-			//if (_dataSet) {
-			//	_inDim.rows = _dataSet->getRows();
-			//	_inDim.cols = _dataSet->getCols();
-			//	_inDim.channels = _dataSet->getChannels();
-			//}
-			//_inDim.batches = _batchSize;
-
-			/*
-			std::vector<std::vector<Evaluation<Dtype>*>> evaluations(this->_evaluations.size());
-			for (uint32_t i = 0; i < this->_evaluations.size(); i++) {
-				evaluations.resize(this->_evaluations[i].size());
-				for (uint32_t j = 0; j < this->_evaluations[i].size(); j++) {
-					if (this->_evaluations[i][j] == "top1")
-						evaluations[i][j] = new Top1Evaluation<Dtype>();
-					else if (this->_evaluations[i][j] == "top5")
-						evaluations[i][j] = new Top5Evaluation<Dtype>();
-					else {
-						std::cout << "invalid evaluation type ... " << std::endl;
-						exit(-1);
-					}
-				}
-			}
-			*/
-
-
-
 			NetworkConfig* networkConfig = (new NetworkConfig(this))
 					->networkListeners(_networkListeners)
 					->batchSize(_batchSize)
@@ -647,67 +574,6 @@ public:
 			return networkConfig;
 		}
 
-
-
-		/*
-		void save(std::ofstream& ofs) {
-			if(_savePathPrefix == "") {
-                std::cout << "save path not specified ... " << std::endl;
-				// TODO 죽이지 말고 사용자에게 save path를 입력받도록 하자 ...
-				exit(1);
-			}
-
-			// save primitives
-			ofs.write((char*)&_batchSize, sizeof(uint32_t));					//_batchSize
-			ofs.write((char*)&_epochs, sizeof(uint32_t));						//_epochs
-			ofs.write((char*)&_baseLearningRate, sizeof(float));				//_baseLearningRate
-			ofs.write((char*)&_momentum, sizeof(float));						//_momentum
-			ofs.write((char*)&_weightDecay, sizeof(float));						//_weightDecay
-			ofs.write((char*)&_clipGradientsLevel, sizeof(float));				//_clipGradientsLevel;
-
-			size_t savePathPrefixLength = _savePathPrefix.size();
-			ofs.write((char*)&savePathPrefixLength, sizeof(size_t));
-			ofs.write((char*)_savePathPrefix.c_str(), savePathPrefixLength);
-
-            //layersConfigs[0]->save(ofs);
-#if 0
-			_layersConfig->save(ofs);
-#endif
-		}
-		void load(const std::string& path) {
-            std::ifstream ifs((path+".config").c_str(), std::ios::in | std::ios::binary);
-
-			ifs.read((char*)&_batchSize, sizeof(uint32_t));
-			ifs.read((char*)&_epochs, sizeof(uint32_t));
-			ifs.read((char*)&_baseLearningRate, sizeof(float));
-			ifs.read((char*)&_momentum, sizeof(float));
-			ifs.read((char*)&_weightDecay, sizeof(float));
-			ifs.read((char*)&_clipGradientsLevel, sizeof(float));
-
-			size_t savePathPrefixLength;
-			ifs.read((char*)&savePathPrefixLength, sizeof(size_t));
-
-			char* savePathPrefix_c = new char[savePathPrefixLength+1];
-			ifs.read(savePathPrefix_c, savePathPrefixLength);
-			savePathPrefix_c[savePathPrefixLength] = '\0';
-			_savePathPrefix = savePathPrefix_c;
-			delete [] savePathPrefix_c;
-
-			typename LayersConfig<Dtype>::Builder* layersBuilder = new typename LayersConfig<Dtype>::Builder();
-			layersBuilder->load(ifs);
-
-#if 0
-			_layersConfig = layersBuilder->build();
-#endif
-            // XXX: 여러대의 GPU를 고려해야 한다..
-            LayersConfig<Dtype>* layersConfig = layersBuilder->build();
-            layersConfigs.push_back(layersConfig);
-
-			ifs.close();
-		}
-		*/
-
-
 		void print() {
             std::cout << "batchSize: " << _batchSize << std::endl;
             std::cout << "epochs: " << _epochs << std::endl;
@@ -728,17 +594,10 @@ public:
 
 	};
 
-
-
-
-
-
 	NetworkStatus _status;
 	LRPolicy _lrPolicy;
 	NetworkPhase _phase;
 	
-	//DataSet<Dtype>* _dataSet;
-    //std::vector<std::vector<Evaluation<Dtype>*>> _evaluations;
     std::vector<NetworkListener*> _networkListeners;
     std::vector<LayersConfig<Dtype>*> layersConfigs;
 
@@ -761,14 +620,8 @@ public:
 
     std::vector<std::string> _lossLayers;
 
-	//io_dim _inDim;
-
-
 	// save & load를 위해서 builder도 일단 저장해 두자.
 	Builder* _builder;
-
-
-
 
 	NetworkConfig(Builder* builder) {
 		this->_builder = builder;
@@ -779,12 +632,6 @@ public:
 		this->_lossLayers = lossLayers;
 		return this;
 	}
-	/*
-	NetworkConfig* evaluations(const std::vector<std::vector<Evaluation<Dtype>*>>& evaluations) {
-		this->_evaluations = evaluations;
-		return this;
-	}
-	*/
 	NetworkConfig* networkListeners(const std::vector<NetworkListener*> networkListeners) {
 		this->_networkListeners = networkListeners;
 		return this;
@@ -833,10 +680,6 @@ public:
 		this->_gamma = gamma;
 		return this;
 	}
-	//NetworkConfig* dataSet(DataSet<Dtype>* dataSet) {
-	//	this->_dataSet = dataSet;
-	//	return this;
-	//}
 	NetworkConfig* baseLearningRate(float baseLearningRate) {
 		this->_baseLearningRate = baseLearningRate;
 		return this;
@@ -857,22 +700,10 @@ public:
 		this->_phase = phase;
 		return this;
 	}
-	//NetworkConfig* inDim(io_dim inDim) {
-	//	this->_inDim = inDim;
-	//	return this;
-	//}
 
 	void save() {
 		if (_savePathPrefix == "") return;
 
-		// save config
-		/*
-        std::ofstream configOfs(
-        		(_savePathPrefix+std::to_string(_iterations)+".config").c_str(),
-                std::ios::out | std::ios::binary);
-		_builder->save(configOfs);
-		configOfs.close();
-		*/
 		// save learned params
         LayersConfig<Dtype>* firstLayersConfig = this->layersConfigs[0];
         std::ofstream paramOfs(
@@ -940,9 +771,6 @@ private:
 	float _rate;
 };
 
-
 template class NetworkConfig<float>;
-
-
 
 #endif /* NETWORKPARAM_H_ */

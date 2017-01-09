@@ -80,7 +80,6 @@ public:
 
 protected:
 	void initialize();
-	virtual void _clearShape();
 
 public:
     void setInputCount(int rows, int cols, int channels, int actionCnt);

@@ -46,7 +46,8 @@ public:
 
     static BrokerRetType            publish(int jobID, Job *content);
     static BrokerRetType            publishEx(int jobID, int taskID, Job *content);
-    static BrokerRetType            subscribe(int jobID, Job **content, BrokerAccessType access);
+    static BrokerRetType            subscribe(int jobID, Job **content,
+                                        BrokerAccessType access);
     static BrokerRetType            subscribeEx(int jobID, int taskID, Job **content,
                                         BrokerAccessType access);
     static void                     init();

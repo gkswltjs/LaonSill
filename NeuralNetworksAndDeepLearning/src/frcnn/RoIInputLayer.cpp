@@ -364,7 +364,8 @@ void RoIInputLayer<Dtype>::getNextMiniBatchInds(vector<uint32_t>& inds) {
 }
 
 template <typename Dtype>
-void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb, const vector<uint32_t>& inds) {
+void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
+    const vector<uint32_t>& inds) {
 	// Given a roidb, construct a minibatch sampled from it.
 
 	const uint32_t numImages = roidb.size();
@@ -414,7 +415,8 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb, const vector
 
 		// gt_boxes
 		fillDataWith2dVec(gt_boxes, this->_inputData[2]);
-		this->_inputShape[2] = {1, 1, (uint32_t)gt_boxes.size(), (uint32_t)gt_boxes[0].size()};
+		this->_inputShape[2] =
+            {1, 1, (uint32_t)gt_boxes.size(), (uint32_t)gt_boxes[0].size()};
 
 #if ROIINPUTLAYER_LOG
 		Data<Dtype>::printConfig = true;
@@ -441,12 +443,14 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb, const vector
 		this->_inputData[3]->set_host_data(proposalTargetDataList[ind][2]);
 		this->_inputShape[3] = bboxTargetsShape;
 
-		const vector<uint32_t> bboxInsideWeightsShape = proposalTargetDataList[ind][3]->getShape();
+		const vector<uint32_t> bboxInsideWeightsShape =
+            proposalTargetDataList[ind][3]->getShape();
 		this->_inputData[4]->reshape(bboxInsideWeightsShape);
 		this->_inputData[4]->set_host_data(proposalTargetDataList[ind][3]);
 		this->_inputShape[4] = bboxInsideWeightsShape;
 
-		const vector<uint32_t> bboxOutsideWeightsShape = proposalTargetDataList[ind][4]->getShape();
+		const vector<uint32_t> bboxOutsideWeightsShape =
+            proposalTargetDataList[ind][4]->getShape();
 		this->_inputData[5]->reshape(bboxOutsideWeightsShape);
 		this->_inputData[5]->set_host_data(proposalTargetDataList[ind][4]);
 		this->_inputShape[5] = bboxOutsideWeightsShape;
@@ -601,38 +605,4 @@ void RoIInputLayer<Dtype>::imListToBlob(vector<Mat>& ims) {
 #endif
 }
 
-
-
 template class RoIInputLayer<float>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

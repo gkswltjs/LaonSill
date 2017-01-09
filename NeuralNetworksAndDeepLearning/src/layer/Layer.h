@@ -21,10 +21,6 @@
 #include "LayerConfig.h"
 
 template <typename Dtype> class NetworkConfig;
-//#define PRINT_CALLSTACK
-
-
-
 
 /**
  * @brief 레이어 베이스 추상 클래스, 모든 레이어는 이 클래스를 상속받아 구현한다.
@@ -115,9 +111,6 @@ public:
 		virtual Layer<Dtype>* build() = 0;
 	};
 
-
-
-
 	////////////////////////////////////////////////////////////////////
 	// CONSTRUCTOR & DESCTRUCTOR
 	////////////////////////////////////////////////////////////////////
@@ -140,7 +133,6 @@ public:
 	 * @details 레이어 클래스 소멸자
 	 */
 	virtual ~Layer();
-
 
 	////////////////////////////////////////////////////////////////////
 	// GETTER & SETTER
@@ -181,48 +173,42 @@ public:
 	 * @details 레이어에 네트워크 설정값을 설정한다.
 	 * @param networkConfig 네트워크 설정값 객체
 	 */
-	virtual void setNetworkConfig(NetworkConfig<Dtype>* networkConfig) { this->networkConfig = networkConfig; }
+	virtual void setNetworkConfig(NetworkConfig<Dtype>* networkConfig) { 
+        this->networkConfig = networkConfig; 
+    }
 
 	/**
-	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화하고
-	 *          다음 레이어들에 대해 shape()를 요청한다.
+	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고
+     *         초기화하고 다음 레이어들에 대해 shape()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 현재 레이어의 입력 데이터 구조정보
 	 */
 	virtual void reshape();
 	/**
-	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를 요청한다.
+	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를
+     *         요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param in_dim 새롭게 변경할 현재 레이어의 입력 데이터 구조정보
 	 */
-	//virtual void reshape(uint32_t idx, io_dim in_dim);
-	/**
-	 * @details 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 clear하고 다음 레이어들에 대해 clearShape()를 요청한다.
-	 * @param idx 요청을 보낸 이전 레이어의 id
-	 */
-	virtual void clearShape(uint32_t idx);
-
 
 #ifndef GPU_MODE
 	/**
-	 * @details batch단위로 누적된 gradient를 초기화하고 다음 레이어들에 대해 reset_nabla()를 요청한다.
+	 * @details batch단위로 누적된 gradient를 초기화하고 다음 레이어들에 대해 reset_nabla()를
+     *          요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @todo GPU_MODE에서 사용하지 않는다.
 	 */
 	virtual void reset_nabla(uint32_t idx);
 #else
 	/**
-	 * @details 레이어 입력값을 전달받아 출력값을 계산하고 다음 레이어들에 대해 feedforward()를 요청한다.
+	 * @details 레이어 입력값을 전달받아 출력값을 계산하고 다음 레이어들에 대해
+     *          feedforward()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
 	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
 	virtual void feedforward();
 #endif
-
-
-
-
 
 protected:
 	/**
@@ -231,56 +217,8 @@ protected:
 	 */
 	void initialize(uint32_t id, const std::string name);
 
-	////////////////////////////////////////////////////////////////////
-	// prop 계열의 method (레이어 연결을 따라 연쇄 호출되는 method) 들에 대해
-	// 각 레이어의 실제 작업을 담당하는 method들
-	////////////////////////////////////////////////////////////////////
-	/**
-	 * @details 현재 레이어의 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고 초기화한다.
-	 * @param recursive 상위 레이어에 대해서 _shape()를 재귀적으로 호출할 것인지 여부
-	 */
-	//virtual void _shape(bool recursive=true);
-
-	/**
-	 * @details 입/출력 데이터 구조정보에 의존성이 있는 자료구조들을 clear한다.
-	 */
-	virtual void _clearShape();
-
-	/**
-	 * @details 복수의 '이전' 레이어로부터의 입력을 조합한다.
-	 *          조합은 입력의 합으로 한다.
-	 * @param idx 현재 레이어에 연결된 이전 레이어의 순번 idx
-	 * @param input 현재 레이어에 전달된 레이어 입력값 장치 포인터
-	 */
-	//virtual void _concat(uint32_t idx, Data<Dtype>* input);
-	/**
-	 * @details 복수의 '이전' 레이어로부터의 입력들에 대해 branch의 수 기준으로 스케일링한다.
-	 *          _concat()이 입력 합산이 아닌 방식으로 구현된 경우 _scaleInput() 역시 적절히 재정의해야 한다.
-	 */
-	//virtual void _scaleInput();
-
-
-
 	bool _adjustInputShape();
 	bool _isInputShapeChanged(uint32_t index);
-
-
-
-
-
-#ifndef GPU_MODE
-	/**
-	 * @details 다음 레이어들에 대해 reset_nabla() 메쏘드를 호출한다.
-	 */
-	void propResetNParam();
-#else
-	/**
-	 * @details 다음 레이어들에 대해 feedforward() 메쏘드를 호출한다.
-	 * @param end feedforward 중단 레이어의 이름 (0인 경우 최종 output레이어가 중단 레이어)
-	 */
-	//void propFeedforward(const char *end=0);
-#endif
-
 
 public:
 	std::vector<std::string> _inputs;					///< 레이어 입력 데이터 이름 목록 벡터
@@ -296,76 +234,13 @@ protected:
 	std::string name;									///< 레이어의 이름
 
 protected:
-
-
 	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
-
-	//io_dim in_dim;										///< 레이어의 입력 데이터 구조 정보
-	//io_dim out_dim;										///< 레이어의 출력 데이터 구조 정보
-
-    //std::vector<Layer<Dtype>*> prevLayers;			///< 현재 레이어의 이전(입력) 레이어 목록 벡터
-    //std::vector<Layer<Dtype>*> nextLayers;			///< 현재 레이어의 다음(출력) 레이어 목록 벡터
 
 	std::vector<std::vector<uint32_t>> _inputShape;
 
 	std::vector<bool> _propDown;
 
-
-
-
-#ifndef GPU_MODE
-#else
-	//cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
-	//cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
-#endif
-
 	static const int LAYER_NAME_LENGTH = 32;
-
-
-
-
-
-
-public:
-	//Data<Dtype>* _input;								///< 레이어 입력 데이터 및 그레디언트
-	//Data<Dtype>* _output;								///< 레이어 출력 데이터 및 그레디언트
-
-    //std::shared_ptr<Data<Dtype>> _input;
-    //std::shared_ptr<Data<Dtype>> _output;
 };
 
-
-
-
 #endif /* LAYER_LAYER_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

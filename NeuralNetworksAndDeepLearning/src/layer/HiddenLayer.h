@@ -11,8 +11,6 @@
 
 #include "common.h"
 #include "Layer.h"
-//#include "../network/NetworkConfig.h"
-
 
 /**
  * @brief 히든 레이어 기본 추상 클래스
@@ -55,72 +53,18 @@ public:
 		Layer<Dtype>* build() = 0;
 	};
 
-
 	HiddenLayer();
 	HiddenLayer(Builder* builder);
 	HiddenLayer(const std::string& name);
 	virtual ~HiddenLayer();
 
-
 	/**
 	 * @details 네트워크 cost의 다음 레이어의 입력에 관한 gradient값을 전달 받아
-	 *          현재 레이어의 parameter(parameter가 있는 경우), input에 관한 gradient를 계산하고
-	 *          이전 레이어에 현재 레이어의 input에 관한 gradient값을 전달한다.
-	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
-	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
+	 *          현재 레이어의 parameter(parameter가 있는 경우), input에 관한 gradient를 
+     *          계산하고 이전 레이어에 현재 레이어의 input에 관한 gradient값을 전달한다.
 	 */
 	virtual void backpropagation();
 	virtual void reshape();
-
-protected:
-	/**
-	 * @details 네트워크 cost의 다음 레이어의 입력에 관한 gradient값을 전달 받아
-	 *          현재 레이어의 parameter(parameter가 있는 경우), input에 관한 gradient를 계산한다.
-	 */
-
-
-	//virtual void _shape(bool recursive=true);
-	virtual void _clearShape();
-
-	/**
-	 * @details 복수의 '다음' 레이어로부터의 gradient를 조합한다.
-	 *          기본 조합은 gradient의 합으로 한다.
-	 * @param idx 현재 레이어에 연결된 다음 레이어의 순번 index
-	 * @param next_delta_input 네트워크 cost의 다음 레이어의 입력에 관한 gradient 장치 메모리 포인터
-	 */
-	//virtual void _deconcat(uint32_t idx, Data<Dtype>* next_delta_input, uint32_t offset);
-
-	/**
-	 * @details 복수의 '다음' 레이어로부터의 gradient들에 대해 branch의 수 기준으로 스케일링한다.
-	 *          _deconcat()이 gradient합산이 아닌 방식으로 구현된 경우 _scaleGradient() 역시 적절히 재정의해야 한다.
-	 */
-	//virtual void _scaleGradient();
-
-	/**
-	 * @details 이전 레이어들에 대해 backpropagation() 메쏘드를 호출한다.
-	 */
-	//virtual void propBackpropagation();
 };
 
-
-
 #endif /* LAYER_HIDDENLAYER_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

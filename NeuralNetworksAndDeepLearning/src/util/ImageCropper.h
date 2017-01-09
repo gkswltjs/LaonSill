@@ -27,7 +27,8 @@ struct DirTaskArg_t {
 
 
 /**
- * @brief 지정된 경로에 포함된 디렉토리의 이미지들을 리사이즈하여 지정된 위치에서 지정된 크기로 크롭한다.
+ * @brief 지정된 경로에 포함된 디렉토리의 이미지들을 리사이즈하여 지정된 위치에서 지정된 
+ *        크기로 크롭한다.
  */
 class ImageCropper {
 public:
@@ -37,7 +38,8 @@ public:
 	 * @param scale 이미지들을 리사이즈할 단축의 크기
 	 * @param numThread 작업을 동시 수행할 thread의 수
 	 */
-	ImageCropper(const char* image_dir, int scale, int numThreads=ImageCropper::system_num_cores);
+	ImageCropper(const char* image_dir, int scale, 
+                 int numThreads=ImageCropper::system_num_cores);
 	/**
 	 * @details ImageCropper 소멸자
 	 */
@@ -49,12 +51,14 @@ public:
 
 private:
 	/**
-	 * @details 대상 디렉토리별 작업을 수행한다. 디렉토리의 전체 이미지 파일에 대해 각 이미지당 작업을 수행하도록 요청한다.
+	 * @details 대상 디렉토리별 작업을 수행한다. 디렉토리의 전체 이미지 파일에 대해 각 
+     *          이미지당 작업을 수행하도록 요청한다.
 	 * @param dirTaskArg 대상 디렉토리의 정보 구조체
 	 */
 	void foreachDirectory(DirTaskArg_t *dirTaskArg);
 	/**
-	 * @details 파일 하나에 대한 작업을 수행한다. 주어진 scale로 리사이즈하고 정해진 위치에서 크롭을 수행한다.
+	 * @details 파일 하나에 대한 작업을 수행한다. 주어진 scale로 리사이즈하고 정해진 
+     *          위치에서 크롭을 수행한다.
 	 * @param full_path 이미지에 대한 전체 경로 문자열 포인터
 	 * @param dir_name 이미지가 들어있는 디렉토리 경로 문자열 포인터
 	 * @param file_name 이미지의 이름 문자열 포인터

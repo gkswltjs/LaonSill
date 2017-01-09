@@ -137,14 +137,10 @@ const uint32_t TEST_RPN_POST_NMS_TOP_N = 300;
 // Proposal height and width both need to be greater than RPN_MIN_SIZE (at orig image scale)
 const uint32_t TEST_RPN_MIN_SIZE = 16;
 
-
-
-
-
-
 template <typename Dtype>
 void displayBoxesOnImage(const std::string& imagePath, const float scale,
-		const std::vector<std::vector<Dtype>>& boxes, const int boxOffset=0, const int numMaxBoxes=-1, const bool pause=true) {
+	const std::vector<std::vector<Dtype>>& boxes, const int boxOffset=0,
+    const int numMaxBoxes=-1, const bool pause=true) {
 
 	cv::Mat im = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
 
@@ -158,8 +154,8 @@ void displayBoxesOnImage(const std::string& imagePath, const float scale,
 
 	for (uint32_t i = 0; i < numBoxes; i++) {
 		cv::rectangle(im, cv::Point(boxes[i][boxOffset+0], boxes[i][boxOffset+1]),
-				cv::Point(boxes[i][boxOffset+2], boxes[i][boxOffset+3]), cv::Scalar(0, 0, (255.0f/numBoxes)*i),
-				2);
+            cv::Point(boxes[i][boxOffset+2], boxes[i][boxOffset+3]),
+            cv::Scalar(0, 0, (255.0f/numBoxes)*i), 2);
 	}
 
 	cv::namedWindow(imagePath, CV_WINDOW_AUTOSIZE);
@@ -173,7 +169,8 @@ void displayBoxesOnImage(const std::string& imagePath, const float scale,
 
 template <typename Dtype>
 void displayBoxesOnImage(const std::string& imagePath, const float scale,
-		const std::vector<std::array<Dtype, 5>>& boxes, const int numMaxBoxes=-1, const bool pause=true) {
+    const std::vector<std::array<Dtype, 5>>& boxes, const int numMaxBoxes=-1,
+    const bool pause=true) {
 
 	cv::Mat im = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
 
@@ -199,10 +196,6 @@ void displayBoxesOnImage(const std::string& imagePath, const float scale,
 	}
 }
 
-
-
-
-
 template <typename PtrType, typename PrtType>
 void printMat(cv::Mat& im) {
 	std::cout << "rows: " << im.rows << ", cols: " << im.cols <<
@@ -216,25 +209,14 @@ void printMat(cv::Mat& im) {
 		for (int j = 0; j < im.cols; j++) {
 			std::cout << "[";
 			for (int k = 0; k < im.channels(); k++) {
-				std::cout << (PrtType)((PtrType*)im.data)[i*rowElemSize+j*colElemSize+k] << ",";
+				std::cout << 
+                    (PrtType)((PtrType*)im.data)[i*rowElemSize+j*colElemSize+k] << ",";
 			}
 			std::cout << "],";
 		}
 		std::cout << std::endl;
 	}
 }
-
-/*
-void showImageMat(cv::Mat& im, const bool pause=true) {
-	cv::namedWindow("MyWindow", CV_WINDOW_AUTOSIZE);
-	imshow("MyWindow", im);
-
-	if (pause) {
-		cv::waitKey(0);
-		cv::destroyAllWindows();
-	}
-}
-*/
 
 template <typename Dtype>
 static void printArray(const std::string& name, std::vector<Dtype>& array,
@@ -261,35 +243,6 @@ static void printArray(const std::string& name, std::vector<Dtype>& array,
 	//std::cout << "]" << std::endl;
 	std::cout << std::endl;
 }
-
-/*
-static void printArray(const std::string& name, std::vector<float>& array,
-		const bool printName=true, const bool landscape=false) {
-	if (printName) {
-		std::cout << name << ": " << array.size() << std::endl;
-	}
-
-	const uint32_t arraySize = array.size();
-	std::cout << "[ ";
-	for (uint32_t i = 0; i < arraySize; i++) {
-		if (!landscape) {
-			std::cout << i << "\t\t: ";
-		}
-
-		std::cout << "" << array[i] << ", ";
-
-		if (landscape)
-			std::cout << ", ";
-		else
-			std::cout << std::endl;
-
-	}
-	std::cout << "]" << std::endl;
-}
-*/
-
-
-
 
 template <typename Dtype>
 static void print2dArray(const std::string& name, std::vector<std::vector<Dtype>>& array,
@@ -583,8 +536,8 @@ static void np_argmax(const std::vector<std::vector<Dtype>>& array, const uint32
  * np_where 단수 조건 버전, compare 옵션 있음.
  */
 template <typename Dtype, typename Dtype2>
-static void np_where_s(const std::vector<Dtype>& array, const uint32_t comp, const Dtype2 criteria,
-		std::vector<uint32_t>& result) {
+static void np_where_s(const std::vector<Dtype>& array, const uint32_t comp,
+    const Dtype2 criteria, std::vector<uint32_t>& result) {
 	const uint32_t numArrayElem = array.size();
 	result.clear();
 
@@ -593,29 +546,34 @@ static void np_where_s(const std::vector<Dtype>& array, const uint32_t comp, con
 
 	switch (comp) {
 	case GT:
-		for (uint32_t i = 0; i < numArrayElem; i++) if (array[i] > criteria) result.push_back(i);
+		for (uint32_t i = 0; i < numArrayElem; i++) 
+            if (array[i] > criteria) result.push_back(i);
 		break;
 	case GE:
-		for (uint32_t i = 0; i < numArrayElem; i++) if (array[i] >= criteria) result.push_back(i);
+		for (uint32_t i = 0; i < numArrayElem; i++)
+            if (array[i] >= criteria) result.push_back(i);
 		break;
 	case EQ:
-		for (uint32_t i = 0; i < numArrayElem; i++) if (array[i] == criteria) result.push_back(i);
+		for (uint32_t i = 0; i < numArrayElem; i++)
+            if (array[i] == criteria) result.push_back(i);
 		break;
 	case LE:
-		for (uint32_t i = 0; i < numArrayElem; i++) if (array[i] <= criteria) result.push_back(i);
+		for (uint32_t i = 0; i < numArrayElem; i++)
+            if (array[i] <= criteria) result.push_back(i);
 		break;
 	case LT:
-		for (uint32_t i = 0; i < numArrayElem; i++) if (array[i] < criteria) result.push_back(i);
+		for (uint32_t i = 0; i < numArrayElem; i++)
+            if (array[i] < criteria) result.push_back(i);
 		break;
 	case NE:
-		for (uint32_t i = 0; i < numArrayElem; i++) if (array[i] != criteria) result.push_back(i);
+		for (uint32_t i = 0; i < numArrayElem; i++)
+            if (array[i] != criteria) result.push_back(i);
 		break;
 	default:
 		std::cout << "invalid comp: " << comp << std::endl;
 		exit(1);
 	}
 }
-
 
 /**
  * np_where 단수 조건 버전, equality에 대해서만 테스트
@@ -662,11 +620,6 @@ static void np_where_s(const std::vector<std::vector<Dtype>>& array,
 	}
 }
 
-
-
-
-
-
 /**
  * np_where 복수 조건 버전
  */
@@ -707,9 +660,6 @@ static void np_where(std::vector<float>& array, const std::vector<uint32_t>& com
 	}
 }
 
-
-
-
 template <typename Dtype>
 static void np_tile(const std::vector<Dtype>& array, const uint32_t repeat,
 		std::vector<std::vector<Dtype>>& result) {
@@ -737,8 +687,6 @@ static void np_round(const std::vector<float>& a, std::vector<uint32_t>& result)
 		result[i] = roundf(a[i]);
 	}
 }
-
-
 
 static void npr_randint(const uint32_t lb, const uint32_t ub, const uint32_t size,
 		std::vector<uint32_t>& result) {
@@ -779,7 +727,6 @@ static std::vector<uint32_t> np_arange(int start, int stop) {
 	return result;
 }
 
-
 template <typename Dtype>
 static void py_arrayElemsWithArrayInds(const std::vector<Dtype>& array,
 		const std::vector<uint32_t>& inds, std::vector<Dtype>& result) {
@@ -795,7 +742,6 @@ static void py_arrayElemsWithArrayInds(const std::vector<Dtype>& array,
 	}
 }
 
-
 template <typename Dtype>
 static Dtype vec_max(const std::vector<Dtype>& array) {
 	Dtype max;
@@ -806,7 +752,6 @@ static Dtype vec_max(const std::vector<Dtype>& array) {
 	}
 	return max;
 }
-
 
 template <typename Dtype, typename Dtype2>
 static void fillDataWith2dVec(const std::vector<std::vector<Dtype>>& array,
@@ -911,11 +856,6 @@ static void fillDataWith1dVec(const std::vector<Dtype>& array,
 }
 */
 
-
-
-
-
-
 template <typename Dtype, typename Dtype2>
 static void fill1dVecWithData(Data<Dtype>* data,
 		std::vector<Dtype2>& array) {
@@ -970,7 +910,8 @@ static std::vector<Dtype> vec_keep_by_index(const std::vector<Dtype>& array,
 }
 
 template <typename Dtype>
-static void vec_argsort(const std::vector<Dtype>& array, std::vector<uint32_t>& arg, int order=0) {
+static void vec_argsort(const std::vector<Dtype>& array, std::vector<uint32_t>& arg,
+    int order=0) {
 	assert(order == 0 || order == 1);
 
 	const uint32_t arraySize = array.size();
@@ -1008,9 +949,6 @@ static void vec_2d_pad(const uint32_t leftPad, std::vector<std::vector<Dtype>>& 
 		}
 	}
 }
-
-
-
 
 /*
 static std::string cv_type2str(int type) {
@@ -1156,14 +1094,6 @@ static void nms(std::vector<std::vector<float>>& dets1,
 	}
 }
 
-
-
-
-
-
-
-
-
 struct Size {
 	uint32_t width;
 	uint32_t height;
@@ -1212,7 +1142,5 @@ struct Annotation {
 		}
 	}
 };
-
-
 
 #endif /* FRCNN_COMMON_H_ */

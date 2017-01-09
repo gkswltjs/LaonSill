@@ -24,9 +24,11 @@
  * @brief 수정된 Mnist 파일 형태의 데이터셋 파일을 읽기위해 구현된 DataSet
  * @details Mnist(http://yann.lecun.com/exdb/mnist/)의 파일 포맷에서
  *          - # of rows, # of columns 후, # of channels 추가.
- *          - 256개 이상의 레이블 사이즈를 수용하기 위해 label 데이터를 unsigned char -> unsigned int로 변경
- *          (mnist의 경우 10진법 숫자를 구별하기 위해 10개의 카테고리가 있었고 이는 2^8=256, 8bit으로 수용가능해 unsigned char를 사용)
- * @todo mnist 파일의 수정없이 파라미터를 통해 mnist 원본을 그대로 읽을 수 있도록 수정할 수도 있음.
+ *          - 256개 이상의 레이블 사이즈를 수용하기 위해 label 데이터를 
+ *            unsigned char -> unsigned int로 변경
+ *          (mnist의 경우 10진법 숫자를 구별하기 위해 10개의 카테고리가 있었고 이는 
+ *           2^8=256, 8bit으로 수용가능해 unsigned char를 사용)
+ * @todo mnist 파일의 수정없이 파라미터를 통해 mnist 원본을 그대로 읽을 수 있게 수정 가능.
  */
 template <typename Dtype>
 class ImagePackDataSet : public DataSet<Dtype> {
@@ -102,18 +104,14 @@ protected:
 	int trainFileIndex;						///< 현재 학습데이터 파일 인덱스
 	int testFileIndex;						///< 현재 테스트 파일 인덱스
 	int numImagesInTrainFile;				///< 학습데이터셋 파일 하나에 들어있는 데이터의 수
-	int numImagesInTestFile;				///< 테스트데이터셋 파일 하나에 들어있는 데이터의 수
+	int numImagesInTestFile;			///< 테스트데이터셋 파일 하나에 들어있는 데이터의 수
 
-    std::vector<uint8_t>* bufDataSet;			///< 데이터셋 데이터를 로드할 버퍼. 파일의 uint8_t타입 데이터를 버퍼에 올려 uint32_t타입으로 변환하기 위한 버퍼.
+    std::vector<uint8_t>* bufDataSet;	///< 데이터셋 데이터를 로드할 버퍼. 파일의 uint8_t타입
+                                        ///  데이터를 버퍼에 올려 uint32_t타입으로 변환하기 
+                                        //   위한 버퍼.
     std::vector<uint32_t>* bufLabelSet;
 
-
-
-
-
-
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////
 
 	struct thread_arg_t {
 		//typename DataSet<Dtype>::Type type;
@@ -121,33 +119,23 @@ protected:
 		int page;
 	};
 
-
-
     std::vector<Dtype>* frontTrainDataSet;
     std::vector<Dtype>* frontTrainLabelSet;
     std::vector<Dtype>* backTrainDataSet;
     std::vector<Dtype>* backTrainLabelSet;
 
-
     std::vector<uint32_t>* trainFileIndices;
-
-
-
-
 
 	bool loading;
 
 	pthread_t bufThread;
 	thread_arg_t threadArg;
-    std::vector<Dtype>* secondTrainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
-    std::vector<Dtype>* secondTrainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
-
+    std::vector<Dtype>* secondTrainDataSet;		///< 학습데이터셋 벡터에 대한 포인터.
+    std::vector<Dtype>* secondTrainLabelSet;	///< 학습데이터셋의 정답 레이블 벡터에 대한 
+                                                ///  포인터.
 
 	static void* load_helper(void* context);
-
-
 	void swap();
-
 };
 
 #endif /* IMAGEPACKDATASET_H_ */

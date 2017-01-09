@@ -29,7 +29,8 @@ void setup() {
 	dataNames = {"data", "im_info", "gt_boxes"};
 
 	// layer
-	RoITestInputLayer<float>::Builder* builder = new typename RoITestInputLayer<float>::Builder();
+	RoITestInputLayer<float>::Builder* builder =
+        new typename RoITestInputLayer<float>::Builder();
 	builder
 		->id(0)
 		->name("input-data")

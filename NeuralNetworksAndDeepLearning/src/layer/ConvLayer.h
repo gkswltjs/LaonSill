@@ -134,8 +134,10 @@ public:
 	 * @param bias_filler bias 초기화 관련 파라미터 구조체
 	 * @param activationType 컨볼루션 결과에 적용할 활성화 타입
 	 */
-	ConvLayer(const std::string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
+	ConvLayer(const std::string name, filter_dim filter_d, update_param weight_update_param, 
+              update_param bias_update_param, param_filler<Dtype> weight_filler, 
+              param_filler<Dtype> bias_filler, 
+              typename Activation<Dtype>::Type activationType);
 	/**
 	 * @details ConvLayer 소멸자
 	 */
@@ -184,8 +186,9 @@ public:
 
 
 protected:
-	void initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-			param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
+	void initialize(filter_dim filter_d, update_param weight_update_param,
+        update_param bias_update_param, param_filler<Dtype> weight_filler,
+        param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
 
 
 
@@ -197,10 +200,8 @@ protected:
 	void _computeBiasesGrad();
 	void _computeInputGrad();
 
-
-	virtual void _clearShape();
-
-	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
+	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
+        Data<Dtype>* dataHistory, Data<Dtype>* data);
 
 	enum ParamType {
 		Filter = 0,
@@ -213,34 +214,32 @@ protected:
 
 	update_param weight_update_param;				///< weight 갱신 관련 파라미터 구조체
 	update_param bias_update_param;					///< bias 갱신 관련 파라미터 구조체
-	param_filler<Dtype> weight_filler;						///< weight 초기화 관련 파라미터 구조체
-	param_filler<Dtype> bias_filler;						///< bias 초기화 관련 파라미터 구조체
+	param_filler<Dtype> weight_filler;				///< weight 초기화 관련 파라미터 구조체
+	param_filler<Dtype> bias_filler;				///< bias 초기화 관련 파라미터 구조체
 
 
 
 #ifndef GPU_MODE
 #else
-	cudnnTensorDescriptor_t inputTensorDesc;			///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
-	cudnnTensorDescriptor_t outputTensorDesc;			///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
-	cudnnTensorDescriptor_t biasTensorDesc;			///< cudnn bias 구조 정보 구조체
-	cudnnFilterDescriptor_t filterDesc;				///< cudnn filter 구조 정보 구조체
-	cudnnConvolutionDescriptor_t convDesc;			///< cudnn 컨볼루션 연산 정보 구조체
-	cudnnConvolutionFwdAlgo_t convFwdAlgo;			///< cudnn 컨볼루션 포워드 알고리즘 열거형 (입력 데이터에 대해 convolution 수행할 알고리즘)
-	cudnnConvolutionBwdFilterAlgo_t convBwdFilterAlgo;	///< cudnn filter 백워드 알고리즘 열거형 (네트워크 cost의 filter에 관한 gradient를 구할 때의 알고리즘)
-	cudnnConvolutionBwdDataAlgo_t convBwdDataAlgo;	///< cudnn data 백워드 알고리즘 열거형 (네트워크 cost의 입력 데이터에 관한 gradient를 구할 때의 알고리즘)
+	cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t outputTensorDesc;	///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
+	cudnnTensorDescriptor_t biasTensorDesc;		///< cudnn bias 구조 정보 구조체
+	cudnnFilterDescriptor_t filterDesc;			///< cudnn filter 구조 정보 구조체
+	cudnnConvolutionDescriptor_t convDesc;		///< cudnn 컨볼루션 연산 정보 구조체
+	cudnnConvolutionFwdAlgo_t convFwdAlgo;		///< cudnn 컨볼루션 포워드 알고리즘 열거형 
+	cudnnConvolutionBwdFilterAlgo_t convBwdFilterAlgo;	///< cudnn filter 백워드 열거형
+	cudnnConvolutionBwdDataAlgo_t convBwdDataAlgo;	///< cudnn data 백워드 알고리즘 열거형
 
-	size_t workspaceSize;							///< cudnn forward, backward에 필요한 작업공간 GPU 메모리 사이즈
-	void *d_workspace;								///< cudnn forward, backward에 필요한 작업공간 장치 메모리 포인터
+	size_t workspaceSize;	///< cudnn forward, backward에 필요한 작업공간 GPU 메모리 사이즈
+	void *d_workspace;		///< cudnn forward, backward에 필요한 작업공간 장치 메모리 포인터
 #endif
 
 public:
-	Data<Dtype>* _preActivation;					///< 컨볼루션 결과에 대한 데이터
-    std::vector<Data<Dtype>*> _params;					///< 파리미터 데이터 (Filter, Bias 포함)
-    std::vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
+	Data<Dtype>* _preActivation;		    	///< 컨볼루션 결과에 대한 데이터
+    std::vector<Data<Dtype>*> _params;			///< 파리미터 데이터 (Filter, Bias 포함)
+    std::vector<Data<Dtype>*> _paramsHistory;	///< 이전 update의 파라미터 그레디언트 데이터
 
     //std::vector<bool> _paramsInitialized;
 };
-
-
 
 #endif /* LAYER_CONVLAYER_H_ */

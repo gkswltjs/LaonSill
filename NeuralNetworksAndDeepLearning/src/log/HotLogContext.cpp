@@ -166,7 +166,8 @@ bool HotLogContext::fillFlushInfo(bool force, bool& isWrapAround) {
     //     I/O의 용도로 활용중인 버퍼를 오염시킬 수 있기 때문이다.
     //     remainSize를 위해서 this->releaseSize에 반환할 releaseSize를 저장해 놓는다.
     this->releaseSize = releaseSize;
-    this->diskOffset = ALIGNDOWN(logOffset, SPARAM(HOTLOG_SLOTSIZE)) % SPARAM(HOTLOG_BUFFERSIZE);
+    this->diskOffset =
+        ALIGNDOWN(logOffset, SPARAM(HOTLOG_SLOTSIZE)) % SPARAM(HOTLOG_BUFFERSIZE);
 
     if (isWrapAround || this->diskOffset == 0UL) {
         this->diskGenNum += 1;

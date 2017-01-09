@@ -115,16 +115,6 @@ public:
 
 protected:
 	void initialize();
-
-protected:
-	virtual void _clearShape();
-	//void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
-
-
-
-
 };
-
-
 
 #endif /* DQNOUTPUTLAYER_H */

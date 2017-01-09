@@ -109,15 +109,3 @@ void load_proposal_target_layer_test() {
 }
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-

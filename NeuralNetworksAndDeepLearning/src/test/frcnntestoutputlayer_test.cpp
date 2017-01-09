@@ -30,7 +30,8 @@ void setup() {
 	npzName = "/home/jkim/Documents/np_array/frcnntestoutputlayer.npz";
 	dataNames = {"rois", "im_info", "cls_prob", "bbox_pred"};
 
-	FrcnnTestOutputLayer<float>::Builder* builder = new typename FrcnnTestOutputLayer<float>::Builder();
+	FrcnnTestOutputLayer<float>::Builder* builder =
+        new typename FrcnnTestOutputLayer<float>::Builder();
 	builder
 		->id(1)
 		->name("test_output")

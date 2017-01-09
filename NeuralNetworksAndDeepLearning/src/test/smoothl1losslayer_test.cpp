@@ -35,13 +35,15 @@ void setup() {
 	dataNames = {"rpn_bbox_pred", "rpn_bbox_targets",
 			"rpn_bbox_inside_weights", "rpn_bbox_outside_weights", "rpn_loss_bbox"};
 
-	SmoothL1LossLayer<float>::Builder* builder = new typename SmoothL1LossLayer<float>::Builder();
+	SmoothL1LossLayer<float>::Builder* builder =
+        new typename SmoothL1LossLayer<float>::Builder();
 	builder
 		->id(1)
 		->name("rpn_loss_bbox")
 		->lossWeight(1.0f)
 		->sigma(3.0f)
-		->inputs({"rpn_bbox_pred", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"})
+		->inputs({"rpn_bbox_pred", "rpn_bbox_targets", "rpn_bbox_inside_weights",
+                  "rpn_bbox_outside_weights"})
 		->outputs({"rpn_loss_bbox"});
 
 	layer = dynamic_cast<SmoothL1LossLayer<float>*>(builder->build());

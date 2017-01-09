@@ -24,26 +24,6 @@ public:
 	Top1Evaluation() {}
 	virtual ~Top1Evaluation() {}
 
-	/*
-	virtual void evaluate(const int num_labels, const int batches, const Dtype *output, const uint32_t *y) {
-		//cout << "Top1Evaluation: " << endl;
-		for(int j = 0; j < batches; j++) {
-			Dtype maxValue = -std::numeric_limits<Dtype>::max();
-			int maxIndex = 0;
-			for(int i = 0; i < num_labels; i++) {
-				if(output[num_labels*j+i] > maxValue) {
-					maxValue = output[num_labels*j+i];
-					maxIndex = i;
-				}
-				// cost
-				if(i == y[j]) this->cost += abs(output[num_labels*j+i]-1);
-				else this->cost += abs(output[num_labels*j+i]);
-			}
-			if(maxIndex == y[j]) this->accurateCount++;
-		}
-	}
-	*/
-
 	virtual void evaluate(const int num_labels, const int batches, const Dtype *output,
 			DataSet<Dtype>* dataSet, const uint32_t baseIndex) {
 		//cout << "Top1Evaluation: " << endl;

@@ -70,21 +70,21 @@ private:
     static void                         listenerThread();
     static void                         sessThread(int sessId);
 
-    static bool                         handleWelcomeMsg(MessageHeader recvMsgHdr, char* recvMsg,
-                                            MessageHeader& replyMsgHdr, char* replyMsg, 
-                                            char*& replyBigMsg);
-    static bool 		                handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMsg,
-            						        MessageHeader& replyMsgHdr, char* replyMsg,
-                                            char*& replyBigMsg);
-    static bool 				        handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
-                					        MessageHeader& replyMsgHdr, char* replyMsg,
-                                            char*& replyBigMsg);
-    static bool                         handleHaltMachineMsg(MessageHeader recvMsgHdr, char* recvMsg,
-                                            MessageHeader& replyMsgHdr, char* replyMsg,
-                                            char*& replyBigMsg);
-    static bool                         handleGoodByeMsg(MessageHeader recvMsgHdr, char* recvMsg,
-                                            MessageHeader& replyMsgHdr, char* replyMsg,
-                                            char*& replyBigMsg);
+    static bool                         handleWelcomeMsg(MessageHeader recvMsgHdr,
+                                            char* recvMsg, MessageHeader& replyMsgHdr,
+                                            char* replyMsg, char*& replyBigMsg);
+    static bool 		                handleCreateNetworkMsg(MessageHeader recvMsgHdr,
+                                            char* recvMsg, MessageHeader& replyMsgHdr, 
+                                            char* replyMsg, char*& replyBigMsg);
+    static bool 				        handlePushJobMsg(MessageHeader recvMsgHdr,
+                                            char* recvMsg, MessageHeader& replyMsgHdr,
+                                            char* replyMsg, char*& replyBigMsg);
+    static bool                         handleHaltMachineMsg(MessageHeader recvMsgHdr,
+                                            char* recvMsg, MessageHeader& replyMsgHdr,
+                                            char* replyMsg, char*& replyBigMsg);
+    static bool                         handleGoodByeMsg(MessageHeader recvMsgHdr,
+                                            char* recvMsg, MessageHeader& replyMsgHdr,
+                                            char* replyMsg, char*& replyBigMsg);
 
     static volatile bool                halting;
     static std::atomic<int>             sessHaltCount;

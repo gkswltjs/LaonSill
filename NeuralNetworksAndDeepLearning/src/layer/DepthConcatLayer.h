@@ -22,15 +22,17 @@
  *          channel축을 기준으로 복수의 입력을 조합한다.
  *          input1: batch1-1(channel1-1-1/channel1-1-2)/batch1-2(channel1-2-1/channel1-2-2)
  *          input2: batch2-1(channel2-1-1/channel2-1-2)/batch2-2(channel2-2-1/channel2-2-2)
- *          output: batch1-1(channel1-1-1/channel1-1-2)/batch2-1(channel2-1-1/channel2-1-2)/batch1-2(channel1-2-1/channel1-2-2)/batch2-2(channel2-2-1/channel2-2-2)
+ *          output: batch1-1(channel1-1-1/channel1-1-2)/batch2-1(channel2-1-1/channel2-1-2)/
+ *                  batch1-2(channel1-2-1/channel1-2-2)/batch2-2(channel2-2-1/channel2-2-2)
  */
 template <typename Dtype>
 class DepthConcatLayer : public HiddenLayer<Dtype> {
 public:
 	/**
 	 * @brief Depth Concatenation 레이어 객체 빌더
-	 * @details Depth Concatenation 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
-	 *          해당 파라미터를 만족하는 Depth Concatenation 레이어 객체를 생성한다.
+	 * @details Depth Concatenation 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를
+     *                              통해 해당 파라미터를 만족하는 Depth Concatenation 레이어
+     *                              객체를 생성한다.
 	 */
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
@@ -74,12 +76,6 @@ public:
 protected:
 	void initialize();
 
-	//virtual void _shape(bool recursive=true);
-
-
-	virtual void _clearShape();
-	//virtual void _load(ifstream &ifs, map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
-
 	/**
 	 * @details _concat()에서 입력값이 합산되는 방식이 아니므로 합산에 대해
 	 *          scaling을 적용하는 기본 _scaleInput()을 재정의하여 scale하지 않도록 한다.
@@ -99,7 +95,5 @@ protected:
 #else
 #endif
 };
-
-
 
 #endif /* LAYER_DEPTHCONCATLAYER_H_ */

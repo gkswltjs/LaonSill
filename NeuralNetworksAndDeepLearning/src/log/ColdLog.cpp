@@ -26,7 +26,7 @@
 
 using namespace std;
 
-#define gettid()    syscall(SYS_gettid)     // there is no glibc wrapper for this system call;;
+#define gettid()    syscall(SYS_gettid)   // there is no glibc wrapper for this system call;;
 
 extern const char*  SOOOA_HOME_ENVNAME;
 const char*         ColdLog::coldLogFileName = {"cold.log"};

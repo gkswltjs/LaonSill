@@ -13,8 +13,10 @@
 using namespace std;
 
 template <typename Dtype>
-MockDataSet<Dtype>::MockDataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t numTrainData, uint32_t numTestData, uint32_t numLabels, uint32_t mode)
-	: DataSet<Dtype>(rows, cols, channels, numTrainData, numTestData), numLabels(numLabels), mode(mode) {}
+MockDataSet<Dtype>::MockDataSet(uint32_t rows, uint32_t cols, uint32_t channels,
+    uint32_t numTrainData, uint32_t numTestData, uint32_t numLabels, uint32_t mode)
+	: DataSet<Dtype>(rows, cols, channels, numTrainData, numTestData), 
+      numLabels(numLabels), mode(mode) {}
 
 template <typename Dtype>
 MockDataSet<Dtype>::~MockDataSet() {}
@@ -78,7 +80,5 @@ void MockDataSet<Dtype>::_fillNotableImage() {
 		(*this->testLabelSet)[i] = i%numLabels;
 	}
 }
-
-
 
 template class MockDataSet<float>;

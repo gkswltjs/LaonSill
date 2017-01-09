@@ -44,7 +44,8 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 	if (adjusted) {
 		this->hasWeights = (this->_inputData.size() >= 3);
 		if (this->hasWeights && this->_inputData.size() != 4) {
-			cout << "If weights are used, must specify both inside and outside weights" << endl;
+			cout << "If weights are used, must specify both inside and outside weights" << 
+                endl;
 			exit(-1);
 		}
 
@@ -334,39 +335,4 @@ void SmoothL1LossLayer<Dtype>::initialize() {
 	tempCnt = 0;
 }
 
-
-
 template class SmoothL1LossLayer<float>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

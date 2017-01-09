@@ -70,7 +70,8 @@ ImagePackDataSet<Dtype>::~ImagePackDataSet() {
 template <typename Dtype>
 const Dtype* ImagePackDataSet<Dtype>::getTrainDataAt(int index) {
 	if(index >= this->numTrainData || index < 0) {
-		cout << "invalid index for train data: numTrainData->" << this->numTrainData << ", index: " << index << endl;
+		cout << "invalid index for train data: numTrainData->" << this->numTrainData
+            << ", index: " << index << endl;
 		exit(1);
 	}
 	int reqPage = index / numImagesInTrainFile;
@@ -88,8 +89,6 @@ const Dtype* ImagePackDataSet<Dtype>::getTrainDataAt(int index) {
 		exit(1);
 	}
 
-	//cout << "requested train data at " << index << ", current file index: " << trainFileIndex << ", nextPage is: " << nextPage << endl;
-
 	// 다음 페이지를 요청하는 경우,
 	// 이미로 로드된 다음페이지를 현재 페이지로 스왑하고
 	// 그 다음의 페이지를 back page에 로드한다.
@@ -105,12 +104,8 @@ const Dtype* ImagePackDataSet<Dtype>::getTrainDataAt(int index) {
 		trainFileIndex = reqPage;
 	}
 
-	//cout << "dataSize: " << this->dataSize << endl;
-	//cout << "real index: " << index-reqPage*numImagesInTrainFile << endl;
-	//cout << "final index: " << (*this->trainSetIndices)[(index-reqPage*numImagesInTrainFile)] << endl;
-
-	const Dtype* ptr = &(*this->frontTrainDataSet)[this->dataSize*(*this->trainSetIndices)[(index-reqPage*numImagesInTrainFile)]];
-	//cout << "base: " << &(*this->frontTrainDataSet)[0] << ", ptr: " << ptr << endl;
+	const Dtype* ptr = &(*this->frontTrainDataSet)[
+        this->dataSize*(*this->trainSetIndices)[(index-reqPage*numImagesInTrainFile)]];
 
 	return ptr;
 }
@@ -118,7 +113,8 @@ const Dtype* ImagePackDataSet<Dtype>::getTrainDataAt(int index) {
 template <typename Dtype>
 const Dtype* ImagePackDataSet<Dtype>::getTrainLabelAt(int index) {
 	if(index >= this->numTrainData || index < 0) {
-		cout << "invalid index for train label: numTrainData->" << this->numTrainData << ", index: " << index << endl;
+		cout << "invalid index for train label: numTrainData->" << this->numTrainData
+            << ", index: " << index << endl;
 		exit(1);
 	}
 	int reqPage = index / numImagesInTrainFile;
@@ -136,25 +132,21 @@ const Dtype* ImagePackDataSet<Dtype>::getTrainLabelAt(int index) {
 		while(loading);
 
 		swap();
-		//load(DataSet<Dtype>::Train, reqPage+1);
 
 		threadArg.page = (reqPage+1)%numTrainFile;
 		pthread_create(&bufThread, NULL, ImagePackDataSet<Dtype>::load_helper, &threadArg);
 
 		trainFileIndex = reqPage;
 	}
-	return &(*this->frontTrainLabelSet)[(*this->trainSetIndices)[index-reqPage*numImagesInTrainFile]];
+	return &(*this->frontTrainLabelSet)[
+        (*this->trainSetIndices)[index-reqPage*numImagesInTrainFile]];
 }
-
-
-
-
-
 
 template <typename Dtype>
 const Dtype* ImagePackDataSet<Dtype>::getValidationDataAt(int index) {
 	if(index >= this->numValidationData || index < 0) {
-		cout << "invalid index for validation data: numValidationData->" << this->numValidationData << ", index: " << index << endl;
+		cout << "invalid index for validation data: numValidationData->"
+            << this->numValidationData << ", index: " << index << endl;
 		exit(1);
 	}
 	return &(*this->validationDataSet)[this->dataSize*index];
@@ -163,7 +155,8 @@ const Dtype* ImagePackDataSet<Dtype>::getValidationDataAt(int index) {
 template <typename Dtype>
 const Dtype* ImagePackDataSet<Dtype>::getValidationLabelAt(int index) {
 	if(index >= this->numValidationData || index < 0) {
-		cout << "invalid index for validation label: numValidationData->" << this->numValidationData << ", index: " << index << endl;
+		cout << "invalid index for validation label: numValidationData->"
+            << this->numValidationData << ", index: " << index << endl;
 		exit(1);
 	}
 	return &(*this->validationLabelSet)[index];
@@ -172,7 +165,8 @@ const Dtype* ImagePackDataSet<Dtype>::getValidationLabelAt(int index) {
 template <typename Dtype>
 const Dtype* ImagePackDataSet<Dtype>::getTestDataAt(int index) {
 	if(index >= this->numTestData || index < 0) {
-		cout << "invalid index for test data: numTestData->" << this->numTestData << ", index: " << index << endl;
+		cout << "invalid index for test data: numTestData->" << this->numTestData 
+            << ", index: " << index << endl;
 		exit(1);
 	}
 	int reqPage = index / numImagesInTestFile;
@@ -180,13 +174,15 @@ const Dtype* ImagePackDataSet<Dtype>::getTestDataAt(int index) {
 		load(DataSet<Dtype>::Test, reqPage);
 		testFileIndex = reqPage;
 	}
-	return &(*this->testDataSet)[this->dataSize*(*this->testSetIndices)[(index-reqPage*numImagesInTestFile)]];
+	return &(*this->testDataSet)[
+        this->dataSize*(*this->testSetIndices)[(index-reqPage*numImagesInTestFile)]];
 }
 
 template <typename Dtype>
 const Dtype* ImagePackDataSet<Dtype>::getTestLabelAt(int index) {
 	if(index >= this->numTestData || index < 0) {
-		cout << "invalid index for test label: numTestData->" << this->numTestData << ", index: " << index << endl;
+		cout << "invalid index for test label: numTestData->" << this->numTestData
+            << ", index: " << index << endl;
 		exit(1);
 	}
 	int reqPage = index / numImagesInTestFile;
@@ -197,13 +193,6 @@ const Dtype* ImagePackDataSet<Dtype>::getTestLabelAt(int index) {
 	return &(*this->testLabelSet)[(*this->testSetIndices)[index-reqPage*numImagesInTestFile]];
 }
 
-
-
-
-
-
-
-
 template <typename Dtype>
 void ImagePackDataSet<Dtype>::load() {
 
@@ -211,10 +200,7 @@ void ImagePackDataSet<Dtype>::load() {
 	numTrainData = loadDataSetFromResource(filenames[0], trainDataSet, 0, 10000);
 	numTestData = loadDataSetFromResource(filenames[1], testDataSet, 0, 0);
 #else
-	Timer timer;
-	timer.start();
 	int numTrainDataInFile = load(DataSet<Dtype>::Train, 0);
-	cout << "time for load file: " << timer.stop(false) << endl;
 
 	// train에 대해 load()할 경우 항상 back에 대해서 수행,
 	// 최초의 0page에 대한 load()의 경우 primary, front에 대한 것, 이를 조정해 준다.
@@ -241,10 +227,7 @@ void ImagePackDataSet<Dtype>::load() {
 	// 별도의 thread에서 수행하는 것이 바람직하나 최초에 second에 대한 설정이 필요해서
 	// 편의에 따라 main thread에서 load 수행함.
 	if(numTrainFile > 1) {
-
-		timer.start();
 		load(DataSet<Dtype>::Train, 1);
-		cout << "time for load file: " << timer.stop(false) << endl;
 
 		this->secondTrainDataSet = backTrainDataSet;
 		this->secondTrainLabelSet = backTrainLabelSet;
@@ -253,24 +236,13 @@ void ImagePackDataSet<Dtype>::load() {
 #endif
 }
 
-
-
-
 template <typename Dtype>
 void* ImagePackDataSet<Dtype>::load_helper(void* arg) {
-	//int page_ = *(int*)page;
-	//load(DataSet<Dtype>::Train, page_);
-
 	thread_arg_t* arg_ = (thread_arg_t*)arg;
 	cout << "load train dataset page " << arg_->page << endl;
 
 	((ImagePackDataSet<Dtype>*)(arg_->context))->load(DataSet<Dtype>::Train, arg_->page);
 }
-
-
-
-
-
 
 template <typename Dtype>
 int ImagePackDataSet<Dtype>::load(typename DataSet<Dtype>::Type type, int page) {
@@ -321,7 +293,8 @@ int ImagePackDataSet<Dtype>::load(typename DataSet<Dtype>::Type type, int page) 
 
 #ifndef GPU_MODE
 template <typename Dtype>
-int ImagePackDataSet<Dtype>::loadDataSetFromResource(string resources[2], DataSample* &dataSet, int offset, int size) {
+int ImagePackDataSet<Dtype>::loadDataSetFromResource(string resources[2],
+    DataSample* &dataSet, int offset, int size) {
 	// LOAD IMAGE DATA
 	ImageInfo dataInfo(resources[0]);
 	dataInfo.load();
@@ -427,23 +400,12 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 		return 0;
 	}
 	if (image_header.length != label_header.length) {
-		printf("ERROR: Dataset file mismatch (number of images does not match the number of labels)\n");
+		printf("ERROR: Dataset file mismatch "
+                "(number of images do not match the number of labels)\n");
 		fclose(imfp);
 		fclose(lbfp);
 		return 0;
 	}
-
-	/*
-	cout << data_path << ": " << endl;
-	cout << "\tlength->" << image_header.length << endl;
-	cout << "\theight->" << image_header.height << endl;
-	cout << "\twidth->" << image_header.width << endl;
-	cout << "\tchannel->" << image_header.channel << endl;
-
-	cout << label_path << ": " << endl;
-	cout << "\tlength->" << label_header.length << endl;
-	*/
-
 
 	// Output dimensions
 	size_t width = image_header.width;
@@ -478,7 +440,8 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 		//(*dataSet)[i] = (*bufDataSet)[i];
 	}
 
-	if (fread(&(*bufLabelSet)[0], sizeof(uint32_t), label_header.length, lbfp) != label_header.length) {
+	if (fread(&(*bufLabelSet)[0], sizeof(uint32_t), label_header.length, lbfp) 
+        != label_header.length) {
 		printf("ERROR: Invalid dataset file (partial label dataset)\n");
 		fclose(imfp);
 		fclose(lbfp);
@@ -489,16 +452,12 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 		(*labelSet)[i] = (*bufLabelSet)[i];
 	}
 
-
 	fclose(imfp);
 	fclose(lbfp);
 
 	return image_header.length;
 }
 #endif
-
-
-
 
 template <typename Dtype>
 void ImagePackDataSet<Dtype>::swap() {
@@ -520,15 +479,10 @@ void ImagePackDataSet<Dtype>::swap() {
 	backTrainLabelSet = tempLabelSet;
 }
 
-
-
-
 template <typename Dtype>
 void ImagePackDataSet<Dtype>::zeroMean(bool hasMean, bool isTrain) {
-	//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 	uint32_t di, ci, hi, wi;
 	double sum[3] = {0.0, 0.0, 0.0};
-
 
 	const uint32_t perImageSize = this->cols*this->rows*this->channels;
 	const uint32_t perChannelSize = this->cols*this->rows;
@@ -538,7 +492,8 @@ void ImagePackDataSet<Dtype>::zeroMean(bool hasMean, bool isTrain) {
 			for(ci = 0; ci < this->channels; ci++) {
 				for(hi = 0; hi < this->rows; hi++) {
 					for(wi = 0; wi < this->cols; wi++) {
-						sum[ci] += (*backTrainDataSet)[wi+hi*this->cols+ci*perChannelSize+di*perImageSize];
+						sum[ci] += (*backTrainDataSet)[
+                            wi+hi*this->cols+ci*perChannelSize+di*perImageSize];
 					}
 				}
 			}
@@ -553,7 +508,8 @@ void ImagePackDataSet<Dtype>::zeroMean(bool hasMean, bool isTrain) {
 			for(ci = 0; ci < this->channels; ci++) {
 				for(hi = 0; hi < this->rows; hi++) {
 					for(wi = 0; wi < this->cols; wi++) {
-						(*backTrainDataSet)[wi+hi*this->cols+ci*perChannelSize+di*perImageSize] -= this->mean[ci];
+                        int index = wi+hi*this->cols+ci*perChannelSize+di*perImageSize;
+						(*backTrainDataSet)[index] -= this->mean[ci];
 					}
 				}
 			}
@@ -563,7 +519,8 @@ void ImagePackDataSet<Dtype>::zeroMean(bool hasMean, bool isTrain) {
 			for(ci = 0; ci < this->channels; ci++) {
 				for(hi = 0; hi < this->rows; hi++) {
 					for(wi = 0; wi < this->cols; wi++) {
-						(*this->testDataSet)[wi+hi*this->cols+ci*perChannelSize+di*perImageSize] -= this->mean[ci];
+                        int index = wi+hi*this->cols+ci*perChannelSize+di*perImageSize;
+						(*this->testDataSet)[index] -= this->mean[ci];
 					}
 				}
 			}
@@ -571,48 +528,24 @@ void ImagePackDataSet<Dtype>::zeroMean(bool hasMean, bool isTrain) {
 	}
 }
 
-
-
-
 template <typename Dtype>
 void ImagePackDataSet<Dtype>::shuffleTrainDataSet() {
-	random_shuffle(&(*this->trainSetIndices)[0], &(*this->trainSetIndices)[numImagesInTrainFile]);
-	random_shuffle(&(*this->trainFileIndices)[0], &(*this->trainFileIndices)[numTrainFile]);
-	/*
-	cout << "trainSetIndices: " << endl;
-	for(uint32_t i = 0; i < numImagesInTrainFile; i++) {
-		cout << "i: " << i << ", trainSetIndice: " << (*this->trainSetIndices)[i] << endl;
-	}
-	*/
+	random_shuffle(&(*this->trainSetIndices)[0],
+                    &(*this->trainSetIndices)[numImagesInTrainFile]);
+	random_shuffle(&(*this->trainFileIndices)[0],
+                    &(*this->trainFileIndices)[numTrainFile]);
 }
 
 template <typename Dtype>
 void ImagePackDataSet<Dtype>::shuffleValidationDataSet() {
-	//random_shuffle(&(*this->validationSetIndices)[0], &(*this->validationSetIndices)[numValidationData]);
 	cout << "shuffleValidationDataSet() is not supported yet ... " << endl;
 	exit(1);
 }
 
 template <typename Dtype>
 void ImagePackDataSet<Dtype>::shuffleTestDataSet() {
-	random_shuffle(&(*this->testSetIndices)[0], &(*this->testSetIndices)[numImagesInTestFile]);
+	random_shuffle(&(*this->testSetIndices)[0],
+                   &(*this->testSetIndices)[numImagesInTestFile]);
 }
 
-
-
-
-
-
 template class ImagePackDataSet<float>;
-
-
-
-
-
-
-
-
-
-
-
-

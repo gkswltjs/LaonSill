@@ -255,8 +255,8 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 
 	// Compute number of background RoIs to take from this image (guarding
 	// against there being fewer than desired)
-	const uint32_t bgRoisPerThisImage = uint32_t(std::min((int)(roisPerImage - fgRoisPerThisImage),
-			(int)bgInds.size()));
+	const uint32_t bgRoisPerThisImage =
+        uint32_t(std::min((int)(roisPerImage - fgRoisPerThisImage), (int)bgInds.size()));
 	// Sample background regions without replacement
 	if (bgInds.size() > 0) {
 #if TEST_MODE
@@ -333,16 +333,13 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 	print2dArray("bboxInsideWeights", bboxInsideWeights);
 #endif
 
-
-
-
 	/*
 	for (uint32_t i = 0; i < fgRoisPerThisImage; i++) {
 		cout << i << "\t: " <<
 		rois[i][1] << "," << rois[i][2] << "," << rois[i][3] << "," << rois[i][4] << "," <<
-		gtRois[i][0] << "," << gtRois[i][1] << "," << gtRois[i][2] << "," << gtRois[i][3] << "," << endl;
+		gtRois[i][0] << "," << gtRois[i][1] << "," << gtRois[i][2] << "," << gtRois[i][3] <<
+            "," << endl;
 	}
-
 
 	vector<vector<float>> tempRois(fgRoisPerThisImage);
 	for (uint32_t i = 0; i < fgRoisPerThisImage; i++) {
@@ -366,7 +363,6 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 
 	exit(1);
 	*/
-
 }
 
 template <typename Dtype>
@@ -462,44 +458,4 @@ void ProposalTargetLayer<Dtype>::_getBboxRegressionLabels(
 	}
 }
 
-
-
-
-
-
 template class ProposalTargetLayer<float>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

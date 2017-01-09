@@ -54,8 +54,9 @@ void RoIPoolingLayer<Dtype>::reshape() {
 			this->height = this->_inputData[0]->height();
 			this->width = this->_inputData[0]->width();
 
-			const std::vector<uint32_t> outputDataShape = {(uint32_t)this->_inputData[1]->height(),
-					this->channels, this->pooledH, this->pooledW};
+			const std::vector<uint32_t> outputDataShape =
+                { (uint32_t)this->_inputData[1]->height(), this->channels, this->pooledH,
+                    this->pooledW };
 
 			this->_outputData[0]->reshape(outputDataShape);
 			this->maxIdx->reshape(outputDataShape);
@@ -136,9 +137,6 @@ __global__ void ROIPoolForward(
 		argmax_data[index] = maxidx;
 	}
 }
-
-
-
 
 template <typename Dtype>
 void RoIPoolingLayer<Dtype>::feedforward() {
@@ -294,56 +292,4 @@ void RoIPoolingLayer<Dtype>::initialize() {
 	this->tempCnt = 0;
 }
 
-
-
 template class RoIPoolingLayer<float>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

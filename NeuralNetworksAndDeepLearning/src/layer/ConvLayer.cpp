@@ -26,12 +26,13 @@ ConvLayer<Dtype>::ConvLayer(Builder* builder)
 }
 
 template <typename Dtype>
-ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType)
-: HiddenLayer<Dtype>(name) {
-	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
+    update_param weight_update_param, update_param bias_update_param,
+    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler,
+    typename Activation<Dtype>::Type activationType) : HiddenLayer<Dtype>(name) {
+	initialize(filter_d, weight_update_param, bias_update_param, weight_filler,
+               bias_filler, activationType);
 }
-
 
 template <typename Dtype>
 double ConvLayer<Dtype>::sumSquareParamsData() {
@@ -181,9 +182,11 @@ void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	param_filler bias_filler;
 	ifs.read((char *)&bias_filler, sizeof(param_filler));
 
-	initialize(filter_d, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+	initialize(filter_d, weight_update_param, bias_update_param, weight_filler,
+               bias_filler, activationType);
 
-	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
+	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, 
+    // bias load를 수행해야 함
 	for(uint32_t i = 0; i < filter_d.filters; i++) {
 		filters[i].load(ifs, file_type::arma_binary);
 	}
@@ -191,8 +194,9 @@ void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 }
 
 template <typename Dtype>
-void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
+void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_update_param,
+    update_param bias_update_param, param_filler weight_filler, param_filler bias_filler,
+    Activation::Type activationType) {
 
 	this->type = Layer<Dtype>::Conv;
 
@@ -251,9 +255,8 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 
 template <typename Dtype>
 void ConvLayer<Dtype>::feedforward() {
-
 	// 현재 CONV 레이어의 경우 여러 레이어로 값이 전달되지 않기 때문에 무의미하다.
-	// 다만 backpropagation에서 delta값을 합으로 할당하기 때문에 어쨌든 0로 init은 반드시 해야 함.
+	// 다만 backpropagation에서 delta값을 합으로 할당하기 때문에 0으로 init은 반드시 해야 함.
 	// delta.zeros();
 
 	Util::printCube(input, "input:");
@@ -335,7 +338,8 @@ void ConvLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer) {
 			Util::printMat(filters[j].slice(i), "filter:");
 			Util::printMat(flipud(fliplr(filters[j].slice(i))), "filp:");
 			dx_convolution(delta.slice(j), flipud(fliplr(filters[j].slice(i))), dconv);
-			//d_convolution(conv_layer->getDelta().slice(j), conv_layer->getWeight()[j].slice(i), dconv);
+			//d_convolution(conv_layer->getDelta().slice(j), 
+            //              conv_layer->getWeight()[j].slice(i), dconv);
 			delta_input.slice(i) += dconv;
 		}
 	}
@@ -361,29 +365,22 @@ void ConvLayer<Dtype>::convolution(const rmat &x, const rmat &w, rmat &result, i
 					in_image_row_idx = i-left_pad+k;
 					in_image_col_idx = j-top_pad+m;
 
-					if((in_image_row_idx >= 0 && (uint32_t)in_image_row_idx < x.n_rows)
-							&& (in_image_col_idx >=0 && (uint32_t)in_image_col_idx < x.n_cols)) {
-						//conv += x.mem[in_image_row_idx+(in_image_col_idx)*x.n_cols]*w.mem[k+m*w.n_cols];
-						//try {
+					if((in_image_row_idx >= 0 && (uint32_t)in_image_row_idx < x.n_rows) &&
+                       (in_image_col_idx >=0 && (uint32_t)in_image_col_idx < x.n_cols)) {
 						conv += M_MEM(x, in_image_row_idx, in_image_col_idx)*M_MEM(w, k, m);
-						//} catch (...) {
-						//	cout << "i:" << i << ", j:" << j << ", k:" << k << ", m:" << m << endl;
-						//}
 					}
 				}
 			}
-			//try {
 			result(i/stride, j/stride) = conv;
-			//} catch (...) {
-			//	cout << "i:" << i << ", j:" << j << endl;
-			//}
 		}
 	}
 }
 
-// Yn,m = Sigma(i for 0~filter_size-1)Sigma(j for 0~filter_size-1) Wi,j * Xstride*n-filter_size/2+i, stride*m-filter_size/2+j
+// Yn,m = Sigma(i for 0~filter_size-1)Sigma(j for 0~filter_size-1) Wi,
+//              j * Xstride*n-filter_size/2+i, stride*m-filter_size/2+j
 // dC/dWi,j	= dC/dY * dY/dWi,j
-// 			= Sigma(n)Sigma(m) delta n,m * Xstride*n-filter_size/2+i, stride*m-filter_size/2+j)
+// 			= Sigma(n)Sigma(m) delta n,m * Xstride*n-filter_size/2+i,
+// 			  stride*m-filter_size/2+j)
 template <typename Dtype>
 void ConvLayer<Dtype>::dw_convolution(const rmat &d, const rmat &x, rmat &result) {
 
@@ -397,20 +394,19 @@ void ConvLayer<Dtype>::dw_convolution(const rmat &d, const rmat &x, rmat &result
 
 	result.zeros();
 
-	for(i = 0; i < filter_d.rows; i++) {
-		for(j = 0; j < filter_d.cols; j++) {
+	for (i = 0; i < filter_d.rows; i++) {
+		for (j = 0; j < filter_d.cols; j++) {
 
 			dconv = 0.0;
-			for(k = 0; k < d.n_rows; k++) {
-				for(l = 0; l < d.n_cols; l++) {
+			for (k = 0; k < d.n_rows; k++) {
+				for (l = 0; l < d.n_cols; l++) {
 					in_image_row_idx = filter_d.stride*k-left_pad+i;
 					in_image_col_idx = filter_d.stride*l-top_pad+j;
 
-					if((in_image_row_idx >= 0 && (uint32_t)in_image_row_idx < x.n_rows)
-							&& (in_image_col_idx >= 0 && (uint32_t)in_image_col_idx < x.n_cols)) {
+					if ((in_image_row_idx >= 0 && (uint32_t)in_image_row_idx < x.n_rows) && 
+                       (in_image_col_idx >= 0 && (uint32_t)in_image_col_idx < x.n_cols)) {
 						//dconv += d(k, l)*x(in_image_row_idx, in_image_col_idx);
 						dconv += M_MEM(d, k, l)*M_MEM(x, in_image_row_idx, in_image_col_idx);
-						//dconv += d.mem[in_image_row_idx+in_image_col_idx*d.n_cols]*x.mem[k+l*x.n_cols];
 					}
 				}
 			}
@@ -432,8 +428,6 @@ void ConvLayer<Dtype>::dx_convolution(const rmat &d, const rmat &w, rmat &result
 
 	for(i = 0; i < d.n_rows; i++) {
 		for(j = 0; j < d.n_cols; j++) {
-			//d_ex.mem[filter_d.stride*i+filter_d.stride*j*d_ex.n_cols] = d.mem[i+j*d.n_cols];
-			//d_ex(filter_d.stride*i, filter_d.stride*j) = d.mem[i+j*d.n_cols];
 			M_MEMPTR(d_ex, filter_d.stride*i, filter_d.stride*j) = M_MEM(d, i, j);
 		}
 	}
@@ -472,51 +466,15 @@ void ConvLayer<Dtype>::update(uint32_t idx, uint32_t n, uint32_t miniBatchSize) 
 	//biases -= eta/miniBatchSize*nabla_b;
 
 	for(uint32_t i = 0; i < filter_d.filters; i++) {
-		filters[i] = (1-weight_update_param.lr_mult*weight_update_param.decay_mult/n)*filters[i] - (weight_update_param.lr_mult/miniBatchSize)*nabla_w[i];
+		filters[i] = 
+            (1-weight_update_param.lr_mult*weight_update_param.decay_mult/n)*filters[i] - 
+            (weight_update_param.lr_mult/miniBatchSize)*nabla_w[i];
 	}
 	biases -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
 
 	propUpdate(n, miniBatchSize);
 }
 
-/*
-template <typename Dtype>
-void ConvLayer<Dtype>::_save(ofstream &ofs) {
-	HiddenLayer<Dtype>::_save(ofs);
-
-	int activationType = (int)activation_fn->getType();
-
-	ofs.write((char *)&filter_d, sizeof(filter_dim));
-	ofs.write((char *)&activationType, sizeof(int));
-	ofs.write((char *)&weight_update_param, sizeof(update_param));
-	ofs.write((char *)&bias_update_param, sizeof(update_param));
-	ofs.write((char *)&weight_filler, sizeof(param_filler));
-	ofs.write((char *)&bias_filler, sizeof(param_filler));
-	//ofs.write((char *)&weight, sizeof(rmat));
-	//ofs.write((char *)&bias, sizeof(rvec));
-
-	for(uint32_t i = 0; i < filter_d.filters; i++) {
-		filters[i].save(ofs, file_type::arma_binary);
-	}
-	biases.save(ofs, file_type::arma_binary);
-}
-*/
 #endif
 
 template class ConvLayer<float>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

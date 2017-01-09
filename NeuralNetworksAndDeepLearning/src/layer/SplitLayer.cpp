@@ -126,15 +126,4 @@ void SplitLayer<Dtype>::backpropagation() {
 #endif
 }
 
-
-
 template class SplitLayer<float>;
-
-
-
-
-
-
-
-
-

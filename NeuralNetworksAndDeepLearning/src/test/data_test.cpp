@@ -92,7 +92,8 @@ void reshape_test() {
 		for (uint32_t j = 0; j < channels; j++) {
 			for (uint32_t k = 0; k < height; k++) {
 				for (uint32_t l = 0; l < height; l++) {
-					dataPtr[i*_0Size + j*_1Size + k*_2Size + l] = i*_0Size + j*_1Size + k*_2Size + l;
+					dataPtr[i*_0Size + j*_1Size + k*_2Size + l] =
+                        i*_0Size + j*_1Size + k*_2Size + l;
 				}
 			}
 		}
@@ -163,7 +164,8 @@ void transpose_test() {
 		for (uint32_t j = 0; j < channels; j++) {
 			for (uint32_t k = 0; k < height; k++) {
 				for (uint32_t l = 0; l < height; l++) {
-					dataPtr[i*_0Size + j*_1Size + k*_2Size + l] = i*_0Size + j*_1Size + k*_2Size + l;
+					dataPtr[i*_0Size + j*_1Size + k*_2Size + l] =
+                        i*_0Size + j*_1Size + k*_2Size + l;
 				}
 			}
 		}

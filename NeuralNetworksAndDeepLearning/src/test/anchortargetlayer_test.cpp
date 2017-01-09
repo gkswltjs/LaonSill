@@ -30,15 +30,18 @@ void setup() {
 
 	npzName = "/home/jkim/Documents/np_array/anchortargetlayer.npz";
 	dataNames = {"rpn_cls_score", "gt_boxes", "im_info", "data",
-			"rpn_labels", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"};
+        "rpn_labels", "rpn_bbox_targets", "rpn_bbox_inside_weights",
+        "rpn_bbox_outside_weights"};
 
-	AnchorTargetLayer<float>::Builder* builder = new typename AnchorTargetLayer<float>::Builder();
+	AnchorTargetLayer<float>::Builder* builder = 
+        new typename AnchorTargetLayer<float>::Builder();
 	builder
 		->id(12)
 		->name("rpn-data")
 		->featStride(16)
 		->inputs({"rpn_cls_score", "gt_boxes", "im_info", "data"})
-		->outputs({"rpn_labels", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"});
+		->outputs({"rpn_labels", "rpn_bbox_targets", "rpn_bbox_inside_weights",
+                   "rpn_bbox_outside_weights"});
 
 	layer = dynamic_cast<AnchorTargetLayer<float>*>(builder->build());
 

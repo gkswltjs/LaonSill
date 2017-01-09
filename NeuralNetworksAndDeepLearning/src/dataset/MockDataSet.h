@@ -27,7 +27,8 @@ public:
 	const static uint32_t FULL_RANDOM = 0;
 	const static uint32_t NOTABLE_IMAGE = 1;
 
-	MockDataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t numTrainData, uint32_t numTestData, uint32_t numLabels, uint32_t mode = 0);
+	MockDataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t numTrainData,
+                uint32_t numTestData, uint32_t numLabels, uint32_t mode = 0);
 	virtual ~MockDataSet();
 
 	virtual void load();
@@ -36,7 +37,7 @@ private:
 	void _fillNotableImage();
 
 
-	uint32_t numLabels;				///< 생성할 데이터셋의 정답레이블 크기. 랜덤 레이블 생성을 위해 필요.
+	uint32_t numLabels;	 ///< 생성할 데이터셋의 정답레이블 크기. 랜덤 레이블 생성을 위해 필요
 	uint32_t mode;
 };
 

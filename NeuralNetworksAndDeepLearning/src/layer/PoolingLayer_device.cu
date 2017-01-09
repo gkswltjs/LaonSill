@@ -66,7 +66,8 @@ void PoolingLayer<Dtype>::reshape() {
 	checkCUDNN(cudnnSetTensor4dDescriptor(tempInputTensorDesc,
 				CUDNN_TENSOR_NCHW,
 				CUDNN_DATA_FLOAT,
-				this->in_dim.batches, this->in_dim.channels, this->in_dim.rows, this->in_dim.cols));
+				this->in_dim.batches, this->in_dim.channels, this->in_dim.rows,
+                this->in_dim.cols));
 
 	int n, c, h, w;
 	checkCUDNN(cudnnGetPooling2dForwardOutputDim(pooling_fn->getPoolDesc(),
@@ -129,7 +130,3 @@ template void PoolingLayer<float>::feedforward();
 template void PoolingLayer<float>::backpropagation();
 
 #endif
-
-
-
-

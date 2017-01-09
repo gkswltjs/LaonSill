@@ -46,8 +46,8 @@ public:
 	 * @param output 네트워크가 추정 호스트 메모리 포인터
 	 * @param y 정답값 호스트 메모리 포인터
 	 */
-	//virtual void evaluate(const int num_labels, const int batches, const Dtype* output, const uint32_t* y)=0;
-	virtual void evaluate(const int num_labels, const int batches, const Dtype* output, DataSet<Dtype>* dataSet, const uint32_t baseIndex)=0;
+	virtual void evaluate(const int num_labels, const int batches, const Dtype* output,
+        DataSet<Dtype>* dataSet, const uint32_t baseIndex)=0;
 
 protected:
 	int accurateCount;			///< 네트워크 추정에서 정답을 맞춘 갯수

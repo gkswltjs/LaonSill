@@ -23,8 +23,10 @@
 struct category_t {
 	int id;						///< 카테고리 아이디, 데이터셋상에서 레이블에 해당하는 값
     std::string name;				///< 카테고리 이름, 해당 디렉토리의 이름에 해당하는 값
-    std::vector<std::string> fileList;	///< 파일 이름 문자열 목록 벡터, 해당 디렉토리 내의 모든 이미지 이름 목록에 해당하는 값
-	int fileIndex;				///< 현재 해당 카테고리내에서 Pack된 파일의 수, 중복으로 pack하지 않기 위한 index
+    std::vector<std::string> fileList;	///< 파일 이름 문자열 목록 벡터, 해당 디렉토리 내의 
+                                        ///  모든 이미지 이름 목록에 해당하는 값
+	int fileIndex;				///< 현재 해당 카테고리내에서 Pack된 파일의 수, 중복으로 
+                                ///  pack하지 않기 위한 index
 	int sizePerCategory;
 
 	category_t() {
@@ -61,7 +63,8 @@ struct category_t {
 
 /**
  * @brief 이미지 파일을 대상으로 적절한 사이즈의 디코드되어 그룹화된 Image Pack을 생성한다.
- * @details 많은 이미지를 대상으로 매번 디코딩을 하고 많은 파일에 대해 읽기를 수행해야 하는 낭비를 막는다.
+ * @details 많은 이미지를 대상으로 매번 디코딩을 하고 많은 파일에 대해 읽기를 수행해야 하는
+ *          낭비를 막는다.
  */
 class ImagePacker {
 public:
@@ -117,33 +120,29 @@ private:
 	 * @param size 전체 데이터의 수
 	 * @param sizePerCategory 하나의 카테고리당 pack할 이미지의 수
 	 */
-	void _pack(std::string dataPath, std::string labelPath, int numImagesInFile, int size, int sizePerCategory);
-
+	void _pack(std::string dataPath, std::string labelPath, int numImagesInFile, int size,
+               int sizePerCategory);
 
     std::string image_dir;						///< Pack 대상의 Root 경로 문자열
 
 	static const std::string path_crop;			///< "crop"
 	static const std::string path_save;			///< "save"
 
-    std::vector<category_t> categoryList;		///< Pack 대상의 카테고리와 카테고리의 이미지 파일 정보 목록 벡터
+    std::vector<category_t> categoryList;	///< Pack 대상의 카테고리와 카테고리의 이미지 
+                                            ///  파일 정보 목록 벡터
 	int numCategory;						///< pack 대상의 카테고리 수
 	int numTrain;							///< 학습 이미지 수
 	int numTest;							///< 테스트 이미지 수
 	int numImagesInTrainFile;				///< 학습 파일 하나에 포함될 이미지의 수
 	int numImagesInTestFile;				///< 테스트 파일 하나에 포함될 이미지의 수
-	int numChannels;						///< 이미지 채널의 수 (이미지 마다 채널의 수가 다를 수 있고 다른 경우 주어진 채널수로 고정하게 한다.)
+	int numChannels;						///< 이미지 채널의 수 (이미지 마다 채널의 수가 
+                                            ///  다를 수 있고 다른 경우 주어진 채널수로 
+                                            //   고정하게 한다.)
 
-	uint32_t categoryIndex;					///< 다음 대상 카테고리 index, 카테고리별로 균등하게 pack하기 위해 카테고리별로 돌아가며 파일 하나씩 pack할 때 사용
+	uint32_t categoryIndex;					///< 다음 대상 카테고리 index, 카테고리별로 
+                                            ///  균등하게 pack하기 위해 카테고리별로 돌아가며
+                                            //   파일 하나씩 pack할 때 사용
 
 };
 
 #endif /* IMAGEPACKER_H_ */
-
-
-
-
-
-
-
-
-

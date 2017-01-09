@@ -69,22 +69,22 @@ public:
 
 	/**
 	 * @details 활성화 함수 출력값을 입력값에 대해 미분한 결과를 반환.
-	 * @param activate activate()를 통해 활성화 함수를 적용했던 출력값을 담고 있는 장치 메모리 포인터.
+	 * @param activate activate()를 통해 활성화 함수를 적용했던 출력값을 담고 있는 장치 
+     *        메모리 포인터.
 	 * @param deltaInput Cost를 activate에 대해 미분한 결과를 담고 있는 장치 메모리 포인터.
-	 * @param z activate()를 통해 활성화 함수를 적용하고자 한 입력값을 담고 있는 장치 메모리 포인터.
+	 * @param z activate()를 통해 활성화 함수를 적용하고자 한 입력값을 담고 있는 장치
+     *        메모리 포인터.
 	 * @param da Cost를 z에 대해 미분한 결과를 담고 있는 장치 메모리 포인터.
-	 * @param tensorDesc activate, deltaInput, z, da의 데이터 구성을 설명하는 cudnnTensorDescriptor 포인터.
+	 * @param tensorDesc activate, deltaInput, z, da의 데이터 구성을 설명하는
+     *        cudnnTensorDescriptor 포인터.
 	 */
-	virtual void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y, const Dtype* dy, const Dtype* x, Dtype* dx) = 0;
-
+	virtual void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y,
+        const Dtype* dy, const Dtype* x, Dtype* dx) = 0;
 #endif
-
 
 protected:
 	Type type;			///< 현재 Activation 객체의 Activation 타입.
-
 };
-
 
 template class Activation<float>;
 

@@ -20,7 +20,8 @@ using namespace std;
 
 /*
 template <typename Dtype>
-__global__ void SoftmaxLossBackprop(const uint32_t* label, int num_labels, int batch_size, Dtype *diff) {
+__global__ void SoftmaxLossBackprop(const uint32_t* label, int num_labels, int batch_size,
+    Dtype *diff) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= batch_size)
 		return;
@@ -50,7 +51,6 @@ __global__ void SoftmaxLossBackprop(
 	}
 
 	delta[idx * numLabels + targetValue] = -1.0/ayL;
-	//delta[idx * numLabels + targetValue] = -1.0/max(activation[idx*numLabels + targetValue], Dtype(FLT_MAX));
 }
 
 #endif
@@ -71,7 +71,8 @@ double LogLikelihoodCost<Dtype>::fn(const rvec *pA, const rvec *pY) {
 }
 
 template <typename Dtype>
-void LogLikelihoodCost<Dtype>::d_cost(const rcube &z, const rcube &activation, const rvec &target, rcube &delta) {
+void LogLikelihoodCost<Dtype>::d_cost(const rcube &z, const rcube &activation,
+    const rvec &target, rcube &delta) {
 	Util::printCube(activation, "activation:");
 	Util::printVec(target, "target:");
 
@@ -95,31 +96,10 @@ double LogLikelihoodCost<Dtype>::forward(const Dtype* output, const Dtype* targe
 template <typename Dtype>
 void LogLikelihoodCost<Dtype>::backward(const Dtype* z, const Dtype* activation,
 		const Dtype* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize) {
-	//SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(z, activation, target, delta, numLabels, batchsize);
 	SoftmaxLossBackprop<<<SOOOA_GET_BLOCKS(batchsize), SOOOA_CUDA_NUM_THREADS>>>(
 			z, activation, target, delta, numLabels, batchsize);
 }
 
-
 template class LogLikelihoodCost<float>;
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

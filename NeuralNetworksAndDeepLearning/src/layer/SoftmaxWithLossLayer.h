@@ -61,7 +61,8 @@ public:
 		}
 
 		/*
-		virtual Builder* normalizationMode(const typename LossLayer<Dtype>::NormalizationMode normalizationMode) {
+		virtual Builder* normalizationMode(
+            const typename LossLayer<Dtype>::NormalizationMode normalizationMode) {
 			LossLayer<Dtype>::Builder::normalizationMode(normalizationMode);
 			return this;
 		}
@@ -95,12 +96,9 @@ public:
 	virtual void backpropagation();
 	virtual Dtype cost();
 
-
-
 private:
 	void initialize();
 	Dtype getNormalizer(int validCount);
-
 
 public:
 	Data<Dtype>* prob;
@@ -117,9 +115,6 @@ private:
 
 	cudnnTensorDescriptor_t inputTensorDesc;
 	cudnnTensorDescriptor_t probTensorDesc;
-
-
-
 };
 #endif
 

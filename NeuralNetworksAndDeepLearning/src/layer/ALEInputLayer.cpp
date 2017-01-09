@@ -163,11 +163,6 @@ void ALEInputLayer<Dtype>::initialize() {
 }
 
 template<typename Dtype>
-void ALEInputLayer<Dtype>::_clearShape() {
-    Layer<Dtype>::_clearShape();
-}
-
-template<typename Dtype>
 void ALEInputLayer<Dtype>::fillData(DQNImageLearner<Dtype> *learner, bool useState1) {
 	const vector<uint32_t>& inputShape = this->_inputShape[0];
 	const uint32_t batchSize = inputShape[0];

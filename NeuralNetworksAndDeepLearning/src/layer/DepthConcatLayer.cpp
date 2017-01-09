@@ -64,45 +64,7 @@ void DepthConcatLayer<Dtype>::reshape() {
 	}
 
 	this->_outputData[0]->reshape({batches, channels, rows, cols});
-
-	/*
-	this->out_dim.channels = 0;
-	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
-		this->out_dim.channels += this->_inputData[i]->getShape()[1];
-	}
-	this->out_dim.batches = this->_inputData[0]->getShape()[0];
-	this->out_dim.rows = this->_inputData[0]->getShape()[2];
-	this->out_dim.cols = this->_inputData[0]->getShape()[3];
-
-	HiddenLayer<Dtype>::shape();
-
-	this->in_dim = this->out_dim;
-
-	if (recursive) {
-		HiddenLayer<Dtype>::_shape();
-	}
-	*/
-
-#ifdef DEPTHCONCAT_LOG
-	cout << "shape depthConcatLayer in_dim: " << this->in_dim.batches << "x" << this->in_dim.channels << "x" << this->in_dim.rows << "x" << this->in_dim.cols << endl;
-	cout << "shape depthConcatLayer out_dim: " << this->out_dim.batches << "x" << this->out_dim.channels << "x" << this->out_dim.rows << "x" << this->out_dim.cols << endl;
-#endif
 }
-
-/*
-template <typename Dtype>
-void DepthConcatLayer<Dtype>::reshape(uint32_t idx, io_dim in_dim) {
-	//if (this->isFirstPrevLayerRequest(idx)) this->out_dim.channels = 0;
-	this->out_dim.channels += in_dim.channels;
-	HiddenLayer<Dtype>::reshape(idx, in_dim);
-
-#ifdef DEPTHCONCAT_LOG
-	cout << "reshape depthConcatLayer in_dim: " << this->in_dim.batches << "x" << this->in_dim.channels << "x" << this->in_dim.rows << "x" << this->in_dim.cols << endl;
-	cout << "reshape depthConcatLayer out_dim: " << this->out_dim.batches << "x" << this->out_dim.channels << "x" << this->out_dim.rows << "x" << this->out_dim.cols << endl;
-#endif
-}
-*/
-
 
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::feedforward() {
@@ -159,16 +121,6 @@ void DepthConcatLayer<Dtype>::backpropagation() {
 	}
 }
 
-
-template <typename Dtype>
-void DepthConcatLayer<Dtype>::_clearShape() {
-	HiddenLayer<Dtype>::_clearShape();
-}
-
-
-
-
-
 #ifndef GPU_MODE
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::initialize() {
@@ -181,7 +133,8 @@ void DepthConcatLayer<Dtype>::initialize() {
 }
 
 template <typename Dtype>
-void DepthConcatLayer<Dtype>::feedforward(uint32_t idx, const rcube &input, const char *end=0) {
+void DepthConcatLayer<Dtype>::feedforward(uint32_t idx, const rcube &input,
+    const char *end=0) {
 	this->input = join_slices(this->input, input);
 	Util::printCube(this->input, "input:");
 
@@ -212,13 +165,4 @@ void DepthConcatLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer<Dtype>* 
 }
 #endif
 
-
-
 template class DepthConcatLayer<float>;
-
-
-
-
-
-
-

@@ -19,23 +19,27 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer() {
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer(Builder* builder)
 	: HiddenLayer<Dtype>(builder) {
-	initialize(builder->_nOut, builder->_pDropout, builder->_weightUpdateParam, builder->_biasUpdateParam,
-			builder->_weightFiller, builder->_biasFiller, builder->_activationType);
+	initialize(builder->_nOut, builder->_pDropout, builder->_weightUpdateParam,
+               builder->_biasUpdateParam, builder->_weightFiller, builder->_biasFiller,
+               builder->_activationType);
 }
 
 template <typename Dtype>
-FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string name, int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType)
-	: HiddenLayer<Dtype>(name) {
-	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
+FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string name, int n_out,
+    double p_dropout, update_param weight_update_param, update_param bias_update_param,
+    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler,
+    typename Activation<Dtype>::Type activationType) : HiddenLayer<Dtype>(name) {
+	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler,
+               bias_filler, activationType);
 }
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType) {
+void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout,
+    update_param weight_update_param, update_param bias_update_param,
+    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler,
+    typename Activation<Dtype>::Type activationType) {
 
 	this->tempCnt = 0;
-
 
 	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
 	//this->out_dim = io_dim(n_out, 1, 1, 1);
@@ -53,8 +57,8 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_
 	this->scale = 1. / (1. - p_dropout);
 
 	this->_params.resize(2);
-	this->_params[ParamType::Weight] = new Data<Dtype>(this->name + "_weight");		// weight
-	this->_params[ParamType::Bias] = new Data<Dtype>(this->name + "_bias");			// bias
+	this->_params[ParamType::Weight] = new Data<Dtype>(this->name + "_weight");
+	this->_params[ParamType::Bias] = new Data<Dtype>(this->name + "_bias");
 
 	this->_paramsInitialized.resize(2);
 	this->_paramsInitialized[ParamType::Weight] = false;
@@ -62,10 +66,10 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, update_
 
 
 	this->_paramsHistory.resize(2);
-	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(this->name + "_weight_history");	// weight history
-	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history"); 	// bias history
+	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(this->name + "_weight_history");
+	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history");
 
-	this->_preActivation = new Data<Dtype>("PreActivation");					// weighted sum (pre activation)
+	this->_preActivation = new Data<Dtype>("PreActivation"); // weighted sum (pre activation)
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
@@ -195,10 +199,8 @@ void FullyConnectedLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &lay
 	param_filler bias_filler;
 	ifs.read((char *)&bias_filler, sizeof(param_filler));
 
-	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler, bias_filler, activationType);
-
-	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, bias load를 수행해야 함
-
+	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler,
+               bias_filler, activationType);
 
 	weight.load(ifs, file_type::arma_binary);
 	//weight.print("load-weight:");
@@ -208,8 +210,9 @@ void FullyConnectedLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &lay
 }
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::initialize(double p_dropout, update_param weight_update_param, update_param bias_update_param,
-		param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
+void FullyConnectedLayer<Dtype>::initialize(double p_dropout,
+    update_param weight_update_param, update_param bias_update_param,
+    param_filler weight_filler, param_filler bias_filler, Activation::Type activationType) {
 	this->type = Layer<Dtype>::FullyConnected;
 	this->p_dropout = p_dropout;
 
@@ -349,7 +352,8 @@ void FullyConnectedLayer<Dtype>::update(uint32_t idx, uint32_t n, uint32_t miniB
 	//weight = (1-eta*lambda/n)*weight - (eta/miniBatchSize)*nabla_w;
 	//bias -= eta/miniBatchSize*nabla_b;
 
-	weight = (1-weight_update_param.lr_mult*weight_update_param.decay_mult/n)*weight - (weight_update_param.lr_mult/miniBatchSize)*nabla_w;
+	weight = (1-weight_update_param.lr_mult*weight_update_param.decay_mult/n)*weight -
+        (weight_update_param.lr_mult/miniBatchSize)*nabla_w;
 	bias -= bias_update_param.lr_mult/miniBatchSize*nabla_b;
 
 	propUpdate(n, miniBatchSize);
@@ -357,7 +361,4 @@ void FullyConnectedLayer<Dtype>::update(uint32_t idx, uint32_t n, uint32_t miniB
 
 #endif
 
-
-
 template class FullyConnectedLayer<float>;
-

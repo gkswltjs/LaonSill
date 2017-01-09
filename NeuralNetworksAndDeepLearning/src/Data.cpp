@@ -66,8 +66,6 @@ Data<Dtype>::Data(const string& name, const vector<uint32_t>& _shape, const bool
 	reshape(_shape);
 }
 
-
-
 template <typename Dtype>
 void Data<Dtype>::share_data(Data<Dtype>* data) {
 	this->_data = data->_data;
@@ -78,14 +76,8 @@ void Data<Dtype>::share_grad(Data<Dtype>* data) {
 	this->_grad = data->_grad;
 }
 
-
-
-
-
-
 template <typename Dtype>
 Data<Dtype>::~Data() {}
-
 
 bool isValidShapeSize(const vector<uint32_t>& shape, const uint32_t shapeSize) {
 	return shape.size() == shapeSize;
@@ -100,50 +92,10 @@ bool isValidShapeValue(const vector<uint32_t>& shape) {
 	return true;
 }
 
-
-
-
-
-
-
-/*
-template <typename Dtype>
-void Data<Dtype>::shape(const vector<uint32_t>& shape) {
-	if (!isValidShapeSize(shape, SHAPE_SIZE)) {
-		cout << "invalid data shape ... " << endl;
-		exit(1);
-	}
-	if (!isValidShapeValue(shape)) {
-		cout << "invalid data shape ... " << endl;
-		exit(1);
-	}
-	_shape = shape;
-
-	_count = 1;
-	for(uint32_t i = 0; i < _shape.size(); i++) _count *= _shape[i];
-
-	_data->reshape(_count);
-	_grad->reshape(_count);
-}
-*/
-
 template <typename Dtype>
 void Data<Dtype>::reshape(const vector<uint32_t>& shape) {
 	assert(isValidShapeSize(shape, SHAPE_SIZE));
-	/*
-	if (!isValidShapeSize(shape, SHAPE_SIZE)) {
-		cout << "invalid data shape ... " << endl;
-		exit(1);
-	}
-	*/
-
 	assert(isValidShapeValue(shape));
-	/*
-	if (!isValidShapeValue(shape)) {
-		cout << "invalid data shape ... " << endl;
-		exit(1);
-	}
-	*/
 	_shape = shape;
 
 	_count = 1;
@@ -177,17 +129,10 @@ void Data<Dtype>::reshapeInfer(const vector<int>& shape) {
 	reshape(fShape);
 }
 
-
-
 template <typename Dtype>
 void Data<Dtype>::reshapeLike(const Data<Dtype>* data) {
 	reshape(data->getShape());
 }
-
-
-
-
-
 
 template <typename Dtype>
 const Dtype* Data<Dtype>::host_data() {
@@ -233,9 +178,6 @@ Dtype* Data<Dtype>::mutable_device_grad() {
 	return _grad->mutable_device_mem();
 }
 
-
-
-
 template <typename Dtype>
 void Data<Dtype>::reset_host_data(const bool setZero, const Dtype value) {
 	_data->reset_host_mem(setZero, value);
@@ -258,15 +200,6 @@ void Data<Dtype>::reset_device_grad() {
 	_grad->reset_device_mem();
 }
 
-
-
-
-
-
-
-
-
-
 template <typename Dtype>
 void Data<Dtype>::set_host_data(const Dtype* data) {
 	_data->set_mem(data, SyncMemCopyType::HostToHost);
@@ -278,7 +211,8 @@ void Data<Dtype>::set_host_with_device_data(const Dtype* data) {
 }
 
 template <typename Dtype>
-void Data<Dtype>::set_device_with_host_data(const Dtype* data, const size_t offset, const size_t size) {
+void Data<Dtype>::set_device_with_host_data(const Dtype* data, const size_t offset,
+    const size_t size) {
 	assert(!this->_hostOnly);
 	_data->set_mem(data, SyncMemCopyType::HostToDevice, offset, size);
 }
@@ -288,7 +222,6 @@ void Data<Dtype>::set_device_data(const Dtype* data) {
 	assert(!this->_hostOnly);
 	_data->set_mem(data, SyncMemCopyType::DeviceToDevice);
 }
-
 
 template <typename Dtype>
 void Data<Dtype>::set_host_grad(const Dtype* grad) {
@@ -300,10 +233,6 @@ void Data<Dtype>::set_device_grad(const Dtype* grad) {
 	assert(!this->_hostOnly);
 	_grad->set_mem(grad, SyncMemCopyType::DeviceToDevice);
 }
-
-
-
-
 
 template <typename Dtype>
 void Data<Dtype>::add_host_data(const Dtype* data) {
@@ -327,8 +256,6 @@ void Data<Dtype>::add_device_grad(const Dtype* grad) {
 	_grad->add_device_mem(grad);
 }
 
-
-
 template <typename Dtype>
 void Data<Dtype>::scale_host_data(const float scale) {
 	_data->scale_host_mem(scale);
@@ -351,8 +278,6 @@ void Data<Dtype>::scale_device_grad(const float scale) {
 	_grad->scale_device_mem(scale);
 }
 
-
-
 template <typename Dtype>
 double Data<Dtype>::sumsq_device_data() {
 	assert(!this->_hostOnly);
@@ -365,7 +290,6 @@ double Data<Dtype>::sumsq_device_grad() {
 	return _grad->sumsq_device_mem();
 }
 
-
 template <typename Dtype>
 double Data<Dtype>::asum_device_data() {
 	assert(!this->_hostOnly);
@@ -377,7 +301,6 @@ double Data<Dtype>::asum_device_grad() {
 	assert(!this->_hostOnly);
 	return _grad->asum_device_mem();
 }
-
 
 template <typename Dtype>
 void Data<Dtype>::save(const string& filename) {
@@ -430,14 +353,6 @@ void Data<Dtype>::load(ifstream& ifs) {
 	//_grad->load(ifs);
 }
 
-
-
-
-
-
-
-
-
 template <typename Dtype>
 void Data<Dtype>::print() {
 	if (!printConfig) return;
@@ -469,7 +384,6 @@ void Data<Dtype>::print_data_flatten() {
 	_data->print(_name+"-data");
 }
 
-
 template <typename Dtype>
 void Data<Dtype>::print_grad(const string& head, const vector<uint32_t>& shape,
 		const bool cmo) {
@@ -486,8 +400,6 @@ void Data<Dtype>::print_grad(const vector<uint32_t>& shape, const bool cmo) {
 	print_grad(_name+"-grad", shape, cmo);
 }
 
-
-
 template <typename Dtype>
 void Data<Dtype>::fill_host_with_1d_vec(const vector<int>& array,
 			const vector<uint32_t>& transpose) {
@@ -499,7 +411,8 @@ void Data<Dtype>::fill_host_with_1d_vec(const vector<int>& array,
 	const uint32_t heightSize = _shape[2]*_shape[3];
 	const uint32_t widthSize = _shape[3];
 
-	const uint32_t tBatchSize = _shape[transpose[1]]*_shape[transpose[2]]*_shape[transpose[3]];
+	const uint32_t tBatchSize = 
+        _shape[transpose[1]] * _shape[transpose[2]] * _shape[transpose[3]];
 	const uint32_t tHeightSize = _shape[transpose[2]]*_shape[transpose[3]];
 	const uint32_t tWidthSize = _shape[transpose[3]];
 
@@ -524,7 +437,6 @@ void Data<Dtype>::fill_host_with_1d_vec(const vector<int>& array,
 		}
 	}
 }
-
 
 template <typename Dtype>
 void Data<Dtype>::fill_host_with_1d_vec(const vector<uint32_t>& array,
@@ -556,7 +468,7 @@ void Data<Dtype>::fill_host_with_1d_vec(const vector<uint32_t>& array,
 				// Anchors
 				for (s[3] = 0; s[3] < _shape[3]; s[3]++) {
 					dataPtr[ts0*tBatchSize+ts1*tHeightSize+ts2*tWidthSize+ts3]
-							= uint32_t(array[s[0]*batchSize+s[1]*heightSize+s[2]*widthSize+s[3]]);
+			            = uint32_t(array[s[0]*batchSize+s[1]*heightSize+s[2]*widthSize+s[3]]);
 				}
 			}
 		}
@@ -572,7 +484,8 @@ void Data<Dtype>::fill_host_with_2d_vec(const vector<vector<float>>& array,
 
 	assert(_shape[3]%dim2 == 0);
 
-	const uint32_t tBatchSize = _shape[transpose[1]]*_shape[transpose[2]]*_shape[transpose[3]];
+	const uint32_t tBatchSize = 
+        _shape[transpose[1]]*_shape[transpose[2]]*_shape[transpose[3]];
 	const uint32_t tHeightSize = _shape[transpose[2]]*_shape[transpose[3]];
 	const uint32_t tWidthSize = _shape[transpose[3]];
 
@@ -606,7 +519,6 @@ void Data<Dtype>::fill_host_with_2d_vec(const vector<vector<float>>& array,
 		}
 	}
 }
-
 
 template <typename Dtype>
 Data<Dtype>* Data<Dtype>::range(const vector<int>& startIndex,
@@ -694,7 +606,8 @@ void Data<Dtype>::transpose(const vector<uint32_t>& t) {
 			for (sIndex[2] = 0; sIndex[2] < _shape[2]; sIndex[2]++) {
 				for (sIndex[3] = 0; sIndex[3] < _shape[3]; sIndex[3]++) {
 					dstData[d0Index*d0Size + d1Index*d1Size + d2Index*d2Size + d3Index] =
-							srcData[sIndex[0]*s0Size + sIndex[1]*s1Size + sIndex[2]*s2Size + sIndex[3]];
+						srcData[sIndex[0]*s0Size + sIndex[1]*s1Size + 
+                                sIndex[2]*s2Size + sIndex[3]];
 				}
 			}
 		}
@@ -704,8 +617,6 @@ void Data<Dtype>::transpose(const vector<uint32_t>& t) {
 
 	this->_shape = {d0Index, d1Index, d2Index, d3Index};
 }
-
-
 
 template <typename Dtype>
 bool Data<Dtype>::compareData(
@@ -750,7 +661,6 @@ bool Data<Dtype>::compareData(
 			data->_name << ">: " << result << "(" << errorCnt << ")" << endl;
 	return result;
 }
-
 
 template <typename Dtype>
 bool Data<Dtype>::compareData(
@@ -886,44 +796,5 @@ bool Data<Dtype>::compareGrad(
 	return result;
 }
 
-
-
-
-
-
 template class Data<float>;
 template class Data<int>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -143,24 +143,6 @@ void SoftmaxLayer<Dtype>::initialize() {
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
 template <typename Dtype>
 __global__ void kernel_channel_max(const int num, const int channels,
@@ -359,7 +341,7 @@ void SoftmaxLayer<Dtype>::backpropagation() {
 
 	const uint32_t count = this->_outputData[0]->getCount();
 	const uint32_t channels = this->_outputData[0]->getShape(this->softmaxAxis);
-	soooa_copy(count, outputData, inputGrad);
+	oooa_copy(count, outputData, inputGrad);
 	// Compute inner1d(outputGrad, outputData) and subtract them from the bottom diff.
 	kernel_channel_dot<Dtype><<<SOOOA_GET_BLOCKS(this->outerNum * this->innerNum),
 			SOOOA_CUDA_NUM_THREADS>>>(this->outerNum, channels, this->innerNum,
@@ -387,31 +369,6 @@ void SoftmaxLayer<Dtype>::initialize() {
 }
 */
 
-
-
 template class SoftmaxLayer<float>;
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

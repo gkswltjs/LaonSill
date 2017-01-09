@@ -90,7 +90,8 @@ void ImagePacker::loadFilesInCategory(string categoryPath, vector<string>& fileL
 			if(ent.d_type == 8) {
 
 				size_t nameLength = strlen(ent.d_name);
-				if(strncmp(ent.d_name + nameLength - suffixLength, suffix, suffixLength) == 0) {
+				if (strncmp(ent.d_name + nameLength - suffixLength, suffix, suffixLength) == 
+                    0) {
 					fileList.push_back(ent.d_name);
 				}
 
@@ -105,16 +106,15 @@ void ImagePacker::loadFilesInCategory(string categoryPath, vector<string>& fileL
 }
 
 void ImagePacker::show() {
-	for(int i = 0; i < categoryList.size(); i++) {
+	for (int i = 0; i < categoryList.size(); i++) {
 		category_t& category = categoryList[i];
-		cout << i << "th category: " << category.name << ", files: " << category.fileList.size() << endl;
-		for(int j = 0; j < category.fileList.size(); j++) {
+		cout << i << "th category: " << category.name << ", files: " <<
+            category.fileList.size() << endl;
+		for (int j = 0; j < category.fileList.size(); j++) {
 			cout << "\t" << j << "th file: " << category.fileList[j] << endl;
 		}
 	}
 }
-
-
 
 void ImagePacker::pack() {
 	const string saveBase = image_dir+path_save;
@@ -122,29 +122,30 @@ void ImagePacker::pack() {
 	writeCategoryLabelFile(saveBase+"/category_label");
 
 	// for train
-	_pack(saveBase+"/train_data", saveBase+"/train_label", numImagesInTrainFile, numTrain, numTrain/numCategory);
+	_pack(saveBase+"/train_data", saveBase+"/train_label", numImagesInTrainFile, numTrain,
+          numTrain/numCategory);
 	// for test
-	_pack(saveBase+"/test_data", saveBase+"/test_label", numImagesInTestFile, numTest, numTest/numCategory);
+	_pack(saveBase+"/test_data", saveBase+"/test_label", numImagesInTestFile, numTest,
+          numTest/numCategory);
 }
-
 
 void ImagePacker::writeCategoryLabelFile(string categoryLabelPath) {
 	ofstream ofsCategoryLabel(categoryLabelPath.c_str(), ios::out);
-	for(int i = 0; i < categoryList.size(); i++) {
+	for (int i = 0; i < categoryList.size(); i++) {
 		ofsCategoryLabel << categoryList[i].name << "\t" << categoryList[i].id << endl;
 	}
 	ofsCategoryLabel.close();
 }
 
 
-void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, int size, int sizePerCategory) {
+void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, int size,
+    int sizePerCategory) {
 
 	srand((unsigned int)time(NULL));
 
 	for(uint32_t i = 0; i < numCategory; i++) {
 		categoryList[i].addSizePerCategory(sizePerCategory);
 	}
-
 
 	UByteImageDataset imageDataSet;
 	imageDataSet.magic = UBYTE_IMAGE_MAGIC;
@@ -193,7 +194,8 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 		}
 		*/
 
-		string imageFile = image_dir+path_crop+"/"+categoryList[categoryIndex].name+"/"+categoryList[categoryIndex].getCurrentFile();
+		string imageFile = image_dir+path_crop+"/"+categoryList[categoryIndex].name+"/"+
+            categoryList[categoryIndex].getCurrentFile();
 		//cout << i << ": imageFile: " << imageFile << endl;
 		CImg<unsigned char> image(imageFile.c_str());
 		// 첫 이미지일때 DataSet header에 width, height 지정,
@@ -207,19 +209,23 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 			ofsData->write((char *)&imageDataSet, sizeof(UByteImageDataset));
 		}
 
-		if(width != image.width() || height != image.height()) {
+		if (width != image.width() || height != image.height()) {
 			exit(1);
 		}
 
-		// dataset에 주어진 channel수와 image의 channel수가 동일한 경우 channel수만큼 그대로 복사.
-		if(image.spectrum() == numChannels) { ofsData->write((char *)image.data(), sizeof(unsigned char)*width*height*numChannels); }
+		// dataset에 주어진 channel수와 image의 channel수가 동일한 경우 channel수만큼 복사.
+		if (image.spectrum() == numChannels) { 
+            ofsData->write((char *)image.data(), 
+                           sizeof(unsigned char)*width*height*numChannels); }
 		// color dataset에 grayscale 이미지가 주어진 경우를 상정했지만,
-		// 일반적으로 color dataset의 channel수가 image channel수의 배수가 된다면 배수만큼 복사. (이런 경우는 없다고 보임)
-		else if(image.spectrum() < numChannels && numChannels%image.spectrum()==0) {
+		// 일반적으로 color dataset의 channel수가 image channel수의 배수가 된다면 배수만큼 
+        // 복사. (이런 경우는 없다고 보임)
+		else if (image.spectrum() < numChannels && numChannels%image.spectrum()==0) {
 			int numRepeat = numChannels / image.spectrum();
-			for(int i = 0; i < numRepeat; i++) ofsData->write((char *)image.data(), sizeof(unsigned char)*width*height*image.spectrum());
-		}
-		else {
+			for (int i = 0; i < numRepeat; i++)
+                ofsData->write((char *)image.data(),
+                               sizeof(unsigned char)*width*height*image.spectrum());
+		} else {
 			cout << "image invalid channel num ... " << image.spectrum() << endl;
 			exit(1);
 		}
@@ -228,7 +234,7 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 		ofsLabel->write((char *)&categoryIndex, sizeof(uint32_t));
 		//cout << "label: " << categoryIndex << endl;
 
-		if(++categoryIndex >= numCategory) {
+		if (++categoryIndex >= numCategory) {
 			categoryIndex = 0;
 		}
 
@@ -238,17 +244,17 @@ void ImagePacker::_pack(string dataPath, string labelPath, int numImagesInFile, 
 
 	}
 
-	if(ofsData) {
+	if (ofsData) {
 		ofsData->close();
 		ofsData = 0;
 	}
-	if(ofsLabel) {
+	if (ofsLabel) {
 		ofsLabel->close();
 		ofsLabel = 0;
 	}
 
 	cout << "Category Pack Stat: " << endl;
-	for(uint32_t i = 0; i < numCategory; i++) {
+	for (uint32_t i = 0; i < numCategory; i++) {
 		cout << "category " << i << ": " << categoryList[i].getFileIndex() << endl;
 	}
 
@@ -323,7 +329,6 @@ void ImagePacker::sample() {
 		}
 
 
-		//string imageFile = image_dir+path_crop+"/"+categoryList[categoryIndex].name+"/"+categoryList[categoryIndex].getCurrentFile();
 		//CImg<unsigned char> image(imageFile.c_str());
 		// 첫 이미지일때 DataSet header에 width, height 지정,
 		if(i == 0) {
@@ -334,7 +339,7 @@ void ImagePacker::sample() {
 			ofsData->write((char *)&imageDataSet, sizeof(UByteImageDataset));
 		}
 
-		// dataset에 주어진 channel수와 image의 channel수가 동일한 경우 channel수만큼 그대로 복사.
+		// dataset에 주어진 channel수와 image의 channel수가 동일한 경우 channel수만큼 복사.
 		ofsData->write((char *)buffer, sizeof(unsigned char)*imageSize);
 
 		imagesInFileCount++;
@@ -362,12 +367,3 @@ void ImagePacker::sample() {
 	}
 
 }
-
-
-
-
-
-
-
-
-

@@ -55,16 +55,15 @@ public:
 	bool flipped;							// Original, Flipped Image 여부
 	uint32_t width;
 	uint32_t height;
-	std::vector<std::vector<uint32_t>> boxes;			// Annotation의 원본 bounding box (x1, y1, x2, y2)
-	std::vector<uint32_t> gt_classes;			// 각 bounding box의 class, [9, 9, 9]의 형식
-	std::vector<std::vector<float>> gt_overlaps;		// 각 bounding box의 gt_box와의 IoU Value
+    std::vector<std::vector<uint32_t>> boxes;	// Annotation의 원본 bounding box 
+                                                // (x1, y1, x2, y2)
+	std::vector<uint32_t> gt_classes;	// 각 bounding box의 class, [9, 9, 9]의 형식
+	std::vector<std::vector<float>> gt_overlaps;  // 각 bounding box의 gt_box와의 IoU Value
 	std::vector<uint32_t> max_classes;
 	std::vector<float> max_overlaps;
 	std::vector<std::vector<float>> bbox_targets;
 
 	cv::Mat mat;
-
 };
-
 
 #endif /* ROIDB_H_ */

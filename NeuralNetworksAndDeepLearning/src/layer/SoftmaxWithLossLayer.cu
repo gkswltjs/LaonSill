@@ -229,8 +229,9 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 		Dtype* counts = this->prob->mutable_device_grad();
 
 		SoftmaxLossBackwardGPU<Dtype><<<SOOOA_GET_BLOCKS(nthreads),
-		        SOOOA_CUDA_NUM_THREADS>>>(nthreads, outputData, label, inputGrad,
-		        this->outerNum, dim, this->innerNum, this->hasIgnoreLabel, this->ignoreLabel, counts);
+            SOOOA_CUDA_NUM_THREADS>>>(nthreads, outputData, label, inputGrad,
+            this->outerNum, dim, this->innerNum, this->hasIgnoreLabel, this->ignoreLabel,
+            counts);
 
 		Dtype validCount = -1;
 		// Only launch another CUDA kernel if we actually need the count of valid

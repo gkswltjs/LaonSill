@@ -56,7 +56,8 @@ public:
 
 	void backward(const Dtype* z, const Dtype* activation, const Dtype* target,
 			Dtype* delta, uint32_t numLabels, uint32_t size) {
-		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*size, cudaMemcpyDeviceToDevice));
+		checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*size,
+                                        cudaMemcpyDeviceToDevice));
 		uint32_t i;
 		uint32_t label;
 		for(i = 0; i < size/numLabels; i++) {

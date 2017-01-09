@@ -78,7 +78,6 @@ public:
 protected:
 	void initialize();
 
-
 private:
 	std::vector<int> shape;
 	int axis;

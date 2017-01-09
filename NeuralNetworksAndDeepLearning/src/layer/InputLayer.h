@@ -25,8 +25,8 @@
  * @details 입력 데이터를 그대로 출력 데이터로 전달하는 역할을 한다.
  *          특별한 기능을 담당하지 않고 입력 데이터를 한 레벨 추상화하고
  *          약간의 레어어 쓰기, 읽기 등의 부가 기능을 수행
- *          입력 레이어의 경우 자신의 레이어값 읽기, 쓰기뿐 아니라 최초의 레이어로써 뒤에 연결된 모든 레이어의
- *          메타 정보를 읽기, 쓰기를 수행한다.
+ *          입력 레이어의 경우 자신의 레이어값 읽기, 쓰기뿐 아니라 최초의 레이어로써 뒤에 
+ *          연결된 모든 레이어의 메타 정보를 읽기, 쓰기를 수행한다.
  */
 template <typename Dtype>
 class InputLayer : public Layer<Dtype> {
@@ -127,11 +127,6 @@ public:
 
 protected:
 	void initialize();
-	//virtual void _shape(bool recursive=true);
-	virtual void _clearShape();
-
-
-
 
 public:
 	DataSet<Dtype>* _dataSet;

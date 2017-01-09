@@ -21,7 +21,8 @@ template <typename Dtype>
 class DataSet {
 public:
 	DataSet();
-	DataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t numTrainData, uint32_t numTestData);
+	DataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t numTrainData,
+        uint32_t numTestData);
 	virtual ~DataSet();
 
 	/**
@@ -83,9 +84,6 @@ public:
 
 	void setMean(const std::vector<Dtype>& means);
 
-
-
-
 	/**
 	 * @details index번째 학습데이터에 대한 포인터 조회.
 	 * @param index 조회하고자 하는 학습 데이터의 index
@@ -123,11 +121,11 @@ public:
 	 */
 	virtual const Dtype* getTestLabelAt(int index);
 
-
-
 	/**
-	 * @details 학습데이터의 각 채널별 평균을 구하고 학습, 유효, 테스트 데이터에 대해 평균만큼 shift.
-	 * @param hasMean 이미 계산된 평균값이 있는지 여부, 미리 계산된 평균값이 있는 경우 다시 평균을 계산하지 않는다.
+	 * @details 학습데이터의 각 채널별 평균을 구하고 학습, 유효, 테스트 데이터에 대해 
+     *          평균만큼 shift.
+	 * @param hasMean 이미 계산된 평균값이 있는지 여부, 미리 계산된 평균값이 있는 경우 다시
+     *                평균을 계산하지 않는다.
 	 */
 	virtual void zeroMean(bool hasMean=false);
 
@@ -148,8 +146,6 @@ public:
 	 */
 	virtual void shuffleTestDataSet();
 
-
-
 protected:
 	enum Type {
 		Train = 0,		//학습 데이터
@@ -157,28 +153,33 @@ protected:
 		Test = 2		//테스트 데이터
 	};
 
-	uint32_t rows;								///< 데이터의 rows (height)값.
-	uint32_t cols;								///< 데이터의 cols (width)값.
-	uint32_t channels;							///< 데이터의 channel값.
-	size_t dataSize;							///< 데이터셋 데이터 하나의 요소수 (rows*cols*channels)
+	uint32_t rows;					///< 데이터의 rows (height)값.
+	uint32_t cols;					///< 데이터의 cols (width)값.
+	uint32_t channels;				///< 데이터의 channel값.
+	size_t dataSize;				///< 데이터셋 데이터 하나의 요소수 (rows*cols*channels)
 
 	uint32_t numTrainData;						///< 전체 학습데이터의 수.
 	uint32_t numValidationData;					///< 전체 유효데이터의 수.
 	uint32_t numTestData;						///< 전체 테스트데이터의 수.
 
-    std::vector<Dtype>* trainDataSet;				///< 학습데이터셋 벡터에 대한 포인터.
-    std::vector<Dtype>* trainLabelSet;			///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
-    std::vector<uint32_t>* trainSetIndices;			///< 학습셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
+    std::vector<Dtype>* trainDataSet;		///< 학습데이터셋 벡터에 대한 포인터.
+    std::vector<Dtype>* trainLabelSet;		///< 학습데이터셋의 정답 레이블 벡터에 대한 포인터.
+    std::vector<uint32_t>* trainSetIndices;	///< 학습셋 인덱스 벡터 포인터. 데이터와 레이블을
+                                            ///  함께 shuffle하기 위한 별도의 인덱스 벡터.
 
-    std::vector<Dtype>* validationDataSet;			///< 유효데이터셋 벡터에 대한 포인터.
-    std::vector<Dtype>* validationLabelSet;		///< 유효데이터셋의 정답 레이블 벡터에 대한 포인터.
-    std::vector<uint32_t>* validationSetIndices;		///< 유효셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
+    std::vector<Dtype>* validationDataSet;	///< 유효데이터셋 벡터에 대한 포인터.
+    std::vector<Dtype>* validationLabelSet;	///< 유효데이터셋의 정답 레이블 벡터에 대한 포인터
+    std::vector<uint32_t>* validationSetIndices;	///< 유효셋 인덱스 벡터 포인터 데이터와 
+                                                    ///  레이블을 함께 shuffle하기 위한 별도의
+                                                    ///  인덱스 벡터.
 
-    std::vector<Dtype>* testDataSet;					///< 테스트데이터셋 벡터에 대한 포인터.
-    std::vector<Dtype>* testLabelSet;				///< 테스트데이터셋의 정답 레이블 벡터에 대한 포인터.
-    std::vector<uint32_t>* testSetIndices;			///< 테스트셋 인덱스 벡터 포인터. 데이터와 레이블을 함께 shuffle하기 위한 별도의 인덱스 벡터.
+    std::vector<Dtype>* testDataSet;	///< 테스트데이터셋 벡터에 대한 포인터.
+    std::vector<Dtype>* testLabelSet;	///< 테스트데이터셋의 정답 레이블 벡터에 대한 포인터.
+    std::vector<uint32_t>* testSetIndices;	///< 테스트셋 인덱스 벡터 포인터. 데이터와 
+                                            ///  레이블을 함께 shuffle하기 위한 별도의 인덱스
+                                            ///  벡터.
 
-	Dtype mean[3];								///< 학습데이터셋의 각 채널별 평균값을 저장하는 배열.
+	Dtype mean[3];				///< 학습데이터셋의 각 채널별 평균값을 저장하는 배열.
 };
 
 #endif /* DATASET_H_ */

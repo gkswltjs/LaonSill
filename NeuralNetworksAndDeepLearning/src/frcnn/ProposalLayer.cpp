@@ -73,7 +73,8 @@ void ProposalLayer<Dtype>::feedforward() {
 	//
 	// for each (H, W) location i
 	//		generate A anchor boxes centered on cell i
-	//		apply predicted bbox deltas at cell i to each of the A ancscoreData->getShape()hors
+	//		apply predicted bbox deltas at cell i to each of the A 
+    //		ancscoreData->getShape()hors
 	// clip predicted boxes to image
 	// remove predicted boxes with either height or width < threshold
 	// sort all (proposal, score) pairs by score from hightest to lowest
@@ -138,8 +139,9 @@ void ProposalLayer<Dtype>::feedforward() {
 	const uint32_t width = scoresData->getShape(3);
 
 #if PROPOSALLAYER_LOG
-	cout << "score map size: " << scoresData->getShape(0) << ", " << scoresData->getShape(1) <<
-			", " << scoresData->getShape(2) << ", " << scoresData->getShape(3) << endl;
+	cout << "score map size: " << scoresData->getShape(0) << ", " <<
+        scoresData->getShape(1) << ", " << scoresData->getShape(2) << ", " <<
+        scoresData->getShape(3) << endl;
 #endif
 
 	// Enumerate all shifts
@@ -304,12 +306,6 @@ void ProposalLayer<Dtype>::feedforward() {
 	scores = vec_keep_by_index(scores, keep);
 	//printArray("scores", scores);
 
-
-
-	//displayBoxesOnImage("/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007/VOC2007/JPEGImages/000021.jpg",
-	//		imInfo->host_data()[2], proposals, 100);
-
-
 	// Output rois data
 	// Our RPN implementation only supports a single input image, so all
 	// batch inds are 0
@@ -350,7 +346,6 @@ void ProposalLayer<Dtype>::initialize() {
 #endif
 }
 
-
 template <typename Dtype>
 void ProposalLayer<Dtype>::_filterBoxes(std::vector<std::vector<float>>& boxes,
 		const float minSize, std::vector<uint32_t>& keep) {
@@ -369,37 +364,4 @@ void ProposalLayer<Dtype>::_filterBoxes(std::vector<std::vector<float>>& boxes,
 	}
 }
 
-
 template class ProposalLayer<float>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

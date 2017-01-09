@@ -57,13 +57,8 @@ void temp() {
 void ImageCropper::crop() {
 	int dirCnt = 0;
 
-
 	DIR *dir;
 	if((dir = opendir(original_dir)) != NULL) {
-
-		Timer timer;
-		timer.start();
-
 		thread *threadList = new thread[numThreads];
 		DirTaskArg_t dirTaskArgList[numThreads];
 		int taskCount = 0;
@@ -74,7 +69,8 @@ void ImageCropper::crop() {
 			if(result == NULL) break;
 			if(ent.d_type == 4 && ent.d_name[0] != '.') {
 				strcpy(dirTaskArgList[taskCount].dir_name, ent.d_name);
-				sprintf(dirTaskArgList[taskCount].dir_path, "%s/%s", original_dir, ent.d_name);
+				sprintf(dirTaskArgList[taskCount].dir_path, "%s/%s", original_dir,
+                        ent.d_name);
 
 				DIR *fdir;
 				if((fdir = opendir(dirTaskArgList[taskCount].dir_path)) != NULL) {
@@ -94,7 +90,8 @@ void ImageCropper::crop() {
 
 				if(++taskCount >= numThreads) {
 					for(int i = 0; i < numThreads; i++) {
-						threadList[i] = thread(&ImageCropper::foreachDirectory, this, &dirTaskArgList[i]);
+						threadList[i] = thread(&ImageCropper::foreachDirectory, this, 
+                                               &dirTaskArgList[i]);
 						cout << ++dirCnt << ": " << dirTaskArgList[i].dir_path << endl;
 					}
 
@@ -107,7 +104,6 @@ void ImageCropper::crop() {
 					for(int i = 0; i < numThreads; i++) {
 						dirTaskArgList[i].file_name_list.clear();
 					}
-					cout << "time: " << timer.stop(false) << endl;
 				}
 			}
 		}
@@ -128,11 +124,10 @@ void ImageCropper::foreachDirectory(DirTaskArg_t *dirTaskArg) {
 	int file_size = dirTaskArg->file_name_list.size();
 
 	for(int i = 0; i < file_size; i++) {
-		sprintf(full_path, "%s/%s", dirTaskArg->dir_path, dirTaskArg->file_name_list[i].c_str());
+		sprintf(full_path, "%s/%s", dirTaskArg->dir_path,
+                dirTaskArg->file_name_list[i].c_str());
 		foreachFile(full_path, dirTaskArg->dir_name, dirTaskArg->file_name_list[i].c_str());
 	}
-
-
 
 	/*
 	DIR *dir;
@@ -161,7 +156,8 @@ void ImageCropper::foreachDirectory(DirTaskArg_t *dirTaskArg) {
 }
 
 
-void ImageCropper::foreachFile(const char* full_path, const char* dir_name, const char* file_name) {
+void ImageCropper::foreachFile(const char* full_path, const char* dir_name,
+    const char* file_name) {
 	CImg<unsigned char> image(full_path);
 
 	const int width = image.width();
@@ -225,21 +221,3 @@ void ImageCropper::foreachFile(const char* full_path, const char* dir_name, cons
 		(image.get_crop(x0, y0, x1, y1, 1)).save_jpeg(crop_file_name, 100);
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

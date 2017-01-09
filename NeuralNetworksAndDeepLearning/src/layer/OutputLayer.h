@@ -144,18 +144,11 @@ public:
 	//virtual double cost(const uint32_t* target) = 0;
 	virtual double cost() = 0;
 
-
 protected:
 	void initialize(typename Cost<Dtype>::Type costType) {
 		//if(this->activation_fn) this->activation_fn->initialize_weight(in_dim.rows, weight);
 		this->cost_fn = CostFactory<Dtype>::create(costType);
 	}
-
-
-	virtual void _clearShape() {
-		FullyConnectedLayer<Dtype>::_clearShape();
-	}
-
 
 protected:
 	Cost<Dtype>* cost_fn;				///< cost 객체
@@ -163,9 +156,6 @@ protected:
 	//SyncMem<uint32_t> _target;
 };
 
-
-
 template class OutputLayer<float>;
-
 
 #endif /* LAYER_OUTPUTLAYER_H_ */

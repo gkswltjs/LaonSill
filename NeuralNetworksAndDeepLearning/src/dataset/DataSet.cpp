@@ -29,7 +29,8 @@ DataSet<Dtype>::DataSet() {
 }
 
 template <typename Dtype>
-DataSet<Dtype>::DataSet(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t numTrainData, uint32_t numTestData) {
+DataSet<Dtype>::DataSet(uint32_t rows, uint32_t cols, uint32_t channels,
+        uint32_t numTrainData, uint32_t numTestData) {
 	this->rows = rows;
 	this->cols = cols;
 	this->channels = channels;
@@ -130,7 +131,6 @@ const Dtype* DataSet<Dtype>::getTestLabelAt(int index) {
 
 template <typename Dtype>
 void DataSet<Dtype>::zeroMean(bool hasMean) {
-	//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 	uint32_t di, ci, hi, wi;
 	double sum[3] = {0.0, 0.0, 0.0};
 
@@ -139,26 +139,24 @@ void DataSet<Dtype>::zeroMean(bool hasMean) {
 			for(ci = 0; ci < channels; ci++) {
 				for(hi = 0; hi < rows; hi++) {
 					for(wi = 0; wi < cols; wi++) {
-						sum[ci] += (*trainDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels];
+						sum[ci] += 
+                            (*trainDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels];
 					}
 				}
 			}
-			//cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 		}
 
-		cout << "sum_0: " << sum[0] << ", sum_1: " << sum[1] << ", sum_2: " << sum[2] << endl;
-		cout << "rows: " << rows << ", cols: " << cols << ", numTrainData: " << numTrainData << endl;
 		for(ci = 0; ci < channels; ci++) {
 			mean[ci] = (Dtype)(sum[ci] / (rows*cols*numTrainData));
 		}
-		cout << "mean_0: " << mean[0] << ", mean_1: " << mean[1] << ", mean_2: " << mean[2] << endl;
 	}
 
 	for(di = 0; di < numTrainData; di++) {
 		for(ci = 0; ci < channels; ci++) {
 			for(hi = 0; hi < rows; hi++) {
 				for(wi = 0; wi < cols; wi++) {
-					(*trainDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels] -= mean[ci];
+					(*trainDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels] -=
+                        mean[ci];
 				}
 			}
 		}
@@ -168,7 +166,8 @@ void DataSet<Dtype>::zeroMean(bool hasMean) {
 		for(ci = 0; ci < channels; ci++) {
 			for(hi = 0; hi < rows; hi++) {
 				for(wi = 0; wi < cols; wi++) {
-					(*testDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels] -= mean[ci];
+					(*testDataSet)[wi+hi*cols+ci*cols*rows+di*cols*rows*channels] -=
+                        mean[ci];
 				}
 			}
 		}
@@ -190,20 +189,4 @@ void DataSet<Dtype>::shuffleTestDataSet() {
 	random_shuffle(&(*testSetIndices)[0], &(*testSetIndices)[numTestData]);
 }
 
-
 template class DataSet<float>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
