@@ -53,14 +53,12 @@ public:
 			HiddenLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new DepthConcatLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			HiddenLayer<Dtype>::Builder::save(ofs);
-		}
-		virtual void load(std::ifstream& ifs) {
-			HiddenLayer<Dtype>::Builder::load(ifs);
 		}
 	};
 

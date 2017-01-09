@@ -48,7 +48,7 @@ public:
 	 * @details 지정된 사이즈로 호스트와 디바이스에 메모리를 할당, 초기화한다.
 	 * @param size 할당할 메모리 사이즈
 	 */
-	void shape(size_t size);
+	//void shape(size_t size);
 	void reshape(size_t size);
 
 	/**
@@ -83,7 +83,7 @@ public:
 	/**
 	 * @details 호스트 메모리를 0으로 초기화한다.
 	 */
-	void reset_host_mem();
+	void reset_host_mem(const bool setZero=true, const Dtype value=0.0);
 	/**
 	 * @details 디바이스 메모리를 0으로 초기화한다.
 	 */

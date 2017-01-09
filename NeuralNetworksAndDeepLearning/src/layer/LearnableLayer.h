@@ -8,6 +8,7 @@
 #ifndef LEARNABLELAYER_H_
 #define LEARNABLELAYER_H_
 
+#include <map>
 
 #include "common.h"
 #include "Cuda.h"
@@ -51,8 +52,11 @@ public:
 	//virtual double testParamAbnormality() = 0;
 	virtual uint32_t boundParams() = 0;
 
+	virtual uint32_t numParams() = 0;
+
 	virtual void saveParams(std::ofstream& ofs) = 0;
 	virtual void loadParams(std::ifstream& ifs) = 0;
+	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap) = 0;
 
     virtual void syncMutableMem() {}
     virtual void applyChanges(LearnableLayer<Dtype> *targetLayer) {}
@@ -81,6 +85,7 @@ protected:
 		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne, d_paramHistoryData, 1, d_paramData, 1));	// update
 		*/
 	}
+
 
 };
 

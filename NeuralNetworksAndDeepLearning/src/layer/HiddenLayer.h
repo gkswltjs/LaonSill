@@ -48,25 +48,11 @@ public:
 			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			Layer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() = 0;
-		virtual void save(std::ofstream& ofs) {
-			Layer<Dtype>::Builder::save(ofs);
-			uint32_t numPrevLayerIndices = _prevLayerIndices.size();
-			ofs.write((char*)&numPrevLayerIndices, sizeof(uint32_t));
-			for(uint32_t i = 0; i < numPrevLayerIndices; i++) {
-				ofs.write((char*)&_prevLayerIndices[i], sizeof(uint32_t));
-			}
-		}
-		virtual void load(std::ifstream& ifs) {
-			Layer<Dtype>::Builder::load(ifs);
-			uint32_t numPrevLayerIndices;
-			ifs.read((char*)&numPrevLayerIndices, sizeof(uint32_t));
-			for(uint32_t i = 0; i < numPrevLayerIndices; i++) {
-				uint32_t prevLayerIndice;
-				ifs.read((char*)&prevLayerIndice, sizeof(uint32_t));
-				_prevLayerIndices.push_back(prevLayerIndice);
-			}
-		}
 	};
 
 

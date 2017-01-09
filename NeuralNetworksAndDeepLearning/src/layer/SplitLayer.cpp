@@ -9,6 +9,7 @@
 
 #include "SplitLayer.h"
 
+#define SPLITLAYER_LOG 0
 
 using namespace std;
 
@@ -26,12 +27,8 @@ SplitLayer<Dtype>::SplitLayer(Builder* builder)
 
 
 
-
-
 template <typename Dtype>
-SplitLayer<Dtype>::~SplitLayer() {
-	// TODO Auto-generated destructor stub
-}
+SplitLayer<Dtype>::~SplitLayer() {}
 
 
 
@@ -56,7 +53,7 @@ void SplitLayer<Dtype>::reshape() {
 	this->_inputShape[0] = inputShape;
 
 	for (uint32_t i = 0; i < this->_outputData.size(); i++) {
-		this->_outputData[i]->shape(inputShape);
+		this->_outputData[i]->reshape(inputShape);
 	}
 
 	/*
@@ -69,7 +66,7 @@ void SplitLayer<Dtype>::reshape() {
 
 	//for (uint32_t i = 1; i < this->_inputs.size(); i++) {
 	//	if (this->_inputData[i]->getCount() == 0)
-	//		this->_inputData[i]->shape({this->in_dim.batches, this->in_dim.channels,
+	//		this->_inputData[i]->reshape({this->in_dim.batches, this->in_dim.channels,
 	//		this->in_dim.rows, this->in_dim.cols});
 	//}
 
@@ -77,7 +74,7 @@ void SplitLayer<Dtype>::reshape() {
 	//	ㄴLayer의 _shape()가 호출되어도 이미지 shape처리되었기 때문에 무시된다.
 	for (uint32_t i = 0; i < this->_outputs.size(); i++) {
 		if (this->_outputData[i]->getCount() == 0)
-			this->_outputData[i]->shape({this->out_dim.batches, this->out_dim.channels,
+			this->_outputData[i]->reshape({this->out_dim.batches, this->out_dim.channels,
 			this->out_dim.rows, this->out_dim.cols});
 	}
 
@@ -98,11 +95,35 @@ void SplitLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void SplitLayer<Dtype>::backpropagation() {
-	this->_inputData[0]->reset_device_grad();
 
+#if SPLITLAYER_LOG
+	const string targetLayer = "rpn/output-split";
+#endif
+
+	this->_inputData[0]->reset_device_grad();
 	for (uint32_t i = 0; i < this->_outputs.size(); i++) {
+
+#if SPLITLAYER_LOG
+		if (this->name == targetLayer) {
+			Data<Dtype>::printConfig = true;
+			this->_outputData[i]->print_grad({}, false);
+			Data<Dtype>::printConfig = false;
+		}
+#endif
 		this->_inputData[0]->add_device_grad(this->_outputData[i]);
+#if SPLITLAYER_LOG
+		if (this->name == targetLayer) {
+			Data<Dtype>::printConfig = true;
+			this->_inputData[0]->print_grad({}, false);
+			Data<Dtype>::printConfig = false;
+		}
+#endif
 	}
+#if SPLITLAYER_LOG
+	if (this->name == targetLayer) {
+		exit(1);
+	}
+#endif
 }
 
 

@@ -90,6 +90,7 @@ public:
 	 * @param filename 네트워크를 읽을 파일의 경로
 	 */
 	void load(const char* filename);
+	void loadPretrainedWeights();
 	/**
 	 * @details 네트워크의 입력 데이터 구조 정보를 설정한다.
 	 * @param in_dim 네트워크의 입력 데이터 구조 정보 구조체
@@ -158,6 +159,7 @@ protected:
 	void _backpropagation(uint32_t batchIndex);
 
 
+	void saveProposalTargets(std::ofstream& ofs);
 
 
 
@@ -172,7 +174,7 @@ protected:
 	 * @param y 데이터의 정답 호스트 메모리 포인터
 	 */
 	//void evaluateTestData(const int num_labels, Data* output, const UINT *y);
-	double evaluateTestData(uint32_t batchIndex);
+	double evaluateTestData(uint32_t batchIndex, std::vector<double>& costList);
 #endif
 
 
@@ -182,7 +184,7 @@ protected:
 public:
 	NetworkConfig<Dtype>* config;
 
-
+};
 
 
 #endif /* NETWORK_H_ */

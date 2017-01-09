@@ -55,7 +55,9 @@ public:
 			_biasUpdateParam.lr_mult = 1.0;
 			_biasUpdateParam.decay_mult = 0.0;
 			_weightFiller.type = ParamFillerType::Constant;
+			_weightFiller.value = 0.0f;
 			_biasFiller.type = ParamFillerType::Constant;
+			_biasFiller.value = 0.0f;
 			_activationType = Activation<Dtype>::NoActivation;
 		}
 		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
@@ -108,27 +110,15 @@ public:
 			HiddenLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
+
 		Layer<Dtype>* build() {
 			return new ConvLayer(this);
 		}
-		virtual void save(std::ofstream& ofs) {
-			HiddenLayer<Dtype>::Builder::save(ofs);
-			ofs.write((char*)&_filterDim, sizeof(filter_dim));
-			ofs.write((char*)&_weightUpdateParam, sizeof(update_param));
-			ofs.write((char*)&_biasUpdateParam, sizeof(update_param));
-			ofs.write((char*)&_weightFiller, sizeof(param_filler<Dtype>));
-			ofs.write((char*)&_biasFiller, sizeof(param_filler<Dtype>));
-			ofs.write((char*)&_activationType, sizeof(typename Activation<Dtype>::Type));
-		}
-		virtual void load(std::ifstream& ifs) {
-			HiddenLayer<Dtype>::Builder::load(ifs);
-			ifs.read((char*)&_filterDim, sizeof(filter_dim));
-			ifs.read((char*)&_weightUpdateParam, sizeof(update_param));
-			ifs.read((char*)&_biasUpdateParam, sizeof(update_param));
-			ifs.read((char*)&_weightFiller, sizeof(param_filler<Dtype>));
-			ifs.read((char*)&_biasFiller, sizeof(param_filler<Dtype>));
-			ifs.read((char*)&_activationType, sizeof(typename Activation<Dtype>::Type));
-		}
+
 	};
 	/**
 	 * @details ConvLayer 기본 생성자
@@ -170,8 +160,10 @@ public:
 	virtual void scaleParamsGrad(float scale);
 	//virtual double testParamAbnormality();
 	virtual uint32_t boundParams();
+	virtual uint32_t numParams();
 	virtual void saveParams(std::ofstream& ofs);
 	virtual void loadParams(std::ifstream& ifs);
+	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
 	//////////////////////////////////////////
 
 	virtual void reshape();
@@ -207,13 +199,8 @@ protected:
 
 
 	virtual void _clearShape();
-	//virtual void _save(std::ofstream &ofs);
-	//virtual void _load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*> &layerMap);
 
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data);
-
-
-
 
 	enum ParamType {
 		Filter = 0,
@@ -251,6 +238,7 @@ public:
     std::vector<Data<Dtype>*> _params;					///< 파리미터 데이터 (Filter, Bias 포함)
     std::vector<Data<Dtype>*> _paramsHistory;			///< 이전 update에서 적용된 파라미터 그레디언트 데이터
 
+    //std::vector<bool> _paramsInitialized;
 };
 
 

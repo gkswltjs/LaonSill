@@ -18,16 +18,30 @@
 #include "Evaluation.h"
 #include "Layer.h"
 #include "InputLayer.h"
-#include "OutputLayer.h"
 #include "LearnableLayer.h"
 #include "SplitLayer.h"
+#include "LossLayer.h"
+#include "OutputLayer.h"
 #include "LayerFactory.h"
 #include "NetworkListener.h"
 #include "Worker.h"
+#include "Top1Evaluation.h"
+#include "Top5Evaluation.h"
+
+
+//#define OUTPUTLAYER
 
 
 //template <typename Dtype> class DataSet;
 template <typename Dtype> class Worker;
+
+
+struct WeightsArg {
+	std::string weightsPath;
+	//std::vector<std::string> weights;
+	std::map<std::string, std::string> weightsMap;
+};
+
 
 
 template <typename Dtype>
@@ -73,9 +87,14 @@ public:
                 }
 
                 		// 끝 레이어 추가
-                OutputLayer<Dtype>* outputLayer =
-                		dynamic_cast<OutputLayer<Dtype>*>(currentLayer);
-                if (outputLayer) {
+#ifndef OUTPUTLAYER
+                LossLayer<Dtype>* lossLayer =
+                		dynamic_cast<LossLayer<Dtype>*>(currentLayer);
+#else
+                OutputLayer<Dtype>* lossLayer =
+                        dynamic_cast<OutputLayer<Dtype>*>(currentLayer);
+#endif
+                if (lossLayer) {
                 	lastLayers.push_back(currentLayer);
                 }
 
@@ -95,10 +114,10 @@ public:
                 std::cout << "no input layer ... " << std::endl;
 				exit(1);
 			}
-			if(lastLayers.size() < 1) {
-                std::cout << "no output layer ... " << std::endl;
-				exit(1);
-			}
+			//if(lastLayers.size() < 1) {
+            //  std::cout << "no output layer ... " << std::endl;
+			//	exit(1);
+			//}
 
 			const uint32_t layerSize = layers.size();
 
@@ -199,7 +218,7 @@ public:
 
 						std::cout << splitDataIndex << "th SplitLayer Ouput updated with " << splitDataName << std::endl;
 
-						Data<Dtype>* data = new Data<Dtype>(splitDataName, inputData, 1);
+						Data<Dtype>* data = new Data<Dtype>(splitDataName, inputData, 0);
 						splitLayer->_outputData.push_back(data);
 						layerDataMap[splitDataName] = data;
 
@@ -219,7 +238,6 @@ public:
 			std::cout << "ordering layers ... " << std::endl;
 			std::vector<Layer<Dtype>*> olayers;
 			_orderLayers(layers, olayers);
-
 
 			std::cout << "final layer configuration: " << std::endl;
 			for (uint32_t i = 0; i < olayers.size(); i++) {
@@ -245,6 +263,7 @@ public:
                 ->layerDataMap(layerDataMap);
 		}
 
+		/*
 		void save(std::ofstream& ofs) {
 			uint32_t numLayers = _layerWise.size();
 			ofs.write((char*)&numLayers, sizeof(uint32_t));
@@ -270,6 +289,7 @@ public:
 				layer(layerBuilder);
 			}
 		}
+		*/
 
 
 	private:
@@ -343,7 +363,11 @@ public:
     std::vector<Layer<Dtype>*> _lastLayers;
     std::vector<Layer<Dtype>*> _layers;
     std::vector<LearnableLayer<Dtype>*> _learnableLayers;
-    std::vector<OutputLayer<Dtype>*> _outputLayers;
+#ifndef OUTPUTLAYER
+    std::vector<LossLayer<Dtype>*> _lossLayers;
+#else
+    std::vector<OutputLayer<Dtype>*> _lossLayers;
+#endif
     InputLayer<Dtype>* _inputLayer;
 
     std::map<std::string, Layer<Dtype>*> _nameLayerMap;
@@ -363,12 +387,16 @@ public:
 		this->_lastLayers = lastLayers;
         typename std::vector<Layer<Dtype>*>::iterator iter;
         for (iter = lastLayers.begin(); iter != lastLayers.end(); iter++) {
-            OutputLayer<Dtype>* outputLayer = dynamic_cast<OutputLayer<Dtype>*>(*iter);
-            if(!outputLayer) {
+#ifndef OUTPUTLAYER
+            LossLayer<Dtype>* lossLayer = dynamic_cast<LossLayer<Dtype>*>(*iter);
+#else
+        	OutputLayer<Dtype>* lossLayer = dynamic_cast<OutputLayer<Dtype>*>(*iter);
+#endif
+            if(!lossLayer) {
                 std::cout << "invalid output layer ... " << std::endl;
                 exit(1);
             }
-            _outputLayers.push_back(outputLayer);
+            _lossLayers.push_back(lossLayer);
         }
 		return this;
 	}
@@ -398,9 +426,11 @@ public:
 		return this;
 	}
 	*/
+	/*
 	void save(std::ofstream& ofs) {
 		this->_builder->save(ofs);
 	}
+	*/
 };
 
 
@@ -415,6 +445,11 @@ template class LayersConfig<float>;
 enum NetworkStatus {
 	Train = 0,
 	Test = 1
+};
+
+enum NetworkPhase {
+	TrainPhase = 0,
+	TestPhase = 1
 };
 
 enum LRPolicy {
@@ -437,7 +472,7 @@ public:
 	class Builder {
 	public:
 		//DataSet<Dtype>* _dataSet;
-        std::vector<Evaluation<Dtype>*> _evaluations;
+        //std::vector<Evaluation<Dtype>*> _evaluations;
         std::vector<NetworkListener*> _networkListeners;
         std::vector<LayersConfig<Dtype>*> layersConfigs;
 
@@ -454,9 +489,14 @@ public:
 		float _gamma;
 
         std::string _savePathPrefix;
+        std::string _weightsPath;
+        std::vector<WeightsArg> _weightsArgs;
 
 		LRPolicy _lrPolicy;
+		NetworkPhase _phase;
 
+		std::vector<std::string> _lossLayers;
+		//std::vector<std::vector<std::string>> _evaluations;
 		//io_dim _inDim;
 
 
@@ -466,11 +506,14 @@ public:
 			this->_dop = 1;
 			this->_epochs = 1;
 			this->_clipGradientsLevel = 35.0f;
+			this->_phase = NetworkPhase::TrainPhase;
 		}
-		Builder* evaluations(const std::vector<Evaluation<Dtype>*> evaluations) {
+		/*
+		Builder* evaluations(const std::vector<std::vector<std::string>>& evaluations) {
 			this->_evaluations = evaluations;
 			return this;
 		}
+		*/
 		Builder* networkListeners(const std::vector<NetworkListener*> networkListeners) {
 			this->_networkListeners = networkListeners;
 			return this;
@@ -503,6 +546,14 @@ public:
 			this->_savePathPrefix = savePathPrefix;
 			return this;
 		}
+		Builder* weightsPath(std::string weightsPath) {
+			this->_weightsPath = weightsPath;
+			return this;
+		}
+		Builder* weightsArgs(std::vector<WeightsArg> weightsArgs) {
+			this->_weightsArgs = weightsArgs;
+			return this;
+		}
 		Builder* clipGradientsLevel(float clipGradientsLevel) {
 			this->_clipGradientsLevel = clipGradientsLevel;
 			return this;
@@ -531,12 +582,14 @@ public:
 			this->_lrPolicy = lrPolicy;
 			return this;
 		}
-		//Builder* inputShape(const std::vector<uint32_t>& inputShape) {
-		//	this->_inDim.rows = inputShape[0];
-		//	this->_inDim.cols = inputShape[1];
-		//	this->_inDim.channels = inputShape[2];
-		//	return this;
-		//}
+		Builder* networkPhase(NetworkPhase phase) {
+			this->_phase = phase;
+			return this;
+		}
+		Builder* lossLayers(const std::vector<std::string>& lossLayers) {
+			this->_lossLayers = lossLayers;
+			return this;
+		}
 		NetworkConfig* build() {
 
 			//load()를 학습단계에서도 사용할 경우 ...
@@ -552,8 +605,26 @@ public:
 			//}
 			//_inDim.batches = _batchSize;
 
+			/*
+			std::vector<std::vector<Evaluation<Dtype>*>> evaluations(this->_evaluations.size());
+			for (uint32_t i = 0; i < this->_evaluations.size(); i++) {
+				evaluations.resize(this->_evaluations[i].size());
+				for (uint32_t j = 0; j < this->_evaluations[i].size(); j++) {
+					if (this->_evaluations[i][j] == "top1")
+						evaluations[i][j] = new Top1Evaluation<Dtype>();
+					else if (this->_evaluations[i][j] == "top5")
+						evaluations[i][j] = new Top5Evaluation<Dtype>();
+					else {
+						std::cout << "invalid evaluation type ... " << std::endl;
+						exit(-1);
+					}
+				}
+			}
+			*/
+
+
+
 			NetworkConfig* networkConfig = (new NetworkConfig(this))
-					->evaluations(_evaluations)
 					->networkListeners(_networkListeners)
 					->batchSize(_batchSize)
 					->dop(_dop)
@@ -562,19 +633,28 @@ public:
 					->saveInterval(_saveInterval)
 					->stepSize(_stepSize)
 					->savePathPrefix(_savePathPrefix)
+					->weightsPath(_weightsPath)
+					->weightsArgs(_weightsArgs)
 					->clipGradientsLevel(_clipGradientsLevel)
 					->lrPolicy(_lrPolicy)
 					->gamma(_gamma)
 					//->dataSet(_dataSet)
 					->baseLearningRate(_baseLearningRate)
 					->momentum(_momentum)
-					->weightDecay(_weightDecay);
+					->weightDecay(_weightDecay)
+					->networkPhase(_phase)
+					//->evaluations(evaluations)
+					->lossLayers(_lossLayers);
 					//->inDim(_inDim);
 
             networkConfig->layersConfigs.assign(Worker<Dtype>::consumerCount, NULL);
 
 			return networkConfig;
 		}
+
+
+
+		/*
 		void save(std::ofstream& ofs) {
 			if(_savePathPrefix == "") {
                 std::cout << "save path not specified ... " << std::endl;
@@ -630,6 +710,9 @@ public:
 
 			ifs.close();
 		}
+		*/
+
+
 		void print() {
             std::cout << "batchSize: " << _batchSize << std::endl;
             std::cout << "epochs: " << _epochs << std::endl;
@@ -644,11 +727,8 @@ public:
             std::cout << "gamma: " << _gamma << std::endl;
 
             std::cout << "savePathPrefix: " << _savePathPrefix << std::endl;
+            std::cout << "weightsPath: " << _weightsPath << std::endl;
             std::cout << "lrPolicy: " << _lrPolicy << std::endl;
-
-            //std::cout << "inDim->channels: " << _inDim.channels << std::endl;
-            //std::cout << "inDim->rows: " << _inDim.rows << std::endl;
-            //std::cout << "inDim->cols: " << _inDim.cols << std::endl;
 		}
 
 	};
@@ -660,9 +740,10 @@ public:
 
 	NetworkStatus _status;
 	LRPolicy _lrPolicy;
+	NetworkPhase _phase;
 	
 	//DataSet<Dtype>* _dataSet;
-    std::vector<Evaluation<Dtype>*> _evaluations;
+    //std::vector<std::vector<Evaluation<Dtype>*>> _evaluations;
     std::vector<NetworkListener*> _networkListeners;
     std::vector<LayersConfig<Dtype>*> layersConfigs;
 
@@ -680,6 +761,10 @@ public:
 	float _gamma;
 
     std::string _savePathPrefix;
+    std::string _weightsPath;
+    std::vector<WeightsArg> _weightsArgs;
+
+    std::vector<std::string> _lossLayers;
 
 	//io_dim _inDim;
 
@@ -693,12 +778,18 @@ public:
 	NetworkConfig(Builder* builder) {
 		this->_builder = builder;
 		this->_iterations = 0;
+		this->_rate = -1.0f;
 	}
-
-	NetworkConfig* evaluations(const std::vector<Evaluation<Dtype>*> evaluations) {
+	NetworkConfig* lossLayers(const std::vector<std::string>& lossLayers) {
+		this->_lossLayers = lossLayers;
+		return this;
+	}
+	/*
+	NetworkConfig* evaluations(const std::vector<std::vector<Evaluation<Dtype>*>>& evaluations) {
 		this->_evaluations = evaluations;
 		return this;
 	}
+	*/
 	NetworkConfig* networkListeners(const std::vector<NetworkListener*> networkListeners) {
 		this->_networkListeners = networkListeners;
 		return this;
@@ -731,6 +822,14 @@ public:
 		this->_savePathPrefix = savePathPrefix;
 		return this;
 	}
+	NetworkConfig* weightsPath(const std::string weightsPath) {
+		this->_weightsPath = weightsPath;
+		return this;
+	}
+	NetworkConfig* weightsArgs(const std::vector<WeightsArg>& weightsArgs) {
+		this->_weightsArgs = weightsArgs;
+		return this;
+	}
 	NetworkConfig* clipGradientsLevel(float clipGradientsLevel) {
 		this->_clipGradientsLevel = clipGradientsLevel;
 		return this;
@@ -755,26 +854,12 @@ public:
 		this->_weightDecay = weightDecay;
 		return this;
 	}
-#if 0
-	NetworkConfig* inputLayer(InputLayer<Dtype>* inputLayer) {
-		this->_inputLayer = inputLayer;
-		return this;
-	}
-	NetworkConfig* outputLayers(std::vector<OutputLayer<Dtype>*> outputLayers) {
-		this->_outputLayers = outputLayers;
-		return this;
-	}
-	NetworkConfig* layers(std::vector<Layer<Dtype>*> layers) {
-		this->_layers = layers;
-		return this;
-	}
-	NetworkConfig* nameLayerMap(std::map<std::string, Layer<Dtype>*> nameLayerMap) {
-		this->_nameLayerMap = nameLayerMap;
-		return this;
-	}
-#endif
 	NetworkConfig* lrPolicy(LRPolicy lrPolicy) {
 		this->_lrPolicy = lrPolicy;
+		return this;
+	}
+	NetworkConfig* networkPhase(NetworkPhase phase) {
+		this->_phase = phase;
 		return this;
 	}
 	//NetworkConfig* inDim(io_dim inDim) {
@@ -783,20 +868,33 @@ public:
 	//}
 
 	void save() {
+		if (_savePathPrefix == "") return;
+
 		// save config
-        std::ofstream configOfs((_savePathPrefix+std::to_string(_iterations)+".config").c_str(),
+		/*
+        std::ofstream configOfs(
+        		(_savePathPrefix+std::to_string(_iterations)+".config").c_str(),
                 std::ios::out | std::ios::binary);
 		_builder->save(configOfs);
 		configOfs.close();
-
+		*/
 		// save learned params
         LayersConfig<Dtype>* firstLayersConfig = this->layersConfigs[0];
-        std::ofstream paramOfs((_savePathPrefix+std::to_string(_iterations)+".param").c_str(),
+        std::ofstream paramOfs(
+        		(_savePathPrefix+"/network"+std::to_string(_iterations)+".param").c_str(),
                 std::ios::out | std::ios::binary);
+
 		uint32_t numLearnableLayers = firstLayersConfig->_learnableLayers.size();
-		for(uint32_t i = 0; i < numLearnableLayers; i++) {
+		//paramOfs.write((char*)&numLearnableLayers, sizeof(uint32_t));
+
+		uint32_t numParams = 0;
+		for (uint32_t i = 0; i < numLearnableLayers; i++)
+			numParams += firstLayersConfig->_learnableLayers[i]->numParams();
+
+		paramOfs.write((char*)&numParams, sizeof(uint32_t));
+		for (uint32_t i = 0; i < numLearnableLayers; i++)
 			firstLayersConfig->_learnableLayers[i]->saveParams(paramOfs);
-		}
+
 		paramOfs.close();
 	}
 	void load() {
@@ -828,6 +926,11 @@ public:
 		case Step: {
 			uint32_t currentStep = this->_iterations / this->_stepSize;
 			rate = _baseLearningRate * pow(_gamma, currentStep);
+
+			if (this->_rate < 0.0f || this->_rate != rate) {
+				std::cout << "rate updated: " << rate << std::endl;
+				this->_rate = rate;
+			}
 		}
 			break;
 		default: {
@@ -837,6 +940,9 @@ public:
 		}
 		return rate;
 	}
+
+private:
+	float _rate;
 };
 
 

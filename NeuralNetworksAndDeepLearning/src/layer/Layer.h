@@ -52,9 +52,17 @@ public:
 		Sigmoid, 				// 시그모이드 레이어
 		Softmax,				// 소프트맥스 레이어
 		Split,					//
-		AnchorTarget,			//
 		Reshape,				//
 		SmoothL1Loss,
+		SoftmaxWithLoss,
+
+		AnchorTarget,			//
+		Proposal,				//
+		ProposalTarget,			//
+		RoIPooling,				//
+		RoIInput,
+		RoITestInput,
+		FrcnnTestOutput,
 	};
 
 
@@ -71,6 +79,9 @@ public:
 
         std::vector<std::string> _inputs;
         std::vector<std::string> _outputs;
+
+        std::vector<bool> _propDown;
+
 
 		Builder() {
 			type = Layer<Dtype>::None;
@@ -93,45 +104,12 @@ public:
 			this->_outputs = outputs;
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			this->_propDown = propDown;
+			return this;
+		}
 
 		virtual Layer<Dtype>* build() = 0;
-		virtual void save(std::ofstream& ofs) {
-			ofs.write((char*)&type, sizeof(uint32_t));
-
-			size_t nameLength = _name.size();
-			ofs.write((char*)&nameLength, sizeof(size_t));
-			ofs.write((char*)_name.c_str(), nameLength);
-
-			ofs.write((char*)&_id, sizeof(uint32_t));
-			/*
-			uint32_t numNextLayerIndices = _nextLayerIndices.size();
-			ofs.write((char*)&numNextLayerIndices, sizeof(uint32_t));
-			for(uint32_t i = 0; i < numNextLayerIndices; i++) {
-				ofs.write((char*)&_nextLayerIndices[i], sizeof(uint32_t));
-			}
-			*/
-		}
-		virtual void load(std::ifstream& ifs) {
-
-			size_t nameLength;
-			ifs.read((char*)&nameLength, sizeof(size_t));
-			char* name_c = new char[nameLength+1];
-			ifs.read(name_c, nameLength);
-			name_c[nameLength] = '\0';
-			_name = name_c;
-			delete [] name_c;
-
-			ifs.read((char*)&_id, sizeof(uint32_t));
-			/*
-			uint32_t numNextLayersIndices;
-			ifs.read((char*)&numNextLayersIndices, sizeof(uint32_t));
-			for(uint32_t i = 0; i < numNextLayersIndices; i++) {
-				uint32_t nextLayerIndice;
-				ifs.read((char*)&nextLayerIndice, sizeof(uint32_t));
-				_nextLayerIndices.push_back(nextLayerIndice);
-			}
-			*/
-		}
 	};
 
 
@@ -308,11 +286,12 @@ public:
 	std::vector<Data<Dtype>*> _inputData;				///< 레이어 입력 데이터 목록 벡터
 	std::vector<Data<Dtype>*> _outputData;				///< 레이어 출력 데이터 목록 벡터
 
-
-protected:
 	Layer<Dtype>::Type type;							///< 레이어의 타입
 	int id;												///< 레이어의 고유 아이디
-    std::string name;									///< 레이어의 이름
+	std::string name;									///< 레이어의 이름
+
+protected:
+
 
 	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
@@ -324,8 +303,7 @@ protected:
 
 	std::vector<std::vector<uint32_t>> _inputShape;
 
-
-
+	std::vector<bool> _propDown;
 
 
 

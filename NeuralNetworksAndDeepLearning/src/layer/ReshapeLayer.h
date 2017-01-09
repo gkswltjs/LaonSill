@@ -9,7 +9,7 @@
 #define RESHAPELAYER_H_
 
 
-#if 0
+#if 1
 #include <vector>
 
 #include "common.h"
@@ -22,12 +22,24 @@ public:
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
 		std::vector<int> _shape;
+		int _axis;
+		int _numAxes;
 
 		Builder() {
 			this->type = Layer<Dtype>::Reshape;
+			this->_axis = 0;
+			this->_numAxes = -1;
 		}
 		Builder* shape(const std::vector<int>& shape) {
 			this->_shape = shape;
+			return this;
+		}
+		Builder* axis(const int axis) {
+			this->_axis = axis;
+			return this;
+		}
+		Builder* numAxes(const int numAxes) {
+			this->_numAxes = numAxes;
 			return this;
 		}
 		virtual Builder* name(const std::string name) {
@@ -46,18 +58,12 @@ public:
 			HiddenLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new ReshapeLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			//HiddenLayer<Dtype>::Builder::save(ofs);
-			//ofs.write((char*)&_poolDim, sizeof(pool_dim));
-			//ofs.write((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
-		}
-		virtual void load(std::ifstream& ifs) {
-			//HiddenLayer<Dtype>::Builder::load(ifs);
-			//ifs.read((char*)&_poolDim, sizeof(pool_dim));
-			//ifs.read((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
 		}
 	};
 
@@ -74,7 +80,12 @@ protected:
 
 
 private:
-	std::vector<uint32_t> shape;
+	std::vector<int> shape;
+	int axis;
+	int numAxes;
+	std::vector<uint32_t> copyAxes;
+	int inferredAxis;
+	uint32_t constantCount;
 };
 
 #endif

@@ -38,12 +38,18 @@ public:
 	 */
 	class Builder : public Layer<Dtype>::Builder {
 	public:
+		uint32_t _numTrainPack;
+		uint32_t _numTestPack;
+		std::vector<float> _mean;
 		std::vector<uint32_t> _shape;
 		std::string _source;
 		std::string _sourceType;
 
 		Builder() {
 			this->type = Layer<Dtype>::Input;
+			this->_numTrainPack = 1;
+			this->_numTestPack = 1;
+			this->_mean = {0.0f, 0.0f, 0.0f};
 		}
 		virtual Builder* shape(const std::vector<uint32_t>& shape) {
 			this->_shape = shape;
@@ -55,6 +61,18 @@ public:
 		}
 		virtual Builder* sourceType(const std::string& sourceType) {
 			this->_sourceType = sourceType;
+			return this;
+		}
+		virtual Builder* numTrainPack(const uint32_t numTrainPack) {
+			this->_numTrainPack = numTrainPack;
+			return this;
+		}
+		virtual Builder* numTestPack(const uint32_t numTestPack) {
+			this->_numTestPack = numTestPack;
+			return this;
+		}
+		virtual Builder* mean(const std::vector<float>& mean) {
+			this->_mean = mean;
 			return this;
 		}
 		virtual Builder* name(const std::string name) {
@@ -73,14 +91,12 @@ public:
 			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			Layer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new InputLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			Layer<Dtype>::Builder::save(ofs);
-		}
-		virtual void load(std::ifstream& ifs) {
-			Layer<Dtype>::Builder::load(ifs);
 		}
 	};
 

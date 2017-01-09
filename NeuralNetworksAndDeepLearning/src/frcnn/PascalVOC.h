@@ -9,6 +9,10 @@
 #define PASCALVOC_H_
 
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include <map>
 #include <vector>
 #include <string>
@@ -18,11 +22,15 @@
 #include "tinyxml2/tinyxml2.h"
 #include "IMDB.h"
 
+#define PASCALVOC_LOG 0
+
+using namespace cv;
+
 
 class PascalVOC : public IMDB {
 public:
 	PascalVOC(const std::string& imageSet, const std::string& year,
-			const std::string& devkitPath) : IMDB("voc_" + year + "_" + imageSet) {
+			const std::string& devkitPath, const std::vector<float>& pixelMeans) : IMDB("voc_" + year + "_" + imageSet) {
 
 		this->year = year;
 		this->imageSet = imageSet;
@@ -36,6 +44,7 @@ public:
 				"motorbike", "person", "pottedplant",
 				"sheep", "sofa", "train", "tvmonitor"
 		};
+		this->pixelMeans = pixelMeans;
 		buildClassToInd();
 		this->imageExt = ".jpg";
 		loadImageSetIndex();
@@ -45,6 +54,7 @@ public:
 		for (uint32_t i = 0; i < numClasses; i++) {
 			printf("Label [%02d]: %s\n", i, classes[i].c_str());
 			classToInd[classes[i]] = i;
+			indToClass[i] = classes[i];
 		}
 	}
 
@@ -71,21 +81,71 @@ public:
 			}
 			imageIndex.push_back(std::string(line));
 		}
+#if PASCALVOC_LOG
 		const uint32_t numTrainval = imageIndex.size();
 		std::cout << "numTrainval: " << numTrainval << std::endl;
 		for (uint32_t i = 0; i < numTrainval; i++) {
 			std::cout << imageIndex[i] << std::endl;
 		}
+#endif
 	}
 
-	void loadPascalAnnotation(const std::string& index, RoIDB& roidb) {
-		const std::string filename = this->dataPath + "/Annotations/" + index + ".xml";
+	void loadPascalAnnotation(const uint32_t index, RoIDB& roidb) {
+		const std::string filename = this->dataPath + "/Annotations/" + imageIndex[index] + ".xml";
 		Annotation annotation;
 		readAnnotation(filename, annotation);
 
-		roidb.image = this->dataPath + "/JPEGImages/" + index + this->imageExt;
+		//roidb.image = this->dataPath + "/JPEGImages/" + index + this->imageExt;
+		roidb.image = imagePathAt(index);
 		roidb.width = annotation.size.width;
 		roidb.height = annotation.size.height;
+
+
+
+
+
+
+		roidb.mat = cv::imread(roidb.image);
+#if TEST_MODE
+		roidb.mat.convertTo(roidb.mat, CV_32F);
+#else
+		Mat tempIm;
+		roidb.mat.convertTo(roidb.mat, CV_32FC3, 1.0f/255.0f);
+		roidb.mat.copyTo(tempIm);
+		float* tempImPtr = (float*)tempIm.data;
+#endif
+		float* imPtr = (float*)roidb.mat.data;
+
+		uint32_t rowUnit, colUnit;
+		for (uint32_t i = 0; i < roidb.mat.rows; i++) {
+			rowUnit = i * roidb.mat.cols * roidb.mat.channels();
+			for (uint32_t j = 0; j < roidb.mat.cols; j++) {
+				colUnit = j * roidb.mat.channels();
+#if TEST_MODE
+				for (uint32_t k = 0; k < channels; k++) {
+					// cv::Mat의 경우 RGB가 아닌 BGR로 데이터가 뒤집어져 있음.
+					//imPtr[rowUnit + colUnit + k] -= pixelMeans[channels-k-1];
+					// pixel means도 BGR로 뒤집어져 있음.
+					imPtr[rowUnit + colUnit + k] -= pixelMeans[k];
+				}
+#else
+				// imPtr: target, reordered as rgb
+				// tempImPtr: source, ordered as bgr
+				// pixelMeans: ordered as rgb
+				imPtr[rowUnit + colUnit + 0] = tempImPtr[rowUnit + colUnit + 2] - pixelMeans[0];
+				imPtr[rowUnit + colUnit + 1] = tempImPtr[rowUnit + colUnit + 1] - pixelMeans[1];
+				imPtr[rowUnit + colUnit + 2] = tempImPtr[rowUnit + colUnit + 0] - pixelMeans[2];
+#endif
+			}
+		}
+
+
+
+
+
+
+
+
 
 		const uint32_t numObjs = annotation.objects.size();
 
@@ -114,9 +174,11 @@ public:
 		roidb.max_classes = roidb.gt_classes;
 
 		// max_overlaps
-		roidb.print();
 		np_maxByAxis(roidb.gt_overlaps, roidb.max_overlaps);
+
+#if PASCALVOC_LOG
 		roidb.print();
+#endif
 
 		// XXX: gt_overlaps의 경우 sparse matrix로 변환될 필요가 있음.
 	}
@@ -158,13 +220,24 @@ public:
 				annotation.objects.push_back(object);
 			}
 		}
+#if PASCALVOC_LOG
 		annotation.print();
+#endif
 	}
 
 	uint32_t convertClassToInd(const std::string& cls) {
 		std::map<std::string, uint32_t>::iterator itr = classToInd.find(cls);
-		if(itr == classToInd.end()) {
+		if (itr == classToInd.end()) {
 			std::cout << "invalid class: " << cls << std::endl;
+			exit(1);
+		}
+		return itr->second;
+	}
+
+	std::string convertIndToClass(const uint32_t ind) {
+		std::map<uint32_t, std::string>::iterator itr = indToClass.find(ind);
+		if (itr == indToClass.end()) {
+			std::cout << "invalid class ind: " << ind << std::endl;
 			exit(1);
 		}
 		return itr->second;
@@ -178,10 +251,19 @@ public:
 		const uint32_t numImageIndex = this->imageIndex.size();
 		for (uint32_t i = 0; i < numImageIndex; i++) {
 			RoIDB roidb;
-			loadPascalAnnotation(imageIndex[i], roidb);
+			loadPascalAnnotation(i, roidb);
 			this->roidb.push_back(roidb);
 		}
 		// XXX: gtRoidb를 dump to file
+	}
+
+	std::string imagePathAt(const uint32_t index) {
+		return imagePathFromIndex(index);
+	}
+
+private:
+	std::string imagePathFromIndex(const uint32_t index) {
+		return this->dataPath + "/JPEGImages/" + imageIndex[index] + this->imageExt;
 	}
 
 	//IMDB imdb;
@@ -190,12 +272,18 @@ public:
 	std::string devkitPath;
 	std::string dataPath;
 	std::map<std::string, uint32_t> classToInd;
+	std::map<uint32_t, std::string> indToClass;
 	std::string imageExt;
 	//std::vector<std::string> imageIndex;
 	std::vector<uint32_t> widths;
 
 	const uint32_t numClasses = 21;
 	std::vector<std::string> classes;
+
+
+	std::vector<cv::Mat> matList;
+
+	std::vector<float> pixelMeans;
 };
 
 

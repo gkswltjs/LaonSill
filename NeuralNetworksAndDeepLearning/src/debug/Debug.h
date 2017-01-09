@@ -20,21 +20,29 @@
 #include "FullyConnectedLayer.h"
 #include "InputLayer.h"
 #include "RoIInputLayer.h"
+#include "RoITestInputLayer.h"
 #include "LayerConfig.h"
 #include "LRNLayer.h"
+#include "ReshapeLayer.h"
 #include "PoolingLayer.h"
 #include "SoftmaxLayer.h"
+#include "SoftmaxWithLossLayer.h"
+#include "SmoothL1LossLayer.h"
 #include "SplitLayer.h"
 #include "AnchorTargetLayer.h"
+#include "ProposalLayer.h"
+#include "ProposalTargetLayer.h"
+#include "RoIPoolingLayer.h"
 #include "NetworkConfig.h"
 #include "Pooling.h"
+#include "FrcnnTestOutputLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
 
 
 
-
+//#define OUTPUTLAYER
 
 
 
@@ -128,10 +136,11 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 			->layer((new typename InputLayer<Dtype>::Builder())
 					->id(0)
 					->name("inputLayer")
-					->outputs({"data", "label"})
 					->source("/data/train_pack/mnist")
 					->sourceType("ImagePack")
 					//->sourceType("Mock")
+					->mean({0.13066047740})
+					->outputs({"data", "label"})
 					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
@@ -151,190 +160,54 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->poolingType(Pooling<Dtype>::Max)
 					->inputs({"conv1/3x3_s2"})
 					->outputs({"pool1/3x3_s1"}))
-			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
 					->id(3)
-					->name("softmaxLayer")
+					->name("pool1/3x3_s1_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"pool1/3x3_s1"})
+					->outputs({"pool1/3x3_s1_reshape"}))
+
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(4)
+					->name("fc1")
 					->nOut(10)
 					->pDropout(0.4)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.0)
-					->inputs({"pool1/3x3_s1", "label"})
-					->outputs({"prob"}))
-			->build();
-
-	return layersConfig;
-}
-
-
-
-/*
-template <typename Dtype>
-LayersConfig<Dtype>* createFrcnnLayersConfig() {
-	LayersConfig<Dtype>* layersConfig =
-			(new typename LayersConfig<Dtype>::Builder())
-			->layer((new typename RoIInputLayer<Dtype>::Builder())
-					->id(0)
-					->name("input-data")
-					->numClasses(21)
-					->imsPerBatch(1)
-					->trainBatchSize(128)
-					->trainMaxSize(1000)
-					->trainFgFraction(0.25f)
-					->trainScales({500})
-					->pixelMeans({102.9801f, 115.9465f, 122.7717f})
-					->outputs({"data", "im_info", "gt_boxes"})
-					)
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(1)
-					->name("conv1")
-					->filterDim(7, 7, 3, 96, 0, 2)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					->inputs({"data"})
-					->outputs({"conv1"}))
-			->layer((new typename PoolingLayer<Dtype>::Builder())
-					->id(2)
-					->name("pool1")
-					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
-					->inputs({"conv1"})
-					->outputs({"pool1"}))
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(3)
-					->name("conv2")
-					->filterDim(5, 5, 96, 256, 1, 2)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					->inputs({"pool1"})
-					->outputs({"conv2"}))
-			->layer((new typename PoolingLayer<Dtype>::Builder())
-					->id(4)
-					->name("pool2")
-					//->poolDim(3, 3, 0, 2)
-					->poolDim(3, 3, 1, 2)
-					->poolingType(Pooling<Dtype>::Max)
-					->inputs({"conv2"})
-					->outputs({"pool2"}))
-			->layer((new typename ConvLayer<Dtype>::Builder())
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"pool1/3x3_s1_reshape"})
+					->outputs({"fc1"}))
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
 					->id(5)
-					->name("conv3")
-					->filterDim(3, 3, 256, 512, 1, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					->inputs({"pool2"})
-					->outputs({"conv3"}))
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(6)
-					->name("conv4")
-					->filterDim(3, 3, 512, 512, 1, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					->inputs({"conv3"})
-					->outputs({"conv4"}))
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(7)
-					->name("conv5")
-					->filterDim(3, 3, 512, 512, 1, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->activationType(Activation<Dtype>::ReLU)
-					->inputs({"conv4"})
-					->outputs({"conv5"}))
+					->name("softmaxWithLoss")
+					->inputs({"fc1", "label"})
+					->outputs({"prob"}))
 
-			//===RPN===
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(8)
-					->name("rpn_conv/3x3")
-					->filterDim(3, 3, 512, 256, 1, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Gaussian, 0.01)
-					->biasFiller(ParamFillerType::Constant, 0.0)
-					->activationType(Activation<Dtype>::ReLU)
-					->inputs({"conv5"})
-					->outputs({"rpn/output"}))
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(9)
-					->name("rpn_cls_score")
-					->filterDim(1, 1, 256, 18, 0, 1)	// 2(bg/fg) * 9(anchors)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Gaussian, 0.01)
-					->biasFiller(ParamFillerType::Constant, 0.0)
-					->activationType(Activation<Dtype>::NoActivation)
-					->inputs({"rpn/output"})
-					->outputs({"rpn_cls_score"}))
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(10)
-					->name("rpn_bbox_pred")
-					->filterDim(1, 1, 256, 36, 0, 1)	// 4 * 9(anchors)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Gaussian, 0.01)
-					->biasFiller(ParamFillerType::Constant, 0.0)
-					->activationType(Activation<Dtype>::NoActivation)
-					->inputs({"rpn/output"})
-					->outputs({"rpn_bbox_pred"}))
-			// rpn_cls_score_reshape 레이어가 먼저 등장해야 함. 현재 생략
-			//->layer((new typename ReshapeLayer<Dtype>::Builder())
-			//		->id(11)
-			//		->name("rpn_cls_score_reshape")
-			//		->shape({0, 2, -1, 0})
-			//		->inputs({"rpn_cls_score"})
-			//		->outputs({"rpn_cls_score_reshape"}))
-			->layer((new typename AnchorTargetLayer<Dtype>::Builder())
-					->id(12)
-					->name("rpn-data")
-					->featStride(16)
-					->inputs({"rpn_cls_score", "gt_boxes", "im_info", "data"})
-					->outputs({"rpn_labels", "rpn_bbox_targets", "rpn_inside_weights", "rpn_outside_weights"}))
-			->layer((new typename SoftmaxLayer<Dtype>::Builder())
-					->id(100)
-					->name("rpn_loss_cls")
-					->nOut(1)
-					->pDropout(0.4)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.0)
-					->inputs({"rpn_cls_score_reshape", "rpn_labels"})
-					->outputs({"rpn_cls_loss"}))
+
 			->build();
-
 
 	return layersConfig;
 }
-*/
-
 
 
 template <typename Dtype>
 LayersConfig<Dtype>* createCNNDoubleLayersConfig() {
-	const float bias_const = 0.2;
+	const float bias_const = 0.1;
 
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
 					->id(0)
 					->name("inputLayer")
-					//->nextLayerIndices({1})
-					)
+					->source("/data/train_pack/mnist")
+					->sourceType("ImagePack")
+					->mean({0.13066047740})
+					->outputs({"data", "labels"}))
+
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
 					->name("convLayer1")
@@ -344,17 +217,17 @@ LayersConfig<Dtype>* createCNNDoubleLayersConfig() {
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, bias_const)
 					->activationType(Activation<Dtype>::ReLU)
-					//->prevLayerIndices({0})
-					//->nextLayerIndices({2})
-					)
+					->inputs({"data"})
+					->outputs({"convLayer1"}))
+
 			->layer((new typename PoolingLayer<Dtype>::Builder())
 					->id(2)
 					->name("poolingLayer1")
 					->poolDim(3, 3, 1, 2)
 					->poolingType(Pooling<Dtype>::Max)
-					//->prevLayerIndices({1})
-					//->nextLayerIndices({3})
-					)
+					->inputs({"convLayer1"})
+					->outputs({"poolingLayer1"}))
+
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(3)
 					->name("convLayer2")
@@ -364,45 +237,1999 @@ LayersConfig<Dtype>* createCNNDoubleLayersConfig() {
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, bias_const)
 					->activationType(Activation<Dtype>::ReLU)
-					//->prevLayerIndices({2})
-					//->nextLayerIndices({4})
-					)
+					->inputs({"poolingLayer1"})
+					->outputs({"convLayer2"}))
+
 			->layer((new typename PoolingLayer<Dtype>::Builder())
 					->id(4)
 					->name("poolingLayer2")
 					->poolDim(3, 3, 1, 2)
 					->poolingType(Pooling<Dtype>::Max)
-					//->prevLayerIndices({3})
-					//->nextLayerIndices({5})
-					)
-			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->inputs({"convLayer2"})
+					->outputs({"poolingLayer2"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
 					->id(5)
-					->name("fullyConnectedLayer1")
-					->nOut(100)
-					->pDropout(0.4)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, bias_const)
-					->activationType(Activation<Dtype>::Type::ReLU)
-					//->prevLayerIndices({4})
-					//->nextLayerIndices({6})
-					)
-			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+					->name("poolingLayer2_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"poolingLayer2"})
+					->outputs({"poolingLayer2_reshape"}))
+
+
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
 					->id(6)
-					->name("softmaxLayer")
-					->nOut(10)
+					->name("fullyConnectedLayer1")
+					->nOut(4096)
 					->pDropout(0.4)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->weightFiller(ParamFillerType::Constant, 0.0)
 					->biasFiller(ParamFillerType::Constant, 0.0)
-					//->prevLayerIndices({5})
-					)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"poolingLayer2_reshape"})
+					->outputs({"fullyConnectedLayer1"}))
+
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(7)
+					->name("softmaxLayer")
+					->inputs({"fullyConnectedLayer1", "labels"})
+					->outputs({"prob"}))
 			->build();
 
 	return layersConfig;
 }
+
+
+
+
+
+
+template <typename Dtype>
+LayersConfig<Dtype>* createVggCnnM1024LayersConfig() {
+	const float biasConst = 0.2;
+
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename InputLayer<Dtype>::Builder())
+					->id(0)
+					->name("input")
+					->source("/data/train_pack/ILSVRC2012/save/10000")
+					->sourceType("ImagePack")
+					->numTrainPack(40)
+					->numTestPack(1)
+					->mean({0.47684615850, 0.45469805598, 0.41394191980})
+					->outputs({"data", "labels"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("conv1")
+					->filterDim(7, 7, 3, 96, 0, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, biasConst)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(2)
+					->name("norm1")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv1"})
+					->outputs({"norm1"})
+					)
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(3)
+					->name("pool1")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm1"})
+					->outputs({"pool1"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(4)
+					->name("conv2")
+					->filterDim(5, 5, 96, 256, 1, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, biasConst)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool1"})
+					->outputs({"conv2"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(5)
+					->name("norm2")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv2"})
+					->outputs({"norm2"})
+					)
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(6)
+					->name("pool2")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm2"})
+					->outputs({"pool2"}))
+
+
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(7)
+					->name("conv3")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, biasConst)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool2"})
+					->outputs({"conv3"}))
+
+
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(8)
+					->name("conv4")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, biasConst)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv3"})
+					->outputs({"conv4"}))
+
+
+
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(9)
+					->name("conv5")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, biasConst)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv4"})
+					->outputs({"conv5"}))
+
+
+
+
+
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(10)
+					->name("pool5")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"conv5"})
+					->outputs({"pool5"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(11)
+					->name("pool5_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"pool5"})
+					->outputs({"pool5_reshape"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(12)
+					->name("fc6")
+					->nOut(4096)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, biasConst)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"pool5_reshape"})		//	-> original
+					->outputs({"fc6"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(13)
+					->name("fc7")
+					->nOut(1024)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, biasConst)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"fc6"})
+					->outputs({"fc7"}))
+
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(14)
+					->name("fc8")
+					->nOut(1000)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Constant, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"fc8"}))
+
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(15)
+					->name("prob")
+					->inputs({"fc8", "labels"})
+					->outputs({"prob"}))
+			->build();
+
+
+return layersConfig;
+
+
+}
+
+
+
+
+template <typename Dtype>
+LayersConfig<Dtype>* createFrcnnTrainOneShotLayersConfig() {
+	//const float rpnWeightLr = 0.0f;
+	//const float rpnBiasLr = 0.0f;
+	//const float rpnWeightWd = 0.0f;
+	//const float rpnBiasWd = 0.0f;
+
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename RoIInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("input-data")
+					->numClasses(21)
+					//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+					->pixelMeans({0.4815f, 0.4547f, 0.4038f})		// RGB
+					->outputs({"data", "im_info", "gt_boxes"}))
+
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("conv1:rpn")
+					->filterDim(7, 7, 3, 96, 0, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1_rpn"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(2)
+					->name("norm1:rpn")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv1_rpn"})
+					->outputs({"norm1_rpn"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(3)
+					->name("pool1:rpn")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm1_rpn"})
+					->outputs({"pool1_rpn"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(4)
+					->name("conv2:rpn")
+					->filterDim(5, 5, 96, 256, 1, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool1_rpn"})
+					->outputs({"conv2_rpn"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(5)
+					->name("norm2:rpn")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv2_rpn"})
+					->outputs({"norm2_rpn"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(6)
+					->name("pool2:rpn")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm2_rpn"})
+					->outputs({"pool2_rpn"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(7)
+					->name("conv3:rpn")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool2_rpn"})
+					->outputs({"conv3_rpn"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(8)
+					->name("conv4:rpn")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv3_rpn"})
+					->outputs({"conv4_rpn"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(9)
+					->name("conv5:rpn")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv4_rpn"})
+					->outputs({"conv5_rpn"}))
+
+
+
+
+			//===RPN===
+			// roi-data에서 학습 target 계산,
+			// 각 cell별 cls, pred 학습,
+			//================================================
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(10)
+					->name("rpn_conv/3x3")
+					->filterDim(3, 3, 512, 256, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv5_rpn"})
+					->outputs({"rpn/output"}))
+
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 fg, bg score가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(11)
+					->name("rpn_cls_score")
+					->filterDim(1, 1, 256, 18, 0, 1)	// 2(bg/fg) * 9(anchors)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_cls_score"}))
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 x, y, w, h pred가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(12)
+					->name("rpn_bbox_pred")
+					->filterDim(1, 1, 256, 36, 0, 1)	// 4 * 9(anchors)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_bbox_pred"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(13)
+					->name("rpn_cls_score_reshape")
+					->shape({0, 2, -1, 0})
+					->inputs({"rpn_cls_score"})
+					->outputs({"rpn_cls_score_reshape"}))
+
+			// 실제 input data에 대한 cls score, bbox pred를 계산, loss를 계산할 때 쓸 데이터를 생성한다.
+			// cls score target, bbox pred target 값
+			->layer((new typename AnchorTargetLayer<Dtype>::Builder())
+					->id(14)
+					->name("rpn-data")
+					->featStride(16)
+					->inputs({"rpn_cls_score", "gt_boxes", "im_info", "data"})
+					->outputs({"rpn_labels", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"}))
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(15)
+					->name("rpn_loss_cls")
+					->propDown({true, false})
+					->lossWeight(1.0f)
+					->ignoreLabel(-1)
+					->normalize(true)
+					->softmaxAxis(1)
+					->inputs({"rpn_cls_score_reshape", "rpn_labels"})
+					->outputs({"rpn_cls_loss"}))
+			->layer((new typename SmoothL1LossLayer<Dtype>::Builder())
+					->id(16)
+					->name("rpn_loss_bbox")
+					// XXX: loss weight test
+					//->lossWeight(1.0f)
+					->lossWeight(1.0f)
+					->sigma(3.0f)
+					->inputs({"rpn_bbox_pred", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"})
+					->outputs({"rpn_loss_bbox"}))
+
+
+			//===RoI Proposal===
+			// cls score로 softmax
+			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+					->id(17)
+					->name("rpn_cls_prob")
+					->softmaxAxis(1)
+					->inputs({"rpn_cls_score_reshape"})
+					->outputs({"rpn_cls_prob"}))
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(18)
+					->name("rpn_cls_prob_reshape")
+					->shape({0, 18, -1, 0})
+					->inputs({"rpn_cls_prob"})
+					->outputs({"rpn_cls_prob_reshape"}))
+			//
+			->layer((new typename ProposalLayer<Dtype>::Builder())
+					->id(19)
+					->name("proposal")
+					->featStride(16)
+					->inputs({"rpn_cls_prob_reshape", "rpn_bbox_pred", "im_info"})
+					->outputs({"rpn_rois"}))
+			->layer((new typename ProposalTargetLayer<Dtype>::Builder())
+					->id(20)
+					->name("roi-data")
+					->numClasses(21)
+					->inputs({"rpn_rois", "gt_boxes"})
+					->outputs({"rois", "labels", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"}))
+
+
+
+
+
+
+
+
+
+
+
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(21)
+					->name("conv1:detect")
+					->filterDim(7, 7, 3, 96, 0, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1_detect"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(22)
+					->name("norm1:detect")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv1_detect"})
+					->outputs({"norm1_detect"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(23)
+					->name("pool1:detect")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm1_detect"})
+					->outputs({"pool1_detect"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(24)
+					->name("conv2:detect")
+					->filterDim(5, 5, 96, 256, 1, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool1_detect"})
+					->outputs({"conv2_detect"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(25)
+					->name("norm2:detect")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv2_detect"})
+					->outputs({"norm2_detect"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(26)
+					->name("pool2:detect")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm2_detect"})
+					->outputs({"pool2_detect"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(27)
+					->name("conv3:detect")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool2_detect"})
+					->outputs({"conv3_detect"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(28)
+					->name("conv4:detect")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv3_detect"})
+					->outputs({"conv4_detect"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(29)
+					->name("conv5:detect")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv4_detect"})
+					->outputs({"conv5_detect"}))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			//===RCNN===
+			->layer((new typename RoIPoolingLayer<Dtype>::Builder())
+					->id(31)
+					->name("roi_pool5")
+					//->pooledW(6)
+					//->pooledH(6)
+					->pooledW(5)
+					->pooledH(5)
+					->spatialScale(0.0625f)
+					->inputs({"conv5_detect", "rois"})
+					->outputs({"pool5"}))
+
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(32)
+					->name("pool5_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"pool5"})
+					->outputs({"pool5_reshape"}))
+
+
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(33)
+					->name("fc6")
+					->nOut(4096)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"pool5_reshape"})
+					->outputs({"fc6"}))
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(34)
+					->name("fc7")
+					->nOut(1024)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"fc6"})
+					->outputs({"fc7"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(35)
+					->name("cls_score")
+					->nOut(21)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"cls_score"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(36)
+					->name("bbox_pred")
+					->nOut(21*4)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"bbox_pred"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(38)
+					->name("bbox_pred_reshape")
+					->shape({1, 1, -1, 21*4})
+					->inputs({"bbox_pred"})
+					->outputs({"bbox_pred_reshape"}))
+
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(39)
+					->name("loss_cls")
+					->propDown({true, false})
+					->lossWeight(1.0f)
+					->inputs({"cls_score", "labels"})
+					->outputs({"loss_cls"}))
+
+			->layer((new typename SmoothL1LossLayer<Dtype>::Builder())
+					->id(30)
+					->name("loss_bbox")
+					->lossWeight(1.0f)
+					->firstAxis(2)
+					->inputs({"bbox_pred_reshape", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"})
+					->outputs({"loss_bbox"}))
+
+
+			->build();
+
+
+
+	return layersConfig;
+}
+
+
+template <typename Dtype>
+LayersConfig<Dtype>* createFrcnnTestOneShotLayersConfig() {
+	//const float rpnWeightLr = 0.0f;
+	//const float rpnBiasLr = 0.0f;
+	//const float rpnWeightWd = 0.0f;
+	//const float rpnBiasWd = 0.0f;
+
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+
+			->layer((new typename RoITestInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("input-data")
+					->numClasses(21)
+					//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+					->pixelMeans({0.4815f, 0.4547f, 0.4038f})			// RGB
+					->outputs({"data", "im_info"}))
+
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("conv1:rpn")
+					->filterDim(7, 7, 3, 96, 0, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1_rpn"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(2)
+					->name("norm1:rpn")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv1_rpn"})
+					->outputs({"norm1_rpn"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(3)
+					->name("pool1:rpn")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm1_rpn"})
+					->outputs({"pool1_rpn"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(4)
+					->name("conv2:rpn")
+					->filterDim(5, 5, 96, 256, 1, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool1_rpn"})
+					->outputs({"conv2_rpn"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(5)
+					->name("norm2:rpn")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv2_rpn"})
+					->outputs({"norm2_rpn"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(6)
+					->name("pool2:rpn")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm2_rpn"})
+					->outputs({"pool2_rpn"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(7)
+					->name("conv3:rpn")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool2_rpn"})
+					->outputs({"conv3_rpn"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(8)
+					->name("conv4:rpn")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv3_rpn"})
+					->outputs({"conv4_rpn"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(9)
+					->name("conv5:rpn")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv4_rpn"})
+					->outputs({"conv5_rpn"}))
+
+
+
+
+			//===RPN===
+			// roi-data에서 학습 target 계산,
+			// 각 cell별 cls, pred 학습,
+			//================================================
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(10)
+					->name("rpn_conv/3x3")
+					->filterDim(3, 3, 512, 256, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv5_rpn"})
+					->outputs({"rpn/output"}))
+
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 fg, bg score가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(11)
+					->name("rpn_cls_score")
+					->filterDim(1, 1, 256, 18, 0, 1)	// 2(bg/fg) * 9(anchors)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_cls_score"}))
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 x, y, w, h pred가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(12)
+					->name("rpn_bbox_pred")
+					->filterDim(1, 1, 256, 36, 0, 1)	// 4 * 9(anchors)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_bbox_pred"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(13)
+					->name("rpn_cls_score_reshape")
+					->shape({0, 2, -1, 0})
+					->inputs({"rpn_cls_score"})
+					->outputs({"rpn_cls_score_reshape"}))
+
+
+
+			//===RoI Proposal===
+			// cls score로 softmax
+			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+					->id(17)
+					->name("rpn_cls_prob")
+					->softmaxAxis(1)
+					->inputs({"rpn_cls_score_reshape"})
+					->outputs({"rpn_cls_prob"}))
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(18)
+					->name("rpn_cls_prob_reshape")
+					->shape({0, 18, -1, 0})
+					->inputs({"rpn_cls_prob"})
+					->outputs({"rpn_cls_prob_reshape"}))
+			//
+			->layer((new typename ProposalLayer<Dtype>::Builder())
+					->id(19)
+					->name("proposal")
+					->featStride(16)
+					->inputs({"rpn_cls_prob_reshape", "rpn_bbox_pred", "im_info"})
+					->outputs({"rois"}))
+
+
+
+
+
+
+
+
+
+
+
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(21)
+					->name("conv1:detect")
+					->filterDim(7, 7, 3, 96, 0, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1_detect"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(22)
+					->name("norm1:detect")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv1_detect"})
+					->outputs({"norm1_detect"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(23)
+					->name("pool1:detect")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm1_detect"})
+					->outputs({"pool1_detect"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(24)
+					->name("conv2:detect")
+					->filterDim(5, 5, 96, 256, 1, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool1_detect"})
+					->outputs({"conv2_detect"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(25)
+					->name("norm2:detect")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv2_detect"})
+					->outputs({"norm2_detect"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(26)
+					->name("pool2:detect")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm2_detect"})
+					->outputs({"pool2_detect"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(27)
+					->name("conv3:detect")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool2_detect"})
+					->outputs({"conv3_detect"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(28)
+					->name("conv4:detect")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv3_detect"})
+					->outputs({"conv4_detect"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(29)
+					->name("conv5:detect")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv4_detect"})
+					->outputs({"conv5_detect"}))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			//===RCNN===
+			->layer((new typename RoIPoolingLayer<Dtype>::Builder())
+					->id(31)
+					->name("roi_pool5")
+					//->pooledW(6)
+					//->pooledH(6)
+					->pooledW(5)
+					->pooledH(5)
+					->spatialScale(0.0625f)
+					->inputs({"conv5_detect", "rois"})
+					->outputs({"pool5"}))
+
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(32)
+					->name("pool5_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"pool5"})
+					->outputs({"pool5_reshape"}))
+
+
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(33)
+					->name("fc6")
+					->nOut(4096)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"pool5_reshape"})
+					->outputs({"fc6"}))
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(34)
+					->name("fc7")
+					->nOut(1024)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"fc6"})
+					->outputs({"fc7"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(35)
+					->name("cls_score")
+					->nOut(21)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"cls_score"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(36)
+					->name("bbox_pred")
+					->nOut(21*4)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"bbox_pred"}))
+
+
+			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+					->id(37)
+					->name("cls_prob")
+					//->softmaxAxis(1)
+					->inputs({"cls_score"})
+					->outputs({"cls_prob"}))
+
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(38)
+					->name("bbox_pred_reshape")
+					->shape({1, 1, -1, 21*4})
+					->inputs({"bbox_pred"})
+					->outputs({"bbox_pred_reshape"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(39)
+					->name("cls_prob_reshape")
+					->shape({1, 1, -1, 21})
+					->inputs({"cls_prob"})
+					->outputs({"cls_prob_reshape"}))
+
+			->layer((new typename FrcnnTestOutputLayer<Dtype>::Builder())
+					->id(40)
+					->name("test_output")
+					//->maxPerImage(5)
+					->thresh(0.9)
+					->inputs({"rois", "im_info", "cls_prob_reshape", "bbox_pred_reshape"}))
+
+
+
+
+			->build();
+
+
+
+	return layersConfig;
+}
+
+
+
+
+
+/*
+template <typename Dtype>
+LayersConfig<Dtype>* createFrcnnTrainLayersConfig() {
+	const float rpnWeightLr = 0.0f;
+	const float rpnBiasLr = 0.0f;
+	const float rpnWeightWd = 0.0f;
+	const float rpnBiasWd = 0.0f;
+
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename RoIInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("input-data")
+					->numClasses(21)
+					//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+					->pixelMeans({0.4815f, 0.4547f, 0.4038f})		// RGB
+					->outputs({"data", "im_info", "gt_boxes"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("conv1")
+					->filterDim(7, 7, 3, 96, 0, 2)
+					->weightUpdateParam(0, 0)
+					->biasUpdateParam(0, 0)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(2)
+					->name("norm1")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv1"})
+					->outputs({"norm1"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(3)
+					->name("pool1")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm1"})
+					->outputs({"pool1"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(4)
+					->name("conv2")
+					->filterDim(5, 5, 96, 256, 1, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool1"})
+					->outputs({"conv2"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(5)
+					->name("norm2")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv2"})
+					->outputs({"norm2"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(6)
+					->name("pool2")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm2"})
+					->outputs({"pool2"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(7)
+					->name("conv3")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool2"})
+					->outputs({"conv3"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(8)
+					->name("conv4")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv3"})
+					->outputs({"conv4"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(9)
+					->name("conv5")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv4"})
+					->outputs({"conv5"}))
+
+			//===RPN===
+			// roi-data에서 학습 target 계산,
+			// 각 cell별 cls, pred 학습,
+			//================================================
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(10)
+					->name("rpn_conv/3x3")
+					->filterDim(3, 3, 512, 256, 1, 1)
+					->weightUpdateParam(rpnWeightLr, rpnWeightWd)
+					->biasUpdateParam(rpnBiasLr, rpnBiasWd)
+					->propDown({false})
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv5"})
+					->outputs({"rpn/output"}))
+
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 fg, bg score가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(11)
+					->name("rpn_cls_score")
+					->filterDim(1, 1, 256, 18, 0, 1)	// 2(bg/fg) * 9(anchors)
+					->weightUpdateParam(rpnWeightLr, rpnWeightWd)
+					->biasUpdateParam(rpnBiasLr, rpnBiasWd)
+					->propDown({false})
+
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_cls_score"}))
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 x, y, w, h pred가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(12)
+					->name("rpn_bbox_pred")
+					->filterDim(1, 1, 256, 36, 0, 1)	// 4 * 9(anchors)
+					->weightUpdateParam(rpnWeightLr, rpnWeightWd)
+					->biasUpdateParam(rpnBiasLr, rpnBiasWd)
+					->propDown({false})
+
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_bbox_pred"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(13)
+					->name("rpn_cls_score_reshape")
+					->shape({0, 2, -1, 0})
+					->inputs({"rpn_cls_score"})
+					->outputs({"rpn_cls_score_reshape"}))
+
+			// 실제 input data에 대한 cls score, bbox pred를 계산, loss를 계산할 때 쓸 데이터를 생성한다.
+			// cls score target, bbox pred target 값
+			->layer((new typename AnchorTargetLayer<Dtype>::Builder())
+					->id(14)
+					->name("rpn-data")
+					->featStride(16)
+					->inputs({"rpn_cls_score", "gt_boxes", "im_info", "data"})
+					->outputs({"rpn_labels", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"}))
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(15)
+					->name("rpn_loss_cls")
+					->propDown({true, false})
+					->lossWeight(1.0f)
+					->ignoreLabel(-1)
+					->normalize(true)
+					->softmaxAxis(1)
+					->inputs({"rpn_cls_score_reshape", "rpn_labels"})
+					->outputs({"rpn_cls_loss"}))
+			->layer((new typename SmoothL1LossLayer<Dtype>::Builder())
+					->id(16)
+					->name("rpn_loss_bbox")
+					->lossWeight(1.0f)
+					->sigma(3.0f)
+					->inputs({"rpn_bbox_pred", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"})
+					->outputs({"rpn_loss_bbox"}))
+
+			//===RoI Proposal===
+			// cls score로 softmax
+			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+					->id(17)
+					->name("rpn_cls_prob")
+					->softmaxAxis(1)
+					->inputs({"rpn_cls_score_reshape"})
+					->outputs({"rpn_cls_prob"}))
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(18)
+					->name("rpn_cls_prob_reshape")
+					->shape({0, 18, -1, 0})
+					->inputs({"rpn_cls_prob"})
+					->outputs({"rpn_cls_prob_reshape"}))
+			//
+			->layer((new typename ProposalLayer<Dtype>::Builder())
+					->id(19)
+					->name("proposal")
+					->featStride(16)
+					->inputs({"rpn_cls_prob_reshape", "rpn_bbox_pred", "im_info"})
+					->outputs({"rpn_rois"}))
+			->layer((new typename ProposalTargetLayer<Dtype>::Builder())
+					->id(20)
+					->name("roi-data")
+					->numClasses(21)
+					->inputs({"rpn_rois", "gt_boxes"})
+					->outputs({"rois", "labels", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"}))
+
+			//===RCNN===
+			->layer((new typename RoIPoolingLayer<Dtype>::Builder())
+					->id(21)
+					->name("roi_pool5")
+					//->pooledW(6)
+					//->pooledH(6)
+					->pooledW(5)
+					->pooledH(5)
+					->spatialScale(0.0625f)
+					->inputs({"conv5", "rois"})
+					->outputs({"pool5"}))
+
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(22)
+					->name("pool5_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"pool5"})
+					->outputs({"pool5_reshape"}))
+
+
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(23)
+					->name("fc6")
+					->nOut(4096)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"pool5_reshape"})
+					->outputs({"fc6"}))
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(24)
+					->name("fc7")
+					->nOut(1024)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"fc6"})
+					->outputs({"fc7"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(25)
+					->name("cls_score")
+					->nOut(21)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"cls_score"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(26)
+					->name("bbox_pred")
+					->nOut(21*4)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"bbox_pred"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(28)
+					->name("bbox_pred_reshape")
+					->shape({1, 1, -1, 21*4})
+					->inputs({"bbox_pred"})
+					->outputs({"bbox_pred_reshape"}))
+
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(29)
+					->name("loss_cls")
+					->propDown({true, false})
+					->lossWeight(1.0f)
+					->inputs({"cls_score", "labels"})
+					->outputs({"loss_cls"}))
+
+			->layer((new typename SmoothL1LossLayer<Dtype>::Builder())
+					->id(30)
+					->name("loss_bbox")
+					->lossWeight(1.0f)
+					->firstAxis(2)
+					->inputs({"bbox_pred_reshape", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"})
+					->outputs({"loss_bbox"}))
+			->build();
+
+
+	return layersConfig;
+}
+*/
+
+
+template <typename Dtype>
+LayersConfig<Dtype>* createFrcnnTestLayersConfig() {
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename RoITestInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("input-data")
+					->numClasses(21)
+					//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+					->pixelMeans({0.4815f, 0.4547f, 0.4038f})			// RGB
+					->outputs({"data", "im_info"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("conv1")
+					->filterDim(7, 7, 3, 96, 0, 2)
+					->weightUpdateParam(0, 0)
+					->biasUpdateParam(0, 0)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(2)
+					->name("norm1")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv1"})
+					->outputs({"norm1"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(3)
+					->name("pool1")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm1"})
+					->outputs({"pool1"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(4)
+					->name("conv2")
+					->filterDim(5, 5, 96, 256, 1, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool1"})
+					->outputs({"conv2"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(5)
+					->name("norm2")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv2"})
+					->outputs({"norm2"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(6)
+					->name("pool2")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm2"})
+					->outputs({"pool2"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(7)
+					->name("conv3")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool2"})
+					->outputs({"conv3"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(8)
+					->name("conv4")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv3"})
+					->outputs({"conv4"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(9)
+					->name("conv5")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv4"})
+					->outputs({"conv5"}))
+
+			//===RPN===
+			// roi-data에서 학습 target 계산,
+			// 각 cell별 cls, pred 학습,
+			//================================================
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(10)
+					->name("rpn_conv/3x3")
+					->filterDim(3, 3, 512, 256, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv5"})
+					->outputs({"rpn/output"}))
+
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 fg, bg score가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(11)
+					->name("rpn_cls_score")
+					->filterDim(1, 1, 256, 18, 0, 1)	// 2(bg/fg) * 9(anchors)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_cls_score"}))
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 x, y, w, h pred가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(12)
+					->name("rpn_bbox_pred")
+					->filterDim(1, 1, 256, 36, 0, 1)	// 4 * 9(anchors)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_bbox_pred"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(13)
+					->name("rpn_cls_score_reshape")
+					->shape({0, 2, -1, 0})
+					->inputs({"rpn_cls_score"})
+					->outputs({"rpn_cls_score_reshape"}))
+
+
+			//===RoI Proposal===
+			// cls score로 softmax
+			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+					->id(17)
+					->name("rpn_cls_prob")
+					->softmaxAxis(1)
+					->inputs({"rpn_cls_score_reshape"})
+					->outputs({"rpn_cls_prob"}))
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(18)
+					->name("rpn_cls_prob_reshape")
+					->shape({0, 18, -1, 0})
+					->inputs({"rpn_cls_prob"})
+					->outputs({"rpn_cls_prob_reshape"}))
+			//
+			->layer((new typename ProposalLayer<Dtype>::Builder())
+					->id(19)
+					->name("proposal")
+					->featStride(16)
+					->inputs({"rpn_cls_prob_reshape", "rpn_bbox_pred", "im_info"})
+					->outputs({"rois"}))
+
+			//===RCNN===
+			->layer((new typename RoIPoolingLayer<Dtype>::Builder())
+					->id(21)
+					->name("roi_pool5")
+					//->pooledW(6)
+					//->pooledH(6)
+					->pooledW(5)
+					->pooledH(5)
+					->spatialScale(0.0625f)
+					->inputs({"conv5", "rois"})
+					->outputs({"pool5"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(22)
+					->name("pool5_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"pool5"})
+					->outputs({"pool5_reshape"}))
+
+
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(23)
+					->name("fc6")
+					->nOut(4096)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"pool5_reshape"})
+					->outputs({"fc6"}))
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(24)
+					->name("fc7")
+					->nOut(1024)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"fc6"})
+					->outputs({"fc7"}))
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(25)
+					->name("cls_score")
+					->nOut(21)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"cls_score"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(26)
+					->name("bbox_pred")
+					->nOut(21*4)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"bbox_pred"}))
+
+			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+					->id(27)
+					->name("cls_prob")
+					//->softmaxAxis(1)
+					->inputs({"cls_score"})
+					->outputs({"cls_prob"}))
+
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(28)
+					->name("bbox_pred_reshape")
+					->shape({1, 1, -1, 21*4})
+					->inputs({"bbox_pred"})
+					->outputs({"bbox_pred_reshape"}))
+
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(29)
+					->name("cls_prob_reshape")
+					->shape({1, 1, -1, 21})
+					->inputs({"cls_prob"})
+					->outputs({"cls_prob_reshape"}))
+
+			->layer((new typename FrcnnTestOutputLayer<Dtype>::Builder())
+					->id(30)
+					->name("test_output")
+					//->maxPerImage(5)
+					->thresh(0.7)
+					->inputs({"rois", "im_info", "cls_prob_reshape", "bbox_pred_reshape"}))
+
+			->build();
+
+
+	return layersConfig;
+}
+
+
+/*
+template <typename Dtype>
+LayersConfig<Dtype>* createFrcnnStage1RpnTrainLayersConfig() {
+
+	const float weightLr = 0.0f;
+	const float weightWd = 0.0f;
+	const float biasLr = 0.0f;
+	const float biasWd = 0.0f;
+	const bool propDown = false;
+
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename RoIInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("input-data")
+					->numClasses(21)
+					//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+					->pixelMeans({0.4815f, 0.4547f, 0.4038f})		// RGB
+					->outputs({"data", "im_info", "gt_boxes"}))
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("conv1")
+					->filterDim(7, 7, 3, 96, 0, 2)
+					->weightUpdateParam(0, 0)
+					->biasUpdateParam(0, 0)
+					->activationType(Activation<Dtype>::ReLU)
+					->propDown({propDown})
+					->inputs({"data"})
+					->outputs({"conv1"}))
+
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(2)
+					->name("norm1")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->propDown({propDown})
+					->inputs({"conv1"})
+					->outputs({"norm1"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(3)
+					->name("pool1")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->propDown({propDown})
+					->inputs({"norm1"})
+					->outputs({"pool1"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(4)
+					->name("conv2")
+					->filterDim(5, 5, 96, 256, 1, 2)
+					->weightUpdateParam(weightLr, weightWd)
+					->biasUpdateParam(biasLr, biasWd)
+					->activationType(Activation<Dtype>::ReLU)
+					->propDown({propDown})
+					->inputs({"pool1"})
+					->outputs({"conv2"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(5)
+					->name("norm2")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->propDown({propDown})
+					->inputs({"conv2"})
+					->outputs({"norm2"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(6)
+					->name("pool2")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->propDown({propDown})
+					->inputs({"norm2"})
+					->outputs({"pool2"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(7)
+					->name("conv3")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(weightLr, weightWd)
+					->biasUpdateParam(biasLr, biasWd)
+					->activationType(Activation<Dtype>::ReLU)
+					->propDown({propDown})
+					->inputs({"pool2"})
+					->outputs({"conv3"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(8)
+					->name("conv4")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(weightLr, weightWd)
+					->biasUpdateParam(biasLr, biasWd)
+					->activationType(Activation<Dtype>::ReLU)
+					->propDown({propDown})
+					->inputs({"conv3"})
+					->outputs({"conv4"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(9)
+					->name("conv5")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(weightLr, weightWd)
+					->biasUpdateParam(biasLr, biasWd)
+					->activationType(Activation<Dtype>::ReLU)
+					->propDown({propDown})
+					->inputs({"conv4"})
+					->outputs({"conv5"}))
+
+			//===RPN===
+			// roi-data에서 학습 target 계산,
+			// 각 cell별 cls, pred 학습,
+			//================================================
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(10)
+					->name("rpn_conv/3x3")
+					->filterDim(3, 3, 512, 256, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv5"})
+					->outputs({"rpn/output"}))
+
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 fg, bg score가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(11)
+					->name("rpn_cls_score")
+					->filterDim(1, 1, 256, 18, 0, 1)	// 2(bg/fg) * 9(anchors)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_cls_score"}))
+			// rpn_conv 각 cell 위치에서 9개의 anchor에 대한 x, y, w, h pred가 학습된다.
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(12)
+					->name("rpn_bbox_pred")
+					->filterDim(1, 1, 256, 36, 0, 1)	// 4 * 9(anchors)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Xavier, 0.01)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::NoActivation)
+					->inputs({"rpn/output"})
+					->outputs({"rpn_bbox_pred"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(13)
+					->name("rpn_cls_score_reshape")
+					->shape({0, 2, -1, 0})
+					->inputs({"rpn_cls_score"})
+					->outputs({"rpn_cls_score_reshape"}))
+
+			// 실제 input data에 대한 cls score, bbox pred를 계산, loss를 계산할 때 쓸 데이터를 생성한다.
+			// cls score target, bbox pred target 값
+			->layer((new typename AnchorTargetLayer<Dtype>::Builder())
+					->id(14)
+					->name("rpn-data")
+					->featStride(16)
+					->inputs({"rpn_cls_score", "gt_boxes", "im_info", "data"})
+					->outputs({"rpn_labels", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"}))
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(15)
+					->name("rpn_loss_cls")
+					->propDown({true, false})
+					->lossWeight(1.0f)
+					->ignoreLabel(-1)
+					->normalize(true)
+					->softmaxAxis(1)
+					->inputs({"rpn_cls_score_reshape", "rpn_labels"})
+					->outputs({"rpn_cls_loss"}))
+			->layer((new typename SmoothL1LossLayer<Dtype>::Builder())
+					->id(16)
+					->name("rpn_loss_bbox")
+					->lossWeight(1.0f)
+					->sigma(3.0f)
+					->inputs({"rpn_bbox_pred", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"})
+					->outputs({"rpn_loss_bbox"}))
+*/
+
+					/*
+			//===RoI Proposal===
+			// cls score로 softmax
+			->layer((new typename SoftmaxLayer<Dtype>::Builder())
+					->id(17)
+					->name("rpn_cls_prob")
+					->softmaxAxis(1)
+					->inputs({"rpn_cls_score_reshape"})
+					->outputs({"rpn_cls_prob"}))
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(18)
+					->name("rpn_cls_prob_reshape")
+					->shape({0, 18, -1, 0})
+					->inputs({"rpn_cls_prob"})
+					->outputs({"rpn_cls_prob_reshape"}))
+			//
+			->layer((new typename ProposalLayer<Dtype>::Builder())
+					->id(19)
+					->name("proposal")
+					->featStride(16)
+					->inputs({"rpn_cls_prob_reshape", "rpn_bbox_pred", "im_info"})
+					->outputs({"rpn_rois"}))
+			->layer((new typename ProposalTargetLayer<Dtype>::Builder())
+					->id(20)
+					->name("roi-data")
+					->numClasses(21)
+					->inputs({"rpn_rois", "gt_boxes"})
+					->outputs({"rois", "labels", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"}))
+				*//*
+
+
+
+
+
+			->build();
+
+	return layersConfig;
+}
+*/
+
+
+/*
+template <typename Dtype>
+LayersConfig<Dtype>* createFrcnnStage1TrainLayersConfig() {
+	const float rpnWeightLr = 0.1f;
+	const float rpnBiasLr = 0.2f;
+	const float rpnWeightWd = 0.1f;
+	const float rpnBiasWd = 0.1f;
+
+
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename RoIInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("input-data")
+					->numClasses(21)
+					//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+					->pixelMeans({0.4815f, 0.4547f, 0.4038f})		// RGB
+					->outputs({"data", "rois", "labels", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("conv1")
+					->filterDim(7, 7, 3, 96, 0, 2)
+					//->weightUpdateParam(0, 0)
+					//->biasUpdateParam(0, 0)
+					->weightUpdateParam(0, 0)
+					->biasUpdateParam(0, 0)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(2)
+					->name("norm1")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv1"})
+					->outputs({"norm1"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(3)
+					->name("pool1")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm1"})
+					->outputs({"pool1"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(4)
+					->name("conv2")
+					->filterDim(5, 5, 96, 256, 1, 2)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool1"})
+					->outputs({"conv2"}))
+			->layer((new typename LRNLayer<Dtype>::Builder())
+					->id(5)
+					->name("norm2")
+					->lrnDim(5, 0.0005, 0.75, 2.0)
+					->inputs({"conv2"})
+					->outputs({"norm2"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(6)
+					->name("pool2")
+					->poolDim(3, 3, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"norm2"})
+					->outputs({"pool2"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(7)
+					->name("conv3")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"pool2"})
+					->outputs({"conv3"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(8)
+					->name("conv4")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv3"})
+					->outputs({"conv4"}))
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(9)
+					->name("conv5")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"conv4"})
+					->outputs({"conv5"}))
+
+
+			//===RCNN===
+			->layer((new typename RoIPoolingLayer<Dtype>::Builder())
+					->id(21)
+					->name("roi_pool5")
+					//->pooledW(6)
+					//->pooledH(6)
+					->pooledW(5)
+					->pooledH(5)
+					->spatialScale(0.0625f)
+					->inputs({"conv5", "rois"})
+					->outputs({"pool5"}))
+
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(22)
+					->name("pool5_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"pool5"})
+					->outputs({"pool5_reshape"}))
+
+
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(23)
+					->name("fc6")
+					->nOut(4096)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"pool5_reshape"})
+					->outputs({"fc6"}))
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(24)
+					->name("fc7")
+					->nOut(1024)
+					->pDropout(0.5)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->activationType(Activation<Dtype>::Type::ReLU)
+					->inputs({"fc6"})
+					->outputs({"fc7"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(25)
+					->name("cls_score")
+					->nOut(21)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"cls_score"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(26)
+					->name("bbox_pred")
+					->nOut(21*4)
+					->pDropout(0.0)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 1)
+					->weightFiller(ParamFillerType::Gaussian, 0.0)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"fc7"})
+					->outputs({"bbox_pred"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(28)
+					->name("bbox_pred_reshape")
+					->shape({1, 1, -1, 21*4})
+					->inputs({"bbox_pred"})
+					->outputs({"bbox_pred_reshape"}))
+
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(29)
+					->name("loss_cls")
+					->propDown({true, false})
+					->lossWeight(1.0f)
+					->inputs({"cls_score", "labels"})
+					->outputs({"loss_cls"}))
+
+			->layer((new typename SmoothL1LossLayer<Dtype>::Builder())
+					->id(30)
+					->name("loss_bbox")
+					->lossWeight(1.0f)
+					->firstAxis(2)
+					->inputs({"bbox_pred_reshape", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"})
+					->outputs({"loss_bbox"}))
+			->build();
+
+
+	return layersConfig;
+}
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1492,7 +3319,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					//->prevLayerIndices({81})
 					//->nextLayerIndices({83})
 					)
-
+					/*
 			->layer((new typename SoftmaxLayer<Dtype>::Builder())
 					->id(83)
 					->name("softmax")
@@ -1506,6 +3333,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->outputs({"prob"})
 					//->prevLayerIndices({82})
 					)
+					*/
 			->build();
 
 	return layersConfig;
@@ -1806,6 +3634,9 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					)
 
 
+
+
+
 			// FC
 			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
 					->id(22)
@@ -1837,6 +3668,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					//->prevLayerIndices({22})
 					//->nextLayerIndices({24})
 					)
+					/*
 			->layer((new typename SoftmaxLayer<Dtype>::Builder())
 					->id(24)
 					->name("softmaxLayer")
@@ -1850,6 +3682,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->biasFiller(ParamFillerType::Constant, 0.0)
 					//->prevLayerIndices({23})
 					)
+					*/
 			->build();
 
 	return layersConfig;
@@ -2181,6 +4014,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 					->prevLayerIndices({22})
 					->nextLayerIndices({24}))
 					*/
+					/*
 			->layer((new typename SoftmaxLayer<Dtype>::Builder())
 					->id(24)
 					->name("softmaxLayer")
@@ -2194,6 +4028,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 					->biasFiller(ParamFillerType::Constant, 0.0)
 					//->prevLayerIndices({21})
 					)
+					*/
 			->build();
 
 	return layersConfig;

@@ -107,13 +107,19 @@ uint32_t SyncMem<float>::bound_mem() {
 	//const float bound = 1.0;
 	_h_int = 0;
 	checkCudaErrors(cudaMemcpy(_d_int, &_h_int, sizeof(uint32_t), cudaMemcpyHostToDevice));
-	BoundMem<<<RoundUp((unsigned int)_size, BW), BW>>>(d_mem, bound, _d_int, (unsigned int)_size);
+	//BoundMem<<<RoundUp((unsigned int)_size, BW), BW>>>(d_mem, bound, _d_int, (unsigned int)_size);
+	BoundMem<<<SOOOA_GET_BLOCKS((unsigned int)_size), SOOOA_CUDA_NUM_THREADS>>>(
+			d_mem, bound, _d_int, (unsigned int)_size);
 	checkCudaErrors(cudaMemcpyAsync(&_h_int, _d_int, sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
 	return _h_int;
 }
 
-
+template <>
+uint32_t SyncMem<int>::bound_mem() {
+	assert(false &&
+			"SyncMem<int>::bound_mem() is not supported ... ");
+}
 
 
 

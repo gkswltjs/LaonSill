@@ -62,16 +62,12 @@ public:
 			HiddenLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new LRNLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			HiddenLayer<Dtype>::Builder::save(ofs);
-			ofs.write((char*)&_lrnDim, sizeof(lrn_dim));
-		}
-		virtual void load(std::ifstream& ifs) {
-			HiddenLayer<Dtype>::Builder::load(ifs);
-			ifs.read((char*)&_lrnDim, sizeof(lrn_dim));
 		}
 	};
 	/**
@@ -98,13 +94,7 @@ public:
 protected:
 	void initialize(lrn_dim lrn_d);
 
-
-
-
-
 	virtual void _clearShape();
-	//virtual void _save(std::ofstream &ofs);
-	//virtual void _load(std::ifstream &ifs, std::map<Layer<Dtype>*, Layer<Dtype>*>& layerMap);
 
 
 protected:

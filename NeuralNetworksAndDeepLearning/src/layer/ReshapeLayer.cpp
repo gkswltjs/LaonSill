@@ -6,8 +6,18 @@
  */
 
 
-#if 0
+#if 1
+
+#include <vector>
+
 #include "ReshapeLayer.h"
+#include "Util.h"
+
+#define RESHAPELAYER_LOG 0
+
+using namespace std;
+
+
 
 template <typename Dtype>
 ReshapeLayer<Dtype>::ReshapeLayer() {
@@ -15,9 +25,11 @@ ReshapeLayer<Dtype>::ReshapeLayer() {
 }
 
 template <typename Dtype>
-ReshapeLayer<Dtype>::ReshapeLayer(Builder* builder) {
+ReshapeLayer<Dtype>::ReshapeLayer(Builder* builder)
+	: HiddenLayer<Dtype>(builder) {
 	this->shape = builder->_shape;
-
+	this->axis = builder->_axis;
+	this->numAxes = builder->_numAxes;
 	initialize();
 }
 
@@ -39,44 +51,81 @@ void ReshapeLayer<Dtype>::reshape() {
 
 	// Layer does not allow in-place computation.
 	assert(this->_inputData[0] != this->_outputData[0]);
+
+
+	const vector<uint32_t>& inputDataShape = this->_inputData[0]->getShape();
+	this->_inputShape[0] = inputDataShape;
+
+	const uint32_t dim = inputDataShape.size();
+	vector<uint32_t> outputDataShape(dim);
+
+	for (uint32_t i = 0; i < dim; i++) {
+		if (this->shape[i] > 0)
+			outputDataShape[i] = this->shape[i];
+	}
+	for (uint32_t i = 0; i < copyAxes.size(); i++) {
+		outputDataShape[copyAxes[i]] = inputDataShape[copyAxes[i]];
+	}
+
+	if (this->inferredAxis >= 0) {
+		const uint32_t inputDataSize = this->_inputData[0]->getCount();
+		uint32_t fixedSize = 1;
+		for (uint32_t i = 0; i < dim; i++) {
+			if (outputDataShape[i] > 0)
+				fixedSize *= outputDataShape[i];
+		}
+		assert(inputDataSize % fixedSize == 0 &&
+				"input count must be divisible by the product");
+		outputDataShape[inferredAxis] = inputDataSize / fixedSize;
+	}
+
+	this->_outputData[0]->reshape(outputDataShape);
+
+#if RESHAPELAYER_LOG
+	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
+			this->name.c_str(), outputDataShape[0], outputDataShape[1],
+			outputDataShape[2], outputDataShape[3]);
+#endif
+
+
+	assert(this->_inputData[0]->getCount() == this->_outputData[0]->getCount() &&
+			"output count must match input count");
+
+	this->_outputData[0]->share_data(this->_inputData[0]);
+	this->_outputData[0]->share_grad(this->_inputData[0]);
 }
 
 template <typename Dtype>
 void ReshapeLayer<Dtype>::feedforward() {
 	reshape();
 
-	this->_inputShape[0] = this->_inputData[0]->getShape();
-	vector<uint32_t> outputShape(this->shape.size());
+#if RESHAPELAYER_LOG
+	Data<Dtype>::printConfig = true;
+	const vector<uint32_t> shape;
+	this->_inputData[0]->print_data(shape, false);
+	this->_inputData[0]->print_grad(shape, false);
+	this->_outputData[0]->print_data(shape, false);
+	this->_outputData[0]->print_grad(shape, false);
+	Data<Dtype>::printConfig = false;
+#endif
 
-	int inferredAxis = -1;
-	for (uint32_t i = 0; i < this->shape.size(); i++) {
-		if (this->shape[i] == 0) {
-			outputShape[i] = this->_inputShape[0][i];
-		} else if (this->shape[i] == -1) {
-			inferredAxis = i;
-		} else {
-			outputShape[i] = this->shape[i];
-		}
-	}
-
-	// there is! inferred axis ...
-	if (inferredAxis >= 0) {
-		const uint32_t inputShapeCount = Util::vecCountByAxis(this->_inputShape[0], 0);
-		const uint32_t outputShapeCount = Util::vecCountByAxis(outputShape);
-		assert(inputShapeCount % outputShapeCount == 0);
-
-		const uint32_t inferredAxisShape = inputShapeCount / outputShapeCount;
-		outputShape[inferredAxis] = inferredAxisShape;
-	}
-
-	this->_outputData[0]->shape(outputShape);
-
-	this->_outputData[0]->set_device_data(this->_inputData[0]);
 }
 
 template <typename Dtype>
 void ReshapeLayer<Dtype>::backpropagation() {
+	// do nothing ...
 
+
+	/*
+	if (this->name == "rpn_cls_score_reshape") {
+		Data<Dtype>::printConfig = true;
+
+		this->_outputData[0]->print_grad({}, false);
+		this->_inputData[0]->print_grad({}, false);
+
+		Data<Dtype>::printConfig = false;
+	}
+	*/
 }
 
 
@@ -85,18 +134,21 @@ template <typename Dtype>
 void ReshapeLayer<Dtype>::initialize() {
 	assert(this->shape.size() == 4);
 
-	int inferredAxis = -1;
-	uint32_t numInferredAxis = 0;
-
+	this->inferredAxis = -1;
+	this->copyAxes.clear();
 	const uint32_t topNumAxis = this->shape.size();
+	this->constantCount = 1;
 
 	for (uint32_t i = 0; i < topNumAxis; i++) {
-		if (this->shape[0] == -1) {
-			numInferredAxis++;
-			if (numInferredAxis > 1) {
-				cout << "more than 1 inferred axes exist ... " << endl;
-				exit(1);
-			}
+		const int topDim = this->shape[i];
+		if (topDim == 0) {
+			copyAxes.push_back(i);
+		} else if (topDim == -1) {
+			assert(inferredAxis == -1 &&
+					"new shape contains multiple -1 dims ... ");
+			inferredAxis = i;
+		} else {
+			constantCount *= topDim;
 		}
 	}
 }

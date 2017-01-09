@@ -48,26 +48,27 @@ void LRNLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void LRNLayer<Dtype>::backpropagation() {
+	if (this->_propDown[0]) {
+		const Dtype* d_outputData = this->_outputData[0]->device_data();
+		const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
+		const Dtype* d_inputData = this->_inputData[0]->device_data();
+		Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
+		checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,
+				lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
+				&Cuda::alpha, this->outputTensorDesc, d_outputData, this->outputTensorDesc, d_outputGrad,
+				this->inputTensorDesc, d_inputData,
+				&Cuda::beta, this->inputTensorDesc, d_inputGrad));
 
-	const Dtype* d_outputData = this->_outputData[0]->device_data();
-	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
-	const Dtype* d_inputData = this->_inputData[0]->device_data();
-	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
-	checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,
-			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
-			&Cuda::alpha, this->outputTensorDesc, d_outputData, this->outputTensorDesc, d_outputGrad,
-			this->inputTensorDesc, d_inputData,
-			&Cuda::beta, this->inputTensorDesc, d_inputGrad));
-
-	/*
-	if(this->_input->is_nan_grad()) {
-		Data<Dtype>::printConfig = 1;
-		this->_output->print_grad("outputGrad:");
-		this->_input->print_grad("inputGrad:");
-		Data<Dtype>::printConfig = 0;
-		exit(1);
+		/*
+		if(this->_input->is_nan_grad()) {
+			Data<Dtype>::printConfig = 1;
+			this->_output->print_grad("outputGrad:");
+			this->_input->print_grad("inputGrad:");
+			Data<Dtype>::printConfig = 0;
+			exit(1);
+		}
+		*/
 	}
-	*/
 
 
 }

@@ -18,6 +18,8 @@
 #include <cstdint>
 #include <vector>
 
+#define ROIDBUTIL_LOG 0
+
 
 class RoIDBUtil {
 public:
@@ -35,13 +37,21 @@ public:
 		}
 
 		//std::vector<std::vector<float>> means;
-		np_tile({0.0f, 0.0f, 0.0f, 0.0f}, numClasses, means);
+		//np_tile({0.0f, 0.0f, 0.0f, 0.0f}, numClasses, means);
+		np_tile(TRAIN_BBOX_NORMALIZE_MEANS, numClasses, means);
+#if ROIDBUTIL_LOG
 		print2dArray("bbox target means", means);
+#endif
 
 		//std::vector<std::vector<float>> stds;
-		np_tile({0.1f, 0.1f, 0.2f, 0.2f}, numClasses, stds);
+		//np_tile({0.1f, 0.1f, 0.2f, 0.2f}, numClasses, stds);
+		np_tile(TRAIN_BBOX_NORMALIZE_STDS, numClasses, stds);
+#if ROIDBUTIL_LOG
 		print2dArray("bbox target stdeves", stds);
+#endif
 
+
+		/*
 		// Normalize targets
 		std::cout << "Normalizing targets" << std::endl;
 		for (uint32_t i = 0; i < numImages; i++) {
@@ -57,65 +67,81 @@ public:
 					targets[k][4] = (targets[k][4] - means[j][3]) / stds[j][3];
 				}
 			}
+#if ROIDBUTIL_LOG
 			print2dArray("bbox_targets", targets);
+#endif
 		}
+		*/
 	}
 
 	static void computeTargets(RoIDB& roidb) {
+#if ROIDBUTIL_LOG
 		roidb.print();
+#endif
 
 		// Compute bounding-box regression targets for an image.
 		// Indices of ground-truth ROIs
-		std::vector<uint32_t> gt_inds;
+		std::vector<uint32_t> gtInds;
 		// XXX: 1.0f float compare check
-		np_where_s(roidb.max_overlaps, EQ, 1.0f, gt_inds);
-		if (gt_inds.size() < 1) {
+		np_where_s(roidb.max_overlaps, EQ, 1.0f, gtInds);
+		if (gtInds.size() < 1) {
 			// Bail if the image has no ground-truth ROIs
 		}
 		// Indices of examples for which we try to make predictions
-		std::vector<uint32_t> ex_inds;
-		np_where_s(roidb.max_overlaps, GE, TRAIN_BBOX_THRESH, ex_inds);
+		std::vector<uint32_t> exInds;
+		np_where_s(roidb.max_overlaps, GE, TRAIN_BBOX_THRESH, exInds);
 
 		// Get IoU overlap between each ex ROI and gt ROI
 		std::vector<std::vector<float>> ex_gt_overlaps;
-		bboxOverlaps(roidb.boxes, gt_inds, ex_inds, ex_gt_overlaps);
+		bboxOverlaps(roidb.boxes, gtInds, 0, exInds, 0, ex_gt_overlaps);
+#if ROIDBUTIL_LOG
 		print2dArray("ex_gt_overlaps", ex_gt_overlaps);
+#endif
 
 		// Find which gt ROI each ex ROI has max overlap with:
 		// this will be the ex ROI's gt target
-		std::vector<uint32_t> gt_assignment;
-		np_argmax(ex_gt_overlaps, 1, gt_assignment);
-		std::vector<uint32_t> gt_rois_inds;
-		std::vector<std::vector<uint32_t>> gt_rois;
-		py_arrayElemsWithArrayInds(gt_inds, gt_assignment, gt_rois_inds);
-		py_arrayElemsWithArrayInds(roidb.boxes, gt_rois_inds, gt_rois);
-		print2dArray("gt_rois", gt_rois);
-		std::vector<std::vector<uint32_t>> ex_rois;
-		py_arrayElemsWithArrayInds(roidb.boxes, ex_inds, ex_rois);
-		print2dArray("ex_rois", ex_rois);
+		std::vector<uint32_t> gtAssignment;
+		np_argmax(ex_gt_overlaps, 1, gtAssignment);
+		std::vector<uint32_t> gtRoisInds;
+		std::vector<std::vector<uint32_t>> gtRois;
+		py_arrayElemsWithArrayInds(gtInds, gtAssignment, gtRoisInds);
+		py_arrayElemsWithArrayInds(roidb.boxes, gtRoisInds, gtRois);
+#if ROIDBUTIL_LOG
+		print2dArray("gt_rois", gtRois);
+#endif
+		std::vector<std::vector<uint32_t>> exRois;
+		py_arrayElemsWithArrayInds(roidb.boxes, exInds, exRois);
+#if ROIDBUTIL_LOG
+		print2dArray("ex_rois", exRois);
+#endif
 
 		const uint32_t numRois = roidb.boxes.size();
-		const uint32_t numEx = ex_inds.size();
+		const uint32_t numEx = exInds.size();
 		std::vector<std::vector<float>>& targets = roidb.bbox_targets;
 		targets.resize(numRois);
 		for (uint32_t i = 0; i < numRois; i++) {
 			targets[i].resize(5);
 			// XXX: init to zero ... ?
 		}
+#if ROIDBUTIL_LOG
 		print2dArray("targets", targets);
+#endif
 
 		for (uint32_t i = 0; i < numEx; i++) {
 			targets[i][0] = roidb.max_classes[i];
 		}
-		print2dArray("targets", targets);
-		BboxTransformUtil::bboxTransform(ex_rois, gt_rois, targets, 1);
-		print2dArray("targets", targets);
 
+
+		BboxTransformUtil::bboxTransform(exRois, 0, gtRois, 0, targets, 1);
+#if ROIDBUTIL_LOG
+		print2dArray("targets", targets);
 		roidb.print();
+#endif
 	}
 
 	static void bboxOverlaps(const std::vector<std::vector<uint32_t>>& rois,
-			const std::vector<uint32_t>& gt_inds, const std::vector<uint32_t>& ex_inds,
+			const std::vector<uint32_t>& gt_inds, const uint32_t gtOffset,
+			const std::vector<uint32_t>& ex_inds, const uint32_t exOffset,
 			std::vector<std::vector<float>>& result) {
 
 		const uint32_t numEx = ex_inds.size();
@@ -125,13 +151,15 @@ public:
 		for (uint32_t i = 0; i < numEx; i++) {
 			result[i].resize(numGt);
 			for (uint32_t j = 0; j < numGt; j++) {
-				result[i][j] = iou(rois[ex_inds[i]], rois[gt_inds[j]]);
+				result[i][j] = iou(rois[ex_inds[i]], exOffset, rois[gt_inds[j]], gtOffset);
 			}
 		}
 	}
 
 	static void bboxOverlaps(const std::vector<std::vector<float>>& ex,
+			const uint32_t exOffset,
 			const std::vector<std::vector<float>>& gt,
+			const uint32_t gtOffset,
 			std::vector<std::vector<float>>& result) {
 
 		const uint32_t numEx = ex.size();
@@ -141,26 +169,31 @@ public:
 		for (uint32_t i = 0; i < numEx; i++) {
 			result[i].resize(numGt);
 			for (uint32_t j = 0; j < numGt; j++) {
-				result[i][j] = iou(ex[i], gt[j]);
+				result[i][j] = iou(ex[i], exOffset, gt[j], gtOffset);
 			}
 		}
 	}
 
 	template <typename Dtype>
-	static float iou(const std::vector<Dtype>& box1, const std::vector<Dtype>& box2) {
+	static float iou(const std::vector<Dtype>& box1, const uint32_t box1Offset,
+			const std::vector<Dtype>& box2, const uint32_t box2Offset) {
 		float iou = 0.0f;
 		Dtype left, right, top, bottom;
-		left = std::max(box1[0], box2[0]);
-		right = std::min(box1[2], box2[2]);
-		top = std::max(box1[1], box2[1]);
-		bottom = std::min(box1[3], box2[3]);
+		left	= std::max(box1[box1Offset+0], box2[box2Offset+0]);
+		right	= std::min(box1[box1Offset+2], box2[box2Offset+2]);
+		top		= std::max(box1[box1Offset+1], box2[box2Offset+1]);
+		bottom	= std::min(box1[box1Offset+3], box2[box2Offset+3]);
 
-		if(left < right &&
-				top < bottom) {
-			float i = float((right-left)*(bottom-top));
-			float u = float((box1[2]-box1[0])*(box1[3]-box1[1]) +
-					(box2[2]-box2[0])*(box2[3]-box2[1]) - i);
-			iou = i/u;
+		if(left <= right &&
+				top <= bottom) {
+			float i = float((right - left + 1) * (bottom - top + 1));
+			float u = float(
+					(box1[box1Offset+2]-box1[box1Offset+0] + 1) *
+					(box1[box1Offset+3]-box1[box1Offset+1] + 1) +
+					(box2[box2Offset+2]-box2[box2Offset+0] + 1) *
+					(box2[box2Offset+3]-box2[box2Offset+1] + 1) -
+					i);
+			iou = i / u;
 		}
 		return iou;
 	}

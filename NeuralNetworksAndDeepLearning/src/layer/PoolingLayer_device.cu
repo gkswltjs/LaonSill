@@ -10,6 +10,8 @@
 
 #include "PoolingLayer.h"
 
+#define POOLINGLAYER_LOG 0
+
 using namespace std;
 
 template <typename Dtype>
@@ -48,11 +50,13 @@ void PoolingLayer<Dtype>::reshape() {
 	uint32_t orows = static_cast<uint32_t>(h);
 	uint32_t ocols = static_cast<uint32_t>(w);
 
+#if POOLINGLAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
 			this->name.c_str(), obatches, ochannels, orows, ocols);
+#endif
 
 	this->_inputShape[0] = inputShape;
-	this->_outputData[0]->shape({obatches, ochannels, orows, ocols});
+	this->_outputData[0]->reshape({obatches, ochannels, orows, ocols});
 
 	/*
 	this->setInDimension(this->_inputData[0]->getShape());
@@ -99,22 +103,24 @@ void PoolingLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::backpropagation() {
-	this->_outputData[0]->print_data();
-	this->_inputData[0]->print_data();
-	/*
-	if(this->_output->is_nan_grad()) {
-		cout << this->name << " output gradient nan ... " << endl;
-		exit(1);
-	}
-	*/
-	const Dtype* d_outputData = this->_outputData[0]->device_data();
-	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
-	const Dtype* d_inputData = this->_inputData[0]->device_data();
-	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
-	pooling_fn->backward(this->outputTensorDesc, d_outputData, d_outputGrad,
-			this->inputTensorDesc, d_inputData, d_inputGrad);
+	if (this->_propDown[0]) {
+		this->_outputData[0]->print_data();
+		this->_inputData[0]->print_data();
+		/*
+		if(this->_output->is_nan_grad()) {
+			cout << this->name << " output gradient nan ... " << endl;
+			exit(1);
+		}
+		*/
+		const Dtype* d_outputData = this->_outputData[0]->device_data();
+		const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
+		const Dtype* d_inputData = this->_inputData[0]->device_data();
+		Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
+		pooling_fn->backward(this->outputTensorDesc, d_outputData, d_outputGrad,
+				this->inputTensorDesc, d_inputData, d_inputGrad);
 
-	this->_inputData[0]->print_grad();
+		this->_inputData[0]->print_grad();
+	}
 }
 
 

@@ -16,10 +16,16 @@
 #include <cstdlib>
 #include <vector>
 #include <cmath>
+#include <array>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+
 
 #include "common.h"
 #include "Data.h"
-
+//#include "nms/gpu_nms.hpp"
 
 
 const uint32_t GT = 0;
@@ -29,10 +35,206 @@ const uint32_t LE = 3;
 const uint32_t LT = 4;
 const uint32_t NE = 5;
 
+// Minibatch size (number of regions of interest [ROIs])
+const uint32_t TRAIN_BATCH_SIZE = 128;
+
 const float TRAIN_FG_THRESH = 0.5f;
 const float TRAIN_BG_THRESH_HI = 0.5f;
 const float TRAIN_BG_THRESH_LO = 0.0f;
 const float TRAIN_BBOX_THRESH = 0.5f;
+
+const float TRAIN_FG_FRACTION = 0.25f;
+
+const bool	TRAIN_BBOX_NORMALIZE_TARGETS_PRECOMPUTED = true;
+const std::vector<float> TRAIN_BBOX_NORMALIZE_MEANS = {0.0f, 0.0f, 0.0f, 0.0f};
+const std::vector<float> TRAIN_BBOX_NORMALIZE_STDS = {0.1f, 0.1f, 0.2f, 0.2f};
+
+const std::vector<float> TRAIN_BBOX_INSIDE_WEIGHTS = {1.0f, 1.0f, 1.0f, 1.0f};
+
+
+// Use RPN to detect objects
+//const bool TRAIN_HAS_RPN = true;
+const bool TRAIN_HAS_RPN = false;
+
+// Images to use per minibatch
+const uint32_t TRAIN_IMS_PER_BATCH = 1;
+
+// Scales to use duing training (can list multiple scales)
+// Each scale is the pixel isze of an image's shortest side
+//const std::vector<uint32_t> TRAIN_SCALES = {500};
+const std::vector<uint32_t> TRAIN_SCALES = {400, 500, 600, 700};
+
+// Max pixel size of the longest side of a scaled input image
+const uint32_t TRAIN_MAX_SIZE = 1000;
+
+
+
+// IOU >= thresh: positive example
+const float TRAIN_RPN_POSITIVE_OVERLAP = 0.7f;
+// IOU < thresh: negative example
+const float TRAIN_RPN_NEGATIVE_OVERLAP = 0.3f;
+// If an anchor statisfied by positive and negative conditions set to negative
+const bool TRAIN_RPN_CLOBBER_POSITIVES = false;
+// Max number of oreground examples
+const float TRAIN_RPN_FG_FRACTION = 0.5f;
+// Total number of examples
+const uint32_t TRAIN_RPN_BATCHSIZE = 256;
+// NMS threshold used on RPN proposalse
+const float TRAIN_RPN_NMS_THRESH = 0.7f;
+// Number of top scoring boxes to keep before apply NMS to RPN proposals
+const uint32_t TRAIN_RPN_PRE_NMS_TOP_N = 12000;
+//const uint32_t TRAIN_RPN_PRE_NMS_TOP_N = 6000;
+// Number of top scoring boxes to keep after applying NMS to RPN proposals
+const uint32_t TRAIN_RPN_POST_NMS_TOP_N = 2000;
+//const uint32_t TRAIN_RPN_POST_NMS_TOP_N = 300;
+// Proposal height and width both need to be greater than RPN_MIN_SIZE (at org image scale)
+const uint32_t TRAIN_RPN_MIN_SIZE = 16;
+// Deprecated (outside weights)
+const std::vector<float> TRAIN_RPN_BBOX_INSIDE_WEIGHTS = {1.0f, 1.0f, 1.0f, 1.0f};
+// Give the positive RPN examples weight of p * 1 / (num positives)
+// and give negatives a weight of (1 - p)
+// Set to -1.0 to use uniform example weighting
+const float TRAIN_RPN_POSITIVE_WEIGHT = -1.0f;
+
+
+
+
+
+
+
+
+// Scales to use during testing (can list multiple scales)
+// Each scale is the pixel size of an image's shortest side
+//const std::vector<uint32_t> TEST_SCALES = {600};
+const std::vector<uint32_t> TEST_SCALES = {500};
+
+// Max pixel size of the longest side of a scaled input image
+const uint32_t TEST_MAX_SIZE = 1000;
+
+// Overlap threshold used for non-maximum suppression (suppress boxes with
+// IoU >= this threshold)
+const float TEST_NMS = 0.3f;
+
+// Experimental: treat the (K+1) units in the cls_score layer as linear
+// predictors (trained, eg, with one-vs-rest SVMs).
+const bool TEST_SVM = false;
+
+// Test using bounding-box regressors
+const bool TEST_BBOX_REG = true;
+
+// Propose boxes
+const bool TEST_HAS_RPN = true;
+
+// Test using these proposals
+const std::string TEST_PROPOSAL_METHOD = "selective_search";
+
+// NMS threshold used on RPN proposals
+const float TEST_RPN_NMS_THRESH = 0.7f;
+// Number of top scoring boxes to keep before apply NMS to RPN proposals
+const uint32_t TEST_RPN_PRE_NMS_TOP_N = 6000;
+// Number of top scoring boxes to keep after applying NMS to RPN proposals
+const uint32_t TEST_RPN_POST_NMS_TOP_N = 300;
+// Proposal height and width both need to be greater than RPN_MIN_SIZE (at orig image scale)
+const uint32_t TEST_RPN_MIN_SIZE = 16;
+
+
+
+
+
+
+template <typename Dtype>
+void displayBoxesOnImage(const std::string& imagePath, const float scale,
+		const std::vector<std::vector<Dtype>>& boxes, const int boxOffset=0, const int numMaxBoxes=-1, const bool pause=true) {
+
+	cv::Mat im = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
+
+	if (scale != 1.0f)
+		cv::resize(im, im, cv::Size(), scale, scale, CV_INTER_LINEAR);
+
+
+	uint32_t numBoxes = (numMaxBoxes<0)?
+			(uint32_t)boxes.size():
+			(std::min((uint32_t)numMaxBoxes, (uint32_t)boxes.size()));
+
+	for (uint32_t i = 0; i < numBoxes; i++) {
+		cv::rectangle(im, cv::Point(boxes[i][boxOffset+0], boxes[i][boxOffset+1]),
+				cv::Point(boxes[i][boxOffset+2], boxes[i][boxOffset+3]), cv::Scalar(0, 0, (255.0f/numBoxes)*i),
+				2);
+	}
+
+	cv::namedWindow(imagePath, CV_WINDOW_AUTOSIZE);
+	cv::imshow(imagePath, im);
+
+	if (pause) {
+		cv::waitKey(0);
+		cv::destroyAllWindows();
+	}
+}
+
+template <typename Dtype>
+void displayBoxesOnImage(const std::string& imagePath, const float scale,
+		const std::vector<std::array<Dtype, 5>>& boxes, const int numMaxBoxes=-1, const bool pause=true) {
+
+	cv::Mat im = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
+
+	cv::resize(im, im, cv::Size(), scale, scale, CV_INTER_LINEAR);
+
+
+	uint32_t numBoxes = (numMaxBoxes<0)?
+			(uint32_t)boxes.size():
+			(std::min((uint32_t)numMaxBoxes, (uint32_t)boxes.size()));
+
+	for (uint32_t i = 0; i < numBoxes; i++) {
+		cv::rectangle(im, cv::Point(boxes[i][0], boxes[i][1]),
+				cv::Point(boxes[i][2], boxes[i][3]), cv::Scalar(0, 0, (255.0f/numBoxes)*i),
+				2);
+	}
+
+	cv::namedWindow(imagePath, CV_WINDOW_AUTOSIZE);
+	cv::imshow(imagePath, im);
+
+	if (pause) {
+		cv::waitKey(0);
+		cv::destroyAllWindows();
+	}
+}
+
+
+
+
+
+template <typename PtrType, typename PrtType>
+void printMat(cv::Mat& im) {
+	std::cout << "rows: " << im.rows << ", cols: " << im.cols <<
+				", channels: " << im.channels() << std::endl;
+
+	const size_t numImElems = im.rows*im.cols*im.channels();
+	const int rowElemSize = im.cols*im.channels();
+	const int colElemSize = im.channels();
+
+	for (int i = 0; i < im.rows; i++) {
+		for (int j = 0; j < im.cols; j++) {
+			std::cout << "[";
+			for (int k = 0; k < im.channels(); k++) {
+				std::cout << (PrtType)((PtrType*)im.data)[i*rowElemSize+j*colElemSize+k] << ",";
+			}
+			std::cout << "],";
+		}
+		std::cout << std::endl;
+	}
+}
+
+/*
+void showImageMat(cv::Mat& im, const bool pause=true) {
+	cv::namedWindow("MyWindow", CV_WINDOW_AUTOSIZE);
+	imshow("MyWindow", im);
+
+	if (pause) {
+		cv::waitKey(0);
+		cv::destroyAllWindows();
+	}
+}
+*/
 
 template <typename Dtype>
 static void printArray(const std::string& name, std::vector<Dtype>& array,
@@ -42,10 +244,10 @@ static void printArray(const std::string& name, std::vector<Dtype>& array,
 	}
 
 	const uint32_t arraySize = array.size();
-	std::cout << "[ ";
+	//std::cout << "[ ";
 	for (uint32_t i = 0; i < arraySize; i++) {
 		if (!landscape) {
-			std::cout << i << "\t\t: ";
+			std::cout << i << ",,";
 		}
 
 		std::cout << array[i];
@@ -56,7 +258,8 @@ static void printArray(const std::string& name, std::vector<Dtype>& array,
 			std::cout << std::endl;
 
 	}
-	std::cout << "]" << std::endl;
+	//std::cout << "]" << std::endl;
+	std::cout << std::endl;
 }
 
 /*
@@ -100,13 +303,17 @@ static void print2dArray(const std::string& name, std::vector<std::vector<Dtype>
 	}
 
 	const uint32_t arraySize = array.size();
-	std::cout << "[ " << std::endl;
+	//std::cout << "[ " << std::endl;
+	std::cout << std::endl;
 	for (uint32_t i = 0; i < arraySize; i++) {
-		std::cout << i << "\t\t: ";
+		//std::cout << i << "\t\t: ";
+		std::cout << i << ",,";
 		printArray(name, array[i], false, true);
 	}
-	std::cout << "]" << std::endl;
+	//std::cout << "]" << std::endl;
+	std::cout << std::endl;
 }
+
 
 template <typename Dtype>
 static void printPrimitive(const std::string& name, const Dtype data,
@@ -280,6 +487,48 @@ static Dtype np_max(const std::vector<Dtype>& array,
 
 
 
+template <typename Dtype>
+static void np_maximum(const Dtype value, const std::vector<Dtype>& array,
+		const std::vector<uint32_t>& index,	const uint32_t offset,
+		std::vector<Dtype>& result) {
+	const uint32_t indexSize = index.size();
+	result.resize(indexSize-offset);
+
+	for (uint32_t i = offset; i < indexSize; i++) {
+		result[i-offset] = (value >= array[index[i]]) ?
+				value :
+				array[index[i]];
+	}
+}
+
+template <typename Dtype>
+static void np_minimum(const Dtype value, const std::vector<Dtype>& array,
+		const std::vector<uint32_t>& index,	const uint32_t offset,
+		std::vector<Dtype>& result) {
+	const uint32_t indexSize = index.size();
+	result.resize(indexSize-offset);
+
+	for (uint32_t i = offset; i < indexSize; i++) {
+		result[i-offset] = (value <= array[index[i]]) ?
+				value :
+				array[index[i]];
+	}
+}
+
+
+/*
+template <typename Dtype>
+static void np_maximum(const Dtype value, const std::vector<Dtype>& array,
+		std::vector<Dtype>& result) {
+	const uint32_t arraySize = array.size();
+	result.resize(arraySize);
+
+	for (uint32_t i = 0; i < arraySize; i++) {
+		result[i] = std::max(value, array[i]);
+	}
+}
+*/
+
 
 template <typename Dtype>
 static void np_argmax(const std::vector<std::vector<Dtype>>& array, const uint32_t axis,
@@ -337,7 +586,10 @@ template <typename Dtype, typename Dtype2>
 static void np_where_s(const std::vector<Dtype>& array, const uint32_t comp, const Dtype2 criteria,
 		std::vector<uint32_t>& result) {
 	const uint32_t numArrayElem = array.size();
-	assert(numArrayElem > 0);
+	result.clear();
+
+	if (numArrayElem < 1)
+		return;
 
 	switch (comp) {
 	case GT:
@@ -391,10 +643,11 @@ template <typename Dtype>
 static void np_where_s(const std::vector<std::vector<Dtype>>& array,
 		const std::vector<Dtype>& criteria,
 		std::vector<uint32_t>& result) {
-	if (array.size() < 1) return;
+	result.clear();
+	if (array.size() < 1)
+		return;
 
 	assert(array[0].size() == criteria.size());
-	result.clear();
 
 	const uint32_t numArrayElem = array.size();
 	const uint32_t numAxisElem = criteria.size();
@@ -513,7 +766,7 @@ static void npr_choice(const std::vector<Dtype>& array, const uint32_t size,
 	for (uint32_t i = 0; i < size; i++) {
 		result[i] = array[indexArray[i]];
 	}
-	printArray("result-final", result);
+	//printArray("result-final", result);
 }
 
 static std::vector<uint32_t> np_arange(int start, int stop) {
@@ -563,7 +816,7 @@ static void fillDataWith2dVec(const std::vector<std::vector<Dtype>>& array,
 	const uint32_t dim1 = array.size();
 	const uint32_t dim2 = array[0].size();
 
-	data->shape({1, 1, dim1, dim2});
+	data->reshape({1, 1, dim1, dim2});
 	Dtype2* dataPtr = data->mutable_host_data();
 
 	for (uint32_t i = 0; i < dim1; i++) {
@@ -704,6 +957,60 @@ static void fill2dVecWithData(Data<Dtype>* data,
 }
 
 
+template <typename Dtype>
+static std::vector<Dtype> vec_keep_by_index(const std::vector<Dtype>& array,
+		const std::vector<uint32_t>& index) {
+
+	const uint32_t numKeep = index.size();
+	std::vector<Dtype> result(numKeep);
+	for (uint32_t i = 0; i < numKeep; i++) {
+		result[i] = array[index[i]];
+	}
+	return result;
+}
+
+template <typename Dtype>
+static void vec_argsort(const std::vector<Dtype>& array, std::vector<uint32_t>& arg, int order=0) {
+	assert(order == 0 || order == 1);
+
+	const uint32_t arraySize = array.size();
+	//arg.resize(arraySize);
+	//iota(arg.begin(), arg.end(), 0);
+
+	if (order == 0) {
+		sort(arg.begin(), arg.end(), [&array](size_t i1, size_t i2) {
+			return array[i1] > array[i2];
+		});
+	} else if (order == 1) {
+		sort(arg.begin(), arg.end(), [&array](size_t i1, size_t i2) {
+			return array[i1] < array[i2];
+		});
+	}
+}
+
+template <typename Dtype>
+static void vec_2d_pad(const uint32_t leftPad, std::vector<std::vector<Dtype>>& array) {
+	if (array.size() < 1)
+		return;
+
+	const uint32_t outerSize = array.size();
+	const uint32_t innerSize = array[0].size() + leftPad;
+
+	for (uint32_t i = 0; i < outerSize; i++) {
+		std::vector<Dtype>& item = array[i];
+		item.resize(innerSize);
+
+		for (uint32_t j = innerSize-1; j > leftPad-1; j--) {
+			item[j] = item[j-leftPad];
+		}
+		for (uint32_t j = 0; j < leftPad; j++) {
+			item[j] = 0;
+		}
+	}
+}
+
+
+
 
 /*
 static std::string cv_type2str(int type) {
@@ -729,6 +1036,129 @@ static std::string cv_type2str(int type) {
 	return r;
 }
 */
+
+
+
+/*
+static void nms(const float* dets, const int numDets, const float nmsThresh,
+		std::vector<uint32_t>& keep) {
+
+	int* keep_out = new int[numDets];
+	int num_out;
+
+	// XXX:
+	_nms(keep_out, &num_out, dets, numDets, 5, nmsThresh, 0);
+
+	//for (uint32_t i = 0; i < postNmsTopN; i++)
+	//	keep_out[i] = i;
+	//num_out = postNmsTopN;
+
+	keep.resize(num_out);
+	keep.assign(keep_out, keep_out + num_out);
+	delete [] keep_out;
+}
+*/
+
+
+
+#define NMS_LOG 0
+static void nms(std::vector<std::vector<float>>& dets1,
+			std::vector<float>& scores, const float thresh, std::vector<uint32_t>& keep) {
+	const uint32_t numDets = dets1.size();
+
+	std::vector<float> x1(numDets);
+	std::vector<float> y1(numDets);
+	std::vector<float> x2(numDets);
+	std::vector<float> y2(numDets);
+	//std::vector<float> scores(numDets);
+
+	std::vector<float> areas(numDets);
+	for (uint32_t i = 0; i < numDets; i++) {
+		std::vector<float>& det1 = dets1[i];
+		x1[i] = det1[0];
+		y1[i] = det1[1];
+		x2[i] = det1[2];
+		y2[i] = det1[3];
+		areas[i] = (x2[i] - x1[i] + 1) * (y2[i] - y1[i] + 1);
+	}
+
+#if NMS_LOG
+	printArray("areas", areas);
+#endif
+
+	std::vector<uint32_t> order(numDets), tempOrder;
+	iota(order.begin(), order.end(), 0);
+	vec_argsort(scores, order);
+
+#if NMS_LOG
+	for (uint32_t i = 0; i < numDets; i++) {
+		std::cout << i << ": " << order[i] << ", score: " << scores[order[i]] << std::endl;
+	}
+#endif
+
+
+	keep.clear();
+	std::vector<float> xx1, yy1, xx2, yy2;
+	std::vector<float> w, h, inter, ovr;
+
+	uint32_t i;
+	while (order.size() > 0) {
+		i = order[0];
+		keep.push_back(i);
+		np_maximum(x1[i], x1, order, 1, xx1);
+		np_maximum(y1[i], y1, order, 1, yy1);
+		np_minimum(x2[i], x2, order, 1, xx2);
+		np_minimum(y2[i], y2, order, 1, yy2);
+
+#if NMS_LOG
+		printArray("xx1", xx1);
+		printArray("yy1", yy1);
+		printArray("xx2", xx2);
+		printArray("yy2", yy2);
+#endif
+
+		const uint32_t nextSize = order.size()-1;
+		w.resize(nextSize);
+		h.resize(nextSize);
+		inter.resize(nextSize);
+		ovr.resize(nextSize);
+
+		for (uint32_t k = 0; k < nextSize; k++) {
+			w[k] = std::max(0.0f, xx2[k] - xx1[k] + 1);
+			h[k] = std::max(0.0f, yy2[k] - yy1[k] + 1);
+			inter[k] = w[k] * h[k];
+			ovr[k] = inter[k] / (areas[i] + areas[order[k+1]] - inter[k]);
+		}
+
+#if NMS_LOG
+		printArray("w", w);
+		printArray("h", h);
+		printArray("inter", inter);
+		printArray("ovr", ovr);
+#endif
+
+		std::vector<uint32_t> inds;
+		np_where_s(ovr, LE, thresh, inds);
+
+#if NMS_LOG
+		printArray("inds", inds);
+#endif
+
+		tempOrder.resize(inds.size());
+		for (uint32_t k = 0; k < inds.size(); k++) {
+			tempOrder[k] = order[inds[k]+1];
+		}
+		order = tempOrder;
+
+#if NMS_LOG
+		printArray("order", order);
+#endif
+	}
+}
+
+
+
+
 
 
 

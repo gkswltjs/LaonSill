@@ -1,0 +1,422 @@
+/*
+ * SoftmaxWithLossLayer.cpp
+ *
+ *  Created on: Nov 23, 2016
+ *      Author: jkim
+ */
+
+#if 1
+#include <vector>
+
+#include "SoftmaxWithLossLayer.h"
+#include "ActivationFactory.h"
+#include "CostFactory.h"
+#include "MathFunctions.h"
+
+using namespace std;
+
+
+#define SOFTMAXWITHLOSSLAYER_LOG	1
+
+template <typename Dtype>
+SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer()
+	: LossLayer<Dtype>() {
+	initialize();
+}
+
+template <typename Dtype>
+SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(Builder* builder)
+	: LossLayer<Dtype>(builder) {
+	this->softmaxAxis = builder->_softmaxAxis;
+	initialize();
+}
+
+template <typename Dtype>
+SoftmaxWithLossLayer<Dtype>::~SoftmaxWithLossLayer() {
+	delete prob;
+
+	ActivationFactory<Dtype>::destory(activation_fn);
+	CostFactory<Dtype>::destroy(cost_fn);
+
+	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(probTensorDesc));
+}
+
+
+template <typename Dtype>
+void SoftmaxWithLossLayer<Dtype>::reshape() {
+	Layer<Dtype>::_adjustInputShape();
+
+	const uint32_t inputSize = this->_inputData.size();
+	if (this->propDown.size() != inputSize) {
+		this->propDown.resize(inputSize);
+
+		this->propDown[0] = true;
+		this->propDown[1] = false;
+	}
+
+	for (uint32_t i = 0; i < inputSize; i++) {
+		if (!Layer<Dtype>::_isInputShapeChanged(i))
+			continue;
+
+		const vector<uint32_t>& inputDataShape = this->_inputData[i]->getShape();
+		this->_inputShape[i] = inputDataShape;
+
+		// "data"
+		if (i == 0) {
+			// "prob"
+			this->prob->reshape(inputDataShape);
+			// loss에 해당하는 scalar값 하나
+			this->_outputData[0]->reshape({1, 1, 1, 1});
+			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
+					this->name.c_str(), 1, 1, 1, 1);
+
+			const uint32_t batches = inputDataShape[0];
+			const uint32_t channels = inputDataShape[1];
+			const uint32_t rows = inputDataShape[2];
+			const uint32_t cols = inputDataShape[3];
+
+			checkCUDNN(cudnnSetTensor4dDescriptor(
+					this->inputTensorDesc,
+					CUDNN_TENSOR_NCHW,
+					CUDNN_DATA_FLOAT,
+					batches, channels, rows, cols));
+
+			checkCUDNN(cudnnSetTensor4dDescriptor(
+					this->probTensorDesc,
+					CUDNN_TENSOR_NCHW,
+					CUDNN_DATA_FLOAT,
+					batches, channels, rows, cols));
+
+			//this->softmaxAxis = 1;
+			this->outerNum = this->_inputData[0]->getCountByAxis(0, this->softmaxAxis);
+			this->innerNum = this->_inputData[0]->getCountByAxis(this->softmaxAxis+1);
+
+			assert(this->outerNum*this->innerNum == this->_inputData[1]->getCount() &&
+					"Number of labels must match number of predictions ... ");
+
+			if (this->_outputData.size() > 1) {
+				// softmax output ...
+			}
+		}
+		// "label"
+		else if (i == 1) {}
+	}
+}
+
+
+
+template <typename Dtype>
+__global__ void SoftmaxLossForwardGPU(const uint32_t nthreads,
+		const Dtype* prob_data, const Dtype* label, Dtype* loss,
+		const int num, const int dim, const int spatial_dim,
+		const bool has_ignore_label_, const int ignore_label_,
+		Dtype* counts) {
+
+	CUDA_KERNEL_LOOP(index, nthreads) {
+		const int n = index / spatial_dim;
+		const int s = index % spatial_dim;
+		const int label_value = static_cast<int>(label[n * spatial_dim + s]);
+		if (has_ignore_label_ && label_value == ignore_label_) {
+			loss[index] = 0;
+			counts[index] = 0;
+		} else {
+			loss[index] = -log(max(prob_data[n * dim + label_value * spatial_dim + s],
+					Dtype(FLT_MIN)));
+			counts[index] = 1;
+		}
+	}
+}
+
+
+
+
+template <typename Dtype>
+void SoftmaxWithLossLayer<Dtype>::feedforward() {
+	reshape();
+
+	const Dtype* d_data = this->_inputData[0]->device_data();
+	Dtype* d_prob = this->prob->mutable_device_data();
+
+	// softmax
+	activation_fn->forward(this->probTensorDesc, d_data, d_prob);
+
+
+#if SOFTMAXWITHLOSSLAYER_LOG
+	Data<Dtype>::printConfig = true;
+	this->_inputData[0]->print_data({}, false);
+	this->_inputData[1]->print_data({}, false);
+	this->prob->print_data({}, false);
+	Data<Dtype>::printConfig = false;
+#endif
+
+	const Dtype* d_label = this->_inputData[1]->device_data();
+	const uint32_t dim = prob->getCount() / outerNum;
+	const uint32_t nThreads = outerNum * innerNum;
+
+	// Since this memory is not used for anything until it is overwritten
+	// on the backward pass, we use it here to avoid having to allocate new GPU
+	// memory to accumulate intermediate results in the kernel.
+	Dtype* d_loss = this->_inputData[0]->mutable_device_grad();
+	// Similary, this memory is never used elsewhere, and thus we can use it
+	// to avoid having to allocate additional GPU memory.
+	Dtype* counts = prob->mutable_device_grad();
+
+	SoftmaxLossForwardGPU<Dtype><<<SOOOA_GET_BLOCKS(nThreads),
+			SOOOA_CUDA_NUM_THREADS>>>(nThreads, d_prob, d_label, d_loss,
+			outerNum, dim, innerNum, this->hasIgnoreLabel, this->ignoreLabel, counts);
+
+#if SOFTMAXWITHLOSSLAYER_LOG
+	Data<Dtype>::printConfig = true;
+	//this->_inputData[0]->print_grad({1, 1, 1, nThreads}, false);
+	//this->prob->print_grad({1, 1, 1, nThreads}, false);
+	this->_inputData[0]->print_grad({}, false);
+	this->prob->print_grad({}, false);
+	Data<Dtype>::printConfig = false;
+#endif
+
+	Dtype loss;
+	soooa_gpu_asum(nThreads, d_loss, &loss);
+	Dtype validCount = -1;
+	// Only launch another CUDA kernel if we actually need the count of valid
+	// outputs
+	if (this->normalizationMode == LossLayer<Dtype>::NormalizationMode::Valid &&
+			this->normalize) {
+		soooa_gpu_asum(nThreads, counts, &validCount);
+	}
+	this->_outputData[0]->mutable_host_data()[0] = loss / getNormalizer(validCount);
+
+#if SOFTMAXWITHLOSSLAYER_LOG
+	Data<Dtype>::printConfig = true;
+	this->_outputData[0]->print_data();
+	Data<Dtype>::printConfig = false;
+#endif
+
+	// if (top.size() == 2) ...
+}
+
+
+
+
+template <typename Dtype>
+__global__ void SoftmaxLossBackwardGPU(const int nthreads, const Dtype* top,
+          const Dtype* label, Dtype* bottom_diff, const int num, const int dim,
+          const int spatial_dim, const bool has_ignore_label_,
+          const int ignore_label_, Dtype* counts) {
+  const int channels = dim / spatial_dim;
+
+  CUDA_KERNEL_LOOP(index, nthreads) {
+    const int n = index / spatial_dim;
+    const int s = index % spatial_dim;
+    const int label_value = static_cast<int>(label[n * spatial_dim + s]);
+
+    if (has_ignore_label_ && label_value == ignore_label_) {
+      for (int c = 0; c < channels; ++c) {
+        bottom_diff[n * dim + c * spatial_dim + s] = 0;
+      }
+      counts[index] = 0;
+    } else {
+      bottom_diff[n * dim + label_value * spatial_dim + s] -= 1;
+      counts[index] = 1;
+    }
+  }
+}
+
+
+
+template <typename Dtype>
+void SoftmaxWithLossLayer<Dtype>::backpropagation() {
+	if (this->propDown[1]) {
+		cout << this->type <<
+				" Layer cannot backpropagate to label inputs." << endl;
+	}
+
+	if (this->propDown[0]) {
+		Dtype* d_dataGrad = this->_inputData[0]->mutable_device_grad();
+		const Dtype* d_prob = this->prob->device_data();
+		const Dtype* d_loss = this->_outputData[0]->device_data();
+		soooa_gpu_memcpy(this->prob->getCount()*sizeof(Dtype), d_prob, d_dataGrad);
+
+#if SOFTMAXWITHLOSSLAYER_LOG
+		Data<Dtype>::printConfig = true;
+		this->prob->print_data();
+		this->_outputData[0]->print_data();
+		this->_inputData[0]->print_grad();
+		Data<Dtype>::printConfig = false;
+#endif
+
+		const Dtype* d_label = this->_inputData[1]->device_data();
+		const int dim = this->prob->getCount() / outerNum;
+		const int nThreads = outerNum * innerNum;
+		// Since this memory is never used for anything else,
+		// we use to avoid allocating new GPU memory.
+		Dtype* counts = this->prob->mutable_device_grad();
+		SoftmaxLossBackwardGPU<Dtype><<<SOOOA_GET_BLOCKS(nThreads),
+		        SOOOA_CUDA_NUM_THREADS>>>(nThreads, d_loss, d_label, d_dataGrad,
+		        outerNum, dim, innerNum, this->hasIgnoreLabel, this->ignoreLabel, counts);
+
+#if SOFTMAXWITHLOSSLAYER_LOG
+		Data<Dtype>::printConfig = true;
+		this->_inputData[1]->print_data();
+		this->prob->print_grad();
+		this->_inputData[0]->print_grad();
+		Data<Dtype>::printConfig = false;
+#endif
+
+		Dtype validCount = -1;
+		// Only launch another CUDA kernel if we actually need the count of valid
+		// outputs.
+		if (this->normalizationMode == LossLayer<Dtype>::NormalizationMode::Valid &&
+				this->normalize) {
+			soooa_gpu_asum(nThreads, counts, &validCount);
+		}
+		// XXX: caffe, top[0]->cpu_diff()[0]에 대해서 set하는 부분을 찾을 수 없고
+		// 현재 특수한 값이 들어 있는 것이 아닌 1의 값이 들어있어 상수 1.0f으로 대체
+		//const Dtype lossWeight = this->_outputData[0]->host_grad()[0] /
+		//		getNormalizer(validCount);
+		const Dtype lossWeight = Dtype(1) / getNormalizer(validCount);
+		soooa_gpu_scal(this->prob->getCount(), lossWeight, d_dataGrad);
+
+#if SOFTMAXWITHLOSSLAYER_LOG
+		Data<Dtype>::printConfig = true;
+		this->_inputData[0]->print_grad();
+		Data<Dtype>::printConfig = false;
+#endif
+	}
+
+	/*
+	const uint32_t batches = this->_inputData[0]->getShape(0);
+	const uint32_t probRows = this->prob->getShape(2);
+
+	const Dtype* d_data = this->_inputData[0]->device_data();
+	const Dtype* d_prob = this->prob->device_data();
+	const Dtype* d_label = this->_inputData[1]->device_data();
+
+	// delta_output 구하는 단계를 넣을 경우, delta_output을 0으로 reset할 필요가 있음
+	// 0으로 reset한 후, target에 해당하는 element만 수정, (테스트 단계 임시로 여기서 reset)
+	this->prob->reset_device_grad();
+	Dtype* d_probGrad = this->prob->mutable_device_grad();
+	this->cost_fn->backward(d_data, d_prob, d_label,
+			d_probGrad, probRows, batches);
+
+	//Data<Dtype>::printConfig = true;
+	this->_inputData[0]->print_data();
+	this->_inputData[1]->print_data();
+	this->prob->print_data();
+	this->_inputData[0]->print_grad();
+	//Data<Dtype>::printConfig = false;
+
+	Dtype* d_dx = this->_inputData[0]->mutable_device_grad();
+	this->activation_fn->backward(this->probTensorDesc, d_prob, d_probGrad, d_data, d_dx);
+	*/
+
+}
+
+template <typename Dtype>
+Dtype SoftmaxWithLossLayer<Dtype>::cost() {
+	/*
+	const uint32_t batches = this->_inputData[0]->getShape(0);
+	const uint32_t probRows = this->prob->getShape(2);
+
+	if (this->_inputData.size() <= 1) {
+		cout << "SoftmaxWithLossLayer<" << this->name <<
+				"> does not have label input ... " << endl;
+		exit(1);
+	}
+
+	const Dtype* h_prob = this->prob->host_data();
+	const Dtype* h_label = this->_inputData[1]->host_data();
+
+	//Data<Dtype>::printConfig = true;
+	this->prob->print_data();
+	this->_inputData[1]->print_data();
+	//Data<Dtype>::printConfig = false;
+
+	return this->cost_fn->forward(h_prob, h_label, probRows, batches);
+	*/
+	return this->_outputData[0]->host_data()[0];
+}
+
+
+template <typename Dtype>
+void SoftmaxWithLossLayer<Dtype>::initialize() {
+	this->type = Layer<Dtype>::SoftmaxWithLoss;
+
+	this->prob = new Data<Dtype>("prob");
+
+	this->activation_fn = ActivationFactory<Dtype>::create(Activation<Dtype>::Softmax);
+	this->cost_fn = CostFactory<Dtype>::create(Cost<Dtype>::LogLikelihood);
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&probTensorDesc));
+
+	if (this->normalizationMode == LossLayer<Dtype>::NormalizationMode::NoNormalization &&
+			this->normalize) {
+		this->normalizationMode = this->normalize?
+				LossLayer<Dtype>::NormalizationMode::Valid:
+				LossLayer<Dtype>::NormalizationMode::BatchSize;
+	}
+}
+
+template <typename Dtype>
+Dtype SoftmaxWithLossLayer<Dtype>::getNormalizer(int validCount) {
+	Dtype normalizer;
+	switch (this->normalizationMode) {
+	case LossLayer<Dtype>::NormalizationMode::Full:
+		normalizer = Dtype(outerNum * innerNum);
+		break;
+	case LossLayer<Dtype>::NormalizationMode::Valid:
+		if (validCount == -1) {
+			normalizer = Dtype(outerNum * innerNum);
+		} else {
+			normalizer = Dtype(validCount);
+		}
+		break;
+	case LossLayer<Dtype>::NormalizationMode::BatchSize:
+		normalizer = Dtype(outerNum);
+		break;
+	case LossLayer<Dtype>::NormalizationMode::NoNormalization:
+		normalizer = Dtype(1);
+		break;
+	default:
+		cout << "Unknown normlization mode ... " << endl;
+		exit(-1);
+	}
+	// Some useres will have no labels for some examples in order to 'turn off' a
+	// particular loss in a multi-task setup. The max prevents NaNs in that case.
+	return max(Dtype(1.0), normalizer);
+}
+
+
+template class SoftmaxWithLossLayer<float>;
+
+
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

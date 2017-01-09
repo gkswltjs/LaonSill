@@ -15,10 +15,12 @@ template <typename Dtype>
 HiddenLayer<Dtype>::HiddenLayer() {}
 
 template <typename Dtype>
-HiddenLayer<Dtype>::HiddenLayer(Builder* builder) : Layer<Dtype>(builder) {}
+HiddenLayer<Dtype>::HiddenLayer(Builder* builder)
+: Layer<Dtype>(builder) {}
 
 template <typename Dtype>
-HiddenLayer<Dtype>::HiddenLayer(const string& name) : Layer<Dtype>(name) {}
+HiddenLayer<Dtype>::HiddenLayer(const string& name)
+: Layer<Dtype>(name) {}
 
 
 template <typename Dtype>

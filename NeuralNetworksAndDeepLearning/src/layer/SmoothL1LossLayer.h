@@ -9,52 +9,80 @@
 #define SMOOTHL1LOSSLAYER_H_
 
 
-#if 0
 #include "common.h"
-#include "HiddenLayer.h"
+#include "LossLayer.h"
 
 template <typename Dtype>
-class SmoothL1LossLayer : public HiddenLayer<Dtype> {
+class SmoothL1LossLayer : public LossLayer<Dtype> {
 public:
-	class Builder : public HiddenLayer<Dtype>::Builder {
+	class Builder : public LossLayer<Dtype>::Builder {
 	public:
 		float _sigma;
+		uint32_t _firstAxis;
 
 		Builder() {
-			this->type = Layer<Dtype>::Pool;
+			this->type = Layer<Dtype>::SmoothL1Loss;
+			this->_sigma = 1.0f;
+			this->_firstAxis = 0;
 		}
+		virtual Builder* name(const std::string name) {
+			LossLayer<Dtype>::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			LossLayer<Dtype>::Builder::id(id);
+			return this;
+		}
+		virtual Builder* inputs(const std::vector<std::string>& inputs) {
+			LossLayer<Dtype>::Builder::inputs(inputs);
+			return this;
+		}
+		virtual Builder* outputs(const std::vector<std::string>& outputs) {
+			LossLayer<Dtype>::Builder::outputs(outputs);
+			return this;
+		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			LossLayer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
+		virtual Builder* lossWeight(const float lossWeight) {
+			LossLayer<Dtype>::Builder::lossWeight(lossWeight);
+			return this;
+		}
+		virtual Builder* ignoreLabel(const int ignoreLabel) {
+			LossLayer<Dtype>::Builder::ignoreLabel(ignoreLabel);
+			return this;
+		}
+		virtual Builder* normalize(const bool normalize) {
+			LossLayer<Dtype>::Builder::normalize(normalize);
+			return this;
+		}
+		/*
+		virtual Builder* normalizationMode(const typename LossLayer<Dtype>::NormalizationMode normalizationMode) {
+			LossLayer<Dtype>::Builder::normalizationMode(normalizationMode);
+			return this;
+		}
+		*/
 		Builder* sigma(float sigma) {
 			this->_sigma = sigma;
 			return this;
 		}
-		virtual Builder* name(const std::string name) {
-			HiddenLayer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			HiddenLayer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			HiddenLayer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			HiddenLayer<Dtype>::Builder::outputs(outputs);
+		Builder* firstAxis(uint32_t firstAxis) {
+			this->_firstAxis = firstAxis;
 			return this;
 		}
 		Layer<Dtype>* build() {
+			if (this->_propDown.size() != this->_inputs.size()) {
+				this->_propDown.resize(this->_inputs.size());
+
+				for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+					if (i == 0)
+						this->_propDown[0] = true;
+					else
+						this->_propDown[i] = false;
+				}
+			}
 			return new SmoothL1LossLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			HiddenLayer<Dtype>::Builder::save(ofs);
-			ofs.write((char*)&_poolDim, sizeof(pool_dim));
-			ofs.write((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
-		}
-		virtual void load(std::ifstream& ifs) {
-			HiddenLayer<Dtype>::Builder::load(ifs);
-			ifs.read((char*)&_poolDim, sizeof(pool_dim));
-			ifs.read((char*)&_poolingType, sizeof(typename Pooling<Dtype>::Type));
 		}
 	};
 
@@ -65,14 +93,56 @@ public:
 	virtual void reshape();
 	virtual void feedforward();
 	virtual void backpropagation();
+	virtual Dtype cost();
+
+	virtual inline int exactNumBottomBlobs() const { return -1; }
+	virtual inline int minBottomBlobs() const { return 2; }
+	virtual inline int maxBottomBlobs() const { return 4; }
 
 private:
 	void initialize();
 
 private:
-	float sigma;
+	Data<Dtype>* diff;
+	Data<Dtype>* errors;
+	Data<Dtype>* ones;
+	bool hasWeights;
+	float sigma2;
+	uint32_t firstAxis;
+
+
+	uint32_t tempCnt;
 };
 
-#endif
 
 #endif /* SMOOTHL1LOSSLAYER_H_ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

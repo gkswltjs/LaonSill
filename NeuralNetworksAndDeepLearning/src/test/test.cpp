@@ -1,4 +1,30 @@
 #if 0
+#include "test_common.h"
+#include "ReshapeLayer.h"
+
+using namespace std;
+
+
+int main() {
+
+	string a;
+
+	if (a == "") {
+		cout << "empty string equals \"\"" << endl;
+	}
+	if (a.size() == 0) {
+		cout << "empty string's size is 0" << endl;
+	}
+
+
+}
+#endif
+
+
+
+
+
+#if 0
 #include "ImagePackDataSet.h"
 #include "ImagePacker.h"
 #include "Util.h"

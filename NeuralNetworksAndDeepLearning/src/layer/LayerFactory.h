@@ -49,7 +49,7 @@ public:
 		//case Layer<Dtype>::Inception: return new InceptionLayer<Dtype>();
 		case Layer<Dtype>::LRN: return new LRNLayer<Dtype>();
 		//case Layer<Dtype>::Sigmoid: return new SigmoidLayer<Dtype>();
-		case Layer<Dtype>::Softmax: return new SoftmaxLayer<Dtype>();
+		//case Layer<Dtype>::Softmax: return new SoftmaxLayer<Dtype>();
 		default: throw new Exception();
 		}
 		//return 0;
@@ -87,7 +87,7 @@ public:
 		//case Layer<Dtype>::Inception: return new InceptionLayer<Dtype>();
 		case Layer<Dtype>::LRN: return new typename LRNLayer<Dtype>::Builder();
 		//case Layer<Dtype>::Sigmoid: return new SigmoidLayer<Dtype>();
-		case Layer<Dtype>::Softmax: return new typename SoftmaxLayer<Dtype>::Builder();
+		//case Layer<Dtype>::Softmax: return new typename SoftmaxLayer<Dtype>::Builder();
 		default: throw new Exception();
 		}
 		//return 0;

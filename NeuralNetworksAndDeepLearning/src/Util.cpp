@@ -22,6 +22,7 @@ bool Util::print = false;
 size_t Util::cuda_mem = 0;
 int Util::alloc_cnt = 0;
 ostream *Util::outstream = &cout;
+string Util::imagePath = "";
 //int Util::batchCount = 0;
 
 
@@ -57,7 +58,7 @@ void log_print(FILE *fp, int log_level, const char* filename, const int line, co
 
 /*
 template<class T>
-void Util::clearVector(std::vector<T*>& vec) {
+void Util::clearVector(vector<T*>& vec) {
 	const uint32_t vecSize = vec.size();
 	for(uint32_t i = 0; i < vecSize; i++) {
 		delete vec[i];
@@ -92,6 +93,26 @@ uint32_t Util::vecCountByAxis(const vector<uint32_t>& vec, const uint32_t axis) 
 			count *= vec[i];
 	}
 	return count;
+}
+
+
+void Util::saveStringToFstream(ofstream& ofs, const string& str) {
+	size_t strLength = str.size();
+	ofs.write((char*)&strLength, sizeof(size_t));
+	ofs.write((char*)str.c_str(), strLength);
+}
+
+void Util::loadStringFromFstream(ifstream& ifs, string& str) {
+	size_t strLength;
+	ifs.read((char*)&strLength, sizeof(size_t));
+
+	char* str_c = new char[strLength+1];
+	ifs.read(str_c, strLength);
+	str_c[strLength] = '\0';
+
+	str = str_c;
+
+	delete [] str_c;
 }
 
 
@@ -198,6 +219,42 @@ void Util::printMessage(string message) {
 		(*outstream) << message << endl;
 	}
 }
+
+
+void Util::refineParamName(const char* namePtr, char* tempName) {
+	int i = 0;
+
+	// 이름이 ' :'를 만나서 끝난 케이스, postfix있음, postfix 제거 후 사용
+	// 이름이 '\0'을 만나서 끝난 케이스, postfix없음, 그대로 사용
+	while (true) {
+		if (namePtr[i] == ':') {
+			// tempName 뒤에 _filter, _bias를 붙이고 종료
+
+			int tempi = i;
+			while (namePtr[i] != '\0')
+				i++;
+			while (namePtr[i] != '_')
+				i--;
+
+			while (true) {
+				tempName[tempi] = namePtr[i];
+				if (namePtr[i] == '\0')
+					break;
+				i++;
+				tempi++;
+			}
+			break;
+		}
+
+		tempName[i] = namePtr[i];
+
+		if (namePtr[i] == '\0') {
+			break;
+		}
+		i++;
+	}
+}
+
 
 
 

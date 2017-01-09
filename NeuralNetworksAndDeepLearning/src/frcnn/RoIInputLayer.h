@@ -26,15 +26,10 @@ public:
 	class Builder : public InputLayer<Dtype>::Builder {
 	public:
 		uint32_t _numClasses;
-		uint32_t _imsPerBatch;
-		uint32_t _trainBatchSize;
-		uint32_t _trainMaxSize;
-		float _trainFgFraction;
-		std::vector<uint32_t> _trainScales;
 		std::vector<float> _pixelMeans;
 
 		Builder() {
-			this->type = Layer<Dtype>::Input;
+			this->type = Layer<Dtype>::RoIInput;
 		}
 		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);
@@ -52,28 +47,12 @@ public:
 			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			Layer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
 		virtual Builder* numClasses(const uint32_t numClasses) {
 			this->_numClasses = numClasses;
-			return this;
-		}
-		virtual Builder* imsPerBatch(const uint32_t imsPerBatch) {
-			this->_imsPerBatch = imsPerBatch;
-			return this;
-		}
-		virtual Builder* trainBatchSize(const uint32_t trainBatchSize) {
-			this->_trainBatchSize = trainBatchSize;
-			return this;
-		}
-		virtual Builder* trainMaxSize(const uint32_t trainMaxSize) {
-			this->_trainMaxSize = trainMaxSize;
-			return this;
-		}
-		virtual Builder* trainFgFraction(const float trainFgFraction) {
-			this->_trainFgFraction = trainFgFraction;
-			return this;
-		}
-		virtual Builder* trainScales(const std::vector<uint32_t>& trainScales) {
-			this->_trainScales = trainScales;
 			return this;
 		}
 		virtual Builder* pixelMeans(const std::vector<float>& pixelMeans) {
@@ -82,12 +61,6 @@ public:
 		}
 		Layer<Dtype>* build() {
 			return new RoIInputLayer(this);
-		}
-		virtual void save(std::ofstream& ofs) {
-			Layer<Dtype>::Builder::save(ofs);
-		}
-		virtual void load(std::ifstream& ifs) {
-			Layer<Dtype>::Builder::load(ifs);
 		}
 	};
 
@@ -117,7 +90,7 @@ private:
 	void shuffleRoidbInds();
 	void getNextMiniBatch();
 	void getNextMiniBatchInds(std::vector<uint32_t>& inds);
-	void getMiniBatch(const std::vector<RoIDB>& roidb);
+	void getMiniBatch(const std::vector<RoIDB>& roidb, const std::vector<uint32_t>& inds);
 	void getImageBlob(const std::vector<RoIDB>& roidb, const std::vector<uint32_t>& scaleInds,
 			std::vector<float>& imScales);
 	float prepImForBlob(cv::Mat& im, const std::vector<float>& pixelMeans,
@@ -131,14 +104,11 @@ public:
 	IMDB* imdb;
 
 	uint32_t numClasses;
-	uint32_t imsPerBatch;
-	uint32_t trainBatchSize;
-	uint32_t trainMaxSize;
-	float trainFgFraction;
-	std::vector<uint32_t> trainScales;
 	std::vector<float> pixelMeans;
 	std::vector<uint32_t> perm;
 	uint32_t cur;
+
+	std::vector<std::vector<Data<Dtype>*>> proposalTargetDataList;
 };
 
 #endif /* ROIINPUTLAYER_H_ */

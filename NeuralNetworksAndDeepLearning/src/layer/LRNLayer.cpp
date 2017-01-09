@@ -39,7 +39,7 @@ void LRNLayer<Dtype>::reshape() {
 	uint32_t cols 		= inputShape[3];
 
 	this->_inputShape[0] = inputShape;
-	this->_outputData[0]->shape(inputShape);
+	this->_outputData[0]->reshape(inputShape);
 
 	checkCUDNN(cudnnSetTensor4dDescriptor(
 			this->inputTensorDesc,

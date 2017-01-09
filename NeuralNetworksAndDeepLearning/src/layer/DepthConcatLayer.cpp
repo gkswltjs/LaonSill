@@ -63,7 +63,7 @@ void DepthConcatLayer<Dtype>::reshape() {
 		channels += this->_inputData[i]->getShape()[1];
 	}
 
-	this->_outputData[0]->shape({batches, channels, rows, cols});
+	this->_outputData[0]->reshape({batches, channels, rows, cols});
 
 	/*
 	this->out_dim.channels = 0;

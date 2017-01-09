@@ -75,7 +75,7 @@ void developerMain() {
 
  	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
  	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
- 	NetworkListener* networkListener = new NetworkMonitor(NetworkMonitor::PLOT_ONLY);
+ 	NetworkListener* networkListener = new NetworkMonitor("main_loss", NetworkMonitor::PLOT_ONLY);
 
  	NetworkConfig<float>* networkConfig =
  			(new typename NetworkConfig<float>::Builder())
@@ -89,7 +89,6 @@ void developerMain() {
  			->clipGradientsLevel(clipGradientsLevel)
  			->lrPolicy(lrPolicy)
  			->gamma(gamma)
- 			->evaluations({top1Evaluation, top5Evaluation})
  			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
  			->networkListeners({networkListener})
  			->build();
@@ -195,7 +194,7 @@ int main(int argc, char** argv) {
 
     // (4) 뉴럴 네트워크 관련 기본 설정을 한다.
     //     TODO: SPARAM의 인자로 대체하자.
-	cout.precision(5);
+	cout.precision(7);
 	cout.setf(ios::fixed);
 	Util::setOutstream(&cout);
 	Util::setPrint(false);
@@ -273,30 +272,6 @@ int main(int argc, char** argv) {
 }
 
 void network_load() {
-	Cuda::create(0);
-	cout << "Cuda creation done ... " << endl;
-
-	//DataSet<float>* dataSet = createMnistDataSet<float>();
-	DataSet<float>* dataSet = createImageNet1000DataSet<float>();
-	dataSet->load();
-
-	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
-	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
-
-	// save file 경로로 builder 생성,
-	NetworkConfig<float>::Builder* networkBuilder = new NetworkConfig<float>::Builder();
-	networkBuilder->load(SPARAM(NETWORK_SAVE_DIR));
-	//networkBuilder->dataSet(dataSet);
-	networkBuilder->evaluations({top1Evaluation, top5Evaluation});
-
-	NetworkConfig<float>* networkConfig = networkBuilder->build();
-	networkConfig->load();
-
-	Network<float>* network = new Network<float>(networkConfig);
-	//network->sgd(1);
-	network->test();
-
-	Cuda::destroy();
 }
 
 #else

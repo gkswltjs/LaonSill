@@ -28,7 +28,7 @@ void Layer<Dtype>::_shape(bool recursive) {
 	// 모든 입력 데이터에 대해
 	for (uint32_t i = 0; i < inputSize; i++) {
 		// 이미 shape가 동일한 경우 reshape하지 않는다.
-		if (_inputData[i].shape() == _inputShape[i])
+		if (_inputData[i].reshape() == _inputShape[i])
 			continue;
 
 		_outputData[i]->

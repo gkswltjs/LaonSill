@@ -12,6 +12,8 @@
 #include "cuda_runtime.h"
 #include <algorithm>
 
+#define FULLYCONNECTEDLAYER_LOG 0
+
 using namespace std;
 
 #ifdef GPU_MODE
@@ -95,24 +97,38 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::reshape() {
-	Layer<Dtype>::_adjustInputShape();
+	if (!Layer<Dtype>::_adjustInputShape()) {
+		const uint32_t count = Util::vecCountByAxis(this->_inputShape[0], 1);
+		const uint32_t inputDataCount = this->_inputData[0]->getCountByAxis(1);
+		assert(count == inputDataCount);
+	}
 
+
+
+	/*
 	// 배치수가 변경되는 경우는 허용하도록 하자.
 	const uint32_t count = Util::vecCountByAxis(this->_inputShape[0], 1);
 	const uint32_t inputDataCount = this->_inputData[0]->getCountByAxis(1);
 	if (inputDataCount == count)
 		return;
+		*/
+
+	// XXX: 주의
+
+
+	if (!Layer<Dtype>::_isInputShapeChanged(0))
+		return;
 
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 	uint32_t batches = inputShape[0];
 	uint32_t channels = 1;
-	uint32_t in_rows = inputDataCount;
+	uint32_t in_rows = this->_inputData[0]->getCountByAxis(1);
 	uint32_t out_rows = this->n_out;
 	uint32_t cols = 1;
 
 	this->_inputShape[0] = {batches, channels, in_rows, cols};
-	this->_preActivation->shape({batches, channels, out_rows, cols});
-	this->_outputData[0]->shape({batches, channels, out_rows, cols});
+	this->_preActivation->reshape({batches, channels, out_rows, cols});
+	this->_outputData[0]->reshape({batches, channels, out_rows, cols});
 
 	checkCUDNN(cudnnSetTensor4dDescriptor(
 			this->inputTensorDesc,
@@ -126,85 +142,39 @@ void FullyConnectedLayer<Dtype>::reshape() {
 			CUDNN_DATA_FLOAT,
 			batches, channels, out_rows, cols));
 
+#if !FULLYCONNECTEDLAYER_LOG
 	printf("<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
 			this->name.c_str(), batches, channels, in_rows, cols);
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
 			this->name.c_str(), batches, channels, out_rows, cols);
+#endif
 
-	uint32_t u_in = in_rows;
-	uint32_t u_out = out_rows;
-	uint32_t b_in = batches * in_rows;
-	uint32_t b_out = batches * out_rows;
+	const uint32_t u_in = in_rows;
+	const uint32_t u_out = out_rows;
+	const uint32_t b_in = batches * in_rows;
+	const uint32_t b_out = batches * out_rows;
 
-	_params[ParamType::Weight]->shape({1, 1, u_out, u_in});
-	_params[ParamType::Bias]->shape({1, u_out, 1, 1});
-	_paramsHistory[ParamType::Weight]->shape({1, 1, u_out, u_in});
-	_paramsHistory[ParamType::Bias]->shape({1, u_out, 1, 1});
+	_params[ParamType::Weight]->reshape({1, 1, u_out, u_in});
+	_params[ParamType::Bias]->reshape({1, u_out, 1, 1});
+	_paramsHistory[ParamType::Weight]->reshape({1, 1, u_out, u_in});
+	_paramsHistory[ParamType::Bias]->reshape({1, u_out, 1, 1});
 
-	weight_filler.fill(_params[ParamType::Weight]);
-	bias_filler.fill(_params[ParamType::Bias]);
-
-	_params[ParamType::Weight]->print_data("weight:");
-	_params[ParamType::Bias]->print_data("bias:");
-
-	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*batches));
-	FillValues<<<RoundUp(batches, BW), BW>>>(this->d_onevec, batches, 1.0f);
-
-	_mask.shape(b_out);
-
-
-	/*
-	this->setInDimension(this->_inputData[0]->getShape());
-
-	this->in_dim.rows = this->in_dim.rows*this->in_dim.cols*this->in_dim.channels;
-	this->in_dim.cols = 1;
-	this->in_dim.channels = 1;
-	this->out_dim.batches = this->in_dim.batches;
-
-	if(recursive) {
-		HiddenLayer<Dtype>::_shape();
+	if (!this->_paramsInitialized[Weight]) {
+		this->weight_filler.fill(this->_params[ParamType::Weight]);
+		this->_paramsInitialized[Weight] = true;
+	}
+	if (!this->_paramsInitialized[Bias]) {
+		this->bias_filler.fill(this->_params[ParamType::Bias]);
+		this->_paramsInitialized[Bias] = true;
 	}
 
-	uint32_t u_in = this->in_dim.unitsize();
-	uint32_t u_out = this->out_dim.unitsize();
-	uint32_t b_in = this->in_dim.batchsize();
-	uint32_t b_out = this->out_dim.batchsize();
+	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*batches));
+	//FillValues<<<RoundUp(batches, BW), BW>>>(this->d_onevec, batches, 1.0f);
+	FillValues<<<SOOOA_GET_BLOCKS(batches), SOOOA_CUDA_NUM_THREADS>>>(
+			this->d_onevec, batches, 1.0f);
 
-	//weight = new Dtype[u_out*u_in];
-	//bias = new Dtype[u_out];
-	//_params[ParamType::Weight]->reshape({1, 1, u_out, u_in});
-	_params[ParamType::Weight]->shape({u_out, u_in, 1, 1});
-	_params[ParamType::Bias]->shape({1, 1, u_out, 1});
-	_paramsHistory[ParamType::Weight]->shape({u_out, u_in, 1, 1});
-	_paramsHistory[ParamType::Bias]->shape({1, 1, u_out, 1});
-	_preActivation->shape({this->out_dim.batches, 1, u_out, 1});
+	_mask.reshape(b_out);
 
-
-	//cout << this->name << ", fanin: " << u_out*u_in << endl;
-	//weight_filler.fill(_params[ParamType::Weight]->mutable_host_data(), u_out*u_in, u_in, u_out);
-	//bias_filler.fill(_params[ParamType::Bias]->mutable_host_data(), u_out, u_in, u_out);
-	weight_filler.fill(_params[ParamType::Weight]);
-	bias_filler.fill(_params[ParamType::Bias]);
-
-	_params[ParamType::Weight]->print_data("weight:");
-	_params[ParamType::Bias]->print_data("bias:");
-
-	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*this->in_dim.batches));
-	FillValues<<<RoundUp(this->in_dim.batches, BW), BW>>>(this->d_onevec, this->in_dim.batches, 1.0f);
-	//cuda_FillValues(this->d_onevec, in_dim.batches, 1.0f);
-	//checkCudaErrors(cudaMemset(d_onevec, 1, in_dim.batches));
-
-
-	//checkCudaErrors(cudaMemcpyAsync(this->d_weight, weight, sizeof(Dtype)*u_out*u_in, cudaMemcpyHostToDevice));
-	//checkCudaErrors(cudaMemcpyAsync(this->d_bias, bias, sizeof(Dtype)*u_out, cudaMemcpyHostToDevice));
-
-	checkCudaErrors(cudaDeviceSynchronize());
-
-	//mask = new Dtype[b_out];
-	//checkCudaErrors(Util::ucudaMalloc(&this->d_mask, sizeof(Dtype)*b_out));
-
-	_mask.shape(b_out);
-	*/
 }
 
 template <typename Dtype>
@@ -285,7 +255,8 @@ void FullyConnectedLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer
     const uint32_t biasSize = out_rows;
     FullyConnectedLayer<Dtype>* _targetLayer = (FullyConnectedLayer<Dtype>*)targetLayer;
 
-    int blockSize = BW;
+    //int blockSize = BW;
+    int blockSize = SOOOA_CUDA_NUM_THREADS;
     int gridSize;
 
     gridSize = (weightSize + blockSize -1) / blockSize;
@@ -339,13 +310,33 @@ template <typename Dtype>
 void FullyConnectedLayer<Dtype>::feedforward() {
 	reshape();
 
-	//Data<Dtype>::printConfig = true;
+	/*
+	if (this->name == "fc6") {
+		Data<Dtype>::printConfig = true;
+		this->_inputData[0]->print_data({}, false);
+		Data<Dtype>::printConfig = false;
+
+		//exit(1);
+	}
+	*/
+
 	_computeWeightedData();
 	_computeWeightBiasedData();
 	_computeActivatedData();
-	//Data<Dtype>::printConfig = false;
-
 	//_dropoutForward();
+
+	/*
+	if (this->name == "fc6") {
+		Data<Dtype>::printConfig = true;
+		this->_params[0]->print_data({}, false);
+		this->_params[1]->print_data({}, false);
+		this->_outputData[0]->print_data({}, false);
+		Data<Dtype>::printConfig = false;
+
+		exit(1);
+	}
+	*/
+
 
 }
 
@@ -399,14 +390,18 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeActivatedData() {
 	// Activate weighted sum (+ bias)
-	const Dtype* d_preActivationData = _preActivation->mutable_device_data();
-	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
+	if (activation_fn) {
+		const Dtype* d_preActivationData = _preActivation->device_data();
+		Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
+		activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_outputData);
+	} else {
+		this->_outputData[0]->set_device_data(_preActivation);
+	}
 
+	//Data<Dtype>::printConfig = true;
 	_preActivation->print_data();
-
-	activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_outputData);
-
 	this->_outputData[0]->print_data();
+	//Data<Dtype>::printConfig = false;
 }
 
 template <typename Dtype>
@@ -424,7 +419,9 @@ void FullyConnectedLayer<Dtype>::_dropoutForward() {
 		const Dtype* d_mask_mem = _mask.device_mem();
 		Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
-		Dropout<<<RoundUp(b_out, BW), BW>>>(b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
+		//Dropout<<<RoundUp(b_out, BW), BW>>>(b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
+		Dropout<<<SOOOA_GET_BLOCKS(b_out), SOOOA_CUDA_NUM_THREADS>>>(
+				b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
 	}
 }
 
@@ -456,7 +453,9 @@ void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 		this->_outputData[0]->print_grad("outputGrad:");
 		const Dtype* d_mask_mem = _mask.device_mem();
 		Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
-		Dropout<<<RoundUp(batchSize, BW), BW>>>(batchSize, d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
+		//Dropout<<<RoundUp(batchSize, BW), BW>>>(batchSize, d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
+		Dropout<<<SOOOA_GET_BLOCKS(batchSize), SOOOA_CUDA_NUM_THREADS>>>(
+				batchSize, d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
 
 		//_mask.print("mask:");
 		this->_outputData[0]->print_grad("outputGrad:");
@@ -471,14 +470,22 @@ void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computePreActivationGrad() {
-	this->_outputData[0]->print_data("output:");
+	if (activation_fn) {
+		const Dtype* d_y = this->_outputData[0]->device_data();
+		const Dtype* d_dy = this->_outputData[0]->device_grad();
+		const Dtype* d_x = this->_preActivation->device_data();
+		Dtype* d_dx = this->_preActivation->mutable_device_grad();
+		this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
+	}
+	else {
+		this->_preActivation->set_device_grad(this->_outputData[0]);
+	}
 
-	const Dtype* d_y = this->_outputData[0]->device_data();
-	const Dtype* d_dy = this->_outputData[0]->device_grad();
-	const Dtype* d_x = this->_preActivation->device_data();
-	Dtype* d_dx = this->_preActivation->mutable_device_grad();
+	//Data<Dtype>::printConfig = true;
+	this->_outputData[0]->print_grad();
+	this->_preActivation->print_grad();
+	//Data<Dtype>::printConfig = false;
 
-	this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
 
 
 	//if(this->name == "softmaxLayer") {

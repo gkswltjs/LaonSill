@@ -53,6 +53,11 @@ public:
 		exit(1);
 	}
 
+	virtual std::string imagePathAt(const uint32_t index) {
+		std::cout << "IMDB::imagePathAt() is not supported ... " << std::endl;
+		exit(1);
+	}
+
 
 	std::string name;
 	uint32_t numClasses;

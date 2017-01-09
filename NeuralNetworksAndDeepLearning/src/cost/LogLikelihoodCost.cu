@@ -41,7 +41,7 @@ __global__ void SoftmaxLossBackprop(
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= batchsize) return;
-	const uint32_t targetValue = static_cast<uint32_t>(target[idx]+0.1);
+	const uint32_t targetValue = static_cast<uint32_t>(target[idx]+0.0001f);
 	// For each item in the batch, decrease the result of the label's value by 1
 
 	Dtype ayL = activation[idx*numLabels + targetValue];
@@ -95,10 +95,9 @@ double LogLikelihoodCost<Dtype>::forward(const Dtype* output, const Dtype* targe
 template <typename Dtype>
 void LogLikelihoodCost<Dtype>::backward(const Dtype* z, const Dtype* activation,
 		const Dtype* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize) {
-	//checkCudaErrors(cudaMemcpyAsync(delta, activation, sizeof(Dtype)*numLabels*batchsize, cudaMemcpyDeviceToDevice));
-	//SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(target, numLabels, batchsize, delta);
-
-	SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(z, activation, target, delta, numLabels, batchsize);
+	//SoftmaxLossBackprop<<<RoundUp(batchsize, BW), BW>>>(z, activation, target, delta, numLabels, batchsize);
+	SoftmaxLossBackprop<<<SOOOA_GET_BLOCKS(batchsize), SOOOA_CUDA_NUM_THREADS>>>(
+			z, activation, target, delta, numLabels, batchsize);
 }
 
 

@@ -12,6 +12,8 @@
 #include "MockDataSet.h"
 #include "Util.h"
 
+#define INPUTLAYER_LOG 0
+
 using namespace std;
 
 template <typename Dtype>
@@ -20,21 +22,23 @@ InputLayer<Dtype>::InputLayer() {
 }
 
 template <typename Dtype>
-InputLayer<Dtype>::InputLayer(const string name) : Layer<Dtype>(name) {
+InputLayer<Dtype>::InputLayer(const string name)
+	: Layer<Dtype>(name) {
 	initialize();
 }
 
 template <typename Dtype>
-InputLayer<Dtype>::InputLayer(Builder* builder) : Layer<Dtype>(builder) {
+InputLayer<Dtype>::InputLayer(Builder* builder)
+	: Layer<Dtype>(builder) {
 
 	if (builder->_sourceType == "ImagePack") {
 		_dataSet = new ImagePackDataSet<Dtype>(
 				builder->_source+"/train_data",
 				builder->_source+"/train_label",
-				1,
+				builder->_numTrainPack,
 				builder->_source+"/test_data",
 				builder->_source+"/test_label",
-				1);
+				builder->_numTestPack);
 		_dataSet->setMean({0.13066047740});
 		_dataSet->load();
 	} else if (builder->_sourceType == "Mock") {
@@ -87,10 +91,12 @@ void InputLayer<Dtype>::reshape() {
 			this->_inputShape[0][2] = rows;
 			this->_inputShape[0][3] = cols;
 
-			this->_inputData[0]->shape(this->_inputShape[0]);
+			this->_inputData[0]->reshape(this->_inputShape[0]);
 
+#if INPUTLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
 					this->name.c_str(), batches, channels, rows, cols);
+#endif
 		}
 		// 레이블
 		else if (i == 1) {
@@ -104,10 +110,12 @@ void InputLayer<Dtype>::reshape() {
 			this->_inputShape[1][2] = rows;
 			this->_inputShape[1][3] = cols;
 
-			this->_inputData[1]->shape({batches, channels, rows, cols});
+			this->_inputData[1]->reshape({batches, channels, rows, cols});
 
+#if INPUTLAYER_LOG
 			printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
 					this->name.c_str(), batches, channels, rows, cols);
+#endif
 		}
 	}
 
@@ -140,6 +148,8 @@ void InputLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
+	reshape();
+
 	const vector<uint32_t>& inputShape = this->_inputShape[0];
 	const uint32_t batches = inputShape[0];
 	const uint32_t unitSize = Util::vecCountByAxis(inputShape, 1);

@@ -48,16 +48,66 @@
 
 
 
+// CUDA: various checks for different function calls.
+#define CUDA_CHECK(condition)										\
+	/* Code block avoids redefinition of cudaError_t error */		\
+	do { 															\
+		cudaError_t error = condition; 								\
+		if (error != cudaSuccess) { 								\
+			std::stringstream _error; 								\
+			_error << "CUDA_CHECK failure: " << cudaGetErrorString(error); \
+			exit(-1); 												\
+		} 															\
+	} while (0)
+/*
+#define CUBLAS_CHECK(condition)										\
+	do {															\
+		cublasStatus_t status = condition;							\
+		if (status != CUBLAS_STATUS_SUCCESS) {						\
+			std::stringstream _error;								\
+			_error << "CUBALS_CHECK failure: " <<					\
+			caffe::cublasGetErrorString(status);					\
+			exit(-1);												\
+		}															\
+	} while (0)
 
 
+#define CURAND_CHECK(condition)										\
+	do { 															\
+		curandStatus_t status = condition; 							\
+		CHECK_EQ(status, CURAND_STATUS_SUCCESS) << " " 				\
+		<< caffe::curandGetErrorString(status); 					\
+	} while (0)
+	*/
 
 
-#define CUDA_KERNEL_LOOP(i, n) \
-	for (int i = blockIdx.x * blockDim.x + threadIdx.x; \
-		i < (n); \
+// CUDA: grid stride looping
+#define CUDA_KERNEL_LOOP(i, n) 										\
+	for (int i = blockIdx.x * blockDim.x + threadIdx.x; 			\
+		i < (n); 													\
 		i += blockDim.x * gridDim.x)
 
 
+// CUDA: use 512 threads per block
+const int SOOOA_CUDA_NUM_THREADS = 512;
+
+// CUDA: number of blocks for threads.
+inline int SOOOA_GET_BLOCKS(const int N) {
+  return (N + SOOOA_CUDA_NUM_THREADS - 1) / SOOOA_CUDA_NUM_THREADS;
+}
+
+
+
+
+
+#define CUDA_KERNEL_LOOP(i, n) 										\
+	for (int i = blockIdx.x * blockDim.x + threadIdx.x; 			\
+		i < (n); 													\
+		i += blockDim.x * gridDim.x)
+
+
+// CUDA: check for error after kernel execution and exit loudly if there is one.
+#define CUDA_POST_KERNEL_CHECK CUDA_CHECK(cudaPeekAtLastError())
 
 
 
