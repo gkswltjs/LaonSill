@@ -1224,6 +1224,9 @@ LayersConfig<Dtype>* createFrcnnTestOneShotLayersConfig() {
 					//->prevLayerIndices({4})
 					//->nextLayerIndices({6})
 					)
+
+
+
 			->layer((new typename SoftmaxLayer<Dtype>::Builder())
 					->id(17)
 					->name("rpn_cls_prob")

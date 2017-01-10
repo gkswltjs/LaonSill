@@ -38,7 +38,7 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
 	//LayersConfig<float>* layersConfig = createFrcnnStage1RpnTrainLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createFrcnnStage1TrainLayersConfig<float>();
 #else
-	LayersConfig<float>* layersConfig = createFrcnnTestOneShotLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 #endif
 
 	// (2) network config 정보를 layer들에게 전달한다.
