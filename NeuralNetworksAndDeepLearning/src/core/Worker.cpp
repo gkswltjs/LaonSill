@@ -260,7 +260,7 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
 template <typename Dtype>
 void Worker<Dtype>::launchThreads(int consumerCount) {
     // (1) Cuda를 생성한다.
-    Cuda::create(consumerCount);
+    Cuda::create(SPARAM(GPU_COUNT));
     COLD_LOG(ColdLog::INFO, true, "CUDA is initialized");
 
     Worker<Dtype>::useWorker = true;
@@ -300,7 +300,7 @@ template <typename Dtype>
 bool Worker<Dtype>::waitPeer() {
     // XXX: 아래의 코드는 오직 1개의 GPU를 사용하는 developer mode에서만 유효하다.
     if (!useWorker)
-        return false;
+        return true;
 
     if (atomic_fetch_sub(&Worker<Dtype>::runningPeerCount, 1) == 1) {
         atomic_store(&Worker<Dtype>::runningPeerCount, Worker<Dtype>::consumerCount);

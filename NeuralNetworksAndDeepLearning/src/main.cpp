@@ -52,53 +52,54 @@ void developerMain() {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
+	//vector<WeightsArg> weightsArgs(1);
+	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/network540000.param.bak";
+	const vector<string> lossLayers = { "softmaxWithLoss" };
+	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
+	const uint32_t batchSize = 100;
+	const uint32_t testInterval = 50;		// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.01f;
 
-    const uint32_t maxEpoch = 100;
-    const uint32_t batchSize = 50;
- 	//const uint32_t batchSize = 1000;
- 	//const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
- 	const uint32_t testInterval = 200;			// 10000(목표 샘플수) / batchSize
- 	//const uint32_t saveInterval = 20000;		// 1000000 / batchSize
- 	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
- 	const uint32_t stepSize = 100000;
- 	const float baseLearningRate = 0.001f;
- 	const float weightDecay = 0.0002f;
- 	const float momentum = 0.9f;
- 	const float clipGradientsLevel = 0.0f;
- 	const float gamma = 0.1;
- 	const LRPolicy lrPolicy = LRPolicy::Step;
+	const uint32_t stepSize = 100000;
+	const float weightDecay = 0.0001f;
+	const float momentum = 0.9f;
+	const float clipGradientsLevel = 0.0f;
+	const float gamma = 0.1;
+	//const LRPolicy lrPolicy = LRPolicy::Step;
+	const LRPolicy lrPolicy = LRPolicy::Fixed;
 
- 	cout << "batchSize: " << batchSize << endl;
- 	cout << "testInterval: " << testInterval << endl;
- 	cout << "saveInterval: " << saveInterval << endl;
- 	cout << "baseLearningRate: " << baseLearningRate << endl;
- 	cout << "weightDecay: " << weightDecay << endl;
- 	cout << "momentum: " << momentum << endl;
- 	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
+	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
+	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
+	STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
+	STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
+	STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
+	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
+	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
 
- 	Evaluation<float>* top1Evaluation = new Top1Evaluation<float>();
- 	Evaluation<float>* top5Evaluation = new Top5Evaluation<float>();
- 	NetworkListener* networkListener = new NetworkMonitor("main_loss", NetworkMonitor::PLOT_ONLY);
+	NetworkConfig<float>* networkConfig =
+			(new typename NetworkConfig<float>::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
+			->stepSize(stepSize)
+			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->networkPhase(phase)
+			->gamma(gamma)
+			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+			//->weightsArgs(weightsArgs)
+			->networkListeners({
+				new NetworkMonitor("softmaxWithLoss", NetworkMonitor::PLOT_ONLY),
+				})
+			->lossLayers(lossLayers)
+			->build();
 
- 	NetworkConfig<float>* networkConfig =
- 			(new typename NetworkConfig<float>::Builder())
- 			->batchSize(batchSize)
- 			->baseLearningRate(baseLearningRate)
- 			->weightDecay(weightDecay)
- 			->momentum(momentum)
- 			->testInterval(testInterval)
- 			->saveInterval(saveInterval)
- 			->stepSize(stepSize)
- 			->clipGradientsLevel(clipGradientsLevel)
- 			->lrPolicy(lrPolicy)
- 			->gamma(gamma)
- 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
- 			->networkListeners({networkListener})
- 			->build();
-
- 	Util::printVramInfo();
-
+	Util::printVramInfo();
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
 	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
@@ -113,13 +114,10 @@ void developerMain() {
 		layersConfig->_layers[i]->reshape();
 	}
 
-
  	Network<float>* network = new Network<float>(networkConfig);
  	network->setLayersConfig(layersConfig);
 
- 	network->sgd_with_timer(maxEpoch);
-
-
+ 	network->sgd_with_timer(10);
 
     STDOUT_LOG("exit developerMain()");
 }
@@ -237,7 +235,7 @@ int main(int argc, char** argv) {
     // (5) 모드에 따른 동작을 수행한다.
     if (useDeveloperMode) {
         // (5-A-1) Cuda를 생성한다.
-        Cuda::create(SPARAM(CONSUMER_COUNT));
+        Cuda::create(SPARAM(GPU_COUNT));
         COLD_LOG(ColdLog::INFO, true, "CUDA is initialized");
 
         // (5-A-2) DeveloperMain()함수를 호출한다.

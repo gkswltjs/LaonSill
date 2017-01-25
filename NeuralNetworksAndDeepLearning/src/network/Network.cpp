@@ -115,8 +115,7 @@ void Network<Dtype>::sgd(int epochs) {
 	for (uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		config->_status = NetworkStatus::Train;
 
-
-		cout << "epochIndex: " << epochIndex << ", epochs: " << epochs << endl;
+		STDOUT_BLOCK(cout << "epochIndex: " << epochIndex << ", epochs: " << epochs << endl;);
 
 		dataSet->shuffleTrainDataSet();
 
@@ -184,40 +183,6 @@ void Network<Dtype>::sgd(int epochs) {
 					}
 					cout << endl;
 
-                    //const uint32_t numTestData = dataSet->getNumTestData();
-                    //if(numTestData > 0) {
-                    //    double cost = evaluateTestSet();
-                    //    cost /= numTestData;
-
-                        /*
-                        cout << "epoch: " << epochIndex+1 <<
-                            ", iteration: " << epochIndex*numBatches+batchTotalIndex+1 <<
-                                " " << accurateCnt << " / " << numTestData <<
-                            ", accuracy: " << accuracy << ", cost: " << cost <<
-                            " :" << timer1.stop(false) << endl;
-                            */
-                        /*
-                        //const float cost = evaluations[0]->getCost() / numTestData;
-                        const uint32_t accurateCnt = evaluations[0]->getAccurateCount();
-                        const float accuracy = (float)accurateCnt/numTestData;
-                        
-                        cout << "epoch: " << epochIndex+1 << ", iteration: " 
-                            << epochIndex*numBatches+batchTotalIndex+1 << " " << 
-                            accurateCnt << " / " << numTestData << ", accuracy: " << 
-                            accuracy << ", cost: " << cost << " :" << timer1.stop(false) << 
-                            endl;
-                        
-                        for(uint32_t nl = 0; nl < networkListeners.size(); nl++) {
-                            networkListeners[nl]->onAccuracyComputed(0, "top1_accuracy",
-                                (double)evaluations[0]->getAccurateCount()/numTestData*100);
-                            networkListeners[nl]->onAccuracyComputed(1, "top5_accuracy",
-                                (double)evaluations[1]->getAccurateCount()/numTestData*100);
-                            //networkListeners[nl]->onCostComputed(0, "cost",
-                            //  evaluations[0]->getCost()/numTestData);
-                            networkListeners[nl]->onCostComputed(0, "cost", cost);
-                        }
-                        */
-                    //}
                     config->_status = NetworkStatus::Train;
                 }
 

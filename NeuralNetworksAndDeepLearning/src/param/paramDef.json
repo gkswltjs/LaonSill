@@ -248,6 +248,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 1000
+},
+
+"GPU_COUNT" : 
+{
+    "DESC" : "specify GPU device count.",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SESSION",
+    "TYPE" : "UINT32",
+    "DEFAULT" : 1 
 }
 
 }

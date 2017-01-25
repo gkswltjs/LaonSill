@@ -14,6 +14,7 @@
 #include "Network.h"
 #include "NetworkConfig.h"
 #include "ColdLog.h"
+#include "StdOutLog.h"
 #include "Debug.h"
 #include "Evaluation.h"
 #include "Top1Evaluation.h"
@@ -139,8 +140,7 @@ int LegacyWork<Dtype>::createNetwork() {
 	weightsArgs[1].weightsMap["conv5_bias"] = "conv5:detect_bias";
 	*/
 
-	const vector<string> lossLayers = 
-        {"rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"};
+	const vector<string> lossLayers = { "softmaxWithLoss" };
 	//const vector<string> lossLayers = {"rpn_loss_cls", "rpn_loss_bbox"};
 	//const vector<string> lossLayers = {"loss_cls", "loss_bbox"};
 	//const NetworkPhase phase = NetworkPhase::TestPhase;
@@ -151,10 +151,10 @@ int LegacyWork<Dtype>::createNetwork() {
 	const vector<string> lossLayers = {};
 	const NetworkPhase phase = NetworkPhase::TestPhase;
 #endif
-	const uint32_t batchSize = 1;
-	const uint32_t testInterval = 5000;		// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 10000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.001f;
+	const uint32_t batchSize = 100;
+	const uint32_t testInterval = 500;		// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 10000000000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.1f;
 
 	const uint32_t stepSize = 100000;
 	const float weightDecay = 0.0001f;
@@ -164,13 +164,13 @@ int LegacyWork<Dtype>::createNetwork() {
 	//const LRPolicy lrPolicy = LRPolicy::Step;
 	const LRPolicy lrPolicy = LRPolicy::Fixed;
 
-	cout << "batchSize: " << batchSize << endl;
-	cout << "testInterval: " << testInterval << endl;
-	cout << "saveInterval: " << saveInterval << endl;
-	cout << "baseLearningRate: " << baseLearningRate << endl;
-	cout << "weightDecay: " << weightDecay << endl;
-	cout << "momentum: " << momentum << endl;
-	cout << "clipGradientsLevel: " << clipGradientsLevel << endl;
+	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
+	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
+	STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
+	STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
+	STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
+	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
+	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
 
 	NetworkConfig<Dtype>* networkConfig =
 			(new typename NetworkConfig<Dtype>::Builder())
