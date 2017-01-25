@@ -86,12 +86,12 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
 	//_paramsHistory.clear();
 	Util::clearVector(_paramsHistory);
 
-	delete _preActivation;
+	//delete _preActivation;
 	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 	checkCudaErrors(cudaFree(d_onevec));
 
-	ActivationFactory<Dtype>::destory(activation_fn);
+	//ActivationFactory<Dtype>::destory(activation_fn);
 }
 
 
@@ -127,7 +127,7 @@ void FullyConnectedLayer<Dtype>::reshape() {
 	uint32_t cols = 1;
 
 	this->_inputShape[0] = {batches, channels, in_rows, cols};
-	this->_preActivation->reshape({batches, channels, out_rows, cols});
+	//this->_preActivation->reshape({batches, channels, out_rows, cols});
 	this->_outputData[0]->reshape({batches, channels, out_rows, cols});
 
 	checkCUDNN(cudnnSetTensor4dDescriptor(
@@ -310,7 +310,7 @@ void FullyConnectedLayer<Dtype>::feedforward() {
 
 	_computeWeightedData();
 	_computeWeightBiasedData();
-	_computeActivatedData();
+	//_computeActivatedData();
 	//_dropoutForward();
 
 	/*
@@ -338,7 +338,8 @@ void FullyConnectedLayer<Dtype>::_computeWeightedData() {
 	// Apply weight to input data
 	const Dtype* d_weightData = _params[Weight]->device_data();
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
-	Dtype* d_preActivationData = _preActivation->mutable_device_data();
+	//Dtype* d_preActivationData = _preActivation->mutable_device_data();
+	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
 	_params[Weight]->print_data();
 	this->_inputData[0]->print_data();
@@ -347,9 +348,9 @@ void FullyConnectedLayer<Dtype>::_computeWeightedData() {
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
 			out_rows, batches, in_rows,
 			&Cuda::alpha, d_weightData, out_rows, d_inputData, in_rows,
-			&Cuda::beta, d_preActivationData, out_rows));
+			&Cuda::beta, d_outputData, out_rows));
 
-	_preActivation->print_data();
+	//_preActivation->print_data();
 }
 
 template <typename Dtype>
@@ -360,7 +361,8 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 
 	// Add bias to weighted input data
 	const Dtype* d_biasData = _params[Bias]->device_data();
-	Dtype* d_preActivationData = _preActivation->mutable_device_data();
+	//Dtype* d_preActivationData = _preActivation->mutable_device_data();
+	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
 	_params[Bias]->print_data();
 
@@ -370,11 +372,12 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 			d_biasData, out_rows,
 			d_onevec, 1,
 			&Cuda::alpha,
-			d_preActivationData, out_rows));
+			d_outputData, out_rows));
 
 	_params[Bias]->print_data();
 }
 
+/*
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeActivatedData() {
 	// Activate weighted sum (+ bias)
@@ -391,6 +394,7 @@ void FullyConnectedLayer<Dtype>::_computeActivatedData() {
 	this->_outputData[0]->print_data();
 	//Data<Dtype>::printConfig = false;
 }
+*/
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_dropoutForward() {
@@ -423,7 +427,7 @@ template <typename Dtype>
 void FullyConnectedLayer<Dtype>::backpropagation() {
 	//_dropoutBackward();
 
-	_computePreActivationGrad();
+	//_computePreActivationGrad();
 	_computeWeightGrad();
 	_computeBiasGrad();
 	_computeInputGrad();
@@ -449,6 +453,7 @@ void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 	}
 }
 
+/*
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computePreActivationGrad() {
 	if (activation_fn) {
@@ -475,6 +480,7 @@ void FullyConnectedLayer<Dtype>::_computePreActivationGrad() {
     //  Data<Dtype>::printConfig = 0;
     //}
 }
+*/
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
@@ -483,13 +489,14 @@ void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
 	const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
 	// d(Cost)/d(Weight)
-	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_weightGrad = this->_params[Weight]->mutable_device_grad();
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T,
 			out_rows, in_rows, batches,
-			&Cuda::alpha, d_preActivationGrad, out_rows, d_inputData, in_rows,
+			&Cuda::alpha, d_outputGrad, out_rows, d_inputData, in_rows,
 			&Cuda::beta, d_weightGrad, out_rows));
 
 }
@@ -501,16 +508,17 @@ void FullyConnectedLayer<Dtype>::_computeBiasGrad() {
 	const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
 	// d(Cost)/d(Bias) (same as d_preActivationGrad)
-	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	Dtype* d_biasGrad = _params[Bias]->mutable_device_grad();
 
 	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N,
 			out_rows, batches,
-			&Cuda::alpha, d_preActivationGrad, out_rows, d_onevec, 1,
+			&Cuda::alpha, d_outputGrad, out_rows, d_onevec, 1,
 			&Cuda::beta, d_biasGrad, 1));
 	_params[Bias]->print_grad("biasGrad:");
 	_params[Weight]->print_data("weightData:");
-	_preActivation->print_grad("preActivationGrad");
+	//_preActivation->print_grad("preActivationGrad");
 }
 
 template <typename Dtype>
@@ -521,12 +529,13 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 
 	// d(Cost)/d(Input)
 	const Dtype* d_weightData = _params[Weight]->device_data();
-	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N,
 			in_rows, batches, out_rows,
-			&Cuda::alpha, d_weightData, out_rows, d_preActivationGrad, out_rows,
+			&Cuda::alpha, d_weightData, out_rows, d_outputGrad, out_rows,
 			&Cuda::beta, d_inputGrad, in_rows));
 	this->_inputData[0]->print_grad("inputGrad:");
 

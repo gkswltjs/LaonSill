@@ -19,25 +19,25 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer() {
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer(Builder* builder)
 	: HiddenLayer<Dtype>(builder) {
+
 	initialize(builder->_nOut, builder->_pDropout, builder->_weightUpdateParam,
-               builder->_biasUpdateParam, builder->_weightFiller, builder->_biasFiller,
-               builder->_activationType);
+               builder->_biasUpdateParam, builder->_weightFiller, builder->_biasFiller);
 }
 
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string name, int n_out,
     double p_dropout, update_param weight_update_param, update_param bias_update_param,
-    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler,
-    typename Activation<Dtype>::Type activationType) : HiddenLayer<Dtype>(name) {
+    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler)
+    : HiddenLayer<Dtype>(name) {
+
 	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler,
-               bias_filler, activationType);
+               bias_filler);
 }
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout,
     update_param weight_update_param, update_param bias_update_param,
-    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler,
-    typename Activation<Dtype>::Type activationType) {
+    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler) {
 
 	this->tempCnt = 0;
 
@@ -53,7 +53,7 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout,
 	this->weight_filler = weight_filler;
 	this->bias_filler = bias_filler;
 
-	this->activation_fn = ActivationFactory<Dtype>::create(activationType);
+	//this->activation_fn = ActivationFactory<Dtype>::create(activationType);
 	this->scale = 1. / (1. - p_dropout);
 
 	this->_params.resize(2);
@@ -69,7 +69,7 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout,
 	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(this->name + "_weight_history");
 	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history");
 
-	this->_preActivation = new Data<Dtype>("PreActivation"); // weighted sum (pre activation)
+	//this->_preActivation = new Data<Dtype>("PreActivation"); // weighted sum (pre activation)
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));

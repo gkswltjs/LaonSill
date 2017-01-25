@@ -24,11 +24,7 @@
 using namespace std;
 
 #define TEMP 1
-
-
 #if TEMP
-
-
 #define ARTISTIC_TEST 1
 
 #if !ARTISTIC_TEST
@@ -44,7 +40,6 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->setNetworkConfig(network->config);
 	}
-
 	network->setLayersConfig(layersConfig);
 	network->loadPretrainedWeights();
 }
@@ -99,14 +94,15 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
     		"/data/backup/artistic/starry_night_320.jpg",
     		{"conv4_2"},
     		{"conv1_1", "conv2_1", "conv3_1", "conv4_1", "conv5_1"},
-    		0.001f,					// contentReconstructionFactor
-    		1.0f,					// styleReconstructionFactor
-    		0.1f,					// learningRate
+    		0.0001f,					// contentReconstructionFactor
+    		0.1f,					// styleReconstructionFactor
+    		0.01f,					// learningRate
     		"conv5_1",				// end
     		true,					// plotContentCost
     		true					// plotStyleCost
     );
     */
+
     ArtisticStyle<float>* artisticStyle = new ArtisticStyle<float>(
 			network,
 			//"/data/backup/artistic/tubingen_320.jpg",
@@ -122,6 +118,7 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
 			true,					// plotContentCost
 			true					// plotStyleCost
 	);
+
     artisticStyle->style();
     //artisticStyle->test();
     delete artisticStyle;
@@ -142,6 +139,7 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
 	LayersConfig<float>* layersConfig = createFrcnnTrainOneShotLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createFrcnnStage1RpnTrainLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createFrcnnStage1TrainLayersConfig<float>();
+    //LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 #else
 	LayersConfig<float>* layersConfig = createFrcnnTestOneShotLayersConfig<float>();
 #endif
@@ -206,11 +204,15 @@ int LegacyWork<Dtype>::createNetwork() {
 #if LOAD_WEIGHT
 	vector<WeightsArg> weightsArgs(1);
 	weightsArgs[0].weightsPath =
-			"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_400000of_4.3177791_.param";
+			//"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_400000of_2.75_.param";
+			"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_10000of_0.1598384_.param";
 #endif
 
 	const uint32_t batchSize = 10;
-	const uint32_t testInterval = 1000;			// 10000(목표 샘플수) / batchSize
+	//const uint32_t testInterval = 1000;			// 10000(목표 샘플수) / batchSize
+	//const uint32_t saveInterval = 10000;		// 1000000 / batchSize
+	//const float baseLearningRate = 0.01f;
+	const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 10000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.01f;
 
@@ -269,11 +271,11 @@ int LegacyWork<Dtype>::createNetwork() {
 
 
 #if FRCNN_TRAIN
+	/*
 	vector<WeightsArg> weightsArgs(1);
-
-
 	weightsArgs[0].weightsPath =
 			"/home/jkim/Dev/SOOOA_HOME/network/network190418.param";
+			*/
 
 	/*
 	weightsArgs[0].weightsPath =
@@ -310,7 +312,8 @@ int LegacyWork<Dtype>::createNetwork() {
 	//const vector<string> lossLayers =
     //   {"rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"};
 	//const vector<string> lossLayers = {"rpn_loss_cls", "rpn_loss_bbox"};
-	const vector<string> lossLayers = {"loss_cls", "loss_bbox"};
+	//const vector<string> lossLayers = {"loss_cls", "loss_bbox"};
+	const vector<string> lossLayers = {"softmaxWithLoss"};
 	//const NetworkPhase phase = NetworkPhase::TestPhase;
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 #else
@@ -319,12 +322,13 @@ int LegacyWork<Dtype>::createNetwork() {
 	const vector<string> lossLayers = {};
 	const NetworkPhase phase = NetworkPhase::TestPhase;
 #endif
-	const uint32_t batchSize = 1;
-	const uint32_t testInterval = 10022;		// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 10022;		// 1000000 / batchSize
-	//const uint32_t testInterval = 8;		// 10000(목표 샘플수) / batchSize
-	//const uint32_t saveInterval = 100000000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.001f;
+	//const uint32_t batchSize = 1;
+	//const uint32_t testInterval = 10022;		// 10000(목표 샘플수) / batchSize
+	//const uint32_t saveInterval = 10022;		// 1000000 / batchSize
+	const uint32_t batchSize = 100;
+	const uint32_t testInterval = 60;		// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 100000000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.01f;
 
 	const uint32_t stepSize = 100000;
 	const float weightDecay = 0.0001f;
@@ -356,13 +360,14 @@ int LegacyWork<Dtype>::createNetwork() {
 			->networkPhase(phase)
 			->gamma(gamma)
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
-			->weightsArgs(weightsArgs)
+			//->weightsArgs(weightsArgs)
 #if FRCNN_TRAIN
 			->networkListeners({
 				//new NetworkMonitor("rpn_loss_cls", NetworkMonitor::PLOT_ONLY),
 				//new NetworkMonitor("rpn_loss_bbox", NetworkMonitor::PLOT_ONLY),
-				new NetworkMonitor("loss_cls", NetworkMonitor::PLOT_ONLY),
-				new NetworkMonitor("loss_bbox", NetworkMonitor::PLOT_ONLY)
+				//new NetworkMonitor("loss_cls", NetworkMonitor::PLOT_ONLY),
+				//new NetworkMonitor("loss_bbox", NetworkMonitor::PLOT_ONLY)
+				new NetworkMonitor("softmaxWithLoss", NetworkMonitor::PLOT_ONLY)
 				/*
 				new NetworkMonitor("rpn_loss_cls", NetworkMonitor::PLOT_AND_WRITE),
 				new NetworkMonitor("rpn_loss_bbox", NetworkMonitor::PLOT_AND_WRITE),

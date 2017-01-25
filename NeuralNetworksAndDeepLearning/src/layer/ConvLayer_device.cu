@@ -47,7 +47,7 @@ ConvLayer<Dtype>::~ConvLayer() {
 	delete _paramsHistory[ParamType::Bias];
 	_paramsHistory.clear();
 
-	delete _preActivation;
+	//delete _preActivation;
 
 	if(d_workspace) checkCudaErrors(cudaFree(d_workspace));
 
@@ -57,13 +57,13 @@ ConvLayer<Dtype>::~ConvLayer() {
 	checkCUDNN(cudnnDestroyFilterDescriptor(filterDesc));
 	checkCUDNN(cudnnDestroyConvolutionDescriptor(convDesc));
 
-	ActivationFactory<Dtype>::destory(activation_fn);
+	//ActivationFactory<Dtype>::destory(activation_fn);
 }
 
 template <typename Dtype>
 void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_update_param,
     update_param bias_update_param, param_filler<Dtype> weight_filler, 
-    param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType) {
+    param_filler<Dtype> bias_filler) {
 
 	this->type = Layer<Dtype>::Conv;
 	this->filter_d = filter_d;
@@ -92,7 +92,7 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
         {filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
 	this->_paramsHistory[Bias]->reshape({filter_d.filters, 1, 1, 1});
 
-	this->_preActivation = new Data<Dtype>("PreActivation");
+	//this->_preActivation = new Data<Dtype>("PreActivation");
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
@@ -113,7 +113,7 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 			filter_d.pad, filter_d.pad, filter_d.stride, filter_d.stride, 1, 1,
 			CUDNN_CROSS_CORRELATION));
 
-	this->activation_fn = ActivationFactory<Dtype>::create(activationType);
+	//this->activation_fn = ActivationFactory<Dtype>::create(activationType);
 
 	this->d_workspace = 0;
 }
@@ -139,9 +139,9 @@ void ConvLayer<Dtype>::reshape() {
 
 	int n = 0, c = 0, h = 0, w = 0;
 	checkCUDNN(cudnnGetConvolution2dForwardOutputDim(
-			convDesc,
+			this->convDesc,
 			this->inputTensorDesc,
-			filterDesc,
+			this->filterDesc,
 			&n, &c, &h, &w));
 
 	checkCUDNN(cudnnSetTensor4dDescriptor(
@@ -161,7 +161,7 @@ void ConvLayer<Dtype>::reshape() {
 #endif
 
 	this->_inputShape[0] = inputShape;
-	this->_preActivation->reshape({obatches, ochannels, orows, ocols});
+	//this->_preActivation->reshape({obatches, ochannels, orows, ocols});
 	this->_outputData[0]->reshape({obatches, ochannels, orows, ocols});
 
 
@@ -182,8 +182,8 @@ void ConvLayer<Dtype>::reshape() {
 	checkCUDNN(cudnnGetConvolutionForwardAlgorithm(
 			Cuda::cudnnHandle,
 			this->inputTensorDesc,
-			filterDesc,
-			convDesc,
+			this->filterDesc,
+			this->convDesc,
 			this->outputTensorDesc,
 			CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
 			8<<20,
@@ -192,10 +192,10 @@ void ConvLayer<Dtype>::reshape() {
 	checkCUDNN(cudnnGetConvolutionForwardWorkspaceSize(
 			Cuda::cudnnHandle,
 			this->inputTensorDesc,
-			filterDesc,
-			convDesc,
+			this->filterDesc,
+			this->convDesc,
 			this->outputTensorDesc,
-			convFwdAlgo,
+			this->convFwdAlgo,
 			&convFwdWorkspaceSize));
 
 	// backward filter algorithm
@@ -203,27 +203,27 @@ void ConvLayer<Dtype>::reshape() {
 			Cuda::cudnnHandle,
 			this->inputTensorDesc,
 			this->outputTensorDesc,
-			convDesc,
-			filterDesc,
+			this->convDesc,
+			this->filterDesc,
 			CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
 			8<<20,
-			&convBwdFilterAlgo));
+			&this->convBwdFilterAlgo));
 
 	checkCUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(
 			Cuda::cudnnHandle,
 			this->inputTensorDesc,
 			this->outputTensorDesc,
-			convDesc,
-			filterDesc,
-			convBwdFilterAlgo,
+			this->convDesc,
+			this->filterDesc,
+			this->convBwdFilterAlgo,
 			&convBwdFilterWorkspaceSize));
 
 	// backward data algorithm
 	checkCUDNN(cudnnGetConvolutionBackwardDataAlgorithm(
 			Cuda::cudnnHandle,
-			filterDesc,
+			this->filterDesc,
 			this->outputTensorDesc,
-			convDesc,
+			this->convDesc,
 			this->inputTensorDesc,
 			CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
 			8<<20,
@@ -231,11 +231,11 @@ void ConvLayer<Dtype>::reshape() {
 
 	checkCUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(
 			Cuda::cudnnHandle,
-			filterDesc,
+			this->filterDesc,
 			this->outputTensorDesc,
-			convDesc,
+			this->convDesc,
 			this->inputTensorDesc,
-			convBwdDataAlgo,
+			this->convBwdDataAlgo,
 			&convBwdDataWorkspaceSize));
 
 	workspaceSize = 0;
@@ -342,7 +342,7 @@ void ConvLayer<Dtype>::feedforward() {
 	reshape();
 
 	_computeFiltersConvolutionData();
-	_computeActivationData();
+	//_computeActivationData();
 }
 
 template <typename Dtype>
@@ -350,7 +350,8 @@ void ConvLayer<Dtype>::_computeFiltersConvolutionData() {
 	// Apply filters to input data
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	const Dtype* d_filtersData = _params[Filter]->device_data();
-	Dtype* d_preActivationData = _preActivation->mutable_device_data();
+	//Dtype* d_preActivationData = _preActivation->mutable_device_data();
+	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
 #if CONVLAYER_LOG
 	this->_inputData[0]->print_data();
@@ -360,25 +361,15 @@ void ConvLayer<Dtype>::_computeFiltersConvolutionData() {
 	checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle,
 			&Cuda::alpha, this->inputTensorDesc, d_inputData, filterDesc, d_filtersData,
             convDesc, convFwdAlgo, d_workspace, workspaceSize,
-			&Cuda::beta, this->outputTensorDesc, d_preActivationData));
-
-#if CONVLAYER_LOG
-	_preActivation->print_data();
-	// Add bias to filtered input data
-	_params[Bias]->print_data();
-#endif
+			&Cuda::beta, this->outputTensorDesc, d_outputData));
 
 	const Dtype* d_biasesData = _params[Bias]->device_data();
-
 	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
 			&Cuda::alpha, biasTensorDesc, d_biasesData,
-			&Cuda::alpha, this->outputTensorDesc, d_preActivationData));
-
-#if CONVLAYER_LOG
-	_preActivation->print_data();
-#endif
+			&Cuda::alpha, this->outputTensorDesc, d_outputData));
 }
 
+/*
 template <typename Dtype>
 void ConvLayer<Dtype>::_computeActivationData() {
 	// Activate filtered result
@@ -395,13 +386,14 @@ void ConvLayer<Dtype>::_computeActivationData() {
 	this->_outputData[0]->print_data();
 #endif
 }
+*/
 
 
 
 template <typename Dtype>
 void ConvLayer<Dtype>::backpropagation() {
 	if (this->_propDown[0]) {
-		_computePreActivationGrad();
+		//_computePreActivationGrad();
 		_computeFiltersGrad();
 		_computeBiasesGrad();
 		_computeInputGrad();
@@ -409,6 +401,7 @@ void ConvLayer<Dtype>::backpropagation() {
 }
 
 
+/*
 template <typename Dtype>
 void ConvLayer<Dtype>::_computePreActivationGrad() {
 #if CONVLAYER_LOG
@@ -428,6 +421,7 @@ void ConvLayer<Dtype>::_computePreActivationGrad() {
 		this->_preActivation->set_device_grad(this->_outputData[0]);
 	}
 }
+*/
 
 
 
@@ -440,12 +434,13 @@ void ConvLayer<Dtype>::_computeFiltersGrad() {
 
 	// d(Cost)/d(Filters)
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
-	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	Dtype* d_filtersGrad = _params[Filter]->mutable_device_grad();
 
 	checkCUDNN(cudnnConvolutionBackwardFilter(Cuda::cudnnHandle,
 			&Cuda::alpha, this->inputTensorDesc, d_inputData, this->outputTensorDesc,
-            d_preActivationGrad, convDesc, convBwdFilterAlgo, d_workspace, workspaceSize,
+            d_outputGrad, convDesc, convBwdFilterAlgo, d_workspace, workspaceSize,
 			&Cuda::beta, filterDesc, d_filtersGrad));
 
 #if CONVLAYER_LOG
@@ -456,11 +451,12 @@ void ConvLayer<Dtype>::_computeFiltersGrad() {
 template <typename Dtype>
 void ConvLayer<Dtype>::_computeBiasesGrad() {
 	// d(Cost)/d(Biases)
-	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
-	Dtype* d_biasGrad = _params[Bias]->mutable_device_grad();
+	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
+	Dtype* d_biasGrad = this->_params[Bias]->mutable_device_grad();
 
 	checkCUDNN(cudnnConvolutionBackwardBias(Cuda::cudnnHandle,
-			&Cuda::alpha, this->outputTensorDesc, d_preActivationGrad,
+			&Cuda::alpha, this->outputTensorDesc, d_outputGrad,
 			&Cuda::beta, biasTensorDesc, d_biasGrad));
 }
 
@@ -468,11 +464,12 @@ template <typename Dtype>
 void ConvLayer<Dtype>::_computeInputGrad() {
 	// d(Cost)/d(Input)
 	const Dtype* d_filtersData = _params[Filter]->device_data();
-	const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
+	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 	checkCUDNN(cudnnConvolutionBackwardData(Cuda::cudnnHandle,
 			&Cuda::alpha, filterDesc, d_filtersData, this->outputTensorDesc,
-            d_preActivationGrad, convDesc, convBwdDataAlgo, d_workspace, workspaceSize,
+            d_outputGrad, convDesc, convBwdDataAlgo, d_workspace, workspaceSize,
 			&Cuda::beta, this->inputTensorDesc, d_inputGrad));
 
 #if CONVLAYER_LOG
@@ -484,8 +481,7 @@ void ConvLayer<Dtype>::_computeInputGrad() {
 template ConvLayer<float>::~ConvLayer();
 template void ConvLayer<float>::initialize(filter_dim filter_d,
     update_param weight_update_param, update_param bias_update_param,
-    param_filler<float> weight_filler, param_filler<float> bias_filler,
-    typename Activation<float>::Type activationType);
+    param_filler<float> weight_filler, param_filler<float> bias_filler);
 template void ConvLayer<float>::reshape();
 template void ConvLayer<float>::update();
 template void ConvLayer<float>::feedforward();

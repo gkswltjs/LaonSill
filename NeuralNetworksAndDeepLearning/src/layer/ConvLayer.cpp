@@ -22,16 +22,16 @@ template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(Builder* builder)
 : HiddenLayer<Dtype>(builder) {
 	initialize(builder->_filterDim, builder->_weightUpdateParam, builder->_biasUpdateParam,
-			builder->_weightFiller, builder->_biasFiller, builder->_activationType);
+			builder->_weightFiller, builder->_biasFiller);
 }
 
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
     update_param weight_update_param, update_param bias_update_param,
-    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler,
-    typename Activation<Dtype>::Type activationType) : HiddenLayer<Dtype>(name) {
+    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler)
+    : HiddenLayer<Dtype>(name) {
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler,
-               bias_filler, activationType);
+               bias_filler);
 }
 
 template <typename Dtype>

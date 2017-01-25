@@ -62,6 +62,8 @@ public:
 		RoIInput,
 		RoITestInput,
 		FrcnnTestOutput,
+
+		Relu,
 	};
 
 

@@ -211,22 +211,19 @@ void ArtisticStyle<Dtype>::style() {
 
 		// xdata: input noise x의 Data 타입 객체
 		feedforwardWithData(this->xdata);
-		for (int i = layersConfig->_layers.size()-1; i >= 0; i--) {
-			Layer<Dtype>* repLayer = layersConfig->_layers[i];
+		for (int i = layersConfig->_layers.size()-1; i > 0; i--) {
+			HiddenLayer<Dtype>* repLayer =
+					dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[i]);
+
+			assert(repLayer);
+
 			int repLayerIndex = -1;
 			if((repLayerIndex = findContentRepLayer(repLayer->getName())) >= 0)
 				contentCost += computeContentLossGradientAt(repLayerIndex);
 			else if((repLayerIndex = findStyleRepLayer(repLayer->getName())) >= 0)
 				styleCost += computeStyleLossGradientAt(repLayerIndex);
 
-			if (repLayerIndex >= 0) {
-				for (int j = i; j >= 0; j--) {
-					HiddenLayer<Dtype>* hiddenLayer =
-							dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[j]);
-					if (hiddenLayer)
-						hiddenLayer->backpropagation();
-				}
-			}
+			repLayer->backpropagation();
 		}
 
 		if (plotContentCost)
@@ -241,32 +238,15 @@ void ArtisticStyle<Dtype>::style() {
                                     &learningRate, grad_device, 1, xdata_device, 1));
 
 		if(updateCnt++ % 10 == 0) {
-			// device에서 계산된 결과를 host로 업데이트
-			// 정식 업데이트 api를 추가해야.
-			//xdata->host_data();
-			//xdata->_data.print("xdata:");
-
-			//contentLoss->set_mem(xresp->device_mem(), SyncMemCopyType::DeviceToDevice, 
-            //                     0, xresp->getSize());
 			// xdataTemp device mem을 update한 후,
 			xdataTemp.set_mem(xdata->device_data(), SyncMemCopyType::DeviceToDevice, 0,
                               xdata->getCount());
-			//xdataTemp.host_mem();
-			//xdataTemp.print("xdataTemp before:");
-			//xTempDisp->resize(*xTemp, true).display(*xTemp);
 
 			deprocess(&xdataTemp);
 			// xdataTemp의 host mem으로 copy해서 가져온다.
 			xdataTemp.host_mem();
 			//xdataTemp.print("xdataTemp after:");
 			xdisp->resize(*xTemp, true).display(*xTemp);
-
-
-			//CImg<DATATYPE> temp_src(*x);
-			//deprocess(&temp_src);
-			//xdisp->resize(temp_src, true).display(temp_src.normalize(0, 255));
-			//xdisp->resize(temp_src, true).display(temp_src);
-			//cout << "reconstruction ... " << i << endl;
 		}
 		i++;
 	}
@@ -291,23 +271,8 @@ void ArtisticStyle<Dtype>::computeContentRepresentationLayerResponses() {
 	this->contentRepLayerResps.resize(numContentRepLayers);
 	for(uint32_t i = 0; i < numContentRepLayers; i++) {
 		Layer<Dtype>* contentRepLayer = findRepresentationLayer(contentRepLayers[i]);
-		//on();
-		//contentRepLayer->_outputData[0]->print_data({}, false);
-		//off();
-
-		// XXX: 참고한 구현에서 activation된 결과가 아닌 convolution 결과를 사용하고 있어서 수정.
-		//SyncMem<Dtype>* contentRepLayerResp =
-        //    new SyncMem<Dtype>(contentRepLayer->_outputData[0]->_data.get());
-
-		assert(contentRepLayer);
-		ConvLayer<Dtype>* convLayer = dynamic_cast<ConvLayer<Dtype>*>(contentRepLayer);
-		assert(convLayer);
-		SyncMem<Dtype>* contentRepLayerResp = 
-		      new SyncMem<Dtype>(convLayer->_preActivation->_data.get());
-		//on();
-		//contentRepLayerResp->print("contentRepLayerResp",
-		//		contentRepLayer->_outputData[0]->getShape(), false);
-		//off();
+		SyncMem<Dtype>* contentRepLayerResp =
+            new SyncMem<Dtype>(contentRepLayer->_outputData[0]->_data.get());
 		this->contentRepLayerResps[i] = contentRepLayerResp;
 	}
 }
@@ -328,15 +293,7 @@ void ArtisticStyle<Dtype>::computeStyleRepresentationLayerResponses() {
 	for(uint32_t i = 0; i < numStyleRepLayers; i++) {
 		Layer<Dtype>* styleRepLayer = findRepresentationLayer(styleRepLayers[i]);
 		SyncMem<Dtype>* styleRepLayerResp = new SyncMem<Dtype>();
-
-
-		// XXX: 참고한 구현에서 activation된 결과가 아닌 convolution 결과를 사용하고 있어서 수정.
-        //createGramMatrixFromData(styleRepLayer->_outputData[0], styleRepLayerResp);
-		assert(styleRepLayer);
-		ConvLayer<Dtype>* convLayer = dynamic_cast<ConvLayer<Dtype>*>(styleRepLayer);
-		assert(convLayer);
-		createGramMatrixFromData(convLayer->_preActivation, styleRepLayerResp);
-
+        createGramMatrixFromData(styleRepLayer->_outputData[0], styleRepLayerResp);
 		this->styleRepLayerResps[i] = styleRepLayerResp;
 	}
 }
@@ -477,9 +434,9 @@ void ArtisticStyle<Dtype>::createDataFromCImg(CImg<Dtype>* cimg, Data<Dtype>* da
 		(uint32_t)cimg->width()});
 	data->set_device_with_host_data(cimg->data(), 0, cimg->size());
 
-	on();
-	data->print_data({}, false);
-	off();
+	//on();
+	//data->print_data({}, false);
+	//off();
 }
 
 
@@ -741,9 +698,9 @@ void ArtisticStyle<Dtype>::gramMatrixTest() {
 	param_filler<Dtype> weight_filler(ParamFillerType::Xavier, 0.1);
 	weight_filler.fill(data);
 
-	on();
-	data->print_data("data:");
-	off();
+	//on();
+	//data->print_data("data:");
+	//off();
 
 
 	SyncMem<Dtype>* gramMatrix = new SyncMem<Dtype>();

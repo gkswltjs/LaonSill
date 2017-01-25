@@ -26,7 +26,6 @@ public:
 	public:
 		Builder() {
 			this->type = Layer<Dtype>::Softmax;
-			this->_activationType = Activation<Dtype>::NoActivation;
 			this->_costType = Cost<Dtype>::DQN;
 		}
 		Builder* costType(typename Cost<Dtype>::Type costType) {
@@ -55,10 +54,6 @@ public:
 		}
 		Builder* biasFiller(ParamFillerType biasFillerType, double value) {
 			OutputLayer<Dtype>::Builder::biasFiller(biasFillerType, value);
-			return this;
-		}
-		Builder* activationType(typename Activation<Dtype>::Type activationType) {
-			OutputLayer<Dtype>::Builder::activationType(activationType);
 			return this;
 		}
 		virtual Builder* name(const std::string name) {

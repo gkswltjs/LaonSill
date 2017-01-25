@@ -31,8 +31,7 @@ DQNOutputLayer<Dtype>::DQNOutputLayer(
 		param_filler<Dtype> weight_filler,
 		param_filler<Dtype> bias_filler)
 	: OutputLayer<Dtype>(name, n_out, p_dropout, weight_update_param, bias_update_param,
-            weight_filler, bias_filler, Activation<Dtype>::NoActivation,
-            Cost<Dtype>::DQN) {
+            weight_filler, bias_filler, Cost<Dtype>::DQN) {
 	initialize();
 }
 
