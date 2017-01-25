@@ -233,7 +233,6 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 	// Sample foreground regions without replacement
 	if (fgInds.size() > 0) {
 #if TEST_MODE
-		// XXX: 디버깅 문제로 임시
 		if (fgInds.size() > fgRoisPerThisImage)
 			fgInds.erase(fgInds.begin()+fgRoisPerThisImage, fgInds.end());
 #else
@@ -260,7 +259,6 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 	// Sample background regions without replacement
 	if (bgInds.size() > 0) {
 #if TEST_MODE
-		// XXX: 디버깅 문제로 임시
 		if (bgInds.size() > bgRoisPerThisImage)
 			bgInds.erase(bgInds.begin()+bgRoisPerThisImage, bgInds.end());
 #else
@@ -276,9 +274,9 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 
 	// The indices that we're selecting (both fg and bg)
 	vector<uint32_t> keepInds;
-	// XXX: 디버깅 임시
 	keepInds.insert(keepInds.end(), fgInds.begin(), fgInds.end());
 	keepInds.insert(keepInds.end(), bgInds.begin(), bgInds.end());
+	// XXX: 디버깅 임시
 	//for (uint32_t i = 0; i < roisPerImage; i++)
 	//	keepInds.push_back(i);
 

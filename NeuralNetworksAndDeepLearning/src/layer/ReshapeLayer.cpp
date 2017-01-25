@@ -20,9 +20,7 @@ using namespace std;
 
 
 template <typename Dtype>
-ReshapeLayer<Dtype>::ReshapeLayer() {
-	// TODO Auto-generated constructor stub
-}
+ReshapeLayer<Dtype>::ReshapeLayer() {}
 
 template <typename Dtype>
 ReshapeLayer<Dtype>::ReshapeLayer(Builder* builder)

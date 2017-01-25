@@ -107,12 +107,7 @@ void PoolingLayer<Dtype>::backpropagation() {
 	if (this->_propDown[0]) {
 		this->_outputData[0]->print_data();
 		this->_inputData[0]->print_data();
-		/*
-		if(this->_output->is_nan_grad()) {
-			cout << this->name << " output gradient nan ... " << endl;
-			exit(1);
-		}
-		*/
+
 		const Dtype* d_outputData = this->_outputData[0]->device_data();
 		const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 		const Dtype* d_inputData = this->_inputData[0]->device_data();

@@ -39,9 +39,17 @@ SyncMem<Dtype>::SyncMem() {
 }
 
 template <typename Dtype>
-SyncMem<Dtype>::SyncMem(SyncMem<Dtype>& syncMem) : SyncMem() {
+SyncMem<Dtype>::SyncMem(SyncMem<Dtype>& syncMem)
+: SyncMem() {
 	reshape(syncMem.getSize());
 	set_mem(syncMem.device_mem(), DeviceToDevice, 0, syncMem.getSize());
+}
+
+template <typename Dtype>
+SyncMem<Dtype>::SyncMem(SyncMem<Dtype>* syncMem)
+: SyncMem() {
+	reshape(syncMem->getSize());
+	set_mem(syncMem->device_mem(), DeviceToDevice, 0, syncMem->getSize());
 }
 
 template <typename Dtype>
@@ -61,6 +69,7 @@ void SyncMem<Dtype>::reshape(size_t size) {
 		if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
 
 		_reserved = (size_t)(size*1.2f);
+		//_reserved = (size_t)(size);
 		_host_mem = new Dtype[_reserved];
 		memset(_host_mem, 0, sizeof(Dtype)*_reserved);
 

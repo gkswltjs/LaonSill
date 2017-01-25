@@ -91,9 +91,9 @@ private:
 	void getNextMiniBatch();
 	void getNextMiniBatchInds(std::vector<uint32_t>& inds);
 	void getMiniBatch(const std::vector<RoIDB>& roidb, const std::vector<uint32_t>& inds);
-	void getImageBlob(const std::vector<RoIDB>& roidb, const std::vector<uint32_t>& scaleInds,
-			std::vector<float>& imScales);
-	float prepImForBlob(cv::Mat& im, const std::vector<float>& pixelMeans,
+	std::vector<cv::Mat> getImageBlob(const std::vector<RoIDB>& roidb,
+			const std::vector<uint32_t>& scaleInds, std::vector<float>& imScales);
+	float prepImForBlob(cv::Mat& im, cv::Mat& imResized, const std::vector<float>& pixelMeans,
 			const uint32_t targetSize, const uint32_t maxSize);
 	void imListToBlob(std::vector<cv::Mat>& ims);
 
@@ -109,6 +109,8 @@ public:
 	uint32_t cur;
 
 	std::vector<std::vector<Data<Dtype>*>> proposalTargetDataList;
+
+	std::vector<cv::Scalar> boxColors;
 };
 
 #endif /* ROIINPUTLAYER_H_ */

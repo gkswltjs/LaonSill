@@ -17,9 +17,7 @@ using namespace std;
 
 
 template <typename Dtype>
-AnchorTargetLayer<Dtype>::AnchorTargetLayer() {
-	// TODO Auto-generated constructor stub
-}
+AnchorTargetLayer<Dtype>::AnchorTargetLayer() {}
 
 template <typename Dtype>
 AnchorTargetLayer<Dtype>::AnchorTargetLayer(Builder* builder)
@@ -33,9 +31,7 @@ AnchorTargetLayer<Dtype>::AnchorTargetLayer(Builder* builder)
 }
 
 template <typename Dtype>
-AnchorTargetLayer<Dtype>::~AnchorTargetLayer() {
-	// TODO Auto-generated destructor stub
-}
+AnchorTargetLayer<Dtype>::~AnchorTargetLayer() {}
 
 
 
@@ -168,6 +164,7 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	vector<uint32_t> indsInside;
 	vector<vector<float>> anchors;
 
+	// scale된 이미지 height, width
 	const uint32_t orgHeight = imInfo[0];
 	const uint32_t orgWidth = imInfo[1];
 	for (uint32_t i = 0; i < totalAnchors; i++) {

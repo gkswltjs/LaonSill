@@ -9,14 +9,14 @@
 #define ARTISTICSTYLE_H_
 
 
-#ifndef GPU_MODE
+//#ifndef GPU_MODE
 
 #include "common.h"
 #include "Network.h"
 #include "StatGraphPlotter.h"
 
 #include <CImg.h>
-using namespace cimg_library;
+//using namespace cimg_library;
 
 
 template <typename Dtype>
@@ -63,19 +63,21 @@ private:
 	//void computeStyleLoss(uint32_t styleRepLayerIndex);
 
 
-
-	void preprocess(CImg<Dtype>* cimg);
+	/**
+	 * 이미지에 대해 mean값 subtract
+	 */
+	void preprocess(cimg_library::CImg<Dtype>* cimg);
 	void preprocess(SyncMem<Dtype>* mem);
-	void deprocess(CImg<Dtype>* cimg);
+	void deprocess(cimg_library::CImg<Dtype>* cimg);
 	void deprocess(SyncMem<Dtype>* mem);
-	void clipImage(CImg<Dtype>* img);
+	void clipImage(cimg_library::CImg<Dtype>* img);
 
-	Data<Dtype>* createDataFromCImg(CImg<Dtype>* cimg);
-	SyncMem<Dtype>* createGramMatrixFromData(Data<Dtype>* data);
+	void createDataFromCImg(cimg_library::CImg<Dtype>* cimg, Data<Dtype>* data);
+	void createGramMatrixFromData(Data<Dtype>* data, SyncMem<Dtype>* gramMatrix);
 
 	HiddenLayer<Dtype>* findRepresentationLayer(const std::string& layerName);
 
-	SyncMem<Dtype>* flattenData(Data<Dtype>* data, const uint32_t height, const uint32_t width);
+	void flattenData(Data<Dtype>* data, const uint32_t height, const uint32_t width, SyncMem<Dtype>* mem);
 	void unflattenData(SyncMem<Dtype>* mem, const uint32_t flattenHeight, const uint32_t flattenWidth, Data<Dtype>* data);
 
 
@@ -95,20 +97,43 @@ private:
 	void off() { Data<Dtype>::printConfig = 0; }
 
 
+	void feedforwardWithData(Data<Dtype>* data);
+
+
+
+
+	void updateDimensionFromCImg(cimg_library::CImg<Dtype>* cimg);
+	void prepareCImgFromPath(const std::string& path, cimg_library::CImg<Dtype>*& cimg);
+	void normalizeCImg(cimg_library::CImg<Dtype>* cimg);
+	void updateMean();
+	void prepareCImgDisplay(cimg_library::CImg<Dtype>* cimg, const std::string& title,
+			cimg_library::CImgDisplay*& cimgDisplay);
+	bool isValidImageDimension(cimg_library::CImg<Dtype>* cimg);
+
+
+
+
+
+
+	void printCImg(cimg_library::CImg<Dtype>* cimg);
+
+
 
 private:
 	Network<Dtype>* network;
-	CImg<Dtype>* x;			// input image
-	CImg<Dtype>* p;			// photo, content image
-	CImg<Dtype>* a;			// art, style image
+
+	cimg_library::CImg<Dtype>* x;			// input image
+	cimg_library::CImg<Dtype>* p;			// photo, content image
+	cimg_library::CImg<Dtype>* a;			// art, style image
+	cimg_library::CImg<Dtype>* xTemp;
+
+	cimg_library::CImgDisplay* xdisp;
+	cimg_library::CImgDisplay* pdisp;
+	cimg_library::CImgDisplay* adisp;
 
 	Data<Dtype>* xdata;
-	//Data<Dtype>* pdata;
-	//Data<Dtype>* adata;
-
-	CImgDisplay* xdisp;
-	CImgDisplay* pdisp;
-	CImgDisplay* adisp;
+	SyncMem<Dtype> xdataTemp;
+	SyncMem<Dtype> mean;
 
 	uint32_t width;
 	uint32_t height;
@@ -116,34 +141,21 @@ private:
 
 	const std::vector<std::string> contentRepLayers;
 	const std::vector<std::string> styleRepLayers;
-
     std::vector<SyncMem<Dtype>*> contentRepLayerResps;		// feature map
-    std::vector<SyncMem<Dtype>*> styleRepLayerResps;			// gram matrix of feature map
-
-	SyncMem<Dtype> contentGrad;
-	SyncMem<Dtype> styleGrad;
+    std::vector<SyncMem<Dtype>*> styleRepLayerResps;		// gram matrix of feature map
 
 	const float contentReconstructionFactor;
 	const float styleReconstructionFactor;
-
 	const float learningRate;
-
-	//float mean[3];
-
 	const std::string end;
-
 
 	StatGraphPlotter contentCostLogger;
 	StatGraphPlotter styleCostLogger;
-	SyncMem<Dtype> mean;
-	SyncMem<Dtype> xdataTemp;
-	CImg<Dtype>* xTemp;
-	//CImgDisplay* xTempDisp;
 
 	const bool plotContentCost;
 	const bool plotStyleCost;
 };
 
-#endif
+//#endif
 
 #endif /* ARTISTICSTYLE_H_ */

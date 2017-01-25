@@ -158,8 +158,10 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 			this->hasIgnoreLabel)
 		soooa_gpu_asum(nthreads, counts, &validCount);
 
+	// xxx normalizer test -> restored
 	this->_outputData[0]->mutable_host_data()[0] = loss *
 			Dtype(this->lossWeight) / getNormalizer(validCount);
+	//this->_outputData[0]->mutable_host_data()[0] = loss * Dtype(this->lossWeight);
 
 
 	//cout << "softmaxwithloss: " << this->_outputData[0]->host_data()[0] << endl;

@@ -102,7 +102,10 @@ public:
 		roidb.width = annotation.size.width;
 		roidb.height = annotation.size.height;
 
+
+
 		roidb.mat = cv::imread(roidb.image);
+
 #if TEST_MODE
 		roidb.mat.convertTo(roidb.mat, CV_32F);
 #else
@@ -138,6 +141,7 @@ public:
 #endif
 			}
 		}
+
 
 		const uint32_t numObjs = annotation.objects.size();
 
@@ -273,7 +277,7 @@ private:
 	const uint32_t numClasses = 21;
 	std::vector<std::string> classes;
 
-	std::vector<cv::Mat> matList;
+	//std::vector<cv::Mat> matList;
 
 	std::vector<float> pixelMeans;
 };

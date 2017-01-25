@@ -83,6 +83,10 @@ private:
 	void getImageBlob(cv::Mat& im);
 	void imToBlob(cv::Mat& im);
 
+	IMDB* combinedRoidb(const std::string& imdb_name);
+	IMDB* getRoidb(const std::string& imdb_name);
+	IMDB* getImdb(const std::string& imdb_name);
+
 
 public:
 	IMDB* imdb;
@@ -91,6 +95,10 @@ public:
 	std::vector<float> pixelMeans;
 	std::vector<uint32_t> perm;
 	uint32_t cur;
+
+
+
+	std::vector<cv::Scalar> boxColors;
 };
 
 #endif /* ROITESTINPUTLAYER_H_ */

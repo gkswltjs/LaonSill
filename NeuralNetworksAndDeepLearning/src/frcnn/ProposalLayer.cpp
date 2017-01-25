@@ -247,7 +247,6 @@ void ProposalLayer<Dtype>::feedforward() {
 
 	// 4. sort all (proposal, score) pairs by score from highest to lowest
 	// 5. take preNmsTopN (e.g. 6000)
-	// XXX: 디버깅 임시 -> 원복
 	vector<uint32_t> order(scores.size());
 #if TEST_MODE
 	for (uint32_t i = 0; i < order.size(); i++)

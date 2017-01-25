@@ -162,7 +162,7 @@ void Client::clientMain(const char* hostname, int portno) {
     
     // (5-2) train network
     cout << "push train-network job" << endl;
-    Job* trainNetworkJob = new Job(Job::BuildNetwork);
+    Job* trainNetworkJob = new Job(Job::TrainNetwork);
     trainNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkId);
     int maxEpochCount = 2;
     trainNetworkJob->addJobElem(Job::IntType, 1, (void*)&maxEpochCount);

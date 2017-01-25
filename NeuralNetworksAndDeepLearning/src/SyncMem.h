@@ -35,6 +35,7 @@ class SyncMem {
 public:
 	SyncMem();
 	SyncMem(SyncMem<Dtype>& syncMem);
+	SyncMem(SyncMem<Dtype>* syncMem);
 	virtual ~SyncMem();
 
 	size_t getSize() {

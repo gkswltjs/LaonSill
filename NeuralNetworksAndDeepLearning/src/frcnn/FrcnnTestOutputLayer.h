@@ -9,6 +9,7 @@
 #define FRCNNTESTOUTPUTLAYER_H_
 
 #include "Layer.h"
+#include "frcnn_common.h"
 
 template <typename Dtype>
 class FrcnnTestOutputLayer : public Layer<Dtype> {
@@ -77,6 +78,8 @@ public:
 	uint32_t maxPerImage;
 	float thresh;
 	bool vis;
+
+	std::vector<cv::Scalar> boxColors;
 };
 
 #endif /* FRCNNTESTOUTPUTLAYER_H_ */

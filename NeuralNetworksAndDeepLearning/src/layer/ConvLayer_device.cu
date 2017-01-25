@@ -245,6 +245,7 @@ void ConvLayer<Dtype>::reshape() {
 
 
 	if(workspaceSize > 0) {
+		cout << this->name << "'s workspace: " << workspaceSize << endl;
 		if (this->d_workspace) {
 			checkCudaErrors(cudaFree(d_workspace));
 			this->d_workspace = 0;

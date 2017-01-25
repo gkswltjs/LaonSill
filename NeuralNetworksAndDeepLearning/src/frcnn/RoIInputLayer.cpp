@@ -84,6 +84,35 @@ void RoIInputLayer<Dtype>::initialize() {
 
 
 
+
+
+
+	this->boxColors.push_back(cv::Scalar(10, 163, 240));
+	this->boxColors.push_back(cv::Scalar(44, 90, 130));
+	this->boxColors.push_back(cv::Scalar(239, 80, 0));
+	this->boxColors.push_back(cv::Scalar(37, 0, 162));
+	this->boxColors.push_back(cv::Scalar(226, 161, 27));
+
+	this->boxColors.push_back(cv::Scalar(115, 0, 216));
+	this->boxColors.push_back(cv::Scalar(0, 196, 164));
+	this->boxColors.push_back(cv::Scalar(255, 0, 106));
+	this->boxColors.push_back(cv::Scalar(23, 169, 96));
+	this->boxColors.push_back(cv::Scalar(0, 138, 0));
+
+	this->boxColors.push_back(cv::Scalar(138, 96, 118));
+	this->boxColors.push_back(cv::Scalar(100, 135, 109));
+	this->boxColors.push_back(cv::Scalar(0, 104, 250));
+	this->boxColors.push_back(cv::Scalar(208, 114, 244));
+	this->boxColors.push_back(cv::Scalar(0, 20, 229));
+
+	this->boxColors.push_back(cv::Scalar(63, 59, 122));
+	this->boxColors.push_back(cv::Scalar(135, 118, 100));
+	this->boxColors.push_back(cv::Scalar(169, 171, 0));
+	this->boxColors.push_back(cv::Scalar(255, 0, 170));
+	this->boxColors.push_back(cv::Scalar(0, 193, 216));
+
+
+
 }
 
 template <typename Dtype>
@@ -343,6 +372,18 @@ void RoIInputLayer<Dtype>::getNextMiniBatch() {
 #endif
 	}
 
+
+	/*
+	uint32_t index = inds[0];
+	cout << "flipped: " << imdb->roidb[index].flipped << endl;
+	vector<string> boxLabelsText;
+	for (uint32_t i = 0; i < imdb->roidb[index].boxes.size(); i++)
+		boxLabelsText.push_back(imdb->convertIndToClass(imdb->roidb[index].gt_classes[i]));
+
+	displayBoxesOnImage("TRAIN_GT", imdb->roidb[index].getMat(), 1, imdb->roidb[index].boxes,
+			imdb->roidb[index].gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
+			*/
+
 	getMiniBatch(minibatchDb, inds);
 }
 
@@ -380,7 +421,7 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 
 	// Get the input image blob
 	vector<float> imScales;
-	getImageBlob(roidb, randomScaleInds, imScales);
+	vector<cv::Mat> processedIms = getImageBlob(roidb, randomScaleInds, imScales);
 
 	// if cfg.TRAIN.HAS_RPN
 	assert(imScales.size() == 1);	// Single batch only
@@ -417,6 +458,19 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 		fillDataWith2dVec(gt_boxes, this->_inputData[2]);
 		this->_inputShape[2] =
             {1, 1, (uint32_t)gt_boxes.size(), (uint32_t)gt_boxes[0].size()};
+
+
+
+		/*
+		// 최종 scale된 input image, bounding box를 display
+		vector<string> boxLabelsText;
+		for (uint32_t j = 0; j < roidb[0].boxes.size(); j++)
+			boxLabelsText.push_back(imdb->convertIndToClass(roidb[0].gt_classes[j]));
+
+		displayBoxesOnImage("INPUT DATA", processedIms[0], 1, gt_boxes,
+				roidb[0].gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
+				*/
+
 
 #if ROIINPUTLAYER_LOG
 		Data<Dtype>::printConfig = true;
@@ -458,50 +512,76 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 }
 
 template <typename Dtype>
-void RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
+vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 		const vector<uint32_t>& scaleInds, vector<float>& imScales) {
 	imScales.clear();
 
-	vector<Mat> processedIms;
+	vector<cv::Mat> processedIms;
 	// Builds an input blob from the images in the roidb at the specified scales.
 	const uint32_t numImages = roidb.size();
 	for (uint32_t i = 0; i < numImages; i++) {
-		//cv::Mat im = cv::imread(roidb[i].image);
-		//cv::Mat im = roidb[i].mat;
 		cv::Mat im = roidb[i].getMat();
 #if !ROIINPUTLAYER_LOG
-		cout << "image: " << roidb[i].image <<
-				" (" << im.rows << "x" << im.cols << ")" << endl;
+		cout << "image: " << roidb[i].image.substr(roidb[i].image.length()-10) <<
+				" (" << im.rows << "x" << im.cols << ")" << ", flip: " << roidb[i].flipped;
+		//cout << "original: " << ((float*)im.data) << endl;
 #endif
 		// XXX: for test
 		Util::imagePath = roidb[i].image;
-
-
-
 		//Mat im = cv::imread("/home/jkim/Downloads/sampleR32G64B128.png");
-#if ROIINPUTLAYER_LOG
-		//printMat<unsigned char, unsigned int>(im);
-#endif
 
-		if (roidb[i].flipped)
-			cv::flip(im, im, 1);
+		// 수정: IMDB.appendFlippedImages()에서 flip 처리
+		//if (roidb[i].flipped)
+		//	cv::flip(im, im, 1);
+
+		/*
+		cout << "flipped: " << roidb[i].flipped << endl;
+		vector<string> boxLabelsText;
+		for (uint32_t j = 0; j < roidb[i].boxes.size(); j++)
+			boxLabelsText.push_back(imdb->convertIndToClass(roidb[i].gt_classes[j]));
+
+		displayBoxesOnImage("TRAIN_GT", im, 1, roidb[i].boxes,
+				roidb[i].gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
+				*/
+
+		/*
+		string windowName1 = "im purity test original";
+		cv::namedWindow(windowName1, CV_WINDOW_AUTOSIZE);
+		cv::imshow(windowName1, im);
+		//cv::waitKey(0);
+		//cv::destroyAllWindows();
+		 */
+		//cout << "before: " << ((float*)im.data) << endl;
 
 		uint32_t targetSize = TRAIN_SCALES[scaleInds[i]];
-		float imScale = prepImForBlob(im, this->pixelMeans,
-				targetSize, TRAIN_MAX_SIZE);
+		cv::Mat imResized;
+		float imScale = prepImForBlob(im, imResized, this->pixelMeans, targetSize,
+				TRAIN_MAX_SIZE);
 
+		cout << " -> <" << targetSize << ", " << imScale << "> (" <<
+				imResized.rows << "x" << imResized.cols << ")" << endl;
+		//cout << "after: " << ((float*)im.data) << ", " << ((float*)imResized.data) << endl;
+		/*
+		string windowName2 = "im purity test result";
+		cv::namedWindow(windowName2, CV_WINDOW_AUTOSIZE);
+		cv::imshow(windowName2, imResized);
+		cv::waitKey(0);
+		cv::destroyAllWindows();
+		*/
 		imScales.push_back(imScale);
-		processedIms.push_back(im);
+		processedIms.push_back(imResized);
 	}
 
 	// create a blob to hold the input images
 	imListToBlob(processedIms);
+
+	return processedIms;
 }
 
 
 template <typename Dtype>
-float RoIInputLayer<Dtype>::prepImForBlob(cv::Mat& im, const vector<float>& pixelMeans,
-		const uint32_t targetSize, const uint32_t maxSize) {
+float RoIInputLayer<Dtype>::prepImForBlob(cv::Mat& im, cv::Mat& imResized,
+		const vector<float>& pixelMeans, const uint32_t targetSize, const uint32_t maxSize) {
 	// Mean subtract and scale an image for use in a blob
 	// cv::Mat, BGR이 cols만큼 반복, 다시 해당 row가 rows만큼 반복
 	const uint32_t channels = im.channels();
@@ -559,7 +639,7 @@ float RoIInputLayer<Dtype>::prepImForBlob(cv::Mat& im, const vector<float>& pixe
 	if (np_round(imScale * imSizeMax) > maxSize)
 		imScale = float(maxSize) / float(imSizeMax);
 
-	cv::resize(im, im, cv::Size(), imScale, imScale, CV_INTER_LINEAR);
+	cv::resize(im, imResized, cv::Size(), imScale, imScale, CV_INTER_LINEAR);
 #if ROIINPUTLAYER_LOG
 	cout << "resized to [" << im.rows << ", " << im.cols << ", " << imScale << "]" << endl;
 #endif
