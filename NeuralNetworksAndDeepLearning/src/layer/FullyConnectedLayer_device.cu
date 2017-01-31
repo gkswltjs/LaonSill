@@ -5,12 +5,14 @@
  *      Author: jhkim
  */
 
+#include "cuda_runtime.h"
+#include <algorithm>
+
 #include "FullyConnectedLayer.h"
 #include "Util.h"
 #include "Exception.h"
 #include "NetworkConfig.h"
-#include "cuda_runtime.h"
-#include <algorithm>
+#include "SysLog.h"
 
 #define FULLYCONNECTEDLAYER_LOG 0
 
@@ -174,7 +176,6 @@ void FullyConnectedLayer<Dtype>::reshape() {
 			this->d_onevec, batches, 1.0f);
 
 	_mask.reshape(b_out);
-
 }
 
 template <typename Dtype>

@@ -170,6 +170,8 @@ private:
 	 * @param weight_filler weight 초기화 관련 파라미터 구조체
 	 * @param bias_filler bias 초기화 관련 파라미터 구조체
 	 * @param activationType weighted sum에 적용할 활성화 타입
+     * @param useBatchNorm batch normalization 사용 여부
+     * @param batchNormEpsilon epsilon value for batch normalization
 	 */
 	void initialize(int n_out, double p_dropout, update_param weight_update_param,
         update_param bias_update_param, param_filler<Dtype> weight_filler,
@@ -236,6 +238,7 @@ protected:
 
 	Dtype scale;		///< dropout 스케일 팩터
 #endif
+
 
 public:
 	Data<Dtype>* _preActivation;			    ///< weighted sum 결과에 대한 데이터

@@ -8,6 +8,7 @@
 #include "FullyConnectedLayer.h"
 #include "Util.h"
 #include "Exception.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -102,9 +103,6 @@ void FullyConnectedLayer<Dtype>::scaleParamsGrad(float scale) {
 	}
 }
 
-
-
-
 template <typename Dtype>
 uint32_t FullyConnectedLayer<Dtype>::boundParams() {
 	uint32_t updateCount = _params[Weight]->bound_grad();
@@ -162,14 +160,6 @@ void FullyConnectedLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) 
 		this->_paramsInitialized[i] = true;
 	}
 }
-
-
-
-
-
-
-
-
 
 #ifndef GPU_MODE
 template <typename Dtype>

@@ -38,6 +38,7 @@ public:
 	 */
 	enum LayerType : int {
 		None = 0,
+        AAA,                    // template class
 		Input, 					// 입력 레이어
         ALEInput,               // ALE 입력 레이어
 		FullyConnected, 		// Fully Connected 레이어
@@ -49,7 +50,8 @@ public:
 		Sigmoid, 				// 시그모이드 레이어
 		Softmax,				// 소프트맥스 레이어
 		Split,					//
-        DQNOutput,               // DQN Output 레이어
+        DQNOutput,              // DQN Output 레이어
+        BatchNorm,              // Batch normalization 레이어
 
 		Reshape,				//
 		SmoothL1Loss,
