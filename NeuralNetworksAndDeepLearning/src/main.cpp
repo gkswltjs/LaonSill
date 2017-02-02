@@ -102,7 +102,8 @@ void developerMain() {
 	Util::printVramInfo();
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig2<float>();
+	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
 
 	// (2) network config 정보를 layer들에게 전달한다.

@@ -30,6 +30,18 @@
         }                                                                               \
     } while (0)
 
+#define COLD_LOG0(level, cond, fmt)                                                     \
+    do {                                                                                \
+        if ((level >= ColdLog::logLevel) && (cond)) {                                   \
+            std::unique_lock<std::mutex>  logLock(ColdLog::logMutex);                   \
+            ColdLog::writeLogHeader(level, __FILE__, __LINE__);                         \
+            fprintf(ColdLog::fp, fmt);                                                  \
+            fprintf(ColdLog::fp, "\n");                                                 \
+            logLock.unlock();                                                           \
+            fflush(ColdLog::fp);                                                        \
+        }                                                                               \
+    } while (0)
+
 class ColdLog {
 public: 
     // XXX: 일반적으로는 INFO가 WARNING보다 log level이 낮음.

@@ -23,7 +23,7 @@ public:
 
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
-		uint32_t _nOut;										///< 출력 노드의 수
+		uint32_t    _kernelMapCount;
 		typename Activation<Dtype>::Type _activationType;	///< weighted sum에 적용할 활성화
 
         /* batch normalization related variables */
@@ -32,12 +32,8 @@ public:
                                         
 		Builder() {
 			this->type = Layer<Dtype>::BatchNorm;
-			_nOut = 0;
+            _kernelMapCount = 1;
             _epsilon = 0.001;
-		}
-		Builder* nOut(uint32_t nOut) {
-			this->_nOut = nOut;
-			return this;
 		}
 		virtual Builder* name(const std::string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
@@ -59,7 +55,11 @@ public:
 			HiddenLayer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
-		virtual Builder* epsilon(double epsilon) {
+		Builder* kernelMapCount(uint32_t kernelMapCount) {
+			this->_kernelMapCount = kernelMapCount;
+			return this;
+		}
+		Builder* epsilon(double epsilon) {
 			this->_epsilon = epsilon;
 			return this;
 		}
@@ -75,7 +75,7 @@ public:
 	BatchNormLayer();
 	BatchNormLayer(Builder* builder);
 
-    BatchNormLayer(const std::string name, int n_out, double epsilon);
+    BatchNormLayer(const std::string name, int kernelMapCount, double epsilon);
     virtual ~BatchNormLayer();
 
 	//////////////////////////////////////////
@@ -99,14 +99,35 @@ public:
 	virtual void feedforward();
 
 private:
-    void initialize(int n_out, double epsilon);
+    void initialize(int kernelMapCount, double epsilon);
 
-    int         n_out;
-    double      epsilon;          // Small value added to variance to avoid dividing 
-                                    // by zero. default value = 0.001
-    Dtype      *gammaSets;        // scaled normalized value sets
-    Dtype      *betaSets;         // shift normalized value sets
-    Dtype      *meanSets;         // moving mean value sets
-    Dtype      *varianceSets;     // moving variance value sets
+    int         kernelMapCount;
+    double      epsilon;                // Small value added to variance to avoid dividing 
+                                        // by zero. default value = 0.001
+    int         depth;
+    int         batchSetCount;
+    Dtype      *gammaSets;              // scaled normalized value sets
+    Dtype      *betaSets;               // shift normalized value sets
+    Dtype      *meanSumSets;            // summed mean value sets
+    Dtype      *varianceSumSets;        // summed variance value sets
+
+    Dtype      *localMeanSets;          // mean sets for each mini-batch
+    Dtype      *localVarianceSets;      // variance sets for each mini-batch
+
+    Dtype      *normInputValues;        // normalized input values. 
+                                        // backward 과정에서 gamma 학습에 활용이 됨.
+                                        
+    Dtype      *normInputGradValues;    // gradient of normalized input
+    Dtype      *varianceGradValues;     // gradient of variance
+    Dtype      *meanGradValues;         // gradient of mean
+    Dtype      *gammaGradValues;        // gradient of scaled normalized value
+    Dtype      *betaGradValues;         // gradient of scaled normalized value
+
+    void        computeNormInputGrad();
+    void        computeVarianceGrad();
+    void        computeMeanGrad();
+    void        computeInputGrad();
+    void        computeScaleGrad();
+    void        computeShiftGrad();
 };
 #endif /* BATCHNORMLAYER_H */

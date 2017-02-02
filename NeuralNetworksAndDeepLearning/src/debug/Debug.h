@@ -39,6 +39,7 @@
 #include "ALEInputLayer.h"
 #include "DQNOutputLayer.h"
 #include "FrcnnTestOutputLayer.h"
+#include "BatchNormLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -215,6 +216,74 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 }
 
 
+template <typename Dtype>
+LayersConfig<Dtype>* createCNNSimpleLayersConfig2() {
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename InputLayer<Dtype>::Builder())
+					->id(0)
+					->name("inputLayer")
+					->source(std::string(SPARAM(BASE_DATA_DIR))
+                        + std::string("/mnist"))
+					->sourceType("ImagePack")
+					->mean({0.13066047740})
+					->outputs({"data", "label"})
+					)
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("convLayer1")
+					->filterDim(3, 3, 1, 10, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->activationType(Activation<Dtype>::ReLU)
+					->inputs({"data"})
+					->outputs({"conv1/3x3_s2"}))
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(2)
+					->name("poolingLayer1")
+					->poolDim(2, 2, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"conv1/3x3_s2"})
+					->outputs({"pool1/3x3_s1"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(3)
+					->name("pool1/3x3_s1_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"pool1/3x3_s1"})
+					->outputs({"pool1/3x3_s1_reshape"}))
+
+			->layer((new typename BatchNormLayer<Dtype>::Builder())
+					->id(4)
+					->name("batchnorm1")
+					->inputs({"pool1/3x3_s1_reshape"})
+					->outputs({"batchnorm1"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(5)
+					->name("fc1")
+					->nOut(10)
+					->pDropout(0.4)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->activationType(Activation<Dtype>::Type::NoActivation)
+					->inputs({"batchnorm1"})
+					->outputs({"fc1"}))
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(6)
+					->name("softmaxWithLoss")
+					->inputs({"fc1", "label"})
+					->outputs({"prob"}))
+
+
+			->build();
+
+	return layersConfig;
+}
 
 template <typename Dtype>
 LayersConfig<Dtype>* createCNNSimpleLayersConfig() {

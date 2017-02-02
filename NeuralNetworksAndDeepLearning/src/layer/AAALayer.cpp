@@ -80,13 +80,6 @@ AAALayer<Dtype>::~AAALayer() {
 }
 
 template <typename Dtype>
-void AAALayer<Dtype>::initialize(double var1, double var2) {
-	this->type = Layer<Dtype>::AAA;
-	this->var1 = var1;
-    this->var2 = var2;
-}
-
-template <typename Dtype>
 void AAALayer<Dtype>::feedforward() {
 }
 

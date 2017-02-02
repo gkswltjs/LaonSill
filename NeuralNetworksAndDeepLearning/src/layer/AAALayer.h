@@ -53,11 +53,11 @@ public:
 			HiddenLayer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
-		virtual Builder* var1(uint32_t var1) {
+		Builder* var1(uint32_t var1) {
 			this->_var1 = var1;
 			return this;
 		}
-		virtual Builder* var2(double var2) {
+		Builder* var2(double var2) {
 			this->_var2 = var2;
 			return this;
 		}

@@ -32,6 +32,20 @@
         fflush(stdout);                                                     \
     } while (0)                                                             
 
+#define STDOUT_COND_BLOCK(cond, stmt)                                       \
+    do {                                                                    \
+        if (cond) {                                                         \
+            STDOUT_BLOCK(stmt);                                             \
+        }                                                                   \
+    } while (0)                                                             
+
+#define STDOUT_COND_LOG(cond, fmt, args...)                                 \
+    do {                                                                    \
+        if (cond) {                                                         \
+            STDOUT_LOG(fmt, ##args);                                        \
+        }                                                                   \
+    } while (0)                                                             
+
 class StdOutLog {
 public: 
     StdOutLog() {}

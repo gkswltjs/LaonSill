@@ -13,6 +13,7 @@
 #include "Exception.h"
 #include "NetworkConfig.h"
 #include "SysLog.h"
+#include "StdOutLog.h"
 
 #define FULLYCONNECTEDLAYER_LOG 0
 
@@ -118,6 +119,8 @@ void FullyConnectedLayer<Dtype>::reshape() {
 	// XXX: 주의
 
 
+    // 여기에서는 batch 개수만 변경이 될 수 있다고 가정하였다.
+    // 따라서 batch 개수에 대한 변경만 체크한다.
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
 
@@ -144,12 +147,19 @@ void FullyConnectedLayer<Dtype>::reshape() {
 			CUDNN_DATA_FLOAT,
 			batches, channels, out_rows, cols));
 
-#if !FULLYCONNECTEDLAYER_LOG
-	printf("<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
-			this->name.c_str(), batches, channels, in_rows, cols);
-	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-			this->name.c_str(), batches, channels, out_rows, cols);
-#endif
+	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG, 
+        "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
+        this->name.c_str(), batches, channels, in_rows, cols);
+	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG,
+	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
+        this->name.c_str(), batches, channels, out_rows, cols);
+
+//#if !FULLYCONNECTEDLAYER_LOG
+//	printf("<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
+//			this->name.c_str(), batches, channels, in_rows, cols);
+//	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
+//			this->name.c_str(), batches, channels, out_rows, cols);
+//#endif
 
 	const uint32_t u_in = in_rows;
 	const uint32_t u_out = out_rows;
@@ -195,8 +205,6 @@ void FullyConnectedLayer<Dtype>::update() {
         this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
 	_updateParam(biasSize, regScale_b, learnScale_b, _paramsHistory[Bias], _params[Bias]);
 }
-
-
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale,
@@ -345,6 +353,34 @@ void FullyConnectedLayer<Dtype>::_computeWeightedData() {
 	this->_inputData[0]->print_data();
 	this->_inputData[0]->print_data_flatten();
 
+    /**
+     * [cublasSgemm() 함수 설명 (from cuBlas User Documentation)]
+     *
+     * cublasStatus_t cublasSgemm(cublasHandle_t handle, cublasOperation_t transa,
+     *                            cublasOperation_t transb, int m, int n, int k, 
+     *                            const float *alpha, const float *A, int * lda, 
+     *                            const float *B, int ldb, const float *beta, float *C, 
+     *                            int ldc)
+     *
+     * C = α op ( A ) op ( B ) + β C
+     *
+     * where α and β are scalars, and A , B and C are matrices stored in column-major format
+     * with dimensions op ( A ) m × k , op ( B ) k × n and C m × n , respectively. Also, for
+     * matrix A 
+     *
+     * op ( A ) = A if  transa == CUBLAS_OP_N A T if  transa == CUBLAS_OP_T A H if  transa ==
+     * CUBLAS_OP_C
+     *
+     * and op ( B ) is defined similarly for matrix B .
+     *
+     * cublasOperation_t option
+     *  (1) CUBLAS_OP_N => the non-transpose operation is selected.
+     *  (2) CUBLAS_OP_T => the transpose operation is selected.
+     *  (3) CUBLAS_OP_C => the conjugate transpose operation is selected.
+     *
+     * lda,ldb,ldc => leading dimension of two-dimensional array used to store the matrix A,
+     *                B, C
+     */
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
 			out_rows, batches, in_rows,
 			&Cuda::alpha, d_weightData, out_rows, d_inputData, in_rows,
@@ -424,14 +460,54 @@ template <typename Dtype>
 void FullyConnectedLayer<Dtype>::backpropagation() {
 	//_dropoutBackward();
 
+    /*
+     * 아래와 같은 simple한 network layer가 있다고 가정하자.
+     *
+     *               <<<< ith layer >>>>            <<<< i+1th layer >>>>
+     *   .....    Xi    Wi     Ai     Fi       Yi (=Xi+1)   ........
+     *                  Bi
+     *   .....    O ---------  O  ------------  O            ........
+     *                                                     dL/dYi is already computed
+     *
+     *  (※  Xi = i번째 layer의 input 값, Wi = i번째 layer의 weight, 
+     *      Bi = i번째 layer의 bias 값,  Ai = i번째 layer의 중간 값
+     *      Fi = i번째 layer의 activation function
+     *      Yi = i번째 layer의 ouput 값, i+1 번째 layer의 input 값이기도 함
+     *      L = loss, dL/dYi = i+1번째 layer에서 계산되었던 gradient 값)
+     *
+     *  gradient descent 방식으로 학습을 하기 위해서는 dL/dWi & dL/dBi가 필요하다.
+     *  체인 룰에 의하여 아래와 같은 식으로 표현이 된다:
+     *  (가) dYi/dWi = dL/dYi * dYi/dAi * dAi/dWi
+     *  (나) dYi/dBi = dL/dYi * dYi/dAi * dAi/dBi
+     *
+     *  (가),(나)를 계산하기 위해서는 아래와 같이 4가지 계산이 필요하다.
+     *
+     *  (A) dL/dYi : i+1번째 layer의 backward 과정에서 _outputData[0]의 grad에 값을 저장해
+     *                두었다.
+     *
+     *  (B) dYi/dAi : _computePreActivationGrad() 에서 dL/dYi * dYi/dAi의 계산을  수행 한다. 
+     *                dL/dYi는 구해져 있기 때문에 Yi, Ai 값이 필요하다. 이 값들은 forward시에
+     *                각각 _outputData[0]의 data와 _preActivation의 data에 저장이 되어 있다.
+     *                activation function에 맞게 Yi, Ai, dL/dYi를 입력값으로 하여 dL/dYi * 
+     *                dYi/dAi 값이 계산이 되고, 결과값은 this->_preActivation의 grad에 담는다.
+     *
+     *  (C) dAi/dWi : _computeWeightGrad()에서 (A), (B)의 결과를 조합하여 weight Grad를
+     *               계산한다. dAi/dWi는 실제로 transpose Xi이기 때문에 GEMM 연산만 진행
+     *               한다. 결과값은 _params[Weight]의 grad에 저장된다.
+     *
+     *  (D) dAi/dBi : (C)과정과 동일하다. _computeBiasGrad()에서 bias를 계산하고, 그 결과 값을
+     *                _params[Bias]의 grad에 저장을 하는 것만 다르다.
+     *
+     *  마지막으로 i-1 layer에게 dL/dYi-1값을 전달해야 한다. 이 과정은 _computeInputGrad()
+     *  에서 수행이 된다. 결과값을 _inputData의 grad에 저장한다. dL/dYi-1 = dL/dXi =
+     *   dL/dAi * dAi/dXi가 된다. dL/dAi는 _preAcitvation의 grad에 저장이 되어 있고, dAi/dXi는
+     *  Wi의 transpose 이기 때문에 계산가능하다.
+     */
 	_computePreActivationGrad();
 	_computeWeightGrad();
 	_computeBiasGrad();
 	_computeInputGrad();
-
 }
-
-
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_dropoutBackward() {

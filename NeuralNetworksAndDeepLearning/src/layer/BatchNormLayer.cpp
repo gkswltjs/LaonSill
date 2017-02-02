@@ -10,6 +10,7 @@
 #include "Util.h"
 #include "Exception.h"
 #include "SysLog.h"
+#include "ColdLog.h"
 
 using namespace std;
 
@@ -22,23 +23,35 @@ BatchNormLayer<Dtype>::BatchNormLayer() {
 template <typename Dtype>
 BatchNormLayer<Dtype>::BatchNormLayer(Builder* builder)
 	: HiddenLayer<Dtype>(builder) {
-	initialize(builder->_nOut, builder->_epsilon);
+	initialize(builder->_kernelMapCount, builder->_epsilon);
 }
 
 template <typename Dtype>
-BatchNormLayer<Dtype>::BatchNormLayer(const string name, int n_out,
+BatchNormLayer<Dtype>::BatchNormLayer(const string name, int kernelMapCount,
     double epsilon) : HiddenLayer<Dtype>(name) {
-	initialize(n_out, epsilon);
+	initialize(kernelMapCount, epsilon);
 }
 
 template <typename Dtype>
-void BatchNormLayer<Dtype>::initialize(int n_out, double epsilon) {
+void BatchNormLayer<Dtype>::initialize(int kernelMapCount, double epsilon) {
+	this->type                  = Layer<Dtype>::BatchNorm;
+	this->kernelMapCount        = kernelMapCount;
+    this->epsilon               = epsilon;
 
-	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
-	//this->out_dim = io_dim(n_out, 1, 1, 1);
-	this->type = Layer<Dtype>::BatchNorm;
-	this->n_out = n_out;
-    this->epsilon = epsilon;
+    this->depth                 = 0;
+    this->batchSetCount         = 0;
+    this->gammaSets             = NULL;
+    this->betaSets              = NULL;
+    this->meanSumSets           = NULL;
+    this->varianceSumSets       = NULL;
+    this->localMeanSets         = NULL;
+    this->localVarianceSets     = NULL;
+    this->normInputValues       = NULL;
+    this->normInputGradValues   = NULL;
+    this->varianceGradValues    = NULL;
+    this->meanGradValues        = NULL;
+    this->gammaGradValues       = NULL;
+    this->betaGradValues        = NULL;
 }
 
 template <typename Dtype>
@@ -92,13 +105,6 @@ void BatchNormLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
 template <typename Dtype>
 BatchNormLayer<Dtype>::~BatchNormLayer() {
     // TODO:
-}
-
-template <typename Dtype>
-void BatchNormLayer<Dtype>::initialize(double p_dropout, double epsilon) {
-	this->type = Layer<Dtype>::BatchNorm;
-	this->p_dropout = p_dropout;
-    this->epsilon = epsilon;
 }
 
 template <typename Dtype>

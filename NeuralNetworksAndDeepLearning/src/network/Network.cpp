@@ -86,7 +86,7 @@ void Network<Dtype>::sgd_with_timer(int epochs) {
     struct timespec startTime;
     SPERF_START(NETWORK_TRAINING_TESTTIME, &startTime);
     // XXX: 임시
-    epochs = 1000000;
+    //epochs = 1000000;
     //epochs = 1;
 	sgd(epochs);
 
