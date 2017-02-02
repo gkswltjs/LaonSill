@@ -40,7 +40,7 @@ public:
 		update_param _biasUpdateParam;
 		param_filler<Dtype> _weightFiller;
 		param_filler<Dtype> _biasFiller;
-		typename Activation<Dtype>::Type _activationType;
+		//typename Activation<Dtype>::Type _activationType;
 
 		Builder() {
 			this->type = Layer<Dtype>::Conv;
@@ -58,7 +58,7 @@ public:
 			_weightFiller.value = 0.0f;
 			_biasFiller.type = ParamFillerType::Constant;
 			_biasFiller.value = 0.0f;
-			_activationType = Activation<Dtype>::NoActivation;
+			//_activationType = Activation<Dtype>::NoActivation;
 		}
 		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
 				uint32_t pad, uint32_t stride) {
@@ -90,10 +90,12 @@ public:
 			this->_biasFiller.value = value;
 			return this;
 		}
+		/*
 		Builder* activationType(typename Activation<Dtype>::Type activationType) {
 			this->_activationType = activationType;
 			return this;
 		}
+		*/
 		virtual Builder* name(const std::string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
@@ -136,8 +138,7 @@ public:
 	 */
 	ConvLayer(const std::string name, filter_dim filter_d, update_param weight_update_param, 
               update_param bias_update_param, param_filler<Dtype> weight_filler, 
-              param_filler<Dtype> bias_filler, 
-              typename Activation<Dtype>::Type activationType);
+              param_filler<Dtype> bias_filler);
 	/**
 	 * @details ConvLayer 소멸자
 	 */
@@ -188,14 +189,14 @@ public:
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param,
         update_param bias_update_param, param_filler<Dtype> weight_filler,
-        param_filler<Dtype> bias_filler, typename Activation<Dtype>::Type activationType);
+        param_filler<Dtype> bias_filler);
 
 
 
 	void _computeFiltersConvolutionData();
-	void _computeActivationData();
+	//void _computeActivationData();
 
-	void _computePreActivationGrad();
+	//void _computePreActivationGrad();
 	void _computeFiltersGrad();
 	void _computeBiasesGrad();
 	void _computeInputGrad();
@@ -210,7 +211,7 @@ protected:
 
 protected:
 	filter_dim filter_d;							///< 컨볼루션 연산 관련 파라미터 구조체
-	Activation<Dtype> *activation_fn;				///< 활성화 객체
+	//Activation<Dtype> *activation_fn;				///< 활성화 객체
 
 	update_param weight_update_param;				///< weight 갱신 관련 파라미터 구조체
 	update_param bias_update_param;					///< bias 갱신 관련 파라미터 구조체
@@ -235,7 +236,7 @@ protected:
 #endif
 
 public:
-	Data<Dtype>* _preActivation;		    	///< 컨볼루션 결과에 대한 데이터
+	//Data<Dtype>* _preActivation;		    	///< 컨볼루션 결과에 대한 데이터
     std::vector<Data<Dtype>*> _params;			///< 파리미터 데이터 (Filter, Bias 포함)
     std::vector<Data<Dtype>*> _paramsHistory;	///< 이전 update의 파라미터 그레디언트 데이터
 

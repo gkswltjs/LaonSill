@@ -25,7 +25,9 @@
 
 using namespace std;
 
-const int               Communicator::LISTENER_PORT = 20087;
+// XXX: 포트 복원해야 함.
+//const int               Communicator::LISTENER_PORT = 20087;
+const int               Communicator::LISTENER_PORT = 20088;
 const long              SELECT_TIMEVAL_SEC = 0L;
 const long              SELECT_TIMEVAL_USEC = 500000L;
 

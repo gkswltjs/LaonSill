@@ -35,6 +35,7 @@ class SyncMem {
 public:
 	SyncMem();
 	SyncMem(SyncMem<Dtype>& syncMem);
+	SyncMem(SyncMem<Dtype>* syncMem);
 	virtual ~SyncMem();
 
 	size_t getSize() {
@@ -131,14 +132,14 @@ public:
 	 * @details 메모리의 값을 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
-	void print(const std::string& head);
+	void print(const std::string& head, const bool printData = true);
 	/**
 	 * @details 메모리의 값을 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 * @param shape 출력 포맷 shape (batches, columns, rows, columns)
 	 */
 	void print(const std::string& head, const std::vector<uint32_t>& shape,
-        const bool cmo=true);
+        const bool cmo=true, const bool printData = true);
 
 	static void setOutstream(std::ostream *outstream) {
 		SyncMem<Dtype>::outstream = outstream;
@@ -188,6 +189,10 @@ private:
 	uint32_t _h_int;
 	bool* _d_bool;
 	bool _h_bool;
+
+public:
+	static uint32_t printConfig;
+
 };
 
 #endif /* SYNCMEM_H_ */

@@ -64,6 +64,8 @@ public:
 		RoIInput,
 		RoITestInput,
 		FrcnnTestOutput,
+
+		Relu,
 	};
 
 
@@ -229,7 +231,7 @@ public:
 	std::vector<Data<Dtype>*> _inputData;				///< 레이어 입력 데이터 목록 벡터
 	std::vector<Data<Dtype>*> _outputData;				///< 레이어 출력 데이터 목록 벡터
 
-protected:
+
 	Layer<Dtype>::LayerType type;					    ///< 레이어의 타입
 
 	int id;												///< 레이어의 고유 아이디

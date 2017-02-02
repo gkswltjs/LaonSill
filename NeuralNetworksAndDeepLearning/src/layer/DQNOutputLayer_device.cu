@@ -32,7 +32,10 @@ __global__ void Dropout_(const int n, const Dtype* in, const Dtype* mask,
 
 template <typename Dtype>
 void DQNOutputLayer<Dtype>::backpropagation() {
-	const Dtype* d_preActivationData = this->_preActivation->device_data();
+	// XXX: activation 분리되면서 동작하지 않는 코드가 됨.
+	// OutputLayer도 날렸으니 ... 일단 임시로 막아둠.
+	//const Dtype* d_preActivationData = this->_preActivation->device_data();
+	const Dtype* d_preActivationData = 0;
 	const Dtype* d_outputData = this->_outputData[0]->device_data();
 	const Dtype* d_target = this->_inputData[1]->device_data();
 

@@ -117,8 +117,7 @@ void SoftmaxLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::backpropagation() {
-	// if (propagate_down[0]) {
-	if (true) {
+	if (this->_propDown[0]) {
 		const Dtype* outputData = this->_outputData[0]->device_data();
 		const Dtype* outputGrad = this->_outputData[0]->device_grad();
 		Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();

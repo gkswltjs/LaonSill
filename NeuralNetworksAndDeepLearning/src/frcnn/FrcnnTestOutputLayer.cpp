@@ -8,6 +8,7 @@
 #include <vector>
 #include <array>
 
+
 #include "FrcnnTestOutputLayer.h"
 #include "BboxTransformUtil.h"
 
@@ -367,10 +368,7 @@ void FrcnnTestOutputLayer<Dtype>::feedforward() {
 			printArray("all_scores", all_scores);
 #endif
 
-			// XXX: 테스트를 위해 imageThresh를 강제로 0.00f로 고정
 			float imageThresh = all_scores[all_scores.size()-this->maxPerImage];
-			//float imageThresh = 0.00f;
-
 			for (uint32_t i = 1; i < numClasses; i++) {
 				typename vector<array<float, 5>>::iterator it;
 				for(it = all_boxes[i].begin(); it != all_boxes[i].end();) {
@@ -385,6 +383,8 @@ void FrcnnTestOutputLayer<Dtype>::feedforward() {
 	}
 
 	cout << "object detection result: " << endl;
+	vector<vector<float>> restoredBoxes;
+	vector<uint32_t> boxLabels;
 	for (uint32_t i = 1; i < numClasses; i++) {
 		if (all_boxes[i].size() > 0) {
 			cout << "for class " << i << endl;
@@ -400,23 +400,86 @@ void FrcnnTestOutputLayer<Dtype>::feedforward() {
 						all_boxes[i][j][3] / imScale << ")" << endl;
 			}
 
-			vector<vector<float>> restoredBoxes(all_boxes[i].size());
+
 			for (uint32_t j = 0; j < all_boxes[i].size(); j++) {
-				restoredBoxes[j].resize(all_boxes[i].size());
-				restoredBoxes[j][0] = all_boxes[i][j][0] / imScale;
-				restoredBoxes[j][1] = all_boxes[i][j][1] / imScale;
-				restoredBoxes[j][2] = all_boxes[i][j][2] / imScale;
-				restoredBoxes[j][3] = all_boxes[i][j][3] / imScale;
+				//restoredBoxes[j].resize(all_boxes[i].size());
+				//restoredBoxes[j][0] = all_boxes[i][j][0] / imScale;
+				//restoredBoxes[j][1] = all_boxes[i][j][1] / imScale;
+				//restoredBoxes[j][2] = all_boxes[i][j][2] / imScale;
+				//restoredBoxes[j][3] = all_boxes[i][j][3] / imScale;
+
+				vector<float> tempBox(4);
+				tempBox[0] = all_boxes[i][j][0] / imScale;
+				tempBox[1] = all_boxes[i][j][1] / imScale;
+				tempBox[2] = all_boxes[i][j][2] / imScale;
+				tempBox[3] = all_boxes[i][j][3] / imScale;
+				restoredBoxes.push_back(tempBox);
+
+				boxLabels.push_back(i);
 			}
-			displayBoxesOnImage(Util::imagePath, 1, restoredBoxes);
 		}
 	}
+	displayBoxesOnImage("TEST_RESULT", Util::imagePath, 1, restoredBoxes, boxLabels, {},
+			boxColors);
+
 	cout << "end object detection result ... " << endl;
 }
 
 
 template <typename Dtype>
 void FrcnnTestOutputLayer<Dtype>::initialize() {
+
+	//boxColors.resize(20);
+
+	this->boxColors.push_back(cv::Scalar(10, 163, 240));
+	this->boxColors.push_back(cv::Scalar(44, 90, 130));
+	this->boxColors.push_back(cv::Scalar(239, 80, 0));
+	this->boxColors.push_back(cv::Scalar(37, 0, 162));
+	this->boxColors.push_back(cv::Scalar(226, 161, 27));
+
+	this->boxColors.push_back(cv::Scalar(115, 0, 216));
+	this->boxColors.push_back(cv::Scalar(0, 196, 164));
+	this->boxColors.push_back(cv::Scalar(255, 0, 106));
+	this->boxColors.push_back(cv::Scalar(23, 169, 96));
+	this->boxColors.push_back(cv::Scalar(0, 138, 0));
+
+	this->boxColors.push_back(cv::Scalar(138, 96, 118));
+	this->boxColors.push_back(cv::Scalar(100, 135, 109));
+	this->boxColors.push_back(cv::Scalar(0, 104, 250));
+	this->boxColors.push_back(cv::Scalar(208, 114, 244));
+	this->boxColors.push_back(cv::Scalar(0, 20, 229));
+
+	this->boxColors.push_back(cv::Scalar(63, 59, 122));
+	this->boxColors.push_back(cv::Scalar(135, 118, 100));
+	this->boxColors.push_back(cv::Scalar(169, 171, 0));
+	this->boxColors.push_back(cv::Scalar(255, 0, 170));
+	this->boxColors.push_back(cv::Scalar(0, 193, 216));
+
+	/*
+	boxColors.push_back(cv::Scalar(240, 163, 10));
+	boxColors.push_back(cv::Scalar(130, 90, 44));
+	boxColors.push_back(cv::Scalar(0, 80, 239));
+	boxColors.push_back(cv::Scalar(162, 0, 37));
+	boxColors.push_back(cv::Scalar(27, 161, 226));
+
+	boxColors.push_back(cv::Scalar(216, 0, 115));
+	boxColors.push_back(cv::Scalar(164, 196, 0));
+	boxColors.push_back(cv::Scalar(106, 0, 255));
+	boxColors.push_back(cv::Scalar(96, 169, 23));
+	boxColors.push_back(cv::Scalar(0, 138, 0));
+
+	boxColors.push_back(cv::Scalar(118, 96, 138));
+	boxColors.push_back(cv::Scalar(109, 135, 100));
+	boxColors.push_back(cv::Scalar(250, 104, 0));
+	boxColors.push_back(cv::Scalar(244, 114, 208));
+	boxColors.push_back(cv::Scalar(229, 20, 0));
+
+	boxColors.push_back(cv::Scalar(122, 59, 63));
+	boxColors.push_back(cv::Scalar(100, 118, 135));
+	boxColors.push_back(cv::Scalar(0, 171, 169));
+	boxColors.push_back(cv::Scalar(170, 0, 255));
+	boxColors.push_back(cv::Scalar(216, 193, 0));
+	*/
 
 }
 

@@ -65,10 +65,6 @@ public:
 			FullyConnectedLayer<Dtype>::Builder::biasFiller(biasFillerType, value);
 			return this;
 		}
-		Builder* activationType(typename Activation<Dtype>::Type activationType) {
-			FullyConnectedLayer<Dtype>::Builder::activationType(activationType);
-			return this;
-		}
 		virtual Builder* name(const std::string name) {
 			FullyConnectedLayer<Dtype>::Builder::name(name);
 			return this;
@@ -111,9 +107,9 @@ public:
 	OutputLayer(const std::string name, int n_out, double p_dropout,
         update_param weight_update_param, update_param bias_update_param,
         param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler,
-        typename Activation<Dtype>::Type activationType, typename Cost<Dtype>::Type costType)
+        typename Cost<Dtype>::Type costType)
 		:FullyConnectedLayer<Dtype>(name, n_out, p_dropout, weight_update_param,
-            bias_update_param, weight_filler, bias_filler, activationType) {
+            bias_update_param, weight_filler, bias_filler) {
 		initialize(costType);
 	};
 	virtual ~OutputLayer() {

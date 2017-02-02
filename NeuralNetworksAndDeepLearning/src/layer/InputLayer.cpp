@@ -17,19 +17,20 @@
 using namespace std;
 
 template <typename Dtype>
-InputLayer<Dtype>::InputLayer() {
+InputLayer<Dtype>::InputLayer()
+: Layer<Dtype>() {
 	initialize();
 }
 
 template <typename Dtype>
 InputLayer<Dtype>::InputLayer(const string name)
-	: Layer<Dtype>(name) {
+: Layer<Dtype>(name) {
 	initialize();
 }
 
 template <typename Dtype>
 InputLayer<Dtype>::InputLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
+: Layer<Dtype>(builder) {
 
 	if (builder->_sourceType == "ImagePack") {
 		_dataSet = new ImagePackDataSet<Dtype>(
@@ -138,7 +139,6 @@ void InputLayer<Dtype>::reshape() {
 
 template <typename Dtype>
 void InputLayer<Dtype>::feedforward() {
-	//Layer<Dtype>::feedforward();
 	cout << "unsupported ... " << endl;
 	exit(1);
 }

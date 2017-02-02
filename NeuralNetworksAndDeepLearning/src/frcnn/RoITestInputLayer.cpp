@@ -104,9 +104,7 @@ void RoITestInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char*
 
 template <typename Dtype>
 void RoITestInputLayer<Dtype>::initialize() {
-	imdb = new PascalVOC("test_sample", "2007",
-			"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
-			this->pixelMeans);
+	imdb = combinedRoidb("voc_2007_trainval");
 
 	const uint32_t numImages = imdb->imageIndex.size();
 	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, numImages, 50, 1);
@@ -114,7 +112,62 @@ void RoITestInputLayer<Dtype>::initialize() {
 	this->perm.resize(numImages);
 	iota(this->perm.begin(), this->perm.end(), 0);
 	this->cur = 0;
+
+
+
+	this->boxColors.push_back(cv::Scalar(10, 163, 240));
+	this->boxColors.push_back(cv::Scalar(44, 90, 130));
+	this->boxColors.push_back(cv::Scalar(239, 80, 0));
+	this->boxColors.push_back(cv::Scalar(37, 0, 162));
+	this->boxColors.push_back(cv::Scalar(226, 161, 27));
+
+	this->boxColors.push_back(cv::Scalar(115, 0, 216));
+	this->boxColors.push_back(cv::Scalar(0, 196, 164));
+	this->boxColors.push_back(cv::Scalar(255, 0, 106));
+	this->boxColors.push_back(cv::Scalar(23, 169, 96));
+	this->boxColors.push_back(cv::Scalar(0, 138, 0));
+
+	this->boxColors.push_back(cv::Scalar(138, 96, 118));
+	this->boxColors.push_back(cv::Scalar(100, 135, 109));
+	this->boxColors.push_back(cv::Scalar(0, 104, 250));
+	this->boxColors.push_back(cv::Scalar(208, 114, 244));
+	this->boxColors.push_back(cv::Scalar(0, 20, 229));
+
+	this->boxColors.push_back(cv::Scalar(63, 59, 122));
+	this->boxColors.push_back(cv::Scalar(135, 118, 100));
+	this->boxColors.push_back(cv::Scalar(169, 171, 0));
+	this->boxColors.push_back(cv::Scalar(255, 0, 170));
+	this->boxColors.push_back(cv::Scalar(0, 193, 216));
+
+
 }
+
+template <typename Dtype>
+IMDB* RoITestInputLayer<Dtype>::combinedRoidb(const string& imdb_name) {
+	IMDB* imdb = getRoidb(imdb_name);
+	return imdb;
+}
+
+template <typename Dtype>
+IMDB* RoITestInputLayer<Dtype>::getRoidb(const string& imdb_name) {
+	IMDB* imdb = getImdb(imdb_name);
+	cout << "Loaded dataset " << imdb->name << " for testing ... " << endl;
+
+	return imdb;
+}
+
+template <typename Dtype>
+IMDB* RoITestInputLayer<Dtype>::getImdb(const string& imdb_name) {
+	IMDB* imdb = new PascalVOC("test_sample", "2007",
+			"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
+			this->pixelMeans);
+	imdb->loadGtRoidb();
+
+	return imdb;
+}
+
+
+
 
 template <typename Dtype>
 void RoITestInputLayer<Dtype>::getNextMiniBatch() {
@@ -129,6 +182,15 @@ void RoITestInputLayer<Dtype>::getNextMiniBatch() {
 	cout << "test image: " << imagePath <<
 			" (" << im.rows << "x" << im.cols << ")" << endl;
 
+
+	vector<string> boxLabelsText;
+	for (uint32_t i = 0; i < imdb->roidb[index].boxes.size(); i++)
+		boxLabelsText.push_back(imdb->convertIndToClass(imdb->roidb[index].gt_classes[i]));
+
+	displayBoxesOnImage("TEST_GT", imagePath, 1, imdb->roidb[index].boxes,
+			imdb->roidb[index].gt_classes, boxLabelsText, this->boxColors, 0, -1, false);
+
+
 	imDetect(im);
 
 	Util::imagePath = imagePath;
@@ -137,8 +199,8 @@ void RoITestInputLayer<Dtype>::getNextMiniBatch() {
 }
 
 template <typename Dtype>
-void RoITestInputLayer<Dtype>::imDetect(Mat& im) {
-	Mat tempIm;
+void RoITestInputLayer<Dtype>::imDetect(cv::Mat& im) {
+	cv::Mat tempIm;
 
 	// scale [0, 255] image to [0.0, 1.0] image
 	im.convertTo(im, CV_32FC3, 1.0f/255.0f);
@@ -174,8 +236,9 @@ void RoITestInputLayer<Dtype>::imDetect(Mat& im) {
 	if (np_round(imScale * imSizeMax) > TEST_MAX_SIZE)
 		imScale = float(TEST_MAX_SIZE) / float(imSizeMax);
 
-	cv::resize(im, im, cv::Size(), imScale, imScale, CV_INTER_LINEAR);
-	imToBlob(im);
+	cv::Mat imResized;
+	cv::resize(im, imResized, cv::Size(), imScale, imScale, CV_INTER_LINEAR);
+	imToBlob(imResized);
 
 	//this->_inputData[1]->reshape({1, 1, 1, 3});
 	Dtype* imInfo = this->_inputData[1]->mutable_host_data();

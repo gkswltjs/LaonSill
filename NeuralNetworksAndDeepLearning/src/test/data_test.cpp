@@ -1,4 +1,7 @@
+#define DATA_TEST 0
 
+
+#if DATA_TEST
 #include <cstdlib>
 #include <fstream>
 #include <map>
@@ -6,24 +9,24 @@
 #include "Data.h"
 #include "Util.h"
 #include "Cuda.h"
-
-
-#define DATA_TEST 0
-
+#include "LayerConfig.h"
 
 void reshape_test();
 void range_test();
 void transpose_test();
 void save_test();
+void print_test();
 
-#if DATA_TEST
+
 int main() {
 	//reshape_test();
 	//range_test();
 	//transpose_test();
-	save_test();
+	//save_test();
+
+	print_test();
 }
-#endif
+
 
 void save_test() {
 	Data<float>::printConfig = true;
@@ -108,8 +111,6 @@ void reshape_test() {
 	Data<float>::printConfig = true;
 	data->print_data({}, false);
 	Data<float>::printConfig = false;
-
-
 }
 
 
@@ -179,12 +180,24 @@ void transpose_test() {
 	Data<float>::printConfig = true;
 	data->print_data({}, false);
 	Data<float>::printConfig = false;
+}
 
+void print_test() {
+	Data<float>* data = new Data<float>("data");
+	data->reshape({1, 2, 3, 4});
+
+	param_filler<float> weight_filler(ParamFillerType::Xavier, 0.1);
+	weight_filler.fill(data);
+
+	Data<float>::printConfig = true;
+	data->_data->print("_data");
+	data->print_data({}, true);
+	data->print_data({}, false);
+	Data<float>::printConfig = false;
 }
 
 
-
-
+#endif
 
 
 

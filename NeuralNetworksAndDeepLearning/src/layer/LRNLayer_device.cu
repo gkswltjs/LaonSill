@@ -58,16 +58,6 @@ void LRNLayer<Dtype>::backpropagation() {
                 d_outputData, this->outputTensorDesc, d_outputGrad,
 				this->inputTensorDesc, d_inputData,
 				&Cuda::beta, this->inputTensorDesc, d_inputGrad));
-
-		/*
-		if(this->_input->is_nan_grad()) {
-			Data<Dtype>::printConfig = 1;
-			this->_output->print_grad("outputGrad:");
-			this->_input->print_grad("inputGrad:");
-			Data<Dtype>::printConfig = 0;
-			exit(1);
-		}
-		*/
 	}
 }
 

@@ -108,6 +108,7 @@ void Network<Dtype>::sgd(int epochs) {
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
 	const uint32_t trainDataSize = dataSet->getNumTrainData();
+	cout << "trainDataSize: " << trainDataSize << endl;
 	const uint32_t numBatches = 
         trainDataSize / config->_batchSize / Worker<Dtype>::consumerCount;
 

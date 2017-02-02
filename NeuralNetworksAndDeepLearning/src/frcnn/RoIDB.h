@@ -23,12 +23,27 @@
 class RoIDB {
 public:
 	RoIDB() {};
+
+	// 통상적으로 call by value등 다양한 곳에서 copy constructor가 호출되는데
+	// override할 경우 상식적인 동작과 조금 달라 혼동이 생긴다.
+	// 현재 override할 이유는 mat을 copy하는 것 뿐인데 이를 직접해주는 걸로 일단 work around
 	/*
 	RoIDB(const RoIDB& roidb) {
+		std::cout << "roidb copy constructor called ... " << std::endl;
+
+		this->image = roidb.image;
+		this->flipped = roidb.flipped;
+		this->width = roidb.width;
+		this->height = roidb.height;
+
 		this->boxes = roidb.boxes;
 		this->gt_classes = roidb.gt_classes;
 		this->gt_overlaps = roidb.gt_overlaps;
-		this->flipped = roidb.flipped;
+		this->max_classes = roidb.max_classes;
+		this->max_overlaps = roidb.max_overlaps;
+		this->bbox_targets = roidb.bbox_targets;
+
+		roidb.mat.copyTo(this->mat);
 	}
 	*/
 

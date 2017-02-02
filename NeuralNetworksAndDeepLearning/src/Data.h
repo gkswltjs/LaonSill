@@ -325,6 +325,7 @@ public:
 	 * @details 데이터를 shape에 따라 화면에 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
+	// cmo == true 데이터가 메모리에 물리적으로 cmo로 저장되어 있는데 일반 행렬의 순(rmo)로 출력하는 경우
 	void print_data(const std::string& head, const std::vector<uint32_t>& shape = {},
 			const bool cmo=true);
 	void print_data(const std::vector<uint32_t>& shape = {}, const bool cmo=true);

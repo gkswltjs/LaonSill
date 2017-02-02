@@ -27,6 +27,9 @@
 #include "Data.h"
 //#include "nms/gpu_nms.hpp"
 
+#define FRCNN_TRAIN 1
+
+
 
 const uint32_t GT = 0;
 const uint32_t GE = 1;
@@ -53,8 +56,11 @@ const std::vector<float> TRAIN_BBOX_INSIDE_WEIGHTS = {1.0f, 1.0f, 1.0f, 1.0f};
 
 
 // Use RPN to detect objects
-//const bool TRAIN_HAS_RPN = true;
+#if FRCNN_TRAIN
+const bool TRAIN_HAS_RPN = true;
+#else
 const bool TRAIN_HAS_RPN = false;
+#endif
 
 // Images to use per minibatch
 const uint32_t TRAIN_IMS_PER_BATCH = 1;
@@ -137,29 +143,50 @@ const uint32_t TEST_RPN_POST_NMS_TOP_N = 300;
 // Proposal height and width both need to be greater than RPN_MIN_SIZE (at orig image scale)
 const uint32_t TEST_RPN_MIN_SIZE = 16;
 
-template <typename Dtype>
-void displayBoxesOnImage(const std::string& imagePath, const float scale,
-	const std::vector<std::vector<Dtype>>& boxes, const int boxOffset=0,
-    const int numMaxBoxes=-1, const bool pause=true) {
 
-	cv::Mat im = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
+
+
+
+/**
+ * 전달되는 cv::Mat을 그대로 사용한다. (직접 조작을 가한다.)
+ * 원본을 보존해야 하는 경우 주의해서 사용할 것.
+ */
+template <typename Dtype>
+void _displayBoxesOnImage(
+		const std::string& windowName,
+		cv::Mat& im,
+		const float scale,
+		const std::vector<std::vector<Dtype>>& boxes,
+		const std::vector<uint32_t>& boxLabels,
+		const std::vector<std::string>& boxLabelsText,
+		const std::vector<cv::Scalar>& boxColors,
+		const int boxOffset=0,
+		const int numMaxBoxes=-1,
+		const bool pause=true) {
 
 	if (scale != 1.0f)
 		cv::resize(im, im, cv::Size(), scale, scale, CV_INTER_LINEAR);
 
-
 	uint32_t numBoxes = (numMaxBoxes<0)?
 			(uint32_t)boxes.size():
 			(std::min((uint32_t)numMaxBoxes, (uint32_t)boxes.size()));
 
+	bool hasLabelText = (boxLabelsText.size() > 0) ? true : false;
+
 	for (uint32_t i = 0; i < numBoxes; i++) {
 		cv::rectangle(im, cv::Point(boxes[i][boxOffset+0], boxes[i][boxOffset+1]),
-            cv::Point(boxes[i][boxOffset+2], boxes[i][boxOffset+3]),
-            cv::Scalar(0, 0, (255.0f/numBoxes)*i), 2);
+			cv::Point(boxes[i][boxOffset+2], boxes[i][boxOffset+3]),
+			boxColors[boxLabels[i]-1], 2);
+
+		std::string boxLabel = std::to_string(boxLabels[i]) +
+				(hasLabelText ? (": " + boxLabelsText[i]) : "");
+		cv::putText(im, boxLabel , cv::Point(boxes[i][boxOffset+0],
+				boxes[i][boxOffset+1]+15.0f), 2, 0.5f, boxColors[boxLabels[i]-1]);
+
 	}
 
-	cv::namedWindow(imagePath, CV_WINDOW_AUTOSIZE);
-	cv::imshow(imagePath, im);
+	cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+	cv::imshow(windowName, im);
 
 	if (pause) {
 		cv::waitKey(0);
@@ -168,33 +195,47 @@ void displayBoxesOnImage(const std::string& imagePath, const float scale,
 }
 
 template <typename Dtype>
-void displayBoxesOnImage(const std::string& imagePath, const float scale,
-    const std::vector<std::array<Dtype, 5>>& boxes, const int numMaxBoxes=-1,
-    const bool pause=true) {
+void displayBoxesOnImage(
+		const std::string& windowName,
+		const std::string& imagePath,
+		const float scale,
+		const std::vector<std::vector<Dtype>>& boxes,
+		const std::vector<uint32_t>& boxLabels,
+		const std::vector<std::string>& boxLabelsText,
+		const std::vector<cv::Scalar>& boxColors,
+		const int boxOffset=0,
+		const int numMaxBoxes=-1,
+		const bool pause=true) {
 
 	cv::Mat im = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
 
-	cv::resize(im, im, cv::Size(), scale, scale, CV_INTER_LINEAR);
-
-
-	uint32_t numBoxes = (numMaxBoxes<0)?
-			(uint32_t)boxes.size():
-			(std::min((uint32_t)numMaxBoxes, (uint32_t)boxes.size()));
-
-	for (uint32_t i = 0; i < numBoxes; i++) {
-		cv::rectangle(im, cv::Point(boxes[i][0], boxes[i][1]),
-				cv::Point(boxes[i][2], boxes[i][3]), cv::Scalar(0, 0, (255.0f/numBoxes)*i),
-				2);
-	}
-
-	cv::namedWindow(imagePath, CV_WINDOW_AUTOSIZE);
-	cv::imshow(imagePath, im);
-
-	if (pause) {
-		cv::waitKey(0);
-		cv::destroyAllWindows();
-	}
+	_displayBoxesOnImage(windowName, im, scale, boxes, boxLabels, boxLabelsText,
+			boxColors, boxOffset, numMaxBoxes, pause);
 }
+
+template <typename Dtype>
+void displayBoxesOnImage(
+		const std::string& windowName,
+		cv::Mat& im,
+		const float scale,
+		const std::vector<std::vector<Dtype>>& boxes,
+		const std::vector<uint32_t>& boxLabels,
+		const std::vector<std::string>& boxLabelsText,
+		const std::vector<cv::Scalar>& boxColors,
+		const int boxOffset=0,
+		const int numMaxBoxes=-1,
+		const bool pause=true) {
+
+	cv::Mat tempIm;
+	im.copyTo(tempIm);
+
+	_displayBoxesOnImage(windowName, tempIm, scale, boxes, boxLabels, boxLabelsText,
+			boxColors, boxOffset, numMaxBoxes, pause);
+}
+
+
+
+
 
 template <typename PtrType, typename PrtType>
 void printMat(cv::Mat& im) {
@@ -691,7 +732,7 @@ static void np_round(const std::vector<float>& a, std::vector<uint32_t>& result)
 static void npr_randint(const uint32_t lb, const uint32_t ub, const uint32_t size,
 		std::vector<uint32_t>& result) {
 
-	srand((uint32_t)time(NULL));
+	//srand((uint32_t)time(NULL));
 	result.resize(size);
 
 	for (uint32_t i = 0; i < size; i++) {
