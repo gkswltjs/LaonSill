@@ -13,7 +13,7 @@
 #include <string>
 #include <map>
 #include <cmath>
-#include <cnpy.h>
+#include "cnpy.h"
 
 #include "Data.h"
 
