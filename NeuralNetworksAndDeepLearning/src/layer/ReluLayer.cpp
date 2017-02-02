@@ -56,6 +56,13 @@ void ReluLayer<Dtype>::feedforward() {
 	checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, this->activationDesc,
 					&Cuda::alpha, this->tensorDesc, d_inputData,
 					&Cuda::beta, this->tensorDesc, d_outputData));
+
+	/*
+	Data<Dtype>::printConfig = true;
+	this->_inputData[0]->print_data({}, true);
+	this->_outputData[0]->print_data({}, true);
+	Data<Dtype>::printConfig = false;
+	*/
 }
 
 template <typename Dtype>
@@ -69,6 +76,13 @@ void ReluLayer<Dtype>::backpropagation() {
 					&Cuda::alpha, this->tensorDesc, d_outputData, this->tensorDesc,
 					d_outputGrad, this->tensorDesc, d_inputData,
 					&Cuda::beta, this->tensorDesc, d_inputGrad));
+
+	/*
+	Data<Dtype>::printConfig = true;
+	this->_outputData[0]->print_grad({}, true);
+	this->_inputData[0]->print_grad({}, true);
+	Data<Dtype>::printConfig = false;
+	*/
 }
 
 template <typename Dtype>

@@ -11,18 +11,23 @@
 
 #include <stdint.h>
 #include <vector>
-//#include <CImg.h>
 
 #include "ArtisticStyle.h"
 #include "Data.h"
 #include "InputLayer.h"
+#include "ApplicationCudaFunctions.h"
 
 using namespace std;
 using namespace cimg_library;
 
 
+#define ARTISTICSTYLE_LOG 0
 #define CONTENT_
 #define STYLE_
+
+
+
+#define LOSS_CONCAT 1
 
 /**
  * CImg
@@ -35,7 +40,7 @@ using namespace cimg_library;
  *
  */
 
-//#define STYLE_
+
 template <typename Dtype>
 ArtisticStyle<Dtype>::ArtisticStyle(Network<Dtype> *network,
 		const string& contentImagePath,
@@ -62,6 +67,9 @@ ArtisticStyle<Dtype>::ArtisticStyle(Network<Dtype> *network,
 
 	// photo, content image
 	prepareCImgFromPath(contentImagePath, this->p);
+	printCImg(this->p);
+
+
 	updateDimensionFromCImg(this->p);
 	updateMean();			// dimension 정보 업데이트 후, 해당 정보 기반  mean값 업데이트.
 	preprocess(this->p);
@@ -69,6 +77,9 @@ ArtisticStyle<Dtype>::ArtisticStyle(Network<Dtype> *network,
 
 	// art, style image
 	prepareCImgFromPath(styleImagePath, this->a);
+	printCImg(this->a);
+
+
 	preprocess(this->a);
 	prepareCImgDisplay(this->a, "style", this->adisp);
 	assert(isValidImageDimension(this->a));
@@ -84,12 +95,61 @@ ArtisticStyle<Dtype>::ArtisticStyle(Network<Dtype> *network,
 	this->xdata->reshape({1, this->channel, this->height, this->width});
 	this->x = new CImg<Dtype>(this->xdata->mutable_host_data(), this->width, this->height,
 			1, this->channel, true);
+
+
+	// XXX
 	// xdata를 photo(content)로 초기화
 	this->xdata->set_host_data(this->p->data());
+
+	// noise_type: 0=gaussian, 1=uniform, 2=salt and pepper, 3=poisson, 4=rician
+	this->x->noise(0.1, 1);
+	//this->x->normalize(0.0f, 1.0f);
+	//preprocess(this->x);
+
+	//printCImg(this->x);
+	//exit(1);
+
 	prepareCImgDisplay(this->x, "input", this->xdisp);
 
-	// 이미 preprocess된 this->p를 복사하므로 다시 별도로 x에 대해 preprocess하지 않아야 한다.
-	//preprocess(this->x);
+
+#if !LOSS_CONCAT
+	this->xDelta = new Data<Dtype>("xDelta");
+	this->xDelta->reshapeLike(this->xdata);
+#endif
+
+
+	const uint32_t numStyleRepLayers = this->styleRepLayers.size();
+	const double styleLossWeight = 1.0 / numStyleRepLayers;
+	this->styleLossWeights.resize(numStyleRepLayers);
+	for (uint32_t i = 0; i < numStyleRepLayers; i++) {
+		this->styleLossWeights[i] = styleLossWeight;
+	}
+
+	// 10000000.0
+	// 1000000.0
+	// 100000.0
+	// 100.0
+	// 0.1
+
+	//const vector<double> tempStyleLossScales = {10000.0, 1000.0, 100.0, 0.0, 0.0};
+	const vector<double> tempStyleLossScales = {
+			//1000000.0, 1000000.0, 100000.0, 100.0, 0.01};
+			//100000.0, 100000.0, 100000.0, 100.0, 0.01};
+			//10000.0, 10000.0, 10000.0, 100.0, 0.1};//_1500itr
+			//10000.0, 10000.0, 10000.0, 100.0, 0.01
+			//10000.0, 100000.0, 100000.0, 100.0, 0.01};
+			1000000.0, 1000000.0, 100000.0, 100.0, 0.1};
+			//1.0, 1.0, 1.0, 1.0, 1.0};
+	//const vector<double> tempStyleLossScales = {1.0, 2.0, 4.0, 8.0, 1.0};
+	//const vector<double> tempStyleLossScales = {20000000.0, 10000.0, 50000.0, 5.0, 0.01};
+	//const vector<double> tempStyleLossScales = {2000.0, 20000.0, 200000.0, 2000.0, 0.01};
+	//const vector<double> tempStyleLossScales = {2000, 50};
+	this->styleLossScales.resize(numStyleRepLayers);
+	for (uint32_t i = 0; i < numStyleRepLayers; i++) {
+		this->styleLossScales[i] = tempStyleLossScales[i];
+	}
+
+
 }
 
 
@@ -134,9 +194,11 @@ void ArtisticStyle<Dtype>::updateMean() {
 			mean_host[i+c*hxw] = value;
 		}
 	}
-	//on();
-	//this->mean.print("mean", {1, this->channel, this->height, this->width}, false);
-	//off();
+#if ARTISTICSTYLE_LOG
+	on();
+	this->mean.print("mean", {1, this->channel, this->height, this->width});
+	off();
+#endif
 }
 
 template <typename Dtype>
@@ -208,44 +270,103 @@ void ArtisticStyle<Dtype>::style() {
 	while(true) {
 		double contentCost = 0.0;
 		double styleCost = 0.0;
+#if !LOSS_CONCAT
+		this->xDelta->reset_device_grad();
+#endif
+
+		/*
+		on();
+		this->xdata->print_data({}, true);
+		off();
+		*/
+		double xsumsq = this->xdata->sumsq_device_data();
+		cout << "xsumsq: " << xsumsq << endl;
 
 		// xdata: input noise x의 Data 타입 객체
 		feedforwardWithData(this->xdata);
 		for (int i = layersConfig->_layers.size()-1; i > 0; i--) {
+
 			HiddenLayer<Dtype>* repLayer =
 					dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[i]);
 
 			assert(repLayer);
+			cout << "for " << i << "th layer: " << repLayer->name;
 
 			int repLayerIndex = -1;
-			if((repLayerIndex = findContentRepLayer(repLayer->getName())) >= 0)
+#ifdef CONTENT_
+			if ((repLayerIndex = findContentRepLayer(repLayer->getName())) >= 0) {
+				cout << " is contentRepLayer" << endl;
 				contentCost += computeContentLossGradientAt(repLayerIndex);
-			else if((repLayerIndex = findStyleRepLayer(repLayer->getName())) >= 0)
+			}
+#endif
+#ifdef STYLE_
+			if (repLayerIndex == -1 &&
+					((repLayerIndex = findStyleRepLayer(repLayer->getName())) >= 0)) {
+				cout << " is styleRepLayer" << endl;
 				styleCost += computeStyleLossGradientAt(repLayerIndex);
+			}
+#endif
+			if (repLayerIndex == -1) {
+				cout << " is non-response layer" << endl;
+				//continue;
+			}
 
+
+
+			double losssumsq = repLayer->_outputData[0]->sumsq_device_grad();
+			cout << "losssumsq of " << repLayer->name << ": " << losssumsq << endl;
+
+
+#if !LOSS_CONCAT
+			for (int j = i; j > 0; j--) {
+				HiddenLayer<Dtype>* hiddenLayer =
+						dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[j]);
+				hiddenLayer->backpropagation();
+
+				cout << "sumsq of " << hiddenLayer->name << ": " <<
+						hiddenLayer->_inputData[0]->sumsq_device_grad() << endl;
+			}
+
+			this->xDelta->add_device_grad(inputLayer->_outputData[0]);
+#else
 			repLayer->backpropagation();
+#endif
 		}
+		//exit(1);
 
 		if (plotContentCost)
 			contentCostLogger.addStat(0, "content_cost", contentCost);
 		if (plotStyleCost)
 			styleCostLogger.addStat(0, "style_cost", styleCost);
 
+
+#if LOSS_CONCAT
 		const Dtype* grad_device = inputLayer->_outputData[0]->device_grad();
 		Dtype* xdata_device = xdata->mutable_device_data();
 
 		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(xdata->getCount()),
                                     &learningRate, grad_device, 1, xdata_device, 1));
+#else
+		const Dtype* grad_device = this->xDelta->device_grad();
+		Dtype* xdata_device = xdata->mutable_device_data();
 
-		if(updateCnt++ % 10 == 0) {
+		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(xdata->getCount()),
+                                    &learningRate, grad_device, 1, xdata_device, 1));
+#endif
+
+
+		if(updateCnt++ % 20 == 0) {
 			// xdataTemp device mem을 update한 후,
 			xdataTemp.set_mem(xdata->device_data(), SyncMemCopyType::DeviceToDevice, 0,
                               xdata->getCount());
 
 			deprocess(&xdataTemp);
+
 			// xdataTemp의 host mem으로 copy해서 가져온다.
 			xdataTemp.host_mem();
 			//xdataTemp.print("xdataTemp after:");
+
+			this->xTemp->normalize(0.0f, 1.0f);
 			xdisp->resize(*xTemp, true).display(*xTemp);
 		}
 		i++;
@@ -269,12 +390,19 @@ void ArtisticStyle<Dtype>::computeContentRepresentationLayerResponses() {
 	const uint32_t numContentRepLayers = contentRepLayers.size();
 	this->contentRepLayerResps.clear();
 	this->contentRepLayerResps.resize(numContentRepLayers);
+
+
+	//cout << "ContentRepresentationLayerResponseInfo:" << endl;
 	for(uint32_t i = 0; i < numContentRepLayers; i++) {
 		Layer<Dtype>* contentRepLayer = findRepresentationLayer(contentRepLayers[i]);
 		SyncMem<Dtype>* contentRepLayerResp =
             new SyncMem<Dtype>(contentRepLayer->_outputData[0]->_data.get());
 		this->contentRepLayerResps[i] = contentRepLayerResp;
+
+		//cout << i << endl;
+		//contentRepLayerResp->print(contentRepLayer->name, false);
 	}
+	//cout << "----------------------------------------" << endl;
 }
 
 template <typename Dtype>
@@ -290,12 +418,18 @@ void ArtisticStyle<Dtype>::computeStyleRepresentationLayerResponses() {
 	const uint32_t numStyleRepLayers = styleRepLayers.size();
 	this->styleRepLayerResps.clear();
 	this->styleRepLayerResps.resize(numStyleRepLayers);
+
+	//cout << "StyleRepresentationLayerResponseInfo:" << endl;
 	for(uint32_t i = 0; i < numStyleRepLayers; i++) {
 		Layer<Dtype>* styleRepLayer = findRepresentationLayer(styleRepLayers[i]);
 		SyncMem<Dtype>* styleRepLayerResp = new SyncMem<Dtype>();
         createGramMatrixFromData(styleRepLayer->_outputData[0], styleRepLayerResp);
 		this->styleRepLayerResps[i] = styleRepLayerResp;
+
+		//cout << i << endl;
+		//styleRepLayerResp->print(styleRepLayer->name, false);
 	}
+	//cout << "----------------------------------------" << endl;
 }
 
 template <typename Dtype>
@@ -307,7 +441,7 @@ void ArtisticStyle<Dtype>::feedforwardWithData(Data<Dtype>* data) {
 	inputLayer->_outputData[0]->reshapeLike(data);
 	inputLayer->_outputData[0]->set_host_data(data);
 	//on();
-	//inputLayer->_outputData[0]->print_data({}, false);
+	//inputLayer->_outputData[0]->print_data({});
 	//off();
 
 	for (uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
@@ -317,6 +451,30 @@ void ArtisticStyle<Dtype>::feedforwardWithData(Data<Dtype>* data) {
 			break;
 	}
 }
+
+
+
+
+
+
+/*
+template <typename Dtype>
+__global__ void diff_content_loss(const uint32_t n, const Dtype* f,
+    const Dtype* p, Dtype* df) {
+  CUDA_KERNEL_LOOP(index, n) {
+	  if (f[index] > 0)
+		  df[index] = f[index] - p[index];
+	  else
+		  df[index] = 0;
+  }
+}
+*/
+
+
+
+
+
+
 
 
 
@@ -330,29 +488,68 @@ double ArtisticStyle<Dtype>::computeContentLossGradientAt(const int contentLayer
 	SyncMem<Dtype>* presp = this->contentRepLayerResps[contentLayerIndex];
 	SyncMem<Dtype>* xresp = contentRepLayer->_outputData[0]->_data.get();
 
+	/*
+	on();
+	const vector<uint32_t> shape = contentRepLayer->_outputData[0]->getShape();
+	presp->print("presp", shape);
+	xresp->print("xresp", shape);
+	off();
+	*/
+
 	// add하는 케이스 때문에 임시 SyncMem 객체를 사용
 	SyncMem<Dtype>* contentLoss = new SyncMem<Dtype>();
 	contentLoss->reshape(contentRepLayer->_outputData[0]->_grad->getSize());
 
+	/*
 	// Fl - Pl (Flij < 0 인 케이스 고려하지 않음)
 	contentLoss->set_mem(xresp->device_mem(), SyncMemCopyType::DeviceToDevice, 0,
                          xresp->getSize());
 	contentLoss->sub_device_mem(presp->device_mem());
+	*/
 
+	const uint32_t N = xresp->getSize();
+	diff_content_loss(N, xresp->device_mem(), presp->device_mem(),
+			contentLoss->mutable_device_mem());
+
+	/*
+	on();
+	contentLoss->print("contentLoss", shape);
+	off();
+	*/
 
 	if(this->contentReconstructionFactor != 1.0f)
 		contentLoss->scale_device_mem(this->contentReconstructionFactor);
 
+
+
+	/*
+	on();
+	contentRepLayer->_outputData[0]->print_grad({}, true);
+	contentLoss->print("contentLoss", contentRepLayer->_outputData[0]->getShape());
+	off();
+	*/
+
+
+
 	// content loss를 계산하고 contentRepLayer에 넘겨 backpropagation ...
 	// shared input이 아니어서 강제로 contentLoss를 contentRepLayer의 output grad에 copy한다.
+
+#if LOSS_CONCAT
 	if(contentRepLayerName == this->end)
 		contentRepLayer->_outputData[0]->_grad->set_mem(contentLoss->device_mem(),
                                                 SyncMemCopyType::DeviceToDevice, 0,
                                                 contentLoss->getSize());
 	else
 		contentRepLayer->_outputData[0]->_grad->add_device_mem(contentLoss->device_mem());
+#else
+	contentRepLayer->_outputData[0]->_grad->set_mem(contentLoss->device_mem(),
+	                                                SyncMemCopyType::DeviceToDevice, 0,
+	                                                contentLoss->getSize());
+#endif
 
 	double contentCost = 0.5*contentLoss->sumsq_device_mem();
+	cout << "contentCost: " << contentCost << endl;
+
 	delete contentLoss;
 
 	return contentCost;
@@ -378,10 +575,40 @@ double ArtisticStyle<Dtype>::computeStyleLossGradientAt(const int styleLayerInde
 	SyncMem<Dtype>* xresp = new SyncMem<Dtype>();
 	createGramMatrixFromData(styleRepLayer->_outputData[0], xresp);
 
+
+//#if ARTISTICSTYLE_LOG
+	//on();
+	styleRepLayer->_outputData[0]->print_data({}, true);
+	const vector<uint32_t> shape = {1, 1, nl, nl};
+	aresp->print("aresp", shape);
+	xresp->print("xresp", shape);
+	//off();
+//#endif
+
+
+
+
 	// 5. 해당 레이어에 대한 Input Image의 Output Data
-	SyncMem<Dtype>* f = styleRepLayer->_outputData[0]->_data.get();
+	//SyncMem<Dtype>* f = styleRepLayer->_outputData[0]->_data.get();
 	SyncMem<Dtype>* ff = new SyncMem<Dtype>();
 	flattenData(styleRepLayer->_outputData[0], nl, ml, ff);
+
+	/*
+//#if ARTISTICSTYLE_LOG
+	//on();
+	Data<Dtype>* ffData = new Data<Dtype>("ff");
+	ffData->reshape({1, 1, nl, ml});
+	shared_ptr<SyncMem<Dtype>> temp_data(ff);
+	ffData->_data = temp_data;
+	ffData->print_data({}, true);
+	delete ffData;
+
+	ff->print("ff", {1, 1, nl, ml}, false);
+	ff->print("ff", {1, 1, nl, ml}, true);
+	ff->print("ff");
+	//off();
+//#endif
+	*/
 
 	// 6. Style Loss를 저장할 SyncMem 객체 생성 (레이어의 Output Grad와 동일한 shape를 가짐)
 	//SyncMem<Dtype>* styleLoss = new SyncMem<Dtype>();
@@ -390,8 +617,18 @@ double ArtisticStyle<Dtype>::computeStyleLossGradientAt(const int styleLayerInde
 	SyncMem<Dtype>* gemmResult = new SyncMem<Dtype>();
 	gemmResult->reshape(nl*ml);
 
+
+
 	// 7. Gl = Gl - Al
 	xresp->sub_device_mem(aresp->device_mem());
+
+//#if ARTISTICSTYLE_LOG
+	//on();
+	xresp->print("xresp", {1, 1, nl, nl});
+	//off();
+//#endif
+
+
 
 	// 8. Gl = trans(trans(Fl)*Gl)
 	const Dtype* xresp_device = xresp->device_mem();
@@ -403,27 +640,75 @@ double ArtisticStyle<Dtype>::computeStyleLossGradientAt(const int styleLayerInde
 			&Cuda::alpha, xresp_device, nl, f_device, nl,
 			&Cuda::beta, gemmResult_device, nl));
 
+//#if ARTISTICSTYLE_LOG
+	//on();
+	gemmResult->print("gemmResult", {1, 1, nl, ml});
+
+	const uint32_t N = ff->getSize();
+	diff_style_loss(N, f_device, gemmResult_device);
+
+	gemmResult->print("gemmResult", {1, 1, nl, ml});
+	//off();
+//#endif
+
+
+
+
 	// 9. Gl = 1/(nl*nl*ml*ml)*Gl
 	Data<Dtype>* gemmResultd = new Data<Dtype>("gemmResult",
 			styleRepLayer->_outputData[0]->getShape());
 	unflattenData(gemmResult, nl, ml, gemmResultd);
 
-	gemmResultd->scale_device_data(this->styleReconstructionFactor);
+//#if ARTISTICSTYLE_LOG
+	//on();
+	gemmResultd->print_data({}, true);
+	//off();
+//#endif
 
+
+	//double scale = 25;
+	//double a = this->styleReconstructionFactor *
+	//		this->styleLossWeights[styleLayerIndex] * scale;
+	double a = this->styleReconstructionFactor *
+			this->styleLossWeights[styleLayerIndex] *
+			this->styleLossScales[styleLayerIndex];
+	double b = 1.0 * nl * nl * ml * ml;
+	float scaleFactor =  a / b;
+	cout << "a: " << a << ", b: " << b << ", scaleFactor: " << scaleFactor << endl;
+	gemmResultd->scale_device_data(scaleFactor);
+
+	//on();
+	styleRepLayer->_outputData[0]->print_grad({}, true);
+	// gemmResultd에 data에 결과가 들어있음!
+	gemmResultd->print_data({}, true);
+	//off();
+
+#if LOSS_CONCAT
 	if(styleRepLayerName == this->end)
 		styleRepLayer->_outputData[0]->_grad->set_mem(gemmResultd->_data->device_mem(),
                                               SyncMemCopyType::DeviceToDevice, 0,
                                               gemmResultd->_data->getSize());
 	else
 		styleRepLayer->_outputData[0]->_grad->add_device_mem(gemmResultd->_data->device_mem());
+#else
+	styleRepLayer->_outputData[0]->_grad->set_mem(gemmResultd->_data->device_mem(),
+	                                              SyncMemCopyType::DeviceToDevice, 0,
+	                                              gemmResultd->_data->getSize());
+#endif
+
+	//on();
+	styleRepLayer->_outputData[0]->print_grad({}, true);
+	//off();
+
+
+	double styleCost = xresp->sumsq_device_mem();
+	styleCost = 1.0 / (4.0 * nl * nl * ml * ml) * styleCost;
+	cout << "styleCost: " << styleCost << endl;
 
 	delete gemmResult;
 	delete gemmResultd;
 	delete xresp;
 	delete ff;
-
-	double styleCost = xresp->sumsq_device_mem();
-	styleCost = 0.25 / (nl * nl * ml * ml) * styleCost * styleCost;
 
 	return styleCost;
 }
@@ -464,7 +749,6 @@ void ArtisticStyle<Dtype>::createGramMatrixFromData(Data<Dtype>* data,
 	//gramMatrix->print("gramMatrix:", {1, 1, nl, nl});
 
 	delete fData;
-
 	// TODO
 	// 1. 아마 gram matrix도 column major order로 저장해야 할 것.
 	// 2. symmetric이라 cmo나 rmo나 차이가 없네.
@@ -491,7 +775,6 @@ HiddenLayer<Dtype>* ArtisticStyle<Dtype>::findRepresentationLayer(const string& 
 	}
 	return repLayer;
 }
-
 
 
 
@@ -532,6 +815,50 @@ void ArtisticStyle<Dtype>::flattenData(Data<Dtype>* data, const uint32_t flatten
 		}
 	}
 }
+
+
+
+/*
+template <typename Dtype>
+void ArtisticStyle<Dtype>::flattenData(Data<Dtype>* data, const uint32_t flattenHeight,
+		const uint32_t flattenWidth, SyncMem<Dtype>* mem) {
+
+	// 헷갈리니까 개념적 말고 물리적 도메인으로 몰아넣자.
+	// physical memory domain을 기준으로 생각하자.
+	// p: physical, f: flatten, o: original
+	const uint32_t pfh = flattenWidth;
+	const uint32_t pfw = flattenHeight;
+	const uint32_t pfs = pfh*pfw;
+
+	const uint32_t poc = data->channels();		// pfw
+	const uint32_t poh = data->width();
+	const uint32_t pow = data->height();
+	const uint32_t poHxW = poh*pow;				// pfh
+
+	assert(flattenHeight == poc);
+	assert(flattenWidth == poHxW);
+	assert(pfs == data->getCount());
+
+	mem->reshape(pfs);
+
+	const Dtype* data_host = data->host_data();
+	Dtype* mem_host = mem->mutable_host_mem();
+
+	for (uint32_t c = 0; c < poc; c++) {
+		// w방향이 개념적인 열에 대한 정보
+		for (uint32_t w = 0; w < pow; w++) {
+			// h방향이 개념적인 행에 대한 정보
+			for (uint32_t h = 0; h < poh; h++) {
+
+				mem_host[c * pfh + w * poh + h] =
+						// c는 개념적으로나 물리적으로나 동일!
+						// h changes first!
+						data_host[c * poHxW + w * poh + h];
+			}
+		}
+	}
+}
+*/
 
 
 template <typename Dtype>
@@ -707,12 +1034,13 @@ void ArtisticStyle<Dtype>::gramMatrixTest() {
 	createGramMatrixFromData(data, gramMatrix);
 	gramMatrix->print("gramMatrix:");
 	gramMatrix->print("gramMatrix:", {1, 1, numFeatureMaps, numFeatureMaps});
+
 	delete gramMatrix;
 }
 
 template <typename Dtype>
 void ArtisticStyle<Dtype>::dataSubTest() {
-	Data<Dtype>::printConfig = 1;
+	on();
 
 	Data<Dtype>* data1 = new Data<Dtype>("data1");
 	data1->reshape({1, 3, 4, 4});
@@ -730,12 +1058,15 @@ void ArtisticStyle<Dtype>::dataSubTest() {
 	//data1->_data.sub_host_mem(data2->_data.host_mem());
 	data1->print_data("data1:");
 
-	Data<Dtype>::printConfig = 0;
+	delete data1;
+	delete data2;
+
+	off();
 }
 
 template <typename Dtype>
 void ArtisticStyle<Dtype>::flattenTest() {
-	Data<Dtype>::printConfig = 1;
+	on();
 
 	param_filler<Dtype> weight_filler(ParamFillerType::Xavier, 0.1);
 
@@ -756,12 +1087,12 @@ void ArtisticStyle<Dtype>::flattenTest() {
 	delete flatten;
 	delete flattend;
 
-	Data<Dtype>::printConfig = 0;
+	off();
 }
 
 template <typename Dtype>
 void ArtisticStyle<Dtype>::unflattenTest() {
-	Data<Dtype>::printConfig = 1;
+	on();
 
 	param_filler<Dtype> weight_filler(ParamFillerType::Xavier, 0.1);
 
@@ -779,12 +1110,12 @@ void ArtisticStyle<Dtype>::unflattenTest() {
 	delete src;
 	delete dst;
 
-	Data<Dtype>::printConfig = 0;
+	off();
 }
 
 template <typename Dtype>
 void ArtisticStyle<Dtype>::gemmTest() {
-	Data<Dtype>::printConfig = 1;
+	on();
 
 	const uint32_t nl = 5;
 	const uint32_t height = 3;
@@ -832,7 +1163,14 @@ void ArtisticStyle<Dtype>::gemmTest() {
 	resultd->print_data("final result");
 
 
-	Data<Dtype>::printConfig = 0;
+	delete xresp;
+	delete f;
+	delete ff;
+	delete result;
+	delete resultd;
+
+
+	off();
 }
 
 

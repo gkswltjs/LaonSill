@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
 
     // (4) 뉴럴 네트워크 관련 기본 설정을 한다.
     //     TODO: SPARAM의 인자로 대체하자.
-	cout.precision(7);
+	cout.precision(20);
 	cout.setf(ios::fixed);
 	Util::setOutstream(&cout);
 	Util::setPrint(false);

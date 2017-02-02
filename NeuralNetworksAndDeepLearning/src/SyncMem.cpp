@@ -23,6 +23,9 @@ template <typename Dtype>
 ostream *SyncMem<Dtype>::outstream = &cout;
 
 template <typename Dtype>
+uint32_t SyncMem<Dtype>::printConfig = 0;
+
+template <typename Dtype>
 SyncMem<Dtype>::SyncMem() {
 	_size = 0;
 	_reserved = 0;
@@ -277,10 +280,18 @@ void SyncMem<Dtype>::checkHostMemAndUpdateDeviceMem(bool reset) {
 
 template <typename Dtype>
 void SyncMem<Dtype>::checkMemValidity() {
+	/*
 	assert(_size > 0 &&
 			_host_mem != NULL &&
 			_device_mem != NULL &&
 			"assign mem before using ... ");
+			*/
+
+	if (_size <= 0 &&
+				_host_mem == NULL &&
+				_device_mem == NULL)
+		cout << "assign mem before using ... " << endl;
+
 }
 
 template <typename Dtype>
@@ -348,29 +359,41 @@ void SyncMem<Dtype>::load(ifstream& ifs) {
 }
 
 template <typename Dtype>
-void SyncMem<Dtype>::print(const string& head) {
+void SyncMem<Dtype>::print(const string& head, const bool printData) {
+
+	if (!printConfig)
+		return;
+
 	if (true) {
 		(*outstream) << "-------------------------------------" << endl;
 		(*outstream) << "name: " << head << " of size: " << _size << endl;
 
-		// print()실행시 updated flag를 reset,
-		// mutable pointer 조회하여 계속 업데이트할 경우 print() 이후의 update가 반영되지 않음
-		// 강제로 flag를 reset하지 않도록 수정
-		checkDeviceMemAndUpdateHostMem(false);
-		const Dtype* data = _host_mem;
-		const uint32_t printSize = min(64*3, (int)_size);
-		//const uint32_t printSize = (uint32_t)_size;
-		for (uint32_t i = 0; i < printSize; i++) {
-			(*outstream) << data[i] << ", ";
+		if (printData) {
+			// print()실행시 updated flag를 reset,
+			// mutable pointer 조회하여 계속 업데이트할 경우 print() 이후의 update가 반영되지 않음
+			// 강제로 flag를 reset하지 않도록 수정
+			checkDeviceMemAndUpdateHostMem(false);
+			const Dtype* data = _host_mem;
+			const uint32_t printSize = min(64*3, (int)_size);
+			//const uint32_t printSize = (uint32_t)_size;
+			for (uint32_t i = 0; i < printSize; i++) {
+				(*outstream) << data[i] << ", ";
+			}
+			(*outstream) << endl;
 		}
-		(*outstream) << endl << "-------------------------------------" << endl;
+		(*outstream) << "-------------------------------------" << endl;
 	}
 }
 
 
 template <typename Dtype>
 void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape,
-    const bool cmo) {
+    const bool cmo, const bool printData) {
+
+	if (!printConfig)
+		return;
+
+
 	if (true) {
 		if(shape.size() != 4) {
 			(*outstream) << "shape size should be 4 ... " << endl;
@@ -381,10 +404,10 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape,
 
 		uint32_t i,j,k,l;
 
+		const uint32_t batches = shape[0];
+		const uint32_t channels = shape[1];
 		const uint32_t rows = shape[2];
 		const uint32_t cols = shape[3];
-		const uint32_t channels = shape[1];
-		const uint32_t batches = shape[0];
 
 		(*outstream) << "-------------------------------------" << endl;
 		(*outstream) << "name: " << head << endl;
@@ -399,8 +422,6 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape,
 				for(j = 0; j < channels; j++) {
 					for(k = 0; k < rows; k++) {
 						for(l = 0; l < cols; l++) {
-					//for(k = 0; k < min(10, (int)rows); k++) {
-					//	for(l = 0; l < min(10, (int)cols); l++) {
 							(*outstream) << data[i*batchElem + j*channelElem + l*rows + k]
                                 << ", ";
 						}
@@ -414,7 +435,6 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape,
 			for(i = 0; i < batches; i++) {
 				for(j = 0; j < channels; j++) {
 					(*outstream) << "[" << i << "x" << j << "]" << endl;
-
 					for(k = 0; k < rows; k++) {
 						for(l = 0; l < cols; l++) {
 							(*outstream) << data[i*batchElem + j*channelElem + k*cols + l]

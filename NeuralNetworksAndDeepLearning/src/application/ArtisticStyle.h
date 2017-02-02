@@ -16,7 +16,6 @@
 #include "StatGraphPlotter.h"
 
 #include <CImg.h>
-//using namespace cimg_library;
 
 
 template <typename Dtype>
@@ -31,7 +30,6 @@ public:
 	  end(""),
 	  plotContentCost(false),
 	  plotStyleCost(false) {}
-
 
 	ArtisticStyle(Network<Dtype> *network,
 			const std::string& contentImagePath,
@@ -93,8 +91,14 @@ private:
 	void unflattenTest();
 	void gemmTest();
 
-	void on() { Data<Dtype>::printConfig = 1; }
-	void off() { Data<Dtype>::printConfig = 0; }
+	void on() {
+		Data<Dtype>::printConfig = 1;
+		SyncMem<Dtype>::printConfig = 1;
+	}
+	void off() {
+		Data<Dtype>::printConfig = 0;
+		SyncMem<Dtype>::printConfig = 0;
+	}
 
 
 	void feedforwardWithData(Data<Dtype>* data);
@@ -132,6 +136,7 @@ private:
 	cimg_library::CImgDisplay* adisp;
 
 	Data<Dtype>* xdata;
+	Data<Dtype>* xDelta;
 	SyncMem<Dtype> xdataTemp;
 	SyncMem<Dtype> mean;
 
@@ -143,6 +148,9 @@ private:
 	const std::vector<std::string> styleRepLayers;
     std::vector<SyncMem<Dtype>*> contentRepLayerResps;		// feature map
     std::vector<SyncMem<Dtype>*> styleRepLayerResps;		// gram matrix of feature map
+
+    std::vector<double> styleLossScales;
+    std::vector<double> styleLossWeights;
 
 	const float contentReconstructionFactor;
 	const float styleReconstructionFactor;

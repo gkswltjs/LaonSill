@@ -155,7 +155,7 @@ void ConvLayer<Dtype>::reshape() {
 	const uint32_t orows = static_cast<uint32_t>(h);
 	const uint32_t ocols = static_cast<uint32_t>(w);
 
-#if CONVLAYER_LOG
+#if !CONVLAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
 			this->name.c_str(), obatches, ochannels, orows, ocols);
 #endif

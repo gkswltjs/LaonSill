@@ -66,8 +66,8 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
 
 	// (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	//LayersConfig<float>* layersConfig = createVGG19NetArtisticLayersConfig<Dtype>();
-    LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<Dtype>();
+	LayersConfig<float>* layersConfig = createVGG19NetArtisticLayersConfig<Dtype>();
+    //LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<Dtype>();
 
 	// (2) network config 정보를 layer들에게 전달한다.
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
@@ -87,37 +87,38 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
 
     COLD_LOG(ColdLog::INFO, true, "training network starts(maxEpoch: %d).", maxEpochs);
 
-    /*
     ArtisticStyle<Dtype>* artisticStyle = new ArtisticStyle<Dtype>(
     		network,
     		"/data/backup/artistic/tubingen_320.jpg",
     		"/data/backup/artistic/starry_night_320.jpg",
+    		//"/data/backup/artistic/composition_320.jpg",
     		{"conv4_2"},
     		{"conv1_1", "conv2_1", "conv3_1", "conv4_1", "conv5_1"},
-    		0.0001f,					// contentReconstructionFactor
+    		0.00001f,					// contentReconstructionFactor
     		0.1f,					// styleReconstructionFactor
-    		0.01f,					// learningRate
+    		-1.0f,					// learningRate
     		"conv5_1",				// end
     		true,					// plotContentCost
     		true					// plotStyleCost
     );
-    */
 
+    /*
     ArtisticStyle<float>* artisticStyle = new ArtisticStyle<float>(
 			network,
-			//"/data/backup/artistic/tubingen_320.jpg",
-			//"/data/backup/artistic/starry_night_320.jpg",
-			"/home/jkim/Downloads/sampleR32G64B128.png",
-			"/home/jkim/Downloads/sampleR32G64B128.png",
+			"/data/backup/artistic/tubingen_320.jpg",
+			"/data/backup/artistic/starry_night_320.jpg",
+			//"/home/jkim/Downloads/sampleR32G64B128.png",
+			//"/home/jkim/Downloads/sampleR32G64B128_inv.png",
 			{"convLayer1"},
-			{"fc1"},
-			0.001f,					// contentReconstructionFactor
+			{"convLayer2"},
+			0.01f,					// contentReconstructionFactor
 			1.0f,					// styleReconstructionFactor
-			0.1f,					// learningRate
-			"fc1",					// end
+			-0.1f,					// learningRate
+			"convLayer2",			// end
 			true,					// plotContentCost
 			true					// plotStyleCost
 	);
+	*/
 
     artisticStyle->style();
     //artisticStyle->test();
@@ -204,17 +205,16 @@ int LegacyWork<Dtype>::createNetwork() {
 #if LOAD_WEIGHT
 	vector<WeightsArg> weightsArgs(1);
 	weightsArgs[0].weightsPath =
-			//"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_400000of_2.75_.param";
-			"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_10000of_0.1598384_.param";
+			"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_400000of_0.01_.param";
 #endif
 
 	const uint32_t batchSize = 10;
-	//const uint32_t testInterval = 1000;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 10000;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 10000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.001f;
+	//const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
 	//const uint32_t saveInterval = 10000;		// 1000000 / batchSize
 	//const float baseLearningRate = 0.01f;
-	const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 10000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.01f;
 
 	const uint32_t stepSize = 100000;
 	const float weightDecay = 0.0001f;
