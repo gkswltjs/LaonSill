@@ -154,13 +154,6 @@ void FullyConnectedLayer<Dtype>::reshape() {
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
         this->name.c_str(), batches, channels, out_rows, cols);
 
-//#if !FULLYCONNECTEDLAYER_LOG
-//	printf("<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
-//			this->name.c_str(), batches, channels, in_rows, cols);
-//	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-//			this->name.c_str(), batches, channels, out_rows, cols);
-//#endif
-
 	const uint32_t u_in = in_rows;
 	const uint32_t u_out = out_rows;
 	const uint32_t b_in = batches * in_rows;

@@ -184,7 +184,9 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
 			}
 		}
-	}
+	} else {
+        SASSERT(false, "Invalid network status =%d", this->networkConfig->_status);
+    }
 	//Layer<Dtype>::feedforward();
 }
 

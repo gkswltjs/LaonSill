@@ -79,65 +79,82 @@ void BatchNormLayer<Dtype>::feedforward() {
     const Dtype* inputData = this->_inputData[0]->host_data();
     Dtype* outputData = this->_outputData[0]->mutable_host_data();
 
-    // (1) mini-batch에 사용하는 localMeanSets, localVarainceSets를 초기화 한다.
-    for (int i = 0; i < this->depth; i++) {
-        this->localMeanSets[i] = 0;
-        this->localVarianceSets[i] = 0;
-    }
-
-    // (2) mini-batch mean 값을 구한다.
-    for (int i = 0; i < this->depth; i++) {
-        for (int j = 0; j < batchCount; j++) {
-            int index = j * this->depth + i;
-            this->localMeanSets[i] += inputData[index];
+	if (this->networkConfig->_status == NetworkStatus::Train) {
+        // (1) mini-batch에 사용하는 localMeanSets, localVarainceSets를 초기화 한다.
+        for (int i = 0; i < this->depth; i++) {
+            this->localMeanSets[i] = 0;
+            this->localVarianceSets[i] = 0;
         }
-    }
 
-    for (int i = 0; i < this->depth; i++) {
-        this->localMeanSets[i] = this->localMeanSets[i] / (Dtype)batchCount;
-    }
-
-    // (3) mini-batch variance 값을 구한다.
-    for (int i = 0; i < this->depth; i++) {
-        for (int j = 0; j < batchCount; j++) {
-            int index = j * this->depth + i;
-            this->localVarianceSets[i] += 
-                (inputData[index] - this->localMeanSets[i]) *
-                (inputData[index] - this->localMeanSets[i]);
+        // (2) mini-batch mean 값을 구한다.
+        for (int i = 0; i < this->depth; i++) {
+            for (int j = 0; j < batchCount; j++) {
+                int index = j * this->depth + i;
+                this->localMeanSets[i] += inputData[index];
+            }
         }
-    }
 
-    for (int i = 0; i < this->depth; i++) {
-        this->localVarianceSets[i] = this->localVarianceSets[i] / (Dtype)batchCount;
-    }
-
-    // (4) normalize 
-    for (int i = 0; i < this->depth; i++) {
-        Dtype denominator = sqrt(this->localVarianceSets[i] + (Dtype)this->epsilon);
-        for (int j = 0; j < batchCount; j++) {
-            int index = j * this->depth + i;
-            this->normInputValues[index] = 
-                (inputData[index] - this->localMeanSets[i]) / denominator;
-            outputData[index] = 
-                this->normInputValues[index] * this->gammaSets[i] + this->betaSets[i];
+        for (int i = 0; i < this->depth; i++) {
+            this->localMeanSets[i] = this->localMeanSets[i] / (Dtype)batchCount;
         }
-    }
 
-    // (5) global meanSets과 varianceSets를 갱신한다.
-    this->batchSetCount += 1;
+        // (3) mini-batch variance 값을 구한다.
+        for (int i = 0; i < this->depth; i++) {
+            for (int j = 0; j < batchCount; j++) {
+                int index = j * this->depth + i;
+                this->localVarianceSets[i] += 
+                    (inputData[index] - this->localMeanSets[i]) *
+                    (inputData[index] - this->localMeanSets[i]);
+            }
+        }
 
-    for (int i = 0; i < this->depth; i++) {
-        this->meanSumSets[i] += this->localMeanSets[i];
-        this->varianceSumSets[i] = this->localVarianceSets[i];
-    }
+        for (int i = 0; i < this->depth; i++) {
+            this->localVarianceSets[i] = this->localVarianceSets[i] / (Dtype)batchCount;
+        }
 
-    for (int i = 0; i < 10; i++) {
-        COLD_LOG(ColdLog::INFO, true, "BN[-]: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", 
-            inputData[0], inputData[1], inputData[2], inputData[3], inputData[4],
-            inputData[5], inputData[6], inputData[7], inputData[8], inputData[9]);
-        COLD_LOG(ColdLog::INFO, true, "BN[+]: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", 
-            outputData[0], outputData[1], outputData[2], outputData[3], outputData[4],
-            outputData[5], outputData[6], outputData[7], outputData[8], outputData[9]);
+        // (4) normalize 
+        for (int i = 0; i < this->depth; i++) {
+            Dtype denominator = sqrt(this->localVarianceSets[i] + (Dtype)this->epsilon);
+            for (int j = 0; j < batchCount; j++) {
+                int index = j * this->depth + i;
+                this->normInputValues[index] = 
+                    (inputData[index] - this->localMeanSets[i]) / denominator;
+                outputData[index] = 
+                    this->normInputValues[index] * this->gammaSets[i] + this->betaSets[i];
+            }
+        }
+
+        // (5) global meanSets과 varianceSets를 갱신한다.
+        this->batchSetCount += 1;
+
+        for (int i = 0; i < this->depth; i++) {
+            this->meanSumSets[i] += this->localMeanSets[i];
+            this->varianceSumSets[i] = this->localVarianceSets[i];
+        }
+	} else if (this->networkConfig->_status == NetworkStatus::Test) {
+        SASSERT((this->batchSetCount > 0), "need train before inference");
+        STDOUT_LOG("Batch Norm Test Mode!!!");
+
+        for (int i = 0; i < this->depth; i++) {
+            Dtype avgMean = this->meanSumSets[i] / (Dtype)this->batchSetCount;
+            Dtype avgVariance;
+            if (this->batchSetCount == 1) {
+                avgVariance = this->varianceSumSets[i];
+            } else {
+                avgVariance = this->varianceSumSets[i] / (Dtype)(this->batchSetCount - 1);
+            }
+            Dtype sqrtVariance = sqrt(avgVariance + this->epsilon);
+
+            for (int j = 0; j < batchCount; j++) {
+                int index = j * this->depth + i;
+                outputData[index] = 
+                    inputData[index] * this->gammaSets[i] / sqrtVariance +
+                    this->betaSets[i] - 
+                    this->gammaSets[i] * avgMean / sqrtVariance;
+            }
+        }
+    } else {
+        SASSERT(false, "Invalid network status =%d", this->networkConfig->_status);
     }
 }
 
