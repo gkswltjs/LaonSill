@@ -40,18 +40,17 @@ void BatchNormLayer<Dtype>::initialize(int kernelMapCount, double epsilon) {
 
     this->depth                 = 0;
     this->batchSetCount         = 0;
-    this->gammaSets             = NULL;
-    this->betaSets              = NULL;
-    this->meanSumSets           = NULL;
-    this->varianceSumSets       = NULL;
-    this->localMeanSets         = NULL;
-    this->localVarianceSets     = NULL;
-    this->normInputValues       = NULL;
-    this->normInputGradValues   = NULL;
-    this->varianceGradValues    = NULL;
-    this->meanGradValues        = NULL;
-    this->gammaGradValues       = NULL;
-    this->betaGradValues        = NULL;
+    this->gammaSet              = new Data<Dtype>(this->name + "_gamma");
+    this->betaSet               = new Data<Dtype>(this->name + "_beta");
+    this->meanSet               = new Data<Dtype>(this->name + "_mean");
+    this->varSet                = new Data<Dtype>(this->name + "_variance");
+    this->normInputSet          = new Data<Dtype>(this->name + "_normalizedInput");
+
+    shared_ptr<SyncMem<Dtype>> tempMeanSumSet(new SyncMem<Dtype>());
+    shared_ptr<SyncMem<Dtype>> tempVarSumSet(new SyncMem<Dtype>());
+
+    this->meanSumSet            = tempMeanSumSet;
+    this->varSumSet             = tempVarSumSet;
 }
 
 template <typename Dtype>

@@ -106,22 +106,15 @@ private:
                                         // by zero. default value = 0.001
     int         depth;
     int         batchSetCount;
-    Dtype      *gammaSets;              // scaled normalized value sets
-    Dtype      *betaSets;               // shift normalized value sets
-    Dtype      *meanSumSets;            // summed mean value sets
-    Dtype      *varianceSumSets;        // summed variance value sets
 
-    Dtype      *localMeanSets;          // mean sets for each mini-batch
-    Dtype      *localVarianceSets;      // variance sets for each mini-batch
+	Data<Dtype>    *gammaSet;           // scale factor
+    Data<Dtype>    *betaSet;            // shift factor
+    Data<Dtype>    *meanSet;            // mean
+    Data<Dtype>    *varSet;             // variance
+    Data<Dtype>    *normInputSet;       // normalized input value
 
-    Dtype      *normInputValues;        // normalized input values. 
-                                        // backward 과정에서 gamma 학습에 활용이 됨.
-                                        
-    Dtype      *normInputGradValues;    // gradient of normalized input
-    Dtype      *varianceGradValues;     // gradient of variance
-    Dtype      *meanGradValues;         // gradient of mean
-    Dtype      *gammaGradValues;        // gradient of scaled normalized value
-    Dtype      *betaGradValues;         // gradient of scaled normalized value
+    std::shared_ptr<SyncMem<Dtype>>  meanSumSet;    // meanSet들의 합
+    std::shared_ptr<SyncMem<Dtype>>  varSumSet;     // varSet들의 합
 
     void        computeNormInputGrad();
     void        computeVarianceGrad();
