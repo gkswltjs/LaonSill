@@ -174,9 +174,10 @@ void BatchNormLayer<Dtype>::reshape() {
     // XXX: 현재 FC에 대해서만 생각하였음
     // TODO: Conv Layer에 대한 구현 필요
 	uint32_t batches = inputShape[0];
-	uint32_t channels = 1;
-	uint32_t rows = this->_inputData[0]->getCountByAxis(1);
-	uint32_t cols = 1;
+	uint32_t channels = inputShape[1];
+	uint32_t rows = inputShape[2];
+	uint32_t cols = inputShape[3];
+    uint32_t depth = this->_inputData[0]->getCountByAxis(1);
 
 	this->_inputShape[0] = {batches, channels, rows, cols};
 	this->_outputData[0]->reshape({batches, channels, rows, cols});
@@ -189,9 +190,9 @@ void BatchNormLayer<Dtype>::reshape() {
         this->name.c_str(), batches, channels, rows, cols);
 
     if (this->depth == 0)
-        this->depth = rows;
+        this->depth = depth;
     else
-        SASSERT0(this->depth == rows);
+        SASSERT0(this->depth == depth);
 
     // Batch Normalization 과정에 필요한 구조체들의 메모리를 할당한다.
     if (this->gammaSets == NULL) {
