@@ -407,10 +407,11 @@ void Network<Dtype>::applyUpdate() {
 	const uint32_t numLearnableLayers = getLayersConfig()->_learnableLayers.size();
 
     // device 메모리를 host 메모리로 동기화 시킨다.
-    for (uint32_t i = 0; i < numLearnableLayers; i++) {
-        getLayersConfig()->_learnableLayers[i]->syncMutableMem();
+    if (!Worker<Dtype>::isSingle()) {
+        for (uint32_t i = 0; i < numLearnableLayers; i++) {
+            getLayersConfig()->_learnableLayers[i]->syncMutableMem();
+        }
     }
-
 
     // 모든 worker에서 GPU 트레이닝이 끝나길 기다린다.
     // XXX: 예쁘게.. 
@@ -437,17 +438,19 @@ void Network<Dtype>::applyUpdate() {
         }
 
         // (2) 첫번째 layer의 값을 다른 layer들에게 동기화 한다.
-        for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end();
-            iter++) {
-            if (iter == config->layersConfigs.begin()) {
-                continue;
-            }
+        if (!Worker<Dtype>::isSingle()) {
+            for (iter = config->layersConfigs.begin(); iter != config->layersConfigs.end();
+                iter++) {
+                if (iter == config->layersConfigs.begin()) {
+                    continue;
+                }
 
-            for (uint32_t i = 0; i < numLearnableLayers; i++) {
-                LearnableLayer<Dtype>* firstLayer = firstLayersConfig->_learnableLayers[i];
-                LearnableLayer<Dtype>* curLayer = (*iter)->_learnableLayers[i];
+                for (uint32_t i = 0; i < numLearnableLayers; i++) {
+                    LearnableLayer<Dtype>* firstLayer = firstLayersConfig->_learnableLayers[i];
+                    LearnableLayer<Dtype>* curLayer = (*iter)->_learnableLayers[i];
 
-                curLayer->syncParams(firstLayer);
+                    curLayer->syncParams(firstLayer);
+                }
             }
         }
 

@@ -120,22 +120,6 @@ void developerMain() {
 
  	network->sgd_with_timer(10);
 
-    STDOUT_BLOCK(cout << "[Total backward BN layer time]" << 
-        " - total : " << SPERF_TIME(BATCHNORM_LAYER_BWTIME) << endl <<
-        " - avg : " << SPERF_AVGTIME(BATCHNORM_LAYER_BWTIME) << endl <<
-        " - max : " << SPERF_MAXTIME(BATCHNORM_LAYER_BWTIME) << endl <<
-        " - count : " << SPERF_COUNT(BATCHNORM_LAYER_BWTIME) << endl;);
-    STDOUT_BLOCK(cout << "[Total forward BN layer time]" << 
-        " - total : " << SPERF_TIME(BATCHNORM_LAYER_FWTIME) << endl <<
-        " - avg : " << SPERF_AVGTIME(BATCHNORM_LAYER_FWTIME) << endl <<
-        " - max : " << SPERF_MAXTIME(BATCHNORM_LAYER_FWTIME) << endl <<
-        " - count : " << SPERF_COUNT(BATCHNORM_LAYER_FWTIME) << endl;);
-    STDOUT_BLOCK(cout << "[Total update BN layer time]" << 
-        " - total : " << SPERF_TIME(BATCHNORM_LAYER_UPTIME) << endl <<
-        " - avg : " << SPERF_AVGTIME(BATCHNORM_LAYER_UPTIME) << endl <<
-        " - max : " << SPERF_MAXTIME(BATCHNORM_LAYER_UPTIME) << endl <<
-        " - count : " << SPERF_COUNT(BATCHNORM_LAYER_UPTIME) << endl;);
-
     STDOUT_LOG("exit developerMain()");
 }
 

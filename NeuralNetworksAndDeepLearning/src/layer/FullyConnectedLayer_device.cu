@@ -214,7 +214,8 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 	dataHistory->print_data("paramHistoryData:");
 	data->print_data("paramData:");
 
-    data->mutable_host_grad();
+    if (!Worker<Dtype>::isSingle())
+        data->mutable_host_grad();
 	Dtype* d_paramGrad = data->mutable_device_grad();
 	Dtype* d_paramData = data->mutable_device_data();
 	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
@@ -275,16 +276,6 @@ void FullyConnectedLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) 
         weightSize);
     memcpy(_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
         biasSize);
-#if 0
-    for (uint32_t paramIdx = 0; paramIdx < weightSize; paramIdx++) {
-        _params[Weight]->mutable_host_grad()[paramIdx] = 
-            _targetLayer->_params[Weight]->host_grad()[paramIdx];
-    }
-    for (uint32_t paramIdx = 0; paramIdx < biasSize; paramIdx++) {
-        _params[Bias]->mutable_host_grad()[paramIdx] = 
-            _targetLayer->_params[Bias]->host_grad()[paramIdx];
-    }
-#endif
 }
 
 

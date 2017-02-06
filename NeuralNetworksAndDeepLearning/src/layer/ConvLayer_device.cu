@@ -279,7 +279,8 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
 
-    data->mutable_host_grad();
+    if (!Worker<Dtype>::isSingle())
+        data->mutable_host_grad();
 	Dtype* d_paramGrad = data->mutable_device_grad();   // should update grad
 	Dtype* d_paramData = data->mutable_device_data();
 	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();

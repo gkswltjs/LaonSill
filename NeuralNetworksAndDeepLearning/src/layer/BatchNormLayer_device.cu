@@ -22,6 +22,9 @@ using namespace std;
 
 #ifdef GPU_MODE
 
+// FIXME: 커널함수들 더 빨리 동작시킬 수 있게 수정 필요 
+//        ex. 중간 계산값을 메모리로 들고 있는 방식
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // GPU Kernels
 
@@ -140,13 +143,12 @@ __global__ void ComputeNormInputGrad(const Dtype *outputGrads, const Dtype *gamm
     int batchCount, Dtype* normInputGrads)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= depth) 
+    int count = depth * batchCount;
+	if (idx >= count) 
 		return;
+    int curDepth = idx % depth;
 
-    for (int i = 0; i < batchCount; i++) {
-        int index = i * depth + idx;
-        normInputGrads[index] = outputGrads[index] * gammas[idx];
-    }
+    normInputGrads[idx] = outputGrads[idx] * gammas[curDepth];
 }
 
 template <typename Dtype>
@@ -430,7 +432,8 @@ void BatchNormLayer<Dtype>::computeNormInputGrad() {
     Dtype* normInputGrads = this->normInputSet->mutable_device_grad();
     const Dtype* gammas = this->gammaSet->device_data();
 
-    ComputeNormInputGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+    ComputeNormInputGrad<<<SOOOA_GET_BLOCKS(this->depth * batchCount),
+        SOOOA_CUDA_NUM_THREADS>>>(
         outputGrads, gammas, this->depth, batchCount, normInputGrads);
 }
 
