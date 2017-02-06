@@ -24,6 +24,36 @@
 
 },
 
+"BATCHNORM_LAYER_FWTIME" :
+{
+    "DESC"          : "specify forward time of batch normalization layer",
+    "SCOPE"         : "SYSTEM",
+    "USETIME"       : true,
+    "USEAVGTIME"    : true,
+    "USEMAXTIME"    : true,
+    "ARGS"          : []
+},
+
+"BATCHNORM_LAYER_BWTIME" :
+{
+    "DESC"          : "specify backward time of batch normalization layer",
+    "SCOPE"         : "SYSTEM",
+    "USETIME"       : true,
+    "USEAVGTIME"    : true,
+    "USEMAXTIME"    : true,
+    "ARGS"          : []
+},
+
+"BATCHNORM_LAYER_UPTIME" :
+{
+    "DESC"          : "specify update time of batch normalization layer",
+    "SCOPE"         : "SYSTEM",
+    "USETIME"       : true,
+    "USEAVGTIME"    : true,
+    "USEMAXTIME"    : true,
+    "ARGS"          : []
+},
+
 "TEST_PERF1" : 
 {
     "DESC"          : "test performance 1",

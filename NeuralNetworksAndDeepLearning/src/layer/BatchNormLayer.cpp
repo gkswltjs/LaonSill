@@ -23,19 +23,18 @@ BatchNormLayer<Dtype>::BatchNormLayer() {
 template <typename Dtype>
 BatchNormLayer<Dtype>::BatchNormLayer(Builder* builder)
 	: HiddenLayer<Dtype>(builder) {
-	initialize(builder->_kernelMapCount, builder->_epsilon);
+	initialize(builder->_epsilon);
 }
 
 template <typename Dtype>
-BatchNormLayer<Dtype>::BatchNormLayer(const string name, int kernelMapCount,
+BatchNormLayer<Dtype>::BatchNormLayer(const string name, 
     double epsilon) : HiddenLayer<Dtype>(name) {
-	initialize(kernelMapCount, epsilon);
+	initialize(epsilon);
 }
 
 template <typename Dtype>
-void BatchNormLayer<Dtype>::initialize(int kernelMapCount, double epsilon) {
+void BatchNormLayer<Dtype>::initialize(double epsilon) {
 	this->type                  = Layer<Dtype>::BatchNorm;
-	this->kernelMapCount        = kernelMapCount;
     this->epsilon               = epsilon;
 
     this->depth                 = 0;

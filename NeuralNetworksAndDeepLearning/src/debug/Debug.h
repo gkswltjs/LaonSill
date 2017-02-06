@@ -302,8 +302,6 @@ template <typename Dtype>
 LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
-
-			/*
 			->layer((new typename InputLayer<Dtype>::Builder())
 					->id(0)
 					->name("inputLayer")
@@ -311,13 +309,8 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
                         + std::string("/mnist"))
 					->sourceType("ImagePack")
 					->mean({0.13066047740})
-					->outputs({"data", "label"}))
-					*/
-			->layer((new typename DummyInputLayer<Dtype>::Builder())
-					->id(0)
-					->name("data")
-					->outputs({"data", "label"}))
-
+					->outputs({"data", "label"})
+					)
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
 					->name("convLayer1")
@@ -326,14 +319,13 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.2)
-					//->activationType(Activation<Dtype>::NoActivation)
 					->inputs({"data"})
-					->outputs({"convLayer1"}))
+					->outputs({"conv1/3x3_s2"}))
 
 			->layer((new typename ReluLayer<Dtype>::Builder())
 					->id(2)
 					->name("relu1")
-					->inputs({"convLayer1"})
+					->inputs({"conv1/3x3_s2"})
 					->outputs({"relu1"}))
 
 			->layer((new typename PoolingLayer<Dtype>::Builder())
@@ -342,42 +334,17 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->poolDim(2, 2, 0, 2)
 					->poolingType(Pooling<Dtype>::Max)
 					->inputs({"relu1"})
-					->outputs({"poolingLayer1"}))
-
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(4)
-					->name("convLayer2")
-					->filterDim(3, 3, 3, 5, 1, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->inputs({"poolingLayer1"})
-					->outputs({"convLayer2"}))
-
-					/*
-			->layer((new typename ReluLayer<Dtype>::Builder())
-					->id(5)
-					->name("relu2")
-					->inputs({"convLayer2"})
-					->outputs({"relu2"}))
-
-			->layer((new typename PoolingLayer<Dtype>::Builder())
-					->id(4)
-					->name("poolingLayer2")
-					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
-					->inputs({"relu2"})
-					->outputs({"poolingLayer2"}))
+					->outputs({"pool1/3x3_s1"}))
 
 			->layer((new typename ReshapeLayer<Dtype>::Builder())
-					->id(5)
-					->name("reshapeLayer")
+					->id(4)
+					->name("pool1/3x3_s1_reshape")
 					->shape({0, 1, -1, 1})
-					->inputs({"poolingLayer2"})
-					->outputs({"poolingLayer2_reshape"}))
+					->inputs({"pool1/3x3_s1"})
+					->outputs({"pool1/3x3_s1_reshape"}))
+
 			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
-					->id(6)
+					->id(5)
 					->name("fc1")
 					->nOut(10)
 					->pDropout(0.4)
@@ -385,14 +352,13 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, 0.0)
-					->inputs({"poolingLayer2_reshape"})
+					->inputs({"pool1/3x3_s1_reshape"})
 					->outputs({"fc1"}))
 			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
-					->id(7)
+					->id(6)
 					->name("softmaxWithLoss")
 					->inputs({"fc1", "label"})
 					->outputs({"prob"}))
-					*/
 
 			->build();
 

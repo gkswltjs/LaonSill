@@ -23,7 +23,6 @@ public:
 
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
-		uint32_t    _kernelMapCount;
 		typename Activation<Dtype>::Type _activationType;	///< weighted sum에 적용할 활성화
 
         /* batch normalization related variables */
@@ -32,7 +31,6 @@ public:
                                         
 		Builder() {
 			this->type = Layer<Dtype>::BatchNorm;
-            _kernelMapCount = 1;
             _epsilon = 0.001;
 		}
 		virtual Builder* name(const std::string name) {
@@ -55,10 +53,6 @@ public:
 			HiddenLayer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
-		Builder* kernelMapCount(uint32_t kernelMapCount) {
-			this->_kernelMapCount = kernelMapCount;
-			return this;
-		}
 		Builder* epsilon(double epsilon) {
 			this->_epsilon = epsilon;
 			return this;
@@ -75,7 +69,7 @@ public:
 	BatchNormLayer();
 	BatchNormLayer(Builder* builder);
 
-    BatchNormLayer(const std::string name, int kernelMapCount, double epsilon);
+    BatchNormLayer(const std::string name, double epsilon);
     virtual ~BatchNormLayer();
 
 	//////////////////////////////////////////
@@ -99,9 +93,8 @@ public:
 	virtual void feedforward();
 
 private:
-    void initialize(int kernelMapCount, double epsilon);
+    void initialize(double epsilon);
 
-    int         kernelMapCount;
     double      epsilon;                // Small value added to variance to avoid dividing 
                                         // by zero. default value = 0.001
     int         depth;

@@ -14,6 +14,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "ColdLog.h"
+#include "Perf.h"
 
 #define BATCHCONDLAYER_LOG  0
 
@@ -71,16 +72,15 @@ __global__ void Normalize(const Dtype *input, const Dtype* mean, const Dtype* va
     Dtype* normInput, Dtype* output)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= depth) 
+    int count = depth * batchCount;
+	if (idx >= count) 
 		return;
-    
-    Dtype denominator = sqrt(variance[idx] + epsilon);
 
-    for (int i = 0 ; i < batchCount; i++) {
-        int index = i * depth + idx;
-        normInput[index] = (input[index] - mean[idx]) / denominator;
-        output[index] = normInput[index] * gamma[idx] + beta[idx];
-    }
+    int curDepth = idx % depth;
+    Dtype denominator = sqrt(variance[curDepth] + epsilon);
+
+    normInput[idx] = (input[idx] - mean[curDepth]) / denominator;
+    output[idx] = normInput[idx] * gamma[curDepth] + beta[curDepth];
 }
 
 template <typename Dtype>
@@ -159,10 +159,11 @@ __global__ void ComputeVarianceGrad(const Dtype* normInputGrad, const Dtype *inp
 		return;
 
     varianceGrad[idx] = 0;
+    Dtype poweredVar = (-0.5) * pow((variance[idx] + epsilon), -1.5);
     for (int i = 0; i < batchCount; i++) {
         int index = i * depth + idx;
-        varianceGrad[idx] += normInputGrad[index] * (inputData[index] - mean[idx]) * (-0.5) *
-            pow((variance[idx] + epsilon), -1.5);
+        varianceGrad[idx] += normInputGrad[index] * (inputData[index] - mean[idx]) * 
+            poweredVar;
     }
 }
 
@@ -176,10 +177,12 @@ __global__ void ComputeMeanGrad(const Dtype *normInputGrads, const Dtype *vars,
 		return;
 
     meanGrads[idx] = 0;
+    Dtype sqrtVar = (-1) / sqrt(vars[idx] + epsilon);
+    Dtype varGradFactor = varGrads[idx] * (-2) / (Dtype)batchCount;
     for (int i = 0; i < batchCount; i++) {
         int index = i * depth + idx;
-        meanGrads[i] += normInputGrads[index] * (-1) / sqrt(vars[i] + epsilon) +
-            varGrads[i] * (-2) * (inputData[index] - means[i]) / batchCount;
+        meanGrads[idx] += normInputGrads[index] * sqrtVar +
+            varGradFactor * (inputData[index] - means[idx]);
     }
 }
 
@@ -192,11 +195,13 @@ __global__ void ComputeInputGrad(const Dtype *normInputGrads, const Dtype *vars,
 	if (idx >= depth) 
 		return;
 
+    Dtype sqrtVar = sqrt(vars[idx] + epsilon);
+    Dtype varGradFactor = varGrads[idx] * 2 / (Dtype)batchCount;
+    Dtype meanFactor = meanGrads[idx] / (Dtype)batchCount;
     for (int i = 0; i < batchCount; i++) {
         int index = i * depth + idx;
-        inputGrads[index] = normInputGrads[index] / sqrt(vars[idx] + epsilon) +
-            varGrads[idx] * 2 * (inputData[index] - means[idx]) / batchCount +
-            meanGrads[idx] / batchCount;
+        inputGrads[index] = normInputGrads[index] / sqrtVar +
+            varGradFactor * (inputData[index] - means[idx]) + meanFactor;
     }
 }
 
@@ -230,6 +235,18 @@ __global__ void ComputeShiftGrad(const Dtype *outputGrads, int depth, int batchC
     }
 }
 
+template <typename Dtype>
+__global__ void UpdateShiftAndScale(const Dtype *gammaGrad, const Dtype *betaGrad, int depth,
+    Dtype learningRate, Dtype *gammaData, Dtype *betaData)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+
+    gammaData[idx] -= learningRate * gammaGrad[idx];
+    betaData[idx] -= learningRate * betaGrad[idx];
+}
+
 template<typename Dtype>
 BatchNormLayer<Dtype>::~BatchNormLayer() {
     if (this->depth == 0)
@@ -249,23 +266,29 @@ BatchNormLayer<Dtype>::~BatchNormLayer() {
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::update() {
+    struct timespec startTime;
+    SPERF_START(BATCHNORM_LAYER_UPTIME, &startTime);
+
     // FIXME: momentum, decay 등의 factor들을 고려하지 않았다.
     //        이런 부분을 고려하면 더 좋은 결과가 나올지도 모른다.
     float learningRate = this->networkConfig->getLearningRate();
 
-    Dtype* gammaData = this->gammaSet->mutable_host_data();
-    Dtype* gammaGrad = this->gammaSet->mutable_host_grad();
-    Dtype* betaData = this->betaSet->mutable_host_data();
-    Dtype* betaGrad = this->betaSet->mutable_host_grad();
+    Dtype* gammaData = this->gammaSet->mutable_device_data();
+    const Dtype* gammaGrad = this->gammaSet->device_grad();
+    Dtype* betaData = this->betaSet->mutable_device_data();
+    const Dtype* betaGrad = this->betaSet->device_grad();
 
-    for (int i = 0; i < this->depth; i++) {
-        gammaData[i] -= learningRate * gammaGrad[i];
-        betaData[i]  -= learningRate * betaGrad[i];
-    }
+    UpdateShiftAndScale<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+        gammaGrad, betaGrad, this->depth, (Dtype)learningRate, gammaData, betaData);
+
+    SPERF_END(BATCHNORM_LAYER_UPTIME, startTime);
 }
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::feedforward() {
+    struct timespec startTime;
+    SPERF_START(BATCHNORM_LAYER_FWTIME, &startTime);
+
     // FIXME: 현재 CPU 코드로 구현이 되어 있다. GPU 코드로 변경하자.
     // (1) mini-batch mean 값을 구한다.
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
@@ -296,7 +319,7 @@ void BatchNormLayer<Dtype>::feedforward() {
         Dtype* normInputs = this->normInputSet->mutable_device_data();
         const Dtype* gammas = this->gammaSet->device_data();
         const Dtype* betas = this->betaSet->device_data();
-        Normalize<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+        Normalize<<<SOOOA_GET_BLOCKS(this->depth * batchCount), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, means, vars, gammas, betas, this->depth, batchCount,
             (Dtype)this->epsilon, normInputs, outputData);
 
@@ -329,6 +352,8 @@ void BatchNormLayer<Dtype>::feedforward() {
     } else {
         SASSERT(false, "Invalid network status =%d", this->networkConfig->_status);
     }
+
+    SPERF_END(BATCHNORM_LAYER_FWTIME, startTime);
 }
 
 template <typename Dtype>
@@ -483,6 +508,8 @@ void BatchNormLayer<Dtype>::computeShiftGrad() {
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::backpropagation() {
+    struct timespec startTime;
+    SPERF_START(BATCHNORM_LAYER_BWTIME, &startTime);
     /*
      * 아래와 같은 simple한 network layer가 있다고 가정하자.
      *
@@ -520,6 +547,8 @@ void BatchNormLayer<Dtype>::backpropagation() {
 
     // (6) dL/dβi
     computeShiftGrad();
+
+    SPERF_END(BATCHNORM_LAYER_BWTIME, startTime);
 }
 
 template BatchNormLayer<float>::~BatchNormLayer();
