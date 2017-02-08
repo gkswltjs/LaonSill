@@ -251,9 +251,6 @@ __global__ void UpdateShiftAndScale(const Dtype *gammaGrad, const Dtype *betaGra
 
 template<typename Dtype>
 BatchNormLayer<Dtype>::~BatchNormLayer() {
-    if (this->depth == 0)
-        return;
-
     SASSERT0(this->gammaSet != NULL);
     free(this->gammaSet);
     SASSERT0(this->betaSet != NULL);

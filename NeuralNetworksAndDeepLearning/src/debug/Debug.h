@@ -42,6 +42,8 @@
 #include "FrcnnTestOutputLayer.h"
 #include "BatchNormLayer.h"
 #include "ReluLayer.h"
+#include "CrossEntropyWithLossLayer.h"
+#include "SigmoidLayer2.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -217,6 +219,91 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 	return layersConfig;
 }
 
+template <typename Dtype>
+LayersConfig<Dtype>* createCNNSimpleLayersConfig3() {
+	LayersConfig<Dtype>* layersConfig =
+			(new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename InputLayer<Dtype>::Builder())
+					->id(0)
+					->name("inputLayer")
+					->source(std::string(SPARAM(BASE_DATA_DIR))
+                        + std::string("/mnist"))
+					->sourceType("ImagePack")
+					->mean({0.13066047740})
+					->outputs({"data", "label"})
+					)
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(1)
+					->name("convLayer1")
+					->filterDim(3, 3, 1, 10, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.2)
+					->inputs({"data"})
+					->outputs({"conv1/3x3_s2"}))
+
+			->layer((new typename BatchNormLayer<Dtype>::Builder())
+					->id(2)
+					->name("batchnorm1")
+					->inputs({"conv1/3x3_s2"})
+					->outputs({"batchnorm1"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(3)
+					->name("relu1")
+					->inputs({"batchnorm1"})
+					->outputs({"relu1"}))
+
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(4)
+					->name("poolingLayer1")
+					->poolDim(2, 2, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"relu1"})
+					->outputs({"pool1/3x3_s1"}))
+
+			->layer((new typename ReshapeLayer<Dtype>::Builder())
+					->id(5)
+					->name("pool1/3x3_s1_reshape")
+					->shape({0, 1, -1, 1})
+					->inputs({"pool1/3x3_s1"})
+					->outputs({"pool1/3x3_s1_reshape"}))
+
+			->layer((new typename BatchNormLayer<Dtype>::Builder())
+					->id(6)
+					->name("batchnorm2")
+					->inputs({"pool1/3x3_s1_reshape"})
+					->outputs({"batchnorm2"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(7)
+					->name("fc1")
+					->nOut(10)
+					->pDropout(0.4)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, 0.0)
+					->inputs({"batchnorm2"})
+					->outputs({"fc1"}))
+
+			->layer((new typename SigmoidLayer2<Dtype>::Builder())
+					->id(8)
+					->name("sigmoid2")
+					->inputs({"fc1"})
+					->outputs({"sigmoid2"}))
+
+			->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
+					->id(9)
+					->name("celoss")
+					->inputs({"sigmoid2"})
+					->outputs({"prob"}))
+
+			->build();
+
+	return layersConfig;
+}
 
 template <typename Dtype>
 LayersConfig<Dtype>* createCNNSimpleLayersConfig2() {

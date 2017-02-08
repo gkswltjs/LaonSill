@@ -54,7 +54,7 @@ void developerMain() {
 
 	//vector<WeightsArg> weightsArgs(1);
 	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/network540000.param.bak";
-	const vector<string> lossLayers = { "softmaxWithLoss" };
+	const vector<string> lossLayers = { "celoss" };
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
 	const uint32_t batchSize = 100;
@@ -94,7 +94,7 @@ void developerMain() {
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
 			//->weightsArgs(weightsArgs)
 			->networkListeners({
-				new NetworkMonitor("softmaxWithLoss", NetworkMonitor::PLOT_ONLY),
+				new NetworkMonitor("celoss", NetworkMonitor::PLOT_ONLY),
 				})
 			->lossLayers(lossLayers)
 			->build();
@@ -102,8 +102,9 @@ void developerMain() {
 	Util::printVramInfo();
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig2<float>();
 	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
+	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig2<float>();
+	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig3<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
 
 	// (2) network config 정보를 layer들에게 전달한다.

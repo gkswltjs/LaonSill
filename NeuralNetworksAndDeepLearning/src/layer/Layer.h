@@ -56,6 +56,10 @@ public:
 		Reshape,				//
 		SmoothL1Loss,
 		SoftmaxWithLoss,
+        CrossEntropyWithLoss,
+
+        Sigmoid2,               // 새로운 sigmoid layer. 구현 완료되면 기존 sigmoid layer를
+                                // 대체할 예정.
 
 		AnchorTarget,			//
 		Proposal,				//
