@@ -51,6 +51,11 @@ public:
 		Softmax,				// 소프트맥스 레이어
 		Split,					//
         DQNOutput,              // DQN Output 레이어
+
+        Deconv,                 // deconvolution 레이어
+                                // 엄밀히 말하면 transpose convolution layer 혹은
+                                // fractionally strided convolution layer 입니다
+
         BatchNorm,              // Batch normalization 레이어
 
 		Reshape,				//

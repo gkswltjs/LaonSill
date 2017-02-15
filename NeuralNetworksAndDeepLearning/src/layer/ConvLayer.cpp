@@ -22,16 +22,18 @@ template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(Builder* builder)
 : HiddenLayer<Dtype>(builder) {
 	initialize(builder->_filterDim, builder->_weightUpdateParam, builder->_biasUpdateParam,
-			builder->_weightFiller, builder->_biasFiller);
+			builder->_weightFiller, builder->_biasFiller, builder->_deconv,
+            builder->_deconvExtraCell);
 }
 
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
     update_param weight_update_param, update_param bias_update_param,
-    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler)
+    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, bool deconv,
+    int deconvExtraCell)
     : HiddenLayer<Dtype>(name) {
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler,
-               bias_filler);
+               bias_filler, deconv, deconvExtraCell);
 }
 
 template <typename Dtype>
@@ -183,7 +185,7 @@ void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	ifs.read((char *)&bias_filler, sizeof(param_filler));
 
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler,
-               bias_filler, activationType);
+               bias_filler, false, activationType);
 
 	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, 
     // bias load를 수행해야 함
@@ -196,9 +198,15 @@ void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 template <typename Dtype>
 void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_update_param,
     update_param bias_update_param, param_filler weight_filler, param_filler bias_filler,
-    Activation::Type activationType) {
+    bool deconv, int deconvExtraCell, Activation::Type activationType) {
 
-	this->type = Layer<Dtype>::Conv;
+    if (!deconv)
+	    this->type = Layer<Dtype>::Conv;
+    else
+	    this->type = Layer<Dtype>::Deconv;
+
+    this->deconv = deconv;
+    this->deconvExtraCell = deconvExtraCell;
 
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;

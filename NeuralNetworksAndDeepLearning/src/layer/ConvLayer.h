@@ -40,6 +40,11 @@ public:
 		update_param _biasUpdateParam;
 		param_filler<Dtype> _weightFiller;
 		param_filler<Dtype> _biasFiller;
+        bool _deconv;
+        int _deconvExtraCell;       // deconvolution layer에서 a만큼 더 큰 피처맵(이미지)를 
+                                    // 생성할 수 있다. 이때 a는 0이상 stride 미만의 값을 
+                                    // 가진다.
+                                    // XXX: 이름이 구리다. 예쁜 이름으로 바꿔주세요 :)
 		//typename Activation<Dtype>::Type _activationType;
 
 		Builder() {
@@ -58,6 +63,8 @@ public:
 			_weightFiller.value = 0.0f;
 			_biasFiller.type = ParamFillerType::Constant;
 			_biasFiller.value = 0.0f;
+            _deconv = false;
+            _deconvExtraCell = 0;
 			//_activationType = Activation<Dtype>::NoActivation;
 		}
 		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
@@ -88,6 +95,14 @@ public:
 		Builder* biasFiller(ParamFillerType paramFillerType, double value) {
 			this->_biasFiller.type = paramFillerType;
 			this->_biasFiller.value = value;
+			return this;
+		}
+		Builder* deconv(bool deconv) {
+			this->_deconv = deconv;
+			return this;
+		}
+		Builder* deconvExtraCell(int deconvExtraCell) {
+			this->_deconvExtraCell = deconvExtraCell;
 			return this;
 		}
 		/*
@@ -138,7 +153,7 @@ public:
 	 */
 	ConvLayer(const std::string name, filter_dim filter_d, update_param weight_update_param, 
               update_param bias_update_param, param_filler<Dtype> weight_filler, 
-              param_filler<Dtype> bias_filler);
+              param_filler<Dtype> bias_filler, bool deconv, int deconvExtraCell);
 	/**
 	 * @details ConvLayer 소멸자
 	 */
@@ -189,7 +204,7 @@ public:
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param,
         update_param bias_update_param, param_filler<Dtype> weight_filler,
-        param_filler<Dtype> bias_filler);
+        param_filler<Dtype> bias_filler, bool deconv, int deconvExtraCell);
 
 
 
@@ -241,6 +256,9 @@ public:
     std::vector<Data<Dtype>*> _paramsHistory;	///< 이전 update의 파라미터 그레디언트 데이터
 
     //std::vector<bool> _paramsInitialized;
+
+    bool deconv;
+    int deconvExtraCell;
 };
 
 #endif /* LAYER_CONVLAYER_H_ */
