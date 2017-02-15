@@ -12,7 +12,7 @@ using namespace std;
 template <typename Dtype>
 ReluLayer<Dtype>::ReluLayer(Builder* builder)
 : HiddenLayer<Dtype>(builder) {
-	initialize();
+	initialize(builder->_useLeaky, builder->_leaky);
 }
 
 template <typename Dtype>
@@ -57,6 +57,10 @@ void ReluLayer<Dtype>::feedforward() {
 					&Cuda::alpha, this->tensorDesc, d_inputData,
 					&Cuda::beta, this->tensorDesc, d_outputData));
 
+    if (this->useLeaky) {
+        applyLeaky();
+    }
+
 	/*
 	Data<Dtype>::printConfig = true;
 	this->_inputData[0]->print_data({}, true);
@@ -86,8 +90,10 @@ void ReluLayer<Dtype>::backpropagation() {
 }
 
 template <typename Dtype>
-void ReluLayer<Dtype>::initialize() {
+void ReluLayer<Dtype>::initialize(bool useLeaky, double leaky) {
 	this->type = Layer<Dtype>::Relu;
+    this->useLeaky = useLeaky;
+    this->leaky = leaky;
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->tensorDesc));
 

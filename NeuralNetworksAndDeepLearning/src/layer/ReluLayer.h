@@ -16,8 +16,13 @@ class ReluLayer : public HiddenLayer<Dtype> {
 public:
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:
+        bool    _useLeaky;
+        double  _leaky;
+
 		Builder() {
 			this->type = Layer<Dtype>::Relu;
+            this->_useLeaky = false;
+            this->_leaky = 0.0;
 		}
 		virtual Builder* name(const std::string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
@@ -39,6 +44,11 @@ public:
 			HiddenLayer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
+        Builder* leaky(double leaky) {
+            this->_leaky = leaky;
+            this->_useLeaky = true;
+            return this;
+        }
 		Layer<Dtype>* build() {
 			return new ReluLayer(this);
 		}
@@ -52,15 +62,17 @@ public:
 	virtual void backpropagation();
 
 protected:
-	void initialize();
-
-
+	void initialize(bool useLeaky, double leaky);
+    void applyLeaky();
 
 protected:
 	// input, output tensor의 desc가 동일하므로 하나만 사용
 	cudnnTensorDescriptor_t tensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 
 	cudnnActivationDescriptor_t activationDesc;	///< cudnn 활성화 관련 자료구조에 대한 포인터
+
+    bool useLeaky;      // leaky Relu 사용 여부
+    double leaky;       // leaky value
 };
 
 #endif /* RELULAYER_H_ */

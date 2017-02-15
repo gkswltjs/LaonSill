@@ -245,10 +245,18 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig3() {
 					->inputs({"data"})
 					->outputs({"deconv1"}))
 
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(3)
+					//->leaky(0.000002)
+					->name("relu1")
+					->inputs({"deconv1"})
+					->outputs({"relu1"}))
+
+
 			->layer((new typename SigmoidLayer2<Dtype>::Builder())
 					->id(8)
 					->name("sigmoid2")
-					->inputs({"deconv1"})
+					->inputs({"relu1"})
 					->outputs({"sigmoid2"}))
 
 			->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
