@@ -27,6 +27,7 @@ using namespace std;
 #define TEMP 1
 #if TEMP
 #define ARTISTIC_TEST 1
+#define SMALL_TEST 0
 
 #if !ARTISTIC_TEST
 template <typename Dtype>
@@ -67,7 +68,11 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
 
 	// (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
+#if !SMALL_TEST
 	LayersConfig<float>* layersConfig = createVGG19NetArtisticLayersConfig<Dtype>();
+#else
+    LayersConfig<float>* layersConfig = createVGG19NetArtisticTestLayersConfig<Dtype>();
+#endif
     //LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<Dtype>();
 
 	// (2) network config 정보를 layer들에게 전달한다.
@@ -90,39 +95,30 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
 
     ArtisticStyle<Dtype>* artisticStyle = new ArtisticStyle<Dtype>(
     		network,
+#if !SMALL_TEST
     		"/data/backup/artistic/tubingen_320.jpg",
+    		//"/home/jkim/Downloads/sampleR32G64B128.png",
     		"/data/backup/artistic/starry_night_320.jpg",
     		//"/data/backup/artistic/composition_320.jpg",
-    		{"conv4_2"},
-    		{"conv1_1", "conv2_1", "conv3_1", "conv4_1", "conv5_1"},
-    		0.00001f,					// contentReconstructionFactor
-    		0.1f,					// styleReconstructionFactor
-    		-1.0f,					// learningRate
-    		"conv5_1",				// end
+    		{},
+    		{"relu1_1", "relu2_1"},
+#else
+    		"/data/backup/artistic/tubingen_16.jpg",
+    		"/data/backup/artistic/starry_night_16.jpg",
+			//{"conv1_1"},
+    		{},
+			{"conv1_1", "conv2_1"},
+#endif
+    		5.0f,					// contentReconstructionFactor
+    		100.0f,					// styleReconstructionFactor
+    		10.0f,					// learningRate
+    		"relu2_1",				// end
     		true,					// plotContentCost
     		true					// plotStyleCost
     );
 
-    /*
-    ArtisticStyle<float>* artisticStyle = new ArtisticStyle<float>(
-			network,
-			"/data/backup/artistic/tubingen_320.jpg",
-			"/data/backup/artistic/starry_night_320.jpg",
-			//"/home/jkim/Downloads/sampleR32G64B128.png",
-			//"/home/jkim/Downloads/sampleR32G64B128_inv.png",
-			{"convLayer1"},
-			{"convLayer2"},
-			0.01f,					// contentReconstructionFactor
-			1.0f,					// styleReconstructionFactor
-			-0.1f,					// learningRate
-			"convLayer2",			// end
-			true,					// plotContentCost
-			true					// plotStyleCost
-	);
-	*/
-
     artisticStyle->style();
-    //artisticStyle->test();
+
     delete artisticStyle;
 }
 #endif
@@ -196,7 +192,12 @@ void LegacyWork<Dtype>::cleanupNetwork(Job* job) {
 
 
 #if TEMP
+
+#if !SMALL_TEST
 #define LOAD_WEIGHT 1
+#else
+#define LOAD_WEIGHT 0
+#endif
 
 template <typename Dtype>
 int LegacyWork<Dtype>::createNetwork() {

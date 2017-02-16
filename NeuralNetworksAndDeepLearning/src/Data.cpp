@@ -21,6 +21,10 @@ uint32_t Data<Dtype>::printConfig = 0;
 
 
 template <typename Dtype>
+Data<Dtype>::Data(const bool hostOnly)
+: Data("", hostOnly) {}
+
+template <typename Dtype>
 Data<Dtype>::Data(const string& name, const bool hostOnly) {
 	this->_name = name;
 	this->_shape.resize(SHAPE_SIZE);
@@ -199,6 +203,20 @@ void Data<Dtype>::reset_device_grad() {
 	assert(!this->_hostOnly);
 	_grad->reset_device_mem();
 }
+
+
+
+template <typename Dtype>
+void Data<Dtype>::set(Data<Dtype>* data, bool reshape) {
+	if (reshape)
+		this->reshapeLike(data);
+
+	assert(_shape == data->getShape());
+
+	this->set_host_data(data);
+	this->set_host_grad(data);
+}
+
 
 template <typename Dtype>
 void Data<Dtype>::set_host_data(const Dtype* data) {
@@ -735,7 +753,7 @@ bool Data<Dtype>::compareGrad(
 				for (uint32_t l = 0; l < width; l++) {
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
 					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
-						cout << "data is different at (" << i << "x" << j << "x" <<
+						cout << "grad is different at (" << i << "x" << j << "x" <<
 								k << "x" << l << ")" << endl;
 						cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
 								data2Ptr[index] << endl;
@@ -780,7 +798,7 @@ bool Data<Dtype>::compareGrad(
 				for (uint32_t l = 0; l < width; l++) {
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
 					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
-						cout << "data is different at (" << i << "x" << j << "x" <<
+						cout << "grad is different at (" << i << "x" << j << "x" <<
 								k << "x" << l << ")" << endl;
 						cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
 								data2Ptr[index] << endl;

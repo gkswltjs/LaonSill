@@ -255,8 +255,20 @@ void SyncMem<Dtype>::checkDeviceMemAndUpdateHostMem(bool reset) {
 #ifdef SYNCMEM_LOG
 		cout << "device mem is updated, updating host mem ... " << endl;
 #endif
-		checkCudaErrors(cudaMemcpyAsync(_host_mem, _device_mem, sizeof(Dtype)*_size,
-                                        cudaMemcpyDeviceToHost));
+
+
+
+		std::stringstream _error;
+		int status = cudaMemcpyAsync(_host_mem, _device_mem, sizeof(Dtype)*_size,
+                cudaMemcpyDeviceToHost);
+		if (status != 0) {
+		  _error << "Cuda failure: " << status;
+		  FatalError(_error.str());
+		}
+
+
+		//checkCudaErrors(cudaMemcpyAsync(_host_mem, _device_mem, sizeof(Dtype)*_size,
+        //                                cudaMemcpyDeviceToHost));
 		if(reset) {
 			resetMemUpdated();
 		}
@@ -280,18 +292,16 @@ void SyncMem<Dtype>::checkHostMemAndUpdateDeviceMem(bool reset) {
 
 template <typename Dtype>
 void SyncMem<Dtype>::checkMemValidity() {
-	/*
 	assert(_size > 0 &&
 			_host_mem != NULL &&
 			_device_mem != NULL &&
 			"assign mem before using ... ");
-			*/
-
+	/*
 	if (_size <= 0 &&
 				_host_mem == NULL &&
 				_device_mem == NULL)
 		cout << "assign mem before using ... " << endl;
-
+		*/
 }
 
 template <typename Dtype>

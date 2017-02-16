@@ -46,51 +46,48 @@ public:
 	void style();
 	void test();
 
-private:
+public:
 	void computeContentRepresentationLayerResponses();
 	void computeStyleRepresentationLayerResponses();
-
-	//void computeContentLossGradient();
-	//void computeStyleLossGradient();
 
 	double computeContentLossGradientAt(const int contentLayerIndex);
 	double computeStyleLossGradientAt(const int styleLayerIndex);
 
-
-	//void computeContentLoss(uint32_t contentRepLayerIndex);
-	//void computeStyleLoss(uint32_t styleRepLayerIndex);
-
-
 	/**
 	 * 이미지에 대해 mean값 subtract
 	 */
-	void preprocess(cimg_library::CImg<Dtype>* cimg);
 	void preprocess(SyncMem<Dtype>* mem);
-	void deprocess(cimg_library::CImg<Dtype>* cimg);
 	void deprocess(SyncMem<Dtype>* mem);
 	void clipImage(cimg_library::CImg<Dtype>* img);
 
 	void createDataFromCImg(cimg_library::CImg<Dtype>* cimg, Data<Dtype>* data);
-	void createGramMatrixFromData(Data<Dtype>* data, SyncMem<Dtype>* gramMatrix);
+	void createGramMatrixFromData(Data<Dtype>* data, SyncMem<Dtype>* Fl,
+			SyncMem<Dtype>* gramMatrix);
 
 	HiddenLayer<Dtype>* findRepresentationLayer(const std::string& layerName);
 
-	void flattenData(Data<Dtype>* data, const uint32_t height, const uint32_t width, SyncMem<Dtype>* mem);
-	void unflattenData(SyncMem<Dtype>* mem, const uint32_t flattenHeight, const uint32_t flattenWidth, Data<Dtype>* data);
-
-
+	void flattenData(Data<Dtype>* data, const uint32_t height, const uint32_t width,
+			SyncMem<Dtype>* mem);
+	void unflattenData(SyncMem<Dtype>* mem, const uint32_t flattenHeight,
+			const uint32_t flattenWidth, Data<Dtype>* data);
 
 	int findContentRepLayer(const std::string& layerName);
 	int findStyleRepLayer(const std::string& layerName);
 
 
 
+	// ***********************************************
+	// TEST
+	// ***********************************************
 	void gramMatrixTest();
 	void dataSubTest();
 	void flattenTest();
 	void unflattenTest();
 	void gemmTest();
 
+	// ***********************************************
+	// PRINT CONFIG
+	// ***********************************************
 	void on() {
 		Data<Dtype>::printConfig = 1;
 		SyncMem<Dtype>::printConfig = 1;
@@ -103,23 +100,20 @@ private:
 
 	void feedforwardWithData(Data<Dtype>* data);
 
-
-
-
 	void updateDimensionFromCImg(cimg_library::CImg<Dtype>* cimg);
 	void prepareCImgFromPath(const std::string& path, cimg_library::CImg<Dtype>*& cimg);
-	void normalizeCImg(cimg_library::CImg<Dtype>* cimg);
-	void updateMean();
+	void fillMean();
 	void prepareCImgDisplay(cimg_library::CImg<Dtype>* cimg, const std::string& title,
 			cimg_library::CImgDisplay*& cimgDisplay);
 	bool isValidImageDimension(cimg_library::CImg<Dtype>* cimg);
+	void boundData(const Dtype* dataMin, const Dtype* dataMax, Data<Dtype>* data);
+	void makeNoiseInput(Data<Dtype>* input);
 
 
 
 
-
-
-	void printCImg(cimg_library::CImg<Dtype>* cimg);
+	void printCImg(cimg_library::CImg<Dtype>* cimg, const std::string& head,
+			const bool printData=true);
 
 
 
@@ -129,16 +123,18 @@ private:
 	cimg_library::CImg<Dtype>* x;			// input image
 	cimg_library::CImg<Dtype>* p;			// photo, content image
 	cimg_library::CImg<Dtype>* a;			// art, style image
-	cimg_library::CImg<Dtype>* xTemp;
 
 	cimg_library::CImgDisplay* xdisp;
 	cimg_library::CImgDisplay* pdisp;
 	cimg_library::CImgDisplay* adisp;
 
 	Data<Dtype>* xdata;
-	Data<Dtype>* xDelta;
 	SyncMem<Dtype> xdataTemp;
+	SyncMem<Dtype> dataMean;
 	SyncMem<Dtype> mean;
+	SyncMem<Dtype> dataMin;
+	SyncMem<Dtype> dataMax;
+ 	SyncMem<Dtype> dataBounds;
 
 	uint32_t width;
 	uint32_t height;
@@ -159,9 +155,14 @@ private:
 
 	StatGraphPlotter contentCostLogger;
 	StatGraphPlotter styleCostLogger;
+	StatGraphPlotter styleUnitCostLogger;
 
 	const bool plotContentCost;
 	const bool plotStyleCost;
+
+	float lrMult;
+
+
 };
 
 //#endif

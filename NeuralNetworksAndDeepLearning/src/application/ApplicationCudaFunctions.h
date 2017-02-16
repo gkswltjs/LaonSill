@@ -16,4 +16,13 @@ void diff_content_loss(const uint32_t n, const Dtype* f, const Dtype* p, Dtype* 
 template <typename Dtype>
 void diff_style_loss(const uint32_t n, const Dtype* f, Dtype* a);
 
+template <typename Dtype>
+void fill_channel_mean(const uint32_t n, const uint32_t singleChannelSize,
+		const Dtype* mean, Dtype* dst);
+
+template <typename Dtype>
+void bound_data(const uint32_t n, const uint32_t singleChannelSize, const Dtype* dataMin,
+		const Dtype* dataMax, Dtype* data);
+
+
 #endif /* APPLICATIONCUDAFUNCTIONS_H_ */

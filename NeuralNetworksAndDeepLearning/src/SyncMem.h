@@ -139,7 +139,7 @@ public:
 	 * @param shape 출력 포맷 shape (batches, columns, rows, columns)
 	 */
 	void print(const std::string& head, const std::vector<uint32_t>& shape,
-        const bool cmo=true, const bool printData = true);
+        const bool cmo=true, const bool printData=true);
 
 	static void setOutstream(std::ostream *outstream) {
 		SyncMem<Dtype>::outstream = outstream;

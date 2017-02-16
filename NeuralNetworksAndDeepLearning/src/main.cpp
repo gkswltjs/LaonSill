@@ -142,7 +142,7 @@ void loadJobFile(const char* fileName, Json::Value& rootValue) {
     }
 }
 
-int main(int argc, char** argv) {
+int main_(int argc, char** argv) {
     int     opt;
 
 

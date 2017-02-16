@@ -24,6 +24,7 @@
 template <typename Dtype>
 class Data {
 public:
+	Data(const bool hostOnly=false);
 	Data(const std::string& name, const bool hostOnly=false);
 	Data(Data<Dtype>* data, const bool hostOnly=false);
 	Data(const std::string& name, Data<Dtype>* data, uint32_t type,
@@ -93,6 +94,9 @@ public:
 	 * @return 그레디언트의 수정할 수 있는 디바이스 메모리 포인터
 	 */
 	Dtype* mutable_device_grad();
+
+
+	void set(Data<Dtype>* data, bool reshape=true);
 
 	/**
 	 * @details 데이터의 호스트 메모리에 _count만큼 값을 복사한다.
