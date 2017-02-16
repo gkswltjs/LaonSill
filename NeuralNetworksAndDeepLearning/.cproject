@@ -90,6 +90,7 @@
 									<listOptionValue builtIn="false" value="boost_iostreams"/>
 									<listOptionValue builtIn="false" value="X11"/>
 									<listOptionValue builtIn="false" value="rt"/>
+									<listOptionValue builtIn="false" value="blas"/>
 								</option>
 								<option id="nvcc.linker.option.paths.516465820" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/lib&quot;"/>
@@ -213,6 +214,7 @@
 									<listOptionValue builtIn="false" value="boost_iostreams"/>
 									<listOptionValue builtIn="false" value="X11"/>
 									<listOptionValue builtIn="false" value="rt"/>
+									<listOptionValue builtIn="false" value="blas"/>
 								</option>
 								<option id="nvcc.linker.option.other.767051080" name="Other options (-Xlinker [option])" superClass="nvcc.linker.option.other" valueType="stringList">
 									<listOptionValue builtIn="false" value="--export-dynamic"/>
@@ -337,6 +339,7 @@
 									<listOptionValue builtIn="false" value="boost_iostreams"/>
 									<listOptionValue builtIn="false" value="X11"/>
 									<listOptionValue builtIn="false" value="rt"/>
+									<listOptionValue builtIn="false" value="blas"/>
 								</option>
 								<option id="nvcc.linker.option.paths.21196381" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/lib&quot;"/>
@@ -461,6 +464,7 @@
 									<listOptionValue builtIn="false" value="boost_iostreams"/>
 									<listOptionValue builtIn="false" value="X11"/>
 									<listOptionValue builtIn="false" value="rt"/>
+									<listOptionValue builtIn="false" value="blas"/>
 								</option>
 								<option id="nvcc.linker.option.other.615671863" name="Other options (-Xlinker [option])" superClass="nvcc.linker.option.other" valueType="stringList">
 									<listOptionValue builtIn="false" value="--export-dynamic"/>
