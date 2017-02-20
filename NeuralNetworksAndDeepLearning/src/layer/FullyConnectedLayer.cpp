@@ -21,22 +21,13 @@ template <typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer(Builder* builder)
 	: HiddenLayer<Dtype>(builder) {
 
-	initialize(builder->_nOut, builder->_pDropout, builder->_weightUpdateParam,
-               builder->_biasUpdateParam, builder->_weightFiller, builder->_biasFiller);
+	initialize(builder->_nOut, builder->_pDropout, builder->_axis,
+			builder->_weightUpdateParam, builder->_biasUpdateParam, builder->_weightFiller,
+			builder->_biasFiller);
 }
 
 template <typename Dtype>
-FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string name, int n_out,
-    double p_dropout, update_param weight_update_param, update_param bias_update_param,
-    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler)
-    : HiddenLayer<Dtype>(name) {
-
-	initialize(n_out, p_dropout, weight_update_param, bias_update_param, weight_filler,
-               bias_filler);
-}
-
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout,
+void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axis,
     update_param weight_update_param, update_param bias_update_param,
     param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler) {
 
@@ -48,6 +39,7 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout,
 
 	this->n_out = n_out;
 	this->p_dropout = p_dropout;
+	this->axis = axis;
 
 	this->weight_update_param = weight_update_param;
 	this->bias_update_param = bias_update_param;
@@ -72,8 +64,8 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout,
 
 	//this->_preActivation = new Data<Dtype>("PreActivation"); // weighted sum (pre activation)
 
-	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
+	//checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	//checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
 template <typename Dtype>

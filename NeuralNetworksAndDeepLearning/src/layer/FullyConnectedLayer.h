@@ -42,20 +42,22 @@ public:
 		update_param _biasUpdateParam;						///< bias 갱신 관련 파라미터
 		param_filler<Dtype> _weightFiller;					///< weight 초기화 관련 파라미터
 		param_filler<Dtype> _biasFiller;					///< bias 초기화 관련 파라미터
+		int _axis;
 		//typename Activation<Dtype>::Type _activationType;	///< weighted sum에 적용할 활성화
 
 		Builder() {
 			this->type = Layer<Dtype>::FullyConnected;
-			_nOut = 0;
-			_pDropout = 0.0;
-			_weightUpdateParam.lr_mult = 1.0;
-			_weightUpdateParam.decay_mult = 0.0;
-			_biasUpdateParam.lr_mult = 1.0;
-			_biasUpdateParam.decay_mult = 0.0;
-			_weightFiller.type = ParamFillerType::Constant;
-			_weightFiller.value = 0.0f;
-			_biasFiller.type = ParamFillerType::Constant;
-			_biasFiller.value = 0.0f;
+			this->_nOut = 0;
+			this->_pDropout = 0.0;
+			this->_weightUpdateParam.lr_mult = 1.0;
+			this->_weightUpdateParam.decay_mult = 0.0;
+			this->_biasUpdateParam.lr_mult = 1.0;
+			this->_biasUpdateParam.decay_mult = 0.0;
+			this->_weightFiller.type = ParamFillerType::Constant;
+			this->_weightFiller.value = 0.0f;
+			this->_biasFiller.type = ParamFillerType::Constant;
+			this->_biasFiller.value = 0.0f;
+			this->_axis = 1;
 			//_activationType = Activation<Dtype>::NoActivation;
 		}
 		Builder* nOut(uint32_t nOut) {
@@ -86,12 +88,10 @@ public:
 			this->_biasFiller.value = value;
 			return this;
 		}
-		/*
-		Builder* activationType(typename Activation<Dtype>::Type activationType) {
-			this->_activationType = activationType;
+		Builder* axis(int axis) {
+			this->_axis = axis;
 			return this;
 		}
-		*/
 		virtual Builder* name(const std::string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
 			return this;
@@ -124,20 +124,6 @@ public:
 	FullyConnectedLayer();
 	FullyConnectedLayer(Builder* builder);
 
-	/**
-	 * @details FullyConnectedLayer 생성자
-	 * @param name 레이어의 이름 문자열
-	 * @param n_out 출력 노드의 수
-	 * @param p_dropout dropout을 적용할 확율
-	 * @param weight_update_param weight 갱신 관련 파라미터 구조체
-	 * @param bias_update_param bias 갱신 관련 파라미터 구조체
-	 * @param weight_filler weight 초기화 관련 파라미터 구조체
-	 * @param bias_filler bias 초기화 관련 파라미터 구조체
-	 * @param activationType weighted sum에 적용할 활성화 타입
-	 */
-	FullyConnectedLayer(const std::string name, int n_out, double p_dropout,
-        update_param weight_update_param, update_param bias_update_param,
-        param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler);
 	virtual ~FullyConnectedLayer();
 
 	//////////////////////////////////////////
@@ -174,7 +160,7 @@ private:
      * @param useBatchNorm batch normalization 사용 여부
      * @param batchNormEpsilon epsilon value for batch normalization
 	 */
-	void initialize(int n_out, double p_dropout, update_param weight_update_param,
+	void initialize(int n_out, double p_dropout, int axis, update_param weight_update_param,
         update_param bias_update_param, param_filler<Dtype> weight_filler,
         param_filler<Dtype> bias_filler);
 
@@ -208,6 +194,7 @@ protected:
 protected:
 	uint32_t n_out;
 	double p_dropout;						///< dropout을 적용할 확율
+	int axis;
 
 	update_param weight_update_param;		///< weight 갱신 관련 파라미터 구조체
 	update_param bias_update_param;			///< bias 갱신 관련 파라미터 구조체
@@ -228,8 +215,8 @@ protected:
 	rcube delta;
 	rcube delta_input;
 #else
-	cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
-	cudnnTensorDescriptor_t outputTensorDesc;   ///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
+	//cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
+	//cudnnTensorDescriptor_t outputTensorDesc;   ///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 
 	Dtype* d_onevec;    ///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
 
@@ -250,6 +237,10 @@ public:
                                                 /// 그레디언트 데이터
 
     uint32_t tempCnt;
+
+    uint32_t batches;
+    uint32_t in_rows;
+    uint32_t out_rows;
 
 };
 

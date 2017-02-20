@@ -104,6 +104,7 @@ public:
 	 * @param activationType weighted sum에 적용할 활성화 타입
 	 * @param costType 레이어 출력값에 대한 cost 계산 타입
 	 */
+	/*
 	OutputLayer(const std::string name, int n_out, double p_dropout,
         update_param weight_update_param, update_param bias_update_param,
         param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler,
@@ -112,6 +113,7 @@ public:
             bias_update_param, weight_filler, bias_filler) {
 		initialize(costType);
 	};
+	*/
 	virtual ~OutputLayer() {
 		CostFactory<Dtype>::destroy(cost_fn);
 	};

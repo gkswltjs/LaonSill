@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "FullyConnectedLayer.h"
+#include "MathFunctions.h"
 #include "Util.h"
 #include "Exception.h"
 #include "NetworkConfig.h"
@@ -90,8 +91,8 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
 	Util::clearVector(_paramsHistory);
 
 	//delete _preActivation;
-	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
-	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
+	//checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
+	//checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
 	checkCudaErrors(cudaFree(d_onevec));
 
 	//ActivationFactory<Dtype>::destory(activation_fn);
@@ -106,8 +107,6 @@ void FullyConnectedLayer<Dtype>::reshape() {
 		assert(count == inputDataCount);
 	}
 
-
-
 	/*
 	// 배치수가 변경되는 경우는 허용하도록 하자.
 	const uint32_t count = Util::vecCountByAxis(this->_inputShape[0], 1);
@@ -118,41 +117,42 @@ void FullyConnectedLayer<Dtype>::reshape() {
 
 	// XXX: 주의
 
-
     // 여기에서는 batch 개수만 변경이 될 수 있다고 가정하였다.
     // 따라서 batch 개수에 대한 변경만 체크한다.
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
 
-	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
-	uint32_t batches = inputShape[0];
-	uint32_t channels = 1;
-	uint32_t in_rows = this->_inputData[0]->getCountByAxis(1);
-	uint32_t out_rows = this->n_out;
-	uint32_t cols = 1;
+	this->batches = this->_inputData[0]->getShape(0);
+	this->in_rows = this->_inputData[0]->getCountByAxis(this->axis);
+	this->out_rows = this->n_out;
 
-	this->_inputShape[0] = {batches, channels, in_rows, cols};
-	//this->_preActivation->reshape({batches, channels, out_rows, cols});
-	this->_outputData[0]->reshape({batches, channels, out_rows, cols});
+	const uint32_t channels = 1;
+	const uint32_t cols = 1;
 
+	//this->_inputShape[0] = {batches, channels, in_rows, cols};
+	this->_inputShape[0] = this->_inputData[0]->getShape();
+	this->_outputData[0]->reshape({this->batches, channels, this->out_rows, cols});
+
+	/*
 	checkCUDNN(cudnnSetTensor4dDescriptor(
 			this->inputTensorDesc,
 			CUDNN_TENSOR_NCHW,
 			CUDNN_DATA_FLOAT,
-			batches, channels, in_rows, cols));
+			this->batches, channels, this->in_rows, cols));
 
 	checkCUDNN(cudnnSetTensor4dDescriptor(
 			this->outputTensorDesc,
 			CUDNN_TENSOR_NCHW,
 			CUDNN_DATA_FLOAT,
-			batches, channels, out_rows, cols));
+			this->batches, channels, this->out_rows, cols));
+			*/
 
 	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG, 
         "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), batches, channels, in_rows, cols);
+        this->name.c_str(), this->batches, channels, this->in_rows, cols);
 	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG,
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
-        this->name.c_str(), batches, channels, out_rows, cols);
+        this->name.c_str(), this->batches, channels, this->out_rows, cols);
 
 	const uint32_t u_in = in_rows;
 	const uint32_t u_out = out_rows;
@@ -183,13 +183,14 @@ void FullyConnectedLayer<Dtype>::reshape() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::update() {
-	const uint32_t in_rows = this->_inputShape[0][2];
-	const uint32_t out_rows = this->_outputData[0]->getShape(2);
+	//const uint32_t in_rows = this->_inputShape[0][2];
+	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
-	const uint32_t weightSize = in_rows * out_rows;
-	const Dtype regScale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
-	const Dtype learnScale = 
-        this->networkConfig->getLearningRate() * weight_update_param.lr_mult;
+	const uint32_t weightSize = this->in_rows * this->out_rows;
+	const Dtype regScale = this->networkConfig->_weightDecay *
+			this->weight_update_param.decay_mult;
+	const Dtype learnScale = this->networkConfig->getLearningRate() *
+			this->weight_update_param.lr_mult;
 	_updateParam(weightSize, regScale, learnScale, _paramsHistory[Weight], _params[Weight]);
 
 	const uint32_t biasSize = out_rows;
@@ -203,8 +204,8 @@ template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale,
 	const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
 
-	const uint32_t batches = this->_inputShape[0][0];
-	const Dtype normScale = 1.0/batches;
+	//const uint32_t batches = this->_inputShape[0][0];
+	const Dtype normScale = 1.0 / this->batches;
 
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
@@ -238,11 +239,11 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
-	const uint32_t in_rows = this->_inputShape[0][2];
-	const uint32_t out_rows = this->_outputData[0]->getShape(2);
+	//const uint32_t in_rows = this->_inputShape[0][2];
+	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
-    const uint32_t weightSize = in_rows * out_rows;
-    const uint32_t biasSize = out_rows;
+    const uint32_t weightSize = this->in_rows * this->out_rows;
+    const uint32_t biasSize = this->out_rows;
     FullyConnectedLayer<Dtype>* _targetLayer = (FullyConnectedLayer<Dtype>*)targetLayer;
 
     //int blockSize = BW;
@@ -264,11 +265,11 @@ void FullyConnectedLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
-	const uint32_t in_rows = this->_inputShape[0][2];
-	const uint32_t out_rows = this->_outputData[0]->getShape(2);
+	//const uint32_t in_rows = this->_inputShape[0][2];
+	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
-    const uint32_t weightSize = in_rows * out_rows;
-    const uint32_t biasSize = out_rows;
+    const uint32_t weightSize = this->in_rows * this->out_rows;
+    const uint32_t biasSize = this->out_rows;
     FullyConnectedLayer<Dtype>* _targetLayer = (FullyConnectedLayer<Dtype>*)targetLayer;
 
     memcpy(_params[Weight]->mutable_host_grad(), _targetLayer->_params[Weight]->host_grad(),
@@ -333,19 +334,15 @@ void FullyConnectedLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightedData() {
-	const uint32_t batches = this->_inputShape[0][0];
-	const uint32_t in_rows = this->_inputShape[0][2];
-	const uint32_t out_rows = this->_outputData[0]->getShape(2);
+	//const uint32_t batches = this->_inputShape[0][0];
+	//const uint32_t in_rows = this->_inputShape[0][2];
+	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
 	// Apply weight to input data
 	const Dtype* d_weightData = _params[Weight]->device_data();
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	//Dtype* d_preActivationData = _preActivation->mutable_device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
-
-	_params[Weight]->print_data();
-	this->_inputData[0]->print_data();
-	this->_inputData[0]->print_data_flatten();
 
     /**
      * [cublasSgemm() 함수 설명 (from cuBlas User Documentation)]
@@ -375,20 +372,29 @@ void FullyConnectedLayer<Dtype>::_computeWeightedData() {
      * lda,ldb,ldc => leading dimension of two-dimensional array used to store the matrix A,
      *                B, C
      */
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
-			out_rows, batches, in_rows,
-			&Cuda::alpha, d_weightData, out_rows, d_inputData, in_rows,
-			&Cuda::beta, d_outputData, out_rows));
 
-	//_preActivation->print_data();
+	if (this->batches == 1) {
+		soooa_gpu_gemv(CblasNoTrans,
+				this->out_rows, this->in_rows,
+				Cuda::alpha, d_weightData, d_inputData,
+				Cuda::beta, d_outputData);
+
+	} else {
+		soooa_gpu_gemm(CblasNoTrans, CblasTrans,
+				this->batches, this->out_rows, this->in_rows,
+				Cuda::alpha, d_inputData, d_weightData,
+				Cuda::beta, d_outputData);
+	}
+	/*
+	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
+			this->out_rows, this->batches, this->in_rows,
+			&Cuda::alpha, d_weightData, this->out_rows, d_inputData, this->in_rows,
+			&Cuda::beta, d_outputData, this->out_rows));
+			*/
 }
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
-	const uint32_t batches = this->_inputShape[0][0];
-	const uint32_t in_rows = this->_inputShape[0][2];
-	const uint32_t out_rows = this->_outputData[0]->getShape(2);
-
 	// Add bias to weighted input data
 	const Dtype* d_biasData = _params[Bias]->device_data();
 	//Dtype* d_preActivationData = _preActivation->mutable_device_data();
@@ -396,13 +402,24 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 
 	_params[Bias]->print_data();
 
+	if (this->batches == 1) {
+		soooa_gpu_axpy(this->out_rows, 1.0f,  d_biasData, d_outputData);
+	} else {
+		soooa_gpu_gemm(CblasNoTrans, CblasNoTrans,
+				this->batches, this->out_rows,	1,
+				Cuda::alpha, this->d_onevec, d_biasData,
+				Cuda::alpha, d_outputData);
+	}
+
+	/*
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
-			out_rows, batches, 1,
+			this->out_rows, this->batches, 1,
 			&Cuda::alpha,
-			d_biasData, out_rows,
-			d_onevec, 1,
+			d_biasData, this->out_rows,
+			this->d_onevec, 1,
 			&Cuda::alpha,
-			d_outputData, out_rows));
+			d_outputData, this->out_rows));
+			*/
 
 	_params[Bias]->print_data();
 }
@@ -553,38 +570,46 @@ void FullyConnectedLayer<Dtype>::_computePreActivationGrad() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
-	const uint32_t batches = this->_inputShape[0][0];
-	const uint32_t in_rows = this->_inputShape[0][2];
-	const uint32_t out_rows = this->_outputData[0]->getShape(2);
-
 	// d(Cost)/d(Weight)
-	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
 	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_weightGrad = this->_params[Weight]->mutable_device_grad();
 
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T,
-			out_rows, in_rows, batches,
-			&Cuda::alpha, d_outputGrad, out_rows, d_inputData, in_rows,
-			&Cuda::beta, d_weightGrad, out_rows));
+	soooa_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
+			this->out_rows, this->in_rows, this->batches,
+			Cuda::alpha, d_outputGrad, d_inputData,
+			Cuda::alpha, d_weightGrad);
 
+	/*
+	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T,
+			this->out_rows, this->in_rows, this->batches,
+			&Cuda::alpha, d_outputGrad, this->out_rows, d_inputData, this->in_rows,
+			&Cuda::beta, d_weightGrad, this->out_rows));
+			*/
 }
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeBiasGrad() {
-	const uint32_t batches = this->_inputShape[0][0];
-	const uint32_t in_rows = this->_inputShape[0][2];
-	const uint32_t out_rows = this->_outputData[0]->getShape(2);
+	//const uint32_t batches = this->_inputShape[0][0];
+	//const uint32_t in_rows = this->_inputShape[0][2];
+	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
 	// d(Cost)/d(Bias) (same as d_preActivationGrad)
 	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
 	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	Dtype* d_biasGrad = _params[Bias]->mutable_device_grad();
 
+	soooa_gpu_gemv<Dtype>(CblasTrans,
+			this->batches, this->out_rows,
+			Cuda::alpha, d_outputGrad, this->d_onevec,
+			Cuda::alpha, d_biasGrad);
+
+	/*
 	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N,
-			out_rows, batches,
-			&Cuda::alpha, d_outputGrad, out_rows, d_onevec, 1,
+			this->out_rows, this->batches,
+			&Cuda::alpha, d_outputGrad, this->out_rows, this->d_onevec, 1,
 			&Cuda::beta, d_biasGrad, 1));
+			*/
 	_params[Bias]->print_grad("biasGrad:");
 	_params[Weight]->print_data("weightData:");
 	//_preActivation->print_grad("preActivationGrad");
@@ -592,9 +617,9 @@ void FullyConnectedLayer<Dtype>::_computeBiasGrad() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeInputGrad() {
-	const uint32_t batches = this->_inputShape[0][0];
-	const uint32_t in_rows = this->_inputShape[0][2];
-	const uint32_t out_rows = this->_outputData[0]->getShape(2);
+	//const uint32_t batches = this->_inputShape[0][0];
+	//const uint32_t in_rows = this->_inputShape[0][2];
+	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
 	// d(Cost)/d(Input)
 	const Dtype* d_weightData = _params[Weight]->device_data();
@@ -602,10 +627,17 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 
+	soooa_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans,
+			this->batches, this->in_rows, this->out_rows,
+			Cuda::alpha, d_outputGrad, d_weightData,
+			Cuda::beta, d_inputGrad);
+
+	/*
 	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N,
-			in_rows, batches, out_rows,
-			&Cuda::alpha, d_weightData, out_rows, d_outputGrad, out_rows,
-			&Cuda::beta, d_inputGrad, in_rows));
+			this->in_rows, this->batches, this->out_rows,
+			&Cuda::alpha, d_weightData, this->out_rows, d_outputGrad, this->out_rows,
+			&Cuda::beta, d_inputGrad, this->in_rows));
+			*/
 	this->_inputData[0]->print_grad("inputGrad:");
 
 	/*

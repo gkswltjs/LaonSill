@@ -8,13 +8,26 @@
 #ifndef LAYERTESTINTERFACE_H_
 #define LAYERTESTINTERFACE_H_
 
+#include "TestUtil.h"
+
 template <typename Dtype>
 class LayerTestInterface {
 public:
-	void setUp() = 0;
-	void cleanUp() = 0;
-	void forwardTest() = 0;
-	void backwardTest() = 0;
+	LayerTestInterface() {}
+	virtual ~LayerTestInterface() {}
+
+	static void globalSetUp(const int gpuid) {
+		setUpCuda(gpuid);
+	}
+
+	static void globalCleanUp() {
+		cleanUpCuda();
+	}
+
+	virtual void setUp() = 0;
+	virtual void cleanUp() = 0;
+	virtual void forwardTest() = 0;
+	virtual void backwardTest() = 0;
 };
 
 

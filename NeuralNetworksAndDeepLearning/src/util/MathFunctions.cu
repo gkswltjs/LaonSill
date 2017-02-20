@@ -185,3 +185,34 @@ void soooa_gpu_memcpy(const size_t N, const void* X, void* Y) {
 	  checkCudaErrors(cudaMemcpy(Y, X, N, cudaMemcpyDefault));  // NOLINT(caffe/alt_fn)
   }
 }
+
+template<>
+void soooa_gpu_gemm<float>(const CBLAS_TRANSPOSE TransA,
+		const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+		const float alpha, const float* A, const float* B, const float beta, float* C) {
+	// Note that cublas follows fortran order.
+	int lda = (TransA == CblasNoTrans) ? K : M;
+	int ldb = (TransB == CblasNoTrans) ? N : K;
+
+	cublasOperation_t cuTransA =
+	(TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+	cublasOperation_t cuTransB =
+	(TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+
+	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, cuTransB, cuTransA, N, M, K,
+			&alpha, B, ldb, A, lda, &beta, C, N));
+}
+
+template <>
+void soooa_gpu_gemv<float>(const CBLAS_TRANSPOSE TransA, const int M, const int N,
+		const float alpha, const float* A, const float* x, const float beta, float* y) {
+	cublasOperation_t cuTransA =
+			(TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
+	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, cuTransA, N, M, &alpha, A, N, x,
+			1, &beta, y, 1));
+}
+
+
+
+
+

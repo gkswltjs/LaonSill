@@ -21,6 +21,7 @@ DQNOutputLayer<Dtype>::DQNOutputLayer(Builder* builder)
 	initialize();
 }
 
+/*
 template <typename Dtype>
 DQNOutputLayer<Dtype>::DQNOutputLayer(
 		const string name,
@@ -34,6 +35,7 @@ DQNOutputLayer<Dtype>::DQNOutputLayer(
             weight_filler, bias_filler, Cost<Dtype>::DQN) {
 	initialize();
 }
+*/
 
 template <typename Dtype>
 DQNOutputLayer<Dtype>::~DQNOutputLayer() {}

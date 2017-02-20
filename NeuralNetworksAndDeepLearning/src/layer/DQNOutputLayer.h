@@ -89,9 +89,11 @@ public:
 	 * @param weight_filler weight 초기화 관련 파라미터 구조체
 	 * @param bias_filler bias 초기화 관련 파라미터 구조체
 	 */
+	/*
 	DQNOutputLayer(const std::string name, int n_out, double p_dropout,
         update_param weight_update_param, update_param bias_update_param,
         param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler);
+        */
 	virtual ~DQNOutputLayer();
 
 	/**

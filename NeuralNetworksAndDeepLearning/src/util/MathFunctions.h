@@ -9,6 +9,7 @@
 #define SOOOA_MATHFUNCTIONS_H_
 
 #include "common.h"
+#include <cblas.h>
 
 template <typename Dtype>
 void soooa_copy(const int N, const Dtype *X, Dtype *Y);
@@ -21,7 +22,7 @@ void soooa_gpu_set(const int N, const Dtype alpha, Dtype *X);
 
 template <typename Dtype>
 void soooa_gpu_axpy(const uint32_t N, const Dtype alpha, const Dtype* X,
-    Dtype* Y);
+		Dtype* Y);
 
 template <typename Dtype>
 void soooa_gpu_scal(const uint32_t N, const Dtype alpha, Dtype *X);
@@ -51,6 +52,22 @@ void soooa_gpu_asum(const int n, const Dtype* x, Dtype* y);
 
 
 void soooa_gpu_memcpy(const size_t N, const void *X, void *Y);
+
+// Decaf gpu gemm provides an interface that is almost the same as the cpu
+// gemm function - following the c convention and calling the fortran-order
+// gpu code under the hood.
+template <typename Dtype>
+void soooa_gpu_gemm(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const Dtype alpha, const Dtype* A, const Dtype* B, const Dtype beta,
+    Dtype* C);
+
+template <typename Dtype>
+void soooa_gpu_gemv(const CBLAS_TRANSPOSE TransA, const int M, const int N,
+    const Dtype alpha, const Dtype* A, const Dtype* x, const Dtype beta,
+    Dtype* y);
+
+
 
 
 #endif /* SOOOA_MATHFUNCTIONS_H_ */

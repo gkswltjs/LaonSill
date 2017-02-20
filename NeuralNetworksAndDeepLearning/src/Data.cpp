@@ -641,7 +641,8 @@ bool Data<Dtype>::compareData(
 		Data<Dtype>* data,
 		const Dtype error) {
 
-	assert(this->getShape() == data->getShape());
+	//assert(this->getShape() == data->getShape());
+	assert(this->getCount() == data->getCount());
 
 	const uint32_t count = this->getCount();
 	const Dtype* data1Ptr = this->host_data();
