@@ -19,7 +19,7 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer() {
 
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 
 	initialize(builder->_nOut, builder->_pDropout, builder->_axis,
 			builder->_weightUpdateParam, builder->_biasUpdateParam, builder->_weightFiller,
@@ -30,8 +30,6 @@ template <typename Dtype>
 void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axis,
     update_param weight_update_param, update_param bias_update_param,
     param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler) {
-
-	this->tempCnt = 0;
 
 	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
 	//this->out_dim = io_dim(n_out, 1, 1, 1);
@@ -68,11 +66,12 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axi
 	//checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
+/*
 template <typename Dtype>
 double FullyConnectedLayer<Dtype>::sumSquareParamsData() {
 	double result = 0.0;
-	for(uint32_t i = 0; i < _params.size(); i++) {
-		result += _params[i]->sumsq_device_data();
+	for(uint32_t i = 0; i < this->_params.size(); i++) {
+		result += this->_params[i]->sumsq_device_data();
 	}
 	return result;
 }
@@ -87,6 +86,7 @@ double FullyConnectedLayer<Dtype>::sumSquareParamsGrad() {
 	}
 	return result;
 }
+*/
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::scaleParamsGrad(float scale) {
@@ -161,7 +161,7 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer<Dtype>::_load(ifs, layerMap);
+	Layer<Dtype>::_load(ifs, layerMap);
 
 	double p_dropout;
 	ifs.read((char *)&p_dropout, sizeof(double));
@@ -230,7 +230,7 @@ void FullyConnectedLayer<Dtype>::initialize(double p_dropout,
 	this->delta_input.zeros();
 
 	/**
-	 * HiddenLayer에서 activation_fn이 할당되는 곳에서 weight initialize 필요
+	 * Layer에서 activation_fn이 할당되는 곳에서 weight initialize 필요
 	 * 잊어버리기 쉬울 것 같으니 대책이 필요
 	 */
 	this->activation_fn = ActivationFactory::create(activationType);
@@ -239,7 +239,7 @@ void FullyConnectedLayer<Dtype>::initialize(double p_dropout,
 /*
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_save(ofstream &ofs) {
-	HiddenLayer<Dtype>::_save(ofs);
+	Layer<Dtype>::_save(ofs);
 
 	ofs.write((char *)&p_dropout, sizeof(double));
 
@@ -283,7 +283,7 @@ void FullyConnectedLayer<Dtype>::feedforward() {
 }
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer) {
+void FullyConnectedLayer<Dtype>::backpropagation(uint32_t idx, Layer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
 

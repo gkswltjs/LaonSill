@@ -10,7 +10,7 @@
 #define LAYER_FULLYCONNECTEDLAYER_H_
 
 #include "common.h"
-#include "HiddenLayer.h"
+#include "Layer.h"
 #include "LearnableLayer.h"
 #include "LayerConfig.h"
 #include "Activation.h"
@@ -27,14 +27,14 @@
  *          복구해야 한다.
  */
 template <typename Dtype>
-class FullyConnectedLayer : public HiddenLayer<Dtype>, public LearnableLayer<Dtype> {
+class FullyConnectedLayer : public Layer<Dtype>, public LearnableLayer<Dtype> {
 public:
 	/**
 	 * @brief Fully Connected 레이어 객체 빌더
 	 * @details Fully Connected 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
 	 *          해당 파라미터를 만족하는 Fully Connected 레이어 객체를 생성한다.
 	 */
-	class Builder : public HiddenLayer<Dtype>::Builder {
+	class Builder : public Layer<Dtype>::Builder {
 	public:
 		uint32_t _nOut;										///< 출력 노드의 수
 		double _pDropout;									///< dropout을 적용할 확율
@@ -93,23 +93,23 @@ public:
 			return this;
 		}
 		virtual Builder* name(const std::string name) {
-			HiddenLayer<Dtype>::Builder::name(name);
+			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer<Dtype>::Builder::id(id);
+			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			HiddenLayer<Dtype>::Builder::inputs(inputs);
+			Layer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			HiddenLayer<Dtype>::Builder::outputs(outputs);
+			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			Layer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Layer<Dtype>* build() {
@@ -129,11 +129,11 @@ public:
 	//////////////////////////////////////////
 	// Learnable Layer Method
 	//////////////////////////////////////////
-	using HiddenLayer<Dtype>::getName;
+	using Layer<Dtype>::getName;
 	virtual const std::string getName() { return this->name; }
 	virtual void update();
-	virtual double sumSquareParamsData();
-	virtual double sumSquareParamsGrad();
+	//virtual double sumSquareParamsData();
+	//virtual double sumSquareParamsGrad();
 	virtual void scaleParamsGrad(float scale);
 	//virtual double testParamAbnormality();
 	virtual uint32_t boundParams();
@@ -229,15 +229,6 @@ protected:
 
 
 public:
-	//Data<Dtype>* _preActivation;			    ///< weighted sum 결과에 대한 데이터
-    std::vector<Data<Dtype>*> _params;			///< 파라미터 데이터 (Weight, Bias 포함)
-    std::vector<bool> _paramsInitialized;
-
-    std::vector<Data<Dtype>*> _paramsHistory;	///< 이전 update에서 적용된 파라미터 
-                                                /// 그레디언트 데이터
-
-    uint32_t tempCnt;
-
     uint32_t batches;
     uint32_t in_rows;
     uint32_t out_rows;

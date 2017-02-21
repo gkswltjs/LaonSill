@@ -65,7 +65,12 @@ void Layer<Dtype>::reshape() {}
 
 template <typename Dtype>
 void Layer<Dtype>::feedforward() {
-	_outputData[0]->set_device_data(_inputData[0]);
+	this->_outputData[0]->set_device_data(this->_inputData[0]);
+}
+
+template <typename Dtype>
+void Layer<Dtype>::backpropagation() {
+	this->_inputData[0]->set_device_grad(this->_outputData[0]);
 }
 
 template <typename Dtype>

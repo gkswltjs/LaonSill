@@ -19,8 +19,8 @@ using namespace std;
 template <typename Dtype>
 class FullyConnectedLayerTest : public LayerTestInterface<Dtype> {
 public:
-	FullyConnectedLayerTest(int gpuid, typename FullyConnectedLayer<Dtype>::Builder* builder)
-	: gpuid(gpuid), builder(builder), layer(0) {	}
+	FullyConnectedLayerTest(typename FullyConnectedLayer<Dtype>::Builder* builder)
+	: builder(builder), layer(0) {	}
 
 	virtual ~FullyConnectedLayerTest() {
 		if (this->layer)
@@ -63,16 +63,30 @@ public:
 
 		this->layer->feedforward();
 
-		compareData(this->nameDataMap, this->layer->name + SIG_TOP, this->layer->_outputData,
-				0);
+		// 아마 outputData에서의 일치가 params의 일치를 보장할 듯.
+		// params data에 대한 compare는 불필요해 보임.
+		compareData(this->nameDataMap, this->layer->name + SIG_PARAMS,
+				this->layer->_params, 0);
+
+		compareData(this->nameDataMap, this->layer->name + SIG_TOP,
+				this->layer->_outputData, 0);
+
 	}
 
 	virtual void backwardTest() {
-		fillData(this->nameDataMap, this->layer->name + SIG_BOTTOM, this->layer->_inputData);
-		fillData(this->nameDataMap, this->layer->name + SIG_TOP, this->layer->_outputData);
-		fillParam(this->nameDataMap, this->layer->name + SIG_PARAMS, this->layer->_params);
+		fillData(this->nameDataMap, this->layer->name + SIG_BOTTOM,
+				this->layer->_inputData);
+		fillData(this->nameDataMap, this->layer->name + SIG_TOP,
+				this->layer->_outputData);
+		fillParam(this->nameDataMap, this->layer->name + SIG_PARAMS,
+				this->layer->_params);
 
 		this->layer->backpropagation();
+
+		// 아마 inputData grad에 대한 일치가 params의 grad 일치를 보장하지 않을 듯.
+		// params grad에 대한 compare가 필요해 보임.
+		compareData(this->nameDataMap, this->layer->name + SIG_PARAMS,
+				this->layer->_params, 1);
 
 		compareData(this->nameDataMap, this->layer->name + SIG_BOTTOM,
 				this->layer->_inputData, 1);
@@ -80,7 +94,6 @@ public:
 
 
 private:
-	const int gpuid;
 	typename FullyConnectedLayer<Dtype>::Builder* builder;
 	FullyConnectedLayer<Dtype>* layer;
 

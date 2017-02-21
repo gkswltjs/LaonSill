@@ -212,6 +212,7 @@ public:
 	 * @param end feedforward 종료 레이어 이름, 0인 경우 계속 진행
 	 */
 	virtual void feedforward();
+	virtual void backpropagation();
 #endif
 
 protected:

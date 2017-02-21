@@ -10,7 +10,7 @@
 #define LAYER_LRNLAYER_H_
 
 #include "common.h"
-#include "HiddenLayer.h"
+#include "Layer.h"
 #include "LayerConfig.h"
 #include "Exception.h"
 
@@ -24,14 +24,14 @@
  *          Normalization (LRN) 항목 참고 (1+(α/n)∑ixi^2)^β의 수식으로 계산
  */
 template <typename Dtype>
-class LRNLayer : public HiddenLayer<Dtype> {
+class LRNLayer : public Layer<Dtype> {
 public:
 	/**
 	 * @brief LRN 레이어 객체 빌더
 	 * @details LRN 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
 	 *          해당 파라미터를 만족하는 LRN 레이어 객체를 생성한다.
 	 */
-	class Builder : public HiddenLayer<Dtype>::Builder {
+	class Builder : public Layer<Dtype>::Builder {
 	public:
 		lrn_dim _lrnDim;
 		Builder() {
@@ -45,23 +45,23 @@ public:
 			return this;
 		}
 		virtual Builder* name(const std::string name) {
-			HiddenLayer<Dtype>::Builder::name(name);
+			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer<Dtype>::Builder::id(id);
+			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			HiddenLayer<Dtype>::Builder::inputs(inputs);
+			Layer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			HiddenLayer<Dtype>::Builder::outputs(outputs);
+			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			Layer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Layer<Dtype>* build() {

@@ -11,7 +11,7 @@
 #define LAYER_POOLINGLAYER_H_
 
 #include "common.h"
-#include "HiddenLayer.h"
+#include "Layer.h"
 #include "Pooling.h"
 #include "PoolingFactory.h"
 #include "Exception.h"
@@ -24,14 +24,14 @@
  *          Non padding을 기본으로 하고 있다.
  */
 template <typename Dtype>
-class PoolingLayer : public HiddenLayer<Dtype> {
+class PoolingLayer : public Layer<Dtype> {
 public:
 	/**
 	 * @brief 풀링 레이어 객체 빌더
 	 * @details 풀링 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
 	 *          해당 파라미터를 만족하는 풀링 레이어 객체를 생성한다.
 	 */
-	class Builder : public HiddenLayer<Dtype>::Builder {
+	class Builder : public Layer<Dtype>::Builder {
 	public:
 		pool_dim _poolDim;								///< 풀링 파라미터
 		typename Pooling<Dtype>::Type _poolingType;		///< 풀링 타입
@@ -56,23 +56,23 @@ public:
 			return this;
 		}
 		virtual Builder* name(const std::string name) {
-			HiddenLayer<Dtype>::Builder::name(name);
+			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer<Dtype>::Builder::id(id);
+			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			HiddenLayer<Dtype>::Builder::inputs(inputs);
+			Layer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			HiddenLayer<Dtype>::Builder::outputs(outputs);
+			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			Layer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Layer<Dtype>* build() {

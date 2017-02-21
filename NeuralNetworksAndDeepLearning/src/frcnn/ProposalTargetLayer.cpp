@@ -17,13 +17,13 @@ using namespace std;
 
 template <typename Dtype>
 ProposalTargetLayer<Dtype>::ProposalTargetLayer()
-	: HiddenLayer<Dtype>() {
+	: Layer<Dtype>() {
 	initialize();
 }
 
 template <typename Dtype>
 ProposalTargetLayer<Dtype>::ProposalTargetLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	this->numClasses = builder->_numClasses;
 	initialize();
 }

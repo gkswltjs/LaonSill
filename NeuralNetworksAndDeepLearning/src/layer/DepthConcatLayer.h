@@ -10,7 +10,7 @@
 #define LAYER_DEPTHCONCATLAYER_H_
 
 #include "common.h"
-#include "HiddenLayer.h"
+#include "Layer.h"
 #include "Exception.h"
 
 
@@ -26,7 +26,7 @@
  *                  batch1-2(channel1-2-1/channel1-2-2)/batch2-2(channel2-2-1/channel2-2-2)
  */
 template <typename Dtype>
-class DepthConcatLayer : public HiddenLayer<Dtype> {
+class DepthConcatLayer : public Layer<Dtype> {
 public:
 	/**
 	 * @brief Depth Concatenation 레이어 객체 빌더
@@ -34,29 +34,29 @@ public:
      *                              통해 해당 파라미터를 만족하는 Depth Concatenation 레이어
      *                              객체를 생성한다.
 	 */
-	class Builder : public HiddenLayer<Dtype>::Builder {
+	class Builder : public Layer<Dtype>::Builder {
 	public:
 		Builder() {
 			this->type = Layer<Dtype>::DepthConcat;
 		}
 		virtual Builder* name(const std::string name) {
-			HiddenLayer<Dtype>::Builder::name(name);
+			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer<Dtype>::Builder::id(id);
+			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			HiddenLayer<Dtype>::Builder::inputs(inputs);
+			Layer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			HiddenLayer<Dtype>::Builder::outputs(outputs);
+			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			Layer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Layer<Dtype>* build() {

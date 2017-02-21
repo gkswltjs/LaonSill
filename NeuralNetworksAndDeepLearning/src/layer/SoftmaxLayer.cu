@@ -20,13 +20,13 @@ using namespace std;
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer()
-	: HiddenLayer<Dtype>() {
+	: Layer<Dtype>() {
 	initialize();
 }
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	this->softmaxAxis = builder->_softmaxAxis;
 
 	initialize();
@@ -221,13 +221,13 @@ __global__ void kernel_channel_dot(const int num, const int channels,
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer()
-	: HiddenLayer<Dtype>() {
+	: Layer<Dtype>() {
 	initialize();
 }
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	this->softmaxAxis = builder->_softmaxAxis;
 
 	initialize();

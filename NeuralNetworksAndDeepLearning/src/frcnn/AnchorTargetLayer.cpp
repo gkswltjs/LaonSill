@@ -21,7 +21,7 @@ AnchorTargetLayer<Dtype>::AnchorTargetLayer() {}
 
 template <typename Dtype>
 AnchorTargetLayer<Dtype>::AnchorTargetLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 
 	this->featStride = builder->_featStride;
 	this->allowedBorder = builder->_allowedBorder;

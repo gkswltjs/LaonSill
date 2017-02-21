@@ -20,9 +20,11 @@ template <typename Dtype>
 uint32_t Data<Dtype>::printConfig = 0;
 
 
+/*
 template <typename Dtype>
 Data<Dtype>::Data(const bool hostOnly)
 : Data("", hostOnly) {}
+*/
 
 template <typename Dtype>
 Data<Dtype>::Data(const string& name, const bool hostOnly) {
@@ -167,7 +169,10 @@ Dtype* Data<Dtype>::mutable_host_data() {
 
 template <typename Dtype>
 Dtype* Data<Dtype>::mutable_device_data() {
-	assert(!this->_hostOnly);
+	//assert(!this->_hostOnly);
+	if (this->_hostOnly) {
+		assert(!this->_hostOnly);
+	}
 	return _data->mutable_device_mem();
 }
 
@@ -214,7 +219,8 @@ void Data<Dtype>::set(Data<Dtype>* data, bool reshape) {
 	assert(_shape == data->getShape());
 
 	this->set_host_data(data);
-	this->set_host_grad(data);
+	if (!this->_hostOnly)
+		this->set_host_grad(data);
 }
 
 

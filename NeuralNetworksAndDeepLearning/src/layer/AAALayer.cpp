@@ -21,13 +21,13 @@ AAALayer<Dtype>::AAALayer() {
 
 template <typename Dtype>
 AAALayer<Dtype>::AAALayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	initialize(builder->_var1, builder->_var2);
 }
 
 template <typename Dtype>
 AAALayer<Dtype>::AAALayer(
-    const string name, int var1, double var2) : HiddenLayer<Dtype>(name) {
+    const string name, int var1, double var2) : Layer<Dtype>(name) {
 	initialize(var1, var2);
 }
 
@@ -84,7 +84,7 @@ void AAALayer<Dtype>::feedforward() {
 }
 
 template <typename Dtype>
-void AAALayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer) {
+void AAALayer<Dtype>::backpropagation(uint32_t idx, Layer *next_layer) {
 }
 
 #endif

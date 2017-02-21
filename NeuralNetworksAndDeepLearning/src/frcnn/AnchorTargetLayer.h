@@ -12,7 +12,7 @@
 
 
 #include "common.h"
-#include "HiddenLayer.h"
+#include "Layer.h"
 
 
 /**
@@ -21,9 +21,9 @@
  * 실제 input data에 대한 cls score, bbox pred를 계산, loss를 계산할 때 쓸 데이터를 생성한다.
  */
 template <typename Dtype>
-class AnchorTargetLayer : public HiddenLayer<Dtype> {
+class AnchorTargetLayer : public Layer<Dtype> {
 public:
-	class Builder : public HiddenLayer<Dtype>::Builder {
+	class Builder : public Layer<Dtype>::Builder {
 	public:
 		uint32_t _featStride;
 		uint32_t _allowedBorder;
@@ -36,23 +36,23 @@ public:
 			this->_scales = {8, 16, 32};
 		}
 		virtual Builder* name(const std::string name) {
-			HiddenLayer<Dtype>::Builder::name(name);
+			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer<Dtype>::Builder::id(id);
+			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			HiddenLayer<Dtype>::Builder::inputs(inputs);
+			Layer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			HiddenLayer<Dtype>::Builder::outputs(outputs);
+			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			Layer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		virtual Builder* featStride(const uint32_t featStride) {

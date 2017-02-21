@@ -16,13 +16,13 @@
 
 template <typename Dtype>
 RoIPoolingLayer<Dtype>::RoIPoolingLayer()
-	: HiddenLayer<Dtype>() {
+	: Layer<Dtype>() {
 	initialize();
 }
 
 template <typename Dtype>
 RoIPoolingLayer<Dtype>::RoIPoolingLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	this->pooledW = builder->_pooledW;
 	this->pooledH = builder->_pooledH;
 	this->spatialScale = builder->_spatialScale;
@@ -153,20 +153,6 @@ void RoIPoolingLayer<Dtype>::feedforward() {
 	      this->pooledH, this->pooledW, inputRois, outputData, argmaxData);
 
 	CUDA_POST_KERNEL_CHECK;
-
-
-	/*
-	//if (++tempCnt == 100) {
-		Data<Dtype>::printConfig = true;
-		this->_outputData[0]->print_data({}, false);
-		Data<Dtype>::printConfig = false;
-
-		//exit(1);
-	//}
-	 */
-
-
-
 }
 
 
@@ -285,11 +271,6 @@ void RoIPoolingLayer<Dtype>::initialize() {
 			"pooledH must be > 0");
 
 	this->maxIdx = new Data<int>("maxIdx");
-
-
-
-
-	this->tempCnt = 0;
 }
 
 template class RoIPoolingLayer<float>;

@@ -20,7 +20,7 @@ ConvLayer<Dtype>::ConvLayer() {
 
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(Builder* builder)
-: HiddenLayer<Dtype>(builder) {
+: Layer<Dtype>(builder) {
 	initialize(builder->_filterDim, builder->_weightUpdateParam, builder->_biasUpdateParam,
 			builder->_weightFiller, builder->_biasFiller);
 }
@@ -29,11 +29,12 @@ template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
     update_param weight_update_param, update_param bias_update_param,
     param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler)
-    : HiddenLayer<Dtype>(name) {
+    : Layer<Dtype>(name) {
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler,
                bias_filler);
 }
 
+/*
 template <typename Dtype>
 double ConvLayer<Dtype>::sumSquareParamsData() {
 	double result = 0.0;
@@ -47,23 +48,11 @@ template <typename Dtype>
 double ConvLayer<Dtype>::sumSquareParamsGrad() {
 	double result = 0.0;
 	for(uint32_t i = 0; i < this->_params.size(); i++) {
-		double temp = this->_params[i]->sumsq_device_grad();
-		//temp /= _params[i]->getCount();
-		//float temp = this->_params[i]->sumsq_device_grad();
-		/*
-		if(isnan(temp) || isinff(temp) || (temp < 0.0000000001f && temp > -0.0000000001f)) {
-			//if(this->name =="inception_3a/conv5x5reduce") {
-				cout << "sumsq error .. " << endl;
-				Data<Dtype>::printConfig = 1;
-				this->_params[i]->print_grad(this->name+" sumsq params grad:");
-				Data<Dtype>::printConfig = 0;
-				exit(1);
-			//}
-		}*/
-		result += temp;
+		result += this->_params[i]->sumsq_device_grad();
 	}
 	return result;
 }
+*/
 
 template <typename Dtype>
 void ConvLayer<Dtype>::scaleParamsGrad(float scale) {
@@ -130,7 +119,6 @@ void ConvLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
 
 		this->_params[i]->reshapeLike(it->second);
 		this->_params[i]->set_device_with_host_data(it->second->host_data());
-		//this->_paramsInitialized[i] = true;
 	}
 }
 
@@ -162,7 +150,7 @@ ConvLayer<Dtype>::~ConvLayer() {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
-	HiddenLayer<Dtype>::_load(ifs, layerMap);
+	Layer<Dtype>::_load(ifs, layerMap);
 
 	filter_dim filter_d;
 	ifs.read((char *)&filter_d, sizeof(filter_dim));
@@ -295,7 +283,7 @@ void ConvLayer<Dtype>::feedforward() {
 }
 
 template <typename Dtype>
-void ConvLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer) {
+void ConvLayer<Dtype>::backpropagation(uint32_t idx, Layer *next_layer) {
 	// 여러 source로부터 delta값이 모두 모이면 dw, dx 계산
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 

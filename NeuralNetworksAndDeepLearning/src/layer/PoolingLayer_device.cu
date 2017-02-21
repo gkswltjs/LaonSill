@@ -82,7 +82,7 @@ void PoolingLayer<Dtype>::reshape() {
 	checkCUDNN(cudnnDestroyTensorDescriptor(tempInputTensorDesc));
 
 	if(recursive) {
-		HiddenLayer<Dtype>::_shape();
+		Layer<Dtype>::_shape();
 	}
 	*/
 }

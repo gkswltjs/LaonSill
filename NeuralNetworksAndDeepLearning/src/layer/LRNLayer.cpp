@@ -16,12 +16,12 @@ LRNLayer<Dtype>::LRNLayer() {
 }
 
 template <typename Dtype>
-LRNLayer<Dtype>::LRNLayer(Builder* builder) : HiddenLayer<Dtype>(builder) {
+LRNLayer<Dtype>::LRNLayer(Builder* builder) : Layer<Dtype>(builder) {
 	initialize(builder->_lrnDim);
 }
 
 template <typename Dtype>
-LRNLayer<Dtype>::LRNLayer(const string name, lrn_dim lrn_d) : HiddenLayer<Dtype>(name) {
+LRNLayer<Dtype>::LRNLayer(const string name, lrn_dim lrn_d) : Layer<Dtype>(name) {
 	initialize(lrn_d);
 }
 
@@ -58,7 +58,7 @@ void LRNLayer<Dtype>::reshape() {
 	this->out_dim = this->in_dim;
 
 	if(recursive) {
-		HiddenLayer<Dtype>::_shape();
+		Layer<Dtype>::_shape();
 	}
 	*/
 }
@@ -103,7 +103,7 @@ void LRNLayer<Dtype>::feedforward() {
 	propFeedforward(this->output, end);
 }
 
-void LRNLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer) {
+void LRNLayer<Dtype>::backpropagation(uint32_t idx, Layer *next_layer) {
 	if(!isLastNextLayerRequest(idx)) throw Exception();
 
 	uint32_t i, j;

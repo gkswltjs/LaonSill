@@ -110,9 +110,6 @@ private:
 	bool hasWeights;
 	float sigma2;
 	uint32_t firstAxis;
-
-
-	uint32_t tempCnt;
 };
 
 #endif /* SMOOTHL1LOSSLAYER_H_ */

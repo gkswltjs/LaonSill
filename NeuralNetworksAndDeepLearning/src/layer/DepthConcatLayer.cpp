@@ -18,13 +18,13 @@ DepthConcatLayer<Dtype>::DepthConcatLayer() {
 
 template <typename Dtype>
 DepthConcatLayer<Dtype>::DepthConcatLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	initialize();
 }
 
 template <typename Dtype>
 DepthConcatLayer<Dtype>::DepthConcatLayer(const string name)
-	: HiddenLayer<Dtype>(name) {
+	: Layer<Dtype>(name) {
 	initialize();
 }
 
@@ -152,7 +152,7 @@ void DepthConcatLayer<Dtype>::feedforward(uint32_t idx, const rcube &input,
 }
 
 template <typename Dtype>
-void DepthConcatLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer<Dtype>* next_layer) {
+void DepthConcatLayer<Dtype>::backpropagation(uint32_t idx, Layer<Dtype>* next_layer) {
 	Util::printCube(delta_input, "delta_input:");
 	rcube w_next_delta(size(delta_input));
 	Util::convertCube(next_layer->getDeltaInput(), delta_input);

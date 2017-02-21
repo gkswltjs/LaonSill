@@ -22,7 +22,7 @@ ReshapeLayer<Dtype>::ReshapeLayer() {}
 
 template <typename Dtype>
 ReshapeLayer<Dtype>::ReshapeLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	this->shape = builder->_shape;
 	this->axis = builder->_axis;
 	this->numAxes = builder->_numAxes;

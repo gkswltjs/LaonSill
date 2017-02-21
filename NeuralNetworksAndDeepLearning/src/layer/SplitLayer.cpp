@@ -15,13 +15,13 @@ using namespace std;
 
 template <typename Dtype>
 SplitLayer<Dtype>::SplitLayer(const std::string& name)
-	: HiddenLayer<Dtype>(name) {
+	: Layer<Dtype>(name) {
 
 }
 
 template <typename Dtype>
 SplitLayer<Dtype>::SplitLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	initialize();
 }
 
@@ -79,7 +79,7 @@ void SplitLayer<Dtype>::reshape() {
 	}
 
 	if(recursive) {
-		HiddenLayer<Dtype>::_shape();
+		Layer<Dtype>::_shape();
 	}
 	*/
 }

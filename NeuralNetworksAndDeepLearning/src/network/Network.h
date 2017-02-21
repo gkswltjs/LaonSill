@@ -16,7 +16,6 @@
 #include "Layer.h"
 #include "InputLayer.h"
 #include "ALEInputLayer.h"
-#include "HiddenLayer.h"
 #include "LayerConfig.h"
 #include "Evaluation.h"
 #include "Worker.h"

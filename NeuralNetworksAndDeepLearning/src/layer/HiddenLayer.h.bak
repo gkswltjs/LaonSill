@@ -27,8 +27,6 @@ public:
 	 */
 	class Builder : public Layer<Dtype>::Builder {
 	public:
-        std::vector<uint32_t> _prevLayerIndices;
-
 		Builder() {}
 		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);

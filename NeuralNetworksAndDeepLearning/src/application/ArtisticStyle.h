@@ -64,7 +64,7 @@ public:
 	void createGramMatrixFromData(Data<Dtype>* data, SyncMem<Dtype>* Fl,
 			SyncMem<Dtype>* gramMatrix);
 
-	HiddenLayer<Dtype>* findRepresentationLayer(const std::string& layerName);
+	Layer<Dtype>* findRepresentationLayer(const std::string& layerName);
 
 	void flattenData(Data<Dtype>* data, const uint32_t height, const uint32_t width,
 			SyncMem<Dtype>* mem);

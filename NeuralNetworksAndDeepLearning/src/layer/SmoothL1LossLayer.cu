@@ -328,11 +328,6 @@ void SmoothL1LossLayer<Dtype>::initialize() {
 	diff = new Data<Dtype>("diff");
 	errors = new Data<Dtype>("errors");
 	ones = new Data<Dtype>("ones");
-
-
-
-
-	tempCnt = 0;
 }
 
 template class SmoothL1LossLayer<float>;

@@ -16,13 +16,13 @@ PoolingLayer<Dtype>::PoolingLayer() {
 
 template <typename Dtype>
 PoolingLayer<Dtype>::PoolingLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	initialize(builder->_poolDim, builder->_poolingType);
 }
 
 template <typename Dtype>
 PoolingLayer<Dtype>::PoolingLayer(const string name, pool_dim pool_d,
-    typename Pooling<Dtype>::Type poolingType) : HiddenLayer<Dtype>(name) {
+    typename Pooling<Dtype>::Type poolingType) : Layer<Dtype>(name) {
 	initialize(pool_d, poolingType);
 }
 
@@ -78,7 +78,7 @@ void PoolingLayer<Dtype>::feedforward(uint32_t idx, const rcube &input, const ch
 }
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer) {
+void PoolingLayer<Dtype>::backpropagation(uint32_t idx, Layer *next_layer) {
 	// TODO w_next_delta를 모두 합하여 한 번에 d_pool하는 것이 연산적으로 유리, 수정 필요
 	rcube w_next_delta(size(output));
 

@@ -24,7 +24,7 @@
 template <typename Dtype>
 class Data {
 public:
-	Data(const bool hostOnly=false);
+	//Data(const bool hostOnly=false);
 	Data(const std::string& name, const bool hostOnly=false);
 	Data(Data<Dtype>* data, const bool hostOnly=false);
 	Data(const std::string& name, Data<Dtype>* data, uint32_t type,

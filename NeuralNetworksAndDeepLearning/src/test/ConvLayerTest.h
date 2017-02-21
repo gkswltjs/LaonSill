@@ -18,8 +18,8 @@ using namespace std;
 template <typename Dtype>
 class ConvLayerTest : public LayerTestInterface<Dtype> {
 public:
-	ConvLayerTest(int gpuid, typename ConvLayer<Dtype>::Builder* builder)
-	: gpuid(gpuid), builder(builder), layer(0) {
+	ConvLayerTest(typename ConvLayer<Dtype>::Builder* builder)
+	: builder(builder), layer(0) {
 
 	}
 
@@ -76,7 +76,6 @@ public:
 
 
 private:
-	const int gpuid;
 	typename ConvLayer<Dtype>::Builder* builder;
 	ConvLayer<Dtype>* layer;
 

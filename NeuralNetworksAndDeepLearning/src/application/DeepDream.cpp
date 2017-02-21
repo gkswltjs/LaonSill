@@ -157,13 +157,13 @@ void DeepDream::make_step(CImg<DATATYPE>& src, DATATYPE *d_src, const char *end,
 	checkCudaErrors(cudaMemcpyAsync(d_src, p_src, sizeof(DATATYPE)*src.size(), cudaMemcpyHostToDevice));
 
 	network->feedforward(d_src, end);
-	HiddenLayer* dst = dynamic_cast<HiddenLayer*>(network->findLayer(end));
+	Layer* dst = dynamic_cast<Layer*>(network->findLayer(end));
 	if(!dst) {
 		cout << "could not find layer of name " << end << " ... " << endl;
 		exit(-1);
 	}
 	/*
-	HiddenLayer* dst_nextLayer = dynamic_cast<HiddenLayer*>(dst->getNextLayers()[0]);
+	Layer* dst_nextLayer = dynamic_cast<Layer*>(dst->getNextLayers()[0]);
 	if(!dst_nextLayer) {
 		cout << "could not find next layer ... " << endl;
 		exit(-1);
@@ -172,7 +172,7 @@ void DeepDream::make_step(CImg<DATATYPE>& src, DATATYPE *d_src, const char *end,
 	dst_nextLayer->setDeltaInput(dst->getOutput());
 	*/
 	dst->backpropagation(0, dst->getOutput());
-	HiddenLayer* firstHiddenLayer = dynamic_cast<HiddenLayer*>(network->getInputLayer()->getNextLayers()[0]);
+	Layer* firstHiddenLayer = dynamic_cast<Layer*>(network->getInputLayer()->getNextLayers()[0]);
 	if(!firstHiddenLayer) {
 		cout << "cout not find first hidden layer ... " << endl;
 		exit(-1);

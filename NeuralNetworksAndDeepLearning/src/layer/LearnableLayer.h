@@ -33,12 +33,27 @@ public:
 	 * @details 파라미터들의 제곱의 합을 구한다.
 	 * @return 파라미터들의 제곱의 합
 	 */
-	virtual double sumSquareParamsData() = 0;
+	virtual double sumSquareParamsData() {
+		double result = 0.0;
+		for(uint32_t i = 0; i < this->_params.size(); i++) {
+			result += this->_params[i]->sumsq_device_data();
+		}
+		return result;
+	}
+
 	/**
 	 * @details 파라미터 그레디언트들의 제곱의 합을 구한다.
 	 * @return 파라미터 그레디언트들의 제곱의 합
 	 */
-	virtual double sumSquareParamsGrad() = 0;
+	virtual double sumSquareParamsGrad() {
+		double result = 0.0;
+		for(uint32_t i = 0; i < this->_params.size(); i++) {
+			result += this->_params[i]->sumsq_device_grad();
+		}
+		return result;
+	}
+
+
 	/**
 	 * @details 파라미터 그레디언트를 스케일링한다.
 	 * @param 파라미터 그레디언트를 스케일링할 스케일 값
@@ -88,6 +103,12 @@ protected:
             &negativeOne, d_paramHistoryData, 1, d_paramData, 1));	// update
 		*/
 	}
+
+
+public:
+	std::vector<Data<Dtype>*> _params;
+	std::vector<Data<Dtype>*> _paramsHistory;
+	std::vector<bool> _paramsInitialized;
 };
 
 #endif /* LEARNABLELAYER_H_ */

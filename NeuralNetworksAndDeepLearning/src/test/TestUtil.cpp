@@ -52,7 +52,7 @@ void buildNameDataMapFromNpzFile(const string& npz_path, const string& layer_nam
 
 		Data<float>* data = retrieveValueFromMap(nameDataMap, data_key);
 		if (!data) {
-			data = new Data<float>(data_key);
+			data = new Data<float>(data_key, false);
 			const vector<uint32_t> shape = getShape(data_key, npyArray);
 			data->reshape(shape);
 			nameDataMap[data_key] = data;
@@ -96,9 +96,13 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 				shape[i] = 1;
 		}
 	} else if (tokens[1] == "bottom" || tokens[1] == "top") {
-		assert(shapeSize == 2 || shapeSize == 4);
-
-		if (shapeSize == 2) {
+		assert(shapeSize == 1 || shapeSize == 2 || shapeSize == 4);
+		if (shapeSize == 1) {
+			shape[0] = npyArray.shape[0];
+			shape[1] = 1;
+			shape[2] = 1;
+			shape[3] = 1;
+		} else if (shapeSize == 2) {
 			shape[0] = npyArray.shape[0];
 			shape[1] = 1;
 			shape[2] = npyArray.shape[1];
@@ -138,6 +142,21 @@ S* retrieveValueFromMap(map<T, S*>& dict, const T& key) {
 		return 0;
 	} else
 		return itr->second;
+}
+
+template <typename T, typename S>
+void cleanUpMap(map<T, S*>& dict) {
+	typename map<T, S*>::iterator itr;
+	for (itr = dict.begin(); itr != dict.end(); itr++) {
+		if (itr->second)
+			delete itr->second;
+	}
+}
+
+template <typename T>
+void cleanUpObject(T* obj) {
+	if (obj)
+		delete obj;
 }
 
 
@@ -251,9 +270,9 @@ void compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 		printConfigOff();
 
 		if (compareType == 0)
-			assert(targetData->compareData(data));
+			assert(targetData->compareData(data, COMPARE_ERROR));
 		else
-			assert(targetData->compareGrad(data));
+			assert(targetData->compareGrad(data, COMPARE_ERROR));
 	}
 }
 

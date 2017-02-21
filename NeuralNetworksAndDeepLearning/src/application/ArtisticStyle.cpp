@@ -268,8 +268,8 @@ void ArtisticStyle<Dtype>::style() {
 
 		feedforwardWithData(this->xdata);
 		for (int i = layersConfig->_layers.size()-1; i > 0; i--) {
-			HiddenLayer<Dtype>* repLayer =
-					dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[i]);
+			Layer<Dtype>* repLayer =
+					dynamic_cast<Layer<Dtype>*>(layersConfig->_layers[i]);
 			assert(repLayer);
 
 			int repLayerIndex = -1;
@@ -547,7 +547,7 @@ double ArtisticStyle<Dtype>::computeContentLossGradientAt(const int contentLayer
 	const string& contentRepLayerName = this->contentRepLayers[contentLayerIndex];
 
 	// index에 해당하는 content representation layer
-	HiddenLayer<Dtype>* contentRepLayer = findRepresentationLayer(contentRepLayerName);
+	Layer<Dtype>* contentRepLayer = findRepresentationLayer(contentRepLayerName);
 	//cout << "compute content loss gradient at " << contentLayerIndex << ", " <<
 	//		contentRepLayer->name << endl;
 
@@ -599,7 +599,7 @@ template <typename Dtype>
 double ArtisticStyle<Dtype>::computeStyleLossGradientAt(const int styleLayerIndex) {
 	const string& styleRepLayerName = this->styleRepLayers[styleLayerIndex];
 
-	HiddenLayer<Dtype>* styleRepLayer = findRepresentationLayer(styleRepLayerName);
+	Layer<Dtype>* styleRepLayer = findRepresentationLayer(styleRepLayerName);
 	assert(styleRepLayer);
 
 	const uint32_t nl = styleRepLayer->_outputData[0]->channels();
@@ -722,9 +722,9 @@ void ArtisticStyle<Dtype>::createGramMatrixFromData(Data<Dtype>* data,
 
 
 template <typename Dtype>
-HiddenLayer<Dtype>* ArtisticStyle<Dtype>::findRepresentationLayer(const string& layerName) {
-	HiddenLayer<Dtype>* repLayer =
-			dynamic_cast<HiddenLayer<Dtype>*>(network->findLayer(layerName));
+Layer<Dtype>* ArtisticStyle<Dtype>::findRepresentationLayer(const string& layerName) {
+	Layer<Dtype>* repLayer =
+			dynamic_cast<Layer<Dtype>*>(network->findLayer(layerName));
 	if(!repLayer) {
 		cout << layerName << " specified representation layer is not hidden layer ... " <<
 				endl;

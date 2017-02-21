@@ -22,13 +22,13 @@ BatchNormLayer<Dtype>::BatchNormLayer() {
 
 template <typename Dtype>
 BatchNormLayer<Dtype>::BatchNormLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	initialize(builder->_kernelMapCount, builder->_epsilon);
 }
 
 template <typename Dtype>
 BatchNormLayer<Dtype>::BatchNormLayer(const string name, int kernelMapCount,
-    double epsilon) : HiddenLayer<Dtype>(name) {
+    double epsilon) : Layer<Dtype>(name) {
 	initialize(kernelMapCount, epsilon);
 }
 
@@ -113,7 +113,7 @@ void BatchNormLayer<Dtype>::feedforward() {
 }
 
 template <typename Dtype>
-void BatchNormLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_layer) {
+void BatchNormLayer<Dtype>::backpropagation(uint32_t idx, Layer *next_layer) {
     // TODO:
 }
 

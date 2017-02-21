@@ -3173,13 +3173,16 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->inputs({"relu5_4"})
 					->outputs({"pool5"}))
 
+
 			// classifier
+					/*
 			->layer((new typename ReshapeLayer<Dtype>::Builder())
 					->id(38)
 					->name("pool5_reshape")
 					->shape({0, 1, -1, 1})
 					->inputs({"pool5"})
 					->outputs({"pool5_reshape"}))
+					*/
 
 			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
 					->id(39)
@@ -3190,7 +3193,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
 					->biasFiller(ParamFillerType::Constant, bias_const)
-					->inputs({"pool5_reshape"})
+					->inputs({"pool5"})
 					->outputs({"fc6"}))
 
 			->layer((new typename ReluLayer<Dtype>::Builder())

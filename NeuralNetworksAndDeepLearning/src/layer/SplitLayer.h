@@ -10,12 +10,12 @@
 
 
 
-#include "HiddenLayer.h"
+#include "Layer.h"
 
 template <typename Dtype>
-class SplitLayer : public HiddenLayer<Dtype> {
+class SplitLayer : public Layer<Dtype> {
 public:
-	class Builder : public HiddenLayer<Dtype>::Builder {
+	class Builder : public Layer<Dtype>::Builder {
 	public:
 		Builder() {
 			this->type = Layer<Dtype>::Split;
@@ -37,7 +37,7 @@ public:
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			Layer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Layer<Dtype>* build() {

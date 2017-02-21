@@ -11,7 +11,7 @@ using namespace std;
 
 template <typename Dtype>
 ReluLayer<Dtype>::ReluLayer(Builder* builder)
-: HiddenLayer<Dtype>(builder) {
+: Layer<Dtype>(builder) {
 	initialize();
 }
 

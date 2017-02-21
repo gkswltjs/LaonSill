@@ -24,6 +24,8 @@ const std::string SIG_PARAMS = "_params_";
 
 const std::string NPZ_PATH = "/home/jkim/Dev/data/numpy_array/";
 
+const float COMPARE_ERROR = 0.00001;
+
 
 // cuda device 설정
 // cublas, cudnn handle 생성
@@ -57,6 +59,12 @@ void printData(std::vector<Data<float>*>& dataVec);
 void printConfigOn();
 void printConfigOff();
 
+
+template <typename T, typename S>
+void cleanUpMap(std::map<T, S*>& dict);
+
+template <typename T>
+void cleanUpObject(T* obj);
 
 
 

@@ -11,7 +11,7 @@
 
 #include "DataSet.h"
 #include "LayerFactory.h"
-#include "HiddenLayer.h"
+#include "Layer.h"
 #include "SoftmaxWithLossLayer.h"
 #include "LossLayer.h"
 #include "Util.h"
@@ -731,8 +731,8 @@ void Network<Dtype>::_backpropagation(uint32_t batchIndex) {
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
 
 	for (int i = layersConfig->_layers.size()-1; i >= 0; i--) {
-		HiddenLayer<Dtype>* hiddenLayer =
-				dynamic_cast<HiddenLayer<Dtype>*>(layersConfig->_layers[i]);
+		Layer<Dtype>* hiddenLayer =
+				dynamic_cast<Layer<Dtype>*>(layersConfig->_layers[i]);
 		if (hiddenLayer) {
 			//cout << layersConfig->_layers[i]->name << ": backpropagation ... " << endl;
 			hiddenLayer->backpropagation();

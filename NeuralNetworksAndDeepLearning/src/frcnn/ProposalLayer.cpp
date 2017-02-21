@@ -22,13 +22,13 @@ using namespace std;
 
 template <typename Dtype>
 ProposalLayer<Dtype>::ProposalLayer()
-	: HiddenLayer<Dtype>() {
+	: Layer<Dtype>() {
 	initialize();
 }
 
 template <typename Dtype>
 ProposalLayer<Dtype>::ProposalLayer(Builder* builder)
-	: HiddenLayer<Dtype>(builder) {
+	: Layer<Dtype>(builder) {
 	this->featStride = builder->_featStride;
 	this->scales = builder->_scales;
 

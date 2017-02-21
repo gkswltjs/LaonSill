@@ -11,10 +11,10 @@
 #include <vector>
 
 #include "common.h"
-#include "HiddenLayer.h"
+#include "Layer.h"
 
 template <typename Dtype>
-class LossLayer : public HiddenLayer<Dtype> {
+class LossLayer : public Layer<Dtype> {
 public:
 	enum NormalizationMode {
 		Full = 0,
@@ -23,7 +23,7 @@ public:
 		NoNormalization
 	};
 
-	class Builder : public HiddenLayer<Dtype>::Builder {
+	class Builder : public Layer<Dtype>::Builder {
 	public:
 		float _lossWeight;
 
@@ -46,19 +46,19 @@ public:
 			this->_normalization = NormalizationMode::Valid;
 		}
 		virtual Builder* name(const std::string name) {
-			HiddenLayer<Dtype>::Builder::name(name);
+			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer<Dtype>::Builder::id(id);
+			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			HiddenLayer<Dtype>::Builder::inputs(inputs);
+			Layer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			HiddenLayer<Dtype>::Builder::outputs(outputs);
+			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* lossWeight(const float lossWeight) {
@@ -81,7 +81,7 @@ public:
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			Layer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Layer<Dtype>* build() = 0;
@@ -90,9 +90,9 @@ public:
 
 
 	LossLayer()
-		: HiddenLayer<Dtype>() {}
+		: Layer<Dtype>() {}
 	LossLayer(Builder* builder)
-		: HiddenLayer<Dtype>(builder) {
+		: Layer<Dtype>(builder) {
 
 		/*
 		if (builder->_propDown.size() > 0)
@@ -119,13 +119,13 @@ public:
 	virtual ~LossLayer() {}
 
 	virtual void reshape() {
-		HiddenLayer<Dtype>::reshape();
+		Layer<Dtype>::reshape();
 	}
 	virtual void feedforward() {
-		HiddenLayer<Dtype>::feedforward();
+		Layer<Dtype>::feedforward();
 	}
 	virtual void backpropagation() {
-		HiddenLayer<Dtype>::backpropagation();
+		Layer<Dtype>::backpropagation();
 	}
 	virtual Dtype cost() = 0;
 

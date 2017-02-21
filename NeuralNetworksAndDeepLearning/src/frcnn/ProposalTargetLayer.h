@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "common.h"
-#include "HiddenLayer.h"
+#include "Layer.h"
 
 
 /**
@@ -19,9 +19,9 @@
  * classification labels and bounding-box regression targets.
  */
 template <typename Dtype>
-class ProposalTargetLayer : public HiddenLayer<Dtype> {
+class ProposalTargetLayer : public Layer<Dtype> {
 public:
-	class Builder : public HiddenLayer<Dtype>::Builder {
+	class Builder : public Layer<Dtype>::Builder {
 	public:
 		uint32_t _numClasses;
 
@@ -30,23 +30,23 @@ public:
 			this->_numClasses = 0;
 		}
 		virtual Builder* name(const std::string name) {
-			HiddenLayer<Dtype>::Builder::name(name);
+			Layer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			HiddenLayer<Dtype>::Builder::id(id);
+			Layer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			HiddenLayer<Dtype>::Builder::inputs(inputs);
+			Layer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			HiddenLayer<Dtype>::Builder::outputs(outputs);
+			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			HiddenLayer<Dtype>::Builder::propDown(propDown);
+			Layer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Builder* numClasses(const uint32_t numClasses) {
