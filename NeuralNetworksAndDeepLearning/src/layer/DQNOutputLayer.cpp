@@ -10,10 +10,6 @@
 
 using namespace std;
 
-template <typename Dtype>
-DQNOutputLayer<Dtype>::DQNOutputLayer() {
-	this->type = Layer<Dtype>::DQNOutput;
-}
 
 template <typename Dtype>
 DQNOutputLayer<Dtype>::DQNOutputLayer(Builder* builder)

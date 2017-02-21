@@ -77,7 +77,6 @@ public:
 		}
 	};
 
-	DQNOutputLayer();
 	DQNOutputLayer(Builder* builder);
 	/**
 	 * @details DQNOutputLayer 생성자

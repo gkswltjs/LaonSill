@@ -15,11 +15,6 @@
 
 using namespace std;
 
-template <typename Dtype>
-ProposalTargetLayer<Dtype>::ProposalTargetLayer()
-	: Layer<Dtype>() {
-	initialize();
-}
 
 template <typename Dtype>
 ProposalTargetLayer<Dtype>::ProposalTargetLayer(Builder* builder)

@@ -10,20 +10,9 @@
 using namespace std;
 
 template <typename Dtype>
-PoolingLayer<Dtype>::PoolingLayer() {
-	this->type = Layer<Dtype>::Pool;
-}
-
-template <typename Dtype>
 PoolingLayer<Dtype>::PoolingLayer(Builder* builder)
 	: Layer<Dtype>(builder) {
 	initialize(builder->_poolDim, builder->_poolingType);
-}
-
-template <typename Dtype>
-PoolingLayer<Dtype>::PoolingLayer(const string name, pool_dim pool_d,
-    typename Pooling<Dtype>::Type poolingType) : Layer<Dtype>(name) {
-	initialize(pool_d, poolingType);
 }
 
 template <typename Dtype>

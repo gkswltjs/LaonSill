@@ -1,5 +1,7 @@
 #include "TestUtil.h"
 #include "Cuda.h"
+#include "Layer.h"
+#include "LearnableLayer.h"
 
 using namespace std;
 using namespace cnpy;
@@ -134,6 +136,7 @@ bool hasKey(map<T, S*>& dict, const T& key) {
 	typename map<T, S*>::iterator itr = dict.find(key);
 	return (itr != dict.end());
 }
+template bool hasKey(map<string, Data<float>*>& dict, const string& key);
 
 template <typename T, typename S>
 S* retrieveValueFromMap(map<T, S*>& dict, const T& key) {
@@ -144,6 +147,7 @@ S* retrieveValueFromMap(map<T, S*>& dict, const T& key) {
 		return itr->second;
 }
 
+
 template <typename T, typename S>
 void cleanUpMap(map<T, S*>& dict) {
 	typename map<T, S*>::iterator itr;
@@ -152,12 +156,19 @@ void cleanUpMap(map<T, S*>& dict) {
 			delete itr->second;
 	}
 }
+template void cleanUpMap(map<string, Data<float>*>& dict);
 
 template <typename T>
 void cleanUpObject(T* obj) {
 	if (obj)
 		delete obj;
 }
+template void cleanUpObject(Layer<float>* obj);
+template void cleanUpObject(Layer<float>::Builder* obj);
+template void cleanUpObject(LearnableLayer<float>* obj);
+template void cleanUpObject(LearnableLayer<float>::Builder* obj);
+
+
 
 
 void printNpzFiles(npz_t& cnpy_npz) {
@@ -258,7 +269,7 @@ void compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 
 		Data<float>* targetData = dataVec[i];
 
-
+		/*
 		printConfigOn();
 		if (compareType == 0) {
 			data->print_data({}, false);
@@ -268,6 +279,7 @@ void compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 			targetData->print_grad({}, false);
 		}
 		printConfigOff();
+		*/
 
 		if (compareType == 0)
 			assert(targetData->compareData(data, COMPARE_ERROR));

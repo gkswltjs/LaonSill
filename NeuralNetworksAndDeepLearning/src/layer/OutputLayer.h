@@ -88,7 +88,6 @@ public:
 		Layer<Dtype>* build() = 0;
 	};
 
-	OutputLayer() {}
 	OutputLayer(Builder* builder) : FullyConnectedLayer<Dtype>(builder) {
 		initialize(builder->_costType);
 	}

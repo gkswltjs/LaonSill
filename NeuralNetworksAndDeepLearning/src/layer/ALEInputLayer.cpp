@@ -14,16 +14,6 @@
 using namespace std;
 
 template<typename Dtype>
-ALEInputLayer<Dtype>::ALEInputLayer() {
-    initialize();
-}
-
-template<typename Dtype>
-ALEInputLayer<Dtype>::ALEInputLayer(const string name) : InputLayer<Dtype>(name) {
-    initialize();
-}
-
-template<typename Dtype>
 ALEInputLayer<Dtype>::ALEInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
 	initialize();
 }

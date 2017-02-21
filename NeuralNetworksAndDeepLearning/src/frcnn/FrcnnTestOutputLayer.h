@@ -63,7 +63,6 @@ public:
 		}
 	};
 
-	FrcnnTestOutputLayer();
 	FrcnnTestOutputLayer(Builder* builder);
 	virtual ~FrcnnTestOutputLayer();
 

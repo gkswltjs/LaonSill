@@ -17,12 +17,6 @@
 using namespace std;
 
 template <typename Dtype>
-InputLayer<Dtype>::InputLayer()
-: Layer<Dtype>() {
-	initialize();
-}
-
-template <typename Dtype>
 InputLayer<Dtype>::InputLayer(const string name)
 : Layer<Dtype>(name) {
 	initialize();

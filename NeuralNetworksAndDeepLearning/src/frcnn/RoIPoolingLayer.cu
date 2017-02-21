@@ -14,11 +14,6 @@
 #define ROIPOOLINGLAYER_LOG 0
 
 
-template <typename Dtype>
-RoIPoolingLayer<Dtype>::RoIPoolingLayer()
-	: Layer<Dtype>() {
-	initialize();
-}
 
 template <typename Dtype>
 RoIPoolingLayer<Dtype>::RoIPoolingLayer(Builder* builder)

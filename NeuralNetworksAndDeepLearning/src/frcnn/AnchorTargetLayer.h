@@ -72,7 +72,6 @@ public:
 		}
 	};
 
-	AnchorTargetLayer();
 	AnchorTargetLayer(Builder* builder);
 	virtual ~AnchorTargetLayer();
 

@@ -13,21 +13,15 @@
 
 using namespace std;
 
-
-template <typename Dtype>
-AAALayer<Dtype>::AAALayer() {
-	this->type = Layer<Dtype>::AAA;
-}
-
 template <typename Dtype>
 AAALayer<Dtype>::AAALayer(Builder* builder)
-	: Layer<Dtype>(builder) {
+	: LearnableLayer<Dtype>(builder) {
 	initialize(builder->_var1, builder->_var2);
 }
 
 template <typename Dtype>
 AAALayer<Dtype>::AAALayer(
-    const string name, int var1, double var2) : Layer<Dtype>(name) {
+    const string name, int var1, double var2) : LearnableLayer<Dtype>(name) {
 	initialize(var1, var2);
 }
 
@@ -38,6 +32,7 @@ void AAALayer<Dtype>::initialize(int var1, double var2) {
     this->var2 = var2;
 }
 
+/*
 template <typename Dtype>
 double AAALayer<Dtype>::sumSquareParamsData() {
 	return 0.0;
@@ -73,6 +68,7 @@ void AAALayer<Dtype>::loadParams(ifstream& ifs) {
 template <typename Dtype>
 void AAALayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
 }
+*/
 
 #ifndef GPU_MODE
 template <typename Dtype>

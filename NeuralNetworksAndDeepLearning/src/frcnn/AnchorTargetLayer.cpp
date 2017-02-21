@@ -15,10 +15,6 @@
 
 using namespace std;
 
-
-template <typename Dtype>
-AnchorTargetLayer<Dtype>::AnchorTargetLayer() {}
-
 template <typename Dtype>
 AnchorTargetLayer<Dtype>::AnchorTargetLayer(Builder* builder)
 	: Layer<Dtype>(builder) {

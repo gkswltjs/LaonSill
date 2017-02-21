@@ -20,11 +20,6 @@
 
 using namespace std;
 
-template <typename Dtype>
-ProposalLayer<Dtype>::ProposalLayer()
-	: Layer<Dtype>() {
-	initialize();
-}
 
 template <typename Dtype>
 ProposalLayer<Dtype>::ProposalLayer(Builder* builder)

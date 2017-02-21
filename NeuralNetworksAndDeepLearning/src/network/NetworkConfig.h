@@ -21,15 +21,11 @@
 #include "LearnableLayer.h"
 #include "SplitLayer.h"
 #include "LossLayer.h"
-#include "OutputLayer.h"
-#include "LayerFactory.h"
 #include "NetworkListener.h"
 #include "Worker.h"
 #include "Top1Evaluation.h"
 #include "Top5Evaluation.h"
 
-
-//#define OUTPUTLAYER
 
 //template <typename Dtype> class DataSet;
 template <typename Dtype> class Worker;
@@ -85,14 +81,10 @@ public:
                 	firstLayers.push_back(currentLayer);
                 }
 
-                		// 끝 레이어 추가
-#ifndef OUTPUTLAYER
+          		// 끝 레이어 추가
                 LossLayer<Dtype>* lossLayer =
                 		dynamic_cast<LossLayer<Dtype>*>(currentLayer);
-#else
-                OutputLayer<Dtype>* lossLayer =
-                        dynamic_cast<OutputLayer<Dtype>*>(currentLayer);
-#endif
+
                 if (lossLayer) {
                 	lastLayers.push_back(currentLayer);
                 }
@@ -352,11 +344,7 @@ public:
     std::vector<Layer<Dtype>*> _lastLayers;
     std::vector<Layer<Dtype>*> _layers;
     std::vector<LearnableLayer<Dtype>*> _learnableLayers;
-#ifndef OUTPUTLAYER
     std::vector<LossLayer<Dtype>*> _lossLayers;
-#else
-    std::vector<OutputLayer<Dtype>*> _lossLayers;
-#endif
     InputLayer<Dtype>* _inputLayer;
 
     std::map<std::string, Layer<Dtype>*> _nameLayerMap;
@@ -376,11 +364,7 @@ public:
 		this->_lastLayers = lastLayers;
         typename std::vector<Layer<Dtype>*>::iterator iter;
         for (iter = lastLayers.begin(); iter != lastLayers.end(); iter++) {
-#ifndef OUTPUTLAYER
             LossLayer<Dtype>* lossLayer = dynamic_cast<LossLayer<Dtype>*>(*iter);
-#else
-        	OutputLayer<Dtype>* lossLayer = dynamic_cast<OutputLayer<Dtype>*>(*iter);
-#endif
             if(!lossLayer) {
                 std::cout << "invalid output layer ... " << std::endl;
                 exit(1);

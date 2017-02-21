@@ -18,10 +18,10 @@
 #include "Cost.h"
 
 template <typename Dtype>
-class BatchNormLayer : public Layer<Dtype>, public LearnableLayer<Dtype> {
+class BatchNormLayer : public LearnableLayer<Dtype> {
 public: 
 
-	class Builder : public Layer<Dtype>::Builder {
+	class Builder : public LearnableLayer<Dtype>::Builder {
 	public:
 		uint32_t    _kernelMapCount;
 		typename Activation<Dtype>::Type _activationType;	///< weighted sum에 적용할 활성화
@@ -36,23 +36,23 @@ public:
             _epsilon = 0.001;
 		}
 		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
+			LearnableLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
+			LearnableLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
+			LearnableLayer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
+			LearnableLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
+			LearnableLayer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Builder* kernelMapCount(uint32_t kernelMapCount) {
@@ -68,11 +68,6 @@ public:
 		}
 	};
 
-	/**
-	 * @details FullyConnectedLayer 기본 생성자
-	 *          내부적으로 레이어 타입만 초기화한다.
-	 */
-	BatchNormLayer();
 	BatchNormLayer(Builder* builder);
 
     BatchNormLayer(const std::string name, int kernelMapCount, double epsilon);
@@ -84,14 +79,14 @@ public:
 	using Layer<Dtype>::getName;
 	virtual const std::string getName() { return this->name; }
 	virtual void update();
-	virtual double sumSquareParamsData();
-	virtual double sumSquareParamsGrad();
-	virtual void scaleParamsGrad(float scale);
-	virtual uint32_t boundParams();
-	virtual uint32_t numParams();
-	virtual void saveParams(std::ofstream& ofs);
-	virtual void loadParams(std::ifstream& ifs);
-	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
+	//virtual double sumSquareParamsData();
+	//virtual double sumSquareParamsGrad();
+	//virtual void scaleParamsGrad(float scale);
+	//virtual uint32_t boundParams();
+	//virtual uint32_t numParams();
+	//virtual void saveParams(std::ofstream& ofs);
+	//virtual void loadParams(std::ifstream& ifs);
+	//virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
 	//////////////////////////////////////////
 
 	virtual void backpropagation();

@@ -65,9 +65,6 @@ public:
 		}
 	};
 
-
-
-	RoIPoolingLayer();
 	RoIPoolingLayer(Builder* builder);
 	virtual ~RoIPoolingLayer();
 

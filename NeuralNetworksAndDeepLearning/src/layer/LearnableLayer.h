@@ -13,17 +13,46 @@
 #include "common.h"
 #include "Cuda.h"
 #include "Data.h"
+#include "Layer.h"
 
 /**
  * @brief 학습하는 레이어에서 구현해야하는 베이스 추상 클래스,
  *        인터페이스 역할을 한다.
  */
 template <typename Dtype>
-class LearnableLayer {
+class LearnableLayer : public Layer<Dtype> {
 public:
+	class Builder : public Layer<Dtype>::Builder {
+	public:
+		Builder() {}
+		virtual Builder* name(const std::string name) {
+			Layer<Dtype>::Builder::name(name);
+			return this;
+		}
+		virtual Builder* id(uint32_t id) {
+			Layer<Dtype>::Builder::id(id);
+			return this;
+		}
+		virtual Builder* inputs(const std::vector<std::string>& inputs) {
+			Layer<Dtype>::Builder::inputs(inputs);
+			return this;
+		}
+		virtual Builder* outputs(const std::vector<std::string>& outputs) {
+			Layer<Dtype>::Builder::outputs(outputs);
+			return this;
+		}
+		virtual Builder* propDown(const std::vector<bool>& propDown) {
+			Layer<Dtype>::Builder::propDown(propDown);
+			return this;
+		}
+		Layer<Dtype>* build() = 0;
+	};
+
+
+	LearnableLayer(Builder* builder);
+	LearnableLayer(const std::string& name);
 	virtual ~LearnableLayer() {}
 
-	virtual const std::string getName() = 0;
 
 	/**
 	 * @details 학습한 파라미터 그레디언트를 파라미터에 업데이트한다.
@@ -33,77 +62,33 @@ public:
 	 * @details 파라미터들의 제곱의 합을 구한다.
 	 * @return 파라미터들의 제곱의 합
 	 */
-	virtual double sumSquareParamsData() {
-		double result = 0.0;
-		for(uint32_t i = 0; i < this->_params.size(); i++) {
-			result += this->_params[i]->sumsq_device_data();
-		}
-		return result;
-	}
+	virtual double sumSquareParamsData();
 
 	/**
 	 * @details 파라미터 그레디언트들의 제곱의 합을 구한다.
 	 * @return 파라미터 그레디언트들의 제곱의 합
 	 */
-	virtual double sumSquareParamsGrad() {
-		double result = 0.0;
-		for(uint32_t i = 0; i < this->_params.size(); i++) {
-			result += this->_params[i]->sumsq_device_grad();
-		}
-		return result;
-	}
-
+	virtual double sumSquareParamsGrad();
 
 	/**
 	 * @details 파라미터 그레디언트를 스케일링한다.
 	 * @param 파라미터 그레디언트를 스케일링할 스케일 값
 	 */
-	virtual void scaleParamsGrad(float scale) = 0;
+	virtual void scaleParamsGrad(float scale);
+	virtual uint32_t boundParams();
+	virtual uint32_t numParams();
 
+	virtual void saveParams(std::ofstream& ofs);
+	virtual void loadParams(std::ifstream& ifs);
+	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
 
-	//virtual double testParamAbnormality() = 0;
-	virtual uint32_t boundParams() = 0;
-
-	virtual uint32_t numParams() = 0;
-
-	virtual void saveParams(std::ofstream& ofs) = 0;
-	virtual void loadParams(std::ifstream& ifs) = 0;
-	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap) = 0;
-
-    virtual void syncMutableMem() {}
-    virtual void applyChanges(LearnableLayer<Dtype> *targetLayer) {}
-    virtual void syncParams(LearnableLayer<Dtype> *targetLayer) {}
-
+    virtual void syncMutableMem() {};
+    virtual void applyChanges(LearnableLayer<Dtype> *targetLayer) {};
+    virtual void syncParams(LearnableLayer<Dtype> *targetLayer) {};
 
 protected:
-	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
-            Data<Dtype>* dataHistory, Data<Dtype>* data) {
-		/*
-		const Dtype normScale = 1.0/this->in_dim.batches;
-		const Dtype momentum = this->networkConfig->_momentum;
-		const Dtype negativeOne = -1.0;
-
-		data->print_grad("paramGrad:");
-		data->print_data("paramData:");
-		dataHistory->print_grad("paramHistoryGrad:");
-
-		Dtype* d_paramGrad = data->mutable_device_grad();
-		Dtype* d_paramData = data->mutable_device_data();
-		Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
-
-		checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), 
-            &normScale, d_paramGrad, 1)); // normalized by batch size
-		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &regScale, d_paramData, 1, d_paramGrad, 1)); // regularize
-		checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &momentum, d_paramHistoryData, 1));					//
-		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), 
-            &learnScale, d_paramGrad, 1, d_paramHistoryData, 1));	// momentum
-		checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), 
-            &negativeOne, d_paramHistoryData, 1, d_paramData, 1));	// update
-		*/
-	}
-
+	virtual void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
+            Data<Dtype>* dataHistory, Data<Dtype>* data) {};
 
 public:
 	std::vector<Data<Dtype>*> _params;

@@ -64,7 +64,6 @@ public:
 		}
 	};
 
-	RoIInputLayer();
 	RoIInputLayer(Builder* builder);
 	virtual ~RoIInputLayer();
 

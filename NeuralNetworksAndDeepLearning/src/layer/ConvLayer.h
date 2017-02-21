@@ -26,14 +26,14 @@
  * @details
  */
 template <typename Dtype>
-class ConvLayer : public Layer<Dtype>, public LearnableLayer<Dtype> {
+class ConvLayer : public LearnableLayer<Dtype> {
 public:
 	/**
 	 * @brief 컨볼루션 레이어 객체 빌더
 	 * @details 컨볼루션 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
 	 *          해당 파라미터를 만족하는 컨볼루션 레이어 객체를 생성한다.
 	 */
-	class Builder : public Layer<Dtype>::Builder {
+	class Builder : public LearnableLayer<Dtype>::Builder {
 	public:
 		filter_dim _filterDim;
 		update_param _weightUpdateParam;
@@ -90,30 +90,24 @@ public:
 			this->_biasFiller.value = value;
 			return this;
 		}
-		/*
-		Builder* activationType(typename Activation<Dtype>::Type activationType) {
-			this->_activationType = activationType;
-			return this;
-		}
-		*/
 		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
+			LearnableLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
+			LearnableLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
+			LearnableLayer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
+			LearnableLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
+			LearnableLayer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 
@@ -122,10 +116,7 @@ public:
 		}
 
 	};
-	/**
-	 * @details ConvLayer 기본 생성자
-	 */
-	ConvLayer();
+
 	ConvLayer(Builder* builder);
 	/**
 	 * @details ConvLayer 생성자
@@ -160,13 +151,13 @@ public:
 	virtual void update();
 	//virtual double sumSquareParamsData();
 	//virtual double sumSquareParamsGrad();
-	virtual void scaleParamsGrad(float scale);
+	//virtual void scaleParamsGrad(float scale);
 	//virtual double testParamAbnormality();
-	virtual uint32_t boundParams();
-	virtual uint32_t numParams();
-	virtual void saveParams(std::ofstream& ofs);
-	virtual void loadParams(std::ifstream& ifs);
-	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
+	//virtual uint32_t boundParams();
+	//virtual uint32_t numParams();
+	//virtual void saveParams(std::ofstream& ofs);
+	//virtual void loadParams(std::ifstream& ifs);
+	//virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
 	//////////////////////////////////////////
 
 	virtual void reshape();
@@ -235,10 +226,6 @@ protected:
 	void *d_workspace;		///< cudnn forward, backward에 필요한 작업공간 장치 메모리 포인터
 #endif
 
-public:
-    //std::vector<Data<Dtype>*> _params;			///< 파리미터 데이터 (Filter, Bias 포함)
-    //std::vector<Data<Dtype>*> _paramsHistory;	///< 이전 update의 파라미터 그레디언트 데이터
-    //std::vector<bool> _paramsInitialized;
 };
 
 #endif /* LAYER_CONVLAYER_H_ */

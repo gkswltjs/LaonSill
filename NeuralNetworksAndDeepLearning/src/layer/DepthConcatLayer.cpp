@@ -12,19 +12,8 @@ using namespace std;
 //#define DEPTHCONCAT_LOG
 
 template <typename Dtype>
-DepthConcatLayer<Dtype>::DepthConcatLayer() {
-	this->type = Layer<Dtype>::DepthConcat;
-}
-
-template <typename Dtype>
 DepthConcatLayer<Dtype>::DepthConcatLayer(Builder* builder)
 	: Layer<Dtype>(builder) {
-	initialize();
-}
-
-template <typename Dtype>
-DepthConcatLayer<Dtype>::DepthConcatLayer(const string name)
-	: Layer<Dtype>(name) {
 	initialize();
 }
 

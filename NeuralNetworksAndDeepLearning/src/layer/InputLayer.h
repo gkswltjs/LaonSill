@@ -101,12 +101,6 @@ public:
 	};
 
 
-
-	/**
-	 * @details InputLayer 기본 생성자
-	 *          LayerFactory에서 객체 생성을 위해 name 파라미터가 없는 기본 생성자가 필요하다.
-	 */
-	InputLayer();
 	/**
 	 * @details InputLayer 생성자
 	 * @param name 레이어의 이름 문자열

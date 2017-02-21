@@ -68,17 +68,9 @@ public:
 			return new LRNLayer(this);
 		}
 	};
-	/**
-	 * @details LRNLayer 기본 생성자
-	 */
-	LRNLayer();
+
 	LRNLayer(Builder* builder);
-	/**
-	 * @details LRNLayer 생성자
-	 * @param 레이어 이름 문자열
-	 * @param lrn_d LRN 연산 관련 파라미터 구조체
-	 */
-	LRNLayer(const std::string name, lrn_dim lrn_d);
+
 	/**
 	 * @details LRNLayer 소멸자
 	 */

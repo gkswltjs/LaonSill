@@ -1,8 +1,9 @@
 #include "LayerTestInterface.h"
-#include "ConvLayerTest.h"
-#include "FullyConnectedLayerTest.h"
 #include "LayerTest.h"
+#include "LearnableLayerTest.h"
 
+#include "ConvLayer.h"
+#include "FullyConnectedLayer.h"
 #include "ReluLayer.h"
 #include "PoolingLayer.h"
 #include "SoftmaxWithLossLayer.h"
@@ -13,14 +14,14 @@ int main(void) {
 	const int gpuid = 0;
 	vector<LayerTestInterface<float>*> layerTestList;
 
-#if 0
+#if 1
 	ConvLayer<float>::Builder* convBuilder = new typename ConvLayer<float>::Builder();
 	convBuilder->id(1)
 			->name("conv2")
 			->filterDim(5, 5, 20, 50, 0, 1)
 			->inputs({"pool1"})
 			->outputs({"conv2"});
-	layerTestList.push_back(new ConvLayerTest<float>(convBuilder));
+	layerTestList.push_back(new LearnableLayerTest<float>(convBuilder));
 #endif
 
 #if 0
@@ -31,7 +32,7 @@ int main(void) {
 			->nOut(500)
 			->inputs({"pool2"})
 			->outputs({"ip1"});
-	layerTestList.push_back(new FullyConnectedLayerTest<float>(fcBuilder));
+	layerTestList.push_back(new LearnableLayerTest<float>(fcBuilder));
 #endif
 
 #if 0

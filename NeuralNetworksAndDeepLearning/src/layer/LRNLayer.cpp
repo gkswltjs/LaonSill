@@ -11,18 +11,8 @@
 using namespace std;
 
 template <typename Dtype>
-LRNLayer<Dtype>::LRNLayer() {
-	this->type = Layer<Dtype>::LRN;
-}
-
-template <typename Dtype>
 LRNLayer<Dtype>::LRNLayer(Builder* builder) : Layer<Dtype>(builder) {
 	initialize(builder->_lrnDim);
-}
-
-template <typename Dtype>
-LRNLayer<Dtype>::LRNLayer(const string name, lrn_dim lrn_d) : Layer<Dtype>(name) {
-	initialize(lrn_d);
 }
 
 template <typename Dtype>

@@ -23,8 +23,6 @@
 using namespace std;
 using namespace cv;
 
-template <typename Dtype>
-RoIInputLayer<Dtype>::RoIInputLayer() : InputLayer<Dtype>() {}
 
 template <typename Dtype>
 RoIInputLayer<Dtype>::RoIInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {

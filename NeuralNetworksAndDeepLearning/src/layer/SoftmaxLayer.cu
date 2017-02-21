@@ -17,13 +17,6 @@
 
 using namespace std;
 
-
-template <typename Dtype>
-SoftmaxLayer<Dtype>::SoftmaxLayer()
-	: Layer<Dtype>() {
-	initialize();
-}
-
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer(Builder* builder)
 	: Layer<Dtype>(builder) {

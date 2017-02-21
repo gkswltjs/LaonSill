@@ -39,13 +39,13 @@ __global__ void AddArrayOfConvLayer(Dtype* dst, const Dtype* src, int N)
 
 template <typename Dtype>
 ConvLayer<Dtype>::~ConvLayer() {
-	delete _params[ParamType::Filter];
-	delete _params[ParamType::Bias];
-	_params.clear();
+	delete this->_params[ParamType::Filter];
+	delete this->_params[ParamType::Bias];
+	this->_params.clear();
 
-	delete _paramsHistory[ParamType::Filter];
-	delete _paramsHistory[ParamType::Bias];
-	_paramsHistory.clear();
+	delete this->_paramsHistory[ParamType::Filter];
+	delete this->_paramsHistory[ParamType::Bias];
+	this->_paramsHistory.clear();
 
 	//delete _preActivation;
 
@@ -82,8 +82,8 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
         {filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
 	this->_params[Bias]->reshape({filter_d.filters, 1, 1, 1});
 
-    weight_filler.fill(_params[Filter]);
-    bias_filler.fill(_params[Bias]);
+    weight_filler.fill(this->_params[Filter]);
+    bias_filler.fill(this->_params[Bias]);
 
 	this->_paramsHistory.resize(2);
 	this->_paramsHistory[Filter] = new Data<Dtype>(this->name + "_filter_history");
@@ -92,7 +92,9 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
         {filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
 	this->_paramsHistory[Bias]->reshape({filter_d.filters, 1, 1, 1});
 
-	//this->_preActivation = new Data<Dtype>("PreActivation");
+	this->_paramsInitialized.resize(2);
+	this->_paramsInitialized[Filter] = false;
+	this->_paramsInitialized[Bias] = false;
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
@@ -264,14 +266,14 @@ void ConvLayer<Dtype>::update() {
 	const Dtype regScale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
 	const Dtype learnScale = 
         this->networkConfig->getLearningRate() * weight_update_param.lr_mult;
-	_updateParam(weightSize, regScale, learnScale, _paramsHistory[Filter], _params[Filter]);
+	_updateParam(weightSize, regScale, learnScale, this->_paramsHistory[Filter], this->_params[Filter]);
 
 	// update biases ...
 	const uint32_t biasSize = filter_d.filters;
 	const Dtype regScale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
 	const Dtype learnScale_b = 
         this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
-	_updateParam(biasSize, regScale_b, learnScale_b, _paramsHistory[Bias], _params[Bias]);
+	_updateParam(biasSize, regScale_b, learnScale_b, this->_paramsHistory[Bias], this->_params[Bias]);
 }
 
 template <typename Dtype>
@@ -301,8 +303,8 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 
 template <typename Dtype>
 void ConvLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
-	const uint32_t weightSize = filter_d.size();
-	const uint32_t biasSize = filter_d.filters;
+	const uint32_t weightSize = this->filter_d.size();
+	const uint32_t biasSize = this->filter_d.filters;
     ConvLayer<Dtype>* _targetLayer = (ConvLayer<Dtype>*)targetLayer;
 
     //int blockSize = BW;
@@ -311,13 +313,13 @@ void ConvLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
 
     AddArrayOfConvLayer<<<gridSize, blockSize>>>(
         _targetLayer->_params[Filter]->mutable_device_grad(),
-        _params[Filter]->device_grad(), weightSize);
+        this->_params[Filter]->device_grad(), weightSize);
 
     gridSize = (biasSize + blockSize -1) / blockSize;
 
     AddArrayOfConvLayer<<<gridSize, blockSize>>>(
         _targetLayer->_params[Bias]->mutable_device_grad(),
-        _params[Bias]->device_grad(), biasSize);
+        this->_params[Bias]->device_grad(), biasSize);
 }
 
 template <typename Dtype>
@@ -326,18 +328,18 @@ void ConvLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
 	const uint32_t biasSize = filter_d.filters;
     ConvLayer<Dtype>* _targetLayer = (ConvLayer<Dtype>*)targetLayer;
 
-    memcpy(_params[Filter]->mutable_host_grad(), _targetLayer->_params[Filter]->host_grad(),
+    memcpy(this->_params[Filter]->mutable_host_grad(), _targetLayer->_params[Filter]->host_grad(),
         weightSize);
-    memcpy(_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
+    memcpy(this->_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
         biasSize);
 }
 
 template <typename Dtype>
 void ConvLayer<Dtype>::syncMutableMem() {
-	_params[Filter]->mutable_device_grad();
-	_params[Filter]->host_grad();
-	_params[Bias]->mutable_device_grad();
-	_params[Bias]->host_data();
+	this->_params[Filter]->mutable_device_grad();
+	this->_params[Filter]->host_grad();
+	this->_params[Bias]->mutable_device_grad();
+	this->_params[Bias]->host_data();
 }
 
 template <typename Dtype>
@@ -345,20 +347,19 @@ void ConvLayer<Dtype>::feedforward() {
 	reshape();
 
 	_computeFiltersConvolutionData();
-	//_computeActivationData();
 }
 
 template <typename Dtype>
 void ConvLayer<Dtype>::_computeFiltersConvolutionData() {
 	// Apply filters to input data
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
-	const Dtype* d_filtersData = _params[Filter]->device_data();
+	const Dtype* d_filtersData = this->_params[Filter]->device_data();
 	//Dtype* d_preActivationData = _preActivation->mutable_device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
 #if CONVLAYER_LOG
 	this->_inputData[0]->print_data();
-	_params[Filter]->print_data();
+	this->_params[Filter]->print_data();
 #endif
 
 	checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle,
@@ -366,7 +367,7 @@ void ConvLayer<Dtype>::_computeFiltersConvolutionData() {
             convDesc, convFwdAlgo, d_workspace, workspaceSize,
 			&Cuda::beta, this->outputTensorDesc, d_outputData));
 
-	const Dtype* d_biasesData = _params[Bias]->device_data();
+	const Dtype* d_biasesData = this->_params[Bias]->device_data();
 	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
 			&Cuda::alpha, biasTensorDesc, d_biasesData,
 			&Cuda::alpha, this->outputTensorDesc, d_outputData));
@@ -439,7 +440,7 @@ void ConvLayer<Dtype>::_computeFiltersGrad() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
 	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
-	Dtype* d_filtersGrad = _params[Filter]->mutable_device_grad();
+	Dtype* d_filtersGrad = this->_params[Filter]->mutable_device_grad();
 
 	checkCUDNN(cudnnConvolutionBackwardFilter(Cuda::cudnnHandle,
 			&Cuda::alpha, this->inputTensorDesc, d_inputData, this->outputTensorDesc,
@@ -466,7 +467,7 @@ void ConvLayer<Dtype>::_computeBiasesGrad() {
 template <typename Dtype>
 void ConvLayer<Dtype>::_computeInputGrad() {
 	// d(Cost)/d(Input)
-	const Dtype* d_filtersData = _params[Filter]->device_data();
+	const Dtype* d_filtersData = this->_params[Filter]->device_data();
 	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
 	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
@@ -477,7 +478,7 @@ void ConvLayer<Dtype>::_computeInputGrad() {
 
 #if CONVLAYER_LOG
 	this->_inputData[0]->print_grad("inputGrad:");
-	_params[Filter]->print_data("filtersData:");
+	this->_params[Filter]->print_data("filtersData:");
 #endif
 }
 

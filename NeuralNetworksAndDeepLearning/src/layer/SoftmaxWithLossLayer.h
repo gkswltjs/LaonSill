@@ -87,7 +87,6 @@ public:
 		}
 	};
 
-	SoftmaxWithLossLayer();
 	SoftmaxWithLossLayer(Builder* builder);
 	virtual ~SoftmaxWithLossLayer();
 

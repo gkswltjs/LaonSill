@@ -16,12 +16,6 @@
 using namespace std;
 
 template <typename Dtype>
-SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer()
-	: LossLayer<Dtype>() {
-	initialize();
-}
-
-template <typename Dtype>
 SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(Builder* builder)
 	: LossLayer<Dtype>(builder) {
 	this->softmaxAxis = builder->_softmaxAxis;

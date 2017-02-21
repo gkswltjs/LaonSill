@@ -16,19 +16,14 @@ using namespace std;
 
 
 template <typename Dtype>
-BatchNormLayer<Dtype>::BatchNormLayer() {
-	this->type = Layer<Dtype>::BatchNorm;
-}
-
-template <typename Dtype>
 BatchNormLayer<Dtype>::BatchNormLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
+	: LearnableLayer<Dtype>(builder) {
 	initialize(builder->_kernelMapCount, builder->_epsilon);
 }
 
 template <typename Dtype>
 BatchNormLayer<Dtype>::BatchNormLayer(const string name, int kernelMapCount,
-    double epsilon) : Layer<Dtype>(name) {
+    double epsilon) : LearnableLayer<Dtype>(name) {
 	initialize(kernelMapCount, epsilon);
 }
 
@@ -54,6 +49,7 @@ void BatchNormLayer<Dtype>::initialize(int kernelMapCount, double epsilon) {
     this->betaGradValues        = NULL;
 }
 
+/*
 template <typename Dtype>
 double BatchNormLayer<Dtype>::sumSquareParamsData() {
     // TODO:
@@ -100,6 +96,7 @@ template <typename Dtype>
 void BatchNormLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
     // TODO:
 }
+*/
 
 #ifndef GPU_MODE
 template <typename Dtype>

@@ -18,10 +18,10 @@
 #include "Cost.h"
 
 template <typename Dtype>
-class AAALayer : public Layer<Dtype>, public LearnableLayer<Dtype> {
+class AAALayer : public LearnableLayer<Dtype> {
 public: 
 
-	class Builder : public Layer<Dtype>::Builder {
+	class Builder : public LearnableLayer<Dtype>::Builder {
 	public:
 		typename Activation<Dtype>::Type _activationType;
 
@@ -34,23 +34,23 @@ public:
             _var2 = 0.0;
 		}
 		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
+			LearnableLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
+			LearnableLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
+			LearnableLayer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
+			LearnableLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
+			LearnableLayer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Builder* var1(uint32_t var1) {
@@ -66,11 +66,6 @@ public:
 		}
 	};
 
-	/**
-	 * @details FullyConnectedLayer 기본 생성자
-	 *          내부적으로 레이어 타입만 초기화한다.
-	 */
-	AAALayer();
 	AAALayer(Builder* builder);
 
     AAALayer(const std::string name, int var1, double var2);
@@ -82,14 +77,14 @@ public:
 	using Layer<Dtype>::getName;
 	virtual const std::string getName() { return this->name; }
 	virtual void update();
-	virtual double sumSquareParamsData();
-	virtual double sumSquareParamsGrad();
-	virtual void scaleParamsGrad(float scale);
-	virtual uint32_t boundParams();
-	virtual uint32_t numParams();
-	virtual void saveParams(std::ofstream& ofs);
-	virtual void loadParams(std::ifstream& ifs);
-	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
+	//virtual double sumSquareParamsData();
+	//virtual double sumSquareParamsGrad();
+	//virtual void scaleParamsGrad(float scale);
+	//virtual uint32_t boundParams();
+	//virtual uint32_t numParams();
+	//virtual void saveParams(std::ofstream& ofs);
+	//virtual void loadParams(std::ifstream& ifs);
+	//virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
 	//////////////////////////////////////////
 
 	virtual void backpropagation();

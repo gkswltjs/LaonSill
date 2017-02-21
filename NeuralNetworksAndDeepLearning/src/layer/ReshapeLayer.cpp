@@ -18,9 +18,6 @@
 using namespace std;
 
 template <typename Dtype>
-ReshapeLayer<Dtype>::ReshapeLayer() {}
-
-template <typename Dtype>
 ReshapeLayer<Dtype>::ReshapeLayer(Builder* builder)
 	: Layer<Dtype>(builder) {
 	this->shape = builder->_shape;

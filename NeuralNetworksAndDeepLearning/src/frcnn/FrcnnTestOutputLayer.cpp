@@ -18,12 +18,6 @@ using namespace std;
 
 
 template <typename Dtype>
-FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer()
-: Layer<Dtype>() {
-
-}
-
-template <typename Dtype>
 FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer(Builder* builder)
 : Layer<Dtype>(builder) {
 	this->maxPerImage = builder->_maxPerImage;

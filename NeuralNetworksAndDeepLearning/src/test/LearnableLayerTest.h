@@ -1,59 +1,51 @@
 /*
- * ConvLayerTest.h
+ * LearnableLayerTest.h
  *
- *  Created on: Feb 16, 2017
+ *  Created on: Feb 21, 2017
  *      Author: jkim
  */
 
-#ifndef CONVLAYERTEST_H_
-#define CONVLAYERTEST_H_
+#ifndef LEARNABLELAYERTEST_H_
+#define LEARNABLELAYERTEST_H_
 
 #include "LayerTestInterface.h"
 #include "TestUtil.h"
-#include "ConvLayer.h"
+#include "LearnableLayer.h"
 
 using namespace std;
 
 
 template <typename Dtype>
-class ConvLayerTest : public LayerTestInterface<Dtype> {
+class LearnableLayerTest : public LayerTestInterface<Dtype> {
 public:
-	ConvLayerTest(typename ConvLayer<Dtype>::Builder* builder)
+	LearnableLayerTest(typename LearnableLayer<Dtype>::Builder* builder)
 	: builder(builder), layer(0) {}
 
-	virtual ~ConvLayerTest() {
-		if (this->layer)
-			delete this->layer;
-
-		if (this->builder)
-			delete builder;
-
-		typename map<string, Data<Dtype>*>::iterator itr;
-		for (itr = this->nameDataMap.begin(); itr != this->nameDataMap.end(); itr++) {
-			if (itr->second)
-				delete itr->second;
-		}
+	virtual ~LearnableLayerTest() {
+		cleanUpObject(this->layer);
+		cleanUpObject(this->builder);
+		cleanUpMap(this->nameDataMap);
 	}
 
 	virtual void setUp() {
-		//setUpCuda(this->gpuid);
-
 		buildNameDataMapFromNpzFile(NPZ_PATH, this->builder->_name, this->nameDataMap);
 		printNameDataMap(this->nameDataMap, false);
 
 		// 최소 설정만 전달받고 나머지는 npz로부터 추론하는 것이 좋겠다.
-		this->layer = dynamic_cast<ConvLayer<Dtype>*>(this->builder->build());
+		this->layer = dynamic_cast<LearnableLayer<Dtype>*>(this->builder->build());
+		assert(this->layer != 0);
+
 		fillLayerDataVec(this->layer->_inputs, this->layer->_inputData);
 		fillLayerDataVec(this->layer->_outputs, this->layer->_outputData);
 	}
 
-	virtual void cleanUp() {
-		//cleanUpCuda();
-	}
+	virtual void cleanUp() {}
 
 	virtual void forwardTest() {
 		fillData(this->nameDataMap, this->layer->name + SIG_BOTTOM, this->layer->_inputData);
 		fillParam(this->nameDataMap, this->layer->name + SIG_PARAMS, this->layer->_params);
+		for (uint32_t i = 0; i < this->layer->_params.size(); i++)
+			this->layer->_paramsInitialized[i] = true;
 
 		this->layer->feedforward();
 
@@ -74,11 +66,11 @@ public:
 
 
 private:
-	typename ConvLayer<Dtype>::Builder* builder;
-	ConvLayer<Dtype>* layer;
+	typename LearnableLayer<Dtype>::Builder* builder;
+	LearnableLayer<Dtype>* layer;
 
 	map<string, Data<Dtype>*> nameDataMap;
 };
 
 
-#endif /* CONVLAYERTEST_H_ */
+#endif /* LEARNABLELAYERTEST_H_ */

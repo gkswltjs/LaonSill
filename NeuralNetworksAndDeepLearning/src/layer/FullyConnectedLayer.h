@@ -27,14 +27,14 @@
  *          복구해야 한다.
  */
 template <typename Dtype>
-class FullyConnectedLayer : public Layer<Dtype>, public LearnableLayer<Dtype> {
+class FullyConnectedLayer : public LearnableLayer<Dtype> {
 public:
 	/**
 	 * @brief Fully Connected 레이어 객체 빌더
 	 * @details Fully Connected 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
 	 *          해당 파라미터를 만족하는 Fully Connected 레이어 객체를 생성한다.
 	 */
-	class Builder : public Layer<Dtype>::Builder {
+	class Builder : public LearnableLayer<Dtype>::Builder {
 	public:
 		uint32_t _nOut;										///< 출력 노드의 수
 		double _pDropout;									///< dropout을 적용할 확율
@@ -93,23 +93,23 @@ public:
 			return this;
 		}
 		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
+			LearnableLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
+			LearnableLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
+			LearnableLayer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
+			LearnableLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
 		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
+			LearnableLayer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
 		Layer<Dtype>* build() {
@@ -121,7 +121,6 @@ public:
 	 * @details FullyConnectedLayer 기본 생성자
 	 *          내부적으로 레이어 타입만 초기화한다.
 	 */
-	FullyConnectedLayer();
 	FullyConnectedLayer(Builder* builder);
 
 	virtual ~FullyConnectedLayer();
@@ -134,13 +133,13 @@ public:
 	virtual void update();
 	//virtual double sumSquareParamsData();
 	//virtual double sumSquareParamsGrad();
-	virtual void scaleParamsGrad(float scale);
+	//virtual void scaleParamsGrad(float scale);
 	//virtual double testParamAbnormality();
-	virtual uint32_t boundParams();
-	virtual uint32_t numParams();
-	virtual void saveParams(std::ofstream& ofs);
-	virtual void loadParams(std::ifstream& ifs);
-	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
+	//virtual uint32_t boundParams();
+	//virtual uint32_t numParams();
+	//virtual void saveParams(std::ofstream& ofs);
+	//virtual void loadParams(std::ifstream& ifs);
+	//virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
 	//////////////////////////////////////////
 
 	virtual void backpropagation();

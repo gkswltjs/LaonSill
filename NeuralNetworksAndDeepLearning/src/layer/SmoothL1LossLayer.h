@@ -87,7 +87,6 @@ public:
 		}
 	};
 
-	SmoothL1LossLayer();
 	SmoothL1LossLayer(Builder* builder);
 	virtual ~SmoothL1LossLayer();
 

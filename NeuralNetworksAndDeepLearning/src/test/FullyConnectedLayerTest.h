@@ -74,12 +74,9 @@ public:
 	}
 
 	virtual void backwardTest() {
-		fillData(this->nameDataMap, this->layer->name + SIG_BOTTOM,
-				this->layer->_inputData);
-		fillData(this->nameDataMap, this->layer->name + SIG_TOP,
-				this->layer->_outputData);
-		fillParam(this->nameDataMap, this->layer->name + SIG_PARAMS,
-				this->layer->_params);
+		fillData(this->nameDataMap, this->layer->name + SIG_BOTTOM, this->layer->_inputData);
+		fillData(this->nameDataMap, this->layer->name + SIG_TOP, this->layer->_outputData);
+		fillParam(this->nameDataMap, this->layer->name + SIG_PARAMS, this->layer->_params);
 
 		this->layer->backpropagation();
 

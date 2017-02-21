@@ -63,8 +63,6 @@ public:
 		}
 	};
 
-
-	RoITestInputLayer();
 	RoITestInputLayer(Builder* builder);
 	virtual ~RoITestInputLayer();
 

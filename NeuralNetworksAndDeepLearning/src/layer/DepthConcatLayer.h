@@ -64,9 +64,7 @@ public:
 		}
 	};
 
-	DepthConcatLayer();
 	DepthConcatLayer(Builder* builder);
-	DepthConcatLayer(const std::string name);
 	virtual ~DepthConcatLayer();
 
 	virtual void reshape();

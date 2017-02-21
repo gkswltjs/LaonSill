@@ -54,7 +54,7 @@ public:
 			return new SoftmaxLayer(this);
 		}
 	};
-	SoftmaxLayer();
+
 	SoftmaxLayer(Builder* builder);
 
 	virtual ~SoftmaxLayer();

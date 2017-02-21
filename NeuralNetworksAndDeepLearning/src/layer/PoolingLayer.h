@@ -83,15 +83,7 @@ public:
 	/**
 	 * @details PoolingLayer 기본 생성자
 	 */
-	PoolingLayer();
 	PoolingLayer(Builder* builder);
-	/**
-	 * @details PoolingLayer 생성자
-	 * @param name 레이어 이름 문자열 포인터
-	 * @param pool_d 풀링 연산 관련 파라미터 구조체
-	 */
-	PoolingLayer(const std::string name, pool_dim pool_d,
-                 typename Pooling<Dtype>::Type poolingType);
 	/**
 	 * @details PoolingLayer 소멸자
 	 */

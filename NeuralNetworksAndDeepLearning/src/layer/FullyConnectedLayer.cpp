@@ -13,13 +13,8 @@
 using namespace std;
 
 template <typename Dtype>
-FullyConnectedLayer<Dtype>::FullyConnectedLayer() {
-	this->type = Layer<Dtype>::FullyConnected;
-}
-
-template <typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
+	: LearnableLayer<Dtype>(builder) {
 
 	initialize(builder->_nOut, builder->_pDropout, builder->_axis,
 			builder->_weightUpdateParam, builder->_biasUpdateParam, builder->_weightFiller,
@@ -44,7 +39,6 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axi
 	this->weight_filler = weight_filler;
 	this->bias_filler = bias_filler;
 
-	//this->activation_fn = ActivationFactory<Dtype>::create(activationType);
 	this->scale = 1. / (1. - p_dropout);
 
 	this->_params.resize(2);
@@ -55,103 +49,12 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axi
 	this->_paramsInitialized[ParamType::Weight] = false;
 	this->_paramsInitialized[ParamType::Bias] = false;
 
-
 	this->_paramsHistory.resize(2);
 	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(this->name + "_weight_history");
 	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history");
-
-	//this->_preActivation = new Data<Dtype>("PreActivation"); // weighted sum (pre activation)
-
-	//checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
-	//checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
-}
-
-/*
-template <typename Dtype>
-double FullyConnectedLayer<Dtype>::sumSquareParamsData() {
-	double result = 0.0;
-	for(uint32_t i = 0; i < this->_params.size(); i++) {
-		result += this->_params[i]->sumsq_device_data();
-	}
-	return result;
-}
-
-template <typename Dtype>
-double FullyConnectedLayer<Dtype>::sumSquareParamsGrad() {
-	double result = 0.0;
-	for(uint32_t i = 0; i < _params.size(); i++) {
-		double temp = _params[i]->sumsq_device_grad();
-		//temp /= _params[i]->getCount();
-		result += temp;
-	}
-	return result;
-}
-*/
-
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::scaleParamsGrad(float scale) {
-	for(uint32_t i = 0; i < _params.size(); i++) {
-		_params[i]->scale_device_grad(scale);
-	}
-}
-
-template <typename Dtype>
-uint32_t FullyConnectedLayer<Dtype>::boundParams() {
-	uint32_t updateCount = _params[Weight]->bound_grad();
-	updateCount += _params[Bias]->bound_grad();
-
-	return updateCount;
-}
-
-template <typename Dtype>
-uint32_t FullyConnectedLayer<Dtype>::numParams() {
-	return this->_params.size();
 }
 
 
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::saveParams(ofstream& ofs) {
-	uint32_t numParams = _params.size();
-	//ofs.write((char*)&numParams, sizeof(uint32_t));
-	for(uint32_t i = 0; i < numParams; i++) {
-		_params[i]->save(ofs);
-	}
-}
-
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::loadParams(ifstream& ifs) {
-	uint32_t numParams;
-	ifs.read((char*)&numParams, sizeof(uint32_t));
-	for(uint32_t i = 0; i < numParams; i++) {
-		_params[i]->load(ifs);
-	}
-}
-
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
-	typename map<string, Data<Dtype>*>::iterator it;
-
-	//char tempName[80];
-	for (uint32_t i = 0; i < this->_params.size(); i++) {
-
-		// XXX: so temporal ~~~
-		//Util::refineParamName(this->_params[i]->_name.c_str(), tempName);
-		//string refinedName(tempName);
-		//cout << "refineName: " << refinedName << ", ";
-
-		cout << "looking for " << this->_params[i]->_name;
-		it = dataMap.find(this->_params[i]->_name.c_str());
-		if (it == dataMap.end()) {
-			cout << " ... could not find ... " << endl;
-			continue;
-		}
-		cout << " ... found ... " << endl;
-
-		this->_params[i]->reshapeLike(it->second);
-		this->_params[i]->set_device_with_host_data(it->second->host_data());
-		this->_paramsInitialized[i] = true;
-	}
-}
 
 #ifndef GPU_MODE
 template <typename Dtype>

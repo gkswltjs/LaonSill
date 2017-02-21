@@ -66,8 +66,6 @@ public:
 		}
 	};
 
-    ALEInputLayer();
-	ALEInputLayer(const std::string name);
 	ALEInputLayer(Builder* builder);
 
     virtual ~ALEInputLayer();

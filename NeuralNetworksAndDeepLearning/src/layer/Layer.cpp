@@ -11,7 +11,6 @@
 #include <utility>
 
 #include "Exception.h"
-#include "LayerFactory.h"
 #include "NetworkConfig.h"
 
 using namespace std;

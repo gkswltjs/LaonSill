@@ -67,7 +67,6 @@ public:
 		}
 	};
 
-	ReshapeLayer();
 	ReshapeLayer(Builder* builder);
 	virtual ~ReshapeLayer();
 

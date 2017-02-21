@@ -14,15 +14,6 @@
 
 using namespace std;
 
-
-
-
-template <typename Dtype>
-SmoothL1LossLayer<Dtype>::SmoothL1LossLayer()
-	: LossLayer<Dtype>() {
-	initialize();
-}
-
 template <typename Dtype>
 SmoothL1LossLayer<Dtype>::SmoothL1LossLayer(Builder* builder)
 	: LossLayer<Dtype>(builder) {

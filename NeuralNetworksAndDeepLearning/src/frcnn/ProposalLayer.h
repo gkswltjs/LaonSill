@@ -59,8 +59,6 @@ public:
 		}
 	};
 
-
-	ProposalLayer();
 	ProposalLayer(Builder* builder);
 	virtual ~ProposalLayer();
 

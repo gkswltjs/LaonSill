@@ -22,11 +22,6 @@
 using namespace std;
 using namespace cv;
 
-
-template <typename Dtype>
-RoITestInputLayer<Dtype>::RoITestInputLayer()
-: InputLayer<Dtype>() {}
-
 template <typename Dtype>
 RoITestInputLayer<Dtype>::RoITestInputLayer(Builder* builder)
 : InputLayer<Dtype>(builder) {
