@@ -22,10 +22,12 @@ public:
 	class Builder : public LossLayer<Dtype>::Builder {
 	public:
         Dtype _targetValue;
+        bool _withSigmoid;
 
 		Builder() {
 			this->type = Layer<Dtype>::CrossEntropyWithLoss;
             this->_targetValue = 0;
+            this->_withSigmoid = false;
 		}
 		virtual Builder* name(const std::string name) {
 			LossLayer<Dtype>::Builder::name(name);
@@ -63,8 +65,12 @@ public:
         //      되어 있다.
         //       추후에 임의의  value distribution에 대한 cross entropy loss를 구할 수 있어야
         //      한다.
-		virtual Builder* targetValue(const Dtype targetValue) {
+		Builder* targetValue(const Dtype targetValue) {
             this->_targetValue = targetValue;
+			return this;
+		}
+		Builder* withSigmoid(bool withSigmoid) {
+            this->_withSigmoid = withSigmoid;
 			return this;
 		}
 		Layer<Dtype>* build() {
@@ -82,9 +88,10 @@ public:
 	virtual Dtype cost();
 
 private:
-	void initialize(Dtype targetValue);
+	void initialize(Dtype targetValue, bool withSigmoid);
     Dtype   targetValue;
-    int   depth;
+    int     depth;
+    bool    withSigmoid;
 };
 
 #endif /* SIGMOIDWITHLOSSLAYER_H */

@@ -57,7 +57,7 @@ void developerMain() {
 	const vector<string> lossLayers = { "celoss" };
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
-	const uint32_t batchSize = 5;
+	const uint32_t batchSize = 100;
 	const uint32_t testInterval = 50;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.01f;
@@ -106,7 +106,8 @@ void developerMain() {
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
 	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig2<float>();
-	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig3<float>();
+	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig3<float>();
+	LayersConfig<float>* layersConfig = createDLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
  	network->setLayersConfig(layersConfig);
 

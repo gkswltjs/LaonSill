@@ -63,7 +63,8 @@ public:
 
 protected:
 	void initialize(bool useLeaky, double leaky);
-    void applyLeaky();
+    void applyLeakyForward();
+    void applyLeakyBackward();
 
 protected:
 	// input, output tensor의 desc가 동일하므로 하나만 사용

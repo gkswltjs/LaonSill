@@ -58,7 +58,7 @@ void ReluLayer<Dtype>::feedforward() {
 					&Cuda::beta, this->tensorDesc, d_outputData));
 
     if (this->useLeaky) {
-        applyLeaky();
+        applyLeakyForward();
     }
 
 	/*
@@ -80,6 +80,10 @@ void ReluLayer<Dtype>::backpropagation() {
 					&Cuda::alpha, this->tensorDesc, d_outputData, this->tensorDesc,
 					d_outputGrad, this->tensorDesc, d_inputData,
 					&Cuda::beta, this->tensorDesc, d_inputGrad));
+
+    if (this->useLeaky) {
+        applyLeakyBackward();
+    }
 
 	/*
 	Data<Dtype>::printConfig = true;

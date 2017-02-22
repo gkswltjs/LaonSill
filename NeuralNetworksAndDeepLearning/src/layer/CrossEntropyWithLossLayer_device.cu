@@ -34,6 +34,8 @@ __global__ void Forward(const Dtype* input, Dtype z, int depth, int batchCount,
         Dtype x;
         if (input[index] < 0.00001)
             x = 0.00001;
+        else if (input[index] > 0.99999)
+            x = 0.99999;
         else
             x = input[index];
 
@@ -41,6 +43,32 @@ __global__ void Forward(const Dtype* input, Dtype z, int depth, int batchCount,
     }
 
     output[idx] = (-1.0) * output[idx] / (Dtype)batchCount;
+}
+
+// Cross Entropy with logit(sigmoid): 
+//  Loss : x - x * z + log (1 + exp(-x))        ....    x >= 0
+//         -x * z + log(1 + exp(x))             ....    x < 0
+//  x : input, z : target
+template <typename Dtype>
+__global__ void ForwardWithSigmoid(const Dtype* input, Dtype z, int depth, int batchCount,
+    Dtype* output) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth)
+		return;
+
+    output[idx] = 0;
+    Dtype x;
+    for (int i = 0; i < batchCount; i++) {
+        int index = i * depth + idx;
+        x = input[index];
+        if (x < 0) { 
+            output[idx] += ((-1.0) * x * z + log(1 + exp(x)));
+        } else {
+            output[idx] += (x - x * z + log(1 + exp( (-1.0) * x)));
+        }
+    }
+
+    output[idx] = output[idx] / (Dtype)batchCount;
 }
 
 // gradient = x - z
@@ -62,23 +90,50 @@ __global__ void Backward(const Dtype* input, const Dtype z, int depth, int batch
     gradient[idx] = gradient[idx] / (Dtype)batchCount;
 }
 
+// gradient : 1 - z - exp(-x) / (1 + exp(-x))   ....   x >= 0
+//            -z + exp(x) / (1 + exp(x))        ....   x < 0 
+// x : input
+template <typename Dtype>
+__global__ void BackwardWithSigmoid(const Dtype* input, const Dtype z, int depth, int batchCount,
+    Dtype* gradient) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth)
+		return;
+
+    gradient[idx] = 0;
+
+    for (int i = 0; i < batchCount; i++) {
+        int index = i * depth + idx;
+        Dtype x = input[index];
+
+        if (input[index] < 0) {
+            gradient[idx] += ((-1.0) * z + exp(x) / (1 + exp(x)));
+        } else {
+            gradient[idx] += (1 - z - exp((-1.0) * x) / (1 + exp((-1.0) * x)));
+        }
+    }
+   
+    gradient[idx] = gradient[idx] / (Dtype)batchCount;
+}
+
 template <typename Dtype>
 CrossEntropyWithLossLayer<Dtype>::CrossEntropyWithLossLayer()
 	: LossLayer<Dtype>() {
-	initialize(0);
+	initialize(0, false);
 }
 
 template <typename Dtype>
 CrossEntropyWithLossLayer<Dtype>::CrossEntropyWithLossLayer(Builder* builder)
 	: LossLayer<Dtype>(builder) {
-	initialize(builder->_targetValue);
+	initialize(builder->_targetValue, builder->_withSigmoid);
 }
 
 template <typename Dtype>
-void CrossEntropyWithLossLayer<Dtype>::initialize(Dtype targetValue) {
+void CrossEntropyWithLossLayer<Dtype>::initialize(Dtype targetValue, bool withSigmoid) {
 	this->type = Layer<Dtype>::CrossEntropyWithLoss;
     this->targetValue = targetValue;
     this->depth = 0;
+    this->withSigmoid = withSigmoid;
 }
 
 template<typename Dtype>
@@ -130,8 +185,13 @@ void CrossEntropyWithLossLayer<Dtype>::feedforward() {
     const Dtype *inputData = this->_inputData[0]->device_data();
     Dtype *outputData = this->_outputData[0]->mutable_device_data();
 
-	Forward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, (Dtype)this->targetValue, this->depth, batchCount, outputData);
+    if (!this->withSigmoid) {
+	    Forward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, this->depth, batchCount, outputData);
+    } else {
+	    ForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, this->depth, batchCount, outputData);
+    }
 }
 
 template <typename Dtype>
@@ -142,13 +202,23 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
     const Dtype *inputData = this->_inputData[0]->device_data();
 	Dtype* inputGrads = this->_inputData[0]->mutable_device_grad();
 
-	Backward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, (Dtype)this->targetValue, this->depth, batchCount, inputGrads);
+    if (!this->withSigmoid) {
+	    Backward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, this->depth, batchCount, inputGrads);
+    } else {
+	    BackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, this->depth, batchCount, inputGrads);
+    }
 }
 
 template <typename Dtype>
 Dtype CrossEntropyWithLossLayer<Dtype>::cost() {
-	return this->_outputData[0]->host_data()[0];
+    const Dtype* outputData = this->_outputData[0]->host_data();
+    Dtype avg = 0.0;
+    for (int i = 0; i < this->depth; i++) {
+        avg += outputData[i];
+    }
+	return avg / (Dtype)this->depth;
 }
 
 template class CrossEntropyWithLossLayer<float>;

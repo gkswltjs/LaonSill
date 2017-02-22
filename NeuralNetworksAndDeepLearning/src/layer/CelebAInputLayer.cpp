@@ -22,7 +22,7 @@
 
 using namespace std;
 
-#define CELEBAINPUTLAYER_LOG        1
+#define CELEBAINPUTLAYER_LOG        0
 
 const int CELEBA_IMAGE_CHANNEL = 3;
 const int CELEBA_IMAGE_ROW = 218;
@@ -96,13 +96,8 @@ void CelebAInputLayer<Dtype>::reshape() {
     loadImages();
 
     int inputImageSize = this->imageChannel * this->imageRow * this->imageCol * batchSize;
-    int perBatchSize = this->imageChannel * this->imageRow * this->imageCol;
 
-    for (int i = 0; i < batchSize; i++) {
-        printf("set device with host data.. i=%d\n", i);
-        this->_inputData[0]->set_device_with_host_data(this->images, 
-                                                       i * perBatchSize, perBatchSize);
-    }
+    this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageSize);
 }
 
 template<typename Dtype>
@@ -213,14 +208,7 @@ template<typename Dtype>
 void CelebAInputLayer<Dtype>::shuffleImages() {
     // FIXME: move it to other source.
     srand(time(NULL)); 
-
     boost::range::random_shuffle(this->imageIndexes);
-
-    cout << "[INDEX] : ";
-    for (int i = 0; i < 10; i++) {
-        cout << this->imageIndexes[i] << " ";
-    }
-    cout << endl;
 }
 
 template<typename Dtype>
@@ -268,8 +256,8 @@ template<typename Dtype>
 void CelebAInputLayer<Dtype>::shuffleTrainDataSet() {
     shuffleImages();
     int batchSize = this->networkConfig->_batchSize;
-    int inputImageSize = this->imageChannel * this->imageRow * this->imageCol * batchSize;
-    this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageSize);
+    int inputImageCount = this->imageChannel * this->imageRow * this->imageCol * batchSize;
+    this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageCount);
 }
 
 template class CelebAInputLayer<float>;
