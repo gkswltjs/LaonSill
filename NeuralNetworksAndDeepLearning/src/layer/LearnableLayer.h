@@ -55,7 +55,6 @@ public:
 	virtual void loadParams(std::ifstream& ifs) = 0;
 	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap) = 0;
 
-    virtual void syncMutableMem() {}
     virtual void applyChanges(LearnableLayer<Dtype> *targetLayer) {}
     virtual void syncParams(LearnableLayer<Dtype> *targetLayer) {}
 

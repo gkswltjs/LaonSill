@@ -125,6 +125,13 @@ void NoiseInputLayer<Dtype>::reshape() {
             prepareLinearTranMatrix();
     }
 
+	if (this->_inputData.size() < 1) {
+		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
+			this->_inputs.push_back(this->_outputs[i]);
+			this->_inputData.push_back(this->_outputData[i]);
+		}
+	}
+
     this->batchSize = batchSize;
     if (!this->useLinearTrans) {
         this->_inputData[0]->reshape(
@@ -184,6 +191,32 @@ void NoiseInputLayer<Dtype>::initialize(int noiseDepth, double noiseMean,
     this->tranCols = tranCols;
     this->tranMean = tranMean;
     this->tranVariance = tranVariance;
+}
+
+template<typename Dtype>
+int NoiseInputLayer<Dtype>::getNumTrainData() {
+    if (this->_dataSet != NULL) {
+        return this->_dataSet->getNumTrainData();
+    } else {    
+        uint32_t batches = this->networkConfig->_batchSize;
+        return batches;
+    }
+}
+
+template<typename Dtype>
+int NoiseInputLayer<Dtype>::getNumTestData() {
+    if (this->_dataSet != NULL) {
+        return this->_dataSet->getNumTestData();
+    } else {
+        return 1;
+    }
+}
+
+template<typename Dtype>
+void NoiseInputLayer<Dtype>::shuffleTrainDataSet() {
+    if (this->_dataSet != NULL) {
+        return this->_dataSet->shuffleTrainDataSet();
+    }
 }
 
 template class NoiseInputLayer<float>;

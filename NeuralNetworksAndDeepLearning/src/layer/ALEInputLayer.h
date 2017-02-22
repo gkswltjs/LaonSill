@@ -76,6 +76,10 @@ public:
 	using Layer<Dtype>::feedforward;
 	void feedforward(const uint32_t baseIndex, const char* end=0);
 
+    int getNumTrainData();
+    int getNumTestData();
+    void shuffleTrainDataSet();
+
 	void reshape();
 
 protected:

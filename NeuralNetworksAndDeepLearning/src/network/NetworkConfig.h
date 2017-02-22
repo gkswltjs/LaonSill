@@ -48,6 +48,8 @@ class LayersConfig {
 public:
 	class Builder {
 	public:
+
+
         std::map<uint32_t, typename Layer<Dtype>::Builder*> _layerWise;
 
 
@@ -73,7 +75,7 @@ public:
             std::vector<LearnableLayer<Dtype>*> learnableLayers;
             std::map<uint32_t, Layer<Dtype>*> idLayerMap;
 
-            		// (1) 전체 레이어에 대해 Layer Builder의 설정대로 Layer들을 생성한다.
+            // (1) 전체 레이어에 대해 Layer Builder의 설정대로 Layer들을 생성한다.
             typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
 			for (it = _layerWise.begin(); it != _layerWise.end(); it++) {
                 Layer<Dtype>* currentLayer = it->second->build();
@@ -85,7 +87,7 @@ public:
                 	firstLayers.push_back(currentLayer);
                 }
 
-                		// 끝 레이어 추가
+               	// 끝 레이어 추가
 #ifndef OUTPUTLAYER
                 LossLayer<Dtype>* lossLayer =
                 		dynamic_cast<LossLayer<Dtype>*>(currentLayer);
@@ -97,14 +99,14 @@ public:
                 	lastLayers.push_back(currentLayer);
                 }
 
-                		// 학습 레이어 추가
+                // 학습 레이어 추가
                 LearnableLayer<Dtype>* learnableLayer =
                     dynamic_cast<LearnableLayer<Dtype>*>(currentLayer);
                 if (learnableLayer) {
                     learnableLayers.push_back(learnableLayer);
                 }
 
-                		// 일반 레이어 추가
+               	// 일반 레이어 추가
                 layers.push_back(currentLayer);
                 idLayerMap[it->first] = currentLayer;
 			}

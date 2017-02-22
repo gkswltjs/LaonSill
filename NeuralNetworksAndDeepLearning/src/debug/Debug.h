@@ -20,6 +20,7 @@
 #include "FullyConnectedLayer.h"
 #include "InputLayer.h"
 #include "RoIInputLayer.h"
+#include "CelebAInputLayer.h"
 #include "DummyInputLayer.h"
 #include "RoITestInputLayer.h"
 #include "LayerConfig.h"
@@ -223,6 +224,20 @@ template <typename Dtype>
 LayersConfig<Dtype>* createCNNSimpleLayersConfig3() {
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
+
+#if 1
+			->layer((new typename CelebAInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("celebAInputLayer")
+					->imageDir(std::string(SPARAM(BASE_DATA_DIR))
+                        + std::string("/celebA"))
+					->source(std::string(SPARAM(BASE_DATA_DIR))
+                        + std::string("/celebA"))
+                    ->cropImage(128,128)
+					->sourceType("ImagePack")
+					->outputs({"data"})
+					)
+#else
 			->layer((new typename InputLayer<Dtype>::Builder())
 					->id(0)
 					->name("inputLayer")
@@ -232,12 +247,14 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig3() {
 					->mean({0.13066047740})
 					->outputs({"data", "label"})
 					)
+
+#endif
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
 					->name("deconvLayer1")
-                    ->deconv(true)
-                    ->deconvExtraCell(1)
-					->filterDim(3, 3, 1, 10, 1, 2)
+                    //->deconv(true)
+                    //->deconvExtraCell(1)
+					->filterDim(3, 3, 3, 10, 1, 1)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 0)
 					->weightFiller(ParamFillerType::Xavier, 0.1)

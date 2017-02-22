@@ -42,6 +42,8 @@ public:
 		Input, 					// 입력 레이어
         NoiseInput,             // noise 입력 레이어
         ALEInput,               // ALE 입력 레이어
+        CelebAInput,            // CelebA 입력 레이어
+
 		FullyConnected, 		// Fully Connected 레이어
 		Conv, 					// 컨볼루션 레이어
 		Pool, 					// 풀링 레이어

@@ -551,10 +551,22 @@ void BatchNormLayer<Dtype>::backpropagation() {
     SPERF_END(BATCHNORM_LAYER_BWTIME, startTime);
 }
 
+template <typename Dtype>
+void BatchNormLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
+    return;
+}
+
+template <typename Dtype>
+void BatchNormLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
+    return;
+}
+
 template BatchNormLayer<float>::~BatchNormLayer();
 template void BatchNormLayer<float>::reshape();
 template void BatchNormLayer<float>::update();
 template void BatchNormLayer<float>::feedforward();
 template void BatchNormLayer<float>::backpropagation();
+template void BatchNormLayer<float>::applyChanges(LearnableLayer<float> *targetLayer);
+template void BatchNormLayer<float>::syncParams(LearnableLayer<float> *targetLayer);
 
 #endif

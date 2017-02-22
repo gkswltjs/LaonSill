@@ -178,7 +178,6 @@ private:
         update_param bias_update_param, param_filler<Dtype> weight_filler,
         param_filler<Dtype> bias_filler);
 
-    void syncMutableMem();
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);
 

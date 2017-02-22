@@ -143,6 +143,9 @@ void ConvLayer<Dtype>::reshape() {
 	uint32_t rows 		= inputShape[2];
 	uint32_t cols 		= inputShape[3];
 
+    cout << "batches : " << batches << ", channels : " << channels <<
+        ", rows : " << rows << ", cols : " << cols << endl;
+
 	checkCUDNN(cudnnSetTensor4dDescriptor(
 			this->inputTensorDesc,
 			CUDNN_TENSOR_NCHW,
@@ -416,14 +419,6 @@ void ConvLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
         weightSize);
     memcpy(_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
         biasSize);
-}
-
-template <typename Dtype>
-void ConvLayer<Dtype>::syncMutableMem() {
-	_params[Filter]->mutable_device_grad();
-	_params[Filter]->host_grad();
-	_params[Bias]->mutable_device_grad();
-	_params[Bias]->host_data();
 }
 
 template <typename Dtype>

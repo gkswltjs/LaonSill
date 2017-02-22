@@ -95,6 +95,9 @@ public:
 private:
     void initialize(double epsilon);
 
+    void applyChanges(LearnableLayer<Dtype> *targetLayer);
+    void syncParams(LearnableLayer<Dtype> *targetLayer);
+
     double      epsilon;                // Small value added to variance to avoid dividing 
                                         // by zero. default value = 0.001
     int         depth;

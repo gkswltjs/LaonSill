@@ -67,7 +67,7 @@ __global__ void Dropout(const int n, const Dtype* in, const Dtype* mask,
  * @param N The number of elements in the array.
  */
 template <typename Dtype>
-__global__ void AddArrayOfFCLayer(Dtype* dst, const Dtype* src, int N)
+__global__ void AddData(Dtype* dst, const Dtype* src, int N)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -252,13 +252,13 @@ void FullyConnectedLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer
 
     gridSize = (weightSize + blockSize -1) / blockSize;
 
-    AddArrayOfFCLayer<<<gridSize, blockSize>>>(
+    AddData<<<gridSize, blockSize>>>(
         _targetLayer->_params[Weight]->mutable_device_grad(),
         _params[Weight]->device_grad(), weightSize);
 
     gridSize = (biasSize + blockSize -1) / blockSize;
 
-    AddArrayOfFCLayer<<<gridSize, blockSize>>>(
+    AddData<<<gridSize, blockSize>>>(
         _targetLayer->_params[Bias]->mutable_device_grad(),
         _params[Bias]->device_grad(), biasSize);
 }
@@ -276,15 +276,6 @@ void FullyConnectedLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) 
         weightSize);
     memcpy(_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
         biasSize);
-}
-
-
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::syncMutableMem() {
-	_params[Weight]->mutable_device_grad();
-	_params[Weight]->host_grad();
-	_params[Bias]->mutable_device_grad();
-	_params[Bias]->host_grad();
 }
 
 template <typename Dtype>

@@ -48,4 +48,18 @@ void DummyInputLayer<Dtype>::initialize() {
 
 }
 
+template<typename Dtype>
+int DummyInputLayer<Dtype>::getNumTrainData() {
+    return 1;
+}
+
+template<typename Dtype>
+int DummyInputLayer<Dtype>::getNumTestData() {
+    return 1;
+}
+
+template<typename Dtype>
+void DummyInputLayer<Dtype>::shuffleTrainDataSet() {
+}
+
 template class DummyInputLayer<float>;

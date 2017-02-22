@@ -48,6 +48,10 @@ public:
 	DummyInputLayer(Builder* builder);
 	virtual ~DummyInputLayer();
 
+    int getNumTrainData();
+    int getNumTestData();
+    void shuffleTrainDataSet();
+
 	virtual void feedforward();
 	virtual void reshape();
 

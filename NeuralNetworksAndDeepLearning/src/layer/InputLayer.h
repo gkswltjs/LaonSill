@@ -125,6 +125,11 @@ public:
 
 	void reshape();
 
+    virtual int getNumTrainData();
+    virtual int getNumTestData();
+    virtual void shuffleTrainDataSet();
+
+
 protected:
 	void initialize();
 

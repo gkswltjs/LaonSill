@@ -103,11 +103,11 @@ void Network<Dtype>::sgd_with_timer(int epochs) {
 
 template <typename Dtype>
 void Network<Dtype>::sgd(int epochs) {
-	DataSet<Dtype>* dataSet = getLayersConfig()->_inputLayer->_dataSet;
+    InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
 	//vector<vector<Evaluation<Dtype>*>>& evaluations = config->_evaluations;
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
-	const uint32_t trainDataSize = dataSet->getNumTrainData();
+	const uint32_t trainDataSize = inputLayer->getNumTrainData();
 	cout << "trainDataSize: " << trainDataSize << endl;
 	const uint32_t numBatches = 
         trainDataSize / config->_batchSize / Worker<Dtype>::consumerCount;
@@ -118,7 +118,7 @@ void Network<Dtype>::sgd(int epochs) {
 
 		STDOUT_BLOCK(cout << "epochIndex: " << epochIndex << ", epochs: " << epochs << endl;);
 
-		dataSet->shuffleTrainDataSet();
+		inputLayer->shuffleTrainDataSet();
 
         // GPU가 여러대 있는 경우에 한대의 GPU가 하나의 batch에 해당하는
         // 데이터를 트레이닝한다.
@@ -206,7 +206,7 @@ void Network<Dtype>::sgd(int epochs) {
 
 template <typename Dtype>
 double Network<Dtype>::evaluateTestSet() {
-	DataSet<Dtype>* dataSet = getLayersConfig()->_inputLayer->_dataSet;
+    InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
 	//vector<vector<Evaluation<Dtype>*>>& evaluations = config->_evaluations;
 	double cost = 0.0;
 
@@ -216,7 +216,7 @@ double Network<Dtype>::evaluateTestSet() {
 	//}
 
 	vector<double> costList;
-	const uint32_t numBatches = dataSet->getNumTestData()/config->_batchSize;
+	const uint32_t numBatches = inputLayer->getNumTestData()/config->_batchSize;
 	for (uint32_t batchIndex = 0; batchIndex < numBatches; batchIndex++) {
 		//cost += evaluateTestData(batchIndex);
 		evaluateTestData(batchIndex, costList);
@@ -314,6 +314,7 @@ void Network<Dtype>::feedforward(const rcube &input, const char *end) {
 template <typename Dtype>
 void Network<Dtype>::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
 
+#if 0
 	int baseIndex = nthMiniBatch*miniBatchSize;
 	for(int i = 0; i < miniBatchSize; i++) {
 		backprop(dataSet->getTrainDataAt(baseIndex+i));
@@ -323,6 +324,7 @@ void Network<Dtype>::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
 
 	//cout << "update()" << endl;
 	//inputLayer->update(0, n, miniBatchSize);
+#endif
 }
 
 template <typename Dtype>
@@ -406,13 +408,6 @@ void Network<Dtype>::applyUpdate() {
 	clipGradients();
 	const uint32_t numLearnableLayers = getLayersConfig()->_learnableLayers.size();
 
-    // device 메모리를 host 메모리로 동기화 시킨다.
-    if (!Worker<Dtype>::isSingle()) {
-        for (uint32_t i = 0; i < numLearnableLayers; i++) {
-            getLayersConfig()->_learnableLayers[i]->syncMutableMem();
-        }
-    }
-
     // 모든 worker에서 GPU 트레이닝이 끝나길 기다린다.
     // XXX: 예쁘게.. 
     if (Worker<Dtype>::waitPeer()) {
@@ -491,11 +486,7 @@ void Network<Dtype>::syncNetwork(Network<Dtype>* target) {
             LayersConfig<Dtype>* srcLC = this->config->layersConfigs[i];
             LayersConfig<Dtype>* dstLC = target->config->layersConfigs[i];
 
-            // (1) device 메모리를 host 메모리로 동기화 한다.
-            srcLC->_learnableLayers[i]->syncMutableMem();
-            dstLC->_learnableLayers[i]->syncMutableMem();
-
-            // (2) source network layer의 파라미터 값을 dest network layer의 파라미터 
+            // (1) source network layer의 파라미터 값을 dest network layer의 파라미터 
             //    값으로 동기화 한다.
             dstLC->_learnableLayers[i]->syncParams(srcLC->_learnableLayers[i]);
         }

@@ -217,4 +217,30 @@ void ALEInputLayer<Dtype>::fillLabel(DQNImageLearner<Dtype> *learner) {
     }
 }
 
+template<typename Dtype>
+int ALEInputLayer<Dtype>::getNumTrainData() {
+    if (this->_dataSet != NULL) {
+        return this->_dataSet->getNumTrainData();
+    } else {    
+        uint32_t batches = this->networkConfig->_batchSize;
+        return batches;
+    }
+}
+
+template<typename Dtype>
+int ALEInputLayer<Dtype>::getNumTestData() {
+    if (this->_dataSet != NULL) {
+        return this->_dataSet->getNumTestData();
+    } else {
+        return 1;
+    }
+}
+
+template<typename Dtype>
+void ALEInputLayer<Dtype>::shuffleTrainDataSet() {
+    if (this->_dataSet != NULL) {
+        return this->_dataSet->shuffleTrainDataSet();
+    }
+}
+
 template class ALEInputLayer<float>;
