@@ -485,4 +485,20 @@ void ConvLayer<Dtype>::update(uint32_t idx, uint32_t n, uint32_t miniBatchSize) 
 
 #endif
 
+template<typename Dtype>
+void ConvLayer<Dtype>::donateParam(ConvLayer<Dtype>* receiver) {
+#if GPU_MODE
+    receiver->_params.clear();
+    receiver->_paramsHistory.clear();
+
+    for (int i = 0; i < _params.size(); i++) {
+        receiver->_params.push_back(_params[i]);
+    }
+
+    for (int i = 0; i < _paramsHistory.size(); i++) {
+        receiver->_paramsHistory.push_back(_paramsHistory[i]);
+    }
+#endif
+}
+
 template class ConvLayer<float>;

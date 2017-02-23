@@ -79,15 +79,20 @@ __global__ void AddData(Dtype* dst, const Dtype* src, int N)
 
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
-	//delete _params[ParamType::Weight];
-	//delete _params[ParamType::Bias];
-	//_params.clear();
-	Util::clearVector(_params);
 
-	//delete _paramsHistory[ParamType::Weight];
-	//delete _paramsHistory[ParamType::Bias];
-	//_paramsHistory.clear();
-	Util::clearVector(_paramsHistory);
+    if (this->isReceiver) {
+        Donator<Dtype>::releaseReceiver(this->donatorID);
+    } else {
+        //delete _params[ParamType::Weight];
+        //delete _params[ParamType::Bias];
+        //_params.clear();
+        Util::clearVector(_params);
+
+        //delete _paramsHistory[ParamType::Weight];
+        //delete _paramsHistory[ParamType::Bias];
+        //_paramsHistory.clear();
+        Util::clearVector(_paramsHistory);
+    }
 
 	//delete _preActivation;
 	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));

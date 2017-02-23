@@ -258,6 +258,7 @@ public:
 
     bool deconv;
     int deconvExtraCell;
+    void donateParam(ConvLayer<Dtype>* receiver);
 };
 
 #endif /* LAYER_CONVLAYER_H_ */

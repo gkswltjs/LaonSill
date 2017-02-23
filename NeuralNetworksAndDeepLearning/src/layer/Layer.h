@@ -97,10 +97,17 @@ public:
 
         std::vector<bool> _propDown;
 
+        bool _isDonator;
+        bool _isReceiver;
+        uint32_t _donatorID;
 
 		Builder() {
 			type = Layer<Dtype>::None;
 			_name = "";
+
+            this->_isDonator = false;
+            this->_isReceiver = false;
+            this->_donatorID = 0;
 		}
 		virtual ~Builder() {}
 		virtual Builder* name(const std::string name) {
@@ -123,6 +130,15 @@ public:
 			this->_propDown = propDown;
 			return this;
 		}
+        Builder* donate() {
+            this->_isDonator = true;
+			return this;
+        }
+        Builder* receive(uint32_t donatorID) {
+            this->_isReceiver = true;
+            this->_donatorID = donatorID;
+			return this;
+        }
 
 		virtual Layer<Dtype>* build() = 0;
 	};

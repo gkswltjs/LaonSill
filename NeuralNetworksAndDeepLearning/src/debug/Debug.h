@@ -222,7 +222,70 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 
 
 template <typename Dtype>
-LayersConfig<Dtype>* createDLayersConfig() {
+LayersConfig<Dtype>* createGeneratorOfGANLayersConfig() {
+	LayersConfig<Dtype>* layersConfig =
+	    (new typename LayersConfig<Dtype>::Builder())
+        ->layer((new typename CelebAInputLayer<Dtype>::Builder())
+                ->id(101)
+                ->name("celebAInputLayer")
+                ->imageDir(std::string(SPARAM(BASE_DATA_DIR))
+                    + std::string("/celebA"))
+                ->source(std::string(SPARAM(BASE_DATA_DIR))
+                    + std::string("/celebA"))
+                ->cropImage(64,64)
+                ->sourceType("ImagePack")
+                ->outputs({"data"})
+                )
+        ->layer((new typename ConvLayer<Dtype>::Builder())
+                ->id(102)
+                ->name("convLayer1")
+                ->filterDim(5, 5, 3, 64, 1, 2)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
+                ->weightFiller(ParamFillerType::Xavier, 0.1)
+                ->biasFiller(ParamFillerType::Constant, 0.2)
+                ->inputs({"data"})
+                ->outputs({"conv1"})
+                ->receive(2))
+        ->layer((new typename ReluLayer<Dtype>::Builder())
+                ->id(103)
+                //->leaky(0.2)
+                ->name("relu1")
+                ->inputs({"conv1"})
+                ->outputs({"relu1"}))
+#if 0
+        ->layer((new typename SigmoidLayer2<Dtype>::Builder())
+                ->id(10)
+                ->name("sigmoid")
+                ->inputs({"relu4"})
+                ->outputs({"sigmoid"}))
+
+        ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
+                ->id(11)
+                ->targetValue(1.0)
+                //->targetValue(0.0)
+                ->name("celoss")
+                ->inputs({"sigmoid"})
+                ->outputs({"prob"}))
+#else
+        ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
+                ->id(104)
+                ->targetValue(1.0)
+                //->targetValue(0.0)
+                ->withSigmoid(true)
+                ->name("celoss")
+                ->inputs({"relu1"})
+                ->outputs({"prob"}))
+
+#endif
+
+        ->build();
+
+	return layersConfig;
+}
+
+template <typename Dtype>
+LayersConfig<Dtype>* createDiscriminatorOfGANLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
 	    (new typename LayersConfig<Dtype>::Builder())
         ->layer((new typename CelebAInputLayer<Dtype>::Builder())
@@ -245,7 +308,8 @@ LayersConfig<Dtype>* createDLayersConfig() {
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
                 ->biasFiller(ParamFillerType::Constant, 0.2)
                 ->inputs({"data"})
-                ->outputs({"conv1"}))
+                ->outputs({"conv1"})
+                ->donate())
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(3)
                 //->leaky(0.2)

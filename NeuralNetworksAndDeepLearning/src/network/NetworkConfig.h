@@ -27,6 +27,8 @@
 #include "Worker.h"
 #include "Top1Evaluation.h"
 #include "Top5Evaluation.h"
+#include "SysLog.h"
+#include "Donator.h"
 
 
 //#define OUTPUTLAYER
@@ -48,7 +50,6 @@ class LayersConfig {
 public:
 	class Builder {
 	public:
-
 
         std::map<uint32_t, typename Layer<Dtype>::Builder*> _layerWise;
 
@@ -104,11 +105,37 @@ public:
                     dynamic_cast<LearnableLayer<Dtype>*>(currentLayer);
                 if (learnableLayer) {
                     learnableLayers.push_back(learnableLayer);
+
+                    uint32_t donatorID;
+
+                    if (it->second->_isReceiver) {
+                        donatorID = it->second->_donatorID;
+                    } else {
+                        donatorID = it->first;
+                    }
+
+                    learnableLayer->fillDonatorInfo(it->second->_isDonator,
+                        it->second->_isReceiver, donatorID);
+
+                    if (learnableLayer->isReceiver) {
+                        SASSERT(!learnableLayer->isDonator,
+                            "layer can not be donator and receiver at the same time. "
+                            "donator ID : %d", learnableLayer->donatorID);
+                        // FIXME: dangerous casting..
+                        Donator<Dtype>::receive(learnableLayer->donatorID,
+                                                (void*)currentLayer);
+                    }
+
+                    if (learnableLayer->isDonator) {
+                        Donator<Dtype>::donate(learnableLayer->donatorID,
+                                               (void*)currentLayer);
+                    }
                 }
 
                	// 일반 레이어 추가
                 layers.push_back(currentLayer);
                 idLayerMap[it->first] = currentLayer;
+
 			}
 
 			if(firstLayers.size() < 1) {

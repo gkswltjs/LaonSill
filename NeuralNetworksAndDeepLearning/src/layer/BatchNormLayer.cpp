@@ -117,4 +117,10 @@ void BatchNormLayer<Dtype>::backpropagation(uint32_t idx, HiddenLayer *next_laye
 
 #endif
 
+template<typename Dtype>
+void BatchNormLayer<Dtype>::donateParam(BatchNormLayer<Dtype>* receiver) {
+    // XXX: hmm... does this layer really need param donation??
+    return;
+}
+
 template class BatchNormLayer<float>;

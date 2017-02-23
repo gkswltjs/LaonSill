@@ -351,4 +351,26 @@ void FullyConnectedLayer<Dtype>::update(uint32_t idx, uint32_t n, uint32_t miniB
 
 #endif
 
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::donateParam(FullyConnectedLayer<Dtype>* receiver) {
+#if GPU_MODE
+    receiver->_params.clear();
+    receiver->_paramsHistory.clear();
+    receiver->_paramsInitialized.clear();
+
+    for (int i = 0; i < _params.size(); i++) {
+        receiver->_params.push_back(_params[i]);
+    }
+
+    for (int i = 0; i < _paramsHistory.size(); i++) {
+        receiver->_paramsHistory.push_back(_paramsHistory[i]);
+    }
+
+    for (int i = 0; i < _paramsInitialized.size(); i++) {
+        receiver->_paramsInitialized.push_back(_paramsInitialized[i]);
+    }
+#endif
+}
+
+
 template class FullyConnectedLayer<float>;

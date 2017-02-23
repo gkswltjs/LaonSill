@@ -107,14 +107,16 @@ void developerMain() {
 	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig2<float>();
 	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig3<float>();
-	LayersConfig<float>* layersConfig = createDLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createDiscriminatorOfGANLayersConfig<float>();
+	LayersConfig<float>* layersConfig2 = createGeneratorOfGANLayersConfig<float>();
 	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
  	network->setLayersConfig(layersConfig);
 
 	// (2) network config 정보를 layer들에게 전달한다.
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
-	}
+    }
+
 
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->reshape();

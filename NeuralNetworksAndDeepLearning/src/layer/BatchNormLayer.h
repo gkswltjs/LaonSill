@@ -118,5 +118,7 @@ private:
     void        computeInputGrad();
     void        computeScaleGrad();
     void        computeShiftGrad();
+public:
+    void        donateParam(BatchNormLayer<Dtype>* receiver);
 };
 #endif /* BATCHNORMLAYER_H */

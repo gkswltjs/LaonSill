@@ -57,6 +57,7 @@ public:
 			_biasFiller.type = ParamFillerType::Constant;
 			_biasFiller.value = 0.0f;
 			//_activationType = Activation<Dtype>::NoActivation;
+            //
 		}
 		Builder* nOut(uint32_t nOut) {
 			this->_nOut = nOut;
@@ -250,6 +251,8 @@ public:
 
     uint32_t tempCnt;
 
+public:
+    void donateParam(FullyConnectedLayer<Dtype>* receiver);
 };
 
 #endif /* LAYER_FULLYCONNECTEDLAYER_H_ */

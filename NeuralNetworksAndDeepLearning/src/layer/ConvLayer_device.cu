@@ -39,13 +39,18 @@ __global__ void AddArrayOfConvLayer(Dtype* dst, const Dtype* src, int N)
 
 template <typename Dtype>
 ConvLayer<Dtype>::~ConvLayer() {
-	delete _params[ParamType::Filter];
-	delete _params[ParamType::Bias];
-	_params.clear();
 
-	delete _paramsHistory[ParamType::Filter];
-	delete _paramsHistory[ParamType::Bias];
-	_paramsHistory.clear();
+    if (this->isReceiver) {
+        Donator<Dtype>::releaseReceiver(this->donatorID);
+    } else {
+        delete _params[ParamType::Filter];
+        delete _params[ParamType::Bias];
+        _params.clear();
+
+        delete _paramsHistory[ParamType::Filter];
+        delete _paramsHistory[ParamType::Bias];
+        _paramsHistory.clear();
+    }
 
 	//delete _preActivation;
 
