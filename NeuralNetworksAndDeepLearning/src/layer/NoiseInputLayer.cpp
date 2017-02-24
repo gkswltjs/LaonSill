@@ -100,12 +100,12 @@ void NoiseInputLayer<Dtype>::prepareLinearTranMatrix() {
     int k = this->noiseDepth;
 
     if (sizeof(Dtype) == sizeof(float)) {
-        cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1,
-            this->uniformArray, m, tempMatrix, n, 0, this->linearTransMatrix, m);
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1,
+            this->uniformArray, k, tempMatrix, n, 0, this->linearTransMatrix, n);
     } else {
-        cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1,
-            (const double*)this->uniformArray, m, (const double*)tempMatrix, n, 0,
-            (double*)this->linearTransMatrix, m);
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1,
+            (const double*)this->uniformArray, k, (const double*)tempMatrix, n, 0,
+            (double*)this->linearTransMatrix, n);
     }
 
     free(tempMatrix);
@@ -144,16 +144,16 @@ void NoiseInputLayer<Dtype>::reshape() {
     }
 
     for (int i = 0 ; i < batchSize; i++) {
-        int copySize;
+        int copyElemCount;
 
         if (this->useLinearTrans) {
-            copySize = sizeof(Dtype) * this->tranChannels * this->tranRows * this->tranCols;
+            copyElemCount = this->tranChannels * this->tranRows * this->tranCols;
             this->_inputData[0]->set_device_with_host_data(this->linearTransMatrix,
-                copySize * i, copySize); 
+                copyElemCount * i, copyElemCount); 
         } else {
-            copySize = sizeof(Dtype) * this->noiseDepth;
-            this->_inputData[0]->set_device_with_host_data(this->uniformArray, copySize * i,
-                copySize); 
+            copyElemCount = this->noiseDepth;
+            this->_inputData[0]->set_device_with_host_data(this->uniformArray,
+                copyElemCount * i, copyElemCount); 
         }
     }
 

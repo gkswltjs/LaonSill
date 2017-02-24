@@ -32,6 +32,17 @@ public:
 	 * @brief 컨볼루션 레이어 객체 빌더
 	 * @details 컨볼루션 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
 	 *          해당 파라미터를 만족하는 컨볼루션 레이어 객체를 생성한다.
+     *
+     *
+     *          [convolution layer output]
+     *          o = rounding off((i + 2p - k) / s) + 1
+     *          o : output, p : padding, k : kernel, s : stride
+     *
+     *          [deconvolution layer output]
+     *          o = s * (i - 1) + a + k - 2p
+     *          o : output, s : stride, i : input, a : _deconvExtraCell, 
+     *          k : kernel, p : padding
+     *
 	 */
 	class Builder : public HiddenLayer<Dtype>::Builder {
 	public:

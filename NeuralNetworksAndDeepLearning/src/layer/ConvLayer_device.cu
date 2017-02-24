@@ -15,7 +15,7 @@
 #include "cuda_runtime.h"
 #include <algorithm>
 
-#define CONVLAYER_LOG 1
+#define CONVLAYER_LOG 0
 
 using namespace std;
 
@@ -148,9 +148,6 @@ void ConvLayer<Dtype>::reshape() {
 	uint32_t rows 		= inputShape[2];
 	uint32_t cols 		= inputShape[3];
 
-    cout << "batches : " << batches << ", channels : " << channels <<
-        ", rows : " << rows << ", cols : " << cols << endl;
-
 	checkCUDNN(cudnnSetTensor4dDescriptor(
 			this->inputTensorDesc,
 			CUDNN_TENSOR_NCHW,
@@ -169,8 +166,10 @@ void ConvLayer<Dtype>::reshape() {
         SASSERT0(this->filter_d.rows == this->filter_d.cols);
         SASSERT0(this->deconvExtraCell < this->filter_d.stride);
 
+        // See ConvLayer.h
         n = batches;
-        c = this->filter_d.filters * this->filter_d.channels;
+        //c = this->filter_d.filters * this->filter_d.channels;
+        c = this->filter_d.filters;
         h = this->filter_d.stride * (cols - 1) + this->filter_d.cols -
             2 * this->filter_d.pad + this->deconvExtraCell;
         w = this->filter_d.stride * (rows - 1) + this->filter_d.rows - 

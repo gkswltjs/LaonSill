@@ -89,6 +89,7 @@ public:
             this->_tranCols = cols;
             this->_tranMean = mean;
             this->_tranVariance = variance;
+            return this;
         }
 		Layer<Dtype>* build() {
 			return new NoiseInputLayer(this);

@@ -45,19 +45,21 @@ void printUsageAndExit(char* prog) {
 }
 
 void developerMain() {
-    // TODO: 
     STDOUT_LOG("enter developerMain()");
 
     checkCudaErrors(cudaSetDevice(0));
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-	//vector<WeightsArg> weightsArgs(1);
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/network540000.param.bak";
-	const vector<string> lossLayers = { "celoss" };
-	const NetworkPhase phase = NetworkPhase::TrainPhase;
+    // loss layer of Discriminator GAN 
+	const vector<string> llDGAN = { "celossDGAN" };
+    // loss layer of Generatoer-Discriminator 0 GAN
+	const vector<string> llGD0GAN = { "celossGD0GAN" };
+    // loss layer of Generatoer-Discriminator 1 GAN
+	const vector<string> llGD1GAN = { "celossGD1GAN" };
 
-	const uint32_t batchSize = 100;
+	const NetworkPhase phase = NetworkPhase::TrainPhase;
+	const uint32_t batchSize = 128;
 	const uint32_t testInterval = 50;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.01f;
@@ -67,7 +69,6 @@ void developerMain() {
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 0.0f;
 	const float gamma = 0.1;
-	//const LRPolicy lrPolicy = LRPolicy::Step;
 	const LRPolicy lrPolicy = LRPolicy::Fixed;
 
 	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
@@ -78,7 +79,7 @@ void developerMain() {
 	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
 	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
 
-	NetworkConfig<float>* networkConfig =
+	NetworkConfig<float>* ncDGAN =
 			(new typename NetworkConfig<float>::Builder())
 			->batchSize(batchSize)
 			->baseLearningRate(baseLearningRate)
@@ -92,38 +93,94 @@ void developerMain() {
 			->networkPhase(phase)
 			->gamma(gamma)
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
-			//->weightsArgs(weightsArgs)
 			->networkListeners({
-				new NetworkMonitor("celoss", NetworkMonitor::PLOT_ONLY),
+				new NetworkMonitor("celossDGAN", NetworkMonitor::PLOT_ONLY),
 				})
-			->lossLayers(lossLayers)
+			->lossLayers(llDGAN)
+			->build();
+
+	NetworkConfig<float>* ncGD0GAN =
+			(new typename NetworkConfig<float>::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
+			->stepSize(stepSize)
+			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->networkPhase(phase)
+			->gamma(gamma)
+			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+			->networkListeners({
+				new NetworkMonitor("celossGD0GAN", NetworkMonitor::PLOT_ONLY),
+				})
+			->lossLayers(llGD0GAN)
+			->build();
+
+	NetworkConfig<float>* ncGD1GAN =
+			(new typename NetworkConfig<float>::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
+			->stepSize(stepSize)
+			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->networkPhase(phase)
+			->gamma(gamma)
+			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+			->networkListeners({
+				new NetworkMonitor("celossGD1GAN", NetworkMonitor::PLOT_ONLY),
+				})
+			->lossLayers(llGD1GAN)
 			->build();
 
 	Util::printVramInfo();
 
- 	Network<float>* network = new Network<float>(networkConfig);
+ 	Network<float>* networkDGAN = new Network<float>(ncDGAN);
+ 	Network<float>* networkGD0GAN = new Network<float>(ncGD0GAN);
+ 	Network<float>* networkGD1GAN = new Network<float>(ncGD1GAN);
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig2<float>();
-	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig3<float>();
-	LayersConfig<float>* layersConfig = createDiscriminatorOfGANLayersConfig<float>();
-	LayersConfig<float>* layersConfig2 = createGeneratorOfGANLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
- 	network->setLayersConfig(layersConfig);
+	LayersConfig<float>* lcDGAN = createDOfGANLayersConfig<float>();
+	LayersConfig<float>* lcGD0GAN = createGD0OfGANLayersConfig<float>();
+	LayersConfig<float>* lcGD1GAN = createGD1OfGANLayersConfig<float>();
+ 	networkDGAN->setLayersConfig(lcDGAN);
+ 	networkGD0GAN->setLayersConfig(lcGD0GAN);
+ 	networkGD1GAN->setLayersConfig(lcGD1GAN);
 
 	// (2) network config 정보를 layer들에게 전달한다.
-	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
+	for (uint32_t i = 0; i < lcDGAN->_layers.size(); i++)
+		lcDGAN->_layers[i]->setNetworkConfig(ncDGAN);
+
+	for (uint32_t i = 0; i < lcDGAN->_layers.size(); i++)
+		lcDGAN->_layers[i]->reshape();
+
+	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
+		lcGD0GAN->_layers[i]->setNetworkConfig(ncGD0GAN);
+
+	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++) {
+		lcGD0GAN->_layers[i]->reshape();
     }
 
+	for (uint32_t i = 0; i < lcGD1GAN->_layers.size(); i++)
+		lcGD1GAN->_layers[i]->setNetworkConfig(ncGD1GAN);
 
-	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-		layersConfig->_layers[i]->reshape();
-	}
+	for (uint32_t i = 0; i < lcGD1GAN->_layers.size(); i++)
+		lcGD1GAN->_layers[i]->reshape();
 
+    for (int i = 0; i < 10; i++) {
+        for (int k = 0; k < 5; k++) {
+            networkDGAN->sgd_with_timer(1);
+            networkGD0GAN->sgd_with_timer(1);
+        }
 
- 	network->sgd_with_timer(10);
+ 	    networkGD1GAN->sgd_with_timer(1);
+    }
 
     STDOUT_LOG("exit developerMain()");
 }
