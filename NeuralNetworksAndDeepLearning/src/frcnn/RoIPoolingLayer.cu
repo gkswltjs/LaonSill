@@ -5,7 +5,7 @@
  *      Author: jkim
  */
 
-
+#include <cfloat>
 
 #include "RoIPoolingLayer.h"
 #include "Cuda.h"
