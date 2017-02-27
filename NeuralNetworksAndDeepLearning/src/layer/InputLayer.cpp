@@ -133,8 +133,10 @@ void InputLayer<Dtype>::reshape() {
 
 template <typename Dtype>
 void InputLayer<Dtype>::feedforward() {
-	cout << "unsupported ... " << endl;
-	exit(1);
+	reshape();
+	//cout << "unsupported ... " << endl;
+	//exit(1);
+	// do nothing
 }
 
 

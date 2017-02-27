@@ -218,9 +218,13 @@ void Data<Dtype>::set(Data<Dtype>* data, bool reshape) {
 
 	assert(_shape == data->getShape());
 
-	this->set_host_data(data);
-	if (!this->_hostOnly)
+	if (this->_hostOnly || data->_hostOnly) {
+		this->set_host_data(data);
 		this->set_host_grad(data);
+	} else {
+		this->set_device_data(data);
+		this->set_device_grad(data);
+	}
 }
 
 
@@ -671,10 +675,12 @@ bool Data<Dtype>::compareData(
 				for (uint32_t l = 0; l < width; l++) {
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
 					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
-						cout << "data is different at (" << i << "," << j << "," <<
-								k << "," << l << ")" << endl;
-						cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
-								data2Ptr[index] << endl;
+						if (errorCnt < 10) {
+							cout << "data is different at (" << i << "," << j << "," <<
+									k << "," << l << ")" << endl;
+							cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
+									data2Ptr[index] << endl;
+						}
 						errorCnt++;
 						result = false;
 					}
@@ -716,10 +722,12 @@ bool Data<Dtype>::compareData(
 				for (uint32_t l = 0; l < width; l++) {
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
 					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
-						cout << "data is different at (" << i << "," << j << "," <<
-								k << "," << l << ")" << endl;
-						cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
-								data2Ptr[index] << endl;
+						if (errorCnt < 10) {
+							cout << "data is different at (" << i << "," << j << "," <<
+									k << "," << l << ")" << endl;
+							cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
+									data2Ptr[index] << endl;
+						}
 						errorCnt++;
 						result = false;
 					}
@@ -760,10 +768,12 @@ bool Data<Dtype>::compareGrad(
 				for (uint32_t l = 0; l < width; l++) {
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
 					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
-						cout << "grad is different at (" << i << "x" << j << "x" <<
-								k << "x" << l << ")" << endl;
-						cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
-								data2Ptr[index] << endl;
+						if (errorCnt < 10) {
+							cout << "grad is different at (" << i << "x" << j << "x" <<
+									k << "x" << l << ")" << endl;
+							cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
+									data2Ptr[index] << endl;
+						}
 						errorCnt++;
 						result = false;
 					}
@@ -805,10 +815,12 @@ bool Data<Dtype>::compareGrad(
 				for (uint32_t l = 0; l < width; l++) {
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
 					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
-						cout << "grad is different at (" << i << "x" << j << "x" <<
-								k << "x" << l << ")" << endl;
-						cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
-								data2Ptr[index] << endl;
+						if (errorCnt < 10) {
+							cout << "grad is different at (" << i << "x" << j << "x" <<
+									k << "x" << l << ")" << endl;
+							cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
+									data2Ptr[index] << endl;
+						}
 						errorCnt++;
 						result = false;
 					}

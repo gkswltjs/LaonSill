@@ -103,7 +103,10 @@ public:
 	 * @param data 복사할 Data
 	 * @param offset data의 포인터에 대한 offset
 	 */
-	void set_host_data(Data* data, const uint32_t offset=0) { 
+	void set_host_data(Data* data, const uint32_t offset=0, bool reshape = false) {
+		if (reshape)
+			this->reshapeLike(data);
+
         set_host_data(data->host_data()+offset);
     }
 	/**
@@ -111,7 +114,10 @@ public:
 	 * @param data 복사할 Data
 	 * @param offset data의 포인터에 대한 offset
 	 */
-	void set_device_data(Data* data, const uint32_t offset=0) {
+	void set_device_data(Data* data, const uint32_t offset=0, bool reshape = false) {
+		if (reshape)
+			this->reshapeLike(data);
+
         set_device_data(data->device_data()+offset);
     }
 	/**
@@ -119,7 +125,10 @@ public:
 	 * @param grad 복사할 Data
 	 * @param offset grad의 포인터에 대한 offset
 	 */
-	void set_host_grad(Data* grad, const uint32_t offset=0) {
+	void set_host_grad(Data* grad, const uint32_t offset=0, bool reshape = false) {
+		if (reshape)
+			this->reshapeLike(grad);
+
         set_host_grad(grad->host_grad()+offset);
     }
 	/**
@@ -127,7 +136,10 @@ public:
 	 * @param grad 복사할 Data
 	 * @param offset grad의 포인터에 대한 offset
 	 */
-	void set_device_grad(Data* grad, const uint32_t offset=0) {
+	void set_device_grad(Data* grad, const uint32_t offset=0, bool reshape = false) {
+		if (reshape)
+			this->reshapeLike(grad);
+
         set_device_grad(grad->device_grad()+offset);
     }
 	/**

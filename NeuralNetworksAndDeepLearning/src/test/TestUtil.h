@@ -21,6 +21,7 @@ const std::string TYPE_DIFF = "diff";
 const std::string SIG_BOTTOM = "_bottom_";
 const std::string SIG_TOP = "_top_";
 const std::string SIG_PARAMS = "_params_";
+const std::string BLOBS_PREFIX = "anonymous_blobs_";
 
 const std::string NPZ_PATH = "/home/jkim/Dev/data/numpy_array/";
 
@@ -48,9 +49,13 @@ void fillParam(std::map<std::string, Data<float>*>& nameDataMap,
 		const std::string& param_prefix, std::vector<Data<float>*>& paramVec);
 
 //
-void compareData(std::map<std::string, Data<float>*>& nameDataMap,
+bool compareData(std::map<std::string, Data<float>*>& nameDataMap,
 		const std::string& data_prefix, std::vector<Data<float>*>& dataVec,
 		uint32_t compareType);
+bool compareParam(std::map<std::string, Data<float>*>& nameDataMap,
+		const std::string& param_prefix, std::vector<Data<float>*>& paramVec,
+		uint32_t compareType);
+
 
 void printNpzFiles(cnpy::npz_t& cnpy_npz);
 void printNameDataMap(std::map<std::string, Data<float>*>& nameDataMap, bool printData);
@@ -66,7 +71,8 @@ void cleanUpMap(std::map<T, S*>& dict);
 template <typename T>
 void cleanUpObject(T* obj);
 
-
+template <typename T, typename S>
+S* retrieveValueFromMap(std::map<T, S*>& dict, const T& key);
 
 
 

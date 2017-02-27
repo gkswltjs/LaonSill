@@ -1,3 +1,5 @@
+#if 0
+
 #include "LayerTestInterface.h"
 #include "LayerTest.h"
 #include "LearnableLayerTest.h"
@@ -8,9 +10,25 @@
 #include "PoolingLayer.h"
 #include "SoftmaxWithLossLayer.h"
 
+#include "NetworkTestInterface.h"
+#include "NetworkTest.h"
+
 #include "TestUtil.h"
+#include "Debug.h"
+
+
+void layerTest();
+void networkTest();
 
 int main(void) {
+	cout.precision(10);
+	cout.setf(ios::fixed);
+
+	//layerTest();
+	networkTest();
+}
+
+void layerTest() {
 	const int gpuid = 0;
 	vector<LayerTestInterface<float>*> layerTestList;
 
@@ -78,3 +96,34 @@ int main(void) {
 	}
 	LayerTestInterface<float>::globalCleanUp();
 }
+
+void networkTest() {
+	const int gpuid = 0;
+
+	LayersConfig<float>* layersConfig = createLeNetLayersConfig<float>();
+	NetworkConfig<float>* networkConfig =
+		(new typename NetworkConfig<float>::Builder())
+		->batchSize(64)
+		->baseLearningRate(0.01)
+		->weightDecay(0.0005)
+		->momentum(0.0)
+		->lrPolicy(LRPolicy::Fixed)
+		->stepSize(10000)
+		->networkPhase(NetworkPhase::TrainPhase)
+		->gamma(0.0001)
+		->build();
+
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
+	}
+
+	NetworkTest<float>* networkTest = new NetworkTest<float>(layersConfig, "lenet");
+
+	NetworkTestInterface<float>::globalSetUp(gpuid);
+	networkTest->setUp();
+	networkTest->updateTest();
+	networkTest->cleanUp();
+	NetworkTestInterface<float>::globalCleanUp();
+}
+
+#endif

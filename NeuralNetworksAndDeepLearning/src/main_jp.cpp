@@ -1,4 +1,4 @@
-
+#if 0
 
 #include <stddef.h>
 #include <iostream>
@@ -31,7 +31,7 @@ void print_mat(cv::Mat& im);
 void show_mat(cv::Mat& im);
 void convert(cv::Mat& im, const vector<float>& pixelMeans);
 
-int main_(void) {
+int main(void) {
 
 	opencv_test();
 
@@ -113,33 +113,4 @@ void convert(cv::Mat& im, const vector<float>& pixelMeans) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif

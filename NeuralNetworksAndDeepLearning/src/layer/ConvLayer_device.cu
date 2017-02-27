@@ -13,6 +13,7 @@
 #include "Exception.h"
 #include "NetworkConfig.h"
 #include "cuda_runtime.h"
+#include "MathFunctions.h"
 #include <algorithm>
 
 #define CONVLAYER_LOG 0
@@ -279,8 +280,8 @@ void ConvLayer<Dtype>::update() {
 template <typename Dtype>
 void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale,
     const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
-	const uint32_t batches = this->_inputData[0]->getShape(0);
-	const Dtype normScale = 1.0/batches;
+	//const uint32_t batches = this->_inputData[0]->getShape(0);
+	//const Dtype normScale = 1.0/batches;
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
 
@@ -289,8 +290,10 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	Dtype* d_paramData = data->mutable_device_data();
 	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
 
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), 
-        &normScale, d_paramGrad, 1));	// normalized by batch size
+
+	/*
+	//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
+    //    &normScale, d_paramGrad, 1));	// normalized by batch size
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &regScale,
         d_paramData, 1, d_paramGrad, 1));	// regularize
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &momentum,
@@ -299,6 +302,41 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
         d_paramGrad, 1, d_paramHistoryData, 1));	// momentum
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne,
         d_paramHistoryData, 1, d_paramData, 1));	// update
+        */
+	// grad = grad + reg * data
+
+
+	//Data<Dtype>::printConfig = true;
+	//SyncMem<Dtype>::printConfig = true;
+
+	data->print_data({}, false);
+	data->print_grad({}, false);
+	dataHistory->print_data({}, false);
+
+
+
+	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
+	data->print_grad({}, false);
+
+
+
+	soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
+			d_paramHistoryData);
+	dataHistory->print_data({}, false);
+
+
+
+	soooa_copy(static_cast<int>(paramSize), d_paramHistoryData, d_paramGrad);
+	data->print_grad({}, false);
+
+	// update
+	soooa_gpu_axpy(static_cast<int>(paramSize), negativeOne, d_paramGrad, d_paramData);
+	data->print_data({}, false);
+
+
+	//Data<Dtype>::printConfig = false;
+	//SyncMem<Dtype>::printConfig = false;
+
 }
 
 template <typename Dtype>

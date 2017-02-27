@@ -13,6 +13,7 @@
 #include "Util.h"
 #include "Exception.h"
 #include "NetworkConfig.h"
+#include "MathFunctions.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
 
@@ -205,25 +206,19 @@ void FullyConnectedLayer<Dtype>::update() {
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale,
 	const Dtype learnScale, Data<Dtype>* dataHistory, Data<Dtype>* data) {
-
 	//const uint32_t batches = this->_inputShape[0][0];
-	const Dtype normScale = 1.0 / this->batches;
-
+	//const Dtype normScale = 1.0 / this->batches;
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
-
-	//Data<Dtype>::printConfig = 1;
-	data->print_grad("paramGrad:");
-	dataHistory->print_data("paramHistoryData:");
-	data->print_data("paramData:");
 
     data->mutable_host_grad();
 	Dtype* d_paramGrad = data->mutable_device_grad();
 	Dtype* d_paramData = data->mutable_device_data();
 	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
 
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &normScale,
-        d_paramGrad, 1));								// normalize by batch size
+	/*
+	//checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &normScale,
+    //    d_paramGrad, 1));								// normalize by batch size
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &regScale,
         d_paramData, 1, d_paramGrad, 1));				// regularize
 	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize), &momentum,
@@ -232,11 +227,47 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
         d_paramGrad, 1, d_paramHistoryData, 1));		// momentum
 	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize), &negativeOne,
         d_paramHistoryData, 1, d_paramData, 1));		// update
+        */
 
-	data->print_grad("paramGrad:");
-	dataHistory->print_data("paramHistoryData:");
-	data->print_data("paramData:");
-	//Data<Dtype>::printConfig = 0;
+	/*
+	if (this->name == "ip2") {
+		Data<Dtype>::printConfig = true;
+		SyncMem<Dtype>::printConfig = true;
+	}
+	*/
+
+	data->print_data({}, false);
+	data->print_grad({}, false);
+	dataHistory->print_data({}, false);
+
+
+
+
+	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
+	data->print_grad({}, false);
+
+
+
+	soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
+			d_paramHistoryData);
+	dataHistory->print_data({}, false);
+
+
+
+	soooa_copy(static_cast<int>(paramSize), d_paramHistoryData, d_paramGrad);
+	data->print_grad({}, false);
+
+	// update
+	soooa_gpu_axpy(static_cast<int>(paramSize), negativeOne, d_paramGrad, d_paramData);
+	data->print_data({}, false);
+
+	/*
+	if (this->name == "ip2") {
+		Data<Dtype>::printConfig = false;
+		SyncMem<Dtype>::printConfig = false;
+		exit(1);
+	}
+	*/
 }
 
 template <typename Dtype>
@@ -304,14 +335,16 @@ void FullyConnectedLayer<Dtype>::feedforward() {
 	reshape();
 
 	/*
-	if (this->name == "fc6") {
+	if (this->name == "ip1") {
 		Data<Dtype>::printConfig = true;
+		SyncMem<Dtype>::printConfig = true;
 		this->_inputData[0]->print_data({}, false);
+		this->_params[0]->print_data({}, false);
 		Data<Dtype>::printConfig = false;
-
-		//exit(1);
+		SyncMem<Dtype>::printConfig = false;
 	}
 	*/
+
 
 	_computeWeightedData();
 	_computeWeightBiasedData();
@@ -319,17 +352,14 @@ void FullyConnectedLayer<Dtype>::feedforward() {
 	//_dropoutForward();
 
 	/*
-	if (this->name == "fc6") {
+	if (this->name == "ip1") {
 		Data<Dtype>::printConfig = true;
-		this->_params[0]->print_data({}, false);
-		this->_params[1]->print_data({}, false);
+		SyncMem<Dtype>::printConfig = true;
 		this->_outputData[0]->print_data({}, false);
 		Data<Dtype>::printConfig = false;
-
-		exit(1);
+		SyncMem<Dtype>::printConfig = false;
 	}
 	*/
-
 
 }
 
@@ -522,6 +552,18 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
 	_computeWeightGrad();
 	_computeBiasGrad();
 	_computeInputGrad();
+
+
+	/*
+	Data<Dtype>::printConfig = true;
+	SyncMem<Dtype>::printConfig = true;
+
+	this->_outputData[0]->print_grad({}, false);
+	this->_inputData[0]->print_grad({}, false);
+
+	Data<Dtype>::printConfig = true;
+	SyncMem<Dtype>::printConfig = true;
+	*/
 }
 
 template <typename Dtype>

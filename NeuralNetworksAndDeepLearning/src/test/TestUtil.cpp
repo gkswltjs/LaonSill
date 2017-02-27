@@ -2,6 +2,7 @@
 #include "Cuda.h"
 #include "Layer.h"
 #include "LearnableLayer.h"
+#include "NetworkConfig.h"
 
 using namespace std;
 using namespace cnpy;
@@ -15,8 +16,7 @@ void Tokenize(const string& str, vector<string>& tokens, const string& delimiter
 template <typename T, typename S>
 bool hasKey(map<T, S*>& dict, const T& key);
 
-template <typename T, typename S>
-S* retrieveValueFromMap(map<T, S*>& dict, const T& key);
+
 
 
 
@@ -85,7 +85,7 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 
 
 	vector<string> tokens;
-	Tokenize(data_key, tokens, "_", true);
+	Tokenize(data_key, tokens, "_");
 	assert(tokens.size() == 3);
 
 	if (tokens[1] == "params") {
@@ -97,7 +97,7 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 			if (shape[i] == 0)
 				shape[i] = 1;
 		}
-	} else if (tokens[1] == "bottom" || tokens[1] == "top") {
+	} else if (tokens[1] == "bottom" || tokens[1] == "top" || tokens[1] == "blobs") {
 		assert(shapeSize == 1 || shapeSize == 2 || shapeSize == 4);
 		if (shapeSize == 1) {
 			shape[0] = npyArray.shape[0];
@@ -167,6 +167,7 @@ template void cleanUpObject(Layer<float>* obj);
 template void cleanUpObject(Layer<float>::Builder* obj);
 template void cleanUpObject(LearnableLayer<float>* obj);
 template void cleanUpObject(LearnableLayer<float>::Builder* obj);
+template void cleanUpObject(LayersConfig<float>* obj);
 
 
 
@@ -253,13 +254,22 @@ void fillParam(map<string, Data<float>*>& nameDataMap, const string& param_prefi
 
 		Data<float>* targetParam = paramVec[i];
 		targetParam->set(param, true);
+
+
+		/*
+		printConfigOn();
+		param->print_data({}, false);
+		targetParam->print_data({}, false);
+		printConfigOff();
+		*/
 	}
 }
 
 
-void compareData(map<string, Data<float>*>& nameDataMap, const string& data_prefix,
+bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_prefix,
 		vector<Data<float>*>& dataVec, uint32_t compareType) {
 
+	bool final_result = true;
 	for (uint32_t i = 0; i < dataVec.size(); i++) {
 		const string dataName = dataVec[i]->_name;
 		const string key = data_prefix + dataName;
@@ -268,6 +278,38 @@ void compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 		assert(data != 0);
 
 		Data<float>* targetData = dataVec[i];
+
+		bool partial_result = false;
+		if (compareType == 0)
+			partial_result = targetData->compareData(data, COMPARE_ERROR);
+		else
+			partial_result = targetData->compareGrad(data, COMPARE_ERROR);
+
+		if (!partial_result) {
+			printConfigOn();
+			if (compareType == 0) {
+				data->print_data({}, false);
+				targetData->print_data({}, false);
+			} else {
+				data->print_grad({}, false);
+				targetData->print_grad({}, false);
+			}
+			printConfigOff();
+		}
+		final_result = final_result && partial_result;
+	}
+	return final_result;
+}
+
+bool compareParam(map<string, Data<float>*>& nameDataMap, const string& param_prefix,
+		vector<Data<float>*>& paramVec, uint32_t compareType) {
+
+	for (uint32_t i = 0; i < paramVec.size(); i++) {
+		const string key = param_prefix + to_string(i);
+		Data<float>* data = retrieveValueFromMap(nameDataMap, key);
+		assert(data != 0);
+
+		Data<float>* targetData = paramVec[i];
 
 		/*
 		printConfigOn();
@@ -282,9 +324,11 @@ void compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 		*/
 
 		if (compareType == 0)
-			assert(targetData->compareData(data, COMPARE_ERROR));
+			//assert(targetData->compareData(data, COMPARE_ERROR));
+			return targetData->compareData(data, COMPARE_ERROR);
 		else
-			assert(targetData->compareGrad(data, COMPARE_ERROR));
+			//assert(targetData->compareGrad(data, COMPARE_ERROR));
+			return targetData->compareGrad(data, COMPARE_ERROR);
 	}
 }
 

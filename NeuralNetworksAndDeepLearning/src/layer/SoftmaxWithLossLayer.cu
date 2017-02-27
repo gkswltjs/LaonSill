@@ -241,14 +241,15 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 
 
 
+
 		/*
 		Data<Dtype>::printConfig = true;
+		SyncMem<Dtype>::printConfig = true;
+		this->_outputData[0]->print_grad({}, false);
 		this->_inputData[0]->print_grad({}, false);
 		Data<Dtype>::printConfig = false;
-		//exit(1);
-		 */
-
-
+		SyncMem<Dtype>::printConfig = false;
+		*/
 
 	}
 }

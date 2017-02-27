@@ -152,9 +152,6 @@ void Network<Dtype>::sgd(int epochs) {
 #if SAVE_PROPOSAL_TARGET_LAYER
 			saveProposalTargets(ofs);
 #endif
-
-
-
 			// UPDATE
 			if (config->_phase == NetworkPhase::TrainPhase) {
 				for (uint32_t i = 0; i < config->_lossLayers.size(); i++) {
@@ -163,9 +160,15 @@ void Network<Dtype>::sgd(int epochs) {
 					LossLayer<Dtype>* lossLayer = dynamic_cast<LossLayer<Dtype>*>(it->second);
 					assert(lossLayer != 0);
 					costList[i] += lossLayer->cost();
+
+					//costList[i] = lossLayer->cost();
+					//networkListeners[i]->onCostComputed(0, config->_lossLayers[i], costList[i]);
 				}
 				applyUpdate();
 			}
+
+
+
 
             // 모든 worker에서 GPU 트레이닝이 끝나길 기다린다.
             // XXX: 예쁘게.. 
@@ -173,22 +176,21 @@ void Network<Dtype>::sgd(int epochs) {
                 // 마지막 쓰레드가 메모리를 갱신한다.
                 if (config->_phase == NetworkPhase::TrainPhase && config->doTest()) {
                     config->_status = NetworkStatus::Test;
-
-
 					for (uint32_t i = 0; i < config->_lossLayers.size(); i++) {
 						float cost = costList[i]/config->_testInterval;
-						networkListeners[i]->onCostComputed(0, config->_lossLayers[i], cost);
+						networkListeners[i]->onCostComputed(i, config->_lossLayers[i], cost);
 						costList[i] = 0.0;
 						cout << config->_lossLayers[i] << " cost:" << cost << ",";
 					}
 					cout << endl;
-
                     config->_status = NetworkStatus::Train;
                 }
 
+                /*
                 if(config->_phase == NetworkPhase::TrainPhase && config->doSave()) {
                     save();
                 }
+                */
 
                 Worker<Dtype>::wakeupPeer();
             }

@@ -36,7 +36,8 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
 
 	// (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<Dtype>();
+	//LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<Dtype>();
+    LayersConfig<float>* layersConfig = createLeNetLayersConfig<Dtype>();
 
 	// (2) network config 정보를 layer들에게 전달한다.
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
@@ -50,6 +51,7 @@ template <typename Dtype>
 void LegacyWork<Dtype>::trainNetwork(Job *job) {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
     int maxEpochs = job->getIntValue(1);
+    maxEpochs = 10000;
 
     COLD_LOG(ColdLog::INFO, true, "training network starts(maxEpoch: %d).", maxEpochs);
 
@@ -201,7 +203,7 @@ void LegacyWork<Dtype>::cleanupNetwork(Job* job) {
 
 template <typename Dtype>
 int LegacyWork<Dtype>::createNetwork() {
-	const vector<string> lossLayers = {"prob"};
+	const vector<string> lossLayers = {"loss"};
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
 #if LOAD_WEIGHT
@@ -209,19 +211,19 @@ int LegacyWork<Dtype>::createNetwork() {
 	weightsArgs[0].weightsPath =
 			"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_400000of_0.01_.param";
 #endif
-	const uint32_t batchSize = 10;
-	const uint32_t testInterval = 10000;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 10000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.001f;
+	const uint32_t batchSize = 100;
+	const uint32_t testInterval = 1000;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 100000000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.01f;
 	//const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
 	//const uint32_t saveInterval = 10000;		// 1000000 / batchSize
 	//const float baseLearningRate = 0.01f;
 
 	const uint32_t stepSize = 100000;
-	const float weightDecay = 0.0001f;
+	const float weightDecay = 0.0005f;
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 0.0f;
-	const float gamma = 0.1;
+	const float gamma = 0.0001;
 	//const LRPolicy lrPolicy = LRPolicy::Step;
 	const LRPolicy lrPolicy = LRPolicy::Fixed;
 
@@ -251,7 +253,7 @@ int LegacyWork<Dtype>::createNetwork() {
 			->weightsArgs(weightsArgs)
 #endif
 			->networkListeners({
-				new NetworkMonitor("prob", NetworkMonitor::PLOT_ONLY)
+				new NetworkMonitor("loss", NetworkMonitor::PLOT_ONLY)
 				})
 			->lossLayers(lossLayers)
 			->build();

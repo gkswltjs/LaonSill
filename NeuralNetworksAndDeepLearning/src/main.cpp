@@ -1,3 +1,4 @@
+#if 1
 #include <cstdint>
 #include <vector>
 #include <iostream>
@@ -142,7 +143,7 @@ void loadJobFile(const char* fileName, Json::Value& rootValue) {
     }
 }
 
-int main_(int argc, char** argv) {
+int main(int argc, char** argv) {
     int     opt;
 
 
@@ -346,5 +347,6 @@ int main(int argc, char** argv) {
     Client::clientMain(SERVER_HOSTNAME, Communicator::LISTENER_PORT);
 	exit(EXIT_SUCCESS);
 }
+#endif
 #endif
 
