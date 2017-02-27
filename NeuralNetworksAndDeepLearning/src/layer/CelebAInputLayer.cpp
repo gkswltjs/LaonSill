@@ -180,27 +180,6 @@ void CelebAInputLayer<Dtype>::loadImages() {
         } else {
             loadPixels(image, i);
         }
-
-#if 0
-        if (i == 0) {
-            cv::Mat testImage(this->imageRow, this->imageCol, CV_8UC3);
-            int imageChannelSize = this->imageRow * this->imageCol;
-            for (int row = 0; row < this->imageRow; row++) {
-                for (int col = 0; col < this->imageCol; col++) {
-                    int index = row * this->imageCol + col;
-                    testImage.at<cv::Vec3b>(row, col)[0] =
-                        this->images[index + imageChannelSize * 2] * 255;
-                    testImage.at<cv::Vec3b>(row, col)[1] =
-                        this->images[index + imageChannelSize * 1] * 255;
-                    testImage.at<cv::Vec3b>(row, col)[2] =
-                        this->images[index + imageChannelSize * 0] * 255;
-                }
-            }
-
-            cv::imshow("test image", testImage);
-            cv::waitKey(0);
-        }
-#endif
     }
 }
 
