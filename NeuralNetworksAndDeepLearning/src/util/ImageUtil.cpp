@@ -51,3 +51,5 @@ void ImageUtil<Dtype>::showImage(const Dtype* data, int nthImage, int channel, i
     cv::imshow("test image", testImage);
     cv::waitKey(0);
 }
+
+template class ImageUtil<float>;

@@ -33,6 +33,7 @@
 #include "Broker.h"
 #include "test.h"
 #include "DQNImageLearner.h"
+#include "ImageUtil.h"
 
 using namespace std;
 
@@ -55,12 +56,10 @@ void developerMain() {
 	const vector<string> llDGAN = { "celossDGAN" };
     // loss layer of Generatoer-Discriminator 0 GAN
 	const vector<string> llGD0GAN = { "celossGD0GAN" };
-    // loss layer of Generatoer-Discriminator 1 GAN
-	const vector<string> llGD1GAN = { "celossGD1GAN" };
 
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 	const uint32_t batchSize = 128;
-	const uint32_t testInterval = 50;		// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.01f;
 
@@ -82,7 +81,7 @@ void developerMain() {
 	NetworkConfig<float>* ncDGAN =
 			(new typename NetworkConfig<float>::Builder())
 			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
+			->baseLearningRate(0.0001)
 			->weightDecay(weightDecay)
 			->momentum(momentum)
 			->testInterval(testInterval)
@@ -102,7 +101,7 @@ void developerMain() {
 	NetworkConfig<float>* ncGD0GAN =
 			(new typename NetworkConfig<float>::Builder())
 			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
+			->baseLearningRate(0.01)
 			->weightDecay(weightDecay)
 			->momentum(momentum)
 			->testInterval(testInterval)
@@ -119,39 +118,16 @@ void developerMain() {
 			->lossLayers(llGD0GAN)
 			->build();
 
-	NetworkConfig<float>* ncGD1GAN =
-			(new typename NetworkConfig<float>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->stepSize(stepSize)
-			->clipGradientsLevel(clipGradientsLevel)
-			->lrPolicy(lrPolicy)
-			->networkPhase(phase)
-			->gamma(gamma)
-			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
-			->networkListeners({
-				new NetworkMonitor("celossGD1GAN", NetworkMonitor::PLOT_ONLY),
-				})
-			->lossLayers(llGD1GAN)
-			->build();
-
 	Util::printVramInfo();
 
  	Network<float>* networkDGAN = new Network<float>(ncDGAN);
  	Network<float>* networkGD0GAN = new Network<float>(ncGD0GAN);
- 	Network<float>* networkGD1GAN = new Network<float>(ncGD1GAN);
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
 	LayersConfig<float>* lcDGAN = createDOfGANLayersConfig<float>();
 	LayersConfig<float>* lcGD0GAN = createGD0OfGANLayersConfig<float>();
-	LayersConfig<float>* lcGD1GAN = createGD1OfGANLayersConfig<float>();
  	networkDGAN->setLayersConfig(lcDGAN);
  	networkGD0GAN->setLayersConfig(lcGD0GAN);
- 	networkGD1GAN->setLayersConfig(lcGD1GAN);
 
 	// (2) network config 정보를 layer들에게 전달한다.
 	for (uint32_t i = 0; i < lcDGAN->_layers.size(); i++)
@@ -163,23 +139,36 @@ void developerMain() {
 	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
 		lcGD0GAN->_layers[i]->setNetworkConfig(ncGD0GAN);
 
-	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++) {
+	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
 		lcGD0GAN->_layers[i]->reshape();
-    }
 
-	for (uint32_t i = 0; i < lcGD1GAN->_layers.size(); i++)
-		lcGD1GAN->_layers[i]->setNetworkConfig(ncGD1GAN);
-
-	for (uint32_t i = 0; i < lcGD1GAN->_layers.size(); i++)
-		lcGD1GAN->_layers[i]->reshape();
-
-    for (int i = 0; i < 10; i++) {
-        for (int k = 0; k < 5; k++) {
-            networkDGAN->sgd_with_timer(1);
-            networkGD0GAN->sgd_with_timer(1);
+    for (int i = 0; i < 100000; i++) {
+        for (int k = 0; k < 4; k++) {
+            networkDGAN->sgd(1);
+            networkGD0GAN->sgd(1);
         }
 
- 	    networkGD1GAN->sgd_with_timer(1);
+        CrossEntropyWithLossLayer<float>* lossLayer =
+            dynamic_cast<CrossEntropyWithLossLayer<float>*>(lcGD0GAN->_lastLayers[0]);
+
+        SASSERT0(lossLayer != NULL);
+        lossLayer->setTargetValue(1.0);
+
+
+        for (int k = 0; k < 4; k++) {
+ 	        networkGD0GAN->sgd(1);
+        }
+
+        lossLayer->setTargetValue(0.0);
+
+#if 0
+        if (i == 3) {
+            Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
+            //Layer<float>* convLayer = lcDGAN->_nameLayerMap["CelebAInputLayer"];
+            const float* host_data = convLayer->_inputData[0]->host_data();
+            ImageUtil<float>::showImage(host_data, 0, 3, 64, 64);
+        }
+#endif
     }
 
     STDOUT_LOG("exit developerMain()");

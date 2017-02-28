@@ -221,4 +221,9 @@ Dtype CrossEntropyWithLossLayer<Dtype>::cost() {
 	return avg / (Dtype)this->depth;
 }
 
+template<typename Dtype>
+void CrossEntropyWithLossLayer<Dtype>::setTargetValue(Dtype value) {
+    this->targetValue = value;
+}
+
 template class CrossEntropyWithLossLayer<float>;

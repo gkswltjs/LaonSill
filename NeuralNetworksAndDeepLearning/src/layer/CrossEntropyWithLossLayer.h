@@ -86,6 +86,7 @@ public:
 	virtual void feedforward();
 	virtual void backpropagation();
 	virtual Dtype cost();
+    void setTargetValue(Dtype value);
 
 private:
 	void initialize(Dtype targetValue, bool withSigmoid);

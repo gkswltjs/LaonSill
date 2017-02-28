@@ -223,7 +223,7 @@ void CelebAInputLayer<Dtype>::initialize(string imageDir, bool cropImage, int cr
 
 template<typename Dtype>
 int CelebAInputLayer<Dtype>::getNumTrainData() {
-    return 10000;
+    return this->networkConfig->_batchSize;
 }
 
 template<typename Dtype>
