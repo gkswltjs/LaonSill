@@ -26,7 +26,7 @@ using namespace std;
 
 #define TEMP 1
 #if TEMP
-#define ARTISTIC_TEST 1
+#define ARTISTIC_TEST 0
 #define SMALL_TEST 0
 
 #if !ARTISTIC_TEST
@@ -196,7 +196,7 @@ void LegacyWork<Dtype>::cleanupNetwork(Job* job) {
 #if TEMP
 
 #if !SMALL_TEST
-#define LOAD_WEIGHT 1
+#define LOAD_WEIGHT 0
 #else
 #define LOAD_WEIGHT 0
 #endif
@@ -212,7 +212,7 @@ int LegacyWork<Dtype>::createNetwork() {
 			"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_400000of_0.01_.param";
 #endif
 	const uint32_t batchSize = 100;
-	const uint32_t testInterval = 1000;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 600;			// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.01f;
 	//const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize

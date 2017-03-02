@@ -35,8 +35,8 @@ using namespace cimg_library;
 #define RATIO		10000
 
 #define ARTISTICSTYLE_LOG	0
-#define CONTENT_
-//#define STYLE_
+//#define CONTENT_
+#define STYLE_
 
 
 /**
