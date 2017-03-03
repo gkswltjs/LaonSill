@@ -46,6 +46,7 @@
 #include "CrossEntropyWithLossLayer.h"
 #include "SigmoidLayer2.h"
 #include "NoiseInputLayer.h"
+#include "HyperTangentLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -335,6 +336,8 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
 	return layersConfig;
 }
 
+#define USE_DECONV      1
+
 template <typename Dtype>
 LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
@@ -346,7 +349,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->linear(1024, 4, 4, 0, 0.02)
                 ->outputs({"noise"})
                 )
-#if 1
+#if USE_DECONV
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10002)
                 ->name("DeconvLayer1")
@@ -425,6 +428,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->outputs({"deconv4"})
                 ->deconv(true)
                 ->deconvExtraCell(1))
+#if 0
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10012)
                 ->name("BNLayer/deconv4")
@@ -435,6 +439,13 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("deconv/sigmoid")
                 ->inputs({"BN/deconv4"})
                 ->outputs({"deconv/sigmoid"}))
+#else
+        ->layer((new typename HyperTangentLayer<Dtype>::Builder())
+                ->id(10013)
+                ->name("hypertangent")
+                ->inputs({"deconv4"})
+                ->outputs({"hypertangent"}))
+#endif
 #else
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10002)
@@ -526,7 +537,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
                 ->biasFiller(ParamFillerType::Constant, 0.2)
-                ->inputs({"deconv/sigmoid"})
+                ->inputs({"hypertangent"})
                 ->outputs({"conv1"})
                 ->receive(2))
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
@@ -4377,4 +4388,4 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 }
 */
 
-#endif /* DEBUG_H_ */
+#endif

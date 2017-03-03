@@ -213,7 +213,7 @@ void developerMain() {
         lossLayer->setTargetValue(0.0);
 
 #if 1
-        if ((i % 10) == 9) {
+        if ((i % 100) == 99) {
             Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
             //Layer<float>* convLayer = lcDGAN->_nameLayerMap["CelebAInputLayer"];
             const float* host_data = convLayer->_inputData[0]->host_data();
