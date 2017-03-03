@@ -258,6 +258,16 @@
     "SCOPE" : "SESSION",
     "TYPE" : "UINT32",
     "DEFAULT" : 1 
+},
+
+"IMAGEUTIL_SAVE_DIR" : 
+{
+    "DESC" : "specify image util module's save directory.",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "CHAR(1024)",
+    "DEFAULT" : ""
 }
 
 }

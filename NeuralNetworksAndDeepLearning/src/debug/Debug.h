@@ -593,7 +593,8 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
                 ->biasFiller(ParamFillerType::Constant, 0.2)
                 ->inputs({"lrelu3"})
-                ->outputs({"conv4"}))
+                ->outputs({"conv4"})
+                ->receive(11))
 #if 0
         ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
                 ->id(10024)

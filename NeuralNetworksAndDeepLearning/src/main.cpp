@@ -5,6 +5,8 @@
 
 #include "cuda/Cuda.h"
 
+#include "gnuplot-iostream.h"
+
 #include "jsoncpp/json/json.h"
 
 #include "common.h"
@@ -43,6 +45,31 @@ void printUsageAndExit(char* prog) {
     fprintf(stderr,
         "Usage: %s [-v] [-d | -f jobFilePath | -a romFilePath | -t testItemName]\n", prog);
     exit(EXIT_FAILURE);
+}
+
+void drawAvgOfSquaredSumGrad(Gnuplot &plot, vector<pair<int, double>> &plotData,
+    LayersConfig<float>* lc, string layerName) {
+    // calc squared sum
+    Layer<float>* layer = (Layer<float>*)lc->_nameLayerMap[layerName];
+    const float* data = layer->_outputData[0]->host_grad(); 
+    int nout = layer->_outputData[0]->getCount();
+    float sum = 0.0;
+    for (int i = 0; i < nout; i++) {
+        sum += data[i] * data[i];
+    }
+
+    if (plotData.size() > 100) {
+        plotData.clear();
+    }
+
+    sum /= (float)nout;
+    plotData.push_back(make_pair(plotData.size(), sum));
+
+    char cmd[1024];
+    sprintf(cmd, "plot '-' using 1:2 with lines title '%s'\n", layerName.c_str());
+
+    plot << cmd;
+    plot.send1d(plotData);
 }
 
 void developerMain() {
@@ -142,10 +169,34 @@ void developerMain() {
 	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
 		lcGD0GAN->_layers[i]->reshape();
 
+    Gnuplot gpGDGanDeconv1;
+    vector<pair<int, double>> dataGDGanDeconv1;
+    Gnuplot gpGDGanDeconv2;
+    Gnuplot gpGDGanDeconv3;
+    Gnuplot gpGDGanDeconv4;
+
+    Gnuplot gpGDGanConv1;
+    vector<pair<int, double>> dataGDGanConv1;
+
+    Gnuplot gpGDGanConv2;
+    Gnuplot gpGDGanConv3;
+    Gnuplot gpGDGanConv4;
+
+    Gnuplot gpDGanConv1;
+    vector<pair<int, double>> dataDGanConv1;
+    Gnuplot gpDGanConv2;
+    Gnuplot gpDGanConv3;
+    Gnuplot gpDGanConv4;
+
     for (int i = 0; i < 100000; i++) {
         for (int k = 0; k < 4; k++) {
             networkDGAN->sgd(1);
             networkGD0GAN->sgd(1);
+
+            drawAvgOfSquaredSumGrad(gpGDGanDeconv1, dataGDGanDeconv1, lcGD0GAN, 
+                "DeconvLayer1");
+            drawAvgOfSquaredSumGrad(gpGDGanConv1, dataGDGanConv1, lcGD0GAN, "ConvLayer1");
+            drawAvgOfSquaredSumGrad(gpDGanConv1, dataDGanConv1, lcDGAN, "ConvLayer1");
         }
 
         CrossEntropyWithLossLayer<float>* lossLayer =
@@ -161,12 +212,13 @@ void developerMain() {
 
         lossLayer->setTargetValue(0.0);
 
-#if 0
-        if (i == 3) {
+#if 1
+        if ((i % 10) == 9) {
             Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
             //Layer<float>* convLayer = lcDGAN->_nameLayerMap["CelebAInputLayer"];
             const float* host_data = convLayer->_inputData[0]->host_data();
-            ImageUtil<float>::showImage(host_data, 0, 3, 64, 64);
+            //ImageUtil<float>::showImage(host_data, 0, 3, 64, 64);
+            ImageUtil<float>::saveImage(host_data, 10, 3, 64, 64);
         }
 #endif
     }

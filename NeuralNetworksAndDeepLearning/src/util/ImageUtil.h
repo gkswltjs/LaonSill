@@ -18,6 +18,7 @@ public:
     virtual ~ImageUtil() {}
 
     static void showImage(const Dtype* data, int nthImage, int channel, int row, int col);
+    static void saveImage(const Dtype* data, int imageCount, int channel, int row, int col);
 };
 
 #endif /* IMAGEUTIL_H */
