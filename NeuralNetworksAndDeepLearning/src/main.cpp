@@ -72,6 +72,51 @@ void drawAvgOfSquaredSumGrad(Gnuplot &plot, vector<pair<int, double>> &plotData,
     plot.send1d(plotData);
 }
 
+void drawAvgOfSquaredSumData(Gnuplot &plot, vector<pair<int, double>> &plotData,
+    LayersConfig<float>* lc, string layerName) {
+    // calc squared sum
+    Layer<float>* layer = (Layer<float>*)lc->_nameLayerMap[layerName];
+    const float* data = layer->_outputData[0]->host_data(); 
+    int nout = layer->_outputData[0]->getCount();
+    float sum = 0.0;
+    for (int i = 0; i < nout; i++) {
+        sum += data[i] * data[i];
+    }
+
+    if (plotData.size() > 100) {
+        plotData.clear();
+    }
+
+    sum /= (float)nout;
+    plotData.push_back(make_pair(plotData.size(), sum));
+
+    char cmd[1024];
+    sprintf(cmd, "plot '-' using 1:2 with lines title '%s'\n", layerName.c_str());
+
+    plot << cmd;
+    plot.send1d(plotData);
+}
+
+void printDataForDebug(LayersConfig<float>* lc, const char* title) {
+    int layerCount = lc->_layers.size();
+
+    for (int i = 0; i < layerCount; i++) {
+        printf("[Layer : %s #%d]\n", title, i);
+        const float* data = lc->_layers[i]->_outputData[0]->host_data();
+        const float* grad = lc->_layers[i]->_outputData[0]->host_grad();
+
+        for (int j = 0; j < 8; j++) {
+            printf(" %lf", data[j]);
+        }
+        printf("\n");
+
+        for (int j = 0; j < 8; j++) {
+            printf(" %lf", grad[j]);
+        }
+        printf("\n");
+    }
+}
+
 void developerMain() {
     STDOUT_LOG("enter developerMain()");
 
@@ -93,6 +138,7 @@ void developerMain() {
 	const uint32_t stepSize = 100000;
 	const float weightDecay = 0.0001f;
 	const float momentum = 0.9f;
+	//const float momentum = 0.5f;
 	const float clipGradientsLevel = 0.0f;
 	const float gamma = 0.1;
 	const LRPolicy lrPolicy = LRPolicy::Fixed;
@@ -108,7 +154,7 @@ void developerMain() {
 	NetworkConfig<float>* ncDGAN =
 			(new typename NetworkConfig<float>::Builder())
 			->batchSize(batchSize)
-			->baseLearningRate(0.0001)
+			->baseLearningRate(0.02)
 			->weightDecay(weightDecay)
 			->momentum(momentum)
 			->testInterval(testInterval)
@@ -128,7 +174,7 @@ void developerMain() {
 	NetworkConfig<float>* ncGD0GAN =
 			(new typename NetworkConfig<float>::Builder())
 			->batchSize(batchSize)
-			->baseLearningRate(0.01)
+			->baseLearningRate(0.0002)
 			->weightDecay(weightDecay)
 			->momentum(momentum)
 			->testInterval(testInterval)
@@ -188,15 +234,19 @@ void developerMain() {
     Gnuplot gpDGanConv3;
     Gnuplot gpDGanConv4;
 
-    for (int i = 0; i < 100000; i++) {
-        for (int k = 0; k < 4; k++) {
+    for (int i = 0; i < 10000; i++) {
+        for (int k = 0; k < 10; k++) {
             networkDGAN->sgd(1);
             networkGD0GAN->sgd(1);
 
-            drawAvgOfSquaredSumGrad(gpGDGanDeconv1, dataGDGanDeconv1, lcGD0GAN, 
+#if 0
+            drawAvgOfSquaredSumData(gpGDGanDeconv1, dataGDGanDeconv1, lcGD0GAN, 
                 "DeconvLayer1");
-            drawAvgOfSquaredSumGrad(gpGDGanConv1, dataGDGanConv1, lcGD0GAN, "ConvLayer1");
-            drawAvgOfSquaredSumGrad(gpDGanConv1, dataDGanConv1, lcDGAN, "ConvLayer1");
+            drawAvgOfSquaredSumData(gpGDGanConv1, dataGDGanConv1, lcGD0GAN, "ConvLayer1");
+            drawAvgOfSquaredSumData(gpDGanConv1, dataDGanConv1, lcDGAN, "ConvLayer1");
+#endif
+            //printDataForDebug(lcDGAN, "D-GAN"); 
+            //printDataForDebug(lcGD0GAN, "GD0-GAN");
         }
 
         CrossEntropyWithLossLayer<float>* lossLayer =
@@ -206,19 +256,23 @@ void developerMain() {
         lossLayer->setTargetValue(1.0);
 
 
-        for (int k = 0; k < 4; k++) {
+        for (int k = 0; k < 1; k++) {
  	        networkGD0GAN->sgd(1);
         }
 
         lossLayer->setTargetValue(0.0);
 
 #if 1
-        if ((i % 100) == 99) {
+        if ((i % 100) == 15) {
             Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
-            //Layer<float>* convLayer = lcDGAN->_nameLayerMap["CelebAInputLayer"];
             const float* host_data = convLayer->_inputData[0]->host_data();
-            //ImageUtil<float>::showImage(host_data, 0, 3, 64, 64);
             ImageUtil<float>::saveImage(host_data, 10, 3, 64, 64);
+
+            printf("Generated Data :");
+            for (int i = 0; i < 30; i++) {
+                printf(" %f", host_data[i]);
+            }
+            printf("\n");
         }
 #endif
     }

@@ -60,7 +60,8 @@ void NoiseInputLayer<Dtype>::prepareUniformArray() {
     this->uniformArray = (Dtype*)malloc(allocSize);
     SASSERT0(this->uniformArray != NULL);
 
-    boost::normal_distribution<float> random_distribution(0, 1);
+    boost::normal_distribution<float> random_distribution(this->noiseMean,
+        this->noiseVariance);
     boost::variate_generator<RNGType, boost::normal_distribution<float> >
     variate_generator(rng, random_distribution);
 
@@ -73,7 +74,7 @@ template <typename Dtype>
 void NoiseInputLayer<Dtype>::prepareLinearTranMatrix() {
 	RNGType rng;
     rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
-    boost::normal_distribution<float> random_distribution(0, 1);
+    boost::normal_distribution<float> random_distribution(this->tranMean, this->tranVariance);
     boost::variate_generator<RNGType, boost::normal_distribution<float> >
     variate_generator(rng, random_distribution);
 

@@ -53,12 +53,12 @@ void ReluLayer<Dtype>::feedforward() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
-	checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, this->activationDesc,
-					&Cuda::alpha, this->tensorDesc, d_inputData,
-					&Cuda::beta, this->tensorDesc, d_outputData));
-
     if (this->useLeaky) {
         applyLeakyForward();
+    } else {
+	    checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, this->activationDesc,
+					&Cuda::alpha, this->tensorDesc, d_inputData,
+					&Cuda::beta, this->tensorDesc, d_outputData));
     }
 
 	/*
@@ -76,13 +76,13 @@ void ReluLayer<Dtype>::backpropagation() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 
-	checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, this->activationDesc,
+    if (this->useLeaky) {
+        applyLeakyBackward();
+    } else {
+	    checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, this->activationDesc,
 					&Cuda::alpha, this->tensorDesc, d_outputData, this->tensorDesc,
 					d_outputGrad, this->tensorDesc, d_inputData,
 					&Cuda::beta, this->tensorDesc, d_inputGrad));
-
-    if (this->useLeaky) {
-        applyLeakyBackward();
     }
 
 	/*

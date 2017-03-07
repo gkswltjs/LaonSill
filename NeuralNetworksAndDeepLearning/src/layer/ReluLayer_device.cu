@@ -25,43 +25,55 @@ using namespace std;
 //
 
 template <typename Dtype>
-__global__ void ApplyLeakyForward(Dtype* output, int size, Dtype leaky)
+__global__ void ApplyLeakyForward(const Dtype* input, Dtype* output, int size, Dtype leaky)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
 		return;
 
-    if (output[idx] < 0)
-        output[idx] = leaky * output[idx];
+    if (input[idx] < 0)
+        output[idx] = leaky * input[idx];
+    else 
+        output[idx] = input[idx];
 }
 
 template <typename Dtype>
-__global__ void ApplyLeakyBackward(Dtype* inputGrad, int size, Dtype leaky)
+__global__ void ApplyLeakyBackward(const Dtype* input, const Dtype* outputGrad,
+    Dtype* inputGrad, int size, Dtype leaky)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
 		return;
 
-    if (inputGrad[idx] <= 0)
+    if (input[idx] < 0)
+#if 0
+        inputGrad[idx] = leaky * outputGrad[idx];
+#else       // CAFFE's implementation
         inputGrad[idx] = leaky;
+#endif
+    else
+        inputGrad[idx] = outputGrad[idx];
 }
 
 template <typename Dtype>
 void ReluLayer<Dtype>::applyLeakyForward() {
 	int size = this->_outputData[0]->getCountByAxis(0);
+    const Dtype* inputData = this->_inputData[0]->device_data();
     Dtype* outputData = this->_outputData[0]->mutable_device_data();
 
     ApplyLeakyForward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        outputData, size, (Dtype)this->leaky);
+        inputData, outputData, size, (Dtype)this->leaky);
 }
 
 template <typename Dtype>
 void ReluLayer<Dtype>::applyLeakyBackward() {
 	int size = this->_outputData[0]->getCountByAxis(0);
-    Dtype* inputGrad = this->_outputData[0]->mutable_device_grad();
+    const Dtype* inputData = this->_inputData[0]->device_data();
+    const Dtype* outputGrad = this->_outputData[0]->device_grad();
+    Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
 
     ApplyLeakyBackward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputGrad, size, (Dtype)this->leaky);
+        inputData, outputGrad, inputGrad, size, (Dtype)this->leaky);
 }
 
 template void ReluLayer<float>::applyLeakyForward();

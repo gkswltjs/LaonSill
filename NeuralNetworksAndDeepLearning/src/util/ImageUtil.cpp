@@ -49,11 +49,11 @@ cv::Mat makeImage(const Dtype* data, int nthImage, int channel, int row,
         for (int j = 0; j < col; j++) {
             int index = i * col + j;
             testImage.at<cv::Vec3b>(i, j)[0] =
-                data[baseIndex + index + channelElemCount * 2] * 255;
+                (int)((data[baseIndex + index + channelElemCount * 2] + 1.0) * 127.5);
             testImage.at<cv::Vec3b>(i, j)[1] =
-                data[baseIndex + index + channelElemCount * 1] * 255;
+                (int)((data[baseIndex + index + channelElemCount * 1] + 1.0) * 127.5);
             testImage.at<cv::Vec3b>(i, j)[2] =
-                data[baseIndex + index + channelElemCount * 0] * 255;
+                (int)((data[baseIndex + index + channelElemCount * 0] + 1.0) * 127.5);
         }
     }
 

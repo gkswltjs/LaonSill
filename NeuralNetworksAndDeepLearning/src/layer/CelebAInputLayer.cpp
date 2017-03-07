@@ -109,7 +109,7 @@ void CelebAInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
     // Red
     for (int row = 0; row < this->imageRow; row++) {
         for (int col = 0; col < this->imageCol; col++) {
-            this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[2] / 255.0;
+            this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[2] / 127.5 - 1.0;
             offset++;
         }
     }
@@ -117,7 +117,7 @@ void CelebAInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
     // Green
     for (int row = 0; row < this->imageRow; row++) {
         for (int col = 0; col < this->imageCol; col++) {
-            this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[1] / 255.0;
+            this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[1] / 127.5 - 1.0;
             offset++;
         }
     }
@@ -125,7 +125,7 @@ void CelebAInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
     // Blue
     for (int row = 0; row < this->imageRow; row++) {
         for (int col = 0; col < this->imageCol; col++) {
-            this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[0] / 255.0;
+            this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[0] / 127.5 - 1.0;
             offset++;
         }
     }

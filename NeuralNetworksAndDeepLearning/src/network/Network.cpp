@@ -108,7 +108,7 @@ void Network<Dtype>::sgd(int epochs) {
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
 
 	const uint32_t trainDataSize = inputLayer->getNumTrainData();
-	cout << "trainDataSize: " << trainDataSize << endl;
+	//cout << "trainDataSize: " << trainDataSize << endl;
 	const uint32_t numBatches = 
         trainDataSize / config->_batchSize / Worker<Dtype>::consumerCount;
 
@@ -116,7 +116,7 @@ void Network<Dtype>::sgd(int epochs) {
 	for (uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		config->_status = NetworkStatus::Train;
 
-		STDOUT_BLOCK(cout << "epochIndex: " << epochIndex << ", epochs: " << epochs << endl;);
+		//STDOUT_BLOCK(cout << "epochIndex: " << epochIndex << ", epochs: " << epochs << endl;);
 
 		inputLayer->shuffleTrainDataSet();
 
@@ -453,6 +453,7 @@ void Network<Dtype>::applyUpdate() {
     }
 
     // 각 layer들을 갱신한다.
+    cout << "update() is called. num of learnable layers=" << numLearnableLayers << endl;
 	for (uint32_t i = 0; i < numLearnableLayers; i++) {
         getLayersConfig()->_learnableLayers[i]->update();
 	}

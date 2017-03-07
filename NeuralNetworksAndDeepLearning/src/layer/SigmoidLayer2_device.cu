@@ -30,7 +30,7 @@ __global__ void Forward(const Dtype *input, int size, Dtype *output)
 	if (idx >= size)
 		return;
 
-	output[idx] = 1 / (1 + exp((-1.0) * input[idx]));
+	output[idx] = 1.0 / (1.0 + exp((-1.0) * input[idx]));
 }
 
 template <typename Dtype>
@@ -40,7 +40,7 @@ __global__ void Backward(const Dtype *outputGrad, const Dtype *output, int size,
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
 		return;
-	inputGrad[idx] = outputGrad[idx] * output[idx] * (1 - output[idx]);
+	inputGrad[idx] = outputGrad[idx] * output[idx] * (1.0 - output[idx]);
 }
 
 template <typename Dtype>
