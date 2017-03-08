@@ -23,8 +23,8 @@ public:
 		std::vector<uint32_t> _shape;
 		std::string _source;
 		std::string _sourceType;
-        double _noiseMean;
-        double _noiseVariance;
+        double _noiseRangeLow;
+        double _noiseRangeHigh;
         int _noiseDepth;
 
         // linear transform
@@ -38,8 +38,8 @@ public:
 		Builder() {
 			this->type = Layer<Dtype>::NoiseInput;
             this->_noiseDepth = 100;
-            this->_noiseMean = 0.0;
-            this->_noiseVariance = 1.0;
+            this->_noiseRangeLow = 0.0;
+            this->_noiseRangeHigh = 1.0;
 
             this->_useLinearTrans = false;
             this->_tranChannels = 1;
@@ -76,10 +76,10 @@ public:
 			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
-        Builder* noise(int depth, double mean, double variance) {
+        Builder* noise(int depth, double rangeLow, double rangeHigh) {
             this->_noiseDepth = depth;
-            this->_noiseMean = mean;
-            this->_noiseVariance = variance;
+            this->_noiseRangeLow = rangeLow;
+            this->_noiseRangeHigh = rangeHigh;
             return this;
         }
         Builder* linear(int channels, int rows, int cols, double mean, double variance) {
@@ -97,8 +97,8 @@ public:
 	};
 
     NoiseInputLayer();
-	NoiseInputLayer(const std::string name, int noiseDepth, double noiseMean,
-        double noiseVariance, bool useLinearTrans, int tranChannels, int tranRows,
+	NoiseInputLayer(const std::string name, int noiseDepth, double noiseRangeLow,
+        double noiseRangeHigh, bool useLinearTrans, int tranChannels, int tranRows,
         int tranCols, double tranMean, double tranVariance);
 	NoiseInputLayer(Builder* builder);
 
@@ -115,16 +115,16 @@ public:
 	void reshape();
 
 protected:
-	void initialize(int noiseDepth, double noiseMean,
-        double noiseVariance, bool useLinearTrans, int tranChannels, int tranRows,
-        int tranCols, double tranMean, double tranVariance);
+	void initialize(int noiseDepth, double noiseRangeLow, double noiseRangeHigh,
+        bool useLinearTrans, int tranChannels, int tranRows, int tranCols, double tranMean,
+        double tranVariance);
             
     void prepareUniformArray();
     void prepareLinearTranMatrix();
 
     int noiseDepth;
-    double noiseMean;
-    double noiseVariance;
+    double noiseRangeLow;
+    double noiseRangeHigh;
 
     bool useLinearTrans;
     int tranChannels;

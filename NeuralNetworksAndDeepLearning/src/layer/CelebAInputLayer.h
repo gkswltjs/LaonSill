@@ -110,12 +110,14 @@ protected:
     int         imageChannel;
 
     void        fillImagePaths();
-    void        loadImages();
+    void        loadImages(int baseIdx);
     void        loadPixels(cv::Mat image, int imageIndex);
     void        shuffleImages();
 
     std::vector<int> imageIndexes;
     std::vector<std::string> imagePaths;
-    Dtype*      images;
+    Dtype*      images; 
+    int         currentBatchIndex;
+
 };
 #endif /* CELEBAINPUTLAYER_H */

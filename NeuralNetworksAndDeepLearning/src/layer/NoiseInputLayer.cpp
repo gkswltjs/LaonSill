@@ -28,17 +28,17 @@ NoiseInputLayer<Dtype>::NoiseInputLayer() {
 }
 
 template<typename Dtype>
-NoiseInputLayer<Dtype>::NoiseInputLayer(const string name, int noiseDepth, double noiseMean,
-    double noiseVariance, bool useLinearTrans, int tranChannels, int tranRows, int tranCols,
-    double tranMean, double tranVariance) :
+NoiseInputLayer<Dtype>::NoiseInputLayer(const string name, int noiseDepth,
+    double noiseRangeLow, double noiseRangeHigh, bool useLinearTrans, int tranChannels,
+    int tranRows, int tranCols, double tranMean, double tranVariance) :
     InputLayer<Dtype>(name) {
-    initialize(noiseDepth, noiseMean, noiseVariance, useLinearTrans, tranChannels, tranRows,
-        tranCols, tranMean, tranVariance);
+    initialize(noiseDepth, noiseRangeLow, noiseRangeHigh, useLinearTrans, tranChannels,
+        tranRows, tranCols, tranMean, tranVariance);
 }
 
 template<typename Dtype>
 NoiseInputLayer<Dtype>::NoiseInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
-	initialize(builder->_noiseDepth, builder->_noiseMean, builder->_noiseVariance,
+	initialize(builder->_noiseDepth, builder->_noiseRangeLow, builder->_noiseRangeHigh,
         builder->_useLinearTrans, builder->_tranChannels, builder->_tranRows,
         builder->_tranCols, builder->_tranMean, builder->_tranVariance);
 }
@@ -55,14 +55,15 @@ void NoiseInputLayer<Dtype>::prepareUniformArray() {
 	RNGType rng;
     rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
 
-    SASSERT0(this->uniformArray == NULL);
-    int allocSize = sizeof(Dtype) * this->noiseDepth;
-    this->uniformArray = (Dtype*)malloc(allocSize);
-    SASSERT0(this->uniformArray != NULL);
+    if (this->uniformArray == NULL) {
+        int allocSize = sizeof(Dtype) * this->noiseDepth;
+        this->uniformArray = (Dtype*)malloc(allocSize);
+        SASSERT0(this->uniformArray != NULL);
+    }
 
-    boost::normal_distribution<float> random_distribution(this->noiseMean,
-        this->noiseVariance);
-    boost::variate_generator<RNGType, boost::normal_distribution<float> >
+    boost::random::uniform_real_distribution<float> random_distribution(this->noiseRangeLow,
+        this->noiseRangeHigh);
+    boost::variate_generator<RNGType, boost::random::uniform_real_distribution<float> >
     variate_generator(rng, random_distribution);
 
     for (int i = 0; i < this->noiseDepth; ++i) {
@@ -116,14 +117,13 @@ template <typename Dtype>
 void NoiseInputLayer<Dtype>::reshape() {
     uint32_t batchSize = this->networkConfig->_batchSize;
 
+    prepareUniformArray();
+
     if (batchSize <= this->batchSize)
         return;
 
-    if (this->uniformArray == NULL) {
-        prepareUniformArray();
-
-        if (this->useLinearTrans)
-            prepareLinearTranMatrix();
+    if ((this->uniformArray == NULL) && (this->useLinearTrans)) {
+        prepareLinearTranMatrix();
     }
 
 	if (this->_inputData.size() < 1) {
@@ -174,8 +174,8 @@ void NoiseInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* e
 }
 
 template<typename Dtype>
-void NoiseInputLayer<Dtype>::initialize(int noiseDepth, double noiseMean,
-    double noiseVariance, bool useLinearTrans, int tranChannels, int tranRows,
+void NoiseInputLayer<Dtype>::initialize(int noiseDepth, double noiseRangeLow,
+    double noiseRangeHigh, bool useLinearTrans, int tranChannels, int tranRows,
     int tranCols, double tranMean, double tranVariance) {
 
     this->type = Layer<Dtype>::NoiseInput;
@@ -184,8 +184,8 @@ void NoiseInputLayer<Dtype>::initialize(int noiseDepth, double noiseMean,
     this->linearTransMatrix = NULL;
 
     this->noiseDepth = noiseDepth;
-    this->noiseMean = noiseMean;
-    this->noiseVariance = noiseVariance;
+    this->noiseRangeLow = noiseRangeLow;
+    this->noiseRangeHigh = noiseRangeHigh;
     this->useLinearTrans = useLinearTrans;
     this->tranChannels = tranChannels;
     this->tranRows = tranRows;

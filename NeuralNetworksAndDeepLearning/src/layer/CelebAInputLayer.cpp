@@ -92,8 +92,7 @@ void CelebAInputLayer<Dtype>::reshape() {
         this->name.c_str(), batchSize, this->imageChannel, this->imageRow, this->imageCol);
 #endif
 
-    shuffleImages();
-    loadImages();
+    loadImages(this->currentBatchIndex);
 
     int inputImageSize = this->imageChannel * this->imageRow * this->imageCol * batchSize;
 
@@ -155,12 +154,16 @@ void CelebAInputLayer<Dtype>::fillImagePaths() {
 }
 
 template<typename Dtype>
-void CelebAInputLayer<Dtype>::loadImages() {
+void CelebAInputLayer<Dtype>::loadImages(int baseIdx) {
     int batchSize = this->networkConfig->_batchSize;
 
     // (1) load jpeg
     for (int i = 0; i < batchSize; i++) {
-        int shuffledIndex = this->imageIndexes[i];
+        int index = i + baseIdx;
+        if (index >= this->imagePaths.size())
+            break;
+
+        int shuffledIndex = this->imageIndexes[index];
         string imagePath = this->imagePaths[shuffledIndex];
 
         cv::Mat image;
@@ -199,7 +202,12 @@ void CelebAInputLayer<Dtype>::feedforward() {
 
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
+    this->currentBatchIndex = baseIndex;    // FIXME: ...
     reshape();
+
+    int batchSize = this->networkConfig->_batchSize;
+    int inputImageCount = this->imageChannel * this->imageRow * this->imageCol * batchSize;
+    this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageCount);
 }
 
 template<typename Dtype>
@@ -223,7 +231,8 @@ void CelebAInputLayer<Dtype>::initialize(string imageDir, bool cropImage, int cr
 
 template<typename Dtype>
 int CelebAInputLayer<Dtype>::getNumTrainData() {
-    return this->networkConfig->_batchSize;
+    //return this->networkConfig->_batchSize;
+    return this->imagePaths.size();
 }
 
 template<typename Dtype>
@@ -234,9 +243,6 @@ int CelebAInputLayer<Dtype>::getNumTestData() {
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::shuffleTrainDataSet() {
     shuffleImages();
-    int batchSize = this->networkConfig->_batchSize;
-    int inputImageCount = this->imageChannel * this->imageRow * this->imageCol * batchSize;
-    this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageCount);
 }
 
 template class CelebAInputLayer<float>;

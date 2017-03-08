@@ -319,10 +319,10 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->id(14)
                 ->name("fc1")
                 ->nOut(1)
-                ->weightUpdateParam(0, 0)
-                ->biasUpdateParam(0, 0)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0)
+                ->biasFiller(ParamFillerType::Constant, 0.01)
                 ->inputs({"lrelu4"})
                 ->outputs({"fc1"}))
         ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
@@ -336,6 +336,8 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
 
 	return layersConfig;
 }
+
+#define USE_CONV_INSTEAD_OF_DECONV      0
 
 template <typename Dtype>
 LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
@@ -352,10 +354,10 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->id(10000)
                 ->name("fc0")
                 ->nOut(4 * 4 * 1024)
-                ->weightUpdateParam(0, 0)
-                ->biasUpdateParam(0, 0)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0)
+                ->biasFiller(ParamFillerType::Constant, 0.01)
                 ->inputs({"noise"})
                 ->outputs({"fc0"}))
         ->layer((new typename ReshapeLayer<Dtype>::Builder())
@@ -374,6 +376,18 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("ReluForNoise")
                 ->inputs({"BN/noiseInput"})
                 ->outputs({"relu/noiseInput"}))
+#if USE_CONV_INSTEAD_OF_DECONV
+        ->layer((new typename ConvLayer<Dtype>::Builder())
+                ->id(10004)
+                ->name("DeconvLayer1")
+                ->filterDim(3, 3, 1024, 512, 3, 1)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
+                ->weightFiller(ParamFillerType::Gaussian, 0.02)
+                ->biasFiller(ParamFillerType::Constant, 0.01)
+                ->inputs({"relu/noiseInput"})
+                ->outputs({"deconv1"}))
+#else
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10004)
                 ->name("DeconvLayer1")
@@ -386,6 +400,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->outputs({"deconv1"})
                 ->deconv(true)
                 ->deconvExtraCell(1))
+#endif
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10005)
                 ->name("BNLayer/deconv1")
@@ -396,6 +411,18 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("Relu1")
                 ->inputs({"BN/deconv1"})
                 ->outputs({"relu1"}))
+#if USE_CONV_INSTEAD_OF_DECONV
+        ->layer((new typename ConvLayer<Dtype>::Builder())
+                ->id(10007)
+                ->name("DeconvLayer2")
+                ->filterDim(5, 5, 512, 256, 6, 1)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
+                ->weightFiller(ParamFillerType::Gaussian, 0.02)
+                ->biasFiller(ParamFillerType::Constant, 0.01)
+                ->inputs({"relu1"})
+                ->outputs({"deconv2"}))
+#else
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10007)
                 ->name("DeconvLayer2")
@@ -408,6 +435,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->outputs({"deconv2"})
                 ->deconv(true)
                 ->deconvExtraCell(1))
+#endif
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10008)
                 ->name("BNLayer/deconv2")
@@ -418,6 +446,18 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("Relu2")
                 ->inputs({"BN/deconv2"})
                 ->outputs({"relu2"}))
+#if USE_CONV_INSTEAD_OF_DECONV
+        ->layer((new typename ConvLayer<Dtype>::Builder())
+                ->id(10010)
+                ->name("DeconvLayer3")
+                ->filterDim(5, 5, 256, 128, 10, 1)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
+                ->weightFiller(ParamFillerType::Gaussian, 0.02)
+                ->biasFiller(ParamFillerType::Constant, 0.01)
+                ->inputs({"relu2"})
+                ->outputs({"deconv3"}))
+#else
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10010)
                 ->name("DeconvLayer3")
@@ -430,6 +470,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->outputs({"deconv3"})
                 ->deconv(true)
                 ->deconvExtraCell(1))
+#endif
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10011)
                 ->name("BNLayer/deconv3")
@@ -440,6 +481,18 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("Relu3")
                 ->inputs({"BN/deconv3"})
                 ->outputs({"relu3"}))
+#if USE_CONV_INSTEAD_OF_DECONV
+        ->layer((new typename ConvLayer<Dtype>::Builder())
+                ->id(10013)
+                ->name("DeconvLayer4")
+                ->filterDim(5, 5, 128, 3, 18, 1)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
+                ->weightFiller(ParamFillerType::Gaussian, 0.02)
+                ->biasFiller(ParamFillerType::Constant, 0.01)
+                ->inputs({"relu3"})
+                ->outputs({"deconv4"}))
+#else
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10013)
                 ->name("DeconvLayer4")
@@ -452,6 +505,8 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->outputs({"deconv4"})
                 ->deconv(true)
                 ->deconvExtraCell(1))
+
+#endif
         ->layer((new typename HyperTangentLayer<Dtype>::Builder())
                 ->id(10014)
                 ->name("hypertangent")
@@ -544,10 +599,10 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->id(10027)
                 ->name("fc1")
                 ->nOut(1)
-                ->weightUpdateParam(0, 0)
-                ->biasUpdateParam(0, 0)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0)
+                ->biasFiller(ParamFillerType::Constant, 0.01)
                 ->inputs({"lrelu4"})
                 ->outputs({"fc1"}))
         ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
