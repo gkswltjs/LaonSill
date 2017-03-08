@@ -195,8 +195,10 @@ protected:
 	void _computeBiasGrad();
 	void _computeInputGrad();
 
+    // FIXME: 파라미터가 너무 많다. 구조화해서 줄이자.
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
-        Data<Dtype>* dataHistory, Data<Dtype>* data);
+        const Dtype epsilon, const Dtype decayRate, const Dtype beta1, const Dtype beta2,
+        Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2, Data<Dtype>* data);
 	void _dropoutForward();
 	void _dropoutBackward();
 
@@ -247,7 +249,7 @@ public:
     std::vector<bool> _paramsInitialized;
 
     std::vector<Data<Dtype>*> _paramsHistory;	///< 이전 update에서 적용된 파라미터 
-                                                /// 그레디언트 데이터
+    std::vector<Data<Dtype>*> _paramsHistory2;	///< 이전 update에서 적용된 파라미터 
 
     uint32_t tempCnt;
 

@@ -138,10 +138,11 @@ void developerMain() {
 	const uint32_t stepSize = 100000;
 	const float weightDecay = 0.0001f;
 	const float momentum = 0.9f;
-	//const float momentum = 0.5f;
 	const float clipGradientsLevel = 0.0f;
 	const float gamma = 0.1;
 	const LRPolicy lrPolicy = LRPolicy::Fixed;
+
+    const Optimizer opt = Optimizer::RMSprop;
 
 	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
 	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
@@ -154,7 +155,7 @@ void developerMain() {
 	NetworkConfig<float>* ncDGAN =
 			(new typename NetworkConfig<float>::Builder())
 			->batchSize(batchSize)
-			->baseLearningRate(0.02)
+			->baseLearningRate(0.0002)
 			->weightDecay(weightDecay)
 			->momentum(momentum)
 			->testInterval(testInterval)
@@ -169,6 +170,7 @@ void developerMain() {
 				new NetworkMonitor("celossDGAN", NetworkMonitor::PLOT_ONLY),
 				})
 			->lossLayers(llDGAN)
+            ->optimizer(opt)
 			->build();
 
 	NetworkConfig<float>* ncGD0GAN =
@@ -197,8 +199,13 @@ void developerMain() {
  	Network<float>* networkGD0GAN = new Network<float>(ncGD0GAN);
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
+#if 0
 	LayersConfig<float>* lcDGAN = createDOfGANLayersConfig<float>();
 	LayersConfig<float>* lcGD0GAN = createGD0OfGANLayersConfig<float>();
+#else
+    LayersConfig<float>* lcDGAN = createCNNSimpleLayersConfig3<float>();
+	LayersConfig<float>* lcGD0GAN = createCNNSimpleLayersConfig3<float>();
+#endif
  	networkDGAN->setLayersConfig(lcDGAN);
  	networkGD0GAN->setLayersConfig(lcGD0GAN);
 
@@ -235,9 +242,9 @@ void developerMain() {
     Gnuplot gpDGanConv4;
 
     for (int i = 0; i < 10000; i++) {
-        for (int k = 0; k < 10; k++) {
+        for (int k = 0; k < 1; k++) {
             networkDGAN->sgd(1);
-            networkGD0GAN->sgd(1);
+            //networkGD0GAN->sgd(1);
 
 #if 0
             drawAvgOfSquaredSumData(gpGDGanDeconv1, dataGDGanDeconv1, lcGD0GAN, 
@@ -257,12 +264,12 @@ void developerMain() {
 
 
         for (int k = 0; k < 1; k++) {
- 	        networkGD0GAN->sgd(1);
+ 	        //networkGD0GAN->sgd(1);
         }
 
         lossLayer->setTargetValue(0.0);
 
-#if 1
+#if 0
         if ((i % 100) == 15) {
             Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
             const float* host_data = convLayer->_inputData[0]->host_data();

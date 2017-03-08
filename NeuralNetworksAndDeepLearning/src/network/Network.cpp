@@ -95,11 +95,7 @@ void Network<Dtype>::sgd_with_timer(int epochs) {
                     << endl;);
 }
 
-
-
-
 #define SAVE_PROPOSAL_TARGET_LAYER 0
-
 
 template <typename Dtype>
 void Network<Dtype>::sgd(int epochs) {

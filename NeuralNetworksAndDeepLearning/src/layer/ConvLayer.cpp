@@ -10,6 +10,7 @@
 #include "FullyConnectedLayer.h"
 #include "Util.h"
 #include "Exception.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -490,13 +491,17 @@ void ConvLayer<Dtype>::donateParam(ConvLayer<Dtype>* receiver) {
 #if GPU_MODE
     receiver->_params.clear();
     receiver->_paramsHistory.clear();
+    receiver->_paramsHistory2.clear();
 
     for (int i = 0; i < _params.size(); i++) {
         receiver->_params.push_back(_params[i]);
     }
 
+    SASSERT0(_paramsHistory.size() == _paramsHistory2.size());
+
     for (int i = 0; i < _paramsHistory.size(); i++) {
         receiver->_paramsHistory.push_back(_paramsHistory[i]);
+        receiver->_paramsHistory2.push_back(_paramsHistory2[i]);
     }
 #endif
 }

@@ -70,6 +70,11 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout,
 	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(this->name + "_weight_history");
 	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history");
 
+	this->_paramsHistory2.resize(2);
+	this->_paramsHistory2[ParamType::Weight] = 
+        new Data<Dtype>(this->name + "_weight_history2");
+	this->_paramsHistory2[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history2");
+
 	//this->_preActivation = new Data<Dtype>("PreActivation"); // weighted sum (pre activation)
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
@@ -356,14 +361,18 @@ void FullyConnectedLayer<Dtype>::donateParam(FullyConnectedLayer<Dtype>* receive
 #if GPU_MODE
     receiver->_params.clear();
     receiver->_paramsHistory.clear();
+    receiver->_paramsHistory2.clear();
     receiver->_paramsInitialized.clear();
 
     for (int i = 0; i < _params.size(); i++) {
         receiver->_params.push_back(_params[i]);
     }
 
+    SASSERT0(_paramsHistory.size() == _paramsHistory2.size());
+
     for (int i = 0; i < _paramsHistory.size(); i++) {
         receiver->_paramsHistory.push_back(_paramsHistory[i]);
+        receiver->_paramsHistory2.push_back(_paramsHistory2[i]);
     }
 
     for (int i = 0; i < _paramsInitialized.size(); i++) {
