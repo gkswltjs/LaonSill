@@ -24,23 +24,29 @@ typedef boost::mt19937 RNGType;
 
 template<typename Dtype>
 NoiseInputLayer<Dtype>::NoiseInputLayer() {
-    initialize(0, 0.0, 0.0, false, 0, 0, 0, 0.0, 0.0);
+    initialize(0, 0.0, 0.0, false, 0, 0, 0, 0.0, 0.0, false);
 }
 
 template<typename Dtype>
 NoiseInputLayer<Dtype>::NoiseInputLayer(const string name, int noiseDepth,
     double noiseRangeLow, double noiseRangeHigh, bool useLinearTrans, int tranChannels,
-    int tranRows, int tranCols, double tranMean, double tranVariance) :
+    int tranRows, int tranCols, double tranMean, double tranVariance, bool regenerateNoise) :
     InputLayer<Dtype>(name) {
     initialize(noiseDepth, noiseRangeLow, noiseRangeHigh, useLinearTrans, tranChannels,
-        tranRows, tranCols, tranMean, tranVariance);
+        tranRows, tranCols, tranMean, tranVariance, regenerateNoise);
 }
 
 template<typename Dtype>
 NoiseInputLayer<Dtype>::NoiseInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
 	initialize(builder->_noiseDepth, builder->_noiseRangeLow, builder->_noiseRangeHigh,
         builder->_useLinearTrans, builder->_tranChannels, builder->_tranRows,
-        builder->_tranCols, builder->_tranMean, builder->_tranVariance);
+        builder->_tranCols, builder->_tranMean, builder->_tranVariance,
+        builder->_regenerateNoise);
+}
+
+template<typename Dtype>
+void NoiseInputLayer<Dtype>::setRegenerateNoise(bool regenerate) {
+    this->regenerateNoise = regenerate;
 }
 
 template<typename Dtype>
@@ -55,19 +61,24 @@ void NoiseInputLayer<Dtype>::prepareUniformArray() {
 	RNGType rng;
     rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
 
+    bool firstGenerate = false;
+
     if (this->uniformArray == NULL) {
         int allocSize = sizeof(Dtype) * this->noiseDepth;
         this->uniformArray = (Dtype*)malloc(allocSize);
         SASSERT0(this->uniformArray != NULL);
+        firstGenerate = true;
     }
 
-    boost::random::uniform_real_distribution<float> random_distribution(this->noiseRangeLow,
-        this->noiseRangeHigh);
-    boost::variate_generator<RNGType, boost::random::uniform_real_distribution<float> >
-    variate_generator(rng, random_distribution);
+    if (firstGenerate || this->regenerateNoise) {
+        boost::random::uniform_real_distribution<float> random_distribution(
+            this->noiseRangeLow, this->noiseRangeHigh);
+        boost::variate_generator<RNGType, boost::random::uniform_real_distribution<float>>
+            variate_generator(rng, random_distribution);
 
-    for (int i = 0; i < this->noiseDepth; ++i) {
-        this->uniformArray[i] = (Dtype)variate_generator();
+        for (int i = 0; i < this->noiseDepth; ++i) {
+            this->uniformArray[i] = (Dtype)variate_generator();
+        }
     }
 }
 
@@ -176,7 +187,7 @@ void NoiseInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* e
 template<typename Dtype>
 void NoiseInputLayer<Dtype>::initialize(int noiseDepth, double noiseRangeLow,
     double noiseRangeHigh, bool useLinearTrans, int tranChannels, int tranRows,
-    int tranCols, double tranMean, double tranVariance) {
+    int tranCols, double tranMean, double tranVariance, bool regenerateNoise) {
 
     this->type = Layer<Dtype>::NoiseInput;
     this->batchSize = 0;
@@ -192,6 +203,8 @@ void NoiseInputLayer<Dtype>::initialize(int noiseDepth, double noiseRangeLow,
     this->tranCols = tranCols;
     this->tranMean = tranMean;
     this->tranVariance = tranVariance;
+
+    this->regenerateNoise = regenerateNoise;
 }
 
 template<typename Dtype>

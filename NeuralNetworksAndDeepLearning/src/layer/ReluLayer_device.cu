@@ -46,11 +46,7 @@ __global__ void ApplyLeakyBackward(const Dtype* input, const Dtype* outputGrad,
 		return;
 
     if (input[idx] < 0)
-#if 0
         inputGrad[idx] = leaky * outputGrad[idx];
-#else       // CAFFE's implementation
-        inputGrad[idx] = leaky;
-#endif
     else
         inputGrad[idx] = outputGrad[idx];
 }

@@ -239,11 +239,17 @@ void developerMain() {
     Gnuplot gpDGanConv3;
     Gnuplot gpDGanConv4;
 
-    for (int i = 0; i < 10000; i++) {
-        for (int k = 0; k < 1; k++) {
-            networkDGAN->sgd(1);
-            networkGD0GAN->sgd(1);
+    for (int i = 0; i < 25; i++) {  // epoch
+        InputLayer<float>* inputLayer = lcDGAN->_inputLayer;
+        const uint32_t trainDataSize = inputLayer->getNumTrainData();
+        const uint32_t numBatches = trainDataSize / ncDGAN->_batchSize;
 
+        for (int j = 0; j < numBatches; j++) {
+            float lossD = 0.0;
+            float lossG = 0.0;
+
+            lossD = networkDGAN->sgdMiniBatch(j);
+            lossD += networkGD0GAN->sgd(1);
 #if 0
             drawAvgOfSquaredSumData(gpGDGanDeconv1, dataGDGanDeconv1, lcGD0GAN, 
                 "DeconvLayer1");
@@ -252,23 +258,29 @@ void developerMain() {
 #endif
             //printDataForDebug(lcDGAN, "D-GAN"); 
             //printDataForDebug(lcGD0GAN, "GD0-GAN");
+
+            CrossEntropyWithLossLayer<float>* lossLayer =
+                dynamic_cast<CrossEntropyWithLossLayer<float>*>(lcGD0GAN->_lastLayers[0]);
+            SASSERT0(lossLayer != NULL);
+            NoiseInputLayer<float>* noiseInputLayer =
+                dynamic_cast<NoiseInputLayer<float>*>(lcGD0GAN->_firstLayers[0]);
+            SASSERT0(noiseInputLayer != NULL);
+
+            lossLayer->setTargetValue(1.0);
+            noiseInputLayer->setRegenerateNoise(false);
+
+            networkGD0GAN->sgd(1);
+            lossG = networkGD0GAN->sgd(1);
+
+            lossLayer->setTargetValue(0.0);
+            noiseInputLayer->setRegenerateNoise(true);
+
+            cout << "LOSS[epoch=" << i << "/batch=" << j << "] D: " << lossD << ",G: " <<
+                lossG << endl;
         }
-
-        CrossEntropyWithLossLayer<float>* lossLayer =
-            dynamic_cast<CrossEntropyWithLossLayer<float>*>(lcGD0GAN->_lastLayers[0]);
-
-        SASSERT0(lossLayer != NULL);
-        lossLayer->setTargetValue(1.0);
-
-
-        for (int k = 0; k < 2; k++) {
- 	        networkGD0GAN->sgd(1);
-        }
-
-        lossLayer->setTargetValue(0.0);
 
 #if 1
-        if ((i % 100) == 15) {
+        if (true) {
             Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
             const float* host_data = convLayer->_inputData[0]->host_data();
             ImageUtil<float>::saveImage(host_data, 10, 3, 64, 64);

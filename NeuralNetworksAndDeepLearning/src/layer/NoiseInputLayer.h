@@ -35,10 +35,12 @@ public:
         double _tranMean;
         double _tranVariance;
 
+        bool _regenerateNoise;
+
 		Builder() {
 			this->type = Layer<Dtype>::NoiseInput;
             this->_noiseDepth = 100;
-            this->_noiseRangeLow = 0.0;
+            this->_noiseRangeLow = -1.0;
             this->_noiseRangeHigh = 1.0;
 
             this->_useLinearTrans = false;
@@ -47,6 +49,7 @@ public:
             this->_tranCols = 1;
             this->_tranMean = 0;
             this->_tranVariance = 1.0;
+            this->_regenerateNoise = false;
 		}
 		virtual Builder* shape(const std::vector<uint32_t>& shape) {
 			this->_shape = shape;
@@ -82,6 +85,10 @@ public:
             this->_noiseRangeHigh = rangeHigh;
             return this;
         }
+        Builder* regenerateNoise(bool regenerate) {
+            this->_regenerateNoise = regenerate;
+            return this;
+        }
         Builder* linear(int channels, int rows, int cols, double mean, double variance) {
             this->_useLinearTrans = true;
             this->_tranChannels = channels;
@@ -99,7 +106,7 @@ public:
     NoiseInputLayer();
 	NoiseInputLayer(const std::string name, int noiseDepth, double noiseRangeLow,
         double noiseRangeHigh, bool useLinearTrans, int tranChannels, int tranRows,
-        int tranCols, double tranMean, double tranVariance);
+        int tranCols, double tranMean, double tranVariance, bool regenerateNoise);
 	NoiseInputLayer(Builder* builder);
 
     virtual ~NoiseInputLayer();
@@ -114,10 +121,12 @@ public:
 
 	void reshape();
 
+    void setRegenerateNoise(bool regenerate);
+
 protected:
 	void initialize(int noiseDepth, double noiseRangeLow, double noiseRangeHigh,
         bool useLinearTrans, int tranChannels, int tranRows, int tranCols, double tranMean,
-        double tranVariance);
+        double tranVariance, bool regenerateNoise);
             
     void prepareUniformArray();
     void prepareLinearTranMatrix();
@@ -132,6 +141,8 @@ protected:
     int tranCols;
     double tranMean;
     double tranVariance;
+
+    bool regenerateNoise;
 
     int batchSize;
 

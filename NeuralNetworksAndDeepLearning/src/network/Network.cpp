@@ -97,8 +97,10 @@ void Network<Dtype>::sgd_with_timer(int epochs) {
 
 #define SAVE_PROPOSAL_TARGET_LAYER 0
 
-template <typename Dtype>
-void Network<Dtype>::sgd(int epochs) {
+// batch 단위로 sgd()를 수행하기 위한 함수.
+// GAN 디버깅을 위한 임시 함수. 추후에 정리 필요.
+template<typename Dtype>
+Dtype Network<Dtype>::sgdMiniBatch(uint32_t batchTotalIndex) {
     InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
 	//vector<vector<Evaluation<Dtype>*>>& evaluations = config->_evaluations;
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
@@ -108,6 +110,78 @@ void Network<Dtype>::sgd(int epochs) {
 	const uint32_t numBatches = 
         trainDataSize / config->_batchSize / Worker<Dtype>::consumerCount;
 
+    config->_status = NetworkStatus::Train;
+
+    if (batchTotalIndex == 0)
+        inputLayer->shuffleTrainDataSet();
+
+    LayersConfig<Dtype>* layersConfig = getLayersConfig();
+    vector<double> costList(config->_lossLayers.size());
+    typename map<string, Layer<Dtype>*>::iterator it;
+
+    uint32_t batchIndex = batchTotalIndex * Worker<Dtype>::consumerCount +
+        Worker<Dtype>::consumerIdx;
+    config->_iterations++;
+
+#ifndef GPU_MODE
+    inputLayer->reset_nabla(0);
+#endif
+    trainBatch(batchIndex);
+
+    // UPDATE
+    if (config->_phase == NetworkPhase::TrainPhase) {
+        for (uint32_t i = 0; i < config->_lossLayers.size(); i++) {
+            it = layersConfig->_nameLayerMap.find(config->_lossLayers[i]);
+            assert(it != layersConfig->_nameLayerMap.end());
+            LossLayer<Dtype>* lossLayer = dynamic_cast<LossLayer<Dtype>*>(it->second);
+            assert(lossLayer != 0);
+            costList[i] += lossLayer->cost();
+        }
+        applyUpdate();
+    }
+
+    float lossSum = 0.0;
+    // 모든 worker에서 GPU 트레이닝이 끝나길 기다린다.
+    // XXX: 예쁘게.. 
+    if (Worker<Dtype>::waitPeer()) {
+        // 마지막 쓰레드가 메모리를 갱신한다.
+        if (config->_phase == NetworkPhase::TrainPhase && config->doTest()) {
+            config->_status = NetworkStatus::Test;
+
+            for (uint32_t i = 0; i < config->_lossLayers.size(); i++) {
+                float cost = costList[i]/config->_testInterval;
+                networkListeners[i]->onCostComputed(0, config->_lossLayers[i], cost);
+                costList[i] = 0.0;
+                //cout << config->_lossLayers[i] << " cost:" << cost << ",";
+                lossSum += cost;
+            }
+            //cout << endl;
+
+            config->_status = NetworkStatus::Train;
+        }
+
+        if(config->_phase == NetworkPhase::TrainPhase && config->doSave()) {
+            save();
+        }
+
+        Worker<Dtype>::wakeupPeer();
+    }
+
+    return lossSum;
+}
+
+template <typename Dtype>
+Dtype Network<Dtype>::sgd(int epochs) {
+    InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
+	//vector<vector<Evaluation<Dtype>*>>& evaluations = config->_evaluations;
+	vector<NetworkListener*>& networkListeners = config->_networkListeners;
+
+	const uint32_t trainDataSize = inputLayer->getNumTrainData();
+	//cout << "trainDataSize: " << trainDataSize << endl;
+	const uint32_t numBatches = 
+        trainDataSize / config->_batchSize / Worker<Dtype>::consumerCount;
+
+    float lossSum = 0.0;
 	//iterations = 0;
 	for (uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		config->_status = NetworkStatus::Train;
@@ -176,9 +250,10 @@ void Network<Dtype>::sgd(int epochs) {
 						float cost = costList[i]/config->_testInterval;
 						networkListeners[i]->onCostComputed(0, config->_lossLayers[i], cost);
 						costList[i] = 0.0;
-						cout << config->_lossLayers[i] << " cost:" << cost << ",";
+                        lossSum += cost;
+						//cout << config->_lossLayers[i] << " cost:" << cost << ",";
 					}
-					cout << endl;
+					//cout << endl;
 
                     config->_status = NetworkStatus::Train;
                 }
@@ -197,6 +272,8 @@ void Network<Dtype>::sgd(int epochs) {
 
 
 	}
+
+    return lossSum;
 }
 
 
@@ -449,7 +526,6 @@ void Network<Dtype>::applyUpdate() {
     }
 
     // 각 layer들을 갱신한다.
-    cout << "update() is called. num of learnable layers=" << numLearnableLayers << endl;
 	for (uint32_t i = 0; i < numLearnableLayers; i++) {
         getLayersConfig()->_learnableLayers[i]->update();
 	}
