@@ -237,16 +237,28 @@ __global__ void ComputeShiftGrad(const Dtype *outputGrads, int depth, int batchC
     }
 }
 
+#define USE_ADAGRAD_UPDATE      1
+
 template <typename Dtype>
 __global__ void UpdateShiftAndScale(const Dtype *gammaGrad, const Dtype *betaGrad, int depth,
-    Dtype learningRate, Dtype *gammaData, Dtype *betaData)
+    Dtype learningRate, Dtype *gammaData, Dtype *betaData, Dtype* gammaCache,
+    Dtype* betaCache)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= depth) 
 		return;
+#if USE_ADAGRAD_UPDATE
+    gammaCache[idx] += gammaGrad[idx] * gammaGrad[idx];
+    betaCache[idx] += betaGrad[idx] * betaGrad[idx];
 
+    gammaData[idx] += 
+        (-1.0) * learningRate * gammaGrad[idx] / (sqrt(gammaCache[idx]) + 0.00001);
+    betaData[idx] += 
+        (-1.0) * learningRate * betaGrad[idx] / (sqrt(betaCache[idx]) + 0.00001);
+#else
     gammaData[idx] -= learningRate * gammaGrad[idx];
     betaData[idx] -= learningRate * betaGrad[idx];
+#endif
 }
 
 template<typename Dtype>
@@ -255,6 +267,10 @@ BatchNormLayer<Dtype>::~BatchNormLayer() {
     free(this->gammaSet);
     SASSERT0(this->betaSet != NULL);
     free(this->betaSet);
+    SASSERT0(this->gammaCacheSet != NULL);
+    free(this->gammaCacheSet);
+    SASSERT0(this->betaCacheSet != NULL);
+    free(this->betaCacheSet);
     SASSERT0(this->meanSet != NULL);
     free(this->meanSet);
     SASSERT0(this->varSet != NULL);
@@ -276,9 +292,12 @@ void BatchNormLayer<Dtype>::update() {
     const Dtype* gammaGrad = this->gammaSet->device_grad();
     Dtype* betaData = this->betaSet->mutable_device_data();
     const Dtype* betaGrad = this->betaSet->device_grad();
+    Dtype* gammaCache = this->gammaCacheSet->mutable_device_data();
+    Dtype* betaCache = this->betaCacheSet->mutable_device_data();
 
     UpdateShiftAndScale<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-        gammaGrad, betaGrad, this->depth, (Dtype)learningRate, gammaData, betaData);
+        gammaGrad, betaGrad, this->depth, (Dtype)learningRate, gammaData, betaData,
+        gammaCache, betaCache);
 
     SPERF_END(BATCHNORM_LAYER_UPTIME, startTime);
 }
@@ -392,6 +411,8 @@ void BatchNormLayer<Dtype>::reshape() {
 
         this->gammaSet->reshape({1, channels, rows, cols});
         this->betaSet->reshape({1, channels, rows, cols});
+        this->gammaCacheSet->reshape({1, channels, rows, cols});
+        this->betaCacheSet->reshape({1, channels, rows, cols});
         this->meanSet->reshape({1, channels, rows, cols});
         this->varSet->reshape({1, channels, rows, cols});
 
@@ -403,18 +424,8 @@ void BatchNormLayer<Dtype>::reshape() {
 
         // FIXME: 더 좋은 초기화 방법이 있을지도 모른다..
         Dtype* gammas = this->gammaSet->mutable_device_data();
-        Dtype* betas = this->betaSet->mutable_device_data();
-        Dtype* meanSums = this->meanSumSet->mutable_device_mem();
-        Dtype* varSums = this->varSumSet->mutable_device_mem();
-
         FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             gammas, this->depth, 1.0f);
-        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-            betas, this->depth, 0.0f);
-        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-            meanSums, this->depth, 0.0f);
-        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-            varSums, this->depth, 0.0f);
     } else {
         SASSERT0(this->depth == depth);
     }

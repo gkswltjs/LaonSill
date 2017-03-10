@@ -41,6 +41,8 @@ void BatchNormLayer<Dtype>::initialize(double epsilon) {
     this->batchSetCount         = 0;
     this->gammaSet              = new Data<Dtype>(this->name + "_gamma");
     this->betaSet               = new Data<Dtype>(this->name + "_beta");
+    this->gammaCacheSet         = new Data<Dtype>(this->name + "_gammaCache");
+    this->betaCacheSet          = new Data<Dtype>(this->name + "_betaCache");
     this->meanSet               = new Data<Dtype>(this->name + "_mean");
     this->varSet                = new Data<Dtype>(this->name + "_variance");
     this->normInputSet          = new Data<Dtype>(this->name + "_normalizedInput");

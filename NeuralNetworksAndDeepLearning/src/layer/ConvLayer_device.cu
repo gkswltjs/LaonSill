@@ -489,8 +489,6 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
     // FIXME: FullyConnectedLayer에 동일한 코드가 있음. 추후에 정리 필요
     // (1) do normalization & regularization
     //  FIXME: 이것도 옵션으로 정규화를 할지 여부를 설정할 수 있었으면 좋겠음.
-    checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
-        &normScale, d_paramGrad, 1));					// normalize by batch size
     checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
         &regScale, d_paramData, 1, d_paramGrad, 1));	// regularize
 

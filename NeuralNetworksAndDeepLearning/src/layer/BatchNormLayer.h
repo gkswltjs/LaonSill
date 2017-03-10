@@ -31,7 +31,7 @@ public:
                                         
 		Builder() {
 			this->type = Layer<Dtype>::BatchNorm;
-            _epsilon = 0.001;
+            _epsilon = 0.000001;
 		}
 		virtual Builder* name(const std::string name) {
 			HiddenLayer<Dtype>::Builder::name(name);
@@ -105,12 +105,18 @@ private:
 
 	Data<Dtype>    *gammaSet;           // scale factor
     Data<Dtype>    *betaSet;            // shift factor
+
+    Data<Dtype>    *gammaCacheSet;
+    Data<Dtype>    *betaCacheSet;
+
+
     Data<Dtype>    *meanSet;            // mean
     Data<Dtype>    *varSet;             // variance
     Data<Dtype>    *normInputSet;       // normalized input value
 
     std::shared_ptr<SyncMem<Dtype>>  meanSumSet;    // meanSet들의 합
     std::shared_ptr<SyncMem<Dtype>>  varSumSet;     // varSet들의 합
+
 
     void        computeNormInputGrad();
     void        computeVarianceGrad();
