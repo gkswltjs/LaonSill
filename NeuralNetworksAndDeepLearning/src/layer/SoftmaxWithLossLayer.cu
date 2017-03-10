@@ -83,7 +83,10 @@ __global__ void SoftmaxLossForwardGPU(
         const bool has_ignore_label_,
         const int ignore_label_,
         Dtype* counts) {
+
 	CUDA_KERNEL_LOOP(index, nthreads) {
+		//printf("SoftmaxLossForwardGPU index: %d\n", index);
+
 		const int n = index / spatial_dim;
 		const int s = index % spatial_dim;
 		const int label_value = static_cast<int>(label[n * spatial_dim + s]);
@@ -103,7 +106,18 @@ template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	reshape();
 
+
+	//Data<Dtype>::printConfig = true;
+	//SyncMem<Dtype>::printConfig = true;
+
+	this->_inputData[0]->print_data({}, false);
+	this->_inputData[1]->print_data({}, false);
+
 	this->softmaxLayer->feedforward();
+
+	this->softmaxLayer->_outputData[0]->print_data({}, false);
+
+
 
 	const Dtype* probData = this->prob->device_data();
 	const Dtype* label = this->_inputData[1]->device_data();
@@ -117,10 +131,18 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	// to avoid having to allocated additional GPU memory.
 	Dtype* counts = this->prob->mutable_device_grad();
 
+
+	//cout << "FLT_MIN: " << Dtype(FLT_MIN) << endl;
+
+
+
 	SoftmaxLossForwardGPU<Dtype><<<SOOOA_GET_BLOCKS(nthreads), SOOOA_CUDA_NUM_THREADS>>>(
 			nthreads, probData, label, lossData, this->outerNum, dim,
 			this->innerNum, this->hasIgnoreLabel, this->ignoreLabel, counts);
+	//cudaDeviceSynchronize();
 
+
+	//exit(1);
 
 	/*
 	if (this->name == "loss_cls") {
@@ -137,11 +159,7 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	*/
 
 
-
-
-
-
-
+	this->_inputData[0]->print_grad({}, false);
 
 	Dtype loss;
 	soooa_gpu_asum(nthreads, lossData, &loss);
@@ -171,6 +189,12 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	//this->prob->print_data({}, false);
 	//Data<Dtype>::printConfig = false;
 	//exit(1);
+
+
+	this->_outputData[0]->print_data({}, false);
+
+	Data<Dtype>::printConfig = false;
+	SyncMem<Dtype>::printConfig = false;
 }
 
 

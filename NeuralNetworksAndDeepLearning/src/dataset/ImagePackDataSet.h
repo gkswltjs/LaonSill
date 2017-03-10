@@ -52,8 +52,8 @@ public:
 			uint32_t numTrainFile,
 			std::string testImage,
 			std::string testLabel,
-			uint32_t numTestFile
-			);
+			uint32_t numTestFile,
+			Dtype scale);
 	virtual ~ImagePackDataSet();
 
 	virtual void load();
@@ -133,6 +133,8 @@ protected:
     std::vector<Dtype>* secondTrainDataSet;		///< 학습데이터셋 벡터에 대한 포인터.
     std::vector<Dtype>* secondTrainLabelSet;	///< 학습데이터셋의 정답 레이블 벡터에 대한 
                                                 ///  포인터.
+
+    Dtype scale;
 
 	static void* load_helper(void* context);
 	void swap();

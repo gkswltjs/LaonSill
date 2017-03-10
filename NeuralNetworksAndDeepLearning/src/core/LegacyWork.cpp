@@ -36,8 +36,8 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
 
 	// (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	//LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<Dtype>();
-    LayersConfig<float>* layersConfig = createLeNetLayersConfig<Dtype>();
+	LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<Dtype>();
+    //LayersConfig<float>* layersConfig = createLeNetLayersConfig<Dtype>();
 
 	// (2) network config 정보를 layer들에게 전달한다.
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
@@ -211,10 +211,10 @@ int LegacyWork<Dtype>::createNetwork() {
 	weightsArgs[0].weightsPath =
 			"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_400000of_0.01_.param";
 #endif
-	const uint32_t batchSize = 100;
-	const uint32_t testInterval = 600;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 100000000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.01f;
+	const uint32_t batchSize = 10;
+	const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 1000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.001f;
 	//const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
 	//const uint32_t saveInterval = 10000;		// 1000000 / batchSize
 	//const float baseLearningRate = 0.01f;

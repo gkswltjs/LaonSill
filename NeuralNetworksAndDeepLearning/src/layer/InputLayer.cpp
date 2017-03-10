@@ -27,21 +27,23 @@ InputLayer<Dtype>::InputLayer(Builder* builder)
 : Layer<Dtype>(builder) {
 
 	if (builder->_sourceType == "ImagePack") {
-		_dataSet = new ImagePackDataSet<Dtype>(
+		this->_dataSet = new ImagePackDataSet<Dtype>(
 				builder->_source+"/train_data",
 				builder->_source+"/train_label",
 				builder->_numTrainPack,
 				builder->_source+"/test_data",
 				builder->_source+"/test_label",
-				builder->_numTestPack);
-		_dataSet->setMean({0.13066047740});
-		_dataSet->load();
+				builder->_numTestPack,
+				builder->_scale);
+		//this->_dataSet->setMean({0.13066047740});
+		this->_dataSet->setMean(builder->_mean);
+		this->_dataSet->load();
 
 	} else if (builder->_sourceType == "Mock") {
-		_dataSet = new MockDataSet<Dtype>(
+		this->_dataSet = new MockDataSet<Dtype>(
 				4, 4, 3, 10, 10, 10
 				);
-		_dataSet->load();
+		this->_dataSet->load();
 	} else {
 		//cout << "Unsuppored Input Source Type: " << builder->_sourceType;
 		//exit(1);

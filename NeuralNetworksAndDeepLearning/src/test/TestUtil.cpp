@@ -85,7 +85,7 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 
 
 	vector<string> tokens;
-	Tokenize(data_key, tokens, "_");
+	Tokenize(data_key, tokens, "*", true);
 	assert(tokens.size() == 3);
 
 	if (tokens[1] == "params") {
@@ -146,6 +146,8 @@ S* retrieveValueFromMap(map<T, S*>& dict, const T& key) {
 	} else
 		return itr->second;
 }
+template Data<float>* retrieveValueFromMap(map<string, Data<float>*>& dict,
+		const string& key);
 
 
 template <typename T, typename S>
@@ -249,6 +251,7 @@ void fillParam(map<string, Data<float>*>& nameDataMap, const string& param_prefi
 	for (uint32_t i = 0; i < paramVec.size(); i++) {
 		const string key = param_prefix + to_string(i);
 
+		cout << "fill param key: " << key << endl;
 		Data<float>* param = retrieveValueFromMap(nameDataMap, key);
 		assert(param != 0);
 

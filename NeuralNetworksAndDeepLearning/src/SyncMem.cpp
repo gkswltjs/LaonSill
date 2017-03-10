@@ -71,12 +71,20 @@ void SyncMem<Dtype>::reshape(size_t size) {
 		if(_host_mem) delete [] _host_mem;
 		if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
 
-		_reserved = (size_t)(size*1.2f);
+		_reserved = (size_t)(size*1.0f);
 		//_reserved = (size_t)(size);
 		_host_mem = new Dtype[_reserved];
 		memset(_host_mem, 0, sizeof(Dtype)*_reserved);
 
-		checkCudaErrors(Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved));
+		//checkCudaErrors(Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved));
+		std::stringstream _error;                                          \
+		cudaError_t status = Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved);
+		if (status != 0) {                                                 \
+		  _error << "Cuda failure: " << status;                            \
+		  FatalError(_error.str());                                        \
+		}                                                                  \
+
+
 		checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_reserved));
 	}
 	_size = size;

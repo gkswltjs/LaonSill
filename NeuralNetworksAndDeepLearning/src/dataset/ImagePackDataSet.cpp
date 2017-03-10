@@ -25,13 +25,15 @@ ImagePackDataSet<Dtype>::ImagePackDataSet(
 		uint32_t numTrainFile,
 		string testImage,
 		string testLabel,
-		uint32_t numTestFile)
+		uint32_t numTestFile,
+		Dtype scale)
 	: trainImage(trainImage),
 	  trainLabel(trainLabel),
 	  numTrainFile(numTrainFile),
 	  testImage(testImage),
 	  testLabel(testLabel),
-	  numTestFile(numTestFile) {
+	  numTestFile(numTestFile),
+	  scale(scale) {
 
 	this->trainFileIndex = 0;
 	this->testFileIndex = 0;
@@ -246,7 +248,7 @@ void* ImagePackDataSet<Dtype>::load_helper(void* arg) {
 
 template <typename Dtype>
 int ImagePackDataSet<Dtype>::load(typename DataSet<Dtype>::Type type, int page) {
-	loading = true;
+	this->loading = true;
 
 	int shuffledPage = (*this->trainFileIndices)[page];
 	cout << "load train dataset shuffled page " << shuffledPage << endl;
@@ -436,7 +438,7 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 	}
 
 	for (size_t i = 0; i < dataSetSize; i++) {
-		(*dataSet)[i] = (*bufDataSet)[i]/255.0f;
+		(*dataSet)[i] = (*this->bufDataSet)[i] / this->scale;
 		//(*dataSet)[i] = (*bufDataSet)[i];
 	}
 

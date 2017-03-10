@@ -44,12 +44,14 @@ public:
 		std::vector<uint32_t> _shape;
 		std::string _source;
 		std::string _sourceType;
+		Dtype _scale;
 
 		Builder() {
 			this->type = Layer<Dtype>::Input;
 			this->_numTrainPack = 1;
 			this->_numTestPack = 1;
 			this->_mean = {0.0f, 0.0f, 0.0f};
+			this->_scale = Dtype(1.0);
 		}
 		virtual Builder* shape(const std::vector<uint32_t>& shape) {
 			this->_shape = shape;
@@ -73,6 +75,10 @@ public:
 		}
 		virtual Builder* mean(const std::vector<float>& mean) {
 			this->_mean = mean;
+			return this;
+		}
+		virtual Builder* scale(const Dtype scale) {
+			this->_scale = scale;
 			return this;
 		}
 		virtual Builder* name(const std::string name) {

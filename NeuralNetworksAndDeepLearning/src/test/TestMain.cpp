@@ -97,27 +97,62 @@ void layerTest() {
 	LayerTestInterface<float>::globalCleanUp();
 }
 
-void networkTest() {
-	const int gpuid = 0;
 
+#define NETWORK_LENET	0
+#define NETWORK_VGG19	1
+#define NETWORK			NETWORK_VGG19
+
+
+
+void networkTest() {
+	const int gpuid 				= 0;
+
+#if NETWORK == NETWORK_LENET
+	// LENET
 	LayersConfig<float>* layersConfig = createLeNetLayersConfig<float>();
+	const string networkName		= "lenet";
+	const int batchSize 			= 64;
+	const float baseLearningRate 	= 0.01;
+	const float weightDecay 		= 0.0005;
+	const float momentum 			= 0.0;
+	const LRPolicy lrPolicy 		= LRPolicy::Fixed;
+	const int stepSize 				= 20000;
+	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
+	const float gamma 				= 0.0001;
+#elif NETWORK == NETWORK_VGG19
+	// VGG19
+	LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<float>();
+	const string networkName		= "vgg19";
+	const int batchSize 			= 10;
+	const float baseLearningRate 	= 0.1;
+	const float weightDecay 		= 0.05;
+	const float momentum 			= 0.0;
+	const LRPolicy lrPolicy 		= LRPolicy::Step;
+	const int stepSize 				= 20000;
+	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
+	const float gamma 				= 0.1;
+#else
+	cout << "invalid network ... " << endl;
+	exit(1);
+#endif
+
 	NetworkConfig<float>* networkConfig =
 		(new typename NetworkConfig<float>::Builder())
-		->batchSize(64)
-		->baseLearningRate(0.01)
-		->weightDecay(0.0005)
-		->momentum(0.0)
-		->lrPolicy(LRPolicy::Fixed)
-		->stepSize(10000)
-		->networkPhase(NetworkPhase::TrainPhase)
-		->gamma(0.0001)
+		->batchSize(batchSize)
+		->baseLearningRate(baseLearningRate)
+		->weightDecay(weightDecay)
+		->momentum(momentum)
+		->lrPolicy(lrPolicy)
+		->stepSize(stepSize)
+		->networkPhase(networkPhase)
+		->gamma(gamma)
 		->build();
 
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 	}
 
-	NetworkTest<float>* networkTest = new NetworkTest<float>(layersConfig, "lenet");
+	NetworkTest<float>* networkTest = new NetworkTest<float>(layersConfig, networkName);
 
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 	networkTest->setUp();

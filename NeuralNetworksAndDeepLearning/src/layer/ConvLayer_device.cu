@@ -177,6 +177,9 @@ void ConvLayer<Dtype>::reshape() {
 	const int b_in = batches * channels * rows * cols;
 	const int b_out = n * c * h * w;
 
+	const size_t memoryLimitInBytes = 8 << 20;
+	//const size_t memoryLimitInBytes = 0;
+
 	size_t convFwdWorkspaceSize;
 	size_t convBwdFilterWorkspaceSize;
 	size_t convBwdDataWorkspaceSize;
@@ -190,7 +193,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->outputTensorDesc,
 			//CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
 			CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
-			8<<20,
+			memoryLimitInBytes,
 			&convFwdAlgo));
 
 	checkCUDNN(cudnnGetConvolutionForwardWorkspaceSize(
@@ -211,7 +214,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->filterDesc,
 			//CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
 			CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
-			8<<20,
+			memoryLimitInBytes,
 			&this->convBwdFilterAlgo));
 
 	checkCUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(
@@ -232,7 +235,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->inputTensorDesc,
 			//CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
 			CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
-			8<<20,
+			memoryLimitInBytes,
 			&convBwdDataAlgo));
 
 	checkCUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(

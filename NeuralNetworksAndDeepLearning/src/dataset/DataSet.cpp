@@ -70,6 +70,8 @@ DataSet<Dtype>::~DataSet() {
 
 template <typename Dtype>
 void DataSet<Dtype>::setMean(const vector<Dtype>& means) {
+	assert(means.size() == 1 || means.size() == 3);
+
 	for(uint32_t i = 0; i < means.size(); i++) {
 		this->mean[i] = means[i];
 	}

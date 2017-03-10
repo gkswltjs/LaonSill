@@ -2921,7 +2921,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 
 template <typename Dtype>
 LayersConfig<Dtype>* createVGG19NetLayersConfig() {
-	const float bias_const = 0.1f;
+	const float bias_const = 0.2f;
 
 	LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
 			->layer((new typename InputLayer<Dtype>::Builder())
@@ -2936,10 +2936,11 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->source(std::string(SPARAM(BASE_DATA_DIR))
 						+ std::string("/ILSVRC2012/save/10000"))
 					->sourceType("ImagePack")
-					->numTrainPack(40)
+					->numTrainPack(1)
 #endif
 					->numTestPack(1)
-					->mean({0.47684615850, 0.45469805598, 0.41394191980})
+					//->mean({0.47684615850, 0.45469805598, 0.41394191980})
+					->mean({123.0f, 117.0f, 104.0f})
 					->outputs({"data", "label"}))
 
 			// artistic style에서 사용할 input layer 설정
@@ -3269,15 +3270,6 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 
 
 			// classifier
-					/*
-			->layer((new typename ReshapeLayer<Dtype>::Builder())
-					->id(38)
-					->name("pool5_reshape")
-					->shape({0, 1, -1, 1})
-					->inputs({"pool5"})
-					->outputs({"pool5_reshape"}))
-					*/
-
 			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
 					->id(39)
 					->name("fc6")
@@ -3328,9 +3320,9 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 
 			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
 					->id(44)
-					->name("prob")
+					->name("loss")
 					->inputs({"fc8", "label"})
-					->outputs({"prob"}))
+					->outputs({"loss"}))
 
 			->build();
 

@@ -180,7 +180,7 @@ void Network<Dtype>::sgd(int epochs) {
 						float cost = costList[i]/config->_testInterval;
 						networkListeners[i]->onCostComputed(i, config->_lossLayers[i], cost);
 						costList[i] = 0.0;
-						cout << config->_lossLayers[i] << " cost:" << cost << ",";
+						STDOUT_BLOCK(cout << config->_lossLayers[i] << " cost:" << cost << ",";);
 					}
 					cout << endl;
                     config->_status = NetworkStatus::Train;
@@ -671,6 +671,8 @@ void Network<Dtype>::_feedforward(uint32_t batchIndex) {
 	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
 		//cout << layersConfig->_layers[i]->name << ": feedforward ... " << endl;
 		layersConfig->_layers[i]->feedforward();
+		//cout << "output sumsq of " << layersConfig->_layers[i]->name << ":\t\t" <<
+		//		layersConfig->_layers[i]->_outputData[0]->sumsq_device_data() << endl;
 	}
 }
 
@@ -737,6 +739,8 @@ void Network<Dtype>::_backpropagation(uint32_t batchIndex) {
 		if (hiddenLayer) {
 			//cout << layersConfig->_layers[i]->name << ": backpropagation ... " << endl;
 			hiddenLayer->backpropagation();
+			//cout << "input sumsq of " << hiddenLayer->name << ":\t\t" <<
+			//		hiddenLayer->_inputData[0]->sumsq_device_grad() << endl;
 		}
 
 		/*

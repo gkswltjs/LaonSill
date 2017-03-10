@@ -16,16 +16,16 @@
 #include "Data.h"
 
 
-const std::string TYPE_DATA = "data";
-const std::string TYPE_DIFF = "diff";
-const std::string SIG_BOTTOM = "_bottom_";
-const std::string SIG_TOP = "_top_";
-const std::string SIG_PARAMS = "_params_";
-const std::string BLOBS_PREFIX = "anonymous_blobs_";
+const std::string DELIM 		= "*";
+const std::string TYPE_DATA 	= "data";
+const std::string TYPE_DIFF 	= "diff";
+const std::string SIG_BOTTOM 	= DELIM + "bottom" + DELIM;
+const std::string SIG_TOP 		= DELIM + "top" + DELIM;
+const std::string SIG_PARAMS 	= DELIM + "params" + DELIM;
+const std::string BLOBS_PREFIX	= "anonymous" + DELIM + "blobs" + DELIM;
+const std::string NPZ_PATH 		= "/home/jkim/Dev/data/numpy_array/";
 
-const std::string NPZ_PATH = "/home/jkim/Dev/data/numpy_array/";
-
-const float COMPARE_ERROR = 0.00001;
+const float COMPARE_ERROR 		= 0.00001;
 
 
 // cuda device 설정

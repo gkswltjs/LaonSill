@@ -13,6 +13,7 @@
 #include "Util.h"
 #include "Network.h"
 #include "NetworkConfig.h"
+#include "Data.h"
 
 template <typename Dtype>
 class NetworkTest : public NetworkTestInterface<Dtype> {
@@ -28,12 +29,12 @@ public:
 	}
 
 	virtual void setUp() {
-		buildNameDataMapFromNpzFile(NPZ_PATH, this->networkName + this->paramsOld,
-				this->nameParamsOldMap);
-		buildNameDataMapFromNpzFile(NPZ_PATH, this->networkName + this->paramsNew,
-				this->nameParamsNewMap);
-		buildNameDataMapFromNpzFile(NPZ_PATH, this->networkName + this->blobs,
-				this->nameBlobsMap);
+		buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
+				this->networkName + this->paramsOld, this->nameParamsOldMap);
+		buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
+				this->networkName + this->paramsNew, this->nameParamsNewMap);
+		buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
+				this->networkName + this->blobs, this->nameBlobsMap);
 
 		printNameDataMap(this->nameParamsOldMap, false);
 		printNameDataMap(this->nameParamsNewMap, false);
@@ -87,8 +88,8 @@ public:
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
 			layer->feedforward();
 			if (!compareData(this->nameBlobsMap, BLOBS_PREFIX, layer->_outputData, 0)) {
-				std::cout << "data feedforward failed at layer " << layer->name << std::endl;
-				exit(1);
+				std::cout << "[ERROR] data feedforward failed at layer " << layer->name << std::endl;
+				//exit(1);
 			} else {
 				std::cout << "data feedforward succeed at layer " << layer->name << std::endl;
 			}
@@ -107,9 +108,9 @@ public:
 			if (i > 1) {
 				// test blobs except input layer and second layer
 				if (!compareData(this->nameBlobsMap, BLOBS_PREFIX, layer->_inputData, 1)) {
-					std::cout << "data backpropagation failed at layer " << layer->name
+					std::cout << "[ERROR] data backpropagation failed at layer " << layer->name
 							<< std::endl;
-					exit(1);
+					//exit(1);
 				} else {
 					std::cout << "data backpropagation succeed at layer " << layer->name
 							<< std::endl;
@@ -127,9 +128,9 @@ public:
 			// test final delta
 			if (!compareParam(this->nameParamsNewMap,
 					learnableLayer->name + SIG_PARAMS, learnableLayer->_params, 1)) {
-				std::cout << "param backpropagation failed at layer " <<
+				std::cout << "[ERROR] param backpropagation failed at layer " <<
 						learnableLayer->name << std::endl;
-				exit(1);
+				//exit(1);
 			} else {
 				std::cout << "param backpropagation succeed at layer " <<
 						learnableLayer->name << std::endl;
@@ -138,8 +139,8 @@ public:
 			// test final params
 			if (!compareParam(this->nameParamsNewMap, learnableLayer->name + SIG_PARAMS,
 					learnableLayer->_params, 0)) {
-				std::cout << "update failed at layer " << learnableLayer->name << std::endl;
-				exit(1);
+				std::cout << "[ERROR] update failed at layer " << learnableLayer->name << std::endl;
+				//exit(1);
 			} else {
 				std::cout << "update succeed at layer " << learnableLayer->name << std::endl;
 			}
