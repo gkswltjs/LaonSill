@@ -186,11 +186,10 @@ void Network<Dtype>::sgd(int epochs) {
                     config->_status = NetworkStatus::Train;
                 }
 
-                /*
+
                 if(config->_phase == NetworkPhase::TrainPhase && config->doSave()) {
                     save();
                 }
-                */
 
                 Worker<Dtype>::wakeupPeer();
             }

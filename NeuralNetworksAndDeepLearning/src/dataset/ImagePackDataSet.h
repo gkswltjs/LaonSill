@@ -52,8 +52,7 @@ public:
 			uint32_t numTrainFile,
 			std::string testImage,
 			std::string testLabel,
-			uint32_t numTestFile,
-			Dtype scale);
+			uint32_t numTestFile);
 	virtual ~ImagePackDataSet();
 
 	virtual void load();
@@ -87,7 +86,7 @@ protected:
 			std::vector<Dtype> *&labelSet,
 			std::vector<uint32_t>*& setIndices);
 
-	virtual void zeroMean(bool hasMean=false, bool isTrain=true);
+	//virtual void zeroMean(bool hasMean=false, bool isTrain=true);
 
 
 #endif
@@ -134,7 +133,7 @@ protected:
     std::vector<Dtype>* secondTrainLabelSet;	///< 학습데이터셋의 정답 레이블 벡터에 대한 
                                                 ///  포인터.
 
-    Dtype scale;
+    //Dtype scale;
 
 	static void* load_helper(void* context);
 	void swap();

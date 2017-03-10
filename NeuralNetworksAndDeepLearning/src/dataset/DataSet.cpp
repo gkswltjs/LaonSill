@@ -11,9 +11,9 @@ using namespace std;
 
 template <typename Dtype>
 DataSet<Dtype>::DataSet() {
-	mean[0] = 0;
-	mean[1] = 0;
-	mean[2] = 0;
+	//mean[0] = 0;
+	//mean[1] = 0;
+	//mean[2] = 0;
 
 	trainDataSet = NULL;
 	trainLabelSet = NULL;
@@ -48,9 +48,9 @@ DataSet<Dtype>::DataSet(uint32_t rows, uint32_t cols, uint32_t channels,
 	testSetIndices = new vector<uint32_t>(numTestData);
 	iota(testSetIndices->begin(), testSetIndices->end(), 0);
 
-	mean[0] = 0;
-	mean[1] = 0;
-	mean[2] = 0;
+	//mean[0] = 0;
+	//mean[1] = 0;
+	//mean[2] = 0;
 }
 
 template <typename Dtype>
@@ -68,6 +68,7 @@ DataSet<Dtype>::~DataSet() {
 	if(testSetIndices) delete testSetIndices;
 }
 
+/*
 template <typename Dtype>
 void DataSet<Dtype>::setMean(const vector<Dtype>& means) {
 	assert(means.size() == 1 || means.size() == 3);
@@ -76,6 +77,7 @@ void DataSet<Dtype>::setMean(const vector<Dtype>& means) {
 		this->mean[i] = means[i];
 	}
 }
+*/
 
 template <typename Dtype>
 const Dtype* DataSet<Dtype>::getTrainDataAt(int index) {
@@ -131,6 +133,7 @@ const Dtype* DataSet<Dtype>::getTestLabelAt(int index) {
 	return &(*testLabelSet)[(*testSetIndices)[index]];
 }
 
+/*
 template <typename Dtype>
 void DataSet<Dtype>::zeroMean(bool hasMean) {
 	uint32_t di, ci, hi, wi;
@@ -175,6 +178,7 @@ void DataSet<Dtype>::zeroMean(bool hasMean) {
 		}
 	}
 }
+*/
 
 template <typename Dtype>
 void DataSet<Dtype>::shuffleTrainDataSet() {

@@ -11,6 +11,7 @@
 #include "ImagePackDataSet.h"
 #include "MockDataSet.h"
 #include "Util.h"
+#include "CudaUtils.h"
 
 #define INPUTLAYER_LOG 0
 
@@ -26,6 +27,9 @@ template <typename Dtype>
 InputLayer<Dtype>::InputLayer(Builder* builder)
 : Layer<Dtype>(builder) {
 
+	this->_scale = builder->_scale;
+	this->_dataMean = new Data<Dtype>("dataMean");
+
 	if (builder->_sourceType == "ImagePack") {
 		this->_dataSet = new ImagePackDataSet<Dtype>(
 				builder->_source+"/train_data",
@@ -33,10 +37,18 @@ InputLayer<Dtype>::InputLayer(Builder* builder)
 				builder->_numTrainPack,
 				builder->_source+"/test_data",
 				builder->_source+"/test_label",
-				builder->_numTestPack,
-				builder->_scale);
+				builder->_numTestPack);
 		//this->_dataSet->setMean({0.13066047740});
-		this->_dataSet->setMean(builder->_mean);
+
+
+		//this->_dataSet->setMean(builder->_mean);
+
+		int numChannels = builder->_mean.size();
+		this->_dataMean->reshape({1, 1, 1, numChannels});
+		for (int i = 0; i < numChannels; i++) {
+			this->_dataMean->mutable_host_data()[i] = builder->_mean[i];
+		}
+
 		this->_dataSet->load();
 
 	} else if (builder->_sourceType == "Mock") {
@@ -53,7 +65,11 @@ InputLayer<Dtype>::InputLayer(Builder* builder)
 }
 
 template <typename Dtype>
-InputLayer<Dtype>::~InputLayer() {}
+InputLayer<Dtype>::~InputLayer() {
+	if (this->_dataMean) {
+		delete this->_dataMean;
+	}
+}
 
 
 template <typename Dtype>
@@ -150,15 +166,31 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 	const uint32_t batches = inputShape[0];
 	const uint32_t unitSize = Util::vecCountByAxis(inputShape, 1);
 
+	//Data<Dtype>::printConfig = true;
+	//SyncMem<Dtype>::printConfig = true;
+
+	//cout.precision(0);
 	if (this->networkConfig->_status == NetworkStatus::Train) {
 		// data
 		for (uint32_t i = 0; i < batches; i++) {
 			const Dtype* ptr = _dataSet->getTrainDataAt(baseIndex+i);
 			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
+			//this->_inputData[0]->print_data({}, false);
+		}
+		this->_inputData[0]->scale_device_data(this->_scale);
+		//this->_inputData[0]->print_data({}, false);
+
+		const uint32_t singleChannelSize = this->_inputData[0]->getCountByAxis(2);
+		const Dtype* mean = this->_dataMean->device_data();
+
+		for (uint32_t i = 0; i < batches; i++) {
+			Dtype* data = this->_inputData[0]->mutable_device_data() + i*unitSize;
+			soooa_sub_channel_mean(unitSize, singleChannelSize, mean, data);
 		}
 
+		//this->_inputData[0]->print_data({}, false);
 		//Data<Dtype>::printConfig = true;
-		this->_inputData[0]->print_data("data");
+		//this->_inputData[0]->print_data("data");
 
 		// label
 		if (this->_inputs.size() > 1) {
@@ -166,8 +198,7 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 				const Dtype* ptr = _dataSet->getTrainLabelAt(baseIndex+i);
 				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
 			}
-
-			this->_inputData[1]->print_data("label");
+			//this->_inputData[1]->print_data("label");
 		}
 
 	} else if (this->networkConfig->_status == NetworkStatus::Test) {
@@ -186,6 +217,10 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
         SASSERT(false, "Invalid network status =%d", this->networkConfig->_status);
     }
 	//Layer<Dtype>::feedforward();
+
+
+	Data<Dtype>::printConfig = false;
+	SyncMem<Dtype>::printConfig = false;
 }
 
 template <typename Dtype>

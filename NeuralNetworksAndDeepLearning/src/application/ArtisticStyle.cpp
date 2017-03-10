@@ -856,7 +856,7 @@ void ArtisticStyle<Dtype>::preprocess(SyncMem<Dtype>* mem) {
 	mem->scale_device_mem(scale);
 
 	// subtract mean
-	mem->sub_device_mem(mean.device_mem());
+	mem->sub_device_mem(this->mean.device_mem());
 
 }
 

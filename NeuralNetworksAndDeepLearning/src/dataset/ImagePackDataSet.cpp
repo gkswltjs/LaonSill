@@ -25,15 +25,13 @@ ImagePackDataSet<Dtype>::ImagePackDataSet(
 		uint32_t numTrainFile,
 		string testImage,
 		string testLabel,
-		uint32_t numTestFile,
-		Dtype scale)
+		uint32_t numTestFile)
 	: trainImage(trainImage),
 	  trainLabel(trainLabel),
 	  numTrainFile(numTrainFile),
 	  testImage(testImage),
 	  testLabel(testLabel),
-	  numTestFile(numTestFile),
-	  scale(scale) {
+	  numTestFile(numTestFile) {
 
 	this->trainFileIndex = 0;
 	this->testFileIndex = 0;
@@ -272,7 +270,7 @@ int ImagePackDataSet<Dtype>::load(typename DataSet<Dtype>::Type type, int page) 
 				this->backTrainLabelSet,
 				this->trainSetIndices);
 		numImagesInTrainFile = numData;
-		zeroMean(true, true);
+		//zeroMean(true, true);
 
 		break;
 	}
@@ -284,7 +282,7 @@ int ImagePackDataSet<Dtype>::load(typename DataSet<Dtype>::Type type, int page) 
 				this->testLabelSet,
 				this->testSetIndices);
 		numImagesInTestFile = numData;
-		zeroMean(true, false);
+		//zeroMean(true, false);
 		break;
 	}
 	}
@@ -438,11 +436,11 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 	}
 
 	for (size_t i = 0; i < dataSetSize; i++) {
-		(*dataSet)[i] = (*this->bufDataSet)[i] / this->scale;
-		//(*dataSet)[i] = (*bufDataSet)[i];
+		//(*dataSet)[i] = (*this->bufDataSet)[i] / this->scale;
+		(*dataSet)[i] = (*this->bufDataSet)[i];
 	}
 
-	if (fread(&(*bufLabelSet)[0], sizeof(uint32_t), label_header.length, lbfp) 
+	if (fread(&(*this->bufLabelSet)[0], sizeof(uint32_t), label_header.length, lbfp)
         != label_header.length) {
 		printf("ERROR: Invalid dataset file (partial label dataset)\n");
 		fclose(imfp);
@@ -451,7 +449,7 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 	}
 
 	for (size_t i = 0; i < label_header.length; i++) {
-		(*labelSet)[i] = (*bufLabelSet)[i];
+		(*labelSet)[i] = Dtype((*bufLabelSet)[i]);
 	}
 
 	fclose(imfp);
@@ -481,6 +479,7 @@ void ImagePackDataSet<Dtype>::swap() {
 	backTrainLabelSet = tempLabelSet;
 }
 
+/*
 template <typename Dtype>
 void ImagePackDataSet<Dtype>::zeroMean(bool hasMean, bool isTrain) {
 	uint32_t di, ci, hi, wi;
@@ -529,6 +528,7 @@ void ImagePackDataSet<Dtype>::zeroMean(bool hasMean, bool isTrain) {
 		}
 	}
 }
+*/
 
 template <typename Dtype>
 void ImagePackDataSet<Dtype>::shuffleTrainDataSet() {

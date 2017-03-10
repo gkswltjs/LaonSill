@@ -75,14 +75,14 @@ public:
 	 * @param channel 조회하고자 하는 채널의 index
 	 * @return 지정한 채널의 평균값.
 	 */
-	const Dtype getMean(uint32_t channel) const { return mean[channel]; }
+	//const Dtype getMean(uint32_t channel) const { return mean[channel]; }
 	/**
 	 * @details 전체 채널의 평균값 배열의 첫번째 위치에 대한 포인터를 조회한다.
 	 * @return 전체 채널 평균값 배열의 첫번째 위치에 대한 포인터.
 	 */
-	const Dtype *getMean() const { return mean; }
+	//const Dtype *getMean() const { return mean; }
 
-	void setMean(const std::vector<Dtype>& means);
+	//void setMean(const std::vector<Dtype>& means);
 
 	/**
 	 * @details index번째 학습데이터에 대한 포인터 조회.
@@ -127,7 +127,7 @@ public:
 	 * @param hasMean 이미 계산된 평균값이 있는지 여부, 미리 계산된 평균값이 있는 경우 다시
      *                평균을 계산하지 않는다.
 	 */
-	virtual void zeroMean(bool hasMean=false);
+	//virtual void zeroMean(bool hasMean=false);
 
 	/**
 	 * @details 학습,유효,테스트 데이터를 메모리로 로드.
@@ -179,7 +179,7 @@ protected:
                                             ///  레이블을 함께 shuffle하기 위한 별도의 인덱스
                                             ///  벡터.
 
-	Dtype mean[3];				///< 학습데이터셋의 각 채널별 평균값을 저장하는 배열.
+	//Dtype mean[3];				///< 학습데이터셋의 각 채널별 평균값을 저장하는 배열.
 };
 
 #endif /* DATASET_H_ */

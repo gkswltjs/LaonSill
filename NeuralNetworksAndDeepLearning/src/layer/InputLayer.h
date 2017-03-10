@@ -130,6 +130,8 @@ protected:
 
 public:
 	DataSet<Dtype>* _dataSet;
+	Data<Dtype>* _dataMean;
+	Dtype _scale;
 
 };
 
