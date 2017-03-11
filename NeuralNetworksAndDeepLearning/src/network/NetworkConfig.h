@@ -137,6 +137,7 @@ public:
 
 			//////////////////////////////////////////////////////////////////////////////////
 			// 레이어 아이디로 multi branch의 input data, output grad인지 조회하는 맵 생성
+			// input으로 사용된 key와 횟수, output으로 사용된 key와 횟수를 맵으로 구성
 			std::map<std::string, uint32_t> outputDataCountMap;
 			std::map<std::string, uint32_t> inputGradCountMap;
 			for (uint32_t i = 0; i < layerSize; i++) {
@@ -152,6 +153,12 @@ public:
 				}
 			}
 
+			// input data와 다르게 output data의 경우 동일한 이름이 일반적으로는 있을 수
+			// 없다. input data의 경우 하나의 output을 share하는 input이 있는 경우
+			// 해당한다. 예외로 relu와 같이 전달된 input을 그대로 output으로 사용하는
+			// 경우이다.
+			// 예외가 있어 일단 error에 대해서는 고려하지 않는다.
+			/*
 			typename std::map<std::string, uint32_t>::iterator odcmItr;
 			for (odcmItr = outputDataCountMap.begin(); odcmItr != outputDataCountMap.end();
                 odcmItr++) {
@@ -160,17 +167,21 @@ public:
 					exit(1);
 				}
 			}
+			*/
 
 			typename std::map<std::string, uint32_t>::iterator igcmItr;
 			for (igcmItr = inputGradCountMap.begin(); igcmItr != inputGradCountMap.end();
                 igcmItr++) {
+				// 하나의 output을 여러 input에서 공유하는 경우
+				// split layer를 추가하여 하나의 output을 여러 input으로 나눠주고
+				// backward때 합쳐주는 역할을 하게 해야 한다.
 				if (igcmItr->second > 1) {
 					std::cout << "Split Layer for data " << igcmItr->first <<
 							" will be added ... " << std::endl;
 				}
 			}
 
-
+			/*
 			std::cout << "Adjusting Split Layers ... " << std::endl;
 			std::map<std::string, SplitLayer<Dtype>*> dataSplitLayerMap;
 			typename std::map<std::string, SplitLayer<Dtype>*>::iterator dataSplitLayerMapItr;
@@ -224,6 +235,8 @@ public:
 					}
 				}
 			}
+			*/
+
 
 			// 레이어 호출 순서에 따라 순서 재조정
 			// 의존성이 해결된 레이어를 앞에 배치하여 순차적으로 호출시 적절한 결과를 보장 함
