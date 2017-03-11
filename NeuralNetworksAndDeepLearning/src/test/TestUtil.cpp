@@ -272,6 +272,7 @@ void fillParam(map<string, Data<float>*>& nameDataMap, const string& param_prefi
 bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_prefix,
 		vector<Data<float>*>& dataVec, uint32_t compareType) {
 
+	/*
 	bool final_result = true;
 	for (uint32_t i = 0; i < dataVec.size(); i++) {
 		const string dataName = dataVec[i]->_name;
@@ -302,7 +303,50 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 		final_result = final_result && partial_result;
 	}
 	return final_result;
+	*/
+
+	bool final_result = true;
+	for (uint32_t i = 0; i < dataVec.size(); i++) {
+		Data<float>* targetData = dataVec[i];
+		bool partial_result = compareData(nameDataMap, data_prefix, targetData, compareType);
+
+		final_result = final_result && partial_result;
+	}
+	return final_result;
 }
+
+bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_prefix,
+		Data<float>* targetData, uint32_t compareType) {
+	const string dataName = targetData->_name;
+	const string key = data_prefix + dataName;
+
+	Data<float>* data = retrieveValueFromMap(nameDataMap, key);
+	assert(data != 0);
+
+	bool result = false;
+	if (compareType == 0)
+		result = targetData->compareData(data, COMPARE_ERROR);
+	else
+		result = targetData->compareGrad(data, COMPARE_ERROR);
+
+	if (!result) {
+		printConfigOn();
+		if (compareType == 0) {
+			data->print_data({}, false);
+			targetData->print_data({}, false);
+		} else {
+			data->print_grad({}, false);
+			targetData->print_grad({}, false);
+		}
+		printConfigOff();
+	}
+	return result;
+}
+
+
+
+
+
 
 bool compareParam(map<string, Data<float>*>& nameDataMap, const string& param_prefix,
 		vector<Data<float>*>& paramVec, uint32_t compareType) {

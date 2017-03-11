@@ -211,9 +211,9 @@ int LegacyWork<Dtype>::createNetwork() {
 	weightsArgs[0].weightsPath =
 			"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_400000of_0.01_.param";
 #endif
-	const uint32_t batchSize = 10;
-	const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 1000;		// 1000000 / batchSize
+	const uint32_t batchSize = 40;
+	const uint32_t testInterval = 250;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 2500;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
 	//const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
 	//const uint32_t saveInterval = 10000;		// 1000000 / batchSize

@@ -52,6 +52,9 @@ void fillParam(std::map<std::string, Data<float>*>& nameDataMap,
 bool compareData(std::map<std::string, Data<float>*>& nameDataMap,
 		const std::string& data_prefix, std::vector<Data<float>*>& dataVec,
 		uint32_t compareType);
+bool compareData(std::map<std::string, Data<float>*>& nameDataMap,
+		const std::string& data_prefix, Data<float>* targetData, uint32_t compareType);
+
 bool compareParam(std::map<std::string, Data<float>*>& nameDataMap,
 		const std::string& param_prefix, std::vector<Data<float>*>& paramVec,
 		uint32_t compareType);

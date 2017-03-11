@@ -58,94 +58,23 @@ public:
 	}
 
 	virtual void updateTest() {
-
-
-		/*
-		const std::string key = "conv1_params_0";
-		typename std::map<std::string, Data<Dtype>*>::iterator itr;
-
-		itr = this->nameParamsOldMap.find(key);
-		Data<Dtype>* o = itr->second;
-
-		itr = this->nameParamsNewMap.find(key);
-		Data<Dtype>* n = itr->second;
-
-		Dtype compute = o->host_data()[0] - n->host_grad()[0];
-
-		cout << "old param data: " << o->host_data()[0] << endl;
-		cout << "new param grad: " << n->host_grad()[0] << endl;
-		cout << "new param data: " << n->host_data()[0] << endl;
-		cout << "compute: " << compute << endl;
-
-		cout << endl;
-		*/
-
-		feedInputLayerData();
-
 		// feedforward
-		cout << "<<< FEED FORWARD TEST ... -----------------------------------------" << endl;
-		for (int i = 0; i < this->layersConfig->_layers.size(); i++) {
-			Layer<Dtype>* layer = this->layersConfig->_layers[i];
-			layer->feedforward();
-			if (!compareData(this->nameBlobsMap, BLOBS_PREFIX, layer->_outputData, 0)) {
-				std::cout << "[ERROR] data feedforward failed at layer " << layer->name << std::endl;
-				//exit(1);
-			} else {
-				std::cout << "data feedforward succeed at layer " << layer->name << std::endl;
-			}
-		}
-		cout << ">>> FEED FORWARD TEST DONE ... ------------------------------------" << endl;
+		logStartTest("FEED FORWARD");
+		forward();
+		dataTest();
+		logEndTest("FEED FORWARD");
 
 		// backpropagation
-		cout << "<<< BACK PROPAGATION TEST ... -------------------------------------" << endl;
-		for (int i = this->layersConfig->_layers.size() - 1; i >= 1; i--) {
-			Layer<Dtype>* layer = this->layersConfig->_layers[i];
-			layer->backpropagation();
-
-			// param grad를 계산해야 하므로 backpropagation은
-			// inputLayer 직전 레이어까지 진행
-			// input layer에서 grad 계산하지 않음
-			if (i > 1) {
-				// test blobs except input layer and second layer
-				if (!compareData(this->nameBlobsMap, BLOBS_PREFIX, layer->_inputData, 1)) {
-					std::cout << "[ERROR] data backpropagation failed at layer " << layer->name
-							<< std::endl;
-					//exit(1);
-				} else {
-					std::cout << "data backpropagation succeed at layer " << layer->name
-							<< std::endl;
-				}
-			}
-		}
-		cout << ">>> BACK PROPAGATION TEST DONE ... --------------------------------" << endl;
+		logStartTest("BACK PROPAGATION");
+		backward();
+		gradTest();
+		logEndTest("BACK PROPAGATION");
 
 		// update & compare result
-		cout << "<<< UPDATE TEST ... -----------------------------------------------" << endl;
-		for (int i = 0; i < this->layersConfig->_learnableLayers.size(); i++) {
-			LearnableLayer<Dtype>* learnableLayer = this->layersConfig->_learnableLayers[i];
-			learnableLayer->update();
-
-			// test final delta
-			if (!compareParam(this->nameParamsNewMap,
-					learnableLayer->name + SIG_PARAMS, learnableLayer->_params, 1)) {
-				std::cout << "[ERROR] param backpropagation failed at layer " <<
-						learnableLayer->name << std::endl;
-				//exit(1);
-			} else {
-				std::cout << "param backpropagation succeed at layer " <<
-						learnableLayer->name << std::endl;
-			}
-
-			// test final params
-			if (!compareParam(this->nameParamsNewMap, learnableLayer->name + SIG_PARAMS,
-					learnableLayer->_params, 0)) {
-				std::cout << "[ERROR] update failed at layer " << learnableLayer->name << std::endl;
-				//exit(1);
-			} else {
-				std::cout << "update succeed at layer " << learnableLayer->name << std::endl;
-			}
-		}
-		cout << ">>> UPDATE TEST DONE ... ------------------------------------------" << endl;
+		logStartTest("UPDATE");
+		update();
+		paramTest();
+		logEndTest("UPDATE");
 	}
 
 	void feedInputLayerData() {
@@ -169,6 +98,99 @@ public:
 		*/
 
 	}
+
+
+private:
+	void forward() {
+		feedInputLayerData();
+
+		for (int i = 0; i < this->layersConfig->_layers.size(); i++) {
+			Layer<Dtype>* layer = this->layersConfig->_layers[i];
+			layer->feedforward();
+		}
+	}
+
+	void dataTest() {
+		for (int i = 0; i < this->layersConfig->_layers.size(); i++) {
+			Layer<Dtype>* layer = this->layersConfig->_layers[i];
+
+			if (!compareData(this->nameBlobsMap, BLOBS_PREFIX, layer->_outputData, 0)) {
+				std::cout << "[ERROR] data feedforward failed at layer " << layer->name <<
+						std::endl;
+			} else {
+				std::cout << "data feedforward succeed at layer " << layer->name << std::endl;
+			}
+		}
+	}
+
+	void backward() {
+		for (int i = this->layersConfig->_layers.size() - 1; i >= 1; i--) {
+			Layer<Dtype>* layer = this->layersConfig->_layers[i];
+			layer->backpropagation();
+		}
+	}
+
+	void gradTest() {
+		// caffe의 backward 과정에서 input layer와
+		// input layer의 다음 레이어 input data에 대해 backward 진행하지 않기 때문에
+		// 적용된 diff가 없으므로 해당 data에 대해서는 체크하지 않는다.
+		for (int i = this->layersConfig->_layers.size() - 1; i > 1; i--) {
+			Layer<Dtype>* layer = this->layersConfig->_layers[i];
+
+			// test blobs except input layer and second layer
+			if (!compareData(this->nameBlobsMap, BLOBS_PREFIX, layer->_inputData, 1)) {
+				std::cout << "[ERROR] data backpropagation failed at layer " << layer->name
+						<< std::endl;
+				//exit(1);
+			} else {
+				std::cout << "data backpropagation succeed at layer " << layer->name
+						<< std::endl;
+			}
+		}
+	}
+
+	void update() {
+		for (int i = 0; i < this->layersConfig->_learnableLayers.size(); i++) {
+			LearnableLayer<Dtype>* learnableLayer = this->layersConfig->_learnableLayers[i];
+			learnableLayer->update();
+		}
+	}
+
+	void paramTest() {
+		for (int i = 0; i < this->layersConfig->_learnableLayers.size(); i++) {
+			LearnableLayer<Dtype>* learnableLayer = this->layersConfig->_learnableLayers[i];
+
+			// test final delta
+			if (!compareParam(this->nameParamsNewMap,
+					learnableLayer->name + SIG_PARAMS, learnableLayer->_params, 1)) {
+				std::cout << "[ERROR] param backpropagation failed at layer " <<
+						learnableLayer->name << std::endl;
+				//exit(1);
+			} else {
+				std::cout << "param backpropagation succeed at layer " <<
+						learnableLayer->name << std::endl;
+			}
+
+			// test final params
+			if (!compareParam(this->nameParamsNewMap, learnableLayer->name + SIG_PARAMS,
+					learnableLayer->_params, 0)) {
+				std::cout << "[ERROR] update failed at layer " << learnableLayer->name <<
+						std::endl;
+				//exit(1);
+			} else {
+				std::cout << "update succeed at layer " << learnableLayer->name << std::endl;
+			}
+		}
+	}
+
+	void logStartTest(const std::string& testName) {
+		cout << "<<< " + testName + " TEST ... -------------------------------" << endl;
+	}
+
+	void logEndTest(const std::string& testName) {
+		cout << ">>> " + testName + " TEST DONE ... --------------------------" << endl;
+	}
+
 
 
 
