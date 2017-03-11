@@ -44,10 +44,12 @@ class LayersConfig {
 public:
 	class Builder {
 	public:
-        std::map<uint32_t, typename Layer<Dtype>::Builder*> _layerWise;
-
+		std::vector<typename Layer<Dtype>::Builder*> _layerWise;
+        //std::map<uint32_t, typename Layer<Dtype>::Builder*> _layerWise;
+		std::set<uint32_t> _layerIdSet;
 
 		Builder* layer(typename Layer<Dtype>::Builder* layerBuilder) {
+			/*
 			// id 중복이 없도록 id-layer의 맵에 레이어를 추가한다.
 			uint32_t layerIndex = layerBuilder->_id;
 			typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
@@ -57,6 +59,19 @@ public:
 				exit(1);
 			} else {
 				_layerWise[layerIndex] = layerBuilder;
+			}
+			return this;
+			*/
+			// id 중복이 없도록 id-layer의 맵에 레이어를 추가한다.
+			uint32_t layerIndex = layerBuilder->_id;
+			typename std::set<uint32_t>::iterator it;
+			it = this->_layerIdSet.find(layerIndex);
+			if (it != this->_layerIdSet.end()) {
+				std::cout << "already contained layer index " << layerIndex << std::endl;
+				exit(1);
+			} else {
+				//_layerWise[layerIndex] = layerBuilder;
+				this->_layerWise.push_back(layerBuilder);
 			}
 			return this;
 		}
@@ -70,9 +85,11 @@ public:
             std::map<uint32_t, Layer<Dtype>*> idLayerMap;
 
             // (1) 전체 레이어에 대해 Layer Builder의 설정대로 Layer들을 생성한다.
-            typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
-			for (it = _layerWise.begin(); it != _layerWise.end(); it++) {
-                Layer<Dtype>* currentLayer = it->second->build();
+            //typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
+            for (int i = 0; i < this->_layerWise.size(); i++) {
+			//for (it = this->_layerWise.begin(); it != this->_layerWise.end(); it++) {
+                //Layer<Dtype>* currentLayer = it->second->build();
+            	Layer<Dtype>* currentLayer = this->_layerWise[i]->build();
 
                 // 시작 레이어 추가
                 InputLayer<Dtype>* inputLayer =
@@ -98,7 +115,8 @@ public:
 
                 // 일반 레이어 추가
                 layers.push_back(currentLayer);
-                idLayerMap[it->first] = currentLayer;
+                //idLayerMap[it->first] = currentLayer;
+                idLayerMap[currentLayer->id] = currentLayer;
 			}
 
 			if(firstLayers.size() < 1) {

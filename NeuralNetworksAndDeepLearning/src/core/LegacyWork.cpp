@@ -196,7 +196,7 @@ void LegacyWork<Dtype>::cleanupNetwork(Job* job) {
 #if TEMP
 
 #if !SMALL_TEST
-#define LOAD_WEIGHT 0
+#define LOAD_WEIGHT 1
 #else
 #define LOAD_WEIGHT 0
 #endif
@@ -209,7 +209,7 @@ int LegacyWork<Dtype>::createNetwork() {
 #if LOAD_WEIGHT
 	vector<WeightsArg> weightsArgs(1);
 	weightsArgs[0].weightsPath =
-			"/home/jkim/Dev/SOOOA_HOME/network/vgg_19_400000of_0.01_.param";
+			"/home/jkim/Dev/SOOOA_HOME/network/network.param";
 #endif
 	const uint32_t batchSize = 40;
 	const uint32_t testInterval = 250;			// 10000(목표 샘플수) / batchSize

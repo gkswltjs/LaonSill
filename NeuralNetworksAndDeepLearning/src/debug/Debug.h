@@ -2936,7 +2936,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->source(std::string(SPARAM(BASE_DATA_DIR))
 						+ std::string("/ILSVRC2012/save/10000"))
 					->sourceType("ImagePack")
-					->numTrainPack(1)
+					->numTrainPack(40)
 #endif
 					->numTestPack(1)
 					//->mean({0.47684615850, 0.45469805598, 0.41394191980})
