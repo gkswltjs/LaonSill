@@ -267,14 +267,15 @@ public:
 	int id;												///< 레이어의 고유 아이디
 	std::string name;									///< 레이어의 이름
 
-protected:
-	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
-
+    // FIXME: 디버깅 때문에 임시로 protected -> public으로 변수를 변경하였음..
     // inputShape는 input에 대한 메타이다.
     // 일반적으로 0번 인덱스에 해당하는 원소는 inputData에 대한 메타 값이 들어 있고, 
     // 1번 인덱스에 해당하는 원소는 라벨에 대한 메타 값이 들어 있다.
     // 각 원소의 메타 값은 { batch, channel, row, column } 크기가 들어 있다.
 	std::vector<std::vector<uint32_t>> _inputShape;
+
+protected:
+	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
 	std::vector<bool> _propDown;
 

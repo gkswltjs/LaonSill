@@ -106,14 +106,118 @@ void printDataForDebug(LayersConfig<float>* lc, const char* title) {
         const float* grad = lc->_layers[i]->_outputData[0]->host_grad();
 
         for (int j = 0; j < 8; j++) {
-            printf(" %lf", data[j]);
+            printf(" %f", data[j]);
         }
         printf("\n");
 
         for (int j = 0; j < 8; j++) {
-            printf(" %lf", grad[j]);
+            printf(" %f", grad[j]);
         }
         printf("\n");
+    }
+}
+
+// FIXME: 디버깅용 함수.... 나중에 싹다 지우자.
+void printWeightAndBias(LayersConfig<float>* lc, const char* title) {
+    int layerCount = lc->_layers.size();
+
+    for (int i = 0; i < layerCount; i++) {
+        printf("[Layer : %s #%d]\n", title, i);
+
+        FullyConnectedLayer<float>* fcLayer = 
+            dynamic_cast<FullyConnectedLayer<float>*>(lc->_layers[i]);
+        if (fcLayer) {
+            const float* weightParams = fcLayer->_params[0]->host_data();
+            const float* biasParams = fcLayer->_params[1]->host_data();
+            const float* weightGradParams = fcLayer->_params[0]->host_grad();
+            const float* biasGradParams = fcLayer->_params[1]->host_grad();
+
+            int biasChCnt = fcLayer->_inputShape[0][1];
+            if (biasChCnt > 8)
+                biasChCnt = 8;
+            
+            printf(" - Weight Data : ");
+            for (int j = 0; j < 8; j++) {
+                printf(" %f", weightParams[j]);
+            }
+            printf("\n");
+            printf(" - Weight Grad : ");
+            for (int j = 0; j < 8; j++) {
+                printf(" %f", weightGradParams[j]);
+            }
+            printf("\n");
+            printf(" - Bias Data : ");
+            for (int j = 0; j < biasChCnt; j++) {
+                printf(" %f", biasParams[j]);
+            }
+            printf("\n");
+            printf(" - Bias Grad : ");
+            for (int j = 0; j < biasChCnt; j++) {
+                printf(" %f", biasGradParams[j]);
+            }
+            printf("\n");
+        }
+
+        ConvLayer<float>* convLayer = dynamic_cast<ConvLayer<float>*>(lc->_layers[i]);
+        if (convLayer) {
+            const float* filterParams = convLayer->_params[0]->host_data();
+            const float* biasParams = convLayer->_params[1]->host_data();
+            const float* filterGradParams = convLayer->_params[0]->host_grad();
+            const float* biasGradParams = convLayer->_params[1]->host_grad();
+            
+            int biasChCnt = convLayer->_inputShape[0][1];
+            if (biasChCnt > 8)
+                biasChCnt = 8;
+            
+            printf(" - Filter Data : ");
+            for (int j = 0; j < 8; j++) {
+                printf(" %f", filterParams[j]);
+            }
+            printf("\n");
+            printf(" - Filter Grad : ");
+            for (int j = 0; j < 8; j++) {
+                printf(" %f", filterGradParams[j]);
+            }
+            printf("\n");
+            printf(" - Bias Data : ");
+            for (int j = 0; j < biasChCnt; j++) {
+                printf(" %f", biasParams[j]);
+            }
+            printf("\n");
+            printf(" - Bias Grad : ");
+            for (int j = 0; j < biasChCnt; j++) {
+                printf(" %f", biasGradParams[j]);
+            }
+            printf("\n");
+        }
+
+        {
+            const float* inputData = lc->_layers[i]->_inputData[0]->host_data();
+            const float* inputGrad = lc->_layers[i]->_inputData[0]->host_grad();
+            const float* outputData = lc->_layers[i]->_outputData[0]->host_data();
+            const float* outputGrad = lc->_layers[i]->_outputData[0]->host_grad();
+
+            printf(" - Input Data : ");
+            for (int j = 0; j < 8; j++) {
+                printf(" %f", inputData[j]);
+            }
+            printf("\n");
+            printf(" - Input Grad : ");
+            for (int j = 0; j < 8; j++) {
+                printf(" %f", inputGrad[j]);
+            }
+            printf("\n");
+            printf(" - Output Data : ");
+            for (int j = 0; j < 8; j++) {
+                printf(" %f", outputData[j]);
+            }
+            printf("\n");
+            printf(" - Output Grad : ");
+            for (int j = 0; j < 8; j++) {
+                printf(" %f", outputGrad[j]);
+            }
+            printf("\n");
+        }
     }
 }
 
@@ -239,6 +343,8 @@ void developerMain() {
     Gnuplot gpDGanConv3;
     Gnuplot gpDGanConv4;
 
+    int debugPeriod = 100;
+
     for (int i = 0; i < 25; i++) {  // epoch
         InputLayer<float>* inputLayer = lcDGAN->_inputLayer;
         const uint32_t trainDataSize = inputLayer->getNumTrainData();
@@ -248,8 +354,17 @@ void developerMain() {
             float lossD = 0.0;
             float lossG = 0.0;
 
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcDGAN, "D init");
             lossD = networkDGAN->sgdMiniBatch(j);
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcDGAN, "real D");
+
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "fake D init");
             lossD += networkGD0GAN->sgd(1);
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "fake D");
 #if 0
             drawAvgOfSquaredSumData(gpGDGanDeconv1, dataGDGanDeconv1, lcGD0GAN, 
                 "DeconvLayer1");
@@ -269,8 +384,14 @@ void developerMain() {
             lossLayer->setTargetValue(1.0);
             noiseInputLayer->setRegenerateNoise(false);
 
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "G init");
             networkGD0GAN->sgd(1);
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "G 1");
             lossG = networkGD0GAN->sgd(1);
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "G 2");
 
             lossLayer->setTargetValue(0.0);
             noiseInputLayer->setRegenerateNoise(true);

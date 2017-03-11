@@ -161,7 +161,7 @@ void CrossEntropyWithLossLayer<Dtype>::reshape() {
     uint32_t depth = this->_inputData[0]->getCountByAxis(1);
 
 	this->_inputShape[0] = {batches, channels, rows, cols};
-	this->_outputData[0]->reshape({1, 1, depth, 1});
+	this->_outputData[0]->reshape({batches, 1, depth, 1});
 
 	STDOUT_COND_LOG(CROSSENTROPYWITHLOSSLAYER_LOG, 
         "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
@@ -185,6 +185,7 @@ void CrossEntropyWithLossLayer<Dtype>::feedforward() {
     const Dtype *inputData = this->_inputData[0]->device_data();
     Dtype *outputData = this->_outputData[0]->mutable_device_data();
 
+#if 0
     if (!this->withSigmoid) {
 	    Forward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, this->depth, batchCount, outputData);
@@ -192,6 +193,16 @@ void CrossEntropyWithLossLayer<Dtype>::feedforward() {
 	    ForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, this->depth, batchCount, outputData);
     }
+#else
+    int count = this->depth * batchCount;
+    if (!this->withSigmoid) {
+	    Forward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, count, 1, outputData);
+    } else {
+	    ForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, count, 1, outputData);
+    }
+#endif
 }
 
 template <typename Dtype>
@@ -202,6 +213,7 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
     const Dtype *inputData = this->_inputData[0]->device_data();
 	Dtype* inputGrads = this->_inputData[0]->mutable_device_grad();
 
+#if 0
     if (!this->withSigmoid) {
 	    Backward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, this->depth, batchCount, inputGrads);
@@ -209,6 +221,17 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
 	    BackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, this->depth, batchCount, inputGrads);
     }
+#else
+    int count = batchCount * this->depth;
+
+    if (!this->withSigmoid) {
+	    Backward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, count, 1, inputGrads);
+    } else {
+	    BackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, count, 1, inputGrads);
+    }
+#endif
 }
 
 template <typename Dtype>

@@ -128,7 +128,7 @@ protected:
         bool useLinearTrans, int tranChannels, int tranRows, int tranCols, double tranMean,
         double tranVariance, bool regenerateNoise);
             
-    void prepareUniformArray();
+    bool prepareUniformArray();
     void prepareLinearTranMatrix();
 
     int noiseDepth;

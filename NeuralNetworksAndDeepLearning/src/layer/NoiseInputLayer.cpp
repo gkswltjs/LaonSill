@@ -57,14 +57,16 @@ NoiseInputLayer<Dtype>::~NoiseInputLayer() {
 }
 
 template <typename Dtype>
-void NoiseInputLayer<Dtype>::prepareUniformArray() {
+bool NoiseInputLayer<Dtype>::prepareUniformArray() {
+    uint32_t batchSize = this->networkConfig->_batchSize;
 	RNGType rng;
-    rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
+    unsigned int seedValue = static_cast<unsigned int>(time(NULL)+getpid());
+    rng.seed(seedValue);
 
     bool firstGenerate = false;
 
     if (this->uniformArray == NULL) {
-        int allocSize = sizeof(Dtype) * this->noiseDepth;
+        int allocSize = sizeof(Dtype) * this->noiseDepth * batchSize;
         this->uniformArray = (Dtype*)malloc(allocSize);
         SASSERT0(this->uniformArray != NULL);
         firstGenerate = true;
@@ -76,14 +78,20 @@ void NoiseInputLayer<Dtype>::prepareUniformArray() {
         boost::variate_generator<RNGType, boost::random::uniform_real_distribution<float>>
             variate_generator(rng, random_distribution);
 
-        for (int i = 0; i < this->noiseDepth; ++i) {
+        for (int i = 0; i < this->noiseDepth * batchSize; ++i) {
             this->uniformArray[i] = (Dtype)variate_generator();
         }
+
+        return true;
     }
+
+    return false;
 }
 
 template <typename Dtype>
 void NoiseInputLayer<Dtype>::prepareLinearTranMatrix() {
+    uint32_t batchSize = this->networkConfig->_batchSize;
+
 	RNGType rng;
     rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
     boost::normal_distribution<float> random_distribution(this->tranMean, this->tranVariance);
@@ -92,7 +100,7 @@ void NoiseInputLayer<Dtype>::prepareLinearTranMatrix() {
 
     Dtype* tempMatrix;
     int tempMatrixCount = this->noiseDepth * this->tranChannels * this->tranRows *
-        this->tranCols;
+        this->tranCols * batchSize;
 
     int tempMatrixAllocSize = sizeof(Dtype) * tempMatrixCount;
     tempMatrix = (Dtype*)malloc(tempMatrixAllocSize);
@@ -103,14 +111,14 @@ void NoiseInputLayer<Dtype>::prepareLinearTranMatrix() {
     }
 
     int linearTransMatrixAllocSize = sizeof(Dtype) * this->tranChannels * this->tranRows *
-        this->tranCols;
+        this->tranCols * batchSize;
     SASSERT0(this->linearTransMatrix == NULL);
     this->linearTransMatrix = (Dtype*)malloc(linearTransMatrixAllocSize);
     SASSERT0(this->linearTransMatrix != NULL);
 
     int m = 1;
-    int n = this->tranChannels * this->tranRows * this->tranCols;
-    int k = this->noiseDepth;
+    int n = this->tranChannels * this->tranRows * this->tranCols * batchSize;
+    int k = this->noiseDepth * batchSize;
 
     if (sizeof(Dtype) == sizeof(float)) {
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1,
@@ -128,10 +136,7 @@ template <typename Dtype>
 void NoiseInputLayer<Dtype>::reshape() {
     uint32_t batchSize = this->networkConfig->_batchSize;
 
-    prepareUniformArray();
-
-    if (batchSize <= this->batchSize)
-        return;
+    bool isNoiseGenerated = prepareUniformArray();
 
     if ((this->uniformArray == NULL) && (this->useLinearTrans)) {
         prepareLinearTranMatrix();
@@ -144,31 +149,37 @@ void NoiseInputLayer<Dtype>::reshape() {
 		}
 	}
 
+    Layer<Dtype>::_adjustInputShape();
+
     this->batchSize = batchSize;
     if (!this->useLinearTrans) {
-        this->_inputData[0]->reshape(
-            {(unsigned int)batchSize, 1, (unsigned int)this->noiseDepth, 1});
+        this->_inputShape[0][0] = batchSize;
+        this->_inputShape[0][1] = 1;
+        this->_inputShape[0][2] = (unsigned int)this->noiseDepth;
+        this->_inputShape[0][3] = 1;
+
+        this->_inputData[0]->reshape(this->_inputShape[0]);
     } else {
-        this->_inputData[0]->reshape({(unsigned int)batchSize, 
-                                      (unsigned int)this->tranChannels,
-                                      (unsigned int)this->tranRows,
-                                      (unsigned int)this->tranCols});
+        this->_inputShape[0][0] = batchSize;
+        this->_inputShape[0][1] = (unsigned int)this->tranChannels;
+        this->_inputShape[0][2] = (unsigned int)this->tranRows;
+        this->_inputShape[0][3] = (unsigned int)this->tranCols;
+
+        this->_inputData[0]->reshape(this->_inputShape[0]);
     }
 
-    for (int i = 0 ; i < batchSize; i++) {
+    if (isNoiseGenerated) {
         int copyElemCount;
-
         if (this->useLinearTrans) {
-            copyElemCount = this->tranChannels * this->tranRows * this->tranCols;
+            copyElemCount = this->tranChannels * this->tranRows * this->tranCols * batchSize;
             this->_inputData[0]->set_device_with_host_data(this->linearTransMatrix,
-                copyElemCount * i, copyElemCount); 
+                0, copyElemCount); 
         } else {
-            copyElemCount = this->noiseDepth;
+            copyElemCount = this->noiseDepth * batchSize;
             this->_inputData[0]->set_device_with_host_data(this->uniformArray,
-                copyElemCount * i, copyElemCount); 
+                0, copyElemCount); 
         }
     }
-
 }
 
 template<typename Dtype>
