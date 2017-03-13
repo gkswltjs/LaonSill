@@ -325,8 +325,10 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
     // FIXME: ConvLayer에 동일한 코드가 있음. 추후에 정리 필요
     // (1) do normalization & regularization
     //  FIXME: 이것도 옵션으로 정규화를 할지 여부를 설정할 수 있었으면 좋겠음.
+#if 0
     checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
         &regScale, d_paramData, 1, d_paramGrad, 1));	// regularize
+#endif
 
     // (2) apply optimizer
     Optimizer opt = this->networkConfig->_optimizer;
@@ -338,6 +340,8 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
          * x += v
          *
          */
+        checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
+            &regScale, d_paramData, 1, d_paramGrad, 1));	// regularize
     	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
             &momentum, d_paramHistoryData, 1));				//
     	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
@@ -624,13 +628,6 @@ void FullyConnectedLayer<Dtype>::_dropoutForward() {
 				b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
 	}
 }
-
-
-
-
-
-
-
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::backpropagation() {

@@ -132,27 +132,42 @@ void printWeightAndBias(LayersConfig<float>* lc, const char* title) {
             const float* weightGradParams = fcLayer->_params[0]->host_grad();
             const float* biasGradParams = fcLayer->_params[1]->host_grad();
 
-            int biasChCnt = fcLayer->_inputShape[0][1];
-            if (biasChCnt > 8)
-                biasChCnt = 8;
-            
+            int weightCnt = fcLayer->_params[0]->getCount();
+            int biasCnt = fcLayer->_params[1]->getCount();
+
             printf(" - Weight Data : ");
-            for (int j = 0; j < 8; j++) {
+            for (int j = 0; j < min(3, weightCnt) ; j++) {
+                printf(" %f", weightParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, weightCnt - 3); j < weightCnt ; j++) {
                 printf(" %f", weightParams[j]);
             }
             printf("\n");
             printf(" - Weight Grad : ");
-            for (int j = 0; j < 8; j++) {
+            for (int j = 0; j < min(3, weightCnt) ; j++) {
+                printf(" %f", weightGradParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, weightCnt - 3); j < weightCnt ; j++) {
                 printf(" %f", weightGradParams[j]);
             }
             printf("\n");
             printf(" - Bias Data : ");
-            for (int j = 0; j < biasChCnt; j++) {
+            for (int j = 0; j < min(3, biasCnt); j++) {
+                printf(" %f", biasParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, biasCnt - 3); j < biasCnt; j++) {
                 printf(" %f", biasParams[j]);
             }
             printf("\n");
             printf(" - Bias Grad : ");
-            for (int j = 0; j < biasChCnt; j++) {
+            for (int j = 0; j < min(3, biasCnt); j++) {
+                printf(" %f", biasGradParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, biasCnt - 3); j < biasCnt; j++) {
                 printf(" %f", biasGradParams[j]);
             }
             printf("\n");
@@ -165,55 +180,90 @@ void printWeightAndBias(LayersConfig<float>* lc, const char* title) {
             const float* filterGradParams = convLayer->_params[0]->host_grad();
             const float* biasGradParams = convLayer->_params[1]->host_grad();
             
-            int biasChCnt = convLayer->_inputShape[0][1];
-            if (biasChCnt > 8)
-                biasChCnt = 8;
-            
+            int filterCnt = convLayer->_params[0]->getCount();
+            int biasCnt = convLayer->_params[1]->getCount();
+
             printf(" - Filter Data : ");
-            for (int j = 0; j < 8; j++) {
+            for (int j = 0; j < min(3, filterCnt) ; j++) {
+                printf(" %f", filterParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, filterCnt - 3); j < filterCnt ; j++) {
                 printf(" %f", filterParams[j]);
             }
             printf("\n");
             printf(" - Filter Grad : ");
-            for (int j = 0; j < 8; j++) {
+            for (int j = 0; j < min(3, filterCnt) ; j++) {
+                printf(" %f", filterGradParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, filterCnt - 3); j < filterCnt ; j++) {
                 printf(" %f", filterGradParams[j]);
             }
             printf("\n");
             printf(" - Bias Data : ");
-            for (int j = 0; j < biasChCnt; j++) {
+            for (int j = 0; j < min(3, biasCnt); j++) {
+                printf(" %f", biasParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, biasCnt - 3); j < biasCnt; j++) {
                 printf(" %f", biasParams[j]);
             }
             printf("\n");
             printf(" - Bias Grad : ");
-            for (int j = 0; j < biasChCnt; j++) {
+            for (int j = 0; j < min(3, biasCnt); j++) {
+                printf(" %f", biasGradParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, biasCnt - 3); j < biasCnt; j++) {
                 printf(" %f", biasGradParams[j]);
             }
             printf("\n");
         }
 
         {
+            Layer<float>* layer = lc->_layers[i];
+
             const float* inputData = lc->_layers[i]->_inputData[0]->host_data();
             const float* inputGrad = lc->_layers[i]->_inputData[0]->host_grad();
+            int inputDataCnt = lc->_layers[i]->_inputData[0]->getCount();
             const float* outputData = lc->_layers[i]->_outputData[0]->host_data();
             const float* outputGrad = lc->_layers[i]->_outputData[0]->host_grad();
+            int outputDataCnt = lc->_layers[i]->_outputData[0]->getCount();
 
             printf(" - Input Data : ");
-            for (int j = 0; j < 8; j++) {
+            for (int j = 0; j < min(3, inputDataCnt); j++) {
+                printf(" %f", inputData[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, inputDataCnt - 3); j < inputDataCnt; j++) {
                 printf(" %f", inputData[j]);
             }
             printf("\n");
             printf(" - Input Grad : ");
-            for (int j = 0; j < 8; j++) {
+            for (int j = 0; j < min(3, inputDataCnt); j++) {
+                printf(" %f", inputGrad[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, inputDataCnt - 3); j < inputDataCnt; j++) {
                 printf(" %f", inputGrad[j]);
             }
             printf("\n");
             printf(" - Output Data : ");
-            for (int j = 0; j < 8; j++) {
+            for (int j = 0; j < min(3, outputDataCnt); j++) {
+                printf(" %f", outputData[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, outputDataCnt - 3); j < outputDataCnt; j++) {
                 printf(" %f", outputData[j]);
             }
             printf("\n");
             printf(" - Output Grad : ");
-            for (int j = 0; j < 8; j++) {
+            for (int j = 0; j < min(3, outputDataCnt); j++) {
+                printf(" %f", outputGrad[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, outputDataCnt - 3); j < outputDataCnt; j++) {
                 printf(" %f", outputGrad[j]);
             }
             printf("\n");
@@ -275,7 +325,7 @@ void developerMain() {
 				})
 			->lossLayers(llDGAN)
             ->optimizer(opt)
-            ->beta(0.5, 0.99)
+            ->beta(0.5, 0.999)
 			->build();
 
 	NetworkConfig<float>* ncGD0GAN =
@@ -297,7 +347,7 @@ void developerMain() {
 				})
 			->lossLayers(llGD0GAN)
             ->optimizer(opt)
-            ->beta(0.5, 0.99)
+            ->beta(0.5, 0.999)
 			->build();
 
 	Util::printVramInfo();
@@ -406,7 +456,21 @@ void developerMain() {
             const float* host_data = convLayer->_inputData[0]->host_data();
             ImageUtil<float>::saveImage(host_data, 10, 3, 64, 64);
 
-            printf("Generated Data :");
+            printf("Generated convlayer1 Data :");
+            for (int i = 0; i < 30; i++) {
+                printf(" %f", host_data[i]);
+            }
+            printf("\n");
+
+            sleep(2);
+        }
+
+        if (true) {
+            Layer<float>* htLayer = lcGD0GAN->_nameLayerMap["hypertangent"];
+            const float* host_data = htLayer->_inputData[0]->host_data();
+            ImageUtil<float>::saveImage(host_data, 15, 3, 64, 64);
+
+            printf("Generated hyper tangent Data :");
             for (int i = 0; i < 30; i++) {
                 printf(" %f", host_data[i]);
             }

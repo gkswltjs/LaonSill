@@ -28,6 +28,8 @@ const int CELEBA_IMAGE_CHANNEL = 3;
 const int CELEBA_IMAGE_ROW = 218;
 const int CELEBA_IMAGE_COL = 178;
 
+const int CELEBA_CENTER_CROP_LEN = 108;
+
 template<typename Dtype>
 CelebAInputLayer<Dtype>::CelebAInputLayer() {
     initialize("", false, -1, -1);
@@ -176,10 +178,18 @@ void CelebAInputLayer<Dtype>::loadImages(int baseIdx) {
         SASSERT(imageRows == CELEBA_IMAGE_ROW, "row : %d", imageRows);
         SASSERT(imageChannels == CELEBA_IMAGE_CHANNEL, "row : %d", imageChannels);
 
-        cv::Mat croppedImage;
         if (this->cropImage) {
-            cv::resize(image, croppedImage, cv::Size(this->imageRow, this->imageCol));
-            loadPixels(croppedImage, i);
+            cv::Mat croppedImage;
+            cv::Rect roi;
+            roi.x = (CELEBA_IMAGE_COL - CELEBA_CENTER_CROP_LEN) / 2;
+            roi.y = (CELEBA_IMAGE_ROW - CELEBA_CENTER_CROP_LEN) / 2;
+            roi.width = CELEBA_CENTER_CROP_LEN;
+            roi.height = CELEBA_CENTER_CROP_LEN;
+            croppedImage = image(roi);
+
+            cv::Mat resizedImage;
+            cv::resize(croppedImage, resizedImage, cv::Size(this->imageRow, this->imageCol));
+            loadPixels(resizedImage, i);
         } else {
             loadPixels(image, i);
         }
@@ -189,8 +199,10 @@ void CelebAInputLayer<Dtype>::loadImages(int baseIdx) {
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::shuffleImages() {
     // FIXME: move it to other source.
+#if 0
     srand(time(NULL)); 
     boost::range::random_shuffle(this->imageIndexes);
+#endif
 }
 
 template<typename Dtype>

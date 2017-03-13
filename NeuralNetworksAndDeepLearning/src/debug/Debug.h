@@ -339,6 +339,7 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
 }
 
 #define USE_CONV_INSTEAD_OF_DECONV      0
+#define INSERT_BN                       0
 
 template <typename Dtype>
 LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
@@ -508,11 +509,25 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->deconvExtraCell(1))
 
 #endif
+
+#if INSERT_BN
+        ->layer((new typename BatchNormLayer<Dtype>::Builder())
+                ->id(9997)
+                ->name("BNLayer/deconv4")
+                ->inputs({"deconv4"})
+                ->outputs({"BN/deconv4"}))
+        ->layer((new typename HyperTangentLayer<Dtype>::Builder())
+                ->id(10014)
+                ->name("hypertangent")
+                ->inputs({"BN/deconv4"})
+                ->outputs({"hypertangent"}))
+#else
         ->layer((new typename HyperTangentLayer<Dtype>::Builder())
                 ->id(10014)
                 ->name("hypertangent")
                 ->inputs({"deconv4"})
                 ->outputs({"hypertangent"}))
+#endif
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10015)
                 ->name("ConvLayer1")
