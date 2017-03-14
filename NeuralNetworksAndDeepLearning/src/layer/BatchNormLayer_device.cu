@@ -14,6 +14,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "ColdLog.h"
+#include "Perf.h"
 
 #define BATCHCONDLAYER_LOG  0
 
@@ -21,141 +22,356 @@ using namespace std;
 
 #ifdef GPU_MODE
 
-template<typename Dtype>
-BatchNormLayer<Dtype>::~BatchNormLayer() {
-    if (this->depth == 0)
-        return;
+// FIXME: 커널함수들 더 빨리 동작시킬 수 있게 수정 필요 
+//        ex. 중간 계산값을 메모리로 들고 있는 방식
 
-    SASSERT0(this->gammaSets != NULL);
-    free(this->gammaSets);
-    SASSERT0(this->betaSets != NULL);
-    free(this->betaSets);
-    SASSERT0(this->meanSumSets != NULL);
-    free(this->meanSumSets);
-    SASSERT0(this->varianceSumSets != NULL);
-    free(this->varianceSumSets);
-    SASSERT0(this->localMeanSets != NULL);
-    free(this->localMeanSets);
-    SASSERT0(this->localVarianceSets != NULL);
-    free(this->localVarianceSets);
+///////////////////////////////////////////////////////////////////////////////////////////
+// GPU Kernels
 
-    SASSERT0(this->normInputValues != NULL);
-    free(this->normInputValues);
-    SASSERT0(this->normInputGradValues != NULL);
-    free(this->normInputGradValues);
-    SASSERT0(this->varianceGradValues != NULL);
-    free(this->varianceGradValues);
-    SASSERT0(this->meanGradValues != NULL);
-    free(this->meanGradValues);
-    SASSERT0(this->gammaGradValues != NULL);
-    free(this->gammaGradValues);
-    SASSERT0(this->betaGradValues != NULL);
-    free(this->betaGradValues);
+template <typename Dtype>
+__global__ void FillValues(Dtype *vec, int size, Dtype value)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= size)
+		return;
+	vec[idx] = value;
 }
 
 template <typename Dtype>
-void BatchNormLayer<Dtype>::update() {
-    // FIXME: momentum, decay 등의 factor들을 고려하지 않았다.
-    //        이런 부분을 고려하면 더 좋은 결과가 나올지도 모른다.
-    float learningRate = this->networkConfig->getLearningRate();
+__global__ void CalcMean(const Dtype *input, int depth, int batchCount, Dtype *mean)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
 
-    for (int i = 0; i < this->depth; i++) {
-        this->gammaSets[i]  -= learningRate * this->gammaGradValues[i];
-        this->betaSets[i]   -= learningRate * this->betaGradValues[i];
+    for (int i = 0 ; i < batchCount; i++) {
+        int index = i * depth + idx;
+        mean[idx] += input[index];
+    }
 
+
+    mean[idx] = mean[idx] / (Dtype)batchCount;
+}
+
+template <typename Dtype>
+__global__ void CalcVariance(const Dtype *input, const Dtype* mean, int depth, int batchCount,
+    Dtype *variance)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+
+    for (int i = 0 ; i < batchCount; i++) {
+        int index = i * depth + idx;
+        variance[idx] += (input[index] - mean[idx]) * (input[index] - mean[idx]);
+    }
+
+    variance[idx] = variance[idx] / (Dtype)batchCount;
+}
+
+template <typename Dtype>
+__global__ void Normalize(const Dtype *input, const Dtype* mean, const Dtype* variance,
+    const Dtype* gamma, const Dtype* beta, int depth, int batchCount, Dtype epsilon,
+    Dtype* normInput, Dtype* output)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int count = depth * batchCount;
+	if (idx >= count) 
+		return;
+
+    int curDepth = idx % depth;
+    Dtype denominator = sqrt(variance[curDepth] + epsilon);
+
+    normInput[idx] = (input[idx] - mean[curDepth]) / denominator;
+    output[idx] = normInput[idx] * gamma[curDepth] + beta[curDepth];
+}
+
+template <typename Dtype>
+__global__ void Add(const Dtype *input, int depth, Dtype* output)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+
+    output[idx] += input[idx];
+}
+
+template <typename Dtype>
+__global__ void Inference(const Dtype *input, const Dtype *meanSum, const Dtype *varianceSum,
+    const Dtype *gamma, const Dtype *beta, int depth, int batchCount, int batchSetCount, 
+    Dtype epsilon, Dtype* output)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+
+    Dtype avgMean = meanSum[idx] / (Dtype)batchSetCount;
+    Dtype avgVariance = varianceSum[idx] / (Dtype)(batchSetCount - 1);
+    Dtype sqrtVariance = sqrt(avgVariance + epsilon);
+
+    for (int i = 0 ; i < batchCount; i++) {
+        int index = i * depth + idx;
+
+        output[idx] = input[index] * gamma[idx] / sqrtVariance + beta[idx] - 
+            gamma[idx] * avgMean / sqrtVariance;
     }
 }
 
 template <typename Dtype>
+__global__ void FirstInference(const Dtype *input, const Dtype *meanSum,
+    const Dtype *varianceSum, const Dtype *gamma, const Dtype *beta, int depth,
+    int batchCount, int batchSetCount, Dtype epsilon, Dtype* output)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth)
+		return;
+
+    Dtype avgMean = meanSum[idx];
+    Dtype avgVariance = varianceSum[idx];
+    Dtype sqrtVariance = sqrt(avgVariance + epsilon);
+
+    for (int i = 0 ; i < batchCount; i++) {
+        int index = i * depth + idx;
+
+        output[idx] = input[index] * gamma[idx] / sqrtVariance + beta[idx] - 
+            gamma[idx] * avgMean / sqrtVariance;
+    }
+}
+
+template <typename Dtype>
+__global__ void ComputeNormInputGrad(const Dtype *outputGrads, const Dtype *gammas, int depth,
+    int batchCount, Dtype* normInputGrads)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int count = depth * batchCount;
+	if (idx >= count) 
+		return;
+    int curDepth = idx % depth;
+
+    normInputGrads[idx] = outputGrads[idx] * gammas[curDepth];
+}
+
+template <typename Dtype>
+__global__ void ComputeVarianceGrad(const Dtype* normInputGrad, const Dtype *inputData, 
+    const Dtype *mean, const Dtype *variance, Dtype epsilon, int depth, int batchCount,
+    Dtype* varianceGrad)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+
+    varianceGrad[idx] = 0;
+    Dtype poweredVar = (-0.5) * pow((variance[idx] + epsilon), -1.5);
+    for (int i = 0; i < batchCount; i++) {
+        int index = i * depth + idx;
+        varianceGrad[idx] += normInputGrad[index] * (inputData[index] - mean[idx]) * 
+            poweredVar;
+    }
+}
+
+template <typename Dtype>
+__global__ void ComputeMeanGrad(const Dtype *normInputGrads, const Dtype *vars,
+    const Dtype *varGrads, const Dtype* inputData, const Dtype* means, int depth,
+    int batchCount, Dtype epsilon, Dtype* meanGrads)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+
+    meanGrads[idx] = 0;
+    Dtype sqrtVar = (-1) / sqrt(vars[idx] + epsilon);
+    Dtype varGradFactor = varGrads[idx] * (-2) / (Dtype)batchCount;
+    for (int i = 0; i < batchCount; i++) {
+        int index = i * depth + idx;
+        meanGrads[idx] += normInputGrads[index] * sqrtVar +
+            varGradFactor * (inputData[index] - means[idx]);
+    }
+}
+
+template <typename Dtype>
+__global__ void ComputeInputGrad(const Dtype *normInputGrads, const Dtype *vars,
+    const Dtype *varGrads, const Dtype* inputData, const Dtype* means, const Dtype* meanGrads,
+    int depth, int batchCount, Dtype epsilon, Dtype* inputGrads)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+
+    Dtype sqrtVar = sqrt(vars[idx] + epsilon);
+    Dtype varGradFactor = varGrads[idx] * 2 / (Dtype)batchCount;
+    Dtype meanFactor = meanGrads[idx] / (Dtype)batchCount;
+    for (int i = 0; i < batchCount; i++) {
+        int index = i * depth + idx;
+        inputGrads[index] = normInputGrads[index] / sqrtVar +
+            varGradFactor * (inputData[index] - means[idx]) + meanFactor;
+    }
+}
+
+template <typename Dtype>
+__global__ void ComputeScaleGrad(const Dtype *normInputs, const Dtype *outputGrads,
+    int depth, int batchCount, Dtype* gammaGrads)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+
+    gammaGrads[idx] = 0;
+    for (int i = 0; i < batchCount; i++) {
+        int index = i * depth + idx;
+        gammaGrads[idx] += outputGrads[index] * normInputs[index];
+    }
+}
+
+template <typename Dtype>
+__global__ void ComputeShiftGrad(const Dtype *outputGrads, int depth, int batchCount,
+    Dtype* betaGrads)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+
+    betaGrads[idx] = 0;
+    for (int i = 0; i < batchCount; i++) {
+        int index = i * depth + idx;
+        betaGrads[idx] += outputGrads[index];
+    }
+}
+
+#define USE_ADAGRAD_UPDATE      1
+
+template <typename Dtype>
+__global__ void UpdateShiftAndScale(const Dtype *gammaGrad, const Dtype *betaGrad, int depth,
+    Dtype learningRate, Dtype *gammaData, Dtype *betaData, Dtype* gammaCache,
+    Dtype* betaCache)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= depth) 
+		return;
+#if USE_ADAGRAD_UPDATE
+    gammaCache[idx] += gammaGrad[idx] * gammaGrad[idx];
+    betaCache[idx] += betaGrad[idx] * betaGrad[idx];
+
+    gammaData[idx] += 
+        (-1.0) * learningRate * gammaGrad[idx] / (sqrt(gammaCache[idx]) + 0.00001);
+    betaData[idx] += 
+        (-1.0) * learningRate * betaGrad[idx] / (sqrt(betaCache[idx]) + 0.00001);
+#else
+    gammaData[idx] -= learningRate * gammaGrad[idx];
+    betaData[idx] -= learningRate * betaGrad[idx];
+#endif
+}
+
+template<typename Dtype>
+BatchNormLayer<Dtype>::~BatchNormLayer() {
+    SASSERT0(this->gammaSet != NULL);
+    free(this->gammaSet);
+    SASSERT0(this->betaSet != NULL);
+    free(this->betaSet);
+    SASSERT0(this->gammaCacheSet != NULL);
+    free(this->gammaCacheSet);
+    SASSERT0(this->betaCacheSet != NULL);
+    free(this->betaCacheSet);
+    SASSERT0(this->meanSet != NULL);
+    free(this->meanSet);
+    SASSERT0(this->varSet != NULL);
+    free(this->varSet);
+    SASSERT0(this->normInputSet != NULL);
+    free(this->normInputSet);
+}
+
+template <typename Dtype>
+void BatchNormLayer<Dtype>::update() {
+    struct timespec startTime;
+    SPERF_START(BATCHNORM_LAYER_UPTIME, &startTime);
+
+    // FIXME: momentum, decay 등의 factor들을 고려하지 않았다.
+    //        이런 부분을 고려하면 더 좋은 결과가 나올지도 모른다.
+    float learningRate = this->networkConfig->getLearningRate();
+
+    Dtype* gammaData = this->gammaSet->mutable_device_data();
+    const Dtype* gammaGrad = this->gammaSet->device_grad();
+    Dtype* betaData = this->betaSet->mutable_device_data();
+    const Dtype* betaGrad = this->betaSet->device_grad();
+    Dtype* gammaCache = this->gammaCacheSet->mutable_device_data();
+    Dtype* betaCache = this->betaCacheSet->mutable_device_data();
+
+    UpdateShiftAndScale<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+        gammaGrad, betaGrad, this->depth, (Dtype)learningRate, gammaData, betaData,
+        gammaCache, betaCache);
+
+    SPERF_END(BATCHNORM_LAYER_UPTIME, startTime);
+}
+
+template <typename Dtype>
 void BatchNormLayer<Dtype>::feedforward() {
+    struct timespec startTime;
+    SPERF_START(BATCHNORM_LAYER_FWTIME, &startTime);
+
     // FIXME: 현재 CPU 코드로 구현이 되어 있다. GPU 코드로 변경하자.
     // (1) mini-batch mean 값을 구한다.
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 	int batchCount = inputShape[0];
 
-    SASSUME0(this->localMeanSets != NULL);
-    SASSUME0(this->localVarianceSets != NULL);
-
-    const Dtype* inputData = this->_inputData[0]->host_data();
-    Dtype* outputData = this->_outputData[0]->mutable_host_data();
+    const Dtype* inputData = this->_inputData[0]->device_data();
+    Dtype* outputData = this->_outputData[0]->mutable_device_data();
 
 	if (this->networkConfig->_status == NetworkStatus::Train) {
-        // (1) mini-batch에 사용하는 localMeanSets, localVarainceSets를 초기화 한다.
-        for (int i = 0; i < this->depth; i++) {
-            this->localMeanSets[i] = 0;
-            this->localVarianceSets[i] = 0;
-        }
+        Dtype* means = this->meanSet->mutable_device_data();
+        Dtype* vars = this->varSet->mutable_device_data();
+
+        // (1) mini-batch에 사용하는 mean, variance를 초기화 한다.
+        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            means, this->depth, 0.0f);
+        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            vars, this->depth, 0.0f);
 
         // (2) mini-batch mean 값을 구한다.
-        for (int i = 0; i < this->depth; i++) {
-            for (int j = 0; j < batchCount; j++) {
-                int index = j * this->depth + i;
-                this->localMeanSets[i] += inputData[index];
-            }
-        }
-
-        for (int i = 0; i < this->depth; i++) {
-            this->localMeanSets[i] = this->localMeanSets[i] / (Dtype)batchCount;
-        }
+        CalcMean<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, this->depth, batchCount, means);
 
         // (3) mini-batch variance 값을 구한다.
-        for (int i = 0; i < this->depth; i++) {
-            for (int j = 0; j < batchCount; j++) {
-                int index = j * this->depth + i;
-                this->localVarianceSets[i] += 
-                    (inputData[index] - this->localMeanSets[i]) *
-                    (inputData[index] - this->localMeanSets[i]);
-            }
-        }
-
-        for (int i = 0; i < this->depth; i++) {
-            this->localVarianceSets[i] = this->localVarianceSets[i] / (Dtype)batchCount;
-        }
+        CalcVariance<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, means, this->depth, batchCount, vars);
 
         // (4) normalize 
-        for (int i = 0; i < this->depth; i++) {
-            Dtype denominator = sqrt(this->localVarianceSets[i] + (Dtype)this->epsilon);
-            for (int j = 0; j < batchCount; j++) {
-                int index = j * this->depth + i;
-                this->normInputValues[index] = 
-                    (inputData[index] - this->localMeanSets[i]) / denominator;
-                outputData[index] = 
-                    this->normInputValues[index] * this->gammaSets[i] + this->betaSets[i];
-            }
-        }
+        Dtype* normInputs = this->normInputSet->mutable_device_data();
+        const Dtype* gammas = this->gammaSet->device_data();
+        const Dtype* betas = this->betaSet->device_data();
+        Normalize<<<SOOOA_GET_BLOCKS(this->depth * batchCount), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, means, vars, gammas, betas, this->depth, batchCount,
+            (Dtype)this->epsilon, normInputs, outputData);
 
         // (5) global meanSets과 varianceSets를 갱신한다.
         this->batchSetCount += 1;
 
-        for (int i = 0; i < this->depth; i++) {
-            this->meanSumSets[i] += this->localMeanSets[i];
-            this->varianceSumSets[i] = this->localVarianceSets[i];
-        }
+        Dtype* meanSums = this->meanSumSet->mutable_device_mem();
+        Dtype* varSums = this->varSumSet->mutable_device_mem();
+        Add<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            means, this->depth, meanSums);
+        Add<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            vars, this->depth, varSums);
 	} else if (this->networkConfig->_status == NetworkStatus::Test) {
         SASSERT((this->batchSetCount > 0), "need train before inference");
-        STDOUT_LOG("Batch Norm Test Mode!!!");
 
-        for (int i = 0; i < this->depth; i++) {
-            Dtype avgMean = this->meanSumSets[i] / (Dtype)this->batchSetCount;
-            Dtype avgVariance;
-            if (this->batchSetCount == 1) {
-                avgVariance = this->varianceSumSets[i];
-            } else {
-                avgVariance = this->varianceSumSets[i] / (Dtype)(this->batchSetCount - 1);
-            }
-            Dtype sqrtVariance = sqrt(avgVariance + this->epsilon);
+        const Dtype* meanSums = this->meanSumSet->device_mem();
+        const Dtype* varSums = this->varSumSet->device_mem();
+        const Dtype* gammas = this->gammaSet->device_data();
+        const Dtype* betas = this->betaSet->device_data();
 
-            for (int j = 0; j < batchCount; j++) {
-                int index = j * this->depth + i;
-                outputData[index] = 
-                    inputData[index] * this->gammaSets[i] / sqrtVariance +
-                    this->betaSets[i] - 
-                    this->gammaSets[i] * avgMean / sqrtVariance;
-            }
+        if (this->batchSetCount == 1) {
+            FirstInference<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, meanSums, varSums, gammas, betas, this->depth, batchCount,
+                this->batchSetCount, (Dtype)this->epsilon, outputData);
+        } else {
+            Inference<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, meanSums, varSums, gammas, betas, this->depth, batchCount,
+                this->batchSetCount, (Dtype)this->epsilon, outputData);
         }
     } else {
         SASSERT(false, "Invalid network status =%d", this->networkConfig->_status);
     }
+
+    SPERF_END(BATCHNORM_LAYER_FWTIME, startTime);
 }
 
 template <typename Dtype>
@@ -174,9 +390,10 @@ void BatchNormLayer<Dtype>::reshape() {
     // XXX: 현재 FC에 대해서만 생각하였음
     // TODO: Conv Layer에 대한 구현 필요
 	uint32_t batches = inputShape[0];
-	uint32_t channels = 1;
-	uint32_t rows = this->_inputData[0]->getCountByAxis(1);
-	uint32_t cols = 1;
+	uint32_t channels = inputShape[1];
+	uint32_t rows = inputShape[2];
+	uint32_t cols = inputShape[3];
+    uint32_t depth = this->_inputData[0]->getCountByAxis(1);
 
 	this->_inputShape[0] = {batches, channels, rows, cols};
 	this->_outputData[0]->reshape({batches, channels, rows, cols});
@@ -188,182 +405,122 @@ void BatchNormLayer<Dtype>::reshape() {
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
         this->name.c_str(), batches, channels, rows, cols);
 
-    if (this->depth == 0)
-        this->depth = rows;
-    else
-        SASSERT0(this->depth == rows);
-
     // Batch Normalization 과정에 필요한 구조체들의 메모리를 할당한다.
-    if (this->gammaSets == NULL) {
-        SASSERT0(this->betaSets == NULL);
-        SASSERT0(this->meanSumSets == NULL);
-        SASSERT0(this->varianceSumSets == NULL);
-        SASSERT0(this->localMeanSets == NULL);
-        SASSERT0(this->localVarianceSets == NULL);
+    if (this->depth == 0) {
+        this->depth = depth;
 
-        SASSERT0(this->normInputValues == NULL);
-        SASSERT0(this->meanGradValues == NULL);
-        SASSERT0(this->varianceGradValues == NULL);
-        SASSERT0(this->gammaGradValues == NULL);
-        SASSERT0(this->betaGradValues == NULL);
+        this->gammaSet->reshape({1, channels, rows, cols});
+        this->betaSet->reshape({1, channels, rows, cols});
+        this->gammaCacheSet->reshape({1, channels, rows, cols});
+        this->betaCacheSet->reshape({1, channels, rows, cols});
+        this->meanSet->reshape({1, channels, rows, cols});
+        this->varSet->reshape({1, channels, rows, cols});
 
         int allocSize = sizeof(Dtype) * this->depth;
+        this->meanSumSet->reshape((size_t)allocSize);
+        this->varSumSet->reshape((size_t)allocSize);
 
-        this->gammaSets = (Dtype*)malloc(allocSize);
-        SASSERT0(this->gammaSets != NULL);
-        this->betaSets = (Dtype*)malloc(allocSize);
-        SASSERT0(this->betaSets != NULL);
-        this->meanSumSets = (Dtype*)malloc(allocSize);
-        SASSERT0(this->meanSumSets != NULL);
-        this->varianceSumSets = (Dtype*)malloc(allocSize);
-        SASSERT0(this->varianceSumSets != NULL);
-        this->localMeanSets = (Dtype*)malloc(allocSize);
-        SASSERT0(this->localMeanSets != NULL);
-        this->localVarianceSets = (Dtype*)malloc(allocSize);
-        SASSERT0(this->localVarianceSets != NULL);
+        this->normInputSet->reshape({batches, channels, rows, cols});
 
-        this->varianceGradValues = (Dtype*)malloc(allocSize);
-        SASSERT0(this->varianceGradValues != NULL);
-        this->meanGradValues = (Dtype*)malloc(allocSize);
-        SASSERT0(this->meanGradValues != NULL);
-        this->gammaGradValues = (Dtype*)malloc(allocSize);
-        SASSERT0(this->gammaGradValues != NULL);
-        this->betaGradValues = (Dtype*)malloc(allocSize);
-        SASSERT0(this->betaGradValues != NULL);
-
-        // XXX: batches가 크게 변하지 않을꺼라는 가정이 있다. 
-        int batchAllocSize = allocSize * batches;
-        this->normInputValues = (Dtype*)malloc(batchAllocSize);
-        SASSERT0(this->normInputValues != NULL);
-        this->normInputGradValues = (Dtype*)malloc(batchAllocSize);
-        SASSERT0(this->normInputGradValues != NULL);
-
-        for (int i = 0; i < this->depth; i++) {
-            this->gammaSets[i] = 1;
-            this->betaSets[i] = 0;
-            this->meanSumSets[i] = 0;
-            this->varianceSumSets[i] = 0;
-        }
+        // FIXME: 더 좋은 초기화 방법이 있을지도 모른다..
+        Dtype* gammas = this->gammaSet->mutable_device_data();
+        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            gammas, this->depth, 1.0f);
     } else {
-        SASSERT0(this->betaSets != NULL);
-        SASSERT0(this->meanSumSets != NULL);
-        SASSERT0(this->varianceSumSets != NULL);
-        SASSERT0(this->localMeanSets != NULL);
-        SASSERT0(this->localVarianceSets != NULL);
-
-        SASSERT0(this->varianceGradValues != NULL);
-        SASSERT0(this->meanGradValues != NULL);
-        SASSERT0(this->gammaGradValues != NULL);
-        SASSERT0(this->betaGradValues != NULL);
-
-        SASSERT0(this->normInputValues != NULL);
-        SASSERT0(this->normInputGradValues != NULL);
+        SASSERT0(this->depth == depth);
     }
 }
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::computeNormInputGrad() {
-	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
-	int batchCount = inputShape[0];
+    const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
+    int batchCount = inputShape[0];
 
-    const Dtype* outputGrad = this->_outputData[0]->host_grad();
+    const Dtype* outputGrads = this->_outputData[0]->device_grad();
+    Dtype* normInputGrads = this->normInputSet->mutable_device_grad();
+    const Dtype* gammas = this->gammaSet->device_data();
 
-    for (int i = 0; i < this->depth; i++) {
-        for (int j = 0; j < batchCount; j++) {
-            int index = j * this->depth + i;
-            this->normInputGradValues[index] = outputGrad[index] * this->gammaSets[i];
-        }
-    }
+    ComputeNormInputGrad<<<SOOOA_GET_BLOCKS(this->depth * batchCount),
+        SOOOA_CUDA_NUM_THREADS>>>(
+        outputGrads, gammas, this->depth, batchCount, normInputGrads);
 }
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::computeVarianceGrad() {
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 	int batchCount = inputShape[0];
-    const Dtype* inputData = this->_inputData[0]->host_data();
+    const Dtype* inputData = this->_inputData[0]->device_data();
+    Dtype* varGrads = this->varSet->mutable_device_grad();
+    const Dtype* normInputGrads = this->normInputSet->device_grad();
+    const Dtype* means = this->meanSet->device_data();
+    const Dtype* vars = this->varSet->device_data();
 
-    for (int i = 0; i < this->depth; i++) {
-        this->varianceGradValues[i] = 0;
-        for (int j = 0; j < batchCount; j++) {
-            int index = j * this->depth + i;
-            this->varianceGradValues[i] += 
-                this->normInputGradValues[index] * 
-                (inputData[index] - this->localMeanSets[i]) * (-0.5) *
-                pow((this->localVarianceSets[i] + this->epsilon), -1.5);
-        }
-    }
+    ComputeVarianceGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+        normInputGrads, inputData, means, vars, (Dtype)this->epsilon, depth, batchCount,
+        varGrads);
 }
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::computeMeanGrad() {
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 	int batchCount = inputShape[0];
-    const Dtype* inputData = this->_inputData[0]->host_data();
+    const Dtype* inputData = this->_inputData[0]->device_data();
+    Dtype* meanGrads = this->meanSet->mutable_device_grad();
+    const Dtype* normInputGrads = this->normInputSet->device_grad();
+    const Dtype* vars = this->varSet->device_data();
+    const Dtype* varGrads = this->varSet->device_grad();
+    const Dtype* means = this->meanSet->device_data();
 
-    for (int i = 0; i < this->depth; i++) {
-        this->meanGradValues[i] = 0;
-        for (int j = 0; j < batchCount; j++) {
-            int index = j * this->depth + i;
-            this->meanGradValues[i] +=
-                this->normInputGradValues[index] * (-1) /
-                sqrt(this->localVarianceSets[i] + this->epsilon) +
-                this->varianceGradValues[i] * (-2) * 
-                (inputData[index] - this->localMeanSets[i]) / batchCount;
-        }
-    }
+    ComputeMeanGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+        normInputGrads, vars, varGrads, inputData, means, depth, batchCount,
+        (Dtype)this->epsilon, meanGrads);
 }
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::computeInputGrad() {
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 	int batchCount = inputShape[0];
-    const Dtype* inputData = this->_inputData[0]->host_data();
-	Dtype* inputGrad = this->_inputData[0]->mutable_host_grad();
+    const Dtype* inputData = this->_inputData[0]->device_data();
+	Dtype* inputGrads = this->_inputData[0]->mutable_device_grad();
+    const Dtype* normInputGrads = this->normInputSet->device_grad();
+    const Dtype* vars = this->varSet->device_data();
+    const Dtype* varGrads = this->varSet->device_grad();
+    const Dtype* means = this->meanSet->device_data();
+    const Dtype* meanGrads = this->meanSet->device_grad();
 
-    for (int i = 0; i < this->depth; i++) {
-        for (int j = 0; j < batchCount; j++) {
-            int index = j * this->depth + i;
-            inputGrad[index] = this->normInputGradValues[index] /
-                sqrt(this->localVarianceSets[i] + this->epsilon) +
-                this->varianceGradValues[i] * 2 *
-                (inputData[index] - this->localMeanSets[i]) / batchCount +
-                this->meanGradValues[i] / batchCount;
-        }
-    }
+    ComputeInputGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+        normInputGrads, vars, varGrads, inputData, means, meanGrads, depth, batchCount,
+        (Dtype)this->epsilon, inputGrads);
 }
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::computeScaleGrad() {
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 	int batchCount = inputShape[0];
-    const Dtype* outputGrad = this->_outputData[0]->host_grad();
+    const Dtype* outputGrads = this->_outputData[0]->device_grad();;
+    Dtype* gammaGrads = this->gammaSet->mutable_device_grad();
+    const Dtype* normInputs = this->normInputSet->device_data();
 
-    for (int i = 0; i < this->depth; i++) {
-        this->gammaGradValues[i] = 0;
-        for (int j = 0; j < batchCount; j++) {
-            int index = j * this->depth + i;
-            this->gammaGradValues[i] += outputGrad[index] * this->normInputValues[index];
-        }
-    }
+    ComputeScaleGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+        normInputs, outputGrads, depth, batchCount, gammaGrads);
+   
 }
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::computeShiftGrad() {
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 	int batchCount = inputShape[0];
-    const Dtype* outputGrad = this->_outputData[0]->host_grad();
+    const Dtype* outputGrads = this->_outputData[0]->device_grad();
+    Dtype* betaGrads = this->betaSet->mutable_device_grad();
 
-    for (int i = 0; i < this->depth; i++) {
-        this->betaGradValues[i] = 0;
-        for (int j = 0; j < batchCount; j++) {
-            int index = j * this->depth + i;
-            this->betaGradValues[i] += outputGrad[index];
-        }
-    }
+    ComputeShiftGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+        outputGrads, depth, batchCount, betaGrads);
 }
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::backpropagation() {
+    struct timespec startTime;
+    SPERF_START(BATCHNORM_LAYER_BWTIME, &startTime);
     /*
      * 아래와 같은 simple한 network layer가 있다고 가정하자.
      *
@@ -401,6 +558,18 @@ void BatchNormLayer<Dtype>::backpropagation() {
 
     // (6) dL/dβi
     computeShiftGrad();
+
+    SPERF_END(BATCHNORM_LAYER_BWTIME, startTime);
+}
+
+template <typename Dtype>
+void BatchNormLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
+    return;
+}
+
+template <typename Dtype>
+void BatchNormLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
+    return;
 }
 
 template BatchNormLayer<float>::~BatchNormLayer();
@@ -408,5 +577,7 @@ template void BatchNormLayer<float>::reshape();
 template void BatchNormLayer<float>::update();
 template void BatchNormLayer<float>::feedforward();
 template void BatchNormLayer<float>::backpropagation();
+template void BatchNormLayer<float>::applyChanges(LearnableLayer<float> *targetLayer);
+template void BatchNormLayer<float>::syncParams(LearnableLayer<float> *targetLayer);
 
 #endif

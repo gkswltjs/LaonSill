@@ -25,6 +25,8 @@
 #include "Worker.h"
 #include "Top1Evaluation.h"
 #include "Top5Evaluation.h"
+#include "SysLog.h"
+#include "Donator.h"
 
 
 //template <typename Dtype> class DataSet;
@@ -84,7 +86,6 @@ public:
 			buildLayerData(layers, layerDataMap);
 
 
-
 			// 레이어 호출 순서에 따라 순서 재조정
 			// 의존성이 해결된 레이어를 앞에 배치하여 순차적으로 호출시 적절한 결과를 보장 함
 			// XXX: 내부적으로 layers vector를 변경시켜서 call by value하든지 다른 수단 필요.
@@ -109,8 +110,10 @@ public:
         		std::vector<Layer<Dtype>*>& layers,
         		std::vector<LearnableLayer<Dtype>*>& learnableLayers,
         		std::map<uint32_t, Layer<Dtype>*>& idLayerMap) {
+
 			for (int i = 0; i < this->_layerWise.size(); i++) {
-				Layer<Dtype>* currentLayer = this->_layerWise[i]->build();
+				typename Layer<Dtype>::Builder* builder = this->_layerWise[i];
+				Layer<Dtype>* currentLayer = builder->build();
 
 				// 시작 레이어 추가
 				InputLayer<Dtype>* inputLayer =
@@ -131,6 +134,30 @@ public:
 					dynamic_cast<LearnableLayer<Dtype>*>(currentLayer);
 				if (learnableLayer) {
 					learnableLayers.push_back(learnableLayer);
+
+					uint32_t donatorID;
+					if (builder->_isReceiver) {
+						donatorID = builder->_donatorID;
+					} else {
+						donatorID = i;
+					}
+
+					learnableLayer->fillDonatorInfo(builder->_isDonator,
+						builder->_isReceiver, donatorID);
+
+					if (learnableLayer->isReceiver) {
+						SASSERT(!learnableLayer->isDonator,
+							"layer can not be donator and receiver at the same time. "
+							"donator ID : %d", learnableLayer->donatorID);
+						// FIXME: dangerous casting..
+						Donator<Dtype>::receive(learnableLayer->donatorID,
+												(void*)currentLayer);
+					}
+
+					if (learnableLayer->isDonator) {
+						Donator<Dtype>::donate(learnableLayer->donatorID,
+											   (void*)currentLayer);
+					}
 				}
 
 				// 일반 레이어 추가
@@ -556,6 +583,15 @@ enum LRPolicy {
 	Poly
 };
 
+enum Optimizer {
+    Momentum = 0,
+    Vanilla,
+    Nesterov,
+    Adagrad,
+    RMSprop,
+    Adam
+};
+
 
 template <typename Dtype>
 class NetworkConfig {
@@ -579,12 +615,17 @@ public:
 		float _weightDecay;
 		float _clipGradientsLevel;
 		float _gamma;
+        float _epsilon;     // for Adam, Adagrad, Rmsprop learning policy
+        float _beta1;       // for Adam learning policy
+        float _beta2;       // for Adam learning policy
+        float _decayRate;   // for RMSprop learning policy
 
         std::string _savePathPrefix;
         std::string _weightsPath;
         std::vector<WeightsArg> _weightsArgs;
 
-		LRPolicy _lrPolicy;
+        Optimizer _optimizer;   // optimizer
+		LRPolicy _lrPolicy;     // learning rate policy
 		NetworkPhase _phase;
 
 		std::vector<std::string> _lossLayers;
@@ -599,6 +640,11 @@ public:
 			this->_epochs = 1;
 			this->_clipGradientsLevel = 35.0f;
 			this->_phase = NetworkPhase::TrainPhase;
+            this->_optimizer = Optimizer::Momentum;
+            this->_epsilon = 0.000000001;
+            this->_beta1 = 0.9;
+            this->_beta2 = 0.999;
+            this->_decayRate = 0.9;
 		}
 		Builder* networkListeners(const std::vector<NetworkListener*> networkListeners) {
 			this->_networkListeners = networkListeners;
@@ -648,6 +694,19 @@ public:
 			this->_gamma = gamma;
 			return this;
 		}
+        Builder* epsilon(float epsilon) {
+            this->_epsilon = epsilon;
+            return this;
+        }
+        Builder* beta(float beta1, float beta2) {
+            this->_beta1 = beta1;
+            this->_beta2 = beta2;
+            return this;
+        }
+        Builder* decayRate(float decayRate) {
+            this->_decayRate = decayRate;
+            return this;
+        }
 		Builder* baseLearningRate(float baseLearningRate) {
 			this->_baseLearningRate = baseLearningRate;
 			return this;
@@ -662,6 +721,10 @@ public:
 		}
 		Builder* lrPolicy(LRPolicy lrPolicy) {
 			this->_lrPolicy = lrPolicy;
+			return this;
+		}
+		Builder* optimizer(Optimizer opt) {
+			this->_optimizer = opt;
 			return this;
 		}
 		Builder* networkPhase(NetworkPhase phase) {
@@ -686,7 +749,11 @@ public:
 					->weightsArgs(_weightsArgs)
 					->clipGradientsLevel(_clipGradientsLevel)
 					->lrPolicy(_lrPolicy)
+                    ->optimizer(_optimizer)
 					->gamma(_gamma)
+                    ->beta(_beta1, _beta2)
+                    ->epsilon(_epsilon)
+                    ->decayRate(_decayRate)
 					//->dataSet(_dataSet)
 					->baseLearningRate(_baseLearningRate)
 					->momentum(_momentum)
@@ -716,12 +783,14 @@ public:
 
             std::cout << "savePathPrefix: " << _savePathPrefix << std::endl;
             std::cout << "weightsPath: " << _weightsPath << std::endl;
-            std::cout << "lrPolicy: " << _lrPolicy << std::endl;
+            std::cout << "Optimizer: " << _optimizer << std::endl;
+            std::cout << "learningRatePolicy: " << _lrPolicy << std::endl;
 		}
 
 	};
 
 	NetworkStatus _status;
+    Optimizer _optimizer;
 	LRPolicy _lrPolicy;
 	NetworkPhase _phase;
 	
@@ -740,6 +809,10 @@ public:
 	float _weightDecay;
 	float _clipGradientsLevel;
 	float _gamma;
+    float _epsilon;     // for Adam, Adagrad, Rmsprop learning policy
+    float _beta1;       // for Adam learning policy
+    float _beta2;       // for Adam learning policy
+    float _decayRate;   // for RMSprop learning policy
 
     std::string _savePathPrefix;
     std::string _weightsPath;
@@ -754,6 +827,7 @@ public:
 		this->_builder = builder;
 		this->_iterations = 0;
 		this->_rate = -1.0f;
+        this->_optimizer = Optimizer::Momentum;
 	}
 	NetworkConfig* lossLayers(const std::vector<std::string>& lossLayers) {
 		this->_lossLayers = lossLayers;
@@ -819,8 +893,25 @@ public:
 		this->_weightDecay = weightDecay;
 		return this;
 	}
+	NetworkConfig* epsilon(float epsilon) {
+		this->_epsilon = epsilon;
+		return this;
+	}
+	NetworkConfig* beta(float beta1, float beta2) {
+		this->_beta1 = beta1;
+		this->_beta2 = beta2;
+		return this;
+	}
+	NetworkConfig* decayRate(float decayRate) {
+		this->_decayRate = decayRate;
+		return this;
+	}
 	NetworkConfig* lrPolicy(LRPolicy lrPolicy) {
 		this->_lrPolicy = lrPolicy;
+		return this;
+	}
+	NetworkConfig* optimizer(Optimizer opt) {
+		this->_optimizer = opt;
 		return this;
 	}
 	NetworkConfig* networkPhase(NetworkPhase phase) {

@@ -13,13 +13,21 @@
 #include "Util.h"
 #include "CudaUtils.h"
 
-#define INPUTLAYER_LOG 0
+#define INPUTLAYER_LOG 1
 
 using namespace std;
 
 template <typename Dtype>
+InputLayer<Dtype>::InputLayer()
+: Layer<Dtype>() {
+    _dataSet = NULL;
+	initialize();
+}
+
+template <typename Dtype>
 InputLayer<Dtype>::InputLayer(const string name)
 : Layer<Dtype>(name) {
+    _dataSet = NULL;
 	initialize();
 }
 
@@ -57,6 +65,7 @@ InputLayer<Dtype>::InputLayer(Builder* builder)
 				);
 		this->_dataSet->load();
 	} else {
+        _dataSet = NULL;
 		//cout << "Unsuppored Input Source Type: " << builder->_sourceType;
 		//exit(1);
 	}
@@ -226,6 +235,21 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 template <typename Dtype>
 void InputLayer<Dtype>::initialize() {
 	this->type = Layer<Dtype>::Input;
+}
+
+template<typename Dtype>
+int InputLayer<Dtype>::getNumTrainData() {
+    return this->_dataSet->getNumTrainData();
+}
+
+template<typename Dtype>
+int InputLayer<Dtype>::getNumTestData() {
+    return this->_dataSet->getNumTestData();
+}
+
+template<typename Dtype>
+void InputLayer<Dtype>::shuffleTrainDataSet() {
+    return this->_dataSet->shuffleTrainDataSet();
 }
 
 template class InputLayer<float>;

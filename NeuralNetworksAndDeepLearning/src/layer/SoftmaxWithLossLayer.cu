@@ -5,6 +5,7 @@
  *      Author: jkim
  */
 
+#include <cfloat>
 #include <vector>
 
 #include "SoftmaxWithLossLayer.h"

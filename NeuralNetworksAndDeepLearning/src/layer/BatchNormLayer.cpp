@@ -18,85 +18,37 @@ using namespace std;
 template <typename Dtype>
 BatchNormLayer<Dtype>::BatchNormLayer(Builder* builder)
 	: LearnableLayer<Dtype>(builder) {
-	initialize(builder->_kernelMapCount, builder->_epsilon);
+	initialize(builder->_epsilon);
 }
 
 template <typename Dtype>
-BatchNormLayer<Dtype>::BatchNormLayer(const string name, int kernelMapCount,
+BatchNormLayer<Dtype>::BatchNormLayer(const string name, 
     double epsilon) : LearnableLayer<Dtype>(name) {
-	initialize(kernelMapCount, epsilon);
+	initialize(epsilon);
 }
 
 template <typename Dtype>
-void BatchNormLayer<Dtype>::initialize(int kernelMapCount, double epsilon) {
+void BatchNormLayer<Dtype>::initialize(double epsilon) {
 	this->type                  = Layer<Dtype>::BatchNorm;
-	this->kernelMapCount        = kernelMapCount;
     this->epsilon               = epsilon;
 
     this->depth                 = 0;
     this->batchSetCount         = 0;
-    this->gammaSets             = NULL;
-    this->betaSets              = NULL;
-    this->meanSumSets           = NULL;
-    this->varianceSumSets       = NULL;
-    this->localMeanSets         = NULL;
-    this->localVarianceSets     = NULL;
-    this->normInputValues       = NULL;
-    this->normInputGradValues   = NULL;
-    this->varianceGradValues    = NULL;
-    this->meanGradValues        = NULL;
-    this->gammaGradValues       = NULL;
-    this->betaGradValues        = NULL;
+    this->gammaSet              = new Data<Dtype>(this->name + "_gamma");
+    this->betaSet               = new Data<Dtype>(this->name + "_beta");
+    this->gammaCacheSet         = new Data<Dtype>(this->name + "_gammaCache");
+    this->betaCacheSet          = new Data<Dtype>(this->name + "_betaCache");
+    this->meanSet               = new Data<Dtype>(this->name + "_mean");
+    this->varSet                = new Data<Dtype>(this->name + "_variance");
+    this->normInputSet          = new Data<Dtype>(this->name + "_normalizedInput");
+
+    shared_ptr<SyncMem<Dtype>> tempMeanSumSet(new SyncMem<Dtype>());
+    shared_ptr<SyncMem<Dtype>> tempVarSumSet(new SyncMem<Dtype>());
+
+    this->meanSumSet            = tempMeanSumSet;
+    this->varSumSet             = tempVarSumSet;
 }
 
-/*
-template <typename Dtype>
-double BatchNormLayer<Dtype>::sumSquareParamsData() {
-    // TODO:
-	double result = 0.0;
-	return result;
-}
-
-template <typename Dtype>
-double BatchNormLayer<Dtype>::sumSquareParamsGrad() {
-    // TODO:
-	double result = 0.0;
-	return result;
-}
-
-template <typename Dtype>
-void BatchNormLayer<Dtype>::scaleParamsGrad(float scale) {
-    // TODO:
-}
-
-template <typename Dtype>
-uint32_t BatchNormLayer<Dtype>::boundParams() {
-    // TODO:
-	uint32_t updateCount = 1;
-	return updateCount;
-}
-
-template <typename Dtype>
-uint32_t BatchNormLayer<Dtype>::numParams() {
-    // TODO:
-	return 1;
-}
-
-template <typename Dtype>
-void BatchNormLayer<Dtype>::saveParams(ofstream& ofs) {
-    // TODO:
-}
-
-template <typename Dtype>
-void BatchNormLayer<Dtype>::loadParams(ifstream& ifs) {
-    // TODO:
-}
-
-template <typename Dtype>
-void BatchNormLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
-    // TODO:
-}
-*/
 
 #ifndef GPU_MODE
 template <typename Dtype>
@@ -115,5 +67,11 @@ void BatchNormLayer<Dtype>::backpropagation(uint32_t idx, Layer *next_layer) {
 }
 
 #endif
+
+template<typename Dtype>
+void BatchNormLayer<Dtype>::donateParam(BatchNormLayer<Dtype>* receiver) {
+    // XXX: hmm... does this layer really need param donation??
+    return;
+}
 
 template class BatchNormLayer<float>;

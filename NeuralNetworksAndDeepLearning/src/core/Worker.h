@@ -56,6 +56,8 @@ public:
 	static int                                  consumerCount;
 	static thread_local int                     consumerIdx;
 
+    static bool                                 isSingle() { return (consumerCount == 1); }
+
     /**
      * @return      마지막으로 깨어난 consumer는 true, 그 외에는 false를 반환
      */

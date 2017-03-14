@@ -17,7 +17,7 @@ symbolDic["ReleaseClient"]      = ["GPU_MODE", "CLIENT_MODE"]
 
 libList = ["cudart", "opencv_core", "cublas", "cudnn", "boost_system", "boost_filesystem",\
          "opencv_highgui", "opencv_imgproc", "opencv_features2d", "z", "SDL", "ale",\
- 	 "boost_iostreams", "X11", "opencv_cudev", "opencv_imgcodecs"]
+ 	 "boost_iostreams", "X11", "opencv_cudev", "opencv_imgcodecs", "openblas", "blas"]
 
 targetNameDic = dict()  # key : configure name, value : target name
 targetNameDic["Debug"]          = "SoooaServerDebug"
@@ -38,7 +38,8 @@ supportCode             = "sm_35"
 
 sourceHomeDirEnvName    = 'SOOOA_BUILD_PATH'
 
-incEnvVarList = ["INC_PATH_GNUPLOT", "INC_PATH_CIMG", "INC_PATH_SDL", "INC_PATH_OPENCV"]
+incEnvVarList = ["INC_PATH_GNUPLOT", "INC_PATH_CIMG", "INC_PATH_SDL", "INC_PATH_OPENCV",\
+                "INC_PATH_BLAS"]
 
 ###########################################################################################
 # Codes

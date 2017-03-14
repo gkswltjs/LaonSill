@@ -6,6 +6,8 @@
 
 #include "cuda/Cuda.h"
 
+#include "gnuplot-iostream.h"
+
 #include "jsoncpp/json/json.h"
 
 #include "common.h"
@@ -34,6 +36,7 @@
 #include "Broker.h"
 #include "test.h"
 #include "DQNImageLearner.h"
+#include "ImageUtil.h"
 
 using namespace std;
 
@@ -45,31 +48,256 @@ void printUsageAndExit(char* prog) {
     exit(EXIT_FAILURE);
 }
 
+void drawAvgOfSquaredSumGrad(Gnuplot &plot, vector<pair<int, double>> &plotData,
+    LayersConfig<float>* lc, string layerName) {
+    // calc squared sum
+    Layer<float>* layer = (Layer<float>*)lc->_nameLayerMap[layerName];
+    const float* data = layer->_outputData[0]->host_grad(); 
+    int nout = layer->_outputData[0]->getCount();
+    float sum = 0.0;
+    for (int i = 0; i < nout; i++) {
+        sum += data[i] * data[i];
+    }
+
+    if (plotData.size() > 100) {
+        plotData.clear();
+    }
+
+    sum /= (float)nout;
+    plotData.push_back(make_pair(plotData.size(), sum));
+
+    char cmd[1024];
+    sprintf(cmd, "plot '-' using 1:2 with lines title '%s'\n", layerName.c_str());
+
+    plot << cmd;
+    plot.send1d(plotData);
+}
+
+void drawAvgOfSquaredSumData(Gnuplot &plot, vector<pair<int, double>> &plotData,
+    LayersConfig<float>* lc, string layerName) {
+    // calc squared sum
+    Layer<float>* layer = (Layer<float>*)lc->_nameLayerMap[layerName];
+    const float* data = layer->_outputData[0]->host_data(); 
+    int nout = layer->_outputData[0]->getCount();
+    float sum = 0.0;
+    for (int i = 0; i < nout; i++) {
+        sum += data[i] * data[i];
+    }
+
+    if (plotData.size() > 100) {
+        plotData.clear();
+    }
+
+    sum /= (float)nout;
+    plotData.push_back(make_pair(plotData.size(), sum));
+
+    char cmd[1024];
+    sprintf(cmd, "plot '-' using 1:2 with lines title '%s'\n", layerName.c_str());
+
+    plot << cmd;
+    plot.send1d(plotData);
+}
+
+void printDataForDebug(LayersConfig<float>* lc, const char* title) {
+    int layerCount = lc->_layers.size();
+
+    for (int i = 0; i < layerCount; i++) {
+        printf("[Layer : %s #%d]\n", title, i);
+        const float* data = lc->_layers[i]->_outputData[0]->host_data();
+        const float* grad = lc->_layers[i]->_outputData[0]->host_grad();
+
+        for (int j = 0; j < 8; j++) {
+            printf(" %f", data[j]);
+        }
+        printf("\n");
+
+        for (int j = 0; j < 8; j++) {
+            printf(" %f", grad[j]);
+        }
+        printf("\n");
+    }
+}
+
+// FIXME: 디버깅용 함수.... 나중에 싹다 지우자.
+void printWeightAndBias(LayersConfig<float>* lc, const char* title) {
+    int layerCount = lc->_layers.size();
+
+    for (int i = 0; i < layerCount; i++) {
+        printf("[Layer : %s #%d]\n", title, i);
+
+        FullyConnectedLayer<float>* fcLayer = 
+            dynamic_cast<FullyConnectedLayer<float>*>(lc->_layers[i]);
+        if (fcLayer) {
+            const float* weightParams = fcLayer->_params[0]->host_data();
+            const float* biasParams = fcLayer->_params[1]->host_data();
+            const float* weightGradParams = fcLayer->_params[0]->host_grad();
+            const float* biasGradParams = fcLayer->_params[1]->host_grad();
+
+            int weightCnt = fcLayer->_params[0]->getCount();
+            int biasCnt = fcLayer->_params[1]->getCount();
+
+            printf(" - Weight Data : ");
+            for (int j = 0; j < min(3, weightCnt) ; j++) {
+                printf(" %f", weightParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, weightCnt - 3); j < weightCnt ; j++) {
+                printf(" %f", weightParams[j]);
+            }
+            printf("\n");
+            printf(" - Weight Grad : ");
+            for (int j = 0; j < min(3, weightCnt) ; j++) {
+                printf(" %f", weightGradParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, weightCnt - 3); j < weightCnt ; j++) {
+                printf(" %f", weightGradParams[j]);
+            }
+            printf("\n");
+            printf(" - Bias Data : ");
+            for (int j = 0; j < min(3, biasCnt); j++) {
+                printf(" %f", biasParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, biasCnt - 3); j < biasCnt; j++) {
+                printf(" %f", biasParams[j]);
+            }
+            printf("\n");
+            printf(" - Bias Grad : ");
+            for (int j = 0; j < min(3, biasCnt); j++) {
+                printf(" %f", biasGradParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, biasCnt - 3); j < biasCnt; j++) {
+                printf(" %f", biasGradParams[j]);
+            }
+            printf("\n");
+        }
+
+        ConvLayer<float>* convLayer = dynamic_cast<ConvLayer<float>*>(lc->_layers[i]);
+        if (convLayer) {
+            const float* filterParams = convLayer->_params[0]->host_data();
+            const float* biasParams = convLayer->_params[1]->host_data();
+            const float* filterGradParams = convLayer->_params[0]->host_grad();
+            const float* biasGradParams = convLayer->_params[1]->host_grad();
+            
+            int filterCnt = convLayer->_params[0]->getCount();
+            int biasCnt = convLayer->_params[1]->getCount();
+
+            printf(" - Filter Data : ");
+            for (int j = 0; j < min(3, filterCnt) ; j++) {
+                printf(" %f", filterParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, filterCnt - 3); j < filterCnt ; j++) {
+                printf(" %f", filterParams[j]);
+            }
+            printf("\n");
+            printf(" - Filter Grad : ");
+            for (int j = 0; j < min(3, filterCnt) ; j++) {
+                printf(" %f", filterGradParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, filterCnt - 3); j < filterCnt ; j++) {
+                printf(" %f", filterGradParams[j]);
+            }
+            printf("\n");
+            printf(" - Bias Data : ");
+            for (int j = 0; j < min(3, biasCnt); j++) {
+                printf(" %f", biasParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, biasCnt - 3); j < biasCnt; j++) {
+                printf(" %f", biasParams[j]);
+            }
+            printf("\n");
+            printf(" - Bias Grad : ");
+            for (int j = 0; j < min(3, biasCnt); j++) {
+                printf(" %f", biasGradParams[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, biasCnt - 3); j < biasCnt; j++) {
+                printf(" %f", biasGradParams[j]);
+            }
+            printf("\n");
+        }
+
+        {
+            Layer<float>* layer = lc->_layers[i];
+
+            const float* inputData = lc->_layers[i]->_inputData[0]->host_data();
+            const float* inputGrad = lc->_layers[i]->_inputData[0]->host_grad();
+            int inputDataCnt = lc->_layers[i]->_inputData[0]->getCount();
+            const float* outputData = lc->_layers[i]->_outputData[0]->host_data();
+            const float* outputGrad = lc->_layers[i]->_outputData[0]->host_grad();
+            int outputDataCnt = lc->_layers[i]->_outputData[0]->getCount();
+
+            printf(" - Input Data : ");
+            for (int j = 0; j < min(3, inputDataCnt); j++) {
+                printf(" %f", inputData[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, inputDataCnt - 3); j < inputDataCnt; j++) {
+                printf(" %f", inputData[j]);
+            }
+            printf("\n");
+            printf(" - Input Grad : ");
+            for (int j = 0; j < min(3, inputDataCnt); j++) {
+                printf(" %f", inputGrad[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, inputDataCnt - 3); j < inputDataCnt; j++) {
+                printf(" %f", inputGrad[j]);
+            }
+            printf("\n");
+            printf(" - Output Data : ");
+            for (int j = 0; j < min(3, outputDataCnt); j++) {
+                printf(" %f", outputData[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, outputDataCnt - 3); j < outputDataCnt; j++) {
+                printf(" %f", outputData[j]);
+            }
+            printf("\n");
+            printf(" - Output Grad : ");
+            for (int j = 0; j < min(3, outputDataCnt); j++) {
+                printf(" %f", outputGrad[j]);
+            }
+            printf(" ~ ");
+            for (int j = max(0, outputDataCnt - 3); j < outputDataCnt; j++) {
+                printf(" %f", outputGrad[j]);
+            }
+            printf("\n");
+        }
+    }
+}
+
 void developerMain() {
-    // TODO: 
     STDOUT_LOG("enter developerMain()");
 
     checkCudaErrors(cudaSetDevice(0));
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-	//vector<WeightsArg> weightsArgs(1);
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/network540000.param.bak";
-	const vector<string> lossLayers = { "softmaxWithLoss" };
-	const NetworkPhase phase = NetworkPhase::TrainPhase;
+    // loss layer of Discriminator GAN 
+	const vector<string> llDGAN = { "celossDGAN" };
+    // loss layer of Generatoer-Discriminator 0 GAN
+	const vector<string> llGD0GAN = { "celossGD0GAN" };
 
-	const uint32_t batchSize = 100;
-	const uint32_t testInterval = 50;		// 10000(목표 샘플수) / batchSize
+	const NetworkPhase phase = NetworkPhase::TrainPhase;
+	const uint32_t batchSize = 64;
+	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.01f;
+	const float baseLearningRate = 0.0002f;
 
 	const uint32_t stepSize = 100000;
 	const float weightDecay = 0.0001f;
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 0.0f;
 	const float gamma = 0.1;
-	//const LRPolicy lrPolicy = LRPolicy::Step;
 	const LRPolicy lrPolicy = LRPolicy::Fixed;
+
+    const Optimizer opt = Optimizer::Adam;
 
 	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
 	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
@@ -79,7 +307,7 @@ void developerMain() {
 	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
 	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
 
-	NetworkConfig<float>* networkConfig =
+	NetworkConfig<float>* ncDGAN =
 			(new typename NetworkConfig<float>::Builder())
 			->batchSize(batchSize)
 			->baseLearningRate(baseLearningRate)
@@ -93,33 +321,164 @@ void developerMain() {
 			->networkPhase(phase)
 			->gamma(gamma)
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
-			//->weightsArgs(weightsArgs)
 			->networkListeners({
-				new NetworkMonitor("softmaxWithLoss", NetworkMonitor::PLOT_ONLY),
+				new NetworkMonitor("celossDGAN", NetworkMonitor::PLOT_ONLY),
 				})
-			->lossLayers(lossLayers)
+			->lossLayers(llDGAN)
+            ->optimizer(opt)
+            ->beta(0.5, 0.999)
+			->build();
+
+	NetworkConfig<float>* ncGD0GAN =
+			(new typename NetworkConfig<float>::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
+			->stepSize(stepSize)
+			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->networkPhase(phase)
+			->gamma(gamma)
+			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+			->networkListeners({
+				new NetworkMonitor("celossGD0GAN", NetworkMonitor::PLOT_ONLY),
+				})
+			->lossLayers(llGD0GAN)
+            ->optimizer(opt)
+            ->beta(0.5, 0.999)
 			->build();
 
 	Util::printVramInfo();
 
+ 	Network<float>* networkDGAN = new Network<float>(ncDGAN);
+ 	Network<float>* networkGD0GAN = new Network<float>(ncGD0GAN);
+
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig2<float>();
-	//LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
-	//LayersConfig<float>* layersConfig = createGoogLeNetInception5BLayersConfig<float>();
+	LayersConfig<float>* lcDGAN = createDOfGANLayersConfig<float>();
+	LayersConfig<float>* lcGD0GAN = createGD0OfGANLayersConfig<float>();
+ 	networkDGAN->setLayersConfig(lcDGAN);
+ 	networkGD0GAN->setLayersConfig(lcGD0GAN);
 
 	// (2) network config 정보를 layer들에게 전달한다.
-	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
-	}
+	for (uint32_t i = 0; i < lcDGAN->_layers.size(); i++)
+		lcDGAN->_layers[i]->setNetworkConfig(ncDGAN);
 
-	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-		layersConfig->_layers[i]->reshape();
-	}
+	for (uint32_t i = 0; i < lcDGAN->_layers.size(); i++)
+		lcDGAN->_layers[i]->reshape();
 
- 	Network<float>* network = new Network<float>(networkConfig);
- 	network->setLayersConfig(layersConfig);
+	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
+		lcGD0GAN->_layers[i]->setNetworkConfig(ncGD0GAN);
 
- 	network->sgd_with_timer(10);
+	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
+		lcGD0GAN->_layers[i]->reshape();
+
+    Gnuplot gpGDGanDeconv1;
+    vector<pair<int, double>> dataGDGanDeconv1;
+    Gnuplot gpGDGanDeconv2;
+    Gnuplot gpGDGanDeconv3;
+    Gnuplot gpGDGanDeconv4;
+
+    Gnuplot gpGDGanConv1;
+    vector<pair<int, double>> dataGDGanConv1;
+
+    Gnuplot gpGDGanConv2;
+    Gnuplot gpGDGanConv3;
+    Gnuplot gpGDGanConv4;
+
+    Gnuplot gpDGanConv1;
+    vector<pair<int, double>> dataDGanConv1;
+    Gnuplot gpDGanConv2;
+    Gnuplot gpDGanConv3;
+    Gnuplot gpDGanConv4;
+
+    int debugPeriod = 100;
+
+    for (int i = 0; i < 25; i++) {  // epoch
+        InputLayer<float>* inputLayer = lcDGAN->_inputLayer;
+        const uint32_t trainDataSize = inputLayer->getNumTrainData();
+        const uint32_t numBatches = trainDataSize / ncDGAN->_batchSize;
+
+        for (int j = 0; j < numBatches; j++) {
+            float lossD = 0.0;
+            float lossG = 0.0;
+
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcDGAN, "D init");
+            lossD = networkDGAN->sgdMiniBatch(j);
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcDGAN, "real D");
+
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "fake D init");
+            lossD += networkGD0GAN->sgd(1);
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "fake D");
+#if 0
+            drawAvgOfSquaredSumData(gpGDGanDeconv1, dataGDGanDeconv1, lcGD0GAN, 
+                "DeconvLayer1");
+            drawAvgOfSquaredSumData(gpGDGanConv1, dataGDGanConv1, lcGD0GAN, "ConvLayer1");
+            drawAvgOfSquaredSumData(gpDGanConv1, dataDGanConv1, lcDGAN, "ConvLayer1");
+#endif
+            //printDataForDebug(lcDGAN, "D-GAN"); 
+            //printDataForDebug(lcGD0GAN, "GD0-GAN");
+
+            CrossEntropyWithLossLayer<float>* lossLayer =
+                dynamic_cast<CrossEntropyWithLossLayer<float>*>(lcGD0GAN->_lastLayers[0]);
+            SASSERT0(lossLayer != NULL);
+            NoiseInputLayer<float>* noiseInputLayer =
+                dynamic_cast<NoiseInputLayer<float>*>(lcGD0GAN->_firstLayers[0]);
+            SASSERT0(noiseInputLayer != NULL);
+
+            lossLayer->setTargetValue(1.0);
+            noiseInputLayer->setRegenerateNoise(false);
+
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "G init");
+            networkGD0GAN->sgd(1);
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "G 1");
+            lossG = networkGD0GAN->sgd(1);
+            if (j % debugPeriod == 0)
+                printWeightAndBias(lcGD0GAN, "G 2");
+
+            lossLayer->setTargetValue(0.0);
+            noiseInputLayer->setRegenerateNoise(true);
+
+            cout << "LOSS[epoch=" << i << "/batch=" << j << "] D: " << lossD << ",G: " <<
+                lossG << endl;
+        }
+
+#if 1
+        if (true) {
+            Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
+            const float* host_data = convLayer->_inputData[0]->host_data();
+            ImageUtil<float>::saveImage(host_data, 10, 3, 64, 64);
+
+            printf("Generated convlayer1 Data :");
+            for (int i = 0; i < 30; i++) {
+                printf(" %f", host_data[i]);
+            }
+            printf("\n");
+
+            sleep(2);
+        }
+
+        if (true) {
+            Layer<float>* htLayer = lcGD0GAN->_nameLayerMap["hypertangent"];
+            const float* host_data = htLayer->_inputData[0]->host_data();
+            ImageUtil<float>::saveImage(host_data, 15, 3, 64, 64);
+
+            printf("Generated hyper tangent Data :");
+            for (int i = 0; i < 30; i++) {
+                printf(" %f", host_data[i]);
+            }
+            printf("\n");
+        }
+#endif
+    }
 
     STDOUT_LOG("exit developerMain()");
 }

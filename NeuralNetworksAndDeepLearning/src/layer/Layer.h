@@ -40,7 +40,10 @@ public:
 		None = 0,
         AAA,                    // template class
 		Input, 					// 입력 레이어
+        NoiseInput,             // noise 입력 레이어
         ALEInput,               // ALE 입력 레이어
+        CelebAInput,            // CelebA 입력 레이어
+
 		FullyConnected, 		// Fully Connected 레이어
 		Conv, 					// 컨볼루션 레이어
 		Pool, 					// 풀링 레이어
@@ -51,11 +54,22 @@ public:
 		Softmax,				// 소프트맥스 레이어
 		Split,					//
         DQNOutput,              // DQN Output 레이어
+
+        Deconv,                 // deconvolution 레이어
+                                // 엄밀히 말하면 transpose convolution layer 혹은
+                                // fractionally strided convolution layer 입니다
+
         BatchNorm,              // Batch normalization 레이어
+        BatchNorm2,             // CUDNN으로 만든 Batch normalization 레이어
 
 		Reshape,				//
 		SmoothL1Loss,
 		SoftmaxWithLoss,
+        CrossEntropyWithLoss,
+
+        Sigmoid2,               // 새로운 sigmoid layer. 구현 완료되면 기존 sigmoid layer를
+                                // 대체할 예정.
+        HyperTangent,
 
 		AnchorTarget,			//
 		Proposal,				//
@@ -85,10 +99,17 @@ public:
 
         std::vector<bool> _propDown;
 
+        bool _isDonator;
+        bool _isReceiver;
+        uint32_t _donatorID;
 
 		Builder() {
 			type = Layer<Dtype>::None;
 			_name = "";
+
+            this->_isDonator = false;
+            this->_isReceiver = false;
+            this->_donatorID = 0;
 		}
 		virtual ~Builder() {}
 		virtual Builder* name(const std::string name) {
@@ -111,6 +132,15 @@ public:
 			this->_propDown = propDown;
 			return this;
 		}
+        Builder* donate() {
+            this->_isDonator = true;
+			return this;
+        }
+        Builder* receive(uint32_t donatorID) {
+            this->_isReceiver = true;
+            this->_donatorID = donatorID;
+			return this;
+        }
 
 		virtual Layer<Dtype>* build() = 0;
 	};
@@ -238,14 +268,15 @@ public:
 	int id;												///< 레이어의 고유 아이디
 	std::string name;									///< 레이어의 이름
 
-protected:
-	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
-
+    // FIXME: 디버깅 때문에 임시로 protected -> public으로 변수를 변경하였음..
     // inputShape는 input에 대한 메타이다.
     // 일반적으로 0번 인덱스에 해당하는 원소는 inputData에 대한 메타 값이 들어 있고, 
     // 1번 인덱스에 해당하는 원소는 라벨에 대한 메타 값이 들어 있다.
     // 각 원소의 메타 값은 { batch, channel, row, column } 크기가 들어 있다.
 	std::vector<std::vector<uint32_t>> _inputShape;
+
+protected:
+	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
 	std::vector<bool> _propDown;
 

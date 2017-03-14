@@ -66,6 +66,10 @@ public:
 	RoITestInputLayer(Builder* builder);
 	virtual ~RoITestInputLayer();
 
+    int getNumTrainData();
+    int getNumTestData();
+    void shuffleTrainDataSet();
+
 	virtual void reshape();
 	virtual void feedforward();
 	using InputLayer<Dtype>::feedforward;

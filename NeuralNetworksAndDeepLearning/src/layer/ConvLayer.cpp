@@ -10,6 +10,7 @@
 #include "FullyConnectedLayer.h"
 #include "Util.h"
 #include "Exception.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -17,16 +18,19 @@ template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(Builder* builder)
 : LearnableLayer<Dtype>(builder) {
 	initialize(builder->_filterDim, builder->_weightUpdateParam, builder->_biasUpdateParam,
-			builder->_weightFiller, builder->_biasFiller);
+			builder->_weightFiller, builder->_biasFiller, builder->_deconv,
+            builder->_deconvExtraCell);
 }
 
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
     update_param weight_update_param, update_param bias_update_param,
-    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler)
+    param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, bool deconv,
+    int deconvExtraCell)
     : LearnableLayer<Dtype>(name) {
+
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler,
-               bias_filler);
+               bias_filler, deconv, deconvExtraCell);
 }
 
 
@@ -71,7 +75,7 @@ void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 	ifs.read((char *)&bias_filler, sizeof(param_filler));
 
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler,
-               bias_filler, activationType);
+               bias_filler, false, activationType);
 
 	// initialize() 내부에서 weight, bias를 초기화하므로 initialize() 후에 weight, 
     // bias load를 수행해야 함
@@ -84,9 +88,15 @@ void ConvLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &layerMap) {
 template <typename Dtype>
 void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_update_param,
     update_param bias_update_param, param_filler weight_filler, param_filler bias_filler,
-    Activation::Type activationType) {
+    bool deconv, int deconvExtraCell, Activation::Type activationType) {
 
-	this->type = Layer<Dtype>::Conv;
+    if (!deconv)
+	    this->type = Layer<Dtype>::Conv;
+    else
+	    this->type = Layer<Dtype>::Deconv;
+
+    this->deconv = deconv;
+    this->deconvExtraCell = deconvExtraCell;
 
 	//this->in_dim = in_dim;
 	this->filter_d = filter_d;
@@ -364,5 +374,25 @@ void ConvLayer<Dtype>::update(uint32_t idx, uint32_t n, uint32_t miniBatchSize) 
 }
 
 #endif
+
+template<typename Dtype>
+void ConvLayer<Dtype>::donateParam(ConvLayer<Dtype>* receiver) {
+#if GPU_MODE
+    receiver->_params.clear();
+    receiver->_paramsHistory.clear();
+    receiver->_paramsHistory2.clear();
+
+    for (int i = 0; i < this->_params.size(); i++) {
+        receiver->_params.push_back(this->_params[i]);
+    }
+
+    SASSERT0(this->_paramsHistory.size() == this->_paramsHistory2.size());
+
+    for (int i = 0; i < this->_paramsHistory.size(); i++) {
+        receiver->_paramsHistory.push_back(this->_paramsHistory[i]);
+        receiver->_paramsHistory2.push_back(this->_paramsHistory2[i]);
+    }
+#endif
+}
 
 template class ConvLayer<float>;

@@ -69,14 +69,13 @@ public:
 	 */
 	void sgd_with_timer(int epochs);
 
-
-
+    Dtype sgdMiniBatch(uint32_t batchTotalIndex);
 
 	/**
 	 * @details stochastic gradient descent를 수행한다.
 	 * @param epochs sgd를 수행할 최대 epoch
 	 */
-	void sgd(int epochs);
+	Dtype sgd(int epochs);
 	/**
 	 * @details 네트워크의 주어진 테스트 데이터셋으로 네트워크 테스트를 수행한다.
 	 */

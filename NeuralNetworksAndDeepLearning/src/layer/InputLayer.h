@@ -111,6 +111,7 @@ public:
 	 * @details InputLayer 생성자
 	 * @param name 레이어의 이름 문자열
 	 */
+	InputLayer();
 	InputLayer(const std::string name);
 	InputLayer(Builder* builder);
 	/**
@@ -124,6 +125,11 @@ public:
 	virtual void feedforward(const uint32_t baseIndex, const char* end=0);
 
 	void reshape();
+
+    virtual int getNumTrainData();
+    virtual int getNumTestData();
+    virtual void shuffleTrainDataSet();
+
 
 protected:
 	void initialize();

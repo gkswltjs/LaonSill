@@ -6,6 +6,7 @@
  */
 
 #include <vector>
+#include <cfloat>
 
 #include "SoftmaxLayer.h"
 //#include "ActivationFactory.h"

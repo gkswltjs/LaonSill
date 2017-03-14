@@ -683,4 +683,19 @@ void RoIInputLayer<Dtype>::imListToBlob(vector<Mat>& ims) {
 #endif
 }
 
+template<typename Dtype>
+int RoIInputLayer<Dtype>::getNumTrainData() {
+    return this->_dataSet->getNumTrainData();
+}
+
+template<typename Dtype>
+int RoIInputLayer<Dtype>::getNumTestData() {
+    return this->_dataSet->getNumTestData();
+}
+
+template<typename Dtype>
+void RoIInputLayer<Dtype>::shuffleTrainDataSet() {
+    return this->_dataSet->shuffleTrainDataSet();
+}
+
 template class RoIInputLayer<float>;

@@ -82,9 +82,15 @@ public:
 	virtual void loadParams(std::ifstream& ifs);
 	virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
 
-    virtual void syncMutableMem() {};
-    virtual void applyChanges(LearnableLayer<Dtype> *targetLayer) {};
-    virtual void syncParams(LearnableLayer<Dtype> *targetLayer) {};
+	virtual void applyChanges(LearnableLayer<Dtype> *targetLayer) {}
+    virtual void syncParams(LearnableLayer<Dtype> *targetLayer) {}
+    virtual void receiveParam(LearnableLayer<Dtype>* donatorLayer) {}
+
+    void fillDonatorInfo(bool isDonator, bool isReceiver, uint32_t donatorID) {
+        this->isDonator = isDonator;
+        this->isReceiver = isReceiver;
+        this->donatorID = donatorID;
+    }
 
 protected:
 	virtual void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
@@ -93,7 +99,13 @@ protected:
 public:
 	std::vector<Data<Dtype>*> _params;
 	std::vector<Data<Dtype>*> _paramsHistory;
+	std::vector<Data<Dtype>*> _paramsHistory2;
 	std::vector<bool> _paramsInitialized;
+
+public:
+    bool isDonator;
+    bool isReceiver;
+    uint32_t donatorID;
 };
 
 #endif /* LEARNABLELAYER_H_ */

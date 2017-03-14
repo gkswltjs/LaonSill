@@ -12,7 +12,8 @@ using namespace std;
 template <typename Dtype>
 ReluLayer<Dtype>::ReluLayer(Builder* builder)
 : Layer<Dtype>(builder) {
-	initialize();
+
+	initialize(builder->_useLeaky, builder->_leaky);
 }
 
 template <typename Dtype>
@@ -53,9 +54,13 @@ void ReluLayer<Dtype>::feedforward() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
-	checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, this->activationDesc,
+    if (this->useLeaky) {
+        applyLeakyForward();
+    } else {
+	    checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, this->activationDesc,
 					&Cuda::alpha, this->tensorDesc, d_inputData,
 					&Cuda::beta, this->tensorDesc, d_outputData));
+    }
 
 	/*
 	Data<Dtype>::printConfig = true;
@@ -72,10 +77,14 @@ void ReluLayer<Dtype>::backpropagation() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 
-	checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, this->activationDesc,
+    if (this->useLeaky) {
+        applyLeakyBackward();
+    } else {
+	    checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, this->activationDesc,
 					&Cuda::alpha, this->tensorDesc, d_outputData, this->tensorDesc,
 					d_outputGrad, this->tensorDesc, d_inputData,
 					&Cuda::beta, this->tensorDesc, d_inputGrad));
+    }
 
 	/*
 	Data<Dtype>::printConfig = true;
@@ -86,8 +95,10 @@ void ReluLayer<Dtype>::backpropagation() {
 }
 
 template <typename Dtype>
-void ReluLayer<Dtype>::initialize() {
+void ReluLayer<Dtype>::initialize(bool useLeaky, double leaky) {
 	this->type = Layer<Dtype>::Relu;
+    this->useLeaky = useLeaky;
+    this->leaky = leaky;
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->tensorDesc));
 

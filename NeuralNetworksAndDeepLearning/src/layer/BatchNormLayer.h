@@ -23,7 +23,6 @@ public:
 
 	class Builder : public LearnableLayer<Dtype>::Builder {
 	public:
-		uint32_t    _kernelMapCount;
 		typename Activation<Dtype>::Type _activationType;	///< weighted sum에 적용할 활성화
 
         /* batch normalization related variables */
@@ -32,7 +31,7 @@ public:
                                         
 		Builder() {
 			this->type = Layer<Dtype>::BatchNorm;
-            _kernelMapCount = 1;
+            //_epsilon = 0.000001;
             _epsilon = 0.001;
 		}
 		virtual Builder* name(const std::string name) {
@@ -55,10 +54,6 @@ public:
 			LearnableLayer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
-		Builder* kernelMapCount(uint32_t kernelMapCount) {
-			this->_kernelMapCount = kernelMapCount;
-			return this;
-		}
 		Builder* epsilon(double epsilon) {
 			this->_epsilon = epsilon;
 			return this;
@@ -70,7 +65,7 @@ public:
 
 	BatchNormLayer(Builder* builder);
 
-    BatchNormLayer(const std::string name, int kernelMapCount, double epsilon);
+    BatchNormLayer(const std::string name, double epsilon);
     virtual ~BatchNormLayer();
 
 	//////////////////////////////////////////
@@ -94,29 +89,30 @@ public:
 	virtual void feedforward();
 
 private:
-    void initialize(int kernelMapCount, double epsilon);
+    void initialize(double epsilon);
 
-    int         kernelMapCount;
+    void applyChanges(LearnableLayer<Dtype> *targetLayer);
+    void syncParams(LearnableLayer<Dtype> *targetLayer);
+
     double      epsilon;                // Small value added to variance to avoid dividing 
                                         // by zero. default value = 0.001
     int         depth;
     int         batchSetCount;
-    Dtype      *gammaSets;              // scaled normalized value sets
-    Dtype      *betaSets;               // shift normalized value sets
-    Dtype      *meanSumSets;            // summed mean value sets
-    Dtype      *varianceSumSets;        // summed variance value sets
 
-    Dtype      *localMeanSets;          // mean sets for each mini-batch
-    Dtype      *localVarianceSets;      // variance sets for each mini-batch
+	Data<Dtype>    *gammaSet;           // scale factor
+    Data<Dtype>    *betaSet;            // shift factor
 
-    Dtype      *normInputValues;        // normalized input values. 
-                                        // backward 과정에서 gamma 학습에 활용이 됨.
-                                        
-    Dtype      *normInputGradValues;    // gradient of normalized input
-    Dtype      *varianceGradValues;     // gradient of variance
-    Dtype      *meanGradValues;         // gradient of mean
-    Dtype      *gammaGradValues;        // gradient of scaled normalized value
-    Dtype      *betaGradValues;         // gradient of scaled normalized value
+    Data<Dtype>    *gammaCacheSet;
+    Data<Dtype>    *betaCacheSet;
+
+
+    Data<Dtype>    *meanSet;            // mean
+    Data<Dtype>    *varSet;             // variance
+    Data<Dtype>    *normInputSet;       // normalized input value
+
+    std::shared_ptr<SyncMem<Dtype>>  meanSumSet;    // meanSet들의 합
+    std::shared_ptr<SyncMem<Dtype>>  varSumSet;     // varSet들의 합
+
 
     void        computeNormInputGrad();
     void        computeVarianceGrad();
@@ -124,5 +120,7 @@ private:
     void        computeInputGrad();
     void        computeScaleGrad();
     void        computeShiftGrad();
+public:
+    void        donateParam(BatchNormLayer<Dtype>* receiver);
 };
 #endif /* BATCHNORMLAYER_H */

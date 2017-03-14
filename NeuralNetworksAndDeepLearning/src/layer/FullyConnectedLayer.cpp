@@ -52,6 +52,14 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axi
 	this->_paramsHistory.resize(2);
 	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(this->name + "_weight_history");
 	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history");
+
+	this->_paramsHistory2.resize(2);
+	this->_paramsHistory2[ParamType::Weight] = 
+        new Data<Dtype>(this->name + "_weight_history2");
+	this->_paramsHistory2[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history2");
+
+	//checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
+	//checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
 
@@ -245,5 +253,31 @@ void FullyConnectedLayer<Dtype>::update(uint32_t idx, uint32_t n, uint32_t miniB
 }
 
 #endif
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::donateParam(FullyConnectedLayer<Dtype>* receiver) {
+#if GPU_MODE
+    receiver->_params.clear();
+    receiver->_paramsHistory.clear();
+    receiver->_paramsHistory2.clear();
+    receiver->_paramsInitialized.clear();
+
+    for (int i = 0; i < this->_params.size(); i++) {
+        receiver->_params.push_back(this->_params[i]);
+    }
+
+    SASSERT0(this->_paramsHistory.size() == this->_paramsHistory2.size());
+
+    for (int i = 0; i < this->_paramsHistory.size(); i++) {
+        receiver->_paramsHistory.push_back(this->_paramsHistory[i]);
+        receiver->_paramsHistory2.push_back(this->_paramsHistory2[i]);
+    }
+
+    for (int i = 0; i < this->_paramsInitialized.size(); i++) {
+        receiver->_paramsInitialized.push_back(this->_paramsInitialized[i]);
+    }
+#endif
+}
+
 
 template class FullyConnectedLayer<float>;

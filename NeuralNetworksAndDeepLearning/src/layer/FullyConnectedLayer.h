@@ -59,6 +59,7 @@ public:
 			this->_biasFiller.value = 0.0f;
 			this->_axis = 1;
 			//_activationType = Activation<Dtype>::NoActivation;
+            //
 		}
 		Builder* nOut(uint32_t nOut) {
 			this->_nOut = nOut;
@@ -163,7 +164,6 @@ private:
         update_param bias_update_param, param_filler<Dtype> weight_filler,
         param_filler<Dtype> bias_filler);
 
-    void syncMutableMem();
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);
 
@@ -180,8 +180,10 @@ protected:
 	void _computeBiasGrad();
 	void _computeInputGrad();
 
+    // FIXME: 파라미터가 너무 많다. 구조화해서 줄이자.
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
-        Data<Dtype>* dataHistory, Data<Dtype>* data);
+        const Dtype epsilon, const Dtype decayRate, const Dtype beta1, const Dtype beta2,
+        Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2, Data<Dtype>* data);
 	void _dropoutForward();
 	void _dropoutBackward();
 
@@ -232,6 +234,8 @@ public:
     uint32_t in_rows;
     uint32_t out_rows;
 
+public:
+    void donateParam(FullyConnectedLayer<Dtype>* receiver);
 };
 
 #endif /* LAYER_FULLYCONNECTEDLAYER_H_ */

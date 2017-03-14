@@ -279,6 +279,19 @@ void RoITestInputLayer<Dtype>::imToBlob(Mat& im) {
 #endif
 }
 
+template<typename Dtype>
+int RoITestInputLayer<Dtype>::getNumTrainData() {
+    return this->_dataSet->getNumTrainData();
+}
 
+template<typename Dtype>
+int RoITestInputLayer<Dtype>::getNumTestData() {
+    return this->_dataSet->getNumTestData();
+}
+
+template<typename Dtype>
+void RoITestInputLayer<Dtype>::shuffleTrainDataSet() {
+    return this->_dataSet->shuffleTrainDataSet();
+}
 
 template class RoITestInputLayer<float>;

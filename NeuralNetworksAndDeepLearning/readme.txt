@@ -5,7 +5,7 @@
  - /usr/local/cuda
    (CUDA 설치시에 옵션으로 link를 걸도록 묻는데 이때 yes를 해주면 된다.)
 
-(2) GNUPLOT_STREAM include 경로
+(2) GNUPLOT_STREAM 설치 및 include 경로 설정
  - INC_PATH_GNUPLOT 환경변수에 저장
 
 (3) CIMG include 경로
@@ -14,6 +14,12 @@
 (4) SOOOA_HOME, SOOOA_SOURCE_PATH, SOOOA_BUILD_PATH 경로 설정
 
 (5) SDL설치
+
+(6) opencv 설치
+
+(7) BLAS 설치
+
+(8) boost 라이브러리 설치
 
 ※ 이 외에도 추가할 설정이 있을 수 있다. 그때 그때 추가하고 문서도 갱신하도록
 하자.

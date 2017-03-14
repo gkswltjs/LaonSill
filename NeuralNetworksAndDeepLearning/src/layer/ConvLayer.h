@@ -32,6 +32,17 @@ public:
 	 * @brief 컨볼루션 레이어 객체 빌더
 	 * @details 컨볼루션 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
 	 *          해당 파라미터를 만족하는 컨볼루션 레이어 객체를 생성한다.
+     *
+     *
+     *          [convolution layer output]
+     *          o = rounding off((i + 2p - k) / s) + 1
+     *          o : output, p : padding, k : kernel, s : stride
+     *
+     *          [deconvolution layer output]
+     *          o = s * (i - 1) + a + k - 2p
+     *          o : output, s : stride, i : input, a : _deconvExtraCell, 
+     *          k : kernel, p : padding
+     *
 	 */
 	class Builder : public LearnableLayer<Dtype>::Builder {
 	public:
@@ -40,6 +51,11 @@ public:
 		update_param _biasUpdateParam;
 		param_filler<Dtype> _weightFiller;
 		param_filler<Dtype> _biasFiller;
+        bool _deconv;
+        int _deconvExtraCell;       // deconvolution layer에서 a만큼 더 큰 피처맵(이미지)를 
+                                    // 생성할 수 있다. 이때 a는 0이상 stride 미만의 값을 
+                                    // 가진다.
+                                    // XXX: 이름이 구리다. 예쁜 이름으로 바꿔주세요 :)
 		//typename Activation<Dtype>::Type _activationType;
 
 		Builder() {
@@ -58,6 +74,8 @@ public:
 			_weightFiller.value = 0.0f;
 			_biasFiller.type = ParamFillerType::Constant;
 			_biasFiller.value = 0.0f;
+            _deconv = false;
+            _deconvExtraCell = 0;
 			//_activationType = Activation<Dtype>::NoActivation;
 		}
 		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
@@ -88,6 +106,14 @@ public:
 		Builder* biasFiller(ParamFillerType paramFillerType, double value) {
 			this->_biasFiller.type = paramFillerType;
 			this->_biasFiller.value = value;
+			return this;
+		}
+		Builder* deconv(bool deconv) {
+			this->_deconv = deconv;
+			return this;
+		}
+		Builder* deconvExtraCell(int deconvExtraCell) {
+			this->_deconvExtraCell = deconvExtraCell;
 			return this;
 		}
 		virtual Builder* name(const std::string name) {
@@ -129,7 +155,7 @@ public:
 	 */
 	ConvLayer(const std::string name, filter_dim filter_d, update_param weight_update_param, 
               update_param bias_update_param, param_filler<Dtype> weight_filler, 
-              param_filler<Dtype> bias_filler);
+              param_filler<Dtype> bias_filler, bool deconv, int deconvExtraCell);
 	/**
 	 * @details ConvLayer 소멸자
 	 */
@@ -167,7 +193,6 @@ public:
 
 	
     //
-    void syncMutableMem();
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);
 
@@ -180,7 +205,7 @@ public:
 protected:
 	void initialize(filter_dim filter_d, update_param weight_update_param,
         update_param bias_update_param, param_filler<Dtype> weight_filler,
-        param_filler<Dtype> bias_filler);
+        param_filler<Dtype> bias_filler, bool deconv, int deconvExtraCell);
 
 
 
@@ -192,8 +217,10 @@ protected:
 	void _computeBiasesGrad();
 	void _computeInputGrad();
 
+    // FIXME: 파라미터가 너무 많다. 구조화해서 줄이자.
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
-        Data<Dtype>* dataHistory, Data<Dtype>* data);
+        const Dtype epsilon, const Dtype decayRate, const Dtype beta1, const Dtype beta2,
+        Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2, Data<Dtype>* data);
 
 	enum ParamType {
 		Filter = 0,
@@ -226,6 +253,10 @@ protected:
 	void *d_workspace;		///< cudnn forward, backward에 필요한 작업공간 장치 메모리 포인터
 #endif
 
+public:
+    bool deconv;
+    int deconvExtraCell;
+    void donateParam(ConvLayer<Dtype>* receiver);
 };
 
 #endif /* LAYER_CONVLAYER_H_ */
