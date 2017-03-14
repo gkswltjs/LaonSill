@@ -55,11 +55,14 @@ Data<Dtype>::Data(const string& name, Data<Dtype>* data, uint32_t type, const bo
 	this->_count = 0;
 	this->_hostOnly = hostOnly;
 
+	// type 0: data share, grad 별도
 	if (type == 0) {
 		this->_data = data->_data;
 		shared_ptr<SyncMem<Dtype>> temp_grad(new SyncMem<Dtype>());
 		this->_grad = temp_grad;
-	} else if(type == 1) {
+	}
+	// type 1: data 별도, grad share
+	else if(type == 1) {
 		shared_ptr<SyncMem<Dtype>> temp_data(new SyncMem<Dtype>());
 		this->_data = temp_data;
 		this->_grad = data->_grad;

@@ -44,40 +44,24 @@ class LayersConfig {
 public:
 	class Builder {
 	public:
+		// layer의 등록 순서를 보장하기 위해 vector를 사용해야 함.
 		std::vector<typename Layer<Dtype>::Builder*> _layerWise;
-        //std::map<uint32_t, typename Layer<Dtype>::Builder*> _layerWise;
 		std::set<uint32_t> _layerIdSet;
 
 		Builder* layer(typename Layer<Dtype>::Builder* layerBuilder) {
-			/*
 			// id 중복이 없도록 id-layer의 맵에 레이어를 추가한다.
 			uint32_t layerIndex = layerBuilder->_id;
-			typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
-            it = _layerWise.find(layerIndex);
-			if (it != _layerWise.end()) {
-                std::cout << "already contained layer index " << layerIndex << std::endl;
-				exit(1);
-			} else {
-				_layerWise[layerIndex] = layerBuilder;
-			}
-			return this;
-			*/
-			// id 중복이 없도록 id-layer의 맵에 레이어를 추가한다.
-			uint32_t layerIndex = layerBuilder->_id;
-			typename std::set<uint32_t>::iterator it;
-			it = this->_layerIdSet.find(layerIndex);
-			if (it != this->_layerIdSet.end()) {
+			if (this->_layerIdSet.find(layerIndex) != this->_layerIdSet.end()) {
 				std::cout << "already contained layer index " << layerIndex << std::endl;
 				exit(1);
 			} else {
-				//_layerWise[layerIndex] = layerBuilder;
+				_layerIdSet.insert(layerBuilder->_id);
 				this->_layerWise.push_back(layerBuilder);
 			}
 			return this;
 		}
-		LayersConfig<Dtype>* build() {
-            std::cout << "LayersConfig::build() ... " << std::endl;
 
+		LayersConfig<Dtype>* build() {
             std::vector<Layer<Dtype>*> firstLayers;
             std::vector<Layer<Dtype>*> lastLayers;
             std::vector<Layer<Dtype>*> layers;
@@ -85,64 +69,96 @@ public:
             std::map<uint32_t, Layer<Dtype>*> idLayerMap;
 
             // (1) 전체 레이어에 대해 Layer Builder의 설정대로 Layer들을 생성한다.
-            //typename std::map<uint32_t, typename Layer<Dtype>::Builder*>::iterator it;
-            for (int i = 0; i < this->_layerWise.size(); i++) {
-			//for (it = this->_layerWise.begin(); it != this->_layerWise.end(); it++) {
-                //Layer<Dtype>* currentLayer = it->second->build();
-            	Layer<Dtype>* currentLayer = this->_layerWise[i]->build();
-
-                // 시작 레이어 추가
-                InputLayer<Dtype>* inputLayer =
-                		dynamic_cast<InputLayer<Dtype>*>(currentLayer);
-                if (inputLayer) {
-                	firstLayers.push_back(currentLayer);
-                }
-
-          		// 끝 레이어 추가
-                LossLayer<Dtype>* lossLayer =
-                		dynamic_cast<LossLayer<Dtype>*>(currentLayer);
-
-                if (lossLayer) {
-                	lastLayers.push_back(currentLayer);
-                }
-
-                // 학습 레이어 추가
-                LearnableLayer<Dtype>* learnableLayer =
-                    dynamic_cast<LearnableLayer<Dtype>*>(currentLayer);
-                if (learnableLayer) {
-                    learnableLayers.push_back(learnableLayer);
-                }
-
-                // 일반 레이어 추가
-                layers.push_back(currentLayer);
-                //idLayerMap[it->first] = currentLayer;
-                idLayerMap[currentLayer->id] = currentLayer;
-			}
-
-			if(firstLayers.size() < 1) {
-                std::cout << "no input layer ... " << std::endl;
-				exit(1);
-			}
-
-			const uint32_t layerSize = layers.size();
+            initializeLayers(firstLayers, lastLayers, layers, learnableLayers, idLayerMap);
 
 			// (2) 레이어 이름으로 레이어 객체를 찾을 수 있도록 이름-레이어 맵을 생성
             std::map<std::string, Layer<Dtype>*> nameLayerMap;
+            buildNameLayerMap(layers, nameLayerMap);
+
+            // (3) SplitLayer 추가, SplitData로 업데이트
+            insertSplitLayers(layers);
+
+			// (4) 레이어의 입출력 데이터 이름으로부터 유일한 데이터를 생성,
+            //    이름-데이터 맵을 생성
+			std::map<std::string, Data<Dtype>*> layerDataMap;
+			buildLayerData(layers, layerDataMap);
+
+
+
+			// 레이어 호출 순서에 따라 순서 재조정
+			// 의존성이 해결된 레이어를 앞에 배치하여 순차적으로 호출시 적절한 결과를 보장 함
+			// XXX: 내부적으로 layers vector를 변경시켜서 call by value하든지 다른 수단 필요.
+			// 이후로 사용하지 않으면 되나 이상해 보임.
+			std::vector<Layer<Dtype>*> olayers;
+			_orderLayers(layers, olayers);
+
+			printFinalLayerConfiguration(olayers);
+
+			return (new LayersConfig(this))
+				->firstLayers(firstLayers)
+				->lastLayers(lastLayers)
+				->layers(olayers)
+				->learnableLayers(learnableLayers)
+                ->nameLayerMap(nameLayerMap)
+                ->layerDataMap(layerDataMap);
+		}
+
+	private:
+		void initializeLayers(std::vector<Layer<Dtype>*>& firstLayers,
+				std::vector<Layer<Dtype>*>& lastLayers,
+        		std::vector<Layer<Dtype>*>& layers,
+        		std::vector<LearnableLayer<Dtype>*>& learnableLayers,
+        		std::map<uint32_t, Layer<Dtype>*>& idLayerMap) {
+			for (int i = 0; i < this->_layerWise.size(); i++) {
+				Layer<Dtype>* currentLayer = this->_layerWise[i]->build();
+
+				// 시작 레이어 추가
+				InputLayer<Dtype>* inputLayer =
+						dynamic_cast<InputLayer<Dtype>*>(currentLayer);
+				if (inputLayer) {
+					firstLayers.push_back(currentLayer);
+				}
+
+				// 끝 레이어 추가
+				LossLayer<Dtype>* lossLayer =
+						dynamic_cast<LossLayer<Dtype>*>(currentLayer);
+				if (lossLayer) {
+					lastLayers.push_back(currentLayer);
+				}
+
+				// 학습 레이어 추가
+				LearnableLayer<Dtype>* learnableLayer =
+					dynamic_cast<LearnableLayer<Dtype>*>(currentLayer);
+				if (learnableLayer) {
+					learnableLayers.push_back(learnableLayer);
+				}
+
+				// 일반 레이어 추가
+				layers.push_back(currentLayer);
+				idLayerMap[currentLayer->id] = currentLayer;
+			}
+			assert(firstLayers.size() >= 1 && "no input layer ...");
+		}
+
+		void buildNameLayerMap(std::vector<Layer<Dtype>*>& layers,
+				std::map<std::string, Layer<Dtype>*>& nameLayerMap) {
+			const uint32_t layerSize = layers.size();
 			for (uint32_t i = 0; i < layerSize; i++) {
-				const std::string& layerName = layers[i]->getName();
-				typename std::map<std::string, Layer<Dtype>*>::iterator it =
-                    nameLayerMap.find(layerName);
-				if (it != nameLayerMap.end()) {
+				const std::string& layerName = layers[i]->name;
+				if (nameLayerMap.find(layerName) != nameLayerMap.end()) {
 					std::cout << "layer name used more than once ... : " <<
-                        layerName << std::endl;
+						layerName << std::endl;
 					exit(1);
 				}
 				nameLayerMap[layerName] = layers[i];
 			}
+		}
 
-			// 레이어의 입출력 데이터 이름으로부터 유일한 데이터를 생성, 이름-데이터 맵을 생성
+		void buildLayerData(std::vector<Layer<Dtype>*>& layers,
+				std::map<std::string, Data<Dtype>*>& layerDataMap) {
 			std::cout << "update layer data to unique objects ... " << std::endl;
-			std::map<std::string, Data<Dtype>*> layerDataMap;
+
+			const uint32_t layerSize = layers.size();
 			for (uint32_t i = 0; i < layerSize; i++) {
 				std::vector<std::string> dataNameVec;
 				Layer<Dtype>* layer = layers[i];
@@ -152,7 +168,119 @@ public:
 				std::cout << "\toutput data: " << layer->getOutputs().size() << std::endl;
 				_updateLayerData(layerDataMap, layer->getOutputs(), layer->getOutputData());
 			}
+		}
 
+		void printFinalLayerConfiguration(std::vector<Layer<Dtype>*>& olayers) {
+			std::cout << "final layer configuration: " << std::endl;
+			for (uint32_t i = 0; i < olayers.size(); i++) {
+				std::cout << i << ": " << olayers[i]->getName() << std::endl;
+				std::cout << "\t-inputData: ";
+				for (uint32_t j = 0; j < olayers[i]->_inputData.size(); j++) {
+					std::cout << olayers[i]->_inputData[j]->_name << ", ";
+				}
+				std::cout << std::endl;
+				std::cout << "\t-outputData: ";
+				for (uint32_t j = 0; j < olayers[i]->_outputData.size(); j++) {
+					std::cout << olayers[i]->_outputData[j]->_name << ", ";
+				}
+				std::cout << std::endl;
+			}
+		}
+
+		void insertSplitLayers(std::vector<Layer<Dtype>*>& layers) {
+			std::map<std::string, std::pair<int, int>> outputDataLastOneMap;
+			std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> outputDataRefMap;
+
+			int layerSize = layers.size();
+			for (int i = 0; i < layerSize; i++) {
+				Layer<Dtype>* layer = layers[i];
+				for (int j = 0; j < layer->_inputs.size(); j++) {
+					if (outputDataLastOneMap.find(layer->_inputs[j]) ==
+							outputDataLastOneMap.end()) {
+						std::cout << "Undefined input data " << layer->_inputs[j] <<
+								" of " << layer->name << std::endl;
+						exit(1);
+					}
+
+					// input data는 가장 최근에 등장한 동일 이름의 output data를 ref.
+					const std::pair<int, int>& lastOne =
+							outputDataLastOneMap[layer->_inputs[j]];
+
+					if (outputDataRefMap.find(lastOne) == outputDataRefMap.end()) {
+						std::vector<std::pair<int, int>> refList;
+						outputDataRefMap[lastOne] = refList;
+					}
+					outputDataRefMap[lastOne].push_back(std::make_pair(i, j));
+				}
+
+				for (int j = 0; j < layer->_outputs.size(); j++) {
+					outputDataLastOneMap[layer->_outputs[j]] = std::make_pair(i, j);
+				}
+			}
+
+			// LOGGING FOR DEBUG ///
+			std::cout << "for outputDataLastOneMap: " << std::endl;
+			typename std::map<std::string, std::pair<int, int>>::iterator itr1;
+			for (itr1 = outputDataLastOneMap.begin(); itr1 != outputDataLastOneMap.end();
+					itr1++) {
+				std::cout << itr1->first << ": (" << layers[itr1->second.first]->name <<
+						", " << layers[itr1->second.first]->_outputs[itr1->second.second] <<
+						")"  << std::endl;
+			}
+
+			std::cout << "for outputDataRefMap: " << std::endl;
+			typename std::map<std::pair<int, int>, std::vector<std::pair<int, int>>>::iterator itr2;
+			for (itr2 = outputDataRefMap.begin(); itr2 != outputDataRefMap.end(); itr2++) {
+				const std::vector<std::pair<int, int>>& refList = itr2->second;
+
+				std::cout << "(" << layers[itr2->first.first]->name << ", " <<
+						layers[itr2->first.first]->_outputs[itr2->first.second] << "): " <<
+						refList.size() << std::endl;
+
+				for (int j = 0; j < refList.size(); j++) {
+					std::cout << "\t(" << layers[refList[j].first]->name << ", " <<
+							layers[refList[j].first]->_inputs[refList[j].second] << ")" <<
+							std::endl;
+				}
+			}
+			//////////////////////////////////////////////////
+
+			for (itr2 = outputDataRefMap.begin(); itr2 != outputDataRefMap.end(); itr2++) {
+				const std::pair<int, int> key = itr2->first;
+				const std::vector<std::pair<int, int>>& value = itr2->second;
+				if (value.size() <= 1)
+					continue;
+
+				// split layer를 추가할 대상 data
+				const std::string& layerName = layers[key.first]->name;
+				const std::string& dataName = layers[key.first]->_outputs[key.second];
+				const std::string splitLayerName = getSplitLayerName(layerName, dataName,
+						key.second);
+
+				std::cout << "splitLayerName: " << splitLayerName << std::endl;
+
+				SplitLayer<Dtype>* splitLayer = new SplitLayer<Dtype>(splitLayerName);
+				splitLayer->_inputs.push_back(dataName);
+
+				for (int j = 0; j < value.size(); j++) {
+					std::string splitDataName = getSplitDataName(layerName, dataName,
+							key.second, j);
+					splitLayer->_outputs.push_back(splitDataName);
+					std::cout << j << "th SplitLayer Ouput updated with " <<
+						splitDataName << std::endl;
+
+					layers[value[j].first]->_inputs[value[j].second] = splitDataName;
+				}
+
+				// insert를 위 코드의 중간에서 실행할 경우 index 밀려서 헷갈림
+				layers.insert(layers.begin() + key.first + 1, splitLayer);
+			}
+
+
+			//exit(1);
+
+
+			/*
 			//////////////////////////////////////////////////////////////////////////////////
 			// 레이어 아이디로 multi branch의 input data, output grad인지 조회하는 맵 생성
 			// input으로 사용된 key와 횟수, output으로 사용된 key와 횟수를 맵으로 구성
@@ -164,10 +292,10 @@ public:
 				std::vector<std::string>& outputs = layer->_outputs;
 
 				for (uint32_t j = 0; j < outputs.size(); j++) {
-					outputDataCountMap[outputs[j]] = outputDataCountMap[outputs[j]]+1;
+					outputDataCountMap[outputs[j]]++;
 				}
 				for (uint32_t j = 0; j < inputs.size(); j++) {
-					inputGradCountMap[inputs[j]] = inputGradCountMap[inputs[j]]+1;
+					inputGradCountMap[inputs[j]]++;
 				}
 			}
 
@@ -176,20 +304,18 @@ public:
 			// 해당한다. 예외로 relu와 같이 전달된 input을 그대로 output으로 사용하는
 			// 경우이다.
 			// 예외가 있어 일단 error에 대해서는 고려하지 않는다.
-			/*
 			typename std::map<std::string, uint32_t>::iterator odcmItr;
 			for (odcmItr = outputDataCountMap.begin(); odcmItr != outputDataCountMap.end();
-                odcmItr++) {
+				odcmItr++) {
 				if (odcmItr->second > 1) {
 					std::cout << "output data multi branch is not allowed ... " << std::endl;
 					exit(1);
 				}
 			}
-			*/
 
 			typename std::map<std::string, uint32_t>::iterator igcmItr;
 			for (igcmItr = inputGradCountMap.begin(); igcmItr != inputGradCountMap.end();
-                igcmItr++) {
+				igcmItr++) {
 				// 하나의 output을 여러 input에서 공유하는 경우
 				// split layer를 추가하여 하나의 output을 여러 input으로 나눠주고
 				// backward때 합쳐주는 역할을 하게 해야 한다.
@@ -198,8 +324,12 @@ public:
 							" will be added ... " << std::endl;
 				}
 			}
+			*/
 
 			/*
+			// 전체 레이어들을 순회, 해당 레이어의 전체 입력 데이터들에 대해
+			// 동일 입력 데이터를 복수 위치에서 참조할 경우 해당 입력 데이터에 대해
+			// SplitLayer를 추가한다.
 			std::cout << "Adjusting Split Layers ... " << std::endl;
 			std::map<std::string, SplitLayer<Dtype>*> dataSplitLayerMap;
 			typename std::map<std::string, SplitLayer<Dtype>*>::iterator dataSplitLayerMapItr;
@@ -219,9 +349,9 @@ public:
 						SplitLayer<Dtype>* splitLayer = 0;
 						if (dataSplitLayerMapItr == dataSplitLayerMap.end()) {
 							std::cout << "SplitLayer for data " << dataName <<
-                                " has not been created yet ... " << std::endl;
+								" has not been created yet ... " << std::endl;
 							std::cout << "Creating Split Layer " << splitLayerName <<
-                                " ... " << std::endl;
+								" ... " << std::endl;
 
 							splitLayer = new SplitLayer<Dtype>(splitLayerName);
 							dataSplitLayerMap[splitLayerName] = splitLayer;
@@ -230,18 +360,18 @@ public:
 							layers.push_back(splitLayer);
 						} else {
 							std::cout << "SplitLayer for data " << dataName <<
-                                " is already created ... " << std::endl;
+								" is already created ... " << std::endl;
 							splitLayer = dataSplitLayerMapItr->second;
 						}
 
 						// SplitLayer 업데이트
 						const uint32_t splitDataIndex = splitLayer->_outputs.size();
 						const std::string splitDataName =
-                            dataName+"-"+std::to_string(splitDataIndex);
+							dataName+"-"+std::to_string(splitDataIndex);
 						splitLayer->_outputs.push_back(splitDataName);
 
 						std::cout << splitDataIndex << "th SplitLayer Ouput updated with " <<
-                            splitDataName << std::endl;
+							splitDataName << std::endl;
 
 						Data<Dtype>* data = new Data<Dtype>(splitDataName, inputData, 0);
 						splitLayer->_outputData.push_back(data);
@@ -255,40 +385,25 @@ public:
 			}
 			*/
 
-
-			// 레이어 호출 순서에 따라 순서 재조정
-			// 의존성이 해결된 레이어를 앞에 배치하여 순차적으로 호출시 적절한 결과를 보장 함
-			// XXX: 내부적으로 layers vector를 변경시켜서 call by value하든지 다른 수단 필요.
-			// 이후로 사용하지 않으면 되나 이상해 보임.
-			std::cout << "ordering layers ... " << std::endl;
-			std::vector<Layer<Dtype>*> olayers;
-			_orderLayers(layers, olayers);
-
-			std::cout << "final layer configuration: " << std::endl;
-			for (uint32_t i = 0; i < olayers.size(); i++) {
-				std::cout << i << ": " << olayers[i]->getName() << std::endl;
-				std::cout << "\t-inputData: ";
-				for (uint32_t j = 0; j < olayers[i]->_inputData.size(); j++) {
-					std::cout << olayers[i]->_inputData[j]->_name << ", ";
-				}
-				std::cout << std::endl;
-				std::cout << "\t-outputData: ";
-				for (uint32_t j = 0; j < olayers[i]->_outputData.size(); j++) {
-					std::cout << olayers[i]->_outputData[j]->_name << ", ";
-				}
-				std::cout << std::endl;
-			}
-
-			return (new LayersConfig(this))
-				->firstLayers(firstLayers)
-				->lastLayers(lastLayers)
-				->layers(olayers)
-				->learnableLayers(learnableLayers)
-                ->nameLayerMap(nameLayerMap)
-                ->layerDataMap(layerDataMap);
 		}
 
-	private:
+
+		const std::string getSplitLayerName(const std::string& layerName,
+				const std::string& dataName, const int dataIdx) {
+			std::ostringstream splitLayerName;
+			splitLayerName << dataName << "_" << layerName << "_" << dataIdx << "_split";
+			return splitLayerName.str();
+		}
+		const std::string getSplitDataName(const std::string& layerName,
+				const std::string& dataName, const int dataIdx, const int splitIdx) {
+			std::ostringstream splitBlobName;
+			splitBlobName << dataName << "_" << layerName << "_" << dataIdx << "_split_" <<
+					splitIdx;
+			return splitBlobName.str();
+		}
+
+
+
 		void _updateLayerData(std::map<std::string, Data<Dtype>*>& dataMap,
 				std::vector<std::string>& dataNameVec,
                 std::vector<Data<Dtype>*>& layerDataVec) {
@@ -311,6 +426,7 @@ public:
 
 		void _orderLayers(std::vector<Layer<Dtype>*>& tempLayers,
             std::vector<Layer<Dtype>*>& layers) {
+			std::cout << "ordering layers ... " << std::endl;
 
 			std::set<std::string> dataSet;
 			while (tempLayers.size() > 0) {
@@ -349,11 +465,7 @@ public:
 						}
 					}
 				}
-				if (!found) {
-					std::cout << "no input layer or not all layer can find input data ... " <<
-                        std::endl;
-					exit(1);
-				}
+				assert(found && "no input layer or not all layer can find input data ... ");
 			}
 		}
 
