@@ -139,7 +139,7 @@ public:
 					if (builder->_isReceiver) {
 						donatorID = builder->_donatorID;
 					} else {
-						donatorID = i;
+						donatorID = currentLayer->id;
 					}
 
 					learnableLayer->fillDonatorInfo(builder->_isDonator,

@@ -31,8 +31,7 @@ public:
                                         
 		Builder() {
 			this->type = Layer<Dtype>::BatchNorm;
-            //_epsilon = 0.000001;
-            _epsilon = 0.001;
+            _epsilon = 0.000001;
 		}
 		virtual Builder* name(const std::string name) {
 			LearnableLayer<Dtype>::Builder::name(name);

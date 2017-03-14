@@ -350,29 +350,9 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
          * x += -mu * v_prev + (1 + mu) * v # position update changes form
          *
          */
-#if 0   // XXX: 한번 커밋후에 지울 예정..
-    	checkCudaErrors(cublasScopy(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &d_paramHistoryData, d_paramTempData, 1));	// v_prev = v
-
-    	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &momentum, d_paramHistoryData, 1)); // mu = mu * v
-    	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &learnScale, d_paramGrad, 1));      // dx = learning_rate * dx
-    	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &negativeOne, d_paramGrad, 1, d_paramHistoryData, 1));		// v = -1.0 * dx + v
-
-        const Dtype momentumPlusOne = momentum + 1.0;
-    	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &momentumPlusOne, d_paramHistoryData, 1, d_paramGrad, 1));  // x += (1 + mu) * v
-
-        const Dtype negativeMomentum = momentum * (-1.0);
-    	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &negativeMomentum, d_paramTempData, 1, d_paramGrad, 1));  // x += -mu * v_prev
-#else
 	    DoNesterov<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
             d_paramHistoryData2, d_paramData, momentum, learnScale);
-#endif
     } else if (opt == Optimizer::Adagrad) {
         /****
          * Adagrad Alogorithm
