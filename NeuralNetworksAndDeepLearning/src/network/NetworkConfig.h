@@ -182,7 +182,7 @@ public:
 			this->_clipGradientsLevel = 35.0f;
 			this->_phase = NetworkPhase::TrainPhase;
             this->_optimizer = Optimizer::Momentum;
-            this->_epsilon = 0.000000001;
+            this->_epsilon = 0.00000001;    // for ADAM
             this->_beta1 = 0.9;
             this->_beta2 = 0.999;
             this->_decayRate = 0.9;

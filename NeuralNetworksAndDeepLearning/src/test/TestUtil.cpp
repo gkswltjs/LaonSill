@@ -330,7 +330,7 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 		result = targetData->compareGrad(data, COMPARE_ERROR);
 
 	if (!result) {
-		printConfigOn();
+		//printConfigOn();
 		if (compareType == 0) {
 			data->print_data({}, false);
 			targetData->print_data({}, false);

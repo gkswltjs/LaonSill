@@ -27,11 +27,11 @@ public:
 
         /* batch normalization related variables */
         double      _epsilon;   // Small value added to variance to avoid dividing 
-                                // by zero. default value = 0.001
+                                // by zero. default value = 0.00001
                                         
 		Builder() {
 			this->type = Layer<Dtype>::BatchNorm;
-            _epsilon = 0.000001;
+            _epsilon = 0.00001;
 		}
 		virtual Builder* name(const std::string name) {
 			LearnableLayer<Dtype>::Builder::name(name);
@@ -98,13 +98,6 @@ private:
     int         depth;
     int         batchSetCount;
 
-	Data<Dtype>    *gammaSet;           // scale factor
-    Data<Dtype>    *betaSet;            // shift factor
-
-    Data<Dtype>    *gammaCacheSet;
-    Data<Dtype>    *betaCacheSet;
-
-
     Data<Dtype>    *meanSet;            // mean
     Data<Dtype>    *varSet;             // variance
     Data<Dtype>    *normInputSet;       // normalized input value
@@ -121,5 +114,15 @@ private:
     void        computeShiftGrad();
 public:
     void        donateParam(BatchNormLayer<Dtype>* receiver);
+
+protected:
+    enum ParamType {
+        Gamma = 0,
+        Beta = 1
+    };
+
+	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
+        const Dtype epsilon, const Dtype decayRate, const Dtype beta1, const Dtype beta2,
+        Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2, Data<Dtype>* data);
 };
 #endif /* BATCHNORMLAYER_H */

@@ -15,8 +15,9 @@
 #include "StdOutLog.h"
 #include "ColdLog.h"
 #include "Perf.h"
+#include "MathFunctions.h"
 
-#define BATCHCONDLAYER_LOG  0
+#define BATCHCONDLAYER_LOG  1
 
 using namespace std;
 
@@ -36,6 +37,99 @@ __global__ void FillValues(Dtype *vec, int size, Dtype value)
 		return;
 	vec[idx] = value;
 }
+
+template <typename Dtype>
+__global__ void DoNesterov(int size, const Dtype* dx, Dtype* v_prev, Dtype* v, Dtype* x,
+    const Dtype mu, const Dtype lr)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= size)
+		return;
+
+    /****
+     * Nesterov Alogorithm
+     *
+     * v_prev = v # back this up
+     * v = mu * v - learning_rate * dx # velocity update stays the same
+     * x += -mu * v_prev + (1 + mu) * v # position update changes form
+     *
+     */
+
+    v_prev[idx] = v[idx];
+    v[idx] = mu * v[idx] - lr * dx[idx];
+    x[idx] += (-1.0) * mu * v_prev[idx] + (1 + mu) * v[idx];
+}
+
+template <typename Dtype>
+__global__ void DoAdagrad(int size, const Dtype* dx, Dtype* cache, Dtype* x,
+    const Dtype lr, const Dtype eps)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= size)
+		return;
+
+    /****
+     * Adagrad Alogorithm
+     *
+     * cache += dx**2
+     * x += -learning_rate * dx / (sqrt(cache) + eps)
+     *
+     */
+
+    cache[idx] += dx[idx] * dx[idx];
+    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
+}
+
+template <typename Dtype>
+__global__ void DoRMSprop(int size, const Dtype* dx, Dtype* cache, Dtype* x,
+    const Dtype lr, const Dtype eps, const Dtype dr)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= size)
+		return;
+
+    /****
+     * RMSprop
+     *
+     * cache = decay_rate * cache + (1 - decay_rate) * dx**2
+     * x += - learning_rate * dx / (sqrt(cache) + eps)
+     *
+     */
+
+    cache[idx] = dr * cache[idx] + (1.0 - dr) * dx[idx] * dx[idx];
+    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
+}
+
+#define USE_TENSORFLOW_ADAM         1 
+static double decayedBeta1 = 1.0;
+static double decayedBeta2 = 1.0;
+
+template <typename Dtype>
+__global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
+    const Dtype lr, const Dtype eps, const Dtype beta1, const Dtype beta2)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= size)
+		return;
+
+    /****
+     * Adam
+     *
+     * m = beta1 * m + (1 - beta1) * dx
+     * v = beta2 * v + (1 - beta2) * (dx**2)
+     * x += -learning_rate * m / (sqrt(v) + eps)
+     *
+     */
+    m[idx] = beta1 * m[idx] + (1.0 - beta1) * dx[idx];
+    v[idx] = beta2 * v[idx] + (1.0 - beta2) * dx[idx] * dx[idx];
+#if USE_TENSORFLOW_ADAM
+    Dtype learningRate = lr * sqrt(1.0 - decayedBeta2) / (1.0 - decayedBeta1);
+    x[idx] += (-1.0) * lr * m[idx] / (sqrt(v[idx]) + eps);
+#else
+    x[idx] += (-1.0) * lr * m[idx] / (sqrt(v[idx]) + eps);
+#endif
+}
+
 
 template <typename Dtype>
 __global__ void CalcMean(const Dtype *input, int depth, int batchCount, Dtype *mean)
@@ -68,6 +162,7 @@ __global__ void CalcVariance(const Dtype *input, const Dtype* mean, int depth, i
 
     variance[idx] = variance[idx] / (Dtype)batchCount;
 }
+
 
 template <typename Dtype>
 __global__ void Normalize(const Dtype *input, const Dtype* mean, const Dtype* variance,
@@ -237,40 +332,16 @@ __global__ void ComputeShiftGrad(const Dtype *outputGrads, int depth, int batchC
     }
 }
 
-#define USE_ADAGRAD_UPDATE      1
-
-template <typename Dtype>
-__global__ void UpdateShiftAndScale(const Dtype *gammaGrad, const Dtype *betaGrad, int depth,
-    Dtype learningRate, Dtype *gammaData, Dtype *betaData, Dtype* gammaCache,
-    Dtype* betaCache)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= depth) 
-		return;
-#if USE_ADAGRAD_UPDATE
-    gammaCache[idx] += gammaGrad[idx] * gammaGrad[idx];
-    betaCache[idx] += betaGrad[idx] * betaGrad[idx];
-
-    gammaData[idx] += 
-        (-1.0) * learningRate * gammaGrad[idx] / (sqrt(gammaCache[idx]) + 0.00001);
-    betaData[idx] += 
-        (-1.0) * learningRate * betaGrad[idx] / (sqrt(betaCache[idx]) + 0.00001);
-#else
-    gammaData[idx] -= learningRate * gammaGrad[idx];
-    betaData[idx] -= learningRate * betaGrad[idx];
-#endif
-}
-
 template<typename Dtype>
 BatchNormLayer<Dtype>::~BatchNormLayer() {
-    SASSERT0(this->gammaSet != NULL);
-    free(this->gammaSet);
-    SASSERT0(this->betaSet != NULL);
-    free(this->betaSet);
-    SASSERT0(this->gammaCacheSet != NULL);
-    free(this->gammaCacheSet);
-    SASSERT0(this->betaCacheSet != NULL);
-    free(this->betaCacheSet);
+    if (this->isReceiver) {
+        Donator<Dtype>::releaseReceiver(this->donatorID);
+    } else {
+        Util::clearVector(this->_params);
+        Util::clearVector(this->_paramsHistory);
+        Util::clearVector(this->_paramsHistory2);
+    }
+
     SASSERT0(this->meanSet != NULL);
     free(this->meanSet);
     SASSERT0(this->varSet != NULL);
@@ -280,7 +351,135 @@ BatchNormLayer<Dtype>::~BatchNormLayer() {
 }
 
 template <typename Dtype>
+void BatchNormLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale,
+    const Dtype learnScale, const Dtype epsilon, const Dtype decayRate, const Dtype beta1, 
+    const Dtype beta2, Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2,
+    Data<Dtype>* data) {
+
+	const uint32_t batches = this->_inputShape[0][0];
+	const Dtype normScale = 1.0/batches;
+	const Dtype momentum = this->networkConfig->_momentum;
+	const Dtype negativeOne = -1.0;
+    const Dtype negativeLearnScale = (-1.0) * learnScale;
+
+    if (!Worker<Dtype>::isSingle())
+        data->mutable_host_grad();
+	Dtype* d_paramGrad = data->mutable_device_grad();
+	Dtype* d_paramData = data->mutable_device_data();
+	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
+	Dtype* d_paramHistoryData2 = dataHistory2->mutable_device_data();
+
+    // FIXME: ConvLayer에 동일한 코드가 있음. 추후에 정리 필요
+    // (1) do normalization & regularization
+    //  FIXME: 이것도 옵션으로 정규화를 할지 여부를 설정할 수 있었으면 좋겠음.
+#if 0
+    checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
+        &regScale, d_paramData, 1, d_paramGrad, 1));	// regularize
+#endif
+
+    // (2) apply optimizer
+    Optimizer opt = this->networkConfig->_optimizer;
+    if (opt == Optimizer::Momentum) {
+        /****
+         * Momentum Alogorithm
+         *
+         * v = mu * v - learning_rate * dx
+         * x += v
+         *
+         */
+    	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
+		soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
+				d_paramHistoryData);
+		soooa_copy(static_cast<int>(paramSize), d_paramHistoryData, d_paramGrad);
+		// update
+		soooa_gpu_axpy(static_cast<int>(paramSize), negativeOne, d_paramGrad, d_paramData);
+    } else if (opt == Optimizer::Vanilla) {
+        /****
+         * Vanilla Alogorithm
+         *
+         * x += -learning_rate * dx
+         *
+         */
+    	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
+            &learnScale, d_paramGrad, 1));				//
+    	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
+            &negativeOne, d_paramGrad, 1, d_paramData, 1));		// update
+    } else if (opt == Optimizer::Nesterov) {
+        /****
+         * Nesterov Alogorithm
+         *
+         * v_prev = v # back this up
+         * v = mu * v - learning_rate * dx # velocity update stays the same
+         * x += -mu * v_prev + (1 + mu) * v # position update changes form
+         *
+         */
+	    DoNesterov<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
+            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
+            d_paramHistoryData2, d_paramData, momentum, learnScale);
+    } else if (opt == Optimizer::Adagrad) {
+        /****
+         * Adagrad Alogorithm
+         *
+         * cache += dx**2
+         * x += -learning_rate * dx / (sqrt(cache) + eps)
+         *
+         */
+	    DoAdagrad<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
+            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
+            d_paramData, learnScale, epsilon);
+
+    } else if (opt == Optimizer::RMSprop) {
+        /****
+         * RMSprop
+         *
+         * cache = decay_rate * cache + (1 - decay_rate) * dx**2
+         * x += - learning_rate * dx / (sqrt(cache) + eps)
+         *
+         */
+	    DoRMSprop<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
+            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
+            d_paramData, learnScale, epsilon, decayRate);
+
+    } else if (opt == Optimizer::Adam) {
+        /****
+         * Adam
+         *
+         * m = beta1 * m + (1 - beta1) * dx
+         * v = beta2 * v + (1 - beta2) * (dx**2)
+         * x += -learning_rate * m / (sqrt(v) + eps)
+         *
+         */
+        decayedBeta1 *= beta1;
+        decayedBeta2 *= beta2;
+	    DoAdam<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
+            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData, d_paramHistoryData2,
+            d_paramData, learnScale, epsilon, beta1, beta2, (Dtype)decayedBeta1,
+            (Dtype)decayedBeta2);
+    } else {
+        SASSERT(false, "invalid optimizer. optimizer=%d", (int)opt);
+    }
+}
+
+
+template <typename Dtype>
 void BatchNormLayer<Dtype>::update() {
+    const uint32_t size = this->depth;
+	const Dtype regScale = this->networkConfig->_weightDecay;
+	const Dtype learnScale = this->networkConfig->getLearningRate();
+    const Dtype epsilon = this->networkConfig->_epsilon;
+    const Dtype decayRate = this->networkConfig->_decayRate;
+    const Dtype beta1 = this->networkConfig->_beta1;
+    const Dtype beta2 = this->networkConfig->_beta2;
+
+	_updateParam(size, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
+		this->_paramsHistory[ParamType::Gamma], this->_paramsHistory2[ParamType::Gamma],
+        this->_params[ParamType::Gamma]);
+
+	_updateParam(size, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
+		this->_paramsHistory[ParamType::Beta], this->_paramsHistory2[ParamType::Beta],
+        this->_params[ParamType::Beta]);
+
+#if 0
     struct timespec startTime;
     SPERF_START(BATCHNORM_LAYER_UPTIME, &startTime);
 
@@ -300,10 +499,12 @@ void BatchNormLayer<Dtype>::update() {
         gammaCache, betaCache);
 
     SPERF_END(BATCHNORM_LAYER_UPTIME, startTime);
+#endif
 }
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::feedforward() {
+    reshape();
     struct timespec startTime;
     SPERF_START(BATCHNORM_LAYER_FWTIME, &startTime);
 
@@ -315,7 +516,10 @@ void BatchNormLayer<Dtype>::feedforward() {
     const Dtype* inputData = this->_inputData[0]->device_data();
     Dtype* outputData = this->_outputData[0]->mutable_device_data();
 
-	if (this->networkConfig->_status == NetworkStatus::Train) {
+    // XXX: 현재는 무조건 train 모드만 동작하도록 하였음.
+    //      GAN 끝나고 소스 정리 필요
+    if (1) {
+	//if (this->networkConfig->_status == NetworkStatus::Train) {
         Dtype* means = this->meanSet->mutable_device_data();
         Dtype* vars = this->varSet->mutable_device_data();
 
@@ -335,8 +539,8 @@ void BatchNormLayer<Dtype>::feedforward() {
 
         // (4) normalize 
         Dtype* normInputs = this->normInputSet->mutable_device_data();
-        const Dtype* gammas = this->gammaSet->device_data();
-        const Dtype* betas = this->betaSet->device_data();
+        const Dtype* gammas = this->_params[ParamType::Gamma]->device_data();
+        const Dtype* betas = this->_params[ParamType::Beta]->device_data();
         Normalize<<<SOOOA_GET_BLOCKS(this->depth * batchCount), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, means, vars, gammas, betas, this->depth, batchCount,
             (Dtype)this->epsilon, normInputs, outputData);
@@ -355,8 +559,8 @@ void BatchNormLayer<Dtype>::feedforward() {
 
         const Dtype* meanSums = this->meanSumSet->device_mem();
         const Dtype* varSums = this->varSumSet->device_mem();
-        const Dtype* gammas = this->gammaSet->device_data();
-        const Dtype* betas = this->betaSet->device_data();
+        const Dtype* gammas = this->_params[ParamType::Gamma]->device_data();
+        const Dtype* betas = this->_params[ParamType::Beta]->device_data();
 
         if (this->batchSetCount == 1) {
             FirstInference<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
@@ -409,10 +613,13 @@ void BatchNormLayer<Dtype>::reshape() {
     if (this->depth == 0) {
         this->depth = depth;
 
-        this->gammaSet->reshape({1, channels, rows, cols});
-        this->betaSet->reshape({1, channels, rows, cols});
-        this->gammaCacheSet->reshape({1, channels, rows, cols});
-        this->betaCacheSet->reshape({1, channels, rows, cols});
+        this->_params[ParamType::Gamma]->reshape({1, channels, rows, cols});
+        this->_params[ParamType::Beta]->reshape({1, channels, rows, cols});
+        this->_paramsHistory[ParamType::Gamma]->reshape({1, channels, rows, cols});
+        this->_paramsHistory[ParamType::Beta]->reshape({1, channels, rows, cols});
+        this->_paramsHistory2[ParamType::Gamma]->reshape({1, channels, rows, cols});
+        this->_paramsHistory2[ParamType::Beta]->reshape({1, channels, rows, cols});
+
         this->meanSet->reshape({1, channels, rows, cols});
         this->varSet->reshape({1, channels, rows, cols});
 
@@ -423,9 +630,16 @@ void BatchNormLayer<Dtype>::reshape() {
         this->normInputSet->reshape({batches, channels, rows, cols});
 
         // FIXME: 더 좋은 초기화 방법이 있을지도 모른다..
-        Dtype* gammas = this->gammaSet->mutable_device_data();
+        Dtype* gammas = this->_params[ParamType::Gamma]->mutable_device_data();
         FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             gammas, this->depth, 1.0f);
+        this->_paramsInitialized[ParamType::Gamma] = true;
+
+        Dtype* betas = this->_params[ParamType::Beta]->mutable_device_data();
+        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            betas, this->depth, 0.0f);
+        this->_paramsInitialized[ParamType::Beta] = true;
+
     } else {
         SASSERT0(this->depth == depth);
     }
@@ -438,7 +652,7 @@ void BatchNormLayer<Dtype>::computeNormInputGrad() {
 
     const Dtype* outputGrads = this->_outputData[0]->device_grad();
     Dtype* normInputGrads = this->normInputSet->mutable_device_grad();
-    const Dtype* gammas = this->gammaSet->device_data();
+    const Dtype* gammas = this->_params[ParamType::Gamma]->device_data();
 
     ComputeNormInputGrad<<<SOOOA_GET_BLOCKS(this->depth * batchCount),
         SOOOA_CUDA_NUM_THREADS>>>(
@@ -498,7 +712,7 @@ void BatchNormLayer<Dtype>::computeScaleGrad() {
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 	int batchCount = inputShape[0];
     const Dtype* outputGrads = this->_outputData[0]->device_grad();;
-    Dtype* gammaGrads = this->gammaSet->mutable_device_grad();
+    Dtype* gammaGrads = this->_params[ParamType::Gamma]->mutable_device_grad();
     const Dtype* normInputs = this->normInputSet->device_data();
 
     ComputeScaleGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
@@ -511,7 +725,7 @@ void BatchNormLayer<Dtype>::computeShiftGrad() {
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 	int batchCount = inputShape[0];
     const Dtype* outputGrads = this->_outputData[0]->device_grad();
-    Dtype* betaGrads = this->betaSet->mutable_device_grad();
+    Dtype* betaGrads = this->_params[ParamType::Beta]->mutable_device_grad();
 
     ComputeShiftGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
         outputGrads, depth, batchCount, betaGrads);

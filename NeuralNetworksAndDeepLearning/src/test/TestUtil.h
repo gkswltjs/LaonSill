@@ -23,7 +23,7 @@ const std::string SIG_BOTTOM 	= DELIM + "bottom" + DELIM;
 const std::string SIG_TOP 		= DELIM + "top" + DELIM;
 const std::string SIG_PARAMS 	= DELIM + "params" + DELIM;
 const std::string BLOBS_PREFIX	= "anonymous" + DELIM + "blobs" + DELIM;
-const std::string NPZ_PATH 		= "/home/jkim/Dev/data/numpy_array/";
+const std::string NPZ_PATH 		= "/home/monhoney/caffe_soa_test/save/";
 
 const float COMPARE_ERROR 		= 0.00001;
 

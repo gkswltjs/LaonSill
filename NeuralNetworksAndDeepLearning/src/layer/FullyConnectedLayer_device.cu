@@ -13,7 +13,6 @@
 #include "Util.h"
 #include "Exception.h"
 #include "NetworkConfig.h"
-#include "MathFunctions.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
 
@@ -102,9 +101,14 @@ __global__ void DoRMSprop(int size, const Dtype* dx, Dtype* cache, Dtype* x,
     x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
 }
 
+#define USE_TENSORFLOW_ADAM         1 
+static double decayedBeta1 = 1.0;
+static double decayedBeta2 = 1.0;
+
 template <typename Dtype>
 __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
-    const Dtype lr, const Dtype eps, const Dtype beta1, const Dtype beta2)
+    const Dtype lr, const Dtype eps, const Dtype beta1, const Dtype beta2,
+    const Dtype decayedBeta1, const Dtype decayedBeta2)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
@@ -120,7 +124,13 @@ __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
      */
     m[idx] = beta1 * m[idx] + (1.0 - beta1) * dx[idx];
     v[idx] = beta2 * v[idx] + (1.0 - beta2) * dx[idx] * dx[idx];
+#if USE_TENSORFLOW_ADAM
+    Dtype learningRate = lr * sqrt(1.0 - decayedBeta2) / (1.0 - decayedBeta1);
+    x[idx] += (-1.0) * learningRate * m[idx] / (sqrt(v[idx]) + eps);
+#else
     x[idx] += (-1.0) * lr * m[idx] / (sqrt(v[idx]) + eps);
+
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -386,9 +396,12 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
          * x += -learning_rate * m / (sqrt(v) + eps)
          *
          */
+        decayedBeta1 *= beta1;
+        decayedBeta2 *= beta2;
 	    DoAdam<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData, d_paramHistoryData2,
-            d_paramData, learnScale, epsilon, beta1, beta2);
+            d_paramData, learnScale, epsilon, beta1, beta2, (Dtype)decayedBeta1,
+            (Dtype)decayedBeta2);
     } else {
         SASSERT(false, "invalid optimizer. optimizer=%d", (int)opt);
     }

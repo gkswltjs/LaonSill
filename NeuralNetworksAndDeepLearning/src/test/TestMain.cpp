@@ -24,8 +24,8 @@ int main(void) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
-	//layerTest();
-	networkTest();
+	layerTest();
+	//networkTest();
 }
 
 void layerTest() {
@@ -33,6 +33,26 @@ void layerTest() {
 	vector<LayerTestInterface<float>*> layerTestList;
 
 #if 1
+	BatchNormLayer<float>::Builder* bnBuilder = new typename BatchNormLayer<float>::Builder();
+	bnBuilder->id(1)
+			->name("bn1")
+			->inputs({"ip1"})
+			->outputs({"bn1"});
+	layerTestList.push_back(new LearnableLayerTest<float>(bnBuilder));
+#endif
+
+#if 0
+	ConvLayer<float>::Builder* convBuilder = new typename ConvLayer<float>::Builder();
+	convBuilder->id(1)
+			->name("conv2")
+			->filterDim(5, 5, 20, 50, 0, 1)
+			->inputs({"pool1"})
+			->outputs({"conv2"})
+            ->deconv(true);
+	layerTestList.push_back(new LearnableLayerTest<float>(convBuilder));
+#endif
+
+#if 0
 	ConvLayer<float>::Builder* convBuilder = new typename ConvLayer<float>::Builder();
 	convBuilder->id(1)
 			->name("conv2")

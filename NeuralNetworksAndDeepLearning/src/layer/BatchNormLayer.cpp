@@ -34,10 +34,23 @@ void BatchNormLayer<Dtype>::initialize(double epsilon) {
 
     this->depth                 = 0;
     this->batchSetCount         = 0;
-    this->gammaSet              = new Data<Dtype>(this->name + "_gamma");
-    this->betaSet               = new Data<Dtype>(this->name + "_beta");
-    this->gammaCacheSet         = new Data<Dtype>(this->name + "_gammaCache");
-    this->betaCacheSet          = new Data<Dtype>(this->name + "_betaCache");
+
+	this->_paramsInitialized.resize(2);
+	this->_paramsInitialized[ParamType::Gamma] = false;
+	this->_paramsInitialized[ParamType::Beta] = false;
+
+	this->_params.resize(2);
+	this->_params[ParamType::Gamma] = new Data<Dtype>(this->name + "_gamma");
+	this->_params[ParamType::Beta] = new Data<Dtype>(this->name + "_beta");
+
+	this->_paramsHistory.resize(2);
+	this->_paramsHistory[ParamType::Gamma] = new Data<Dtype>(this->name + "_gamma_history");
+	this->_paramsHistory[ParamType::Beta] = new Data<Dtype>(this->name + "_beta_history");
+
+	this->_paramsHistory2.resize(2);
+	this->_paramsHistory2[ParamType::Gamma] = new Data<Dtype>(this->name + "_gamma_history2");
+	this->_paramsHistory2[ParamType::Beta] = new Data<Dtype>(this->name + "_beta_history2");
+
     this->meanSet               = new Data<Dtype>(this->name + "_mean");
     this->varSet                = new Data<Dtype>(this->name + "_variance");
     this->normInputSet          = new Data<Dtype>(this->name + "_normalizedInput");
