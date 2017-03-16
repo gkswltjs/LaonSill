@@ -49,8 +49,8 @@ public:
 
 		this->layer->feedforward();
 
-		assert(compareData(this->nameDataMap, this->layer->name + SIG_TOP,
-				this->layer->_outputData, 0));
+		compareData(this->nameDataMap, this->layer->name + SIG_TOP,
+			this->layer->_outputData, 0);
 	}
 
 	virtual void backwardTest() {
@@ -61,8 +61,8 @@ public:
 
 		this->layer->backpropagation();
 
-		assert(compareData(this->nameDataMap, this->layer->name + SIG_BOTTOM,
-				this->layer->_inputData, 1));
+		compareData(this->nameDataMap, this->layer->name + SIG_BOTTOM,
+			this->layer->_inputData, 1);
 	}
 
 

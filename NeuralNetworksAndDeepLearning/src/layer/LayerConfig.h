@@ -139,7 +139,7 @@ struct lrn_dim {
 	double k;
 
 	//lrn_dim(UINT local_size=5, double alpha=1, double beta=5) {
-	lrn_dim(UINT local_size=5, double alpha=0.0001, double beta=0.75, double k=2.0) {
+	lrn_dim(UINT local_size=5, double alpha=1.0, double beta=0.75, double k=1.0) {
 		this->local_size = local_size;
 		this->alpha = alpha;
 		this->beta = beta;

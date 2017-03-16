@@ -38,7 +38,13 @@ void cleanUpCuda() {
 void buildNameDataMapFromNpzFile(const string& npz_path, const string& layer_name,
 		map<string, Data<float>*>& nameDataMap) {
 
-	const string npz_file = npz_path + layer_name + ".npz";
+	char from = '/';
+	char to = '*';
+	string safe_layer_name = layer_name;
+	std::replace(safe_layer_name.begin(), safe_layer_name.end(), from, to);
+	cout << "layer_name has changed from " << layer_name << " to " << safe_layer_name << endl;
+
+	const string npz_file = npz_path + safe_layer_name + ".npz";
 	npz_t cnpy_npz = npz_load(npz_file);
 	printNpzFiles(cnpy_npz);
 
@@ -330,7 +336,7 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 		result = targetData->compareGrad(data, COMPARE_ERROR);
 
 	if (!result) {
-		printConfigOn();
+		//printConfigOn();
 		if (compareType == 0) {
 			data->print_data({}, false);
 			targetData->print_data({}, false);
@@ -338,7 +344,7 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 			data->print_grad({}, false);
 			targetData->print_grad({}, false);
 		}
-		printConfigOff();
+		//printConfigOff();
 	}
 	return result;
 }

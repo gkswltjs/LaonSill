@@ -12,6 +12,29 @@ using namespace std;
 //#define DEPTHCONCAT_LOG
 
 template <typename Dtype>
+__global__ void Concat(const int nthreads, const Dtype* in_data,
+		const bool forward, const int num_concats, const int concat_size,
+		const int top_concat_axis, const int bottom_concat_axis,
+		const int offset_concat_axis, Dtype* out_data) {
+
+	CUDA_KERNEL_LOOP(index, nthreads) {
+
+		const int total_concat_size = concat_size * bottom_concat_axis;
+		const int concat_num = index / total_concat_size;
+		const int concat_index = index % total_concat_size;
+		const int top_index = concat_index +
+				(concat_num * top_concat_axis + offset_concat_axis) * concat_size;
+		if (forward) {
+			out_data[top_index] = in_data[index];
+		} else {
+			out_data[index] = in_data[top_index];
+		}
+	}
+}
+
+
+
+template <typename Dtype>
 DepthConcatLayer<Dtype>::DepthConcatLayer(Builder* builder)
 	: Layer<Dtype>(builder) {
 	initialize();
@@ -23,6 +46,7 @@ DepthConcatLayer<Dtype>::~DepthConcatLayer() {}
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::initialize() {
 	this->type = Layer<Dtype>::DepthConcat;
+	this->concatAxis = 1;
 }
 
 template <typename Dtype>
@@ -49,12 +73,63 @@ void DepthConcatLayer<Dtype>::reshape() {
 	uint32_t cols 		= this->_inputShape[0][3];
 
 	for (uint32_t i = 0; i < this->_inputData.size(); i++) {
-		channels += this->_inputData[i]->getShape()[1];
+		channels += this->_inputData[i]->getShape()[this->concatAxis];
 	}
 
 	this->_outputData[0]->reshape({batches, channels, rows, cols});
+
+	this->concatInputSize = this->_inputData[0]->getCountByAxis(this->concatAxis + 1);
+	this->numConcats = this->_inputData[0]->getCountByAxis(0, this->concatAxis);
 }
 
+
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::feedforward() {
+	reshape();
+
+	Dtype* outputData = this->_outputData[0]->mutable_device_data();
+	int offsetConcatAxis = 0;
+	const int outputConcatAxis = this->_outputData[0]->getShape()[this->concatAxis];
+	const bool kForward = true;
+
+	for (int i = 0; i < this->_inputData.size(); i++) {
+		const Dtype* inputData = this->_inputData[i]->device_data();
+		const int inputConcatAxis = this->_inputData[i]->getShape()[this->concatAxis];
+		const int inputConcatSize = inputConcatAxis * this->concatInputSize;
+		const int nThreads = inputConcatSize * this->numConcats;
+
+		Concat<Dtype><<<SOOOA_GET_BLOCKS(nThreads), SOOOA_CUDA_NUM_THREADS>>>(
+				nThreads, inputData, kForward, this->numConcats, this->concatInputSize,
+				outputConcatAxis, inputConcatAxis, offsetConcatAxis, outputData);
+		offsetConcatAxis += inputConcatAxis;
+	}
+}
+
+template <typename Dtype>
+void DepthConcatLayer<Dtype>::backpropagation() {
+	const Dtype* outputGrad = this->_outputData[0]->device_grad();
+	int offsetConcatAxis = 0;
+	const int outputConcatAxis = this->_outputData[0]->getShape()[this->concatAxis];
+	const bool kForward = false;
+
+	for (int i = 0; i < this->_inputData.size(); i++) {
+		const int inputConcatAxis = this->_inputData[i]->getShape(this->concatAxis);
+		if (this->_propDown[i]) {
+			Dtype* inputGrad = this->_inputData[i]->mutable_device_grad();
+			const int inputConcatSize = inputConcatAxis * this->concatInputSize;
+			const int nThreads = inputConcatSize * this->numConcats;
+
+			Concat<Dtype><<<SOOOA_GET_BLOCKS(nThreads), SOOOA_CUDA_NUM_THREADS>>>(
+					nThreads, outputGrad, kForward, this->numConcats, this->concatInputSize,
+					outputConcatAxis, inputConcatAxis, offsetConcatAxis, inputGrad);
+		}
+		offsetConcatAxis += inputConcatAxis;
+	}
+}
+
+
+
+/*
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::feedforward() {
 	reshape();
@@ -109,6 +184,7 @@ void DepthConcatLayer<Dtype>::backpropagation() {
 		}
 	}
 }
+*/
 
 #ifndef GPU_MODE
 template <typename Dtype>

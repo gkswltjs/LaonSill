@@ -92,6 +92,10 @@ protected:
     std::vector<int> offsets;
 #else
 #endif
+
+    int concatAxis;
+    int concatInputSize;
+    int numConcats;
 };
 
 #endif /* LAYER_DEPTHCONCATLAYER_H_ */

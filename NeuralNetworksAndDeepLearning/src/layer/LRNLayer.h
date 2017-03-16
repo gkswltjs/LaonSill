@@ -36,6 +36,11 @@ public:
 		lrn_dim _lrnDim;
 		Builder() {
 			this->type = Layer<Dtype>::LRN;
+
+			this->_lrnDim.local_size = 5;
+			this->_lrnDim.alpha = 1.0;
+			this->_lrnDim.beta = 0.75;
+			this->_lrnDim.k = 1.0;
 		}
 		Builder* lrnDim(uint32_t local_size, double alpha, double beta, double k) {
 			this->_lrnDim.local_size = local_size;

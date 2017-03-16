@@ -1,4 +1,4 @@
-#if 0
+#if 1
 
 #include "LayerTestInterface.h"
 #include "LayerTest.h"
@@ -32,7 +32,7 @@ void layerTest() {
 	const int gpuid = 0;
 	vector<LayerTestInterface<float>*> layerTestList;
 
-#if 1
+#if 0
 	ConvLayer<float>::Builder* convBuilder = new typename ConvLayer<float>::Builder();
 	convBuilder->id(1)
 			->name("conv2")
@@ -63,15 +63,15 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(reluBuilder));
 #endif
 
-#if 0
+#if 1
 	PoolingLayer<float>::Builder* poolBuilder =
 			new typename PoolingLayer<float>::Builder();
-	poolBuilder->id(42)
-			->name("pool1")
-			->poolDim(2, 2, 0, 2)
+	poolBuilder->id(3)
+			->name("pool1/3x3_s2")
+			->poolDim(3, 3, 0, 2)
 			->poolingType(Pooling<float>::Max)
-			->inputs({"conv1"})
-			->outputs({"pool1"});
+			->inputs({"conv1/7x7_s2"})
+			->outputs({"pool1/3x3_s2"});
 	layerTestList.push_back(new LayerTest<float>(poolBuilder));
 #endif
 
@@ -83,6 +83,47 @@ void layerTest() {
 			->inputs({"ip2", "label"})
 			->outputs({"loss"});
 	layerTestList.push_back(new LayerTest<float>(softmaxWithLossBuilder));
+#endif
+
+#if 0
+	LRNLayer<float>::Builder* lrnBuilder =
+			new typename LRNLayer<float>::Builder();
+	lrnBuilder->id(42)
+			->name("pool1/norm1")
+			->lrnDim(5, 0.0001, 0.75, 1.0)
+			->inputs({"pool1/3x3_s2"})
+			->outputs({"pool1/norm1"});
+	layerTestList.push_back(new LayerTest<float>(lrnBuilder));
+#endif
+
+#if 0
+	DepthConcatLayer<float>::Builder* depthConcatBuilder =
+			new typename DepthConcatLayer<float>::Builder();
+	depthConcatBuilder->id(24)
+			->name("inception_3a/output")
+			->propDown({true, true, true, true})
+			->inputs({
+				"inception_3a/1x1",
+				"inception_3a/3x3",
+				"inception_3a/5x5",
+				"inception_3a/pool_proj"})
+			->outputs({"inception_3a/output"});
+
+	layerTestList.push_back(new LayerTest<float>(depthConcatBuilder));
+#endif
+
+#if 0
+	SplitLayer<float>::Builder* splitBuilder =
+			new typename SplitLayer<float>::Builder();
+	splitBuilder->id(24)
+			->name("pool2/3x3_s2_pool2/3x3_s2_0_split")
+			->inputs({"pool2/3x3_s2"})
+			->outputs({"pool2/3x3_s2_pool2/3x3_s2_0_split_0",
+				"pool2/3x3_s2_pool2/3x3_s2_0_split_1",
+				"pool2/3x3_s2_pool2/3x3_s2_0_split_2",
+				"pool2/3x3_s2_pool2/3x3_s2_0_split_3"});
+
+	layerTestList.push_back(new LayerTest<float>(splitBuilder));
 #endif
 
 
@@ -121,16 +162,17 @@ void networkTest() {
 	const float gamma 				= 0.0001;
 #elif NETWORK == NETWORK_VGG19
 	// VGG19
-	LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<float>();
-	const string networkName		= "vgg19";
-	const int batchSize 			= 10;
-	const float baseLearningRate 	= 0.1;
-	const float weightDecay 		= 0.05;
+	//LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createInceptionLayersConfig<float>();
+	const string networkName		= "inception";
+	const int batchSize 			= 8;
+	const float baseLearningRate 	= 0.01;
+	const float weightDecay 		= 0.0002;
 	const float momentum 			= 0.0;
 	const LRPolicy lrPolicy 		= LRPolicy::Step;
-	const int stepSize 				= 20000;
+	const int stepSize 				= 320000;
 	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
-	const float gamma 				= 0.1;
+	const float gamma 				= 0.96;
 #else
 	cout << "invalid network ... " << endl;
 	exit(1);

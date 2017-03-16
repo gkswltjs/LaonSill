@@ -154,13 +154,67 @@ void LayersConfig<Dtype>::Builder::buildLayerData(vector<Layer<Dtype>*>& layers,
 
 	const uint32_t layerSize = layers.size();
 	for (uint32_t i = 0; i < layerSize; i++) {
-		vector<string> dataNameVec;
 		Layer<Dtype>* layer = layers[i];
-		cout << "\tfor layer " << layer->getName() << endl;
-		cout << "\tinput data: " << layer->getInputs().size() << endl;
-		_updateLayerData(layerDataMap, layer->getInputs(), layer->getInputData());
-		cout << "\toutput data: " << layer->getOutputs().size() << endl;
-		_updateLayerData(layerDataMap, layer->getOutputs(), layer->getOutputData());
+		cout << "for layer: " << layer->name << endl;
+
+		// in-place check
+		bool inPlaceCheck = true;
+		int lastInPlaceIdx = 0;
+		int numInPlaceCheck = min(layer->_inputs.size(), layer->_outputs.size());
+		for (; lastInPlaceIdx < numInPlaceCheck; lastInPlaceIdx++) {
+			cout << "\tinput: " << layer->_inputs[lastInPlaceIdx] << ", output: " << layer->_outputs[lastInPlaceIdx] << endl;
+			if (layer->_inputs[lastInPlaceIdx] != layer->_outputs[lastInPlaceIdx]) {
+				inPlaceCheck = false;
+				break;
+			}
+		}
+		cout << "\tin-place data is till " << lastInPlaceIdx-1 << endl;
+
+
+		// 현재 레이어의 input data는 무조건 map에 이미 포함되어 있어야 함.
+		for (int j = 0; j < layer->_inputs.size(); j++) {
+			assert(layerDataMap.find(layer->_inputs[j]) != layerDataMap.end()
+					&& "input data should be in layerDataMap ... ");
+
+			layer->_inputData.push_back(layerDataMap[layer->_inputs[j]]);
+			cout << "\tfor input data " << layer->_inputs[j] << ": ref old ... " << endl;
+		}
+
+		// 현재 레이어의 output data에 대해 in-place인 경우 이미 map에 포함되어 있어야 함
+		// in-place가 아닌 경우 이미 map에 포함되어 있을 경우 error
+		SplitLayer<Dtype>* splitLayer = dynamic_cast<SplitLayer<Dtype>*>(layer);
+		if (splitLayer) {
+			// SplitLayer인 경우 inputData와 outputData가 Data를 share하여 memory를 절약
+			for (int j = 0; j < layer->_outputs.size(); j++) {
+				const string& dataName = layer->_outputs[j];
+				assert(layerDataMap.find(dataName) == layerDataMap.end()
+						&& "non in-place output data should not be in layerDataMap ... ");
+
+				Data<Dtype>* data = new Data<Dtype>(dataName, layer->_inputData[0], 0);
+				layerDataMap[dataName] = data;
+				splitLayer->_outputData.push_back(data);
+			}
+		} else {
+			for (int j = 0; j < layer->_outputs.size(); j++) {
+				const string& dataName = layer->_outputs[j];
+
+				// in-place case
+				if (j < lastInPlaceIdx) {
+					assert(layerDataMap.find(dataName) != layerDataMap.end()
+							&& "in-place output data should be in layerDataMap ... ");
+					layer->_outputData.push_back(layerDataMap[dataName]);
+					cout << "\tfor output data " << dataName << ": ref old ... " << endl;
+				} else {
+					assert(layerDataMap.find(dataName) == layerDataMap.end()
+							&& "non in-place output data should not be in layerDataMap ... ");
+
+					Data<Dtype>* data = new Data<Dtype>(dataName);
+					layerDataMap[dataName] = data;
+					layer->_outputData.push_back(data);
+					cout << "\tfor output data " << dataName << ": insert new ... " << endl;
+				}
+			}
+		}
 	}
 }
 
@@ -411,10 +465,10 @@ void LayersConfig<Dtype>::Builder::_updateLayerData(map<string, Data<Dtype>*>& d
 			Data<Dtype>* data = new Data<Dtype>(dataNameVec[i]);
 			dataMap[dataNameVec[i]] = data;
 			layerDataVec.push_back(data);
-			cout << "\t\tfor data " << dataNameVec[i] << ": insert new ... " << endl;
+			cout << "\tfor data " << dataNameVec[i] << ": insert new ... " << endl;
 		} else {
 			layerDataVec.push_back(it->second);
-			cout << "\t\tfor data " << dataNameVec[i] << ": refer old ... " << endl;
+			cout << "\tfor data " << dataNameVec[i] << ": refer old ... " << endl;
 		}
 	}
 }
