@@ -609,6 +609,7 @@ Data<Dtype>* Data<Dtype>::range(const vector<int>& startIndex,
 	return result;
 }
 
+/*
 template <typename Dtype>
 void Data<Dtype>::transpose(const vector<uint32_t>& t) {
 
@@ -636,6 +637,46 @@ void Data<Dtype>::transpose(const vector<uint32_t>& t) {
 		for (sIndex[1] = 0; sIndex[1] < _shape[1]; sIndex[1]++) {
 			for (sIndex[2] = 0; sIndex[2] < _shape[2]; sIndex[2]++) {
 				for (sIndex[3] = 0; sIndex[3] < _shape[3]; sIndex[3]++) {
+					dstData[d0Index*d0Size + d1Index*d1Size + d2Index*d2Size + d3Index] =
+						srcData[sIndex[0]*s0Size + sIndex[1]*s1Size +
+                                sIndex[2]*s2Size + sIndex[3]];
+				}
+			}
+		}
+	}
+	set_host_data(temp);
+	delete temp;
+
+	this->_shape = {d0Index, d1Index, d2Index, d3Index};
+}
+*/
+
+template <typename Dtype>
+void Data<Dtype>::transpose(const vector<uint32_t>& t) {
+	Data<Dtype>* temp = new Data<Dtype>("temp");
+	temp->reshape({_shape[t[0]], _shape[t[1]], _shape[t[2]], _shape[t[3]]});
+
+	const uint32_t s0Size = this->getCountByAxis(1);
+	const uint32_t s1Size = this->getCountByAxis(2);
+	const uint32_t s2Size = this->getCountByAxis(3);
+
+	const uint32_t d0Size = temp->getCountByAxis(1);
+	const uint32_t d1Size = temp->getCountByAxis(2);
+	const uint32_t d2Size = temp->getCountByAxis(3);
+
+	uint32_t sIndex[4];
+	uint32_t& d0Index = sIndex[t[0]];
+	uint32_t& d1Index = sIndex[t[1]];
+	uint32_t& d2Index = sIndex[t[2]];
+	uint32_t& d3Index = sIndex[t[3]];
+
+	const Dtype* srcData = host_data();
+	Dtype* dstData = temp->mutable_host_data();
+
+	for (sIndex[0] = 0; sIndex[0] < this->_shape[0]; sIndex[0]++) {
+		for (sIndex[1] = 0; sIndex[1] < this->_shape[1]; sIndex[1]++) {
+			for (sIndex[2] = 0; sIndex[2] < this->_shape[2]; sIndex[2]++) {
+				for (sIndex[3] = 0; sIndex[3] < this->_shape[3]; sIndex[3]++) {
 					dstData[d0Index*d0Size + d1Index*d1Size + d2Index*d2Size + d3Index] =
 						srcData[sIndex[0]*s0Size + sIndex[1]*s1Size + 
                                 sIndex[2]*s2Size + sIndex[3]];

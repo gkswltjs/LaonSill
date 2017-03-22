@@ -797,23 +797,40 @@ void Network<Dtype>::_backpropagation(uint32_t batchIndex) {
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
 
 	for (int i = layersConfig->_layers.size()-1; i >= 0; i--) {
-		Layer<Dtype>* hiddenLayer =
-				dynamic_cast<Layer<Dtype>*>(layersConfig->_layers[i]);
-		if (hiddenLayer) {
-			//cout << layersConfig->_layers[i]->name << ": backpropagation ... " << endl;
-			hiddenLayer->backpropagation();
-			//cout << "input sumsq of " << hiddenLayer->name << ":\t\t" <<
-			//		hiddenLayer->_inputData[0]->sumsq_device_grad() << endl;
-		}
-
-		/*
-		else {
-			cout << layersConfig->_layers[i]->name <<
-					" is not a hiddenLayer, so skip backpropagation ... " << endl;
-		}
-		*/
+		layersConfig->_layers[i]->backpropagation();
 	}
 }
+
+template <typename Dtype>
+void Network<Dtype>::_backpropagationFromTo(const string& start, const string& end) {
+	LayersConfig<Dtype>* layersConfig = getLayersConfig();
+	map<string, uint32_t>& nameLayerIdxMap = layersConfig->_nameLayerIdxMap;
+
+	int fromIdx;
+	int toIdx;
+	if (start == "") {
+		fromIdx = layersConfig->_layers.size() - 1;
+	} else {
+		assert(nameLayerIdxMap.find(start) != nameLayerIdxMap.end());
+		fromIdx = (int)nameLayerIdxMap[start];
+	}
+
+	if (end == "") {
+		toIdx = 0;
+	} else {
+		assert(nameLayerIdxMap.find(end) != nameLayerIdxMap.end());
+		toIdx = (int)nameLayerIdxMap[end];
+	}
+
+	assert(fromIdx < layersConfig->_layers.size());
+	assert(toIdx >= 0);
+	assert(fromIdx >= toIdx);
+
+	for (int i = fromIdx; i >= toIdx; i--) {
+		layersConfig->_layers[i]->backpropagation();
+	}
+}
+
 
 template <typename Dtype>
 void Network<Dtype>::saveProposalTargets(ofstream& ofs) {

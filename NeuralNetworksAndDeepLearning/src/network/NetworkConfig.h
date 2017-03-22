@@ -96,6 +96,7 @@ public:
     InputLayer<Dtype>* _inputLayer;
 
     std::map<std::string, Layer<Dtype>*> _nameLayerMap;
+    std::map<std::string, uint32_t> _nameLayerIdxMap;
 	Builder* _builder;
 
 	LayersConfig(Builder* builder);
@@ -105,6 +106,7 @@ public:
 	LayersConfig<Dtype>* learnableLayers(std::vector<LearnableLayer<Dtype>*>& learnableLayers);
 	LayersConfig<Dtype>* nameLayerMap(std::map<std::string, Layer<Dtype>*>& nameLayerMap);
 	LayersConfig<Dtype>* layerDataMap(std::map<std::string, Data<Dtype>*>& layerDataMap);
+	LayersConfig<Dtype>* nameLayerIdxMap(std::map<std::string, uint32_t>& nameLayerIdxMap);
 };
 
 

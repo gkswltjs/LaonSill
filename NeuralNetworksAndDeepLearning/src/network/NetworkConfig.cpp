@@ -34,6 +34,7 @@ LayersConfig<Dtype>* LayersConfig<Dtype>::Builder::build() {
 	vector<Layer<Dtype>*> layers;
 	vector<LearnableLayer<Dtype>*> learnableLayers;
 	map<uint32_t, Layer<Dtype>*> idLayerMap;
+	map<string, uint32_t> nameLayerIdxMap;
 
 	// (1) 전체 레이어에 대해 Layer Builder의 설정대로 Layer들을 생성한다.
 	initializeLayers(firstLayers, lastLayers, layers, learnableLayers, idLayerMap);
@@ -58,6 +59,12 @@ LayersConfig<Dtype>* LayersConfig<Dtype>::Builder::build() {
 	vector<Layer<Dtype>*> olayers;
 	_orderLayers(layers, olayers);
 
+
+	for (int i = 0; i < olayers.size(); i++) {
+		nameLayerIdxMap[olayers[i]->name] = i;
+	}
+
+
 	printFinalLayerConfiguration(olayers);
 
 	return (new LayersConfig(this))
@@ -66,7 +73,8 @@ LayersConfig<Dtype>* LayersConfig<Dtype>::Builder::build() {
 		->layers(olayers)
 		->learnableLayers(learnableLayers)
 		->nameLayerMap(nameLayerMap)
-		->layerDataMap(layerDataMap);
+		->layerDataMap(layerDataMap)
+		->nameLayerIdxMap(nameLayerIdxMap);
 }
 
 template <typename Dtype>
@@ -582,6 +590,13 @@ template <typename Dtype>
 LayersConfig<Dtype>* LayersConfig<Dtype>::layerDataMap(
 		map<string, Data<Dtype>*>& layerDataMap) {
 	this->_layerDataMap = layerDataMap;
+	return this;
+}
+
+template <typename Dtype>
+LayersConfig<Dtype>* LayersConfig<Dtype>::nameLayerIdxMap(
+		map<string, uint32_t>& nameLayerIdxMap) {
+	this->_nameLayerIdxMap = nameLayerIdxMap;
 	return this;
 }
 

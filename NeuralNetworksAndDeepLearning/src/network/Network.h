@@ -136,6 +136,10 @@ public:
 
 
 
+    void _backpropagationFromTo(const std::string& start, const std::string& end);
+
+
+
 protected:
 	/**
 	 * @details 배치단위의 학습이 종료된 후 학습된 내용을 적절한 정규화 과정을 거쳐 네트워크에
@@ -174,6 +178,7 @@ protected:
 
 	void _feedforward(uint32_t batchIndex);
 	void _backpropagation(uint32_t batchIndex);
+
 
 	void saveProposalTargets(std::ofstream& ofs);
 

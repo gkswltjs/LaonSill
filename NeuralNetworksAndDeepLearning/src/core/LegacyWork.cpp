@@ -26,7 +26,7 @@ using namespace std;
 
 #define TEMP 1
 #if TEMP
-#define ARTISTIC_TEST 0
+#define ARTISTIC_TEST 1
 #define SMALL_TEST 0
 
 #if !ARTISTIC_TEST
@@ -91,6 +91,7 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
 
 template <typename Dtype>
 void LegacyWork<Dtype>::trainNetwork(Job *job) {
+	/*
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
     int maxEpochs = job->getIntValue(1);
 
@@ -99,12 +100,12 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
     ArtisticStyle<Dtype>* artisticStyle = new ArtisticStyle<Dtype>(
     		network,
 #if !SMALL_TEST
-    		"/data/backup/artistic/tubingen_320.jpg",
+    		"/data/backup/artistic/tubingen_64.jpg",
     		//"/home/jkim/Downloads/sampleR32G64B128.png",
-    		"/data/backup/artistic/starry_night_320.jpg",
+    		"/data/backup/artistic/starry_night_64.jpg",
     		//"/data/backup/artistic/composition_320.jpg",
-    		{},
-    		{"relu1_1", "relu2_1"},
+    		{"conv4_2"},
+    		{"conv1_1"},
 #else
     		"/data/backup/artistic/tubingen_16.jpg",
     		"/data/backup/artistic/starry_night_16.jpg",
@@ -112,10 +113,10 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
     		{},
 			{"conv1_1", "conv2_1"},
 #endif
-    		5.0f,					// contentReconstructionFactor
+    		1.0f,					// contentReconstructionFactor
     		100.0f,					// styleReconstructionFactor
-    		10.0f,					// learningRate
-    		"relu2_1",				// end
+    		100.0,					// learningRate
+    		"relu4_2",				// end
     		true,					// plotContentCost
     		true					// plotStyleCost
     );
@@ -123,6 +124,7 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
     artisticStyle->style();
 
     delete artisticStyle;
+    */
 }
 #endif
 
@@ -195,22 +197,24 @@ void LegacyWork<Dtype>::cleanupNetwork(Job* job) {
 
 
 #if TEMP
-
+/*
 #if !SMALL_TEST
-#define LOAD_WEIGHT 0
+#define LOAD_WEIGHT 1
 #else
 #define LOAD_WEIGHT 0
 #endif
+*/
 
 template <typename Dtype>
 int LegacyWork<Dtype>::createNetwork() {
+	/*
 	const vector<string> lossLayers = {"loss"};
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
 #if LOAD_WEIGHT
 	vector<WeightsArg> weightsArgs(1);
 	weightsArgs[0].weightsPath =
-			"/home/jkim/Dev/SOOOA_HOME/network/network.param";
+			"/home/jkim/Dev/SOOOA_HOME/network/VGG19.param";
 #endif
 	const uint32_t batchSize = 10;
 	const uint32_t testInterval = 1000;			// 10000(목표 샘플수) / batchSize
@@ -265,6 +269,8 @@ int LegacyWork<Dtype>::createNetwork() {
 	Network<Dtype>* network = new Network<Dtype>(networkConfig);
 
     return network->getNetworkID();
+    */
+	return 0;
 }
 #else
 template <typename Dtype>

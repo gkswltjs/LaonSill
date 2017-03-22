@@ -300,16 +300,18 @@ void SyncMem<Dtype>::checkHostMemAndUpdateDeviceMem(bool reset) {
 
 template <typename Dtype>
 void SyncMem<Dtype>::checkMemValidity() {
+	/*
 	assert(_size > 0 &&
 			_host_mem != NULL &&
 			_device_mem != NULL &&
 			"assign mem before using ... ");
-	/*
+			*/
 	if (_size <= 0 &&
 				_host_mem == NULL &&
-				_device_mem == NULL)
+				_device_mem == NULL) {
 		cout << "assign mem before using ... " << endl;
-		*/
+		exit(1);
+	}
 }
 
 template <typename Dtype>

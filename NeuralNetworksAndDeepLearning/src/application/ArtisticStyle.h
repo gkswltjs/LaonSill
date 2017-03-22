@@ -1,170 +1,124 @@
 /*
  * ArtisticStyle.h
  *
- *  Created on: 2016. 7. 22.
- *      Author: jhkim
+ *  Created on: Mar 17, 2017
+ *      Author: jkim
  */
 
 #ifndef ARTISTICSTYLE_H_
 #define ARTISTICSTYLE_H_
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
-//#ifndef GPU_MODE
+#include <map>
 
-#include "common.h"
 #include "Network.h"
-#include "StatGraphPlotter.h"
-
-#include <CImg.h>
 
 
 template <typename Dtype>
 class ArtisticStyle {
 public:
-	ArtisticStyle()
-	: contentRepLayers({""}),
-	  styleRepLayers({""}),
-	  contentReconstructionFactor(0),
-	  styleReconstructionFactor(0),
-	  learningRate(0),
-	  end(""),
-	  plotContentCost(false),
-	  plotStyleCost(false) {}
-
-	ArtisticStyle(Network<Dtype> *network,
-			const std::string& contentImagePath,
-			const std::string& styleImagePath,
-			const std::vector<std::string>& contentRepLayers,
-			const std::vector<std::string>& styleRepLayers,
-			const float contentReconstructionFactor,
-			const float styleReconstructionFactor,
-			const float learningRate,
-			const std::string& end,
-			const bool plotContentCost,
-			const bool plotStyleCost);
+	ArtisticStyle();
 	virtual ~ArtisticStyle();
-	void style();
-	void test();
 
-public:
-	void computeContentRepresentationLayerResponses();
-	void computeStyleRepresentationLayerResponses();
+	void transfer_style();
 
-	double computeContentLossGradientAt(const int contentLayerIndex);
-	double computeStyleLossGradientAt(const int styleLayerIndex);
+
+private:
+	void load_model();
+	void rescale_net(const std::vector<uint32_t>& shape);
 
 	/**
-	 * 이미지에 대해 mean값 subtract
+	 * @brief Computes representation matrices for an image
 	 */
-	void preprocess(SyncMem<Dtype>* mem);
-	void deprocess(SyncMem<Dtype>* mem);
-	void clipImage(cimg_library::CImg<Dtype>* img);
+	std::vector<std::map<std::string, Data<Dtype>*>> compute_reprs(Data<Dtype>* net_in,
+			const std::vector<std::string>& layers_style,
+			const std::vector<std::string>& layers_content, const Dtype gram_scale = 1.0f);
+	/**
+	 * @brief Computes style gradient and loss from activation features.
+	 */
+	Dtype compute_style_grad(std::map<std::string, Data<Dtype>*>& F,
+			std::map<std::string, Data<Dtype>*>& G, const std::string& layer,
+			Data<Dtype>* grad);
+	/**
+	 * @brief Computes content gradient and loss from activation features.
+	 */
+	Dtype compute_content_grad(std::map<std::string, Data<Dtype>*>& F,
+			const std::string& layer, Data<Dtype>* grad);
 
-	void createDataFromCImg(cimg_library::CImg<Dtype>* cimg, Data<Dtype>* data);
-	void createGramMatrixFromData(Data<Dtype>* data, SyncMem<Dtype>* Fl,
-			SyncMem<Dtype>* gramMatrix);
+	void transformer_preprocess(Data<Dtype>* data);
+	void transformer_deprocess(Data<Dtype>* data);
 
-	Layer<Dtype>* findRepresentationLayer(const std::string& layerName);
-
-	void flattenData(Data<Dtype>* data, const uint32_t height, const uint32_t width,
-			SyncMem<Dtype>* mem);
-	void unflattenData(SyncMem<Dtype>* mem, const uint32_t flattenHeight,
-			const uint32_t flattenWidth, Data<Dtype>* data);
-
-	int findContentRepLayer(const std::string& layerName);
-	int findStyleRepLayer(const std::string& layerName);
-
-
-
-	// ***********************************************
-	// TEST
-	// ***********************************************
-	void gramMatrixTest();
-	void dataSubTest();
-	void flattenTest();
-	void unflattenTest();
-	void gemmTest();
-
-	// ***********************************************
-	// PRINT CONFIG
-	// ***********************************************
-	void on() {
-		Data<Dtype>::printConfig = 1;
-		SyncMem<Dtype>::printConfig = 1;
-	}
-	void off() {
-		Data<Dtype>::printConfig = 0;
-		SyncMem<Dtype>::printConfig = 0;
-	}
-
-
-	void feedforwardWithData(Data<Dtype>* data);
-
-	void updateDimensionFromCImg(cimg_library::CImg<Dtype>* cimg);
-	void prepareCImgFromPath(const std::string& path, cimg_library::CImg<Dtype>*& cimg);
-	void fillMean();
-	void prepareCImgDisplay(cimg_library::CImg<Dtype>* cimg, const std::string& title,
-			cimg_library::CImgDisplay*& cimgDisplay);
-	bool isValidImageDimension(cimg_library::CImg<Dtype>* cimg);
-	void boundData(const Dtype* dataMin, const Dtype* dataMax, Data<Dtype>* data);
-	void makeNoiseInput(Data<Dtype>* input);
+	void net_forward(Data<Dtype>* net_in);
+	/**
+	 * Style transfer optimization callback
+	 */
+	Dtype style_optfn(Data<Dtype>* net_in);
 
 
 
+	void _on();
+	void _off();
 
-	void printCImg(cimg_library::CImg<Dtype>* cimg, const std::string& head,
-			const bool printData=true);
+	Data<Dtype>* _from_mat_to_data(const cv::Mat& mat);
+	uint32_t _max_from_shape(const std::vector<uint32_t>& shape, int from, int to);
+	uint32_t _min_from_shape(const std::vector<uint32_t>& shape, int from, int to);
+	uint32_t _max_dim_from_mat(const cv::Mat& mat);
+	uint32_t _min_dim_from_mat(const cv::Mat& mat);
 
+	const std::vector<std::string> _map_keys(std::map<std::string, Dtype>& arg);
 
+	Data<Dtype>* _generateInitialInput();
+
+	void _clearNameDataMapVector(std::vector<std::map<std::string, Data<Dtype>*>>& v);
+	void _clearNameDataMap(std::map<std::string, Data<Dtype>*>& m);
 
 private:
 	Network<Dtype>* network;
 
-	cimg_library::CImg<Dtype>* x;			// input image
-	cimg_library::CImg<Dtype>* p;			// photo, content image
-	cimg_library::CImg<Dtype>* a;			// art, style image
+	std::string		end;
+	std::string 	style_img;
+	std::string 	content_img;
+	int 			length;
+	Dtype 			ratio;
+	int 			n_iter;
+	int 			init;
+	std::string		content_type;
 
-	cimg_library::CImgDisplay* xdisp;
-	cimg_library::CImgDisplay* pdisp;
-	cimg_library::CImgDisplay* adisp;
+	// Update Params
+	std::string optimizer_type;
+	Dtype lr;
+	Dtype wd;
+	Dtype mt;
+	Dtype eps;
+	Dtype bt1;
+	Dtype bt2;
+	Data<Dtype>* hist;
+	Data<Dtype>* hist2;
 
-	Data<Dtype>* xdata;
-	SyncMem<Dtype> xdataTemp;
-	SyncMem<Dtype> dataMean;
-	SyncMem<Dtype> mean;
-	SyncMem<Dtype> dataMin;
-	SyncMem<Dtype> dataMax;
- 	SyncMem<Dtype> dataBounds;
+	cv::Mat 		cv_img_style;
+	cv::Mat 		cv_img_content;
+	Data<Dtype>* 	img_style;
+	Data<Dtype>* 	img_content;
+	std::map<std::string, Data<Dtype>*>	G_style;
+	std::map<std::string, Data<Dtype>*>	F_content;
 
-	uint32_t width;
-	uint32_t height;
-	uint32_t channel;
 
-	const std::vector<std::string> contentRepLayers;
-	const std::vector<std::string> styleRepLayers;
-    std::vector<SyncMem<Dtype>*> contentRepLayerResps;		// feature map
-    std::vector<SyncMem<Dtype>*> styleRepLayerResps;		// gram matrix of feature map
+	std::map<std::string, std::map<std::string, Dtype>> weights;
+	std::vector<std::string> layers;
 
-    std::vector<double> styleLossScales;
-    std::vector<double> styleLossWeights;
+	std::vector<Layer<Dtype>*> _layers;
+	std::map<std::string, Data<Dtype>*> _layerDataMap;
+	std::map<std::string, Layer<Dtype>*> _nameLayerMap;
 
-	const float contentReconstructionFactor;
-	const float styleReconstructionFactor;
-	const float learningRate;
-	const std::string end;
 
-	StatGraphPlotter contentCostLogger;
-	StatGraphPlotter styleCostLogger;
-	StatGraphPlotter styleUnitCostLogger;
 
-	const bool plotContentCost;
-	const bool plotStyleCost;
-
-	float lrMult;
+	Data<Dtype>*	mean;
+	Data<Dtype>*	data_bounds;
 
 
 };
-
-//#endif
 
 #endif /* ARTISTICSTYLE_H_ */
