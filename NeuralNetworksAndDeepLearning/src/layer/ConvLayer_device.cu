@@ -16,7 +16,7 @@
 #include "MathFunctions.h"
 #include <algorithm>
 
-#define CONVLAYER_LOG 0
+#define CONVLAYER_LOG 1
 
 using namespace std;
 
@@ -77,7 +77,7 @@ __global__ void DoAdagrad(int size, const Dtype* dx, Dtype* cache, Dtype* x,
      */
 
     cache[idx] += dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
+    x[idx] += (-1.0) * lr * dx[idx] / (sqrtf(cache[idx]) + eps);
 }
 
 template <typename Dtype>
@@ -97,12 +97,10 @@ __global__ void DoRMSprop(int size, const Dtype* dx, Dtype* cache, Dtype* x,
      */
 
     cache[idx] = dr * cache[idx] + (1.0 - dr) * dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
+    x[idx] += (-1.0) * lr * dx[idx] / (sqrtf(cache[idx]) + eps);
 }
 
-#define USE_TENSORFLOW_ADAM         1 
-static double decayedBeta1 = 1.0;
-static double decayedBeta2 = 1.0;
+#define USE_TENSORFLOW_ADAM         0
 
 template <typename Dtype>
 __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
@@ -124,10 +122,10 @@ __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
     m[idx] = beta1 * m[idx] + (1.0 - beta1) * dx[idx];
     v[idx] = beta2 * v[idx] + (1.0 - beta2) * dx[idx] * dx[idx];
 #if USE_TENSORFLOW_ADAM
-    Dtype learningRate = lr * sqrt(1.0 - decayedBeta2) / (1.0 - decayedBeta1);
-    x[idx] += (-1.0) * lr * m[idx] / (sqrt(v[idx]) + eps);
+    Dtype learningRate = lr * sqrtf(1.0 - decayedBeta2) / (1.0 - decayedBeta1);
+    x[idx] += (-1.0) * learningRate * m[idx] / (sqrtf(v[idx]) + eps);
 #else
-    x[idx] += (-1.0) * lr * m[idx] / (sqrt(v[idx]) + eps);
+    x[idx] += (-1.0) * lr * m[idx] / (sqrtf(v[idx]) + eps);
 #endif
 }
 
@@ -214,6 +212,9 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 	this->_paramsInitialized[Filter] = false;
 	this->_paramsInitialized[Bias] = false;
 
+    this->decayedBeta1 = 1.0;
+    this->decayedBeta2 = 1.0;
+
 	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&biasTensorDesc));
@@ -296,7 +297,7 @@ void ConvLayer<Dtype>::reshape() {
 	const uint32_t orows = static_cast<uint32_t>(h);
 	const uint32_t ocols = static_cast<uint32_t>(w);
 
-#if !CONVLAYER_LOG
+#if CONVLAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
 			this->name.c_str(), obatches, ochannels, orows, ocols);
 #endif
@@ -330,8 +331,8 @@ void ConvLayer<Dtype>::reshape() {
 			this->filterDesc,
 			this->convDesc,
 			this->outputTensorDesc,
-			//CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
-			CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
+			CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
+			//CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
 			memoryLimitInBytes,
 			&convFwdAlgo));
 
@@ -372,8 +373,8 @@ void ConvLayer<Dtype>::reshape() {
 			this->outputTensorDesc,
 			this->convDesc,
 			this->filterDesc,
-			//CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
-			CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+			CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
+			//CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
 			memoryLimitInBytes,
 			&this->convBwdFilterAlgo));
 
@@ -414,8 +415,8 @@ void ConvLayer<Dtype>::reshape() {
 			this->outputTensorDesc,
 			this->convDesc,
 			this->inputTensorDesc,
-			//CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
-			CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
+			CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
+			//CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
 			memoryLimitInBytes,
 			&convBwdDataAlgo));
 
@@ -475,6 +476,9 @@ void ConvLayer<Dtype>::update() {
     const Dtype decayRate = this->networkConfig->_decayRate;
     const Dtype beta1 = this->networkConfig->_beta1;
     const Dtype beta2 = this->networkConfig->_beta2;
+
+    this->decayedBeta1 *= beta1;
+    this->decayedBeta2 *= beta2;
 
 	_updateParam(weightSize, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
 		this->_paramsHistory[Filter], this->_paramsHistory2[Filter], this->_params[Filter]);
@@ -588,12 +592,10 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
          * x += -learning_rate * m / (sqrt(v) + eps)
          *
          */
-        decayedBeta1 *= beta1;
-        decayedBeta2 *= beta2;
 	    DoAdam<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData, d_paramHistoryData2,
-            d_paramData, learnScale, epsilon, beta1, beta2, (Dtype)decayedBeta1,
-            (Dtype)decayedBeta2);
+            d_paramData, learnScale, epsilon, beta1, beta2, this->decayedBeta1,
+            this->decayedBeta2);
     } else {
         SASSERT(false, "invalid optimizer. optimizer=%d", (int)opt);
     }
@@ -765,6 +767,8 @@ void ConvLayer<Dtype>::_computeBiasesGrad() {
 	checkCUDNN(cudnnConvolutionBackwardBias(Cuda::cudnnHandle,
 			&Cuda::alpha, this->outputTensorDesc, d_outputGrad,
 			&Cuda::beta, biasTensorDesc, d_biasGrad));
+
+
 }
 
 template <typename Dtype>

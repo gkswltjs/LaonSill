@@ -102,6 +102,9 @@ public:
 	std::vector<Data<Dtype>*> _paramsHistory2;
 	std::vector<bool> _paramsInitialized;
 
+    Dtype decayedBeta1;     // for Adam optimizer
+    Dtype decayedBeta2;     // for Adam optimizer
+
 public:
     bool isDonator;
     bool isReceiver;

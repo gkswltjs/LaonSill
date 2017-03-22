@@ -1,4 +1,5 @@
 #if 1
+#include <fcntl.h>
 #include <cstdint>
 #include <vector>
 #include <iostream>
@@ -272,6 +273,101 @@ void printWeightAndBias(LayersConfig<float>* lc, const char* title) {
     }
 }
 
+typedef struct failInfo_s {
+    int index;
+    float soa;
+    float tf;
+    float err;
+} failInfo;
+
+void compareValue(LayersConfig<float>* lc, const char* layerName,
+    const char* compareFilePath, int showErrCount, float errorLimit) {
+
+    int failCount = 0;
+    failInfo *fi = (failInfo*)malloc(sizeof(failInfo) * showErrCount);
+    SASSERT0(fi != NULL);
+
+    Layer<float>* layer = lc->_nameLayerMap[layerName];
+    SASSERT0(layer != NULL);
+
+    const float* soaData = layer->_outputData[0]->host_data();
+    int elemCount = layer->_outputData[0]->getCount();
+    printf("elem count=%d\n", elemCount);
+    int elemSize = elemCount * sizeof(float);
+
+    int fd = open(compareFilePath, O_RDONLY);
+    SASSERT0(fd != -1);
+
+    fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK);
+
+    float* buf = (float*)malloc(elemSize);
+    SASSERT0(buf != NULL);
+
+    int nread = read(fd, buf, elemSize);
+    SASSERT0(nread == elemSize);
+
+    printf("Compare %s layer : ", layerName);
+    for (int i = 0; i < elemCount; i++) {
+        float err = abs(soaData[i] - buf[i]);
+        if (err > errorLimit) {
+            if (failCount < showErrCount) {
+                fi[failCount].soa = soaData[i];
+                fi[failCount].tf = buf[i];
+                fi[failCount].err = err;
+                fi[failCount].index = i;
+            }
+
+            failCount++;
+        }
+    }
+
+    close(fd);
+    free(buf);
+
+    if (failCount == 0) {
+        printf("Pass.\n");
+        free(fi);
+    }
+    else {
+        printf("Failed(%d/%d).\n", failCount, elemCount);
+        
+        for (int i = 0; i < min(showErrCount, failCount); i++) {
+            printf("Failed. index=%d, soooa=%f, tf=%f, error=%f\n",
+                fi[i].index, fi[i].soa, fi[i].tf, fi[i].err); 
+        }
+        free(fi);
+
+        exit(0);
+    }
+}
+
+void swapValue(LayersConfig<float>* lc, const char* layerName,
+    const char* swapFilePath) {
+
+    Layer<float>* layer = lc->_nameLayerMap[layerName];
+    SASSERT0(layer != NULL);
+
+    float* soaData = layer->_outputData[0]->mutable_host_data();
+    int elemCount = layer->_outputData[0]->getCount();
+
+    printf("elem count=%d\n", elemCount);
+    int elemSize = elemCount * sizeof(float);
+
+    int fd = open(swapFilePath, O_RDONLY);
+    SASSERT0(fd != -1);
+
+    float* buf = (float*)malloc(elemSize);
+    SASSERT0(buf != NULL);
+
+    int nread = read(fd, buf, elemSize);
+    SASSERT0(nread == elemSize);
+
+    memcpy(soaData, buf, elemSize);
+
+    close(fd);
+    free(buf);
+}
+
 void developerMain() {
     STDOUT_LOG("enter developerMain()");
 
@@ -298,6 +394,7 @@ void developerMain() {
 	const LRPolicy lrPolicy = LRPolicy::Fixed;
 
     const Optimizer opt = Optimizer::Adam;
+    //const Optimizer opt = Optimizer::Momentum;
 
 	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
 	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
@@ -366,15 +463,10 @@ void developerMain() {
 	for (uint32_t i = 0; i < lcDGAN->_layers.size(); i++)
 		lcDGAN->_layers[i]->setNetworkConfig(ncDGAN);
 
-	for (uint32_t i = 0; i < lcDGAN->_layers.size(); i++)
-		lcDGAN->_layers[i]->reshape();
-
 	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
 		lcGD0GAN->_layers[i]->setNetworkConfig(ncGD0GAN);
 
-	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
-		lcGD0GAN->_layers[i]->reshape();
-
+#if 0
     Gnuplot gpGDGanDeconv1;
     vector<pair<int, double>> dataGDGanDeconv1;
     Gnuplot gpGDGanDeconv2;
@@ -393,37 +485,124 @@ void developerMain() {
     Gnuplot gpDGanConv2;
     Gnuplot gpDGanConv3;
     Gnuplot gpDGanConv4;
+#endif
 
     int debugPeriod = 100;
 
     for (int i = 0; i < 25; i++) {  // epoch
+        cout << "epoch=" << i << endl;
+
         InputLayer<float>* inputLayer = lcDGAN->_inputLayer;
         const uint32_t trainDataSize = inputLayer->getNumTrainData();
-        const uint32_t numBatches = trainDataSize / ncDGAN->_batchSize;
+        const uint32_t numBatches = trainDataSize / ncDGAN->_batchSize - 1;
+        //const uint32_t numBatches = 100;
 
         for (int j = 0; j < numBatches; j++) {
-            float lossD = 0.0;
-            float lossG = 0.0;
-
-            if (j % debugPeriod == 0)
-                printWeightAndBias(lcDGAN, "D init");
-            lossD = networkDGAN->sgdMiniBatch(j);
-            if (j % debugPeriod == 0)
-                printWeightAndBias(lcDGAN, "real D");
-
-            if (j % debugPeriod == 0)
-                printWeightAndBias(lcGD0GAN, "fake D init");
-            lossD += networkGD0GAN->sgd(1);
-            if (j % debugPeriod == 0)
-                printWeightAndBias(lcGD0GAN, "fake D");
+            // feedforward
+            for (int loop = 0; loop < 1; loop++) {
 #if 0
-            drawAvgOfSquaredSumData(gpGDGanDeconv1, dataGDGanDeconv1, lcGD0GAN, 
-                "DeconvLayer1");
-            drawAvgOfSquaredSumData(gpGDGanConv1, dataGDGanConv1, lcGD0GAN, "ConvLayer1");
-            drawAvgOfSquaredSumData(gpDGanConv1, dataDGanConv1, lcDGAN, "ConvLayer1");
+                networkGD0GAN->_forward("NoiseInputLayer", 0);
+                compareValue(lcGD0GAN, "NoiseInputLayer", "/data/tfout/noise.dat", 5, 0.000001);
+                networkGD0GAN->_forward("fc0", 0);
+                compareValue(lcGD0GAN, "fc0", "/data/tfout/fc0.dat", 5, 0.000001);
+                networkGD0GAN->_forward("reshape", 0);
+                networkGD0GAN->_forward("BNLayer/noiseInput", 0);
+                swapValue(lcGD0GAN, "BNLayer/noiseInput", "/data/tfout/bn_noise.dat");
+                compareValue(lcGD0GAN, "BNLayer/noiseInput", "/data/tfout/bn_noise.dat", 5,
+                        0.000001);
+                networkGD0GAN->_forward("ReluForNoise", 0);
+                compareValue(lcGD0GAN, "ReluForNoise", "/data/tfout/relu_noise.dat", 5,
+                        0.000001);
+
+                networkGD0GAN->_forward("DeconvLayer1", 0);
+                compareValue(lcGD0GAN, "DeconvLayer1", "/data/tfout/deconv1.dat", 128,
+                        0.000001);
+                networkGD0GAN->_forward("BNLayer/deconv1", 0);
+                swapValue(lcGD0GAN, "BNLayer/deconv1", "/data/tfout/bn_deconv1.dat");
+                compareValue(lcGD0GAN, "BNLayer/deconv1", "/data/tfout/bn_deconv1.dat", 5,
+                        0.000001);
+                networkGD0GAN->_forward("Relu1", 0);
+                compareValue(lcGD0GAN, "Relu1", "/data/tfout/relu_deconv1.dat", 5, 0.000001);
+
+                networkGD0GAN->_forward("DeconvLayer2", 0);
+                compareValue(lcGD0GAN, "DeconvLayer2", "/data/tfout/deconv2.dat", 128,
+                        0.001);
+                networkGD0GAN->_forward("BNLayer/deconv2", 0);
+                swapValue(lcGD0GAN, "BNLayer/deconv2", "/data/tfout/bn_deconv2.dat");
+                compareValue(lcGD0GAN, "BNLayer/deconv2", "/data/tfout/bn_deconv2.dat", 5,
+                        0.000001);
+                networkGD0GAN->_forward("Relu2", 0);
+                compareValue(lcGD0GAN, "Relu2", "/data/tfout/relu_deconv2.dat", 5, 0.000001);
+
+                networkGD0GAN->_forward("DeconvLayer3", 0);
+                compareValue(lcGD0GAN, "DeconvLayer3", "/data/tfout/deconv3.dat", 128,
+                        0.001);
+                networkGD0GAN->_forward("BNLayer/deconv3", 0);
+                swapValue(lcGD0GAN, "BNLayer/deconv3", "/data/tfout/bn_deconv3.dat");
+                compareValue(lcGD0GAN, "BNLayer/deconv3", "/data/tfout/bn_deconv3.dat", 5,
+                        0.000001);
+                networkGD0GAN->_forward("Relu3", 0);
+                compareValue(lcGD0GAN, "Relu3", "/data/tfout/relu_deconv3.dat", 5, 0.000001);
+
+                networkGD0GAN->_forward("DeconvLayer4", 0);
+                compareValue(lcGD0GAN, "DeconvLayer4", "/data/tfout/deconv4.dat", 128,
+                        0.001);
+                networkGD0GAN->_forward("hypertangent", 0);
+                compareValue(lcGD0GAN, "hypertangent", "/data/tfout/tanh.dat", 128, 0.000001);
+
+                networkGD0GAN->_forward("ConvLayer1", 0);
+                compareValue(lcGD0GAN, "ConvLayer1", "/data/tfout/conv1.dat", 128, 0.0001);
+
+                exit(0);
+
+                networkDGAN->_feedforward(j);
+
+                compareValue(lcDGAN, "CelebAInputLayer", "/data/tfout/0.dat", 5, 0.00001);
+                compareValue(lcDGAN, "ConvLayer1", "/data/tfout/conv1.dat", 100, 0.00001);
+
+                exit(0);
 #endif
-            //printDataForDebug(lcDGAN, "D-GAN"); 
-            //printDataForDebug(lcGD0GAN, "GD0-GAN");
+
+                networkGD0GAN->_feedforward(0);
+                networkGD0GAN->_backpropagation(0);
+                for (uint32_t k = 9; k < lcGD0GAN->_learnableLayers.size(); k++) {
+                    lcGD0GAN->_learnableLayers[k]->update();
+                }
+
+                networkDGAN->_feedforward(j);
+                networkDGAN->_backpropagation(j);
+                for (uint32_t k = 0; k < lcDGAN->_learnableLayers.size(); k++) {
+                    lcDGAN->_learnableLayers[k]->update();
+                }
+
+                // calculate D loss
+                {
+                    CrossEntropyWithLossLayer<float>* lossDRealLayer =
+                        dynamic_cast<CrossEntropyWithLossLayer<float>*>(lcDGAN->_lastLayers[0]);
+                    SASSERT0(lossDRealLayer != NULL);
+
+                    float realDRealAvg = 0.0;
+                    const float* dLossReal = lossDRealLayer->_outputData[0]->host_data();
+                    for (int depth = 0; depth < ncDGAN->_batchSize; depth++) {
+                        realDRealAvg += dLossReal[depth];
+                    }
+                    realDRealAvg /= (float)ncDGAN->_batchSize;
+
+                    CrossEntropyWithLossLayer<float>* lossDFakeLayer =
+                        dynamic_cast<CrossEntropyWithLossLayer<float>*>(lcGD0GAN->_lastLayers[0]);
+                    SASSERT0(lossDFakeLayer != NULL);
+
+                    float realDFakeAvg = 0.0;
+                    const float* dLossFake = lossDFakeLayer->_outputData[0]->host_data();
+                    for (int depth = 0; depth < ncDGAN->_batchSize; depth++) {
+                        realDFakeAvg += dLossFake[depth];
+                    }
+                    realDFakeAvg /= (float)ncDGAN->_batchSize;
+
+                    cout << "LOSS D=" << realDRealAvg + realDFakeAvg << "(" << realDRealAvg <<
+                        "," << realDFakeAvg << ")" << endl;
+                }
+            }
 
             CrossEntropyWithLossLayer<float>* lossLayer =
                 dynamic_cast<CrossEntropyWithLossLayer<float>*>(lcGD0GAN->_lastLayers[0]);
@@ -433,26 +612,92 @@ void developerMain() {
             SASSERT0(noiseInputLayer != NULL);
 
             lossLayer->setTargetValue(1.0);
-            noiseInputLayer->setRegenerateNoise(false);
+            //noiseInputLayer->setRegenerateNoise(false);
 
-            if (j % debugPeriod == 0)
-                printWeightAndBias(lcGD0GAN, "G init");
-            networkGD0GAN->sgd(1);
-            if (j % debugPeriod == 0)
-                printWeightAndBias(lcGD0GAN, "G 1");
-            lossG = networkGD0GAN->sgd(1);
-            if (j % debugPeriod == 0)
-                printWeightAndBias(lcGD0GAN, "G 2");
+            for (int loop = 0; loop < 2; loop++) {
+                networkGD0GAN->_feedforward(0);
+                networkGD0GAN->_backpropagation(0);
+                // update
+                //for (uint32_t k = 0; k < lcGD0GAN->_learnableLayers.size(); k++) {
+                for (uint32_t k = 0; k < 9; k++) {
+                    lcGD0GAN->_learnableLayers[k]->update();
+                }
+
+                {
+                    CrossEntropyWithLossLayer<float>* lossGFakeLayer =
+                        dynamic_cast<CrossEntropyWithLossLayer<float>*>(lcGD0GAN->_lastLayers[0]);
+                    SASSERT0(lossGFakeLayer != NULL);
+
+                    float realGFakeAvg = 0.0;
+                    const float* dLossFake = lossGFakeLayer->_outputData[0]->host_data();
+                    for (int depth = 0; depth < ncDGAN->_batchSize; depth++) {
+                        realGFakeAvg += dLossFake[depth];
+                    }
+                    realGFakeAvg /= (float)ncDGAN->_batchSize;
+
+                    cout << "LOSS G=" << realGFakeAvg << endl;
+                }
+
+            }
 
             lossLayer->setTargetValue(0.0);
             noiseInputLayer->setRegenerateNoise(true);
 
-            cout << "LOSS[epoch=" << i << "/batch=" << j << "] D: " << lossD << ",G: " <<
-                lossG << endl;
+            if (j % 100 == 90) {
+                int layerCount = lcGD0GAN->_layers.size();
+
+                for (int i = 0; i < layerCount; i++) {
+                    BatchNormLayer<float>* bnLayer =
+                        dynamic_cast<BatchNormLayer<float>*>(lcGD0GAN->_layers[i]);
+
+                    if (bnLayer == NULL)
+                        continue;
+
+                    bnLayer->setTrain(false);
+                }
+        
+                networkGD0GAN->_feedforward(0);
+                printWeightAndBias(lcGD0GAN, "G Sample");
+
+                Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
+                const float* host_data = convLayer->_inputData[0]->host_data();
+                ImageUtil<float>::saveImage(host_data, 20, 3, 64, 64);
+
+                printf("Generated convlayer1 Data :");
+                for (int i = 0; i < 30; i++) {
+                    printf(" %f", host_data[i]);
+                }
+                printf("\n");
+
+                for (int i = 0; i < layerCount; i++) {
+                    BatchNormLayer<float>* bnLayer =
+                        dynamic_cast<BatchNormLayer<float>*>(lcGD0GAN->_layers[i]);
+
+                    if (bnLayer == NULL)
+                        continue;
+
+                    bnLayer->setTrain(true);
+                }
+            }
         }
 
 #if 1
         if (true) {
+            int layerCount = lcGD0GAN->_layers.size();
+
+            for (int i = 0; i < layerCount; i++) {
+                BatchNormLayer<float>* bnLayer =
+                    dynamic_cast<BatchNormLayer<float>*>(lcGD0GAN->_layers[i]);
+
+                if (bnLayer == NULL)
+                    continue;
+
+                bnLayer->setTrain(false);
+            }
+    
+            networkGD0GAN->_feedforward(0);
+            printWeightAndBias(lcGD0GAN, "G Sample");
+
             Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
             const float* host_data = convLayer->_inputData[0]->host_data();
             ImageUtil<float>::saveImage(host_data, 10, 3, 64, 64);
@@ -463,19 +708,15 @@ void developerMain() {
             }
             printf("\n");
 
-            sleep(2);
-        }
+            for (int i = 0; i < layerCount; i++) {
+                BatchNormLayer<float>* bnLayer =
+                    dynamic_cast<BatchNormLayer<float>*>(lcGD0GAN->_layers[i]);
 
-        if (true) {
-            Layer<float>* htLayer = lcGD0GAN->_nameLayerMap["hypertangent"];
-            const float* host_data = htLayer->_inputData[0]->host_data();
-            ImageUtil<float>::saveImage(host_data, 15, 3, 64, 64);
+                if (bnLayer == NULL)
+                    continue;
 
-            printf("Generated hyper tangent Data :");
-            for (int i = 0; i < 30; i++) {
-                printf(" %f", host_data[i]);
+                bnLayer->setTrain(true);
             }
-            printf("\n");
         }
 #endif
     }

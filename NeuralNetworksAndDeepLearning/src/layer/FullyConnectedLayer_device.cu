@@ -78,7 +78,7 @@ __global__ void DoAdagrad(int size, const Dtype* dx, Dtype* cache, Dtype* x,
      */
 
     cache[idx] += dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
+    x[idx] += (-1.0) * lr * dx[idx] / (sqrtf(cache[idx]) + eps);
 }
 
 template <typename Dtype>
@@ -98,12 +98,10 @@ __global__ void DoRMSprop(int size, const Dtype* dx, Dtype* cache, Dtype* x,
      */
 
     cache[idx] = dr * cache[idx] + (1.0 - dr) * dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
+    x[idx] += (-1.0) * lr * dx[idx] / (sqrtf(cache[idx]) + eps);
 }
 
-#define USE_TENSORFLOW_ADAM         1 
-static double decayedBeta1 = 1.0;
-static double decayedBeta2 = 1.0;
+#define USE_TENSORFLOW_ADAM         0
 
 template <typename Dtype>
 __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
@@ -125,10 +123,10 @@ __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
     m[idx] = beta1 * m[idx] + (1.0 - beta1) * dx[idx];
     v[idx] = beta2 * v[idx] + (1.0 - beta2) * dx[idx] * dx[idx];
 #if USE_TENSORFLOW_ADAM
-    Dtype learningRate = lr * sqrt(1.0 - decayedBeta2) / (1.0 - decayedBeta1);
-    x[idx] += (-1.0) * learningRate * m[idx] / (sqrt(v[idx]) + eps);
+    Dtype learningRate = lr * sqrtf(1.0 - decayedBeta2) / (1.0 - decayedBeta1);
+    x[idx] += (-1.0) * learningRate * m[idx] / (sqrtf(v[idx]) + eps);
 #else
-    x[idx] += (-1.0) * lr * m[idx] / (sqrt(v[idx]) + eps);
+    x[idx] += (-1.0) * lr * m[idx] / (sqrtf(v[idx]) + eps);
 
 #endif
 }
@@ -285,6 +283,9 @@ void FullyConnectedLayer<Dtype>::update() {
     const Dtype beta1 = this->networkConfig->_beta1;
     const Dtype beta2 = this->networkConfig->_beta2;
 
+    this->decayedBeta1 *= beta1;
+    this->decayedBeta2 *= beta2;
+
 	_updateParam(weightSize, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
 		this->_paramsHistory[Weight], this->_paramsHistory2[Weight], this->_params[Weight]);
 
@@ -396,12 +397,10 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
          * x += -learning_rate * m / (sqrt(v) + eps)
          *
          */
-        decayedBeta1 *= beta1;
-        decayedBeta2 *= beta2;
 	    DoAdam<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData, d_paramHistoryData2,
-            d_paramData, learnScale, epsilon, beta1, beta2, (Dtype)decayedBeta1,
-            (Dtype)decayedBeta2);
+            d_paramData, learnScale, epsilon, beta1, beta2, this->decayedBeta1,
+            this->decayedBeta2);
     } else {
         SASSERT(false, "invalid optimizer. optimizer=%d", (int)opt);
     }

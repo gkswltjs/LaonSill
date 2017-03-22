@@ -49,7 +49,7 @@ public:
             this->_tranCols = 1;
             this->_tranMean = 0;
             this->_tranVariance = 1.0;
-            this->_regenerateNoise = false;
+            this->_regenerateNoise = true;
 		}
 		virtual Builder* shape(const std::vector<uint32_t>& shape) {
 			this->_shape = shape;

@@ -18,6 +18,7 @@
 #include "Perf.h"
 #include "StdOutLog.h"
 #include "Network.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -247,10 +248,10 @@ Dtype Network<Dtype>::sgd(int epochs) {
 						float cost = costList[i]/config->_testInterval;
 						networkListeners[i]->onCostComputed(i, config->_lossLayers[i], cost);
 						costList[i] = 0.0;
-						STDOUT_BLOCK(cout << config->_lossLayers[i] << " cost:" << cost << ",";);
+						//STDOUT_BLOCK(cout << config->_lossLayers[i] << " cost:" << cost << ",";);
                         lossSum += cost;
 					}
-					cout << endl;
+					//cout << endl;
                     config->_status = NetworkStatus::Train;
                 }
 
@@ -739,6 +740,25 @@ void Network<Dtype>::_feedforward(uint32_t batchIndex) {
 	}
 }
 
+template<typename Dtype>
+void Network<Dtype>::_forward(string layerName, uint32_t batchIndex) {
+	LayersConfig<Dtype>* layersConfig = getLayersConfig();
+	typename map<string, Layer<Dtype>*>::iterator it =
+        layersConfig->_nameLayerMap.find(layerName);
+	SASSERT((it != layersConfig->_nameLayerMap.end()), "invalid layer name. layer name=%s",
+        layerName.c_str());
+
+    InputLayer<Dtype>* inputLayer = dynamic_cast<InputLayer<Dtype>*>(it->second);
+    if (inputLayer) {
+	    int baseIndex = batchIndex*config->_batchSize;
+	    inputLayer->feedforward(baseIndex);
+    } else {
+        Layer<Dtype>* layer = dynamic_cast<Layer<Dtype>*>(it->second);
+        SASSERT0(layer != NULL); 
+        layer->feedforward();
+    }
+}
+
 /*
  * @brief       이 함수는 아래의 조건들에 따라서 3가지 동작을 수행한다.
  *              (1) batchCount == 1
@@ -813,6 +833,19 @@ void Network<Dtype>::_backpropagation(uint32_t batchIndex) {
 		}
 		*/
 	}
+}
+
+template<typename Dtype>
+void Network<Dtype>::_backward(string layerName) {
+	LayersConfig<Dtype>* layersConfig = getLayersConfig();
+	typename map<string, Layer<Dtype>*>::iterator it = 
+        layersConfig->_nameLayerMap.find(layerName);
+	SASSERT((it != layersConfig->_nameLayerMap.end()), "invalid layer name. layer name=%s",
+        layerName.c_str());
+
+    Layer<Dtype>* hiddenLayer = dynamic_cast<Layer<Dtype>*>(it->second);
+    SASSERT0(hiddenLayer != NULL); 
+    hiddenLayer->backpropagation();
 }
 
 template <typename Dtype>

@@ -58,6 +58,8 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axi
         new Data<Dtype>(this->name + "_weight_history2");
 	this->_paramsHistory2[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history2");
 
+    this->decayedBeta1 = 1.0;
+    this->decayedBeta2 = 1.0;
 	//checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
 	//checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }

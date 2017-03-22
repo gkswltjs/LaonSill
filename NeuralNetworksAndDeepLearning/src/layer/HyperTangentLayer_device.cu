@@ -24,17 +24,17 @@ using namespace std;
 // GPU Kernels
 
 template <typename Dtype>
-__global__ void Forward(const Dtype *input, int size, Dtype *output)
+__global__ void HyperTangentForward(const Dtype *input, int size, Dtype *output)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
 		return;
 
-	output[idx] = tanh(input[idx]);
+	output[idx] = tanhf(input[idx]);
 }
 
 template <typename Dtype>
-__global__ void Backward(const Dtype *outputGrad, const Dtype *output, int size,
+__global__ void HyperTangentBackward(const Dtype *outputGrad, const Dtype *output, int size,
     Dtype *inputGrad)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -66,12 +66,26 @@ void HyperTangentLayer<Dtype>::initialize() {
 
 template <typename Dtype>
 void HyperTangentLayer<Dtype>::feedforward() {
+    reshape();
     const Dtype* inputData = this->_inputData[0]->device_data();
     Dtype* outputData = this->_outputData[0]->mutable_device_data();
     int size = this->_inputData[0]->getCountByAxis(0);
 
-    Forward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
+    HyperTangentForward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         inputData, size, outputData);
+
+#if 0
+    {
+        cout << "Hyperbolic Tangent Forward : ";
+        const Dtype* inputDataDebug = this->_inputData[0]->host_data();
+        const Dtype* outputDataDebug = this->_outputData[0]->host_data();
+        for (int i = 0; i < 10; i++) {
+            cout << inputDataDebug[i] << "/" << outputDataDebug[i] << "/" <<
+                tanh(inputDataDebug[i]) << " ";
+        }
+        cout << endl;
+    }
+#endif
 }
 
 template <typename Dtype>
@@ -81,7 +95,7 @@ void HyperTangentLayer<Dtype>::backpropagation() {
 	Dtype* inputGrads = this->_inputData[0]->mutable_device_grad();
     int size = this->_inputData[0]->getCountByAxis(0);
 
-    Backward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
+    HyperTangentBackward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         outputGrads, outputData, size, inputGrads);
 }
 

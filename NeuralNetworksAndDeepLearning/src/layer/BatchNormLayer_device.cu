@@ -77,7 +77,7 @@ __global__ void DoAdagrad(int size, const Dtype* dx, Dtype* cache, Dtype* x,
      */
 
     cache[idx] += dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
+    x[idx] += (-1.0) * lr * dx[idx] / (sqrtf(cache[idx]) + eps);
 }
 
 template <typename Dtype>
@@ -97,16 +97,15 @@ __global__ void DoRMSprop(int size, const Dtype* dx, Dtype* cache, Dtype* x,
      */
 
     cache[idx] = dr * cache[idx] + (1.0 - dr) * dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
+    x[idx] += (-1.0) * lr * dx[idx] / (sqrtf(cache[idx]) + eps);
 }
 
-#define USE_TENSORFLOW_ADAM         1 
-static double decayedBeta1 = 1.0;
-static double decayedBeta2 = 1.0;
+#define USE_TENSORFLOW_ADAM         0 
 
 template <typename Dtype>
 __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
-    const Dtype lr, const Dtype eps, const Dtype beta1, const Dtype beta2)
+    const Dtype lr, const Dtype eps, const Dtype beta1, const Dtype beta2,
+    const Dtype decayedBeta1, const Dtype decayedBeta2)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
@@ -123,10 +122,10 @@ __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
     m[idx] = beta1 * m[idx] + (1.0 - beta1) * dx[idx];
     v[idx] = beta2 * v[idx] + (1.0 - beta2) * dx[idx] * dx[idx];
 #if USE_TENSORFLOW_ADAM
-    Dtype learningRate = lr * sqrt(1.0 - decayedBeta2) / (1.0 - decayedBeta1);
-    x[idx] += (-1.0) * lr * m[idx] / (sqrt(v[idx]) + eps);
+    Dtype learningRate = lr * sqrtf(1.0 - decayedBeta2) / (1.0 - decayedBeta1);
+    x[idx] += (-1.0) * learningRate * m[idx] / (sqrtf(v[idx]) + eps);
 #else
-    x[idx] += (-1.0) * lr * m[idx] / (sqrt(v[idx]) + eps);
+    x[idx] += (-1.0) * lr * m[idx] / (sqrtf(v[idx]) + eps);
 #endif
 }
 
@@ -175,61 +174,49 @@ __global__ void Normalize(const Dtype *input, const Dtype* mean, const Dtype* va
 		return;
 
     int curDepth = idx % depth;
-    Dtype denominator = sqrt(variance[curDepth] + epsilon);
+    Dtype denominator = sqrtf(variance[curDepth] + epsilon);
 
     normInput[idx] = (input[idx] - mean[curDepth]) / denominator;
     output[idx] = normInput[idx] * gamma[curDepth] + beta[curDepth];
 }
 
+#define USE_SIMPLE_MOVING_AVERAGE       1
 template <typename Dtype>
-__global__ void Add(const Dtype *input, int depth, Dtype* output)
+__global__ void IncrementalMean(const Dtype *input, int depth, const Dtype counter,
+    Dtype* output)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= depth) 
 		return;
-
-    output[idx] += input[idx];
+#if USE_SIMPLE_MOVING_AVERAGE
+    output[idx] = 0.99 * output[idx] + 0.01 * input[idx];
+#else
+    output[idx] = ((counter - 1.0) * output[idx] + input[idx]) / counter;
+#endif
 }
 
 template <typename Dtype>
-__global__ void Inference(const Dtype *input, const Dtype *meanSum, const Dtype *varianceSum,
-    const Dtype *gamma, const Dtype *beta, int depth, int batchCount, int batchSetCount, 
-    Dtype epsilon, Dtype* output)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= depth) 
-		return;
-
-    Dtype avgMean = meanSum[idx] / (Dtype)batchSetCount;
-    Dtype avgVariance = varianceSum[idx] / (Dtype)(batchSetCount - 1);
-    Dtype sqrtVariance = sqrt(avgVariance + epsilon);
-
-    for (int i = 0 ; i < batchCount; i++) {
-        int index = i * depth + idx;
-
-        output[idx] = input[index] * gamma[idx] / sqrtVariance + beta[idx] - 
-            gamma[idx] * avgMean / sqrtVariance;
-    }
-}
-
-template <typename Dtype>
-__global__ void FirstInference(const Dtype *input, const Dtype *meanSum,
-    const Dtype *varianceSum, const Dtype *gamma, const Dtype *beta, int depth,
-    int batchCount, int batchSetCount, Dtype epsilon, Dtype* output)
+__global__ void Inference(const Dtype *input, const Dtype *globalMean,
+    const Dtype *globalVar, const Dtype *gamma, const Dtype *beta, int depth,
+    int batchCount, const Dtype counter, Dtype epsilon, Dtype* output)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= depth)
 		return;
 
-    Dtype avgMean = meanSum[idx];
-    Dtype avgVariance = varianceSum[idx];
-    Dtype sqrtVariance = sqrt(avgVariance + epsilon);
+    Dtype varFactor = 1.0;
+
+    if (counter > 1.1) {
+        varFactor = (Dtype)counter / ((Dtype)counter - 1.0);
+    }
+
+    Dtype sqrtVariance = sqrtf(globalVar[idx] * varFactor + epsilon);
 
     for (int i = 0 ; i < batchCount; i++) {
         int index = i * depth + idx;
 
-        output[idx] = input[index] * gamma[idx] / sqrtVariance + beta[idx] - 
-            gamma[idx] * avgMean / sqrtVariance;
+        output[index] = input[index] * gamma[idx] / sqrtVariance + beta[idx] - 
+            gamma[idx] * globalMean[idx] / sqrtVariance;
     }
 }
 
@@ -274,7 +261,7 @@ __global__ void ComputeMeanGrad(const Dtype *normInputGrads, const Dtype *vars,
 		return;
 
     meanGrads[idx] = 0;
-    Dtype sqrtVar = (-1) / sqrt(vars[idx] + epsilon);
+    Dtype sqrtVar = (-1) / sqrtf(vars[idx] + epsilon);
     Dtype varGradFactor = varGrads[idx] * (-2) / (Dtype)batchCount;
     for (int i = 0; i < batchCount; i++) {
         int index = i * depth + idx;
@@ -292,7 +279,7 @@ __global__ void ComputeInputGrad(const Dtype *normInputGrads, const Dtype *vars,
 	if (idx >= depth) 
 		return;
 
-    Dtype sqrtVar = sqrt(vars[idx] + epsilon);
+    Dtype sqrtVar = sqrtf(vars[idx] + epsilon);
     Dtype varGradFactor = varGrads[idx] * 2 / (Dtype)batchCount;
     Dtype meanFactor = meanGrads[idx] / (Dtype)batchCount;
     for (int i = 0; i < batchCount; i++) {
@@ -342,10 +329,6 @@ BatchNormLayer<Dtype>::~BatchNormLayer() {
         Util::clearVector(this->_paramsHistory2);
     }
 
-    SASSERT0(this->meanSet != NULL);
-    free(this->meanSet);
-    SASSERT0(this->varSet != NULL);
-    free(this->varSet);
     SASSERT0(this->normInputSet != NULL);
     free(this->normInputSet);
 }
@@ -449,12 +432,10 @@ void BatchNormLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
          * x += -learning_rate * m / (sqrt(v) + eps)
          *
          */
-        decayedBeta1 *= beta1;
-        decayedBeta2 *= beta2;
 	    DoAdam<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData, d_paramHistoryData2,
-            d_paramData, learnScale, epsilon, beta1, beta2, (Dtype)decayedBeta1,
-            (Dtype)decayedBeta2);
+            d_paramData, learnScale, epsilon, beta1, beta2, this->decayedBeta1,
+            this->decayedBeta2);
     } else {
         SASSERT(false, "invalid optimizer. optimizer=%d", (int)opt);
     }
@@ -471,6 +452,9 @@ void BatchNormLayer<Dtype>::update() {
     const Dtype beta1 = this->networkConfig->_beta1;
     const Dtype beta2 = this->networkConfig->_beta2;
 
+    this->decayedBeta1 *= beta1;
+    this->decayedBeta2 *= beta2;
+
 	_updateParam(size, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
 		this->_paramsHistory[ParamType::Gamma], this->_paramsHistory2[ParamType::Gamma],
         this->_params[ParamType::Gamma]);
@@ -478,28 +462,6 @@ void BatchNormLayer<Dtype>::update() {
 	_updateParam(size, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
 		this->_paramsHistory[ParamType::Beta], this->_paramsHistory2[ParamType::Beta],
         this->_params[ParamType::Beta]);
-
-#if 0
-    struct timespec startTime;
-    SPERF_START(BATCHNORM_LAYER_UPTIME, &startTime);
-
-    // FIXME: momentum, decay 등의 factor들을 고려하지 않았다.
-    //        이런 부분을 고려하면 더 좋은 결과가 나올지도 모른다.
-    float learningRate = this->networkConfig->getLearningRate();
-
-    Dtype* gammaData = this->gammaSet->mutable_device_data();
-    const Dtype* gammaGrad = this->gammaSet->device_grad();
-    Dtype* betaData = this->betaSet->mutable_device_data();
-    const Dtype* betaGrad = this->betaSet->device_grad();
-    Dtype* gammaCache = this->gammaCacheSet->mutable_device_data();
-    Dtype* betaCache = this->betaCacheSet->mutable_device_data();
-
-    UpdateShiftAndScale<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-        gammaGrad, betaGrad, this->depth, (Dtype)learningRate, gammaData, betaData,
-        gammaCache, betaCache);
-
-    SPERF_END(BATCHNORM_LAYER_UPTIME, startTime);
-#endif
 }
 
 template <typename Dtype>
@@ -516,10 +478,7 @@ void BatchNormLayer<Dtype>::feedforward() {
     const Dtype* inputData = this->_inputData[0]->device_data();
     Dtype* outputData = this->_outputData[0]->mutable_device_data();
 
-    // XXX: 현재는 무조건 train 모드만 동작하도록 하였음.
-    //      GAN 끝나고 소스 정리 필요
-    if (1) {
-	//if (this->networkConfig->_status == NetworkStatus::Train) {
+	if (this->train) {
         Dtype* means = this->meanSet->mutable_device_data();
         Dtype* vars = this->varSet->mutable_device_data();
 
@@ -546,33 +505,27 @@ void BatchNormLayer<Dtype>::feedforward() {
             (Dtype)this->epsilon, normInputs, outputData);
 
         // (5) global meanSets과 varianceSets를 갱신한다.
-        this->batchSetCount += 1;
+        Dtype* counter = this->_params[ParamType::GlobalCount]->mutable_host_data();
+        counter[0] += 1;
 
-        Dtype* meanSums = this->meanSumSet->mutable_device_mem();
-        Dtype* varSums = this->varSumSet->mutable_device_mem();
-        Add<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-            means, this->depth, meanSums);
-        Add<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-            vars, this->depth, varSums);
-	} else if (this->networkConfig->_status == NetworkStatus::Test) {
-        SASSERT((this->batchSetCount > 0), "need train before inference");
+        Dtype* globalMeans = this->_params[ParamType::GlobalMean]->mutable_device_data();
+        Dtype* globalVars = this->_params[ParamType::GlobalVar]->mutable_device_data();
+        IncrementalMean<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            means, this->depth, counter[0], globalMeans);
+        IncrementalMean<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            vars, this->depth, counter[0], globalVars);
+	} else {
+        const Dtype* counter = this->_params[ParamType::GlobalCount]->host_data();
+        SASSERT((counter[0] > 0), "need train before inference");
 
-        const Dtype* meanSums = this->meanSumSet->device_mem();
-        const Dtype* varSums = this->varSumSet->device_mem();
+        const Dtype* globalMeans = this->_params[ParamType::GlobalMean]->device_data();
+        const Dtype* globalVars = this->_params[ParamType::GlobalVar]->device_data();
         const Dtype* gammas = this->_params[ParamType::Gamma]->device_data();
         const Dtype* betas = this->_params[ParamType::Beta]->device_data();
 
-        if (this->batchSetCount == 1) {
-            FirstInference<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-                inputData, meanSums, varSums, gammas, betas, this->depth, batchCount,
-                this->batchSetCount, (Dtype)this->epsilon, outputData);
-        } else {
-            Inference<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-                inputData, meanSums, varSums, gammas, betas, this->depth, batchCount,
-                this->batchSetCount, (Dtype)this->epsilon, outputData);
-        }
-    } else {
-        SASSERT(false, "Invalid network status =%d", this->networkConfig->_status);
+        Inference<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, globalMeans, globalVars, gammas, betas, this->depth, batchCount,
+            counter[0], (Dtype)this->epsilon, outputData);
     }
 
     SPERF_END(BATCHNORM_LAYER_FWTIME, startTime);
@@ -615,17 +568,22 @@ void BatchNormLayer<Dtype>::reshape() {
 
         this->_params[ParamType::Gamma]->reshape({1, channels, rows, cols});
         this->_params[ParamType::Beta]->reshape({1, channels, rows, cols});
+        this->_params[ParamType::GlobalMean]->reshape({1, channels, rows, cols});
+        this->_params[ParamType::GlobalVar]->reshape({1, channels, rows, cols});
+        this->_params[ParamType::GlobalCount]->reshape({1, 1, 1, 1});
         this->_paramsHistory[ParamType::Gamma]->reshape({1, channels, rows, cols});
         this->_paramsHistory[ParamType::Beta]->reshape({1, channels, rows, cols});
+        this->_paramsHistory[ParamType::GlobalMean]->reshape({1, channels, rows, cols});
+        this->_paramsHistory[ParamType::GlobalVar]->reshape({1, channels, rows, cols});
+        this->_paramsHistory[ParamType::GlobalCount]->reshape({1, 1, 1, 1});
         this->_paramsHistory2[ParamType::Gamma]->reshape({1, channels, rows, cols});
         this->_paramsHistory2[ParamType::Beta]->reshape({1, channels, rows, cols});
+        this->_paramsHistory2[ParamType::GlobalMean]->reshape({1, channels, rows, cols});
+        this->_paramsHistory2[ParamType::GlobalVar]->reshape({1, channels, rows, cols});
+        this->_paramsHistory2[ParamType::GlobalCount]->reshape({1, 1, 1, 1});
 
         this->meanSet->reshape({1, channels, rows, cols});
         this->varSet->reshape({1, channels, rows, cols});
-
-        int allocSize = sizeof(Dtype) * this->depth;
-        this->meanSumSet->reshape((size_t)allocSize);
-        this->varSumSet->reshape((size_t)allocSize);
 
         this->normInputSet->reshape({batches, channels, rows, cols});
 
@@ -640,6 +598,20 @@ void BatchNormLayer<Dtype>::reshape() {
             betas, this->depth, 0.0f);
         this->_paramsInitialized[ParamType::Beta] = true;
 
+        Dtype* globalMeans = this->_params[ParamType::GlobalMean]->mutable_device_data();
+        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            globalMeans, this->depth, 0.0f);
+        this->_paramsInitialized[ParamType::GlobalMean] = true;
+
+        Dtype* globalVars = this->_params[ParamType::GlobalVar]->mutable_device_data();
+        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            globalVars, this->depth, 1.0f);
+        this->_paramsInitialized[ParamType::GlobalVar] = true;
+
+        Dtype* globalCounts = this->_params[ParamType::GlobalCount]->mutable_device_data();
+        FillValues<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
+            globalCounts, this->depth, 0.0f);
+        this->_paramsInitialized[ParamType::GlobalCount] = true;
     } else {
         SASSERT0(this->depth == depth);
     }

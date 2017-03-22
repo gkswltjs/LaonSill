@@ -171,9 +171,13 @@ protected:
 	//void checkLearnableParamIsNan();
 
 
-
+    // XXX: GAN때문에 임시로 feedforward를 public 함수로 변경하였음.
+public:
 	void _feedforward(uint32_t batchIndex);
+    void _forward(std::string layerName, uint32_t batchIndex);
 	void _backpropagation(uint32_t batchIndex);
+    void _backward(std::string layerName);
+protected:
 
 	void saveProposalTargets(std::ofstream& ofs);
 

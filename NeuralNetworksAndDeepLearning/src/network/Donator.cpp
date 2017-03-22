@@ -69,8 +69,8 @@ void Donator<Dtype>::receive(uint32_t donatorID, void* layerPtr) {
             dynamic_cast<FullyConnectedLayer<Dtype>*>(receiverLayer);
         donator->donateParam(receiver);
     } else if (donatorLayer->type == Layer<Dtype>::BatchNorm) {
-        ConvLayer<Dtype>* donator = dynamic_cast<ConvLayer<Dtype>*>(donatorLayer);
-        ConvLayer<Dtype>* receiver = dynamic_cast<ConvLayer<Dtype>*>(receiverLayer);
+        BatchNormLayer<Dtype>* donator = dynamic_cast<BatchNormLayer<Dtype>*>(donatorLayer);
+        BatchNormLayer<Dtype>* receiver = dynamic_cast<BatchNormLayer<Dtype>*>(receiverLayer);
         donator->donateParam(receiver);
     } else {
         COLD_LOG(ColdLog::WARNING, true, "layer(type=%d) does not support donate function",

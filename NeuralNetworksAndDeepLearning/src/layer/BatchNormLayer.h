@@ -28,10 +28,12 @@ public:
         /* batch normalization related variables */
         double      _epsilon;   // Small value added to variance to avoid dividing 
                                 // by zero. default value = 0.00001
+        bool        _train;
                                         
 		Builder() {
 			this->type = Layer<Dtype>::BatchNorm;
             _epsilon = 0.00001;
+            _train = true;
 		}
 		virtual Builder* name(const std::string name) {
 			LearnableLayer<Dtype>::Builder::name(name);
@@ -57,6 +59,10 @@ public:
 			this->_epsilon = epsilon;
 			return this;
 		}
+        Builder* train(bool train) {
+            this->_train = train;
+            return this;
+        }
 		Layer<Dtype>* build() {
 			return new BatchNormLayer(this);
 		}
@@ -64,7 +70,7 @@ public:
 
 	BatchNormLayer(Builder* builder);
 
-    BatchNormLayer(const std::string name, double epsilon);
+    BatchNormLayer(const std::string name, double epsilon, bool train);
     virtual ~BatchNormLayer();
 
 	//////////////////////////////////////////
@@ -88,23 +94,19 @@ public:
 	virtual void feedforward();
 
 private:
-    void initialize(double epsilon);
+    void initialize(double epsilon, bool train);
 
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);
 
     double      epsilon;                // Small value added to variance to avoid dividing 
                                         // by zero. default value = 0.001
+    bool        train;
     int         depth;
-    int         batchSetCount;
 
     Data<Dtype>    *meanSet;            // mean
     Data<Dtype>    *varSet;             // variance
     Data<Dtype>    *normInputSet;       // normalized input value
-
-    std::shared_ptr<SyncMem<Dtype>>  meanSumSet;    // meanSet들의 합
-    std::shared_ptr<SyncMem<Dtype>>  varSumSet;     // varSet들의 합
-
 
     void        computeNormInputGrad();
     void        computeVarianceGrad();
@@ -114,11 +116,15 @@ private:
     void        computeShiftGrad();
 public:
     void        donateParam(BatchNormLayer<Dtype>* receiver);
+    void        setTrain(bool train) { this->train = train; }
 
 protected:
     enum ParamType {
         Gamma = 0,
-        Beta = 1
+        Beta = 1,
+        GlobalMean,
+        GlobalVar,
+        GlobalCount
     };
 
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,

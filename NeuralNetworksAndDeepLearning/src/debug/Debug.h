@@ -218,6 +218,8 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 	return layersConfig;
 }
 
+#define USE_CONSTANT_WEIGHT_INIT        0
+
 template <typename Dtype>
 LayersConfig<Dtype>* createDOfGANLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
@@ -235,10 +237,14 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(2)
                 ->name("ConvLayer1")
-                ->filterDim(5, 5, 3, 64, 2, 2)
+                ->filterDim(4, 4, 3, 64, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"data"})
                 ->outputs({"conv1"})
@@ -252,10 +258,14 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(5)
                 ->name("ConvLayer2")
-                ->filterDim(5, 5, 64, 128, 2, 2)
+                ->filterDim(4, 4, 64, 128, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu1"})
                 ->outputs({"conv2"})
@@ -264,7 +274,8 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->id(6)
                 ->name("BNLayer/conv2")
                 ->inputs({"conv2"})
-                ->outputs({"BN/conv2"}))
+                ->outputs({"BN/conv2"})
+                ->donate())
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(7)
                 ->leaky(0.2)
@@ -274,10 +285,14 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(8)
                 ->name("convLayer3")
-                ->filterDim(5, 5, 128, 256, 2, 2)
+                ->filterDim(4, 4, 128, 256, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu2"})
                 ->outputs({"conv3"})
@@ -286,7 +301,8 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->id(9)
                 ->name("BNLayer/conv3")
                 ->inputs({"conv3"})
-                ->outputs({"BN/conv3"}))
+                ->outputs({"BN/conv3"})
+                ->donate())
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(10)
                 ->leaky(0.2)
@@ -296,10 +312,14 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(11)
                 ->name("convLayer4")
-                ->filterDim(5, 5, 256, 512, 2, 2)
+                ->filterDim(4, 4, 256, 512, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu3"})
                 ->outputs({"conv4"})
@@ -308,7 +328,8 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->id(12)
                 ->name("BNLayer/conv4")
                 ->inputs({"conv4"})
-                ->outputs({"BN/conv4"}))
+                ->outputs({"BN/conv4"})
+                ->donate())
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(13)
                 ->leaky(0.2)
@@ -321,7 +342,11 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->nOut(1)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu4"})
                 ->outputs({"fc1"})
@@ -338,9 +363,6 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
 	return layersConfig;
 }
 
-#define USE_CONV_INSTEAD_OF_DECONV      0
-#define INSERT_BN                       0
-
 template <typename Dtype>
 LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
@@ -349,7 +371,6 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->id(9999)
                 ->name("NoiseInputLayer")
                 ->noise(100, -1.0, 1.0)
-                //->linear(1024, 4, 4, 0, 0.02)
                 ->outputs({"noise"})
                 )
         ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
@@ -358,7 +379,11 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->nOut(4 * 4 * 512)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"noise"})
                 ->outputs({"fc0"}))
@@ -378,31 +403,21 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("ReluForNoise")
                 ->inputs({"BN/noiseInput"})
                 ->outputs({"relu/noiseInput"}))
-#if USE_CONV_INSTEAD_OF_DECONV
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10004)
                 ->name("DeconvLayer1")
-                ->filterDim(3, 3, 512, 256, 3, 1)
+                ->filterDim(4, 4, 512, 256, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu/noiseInput"})
-                ->outputs({"deconv1"}))
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
 #else
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10004)
-                ->name("DeconvLayer1")
-                ->filterDim(5, 5, 512, 256, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"relu/noiseInput"})
                 ->outputs({"deconv1"})
-                ->deconv(true)
-                ->deconvExtraCell(1))
-#endif
+                ->deconv(true))
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10005)
                 ->name("BNLayer/deconv1")
@@ -413,31 +428,21 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("Relu1")
                 ->inputs({"BN/deconv1"})
                 ->outputs({"relu1"}))
-#if USE_CONV_INSTEAD_OF_DECONV
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10007)
                 ->name("DeconvLayer2")
-                ->filterDim(5, 5, 256, 128, 6, 1)
+                ->filterDim(4, 4, 256, 128, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu1"})
-                ->outputs({"deconv2"}))
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
 #else
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10007)
-                ->name("DeconvLayer2")
-                ->filterDim(5, 5, 256, 128, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"relu1"})
                 ->outputs({"deconv2"})
-                ->deconv(true)
-                ->deconvExtraCell(1))
-#endif
+                ->deconv(true))
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10008)
                 ->name("BNLayer/deconv2")
@@ -448,31 +453,21 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("Relu2")
                 ->inputs({"BN/deconv2"})
                 ->outputs({"relu2"}))
-#if USE_CONV_INSTEAD_OF_DECONV
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10010)
                 ->name("DeconvLayer3")
-                ->filterDim(5, 5, 128, 64, 10, 1)
+                ->filterDim(4, 4, 128, 64, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu2"})
-                ->outputs({"deconv3"}))
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
 #else
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10010)
-                ->name("DeconvLayer3")
-                ->filterDim(5, 5, 128, 64, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"relu2"})
                 ->outputs({"deconv3"})
-                ->deconv(true)
-                ->deconvExtraCell(1))
-#endif
+                ->deconv(true))
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10011)
                 ->name("BNLayer/deconv3")
@@ -483,58 +478,38 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("Relu3")
                 ->inputs({"BN/deconv3"})
                 ->outputs({"relu3"}))
-#if USE_CONV_INSTEAD_OF_DECONV
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10013)
                 ->name("DeconvLayer4")
-                ->filterDim(5, 5, 64, 3, 18, 1)
+                ->filterDim(4, 4, 64, 3, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu3"})
-                ->outputs({"deconv4"}))
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
 #else
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10013)
-                ->name("DeconvLayer4")
-                ->filterDim(5, 5, 64, 3, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"relu3"})
                 ->outputs({"deconv4"})
-                ->deconv(true)
-                ->deconvExtraCell(1))
+                ->deconv(true))
 
-#endif
-
-#if INSERT_BN
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(9997)
-                ->name("BNLayer/deconv4")
-                ->inputs({"deconv4"})
-                ->outputs({"BN/deconv4"}))
-        ->layer((new typename HyperTangentLayer<Dtype>::Builder())
-                ->id(10014)
-                ->name("hypertangent")
-                ->inputs({"BN/deconv4"})
-                ->outputs({"hypertangent"}))
-#else
         ->layer((new typename HyperTangentLayer<Dtype>::Builder())
                 ->id(10014)
                 ->name("hypertangent")
                 ->inputs({"deconv4"})
                 ->outputs({"hypertangent"}))
-#endif
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10015)
                 ->name("ConvLayer1")
-                ->filterDim(5, 5, 3, 64, 2, 2)
+                ->filterDim(4, 4, 3, 64, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"hypertangent"})
                 ->outputs({"conv1"})
@@ -548,10 +523,14 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10018)
                 ->name("ConvLayer2")
-                ->filterDim(5, 5, 64, 128, 2, 2)
+                ->filterDim(4, 4, 64, 128, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu1"})
                 ->outputs({"conv2"})
@@ -560,7 +539,8 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->id(10019)
                 ->name("BNLayer/conv2")
                 ->inputs({"conv2"})
-                ->outputs({"BN/conv2"}))
+                ->outputs({"BN/conv2"})
+                ->receive(6))
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(10020)
                 ->leaky(0.2)
@@ -570,10 +550,14 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10021)
                 ->name("convLayer3")
-                ->filterDim(5, 5, 128, 256, 2, 2)
+                ->filterDim(4, 4, 128, 256, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu2"})
                 ->outputs({"conv3"})
@@ -582,7 +566,8 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->id(10022)
                 ->name("BNLayer/conv3")
                 ->inputs({"conv3"})
-                ->outputs({"BN/conv3"}))
+                ->outputs({"BN/conv3"})
+                ->receive(9))
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(10023)
                 ->leaky(0.2)
@@ -592,10 +577,14 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(10024)
                 ->name("convLayer4")
-                ->filterDim(5, 5, 256, 512, 2, 2)
+                ->filterDim(4, 4, 256, 512, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu3"})
                 ->outputs({"conv4"})
@@ -604,7 +593,8 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->id(10025)
                 ->name("BNLayer/conv4")
                 ->inputs({"conv4"})
-                ->outputs({"BN/conv4"}))
+                ->outputs({"BN/conv4"})
+                ->receive(12))
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(10026)
                 ->leaky(0.2)
@@ -617,8 +607,11 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->nOut(1)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
+#if USE_CONSTANT_WEIGHT_INIT
+                ->weightFiller(ParamFillerType::Constant, 0.02)
+#else
                 ->biasFiller(ParamFillerType::Constant, 0.0)
+#endif
                 ->inputs({"lrelu4"})
                 ->outputs({"fc1"})
                 ->receive(14))
@@ -629,7 +622,6 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->name("celossGD0GAN")
                 ->inputs({"fc1"})
                 ->outputs({"prob"}))
-
         ->build();
 
 	return layersConfig;
