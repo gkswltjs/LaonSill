@@ -42,45 +42,103 @@
 
 using namespace std;
 
-void developerMain() {
-    STDOUT_LOG("enter developerMain()");
 
-    checkCudaErrors(cudaSetDevice(0));
+void artisticStyle();
+void vgg19();
+
+
+void developerMain() {
+	STDOUT_LOG("enter developerMain()");
+
+	checkCudaErrors(cudaSetDevice(0));
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
+	//artisticStyle();
+	vgg19();
 
-	ArtisticStyle<float>* artisticStyle = new ArtisticStyle<float>(/*
+	STDOUT_LOG("exit developerMain()");
+}
 
-#if !SMALL_TEST
-			"/data/backup/artistic/tubingen_320.jpg",
-			//"/home/jkim/Downloads/sampleR32G64B128.png",
-			"/data/backup/artistic/starry_night_320.jpg",
-			//"/data/backup/artistic/composition_320.jpg",
-			{"conv4_2"},
-			{"conv1_1"},
-#else
-			"/data/backup/artistic/tubingen_16.jpg",
-			"/data/backup/artistic/starry_night_16.jpg",
-			//{"conv1_1"},
-			{},
-			{"conv1_1", "conv2_1"},
-#endif
-			1.0f,					// contentReconstructionFactor
-			100.0f,					// styleReconstructionFactor
-			100.0,					// learningRate
-			"relu4_2",				// end
-			true,					// plotContentCost
-			true					// plotStyleCost*/
-	);
 
+
+void artisticStyle() {
+	ArtisticStyle<float>* artisticStyle = new ArtisticStyle<float>();
 	artisticStyle->transfer_style();
 	delete artisticStyle;
-
-
-
-    STDOUT_LOG("exit developerMain()");
 }
+
+void vgg19() {
+	const int maxEpochs = 1000;
+	const vector<string> lossLayers = {"loss"};
+	const NetworkPhase phase = NetworkPhase::TrainPhase;
+
+#if LOAD_WEIGHT
+	vector<WeightsArg> weightsArgs(1);
+	weightsArgs[0].weightsPath =
+			"/home/jkim/Dev/SOOOA_HOME/network/VGG19.param";
+#endif
+	const uint32_t batchSize = 20;
+	const uint32_t testInterval = 500;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 5000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.001f;
+
+	const uint32_t stepSize = 100000;
+	const float weightDecay = 0.0005f;
+	const float momentum = 0.9f;
+	const float clipGradientsLevel = 0.0f;
+	const float gamma = 0.0001;
+	//const LRPolicy lrPolicy = LRPolicy::Step;
+	const LRPolicy lrPolicy = LRPolicy::Fixed;
+
+	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
+	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
+	STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
+	STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
+	STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
+	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
+	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
+
+	NetworkConfig<float>* networkConfig =
+			(new typename NetworkConfig<float>::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
+			->stepSize(stepSize)
+			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->networkPhase(phase)
+			->gamma(gamma)
+			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+#if LOAD_WEIGHT
+			->weightsArgs(weightsArgs)
+#endif
+			->networkListeners({
+				new NetworkMonitor("loss", NetworkMonitor::PLOT_ONLY)
+				})
+			->lossLayers(lossLayers)
+			->build();
+
+	Util::printVramInfo();
+
+	Network<float>* network = new Network<float>(networkConfig);
+	LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<float>();
+
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(network->config);
+	}
+	network->setLayersConfig(layersConfig);
+	network->loadPretrainedWeights();
+
+	network->sgd_with_timer(maxEpochs);
+}
+
+
+
 
 
 #define TEST_MODE 1
@@ -92,16 +150,15 @@ void developerMain() {
 
 #include "lmdb++.h"
 #include "MathFunctions.h"
+#include "LMDBDataSet.h"
 #endif
 
 int main(int argc, char** argv) {
 #if !TEST_MODE
     int     opt;
 
-
     // 처음 생각했던 것보다 실행모드의 개수가 늘었다.
     // 모드가 하나만 더 추가되면 그냥 enum type으로 모드를 정의하도록 하자.
-
     bool    useDeveloperMode = true;
     char*   singleJobFilePath;
     char*   romFilePath;
@@ -152,21 +209,140 @@ int main(int argc, char** argv) {
 
     InitParam::destroy();
 #else
+    /*
+    //const string source = "/home/jkim/Dev/git/caffe/examples/imagenet/ilsvrc12_train_lmdb";
+    const string source = "/home/jkim/Dev/git/caffe/examples/test/train_lmdb";
+    LMDBDataSet<float>* ds = new LMDBDataSet<float>(source);
+    ds->load();
+
+    int i = 0;
+    while(true) {
+    	cout << i << endl;
+    	const float* trainData = ds->getTrainDataAt(i);
+    	const float* trainLabel = ds->getTrainLabelAt(i);
+    	i++;
+    }
+    delete ds;
+    */
 
     auto env = lmdb::env::create();
     //env.set_mapsize(1UL * 1024UL * 1024UL * 1024UL);		// 1GB
+    //env.open("/home/jkim/Dev/git/caffe/examples/test/train_lmdb_256_jpg");
     env.open("/home/jkim/Dev/git/caffe/examples/imagenet/ilsvrc12_train_lmdb");
 
     auto rtxn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
     auto dbi = lmdb::dbi::open(rtxn, nullptr);
     auto cursor = lmdb::cursor::open(rtxn, dbi);
+
     string key, value;
-    //while (cursor.get(key, value, MDB_NEXT)) {
-    cursor.get(key, value, MDB_NEXT);
-    cout << "key: " << key << ", value: " << value << endl;
-    //}
+    //lmdb::val key;
+    size_t size = dbi.size(rtxn);
+    vector<string> keys(size);
+    int i = 0;
+    while (cursor.get(key, value, MDB_FIRST)) {
+    	//keys[i++] = key;
+
+    	i++;
+    	if (i % 10000 == 0) {
+    		cout << i << endl;
+    	}
+    }
+
+
+    cout << "size: " << size << ", i: " << i << endl;
+
+
+    //cursor.get()
+    /*
+    cout << "key: " << key << ", size: " << value.size() << endl;
+    key = "00000000_n01843383/n01843383_5825.JPEG";
+    if (dbi.get(rtxn, key)) {
+    	cout << "key: " << key;
+    } else
+    	cout << "failed to get ... " << endl;
+    	*/
+
+
+
+
+
+
+
+    /*
+    unsigned char* ptr = (unsigned char*)(&value.c_str()[12]);
+
+    Data<float>* data = new Data<float>("");
+    data->reshape({1, 3, 224, 224});
+    float* data_ptr = data->mutable_host_data();
+    for (int i = 0; i < 224*224*3; i++) {
+    	data_ptr[i] = float(ptr[i]) / 255;
+    }
+    data->transpose({0, 2, 3, 1});
+    cv::Mat result(224, 224, CV_32FC3, data_ptr);
+    cv::namedWindow("result");
+    cv::imshow("result", result);
+    cv::waitKey();
+    */
+
+#if 0
+    const int numSample = 100;
+    //const int numData = 150545;
+    const int numData = 100;
+    uint8_t data[numSample][numData];	//
+    for (int i = 0; i < numSample; i++) {
+    	for (int j = 0; j < numData; j++) {
+    		data[i][j] = 0;
+    	}
+    }
+
+
+
+    for (int i = 0; i < numSample; i++) {
+    	if (!cursor.get(key, value, MDB_NEXT)) {
+    		break;
+    	}
+    	const uint8_t* ptr = (uint8_t*)value.c_str();
+    	const int size = value.size();
+
+    	/*
+    	for (int j = 0; j < value.size(); j++) {
+    		data[i][j] = ptr[j];
+    	}
+    	*/
+
+
+    	for (int j = 0; j < 50; j++) {
+    		data[i][j] = ptr[j];
+    	}
+    	for (int j = 150530; j < size; j++) {
+    		data[i][50+j-150530] = ptr[j];
+    	}
+
+    	/*
+    	printf("%s(%d): %d, %d\n", key.c_str(), value.size(), ptr[size-4], value[size-3]);
+    	uint8_t upper = ptr[size-4];
+    	uint8_t lower = ptr[size-3];
+    	uint16_t category = 0;
+    	if (upper & 0x80) {
+    		category = (0x7f & upper);
+    		category = (category | (lower << 7));
+    	} else {
+    		category = lower;
+    	}
+    	printf("category: %d\n", category);
+    	*/
+    }
+
+    for (int j = 0; j < 70; j++) {
+    	for (int i = 0; i < numSample; i++) {
+    		printf("%d,", data[i][j]);
+    	}
+    	printf("\n");
+    }
+
     cursor.close();
     rtxn.abort();
+#endif
 
 #endif
 

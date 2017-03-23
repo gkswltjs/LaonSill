@@ -707,17 +707,25 @@ LayersConfig<Dtype>* createLeNetLayersConfig() {
 			->layer((new typename InputLayer<Dtype>::Builder())
 					->id(0)
 					->name("mnist")
+
+					/*
 					->source(std::string(SPARAM(BASE_DATA_DIR))
 						+ std::string("/mnist"))
 					->sourceType("ImagePack")
 					->mean({0.13066047740})
-					->outputs({"data", "label"})
-					)
+					->outputs({"data", "label"}))
+					*/
+
+					->source("/home/jkim/Dev/git/caffe/examples/imagenet/ilsvrc12_train_lmdb")
+					->sourceType("LMDB")
+					//->mean({123.0f, 117.0f, 104.0f})
+					->mean({104.0f, 117.0f, 123.0f})
+					->outputs({"data", "label"}))
 
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(1)
 					->name("conv1")
-					->filterDim(5, 5, 1, 20, 0, 1)
+					->filterDim(5, 5, 3, 20, 0, 1)
 					->weightUpdateParam(1, 1)
 					->biasUpdateParam(2, 1)
 					->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -3716,6 +3724,8 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 			->layer((new typename InputLayer<Dtype>::Builder())
 					->id(0)
 					->name("data")
+
+					/*
 #if ILSVRC_1000
 					->source(std::string(SPARAM(BASE_DATA_DIR))
 						+ std::string("/ILSVRC2012/save/1000"))
@@ -3731,6 +3741,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					//->mean({0.47684615850, 0.45469805598, 0.41394191980})
 					->mean({123.0f, 117.0f, 104.0f})
 					->outputs({"data", "label"}))
+					*/
 
 			// artistic style에서 사용할 input layer 설정
 							/*
@@ -3739,6 +3750,12 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->name("data")
 					->outputs({"data", "label"}))
 					*/
+					->source("/home/jkim/Dev/git/caffe/examples/imagenet/ilsvrc12_train_lmdb")
+					->sourceType("LMDB")
+					//->mean({123.0f, 117.0f, 104.0f})
+					->mean({104.0f, 117.0f, 123.0f})
+					->outputs({"data", "label"}))
+
 
 			// tier 1
 			->layer((new typename ConvLayer<Dtype>::Builder())

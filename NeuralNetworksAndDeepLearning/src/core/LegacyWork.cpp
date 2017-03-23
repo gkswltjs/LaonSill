@@ -26,7 +26,7 @@ using namespace std;
 
 #define TEMP 1
 #if TEMP
-#define ARTISTIC_TEST 1
+#define ARTISTIC_TEST 0
 #define SMALL_TEST 0
 
 #if !ARTISTIC_TEST
@@ -36,8 +36,8 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
 
 	// (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	//LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<Dtype>();
-    LayersConfig<float>* layersConfig = createInceptionLayersConfig<Dtype>();
+	LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<Dtype>();
+    //LayersConfig<float>* layersConfig = createInceptionLayersConfig<Dtype>();
     //LayersConfig<float>* layersConfig = createLeNetLayersConfig<Dtype>();
 
 	// (2) network config 정보를 layer들에게 전달한다.
@@ -207,7 +207,6 @@ void LegacyWork<Dtype>::cleanupNetwork(Job* job) {
 
 template <typename Dtype>
 int LegacyWork<Dtype>::createNetwork() {
-	/*
 	const vector<string> lossLayers = {"loss"};
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
@@ -216,7 +215,7 @@ int LegacyWork<Dtype>::createNetwork() {
 	weightsArgs[0].weightsPath =
 			"/home/jkim/Dev/SOOOA_HOME/network/VGG19.param";
 #endif
-	const uint32_t batchSize = 10;
+	const uint32_t batchSize = 40;
 	const uint32_t testInterval = 1000;			// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 10000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
@@ -269,8 +268,6 @@ int LegacyWork<Dtype>::createNetwork() {
 	Network<Dtype>* network = new Network<Dtype>(networkConfig);
 
     return network->getNetworkID();
-    */
-	return 0;
 }
 #else
 template <typename Dtype>

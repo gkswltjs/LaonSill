@@ -6,9 +6,14 @@
  */
 
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include "InputLayer.h"
 #include "NetworkConfig.h"
 #include "ImagePackDataSet.h"
+#include "LMDBDataSet.h"
 #include "MockDataSet.h"
 #include "Util.h"
 #include "CudaUtils.h"
@@ -47,8 +52,6 @@ InputLayer<Dtype>::InputLayer(Builder* builder)
 				builder->_source+"/test_label",
 				builder->_numTestPack);
 		//this->_dataSet->setMean({0.13066047740});
-
-
 		//this->_dataSet->setMean(builder->_mean);
 
 		int numChannels = builder->_mean.size();
@@ -57,6 +60,16 @@ InputLayer<Dtype>::InputLayer(Builder* builder)
 			this->_dataMean->mutable_host_data()[i] = builder->_mean[i];
 		}
 
+		this->_dataSet->load();
+
+	} else if (builder->_sourceType == "LMDB") {
+		this->_dataSet = new LMDBDataSet<Dtype>(
+				builder->_source);
+		int numChannels = builder->_mean.size();
+		this->_dataMean->reshape({1, 1, 1, numChannels});
+		for (int i = 0; i < numChannels; i++) {
+			this->_dataMean->mutable_host_data()[i] = builder->_mean[i];
+		}
 		this->_dataSet->load();
 
 	} else if (builder->_sourceType == "Mock") {
@@ -185,6 +198,26 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 			const Dtype* ptr = _dataSet->getTrainDataAt(baseIndex+i);
 			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
 			//this->_inputData[0]->print_data({}, false);
+
+			if (this->_inputs.size() > 1) {
+				const Dtype* ptr = _dataSet->getTrainLabelAt(baseIndex+i);
+				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
+				//cout << "label: " << ptr[0] << endl;
+			}
+			/*
+			Data<float>* data = new Data<float>("");
+			data->reshape({1, 3, 224, 224});
+			float* data_ptr = data->mutable_host_data();
+			for (int i = 0; i < 224*224*3; i++) {
+				data_ptr[i] = float(ptr[i]) / 255;
+			}
+			data->transpose({0, 2, 3, 1});
+			cv::Mat result(224, 224, CV_32FC3, data_ptr);
+			cv::namedWindow("result");
+			cv::imshow("result", result);
+			cv::waitKey();
+			delete data;
+			*/
 		}
 		this->_inputData[0]->scale_device_data(this->_scale);
 		//this->_inputData[0]->print_data({}, false);
@@ -201,6 +234,7 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 		//Data<Dtype>::printConfig = true;
 		//this->_inputData[0]->print_data("data");
 
+		/*
 		// label
 		if (this->_inputs.size() > 1) {
 			for (uint32_t i = 0; i < batches; i++) {
@@ -209,15 +243,14 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 			}
 			//this->_inputData[1]->print_data("label");
 		}
+		*/
 
 	} else if (this->networkConfig->_status == NetworkStatus::Test) {
 		for(uint32_t i = 0; i < batches; i++) {
 			const Dtype* ptr = _dataSet->getTestDataAt(baseIndex+i);
 			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
-		}
 
-		if (this->_inputs.size() > 1) {
-			for (uint32_t i = 0; i < batches; i++) {
+			if (this->_inputs.size() > 1) {
 				const Dtype* ptr = _dataSet->getTestLabelAt(baseIndex+i);
 				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
 			}

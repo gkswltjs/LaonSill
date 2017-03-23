@@ -30,6 +30,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
@@ -51,6 +52,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/test&quot;"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 									<listOptionValue builtIn="false" value="/usr/include/SDL"/>
@@ -76,6 +78,7 @@
 							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.linker.base.128410097" name="NVCC Linker" superClass="nvcc.linker.base">
 								<option id="nvcc.linker.option.libs.1324387665" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="cudart"/>
+									<listOptionValue builtIn="false" value="lmdb"/>
 									<listOptionValue builtIn="false" value="python2.7"/>
 									<listOptionValue builtIn="false" value="opencv_core"/>
 									<listOptionValue builtIn="false" value="opencv_highgui"/>
@@ -156,6 +159,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
@@ -177,6 +181,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/test&quot;"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 									<listOptionValue builtIn="false" value="/usr/include/SDL"/>
@@ -200,6 +205,7 @@
 							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.linker.base.286585357" name="NVCC Linker" superClass="nvcc.linker.base">
 								<option id="nvcc.linker.option.libs.1290622429" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="cudart"/>
+									<listOptionValue builtIn="false" value="lmdb"/>
 									<listOptionValue builtIn="false" value="python2.7"/>
 									<listOptionValue builtIn="false" value="opencv_core"/>
 									<listOptionValue builtIn="false" value="opencv_highgui"/>
