@@ -71,7 +71,7 @@ void ImageUtil<Dtype>::showImage(const Dtype* data, int nthImage, int channel, i
 
 template<typename Dtype>
 void ImageUtil<Dtype>::saveImage(const Dtype* data, int imageCount, int channel, int row,
-    int col) {
+    int col, string folderName) {
 
     struct timeval val;
     struct tm* tmPtr;
@@ -79,12 +79,17 @@ void ImageUtil<Dtype>::saveImage(const Dtype* data, int imageCount, int channel,
     gettimeofday(&val, NULL);
     tmPtr = localtime(&val.tv_sec);
 
-    char timeStr[1024];
-    sprintf(timeStr, "%04d%02d%02d_%02d%02d%02d_%06ld",
-        tmPtr->tm_year + 1900, tmPtr->tm_mon + 1, tmPtr->tm_mday, tmPtr->tm_hour,
-        tmPtr->tm_min, tmPtr->tm_sec, val.tv_usec);
+    string folderPath;
+    if (strcmp(folderName.c_str(),  "") == 0) {
+        char timeStr[1024];
+        sprintf(timeStr, "%04d%02d%02d_%02d%02d%02d_%06ld",
+            tmPtr->tm_year + 1900, tmPtr->tm_mon + 1, tmPtr->tm_mday, tmPtr->tm_hour,
+            tmPtr->tm_min, tmPtr->tm_sec, val.tv_usec);
 
-    string folderPath = string(SPARAM(IMAGEUTIL_SAVE_DIR)) + "/" + string(timeStr);
+        folderPath = string(SPARAM(IMAGEUTIL_SAVE_DIR)) + "/" + string(timeStr);
+    } else {
+        folderPath = string(SPARAM(IMAGEUTIL_SAVE_DIR)) + "/" + folderName;
+    }
     
     FileMgmt::checkDir(folderPath.c_str());
 

@@ -22,7 +22,7 @@ using namespace std;
 //  z * -log(x) + (1 - z) * -log(1 - x)
 //  x : input
 template <typename Dtype>
-__global__ void Forward(const Dtype* input, Dtype z, int depth, int batchCount,
+__global__ void CEForward(const Dtype* input, Dtype z, int depth, int batchCount,
     Dtype* output) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= depth)
@@ -50,7 +50,7 @@ __global__ void Forward(const Dtype* input, Dtype z, int depth, int batchCount,
 //         -x * z + log(1 + exp(x))             ....    x < 0
 //  x : input, z : target
 template <typename Dtype>
-__global__ void ForwardWithSigmoid(const Dtype* input, Dtype z, int size, Dtype* output) {
+__global__ void CEForwardWithSigmoid(const Dtype* input, Dtype z, int size, Dtype* output) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
 		return;
@@ -68,7 +68,7 @@ __global__ void ForwardWithSigmoid(const Dtype* input, Dtype z, int size, Dtype*
 // gradient = x - z
 // x : input
 template <typename Dtype>
-__global__ void Backward(const Dtype* input, const Dtype z, int depth, int batchCount,
+__global__ void CEBackward(const Dtype* input, const Dtype z, int depth, int batchCount,
     Dtype* gradient) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= depth)
@@ -88,7 +88,7 @@ __global__ void Backward(const Dtype* input, const Dtype z, int depth, int batch
 //            -z + exp(x) / (1 + exp(x))        ....   x < 0 
 // x : input
 template <typename Dtype>
-__global__ void BackwardWithSigmoid(const Dtype* input, const Dtype z, int size,
+__global__ void CEBackwardWithSigmoid(const Dtype* input, const Dtype z, int size,
     Dtype* gradient) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
@@ -174,24 +174,10 @@ void CrossEntropyWithLossLayer<Dtype>::feedforward() {
     const Dtype *inputData = this->_inputData[0]->device_data();
     Dtype *outputData = this->_outputData[0]->mutable_device_data();
 
-#if 0
-    if (!this->withSigmoid) {
-	    Forward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, this->depth, batchCount, outputData);
-    } else {
-	    ForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, this->depth, batchCount, outputData);
-    }
-#else
     int count = this->depth * batchCount;
-    if (!this->withSigmoid) {
-	    Forward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, count, 1, outputData);
-    } else {
-	    ForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, count, outputData);
-    }
-#endif
+    SASSERT0(this->withSigmoid);
+    CEForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+        inputData, (Dtype)this->targetValue, count, outputData);
 }
 
 template <typename Dtype>
@@ -202,25 +188,11 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
     const Dtype *inputData = this->_inputData[0]->device_data();
 	Dtype* inputGrads = this->_inputData[0]->mutable_device_grad();
 
-#if 0
-    if (!this->withSigmoid) {
-	    Backward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, this->depth, batchCount, inputGrads);
-    } else {
-	    BackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, this->depth, batchCount, inputGrads);
-    }
-#else
     int count = batchCount * this->depth;
+    SASSERT0(this->withSigmoid);
 
-    if (!this->withSigmoid) {
-	    Backward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, count, 1, inputGrads);
-    } else {
-	    BackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, count, inputGrads);
-    }
-#endif
+    CEBackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+        inputData, (Dtype)this->targetValue, count, inputGrads);
 }
 
 template <typename Dtype>

@@ -56,8 +56,6 @@ NoiseInputLayer<Dtype>::~NoiseInputLayer() {
     }
 }
 
-#define USE_TF_COMPARE      0
-
 template <typename Dtype>
 bool NoiseInputLayer<Dtype>::prepareUniformArray() {
     uint32_t batchSize = this->networkConfig->_batchSize;
@@ -83,15 +81,6 @@ bool NoiseInputLayer<Dtype>::prepareUniformArray() {
         for (int i = 0; i < this->noiseDepth * batchSize; ++i) {
             this->uniformArray[i] = (Dtype)variate_generator();
         }
-
-#if USE_TF_COMPARE
-        for (int i = 0; i < this->noiseDepth * batchSize; ++i) {
-            if (i % 2 == 0)
-                this->uniformArray[i] = 0.01;
-            else
-                this->uniformArray[i] = 0.02;
-        }
-#endif
 
         return true;
     }

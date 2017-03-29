@@ -43,6 +43,7 @@ public:
         NoiseInput,             // noise 입력 레이어
         ALEInput,               // ALE 입력 레이어
         CelebAInput,            // CelebA 입력 레이어
+        EtriInput,              // Etri... (FIXME: name;;;)
 
 		FullyConnected, 		// Fully Connected 레이어
 		Conv, 					// 컨볼루션 레이어

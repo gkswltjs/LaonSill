@@ -152,10 +152,10 @@ void developerMain() {
  	Network<float>* networkGD0GAN = new Network<float>(ncGD0GAN);
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* lcDGAN = createDOfGANLayersConfig<float>();
 	LayersConfig<float>* lcGD0GAN = createGD0OfGANLayersConfig<float>();
- 	networkDGAN->setLayersConfig(lcDGAN);
+	LayersConfig<float>* lcDGAN = createDOfGANLayersConfig<float>();
  	networkGD0GAN->setLayersConfig(lcGD0GAN);
+ 	networkDGAN->setLayersConfig(lcDGAN);
 
 	// (2) network config 정보를 layer들에게 전달한다.
 	for (uint32_t i = 0; i < lcDGAN->_layers.size(); i++)
@@ -164,9 +164,7 @@ void developerMain() {
 	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
 		lcGD0GAN->_layers[i]->setNetworkConfig(ncGD0GAN);
 
-    int debugPeriod = 100;
-
-    for (int i = 0; i < 25; i++) {  // epoch
+    for (int i = 0; i < 3; i++) {  // epoch
         cout << "epoch=" << i << endl;
 
         InputLayer<float>* inputLayer = lcDGAN->_inputLayer;
@@ -249,22 +247,8 @@ void developerMain() {
 
             lossLayer->setTargetValue(0.0);
             noiseInputLayer->setRegenerateNoise(true);
-
-            if (j % 100 == 0) {
-                setLayerTrain(lcGD0GAN, false);
-        
-                networkGD0GAN->_feedforward(0);
-                //DebugUtil<float>::printNetworkEdges(stdout, "Test G", lcGD0GAN, 0);
-
-                Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
-                const float* host_data = convLayer->_inputData[0]->host_data();
-                ImageUtil<float>::saveImage(host_data, 16, 3, 64, 64);
-
-                setLayerTrain(lcGD0GAN, true);
-            }
         }
 
-#if 1
         if (true) {
             setLayerTrain(lcGD0GAN, false);
 
@@ -276,11 +260,43 @@ void developerMain() {
 
             Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
             const float* host_data = convLayer->_inputData[0]->host_data();
-            ImageUtil<float>::saveImage(host_data, 64, 3, 64, 64);
+            ImageUtil<float>::saveImage(host_data, 64, 3, 64, 64, "");
 
             setLayerTrain(lcGD0GAN, true);
         }
-#endif
+    }
+
+    // noise check
+    setLayerTrain(lcGD0GAN, false);
+
+    NoiseInputLayer<float>* noiseInputLayer =
+        dynamic_cast<NoiseInputLayer<float>*>(lcGD0GAN->_firstLayers[0]);
+    SASSERT0(noiseInputLayer != NULL);
+    noiseInputLayer->setRegenerateNoise(false);
+
+    for (int i = 0; i < 100; i++) {
+        float noise = -0.9;
+        
+        while (noise < 1.0) {
+            string folderName = "noise_" + to_string(i) + "_" + to_string(noise);
+            cout << "folderName : " << folderName << endl;
+
+            float* noiseData = noiseInputLayer->_inputData[0]->mutable_host_data();
+            for (int j = 0; j < 100; j++) {
+                if (i == j) {
+                    noiseData[j] = noise;
+                } else {
+                    noiseData[j] = 0.001;
+                }
+            }
+
+            networkGD0GAN->_feedforward(0);
+            Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
+            const float* host_data = convLayer->_inputData[0]->host_data();
+            ImageUtil<float>::saveImage(host_data, 64, 3, 64, 64, folderName);
+
+            noise += 0.1;
+        }
     }
 
     STDOUT_LOG("exit developerMain()");

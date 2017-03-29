@@ -47,6 +47,7 @@
 #include "SigmoidLayer2.h"
 #include "NoiseInputLayer.h"
 #include "HyperTangentLayer.h"
+#include "EtriInputLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -218,8 +219,6 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 	return layersConfig;
 }
 
-#define USE_CONSTANT_WEIGHT_INIT        0
-
 template <typename Dtype>
 LayersConfig<Dtype>* createDOfGANLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
@@ -240,15 +239,11 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->filterDim(4, 4, 3, 64, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"data"})
                 ->outputs({"conv1"})
-                ->donate())
+                ->receive(10015))
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(4)
                 ->leaky(0.2)
@@ -261,21 +256,17 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->filterDim(4, 4, 64, 128, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu1"})
                 ->outputs({"conv2"})
-                ->donate())
+                ->receive(10018))
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(6)
                 ->name("BNLayer/conv2")
                 ->inputs({"conv2"})
                 ->outputs({"BN/conv2"})
-                ->donate())
+                ->receive(10019))
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(7)
                 ->leaky(0.2)
@@ -288,21 +279,17 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->filterDim(4, 4, 128, 256, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu2"})
                 ->outputs({"conv3"})
-                ->donate())
+                ->receive(10021))
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(9)
                 ->name("BNLayer/conv3")
                 ->inputs({"conv3"})
                 ->outputs({"BN/conv3"})
-                ->donate())
+                ->receive(10022))
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(10)
                 ->leaky(0.2)
@@ -315,21 +302,17 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->filterDim(4, 4, 256, 512, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu3"})
                 ->outputs({"conv4"})
-                ->donate())
+                ->receive(10024))
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(12)
                 ->name("BNLayer/conv4")
                 ->inputs({"conv4"})
                 ->outputs({"BN/conv4"})
-                ->donate())
+                ->receive(10025))
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(13)
                 ->leaky(0.2)
@@ -342,15 +325,11 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->nOut(1)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu4"})
                 ->outputs({"fc1"})
-                ->donate())
+                ->receive(10027))
         ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
                 ->id(15)
                 ->targetValue(1.0)
@@ -379,11 +358,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->nOut(4 * 4 * 512)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"noise"})
                 ->outputs({"fc0"}))
@@ -409,11 +384,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->filterDim(4, 4, 512, 256, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"relu/noiseInput"})
                 ->outputs({"deconv1"})
@@ -434,11 +405,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->filterDim(4, 4, 256, 128, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"relu1"})
                 ->outputs({"deconv2"})
@@ -459,11 +426,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->filterDim(4, 4, 128, 64, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"relu2"})
                 ->outputs({"deconv3"})
@@ -484,11 +447,7 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->filterDim(4, 4, 64, 3, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"relu3"})
                 ->outputs({"deconv4"})
@@ -505,15 +464,11 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->filterDim(4, 4, 3, 64, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"hypertangent"})
                 ->outputs({"conv1"})
-                ->receive(2))
+                ->donate())
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(10017)
                 ->leaky(0.2)
@@ -526,21 +481,17 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->filterDim(4, 4, 64, 128, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu1"})
                 ->outputs({"conv2"})
-                ->receive(5))
+                ->donate())
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10019)
                 ->name("BNLayer/conv2")
                 ->inputs({"conv2"})
                 ->outputs({"BN/conv2"})
-                ->receive(6))
+                ->donate())
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(10020)
                 ->leaky(0.2)
@@ -553,21 +504,17 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->filterDim(4, 4, 128, 256, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu2"})
                 ->outputs({"conv3"})
-                ->receive(8))
+                ->donate())
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10022)
                 ->name("BNLayer/conv3")
                 ->inputs({"conv3"})
                 ->outputs({"BN/conv3"})
-                ->receive(9))
+                ->donate())
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(10023)
                 ->leaky(0.2)
@@ -580,21 +527,17 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->filterDim(4, 4, 256, 512, 1, 2)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
                 ->weightFiller(ParamFillerType::Gaussian, 0.02)
-#endif
                 ->biasFiller(ParamFillerType::Constant, 0.0)
                 ->inputs({"lrelu3"})
                 ->outputs({"conv4"})
-                ->receive(11))
+                ->donate())
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
                 ->id(10025)
                 ->name("BNLayer/conv4")
                 ->inputs({"conv4"})
                 ->outputs({"BN/conv4"})
-                ->receive(12))
+                ->donate())
         ->layer((new typename ReluLayer<Dtype>::Builder())
                 ->id(10026)
                 ->leaky(0.2)
@@ -607,14 +550,11 @@ LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
                 ->nOut(1)
                 ->weightUpdateParam(1, 0)
                 ->biasUpdateParam(1, 0)
-#if USE_CONSTANT_WEIGHT_INIT
-                ->weightFiller(ParamFillerType::Constant, 0.02)
-#else
+                ->weightFiller(ParamFillerType::Gaussian, 0.02)
                 ->biasFiller(ParamFillerType::Constant, 0.0)
-#endif
                 ->inputs({"lrelu4"})
                 ->outputs({"fc1"})
-                ->receive(14))
+                ->donate())
         ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
                 ->id(10028)
                 ->targetValue(0.0)
@@ -3468,6 +3408,419 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 
 	return layersConfig;
 }
+
+
+template <typename Dtype>
+LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
+    const float bias_const = 0.2f;
+
+    LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
+            ->layer((new typename EtriInputLayer<Dtype>::Builder())
+                    ->id(0)
+                    ->name("data")
+                    ->image(std::string(SPARAM(BASE_DATA_DIR)) +
+                            std::string("/etri/flatten/"))
+                    ->outputs({"data", "label"}))
+
+            // tier 1
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(1)
+                    ->name("conv1_1")
+                    ->filterDim(3, 3, 3, 64, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"data"})
+                    ->outputs({"conv1_1"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(2)
+                    ->name("relu1_1")
+                    ->inputs({"conv1_1"})
+                    ->outputs({"conv1_1"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(3)
+                    ->name("conv1_2")
+                    ->filterDim(3, 3, 64, 64, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv1_1"})
+                    ->outputs({"conv1_2"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(4)
+                    ->name("relu1_2")
+                    ->inputs({"conv1_2"})
+                    ->outputs({"conv1_2"}))
+
+            ->layer((new typename PoolingLayer<Dtype>::Builder())
+                    ->id(5)
+                    ->name("pool1")
+                    ->poolDim(2, 2, 0, 2)
+                    ->poolingType(Pooling<Dtype>::Max)
+                    ->inputs({"conv1_2"})
+                    ->outputs({"pool1"}))
+
+            // tier 2
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(6)
+                    ->name("conv2_1")
+                    ->filterDim(3, 3, 64, 128, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"pool1"})
+                    ->outputs({"conv2_1"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(7)
+                    ->name("relu2_1")
+                    ->inputs({"conv2_1"})
+                    ->outputs({"conv2_1"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(8)
+                    ->name("conv2_2")
+                    ->filterDim(3, 3, 128, 128, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv2_1"})
+                    ->outputs({"conv2_2"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(9)
+                    ->name("relu2_2")
+                    ->inputs({"conv2_2"})
+                    ->outputs({"conv2_2"}))
+
+            ->layer((new typename PoolingLayer<Dtype>::Builder())
+                    ->id(10)
+                    ->name("pool2")
+                    ->poolDim(2, 2, 0, 2)
+                    ->poolingType(Pooling<Dtype>::Max)
+                    ->inputs({"conv2_2"})
+                    ->outputs({"pool2"}))
+
+            // tier 3
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(11)
+                    ->name("conv3_1")
+                    ->filterDim(3, 3, 128, 256, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"pool2"})
+                    ->outputs({"conv3_1"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(12)
+                    ->name("relu3_1")
+                    ->inputs({"conv3_1"})
+                    ->outputs({"conv3_1"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(13)
+                    ->name("conv3_2")
+                    ->filterDim(3, 3, 256, 256, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv3_1"})
+                    ->outputs({"conv3_2"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(14)
+                    ->name("relu3_2")
+                    ->inputs({"conv3_2"})
+                    ->outputs({"conv3_2"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(15)
+                    ->name("conv3_3")
+                    ->filterDim(3, 3, 256, 256, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv3_2"})
+                    ->outputs({"conv3_3"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(16)
+                    ->name("relu3_3")
+                    ->inputs({"conv3_3"})
+                    ->outputs({"conv3_3"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(17)
+                    ->name("conv3_4")
+                    ->filterDim(3, 3, 256, 256, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv3_3"})
+                    ->outputs({"conv3_4"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(18)
+                    ->name("relu3_4")
+                    ->inputs({"conv3_4"})
+                    ->outputs({"conv3_4"}))
+
+            ->layer((new typename PoolingLayer<Dtype>::Builder())
+                    ->id(19)
+                    ->name("pool3")
+                    ->poolDim(2, 2, 0, 2)
+                    ->poolingType(Pooling<Dtype>::Max)
+                    ->inputs({"conv3_4"})
+                    ->outputs({"pool3"}))
+
+            // tier 4
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(20)
+                    ->name("conv4_1")
+                    ->filterDim(3, 3, 256, 512, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"pool3"})
+                    ->outputs({"conv4_1"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(21)
+                    ->name("relu4_1")
+                    ->inputs({"conv4_1"})
+                    ->outputs({"conv4_1"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(22)
+                    ->name("conv4_2")
+                    ->filterDim(3, 3, 512, 512, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv4_1"})
+                    ->outputs({"conv4_2"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(23)
+                    ->name("relu4_2")
+                    ->inputs({"conv4_2"})
+                    ->outputs({"conv4_2"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(24)
+                    ->name("conv4_3")
+                    ->filterDim(3, 3, 512, 512, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv4_2"})
+                    ->outputs({"conv4_3"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(25)
+                    ->name("relu4_3")
+                    ->inputs({"conv4_3"})
+                    ->outputs({"conv4_3"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(26)
+                    ->name("conv4_4")
+                    ->filterDim(3, 3, 512, 512, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv4_3"})
+                    ->outputs({"conv4_4"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(27)
+                    ->name("relu4_4")
+                    ->inputs({"conv4_4"})
+                    ->outputs({"conv4_4"}))
+
+            ->layer((new typename PoolingLayer<Dtype>::Builder())
+                    ->id(28)
+                    ->name("pool4")
+                    ->poolDim(2, 2, 0, 2)
+                    ->poolingType(Pooling<Dtype>::Max)
+                    ->inputs({"conv4_4"})
+                    ->outputs({"pool4"}))
+
+            // tier 5
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(29)
+                    ->name("conv5_1")
+                    ->filterDim(3, 3, 512, 512, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"pool4"})
+                    ->outputs({"conv5_1"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(30)
+                    ->name("relu5_1")
+                    ->inputs({"conv5_1"})
+                    ->outputs({"conv5_1"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(31)
+                    ->name("conv5_2")
+                    ->filterDim(3, 3, 512, 512, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv5_1"})
+                    ->outputs({"conv5_2"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(32)
+                    ->name("relu5_2")
+                    ->inputs({"conv5_2"})
+                    ->outputs({"conv5_2"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(33)
+                    ->name("conv5_3")
+                    ->filterDim(3, 3, 512, 512, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv5_2"})
+                    ->outputs({"conv5_3"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(34)
+                    ->name("relu5_3")
+                    ->inputs({"conv5_3"})
+                    ->outputs({"conv5_3"}))
+
+            ->layer((new typename ConvLayer<Dtype>::Builder())
+                    ->id(35)
+                    ->name("conv5_4")
+                    ->filterDim(3, 3, 512, 512, 1, 1)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"conv5_3"})
+                    ->outputs({"conv5_4"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(36)
+                    ->name("relu5_4")
+                    ->inputs({"conv5_4"})
+                    ->outputs({"conv5_4"}))
+
+            ->layer((new typename PoolingLayer<Dtype>::Builder())
+                    ->id(37)
+                    ->name("pool5")
+                    ->poolDim(2, 2, 0, 2)
+                    ->poolingType(Pooling<Dtype>::Max)
+                    ->inputs({"conv5_4"})
+                    ->outputs({"pool5"}))
+
+
+            // classifier
+            ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+                    ->id(39)
+                    ->name("fc6")
+                    ->nOut(4096)
+                    ->pDropout(0.5)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"pool5"})
+                    ->outputs({"fc6"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(40)
+                    ->name("relu6")
+                    ->inputs({"fc6"})
+                    ->outputs({"fc6"}))
+
+            ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+                    ->id(41)
+                    ->name("fc7")
+                    ->nOut(4096)
+                    ->pDropout(0.5)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Xavier, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"fc6"})
+                    ->outputs({"fc7"}))
+
+            ->layer((new typename ReluLayer<Dtype>::Builder())
+                    ->id(42)
+                    ->name("relu7")
+                    ->inputs({"fc7"})
+                    ->outputs({"fc7"}))
+
+            ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+                    ->id(43)
+                    ->name("fc8")
+                    ->nOut(1000)
+                    ->pDropout(0.0)
+                    ->weightUpdateParam(1, 1)
+                    ->biasUpdateParam(2, 0)
+                    ->weightFiller(ParamFillerType::Gaussian, 0.1)
+                    ->biasFiller(ParamFillerType::Constant, bias_const)
+                    ->inputs({"fc7"})
+                    ->outputs({"fc8"}))
+
+            ->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+                    ->id(44)
+                    ->name("loss")
+                    ->inputs({"fc8", "label"})
+                    ->outputs({"loss"}))
+
+            ->build();
+
+    return layersConfig;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

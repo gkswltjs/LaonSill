@@ -156,44 +156,10 @@ void CelebAInputLayer<Dtype>::fillImagePaths() {
     closedir(dp);
 }
 
-#define TF_GAN_DEBUG        0
-
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::loadImages(int baseIdx) {
     int batchSize = this->networkConfig->_batchSize;
 
-#if TF_GAN_DEBUG
-    int imageCols = 64;
-    int imageRows = 64;
-    int imageChannels = 3;
-
-    int bufsize = sizeof(float) * imageCols * imageRows * imageChannels;
-    char *buf = (char*)malloc(bufsize);
-    SASSERT0(buf != NULL);
-
-    char filepath[1024];
-    sprintf(filepath, "/data/tfout/%d.dat", baseIdx);
-
-    int fd = open(filepath, O_RDONLY);
-    SASSERT0(fd != -1);
-
-    unsigned long offset = 0;
-    for (int i = 0; i < batchSize; i++) {
-        int index = i + baseIdx;
-        if (index >= this->imagePaths.size())
-            break;
-
-        int nread = read(fd, buf, bufsize);
-        SASSERT0(nread == bufsize);
-
-        memcpy((void*)((char*)this->images + offset), buf, bufsize);
-        offset += bufsize;
-    }
-
-    free(buf);
-    close(fd);
-     
-#else
     // (1) load jpeg
     for (int i = 0; i < batchSize; i++) {
         int index = i + baseIdx;
@@ -211,7 +177,7 @@ void CelebAInputLayer<Dtype>::loadImages(int baseIdx) {
         int imageChannels = image.channels();
         SASSERT(imageCols == CELEBA_IMAGE_COL, "col : %d", imageCols);
         SASSERT(imageRows == CELEBA_IMAGE_ROW, "row : %d", imageRows);
-        SASSERT(imageChannels == CELEBA_IMAGE_CHANNEL, "row : %d", imageChannels);
+        SASSERT(imageChannels == CELEBA_IMAGE_CHANNEL, "channel : %d", imageChannels);
 
         if (this->cropImage) {
             cv::Mat croppedImage;
@@ -229,7 +195,6 @@ void CelebAInputLayer<Dtype>::loadImages(int baseIdx) {
             loadPixels(image, i);
         }
     }
-#endif
 }
 
 template<typename Dtype>
