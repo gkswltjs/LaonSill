@@ -256,9 +256,6 @@ Dtype Network<Dtype>::sgd(int epochs) {
                     config->_status = NetworkStatus::Train;
                 }
 
-                DebugUtil<Dtype>::printNetworkEdges(stdout, "ETRI network", layersConfig, 0);
-
-
                 if(config->_phase == NetworkPhase::TrainPhase && config->doSave()) {
                     save();
                 }
