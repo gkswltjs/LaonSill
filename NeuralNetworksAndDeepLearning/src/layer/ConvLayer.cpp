@@ -38,7 +38,7 @@ ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
 void convolution(const rmat &x, const rmat &w, rmat &result, int stride);
 void dw_convolution(const rmat &d, const rmat &x, rmat &result);
 void dx_convolution(const rmat &d, const rmat &w, rmat &result);
-2
+
 template <typename Dtype>
 ConvLayer<Dtype>::~ConvLayer() {
 	ActivationFactory::destory(activation_fn);

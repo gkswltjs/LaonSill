@@ -331,8 +331,8 @@ void ConvLayer<Dtype>::reshape() {
 			this->filterDesc,
 			this->convDesc,
 			this->outputTensorDesc,
-			CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
-			//CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
+			//CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
+			CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
 			memoryLimitInBytes,
 			&convFwdAlgo));
 
@@ -351,7 +351,8 @@ void ConvLayer<Dtype>::reshape() {
 			this->filterDesc,
 			this->convDesc,
 			this->inputTensorDesc,
-			CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
+			//CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
+			CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
 			8<<20,
 			&convFwdAlgo));
 
@@ -373,8 +374,8 @@ void ConvLayer<Dtype>::reshape() {
 			this->outputTensorDesc,
 			this->convDesc,
 			this->filterDesc,
-			CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
-			//CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+			//CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
+			CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
 			memoryLimitInBytes,
 			&this->convBwdFilterAlgo));
 
@@ -393,7 +394,8 @@ void ConvLayer<Dtype>::reshape() {
 			this->inputTensorDesc,
 			this->convDesc,
 			this->filterDesc,
-			CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
+			//CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
+			CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
 			8<<20,
 			&this->convBwdFilterAlgo));
 
@@ -415,8 +417,8 @@ void ConvLayer<Dtype>::reshape() {
 			this->outputTensorDesc,
 			this->convDesc,
 			this->inputTensorDesc,
-			CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
-			//CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
+			//CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
+			CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
 			memoryLimitInBytes,
 			&convBwdDataAlgo));
 
@@ -435,7 +437,8 @@ void ConvLayer<Dtype>::reshape() {
 			this->inputTensorDesc,
 			this->convDesc,
 			this->outputTensorDesc,
-			CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
+			//CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
+			CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
 			8<<20,
 			&convBwdDataAlgo));
 
@@ -455,7 +458,7 @@ void ConvLayer<Dtype>::reshape() {
 	workspaceSize = max(workspaceSize, convBwdDataWorkspaceSize);
 
 
-	if(workspaceSize > 0) {
+	if (workspaceSize > 0) {
 		cout << this->name << "'s workspace: " << workspaceSize << endl;
 		if (this->d_workspace) {
 			checkCudaErrors(cudaFree(d_workspace));

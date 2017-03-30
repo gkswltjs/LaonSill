@@ -19,6 +19,7 @@
 #include "StdOutLog.h"
 #include "Network.h"
 #include "SysLog.h"
+#include "DebugUtil.h"
 
 using namespace std;
 
@@ -186,7 +187,7 @@ Dtype Network<Dtype>::sgd(int epochs) {
 	for (uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		config->_status = NetworkStatus::Train;
 
-		//STDOUT_BLOCK(cout << "epochIndex: " << epochIndex << ", epochs: " << epochs << endl;);
+		STDOUT_BLOCK(cout << "epochIndex: " << epochIndex << ", epochs: " << epochs << endl;);
 
 		inputLayer->shuffleTrainDataSet();
 
@@ -248,12 +249,14 @@ Dtype Network<Dtype>::sgd(int epochs) {
 						float cost = costList[i]/config->_testInterval;
 						networkListeners[i]->onCostComputed(i, config->_lossLayers[i], cost);
 						costList[i] = 0.0;
-						//STDOUT_BLOCK(cout << config->_lossLayers[i] << " cost:" << cost << ",";);
+						STDOUT_BLOCK(cout << config->_lossLayers[i] << " cost:" << cost << ",";);
                         lossSum += cost;
 					}
-					//cout << endl;
+					cout << endl;
                     config->_status = NetworkStatus::Train;
                 }
+
+                DebugUtil<Dtype>::printNetworkEdges(stdout, "ETRI network", layersConfig, 0);
 
 
                 if(config->_phase == NetworkPhase::TrainPhase && config->doSave()) {

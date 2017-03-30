@@ -73,8 +73,11 @@ public:
 			Layer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
-        Builder* image(std::string imageDir, int row, int col) {
+        Builder* image(std::string imageDir) {
             this->_imageDir = imageDir;
+            return this;
+        }
+        Builder* resize(int row, int col) {
             this->_resizedImageRow = row;
             this->_resizedImageCol = col;
             return this;

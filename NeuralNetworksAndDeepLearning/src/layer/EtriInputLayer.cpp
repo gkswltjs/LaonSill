@@ -21,6 +21,7 @@
 #include "NetworkConfig.h"
 #include "ColdLog.h"
 #include "SysLog.h"
+#include "ImageUtil.h"
 
 using namespace std;
 
@@ -112,7 +113,7 @@ void EtriInputLayer<Dtype>::registerData(string filePath) {
     DIR *dp;
 
     dp = opendir(filePath.c_str());
-    SASSERT0(dp == NULL);
+    SASSERT0(dp != NULL);
 
     vector<string> imageFileList;
 
@@ -147,17 +148,21 @@ void EtriInputLayer<Dtype>::registerData(string filePath) {
     }
 }
 
+
 template<typename Dtype>
 void EtriInputLayer<Dtype>::prepareData() {
     struct dirent *entry;
     DIR *dp;
 
     dp = opendir(this->imageDir.c_str());
-    SASSERT0(dp == NULL);
+    SASSERT0(dp != NULL);
 
     struct stat s;
     while ((entry = readdir(dp))) {
         string fileName(entry->d_name);
+        if (fileName == "." || fileName == "..")
+            continue;
+
         string filePath = this->imageDir + "/" + fileName;
 
         if (stat (filePath.c_str(), &s) == 0) {
@@ -213,8 +218,6 @@ void EtriInputLayer<Dtype>::loadImages(int batchIndex) {
         string imagePath = this->trainData[index].filePath;
         image = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
 
-        int imageCols = image.cols;
-        int imageRows = image.rows;
         int imageChannels = image.channels();
         SASSERT(imageChannels == ETRIDATA_IMAGE_CHANNEL, "channel : %d", imageChannels);
 
@@ -229,11 +232,8 @@ void EtriInputLayer<Dtype>::loadLabels(int batchIndex) {
     int batchSize = this->networkConfig->_batchSize;
     int baseIndex = batchIndex * batchSize;
 
-    Dtype* labelData = this->_inputData[1]->mutable_host_data();
-
     int totalSize = sizeof(Dtype) * ETRIDATA_LABEL_COUNT * batchSize;
-
-    memset(labelData, 0x00, totalSize);
+    memset(this->labels, 0x00, totalSize);
 
     for (int i = 0; i < batchSize; i++) {
         int index = baseIndex + i;
@@ -360,20 +360,30 @@ void EtriInputLayer<Dtype>::initialize(string imageDir, int resizedImageRow,
 
     this->images = NULL;
     this->labels = NULL;
+    this->currentBatchIndex = 0;
 }
 
 template<typename Dtype>
 int EtriInputLayer<Dtype>::getNumTrainData() {
+    if (this->images == NULL) {
+        reshape();
+    }
     return this->trainData.size();
 }
 
 template<typename Dtype>
 int EtriInputLayer<Dtype>::getNumTestData() {
+    if (this->images == NULL) {
+        reshape();
+    }
     return this->testData.size();
 }
 
 template<typename Dtype>
 void EtriInputLayer<Dtype>::shuffleTrainDataSet() {
+    if (this->images == NULL) {
+        reshape();
+    }
     shuffleImages();
 }
 

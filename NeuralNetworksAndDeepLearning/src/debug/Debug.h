@@ -3757,7 +3757,7 @@ LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
                     ->id(40)
                     ->name("relu6")
                     ->inputs({"fc6"})
-                    ->outputs({"fc6"}))
+                    ->outputs({"relu6"}))
 
             ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
                     ->id(41)
@@ -3768,14 +3768,14 @@ LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
                     ->biasUpdateParam(2, 0)
                     ->weightFiller(ParamFillerType::Xavier, 0.1)
                     ->biasFiller(ParamFillerType::Constant, bias_const)
-                    ->inputs({"fc6"})
+                    ->inputs({"relu6"})
                     ->outputs({"fc7"}))
 
             ->layer((new typename ReluLayer<Dtype>::Builder())
                     ->id(42)
                     ->name("relu7")
                     ->inputs({"fc7"})
-                    ->outputs({"fc7"}))
+                    ->outputs({"relu7"}))
 
             ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
                     ->id(43)
@@ -3786,43 +3786,28 @@ LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
                     ->biasUpdateParam(2, 0)
                     ->weightFiller(ParamFillerType::Gaussian, 0.1)
                     ->biasFiller(ParamFillerType::Constant, bias_const)
-                    ->inputs({"fc7"})
+                    ->inputs({"relu7"})
                     ->outputs({"fc8"}))
 
+            ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
+                    ->id(44)
+                    ->name("celossEtri")
+                    ->withSigmoid(true)
+                    ->inputs({"fc8", "label"})
+                    ->outputs({"celossEtri"}))
+
+#if 0
             ->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
                     ->id(44)
                     ->name("loss")
                     ->inputs({"fc8", "label"})
                     ->outputs({"loss"}))
+#endif
 
             ->build();
 
     return layersConfig;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #define ILSVRC_1000 0
 

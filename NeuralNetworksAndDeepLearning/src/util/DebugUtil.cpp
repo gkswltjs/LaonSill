@@ -99,7 +99,7 @@ void DebugUtil<Dtype>::printLayerEdges(FILE *fp, const char* title, Layer<Dtype>
     ConvLayer<Dtype>* convLayer = dynamic_cast<ConvLayer<Dtype>*>(layer);
     if (convLayer) {
         printEdges(fp, "filter", convLayer->_params[0], flags, indent + 2);
-        printEdges(fp, "bias", convLayer->_params[0], flags, indent + 2);
+        printEdges(fp, "bias", convLayer->_params[1], flags, indent + 2);
     }
 
     Data<Dtype>* inputData = layer->_inputData[0];

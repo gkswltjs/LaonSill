@@ -240,11 +240,14 @@ void CelebAInputLayer<Dtype>::initialize(string imageDir, bool cropImage, int cr
     this->imageChannel = CELEBA_IMAGE_CHANNEL;
 
     this->images = NULL;
+    this->currentBatchIndex = 0;
 }
 
 template<typename Dtype>
 int CelebAInputLayer<Dtype>::getNumTrainData() {
-    //return this->networkConfig->_batchSize;
+    if (this->images == NULL) {
+        reshape();
+    }
     return this->imagePaths.size();
 }
 
@@ -255,6 +258,9 @@ int CelebAInputLayer<Dtype>::getNumTestData() {
 
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::shuffleTrainDataSet() {
+    if (this->images == NULL) {
+        reshape();
+    }
     shuffleImages();
 }
 

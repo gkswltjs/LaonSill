@@ -65,6 +65,30 @@ __global__ void CEForwardWithSigmoid(const Dtype* input, Dtype z, int size, Dtyp
     }
 }
 
+// Cross Entropy with logit(sigmoid): 
+//  Loss : x - x * z + log (1 + exp(-x))        ....    x >= 0
+//         -x * z + log(1 + exp(x))             ....    x < 0
+//  x : input, z : target
+template <typename Dtype>
+__global__ void CEForwardWithSigmoid2(const Dtype* input, const Dtype* input2, int size,
+    Dtype* output) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= size)
+		return;
+
+    Dtype x;
+    Dtype z;
+
+    x = input[idx];
+    z = input2[idx];
+
+    if (x < 0) { 
+        output[idx] = ((-1.0) * x * z + logf(1 + expf(x)));
+    } else {
+        output[idx] = (x - x * z + logf(1 + expf( (-1.0) * x)));
+    }
+}
+
 // gradient = x - z
 // x : input
 template <typename Dtype>
@@ -95,6 +119,26 @@ __global__ void CEBackwardWithSigmoid(const Dtype* input, const Dtype z, int siz
 		return;
 
     Dtype x = input[idx];
+
+    if (input[idx] < 0) {
+        gradient[idx] = ((-1.0) * z + expf(x) / (1 + expf(x)));
+    } else {
+        gradient[idx] = (1 - z - expf((-1.0) * x) / (1 + expf((-1.0) * x)));
+    }
+}
+
+// gradient : 1 - z - exp(-x) / (1 + exp(-x))   ....   x >= 0
+//            -z + exp(x) / (1 + exp(x))        ....   x < 0 
+// x : input
+template <typename Dtype>
+__global__ void CEBackwardWithSigmoid2(const Dtype* input, const Dtype* input2, int size,
+    Dtype* gradient) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= size)
+		return;
+
+    Dtype x = input[idx];
+    Dtype z = input2[idx];
 
     if (input[idx] < 0) {
         gradient[idx] = ((-1.0) * z + expf(x) / (1 + expf(x)));
@@ -162,6 +206,14 @@ void CrossEntropyWithLossLayer<Dtype>::reshape() {
     } else {
         SASSERT(this->depth == depth, "old depth=%d, depth=%d", this->depth, depth);
     }
+
+    SASSERT0(this->_inputData.size() <= 2);
+    if (this->_inputData.size() == 2) {
+        // target value가 아닌 target values가 지정이 된 경우 
+        const vector<uint32_t>& inputShape2 = this->_inputData[1]->getShape();
+        SASSERT0(inputShape2[0] == inputShape[0]);
+        SASSERT0(this->depth == this->_inputData[0]->getCountByAxis(1));
+    }
 }
 
 template <typename Dtype>
@@ -176,8 +228,15 @@ void CrossEntropyWithLossLayer<Dtype>::feedforward() {
 
     int count = this->depth * batchCount;
     SASSERT0(this->withSigmoid);
-    CEForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, (Dtype)this->targetValue, count, outputData);
+
+    if (this->_inputData.size() == 2) {
+        const Dtype *inputData2 = this->_inputData[1]->device_data();
+        CEForwardWithSigmoid2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, inputData2, count, outputData);
+    } else {
+        CEForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, count, outputData);
+    }
 }
 
 template <typename Dtype>
@@ -191,8 +250,14 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
     int count = batchCount * this->depth;
     SASSERT0(this->withSigmoid);
 
-    CEBackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, (Dtype)this->targetValue, count, inputGrads);
+    if (this->_inputData.size() == 2) {
+        const Dtype *inputData2 = this->_inputData[1]->device_data();
+        CEBackwardWithSigmoid2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, inputData2, count, inputGrads);
+    } else {
+        CEBackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+            inputData, (Dtype)this->targetValue, count, inputGrads);
+    }
 }
 
 template <typename Dtype>
