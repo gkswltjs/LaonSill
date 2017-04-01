@@ -252,9 +252,9 @@ void FullyConnectedLayer<Dtype>::reshape() {
 	}
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*batches));
-	//FillValues<<<RoundUp(batches, BW), BW>>>(this->d_onevec, batches, 1.0f);
 	FillValues<<<SOOOA_GET_BLOCKS(batches), SOOOA_CUDA_NUM_THREADS>>>(
 			this->d_onevec, batches, 1.0f);
+	CUDA_POST_KERNEL_CHECK;
 
 	_mask.reshape(b_out);
 }
@@ -353,6 +353,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 	    DoNesterov<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
             d_paramHistoryData2, d_paramData, momentum, learnScale);
+	    CUDA_POST_KERNEL_CHECK;
     } else if (opt == Optimizer::Adagrad) {
         /****
          * Adagrad Alogorithm
@@ -364,7 +365,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 	    DoAdagrad<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
             d_paramData, learnScale, epsilon);
-
+	    CUDA_POST_KERNEL_CHECK;
     } else if (opt == Optimizer::RMSprop) {
         /****
          * RMSprop
@@ -376,7 +377,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 	    DoRMSprop<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
             d_paramData, learnScale, epsilon, decayRate);
-
+	    CUDA_POST_KERNEL_CHECK;
     } else if (opt == Optimizer::Adam) {
         /****
          * Adam
@@ -389,6 +390,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 	    DoAdam<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData, d_paramHistoryData2,
             d_paramData, learnScale, epsilon, beta1, beta2);
+	    CUDA_POST_KERNEL_CHECK;
     } else {
         SASSERT(false, "invalid optimizer. optimizer=%d", (int)opt);
     }
@@ -412,12 +414,14 @@ void FullyConnectedLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer
     AddData<<<gridSize, blockSize>>>(
         _targetLayer->_params[Weight]->mutable_device_grad(),
         this->_params[Weight]->device_grad(), weightSize);
+    CUDA_POST_KERNEL_CHECK;
 
     gridSize = (biasSize + blockSize -1) / blockSize;
 
     AddData<<<gridSize, blockSize>>>(
         _targetLayer->_params[Bias]->mutable_device_grad(),
         this->_params[Bias]->device_grad(), biasSize);
+    CUDA_POST_KERNEL_CHECK;
 }
 
 template <typename Dtype>
@@ -597,6 +601,7 @@ void FullyConnectedLayer<Dtype>::_dropoutForward() {
 
 		Dropout<<<SOOOA_GET_BLOCKS(b_out), SOOOA_CUDA_NUM_THREADS>>>(
 				b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
+		CUDA_POST_KERNEL_CHECK;
 	}
 }
 
@@ -675,6 +680,7 @@ void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 
 		Dropout<<<SOOOA_GET_BLOCKS(batchSize), SOOOA_CUDA_NUM_THREADS>>>(
 				batchSize, d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
+		CUDA_POST_KERNEL_CHECK;
 
 		//_mask.print("mask:");
 		this->_outputData[0]->print_grad("outputGrad:");

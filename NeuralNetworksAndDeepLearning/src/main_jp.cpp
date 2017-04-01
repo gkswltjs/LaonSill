@@ -144,9 +144,10 @@ void fasterRcnn() {
 	const int maxEpochs = 1000;
 	const vector<string> lossLayers = {"rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"};
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
+	const string networkSaveDir = SPARAM(NETWORK_SAVE_DIR);
 
 	vector<WeightsArg> weightsArgs(1);
-	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/VGG_CNN_M_1024.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024.param";
 
 	const uint32_t batchSize = 1;
 	const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize

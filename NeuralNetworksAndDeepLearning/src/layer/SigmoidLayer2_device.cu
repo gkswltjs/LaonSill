@@ -72,6 +72,7 @@ void SigmoidLayer2<Dtype>::feedforward() {
 
     Forward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         inputData, size, outputData);
+    CUDA_POST_KERNEL_CHECK;
 }
 
 template <typename Dtype>
@@ -83,6 +84,7 @@ void SigmoidLayer2<Dtype>::backpropagation() {
 
     Backward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         outputGrads, output, size, inputGrads);
+    CUDA_POST_KERNEL_CHECK;
 }
 
 template <typename Dtype>

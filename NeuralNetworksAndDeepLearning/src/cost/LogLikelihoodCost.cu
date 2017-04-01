@@ -98,6 +98,7 @@ void LogLikelihoodCost<Dtype>::backward(const Dtype* z, const Dtype* activation,
 		const Dtype* target, Dtype* delta, uint32_t numLabels, uint32_t batchsize) {
 	SoftmaxLossBackprop<<<SOOOA_GET_BLOCKS(batchsize), SOOOA_CUDA_NUM_THREADS>>>(
 			z, activation, target, delta, numLabels, batchsize);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template class LogLikelihoodCost<float>;

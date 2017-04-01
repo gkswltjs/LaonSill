@@ -33,6 +33,7 @@ void soooa_gpu_set(const int N, const Dtype alpha, Dtype* Y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   set_kernel<Dtype><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
       N, alpha, Y);
+  CUDA_POST_KERNEL_CHECK;
 }
 
 template void soooa_gpu_set<int>(const int N, const int alpha, int* Y);
@@ -82,6 +83,7 @@ void soooa_gpu_sub<float>(const uint32_t N, const float* a, const float* b,
   // NOLINT_NEXT_LINE(whitespace/operators)
   sub_kernel<float><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
       N, a, b, y);
+  CUDA_POST_KERNEL_CHECK;
 }
 
 template <>
@@ -90,6 +92,7 @@ void soooa_gpu_sub<double>(const uint32_t N, const double* a, const double* b,
   // NOLINT_NEXT_LINE(whitespace/operators)
   sub_kernel<double><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
       N, a, b, y);
+  CUDA_POST_KERNEL_CHECK;
 }
 
 
@@ -108,6 +111,7 @@ void soooa_gpu_mul<float>(const uint32_t N, const float* a,
   // NOLINT_NEXT_LINE(whitespace/operators)
   mul_kernel<float><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
       N, a, b, y);
+  CUDA_POST_KERNEL_CHECK;
 }
 
 template <>
@@ -116,6 +120,7 @@ void soooa_gpu_mul<double>(const uint32_t N, const double* a,
   // NOLINT_NEXT_LINE(whitespace/operators)
   mul_kernel<double><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
       N, a, b, y);
+  CUDA_POST_KERNEL_CHECK;
 }
 
 

@@ -146,7 +146,6 @@ void RoIPoolingLayer<Dtype>::feedforward() {
 	ROIPoolForward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
 	      count, inputData, this->spatialScale, this->channels, this->height, this->width,
 	      this->pooledH, this->pooledW, inputRois, outputData, argmaxData);
-
 	CUDA_POST_KERNEL_CHECK;
 }
 
@@ -253,8 +252,6 @@ void RoIPoolingLayer<Dtype>::backpropagation() {
 	      count, outputGrad, argmaxData, this->_outputData[0]->batches(),
 	      this->spatialScale, this->channels, this->height, this->width,
 	      this->pooledH, this->pooledW, inputGrad, inputRois);
-
-
 	CUDA_POST_KERNEL_CHECK;
 }
 

@@ -544,6 +544,7 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	    DoNesterov<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
             d_paramHistoryData2, d_paramData, momentum, learnScale);
+	    CUDA_POST_KERNEL_CHECK;
     } else if (opt == Optimizer::Adagrad) {
         /****
          * Adagrad Alogorithm
@@ -555,7 +556,7 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	    DoAdagrad<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
             d_paramData, learnScale, epsilon);
-
+	    CUDA_POST_KERNEL_CHECK;
     } else if (opt == Optimizer::RMSprop) {
         /****
          * RMSprop
@@ -567,7 +568,7 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	    DoRMSprop<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
             d_paramData, learnScale, epsilon, decayRate);
-
+	    CUDA_POST_KERNEL_CHECK;
     } else if (opt == Optimizer::Adam) {
         /****
          * Adam
@@ -580,6 +581,7 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 	    DoAdam<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
             static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData, d_paramHistoryData2,
             d_paramData, learnScale, epsilon, beta1, beta2);
+	    CUDA_POST_KERNEL_CHECK;
     } else {
         SASSERT(false, "invalid optimizer. optimizer=%d", (int)opt);
     }
@@ -598,12 +600,14 @@ void ConvLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
     AddArrayOfConvLayer<<<gridSize, blockSize>>>(
         _targetLayer->_params[Filter]->mutable_device_grad(),
         this->_params[Filter]->device_grad(), weightSize);
+    CUDA_POST_KERNEL_CHECK;
 
     gridSize = (biasSize + blockSize -1) / blockSize;
 
     AddArrayOfConvLayer<<<gridSize, blockSize>>>(
         _targetLayer->_params[Bias]->mutable_device_grad(),
         this->_params[Bias]->device_grad(), biasSize);
+    CUDA_POST_KERNEL_CHECK;
 }
 
 template <typename Dtype>

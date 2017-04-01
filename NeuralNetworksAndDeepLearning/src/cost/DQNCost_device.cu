@@ -66,6 +66,7 @@ void DQNCost<Dtype>::backward(const Dtype* z, const Dtype* activation,
 
     int totalSize = numLabels * batchsize;
 	DQNLossBackprop<<<RoundUp(totalSize, BW), BW>>>(z, activation, target, delta, totalSize);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 

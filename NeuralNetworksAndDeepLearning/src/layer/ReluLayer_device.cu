@@ -59,6 +59,7 @@ void ReluLayer<Dtype>::applyLeakyForward() {
 
     ApplyLeakyForward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         inputData, outputData, size, (Dtype)this->leaky);
+    CUDA_POST_KERNEL_CHECK;
 }
 
 template <typename Dtype>
@@ -70,6 +71,7 @@ void ReluLayer<Dtype>::applyLeakyBackward() {
 
     ApplyLeakyBackward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         inputData, outputGrad, inputGrad, size, (Dtype)this->leaky);
+    CUDA_POST_KERNEL_CHECK;
 }
 
 template void ReluLayer<float>::applyLeakyForward();

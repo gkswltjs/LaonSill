@@ -189,18 +189,22 @@ void CrossEntropyWithLossLayer<Dtype>::feedforward() {
     if (!this->withSigmoid) {
 	    Forward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, this->depth, batchCount, outputData);
+	    CUDA_POST_KERNEL_CHECK;
     } else {
 	    ForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, this->depth, batchCount, outputData);
+	    CUDA_POST_KERNEL_CHECK;
     }
 #else
     int count = this->depth * batchCount;
     if (!this->withSigmoid) {
 	    Forward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, count, 1, outputData);
+	    CUDA_POST_KERNEL_CHECK;
     } else {
 	    ForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, count, 1, outputData);
+	    CUDA_POST_KERNEL_CHECK;
     }
 #endif
 }
@@ -217,9 +221,11 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
     if (!this->withSigmoid) {
 	    Backward<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, this->depth, batchCount, inputGrads);
+	    CUDA_POST_KERNEL_CHECK;
     } else {
 	    BackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, this->depth, batchCount, inputGrads);
+	    CUDA_POST_KERNEL_CHECK;
     }
 #else
     int count = batchCount * this->depth;
@@ -227,9 +233,11 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
     if (!this->withSigmoid) {
 	    Backward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, count, 1, inputGrads);
+	    CUDA_POST_KERNEL_CHECK;
     } else {
 	    BackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, (Dtype)this->targetValue, count, 1, inputGrads);
+	    CUDA_POST_KERNEL_CHECK;
     }
 #endif
 }

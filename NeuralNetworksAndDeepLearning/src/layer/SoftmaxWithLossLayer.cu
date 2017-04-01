@@ -140,6 +140,7 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	SoftmaxLossForwardGPU<Dtype><<<SOOOA_GET_BLOCKS(nthreads), SOOOA_CUDA_NUM_THREADS>>>(
 			nthreads, probData, label, lossData, this->outerNum, dim,
 			this->innerNum, this->hasIgnoreLabel, this->ignoreLabel, counts);
+	CUDA_POST_KERNEL_CHECK;
 	//cudaDeviceSynchronize();
 
 
@@ -253,6 +254,7 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
             SOOOA_CUDA_NUM_THREADS>>>(nthreads, outputData, label, inputGrad,
             this->outerNum, dim, this->innerNum, this->hasIgnoreLabel, this->ignoreLabel,
             counts);
+		CUDA_POST_KERNEL_CHECK;
 
 		Dtype validCount = -1;
 		// Only launch another CUDA kernel if we actually need the count of valid

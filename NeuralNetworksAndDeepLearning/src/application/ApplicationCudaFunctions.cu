@@ -17,6 +17,7 @@ void diff_content_loss(const uint32_t n, const Dtype* f,
     const Dtype* p, Dtype* df) {
 	_diff_content_loss<Dtype><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(
 		n, f, p, df);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void diff_content_loss<float>(const uint32_t n, const float* f,
@@ -35,6 +36,7 @@ template <typename Dtype>
 void diff_style_loss(const uint32_t n, const Dtype* f, Dtype* a) {
 	_diff_style_loss<Dtype><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(
 			n, f, a);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void diff_style_loss<float>(const uint32_t n, const float* f, float* a);
@@ -49,13 +51,12 @@ __global__ void _fill_channel_mean(const uint32_t n, const uint32_t singleChanne
 	}
 }
 
-//ignore_if_le_than_zero<Dtype><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(n, f, a);
-
 template <typename Dtype>
 void fill_channel_mean(const uint32_t n, const uint32_t singleChannelSize,
 		const Dtype* mean, Dtype* dst) {
 	_fill_channel_mean<Dtype><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(
 			n, singleChannelSize, mean, dst);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void fill_channel_mean(const uint32_t n, const uint32_t singleChannelSize,
@@ -80,6 +81,7 @@ void bound_data(const uint32_t n, const uint32_t singleChannelSize, const Dtype*
 		const Dtype* dataMax, Dtype* data) {
 	_bound_data<Dtype><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(n, singleChannelSize,
 			dataMin, dataMax, data);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void bound_data(const uint32_t n, const uint32_t singleChannelSize,
@@ -101,6 +103,7 @@ template <typename Dtype>
 void reset_when_condition_le_0(const uint32_t n, const Dtype* condition, Dtype* data) {
 	_reset_when_condition_le_0<Dtype><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(n,
 			condition, data);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void reset_when_condition_le_0(const uint32_t n, const float* condition,
@@ -132,6 +135,7 @@ void optimize_adagrad(const uint32_t n, const Dtype* dx, Dtype* cache, Dtype* x,
 		const Dtype lr, const Dtype eps) {
 	_optimize_adagrad<Dtype><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(n, dx, cache,
 			x, lr, eps);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void optimize_adagrad(const uint32_t n, const float* dx, float* cache, float* x,
@@ -160,6 +164,7 @@ void optimize_rmsprop(const uint32_t n, const Dtype* dx, Dtype* cache, Dtype* x,
 	    const Dtype lr, const Dtype eps, const Dtype dr) {
 	_optimize_rmsprop<Dtype><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(n, dx, cache,
 			x, lr, eps, dr);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void optimize_rmsprop(const uint32_t n, const float* dx, float* cache, float* x,
@@ -195,6 +200,7 @@ void optimize_adam(const uint32_t n, const Dtype* dx, Dtype* m, Dtype* v, Dtype*
 	    const Dtype lr, const Dtype eps, const Dtype beta1, const Dtype beta2) {
 	_optimize_adam<Dtype><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(n, dx, m, v, x,
 			lr, eps, beta1, beta2);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void optimize_adam(const uint32_t n, const float* dx, float* m, float* v, float* x,

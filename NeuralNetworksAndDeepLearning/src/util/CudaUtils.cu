@@ -16,6 +16,7 @@ void soooa_sub_channel_mean(const int N, const uint32_t singleChannelSize, const
 		Dtype *data) {
 	_soooa_sub_channel_mean<Dtype><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
 			N, singleChannelSize, mean, data);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void soooa_sub_channel_mean(const int N, const uint32_t singleChannelSize,
@@ -38,6 +39,7 @@ void soooa_add_channel_mean(const int N, const uint32_t singleChannelSize, const
 		Dtype *data) {
 	_soooa_add_channel_mean<Dtype><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
 			N, singleChannelSize, mean, data);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void soooa_add_channel_mean(const int N, const uint32_t singleChannelSize,
@@ -63,6 +65,7 @@ void soooa_bound_data(const int N, const uint32_t singleChannelSize, const Dtype
 		Dtype* data) {
 	_soooa_bound_data<Dtype><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
 			N, singleChannelSize, bound, data);
+	CUDA_POST_KERNEL_CHECK;
 }
 
 template void soooa_bound_data(const int N, const uint32_t singleChannelSize,

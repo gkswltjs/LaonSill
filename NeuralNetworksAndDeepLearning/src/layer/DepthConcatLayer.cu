@@ -101,6 +101,7 @@ void DepthConcatLayer<Dtype>::feedforward() {
 		Concat<Dtype><<<SOOOA_GET_BLOCKS(nThreads), SOOOA_CUDA_NUM_THREADS>>>(
 				nThreads, inputData, kForward, this->numConcats, this->concatInputSize,
 				outputConcatAxis, inputConcatAxis, offsetConcatAxis, outputData);
+		CUDA_POST_KERNEL_CHECK;
 		offsetConcatAxis += inputConcatAxis;
 	}
 }
@@ -122,6 +123,7 @@ void DepthConcatLayer<Dtype>::backpropagation() {
 			Concat<Dtype><<<SOOOA_GET_BLOCKS(nThreads), SOOOA_CUDA_NUM_THREADS>>>(
 					nThreads, outputGrad, kForward, this->numConcats, this->concatInputSize,
 					outputConcatAxis, inputConcatAxis, offsetConcatAxis, inputGrad);
+			CUDA_POST_KERNEL_CHECK;
 		}
 		offsetConcatAxis += inputConcatAxis;
 	}
