@@ -45,6 +45,7 @@ using namespace std;
 
 void artisticStyle();
 void vgg19();
+void fasterRcnn();
 
 
 void developerMain() {
@@ -55,7 +56,8 @@ void developerMain() {
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
 	//artisticStyle();
-	vgg19();
+	//vgg19();
+	fasterRcnn();
 
 	STDOUT_LOG("exit developerMain()");
 }
@@ -78,9 +80,9 @@ void vgg19() {
 	weightsArgs[0].weightsPath =
 			"/home/jkim/Dev/SOOOA_HOME/network/VGG19.param";
 #endif
-	const uint32_t batchSize = 20;
-	const uint32_t testInterval = 500;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 5000;		// 1000000 / batchSize
+	const uint32_t batchSize = 10;
+	const uint32_t testInterval = 1;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 1;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
 
 	const uint32_t stepSize = 100000;
@@ -138,10 +140,91 @@ void vgg19() {
 }
 
 
+void fasterRcnn() {
+	const int maxEpochs = 1000;
+	const vector<string> lossLayers = {"rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"};
+	const NetworkPhase phase = NetworkPhase::TrainPhase;
+
+	vector<WeightsArg> weightsArgs(1);
+	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/VGG_CNN_M_1024.param";
+
+	const uint32_t batchSize = 1;
+	const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 200000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.001f;
+	const uint32_t stepSize = 50000;
+	const float weightDecay = 0.0005f;
+	const float momentum = 0.9f;
+	const float clipGradientsLevel = 0.0f;
+	const float gamma = 0.1;
+	const LRPolicy lrPolicy = LRPolicy::Step;
+
+	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
+	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
+	STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
+	STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
+	STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
+	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
+	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
+
+	NetworkConfig<float>* networkConfig =
+			(new typename NetworkConfig<float>::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
+			->stepSize(stepSize)
+			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->networkPhase(phase)
+			->gamma(gamma)
+			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+			->weightsArgs(weightsArgs)
+			->networkListeners({
+				new NetworkMonitor("rpn_loss_cls", NetworkMonitor::PLOT_ONLY),
+				new NetworkMonitor("rpn_loss_bbox", NetworkMonitor::PLOT_ONLY),
+				new NetworkMonitor("loss_cls", NetworkMonitor::PLOT_ONLY),
+				new NetworkMonitor("loss_bbox", NetworkMonitor::PLOT_ONLY)
+				})
+			->lossLayers(lossLayers)
+			->build();
+
+	Network<float>* network = new Network<float>(networkConfig);
+	LayersConfig<float>* layersConfig = createFrcnnTrainOneShotLayersConfig<float>();
+
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(network->config);
+	}
+	network->setLayersConfig(layersConfig);
+	network->loadPretrainedWeights();
+
+	/*
+	const string targetLayer = "conv2";
+	for (int i = 0; i < layersConfig->_learnableLayers.size(); i++) {
+		LearnableLayer<float>* layer = layersConfig->_learnableLayers[i];
+		if (layer->name == targetLayer) {
+
+			Data<float>::printConfig = true;
+			SyncMem<float>::printConfig = true;
+
+			layer->_params[0]->print_data({}, false);
+
+			Data<float>::printConfig = false;
+			SyncMem<float>::printConfig = false;
+		}
+	}
+	*/
+	network->sgd_with_timer(maxEpochs);
+}
 
 
 
-#define TEST_MODE 1
+
+
+#define TEST_MODE 0
 
 #if TEST_MODE
 #include <opencv2/core/core.hpp>

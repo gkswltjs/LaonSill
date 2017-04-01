@@ -52,11 +52,6 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 		if (!Layer<Dtype>::_isInputShapeChanged(i))
 			continue;
 
-		//Data<Dtype>::printConfig = true;
-		//this->_inputData[i]->print();
-		//Data<Dtype>::printConfig = false;
-
-
 		const vector<uint32_t>& inputDataShape = this->_inputData[i]->getShape();
 		this->_inputShape[i] = inputDataShape;
 
@@ -71,24 +66,43 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 		}
 		// rpn_bbox_targets
 		else if (i == 1) {
-			assert(this->_inputData[0]->channels() == this->_inputData[1]->channels());
-			assert(this->_inputData[0]->height() == this->_inputData[1]->height());
-			assert(this->_inputData[0]->width() == this->_inputData[1]->width());
+			// XXX: FullyConnectedLayer의 output이 (batches, 1, rows, 1)의 현 구조를 반영,
+			// 강제로 bbox_targets의 shape를 조정
+			if (this->_inputData[0]->getShape() != this->_inputData[1]->getShape()) {
+				this->_inputData[1]->reshape({this->_inputData[1]->getShape(2), 1,
+					this->_inputData[1]->getShape(3), 1});
+				assert(this->_inputData[0]->getShape() == this->_inputData[1]->getShape());
+			}
+			//assert(this->_inputData[0]->channels() == this->_inputData[1]->channels());
+			//assert(this->_inputData[0]->height() == this->_inputData[1]->height());
+			//assert(this->_inputData[0]->width() == this->_inputData[1]->width());
 		}
 		// rpn_bbox_inside_weights
 		else if (i == 2) {
 			if (this->hasWeights) {
-				assert(this->_inputData[0]->channels() == this->_inputData[2]->channels());
-				assert(this->_inputData[0]->height() == this->_inputData[2]->height());
-				assert(this->_inputData[0]->width() == this->_inputData[2]->width());
+				if (this->_inputData[0]->getShape() != this->_inputData[2]->getShape()) {
+					this->_inputData[2]->reshape({this->_inputData[2]->getShape(2), 1,
+						this->_inputData[2]->getShape(3), 1});
+					assert(this->_inputData[0]->getShape() ==
+							this->_inputData[2]->getShape());
+				}
+				//assert(this->_inputData[0]->channels() == this->_inputData[2]->channels());
+				//assert(this->_inputData[0]->height() == this->_inputData[2]->height());
+				//assert(this->_inputData[0]->width() == this->_inputData[2]->width());
 			}
 		}
 		// rpn_bbox_outside_weights
 		else if (i == 3) {
 			if (this->hasWeights) {
-				assert(this->_inputData[0]->channels() == this->_inputData[3]->channels());
-				assert(this->_inputData[0]->height() == this->_inputData[3]->height());
-				assert(this->_inputData[0]->width() == this->_inputData[3]->width());
+				if (this->_inputData[0]->getShape() != this->_inputData[3]->getShape()) {
+					this->_inputData[3]->reshape({this->_inputData[3]->getShape(2), 1,
+						this->_inputData[3]->getShape(3), 1});
+					assert(this->_inputData[0]->getShape() ==
+							this->_inputData[3]->getShape());
+				}
+				//assert(this->_inputData[0]->channels() == this->_inputData[3]->channels());
+				//assert(this->_inputData[0]->height() == this->_inputData[3]->height());
+				//assert(this->_inputData[0]->width() == this->_inputData[3]->width());
 			}
 		}
 	}
@@ -115,53 +129,29 @@ template <typename Dtype>
 void SmoothL1LossLayer<Dtype>::feedforward() {
 	reshape();
 
-	/*
-	if (this->name == "rpn_loss_bbox") {
-		Data<Dtype>::printConfig = true;
-		this->_inputData[0]->print_data({}, false);
-		this->_inputData[1]->print_data({}, false);
-		this->_inputData[2]->print_data({}, false);
-		this->_inputData[3]->print_data({}, false);
-		Data<Dtype>::printConfig = false;
-	}
-	*/
-
 	const uint32_t count = this->_inputData[0]->getCount();
 	// prediction (inputData[0]) - target (inputData[1]) => diff
 	soooa_gpu_sub(
 			count,
 			this->_inputData[0]->device_data(),
 			this->_inputData[1]->device_data(),
-			diff->mutable_device_data());		// d := b0 - b1
-
-	/*
-	Data<Dtype>::printConfig = true;
-	this->_inputData[0]->print_data({}, false);
-	this->_inputData[1]->print_data({}, false);
-	diff->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-	*/
+			this->diff->mutable_device_data());		// d := b0 - b1
 
 #if SMOOTHL1LOSSLAYER_LOG
 	Data<Dtype>::printConfig = true;
-	Data<Dtype>::printConfig = false;
-#endif
-
-#if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	this->_inputData[0]->print_data();
-	this->_inputData[1]->print_data();
-	this->diff->print_data();
+	this->_inputData[0]->print_data({}, false, -1);
+	this->_inputData[1]->print_data({}, false, -1);
+	this->diff->print_data({}, false, -1);
 	Data<Dtype>::printConfig = false;
 #endif
 
 	if (hasWeights) {
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	this->_inputData[2]->print_data();
-	this->diff->print_data();
-	Data<Dtype>::printConfig = false;
+		Data<Dtype>::printConfig = true;
+		this->_inputData[2]->print_data({}, false, -1);
+		this->diff->print_data({}, false, -1);
+		Data<Dtype>::printConfig = false;
 #endif
 		// apply "inside" weights
 		soooa_gpu_mul(
@@ -171,9 +161,9 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 				diff->mutable_device_data());	// d := w_in * (b0 - b1)
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	this->diff->print_data();
-	Data<Dtype>::printConfig = false;
+		Data<Dtype>::printConfig = true;
+		this->diff->print_data({}, false, -1);
+		Data<Dtype>::printConfig = false;
 #endif
 
 	}
@@ -185,18 +175,18 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 
 #if SMOOTHL1LOSSLAYER_LOG
 	Data<Dtype>::printConfig = true;
-	this->diff->print_data();
-	this->errors->print_data();
+	this->diff->print_data({}, false, -1);
+	this->errors->print_data({}, false, -1);
 	Data<Dtype>::printConfig = false;
 #endif
 
 	if (hasWeights) {
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	this->_inputData[3]->print_data();
-	this->errors->print_data();
-	Data<Dtype>::printConfig = false;
+		Data<Dtype>::printConfig = true;
+		this->_inputData[3]->print_data({}, false, -1);
+		this->errors->print_data({}, false, -1);
+		Data<Dtype>::printConfig = false;
 #endif
 
 		// apply "outside" weights
@@ -207,9 +197,9 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 				errors->mutable_device_data());	// d := w_out * SmoothL1(w_in * (b0 - b1))
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	this->errors->print_data();
-	Data<Dtype>::printConfig = false;
+		Data<Dtype>::printConfig = true;
+		this->errors->print_data({}, false, -1);
+		Data<Dtype>::printConfig = false;
 #endif
 	}
 
@@ -242,28 +232,10 @@ __global__ void SmoothL1Backward(const uint32_t n, const Dtype* in, Dtype* out,
 template <typename Dtype>
 void SmoothL1LossLayer<Dtype>::backpropagation() {
 	// after forwards, diff holds w_in * (b0 - b1)
-
-	/*
-	if (this->name == "rpn_loss_bbox") {
-		Data<Dtype>::printConfig = true;
-		diff->print_data({}, false);
-		Data<Dtype>::printConfig = false;
-	}
-	*/
-
-
 	const uint32_t count = diff->getCount();
 	SmoothL1Backward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
 			count, diff->device_data(), diff->mutable_device_data(), this->sigma2);
 	CUDA_POST_KERNEL_CHECK;
-
-	/*
-	if (this->name == "rpn_loss_bbox") {
-		Data<Dtype>::printConfig = true;
-		diff->print_data({}, false);
-		Data<Dtype>::printConfig = false;
-	}
-	*/
 
 	for (uint32_t i = 0; i < 2; i++) {
 		if (this->_propDown[i]) {
@@ -296,14 +268,6 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 			}
 		}
 	}
-
-	/*
-	if (this->name == "rpn_loss_bbox") {
-		Data<Dtype>::printConfig = true;
-		this->_inputData[i]->print_grad({}, false);
-		Data<Dtype>::printConfig = false;
-	}
-	*/
 }
 
 template <typename Dtype>

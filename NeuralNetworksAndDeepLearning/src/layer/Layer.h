@@ -19,6 +19,7 @@
 #include "common.h"
 #include "Data.h"
 #include "LayerConfig.h"
+#include "SysLog.h"
 
 template <typename Dtype> class NetworkConfig;
 
@@ -255,6 +256,12 @@ protected:
 	bool _adjustInputShape();
 	bool _isInputShapeChanged(uint32_t index);
 
+
+
+
+	void _printOn();
+	void _printOff();
+
 public:
 	std::vector<std::string> _inputs;					///< 레이어 입력 데이터 이름 목록 벡터
 	std::vector<std::string> _outputs;					///< 레이어 출력 데이터 이름 목록 벡터
@@ -275,7 +282,7 @@ public:
     // 각 원소의 메타 값은 { batch, channel, row, column } 크기가 들어 있다.
 	std::vector<std::vector<uint32_t>> _inputShape;
 
-protected:
+
 	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
 	std::vector<bool> _propDown;

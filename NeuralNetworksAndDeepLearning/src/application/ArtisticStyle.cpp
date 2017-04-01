@@ -37,7 +37,7 @@ using namespace cnpy;
 
 // SOOOA 모델로 테스트인지 여부(RGB 모델),
 // false인 경우 CAFFE MODEL이고 이는 BGR 기준의 모델을 말함
-#define SOOOA				1
+#define SOOOA				0
 
 
 // BGRBGRBGR ... 순으로 들어있음. 255 scale (8, 12, 3), BGR순
@@ -346,6 +346,7 @@ void ArtisticStyle<Dtype>::load_model() {
 	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/VGG19.param";
 #else
 	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/VGG19_CAFFE_ARTISTICPARTONLY.param";
+	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/VGG19_LMDB_0.01.param";
 #endif
 #endif
 	const uint32_t batchSize = 10;

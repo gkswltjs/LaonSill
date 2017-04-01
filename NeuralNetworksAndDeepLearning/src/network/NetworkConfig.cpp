@@ -305,6 +305,7 @@ void LayersConfig<Dtype>::Builder::insertSplitLayers(vector<Layer<Dtype>*>& laye
 	}
 	//////////////////////////////////////////////////
 
+	vector<pair<int, Layer<Dtype>*>> locationLayerPairList;
 	for (itr2 = outputDataRefMap.begin(); itr2 != outputDataRefMap.end(); itr2++) {
 		const pair<int, int> key = itr2->first;
 		const vector<pair<int, int>>& value = itr2->second;
@@ -332,10 +333,18 @@ void LayersConfig<Dtype>::Builder::insertSplitLayers(vector<Layer<Dtype>*>& laye
 			layers[value[j].first]->_inputs[value[j].second] = splitDataName;
 		}
 
-		// insert를 위 코드의 중간에서 실행할 경우 index 밀려서 헷갈림
-		layers.insert(layers.begin() + key.first + 1, splitLayer);
+		// (수정 2) insert를 여기서 할 경우 참조하고 있는 레이어상 index값이 모두 밀림
+		//			일단 save만 해두고 나중에 일괄 insert하는 방식으로 수정
+		// (수정 1) insert를 위 코드의 중간에서 실행할 경우 index 밀려서 헷갈림
+		//layers.insert(layers.begin() + key.first + 1, splitLayer);
+		locationLayerPairList.push_back(
+				make_pair(key.first + 1 + locationLayerPairList.size(), splitLayer));
 	}
 
+	for (int i = 0; i < locationLayerPairList.size(); i++) {
+		const pair<int, Layer<Dtype>*>& locationLayerPair = locationLayerPairList[i];
+		layers.insert(layers.begin() + locationLayerPair.first, locationLayerPair.second);
+	}
 
 	//exit(1);
 

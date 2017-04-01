@@ -27,8 +27,12 @@
 #include "Data.h"
 //#include "nms/gpu_nms.hpp"
 
+#include "cnpy.h"
+#include "gpu_nms.hpp"
 #define FRCNN_TRAIN 1
 
+
+#define SOOOA_DEBUG	0
 
 
 const uint32_t GT = 0;
@@ -144,6 +148,11 @@ const uint32_t TEST_RPN_POST_NMS_TOP_N = 300;
 const uint32_t TEST_RPN_MIN_SIZE = 16;
 
 
+
+
+
+
+static void loadPredefinedOrder(const std::string& path, std::vector<uint32_t>& order);
 
 
 
@@ -758,14 +767,13 @@ static void npr_choice(const std::vector<Dtype>& array, const uint32_t size,
 	//printArray("result-final", result);
 }
 
-static std::vector<uint32_t> np_arange(int start, int stop) {
+static void np_arange(int start, int stop, std::vector<uint32_t>& result) {
 	assert(start < stop);
 
-	std::vector<uint32_t> result;
+	result.clear();
 	for (int i = start; i < stop; i++) {
 		result.push_back(i);
 	}
-	return result;
 }
 
 template <typename Dtype>
@@ -1040,6 +1048,109 @@ static void nms(const float* dets, const int numDets, const float nmsThresh,
 
 
 
+
+static void nms(std::vector<std::vector<float>>& proposals, std::vector<float>& scores,
+		const float thresh, std::vector<uint32_t>& keep) {
+	assert(proposals.size() > 0 && proposals.size() == scores.size());
+
+	//const float thresh = 0.7f;
+	const int device_id = 0;
+	const int boxes_num = proposals.size();
+	const int boxes_dim = proposals[0].size() + 1;
+
+	/*
+	float* dets = 0;
+	const std::string det_file = "/home/jkim/Dev/data/numpy_array/dets.npz";
+	cnpy::npz_t cnpy_det = cnpy::npz_load(det_file);
+
+	std::vector<int> shape;
+	for (cnpy::npz_t::iterator itr = cnpy_det.begin(); itr != cnpy_det.end(); itr++) {
+		cnpy::NpyArray npyArray = itr->second;
+
+		boxes_num = itr->second.shape[0];
+		boxes_dim = itr->second.shape[1];
+		int n = boxes_num * boxes_dim;
+		dets = new float[n];
+
+		float* srcPtr = (float*)npyArray.data;
+		for (int i = 0; i < n; i++) {
+			dets[i] = srcPtr[i];
+		}
+	}
+	*/
+
+	int num_out;
+	int _keep[boxes_num];
+	//float scores[boxes_num];
+	float sorted_dets[boxes_num][boxes_dim];
+	//vector<int> order(boxes_num);
+
+	//keep.resize(boxes_num);
+
+	std::vector<uint32_t> order(scores.size());
+#if !SOOOA_DEBUG
+	iota(order.begin(), order.end(), 0);
+	vec_argsort(scores, order);
+#else
+	//const std::string path = "/home/jkim/Dev/data/numpy_array/order.npz";
+	//loadPredefinedOrder(path, order);
+	// 이미 정렬된 score를 기준으로 정렬하므로 0부터 순차적인 배열이 만들어진다.
+	iota(order.begin(), order.end(), 0);
+	//printArray("order", order);
+#endif
+
+	for (int i = 0; i < boxes_num; i++) {
+		sorted_dets[i][0] = proposals[order[i]][0];
+		sorted_dets[i][1] = proposals[order[i]][1];
+		sorted_dets[i][2] = proposals[order[i]][2];
+		sorted_dets[i][3] = proposals[order[i]][3];
+		sorted_dets[i][4] = scores[order[i]];
+	}
+
+	//void _nms(int* keep_out, int* num_out, const float* boxes_host, int boxes_num,
+	//         int boxes_dim, float nms_overlap_thresh, int device_id);
+	_nms(&_keep[0], &num_out, &sorted_dets[0][0], boxes_num, boxes_dim, thresh, device_id);
+
+	keep.resize(num_out);
+	for (int i = 0; i < num_out; i++)
+		keep[i] = order[_keep[i]];
+
+	//printArray("keep", keep);
+
+	/*
+	for (int i = 0; i < num_out; i++) {
+		std::cout << i << ": ";
+		for (int j = 0; j < boxes_dim; j++) {
+			if (j < boxes_dim - 1)
+				std::cout << proposals[order[keep[i]]][j] << ", ";
+			else
+				std::cout << scores[order[keep[i]]] << std::endl;
+		}
+	}
+	*/
+}
+
+
+static void loadPredefinedOrder(const std::string& path, std::vector<uint32_t>& order) {
+	cnpy::npz_t cnpy_order = cnpy::npz_load(path);
+	for (cnpy::npz_t::iterator itr = cnpy_order.begin(); itr != cnpy_order.end(); itr++) {
+		cnpy::NpyArray npyArray = itr->second;
+
+		int n = itr->second.shape[0];
+		order.resize(n);
+
+		long* srcPtr = (long*)npyArray.data;
+		for (int i = 0; i < n; i++) {
+			order[i] = uint32_t(srcPtr[i]);
+		}
+	}
+}
+
+
+
+
+
+/*
 #define NMS_LOG 0
 static void nms(std::vector<std::vector<float>>& dets1,
 			std::vector<float>& scores, const float thresh, std::vector<uint32_t>& keep) {
@@ -1134,6 +1245,7 @@ static void nms(std::vector<std::vector<float>>& dets1,
 #endif
 	}
 }
+*/
 
 struct Size {
 	uint32_t width;

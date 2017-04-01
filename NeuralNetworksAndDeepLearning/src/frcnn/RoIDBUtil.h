@@ -36,15 +36,12 @@ public:
 			RoIDBUtil::computeTargets(roidb[i]);
 		}
 
-		//std::vector<std::vector<float>> means;
-		//np_tile({0.0f, 0.0f, 0.0f, 0.0f}, numClasses, means);
+
+		assert(TRAIN_BBOX_NORMALIZE_TARGETS_PRECOMPUTED);
 		np_tile(TRAIN_BBOX_NORMALIZE_MEANS, numClasses, means);
 #if ROIDBUTIL_LOG
 		print2dArray("bbox target means", means);
 #endif
-
-		//std::vector<std::vector<float>> stds;
-		//np_tile({0.1f, 0.1f, 0.2f, 0.2f}, numClasses, stds);
 		np_tile(TRAIN_BBOX_NORMALIZE_STDS, numClasses, stds);
 #if ROIDBUTIL_LOG
 		print2dArray("bbox target stdeves", stds);

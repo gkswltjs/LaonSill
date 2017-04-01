@@ -47,7 +47,12 @@ public:
 		for (uint32_t i = 0; i < this->layer->_params.size(); i++)
 			this->layer->_paramsInitialized[i] = true;
 
+		//printDataList(this->layer->_inputData, 0);
+		//printDataList(this->layer->_params, 0);
+
 		this->layer->feedforward();
+
+		//printDataList(this->layer->_outputData, 0);
 
 		compareData(this->nameDataMap, this->layer->name + SIG_TOP, this->layer->_outputData,
 				0);
@@ -60,8 +65,27 @@ public:
 
 		this->layer->backpropagation();
 
+		//printDataList(this->layer->_inputData, 1);
+
 		compareData(this->nameDataMap, this->layer->name + SIG_BOTTOM,
 				this->layer->_inputData, 1);
+	}
+
+	void printDataList(const std::vector<Data<Dtype>*>& dataList, int type = 0) {
+		Data<Dtype>::printConfig = 1;
+		SyncMem<Dtype>::printConfig = 1;
+
+		if (type == 0) {
+			for (int j = 0; j < dataList.size(); j++) {
+				dataList[j]->print_data({}, false);
+			}
+		} else if (type == 1) {
+			for (int j = 0; j < dataList.size(); j++) {
+				dataList[j]->print_grad({}, false);
+			}
+		}
+		Data<Dtype>::printConfig = 0;
+		SyncMem<Dtype>::printConfig = 0;
 	}
 
 

@@ -2,6 +2,7 @@
 
 #include "LayerTestInterface.h"
 #include "LayerTest.h"
+#include "LayerInputTest.h"
 #include "LearnableLayerTest.h"
 
 #include "ConvLayer.h"
@@ -17,6 +18,13 @@
 #include "Debug.h"
 
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include "gpu_nms.hpp"
+#include "cnpy.h"
+
+
 void layerTest();
 void networkTest();
 
@@ -26,6 +34,8 @@ int main(void) {
 
 	//layerTest();
 	networkTest();
+
+	return 0;
 }
 
 void layerTest() {
@@ -34,11 +44,11 @@ void layerTest() {
 
 #if 0
 	ConvLayer<float>::Builder* convBuilder = new typename ConvLayer<float>::Builder();
-	convBuilder->id(1)
-			->name("conv2")
-			->filterDim(5, 5, 20, 50, 0, 1)
-			->inputs({"pool1"})
-			->outputs({"conv2"});
+	convBuilder->id(10)
+		->name("conv2")
+		->filterDim(5, 5, 96, 256, 1, 2)
+		->inputs({"pool1"})
+		->outputs({"conv2"});
 	layerTestList.push_back(new LearnableLayerTest<float>(convBuilder));
 #endif
 
@@ -63,7 +73,7 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(reluBuilder));
 #endif
 
-#if 1
+#if 0
 	PoolingLayer<float>::Builder* poolBuilder =
 			new typename PoolingLayer<float>::Builder();
 	poolBuilder->id(3)
@@ -126,6 +136,125 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(splitBuilder));
 #endif
 
+#if 0
+	RoIInputLayer<float>::Builder* roiInputBuilder =
+			new typename RoIInputLayer<float>::Builder();
+	roiInputBuilder->id(0)
+			->name("input-data")
+			->numClasses(21)
+			->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			->outputs({"data", "im_info", "gt_boxes"});
+
+	layerTestList.push_back(new LayerInputTest<float>(roiInputBuilder));
+#endif
+
+#if 0
+	AnchorTargetLayer<float>::Builder* anchorTargetBuilder =
+			new typename AnchorTargetLayer<float>::Builder();
+	anchorTargetBuilder->id(14)
+			->name("rpn-data")
+			->featStride(16)
+			->inputs({
+				"rpn_cls_score_rpn_cls_score_0_split_1",
+				"gt_boxes_input-data_2_split_0",
+				"im_info_input-data_1_split_0",
+				"data_input-data_0_split_1"})
+			->propDown({false, false, false, false})
+			->outputs({
+				"rpn_labels",
+				"rpn_bbox_targets",
+				"rpn_bbox_inside_weights",
+				"rpn_bbox_outside_weights"});
+
+	layerTestList.push_back(new LayerTest<float>(anchorTargetBuilder));
+#endif
+
+#if 1
+	ProposalLayer<float>::Builder* proposalBuilder =
+			new typename ProposalLayer<float>::Builder();
+	proposalBuilder->id(19)
+			->name("proposal")
+			->featStride(16)
+			->inputs({
+				"rpn_cls_prob_reshape",
+				"rpn_bbox_pred_rpn_bbox_pred_0_split_1",
+				"im_info_input-data_1_split_1"})
+			->propDown({false, false, false})
+			->outputs({"rpn_rois"});
+
+	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
+			->networkPhase(NetworkPhase::TrainPhase)
+			->build();
+
+	layerTestList.push_back(new LayerTest<float>(proposalBuilder, networkConfig));
+#endif
+
+#if 0
+	ProposalTargetLayer<float>::Builder* proposalTargetBuilder =
+			new typename ProposalTargetLayer<float>::Builder();
+	proposalTargetBuilder->id(20)
+			->name("roi-data")
+			->numClasses(21)
+			->inputs({
+				"rpn_rois",
+				"gt_boxes_input-data_2_split_1"})
+			->propDown({false, false})
+			->outputs({
+				"rois",
+				"labels",
+				"bbox_targets",
+				"bbox_inside_weights",
+				"bbox_outside_weights"});
+
+	layerTestList.push_back(new LayerTest<float>(proposalTargetBuilder));
+#endif
+
+#if 0
+	ReshapeLayer<float>::Builder* reshapeBuilder =
+			new typename ReshapeLayer<float>::Builder();
+	reshapeBuilder->id(13)
+			->name("rpn_cls_score_reshape")
+			->shape({0, 2, -1, 0})
+			->inputs({"rpn_cls_score_rpn_cls_score_0_split_0"})
+			->propDown({false})
+			->outputs({"rpn_cls_score_reshape"});
+
+	layerTestList.push_back(new LayerTest<float>(reshapeBuilder));
+#endif
+
+#if 0
+	SmoothL1LossLayer<float>::Builder* smoothL1LossBuilder =
+			new typename SmoothL1LossLayer<float>::Builder();
+	smoothL1LossBuilder->id(16)
+			->name("rpn_loss_bbox")
+			->lossWeight(1.0f)
+			->sigma(3.0f)
+			->inputs({
+				"rpn_bbox_pred_rpn_bbox_pred_0_split_0",
+				"rpn_bbox_targets",
+				"rpn_bbox_inside_weights",
+				"rpn_bbox_outside_weights"})
+			->propDown({false, false, false, false})
+			->outputs({"rpn_loss_bbox"});
+
+	layerTestList.push_back(new LayerTest<float>(smoothL1LossBuilder));
+#endif
+
+#if 0
+	RoIPoolingLayer<float>::Builder* roiPoolingBuilder =
+			new typename RoIPoolingLayer<float>::Builder();
+	roiPoolingBuilder->id(31)
+			->name("roi_pool5")
+			->pooledW(6)
+			->pooledH(6)
+			->spatialScale(0.0625f)
+			->inputs({
+				"conv5_relu5_0_split_1",
+				"rois"})
+			->outputs({"pool5"});
+
+	layerTestList.push_back(new LayerTest<float>(roiPoolingBuilder));
+#endif
 
 	LayerTestInterface<float>::globalSetUp(gpuid);
 	for (uint32_t i = 0; i < layerTestList.size(); i++) {
@@ -141,7 +270,8 @@ void layerTest() {
 
 #define NETWORK_LENET	0
 #define NETWORK_VGG19	1
-#define NETWORK			NETWORK_VGG19
+#define NETWORK_FRCNN	2
+#define NETWORK			NETWORK_FRCNN
 
 
 
@@ -173,11 +303,22 @@ void networkTest() {
 	const int stepSize 				= 320000;
 	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
 	const float gamma 				= 0.96;
+#elif NETWORK == NETWORK_FRCNN
+	// FRCNN
+	LayersConfig<float>* layersConfig = createFrcnnTrainOneShotLayersConfig<float>();
+	const string networkName		= "frcnn";
+	const int batchSize 			= 1;
+	const float baseLearningRate 	= 0.001;
+	const float weightDecay 		= 0.0005;
+	const float momentum 			= 0.0;
+	const LRPolicy lrPolicy 		= LRPolicy::Step;
+	const int stepSize 				= 50000;
+	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
+	const float gamma 				= 0.1;
 #else
 	cout << "invalid network ... " << endl;
 	exit(1);
 #endif
-
 	NetworkConfig<float>* networkConfig =
 		(new typename NetworkConfig<float>::Builder())
 		->batchSize(batchSize)
@@ -195,9 +336,28 @@ void networkTest() {
 	}
 
 	NetworkTest<float>* networkTest = new NetworkTest<float>(layersConfig, networkName);
-
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 	networkTest->setUp();
+
+	/*
+	const string savePathPrefix = "/home/jkim/Dev/SOOOA_HOME/network";
+	ofstream paramOfs(
+			(savePathPrefix+"/VGG_CNN_M_1024.param").c_str(),
+			ios::out | ios::binary);
+
+	uint32_t numLearnableLayers = layersConfig->_learnableLayers.size();
+	uint32_t numParams = 0;
+	for (uint32_t i = 0; i < numLearnableLayers; i++) {
+		numParams += layersConfig->_learnableLayers[i]->numParams();
+	}
+
+	paramOfs.write((char*)&numParams, sizeof(uint32_t));
+	for (uint32_t i = 0; i < numLearnableLayers; i++) {
+		layersConfig->_learnableLayers[i]->saveParams(paramOfs);
+	}
+	paramOfs.close();
+	*/
+
 	networkTest->updateTest();
 	networkTest->cleanUp();
 	NetworkTestInterface<float>::globalCleanUp();

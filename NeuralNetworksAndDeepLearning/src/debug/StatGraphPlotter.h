@@ -31,6 +31,7 @@ public:
 	virtual ~StatGraphPlotter() {}
 
 	void addStat(const uint32_t statIndex, const std::string statName, const double stat) {
+		/*
 		//std::cout << "statIndex: " << statIndex << ", statName: " << statName << ", stat: "
         //<< stat << std::endl;
 
@@ -97,6 +98,7 @@ public:
 			else
                 plot << std::endl;
 		}
+		*/
 	}
 
 private:

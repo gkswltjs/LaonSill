@@ -102,46 +102,17 @@ public:
 		roidb.width = annotation.size.width;
 		roidb.height = annotation.size.height;
 
-
-
 		roidb.mat = cv::imread(roidb.image);
-
-#if TEST_MODE
 		roidb.mat.convertTo(roidb.mat, CV_32F);
-#else
-		Mat tempIm;
-		roidb.mat.convertTo(roidb.mat, CV_32FC3, 1.0f/255.0f);
-		roidb.mat.copyTo(tempIm);
-		float* tempImPtr = (float*)tempIm.data;
-#endif
+
 		float* imPtr = (float*)roidb.mat.data;
 
-		uint32_t rowUnit, colUnit;
-		for (uint32_t i = 0; i < roidb.mat.rows; i++) {
-			rowUnit = i * roidb.mat.cols * roidb.mat.channels();
-			for (uint32_t j = 0; j < roidb.mat.cols; j++) {
-				colUnit = j * roidb.mat.channels();
-#if TEST_MODE
-				for (uint32_t k = 0; k < channels; k++) {
-					// cv::Mat의 경우 RGB가 아닌 BGR로 데이터가 뒤집어져 있음.
-					//imPtr[rowUnit + colUnit + k] -= pixelMeans[channels-k-1];
-					// pixel means도 BGR로 뒤집어져 있음.
-					imPtr[rowUnit + colUnit + k] -= pixelMeans[k];
-				}
-#else
-				// imPtr: target, reordered as rgb
-				// tempImPtr: source, ordered as bgr
-				// pixelMeans: ordered as rgb
-				imPtr[rowUnit + colUnit + 0] =
-                    tempImPtr[rowUnit + colUnit + 2] - pixelMeans[0];
-				imPtr[rowUnit + colUnit + 1] =
-                    tempImPtr[rowUnit + colUnit + 1] - pixelMeans[1];
-				imPtr[rowUnit + colUnit + 2] =
-                    tempImPtr[rowUnit + colUnit + 0] - pixelMeans[2];
-#endif
-			}
+		int n = roidb.mat.rows * roidb.mat.cols * roidb.mat.channels();
+		for (int i = 0; i < n; i+=3) {
+			imPtr[i+0] -= this->pixelMeans[0];
+			imPtr[i+1] -= this->pixelMeans[1];
+			imPtr[i+2] -= this->pixelMeans[2];
 		}
-
 
 		const uint32_t numObjs = annotation.objects.size();
 

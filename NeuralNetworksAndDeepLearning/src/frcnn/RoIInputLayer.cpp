@@ -312,14 +312,7 @@ void RoIInputLayer<Dtype>::filterRoidb(vector<RoIDB>& roidb) {
 template <typename Dtype>
 void RoIInputLayer<Dtype>::shuffleRoidbInds() {
 	// Randomly permute the training roidb
-	// if cfg.TRAIN.ASPECT_GROUPING
-
-#if TEST_MODE
-	const uint32_t numRoidb = imdb->roidb.size();
-	this->perm.resize(numRoidb);
-	for (uint32_t i = 0; i < numRoidb; i++)
-		this->perm[i] = i;
-#else
+#if !SOOOA_DEBUG
 	vector<uint32_t> horzInds;
 	vector<uint32_t> vertInds;
 	const vector<RoIDB>& roidb = imdb->roidb;
@@ -351,6 +344,8 @@ void RoIInputLayer<Dtype>::shuffleRoidbInds() {
 		perm[i*2] = inds[i][0];
 		perm[i*2+1] = inds[i][1];
 	}
+#else
+	np_arange(0, this->imdb->roidb.size(), this->perm);
 #endif
 	this->cur = 0;
 }
@@ -398,7 +393,7 @@ void RoIInputLayer<Dtype>::getNextMiniBatchInds(vector<uint32_t>& inds) {
 	inds.insert(inds.end(), this->perm.begin() + this->cur,
 			this->perm.begin() + this->cur + TRAIN_IMS_PER_BATCH);
 
-	cout << this->cur << ": ";
+	//cout << this->cur << ": ";
 	this->cur += TRAIN_IMS_PER_BATCH;
 }
 
@@ -410,7 +405,12 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 	const uint32_t numImages = roidb.size();
 	// Sample random scales to use for each image in this batch
 	vector<uint32_t> randomScaleInds;
+#if !SOOOA_DEBUG
 	npr_randint(0, TRAIN_SCALES.size(), numImages, randomScaleInds);
+#else
+	randomScaleInds.resize(numImages);
+	std::fill(randomScaleInds.begin(), randomScaleInds.end(), 0);
+#endif
 
 	assert(TRAIN_BATCH_SIZE % numImages == 0);
 
@@ -519,7 +519,7 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 	const uint32_t numImages = roidb.size();
 	for (uint32_t i = 0; i < numImages; i++) {
 		cv::Mat im = roidb[i].getMat();
-#if !ROIINPUTLAYER_LOG
+#if ROIINPUTLAYER_LOG
 		cout << "image: " << roidb[i].image.substr(roidb[i].image.length()-10) <<
 				" (" << im.rows << "x" << im.cols << ")" << ", flip: " << roidb[i].flipped;
 		//cout << "original: " << ((float*)im.data) << endl;
@@ -556,8 +556,8 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 		float imScale = prepImForBlob(im, imResized, this->pixelMeans, targetSize,
 				TRAIN_MAX_SIZE);
 
-		cout << " -> <" << targetSize << ", " << imScale << "> (" <<
-				imResized.rows << "x" << imResized.cols << ")" << endl;
+		//cout << " -> <" << targetSize << ", " << imScale << "> (" <<
+		//		imResized.rows << "x" << imResized.cols << ")" << endl;
 		//cout << "after: " << ((float*)im.data) << ", " << ((float*)imResized.data) << endl;
 		/*
 		string windowName2 = "im purity test result";
@@ -625,8 +625,6 @@ float RoIInputLayer<Dtype>::prepImForBlob(cv::Mat& im, cv::Mat& imResized,
 		}
 	}
 	*/
-
-
 
 	const vector<uint32_t> imShape = {(uint32_t)im.cols, (uint32_t)im.rows,
 			channels};

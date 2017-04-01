@@ -54,17 +54,15 @@ void ProposalTargetLayer<Dtype>::feedforward() {
 	vector<vector<float>> allRois;
 	fill2dVecWithData(this->_inputData[0], allRois);
 
-#if PROPOSALTARGETLAYER_LOG
-	cout << "# of all rois: " << allRois.size() << endl;
-	print2dArray("allRois", allRois);
-#endif
-
 	// GT boxes (x1, y1, x2, y2, label)
 	// TODO(rbg): it's annoying that sometimes I have extra info before
 	// and other times after box coordinates -- normalize to one format
 	vector<vector<float>> gtBoxes;
 	fill2dVecWithData(this->_inputData[1], gtBoxes);
+
 #if PROPOSALTARGETLAYER_LOG
+	cout << "# of all rois: " << allRois.size() << endl;
+	print2dArray("allRois", allRois);
 	print2dArray("gtBoxes", gtBoxes);
 #endif
 
@@ -108,7 +106,6 @@ void ProposalTargetLayer<Dtype>::feedforward() {
 	this->_outputData[1]->fill_host_with_1d_vec(labels);
 
 	const uint32_t numTargets = bboxTargets.size();
-
 	const uint32_t numTargetElem = bboxTargets[0].size();
 
 	// bboxTargets
@@ -227,13 +224,13 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 
 	// Sample foreground regions without replacement
 	if (fgInds.size() > 0) {
-#if TEST_MODE
-		if (fgInds.size() > fgRoisPerThisImage)
-			fgInds.erase(fgInds.begin()+fgRoisPerThisImage, fgInds.end());
-#else
+#if !SOOOA_DEBUG
 		vector<uint32_t> tempFgInds;
 		npr_choice(fgInds, fgRoisPerThisImage, tempFgInds);
 		fgInds = tempFgInds;
+#else
+		if (fgInds.size() > fgRoisPerThisImage)
+			fgInds.erase(fgInds.begin()+fgRoisPerThisImage, fgInds.end());
 #endif
 	}
 #if PROPOSALTARGETLAYER_LOG
@@ -253,13 +250,13 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
         uint32_t(std::min((int)(roisPerImage - fgRoisPerThisImage), (int)bgInds.size()));
 	// Sample background regions without replacement
 	if (bgInds.size() > 0) {
-#if TEST_MODE
-		if (bgInds.size() > bgRoisPerThisImage)
-			bgInds.erase(bgInds.begin()+bgRoisPerThisImage, bgInds.end());
-#else
+#if !SOOOA_DEBUG
 		vector<uint32_t> tempBgInds;
 		npr_choice(bgInds, bgRoisPerThisImage, tempBgInds);
 		bgInds = tempBgInds;
+#else
+		if (bgInds.size() > bgRoisPerThisImage)
+			bgInds.erase(bgInds.begin()+bgRoisPerThisImage, bgInds.end());
 #endif
 	}
 #if PROPOSALTARGETLAYER_LOG
@@ -380,7 +377,6 @@ void ProposalTargetLayer<Dtype>::_computeTargets(
 	BboxTransformUtil::bboxTransform(exRois, exRoisOffset, gtRois, gtRoisOffset,
 			targets, targetsOffset);
 
-	/*
 	if (TRAIN_BBOX_NORMALIZE_TARGETS_PRECOMPUTED) {
 		for (uint32_t i = 0; i < numRois; i++) {
 			vector<float>& target = targets[i];
@@ -394,7 +390,6 @@ void ProposalTargetLayer<Dtype>::_computeTargets(
 					TRAIN_BBOX_NORMALIZE_MEANS[3]) / TRAIN_BBOX_NORMALIZE_STDS[3];
 		}
 	}
-	*/
 
 	//vec_2d_pad(1, targets);
 	for (uint32_t i = 0; i < numRois; i++) {

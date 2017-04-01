@@ -33,13 +33,13 @@ LMDBDataSet<Dtype>::LMDBDataSet(const string& source)
 
 	// XXX: ilsvrc12 데이터만 가정
 	// 나중에 데이터에 따라 flexible하게 생성하도록 수정해야 함.
-	//this->rows = 224;
-	//this->cols = 224;
-	//this->channels = 3;
-
-	this->rows = 8;
-	this->cols = 12;
+	this->rows = 224;
+	this->cols = 224;
 	this->channels = 3;
+
+	//this->rows = 8;
+	//this->cols = 12;
+	//this->channels = 3;
 
 	this->dataSize = this->rows * this->cols * this->channels;
 	this->numTrainData = this->_dbi->size(*(this->_rtxn));

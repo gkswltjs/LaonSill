@@ -127,8 +127,8 @@ public:
 				predBox[j*4 + 1] = predCtrY - 0.5 * predH;
 				//predBox[j*4 + 2] = predCtrX + 0.5 * predW;
 				//predBox[j*4 + 3] = predCtrY + 0.5 * predH;
-				predBox[j*4 + 2] = predCtrX + 0.5 * predW - 1.0;
-				predBox[j*4 + 3] = predCtrY + 0.5 * predH - 1.0;
+				predBox[j*4 + 2] = predCtrX + 0.5 * predW;
+				predBox[j*4 + 3] = predCtrY + 0.5 * predH;
 
 #if BBOXTRANSFORMUTIL_LOG
 				dxs[j] = dx;

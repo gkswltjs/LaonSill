@@ -3,6 +3,7 @@
 #include "Layer.h"
 #include "LearnableLayer.h"
 #include "NetworkConfig.h"
+#include "SysLog.h"
 
 using namespace std;
 using namespace cnpy;
@@ -111,10 +112,17 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 			shape[2] = 1;
 			shape[3] = 1;
 		} else if (shapeSize == 2) {
+			cout << "***********CAUTION: Consult with JHKIM!!!************" << endl;
+			/*
 			shape[0] = npyArray.shape[0];
 			shape[1] = 1;
 			shape[2] = npyArray.shape[1];
 			shape[3] = 1;
+			*/
+			shape[0] = 1;
+			shape[1] = 1;
+			shape[2] = npyArray.shape[0];
+			shape[3] = npyArray.shape[1];
 		} else if (shapeSize == 4) {
 			shape = npyArray.shape;
 		}
@@ -198,7 +206,7 @@ void printNameDataMap(map<string, Data<float>*>& nameDataMap, bool printData) {
 			itr->second->print_data({}, false);
 			itr->second->print_grad({}, false);
 		} else
-			cout << itr->first << endl;
+			itr->second->print_shape();
 	}
 
 	printConfigOff();
@@ -244,7 +252,7 @@ void fillData(map<string, Data<float>*>& nameDataMap, const string& data_prefix,
 		const string key = data_prefix + dataName;
 
 		Data<float>* data = retrieveValueFromMap(nameDataMap, key);
-		assert(data != 0);
+		SASSERT(data != 0, "couldnt find data %s ... \n", key.c_str());
 
 		Data<float>* targetData = dataVec[i];
 		targetData->set(data, true);

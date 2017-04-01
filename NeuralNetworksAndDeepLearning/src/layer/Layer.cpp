@@ -103,6 +103,20 @@ bool Layer<Dtype>::_isInputShapeChanged(uint32_t index) {
 			this->_inputData[index]->getShape() != this->_inputShape[index]);
 }
 
+
+
+template <typename Dtype>
+void Layer<Dtype>::_printOn() {
+	Data<Dtype>::printConfig = 1;
+	SyncMem<Dtype>::printConfig = 1;
+}
+
+template <typename Dtype>
+void Layer<Dtype>::_printOff() {
+	Data<Dtype>::printConfig = 0;
+	SyncMem<Dtype>::printConfig = 0;
+}
+
 template class Layer<float>;
 
 

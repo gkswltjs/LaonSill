@@ -279,17 +279,18 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	np_where_s(labels, EQ, 1, fgInds);
 	uint32_t finalNumFg = fgInds.size();
 	if (fgInds.size() > numFg) {
-#if TEST_MODE
-		for (uint32_t i = numFg; i < fgInds.size(); i++) {
-			labels[fgInds[i]] = -1;
-		}
-		finalNumFg = numFg;
-#else
+#if !SOOOA_DEBUG
 		vector<uint32_t> disableInds;
 		npr_choice(fgInds, fgInds.size()-numFg, disableInds);
+
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumFg -= disableInds.size();
+#else
+		for (int i = 0; i < fgInds.size() - numFg; i++) {
+			labels[fgInds[i]] = -1;
+		}
+		finalNumFg = numFg;
 #endif
 	}
 
@@ -300,19 +301,17 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	uint32_t finalNumBg = bgInds.size();
 	if (bgInds.size() > numBg) {
 		vector<uint32_t> disableInds;
-#if TEST_MODE
-		// XXX: 디버깅 문제로 임시 -> 원복함 -------------------------------------------------
-		for (uint32_t i = numBg; i < bgInds.size(); i++) {
-			labels[bgInds[i]] = -1;
-		}
-		finalNumBg = numBg;
-#else
+#if !SOOOA_DEBUG
 		npr_choice(bgInds, bgInds.size()-numBg, disableInds);
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumBg -= disableInds.size();
+#else
+		for (int i = 0; i < bgInds.size() - numBg; i++) {
+			labels[bgInds[i]] = -1;
+		}
+		finalNumBg = numBg;
 #endif
-		// ---------------------------------------------------------
 	}
 
 	vector<vector<float>> bboxTargets;

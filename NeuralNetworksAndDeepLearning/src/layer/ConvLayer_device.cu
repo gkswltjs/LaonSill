@@ -285,7 +285,7 @@ void ConvLayer<Dtype>::reshape() {
 	const uint32_t orows = static_cast<uint32_t>(h);
 	const uint32_t ocols = static_cast<uint32_t>(w);
 
-#if !CONVLAYER_LOG
+#if CONVLAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
 			this->name.c_str(), obatches, ochannels, orows, ocols);
 #endif
@@ -444,7 +444,7 @@ void ConvLayer<Dtype>::reshape() {
 
 
 	if(workspaceSize > 0) {
-		cout << this->name << "'s workspace: " << workspaceSize << endl;
+		//cout << this->name << "'s workspace: " << workspaceSize << endl;
 		if (this->d_workspace) {
 			checkCudaErrors(cudaFree(d_workspace));
 			this->d_workspace = 0;

@@ -247,7 +247,8 @@ Dtype Network<Dtype>::sgd(int epochs) {
 						float cost = costList[i]/config->_testInterval;
 						networkListeners[i]->onCostComputed(i, config->_lossLayers[i], cost);
 						costList[i] = 0.0;
-						STDOUT_BLOCK(cout << config->_lossLayers[i] << " cost:" << cost << ",";);
+						//STDOUT_BLOCK(cout << config->_lossLayers[i] << " cost:" << cost << "," << endl;);
+						cout << cost << ", ";
                         lossSum += cost;
 					}
 					cout << endl;

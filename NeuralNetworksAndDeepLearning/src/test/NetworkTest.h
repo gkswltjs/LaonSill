@@ -43,6 +43,7 @@ public:
 		std::vector<LearnableLayer<Dtype>*>& learnableLayers =
 				this->layersConfig->_learnableLayers;
 
+		cout << "fill params ... ---------------------------------------------------" << endl;
 		for (int i = 0; i < learnableLayers.size(); i++) {
 			fillParam(this->nameParamsOldMap, learnableLayers[i]->name + SIG_PARAMS,
 					learnableLayers[i]->_params);
@@ -51,6 +52,7 @@ public:
 				learnableLayers[i]->_paramsInitialized[j] = true;
 			}
 		}
+		cout << "-------------------------------------------------------------------" << endl;
 	}
 
 	virtual void cleanUp() {
@@ -61,6 +63,7 @@ public:
 		// feedforward
 		logStartTest("FEED FORWARD");
 		forward();
+
 		dataTest();
 		logEndTest("FEED FORWARD");
 
@@ -89,30 +92,35 @@ public:
 		const string inputLabelName = BLOBS_PREFIX + inputLayer->_outputData[1]->_name;
 		Data<Dtype>* label = retrieveValueFromMap(this->nameBlobsMap, inputLabelName);
 		inputLayer->_outputData[1]->set_host_data(label, 0, true);
-
-		/*
-		printConfigOn();
-		inputLayer->_outputData[0]->print_data({}, false);
-		inputLayer->_outputData[1]->print_data({}, false);
-		printConfigOff();
-		*/
-
 	}
 
 
 private:
 	void forward() {
-		feedInputLayerData();
+		//feedInputLayerData();
+
+		const string targetLayer = "";
 
 		for (int i = 0; i < this->layersConfig->_layers.size(); i++) {
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
+
+			if (layer->name == targetLayer) {
+				//printDataList(layer->_inputData, 0);
+			}
 			layer->feedforward();
+			if (layer->name == targetLayer) {
+				//LearnableLayer<Dtype>* learnableLayer = dynamic_cast<LearnableLayer<Dtype>*>(layer);
+				//if (learnableLayer) printDataList(learnableLayer->_params, 0);
+				//printDataList(layer->_outputData, 0);
+				//exit(1);
+			}
 		}
 	}
 
 	void dataTest() {
 		for (int i = 0; i < this->layersConfig->_layers.size(); i++) {
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
+			cout << "-----------------------------data test at layer " << layer->name << endl;
 
 			if (!compareData(this->nameBlobsMap, BLOBS_PREFIX, layer->_outputData, 0)) {
 				std::cout << "[ERROR] data feedforward failed at layer " << layer->name <<
@@ -124,9 +132,23 @@ private:
 	}
 
 	void backward() {
+		const std::string targetLayer = "";
+
 		for (int i = this->layersConfig->_layers.size() - 1; i >= 1; i--) {
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
+			if (layer->name == targetLayer) {
+				//LearnableLayer<Dtype>* learnableLayer = dynamic_cast<LearnableLayer<Dtype>*>(layer);
+				//if (learnableLayer) printDataList(learnableLayer->_params, 0);
+				//printDataList(layer->_outputData, 1);
+			}
 			layer->backpropagation();
+
+			if (layer->name == targetLayer) {
+				//printDataList(layer->_inputData, 0);
+				//printDataList(layer->_inputData, 1);
+				//exit(1);
+			}
+
 		}
 	}
 
@@ -191,6 +213,23 @@ private:
 		cout << ">>> " + testName + " TEST DONE ... --------------------------" << endl;
 	}
 
+	void printDataList(const std::vector<Data<Dtype>*>& dataList, int type = 0) {
+		Data<Dtype>::printConfig = 1;
+		SyncMem<Dtype>::printConfig = 1;
+
+		if (type == 0) {
+			for (int j = 0; j < dataList.size(); j++) {
+				dataList[j]->print_data({}, false);
+			}
+		} else if (type == 1) {
+			for (int j = 0; j < dataList.size(); j++) {
+				dataList[j]->print_grad({}, false);
+			}
+		}
+
+		Data<Dtype>::printConfig = 0;
+		SyncMem<Dtype>::printConfig = 0;
+	}
 
 
 
