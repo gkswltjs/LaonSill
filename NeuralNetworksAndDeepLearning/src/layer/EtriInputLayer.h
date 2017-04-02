@@ -38,12 +38,14 @@ public:
         std::string _imageDir;
         int         _resizedImageRow;
         int         _resizedImageCol;
+        bool        _train;
 
 		Builder() {
 			this->type = Layer<Dtype>::EtriInput;
             this->_imageDir = "";
             this->_resizedImageRow = ETRIDATA_DEFAULT_RESIZED_ROW_SIZE;
             this->_resizedImageCol = ETRIDATA_DEFAULT_RESIZED_COL_SIZE;
+            this->_train = true;
 		}
 		virtual Builder* shape(const std::vector<uint32_t>& shape) {
 			this->_shape = shape;
@@ -77,6 +79,10 @@ public:
             this->_imageDir = imageDir;
             return this;
         }
+        Builder* train(bool train) {
+            this->_train = train;
+            return this;
+        }
         Builder* resize(int row, int col) {
             this->_resizedImageRow = row;
             this->_resizedImageCol = col;
@@ -90,7 +96,7 @@ public:
     EtriInputLayer();
     
 	EtriInputLayer(const std::string name, const std::string imageDir,
-        int resizedImageRow, int resizedImageCol);
+        int resizedImageRow, int resizedImageCol, bool train);
 	EtriInputLayer(Builder* builder);
 
     virtual ~EtriInputLayer();
@@ -104,14 +110,17 @@ public:
     void shuffleTrainDataSet();
 
 	void reshape();
+    void setTrain(bool train) { this->train = train; }
 
 protected:
-	void initialize(const std::string imageDir, int resizedImageRow, int resizedImageCol);
+	void initialize(const std::string imageDir, int resizedImageRow, int resizedImageCol,
+        bool train);
 
     std::string imageDir;
     int imageRow;
     int imageCol;
     int imageChannel;
+    bool train;
 
     std::map<std::string, int> keywordMap;
     std::vector<EtriData> trainData;

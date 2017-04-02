@@ -50,7 +50,7 @@ void printUsageAndExit(char* prog) {
     exit(EXIT_FAILURE);
 }
 
-
+// FIXME: 디버깅용 함수.... 나중에 싹다 지우자.
 void setLayerTrain(LayersConfig<float>* lc, bool train) {
     int layerCount = lc->_layers.size();
 
@@ -64,7 +64,93 @@ void setLayerTrain(LayersConfig<float>* lc, bool train) {
     }
 }
 
-// FIXME: 디버깅용 함수.... 나중에 싹다 지우자.
+typedef struct top10Sort_s {
+    float value;
+    int index;
+
+    bool operator < (const struct top10Sort_s &x) const {
+        return value < x.value;
+    }
+} top10Sort;
+
+// XXX: inefficient..
+int getTop10GuessSuccessCount(const float* data, const float* label, int batchCount,
+    int depth) {
+
+    int successCnt = 0;
+
+    for (int i = 0; i < batchCount; i++) {
+        vector<int> curLabel;
+        vector<top10Sort> tempData;
+
+        for (int j = 0; j < depth; j++) {
+            int index = i * depth + j;
+
+            if (label[index] > 0.99) {
+                curLabel.push_back(j);
+            }
+
+            tempData.push_back({data[index], j});
+        }
+
+        sort(tempData.begin(), tempData.end());
+
+        bool found = false;
+        for (int j = 0; j < 10; j++) {
+            int reverseIndex = depth - 1 - j;
+            int target = tempData[reverseIndex].index;
+
+            for (int k = 0; k < curLabel.size(); k++) {
+                if (curLabel[k] == target) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+                break;
+        }
+
+#if 0
+        printf ("Labels[%d] : ", i);
+        for (int j = 0; j < curLabel.size(); j++) {
+            printf(" %d", curLabel[j]);
+        }
+        printf ("\n");
+
+        printf ("top 10 data[%d] : ", i);
+        for (int j = 0; j < 10; j++) {
+            int reverseIndex = depth - 1 - j;
+            int target = tempData[reverseIndex].index;
+            printf(" %d", target);
+        }
+        printf("\n");
+#endif    
+
+        if (found)
+            successCnt++;
+    }
+
+#if 0
+    for (int i = 0; i < batchCount; i++) {
+        printf("Labels[%d] : ", i);
+        for (int j = 0; j < depth; j++) {
+            int index = i * depth + j;
+            printf("%d ", label[index]);
+        }
+        printf("\n");
+        printf("data[%d] : ", i);
+        for (int j = 0; j < depth; j++) {
+            int index = i * depth + j;
+            printf("%d ", data[index]);
+        }
+        printf("\n");
+    }
+#endif
+
+    return successCnt;
+}
+
 
 void runGAN() {
 
@@ -159,7 +245,7 @@ void runGAN() {
 	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
 		lcGD0GAN->_layers[i]->setNetworkConfig(ncGD0GAN);
 
-    for (int i = 0; i < 3; i++) {  // epoch
+    for (int i = 0; i < 25; i++) {  // epoch
         cout << "epoch=" << i << endl;
 
         InputLayer<float>* inputLayer = lcDGAN->_inputLayer;
@@ -242,6 +328,22 @@ void runGAN() {
 
             lossLayer->setTargetValue(0.0);
             noiseInputLayer->setRegenerateNoise(true);
+
+            if (j % 400 == 0) {
+                setLayerTrain(lcGD0GAN, false);
+
+                char temp[64];
+                sprintf(temp, "G(epoch=%d)", i);
+        
+                networkGD0GAN->_feedforward(0);
+                //DebugUtil<float>::printNetworkEdges(stdout, "GEpoch", lcGD0GAN, 0);
+
+                Layer<float>* convLayer = lcGD0GAN->_nameLayerMap["ConvLayer1"];
+                const float* host_data = convLayer->_inputData[0]->host_data();
+                ImageUtil<float>::saveImage(host_data, 64, 3, 64, 64, "");
+
+                setLayerTrain(lcGD0GAN, true);
+            }
         }
 
         if (true) {
@@ -261,6 +363,7 @@ void runGAN() {
         }
     }
 
+#if 0
     // noise check
     setLayerTrain(lcGD0GAN, false);
 
@@ -293,6 +396,7 @@ void runGAN() {
             noise += 0.1;
         }
     }
+#endif
 
 }
 
@@ -313,8 +417,8 @@ void runEtri() {
 	const float clipGradientsLevel = 0.0f;
 	const LRPolicy lrPolicy = LRPolicy::Fixed;
 
-    //const Optimizer opt = Optimizer::Adam;
-    const Optimizer opt = Optimizer::Momentum;
+    const Optimizer opt = Optimizer::Adam;
+    //const Optimizer opt = Optimizer::Momentum;
 
 	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
 	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
@@ -356,7 +460,78 @@ void runEtri() {
 	for (uint32_t i = 0; i < layersConfig->_layers.size(); i++)
 		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 
-    network->sgd(10);
+    // (3) 학습한다.
+    for (int epoch = 0; epoch < 10; epoch++) {
+        STDOUT_BLOCK(cout << "epoch #" << epoch << " starts" << endl;); 
+
+        EtriInputLayer<float>* etriInputLayer =
+            dynamic_cast<EtriInputLayer<float>*>(layersConfig->_firstLayers[0]);
+        SASSERT0(etriInputLayer != NULL);
+
+        CrossEntropyWithLossLayer<float>* lossLayer =
+            dynamic_cast<CrossEntropyWithLossLayer<float>*>(layersConfig->_lastLayers[0]);
+        SASSERT0(lossLayer != NULL);
+
+        const uint32_t trainDataSize = etriInputLayer->getNumTrainData();
+        const uint32_t numTrainBatches = trainDataSize / networkConfig->_batchSize - 1;
+
+        // (3-1) 네트워크를 학습한다.
+        for (int i = 0; i < numTrainBatches; i++) {
+            STDOUT_BLOCK(cout << "train data(" << i << "/" << numTrainBatches << ")" <<
+                endl;);
+            network->sgdMiniBatch(i);
+        }
+
+        // (3-2) 트레이닝 데이터에 대한 평균 Loss와 정확도를 구한다.
+        STDOUT_BLOCK(cout << "evaluate train data(num train batches =" << numTrainBatches <<
+            ")" << endl;);
+        float trainLoss = 0.0;
+        int trainSuccessCnt = 0;
+        for (int i = 0; i < numTrainBatches; i++) {
+            network->_feedforward(i);
+            trainLoss += lossLayer->cost();
+
+            const float* outputData = lossLayer->_outputData[0]->host_data();
+            const float* outputLabel = lossLayer->_inputData[1]->host_data();
+            trainSuccessCnt += getTop10GuessSuccessCount(outputData, outputLabel,
+                networkConfig->_batchSize, 1000);
+        }
+        trainLoss = trainLoss / (float)(numTrainBatches);
+
+        // (3-3) 테스트 데이터에 대한 평균 Loss와 정확도를 구한다.
+        etriInputLayer->setTrain(false);
+
+        const uint32_t testDataSize = etriInputLayer->getNumTestData();
+        const uint32_t numTestBatches = testDataSize / networkConfig->_batchSize - 1;
+
+        STDOUT_BLOCK(cout << "evaluate test data(num test batches =" << numTestBatches <<
+            ")" << endl;);
+        float testLoss = 0.0;
+        int testSuccessCnt = 0;
+        for (int i = 0; i < numTestBatches; i++) {
+            network->_feedforward(i);
+            testLoss += lossLayer->cost();
+
+            const float* outputData = lossLayer->_outputData[0]->host_data();
+            const float* outputLabel = lossLayer->_inputData[1]->host_data();
+            testSuccessCnt += getTop10GuessSuccessCount(outputData, outputLabel,
+                networkConfig->_batchSize, 1000);
+        }
+        testLoss = testLoss / (float)(numTestBatches);
+
+        etriInputLayer->setTrain(true);
+
+        float trainAcc = (float)trainSuccessCnt / (float)numTrainBatches /
+            (float)networkConfig->_batchSize;
+        float testAcc = (float)testSuccessCnt / (float)numTestBatches /
+            (float)networkConfig->_batchSize;
+        STDOUT_BLOCK(cout << "[RESULT #" << epoch << "] train loss : " << trainLoss <<
+            ", test losss : " << testLoss << ", train accuracy : " << trainAcc << "(" <<
+            trainSuccessCnt << "/" << numTrainBatches * networkConfig->_batchSize <<
+            "), test accuracy : " << testAcc << "(" << testSuccessCnt << "/" <<
+            numTestBatches * networkConfig->_batchSize << ")" << endl;);
+    }
+
 #if 0
     network->_feedforward(0);
     DebugUtil<float>::printNetworkEdges(stdout, "etri", layersConfig, 0);

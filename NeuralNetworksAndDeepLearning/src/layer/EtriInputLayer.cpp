@@ -35,19 +35,20 @@ const int ETRIDATA_LABEL_COUNT = 1000;
 
 template<typename Dtype>
 EtriInputLayer<Dtype>::EtriInputLayer() {
-    initialize("", -1, -1);
+    initialize("", -1, -1, true);
 }
 
 template<typename Dtype>
 EtriInputLayer<Dtype>::EtriInputLayer(const string name, string imageDir,
-    int resizedImageRow, int resizedImageCol) :
+    int resizedImageRow, int resizedImageCol, bool train) :
     InputLayer<Dtype>(name) {
-    initialize(imageDir, resizedImageRow, resizedImageCol);
+    initialize(imageDir, resizedImageRow, resizedImageCol, train);
 }
 
 template<typename Dtype>
 EtriInputLayer<Dtype>::EtriInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
-	initialize(builder->_imageDir, builder->_resizedImageRow, builder->_resizedImageCol);
+	initialize(builder->_imageDir, builder->_resizedImageRow, builder->_resizedImageCol,
+        builder->_train);
 }
 
 template<typename Dtype>
@@ -73,6 +74,9 @@ void EtriInputLayer<Dtype>::prepareKeywordMap() {
 
     while (input.good()) {
         getline(input, line);
+        if (line == "")
+            break;
+
         this->keywordMap[line] = index;
         index++;
     }
@@ -132,6 +136,10 @@ void EtriInputLayer<Dtype>::registerData(string filePath) {
     //   1st data => test data
     //   others   => training data
     //   FIXME: inefficient..
+   
+    if (imageFileList.size() < 4)
+        return;
+
     for (int i = 0; i < imageFileList.size(); i++) {
         EtriData newData;
         newData.filePath = imageFileList[i];
@@ -157,6 +165,8 @@ void EtriInputLayer<Dtype>::prepareData() {
     dp = opendir(this->imageDir.c_str());
     SASSERT0(dp != NULL);
 
+    int step = 0;
+
     struct stat s;
     while ((entry = readdir(dp))) {
         string fileName(entry->d_name);
@@ -170,6 +180,13 @@ void EtriInputLayer<Dtype>::prepareData() {
                 registerData(filePath);
             }
         }
+
+        step++;
+
+#if 0
+        if (step > 300)
+            break;
+#endif
     }
 
     closedir(dp);
@@ -185,6 +202,7 @@ void EtriInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
     for (int row = 0; row < this->imageRow; row++) {
         for (int col = 0; col < this->imageCol; col++) {
             this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[2] / 127.5 - 1.0;
+            //this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[2];
             offset++;
         }
     }
@@ -193,6 +211,7 @@ void EtriInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
     for (int row = 0; row < this->imageRow; row++) {
         for (int col = 0; col < this->imageCol; col++) {
             this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[1] / 127.5 - 1.0;
+            //this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[1];
             offset++;
         }
     }
@@ -201,6 +220,7 @@ void EtriInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
     for (int row = 0; row < this->imageRow; row++) {
         for (int col = 0; col < this->imageCol; col++) {
             this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[0] / 127.5 - 1.0;
+            //this->images[offset] = (Dtype)image.at<cv::Vec3b>(row, col)[0];
             offset++;
         }
     }
@@ -209,13 +229,30 @@ void EtriInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
 template<typename Dtype>
 void EtriInputLayer<Dtype>::loadImages(int batchIndex) {
     int batchSize = this->networkConfig->_batchSize;
-    int baseIndex = batchIndex * batchSize;
+    int baseIndex = batchIndex;
 
     for (int i = 0; i < batchSize; i++) {
         int index = baseIndex + i;
 
+        if (this->train) {
+            SASSERT(index < this->trainData.size(),
+                "index sholud be less than data count. index=%d, data count=%d",
+                index, (int)this->trainData.size());
+        } else {
+            SASSERT(index < this->testData.size(),
+                "index sholud be less than data count. index=%d, data count=%d",
+                index, (int)this->trainData.size());
+        }
+
         cv::Mat image;
-        string imagePath = this->trainData[index].filePath;
+        string imagePath;
+
+        // XXX: 
+        if (this->train)
+            imagePath = this->trainData[index].filePath;
+        else
+            imagePath = this->testData[index].filePath;
+
         image = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
 
         int imageChannels = image.channels();
@@ -224,13 +261,15 @@ void EtriInputLayer<Dtype>::loadImages(int batchIndex) {
         cv::Mat resizedImage;
         cv::resize(image, resizedImage, cv::Size(this->imageRow, this->imageCol));
         loadPixels(resizedImage, i);
+
+        
     }
 }
 
 template<typename Dtype>
 void EtriInputLayer<Dtype>::loadLabels(int batchIndex) {
     int batchSize = this->networkConfig->_batchSize;
-    int baseIndex = batchIndex * batchSize;
+    int baseIndex = batchIndex;
 
     int totalSize = sizeof(Dtype) * ETRIDATA_LABEL_COUNT * batchSize;
     memset(this->labels, 0x00, totalSize);
@@ -238,7 +277,23 @@ void EtriInputLayer<Dtype>::loadLabels(int batchIndex) {
     for (int i = 0; i < batchSize; i++) {
         int index = baseIndex + i;
 
-        vector<int> curLabels = this->trainData[index].labels;
+        if (this->train) {
+            SASSERT(index < this->trainData.size(),
+                "index sholud be less than data count. index=%d, data count=%d",
+                index, (int)this->trainData.size());
+        } else {
+            SASSERT(index < this->testData.size(),
+                "index sholud be less than data count. index=%d, data count=%d",
+                index, (int)this->trainData.size());
+        }
+
+        vector<int> curLabels;
+
+        // XXX: 
+        if (this->train)
+            curLabels = this->trainData[index].labels;
+        else 
+            curLabels = this->testData[index].labels;
 
         for (int j = 0; j < curLabels.size(); j++) {
             int pos = curLabels[j];
@@ -343,20 +398,17 @@ template<typename Dtype>
 void EtriInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
     this->currentBatchIndex = baseIndex;    // FIXME: ...
     reshape();
-
-    int batchSize = this->networkConfig->_batchSize;
-    int inputImageCount = this->imageChannel * this->imageRow * this->imageCol * batchSize;
-    this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageCount);
 }
 
 template<typename Dtype>
 void EtriInputLayer<Dtype>::initialize(string imageDir, int resizedImageRow,
-    int resizedImageCol) {
+    int resizedImageCol, bool train) {
     this->type = Layer<Dtype>::EtriInput;
     this->imageDir = imageDir;
     this->imageRow = resizedImageRow;
     this->imageCol = resizedImageCol;
     this->imageChannel = ETRIDATA_IMAGE_CHANNEL;
+    this->train = train;
 
     this->images = NULL;
     this->labels = NULL;
@@ -376,6 +428,7 @@ int EtriInputLayer<Dtype>::getNumTestData() {
     if (this->images == NULL) {
         reshape();
     }
+
     return this->testData.size();
 }
 

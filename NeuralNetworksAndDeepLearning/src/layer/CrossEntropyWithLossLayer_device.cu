@@ -22,27 +22,38 @@ using namespace std;
 //  z * -log(x) + (1 - z) * -log(1 - x)
 //  x : input
 template <typename Dtype>
-__global__ void CEForward(const Dtype* input, Dtype z, int depth, int batchCount,
-    Dtype* output) {
+__global__ void CEForward(const Dtype* input, Dtype z, int size, Dtype* output) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= depth)
+	if (idx >= size)
 		return;
 
-    output[idx] = 0;
-    for (int i = 0; i < batchCount; i++) {
-        int index = i * depth + idx;
-        Dtype x;
-        if (input[index] < 0.00001)
-            x = 0.00001;
-        else if (input[index] > 0.99999)
-            x = 0.99999;
-        else
-            x = input[index];
+    Dtype x;
+    if (input[idx] < 0.00001)
+        x = 0.00001;
+    else if (input[idx] > 0.99999)
+        x = 0.99999;
+    else
+        x = input[idx];
 
-        output[idx] += z * logf(x) + (1 - z) * logf(1 - x);
-    }
+    output[idx] += z * logf(x) + (1 - z) * logf(1 - x);
+}
 
-    output[idx] = (-1.0) * output[idx] / (Dtype)batchCount;
+template <typename Dtype>
+__global__ void CEForward2(const Dtype* input, const Dtype* input2, int size, Dtype* output) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= size)
+		return;
+
+    Dtype x;
+    Dtype z = input2[idx];
+    if (input[idx] < 0.00001)
+        x = 0.00001;
+    else if (input[idx] > 0.99999)
+        x = 0.99999;
+    else
+        x = input[idx];
+
+    output[idx] = (-1.0) * (z * logf(x) + (1 - z) * logf(1 - x));
 }
 
 // Cross Entropy with logit(sigmoid): 
@@ -92,20 +103,24 @@ __global__ void CEForwardWithSigmoid2(const Dtype* input, const Dtype* input2, i
 // gradient = x - z
 // x : input
 template <typename Dtype>
-__global__ void CEBackward(const Dtype* input, const Dtype z, int depth, int batchCount,
-    Dtype* gradient) {
+__global__ void CEBackward(const Dtype* input, const Dtype z, int size, Dtype* gradient) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= depth)
+	if (idx >= size)
 		return;
 
-    gradient[idx] = 0;
+    gradient[idx] = input[idx] - z;
+}
 
-    for (int i = 0; i < batchCount; i++) {
-        int index = i * depth + idx;
-        gradient[idx] += (input[index] - z);
-    }
-   
-    gradient[idx] = gradient[idx] / (Dtype)batchCount;
+// gradient = x - z
+// x : input
+template <typename Dtype>
+__global__ void CEBackward2(const Dtype* input, const Dtype* input2, int size,
+    Dtype* gradient) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= size)
+		return;
+
+    gradient[idx] = input[idx] - input2[idx];
 }
 
 // gradient : 1 - z - exp(-x) / (1 + exp(-x))   ....   x >= 0
@@ -227,15 +242,25 @@ void CrossEntropyWithLossLayer<Dtype>::feedforward() {
     Dtype *outputData = this->_outputData[0]->mutable_device_data();
 
     int count = this->depth * batchCount;
-    SASSERT0(this->withSigmoid);
 
-    if (this->_inputData.size() == 2) {
-        const Dtype *inputData2 = this->_inputData[1]->device_data();
-        CEForwardWithSigmoid2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, inputData2, count, outputData);
+    if (this->withSigmoid) {
+        if (this->_inputData.size() == 2) {
+            const Dtype *inputData2 = this->_inputData[1]->device_data();
+            CEForwardWithSigmoid2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, inputData2, count, outputData);
+        } else {
+            CEForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, (Dtype)this->targetValue, count, outputData);
+        }
     } else {
-        CEForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, count, outputData);
+        if (this->_inputData.size() == 2) {
+            const Dtype *inputData2 = this->_inputData[1]->device_data();
+            CEForward2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, inputData2, count, outputData);
+        } else {
+            CEForward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, (Dtype)this->targetValue, count, outputData);
+        }
     }
 }
 
@@ -248,15 +273,26 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
 	Dtype* inputGrads = this->_inputData[0]->mutable_device_grad();
 
     int count = batchCount * this->depth;
-    SASSERT0(this->withSigmoid);
 
-    if (this->_inputData.size() == 2) {
-        const Dtype *inputData2 = this->_inputData[1]->device_data();
-        CEBackwardWithSigmoid2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, inputData2, count, inputGrads);
+    if (this->withSigmoid) {
+        if (this->_inputData.size() == 2) {
+            const Dtype *inputData2 = this->_inputData[1]->device_data();
+            CEBackwardWithSigmoid2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, inputData2, count, inputGrads);
+        } else {
+            CEBackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, (Dtype)this->targetValue, count, inputGrads);
+        }
     } else {
-        CEBackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-            inputData, (Dtype)this->targetValue, count, inputGrads);
+        if (this->_inputData.size() == 2) {
+            const Dtype *inputData2 = this->_inputData[1]->device_data();
+            CEBackward2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, inputData2, count, inputGrads);
+        } else {
+            CEBackward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
+                inputData, (Dtype)this->targetValue, count, inputGrads);
+        }
+
     }
 }
 

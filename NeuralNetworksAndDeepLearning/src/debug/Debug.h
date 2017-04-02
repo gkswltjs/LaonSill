@@ -219,10 +219,21 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 	return layersConfig;
 }
 
+#define USE_ETRI_GAN    1
+
 template <typename Dtype>
 LayersConfig<Dtype>* createDOfGANLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
 	    (new typename LayersConfig<Dtype>::Builder())
+#if USE_ETRI_GAN
+        ->layer((new typename EtriInputLayer<Dtype>::Builder())
+                ->id(0)
+                ->name("data")
+                ->image(std::string(SPARAM(BASE_DATA_DIR)) +
+                        std::string("/etri/flatten/"))
+                ->resize(64, 64)
+                ->outputs({"data", "label"}))
+#else
         ->layer((new typename CelebAInputLayer<Dtype>::Builder())
                 ->id(1)
                 ->name("CelebAInputLayer")
@@ -233,6 +244,7 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                 ->cropImage(64,64)
                 ->sourceType("ImagePack")
                 ->outputs({"data"}))
+#endif
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(2)
                 ->name("ConvLayer1")
@@ -3792,7 +3804,9 @@ LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
             ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
                     ->id(44)
                     ->name("celossEtri")
+#if 0
                     ->withSigmoid(true)
+#endif
                     ->inputs({"fc8", "label"})
                     ->outputs({"celossEtri"}))
 

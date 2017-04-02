@@ -153,10 +153,10 @@ Dtype Network<Dtype>::sgdMiniBatch(uint32_t batchTotalIndex) {
                 float cost = costList[i]/config->_testInterval;
                 networkListeners[i]->onCostComputed(0, config->_lossLayers[i], cost);
                 costList[i] = 0.0;
-                //cout << config->_lossLayers[i] << " cost:" << cost << ",";
+                cout << config->_lossLayers[i] << " cost:" << cost << ",";
                 lossSum += cost;
             }
-            //cout << endl;
+            cout << endl;
 
             config->_status = NetworkStatus::Train;
         }
@@ -736,7 +736,7 @@ void Network<Dtype>::_feedforward(uint32_t batchIndex) {
 		//cout << layersConfig->_layers[i]->name << ": feedforward ... " << endl;
 		layersConfig->_layers[i]->feedforward();
 		//cout << "output sumsq of " << layersConfig->_layers[i]->name << ":\t\t" <<
-		//		layersConfig->_layers[i]->_outputData[0]->sumsq_device_data() << endl;
+	//			layersConfig->_layers[i]->_outputData[0]->sumsq_device_data() << endl;
 	}
 }
 
