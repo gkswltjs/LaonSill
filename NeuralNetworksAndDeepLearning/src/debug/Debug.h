@@ -3769,7 +3769,7 @@ LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
                     ->id(40)
                     ->name("relu6")
                     ->inputs({"fc6"})
-                    ->outputs({"relu6"}))
+                    ->outputs({"fc6"}))
 
             ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
                     ->id(41)
@@ -3780,14 +3780,14 @@ LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
                     ->biasUpdateParam(2, 0)
                     ->weightFiller(ParamFillerType::Xavier, 0.1)
                     ->biasFiller(ParamFillerType::Constant, bias_const)
-                    ->inputs({"relu6"})
+                    ->inputs({"fc6"})
                     ->outputs({"fc7"}))
 
             ->layer((new typename ReluLayer<Dtype>::Builder())
                     ->id(42)
                     ->name("relu7")
                     ->inputs({"fc7"})
-                    ->outputs({"relu7"}))
+                    ->outputs({"fc7"}))
 
             ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
                     ->id(43)
@@ -3798,13 +3798,13 @@ LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
                     ->biasUpdateParam(2, 0)
                     ->weightFiller(ParamFillerType::Gaussian, 0.1)
                     ->biasFiller(ParamFillerType::Constant, bias_const)
-                    ->inputs({"relu7"})
+                    ->inputs({"fc7"})
                     ->outputs({"fc8"}))
 
             ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
                     ->id(44)
                     ->name("celossEtri")
-#if 0
+#if 1
                     ->withSigmoid(true)
 #endif
                     ->inputs({"fc8", "label"})

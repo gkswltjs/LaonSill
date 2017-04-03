@@ -122,9 +122,11 @@ protected:
     int imageChannel;
     bool train;
 
+public:
     std::map<std::string, int> keywordMap;
     std::vector<EtriData> trainData;
     std::vector<EtriData> testData;
+protected:
 
     void registerData(std::string filePath);
     void prepareKeywordMap();

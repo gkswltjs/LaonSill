@@ -75,9 +75,21 @@ typedef struct top10Sort_s {
 
 // XXX: inefficient..
 int getTop10GuessSuccessCount(const float* data, const float* label, int batchCount,
-    int depth) {
+    int depth, bool train, int epoch, const float* image, int imageBaseIndex,
+    vector<EtriData> etriData) {
 
     int successCnt = 0;
+
+#if 1
+    string folderName;
+        if (train) {
+            folderName = "train_" + to_string(epoch) + "_" + to_string(imageBaseIndex); 
+        } else {
+            folderName = "test_" + to_string(epoch) + "_" + to_string(imageBaseIndex); 
+        }
+        
+        ImageUtil<float>::saveImage(image, batchCount, 3, 224, 224, folderName);
+#endif
 
     for (int i = 0; i < batchCount; i++) {
         vector<int> curLabel;
@@ -125,7 +137,15 @@ int getTop10GuessSuccessCount(const float* data, const float* label, int batchCo
             printf(" %d", target);
         }
         printf("\n");
-#endif    
+
+        int imageIndex = i + imageBaseIndex;
+        cout << "[folder:" << folderName << "] : " << etriData[imageIndex].filePath <<
+            ", labels : ";
+        for (int k = 0; k < etriData[imageIndex].labels.size(); k++) {
+            cout << etriData[imageIndex].labels[k] << " ";
+        }
+        cout << endl;
+#endif
 
         if (found)
             successCnt++;
@@ -329,7 +349,7 @@ void runGAN() {
             lossLayer->setTargetValue(0.0);
             noiseInputLayer->setRegenerateNoise(true);
 
-            if (j % 400 == 0) {
+            if (j % 100 == 0) {
                 setLayerTrain(lcGD0GAN, false);
 
                 char temp[64];
@@ -409,7 +429,7 @@ void runEtri() {
 	const uint32_t batchSize = 16;
 	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.0002f;
+	const float baseLearningRate = 0.001f;
 
 	const uint32_t stepSize = 100000;
 	const float weightDecay = 0.0001f;
@@ -461,7 +481,7 @@ void runEtri() {
 		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 
     // (3) 학습한다.
-    for (int epoch = 0; epoch < 10; epoch++) {
+    for (int epoch = 0; epoch < 50; epoch++) {
         STDOUT_BLOCK(cout << "epoch #" << epoch << " starts" << endl;); 
 
         EtriInputLayer<float>* etriInputLayer =
@@ -491,10 +511,12 @@ void runEtri() {
             network->_feedforward(i);
             trainLoss += lossLayer->cost();
 
-            const float* outputData = lossLayer->_outputData[0]->host_data();
+            const float* inputData = etriInputLayer->_inputData[0]->host_data();
+            const float* outputData = lossLayer->_inputData[0]->host_data();
             const float* outputLabel = lossLayer->_inputData[1]->host_data();
             trainSuccessCnt += getTop10GuessSuccessCount(outputData, outputLabel,
-                networkConfig->_batchSize, 1000);
+                networkConfig->_batchSize, 1000, true, epoch, inputData,
+                (int)(networkConfig->_batchSize * i), etriInputLayer->trainData);
         }
         trainLoss = trainLoss / (float)(numTrainBatches);
 
@@ -512,10 +534,12 @@ void runEtri() {
             network->_feedforward(i);
             testLoss += lossLayer->cost();
 
-            const float* outputData = lossLayer->_outputData[0]->host_data();
+            const float* inputData = etriInputLayer->_inputData[0]->host_data();
+            const float* outputData = lossLayer->_inputData[0]->host_data();
             const float* outputLabel = lossLayer->_inputData[1]->host_data();
             testSuccessCnt += getTop10GuessSuccessCount(outputData, outputLabel,
-                networkConfig->_batchSize, 1000);
+                networkConfig->_batchSize, 1000, false, epoch, inputData,
+                (int)(networkConfig->_batchSize * i), etriInputLayer->testData);
         }
         testLoss = testLoss / (float)(numTestBatches);
 

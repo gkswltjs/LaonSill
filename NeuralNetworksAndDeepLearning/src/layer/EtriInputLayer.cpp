@@ -83,6 +83,19 @@ void EtriInputLayer<Dtype>::prepareKeywordMap() {
 
     input.close();
 
+
+#if 1
+    map <string, int>::iterator iter;
+    cout << "Keyword Map" << endl;
+    cout << "=================================================================" << endl;
+    for (iter = this->keywordMap.begin(); iter != this->keywordMap.end(); iter++) {
+        cout << iter->second << " : " << iter->first << endl;
+    }
+    cout << "=================================================================" << endl;
+
+#endif
+
+
     SASSERT((this->keywordMap.size() <= ETRIDATA_LABEL_COUNT),
         "keyword count of etri data should be less than %d but %d.",
         ETRIDATA_LABEL_COUNT, (int)this->keywordMap.size());
@@ -148,11 +161,10 @@ void EtriInputLayer<Dtype>::registerData(string filePath) {
             newData.labels.push_back(labels[j]);
         }
 
-        if (i == 0) {
+        if (i % 4 == 0)
             this->testData.push_back(newData);        
-        } else {
+        else
             this->trainData.push_back(newData);
-        }
     }
 }
 
@@ -184,7 +196,7 @@ void EtriInputLayer<Dtype>::prepareData() {
         step++;
 
 #if 0
-        if (step > 300)
+        if (step > 2000)
             break;
 #endif
     }
@@ -241,7 +253,7 @@ void EtriInputLayer<Dtype>::loadImages(int batchIndex) {
         } else {
             SASSERT(index < this->testData.size(),
                 "index sholud be less than data count. index=%d, data count=%d",
-                index, (int)this->trainData.size());
+                index, (int)this->testData.size());
         }
 
         cv::Mat image;
@@ -284,7 +296,7 @@ void EtriInputLayer<Dtype>::loadLabels(int batchIndex) {
         } else {
             SASSERT(index < this->testData.size(),
                 "index sholud be less than data count. index=%d, data count=%d",
-                index, (int)this->trainData.size());
+                index, (int)this->testData.size());
         }
 
         vector<int> curLabels;
@@ -292,7 +304,7 @@ void EtriInputLayer<Dtype>::loadLabels(int batchIndex) {
         // XXX: 
         if (this->train)
             curLabels = this->trainData[index].labels;
-        else 
+        else
             curLabels = this->testData[index].labels;
 
         for (int j = 0; j < curLabels.size(); j++) {
