@@ -219,7 +219,14 @@ void Data<Dtype>::set(Data<Dtype>* data, bool reshape) {
 	if (reshape)
 		this->reshapeLike(data);
 
-	assert(_shape == data->getShape());
+	//assert(_shape == data->getShape());
+	//assert(_count == data->getCount());
+	if (this->_count != data->getCount()) {
+		cout << "Data::set() _count != data->getCount()" << endl;
+		this->print_shape();
+		data->print_shape();
+		exit(1);
+	}
 
 	if (this->_hostOnly || data->_hostOnly) {
 		this->set_host_data(data);

@@ -196,9 +196,10 @@ void printNpzFiles(npz_t& cnpy_npz) {
 	cout << "----------------------------------" << endl;
 }
 
-void printNameDataMap(map<string, Data<float>*>& nameDataMap, bool printData) {
+void printNameDataMap(const string& name, map<string, Data<float>*>& nameDataMap, bool printData) {
 	printConfigOn();
 
+	cout << "printNameDataMap: " << name << endl;
 	for (typename map<string, Data<float>*>::iterator itr = nameDataMap.begin();
 			itr != nameDataMap.end(); itr++) {
 
@@ -365,6 +366,7 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 bool compareParam(map<string, Data<float>*>& nameDataMap, const string& param_prefix,
 		vector<Data<float>*>& paramVec, uint32_t compareType) {
 
+	bool finalResult = true;
 	for (uint32_t i = 0; i < paramVec.size(); i++) {
 		const string key = param_prefix + to_string(i);
 		Data<float>* data = retrieveValueFromMap(nameDataMap, key);
@@ -384,13 +386,27 @@ bool compareParam(map<string, Data<float>*>& nameDataMap, const string& param_pr
 		printConfigOff();
 		*/
 
+		bool result = false;
+
 		if (compareType == 0)
-			//assert(targetData->compareData(data, COMPARE_ERROR));
-			return targetData->compareData(data, COMPARE_ERROR);
+			result = targetData->compareData(data, COMPARE_ERROR);
 		else
-			//assert(targetData->compareGrad(data, COMPARE_ERROR));
-			return targetData->compareGrad(data, COMPARE_ERROR);
+			result = targetData->compareGrad(data, COMPARE_ERROR);
+
+		if (!result) {
+			//printConfigOn();
+			if (compareType == 0) {
+				data->print_data({}, false);
+				targetData->print_data({}, false);
+			} else {
+				data->print_grad({}, false);
+				targetData->print_grad({}, false);
+			}
+			//printConfigOff();
+		}
+		finalResult = finalResult && result;
 	}
+	return finalResult;
 }
 
 

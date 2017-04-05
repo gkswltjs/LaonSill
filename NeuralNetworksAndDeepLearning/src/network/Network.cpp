@@ -642,7 +642,7 @@ void Network<Dtype>::scaleParamsGrad(float scale) {
 
 template <typename Dtype>
 void Network<Dtype>::save() {
-	config->save();
+	this->config->save();
 }
 
 template <typename Dtype>

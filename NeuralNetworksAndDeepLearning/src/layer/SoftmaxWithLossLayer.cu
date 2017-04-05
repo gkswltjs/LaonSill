@@ -265,19 +265,6 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 
 		const Dtype lossWeight = Dtype(1) / getNormalizer(validCount);
 		soooa_gpu_scal(this->prob->getCount(), lossWeight, inputGrad);
-
-
-
-
-		/*
-		Data<Dtype>::printConfig = true;
-		SyncMem<Dtype>::printConfig = true;
-		this->_outputData[0]->print_grad({}, false);
-		this->_inputData[0]->print_grad({}, false);
-		Data<Dtype>::printConfig = false;
-		SyncMem<Dtype>::printConfig = false;
-		*/
-
 	}
 }
 

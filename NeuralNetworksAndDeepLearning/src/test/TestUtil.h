@@ -25,7 +25,7 @@ const std::string SIG_PARAMS 	= DELIM + "params" + DELIM;
 const std::string BLOBS_PREFIX	= "anonymous" + DELIM + "blobs" + DELIM;
 const std::string NPZ_PATH 		= "/home/jkim/Dev/data/numpy_array/";
 
-const float COMPARE_ERROR 		= 0.0001f;
+const float COMPARE_ERROR 		= 0.000001f;
 
 
 // cuda device 설정
@@ -61,7 +61,7 @@ bool compareParam(std::map<std::string, Data<float>*>& nameDataMap,
 
 
 void printNpzFiles(cnpy::npz_t& cnpy_npz);
-void printNameDataMap(std::map<std::string, Data<float>*>& nameDataMap, bool printData);
+void printNameDataMap(const std::string& name, std::map<std::string, Data<float>*>& nameDataMap, bool printData);
 void printData(std::vector<Data<float>*>& dataVec);
 
 void printConfigOn();

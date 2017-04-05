@@ -116,7 +116,7 @@ const float TRAIN_RPN_POSITIVE_WEIGHT = -1.0f;
 // Scales to use during testing (can list multiple scales)
 // Each scale is the pixel size of an image's shortest side
 //const std::vector<uint32_t> TEST_SCALES = {600};
-const std::vector<uint32_t> TEST_SCALES = {500};
+const std::vector<uint32_t> TEST_SCALES = {600};
 
 // Max pixel size of the longest side of a scaled input image
 const uint32_t TEST_MAX_SIZE = 1000;
@@ -146,6 +146,14 @@ const uint32_t TEST_RPN_PRE_NMS_TOP_N = 6000;
 const uint32_t TEST_RPN_POST_NMS_TOP_N = 300;
 // Proposal height and width both need to be greater than RPN_MIN_SIZE (at orig image scale)
 const uint32_t TEST_RPN_MIN_SIZE = 16;
+
+
+// The mapping from image coordinates to feature map coordinates might cause
+// some boxes that are distinct in image space to become identical in feature
+// coordinates. If DEDUP_BOXES > 0, then DEDUP_BOXES is used as the scale factor
+// for identifying duplicate boxes.
+// 1/16 is correct for {Alex,Caffe}Net, VGG_CNN_M_1024, and VGG16
+const float TEST_DEDUP_BOXES = 1.0f / 16.0f;
 
 
 
@@ -928,11 +936,29 @@ static void fill2dVecWithData(Data<Dtype>* data,
 		std::vector<std::vector<Dtype2>>& array) {
 
 	const std::vector<uint32_t>& dataShape = data->getShape();
-	assert(dataShape[0] == 1);
-	assert(dataShape[1] == 1);
 
-	const uint32_t dim1 = dataShape[2];
-	const uint32_t dim2 = dataShape[3];
+	int dim1 = 0;
+	int dim2 = 0;
+	for (int i = 0; i < dataShape.size(); i++) {
+		if (dataShape[i] > 1) {
+			if (dim1 == 0) dim1 = dataShape[i];
+			else if (dim2 == 0) dim2 = dataShape[i];
+			else {
+				std::cout << "fill2dVecWithData: invalid data shape ... " << std::endl;
+			}
+		}
+	}
+
+	if (dim1 == 0 || dim2 == 0) {
+		dim1 = dataShape[2];
+		dim2 = dataShape[3];
+	}
+
+	assert(dim1*dim2 == data->getCount());
+
+
+	//assert(dataShape[0] == 1);
+	//assert(dataShape[1] == 1);
 
 	array.resize(dim1);
 	const Dtype* dataPtr = data->host_data();
@@ -1025,30 +1051,6 @@ static std::string cv_type2str(int type) {
 */
 
 
-
-/*
-static void nms(const float* dets, const int numDets, const float nmsThresh,
-		std::vector<uint32_t>& keep) {
-
-	int* keep_out = new int[numDets];
-	int num_out;
-
-	// XXX:
-	_nms(keep_out, &num_out, dets, numDets, 5, nmsThresh, 0);
-
-	//for (uint32_t i = 0; i < postNmsTopN; i++)
-	//	keep_out[i] = i;
-	//num_out = postNmsTopN;
-
-	keep.resize(num_out);
-	keep.assign(keep_out, keep_out + num_out);
-	delete [] keep_out;
-}
-*/
-
-
-
-
 static void nms(std::vector<std::vector<float>>& proposals, std::vector<float>& scores,
 		const float thresh, std::vector<uint32_t>& keep) {
 	assert(proposals.size() > 0 && proposals.size() == scores.size());
@@ -1107,8 +1109,6 @@ static void nms(std::vector<std::vector<float>>& proposals, std::vector<float>& 
 		sorted_dets[i][4] = scores[order[i]];
 	}
 
-	//void _nms(int* keep_out, int* num_out, const float* boxes_host, int boxes_num,
-	//         int boxes_dim, float nms_overlap_thresh, int device_id);
 	_nms(&_keep[0], &num_out, &sorted_dets[0][0], boxes_num, boxes_dim, thresh, device_id);
 
 	keep.resize(num_out);
@@ -1150,102 +1150,6 @@ static void loadPredefinedOrder(const std::string& path, std::vector<uint32_t>& 
 
 
 
-/*
-#define NMS_LOG 0
-static void nms(std::vector<std::vector<float>>& dets1,
-			std::vector<float>& scores, const float thresh, std::vector<uint32_t>& keep) {
-	const uint32_t numDets = dets1.size();
-
-	std::vector<float> x1(numDets);
-	std::vector<float> y1(numDets);
-	std::vector<float> x2(numDets);
-	std::vector<float> y2(numDets);
-	//std::vector<float> scores(numDets);
-
-	std::vector<float> areas(numDets);
-	for (uint32_t i = 0; i < numDets; i++) {
-		std::vector<float>& det1 = dets1[i];
-		x1[i] = det1[0];
-		y1[i] = det1[1];
-		x2[i] = det1[2];
-		y2[i] = det1[3];
-		areas[i] = (x2[i] - x1[i] + 1) * (y2[i] - y1[i] + 1);
-	}
-
-#if NMS_LOG
-	printArray("areas", areas);
-#endif
-
-	std::vector<uint32_t> order(numDets), tempOrder;
-	iota(order.begin(), order.end(), 0);
-	vec_argsort(scores, order);
-
-#if NMS_LOG
-	for (uint32_t i = 0; i < numDets; i++) {
-		std::cout << i << ": " << order[i] << ", score: " << scores[order[i]] << std::endl;
-	}
-#endif
-
-
-	keep.clear();
-	std::vector<float> xx1, yy1, xx2, yy2;
-	std::vector<float> w, h, inter, ovr;
-
-	uint32_t i;
-	while (order.size() > 0) {
-		i = order[0];
-		keep.push_back(i);
-		np_maximum(x1[i], x1, order, 1, xx1);
-		np_maximum(y1[i], y1, order, 1, yy1);
-		np_minimum(x2[i], x2, order, 1, xx2);
-		np_minimum(y2[i], y2, order, 1, yy2);
-
-#if NMS_LOG
-		printArray("xx1", xx1);
-		printArray("yy1", yy1);
-		printArray("xx2", xx2);
-		printArray("yy2", yy2);
-#endif
-
-		const uint32_t nextSize = order.size()-1;
-		w.resize(nextSize);
-		h.resize(nextSize);
-		inter.resize(nextSize);
-		ovr.resize(nextSize);
-
-		for (uint32_t k = 0; k < nextSize; k++) {
-			w[k] = std::max(0.0f, xx2[k] - xx1[k] + 1);
-			h[k] = std::max(0.0f, yy2[k] - yy1[k] + 1);
-			inter[k] = w[k] * h[k];
-			ovr[k] = inter[k] / (areas[i] + areas[order[k+1]] - inter[k]);
-		}
-
-#if NMS_LOG
-		printArray("w", w);
-		printArray("h", h);
-		printArray("inter", inter);
-		printArray("ovr", ovr);
-#endif
-
-		std::vector<uint32_t> inds;
-		np_where_s(ovr, LE, thresh, inds);
-
-#if NMS_LOG
-		printArray("inds", inds);
-#endif
-
-		tempOrder.resize(inds.size());
-		for (uint32_t k = 0; k < inds.size(); k++) {
-			tempOrder[k] = order[inds[k]+1];
-		}
-		order = tempOrder;
-
-#if NMS_LOG
-		printArray("order", order);
-#endif
-	}
-}
-*/
 
 struct Size {
 	uint32_t width;

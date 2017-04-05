@@ -25,7 +25,8 @@ using namespace cv;
 
 
 template <typename Dtype>
-RoIInputLayer<Dtype>::RoIInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
+RoIInputLayer<Dtype>::RoIInputLayer(Builder* builder)
+: InputLayer<Dtype>(builder) {
 	this->numClasses = builder->_numClasses;
 	this->pixelMeans = builder->_pixelMeans;
 

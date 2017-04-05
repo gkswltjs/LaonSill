@@ -252,6 +252,7 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 					diff->device_data(),
 					Dtype(0),
 					this->_inputData[i]->mutable_device_grad());
+
 			if (hasWeights) {
 				// Scale by "inside" weight
 				soooa_gpu_mul(
@@ -259,6 +260,7 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 						this->_inputData[2]->device_data(),
 						this->_inputData[i]->device_grad(),
 						this->_inputData[i]->mutable_device_grad());
+
 				// Scale by "outside" weight
 				soooa_gpu_mul(
 						count,

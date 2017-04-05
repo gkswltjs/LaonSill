@@ -36,9 +36,10 @@ public:
 		buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
 				this->networkName + this->blobs, this->nameBlobsMap);
 
-		printNameDataMap(this->nameParamsOldMap, false);
-		printNameDataMap(this->nameParamsNewMap, false);
-		printNameDataMap(this->nameBlobsMap, false);
+		printNameDataMap("nameParamsOldMap", this->nameParamsOldMap, false);
+		printNameDataMap("nameParamsNewMap", this->nameParamsNewMap, false);
+		printNameDataMap("nameBlobsMap", this->nameBlobsMap, false);
+		cout << "build name data map done ... " << endl;
 
 		std::vector<LearnableLayer<Dtype>*>& learnableLayers =
 				this->layersConfig->_learnableLayers;
@@ -63,15 +64,67 @@ public:
 		// feedforward
 		logStartTest("FEED FORWARD");
 		forward();
-
 		dataTest();
 		logEndTest("FEED FORWARD");
+
+
+
+
+
+
+		std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
+		for (int i = 0; i < layers.size(); i++) {
+			Layer<Dtype>* layer = layers[i];
+			for (int j = 0; j < layer->_inputData.size(); j++) {
+				const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
+				Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMap, dataName);
+				layer->_inputData[j]->set_host_data(data, 0, false);
+			}
+		}
+
+		typename std::map<std::string, Layer<Dtype>*>::iterator itr =
+				this->layersConfig->_nameLayerMap.find("loss_cls");
+		itr->second->_outputData[0]->mutable_host_data()[0] = 3.1143229008f;
+		itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
+
+		itr = this->layersConfig->_nameLayerMap.find("loss_bbox");
+		itr->second->_outputData[0]->mutable_host_data()[0] = 0.1780370474f;
+		itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
+
+
+
+
 
 		// backpropagation
 		logStartTest("BACK PROPAGATION");
 		backward();
+
+		/*
+		std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
+		for (int i = 0; i < layers.size(); i++) {
+			Layer<Dtype>* layer = layers[i];
+			for (int j = 0; j < layer->_inputData.size(); j++) {
+				const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
+				Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMap, dataName);
+				layer->_inputData[j]->set_host_grad(data, 0, false);
+			}
+		}
+		*/
 		gradTest();
 		logEndTest("BACK PROPAGATION");
+
+		/*
+		std::vector<LearnableLayer<Dtype>*>& learnableLayers = this->layersConfig->_learnableLayers;
+		for (int i = 0; i < learnableLayers.size(); i++) {
+			LearnableLayer<Dtype>* learnableLayer = learnableLayers[i];
+			for (int j = 0; j < learnableLayer->_params.size(); j++) {
+				const string key = learnableLayer->name + SIG_PARAMS + to_string(j);
+				Data<float>* param = retrieveValueFromMap(this->nameParamsNewMap, key);
+				assert(param != 0);
+				learnableLayer->_params[j]->set_host_grad(param, 0, false);
+			}
+		}
+		*/
 
 		// update & compare result
 		logStartTest("UPDATE");
@@ -98,20 +151,23 @@ public:
 private:
 	void forward() {
 		//feedInputLayerData();
-
-		const string targetLayer = "";
+		std::set<std::string> targetLayerSet;
+		//targetLayerSet.insert("relu5");
 
 		for (int i = 0; i < this->layersConfig->_layers.size(); i++) {
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
 
-			if (layer->name == targetLayer) {
-				//printDataList(layer->_inputData, 0);
+			if (targetLayerSet.find(layer->name) != targetLayerSet.end()) {
+				printDataList(layer->_inputData, 0);
 			}
+
 			layer->feedforward();
-			if (layer->name == targetLayer) {
-				//LearnableLayer<Dtype>* learnableLayer = dynamic_cast<LearnableLayer<Dtype>*>(layer);
-				//if (learnableLayer) printDataList(learnableLayer->_params, 0);
-				//printDataList(layer->_outputData, 0);
+
+			if (targetLayerSet.find(layer->name) != targetLayerSet.end()) {
+				LearnableLayer<Dtype>* learnableLayer = dynamic_cast<LearnableLayer<Dtype>*>(layer);
+				if (learnableLayer) printDataList(learnableLayer->_params, 0);
+				printDataList(layer->_outputData, 0);
+				//printDataList(layer->_outputData, 1);
 				//exit(1);
 			}
 		}
@@ -132,24 +188,27 @@ private:
 	}
 
 	void backward() {
-		const std::string targetLayer = "";
+		std::set<std::string> targetLayerSet;
+		//targetLayerSet.insert("conv5_relu5_0_split");
+		//targetLayerSet.insert("relu5");
+
 
 		for (int i = this->layersConfig->_layers.size() - 1; i >= 1; i--) {
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
-			if (layer->name == targetLayer) {
+
+			if (targetLayerSet.find(layer->name) != targetLayerSet.end()) {
 				//LearnableLayer<Dtype>* learnableLayer = dynamic_cast<LearnableLayer<Dtype>*>(layer);
 				//if (learnableLayer) printDataList(learnableLayer->_params, 0);
-				//printDataList(layer->_outputData, 1);
+				printDataList(layer->_outputData, 1, -1);
 			}
 			layer->backpropagation();
 
-			if (layer->name == targetLayer) {
-				//printDataList(layer->_inputData, 0);
-				//printDataList(layer->_inputData, 1);
-				//exit(1);
+			if (targetLayerSet.find(layer->name) != targetLayerSet.end()) {
+				printDataList(layer->_inputData, 0, -1);
+				printDataList(layer->_inputData, 1, -1);
 			}
-
 		}
+		//exit(1);
 	}
 
 	void gradTest() {
@@ -172,9 +231,26 @@ private:
 	}
 
 	void update() {
+		std::set<std::string> targetLayerSet;
+		//targetLayerSet.insert("conv2");
+		//targetLayerSet.insert("rpn_conv/3x3");
+
+		std::cout.precision(15);
 		for (int i = 0; i < this->layersConfig->_learnableLayers.size(); i++) {
 			LearnableLayer<Dtype>* learnableLayer = this->layersConfig->_learnableLayers[i];
+
+			if (targetLayerSet.find(learnableLayer->name) != targetLayerSet.end()) {
+				printDataList(learnableLayer->_params, 0);
+				printDataList(learnableLayer->_params, 1);
+			}
+
 			learnableLayer->update();
+
+			if (targetLayerSet.find(learnableLayer->name) != targetLayerSet.end()) {
+				printDataList(learnableLayer->_params, 0);
+				printDataList(learnableLayer->_params, 1);
+				exit(1);
+			}
 		}
 	}
 
@@ -183,6 +259,8 @@ private:
 			LearnableLayer<Dtype>* learnableLayer = this->layersConfig->_learnableLayers[i];
 
 			// test final delta
+			// params grad는 update 과정에서 오염됨.
+			/*
 			if (!compareParam(this->nameParamsNewMap,
 					learnableLayer->name + SIG_PARAMS, learnableLayer->_params, 1)) {
 				std::cout << "[ERROR] param backpropagation failed at layer " <<
@@ -192,6 +270,7 @@ private:
 				std::cout << "param backpropagation succeed at layer " <<
 						learnableLayer->name << std::endl;
 			}
+			*/
 
 			// test final params
 			if (!compareParam(this->nameParamsNewMap, learnableLayer->name + SIG_PARAMS,
@@ -205,6 +284,23 @@ private:
 		}
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	void logStartTest(const std::string& testName) {
 		cout << "<<< " + testName + " TEST ... -------------------------------" << endl;
 	}
@@ -213,17 +309,17 @@ private:
 		cout << ">>> " + testName + " TEST DONE ... --------------------------" << endl;
 	}
 
-	void printDataList(const std::vector<Data<Dtype>*>& dataList, int type = 0) {
+	void printDataList(const std::vector<Data<Dtype>*>& dataList, int type = 0, int summary = 6) {
 		Data<Dtype>::printConfig = 1;
 		SyncMem<Dtype>::printConfig = 1;
 
 		if (type == 0) {
 			for (int j = 0; j < dataList.size(); j++) {
-				dataList[j]->print_data({}, false);
+				dataList[j]->print_data({}, false, summary);
 			}
 		} else if (type == 1) {
 			for (int j = 0; j < dataList.size(); j++) {
-				dataList[j]->print_grad({}, false);
+				dataList[j]->print_grad({}, false, summary);
 			}
 		}
 

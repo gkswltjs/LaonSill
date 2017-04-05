@@ -441,7 +441,7 @@ void ArtisticStyle<Dtype>::load_model() {
 	map<string, Data<Dtype>*> nameParamsOldMap;
 	const string& path = "/home/jkim/";
 	buildNameDataMapFromNpzFile("/home/jkim/", "vgg19_params_old", nameParamsOldMap);
-	printNameDataMap(nameParamsOldMap, false);
+	printNameDataMap("nameParamsOldMap", nameParamsOldMap, false);
 
 	vector<LearnableLayer<Dtype>*>& learnableLayers = layersConfig->_learnableLayers;
 	for (int i = 0; i < learnableLayers.size(); i++) {

@@ -30,7 +30,7 @@ public:
 
 	virtual void setUp() {
 		buildNameDataMapFromNpzFile(NPZ_PATH, this->builder->_name, this->nameDataMap);
-		printNameDataMap(this->nameDataMap, false);
+		printNameDataMap("nameDataMap", this->nameDataMap, false);
 
 		// 최소 설정만 전달받고 나머지는 npz로부터 추론하는 것이 좋겠다.
 		this->layer = this->builder->build();

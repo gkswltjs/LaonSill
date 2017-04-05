@@ -103,18 +103,6 @@ void ReshapeLayer<Dtype>::feedforward() {
 template <typename Dtype>
 void ReshapeLayer<Dtype>::backpropagation() {
 	// do nothing ...
-
-
-	/*
-	if (this->name == "rpn_cls_score_reshape") {
-		Data<Dtype>::printConfig = true;
-
-		this->_outputData[0]->print_grad({}, false);
-		this->_inputData[0]->print_grad({}, false);
-
-		Data<Dtype>::printConfig = false;
-	}
-	*/
 }
 
 

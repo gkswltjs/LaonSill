@@ -81,8 +81,8 @@ private:
 	void getNextMiniBatch();
 
 	void imDetect(cv::Mat& im);
-	void getBlobs();
-	void getImageBlob(cv::Mat& im);
+	float getBlobs(cv::Mat& im);
+	float getImageBlob(cv::Mat& im);
 	void imToBlob(cv::Mat& im);
 
 	IMDB* combinedRoidb(const std::string& imdb_name);

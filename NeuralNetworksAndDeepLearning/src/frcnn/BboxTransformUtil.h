@@ -59,7 +59,16 @@ public:
 
 		const Dtype* deltaPtr = deltas->host_data();
 
-		const uint32_t numDeltaElems = deltas->getShape(3);
+		uint32_t numDeltaElems = 0;
+		int shapeIdx;
+		for (shapeIdx = deltas->getShape().size()-1; shapeIdx >= 0; shapeIdx--) {
+			if (deltas->getShape()[shapeIdx] > 1) {
+				numDeltaElems = deltas->getShape()[shapeIdx];
+				break;
+			}
+		}
+		assert(shapeIdx >= 0);
+
 		const uint32_t numClasses = numDeltaElems / boxes[0].size();
 		const uint32_t numBoxes = boxes.size();
 		result.resize(numBoxes);

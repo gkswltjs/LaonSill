@@ -71,7 +71,17 @@ public:
 
 private:
 	void initialize();
+	void imDetect(std::vector<std::vector<Dtype>>& scores,
+			std::vector<std::vector<Dtype>>& predBoxes);
+	void testNet(std::vector<std::vector<Dtype>>& scores,
+			std::vector<std::vector<Dtype>>& predBoxes);
 
+	void fillClsScores(std::vector<std::vector<Dtype>>& scores, int clsInd,
+			std::vector<Dtype>& clsScores);
+	void fillClsBoxes(std::vector<std::vector<Dtype>>& boxes, int clsInd,
+			std::vector<std::vector<Dtype>>& clsBoxes);
+
+	void visDetection();
 
 public:
 	uint32_t maxPerImage;
@@ -79,6 +89,7 @@ public:
 	bool vis;
 
 	std::vector<cv::Scalar> boxColors;
+	std::vector<std::string> classes;
 };
 
 #endif /* FRCNNTESTOUTPUTLAYER_H_ */

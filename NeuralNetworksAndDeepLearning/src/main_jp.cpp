@@ -45,7 +45,8 @@ using namespace std;
 
 void artisticStyle();
 void vgg19();
-void fasterRcnn();
+void fasterRcnnTrain();
+void fasterRcnnTest();
 
 
 void developerMain() {
@@ -57,7 +58,8 @@ void developerMain() {
 
 	//artisticStyle();
 	//vgg19();
-	fasterRcnn();
+	fasterRcnnTrain();
+	//fasterRcnnTest();
 
 	STDOUT_LOG("exit developerMain()");
 }
@@ -140,25 +142,26 @@ void vgg19() {
 }
 
 
-void fasterRcnn() {
+void fasterRcnnTrain() {
 	const int maxEpochs = 1000;
 	const vector<string> lossLayers = {"rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"};
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 	const string networkSaveDir = SPARAM(NETWORK_SAVE_DIR);
 
 	vector<WeightsArg> weightsArgs(1);
-	weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
 
 	const uint32_t batchSize = 1;
-	const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 200000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
-	const uint32_t stepSize = 50000;
-	const float weightDecay = 0.0005f;
-	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
-	const float gamma = 0.1;
 	const LRPolicy lrPolicy = LRPolicy::Step;
+	const float gamma = 0.1;
+	const uint32_t stepSize = 50000;
+	const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
+	const float momentum = 0.9f;
+	const float weightDecay = 0.0005f;
+
+	const uint32_t saveInterval = 10000;		// 1000000 / batchSize
+	const float clipGradientsLevel = 0.0f;
 
 	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
 	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
@@ -219,6 +222,37 @@ void fasterRcnn() {
 	}
 	*/
 	network->sgd_with_timer(maxEpochs);
+}
+
+void fasterRcnnTest() {
+	const int maxEpochs = 1000;
+	const NetworkPhase phase = NetworkPhase::TestPhase;
+	const string networkSaveDir = SPARAM(NETWORK_SAVE_DIR);
+
+	vector<WeightsArg> weightsArgs(1);
+	//weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/network160000.param";
+	cout << "weight path: " << weightsArgs[0].weightsPath << endl;
+
+	NetworkConfig<float>* networkConfig =
+			(new typename NetworkConfig<float>::Builder())
+			->networkPhase(phase)
+			->weightsArgs(weightsArgs)
+			->build();
+
+	Network<float>* network = new Network<float>(networkConfig);
+	LayersConfig<float>* layersConfig = createFrcnnTestOneShotLayersConfig<float>();
+
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(network->config);
+	}
+	network->setLayersConfig(layersConfig);
+	network->loadPretrainedWeights();
+
+	while(true) {
+		network->_feedforward(0);
+	}
 }
 
 

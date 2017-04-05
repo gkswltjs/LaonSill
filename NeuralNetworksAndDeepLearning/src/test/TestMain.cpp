@@ -149,6 +149,18 @@ void layerTest() {
 #endif
 
 #if 0
+	RoITestInputLayer<float>::Builder* roiTestInputBuilder =
+			new typename RoITestInputLayer<float>::Builder();
+	roiTestInputBuilder->id(0)
+			->name("input-data")
+			->numClasses(21)
+			->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			->outputs({"data", "im_info"});
+
+	layerTestList.push_back(new LayerInputTest<float>(roiTestInputBuilder));
+#endif
+
+#if 0
 	AnchorTargetLayer<float>::Builder* anchorTargetBuilder =
 			new typename AnchorTargetLayer<float>::Builder();
 	anchorTargetBuilder->id(14)
@@ -169,7 +181,7 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(anchorTargetBuilder));
 #endif
 
-#if 1
+#if 0
 	ProposalLayer<float>::Builder* proposalBuilder =
 			new typename ProposalLayer<float>::Builder();
 	proposalBuilder->id(19)
@@ -256,6 +268,18 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(roiPoolingBuilder));
 #endif
 
+#if 1
+	FrcnnTestOutputLayer<float>::Builder* frcnnTestOutputBuilder =
+			new typename FrcnnTestOutputLayer<float>::Builder();
+	frcnnTestOutputBuilder->id(350)
+			->name("test_output")
+			//->maxPerImage(5)
+			->thresh(0.5)
+			->inputs({"rois", "im_info", "cls_prob", "bbox_pred"});
+
+	layerTestList.push_back(new LayerTest<float>(frcnnTestOutputBuilder));
+#endif
+
 	LayerTestInterface<float>::globalSetUp(gpuid);
 	for (uint32_t i = 0; i < layerTestList.size(); i++) {
 		LayerTestInterface<float>* layerTest = layerTestList[i];
@@ -268,10 +292,11 @@ void layerTest() {
 }
 
 
-#define NETWORK_LENET	0
-#define NETWORK_VGG19	1
-#define NETWORK_FRCNN	2
-#define NETWORK			NETWORK_FRCNN
+#define NETWORK_LENET		0
+#define NETWORK_VGG19		1
+#define NETWORK_FRCNN		2
+#define NETWORK_FRCNN_TEST	3
+#define NETWORK				NETWORK_FRCNN
 
 
 
@@ -308,25 +333,34 @@ void networkTest() {
 	LayersConfig<float>* layersConfig = createFrcnnTrainOneShotLayersConfig<float>();
 	const string networkName		= "frcnn";
 	const int batchSize 			= 1;
-	const float baseLearningRate 	= 0.001;
+	const float baseLearningRate 	= 0.1;
 	const float weightDecay 		= 0.0005;
+	//const float baseLearningRate 	= 1;
+	//const float weightDecay 		= 0.000;
 	const float momentum 			= 0.0;
 	const LRPolicy lrPolicy 		= LRPolicy::Step;
 	const int stepSize 				= 50000;
 	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
 	const float gamma 				= 0.1;
+#elif NETWORK == NETWORK_FRCNN_TEST
+	// FRCNN_TEST
+	LayersConfig<float>* layersConfig = createFrcnnTestOneShotLayersConfig<float>();
+	const string networkName		= "frcnn";
+	const NetworkPhase networkPhase	= NetworkPhase::TestPhase;
 #else
 	cout << "invalid network ... " << endl;
 	exit(1);
 #endif
 	NetworkConfig<float>* networkConfig =
 		(new typename NetworkConfig<float>::Builder())
+		//->networkPhase(networkPhase)
+		//->build();
 		->batchSize(batchSize)
 		->baseLearningRate(baseLearningRate)
 		->weightDecay(weightDecay)
 		->momentum(momentum)
-		->lrPolicy(lrPolicy)
 		->stepSize(stepSize)
+		->lrPolicy(lrPolicy)
 		->networkPhase(networkPhase)
 		->gamma(gamma)
 		->build();
@@ -342,7 +376,7 @@ void networkTest() {
 	/*
 	const string savePathPrefix = "/home/jkim/Dev/SOOOA_HOME/network";
 	ofstream paramOfs(
-			(savePathPrefix+"/VGG_CNN_M_1024.param").c_str(),
+			(savePathPrefix+"/VGG_CNN_M_1024_FRCNN_CAFFE.param").c_str(),
 			ios::out | ios::binary);
 
 	uint32_t numLearnableLayers = layersConfig->_learnableLayers.size();
@@ -357,7 +391,6 @@ void networkTest() {
 	}
 	paramOfs.close();
 	*/
-
 	networkTest->updateTest();
 	networkTest->cleanUp();
 	NetworkTestInterface<float>::globalCleanUp();

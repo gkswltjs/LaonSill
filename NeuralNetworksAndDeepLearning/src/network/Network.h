@@ -137,7 +137,7 @@ public:
 
 
     void _backpropagationFromTo(const std::string& start, const std::string& end);
-
+    void _feedforward(uint32_t batchIndex);
 
 
 protected:
@@ -176,7 +176,7 @@ protected:
 
 
 
-	void _feedforward(uint32_t batchIndex);
+
 	void _backpropagation(uint32_t batchIndex);
 
 
