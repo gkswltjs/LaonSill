@@ -283,9 +283,16 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 		vector<uint32_t> disableInds;
 		npr_choice(fgInds, fgInds.size()-numFg, disableInds);
 
+		assert(disableInds.size() == fgInds.size() - numFg);
+
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumFg -= disableInds.size();
+
+		assert(finalNumFg == numFg);
+
+
+
 #else
 		for (int i = 0; i < fgInds.size() - numFg; i++) {
 			labels[fgInds[i]] = -1;
@@ -303,9 +310,14 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 		vector<uint32_t> disableInds;
 #if !SOOOA_DEBUG
 		npr_choice(bgInds, bgInds.size()-numBg, disableInds);
+
+		assert(disableInds.size() == bgInds.size() - numBg);
+
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumBg -= disableInds.size();
+
+		assert(finalNumBg == numBg);
 #else
 		for (int i = 0; i < bgInds.size() - numBg; i++) {
 			labels[bgInds[i]] = -1;

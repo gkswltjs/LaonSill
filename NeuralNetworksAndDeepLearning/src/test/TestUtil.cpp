@@ -272,53 +272,12 @@ void fillParam(map<string, Data<float>*>& nameDataMap, const string& param_prefi
 
 		Data<float>* targetParam = paramVec[i];
 		targetParam->set(param, true);
-
-
-		/*
-		printConfigOn();
-		param->print_data({}, false);
-		targetParam->print_data({}, false);
-		printConfigOff();
-		*/
 	}
 }
 
 
 bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_prefix,
 		vector<Data<float>*>& dataVec, uint32_t compareType) {
-
-	/*
-	bool final_result = true;
-	for (uint32_t i = 0; i < dataVec.size(); i++) {
-		const string dataName = dataVec[i]->_name;
-		const string key = data_prefix + dataName;
-
-		Data<float>* data = retrieveValueFromMap(nameDataMap, key);
-		assert(data != 0);
-
-		Data<float>* targetData = dataVec[i];
-
-		bool partial_result = false;
-		if (compareType == 0)
-			partial_result = targetData->compareData(data, COMPARE_ERROR);
-		else
-			partial_result = targetData->compareGrad(data, COMPARE_ERROR);
-
-		if (!partial_result) {
-			printConfigOn();
-			if (compareType == 0) {
-				data->print_data({}, false);
-				targetData->print_data({}, false);
-			} else {
-				data->print_grad({}, false);
-				targetData->print_grad({}, false);
-			}
-			printConfigOff();
-		}
-		final_result = final_result && partial_result;
-	}
-	return final_result;
-	*/
 
 	bool final_result = true;
 	for (uint32_t i = 0; i < dataVec.size(); i++) {
@@ -357,11 +316,6 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 	}
 	return result;
 }
-
-
-
-
-
 
 bool compareParam(map<string, Data<float>*>& nameDataMap, const string& param_prefix,
 		vector<Data<float>*>& paramVec, uint32_t compareType) {

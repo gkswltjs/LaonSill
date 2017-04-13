@@ -150,7 +150,7 @@ IMDB* RoITestInputLayer<Dtype>::getRoidb(const string& imdb_name) {
 
 template <typename Dtype>
 IMDB* RoITestInputLayer<Dtype>::getImdb(const string& imdb_name) {
-	IMDB* imdb = new PascalVOC("test", "2007",
+	IMDB* imdb = new PascalVOC("pt", "2007",
 			"/home/jkim/Dev/git/py-faster-rcnn-v/data/VOCdevkit2007",
 			this->pixelMeans);
 	//imdb->loadGtRoidb();
@@ -160,8 +160,10 @@ IMDB* RoITestInputLayer<Dtype>::getImdb(const string& imdb_name) {
 
 template <typename Dtype>
 void RoITestInputLayer<Dtype>::getNextMiniBatch() {
-	if (this->cur >= this->imdb->imageIndex.size())
-		this->cur = 0;
+	//if (this->cur >= this->imdb->imageIndex.size()) {
+		//this->cur = 0;
+	//}
+
 
 	uint32_t index = this->perm[this->cur];
 

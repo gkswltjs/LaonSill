@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "NetworkConfig.h"
+#include "RoIInputLayer.h"
 
 using namespace std;
 
@@ -680,6 +681,10 @@ void NetworkConfig<Dtype>::save() {
 	uint32_t numLearnableLayers = firstLayersConfig->_learnableLayers.size();
 	//paramOfs.write((char*)&numLearnableLayers, sizeof(uint32_t));
 
+
+
+	RoIInputLayer<Dtype>* roiInputLayer = dynamic_cast<RoIInputLayer<Dtype>*>(firstLayersConfig->_inputLayer);
+
 	uint32_t numParams = 0;
 	for (uint32_t i = 0; i < numLearnableLayers; i++) {
 		numParams += firstLayersConfig->_learnableLayers[i]->numParams();
@@ -687,7 +692,81 @@ void NetworkConfig<Dtype>::save() {
 
 	paramOfs.write((char*)&numParams, sizeof(uint32_t));
 	for (uint32_t i = 0; i < numLearnableLayers; i++) {
-		firstLayersConfig->_learnableLayers[i]->saveParams(paramOfs);
+		LearnableLayer<Dtype>* learnableLayer = firstLayersConfig->_learnableLayers[i];
+
+		if (roiInputLayer && learnableLayer->name == "bbox_pred") {
+			//Data<Dtype>::printConfig = 1;
+			//SyncMem<Dtype>::printConfig = 1;
+
+
+			uint32_t numParams = learnableLayer->_params.size();
+
+			vector<vector<float>>& bboxMeans = roiInputLayer->bboxMeans;
+			vector<vector<float>>& bboxStds = roiInputLayer->bboxStds;
+
+			//print2dArray("bboxMeans", bboxMeans);
+			//print2dArray("bboxStds", bboxStds);
+
+			//cout << "means: " << bboxMeans.size() << ", " << bboxMeans[0].size() << endl;
+			//cout << "stds: " << bboxStds.size() << ", " << bboxStds[0].size() << endl;
+
+			Data<Dtype>* param0 = learnableLayer->_params[0];
+			Data<Dtype>* orig0 = new Data<Dtype>(param0->_name, true);
+			orig0->reshapeLike(param0);
+
+			//param0->print_shape();
+
+			const Dtype* srcPtr0 = param0->host_data();
+			Dtype* dstPtr0 = orig0->mutable_host_data();
+
+			const int numRows0 = param0->getShape(2);
+			const int numCols0 = param0->getShape(3);
+			int index;
+			int id1, id2;
+			for (int row = 0; row < numRows0; row++) {
+				id2 = row / 4;
+				id1 = row % 4;
+				for (int col = 0; col < numCols0; col++) {
+					index = row * numCols0 + col;
+					dstPtr0[index] = srcPtr0[index] * bboxStds[id2][id1];
+				}
+			}
+
+			//param0->print_data({}, false);
+			//orig0->print_data({}, false);
+
+			Data<Dtype>* param1 = learnableLayer->_params[1];
+			Data<Dtype>* orig1 = new Data<Dtype>(param1->_name, true);
+			orig1->reshapeLike(param1);
+
+			//param1->print_shape();
+
+			const Dtype* srcPtr1 = param1->host_data();
+			Dtype* dstPtr1 = orig1->mutable_host_data();
+
+			const int numRows1 = param1->getShape(1);
+			for (int row = 0; row < numRows1; row++) {
+				id2 = row / 4;
+				id1 = row % 4;
+				dstPtr1[row] = srcPtr1[row] * bboxStds[id2][id1] + bboxMeans[id2][id1];
+			}
+
+			//param1->print_data({}, false);
+			//orig1->print_data({}, false);
+
+			orig0->save(paramOfs);
+			orig1->save(paramOfs);
+
+			delete orig0;
+			delete orig1;
+			//for(uint32_t i = 0; i < numParams; i++) {
+				//_params[i]->save(ofs);
+			//}
+
+			//Data<Dtype>::printConfig = 0;
+			//SyncMem<Dtype>::printConfig = 0;
+		} else
+			learnableLayer->saveParams(paramOfs);
 	}
 
 	paramOfs.close();

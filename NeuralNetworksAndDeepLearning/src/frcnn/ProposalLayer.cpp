@@ -253,9 +253,17 @@ void ProposalLayer<Dtype>::feedforward() {
 #if !SOOOA_DEBUG
 	iota(order.begin(), order.end(), 0);
 	vec_argsort(scores, order);
+	/*
+	std::cout << "proposal layer sort result: " << std::endl;
+	for (int i = 0; i < scores.size(); i++) {
+		std::cout << "\tscore: " << scores[order[i]] << std::endl;
+	}
+	*/
 #else
-	string path = "/home/jkim/Dev/data/numpy_array/order.npz";
-	loadPredefinedOrder(path, order);
+	//string path = "/home/jkim/Dev/data/numpy_array/order.npz";
+	//loadPredefinedOrder(path, order);
+	iota(order.begin(), order.end(), 0);
+	vec_argsort(scores, order);
 #endif
 
 #if PROPOSALLAYER_LOG
@@ -313,6 +321,39 @@ void ProposalLayer<Dtype>::feedforward() {
 		assert(this->_outputData.size() == 1);
 	}
 	delete imInfo;
+
+
+	/*
+	cout << "rois shape: " << endl;
+	print2dArray("rois", proposals);
+
+	const string windowName = "rois";
+	uint32_t numBoxes = proposals.size();
+
+	Dtype scale = this->_inputData[2]->host_data()[2];
+	int boxOffset = 1;
+	cout << "scale: " << scale << endl;
+	const int onceSize = 5;
+
+	for (int j = 0; j < (numBoxes / onceSize); j++) {
+		cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
+		cv::resize(im, im, cv::Size(), scale, scale, CV_INTER_LINEAR);
+
+		for (uint32_t i = j*onceSize; i < (j+1)*onceSize; i++) {
+			cv::rectangle(im, cv::Point(proposals[i][boxOffset+0], proposals[i][boxOffset+1]),
+				cv::Point(proposals[i][boxOffset+2], proposals[i][boxOffset+3]),
+				cv::Scalar(0, 0, 255), 2);
+		}
+
+		cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		cv::imshow(windowName, im);
+
+		if (pause) {
+			cv::waitKey(0);
+			cv::destroyAllWindows();
+		}
+	}
+	*/
 }
 
 template <typename Dtype>

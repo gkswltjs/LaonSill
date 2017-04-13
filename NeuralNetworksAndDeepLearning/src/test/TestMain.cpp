@@ -35,6 +35,34 @@ int main(void) {
 	//layerTest();
 	networkTest();
 
+
+	/*
+	RoIInputLayer<float>::Builder* roiInputBuilder =
+				new typename RoIInputLayer<float>::Builder();
+	roiInputBuilder->id(0)
+			->name("input-data")
+			->numClasses(21)
+			->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			->outputs({"data", "im_info", "gt_boxes"});
+
+	RoIInputLayer<float>* layer = dynamic_cast<RoIInputLayer<float>*>(roiInputBuilder->build());
+
+	for (int i = 0; i < 1000000; i++) {
+		layer->feedforward();
+	}
+
+	map<string, RoIInputLayer<float>::InputStat*>::iterator itr;
+	for (itr = layer->inputStatMap.begin(); itr != layer->inputStatMap.end(); itr++) {
+		cout << itr->first << ": " << endl;
+		cout << "\tnfcnt: " << itr->second->nfcnt << endl;
+		cout << "\tnfcnt: " << itr->second->fcnt << endl;
+		for (int i = 0; i < 4; i++) {
+			cout << "\tscaleCnt[" << i << "]: " << itr->second->scaleCnt[i] << endl;
+		}
+	}
+	*/
+
+
 	return 0;
 }
 
@@ -329,11 +357,13 @@ void networkTest() {
 	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
 	const float gamma 				= 0.96;
 #elif NETWORK == NETWORK_FRCNN
+	const int numSteps = 2;
+
 	// FRCNN
 	LayersConfig<float>* layersConfig = createFrcnnTrainOneShotLayersConfig<float>();
 	const string networkName		= "frcnn";
 	const int batchSize 			= 1;
-	const float baseLearningRate 	= 0.1;
+	const float baseLearningRate 	= 0.01;
 	const float weightDecay 		= 0.0005;
 	//const float baseLearningRate 	= 1;
 	//const float weightDecay 		= 0.000;
@@ -369,7 +399,7 @@ void networkTest() {
 		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 	}
 
-	NetworkTest<float>* networkTest = new NetworkTest<float>(layersConfig, networkName);
+	NetworkTest<float>* networkTest = new NetworkTest<float>(layersConfig, networkName, numSteps);
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 	networkTest->setUp();
 

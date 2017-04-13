@@ -43,13 +43,14 @@ void RoIInputLayer<Dtype>::initialize() {
 	imdb = combinedRoidb("voc_2007_trainval");
 
 	cout << imdb->roidb.size() << " roidb entries ... " << endl;
+
 	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, imdb->roidb.size(), 50, 1);
 
 	// Train a Fast R-CNN network.
 	filterRoidb(imdb->roidb);
 
 	cout << "Computing bounding-box regression targets ... " << endl;
-	RoIDBUtil::addBboxRegressionTargets(imdb->roidb, bboxMeans, bboxStds);
+	RoIDBUtil::addBboxRegressionTargets(imdb->roidb, this->bboxMeans, this->bboxStds);
 
 	shuffleRoidbInds();
 
@@ -412,6 +413,27 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 	randomScaleInds.resize(numImages);
 	std::fill(randomScaleInds.begin(), randomScaleInds.end(), 0);
 #endif
+	//assert(randomScaleInds.size() == 1);
+	//cout << "randomScaleInds: " << randomScaleInds[0] << endl;
+
+
+
+	/*
+	InputStat* ptr;
+	string key = roidb[0].image.substr(roidb[0].image.length()-10);
+	if (inputStatMap.find(key) != inputStatMap.end()) {
+		ptr = inputStatMap[key];
+	} else {
+		ptr = new InputStat();
+		inputStatMap[key] = ptr;
+	}
+	if (roidb[0].flipped) ptr->fcnt++;
+	else ptr->nfcnt++;
+	ptr->scaleCnt[randomScaleInds[0]]++;
+
+	return;
+	*/
+
 
 	assert(TRAIN_BATCH_SIZE % numImages == 0);
 
@@ -520,7 +542,7 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 	const uint32_t numImages = roidb.size();
 	for (uint32_t i = 0; i < numImages; i++) {
 		cv::Mat im = roidb[i].getMat();
-#if ROIINPUTLAYER_LOG
+#if !ROIINPUTLAYER_LOG
 		cout << "image: " << roidb[i].image.substr(roidb[i].image.length()-10) <<
 				" (" << im.rows << "x" << im.cols << ")" << ", flip: " << roidb[i].flipped;
 		//cout << "original: " << ((float*)im.data) << endl;
@@ -557,8 +579,8 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 		float imScale = prepImForBlob(im, imResized, this->pixelMeans, targetSize,
 				TRAIN_MAX_SIZE);
 
-		//cout << " -> <" << targetSize << ", " << imScale << "> (" <<
-		//		imResized.rows << "x" << imResized.cols << ")" << endl;
+		cout << " -> <" << targetSize << ", " << imScale << "> (" <<
+				imResized.rows << "x" << imResized.cols << ")" << endl;
 		//cout << "after: " << ((float*)im.data) << ", " << ((float*)imResized.data) << endl;
 		/*
 		string windowName2 = "im purity test result";

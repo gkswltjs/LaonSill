@@ -1093,6 +1093,14 @@ static void nms(std::vector<std::vector<float>>& proposals, std::vector<float>& 
 #if !SOOOA_DEBUG
 	iota(order.begin(), order.end(), 0);
 	vec_argsort(scores, order);
+
+	/*
+	std::cout << "nms sort result: " << std::endl;
+	for (int i = 0; i < std::min((int)scores.size(), (int)30); i++) {
+		std::cout << "\tscore: " << scores[order[i]] << std::endl;
+	}
+	*/
+
 #else
 	//const std::string path = "/home/jkim/Dev/data/numpy_array/order.npz";
 	//loadPredefinedOrder(path, order);

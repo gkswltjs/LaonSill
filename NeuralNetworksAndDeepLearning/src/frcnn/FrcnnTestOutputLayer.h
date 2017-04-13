@@ -19,12 +19,14 @@ public:
 		uint32_t _maxPerImage;
 		float _thresh;
 		bool _vis;
+		std::string _savePath;
 
 		Builder() {
 			this->type = Layer<Dtype>::FrcnnTestOutput;
 			this->_maxPerImage = 100;
 			this->_thresh = 0.05f;
 			this->_vis = false;
+			this->_savePath = "";
 		}
 		virtual Builder* maxPerImage(const uint32_t maxPerImage) {
 			this->_maxPerImage = maxPerImage;
@@ -36,6 +38,10 @@ public:
 		}
 		virtual Builder* vis(const bool vis) {
 			this->_vis = vis;
+			return this;
+		}
+		virtual Builder* savePath(const std::string& savePath) {
+			this->_savePath = savePath;
 			return this;
 		}
 		virtual Builder* name(const std::string name) {
@@ -87,6 +93,7 @@ public:
 	uint32_t maxPerImage;
 	float thresh;
 	bool vis;
+	std::string savePath;
 
 	std::vector<cv::Scalar> boxColors;
 	std::vector<std::string> classes;

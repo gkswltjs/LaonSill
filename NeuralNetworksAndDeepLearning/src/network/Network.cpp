@@ -171,6 +171,8 @@ Dtype Network<Dtype>::sgdMiniBatch(uint32_t batchTotalIndex) {
 
 template <typename Dtype>
 Dtype Network<Dtype>::sgd(int epochs) {
+	//save();
+	//exit(1);
     InputLayer<Dtype>* inputLayer = getLayersConfig()->_inputLayer;
 	//vector<vector<Evaluation<Dtype>*>>& evaluations = config->_evaluations;
 	vector<NetworkListener*>& networkListeners = config->_networkListeners;
@@ -652,7 +654,7 @@ void Network<Dtype>::loadPretrainedWeights() {
 	const uint32_t numWeightsArgs = config->_weightsArgs.size();
 
 	// load data list from model file
-	map<std::string, Data<float>*> dataMap;
+	map<std::string, Data<Dtype>*> dataMap;
 
 	for (uint32_t i = 0; i < numWeightsArgs; i++) {
 		ifstream ifs(config->_weightsArgs[i].weightsPath, std::ios::in | std::ios::binary);
@@ -661,10 +663,10 @@ void Network<Dtype>::loadPretrainedWeights() {
 		uint32_t numData;
 		ifs.read((char*)&numData, sizeof(uint32_t));
 
-		Data<float>::printConfig = true;
+		Data<Dtype>::printConfig = true;
 		cout << "Load Pretrained Weights ... ----------" << endl;
 		for (uint32_t j = 0; j < numData; j++) {
-			Data<float>* data = new Data<float>("", true);
+			Data<Dtype>* data = new Data<Dtype>("", true);
 			data->load(ifs);
 
 			if (data)
@@ -683,7 +685,7 @@ void Network<Dtype>::loadPretrainedWeights() {
 				}
 			}
 
-			map<string, Data<float>*>::iterator it;
+			typename map<string, Data<Dtype>*>::iterator it;
 			it = dataMap.find(dataName);
 			if (it != dataMap.end()) {
 				cout << dataName << " overwrites ... " << endl;
@@ -694,9 +696,26 @@ void Network<Dtype>::loadPretrainedWeights() {
 			cout << data->_name << " is set to " << dataName << endl;
 		}
 		cout << "--------------------------------------" << endl;
-		Data<float>::printConfig = false;
+		Data<Dtype>::printConfig = false;
 		ifs.close();
 	}
+
+	/*
+	Data<Dtype>::printConfig = true;
+	SyncMem<Dtype>::printConfig = true;
+	typename map<std::string, Data<Dtype>*>::iterator itr;
+	for (itr = dataMap.begin(); itr != dataMap.end(); itr++) {
+		itr->second->print_data({}, false);
+	}
+	Data<Dtype>::printConfig = false;
+	SyncMem<Dtype>::printConfig = false;
+	exit(1);
+	*/
+
+
+
+
+
 
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
 	vector<LearnableLayer<Dtype>*> learnableLayers = layersConfig->_learnableLayers;
@@ -706,7 +725,7 @@ void Network<Dtype>::loadPretrainedWeights() {
 		learnableLayers[i]->loadParams(dataMap);
 	}
 
-	map<std::string, Data<float>*>::iterator it;
+	typename map<std::string, Data<Dtype>*>::iterator it;
 	for (it = dataMap.begin(); it != dataMap.end(); it++)
 		delete it->second;
 	dataMap.clear();

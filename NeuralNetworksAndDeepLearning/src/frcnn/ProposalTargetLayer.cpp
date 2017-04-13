@@ -227,6 +227,13 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 #if !SOOOA_DEBUG
 		vector<uint32_t> tempFgInds;
 		npr_choice(fgInds, fgRoisPerThisImage, tempFgInds);
+		/*
+		assert(tempFgInds.size() == fgRoisPerThisImage);
+		cout << "proposal target layer fg inds of size: " << fgRoisPerThisImage << endl;
+		for (int i = 0; i < tempFgInds.size(); i++) {
+			assert(std::find(fgInds.begin(), fgInds.end(), tempFgInds[i]) != fgInds.end());
+		}
+		*/
 		fgInds = tempFgInds;
 #else
 		if (fgInds.size() > fgRoisPerThisImage)
@@ -253,6 +260,13 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 #if !SOOOA_DEBUG
 		vector<uint32_t> tempBgInds;
 		npr_choice(bgInds, bgRoisPerThisImage, tempBgInds);
+		/*
+		assert(tempBgInds.size() == bgRoisPerThisImage);
+		cout << "proposal target layer bg inds of size: " << bgRoisPerThisImage << endl;
+		for (int i = 0; i < tempBgInds.size(); i++) {
+			assert(std::find(bgInds.begin(), bgInds.end(), tempBgInds[i]) != bgInds.end());
+		}
+		*/
 		bgInds = tempBgInds;
 #else
 		if (bgInds.size() > bgRoisPerThisImage)

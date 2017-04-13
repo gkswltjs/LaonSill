@@ -48,7 +48,12 @@ public:
 #endif
 
 
-		/*
+		// XXX: 정답 box로 target을 구했기 때문에 target값이 모두 0,
+		// 따라서 표준 mean, std로 normalize해봤자 항상 0,
+		// 현재로는 의미가 없어서 빼두지만 custom mean, std를 사용할 경우
+		// 적절히 처리를 해줘야 할 것.
+		// 까먹을 가능성도 있는데 !!!
+#if 0
 		// Normalize targets
 		std::cout << "Normalizing targets" << std::endl;
 		for (uint32_t i = 0; i < numImages; i++) {
@@ -68,7 +73,7 @@ public:
 			print2dArray("bbox_targets", targets);
 #endif
 		}
-		*/
+#endif
 	}
 
 	static void computeTargets(RoIDB& roidb) {

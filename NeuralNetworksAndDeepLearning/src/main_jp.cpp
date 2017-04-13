@@ -57,8 +57,8 @@ void developerMain() {
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
 	//artisticStyle();
-	//vgg19();
-	fasterRcnnTrain();
+	vgg19();
+	//fasterRcnnTrain();
 	//fasterRcnnTest();
 
 	STDOUT_LOG("exit developerMain()");
@@ -143,20 +143,23 @@ void vgg19() {
 
 
 void fasterRcnnTrain() {
+	srand((uint32_t)time(NULL));
+
 	const int maxEpochs = 1000;
 	const vector<string> lossLayers = {"rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"};
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 	const string networkSaveDir = SPARAM(NETWORK_SAVE_DIR);
 
 	vector<WeightsArg> weightsArgs(1);
-	weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
+	//weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/network600000.param";
 
 	const uint32_t batchSize = 1;
 	const float baseLearningRate = 0.001f;
 	const LRPolicy lrPolicy = LRPolicy::Step;
 	const float gamma = 0.1;
 	const uint32_t stepSize = 50000;
-	const uint32_t testInterval = 20;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 1;			// 10000(목표 샘플수) / batchSize
 	const float momentum = 0.9f;
 	const float weightDecay = 0.0005f;
 
@@ -225,13 +228,15 @@ void fasterRcnnTrain() {
 }
 
 void fasterRcnnTest() {
+	srand((uint32_t)time(NULL));
+
 	const int maxEpochs = 1000;
 	const NetworkPhase phase = NetworkPhase::TestPhase;
 	const string networkSaveDir = SPARAM(NETWORK_SAVE_DIR);
 
 	vector<WeightsArg> weightsArgs(1);
-	//weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
-	weightsArgs[0].weightsPath = networkSaveDir + "/network160000.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
+	//weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
 	cout << "weight path: " << weightsArgs[0].weightsPath << endl;
 
 	NetworkConfig<float>* networkConfig =
@@ -250,9 +255,24 @@ void fasterRcnnTest() {
 	network->setLayersConfig(layersConfig);
 	network->loadPretrainedWeights();
 
-	while(true) {
+
+
+	RoITestInputLayer<float>* inputLayer = dynamic_cast<RoITestInputLayer<float>*>(layersConfig->_layers[0]);
+
+
+
+	struct timespec startTime;
+	SPERF_START(SERVER_RUNNING_TIME, &startTime);
+
+	const int imageSize = inputLayer->imdb->imageIndex.size();
+	while (inputLayer->cur < imageSize) {
 		network->_feedforward(0);
 	}
+
+	SPERF_END(SERVER_RUNNING_TIME, startTime);
+	float time = SPERF_TIME(SERVER_RUNNING_TIME);
+	STDOUT_LOG("server running time : %lf for %d images (%lf fps)\n",
+			time, imageSize, imageSize / time);
 }
 
 
@@ -283,8 +303,8 @@ int main(int argc, char** argv) {
     char*   testItemName;
 
     // (2) 서버 시작 시간 측정을 시작한다.
-    struct timespec startTime;
-    SPERF_START(SERVER_RUNNING_TIME, &startTime);
+    //struct timespec startTime;
+    //SPERF_START(SERVER_RUNNING_TIME, &startTime);
 	STDOUT_BLOCK(cout << "SOOOA engine starts" << endl;);
 
     // (3) 파라미터, 로깅, job 모듈을 초기화 한다.
@@ -321,8 +341,8 @@ int main(int argc, char** argv) {
     Broker::destroy();
 
     // (7) 서버 종료 시간을 측정하고, 계산하여 서버 실행 시간을 출력한다.
-    SPERF_END(SERVER_RUNNING_TIME, startTime);
-    STDOUT_LOG("server running time : %lf\n", SPERF_TIME(SERVER_RUNNING_TIME));
+    //SPERF_END(SERVER_RUNNING_TIME, startTime);
+    //STDOUT_LOG("server running time : %lf\n", SPERF_TIME(SERVER_RUNNING_TIME));
 	STDOUT_BLOCK(cout << "SOOOA engine ends" << endl;);
 
     InitParam::destroy();

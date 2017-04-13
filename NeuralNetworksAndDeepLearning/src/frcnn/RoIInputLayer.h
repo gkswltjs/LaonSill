@@ -18,6 +18,21 @@
 template <typename Dtype>
 class RoIInputLayer : public InputLayer<Dtype> {
 public:
+	/*
+	struct InputStat {
+		InputStat() {
+			nfcnt = 0;
+			fcnt = 0;
+			scaleCnt[0] = 0;
+			scaleCnt[1] = 0;
+			scaleCnt[2] = 0;
+			scaleCnt[3] = 0;
+		}
+		int nfcnt;
+		int fcnt;
+		int scaleCnt[4];
+	};
+	*/
 	/**
 	 * @brief 입력 레이어 객체 빌더
 	 * @details 입력 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
@@ -112,6 +127,10 @@ public:
 	std::vector<std::vector<Data<Dtype>*>> proposalTargetDataList;
 
 	std::vector<cv::Scalar> boxColors;
+
+
+
+	//std::map<std::string, InputStat*> inputStatMap;
 };
 
 #endif /* ROIINPUTLAYER_H_ */

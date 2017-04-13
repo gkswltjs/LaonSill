@@ -15,38 +15,67 @@
 #include "NetworkConfig.h"
 #include "Data.h"
 
+
+#define COPY_INPUT		1
+
+
+
+
 template <typename Dtype>
 class NetworkTest : public NetworkTestInterface<Dtype> {
 public:
-	NetworkTest(LayersConfig<Dtype>* layersConfig, const std::string& networkName)
-	: layersConfig(layersConfig), networkName(networkName) {}
+	NetworkTest(LayersConfig<Dtype>* layersConfig, const std::string& networkName,
+			const int numSteps)
+	: layersConfig(layersConfig), networkName(networkName), numSteps(numSteps) {
+		assert(this->numSteps > 0);
+	}
 
 	virtual ~NetworkTest() {
 		cleanUpObject(this->layersConfig);
-		cleanUpMap(this->nameParamsOldMap);
-		cleanUpMap(this->nameParamsNewMap);
-		cleanUpMap(this->nameBlobsMap);
+		//cleanUpMap(this->nameParamsOldMap);
+		//cleanUpMap(this->nameParamsNewMap);
+		for (int i = 0; i <= this->numSteps; i++) {
+			cleanUpMap(this->nameParamsMapList[i]);
+		}
+		//cleanUpMap(this->nameBlobsMap);
+		for (int i = 0; i < this->numSteps; i++) {
+			cleanUpMap(this->nameBlobsMapList[i]);
+		}
 	}
 
 	virtual void setUp() {
-		buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
-				this->networkName + this->paramsOld, this->nameParamsOldMap);
-		buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
-				this->networkName + this->paramsNew, this->nameParamsNewMap);
-		buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
-				this->networkName + this->blobs, this->nameBlobsMap);
+		//buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
+		//		this->networkName + this->paramsOld, this->nameParamsOldMap);
+		//buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
+		//		this->networkName + this->paramsNew, this->nameParamsNewMap);
 
-		printNameDataMap("nameParamsOldMap", this->nameParamsOldMap, false);
-		printNameDataMap("nameParamsNewMap", this->nameParamsNewMap, false);
-		printNameDataMap("nameBlobsMap", this->nameBlobsMap, false);
+		for (int i = 0; i <= this->numSteps; i++) {
+			const string strIdx = to_string(i);
+			map<string, Data<Dtype>*> nameParamsMap;
+			buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
+					this->networkName + this->params + strIdx, nameParamsMap);
+			this->nameParamsMapList.push_back(nameParamsMap);
+			printNameDataMap("nameParamsMap" + strIdx, nameParamsMap, false);
+		}
+
+		for (int i = 0; i < this->numSteps; i++) {
+			const string strIdx = to_string(i);
+			map<string, Data<Dtype>*> nameBlobsMap;
+			buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
+					this->networkName + this->blobs + strIdx, nameBlobsMap);
+			this->nameBlobsMapList.push_back(nameBlobsMap);
+			printNameDataMap("nameBlobsMap" + strIdx, nameBlobsMap, false);
+		}
+
 		cout << "build name data map done ... " << endl;
+
 
 		std::vector<LearnableLayer<Dtype>*>& learnableLayers =
 				this->layersConfig->_learnableLayers;
 
 		cout << "fill params ... ---------------------------------------------------" << endl;
 		for (int i = 0; i < learnableLayers.size(); i++) {
-			fillParam(this->nameParamsOldMap, learnableLayers[i]->name + SIG_PARAMS,
+			fillParam(this->nameParamsMapList[0], learnableLayers[i]->name + SIG_PARAMS,
 					learnableLayers[i]->_params);
 			// 반드시 외부에서 params init되었음을 설정해야 한다.
 			for (int j = 0; j < learnableLayers[i]->_params.size(); j++) {
@@ -61,100 +90,103 @@ public:
 	}
 
 	virtual void updateTest() {
-		// feedforward
-		logStartTest("FEED FORWARD");
-		forward();
-		dataTest();
-		logEndTest("FEED FORWARD");
+		for (int i = 0; i < this->numSteps; i++) {
+			cout << "::::::::::STEP " << i << "::::::::::" << endl;
 
+			// feedforward
+			logStartTest("FEED FORWARD");
+			forward(i);
+			dataTest(i);
+			logEndTest("FEED FORWARD");
 
-
-
-
-
-		std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
-		for (int i = 0; i < layers.size(); i++) {
-			Layer<Dtype>* layer = layers[i];
-			for (int j = 0; j < layer->_inputData.size(); j++) {
-				const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
-				Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMap, dataName);
-				layer->_inputData[j]->set_host_data(data, 0, false);
+#if 0
+			std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
+			for (int i = 0; i < layers.size(); i++) {
+				Layer<Dtype>* layer = layers[i];
+				for (int j = 0; j < layer->_inputData.size(); j++) {
+					const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
+					Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMap, dataName);
+					layer->_inputData[j]->set_host_data(data, 0, false);
+				}
 			}
-		}
+			typename std::map<std::string, Layer<Dtype>*>::iterator itr =
+					this->layersConfig->_nameLayerMap.find("loss_cls");
+			itr->second->_outputData[0]->mutable_host_data()[0] = 3.1143229008f;
+			itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
 
-		typename std::map<std::string, Layer<Dtype>*>::iterator itr =
-				this->layersConfig->_nameLayerMap.find("loss_cls");
-		itr->second->_outputData[0]->mutable_host_data()[0] = 3.1143229008f;
-		itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
+			itr = this->layersConfig->_nameLayerMap.find("loss_bbox");
+			itr->second->_outputData[0]->mutable_host_data()[0] = 0.1780370474f;
+			itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
+#endif
 
-		itr = this->layersConfig->_nameLayerMap.find("loss_bbox");
-		itr->second->_outputData[0]->mutable_host_data()[0] = 0.1780370474f;
-		itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
-
-
-
-
-
-		// backpropagation
-		logStartTest("BACK PROPAGATION");
-		backward();
-
-		/*
-		std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
-		for (int i = 0; i < layers.size(); i++) {
-			Layer<Dtype>* layer = layers[i];
-			for (int j = 0; j < layer->_inputData.size(); j++) {
-				const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
-				Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMap, dataName);
-				layer->_inputData[j]->set_host_grad(data, 0, false);
+			// backpropagation
+			logStartTest("BACK PROPAGATION");
+			backward();
+#if 0
+			std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
+			for (int i = 0; i < layers.size(); i++) {
+				Layer<Dtype>* layer = layers[i];
+				for (int j = 0; j < layer->_inputData.size(); j++) {
+					const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
+					Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMap, dataName);
+					layer->_inputData[j]->set_host_grad(data, 0, false);
+				}
 			}
-		}
-		*/
-		gradTest();
-		logEndTest("BACK PROPAGATION");
-
-		/*
-		std::vector<LearnableLayer<Dtype>*>& learnableLayers = this->layersConfig->_learnableLayers;
-		for (int i = 0; i < learnableLayers.size(); i++) {
-			LearnableLayer<Dtype>* learnableLayer = learnableLayers[i];
-			for (int j = 0; j < learnableLayer->_params.size(); j++) {
-				const string key = learnableLayer->name + SIG_PARAMS + to_string(j);
-				Data<float>* param = retrieveValueFromMap(this->nameParamsNewMap, key);
-				assert(param != 0);
-				learnableLayer->_params[j]->set_host_grad(param, 0, false);
+#endif
+			gradTest(i);
+			logEndTest("BACK PROPAGATION");
+#if 0
+			std::vector<LearnableLayer<Dtype>*>& learnableLayers = this->layersConfig->_learnableLayers;
+			for (int i = 0; i < learnableLayers.size(); i++) {
+				LearnableLayer<Dtype>* learnableLayer = learnableLayers[i];
+				for (int j = 0; j < learnableLayer->_params.size(); j++) {
+					const string key = learnableLayer->name + SIG_PARAMS + to_string(j);
+					Data<float>* param = retrieveValueFromMap(this->nameParamsNewMap, key);
+					assert(param != 0);
+					learnableLayer->_params[j]->set_host_grad(param, 0, false);
+				}
 			}
-		}
-		*/
+#endif
 
-		// update & compare result
-		logStartTest("UPDATE");
-		update();
-		paramTest();
-		logEndTest("UPDATE");
+			// update & compare result
+			logStartTest("UPDATE");
+			update();
+			paramTest(i);
+			logEndTest("UPDATE");
+		}
 	}
 
-	void feedInputLayerData() {
+	void feedInputLayerData(const int nthStep) {
+		assert(nthStep < this->numSteps);
 		InputLayer<Dtype>* inputLayer = this->layersConfig->_inputLayer;
 
-		// 'data'
-		const string inputDataName = BLOBS_PREFIX + inputLayer->_outputData[0]->_name;
-		Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMap, inputDataName);
-		inputLayer->_outputData[0]->set_host_data(data, 0, true);
-
-		// 'label'
-		const string inputLabelName = BLOBS_PREFIX + inputLayer->_outputData[1]->_name;
-		Data<Dtype>* label = retrieveValueFromMap(this->nameBlobsMap, inputLabelName);
-		inputLayer->_outputData[1]->set_host_data(label, 0, true);
+		for (int i = 0; i < inputLayer->_outputs.size(); i++) {
+			const string inputDataName = BLOBS_PREFIX + inputLayer->_outputData[i]->_name;
+			Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMapList[nthStep], inputDataName);
+			inputLayer->_outputData[i]->set_host_data(data, 0, true);
+		}
 	}
+
+
+
+
+
 
 
 private:
-	void forward() {
-		//feedInputLayerData();
+	void forward(const int nthStep) {
+
+#if COPY_INPUT
+		feedInputLayerData(nthStep);
+#endif
 		std::set<std::string> targetLayerSet;
 		//targetLayerSet.insert("relu5");
 
+#if COPY_INPUT
+		for (int i = 1; i < this->layersConfig->_layers.size(); i++) {
+#else
 		for (int i = 0; i < this->layersConfig->_layers.size(); i++) {
+#endif
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
 
 			if (targetLayerSet.find(layer->name) != targetLayerSet.end()) {
@@ -173,12 +205,13 @@ private:
 		}
 	}
 
-	void dataTest() {
+	void dataTest(const int nthStep) {
+		assert(nthStep < this->numSteps);
 		for (int i = 0; i < this->layersConfig->_layers.size(); i++) {
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
 			cout << "-----------------------------data test at layer " << layer->name << endl;
 
-			if (!compareData(this->nameBlobsMap, BLOBS_PREFIX, layer->_outputData, 0)) {
+			if (!compareData(this->nameBlobsMapList[nthStep], BLOBS_PREFIX, layer->_outputData, 0)) {
 				std::cout << "[ERROR] data feedforward failed at layer " << layer->name <<
 						std::endl;
 			} else {
@@ -211,7 +244,8 @@ private:
 		//exit(1);
 	}
 
-	void gradTest() {
+	void gradTest(const int nthStep) {
+		assert(nthStep < this->numSteps);
 		// caffe의 backward 과정에서 input layer와
 		// input layer의 다음 레이어 input data에 대해 backward 진행하지 않기 때문에
 		// 적용된 diff가 없으므로 해당 data에 대해서는 체크하지 않는다.
@@ -219,7 +253,7 @@ private:
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
 
 			// test blobs except input layer and second layer
-			if (!compareData(this->nameBlobsMap, BLOBS_PREFIX, layer->_inputData, 1)) {
+			if (!compareData(this->nameBlobsMapList[nthStep], BLOBS_PREFIX, layer->_inputData, 1)) {
 				std::cout << "[ERROR] data backpropagation failed at layer " << layer->name
 						<< std::endl;
 				//exit(1);
@@ -254,7 +288,9 @@ private:
 		}
 	}
 
-	void paramTest() {
+	void paramTest(int nthStep) {
+		assert(nthStep < this->numSteps);
+
 		for (int i = 0; i < this->layersConfig->_learnableLayers.size(); i++) {
 			LearnableLayer<Dtype>* learnableLayer = this->layersConfig->_learnableLayers[i];
 
@@ -273,8 +309,8 @@ private:
 			*/
 
 			// test final params
-			if (!compareParam(this->nameParamsNewMap, learnableLayer->name + SIG_PARAMS,
-					learnableLayer->_params, 0)) {
+			if (!compareParam(this->nameParamsMapList[nthStep + 1],
+					learnableLayer->name + SIG_PARAMS, learnableLayer->_params, 0)) {
 				std::cout << "[ERROR] update failed at layer " << learnableLayer->name <<
 						std::endl;
 				//exit(1);
@@ -330,17 +366,22 @@ private:
 
 
 private:
-	//Network<Dtype>* network;
-	LayersConfig<Dtype>* layersConfig;
+	const int numSteps;
 
-	map<string, Data<Dtype>*> nameParamsOldMap;
-	map<string, Data<Dtype>*> nameParamsNewMap;
-	map<string, Data<Dtype>*> nameBlobsMap;
+	//Network<Dtype>* network;
+	LayersConfig<Dtype>* layersConfig;\
+
+	//map<string, Data<Dtype>*> nameParamsOldMap;
+	//map<string, Data<Dtype>*> nameParamsNewMap;
+	vector<map<string, Data<Dtype>*>> nameParamsMapList;
+	//map<string, Data<Dtype>*> nameBlobsMap;
+	vector<map<string, Data<Dtype>*>> nameBlobsMapList;
 
 	const std::string networkName;
-	const std::string paramsOld = "_params_old";
-	const std::string paramsNew = "_params_new";
-	const std::string blobs = "_blobs";
+	const std::string params = "_params_";
+	//const std::string paramsOld = "_params_old";
+	//const std::string paramsNew = "_params_new";
+	const std::string blobs = "_blobs_";
 };
 
 

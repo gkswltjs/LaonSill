@@ -743,6 +743,14 @@ bool Data<Dtype>::compareData(
 			for (uint32_t k = 0; k < height; k++) {
 				for (uint32_t l = 0; l < width; l++) {
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
+					/*
+					if (data1Ptr[index] * data2Ptr[index] < 0) {
+						cout << "---data is opposite at (" << i << "," << j << "," <<
+								k << "," << l << ")" << endl;
+						cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
+								data2Ptr[index] << endl;
+					}
+					*/
 					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
 						if (errorCnt < 10) {
 							cout << "data is different at (" << i << "," << j << "," <<

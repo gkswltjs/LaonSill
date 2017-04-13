@@ -2108,6 +2108,7 @@ LayersConfig<Dtype>* createFrcnnTestOneShotLayersConfig() {
 					->name("test_output")
 					//->maxPerImage(5)
 					->thresh(0.5)
+					->savePath("/home/jkim/test_output")
 					->inputs({"rois", "im_info", "cls_prob", "bbox_pred"}))
 
 			->build();
