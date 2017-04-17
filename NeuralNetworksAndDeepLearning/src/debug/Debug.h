@@ -220,12 +220,24 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 }
 
 #define USE_ETRI_GAN    1
+#define USE_ETRI_GAN2    1
 
 template <typename Dtype>
 LayersConfig<Dtype>* createDOfGANLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
 	    (new typename LayersConfig<Dtype>::Builder())
-#if USE_ETRI_GAN
+#if USE_ETRI_GAN2
+        ->layer((new typename CelebAInputLayer<Dtype>::Builder())
+                ->id(1)
+                ->name("CelebAInputLayer")
+                ->imageDir(std::string(SPARAM(BASE_DATA_DIR))
+                    + std::string("/etri/graph"))
+                ->source(std::string(SPARAM(BASE_DATA_DIR))
+                    + std::string("/etri/graph"))
+                ->resizeImage(64,64)
+                ->sourceType("ImagePack")
+                ->outputs({"data"}))
+#elif USE_ETRI_GAN
         ->layer((new typename EtriInputLayer<Dtype>::Builder())
                 ->id(0)
                 ->name("data")
@@ -241,7 +253,8 @@ LayersConfig<Dtype>* createDOfGANLayersConfig() {
                     + std::string("/celebA"))
                 ->source(std::string(SPARAM(BASE_DATA_DIR))
                     + std::string("/celebA"))
-                ->cropImage(64,64)
+                ->cropImage(108)
+                ->resizeImage(64,64)
                 ->sourceType("ImagePack")
                 ->outputs({"data"}))
 #endif
@@ -3805,7 +3818,7 @@ LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
                     ->id(44)
                     ->name("celossEtri")
 #if 1
-                    ->withSigmoid(true)
+                    ->withSigmoid(false)
 #endif
                     ->inputs({"fc8", "label"})
                     ->outputs({"celossEtri"}))

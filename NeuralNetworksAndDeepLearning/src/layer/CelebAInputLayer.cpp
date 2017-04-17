@@ -29,24 +29,24 @@ const int CELEBA_IMAGE_CHANNEL = 3;
 const int CELEBA_IMAGE_ROW = 218;
 const int CELEBA_IMAGE_COL = 178;
 
-const int CELEBA_CENTER_CROP_LEN = 108;
+//const int CELEBA_CENTER_CROP_LEN = 108;
 
 template<typename Dtype>
 CelebAInputLayer<Dtype>::CelebAInputLayer() {
-    initialize("", false, -1, -1);
+    initialize("", false, -1, false, -1, -1);
 }
 
 template<typename Dtype>
 CelebAInputLayer<Dtype>::CelebAInputLayer(const string name, string imageDir, bool cropImage,
-    int croppedImageRow, int croppedImageCol) :
+    int cropLen, bool resizeImage, int resizedImageRow, int resizedImageCol) :
     InputLayer<Dtype>(name) {
-    initialize(imageDir, cropImage, croppedImageRow, croppedImageCol);
+    initialize(imageDir, cropImage, cropLen, resizeImage, resizedImageRow, resizedImageCol);
 }
 
 template<typename Dtype>
 CelebAInputLayer<Dtype>::CelebAInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
-	initialize(builder->_imageDir, builder->_cropImage, builder->_croppedImageRow,
-        builder->_croppedImageCol);
+	initialize(builder->_imageDir, builder->_cropImage, builder->_cropLen,
+        builder->_resizeImage, builder->_resizedImageRow, builder->_resizedImageCol);
 }
 
 template<typename Dtype>
@@ -172,27 +172,38 @@ void CelebAInputLayer<Dtype>::loadImages(int baseIdx) {
         cv::Mat image;
         image = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
 
-        int imageCols = image.cols;
-        int imageRows = image.rows;
-        int imageChannels = image.channels();
-        SASSERT(imageCols == CELEBA_IMAGE_COL, "col : %d", imageCols);
-        SASSERT(imageRows == CELEBA_IMAGE_ROW, "row : %d", imageRows);
-        SASSERT(imageChannels == CELEBA_IMAGE_CHANNEL, "channel : %d", imageChannels);
+        // XXX: 좀더 general 하게 만들자.
+        //int imageCols = image.cols;
+        //int imageRows = image.rows;
+        //int imageChannels = image.channels();
+        //SASSERT(imageCols == CELEBA_IMAGE_COL, "col : %d", imageCols);
+        //SASSERT(imageRows == CELEBA_IMAGE_ROW, "row : %d", imageRows);
+        //SASSERT(imageChannels == CELEBA_IMAGE_CHANNEL, "channel : %d", imageChannels);
 
+        cv::Mat croppedImage;
         if (this->cropImage) {
-            cv::Mat croppedImage;
             cv::Rect roi;
-            roi.x = (CELEBA_IMAGE_COL - CELEBA_CENTER_CROP_LEN) / 2;
-            roi.y = (CELEBA_IMAGE_ROW - CELEBA_CENTER_CROP_LEN) / 2;
-            roi.width = CELEBA_CENTER_CROP_LEN;
-            roi.height = CELEBA_CENTER_CROP_LEN;
+            roi.x = (CELEBA_IMAGE_COL - this->cropLen) / 2;
+            roi.y = (CELEBA_IMAGE_ROW - this->cropLen) / 2;
+            roi.width = this->cropLen;
+            roi.height = this->cropLen;
             croppedImage = image(roi);
 
+            if (!this->resizeImage) {
+                loadPixels(croppedImage, i);
+            }
+        }
+
+        if (this->resizeImage) {
             cv::Mat resizedImage;
-            cv::resize(croppedImage, resizedImage, cv::Size(this->imageRow, this->imageCol));
+
+            if (this->cropImage) {
+                cv::resize(croppedImage, resizedImage, cv::Size(this->imageRow, this->imageCol));
+            } else {
+                cv::resize(image, resizedImage, cv::Size(this->imageRow, this->imageCol));
+            }
+
             loadPixels(resizedImage, i);
-        } else {
-            loadPixels(image, i);
         }
     }
 }
@@ -224,19 +235,27 @@ void CelebAInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* 
 }
 
 template<typename Dtype>
-void CelebAInputLayer<Dtype>::initialize(string imageDir, bool cropImage, int croppedImageRow,
-    int croppedImageCol) {
+void CelebAInputLayer<Dtype>::initialize(string imageDir, bool cropImage, int cropLen,
+    bool resizeImage, int resizedImageRow, int resizedImageCol) {
     this->type = Layer<Dtype>::CelebAInput;
     this->imageDir = imageDir;
     this->cropImage = cropImage;
+    this->resizeImage = resizeImage;
+
+    this->imageRow = CELEBA_IMAGE_ROW;
+    this->imageCol = CELEBA_IMAGE_COL;
 
     if (cropImage) {
-        this->imageRow = croppedImageRow;
-        this->imageCol = croppedImageCol;
-    } else {
-        this->imageRow = CELEBA_IMAGE_ROW;
-        this->imageCol = CELEBA_IMAGE_COL;
+        this->imageRow = cropLen;
+        this->imageCol = cropLen;
+        this->cropLen = cropLen;
+    } 
+    
+    if (resizeImage) {
+        this->imageRow = resizedImageRow;
+        this->imageCol = resizedImageCol;
     }
+
     this->imageChannel = CELEBA_IMAGE_CHANNEL;
 
     this->images = NULL;

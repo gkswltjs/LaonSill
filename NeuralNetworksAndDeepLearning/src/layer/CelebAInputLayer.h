@@ -27,15 +27,19 @@ public:
 		std::string _sourceType;
         std::string _imageDir;
         bool        _cropImage;
-        int         _croppedImageRow;
-        int         _croppedImageCol;
+        int         _cropLen;
+        int         _resizeImage;
+        int         _resizedImageRow;
+        int         _resizedImageCol;
 
 		Builder() {
 			this->type = Layer<Dtype>::CelebAInput;
             this->_imageDir = "";
             this->_cropImage = false;
-            this->_croppedImageRow = -1;
-            this->_croppedImageCol = -1;
+            this->_cropLen = 0;
+            this->_resizeImage = false;
+            this->_resizedImageRow = 0;
+            this->_resizedImageCol = 0;
 		}
 		virtual Builder* shape(const std::vector<uint32_t>& shape) {
 			this->_shape = shape;
@@ -69,10 +73,14 @@ public:
             this->_imageDir = imageDir;
             return this;
         }
-        Builder* cropImage(int row, int col) {
+        Builder* cropImage(int cropLen) {
             this->_cropImage = true;
-            this->_croppedImageRow = row;
-            this->_croppedImageCol = col;
+            this->_cropLen = cropLen;
+        }
+        Builder* resizeImage(int row, int col) {
+            this->_resizeImage = true;
+            this->_resizedImageRow = row;
+            this->_resizedImageCol = col;
         }
 		Layer<Dtype>* build() {
 			return new CelebAInputLayer(this);
@@ -82,7 +90,7 @@ public:
     CelebAInputLayer();
     
 	CelebAInputLayer(const std::string name, const std::string imageDir, bool cropImage,
-        int croppedImageRow, int croppedImageCol);
+        int cropLen, bool resizeImage, int resizedImageRow, int resizedImageCol);
 	CelebAInputLayer(Builder* builder);
 
     virtual ~CelebAInputLayer();
@@ -98,13 +106,15 @@ public:
 	void reshape();
 
 protected:
-	void initialize(const std::string imageDir, bool cropImage, int croppedImageRow,
-        int croppedImageCol);
+	void initialize(const std::string imageDir, bool cropImage, int cropLen,
+        bool resizeImage, int resizedImageRow, int resizedImageCol);
 
     std::string imageDir;
     bool        cropImage;
+    bool        resizeImage;
     int         imageCount;
 
+    int         cropLen;
     int         imageRow;
     int         imageCol;
     int         imageChannel;

@@ -265,7 +265,7 @@ void runGAN() {
 	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
 		lcGD0GAN->_layers[i]->setNetworkConfig(ncGD0GAN);
 
-    for (int i = 0; i < 25; i++) {  // epoch
+    for (int i = 0; i < 100000; i++) {  // epoch
         cout << "epoch=" << i << endl;
 
         InputLayer<float>* inputLayer = lcDGAN->_inputLayer;
@@ -349,6 +349,7 @@ void runGAN() {
             lossLayer->setTargetValue(0.0);
             noiseInputLayer->setRegenerateNoise(true);
 
+#if 0
             if (j % 100 == 0) {
                 setLayerTrain(lcGD0GAN, false);
 
@@ -364,6 +365,7 @@ void runGAN() {
 
                 setLayerTrain(lcGD0GAN, true);
             }
+#endif
         }
 
         if (true) {
@@ -576,8 +578,8 @@ void developerMain() {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-    //runGAN();
-    runEtri();
+    runGAN();
+    //runEtri();
 
     STDOUT_LOG("exit developerMain()");
 }
