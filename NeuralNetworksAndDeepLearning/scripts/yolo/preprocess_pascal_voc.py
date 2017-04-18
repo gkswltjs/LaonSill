@@ -56,11 +56,16 @@ def convert_to_string(image_path, labels):
     string 
   """
   out_string = ''
-  out_string += image_path
+  out_string += image_path + ' ' + str(len(labels)) + '\n'
   for label in labels:
+    isFirst = True
     for i in label:
-      out_string += ' ' + str(i)
-  out_string += '\n'
+      if isFirst:
+        isFirst = False
+      else:
+        out_string += ' '
+      out_string += str(i)
+    out_string += '\n'
   return out_string
 
 def main():
@@ -71,14 +76,21 @@ def main():
   xml_list = os.listdir(xml_dir)
   xml_list = [xml_dir + temp for temp in xml_list]
 
+  maxLabelCount = -1
+
   for xml in xml_list:
     try:
       image_path, labels = parse_xml(xml)
       record = convert_to_string(image_path, labels)
       out_file.write(record)
+
+      if maxLabelCount < len(labels):
+          maxLabelCount = len(labels)
+
     except Exception:
       pass
 
+  print "max label count : %d" % maxLabelCount
   out_file.close()
 
 if __name__ == '__main__':

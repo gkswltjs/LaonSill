@@ -228,10 +228,6 @@ template<typename Dtype>
 void CelebAInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
     this->currentBatchIndex = baseIndex;    // FIXME: ...
     reshape();
-
-    int batchSize = this->networkConfig->_batchSize;
-    int inputImageCount = this->imageChannel * this->imageRow * this->imageCol * batchSize;
-    this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageCount);
 }
 
 template<typename Dtype>

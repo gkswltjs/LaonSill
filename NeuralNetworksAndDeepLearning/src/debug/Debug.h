@@ -48,6 +48,7 @@
 #include "NoiseInputLayer.h"
 #include "HyperTangentLayer.h"
 #include "EtriInputLayer.h"
+#include "VOCPascalInputLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -226,6 +227,7 @@ template <typename Dtype>
 LayersConfig<Dtype>* createDOfGANLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
 	    (new typename LayersConfig<Dtype>::Builder())
+
 #if USE_ETRI_GAN2
         ->layer((new typename CelebAInputLayer<Dtype>::Builder())
                 ->id(1)
@@ -3434,18 +3436,31 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 	return layersConfig;
 }
 
-
+#define USE_VOCPASCAL_INPUT     1 
 template <typename Dtype>
 LayersConfig<Dtype>* createEtriVGG19NetLayersConfig() {
     const float bias_const = 0.2f;
 
     LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
+#if USE_VOCPASCAL_INPUT
+        ->layer((new typename VOCPascalInputLayer<Dtype>::Builder())
+                ->id(0)
+                ->name("VOCPascalInputLayer")
+                ->imageDir(std::string(SPARAM(BASE_DATA_DIR))
+                    + std::string("/VOCdevkit/VOCdevkit/"))
+                ->source(std::string(SPARAM(BASE_DATA_DIR))
+                    + std::string("/VOCdevkit/VOCdevkit/"))
+                ->resizeImage(448, 448)
+                ->sourceType("ImagePack")
+                ->outputs({"data", "label"}))
+#else
             ->layer((new typename EtriInputLayer<Dtype>::Builder())
                     ->id(0)
                     ->name("data")
                     ->image(std::string(SPARAM(BASE_DATA_DIR)) +
                             std::string("/etri/flatten/"))
                     ->outputs({"data", "label"}))
+#endif
 
             // tier 1
             ->layer((new typename ConvLayer<Dtype>::Builder())
