@@ -55,8 +55,8 @@ ArtisticStyle<Dtype>::ArtisticStyle() {
 #else
 	//this->style_img			= "/home/jkim/Downloads/sampleR32G64B128.png";
 	//this->content_img		= "/home/jkim/Downloads/sampleR32G64B128.png";
-	this->style_img			= "/home/jkim/Backups/artistic/starry_night.jpg";
-	this->content_img		= "/home/jkim/Backups/artistic/sky1024px.jpg";
+	this->style_img			= "/data/backup/artistic/starry_night.jpg";
+	this->content_img		= "/data/backup/artistic/johannesburg.jpg";
 #endif
 
 	// 파이썬 기준 테스트를 위해 BGR2RGB COMMENT OUT
@@ -78,15 +78,12 @@ ArtisticStyle<Dtype>::ArtisticStyle() {
 
 	map<string, Dtype> content_weight;
 	map<string, Dtype> style_weight;
-	content_weight["conv5_4"]	= Dtype(1.0);
-	/*
 	content_weight["conv4_2"]	= Dtype(1.0);
 	style_weight["conv1_1"]		= Dtype(0.2);
 	style_weight["conv2_1"]		= Dtype(0.2);
 	style_weight["conv3_1"]		= Dtype(0.2);
 	style_weight["conv4_1"]		= Dtype(0.2);
 	style_weight["conv5_1"]		= Dtype(0.2);
-	*/
 	this->weights["content"]	= content_weight;
 	this->weights["style"]		= style_weight;
 
@@ -113,7 +110,7 @@ ArtisticStyle<Dtype>::ArtisticStyle() {
 	this->init		= -1;
 
 	this->optimizer_type = "adam";
-	this->lr		= Dtype(0.1);
+	this->lr		= Dtype(1);
 	this->wd		= Dtype(0.0005);
 	this->mt		= Dtype(0.9);
 	this->eps		= Dtype(0.000000001);
@@ -123,7 +120,7 @@ ArtisticStyle<Dtype>::ArtisticStyle() {
 	this->hist		= new Data<Dtype>("hist");
 	this->hist2		= new Data<Dtype>("hist2");
 
-	this->end		= "conv5_4";
+	this->end		= "conv5_2";
 }
 
 template <typename Dtype>
@@ -583,18 +580,13 @@ Dtype ArtisticStyle<Dtype>::compute_content_grad(map<string, Data<Dtype>*>& F,
 		const string& layer, Data<Dtype>* grad) {
 	// compute loss and gradient
 	Data<Dtype>* Fl = F[layer];
-	grad->reshapeLike(Fl);
-	grad->set_device_data(Fl->device_data());
-
-	/*
 	Data<Dtype>* El = new Data<Dtype>(Fl);
-	//El->sub_device_data(this->F_content[layer]);
+	El->sub_device_data(this->F_content[layer]);
 	Dtype loss = El->sumsq_device_data() / Dtype(2.0);
 	grad->reshapeLike(El);
 	grad->set_device_data(El);
 	reset_when_condition_le_0(grad->getCount(), Fl->device_data(),
 			grad->mutable_device_data());
-			*/
 	/*
 	_on();
 	Fl->print_data({}, false);
@@ -602,9 +594,9 @@ Dtype ArtisticStyle<Dtype>::compute_content_grad(map<string, Data<Dtype>*>& F,
 	grad->print_data({}, false);
 	_off();
 	*/
-	//delete El;
+	delete El;
 
-	return 0;
+	return loss;
 }
 
 template <typename Dtype>
@@ -846,7 +838,6 @@ Data<Dtype>* ArtisticStyle<Dtype>::_generateInitialInput() {
 	if (this->content_type == "noise") {
 		// ***********************************************************************************
 		// PYTHON 생성 NOISE를 INPUT으로 이용하는 코드
-		/*
 	#if SMALL_TEST
 		npz_t cnpy_npz = npz_load("/home/jkim/input_noise_64.npz");
 	#else
@@ -865,11 +856,6 @@ Data<Dtype>* ArtisticStyle<Dtype>::_generateInitialInput() {
 
 		img0->reshape(shape);
 		img0->set_host_data((Dtype*)input_noise.data);
-		*/
-
-		img0->reshapeLike(this->img_content);
-		param_filler<Dtype> filler(ParamFillerType::Gaussian, 1.0f);
-		filler.fill(img0);
 
 	#if 0
 		_on();
@@ -878,23 +864,7 @@ Data<Dtype>* ArtisticStyle<Dtype>::_generateInitialInput() {
 	#endif
 		// ***********************************************************************************
 	} else if (this->content_type == "content") {
-		//float contentRatio = 0.95f;
-
 		img0->set(this->img_content);
-		//img0->scale_device_data(contentRatio);
-
-
-		/*
-		param_filler<Dtype> filler(ParamFillerType::Gaussian, 1.0f);
-		Data<Dtype>* noise = new Data<Dtype>("noise");
-		noise->reshapeLike(img0);
-		filler.fill(noise);
-		noise->scale_device_data(1-contentRatio);
-
-		img0->add_device_data(noise);
-
-		delete noise;
-		*/
 	} else if (this->content_type == "mixed") {
 		img0->set(this->img_content);
 		img0->scale_device_data(0.95f);

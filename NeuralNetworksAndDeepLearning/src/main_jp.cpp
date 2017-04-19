@@ -57,9 +57,9 @@ void developerMain() {
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
 	//artisticStyle();
-	vgg19();
+	//vgg19();
 	//fasterRcnnTrain();
-	//fasterRcnnTest();
+	fasterRcnnTest();
 
 	STDOUT_LOG("exit developerMain()");
 }
@@ -235,8 +235,8 @@ void fasterRcnnTest() {
 	const string networkSaveDir = SPARAM(NETWORK_SAVE_DIR);
 
 	vector<WeightsArg> weightsArgs(1);
-	weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
-	//weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
+	//weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
 	cout << "weight path: " << weightsArgs[0].weightsPath << endl;
 
 	NetworkConfig<float>* networkConfig =
@@ -261,18 +261,18 @@ void fasterRcnnTest() {
 
 
 
-	struct timespec startTime;
-	SPERF_START(SERVER_RUNNING_TIME, &startTime);
+	//struct timespec startTime;
+	//SPERF_START(SERVER_RUNNING_TIME, &startTime);
 
 	const int imageSize = inputLayer->imdb->imageIndex.size();
 	while (inputLayer->cur < imageSize) {
 		network->_feedforward(0);
 	}
 
-	SPERF_END(SERVER_RUNNING_TIME, startTime);
-	float time = SPERF_TIME(SERVER_RUNNING_TIME);
-	STDOUT_LOG("server running time : %lf for %d images (%lf fps)\n",
-			time, imageSize, imageSize / time);
+	//SPERF_END(SERVER_RUNNING_TIME, startTime);
+	//float time = SPERF_TIME(SERVER_RUNNING_TIME);
+	//STDOUT_LOG("server running time : %lf for %d images (%lf fps)\n",
+	//		time, imageSize, imageSize / time);
 }
 
 
@@ -303,8 +303,8 @@ int main(int argc, char** argv) {
     char*   testItemName;
 
     // (2) 서버 시작 시간 측정을 시작한다.
-    //struct timespec startTime;
-    //SPERF_START(SERVER_RUNNING_TIME, &startTime);
+    struct timespec startTime;
+    SPERF_START(SERVER_RUNNING_TIME, &startTime);
 	STDOUT_BLOCK(cout << "SOOOA engine starts" << endl;);
 
     // (3) 파라미터, 로깅, job 모듈을 초기화 한다.
@@ -341,8 +341,8 @@ int main(int argc, char** argv) {
     Broker::destroy();
 
     // (7) 서버 종료 시간을 측정하고, 계산하여 서버 실행 시간을 출력한다.
-    //SPERF_END(SERVER_RUNNING_TIME, startTime);
-    //STDOUT_LOG("server running time : %lf\n", SPERF_TIME(SERVER_RUNNING_TIME));
+    SPERF_END(SERVER_RUNNING_TIME, startTime);
+    STDOUT_LOG("server running time : %lf\n", SPERF_TIME(SERVER_RUNNING_TIME));
 	STDOUT_BLOCK(cout << "SOOOA engine ends" << endl;);
 
     InitParam::destroy();
