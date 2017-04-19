@@ -424,23 +424,23 @@ void runGAN() {
 
 void runYolo() {
     // loss layer of Discriminator GAN 
-	const vector<string> lossList = { "celossEtri" };
+	const vector<string> lossList = { "loss" };
     // loss layer of Generatoer-Discriminator 0 GAN
 
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 	const uint32_t batchSize = 16;
 	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.001f;
+	const float baseLearningRate = 0.001f;  // 0.001 ~ 0.01 (paper recommendation)
 
 	const uint32_t stepSize = 100000;
-	const float weightDecay = 0.0001f;
+	const float weightDecay = 0.0005f;
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 0.0f;
 	const LRPolicy lrPolicy = LRPolicy::Fixed;
 
-    const Optimizer opt = Optimizer::Adam;
-    //const Optimizer opt = Optimizer::Momentum;
+    //const Optimizer opt = Optimizer::Adam;
+    const Optimizer opt = Optimizer::Momentum;
 
 	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
 	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
@@ -464,7 +464,7 @@ void runYolo() {
 			->networkPhase(phase)
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
 			->networkListeners({
-				new NetworkMonitor("celossEtri", NetworkMonitor::PLOT_ONLY),
+				new NetworkMonitor("loss", NetworkMonitor::PLOT_ONLY),
 				})
 			->lossLayers(lossList)
             ->optimizer(opt)
@@ -475,7 +475,7 @@ void runYolo() {
  	Network<float>* network = new Network<float>(networkConfig);
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<float>* layersConfig = createEtriVGG19NetLayersConfig<float>();
+	LayersConfig<float>* layersConfig = createYoloPreLayersConfig<float>();
  	network->setLayersConfig(layersConfig);
 
 	// (2) network config 정보를 layer들에게 전달한다.

@@ -1,13 +1,13 @@
 /**
- * @file VOCPascalInputLayer.h
- * @date 2017-04-18
+ * @file ILSVRCInputLayer.h
+ * @date 2017-04-19
  * @author moonhoen lee
  * @brief 
  * @details
  */
 
-#ifndef VOCPASCALINPUTLAYER_H
-#define VOCPASCALINPUTLAYER_H 
+#ifndef ILSVRCINPUTLAYER_H
+#define ILSVRCINPUTLAYER_H 
 
 #include <vector>
 #include <string>
@@ -18,19 +18,13 @@
 #include "InputLayer.h"
 #include "Layer.h"
 
-typedef struct VOCPascalMeta_s {
-    std::string     imagePath;
-    float           x;
-    float           y;
-    float           width;
-    float           height;
-    int             gridX;
-    int             gridY;
-    int             classID;
-} VOCPascalMeta;
+typedef struct ILSVRCMeta_s {
+    std::string filePath;
+    int         classID;
+} ILSVRCMeta;
 
 template<typename Dtype>
-class VOCPascalInputLayer : public InputLayer<Dtype> {
+class ILSVRCInputLayer : public InputLayer<Dtype> {
 public: 
 	class Builder : public InputLayer<Dtype>::Builder {
 	public:
@@ -44,7 +38,7 @@ public:
         int         _resizedImageCol;
 
 		Builder() {
-			this->type = Layer<Dtype>::VOCPascalInput;
+			this->type = Layer<Dtype>::ILSVRCInput;
             this->_imageDir = "";
             this->_resizeImage = false;
             this->_resizedImageRow = 0;
@@ -88,17 +82,17 @@ public:
             this->_resizedImageCol = col;
         }
 		Layer<Dtype>* build() {
-			return new VOCPascalInputLayer(this);
+			return new ILSVRCInputLayer(this);
 		}
 	};
 
-    VOCPascalInputLayer();
+    ILSVRCInputLayer();
 
-	VOCPascalInputLayer(const std::string name, const std::string imageDir,
+	ILSVRCInputLayer(const std::string name, const std::string imageDir,
         bool resizeImage, int resizedImageRow, int resizedImageCol);
-	VOCPascalInputLayer(Builder* builder);
+	ILSVRCInputLayer(Builder* builder);
 
-    virtual ~VOCPascalInputLayer();
+    virtual ~ILSVRCInputLayer();
 
 	void feedforward();
 	using Layer<Dtype>::feedforward;
@@ -128,12 +122,11 @@ protected:
     void        loadPixels(cv::Mat image, int imageIndex);
     void        shuffleImages();
 
-    Dtype*                      images;
-    Dtype*                      labels;
+    Dtype*      images;
+    Dtype*      labels;
+    std::vector<ILSVRCMeta>     metas;
 
-    std::vector<VOCPascalMeta>  metas;
     std::vector<int>            metaIndexes;
     int         currentBatchIndex;
 };
-
-#endif /* VOCPASCALINPUTLAYER_H */
+#endif /* ILSVRCINPUTLAYER_H */

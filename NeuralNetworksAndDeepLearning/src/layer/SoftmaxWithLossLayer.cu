@@ -11,6 +11,7 @@
 #include "SoftmaxWithLossLayer.h"
 #include "common.h"
 #include "MathFunctions.h"
+#include "SysLog.h"
 
 #define SOFTMAXWITHLOSSLAYER_LOG 0
 
@@ -59,8 +60,15 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 			this->outerNum = this->_inputData[0]->getCountByAxis(0, this->softmaxAxis);
 			this->innerNum = this->_inputData[0]->getCountByAxis(this->softmaxAxis+1);
 
+            SASSERT(this->outerNum*this->innerNum == this->_inputData[1]->getCount(),
+			    "Number of labels must match number of predictions ... "
+                "outer num : %d, inner num : %d, input count : %d",
+                this->outerNum, this->innerNum, this->_inputData[1]->getCount());
+
+#if 0
 			assert(this->outerNum*this->innerNum == this->_inputData[1]->getCount() &&
 					"Number of labels must match number of predictions ... ");
+#endif
 
 			if (this->_outputData.size() > 1) {
 				// softmax output ...

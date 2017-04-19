@@ -45,6 +45,7 @@ public:
         CelebAInput,            // CelebA 입력 레이어
         EtriInput,              // Etri... (FIXME: name;;;)
         VOCPascalInput,         // VOC PASCAL data
+        ILSVRCInput,
 
 		FullyConnected, 		// Fully Connected 레이어
 		Conv, 					// 컨볼루션 레이어
@@ -82,6 +83,7 @@ public:
 		FrcnnTestOutput,
 
 		Relu,
+        DropOut,
 	};
 
 

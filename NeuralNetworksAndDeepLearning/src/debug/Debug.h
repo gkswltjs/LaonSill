@@ -49,6 +49,8 @@
 #include "HyperTangentLayer.h"
 #include "EtriInputLayer.h"
 #include "VOCPascalInputLayer.h"
+#include "ILSVRCInputLayer.h"
+#include "DropOutLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -3435,6 +3437,82 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 
 	return layersConfig;
 }
+
+template<typename Dtype>
+LayersConfig<Dtype>* createYoloPreLayersConfig() {
+    const float bias_const = 0.2f;
+
+    LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
+
+        ->layer((new typename ILSVRCInputLayer<Dtype>::Builder())
+            ->id(0)
+            ->name("ILSVRCInputLayer")
+            ->imageDir(std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ilsvrc12_train/"))
+            ->source(std::string(SPARAM(BASE_DATA_DIR))
+                + std::string("/ilsvrc12_train/"))
+            ->resizeImage(224, 224)
+            ->sourceType("ImagePack")       // dummy
+            ->outputs({"data", "label"}))
+
+        // 1st tier
+        ->layer((new typename ConvLayer<Dtype>::Builder())
+                ->id(1001)
+                ->name("conv1_1")
+                ->filterDim(7, 7, 3, 64, 1, 2)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
+                ->weightFiller(ParamFillerType::Xavier, 0.1)
+                ->biasFiller(ParamFillerType::Constant, bias_const)
+                ->inputs({"data"})
+                ->outputs({"conv1_1"}))
+
+        ->layer((new typename DropOutLayer<Dtype>::Builder())
+                ->id(1002)
+                ->probability(0.5)
+                ->name("dropout1_1")
+                ->inputs({"conv1_1"})
+                ->outputs({"conv1_1"}))
+
+        ->layer((new typename ReluLayer<Dtype>::Builder())
+                ->id(1003)
+                ->leaky(0.1)
+                ->name("relu1_1")
+                ->inputs({"conv1_1"})
+                ->outputs({"conv1_1"}))
+
+        ->layer((new typename PoolingLayer<Dtype>::Builder())
+                ->id(1004)
+                ->name("pool1_1")
+                ->poolDim(2, 2, 0, 2)
+                ->poolingType(Pooling<Dtype>::Max)
+                ->inputs({"conv1_1"})
+                ->outputs({"pool1_1"}))
+
+
+        ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+                ->id(8001)
+                ->name("fc")
+                ->nOut(1000)
+                ->weightUpdateParam(1, 1)
+                ->biasUpdateParam(2, 0)
+                ->weightFiller(ParamFillerType::Gaussian, 0.1)
+                ->biasFiller(ParamFillerType::Constant, bias_const)
+                ->inputs({"pool1_1"})
+                ->outputs({"fc"}))
+
+        ->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+                ->id(8002)
+                ->name("loss")
+                ->inputs({"fc", "label"})
+                ->outputs({"loss"}))
+
+        ->build();
+
+    return layersConfig;
+}
+
+
 
 #define USE_VOCPASCAL_INPUT     1 
 template <typename Dtype>
