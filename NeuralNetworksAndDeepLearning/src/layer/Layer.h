@@ -43,7 +43,7 @@ public:
         NoiseInput,             // noise 입력 레이어
         ALEInput,               // ALE 입력 레이어
         CelebAInput,            // CelebA 입력 레이어
-        EtriInput,              // Etri... (FIXME: name;;;)
+        KistiInput,             // Kisti project input layer. (FIXME: name;;;)
         VOCPascalInput,         // VOC PASCAL data
         ILSVRCInput,
 

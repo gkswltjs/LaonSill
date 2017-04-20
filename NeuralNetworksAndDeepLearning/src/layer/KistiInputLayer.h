@@ -1,13 +1,13 @@
 /**
- * @file EtriInputLayer.h
+ * @file KistiInputLayer.h
  * @date 2017-03-28
  * @author moonhoen lee
  * @brief 
  * @details
  */
 
-#ifndef ETRIINPUTLAYER_H
-#define ETRIINPUTLAYER_H 
+#ifndef KISTIINPUTLAYER_H
+#define KISTIINPUTLAYER_H 
 
 #include <string>
 
@@ -17,16 +17,16 @@
 #include "InputLayer.h"
 #include "Layer.h"
 
-#define ETRIDATA_DEFAULT_RESIZED_ROW_SIZE       224
-#define ETRIDATA_DEFAULT_RESIZED_COL_SIZE       224
+#define KISTIDATA_DEFAULT_RESIZED_ROW_SIZE       224
+#define KISTIDATA_DEFAULT_RESIZED_COL_SIZE       224
 
-typedef struct EtriData_s {
+typedef struct KistiData_s {
     std::string filePath;
     std::vector<int> labels;
-} EtriData;
+} KistiData;
 
 template<typename Dtype>
-class EtriInputLayer : public InputLayer<Dtype> {
+class KistiInputLayer : public InputLayer<Dtype> {
 public: 
 
 	class Builder : public InputLayer<Dtype>::Builder {
@@ -41,10 +41,10 @@ public:
         bool        _train;
 
 		Builder() {
-			this->type = Layer<Dtype>::EtriInput;
+			this->type = Layer<Dtype>::KistiInput;
             this->_imageDir = "";
-            this->_resizedImageRow = ETRIDATA_DEFAULT_RESIZED_ROW_SIZE;
-            this->_resizedImageCol = ETRIDATA_DEFAULT_RESIZED_COL_SIZE;
+            this->_resizedImageRow = KISTIDATA_DEFAULT_RESIZED_ROW_SIZE;
+            this->_resizedImageCol = KISTIDATA_DEFAULT_RESIZED_COL_SIZE;
             this->_train = true;
 		}
 		virtual Builder* shape(const std::vector<uint32_t>& shape) {
@@ -89,17 +89,17 @@ public:
             return this;
         }
 		Layer<Dtype>* build() {
-			return new EtriInputLayer(this);
+			return new KistiInputLayer(this);
 		}
 	};
 
-    EtriInputLayer();
+    KistiInputLayer();
     
-	EtriInputLayer(const std::string name, const std::string imageDir,
+	KistiInputLayer(const std::string name, const std::string imageDir,
         int resizedImageRow, int resizedImageCol, bool train);
-	EtriInputLayer(Builder* builder);
+	KistiInputLayer(Builder* builder);
 
-    virtual ~EtriInputLayer();
+    virtual ~KistiInputLayer();
 
 	void feedforward();
 	using Layer<Dtype>::feedforward;
@@ -124,8 +124,8 @@ protected:
 
 public:
     std::map<std::string, int> keywordMap;
-    std::vector<EtriData> trainData;
-    std::vector<EtriData> testData;
+    std::vector<KistiData> trainData;
+    std::vector<KistiData> testData;
 protected:
 
     void registerData(std::string filePath);
@@ -140,4 +140,4 @@ protected:
     Dtype *labels;
     int currentBatchIndex;
 };
-#endif /* ETRIINPUTLAYER_H */
+#endif /* KISTIINPUTLAYER_H */

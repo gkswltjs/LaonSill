@@ -1,5 +1,5 @@
 /**
- * @file EtriInputLayer.cpp
+ * @file KistiInputLayer.cpp
  * @date 2017-03-28
  * @author moonhoen lee
  * @brief 
@@ -16,7 +16,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "common.h"
-#include "EtriInputLayer.h"
+#include "KistiInputLayer.h"
 #include "InputLayer.h"
 #include "NetworkConfig.h"
 #include "ColdLog.h"
@@ -34,25 +34,25 @@ const int ETRIDATA_IMAGE_CHANNEL = 3;
 const int ETRIDATA_LABEL_COUNT = 1000;
 
 template<typename Dtype>
-EtriInputLayer<Dtype>::EtriInputLayer() {
+KistiInputLayer<Dtype>::KistiInputLayer() {
     initialize("", -1, -1, true);
 }
 
 template<typename Dtype>
-EtriInputLayer<Dtype>::EtriInputLayer(const string name, string imageDir,
+KistiInputLayer<Dtype>::KistiInputLayer(const string name, string imageDir,
     int resizedImageRow, int resizedImageCol, bool train) :
     InputLayer<Dtype>(name) {
     initialize(imageDir, resizedImageRow, resizedImageCol, train);
 }
 
 template<typename Dtype>
-EtriInputLayer<Dtype>::EtriInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
+KistiInputLayer<Dtype>::KistiInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
 	initialize(builder->_imageDir, builder->_resizedImageRow, builder->_resizedImageCol,
         builder->_train);
 }
 
 template<typename Dtype>
-EtriInputLayer<Dtype>::~EtriInputLayer() {
+KistiInputLayer<Dtype>::~KistiInputLayer() {
     if (this->images != NULL) {
         free(this->images); 
     }
@@ -63,7 +63,7 @@ EtriInputLayer<Dtype>::~EtriInputLayer() {
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::prepareKeywordMap() {
+void KistiInputLayer<Dtype>::prepareKeywordMap() {
     int index = 0;
     string top1000KeywordFilePath = this->imageDir + "/" + ETRI_TOP1000_KEYWORD_FILENAME;
 
@@ -102,7 +102,7 @@ void EtriInputLayer<Dtype>::prepareKeywordMap() {
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::registerData(string filePath) {
+void KistiInputLayer<Dtype>::registerData(string filePath) {
     // (1) read keywords
     string keywordFilePath = filePath + "/" + ETRI_KEYWORD_FILENAME;
 
@@ -154,7 +154,7 @@ void EtriInputLayer<Dtype>::registerData(string filePath) {
         return;
 
     for (int i = 0; i < imageFileList.size(); i++) {
-        EtriData newData;
+        KistiData newData;
         newData.filePath = imageFileList[i];
 
         for (int j = 0; j < labels.size(); j++) {
@@ -170,7 +170,7 @@ void EtriInputLayer<Dtype>::registerData(string filePath) {
 
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::prepareData() {
+void KistiInputLayer<Dtype>::prepareData() {
     struct dirent *entry;
     DIR *dp;
 
@@ -205,7 +205,7 @@ void EtriInputLayer<Dtype>::prepareData() {
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
+void KistiInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
     unsigned long offset = (unsigned long)imageIndex * 
         (this->imageRow * this->imageCol * this->imageChannel);
 
@@ -239,7 +239,7 @@ void EtriInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::loadImages(int batchIndex) {
+void KistiInputLayer<Dtype>::loadImages(int batchIndex) {
     int batchSize = this->networkConfig->_batchSize;
     int baseIndex = batchIndex;
 
@@ -279,7 +279,7 @@ void EtriInputLayer<Dtype>::loadImages(int batchIndex) {
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::loadLabels(int batchIndex) {
+void KistiInputLayer<Dtype>::loadLabels(int batchIndex) {
     int batchSize = this->networkConfig->_batchSize;
     int baseIndex = batchIndex;
 
@@ -316,7 +316,7 @@ void EtriInputLayer<Dtype>::loadLabels(int batchIndex) {
 }
 
 template <typename Dtype>
-void EtriInputLayer<Dtype>::reshape() {
+void KistiInputLayer<Dtype>::reshape() {
     int batchSize = this->networkConfig->_batchSize;
 
     if (this->images == NULL) {
@@ -391,7 +391,7 @@ void EtriInputLayer<Dtype>::reshape() {
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::shuffleImages() {
+void KistiInputLayer<Dtype>::shuffleImages() {
     // FIXME: move it to other source.
 #if 0
     srand(time(NULL)); 
@@ -400,22 +400,22 @@ void EtriInputLayer<Dtype>::shuffleImages() {
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::feedforward() {
+void KistiInputLayer<Dtype>::feedforward() {
 	//Layer<Dtype>::feedforward();
 	cout << "unsupported ... " << endl;
 	exit(1);
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
+void KistiInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
     this->currentBatchIndex = baseIndex;    // FIXME: ...
     reshape();
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::initialize(string imageDir, int resizedImageRow,
+void KistiInputLayer<Dtype>::initialize(string imageDir, int resizedImageRow,
     int resizedImageCol, bool train) {
-    this->type = Layer<Dtype>::EtriInput;
+    this->type = Layer<Dtype>::KistiInput;
     this->imageDir = imageDir;
     this->imageRow = resizedImageRow;
     this->imageCol = resizedImageCol;
@@ -428,7 +428,7 @@ void EtriInputLayer<Dtype>::initialize(string imageDir, int resizedImageRow,
 }
 
 template<typename Dtype>
-int EtriInputLayer<Dtype>::getNumTrainData() {
+int KistiInputLayer<Dtype>::getNumTrainData() {
     if (this->images == NULL) {
         reshape();
     }
@@ -436,7 +436,7 @@ int EtriInputLayer<Dtype>::getNumTrainData() {
 }
 
 template<typename Dtype>
-int EtriInputLayer<Dtype>::getNumTestData() {
+int KistiInputLayer<Dtype>::getNumTestData() {
     if (this->images == NULL) {
         reshape();
     }
@@ -445,11 +445,11 @@ int EtriInputLayer<Dtype>::getNumTestData() {
 }
 
 template<typename Dtype>
-void EtriInputLayer<Dtype>::shuffleTrainDataSet() {
+void KistiInputLayer<Dtype>::shuffleTrainDataSet() {
     if (this->images == NULL) {
         reshape();
     }
     shuffleImages();
 }
 
-template class EtriInputLayer<float>;
+template class KistiInputLayer<float>;
