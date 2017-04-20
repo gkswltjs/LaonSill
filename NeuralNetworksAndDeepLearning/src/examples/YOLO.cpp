@@ -32,7 +32,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
                 + std::string("/ilsvrc12_train/"))
             ->source(std::string(SPARAM(BASE_DATA_DIR))
                 + std::string("/ilsvrc12_train/"))
-            ->resizeImage(224, 224)
+            ->resizeImage(448, 448)
             ->sourceType("ImagePack")       // dummy
             ->outputs({"data", "label"}))
 
@@ -111,7 +111,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(3001)
                 ->name("conv3_1")
-                ->filterDim(1, 1, 192, 128, 1, 1)
+                ->filterDim(1, 1, 192, 128, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -161,7 +161,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(3007)
                 ->name("conv3_3")
-                ->filterDim(1, 1, 256, 256, 1, 1)
+                ->filterDim(1, 1, 256, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -186,7 +186,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(3010)
                 ->name("conv3_4")
-                ->filterDim(1, 1, 256, 256, 1, 1)
+                ->filterDim(3, 3, 256, 512, 1, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -221,7 +221,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4001)
                 ->name("conv4_1")
-                ->filterDim(1, 1, 512, 256, 1, 1)
+                ->filterDim(1, 1, 512, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -271,7 +271,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4007)
                 ->name("conv4_3")
-                ->filterDim(1, 1, 512, 256, 1, 1)
+                ->filterDim(1, 1, 512, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -321,7 +321,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4013)
                 ->name("conv4_5")
-                ->filterDim(1, 1, 512, 256, 1, 1)
+                ->filterDim(1, 1, 512, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -372,7 +372,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4019)
                 ->name("conv4_7")
-                ->filterDim(1, 1, 512, 256, 1, 1)
+                ->filterDim(1, 1, 512, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -422,7 +422,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4025)
                 ->name("conv4_9")
-                ->filterDim(1, 1, 512, 512, 1, 1)
+                ->filterDim(1, 1, 512, 512, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -481,7 +481,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(5001)
                 ->name("conv5_1")
-                ->filterDim(1, 1, 1024, 512, 1, 1)
+                ->filterDim(1, 1, 1024, 512, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -531,7 +531,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(5007)
                 ->name("conv5_3")
-                ->filterDim(1, 1, 1024, 512, 1, 1)
+                ->filterDim(1, 1, 1024, 512, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -700,7 +700,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(3001)
                 ->name("conv3_1")
-                ->filterDim(1, 1, 192, 128, 1, 1)
+                ->filterDim(1, 1, 192, 128, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -750,7 +750,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(3007)
                 ->name("conv3_3")
-                ->filterDim(1, 1, 256, 256, 1, 1)
+                ->filterDim(1, 1, 256, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -775,7 +775,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(3010)
                 ->name("conv3_4")
-                ->filterDim(1, 1, 256, 256, 1, 1)
+                ->filterDim(3, 3, 256, 512, 1, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -810,7 +810,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4001)
                 ->name("conv4_1")
-                ->filterDim(1, 1, 512, 256, 1, 1)
+                ->filterDim(1, 1, 512, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -860,7 +860,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4007)
                 ->name("conv4_3")
-                ->filterDim(1, 1, 512, 256, 1, 1)
+                ->filterDim(1, 1, 512, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -910,7 +910,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4013)
                 ->name("conv4_5")
-                ->filterDim(1, 1, 512, 256, 1, 1)
+                ->filterDim(1, 1, 512, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -961,7 +961,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4019)
                 ->name("conv4_7")
-                ->filterDim(1, 1, 512, 256, 1, 1)
+                ->filterDim(1, 1, 512, 256, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -1011,7 +1011,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(4025)
                 ->name("conv4_9")
-                ->filterDim(1, 1, 512, 512, 1, 1)
+                ->filterDim(1, 1, 512, 512, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -1070,7 +1070,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(5001)
                 ->name("conv5_1")
-                ->filterDim(1, 1, 1024, 512, 1, 1)
+                ->filterDim(1, 1, 1024, 512, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -1120,7 +1120,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->layer((new typename ConvLayer<Dtype>::Builder())
                 ->id(5007)
                 ->name("conv5_3")
-                ->filterDim(1, 1, 1024, 512, 1, 1)
+                ->filterDim(1, 1, 1024, 512, 0, 1)
                 ->weightUpdateParam(1, 1)
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
@@ -1318,11 +1318,12 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
                 ->inputs({"fc8_1"})
                 ->outputs({"fc8_1"}))
 
-#if 0
-        ->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+#if 1
+        ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
                 ->id(9001)
                 ->name("loss")
-                ->inputs({"fc", "label"})
+                ->targetValue(1.0)
+                ->inputs({"fc8_1"})
                 ->outputs({"loss"}))
 #endif
 
@@ -1408,7 +1409,7 @@ void YOLO<Dtype>::run() {
     weightsArgs[0].weightsPath =
         string(SPARAM(NETWORK_SAVE_DIR)) + "/network80072.param";
 
-	const uint32_t batchSize = 16;
+	const uint32_t batchSize = 8;
 	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;  // 0.001 ~ 0.01 (paper recommendation)
@@ -1456,17 +1457,17 @@ void YOLO<Dtype>::run() {
  	Network<Dtype>* network = new Network<Dtype>(networkConfig);
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<Dtype>* layersConfig = createYoloPreLayersConfig();
+	LayersConfig<Dtype>* layersConfig = createYoloLayersConfig();
 
 	// (2) network config 정보를 layer들에게 전달한다.
 	for (uint32_t i = 0; i < layersConfig->_layers.size(); i++)
 		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 
  	network->setLayersConfig(layersConfig);
-    network->loadPretrainedWeights();
+    //network->loadPretrainedWeights();
 
     network->_feedforward(0);
-    DebugUtil<Dtype>::printNetworkEdges(stderr, "load network", layersConfig, 0);
+    //DebugUtil<Dtype>::printNetworkEdges(stderr, "load network", layersConfig, 0);
 }
 
 template class YOLO<float>;

@@ -41,6 +41,7 @@
 #include "DebugUtil.h"
 
 #include "GAN.h"
+#include "YOLO.h"
 
 using namespace std;
 
@@ -59,7 +60,7 @@ void developerMain() {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-    GAN<float>::run();
+    YOLO<float>::runPretrain();
 
     STDOUT_LOG("exit developerMain()");
 }

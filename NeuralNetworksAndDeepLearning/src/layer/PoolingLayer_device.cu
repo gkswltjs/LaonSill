@@ -10,7 +10,7 @@
 
 #include "PoolingLayer.h"
 
-#define POOLINGLAYER_LOG 0
+#define POOLINGLAYER_LOG 1
 
 using namespace std;
 
