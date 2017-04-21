@@ -292,7 +292,7 @@ void VOCPascalInputLayer<Dtype>::loadLabels(int baseIdx) {
 template<typename Dtype>
 void VOCPascalInputLayer<Dtype>::shuffleImages() {
     // FIXME: move it to other source.
-#if 0
+#if 1
     srand(time(NULL)); 
     boost::range::random_shuffle(this->metaIndexes);
 #endif

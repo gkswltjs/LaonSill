@@ -51,6 +51,7 @@
 #include "VOCPascalInputLayer.h"
 #include "ILSVRCInputLayer.h"
 #include "DropOutLayer.h"
+#include "YOLOOutputLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;

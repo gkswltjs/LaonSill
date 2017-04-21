@@ -1318,14 +1318,11 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
                 ->inputs({"fc8_1"})
                 ->outputs({"fc8_1"}))
 
-#if 1
-        ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
+        ->layer((new typename YOLOOutputLayer<Dtype>::Builder())
                 ->id(9001)
                 ->name("loss")
-                ->targetValue(1.0)
-                ->inputs({"fc8_1"})
+                ->inputs({"fc8_1", "label"})
                 ->outputs({"loss"}))
-#endif
 
         ->build();
 
@@ -1466,7 +1463,7 @@ void YOLO<Dtype>::run() {
  	network->setLayersConfig(layersConfig);
     //network->loadPretrainedWeights();
 
-    network->_feedforward(0);
+    network->sgd(1);
     //DebugUtil<Dtype>::printNetworkEdges(stderr, "load network", layersConfig, 0);
 }
 
