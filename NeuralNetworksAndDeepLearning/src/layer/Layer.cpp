@@ -44,11 +44,11 @@ Layer<Dtype>::Layer(Builder* builder) {
 
 	initialize(builder->_id, builder->_name);
 
-	cout << this->name << " propDown: ";
-	for (uint32_t i = 0; i < this->_propDown.size(); i++) {
-		cout << this->_propDown[i] << ", ";
-	}
-	cout << endl;
+	//cout << this->name << " propDown: ";
+	//for (uint32_t i = 0; i < this->_propDown.size(); i++) {
+	//	cout << this->_propDown[i] << ", ";
+	//}
+	//cout << endl;
 }
 
 template <typename Dtype>

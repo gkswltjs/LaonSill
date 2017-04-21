@@ -81,12 +81,6 @@ void RoIInputLayer<Dtype>::initialize() {
 		ifs.close();
 	}
 
-
-
-
-
-
-
 	this->boxColors.push_back(cv::Scalar(10, 163, 240));
 	this->boxColors.push_back(cv::Scalar(44, 90, 130));
 	this->boxColors.push_back(cv::Scalar(239, 80, 0));

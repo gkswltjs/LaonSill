@@ -1,4 +1,4 @@
-#if 0
+#if 1
 
 #include "LayerTestInterface.h"
 #include "LayerTest.h"
@@ -17,6 +17,8 @@
 #include "TestUtil.h"
 #include "Debug.h"
 
+#include "AnnotationDataLayer.h"
+
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -33,7 +35,34 @@ int main(void) {
 	cout.setf(ios::fixed);
 
 	//layerTest();
-	networkTest();
+	//networkTest();
+
+	AnnotationDataLayer<float>::Builder* annotationDataBuilder =
+			new typename AnnotationDataLayer<float>::Builder();
+	annotationDataBuilder->id(0)
+			->name("data")
+			->flip(true)
+			->imageHeight(300)
+			->imageWidth(300)
+			->imageSetPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt")
+			->baseDataPath("/home/jkim/Dev/git/caffe_ssd/data/VOCdevkit/")
+			->labelMapPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt")
+			->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			->outputs({"data", "label"});
+
+	AnnotationDataLayer<float>* layer =
+			dynamic_cast<AnnotationDataLayer<float>*>(annotationDataBuilder->build());
+	layer->_outputData.push_back(new Data<float>("data"));
+	layer->_outputData.push_back(new Data<float>("label"));
+
+	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
+			->batchSize(2)
+			->build();
+	layer->setNetworkConfig(networkConfig);
+
+	layer->feedforward();
+
+	delete layer;
 
 
 	/*
@@ -296,7 +325,7 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(roiPoolingBuilder));
 #endif
 
-#if 1
+#if 0
 	FrcnnTestOutputLayer<float>::Builder* frcnnTestOutputBuilder =
 			new typename FrcnnTestOutputLayer<float>::Builder();
 	frcnnTestOutputBuilder->id(350)
@@ -306,6 +335,15 @@ void layerTest() {
 			->inputs({"rois", "im_info", "cls_prob", "bbox_pred"});
 
 	layerTestList.push_back(new LayerTest<float>(frcnnTestOutputBuilder));
+#endif
+
+#if 1
+	AnnotationDataLayer<float>::Builder* annotationDataBuilder =
+			new typename AnnotationDataLayer<float>::Builder();
+	annotationDataBuilder->id(0)
+			->name("data")
+			->outputs({"data", "label"});
+	layerTestList.push_back(new LayerTest<float>(annotationDataBuilder));
 #endif
 
 	LayerTestInterface<float>::globalSetUp(gpuid);

@@ -80,6 +80,8 @@ public:
 		RoITestInput,
 		FrcnnTestOutput,
 
+		AnnotationData,
+
 		Relu,
 	};
 
