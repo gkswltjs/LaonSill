@@ -155,6 +155,7 @@ public:
 		uint32_t _saveInterval;
 		uint32_t _stepSize;					// update _baseLearningRate
 		float _baseLearningRate;
+        float _power;
 		float _momentum;
 		float _weightDecay;
 		float _clipGradientsLevel;
@@ -252,6 +253,10 @@ public:
 			this->_baseLearningRate = baseLearningRate;
 			return this;
 		}
+		Builder* power(float power) {
+			this->_power = power;
+			return this;
+		}
 		Builder* momentum(float momentum) {
 			this->_momentum = momentum;
 			return this;
@@ -296,6 +301,7 @@ public:
 	uint32_t _iterations;
 	uint32_t _stepSize;
 	float _baseLearningRate;
+    float _power;
 	float _momentum;
 	float _weightDecay;
 	float _clipGradientsLevel;
@@ -374,6 +380,10 @@ public:
 	}
 	NetworkConfig* baseLearningRate(float baseLearningRate) {
 		this->_baseLearningRate = baseLearningRate;
+		return this;
+	}
+	NetworkConfig* power(float power) {
+		this->_power = power;
 		return this;
 	}
 	NetworkConfig* momentum(float momentum) {

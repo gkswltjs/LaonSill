@@ -640,10 +640,23 @@ bool NetworkConfig<Dtype>::doSave() {
 	else return false;
 }
 
+/**
+ * learning rate policy (from CAFFE definition)
+ *    - fixed: always return base_lr.
+ *    - step: return base_lr * gamma ^ (floor(iter / step))
+ *    - exp: return base_lr * gamma ^ iter
+ *    - inv: return base_lr * (1 + gamma * iter) ^ (- power)
+ *    - multistep: similar to step but it allows non uniform steps defined by
+ *      stepvalue
+ *    - poly: the effective learning rate follows a polynomial decay, to be
+ *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
+ *    - sigmoid: the effective learning rate follows a sigmod decay
+ *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+ */
 template <typename Dtype>
 float NetworkConfig<Dtype>::getLearningRate() {
 	float rate;
-	switch(this->_lrPolicy) {
+	switch (this->_lrPolicy) {
 	case Fixed: {
 		rate = this->_baseLearningRate;
 	}
@@ -658,6 +671,11 @@ float NetworkConfig<Dtype>::getLearningRate() {
 		}
 	}
 		break;
+    case Poly: {
+        rate = this->_baseLearningRate * 
+            pow((1.0 - (float)this->_iterations / (float)this->_epochs), this->_power);
+    }
+        break;
 	default: {
 		cout << "not supported lr policy type ... " << endl;
 		exit(1);

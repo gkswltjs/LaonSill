@@ -60,8 +60,8 @@ void developerMain() {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-    //YOLO<float>::runPretrain();
-    YOLO<float>::run();
+    YOLO<float>::runPretrain();
+    //YOLO<float>::run();
 
     STDOUT_LOG("exit developerMain()");
 }
