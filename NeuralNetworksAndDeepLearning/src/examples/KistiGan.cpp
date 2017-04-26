@@ -46,10 +46,7 @@ LayersConfig<Dtype>* KistiGan<Dtype>::createDOfGANLayersConfig() {
                 ->name("CelebAInputLayer")
                 ->imageDir(std::string(SPARAM(BASE_DATA_DIR))
                     + std::string("/etri/graph"))
-                ->source(std::string(SPARAM(BASE_DATA_DIR))
-                    + std::string("/etri/graph"))
                 ->resizeImage(64,64)
-                ->sourceType("ImagePack")
                 ->outputs({"data"}))
 #elif USE_ETRI_GAN
         ->layer((new typename KistiInputLayer<Dtype>::Builder())

@@ -42,11 +42,8 @@ LayersConfig<Dtype>* GAN<Dtype>::createDOfGANLayersConfig() {
                 ->name("CelebAInputLayer")
                 ->imageDir(std::string(SPARAM(BASE_DATA_DIR))
                     + std::string("/celebA"))
-                ->source(std::string(SPARAM(BASE_DATA_DIR))
-                    + std::string("/celebA"))
                 ->cropImage(108)
                 ->resizeImage(64,64)
-                ->sourceType("ImagePack")
                 ->outputs({"data"}))
 
         ->layer((new typename ConvLayer<Dtype>::Builder())

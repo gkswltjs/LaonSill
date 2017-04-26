@@ -1287,8 +1287,8 @@ void YOLO<Dtype>::runPretrain() {
 	const LRPolicy lrPolicy = LRPolicy::Poly;
 	//const LRPolicy lrPolicy = LRPolicy::Fixed;
 
-    const Optimizer opt = Optimizer::Adam;
-    //const Optimizer opt = Optimizer::Momentum;
+    //const Optimizer opt = Optimizer::Adam;
+    const Optimizer opt = Optimizer::Momentum;
 
 	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
 	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
