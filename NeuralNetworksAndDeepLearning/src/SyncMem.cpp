@@ -12,6 +12,7 @@
 
 #include "SyncMem.h"
 #include "Cuda.h"
+#include "MathFunctions.h"
 
 //#define SYNCMEM_LOG
 
@@ -169,9 +170,15 @@ void SyncMem<Dtype>::reset_host_mem(const bool setZero, const Dtype value) {
 }
 
 template <typename Dtype>
-void SyncMem<Dtype>::reset_device_mem() {
+void SyncMem<Dtype>::reset_device_mem(const bool setZero, const Dtype value) {
 	checkMemValidity();
-	checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_size));
+
+	if (setZero) {
+		checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_size));
+	} else {
+		soooa_gpu_set(_size, value, _device_mem);
+	}
+
 	//_device_mem_updated = true;
 	setDeviceMemUpdated();
 }

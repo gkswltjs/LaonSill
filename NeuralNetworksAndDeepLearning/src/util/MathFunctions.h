@@ -69,5 +69,25 @@ void soooa_gpu_gemv(const CBLAS_TRANSPOSE TransA, const int M, const int N,
 
 
 
+template <typename Dtype>
+void soooa_gpu_add(const int N, const Dtype* a, const Dtype* b, Dtype* y);
+
+template <typename Dtype>
+void soooa_gpu_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);
+
+template <typename Dtype>
+void soooa_gpu_powx(const int n, const Dtype* a, const Dtype b, Dtype* y);
+
+
+
+
+template <typename Dtype>
+void soooa_gpu_scale(const int n, const Dtype alpha, const Dtype* x, Dtype* y);
+
+
+
+
+
+
 
 #endif /* SOOOA_MATHFUNCTIONS_H_ */

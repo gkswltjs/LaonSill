@@ -101,7 +101,7 @@ const Dtype* LMDBDataSet<Dtype>::getTrainDataAt(int index) {
 		}
 	}
 
-	cout << "key: " << key << endl;
+	//cout << "key: " << key << endl;
 
 	// train data 조회
 	unsigned char* ptr = (unsigned char*)value.c_str();

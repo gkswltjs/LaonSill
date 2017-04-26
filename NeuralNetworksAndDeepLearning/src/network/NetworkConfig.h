@@ -21,6 +21,7 @@
 #include "LearnableLayer.h"
 #include "SplitLayer.h"
 #include "LossLayer.h"
+#include "AccuracyLayer.h"
 #include "NetworkListener.h"
 #include "Worker.h"
 #include "Top1Evaluation.h"
@@ -31,6 +32,7 @@
 
 //template <typename Dtype> class DataSet;
 template <typename Dtype> class Worker;
+
 
 
 struct WeightsArg {
@@ -56,6 +58,7 @@ public:
 	private:
 		void initializeLayers(std::vector<Layer<Dtype>*>& firstLayers,
 				std::vector<Layer<Dtype>*>& lastLayers,
+				std::vector<AccuracyLayer<Dtype>*>& accuracyLayers,
         		std::vector<Layer<Dtype>*>& layers,
         		std::vector<LearnableLayer<Dtype>*>& learnableLayers,
         		std::map<uint32_t, Layer<Dtype>*>& idLayerMap);
@@ -90,6 +93,7 @@ public:
 	std::map<std::string, Data<Dtype>*> _layerDataMap;
     std::vector<Layer<Dtype>*> _firstLayers;
     std::vector<Layer<Dtype>*> _lastLayers;
+    std::vector<AccuracyLayer<Dtype>*> _accuracyLayers;
     std::vector<Layer<Dtype>*> _layers;
     std::vector<LearnableLayer<Dtype>*> _learnableLayers;
     std::vector<LossLayer<Dtype>*> _lossLayers;
@@ -102,6 +106,7 @@ public:
 	LayersConfig(Builder* builder);
 	LayersConfig<Dtype>* firstLayers(std::vector<Layer<Dtype>*>& firstLayers);
 	LayersConfig<Dtype>* lastLayers(std::vector<Layer<Dtype>*>& lastLayers);
+	LayersConfig<Dtype>* accuracyLayers(std::vector<AccuracyLayer<Dtype>*>& accuracyLayers);
 	LayersConfig<Dtype>* layers(std::vector<Layer<Dtype>*>& layers);
 	LayersConfig<Dtype>* learnableLayers(std::vector<LearnableLayer<Dtype>*>& learnableLayers);
 	LayersConfig<Dtype>* nameLayerMap(std::map<std::string, Layer<Dtype>*>& nameLayerMap);
@@ -175,6 +180,7 @@ public:
 		NetworkPhase _phase;
 
 		std::vector<std::string> _lossLayers;
+		std::vector<std::string> _accuracyLayers;
 
 		Builder() {
 			//this->_dataSet = NULL;
@@ -278,6 +284,10 @@ public:
 			this->_lossLayers = lossLayers;
 			return this;
 		}
+		Builder* accuracyLayers(const std::vector<std::string>& accuracyLayers) {
+			this->_accuracyLayers = accuracyLayers;
+			return this;
+		}
 		NetworkConfig<Dtype>* build();
 		void print();
 	};
@@ -312,6 +322,7 @@ public:
     std::vector<WeightsArg> _weightsArgs;
 
     std::vector<std::string> _lossLayers;
+    std::vector<std::string> _accuracyLayers;
 
 	// save & load를 위해서 builder도 일단 저장해 두자.
 	Builder* _builder;
@@ -324,6 +335,10 @@ public:
 	}
 	NetworkConfig* lossLayers(const std::vector<std::string>& lossLayers) {
 		this->_lossLayers = lossLayers;
+		return this;
+	}
+	NetworkConfig* accuracyLayers(const std::vector<std::string>& accuracyLayers) {
+		this->_accuracyLayers = accuracyLayers;
 		return this;
 	}
 	NetworkConfig* networkListeners(const std::vector<NetworkListener*> networkListeners) {

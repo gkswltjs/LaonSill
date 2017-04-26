@@ -86,7 +86,7 @@ public:
 	/**
 	 * @details 디바이스 메모리를 0으로 초기화한다.
 	 */
-	void reset_device_mem();
+	void reset_device_mem(const bool setZero=true, const Dtype value=0.0);
 
 	/**
 	 * @details 호스트 메모리에 주어진 호스트 포인터의 메모리값을 더한다.

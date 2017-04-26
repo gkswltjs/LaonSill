@@ -196,9 +196,9 @@ void Data<Dtype>::reset_host_data(const bool setZero, const Dtype value) {
 }
 
 template <typename Dtype>
-void Data<Dtype>::reset_device_data() {
+void Data<Dtype>::reset_device_data(const bool setZero, const Dtype value) {
 	assert(!this->_hostOnly);
-	_data->reset_device_mem();
+	_data->reset_device_mem(setZero, value);
 }
 
 template <typename Dtype>

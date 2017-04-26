@@ -25,4 +25,5 @@ void soooa_bound_data(const int N, const uint32_t singleChannelSize, const Dtype
 
 
 
+
 #endif /* CUDAUTILS_H_ */

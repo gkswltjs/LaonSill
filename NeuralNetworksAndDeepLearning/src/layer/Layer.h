@@ -81,8 +81,17 @@ public:
 		FrcnnTestOutput,
 
 		AnnotationData,
+		Normalize,
+		Permute,
+		Flatten,
+		PriorBox,
+		Concat,
+		MultiBoxLoss,
+		DetectionOutput,
+		DetectionEvaluate,
 
 		Relu,
+		Accuracy,
 	};
 
 

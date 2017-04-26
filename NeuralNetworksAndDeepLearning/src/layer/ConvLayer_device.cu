@@ -484,7 +484,6 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
     const Dtype beta2, Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2,
     Data<Dtype>* data) {
 	const uint32_t batches = this->_inputData[0]->getShape(0);
-	const Dtype normScale = 1.0/batches;
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
 

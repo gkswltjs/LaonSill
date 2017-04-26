@@ -47,6 +47,7 @@
 #include "SigmoidLayer2.h"
 #include "NoiseInputLayer.h"
 #include "HyperTangentLayer.h"
+#include "AccuracyLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
@@ -3600,6 +3601,361 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 #define ILSVRC_1000 0
 
 template <typename Dtype>
+LayersConfig<Dtype>* createVGG16NetLayersConfig() {
+	const float bias_const = 0.2f;
+
+	LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
+			->layer((new typename InputLayer<Dtype>::Builder())
+					->id(0)
+					->name("data")
+					->source("/home/jkim/Dev/git/caffe/examples/imagenet/ilsvrc12_train_lmdb")
+					->sourceType("LMDB")
+					->mean({104.0f, 117.0f, 123.0f})
+					->outputs({"data", "label"}))
+
+			// tier 1
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(10)
+					->name("conv1_1")
+					->filterDim(3, 3, 3, 64, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"data"})
+					->outputs({"conv1_1"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(20)
+					->name("relu1_1")
+					->inputs({"conv1_1"})
+					->outputs({"conv1_1"}))
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(30)
+					->name("conv1_2")
+					->filterDim(3, 3, 64, 64, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"conv1_1"})
+					->outputs({"conv1_2"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(40)
+					->name("relu1_2")
+					->inputs({"conv1_2"})
+					->outputs({"conv1_2"}))
+
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(50)
+					->name("pool1")
+					->poolDim(2, 2, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"conv1_2"})
+					->outputs({"pool1"}))
+
+			// tier 2
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(60)
+					->name("conv2_1")
+					->filterDim(3, 3, 64, 128, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"pool1"})
+					->outputs({"conv2_1"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(70)
+					->name("relu2_1")
+					->inputs({"conv2_1"})
+					->outputs({"conv2_1"}))
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(80)
+					->name("conv2_2")
+					->filterDim(3, 3, 128, 128, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"conv2_1"})
+					->outputs({"conv2_2"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(90)
+					->name("relu2_2")
+					->inputs({"conv2_2"})
+					->outputs({"conv2_2"}))
+
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(100)
+					->name("pool2")
+					->poolDim(2, 2, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"conv2_2"})
+					->outputs({"pool2"}))
+
+			// tier 3
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(110)
+					->name("conv3_1")
+					->filterDim(3, 3, 128, 256, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"pool2"})
+					->outputs({"conv3_1"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(120)
+					->name("relu3_1")
+					->inputs({"conv3_1"})
+					->outputs({"conv3_1"}))
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(130)
+					->name("conv3_2")
+					->filterDim(3, 3, 256, 256, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"conv3_1"})
+					->outputs({"conv3_2"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(140)
+					->name("relu3_2")
+					->inputs({"conv3_2"})
+					->outputs({"conv3_2"}))
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(150)
+					->name("conv3_3")
+					->filterDim(3, 3, 256, 256, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"conv3_2"})
+					->outputs({"conv3_3"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(160)
+					->name("relu3_3")
+					->inputs({"conv3_3"})
+					->outputs({"conv3_3"}))
+
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(170)
+					->name("pool3")
+					->poolDim(2, 2, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"conv3_3"})
+					->outputs({"pool3"}))
+
+			// tier 4
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(180)
+					->name("conv4_1")
+					->filterDim(3, 3, 256, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"pool3"})
+					->outputs({"conv4_1"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(190)
+					->name("relu4_1")
+					->inputs({"conv4_1"})
+					->outputs({"conv4_1"}))
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(200)
+					->name("conv4_2")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"conv4_1"})
+					->outputs({"conv4_2"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(210)
+					->name("relu4_2")
+					->inputs({"conv4_2"})
+					->outputs({"conv4_2"}))
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(220)
+					->name("conv4_3")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"conv4_2"})
+					->outputs({"conv4_3"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(230)
+					->name("relu4_3")
+					->inputs({"conv4_3"})
+					->outputs({"conv4_3"}))
+
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(240)
+					->name("pool4")
+					->poolDim(2, 2, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"conv4_3"})
+					->outputs({"pool4"}))
+
+			// tier 5
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(250)
+					->name("conv5_1")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"pool4"})
+					->outputs({"conv5_1"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(260)
+					->name("relu5_1")
+					->inputs({"conv5_1"})
+					->outputs({"conv5_1"}))
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(270)
+					->name("conv5_2")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"conv5_1"})
+					->outputs({"conv5_2"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(280)
+					->name("relu5_2")
+					->inputs({"conv5_2"})
+					->outputs({"conv5_2"}))
+
+			->layer((new typename ConvLayer<Dtype>::Builder())
+					->id(290)
+					->name("conv5_3")
+					->filterDim(3, 3, 512, 512, 1, 1)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"conv5_2"})
+					->outputs({"conv5_3"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(300)
+					->name("relu5_3")
+					->inputs({"conv5_3"})
+					->outputs({"conv5_3"}))
+
+			->layer((new typename PoolingLayer<Dtype>::Builder())
+					->id(310)
+					->name("pool5")
+					->poolDim(2, 2, 0, 2)
+					->poolingType(Pooling<Dtype>::Max)
+					->inputs({"conv5_3"})
+					->outputs({"pool5"}))
+
+			// classifier
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(320)
+					->name("fc6")
+					->nOut(4096)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"pool5"})
+					->outputs({"fc6"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(330)
+					->name("relu6")
+					->inputs({"fc6"})
+					->outputs({"fc6"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(340)
+					->name("fc7")
+					->nOut(4096)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Xavier, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"fc6"})
+					->outputs({"fc7"}))
+
+			->layer((new typename ReluLayer<Dtype>::Builder())
+					->id(350)
+					->name("relu7")
+					->inputs({"fc7"})
+					->outputs({"fc7"}))
+
+			->layer((new typename FullyConnectedLayer<Dtype>::Builder())
+					->id(360)
+					->name("fc8")
+					->nOut(1000)
+					->weightUpdateParam(1, 1)
+					->biasUpdateParam(2, 0)
+					->weightFiller(ParamFillerType::Gaussian, 0.1)
+					->biasFiller(ParamFillerType::Constant, bias_const)
+					->inputs({"fc7"})
+					->outputs({"fc8"}))
+
+			->layer((new typename SoftmaxWithLossLayer<Dtype>::Builder())
+					->id(370)
+					->name("loss")
+					->inputs({"fc8", "label"})
+					->outputs({"loss"}))
+
+			->layer((new typename AccuracyLayer<Dtype>::Builder())
+					->id(380)
+					->name("accuracy/top1")
+					->topK(1)
+					->axis(2)
+					->inputs({"fc8", "label"})
+					->outputs({"accuracy@1"}))
+
+			->layer((new typename AccuracyLayer<Dtype>::Builder())
+					->id(390)
+					->name("accuracy/top5")
+					->topK(5)
+					->axis(2)
+					->inputs({"fc8", "label"})
+					->outputs({"accuracy@5"}))
+
+			->build();
+
+	return layersConfig;
+}
+
+
+
+
+template <typename Dtype>
 LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 	const float bias_const = 0.2f;
 
@@ -4012,6 +4368,23 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->name("loss")
 					->inputs({"fc8", "label"})
 					->outputs({"loss"}))
+
+			->layer((new typename AccuracyLayer<Dtype>::Builder())
+					->id(380)
+					->name("accuracy/top1")
+					->topK(1)
+					->axis(2)
+					->inputs({"fc8", "label"})
+					->outputs({"accuracy@1"}))
+
+			->layer((new typename AccuracyLayer<Dtype>::Builder())
+					->id(390)
+					->name("accuracy/top5")
+					->topK(5)
+					->axis(2)
+					->inputs({"fc8", "label"})
+					->outputs({"accuracy@5"}))
+
 
 			->build();
 

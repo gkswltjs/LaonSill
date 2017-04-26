@@ -32,13 +32,15 @@ template <typename Dtype>
 LayersConfig<Dtype>* LayersConfig<Dtype>::Builder::build() {
 	vector<Layer<Dtype>*> firstLayers;
 	vector<Layer<Dtype>*> lastLayers;
+	vector<AccuracyLayer<Dtype>*> accuracyLayers;
 	vector<Layer<Dtype>*> layers;
 	vector<LearnableLayer<Dtype>*> learnableLayers;
 	map<uint32_t, Layer<Dtype>*> idLayerMap;
 	map<string, uint32_t> nameLayerIdxMap;
 
 	// (1) 전체 레이어에 대해 Layer Builder의 설정대로 Layer들을 생성한다.
-	initializeLayers(firstLayers, lastLayers, layers, learnableLayers, idLayerMap);
+	initializeLayers(firstLayers, lastLayers, accuracyLayers, layers, learnableLayers,
+			idLayerMap);
 
 	// (2) 레이어 이름으로 레이어 객체를 찾을 수 있도록 이름-레이어 맵을 생성
 	map<string, Layer<Dtype>*> nameLayerMap;
@@ -71,6 +73,7 @@ LayersConfig<Dtype>* LayersConfig<Dtype>::Builder::build() {
 	return (new LayersConfig(this))
 		->firstLayers(firstLayers)
 		->lastLayers(lastLayers)
+		->accuracyLayers(accuracyLayers)
 		->layers(olayers)
 		->learnableLayers(learnableLayers)
 		->nameLayerMap(nameLayerMap)
@@ -81,6 +84,7 @@ LayersConfig<Dtype>* LayersConfig<Dtype>::Builder::build() {
 template <typename Dtype>
 void LayersConfig<Dtype>::Builder::initializeLayers(vector<Layer<Dtype>*>& firstLayers,
 		vector<Layer<Dtype>*>& lastLayers,
+		vector<AccuracyLayer<Dtype>*>& accuracyLayers,
 		vector<Layer<Dtype>*>& layers,
 		vector<LearnableLayer<Dtype>*>& learnableLayers,
 		map<uint32_t, Layer<Dtype>*>& idLayerMap) {
@@ -102,6 +106,14 @@ void LayersConfig<Dtype>::Builder::initializeLayers(vector<Layer<Dtype>*>& first
 		if (lossLayer) {
 			lastLayers.push_back(currentLayer);
 		}
+
+		// 정확도 레이어 추가
+		AccuracyLayer<Dtype>* accuracyLayer =
+				dynamic_cast<AccuracyLayer<Dtype>*>(currentLayer);
+		if (accuracyLayer) {
+			accuracyLayers.push_back(accuracyLayer);
+		}
+
 
 		// 학습 레이어 추가
 		LearnableLayer<Dtype>* learnableLayer =
@@ -567,12 +579,23 @@ LayersConfig<Dtype>* LayersConfig<Dtype>::lastLayers(vector<Layer<Dtype>*>& last
 	typename vector<Layer<Dtype>*>::iterator iter;
 	for (iter = lastLayers.begin(); iter != lastLayers.end(); iter++) {
 		LossLayer<Dtype>* lossLayer = dynamic_cast<LossLayer<Dtype>*>(*iter);
-		if(!lossLayer) {
+		if (!lossLayer) {
 			cout << "invalid output layer ... " << endl;
 			exit(1);
 		}
-		_lossLayers.push_back(lossLayer);
+		cout << lossLayer->name << " is LossLayer ... " << endl;
+
+		this->_lossLayers.push_back(lossLayer);
+
+		//AccuracyLayer<Dtype>* accuracyLayer = dynamic_cast<AccuracyLayer<Dtype>*>(*iter);
+		//if (!accuracy)
 	}
+	return this;
+}
+
+template <typename Dtype>
+LayersConfig<Dtype>* LayersConfig<Dtype>::accuracyLayers(vector<AccuracyLayer<Dtype>*>& accuracyLayers) {
+	this->_accuracyLayers = accuracyLayers;
 	return this;
 }
 
@@ -641,7 +664,8 @@ NetworkConfig<Dtype>* NetworkConfig<Dtype>::Builder::build() {
 			->momentum(_momentum)
 			->weightDecay(_weightDecay)
 			->networkPhase(_phase)
-			->lossLayers(_lossLayers);
+			->lossLayers(_lossLayers)
+			->accuracyLayers(_accuracyLayers);
 
 	networkConfig->layersConfigs.assign(Worker<Dtype>::consumerCount, NULL);
 	return networkConfig;

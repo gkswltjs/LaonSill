@@ -93,8 +93,7 @@ public:
     }
 
 protected:
-	virtual void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
-            Data<Dtype>* dataHistory, Data<Dtype>* data) {};
+
 
 public:
 	std::vector<Data<Dtype>*> _params;

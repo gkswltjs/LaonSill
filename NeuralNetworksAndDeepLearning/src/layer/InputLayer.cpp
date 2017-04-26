@@ -55,7 +55,7 @@ InputLayer<Dtype>::InputLayer(Builder* builder)
 		//this->_dataSet->setMean(builder->_mean);
 
 		int numChannels = builder->_mean.size();
-		this->_dataMean->reshape({1, 1, 1, numChannels});
+		this->_dataMean->reshape({1, 1, 1, (uint32_t)numChannels});
 		for (int i = 0; i < numChannels; i++) {
 			this->_dataMean->mutable_host_data()[i] = builder->_mean[i];
 		}
@@ -66,7 +66,7 @@ InputLayer<Dtype>::InputLayer(Builder* builder)
 		this->_dataSet = new LMDBDataSet<Dtype>(
 				builder->_source);
 		int numChannels = builder->_mean.size();
-		this->_dataMean->reshape({1, 1, 1, numChannels});
+		this->_dataMean->reshape({1, 1, 1, (uint32_t)numChannels});
 		for (int i = 0; i < numChannels; i++) {
 			this->_dataMean->mutable_host_data()[i] = builder->_mean[i];
 		}

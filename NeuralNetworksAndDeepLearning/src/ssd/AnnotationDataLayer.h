@@ -112,6 +112,7 @@ public:
 			this->_flip = false;
 			this->_imageHeight = 300;
 			this->_imageWidth = 300;
+			this->_pixelMeans = {Dtype(0.0), Dtype(0.0), Dtype(0.0)};
 		}
 		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);

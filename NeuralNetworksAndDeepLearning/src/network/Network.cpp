@@ -198,9 +198,9 @@ Dtype Network<Dtype>::sgd(int epochs) {
 
 
 		LayersConfig<Dtype>* layersConfig = getLayersConfig();
-		vector<double> costList(config->_lossLayers.size());
+		vector<double> costList(this->config->_lossLayers.size());
+		vector<Dtype> accuracyList(this->config->_accuracyLayers.size());
 		typename map<string, Layer<Dtype>*>::iterator it;
-
 
 #if SAVE_PROPOSAL_TARGET_LAYER
 		ofstream ofs(config->_savePathPrefix + "/proposal_target_layer.ptl",
@@ -226,16 +226,23 @@ Dtype Network<Dtype>::sgd(int epochs) {
 #endif
 			// UPDATE
 			if (config->_phase == NetworkPhase::TrainPhase) {
-				for (uint32_t i = 0; i < config->_lossLayers.size(); i++) {
+				for (uint32_t i = 0; i < this->config->_lossLayers.size(); i++) {
 					it = layersConfig->_nameLayerMap.find(config->_lossLayers[i]);
 					assert(it != layersConfig->_nameLayerMap.end());
 					LossLayer<Dtype>* lossLayer = dynamic_cast<LossLayer<Dtype>*>(it->second);
 					assert(lossLayer != 0);
 					costList[i] += lossLayer->cost();
-
 					//costList[i] = lossLayer->cost();
 					//networkListeners[i]->onCostComputed(0, config->_lossLayers[i], costList[i]);
 				}
+				for (uint32_t i = 0; i < this->config->_accuracyLayers.size(); i++) {
+					it = layersConfig->_nameLayerMap.find(config->_accuracyLayers[i]);
+					assert(it != layersConfig->_nameLayerMap.end());
+					AccuracyLayer<Dtype>* accuracyLayer = dynamic_cast<AccuracyLayer<Dtype>*>(it->second);
+					assert(accuracyLayer != 0);
+					accuracyList[i] += accuracyLayer->getAccuracy();
+				}
+
 				applyUpdate();
 			}
 
@@ -243,20 +250,28 @@ Dtype Network<Dtype>::sgd(int epochs) {
             // XXX: 예쁘게.. 
             if (Worker<Dtype>::waitPeer()) {
                 // 마지막 쓰레드가 메모리를 갱신한다.
-                if (config->_phase == NetworkPhase::TrainPhase && config->doTest()) {
-                    config->_status = NetworkStatus::Test;
-					for (uint32_t i = 0; i < config->_lossLayers.size(); i++) {
-						float cost = costList[i]/config->_testInterval;
-						networkListeners[i]->onCostComputed(i, config->_lossLayers[i], cost);
+                if (this->config->_phase == NetworkPhase::TrainPhase && this->config->doTest()) {
+                	this->config->_status = NetworkStatus::Test;
+
+                	STDOUT_BLOCK(cout << "Test Result at Iteration " << this->config->_iterations << endl;);
+
+					for (uint32_t i = 0; i < this->config->_lossLayers.size(); i++) {
+						float cost = costList[i] / this->config->_testInterval;
+						networkListeners[i]->onCostComputed(i, this->config->_lossLayers[i], cost);
 						costList[i] = 0.0;
 						//STDOUT_BLOCK(cout << config->_lossLayers[i] << " cost:" << cost << "," << endl;);
-						cout << cost << ", ";
+						//cout << cost << ", ";
+						cout << "\t" << this->config->_lossLayers[i] << ": " << cost << ", " << endl;
                         lossSum += cost;
+					}
+					for (uint32_t i = 0; i < this->config->_accuracyLayers.size(); i++) {
+						Dtype accuracy = accuracyList[i] / this->config->_testInterval;
+						cout << "\t" << this->config->_accuracyLayers[i] << ": " << accuracy << endl;
+						accuracyList[i] = Dtype(0);
 					}
 					cout << endl;
                     config->_status = NetworkStatus::Train;
                 }
-
 
                 if(config->_phase == NetworkPhase::TrainPhase && config->doSave()) {
                     save();

@@ -1,4 +1,4 @@
-#if 1
+#if 0
 
 #include "LayerTestInterface.h"
 #include "LayerTest.h"
@@ -10,6 +10,7 @@
 #include "ReluLayer.h"
 #include "PoolingLayer.h"
 #include "SoftmaxWithLossLayer.h"
+#include "AccuracyLayer.h"
 
 #include "NetworkTestInterface.h"
 #include "NetworkTest.h"
@@ -18,6 +19,10 @@
 #include "Debug.h"
 
 #include "AnnotationDataLayer.h"
+#include "NormalizeLayer.h"
+#include "PermuteLayer.h"
+#include "FlattenLayer.h"
+#include "PriorBoxLayer.h"
 
 
 #include <opencv2/core/core.hpp>
@@ -26,7 +31,7 @@
 #include "gpu_nms.hpp"
 #include "cnpy.h"
 
-
+void plainTest();
 void layerTest();
 void networkTest();
 
@@ -34,12 +39,20 @@ int main(void) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
-	//layerTest();
+	//plainTest();
+	layerTest();
 	//networkTest();
 
-	AnnotationDataLayer<float>::Builder* annotationDataBuilder =
+	return 0;
+}
+
+
+void plainTest() {
+
+#if 0
+	AnnotationDataLayer<float>::Builder* builder =
 			new typename AnnotationDataLayer<float>::Builder();
-	annotationDataBuilder->id(0)
+	builder->id(0)
 			->name("data")
 			->flip(true)
 			->imageHeight(300)
@@ -50,10 +63,77 @@ int main(void) {
 			->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
 			->outputs({"data", "label"});
 
-	AnnotationDataLayer<float>* layer =
-			dynamic_cast<AnnotationDataLayer<float>*>(annotationDataBuilder->build());
+	Layer<float>* layer = builder->build();
 	layer->_outputData.push_back(new Data<float>("data"));
 	layer->_outputData.push_back(new Data<float>("label"));
+#endif
+
+#if 0
+	NormalizeLayer<float>::Builder* builder =
+			new typename NormalizeLayer<float>::Builder();
+	builder->id(0)
+			->name("")
+			->acrossSpatial(false)
+			->scaleFiller(ParamFillerType::Constant, 20.0f)
+			->channelShared(false)
+			->inputs({"conv4_3"})
+			->outputs({"conv4_3_norm"});
+
+	Layer<float>* layer = builder->build();
+	layer->_inputData.push_back(new Data<float>("conv4_3"));
+	layer->_outputData.push_back(new Data<float>("conv4_3_norm"));
+#endif
+
+#if 0
+	PermuteLayer<float>::Builder* builder =
+			new typename PermuteLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm_mbox_loc_perm")
+			->orders({0, 2, 3, 1})
+			->inputs({"conv4_3_norm_mbox_loc"})
+			->outputs({"conv4_3_norm_mbox_loc_perm"});
+
+	Layer<float>* layer = builder->build();
+	layer->_inputData.push_back(new Data<float>("conv4_3_norm_mbox_loc"));
+	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_perm"));
+#endif
+
+#if 0
+	FlattenLayer<float>::Builder* builder =
+			new typename FlattenLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm_mbox_loc_flat")
+			->axis(1)
+			->inputs({"conv4_3_norm_mbox_loc_perm"})
+			->outputs({"conv4_3_norm_mbox_loc_flat"});
+
+	Layer<float>* layer = builder->build();
+	layer->_inputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_perm"));
+	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_flat"));
+#endif
+
+
+#if 1
+	PriorBoxLayer<float>::Builder* builder =
+			new typename PriorBoxLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm_mbox_priorbox")
+			->minSizes({30.0})
+			->maxSizes({60.0})
+			->aspectRatios({2.0})
+			->flip(true)
+			->clip(false)
+			->variances({0.1, 0.1, 0.2, 0.2})
+			->step(8.0)
+			->offset(0.5)
+			->inputs({"conv4_3_norm", "data"})
+			->outputs({"conv4_3_norm_mbox_priorbox"});
+
+	Layer<float>* layer = builder->build();
+	layer->_inputData.push_back(new Data<float>("conv4_3_norm"));
+	layer->_inputData.push_back(new Data<float>("data"));
+	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_priorbox"));
+#endif
 
 	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
 			->batchSize(2)
@@ -64,35 +144,6 @@ int main(void) {
 
 	delete layer;
 
-
-	/*
-	RoIInputLayer<float>::Builder* roiInputBuilder =
-				new typename RoIInputLayer<float>::Builder();
-	roiInputBuilder->id(0)
-			->name("input-data")
-			->numClasses(21)
-			->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
-			->outputs({"data", "im_info", "gt_boxes"});
-
-	RoIInputLayer<float>* layer = dynamic_cast<RoIInputLayer<float>*>(roiInputBuilder->build());
-
-	for (int i = 0; i < 1000000; i++) {
-		layer->feedforward();
-	}
-
-	map<string, RoIInputLayer<float>::InputStat*>::iterator itr;
-	for (itr = layer->inputStatMap.begin(); itr != layer->inputStatMap.end(); itr++) {
-		cout << itr->first << ": " << endl;
-		cout << "\tnfcnt: " << itr->second->nfcnt << endl;
-		cout << "\tnfcnt: " << itr->second->fcnt << endl;
-		for (int i = 0; i < 4; i++) {
-			cout << "\tscaleCnt[" << i << "]: " << itr->second->scaleCnt[i] << endl;
-		}
-	}
-	*/
-
-
-	return 0;
 }
 
 void layerTest() {
@@ -337,13 +388,25 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(frcnnTestOutputBuilder));
 #endif
 
-#if 1
+#if 0
 	AnnotationDataLayer<float>::Builder* annotationDataBuilder =
 			new typename AnnotationDataLayer<float>::Builder();
 	annotationDataBuilder->id(0)
 			->name("data")
 			->outputs({"data", "label"});
 	layerTestList.push_back(new LayerTest<float>(annotationDataBuilder));
+#endif
+
+#if 1
+	AccuracyLayer<float>::Builder* accuracyBuilder =
+			new typename AccuracyLayer<float>::Builder();
+	accuracyBuilder->id(390)
+			->name("accuracy")
+			->topK(5)
+			->axis(2)
+			->inputs({"fc8_fc8_0_split_1", "label_data_1_split_1"})
+			->outputs({"accuracy"});
+	layerTestList.push_back(new LayerTest<float>(accuracyBuilder));
 #endif
 
 	LayerTestInterface<float>::globalSetUp(gpuid);

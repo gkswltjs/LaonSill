@@ -294,10 +294,8 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
     Data<Dtype>* data) {
 
 	const uint32_t batches = this->_inputShape[0][0];
-	const Dtype normScale = 1.0/batches;
 	const Dtype momentum = this->networkConfig->_momentum;
 	const Dtype negativeOne = -1.0;
-    const Dtype negativeLearnScale = (-1.0) * learnScale;
 
     if (!Worker<Dtype>::isSingle())
         data->mutable_host_grad();

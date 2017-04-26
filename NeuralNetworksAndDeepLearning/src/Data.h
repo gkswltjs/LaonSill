@@ -184,7 +184,7 @@ public:
 	/**
 	 * @details 데이터의 디바이스 메모리를 0으로 초기화한다.
 	 */
-	void reset_device_data();
+	void reset_device_data(const bool setZero=true, const Dtype value=0.0);
 	/**
 	 * @details 그레디언트의 호스트 메모리를 0으로 초기화한다.
 	 */
