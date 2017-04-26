@@ -17,21 +17,25 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085" name="Debug" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
+				<configuration artifactExtension="" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.VCErrorParser;org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085" name="Debug" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
 					<folderInfo id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085." name="/" resourcePath="">
-						<toolChain id="com.nvidia.cuda.ide.toolchain.eight_zero.1919755204" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
+						<toolChain errorParsers="" id="com.nvidia.cuda.ide.toolchain.eight_zero.1919755204" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
 							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.91398679" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Debug" id="com.nvidia.cuda.ide.builder.1934992930" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
-							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS}  -Wno-deprecated-gpu-targets ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.compiler.base.71694175" name="NVCC Compiler" superClass="nvcc.compiler.base">
+							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Debug" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="com.nvidia.cuda.ide.builder.1934992930" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
+							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS}  -Wno-deprecated-gpu-targets ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.71694175" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.1724077056" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/ssd&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
@@ -45,13 +49,13 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/common&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cost&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dataset&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/evaluation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/layer&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/network&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/test&quot;"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 									<listOptionValue builtIn="false" value="/usr/include/SDL"/>
@@ -74,9 +78,10 @@
 								<inputType id="nvcc.compiler.input.cpp.1999772657" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.1923731997" superClass="nvcc.compiler.input.c"/>
 							</tool>
-							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.linker.base.128410097" name="NVCC Linker" superClass="nvcc.linker.base">
+							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="nvcc.errorParser;org.eclipse.cdt.core.GLDErrorParser" id="nvcc.linker.base.128410097" name="NVCC Linker" superClass="nvcc.linker.base">
 								<option id="nvcc.linker.option.libs.1324387665" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="cudart"/>
+									<listOptionValue builtIn="false" value="lmdb"/>
 									<listOptionValue builtIn="false" value="python2.7"/>
 									<listOptionValue builtIn="false" value="opencv_core"/>
 									<listOptionValue builtIn="false" value="opencv_highgui"/>
@@ -95,6 +100,7 @@
 								</option>
 								<option id="nvcc.linker.option.paths.516465820" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/lib&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="/home/jkim/Dev/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 								</option>
@@ -108,7 +114,7 @@
 								</inputType>
 							</tool>
 							<tool id="nvcc.archiver.base.103192293" name="NVCC Archiver" superClass="nvcc.archiver.base"/>
-							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" id="com.nvidia.host.assembler.1156624740" name="Host Assembler" superClass="com.nvidia.host.assembler">
+							<tool command="as" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GASErrorParser" id="com.nvidia.host.assembler.1156624740" name="Host Assembler" superClass="com.nvidia.host.assembler">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1331215730" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -144,21 +150,25 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251" name="Release" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
+				<configuration artifactExtension="" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.VCErrorParser;org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251" name="Release" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
 					<folderInfo id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251." name="/" resourcePath="">
-						<toolChain id="com.nvidia.cuda.ide.toolchain.eight_zero.1773551253" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
+						<toolChain errorParsers="" id="com.nvidia.cuda.ide.toolchain.eight_zero.1773551253" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
 							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.693219480" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Release" id="com.nvidia.cuda.ide.builder.592021900" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
-							<tool commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets  ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.compiler.base.698493937" name="NVCC Compiler" superClass="nvcc.compiler.base">
+							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Release" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="com.nvidia.cuda.ide.builder.592021900" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
+							<tool commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets  ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.698493937" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.5633418" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/ssd&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
@@ -172,13 +182,13 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/common&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cost&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dataset&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/evaluation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/layer&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/network&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/test&quot;"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 									<listOptionValue builtIn="false" value="/usr/include/SDL"/>
@@ -189,6 +199,7 @@
 								<option id="nvcc.compiler.pic.184961637" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic"/>
 								<option id="nvcc.compiler.def.symbols.829168339" name="Defined symbols (-D)" superClass="nvcc.compiler.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="GPU_MODE"/>
+									<listOptionValue builtIn="false" value="DEBUG_MODE"/>
 								</option>
 								<option id="nvcc.compiler.cpp11option.412480953" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
 								<option id="nvcc.compiler.compileroptions.266105617" name="Preprocessor options (-Xcompiler)" superClass="nvcc.compiler.compileroptions" valueType="stringList">
@@ -199,9 +210,10 @@
 								<inputType id="nvcc.compiler.input.cpp.2072575433" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.1548193653" superClass="nvcc.compiler.input.c"/>
 							</tool>
-							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.linker.base.286585357" name="NVCC Linker" superClass="nvcc.linker.base">
+							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="nvcc.errorParser;org.eclipse.cdt.core.GLDErrorParser" id="nvcc.linker.base.286585357" name="NVCC Linker" superClass="nvcc.linker.base">
 								<option id="nvcc.linker.option.libs.1290622429" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="cudart"/>
+									<listOptionValue builtIn="false" value="lmdb"/>
 									<listOptionValue builtIn="false" value="python2.7"/>
 									<listOptionValue builtIn="false" value="opencv_core"/>
 									<listOptionValue builtIn="false" value="opencv_highgui"/>
@@ -223,6 +235,7 @@
 								</option>
 								<option id="nvcc.linker.option.paths.318128445" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/lib&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="/home/jkim/Dev/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 								</option>
@@ -232,7 +245,7 @@
 								</inputType>
 							</tool>
 							<tool id="nvcc.archiver.base.1717604989" name="NVCC Archiver" superClass="nvcc.archiver.base"/>
-							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" id="com.nvidia.host.assembler.770205656" name="Host Assembler" superClass="com.nvidia.host.assembler">
+							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GASErrorParser" id="com.nvidia.host.assembler.770205656" name="Host Assembler" superClass="com.nvidia.host.assembler">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1690810011" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -268,21 +281,25 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="" artifactName="${ProjName}Client" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.1493502701" name="DebugClient" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
+				<configuration artifactExtension="" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.VCErrorParser;org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.1493502701" name="DebugClient" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
 					<folderInfo id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.1493502701." name="/" resourcePath="">
-						<toolChain id="com.nvidia.cuda.ide.toolchain.eight_zero.1605328567" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
+						<toolChain errorParsers="" id="com.nvidia.cuda.ide.toolchain.eight_zero.1605328567" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
 							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.2077439610" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Debug" id="com.nvidia.cuda.ide.builder.483660598" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
-							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.compiler.base.1612776178" name="NVCC Compiler" superClass="nvcc.compiler.base">
+							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Debug" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="com.nvidia.cuda.ide.builder.483660598" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
+							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.1612776178" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.1273640845" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/ssd&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
@@ -296,13 +313,13 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/common&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cost&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dataset&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/evaluation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/layer&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/network&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/test&quot;"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 									<listOptionValue builtIn="false" value="/usr/include/SDL"/>
@@ -314,7 +331,6 @@
 								<option id="nvcc.compiler.def.symbols.1408674081" name="Defined symbols (-D)" superClass="nvcc.compiler.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="GPU_MODE"/>
 									<listOptionValue builtIn="false" value="DEBUG_MODE"/>
-									<listOptionValue builtIn="false" value="CLIENT_MODE"/>
 								</option>
 								<option id="nvcc.compiler.cpp11option.1157447408" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
 								<option id="nvcc.compiler.compileroptions.77491964" name="Preprocessor options (-Xcompiler)" superClass="nvcc.compiler.compileroptions" valueType="stringList">
@@ -325,9 +341,10 @@
 								<inputType id="nvcc.compiler.input.cpp.2065090143" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.574402601" superClass="nvcc.compiler.input.c"/>
 							</tool>
-							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" id="nvcc.linker.base.141032250" name="NVCC Linker" superClass="nvcc.linker.base">
+							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="nvcc.errorParser;org.eclipse.cdt.core.GLDErrorParser" id="nvcc.linker.base.141032250" name="NVCC Linker" superClass="nvcc.linker.base">
 								<option id="nvcc.linker.option.libs.2070218192" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="cudart"/>
+									<listOptionValue builtIn="false" value="lmdb"/>
 									<listOptionValue builtIn="false" value="python2.7"/>
 									<listOptionValue builtIn="false" value="opencv_core"/>
 									<listOptionValue builtIn="false" value="opencv_highgui"/>
@@ -346,6 +363,7 @@
 								</option>
 								<option id="nvcc.linker.option.paths.21196381" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/lib&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="/home/jkim/Dev/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 								</option>
@@ -358,7 +376,7 @@
 								</inputType>
 							</tool>
 							<tool id="nvcc.archiver.base.1596942550" name="NVCC Archiver" superClass="nvcc.archiver.base"/>
-							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" id="com.nvidia.host.assembler.2062233369" name="Host Assembler" superClass="com.nvidia.host.assembler">
+							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GASErrorParser" id="com.nvidia.host.assembler.2062233369" name="Host Assembler" superClass="com.nvidia.host.assembler">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1753228598" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -394,7 +412,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}Client" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.VCErrorParser;org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278" name="ReleaseClient" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
+				<configuration artifactExtension="" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.VCErrorParser;org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278" name="ReleaseClient" parent="cdt.managedbuild.config.gnu.mingw.exe.debug" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
 					<folderInfo id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278." name="/" resourcePath="">
 						<toolChain errorParsers="" id="com.nvidia.cuda.ide.toolchain.eight_zero.1671286897" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
 							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.1162047805" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
@@ -402,13 +420,17 @@
 							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets  ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.1035527359" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.1815451746" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/ssd&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
@@ -422,31 +444,31 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/common&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cost&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dataset&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/evaluation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/layer&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/network&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/test&quot;"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 									<listOptionValue builtIn="false" value="/usr/include/SDL"/>
 								</option>
 								<option id="nvcc.compiler.deviceDebug.196805054" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug" value="true" valueType="boolean"/>
 								<option id="nvcc.compiler.option.level.836017206" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level" value="true" valueType="boolean"/>
-								<option defaultValue="nvcc.compiler.optimization.level.none" id="nvcc.compiler.optimization.level.903738784" name="Optimization Level" superClass="nvcc.compiler.optimization.level" value="nvcc.compiler.optimization.level.most" valueType="enumerated"/>
+								<option defaultValue="nvcc.compiler.optimization.level.none" id="nvcc.compiler.optimization.level.903738784" name="Optimization Level" superClass="nvcc.compiler.optimization.level" value="nvcc.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="nvcc.compiler.pic.1352713921" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic"/>
 								<option id="nvcc.compiler.def.symbols.1182243571" name="Defined symbols (-D)" superClass="nvcc.compiler.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="GPU_MODE"/>
-									<listOptionValue builtIn="false" value="CLIENT_MODE"/>
+									<listOptionValue builtIn="false" value="DEBUG_MODE"/>
 								</option>
 								<option id="nvcc.compiler.cpp11option.2027449046" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
 								<option id="nvcc.compiler.compileroptions.154194863" name="Preprocessor options (-Xcompiler)" superClass="nvcc.compiler.compileroptions" valueType="stringList">
 									<listOptionValue builtIn="false" value=" -Wno-format-zero-length "/>
 								</option>
 								<option id="nvcc.compiler.option.lineinfo.187623940" name="Generate line-number information for device code (-lineinfo)" superClass="nvcc.compiler.option.lineinfo" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.option.gprof.264185157" name="Generate gprof information (-pg)" superClass="nvcc.compiler.option.gprof" value="true" valueType="boolean"/>
+								<option id="nvcc.compiler.option.gprof.264185157" name="Generate gprof information (-pg)" superClass="nvcc.compiler.option.gprof" value="false" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.2075985056" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.1070225711" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.1078164640" superClass="nvcc.compiler.input.c"/>
@@ -454,6 +476,7 @@
 							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="nvcc.errorParser;org.eclipse.cdt.core.GLDErrorParser" id="nvcc.linker.base.1432334495" name="NVCC Linker" superClass="nvcc.linker.base">
 								<option id="nvcc.linker.option.libs.1455820643" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="cudart"/>
+									<listOptionValue builtIn="false" value="lmdb"/>
 									<listOptionValue builtIn="false" value="python2.7"/>
 									<listOptionValue builtIn="false" value="opencv_core"/>
 									<listOptionValue builtIn="false" value="opencv_highgui"/>
@@ -475,6 +498,9 @@
 								</option>
 								<option id="nvcc.linker.option.paths.1994696423" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/lib&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
+									<listOptionValue builtIn="false" value="/home/jkim/Dev/lib"/>
+									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 								</option>
 								<inputType id="nvcc.linker.input.1640154942" superClass="nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

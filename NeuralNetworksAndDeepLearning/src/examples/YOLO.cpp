@@ -30,10 +30,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
             ->name("ILSVRCInputLayer")
             ->imageDir(std::string(SPARAM(BASE_DATA_DIR))
                 + std::string("/ilsvrc12_train/"))
-            ->source(std::string(SPARAM(BASE_DATA_DIR))
-                + std::string("/ilsvrc12_train/"))
             ->resizeImage(224, 224)
-            ->sourceType("ImagePack")       // dummy
             ->outputs({"data", "label"}))
 
         // 1st group
@@ -597,10 +594,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
                 ->name("VOCPascalInputLayer")
                 ->imageDir(std::string(SPARAM(BASE_DATA_DIR))
                     + std::string("/VOCdevkit/VOCdevkit/"))
-                ->source(std::string(SPARAM(BASE_DATA_DIR))
-                    + std::string("/VOCdevkit/VOCdevkit/"))
                 ->resizeImage(448, 448)
-                ->sourceType("ImagePack")
                 ->outputs({"data", "label"}))
 
         // 1st group
@@ -1330,6 +1324,7 @@ void YOLO<Dtype>::runPretrain() {
 
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
 	LayersConfig<Dtype>* layersConfig = createYoloPreLayersConfig();
+	//LayersConfig<Dtype>* layersConfig = createVGG19NetArtisticLayersConfig<Dtype>();
  	network->setLayersConfig(layersConfig);
 
 	// (2) network config 정보를 layer들에게 전달한다.

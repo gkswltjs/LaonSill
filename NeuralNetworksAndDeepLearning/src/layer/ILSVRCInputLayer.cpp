@@ -57,6 +57,10 @@ ILSVRCInputLayer<Dtype>::~ILSVRCInputLayer() {
     if (this->images != NULL) {
         free(this->images); 
     }
+
+    if (this->labels != NULL) {
+        free(this->labels);
+    }
 }
 
 template <typename Dtype>
@@ -283,6 +287,7 @@ void ILSVRCInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::initialize(string imageDir, bool resizeImage,
     int resizedImageRow, int resizedImageCol) {
+
     this->type = Layer<Dtype>::ILSVRCInput;
     this->imageDir = imageDir;
     this->resizeImage = resizeImage;

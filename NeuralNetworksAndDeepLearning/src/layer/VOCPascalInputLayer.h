@@ -34,10 +34,6 @@ class VOCPascalInputLayer : public InputLayer<Dtype> {
 public: 
 	class Builder : public InputLayer<Dtype>::Builder {
 	public:
-		std::vector<uint32_t> _shape;
-		std::string _source;
-		std::string _sourceType;
-
         std::string _imageDir;
         int         _resizeImage;
         int         _resizedImageRow;
@@ -50,32 +46,20 @@ public:
             this->_resizedImageRow = 0;
             this->_resizedImageCol = 0;
 		}
-		virtual Builder* shape(const std::vector<uint32_t>& shape) {
-			this->_shape = shape;
-			return this;
-		}
-		virtual Builder* source(const std::string& source) {
-			this->_source = source;
-			return this;
-		}
-		virtual Builder* sourceType(const std::string& sourceType) {
-			this->_sourceType = sourceType;
-			return this;
-		}
 		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
+			InputLayer<Dtype>::Builder::name(name);
 			return this;
 		}
 		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
+			InputLayer<Dtype>::Builder::id(id);
 			return this;
 		}
 		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
+			InputLayer<Dtype>::Builder::inputs(inputs);
 			return this;
 		}
 		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
+			InputLayer<Dtype>::Builder::outputs(outputs);
 			return this;
 		}
         Builder* imageDir(std::string imageDir) {
@@ -86,6 +70,7 @@ public:
             this->_resizeImage = true;
             this->_resizedImageRow = row;
             this->_resizedImageCol = col;
+            return this;
         }
 		Layer<Dtype>* build() {
 			return new VOCPascalInputLayer(this);
