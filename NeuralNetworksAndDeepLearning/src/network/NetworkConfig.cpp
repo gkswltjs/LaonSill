@@ -559,6 +559,7 @@ NetworkConfig<Dtype>* NetworkConfig<Dtype>::Builder::build() {
 			->epsilon(_epsilon)
 			->decayRate(_decayRate)
 			->baseLearningRate(_baseLearningRate)
+            ->power(_power)
 			->momentum(_momentum)
 			->weightDecay(_weightDecay)
 			->networkPhase(_phase)
@@ -681,6 +682,7 @@ float NetworkConfig<Dtype>::getLearningRate() {
 		exit(1);
 	}
 	}
+
 	return rate;
 }
 

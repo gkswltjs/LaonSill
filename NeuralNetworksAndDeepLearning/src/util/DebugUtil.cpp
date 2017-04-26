@@ -14,7 +14,7 @@
 
 using namespace std;
 
-#define PRINT_EDGE_DATACOUNT  3
+#define PRINT_EDGE_DATACOUNT 3
 
 template<typename Dtype>
 void DebugUtil<Dtype>::printIndent(FILE *fp, int indent) {
@@ -71,11 +71,11 @@ void DebugUtil<Dtype>::printEdges(FILE *fp, const char* title, Data<Dtype>* data
         printIndent(fp, indent);
         fprintf(fp, "- %s(grad) : ", title);
         for (int i = 0; i < min(PRINT_EDGE_DATACOUNT, dataCount); i++) {
-            printData(fp, hostData[i]);
+            printData(fp, hostGrad[i]);
         }
         fprintf(fp, " ~ ");
         for (int i = max(0, dataCount - PRINT_EDGE_DATACOUNT); i < dataCount; i++) {
-            printData(fp, hostData[i]);
+            printData(fp, hostGrad[i]);
         }
         fprintf(fp, "\n");
     }

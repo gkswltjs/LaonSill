@@ -34,7 +34,7 @@ public:
     static void printLayerEdges(FILE *fp, const char* title, Layer<Dtype>* layer, int indent);
     static void printLayerEdgesByLayerIndex(FILE *fp, const char* title,
         LayersConfig<Dtype>* lc, int layerIndex, int indent);
-    void printLayerEdgesByLayerName(FILE *fp, const char* title,
+    static void printLayerEdgesByLayerName(FILE *fp, const char* title,
         LayersConfig<Dtype>* lc, std::string layerName, int indent);
     static void printNetworkEdges(FILE *fp, const char* title, LayersConfig<Dtype>* lc,
         int indent);

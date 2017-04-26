@@ -533,6 +533,7 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
          * x += v
          *
          */
+
     	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
 		soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
 			d_paramHistoryData);

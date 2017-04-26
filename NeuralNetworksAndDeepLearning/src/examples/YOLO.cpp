@@ -158,7 +158,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
                 ->biasUpdateParam(2, 0)
                 ->weightFiller(ParamFillerType::Xavier, 0.1)
                 ->biasFiller(ParamFillerType::Constant, bias_const)
-                ->inputs({"conv3_2"})
+                ->inputs({"bn3_2"})
                 ->outputs({"conv3_3"}))
 
         ->layer((new typename BatchNormLayer<Dtype>::Builder())
@@ -1277,7 +1277,7 @@ void YOLO<Dtype>::runPretrain() {
 	const uint32_t batchSize = 16;
 	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.1f;  // 0.1
+	const float baseLearningRate = 0.001f;  // 0.1
     const float lrPower = 4.0;
 
 	const uint32_t stepSize = 100000;
@@ -1285,9 +1285,10 @@ void YOLO<Dtype>::runPretrain() {
 	const float momentum = 0.9f;
 	const float clipGradientsLevel = 0.0f;
 	const LRPolicy lrPolicy = LRPolicy::Poly;
+	//const LRPolicy lrPolicy = LRPolicy::Fixed;
 
-    //const Optimizer opt = Optimizer::Adam;
-    const Optimizer opt = Optimizer::Momentum;
+    const Optimizer opt = Optimizer::Adam;
+    //const Optimizer opt = Optimizer::Momentum;
 
 	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
 	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
@@ -1315,6 +1316,7 @@ void YOLO<Dtype>::runPretrain() {
 				new NetworkMonitor("loss", NetworkMonitor::PLOT_ONLY),
 				})
 			->lossLayers(lossList)
+            ->epochs(12500)
             ->optimizer(opt)
 			->build();
 
@@ -1331,9 +1333,16 @@ void YOLO<Dtype>::runPretrain() {
 	for (uint32_t i = 0; i < layersConfig->_layers.size(); i++)
 		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 
-    network->sgd(20);
-    networkConfig->save();
-    DebugUtil<Dtype>::printNetworkEdges(stderr, "save network", layersConfig, 0);
+    InputLayer<Dtype>* inputLayer = layersConfig->_inputLayer;
+    inputLayer->reshape();
+    const uint32_t trainDataSize = inputLayer->getNumTrainData();
+    const uint32_t numBatches = trainDataSize / networkConfig->_batchSize - 1;
+
+    for (int i = 0; i < 12499; i++) {
+        network->sgdMiniBatch(i);
+        DebugUtil<Dtype>::printNetworkEdges(stdout, "load network", layersConfig, 0);
+    }
+    //networkConfig->save();
 }
 
 template<typename Dtype>
@@ -1404,7 +1413,7 @@ void YOLO<Dtype>::run() {
  	network->setLayersConfig(layersConfig);
     //network->loadPretrainedWeights();
 
-    network->sgd(1);
+    network->sgd(12499);
     //DebugUtil<Dtype>::printNetworkEdges(stderr, "load network", layersConfig, 0);
 }
 
