@@ -3605,6 +3605,7 @@ LayersConfig<Dtype>* createVGG16NetLayersConfig() {
 	const float bias_const = 0.2f;
 
 	LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
+			/*
 			->layer((new typename InputLayer<Dtype>::Builder())
 					->id(0)
 					->name("data")
@@ -3612,6 +3613,13 @@ LayersConfig<Dtype>* createVGG16NetLayersConfig() {
 					->sourceType("LMDB")
 					->mean({104.0f, 117.0f, 123.0f})
 					->outputs({"data", "label"}))
+					*/
+
+			->layer((new typename DummyInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("data")
+					->outputs({"data", "label"}))
+
 
 			// tier 1
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -3931,6 +3939,7 @@ LayersConfig<Dtype>* createVGG16NetLayersConfig() {
 					->inputs({"fc8", "label"})
 					->outputs({"loss"}))
 
+					/*
 			->layer((new typename AccuracyLayer<Dtype>::Builder())
 					->id(380)
 					->name("accuracy/top1")
@@ -3946,6 +3955,7 @@ LayersConfig<Dtype>* createVGG16NetLayersConfig() {
 					->axis(2)
 					->inputs({"fc8", "label"})
 					->outputs({"accuracy@5"}))
+					*/
 
 			->build();
 

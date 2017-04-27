@@ -304,8 +304,9 @@ void ConvLayer<Dtype>::reshape() {
 	const int b_in = batches * channels * rows * cols;
 	const int b_out = n * c * h * w;
 
-	const size_t memoryLimitInBytes = 8 << 20;
-	//const size_t memoryLimitInBytes = 0;
+	const size_t memoryLimitInBytes = 16 << 20;
+	//const size_t memoryLimitInBytes = 32 << 20;
+
 
 	size_t convFwdWorkspaceSize;
 	size_t convBwdFilterWorkspaceSize;
@@ -340,7 +341,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->convDesc,
 			this->inputTensorDesc,
 			CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
-			8<<20,
+			memoryLimitInBytes,
 			&convFwdAlgo));
 
 		checkCUDNN(cudnnGetConvolutionForwardWorkspaceSize(
@@ -382,7 +383,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->convDesc,
 			this->filterDesc,
 			CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
-			8<<20,
+			memoryLimitInBytes,
 			&this->convBwdFilterAlgo));
 
 	    checkCUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(
@@ -424,7 +425,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->convDesc,
 			this->outputTensorDesc,
 			CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
-			8<<20,
+			memoryLimitInBytes,
 			&convBwdDataAlgo));
 
 	    checkCUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(
@@ -514,30 +515,12 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
          * x += v
          *
          */
-    	/*
-    	if (this->name == "conv2") {
-    		this->_printOn();
-    	}
-    	data->print_data({}, false);
-    	data->print_grad({}, false);
-    	*/
     	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
-    	//data->print_grad({}, false);
-    	//dataHistory->print_data({}, false);
 		soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
 			d_paramHistoryData);
-		//dataHistory->print_data({}, false);
 		soooa_copy(static_cast<int>(paramSize), d_paramHistoryData, d_paramGrad);
-		//data->print_grad({}, false);
 		// update
 		soooa_gpu_axpy(static_cast<int>(paramSize), negativeOne, d_paramGrad, d_paramData);
-		/*
-		data->print_data({}, false);
-		if (this->name == "conv2") {
-			this->_printOff();
-			exit(1);
-		}
-		*/
     } else if (opt == Optimizer::Vanilla) {
         /****
          * Vanilla Alogorithm

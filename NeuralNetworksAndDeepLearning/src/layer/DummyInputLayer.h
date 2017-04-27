@@ -53,6 +53,8 @@ public:
     void shuffleTrainDataSet();
 
 	virtual void feedforward();
+	using Layer<Dtype>::feedforward;
+	virtual void feedforward(const uint32_t baseIndex, const char* end=0);
 	virtual void reshape();
 
 private:

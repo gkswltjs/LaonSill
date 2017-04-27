@@ -7,6 +7,7 @@
 
 #include "PriorBoxLayer.h"
 #include "SysLog.h"
+#include "MathFunctions.h"
 
 using namespace std;
 
@@ -25,17 +26,138 @@ PriorBoxLayer<Dtype>::~PriorBoxLayer() {
 
 template <typename Dtype>
 void PriorBoxLayer<Dtype>::reshape() {
+	bool adjusted = Layer<Dtype>::_adjustInputShape();
 
+	if (!adjusted)
+		return;
+
+	const int layerWidth = this->_inputData[0]->width();
+	const int layerHeight = this->_inputData[0]->height();
+	vector<uint32_t> outputShape(4, 1);
+	// since all images in a batch has same height and width, we only need to
+	// generate one set of priors which can be shared across all images.
+	outputShape[0] = 1;
+	outputShape[1] = 1;
+	// 2 channels. first channel stores the mean of each prior coordinate.
+	// second channel stores the variance of each prior coordinate.
+	outputShape[2] = 2;
+	outputShape[3] = layerWidth * layerHeight * this->numPriors * 4;
+	SASSERT0(outputShape[3] > 0);
+
+	this->_outputData[0]->reshape(outputShape);
 }
 
 template <typename Dtype>
 void PriorBoxLayer<Dtype>::feedforward() {
 	reshape();
+
+	const int layerHeight = this->_inputData[0]->height();
+	const int layerWidth = this->_inputData[0]->width();
+	int imgHeight;
+	int imgWidth;
+	if (this->imgH == 0 || this->imgW == 0) {
+		imgHeight = this->_inputData[1]->height();
+		imgWidth = this->_inputData[1]->width();
+	} else {
+		imgHeight = this->imgH;
+		imgWidth = this->imgW;
+	}
+
+	Dtype stepH;
+	Dtype stepW;
+	if (this->stepH == 0 || this->stepW == 0) {
+		stepH = Dtype(imgHeight) / layerHeight;
+		stepW = Dtype(imgWidth) / layerWidth;
+	} else {
+		stepH = this->stepH;
+		stepW = this->stepW;
+	}
+
+	Dtype* outputData = this->_outputData[0]->mutable_device_data();
+	int dim = layerHeight * layerWidth * this->numPriors * 4;
+	int idx = 0;
+	for (int h = 0; h < layerHeight; h++) {
+		for (int w = 0; w < layerWidth; w++) {
+			Dtype centerX = (w + this->offset) * stepW;
+			Dtype centerY = (h + this->offset) * stepH;
+			Dtype boxWidth;
+			Dtype boxHeight;
+			for (int s = 0; s < this->minSizes.size(); s++) {
+				int minSize = this->minSizes[s];
+				// first prior: aspectRatio = 1, size = minSize
+				boxWidth = boxHeight = minSize;
+				// xmin
+				outputData[idx++] = (centerX - boxWidth / Dtype(2)) / imgWidth;
+				// ymin
+				outputData[idx++] = (centerY - boxHeight / Dtype(2)) / imgHeight;
+				// xmax
+				outputData[idx++] = (centerX + boxWidth / Dtype(2)) / imgWidth;
+				// ymax
+				outputData[idx++] = (centerY + boxHeight / Dtype(2)) / imgHeight;
+
+				if (this->maxSizes.size() > 0) {
+					SASSERT0(this->minSizes.size() == this->maxSizes.size());
+					int maxSize = this->maxSizes[s];
+					// second prior: aspectRatio = 1, size = sqrt(minSize * maxSize)
+					boxWidth = boxHeight = sqrt(minSize * maxSize);
+					// xmin
+					outputData[idx++] = (centerX - boxWidth / Dtype(2)) / imgWidth;
+					// ymin
+					outputData[idx++] = (centerY - boxHeight / Dtype(2)) / imgHeight;
+					// xmax
+					outputData[idx++] = (centerX + boxWidth / Dtype(2)) / imgWidth;
+					// ymax
+					outputData[idx++] = (centerY + boxHeight / Dtype(2)) / imgHeight;
+				}
+
+				// rest of priors
+				for (int r = 0; r < this->aspectRatios.size(); r++) {
+					Dtype ar = this->aspectRatios[r];
+					if (fabs(ar - Dtype(1)) < 1e-6) {
+						continue;
+					}
+					boxWidth = minSize * sqrt(ar);
+					boxHeight = minSize / sqrt(ar);
+					// xmin
+					outputData[idx++] = (centerX - boxWidth / Dtype(2)) / imgWidth;
+					// ymin
+					outputData[idx++] = (centerY - boxHeight / Dtype(2)) / imgHeight;
+					// xmax
+					outputData[idx++] = (centerX + boxWidth / Dtype(2)) / imgWidth;
+					// ymax
+					outputData[idx++] = (centerY + boxHeight / Dtype(2)) / imgHeight;
+				}
+			}
+		}
+	}
+	// clip the prior's coordinate such that it is within [0, 1]
+	if (this->clip) {
+		for (int d = 0; d < dim; d++) {
+			outputData[d] = std::min<Dtype>(std::max<Dtype>(outputData[d], Dtype(0)), Dtype(1));
+		}
+	}
+	// set the variance.
+	outputData += this->_outputData[0]->offset(0, 0, 1, 0);
+	if (this->variances.size() == 1) {
+		soooa_set<Dtype>(dim, Dtype(this->variances[0]), outputData);
+	} else {
+		int count = 0;
+		for (int h = 0; h < layerHeight; h++) {
+			for (int w = 0; w < layerWidth; w++) {
+				for (int i = 0; i < this->numPriors; i++) {
+					for (int j = 0; j < 4; j++) {
+						outputData[count] = this->variances[j];
+						count++;
+					}
+				}
+			}
+		}
+	}
 }
 
 template <typename Dtype>
 void PriorBoxLayer<Dtype>::backpropagation() {
-
+	return;
 }
 
 template <typename Dtype>

@@ -15,6 +15,7 @@
 #include "common.h"
 #include "Util.h"
 #include "SyncMem.h"
+#include "SysLog.h"
 
 /**
  * @brief Layer 특정 단계에서의 data, gradient를 pair로 warpping, util method를 제공하는
@@ -319,6 +320,21 @@ public:
 	inline uint32_t width() const { return _shape[3]; }
 
 	inline uint32_t numAxes() const { return _shape.size(); }
+
+	inline int offset(const int n, const int c = 0, const int h = 0, const int w = 0) const {
+		SASSERT0(n >= 0);
+		SASSERT0(n <= batches());
+		SASSERT0(c >= 0);
+		SASSERT0(c <= channels());
+		SASSERT0(h >= 0);
+		SASSERT0(h <= height());
+		SASSERT0(w >= 0);
+		SASSERT0(w <= width());
+		return ((n * channels() + c) * height() + h) * width() + w;
+	}
+
+
+
 
 	bool is_nan_data() { return _data->is_nan_mem(); }
 	bool is_nan_grad() { return _grad->is_nan_mem(); }

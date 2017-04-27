@@ -323,28 +323,12 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
          *
          */
 
-    	const string targetLayer = "";
-    	if (this->name == targetLayer) {
-    		this->_printOn();
-    	}
-    	data->print_data({}, false);
-    	data->print_grad({}, false);
-
     	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
-    	data->print_grad({}, false);
-    	dataHistory->print_data({}, false);
 		soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
 				d_paramHistoryData);
-		dataHistory->print_data({}, false);
 		soooa_copy(static_cast<int>(paramSize), d_paramHistoryData, d_paramGrad);
-		data->print_grad({}, false);
 		// update
 		soooa_gpu_axpy(static_cast<int>(paramSize), negativeOne, d_paramGrad, d_paramData);
-		data->print_data({}, false);
-		if (this->name == targetLayer) {
-			this->_printOff();
-			exit(1);
-		}
     } else if (opt == Optimizer::Vanilla) {
         /****
          * Vanilla Alogorithm
@@ -556,8 +540,6 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 	//Dtype* d_preActivationData = _preActivation->mutable_device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
-	this->_params[Bias]->print_data();
-
 	if (this->batches == 1) {
 		soooa_gpu_axpy(this->out_rows, 1.0f,  d_biasData, d_outputData);
 	} else {
@@ -576,8 +558,6 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 			&Cuda::alpha,
 			d_outputData, this->out_rows));
 			*/
-
-	this->_params[Bias]->print_data();
 }
 
 /*
@@ -689,7 +669,6 @@ void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
 		const uint32_t batchSize = this->_inputData[0]->getCount();
 
-		this->_outputData[0]->print_grad("outputGrad:");
 		const Dtype* d_mask_mem = _mask.device_mem();
 		Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
 
@@ -698,7 +677,6 @@ void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 		CUDA_POST_KERNEL_CHECK;
 
 		//_mask.print("mask:");
-		this->_outputData[0]->print_grad("outputGrad:");
 	}
 }
 
@@ -773,9 +751,6 @@ void FullyConnectedLayer<Dtype>::_computeBiasGrad() {
 			&Cuda::alpha, d_outputGrad, this->out_rows, this->d_onevec, 1,
 			&Cuda::beta, d_biasGrad, 1));
 			*/
-	this->_params[Bias]->print_grad("biasGrad:");
-	this->_params[Weight]->print_data("weightData:");
-	//_preActivation->print_grad("preActivationGrad");
 }
 
 template <typename Dtype>
@@ -801,7 +776,6 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 			&Cuda::alpha, d_weightData, this->out_rows, d_outputGrad, this->out_rows,
 			&Cuda::beta, d_inputGrad, this->in_rows));
 			*/
-	this->_inputData[0]->print_grad("inputGrad:");
 
 	/*
 	if(this->_input->is_nan_grad()) {

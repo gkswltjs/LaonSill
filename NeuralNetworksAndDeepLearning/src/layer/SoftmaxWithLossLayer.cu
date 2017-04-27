@@ -107,17 +107,7 @@ template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	reshape();
 
-
-	//Data<Dtype>::printConfig = true;
-	//SyncMem<Dtype>::printConfig = true;
-
-	this->_inputData[0]->print_data({}, false);
-	this->_inputData[1]->print_data({}, false);
-
 	this->softmaxLayer->feedforward();
-
-	this->softmaxLayer->_outputData[0]->print_data({}, false);
-
 
 
 	const Dtype* probData = this->prob->device_data();
@@ -160,9 +150,6 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	}
 	*/
 
-
-	this->_inputData[0]->print_grad({}, false);
-
 	Dtype loss;
 	soooa_gpu_asum(nthreads, lossData, &loss);
 	Dtype validCount = -1;
@@ -192,11 +179,6 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	//Data<Dtype>::printConfig = false;
 	//exit(1);
 
-
-	this->_outputData[0]->print_data({}, false);
-
-	Data<Dtype>::printConfig = false;
-	SyncMem<Dtype>::printConfig = false;
 }
 
 

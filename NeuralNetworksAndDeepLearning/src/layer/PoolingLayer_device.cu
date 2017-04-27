@@ -118,28 +118,19 @@ void PoolingLayer<Dtype>::feedforward() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
-	this->_inputData[0]->print_data();
-
 	this->pooling_fn->forward(this->inputTensorDesc, d_inputData,
 			this->outputTensorDesc, d_outputData);
-
-	this->_outputData[0]->print_data();
 }
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::backpropagation() {
 	if (this->_propDown[0]) {
-		this->_outputData[0]->print_data();
-		this->_inputData[0]->print_data();
-
 		const Dtype* d_outputData = this->_outputData[0]->device_data();
 		const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 		const Dtype* d_inputData = this->_inputData[0]->device_data();
 		Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 		this->pooling_fn->backward(this->outputTensorDesc, d_outputData, d_outputGrad,
 				this->inputTensorDesc, d_inputData, d_inputGrad);
-
-		this->_inputData[0]->print_grad();
 	}
 }
 

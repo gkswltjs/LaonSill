@@ -149,7 +149,7 @@ Dtype Network<Dtype>::sgdMiniBatch(uint32_t batchTotalIndex) {
 
             for (uint32_t i = 0; i < config->_lossLayers.size(); i++) {
                 float cost = costList[i]/config->_testInterval;
-                networkListeners[i]->onCostComputed(0, config->_lossLayers[i], cost);
+                //networkListeners[i]->onCostComputed(0, config->_lossLayers[i], cost);
                 costList[i] = 0.0;
                 //cout << config->_lossLayers[i] << " cost:" << cost << ",";
                 lossSum += cost;
@@ -184,6 +184,7 @@ Dtype Network<Dtype>::sgd(int epochs) {
 
     float lossSum = 0.0;
 	//iterations = 0;
+
 	for (uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		config->_status = NetworkStatus::Train;
 
@@ -257,7 +258,7 @@ Dtype Network<Dtype>::sgd(int epochs) {
 
 					for (uint32_t i = 0; i < this->config->_lossLayers.size(); i++) {
 						float cost = costList[i] / this->config->_testInterval;
-						networkListeners[i]->onCostComputed(i, this->config->_lossLayers[i], cost);
+						//networkListeners[i]->onCostComputed(i, this->config->_lossLayers[i], cost);
 						costList[i] = 0.0;
 						//STDOUT_BLOCK(cout << config->_lossLayers[i] << " cost:" << cost << "," << endl;);
 						//cout << cost << ", ";
@@ -278,6 +279,12 @@ Dtype Network<Dtype>::sgd(int epochs) {
                 }
 
                 Worker<Dtype>::wakeupPeer();
+
+
+
+                if (this->config->_iterations >= 100) {
+                	exit(1);
+                }
             }
 		}
 
@@ -584,17 +591,20 @@ void Network<Dtype>::syncNetwork(Network<Dtype>* target) {
 template <typename Dtype>
 void Network<Dtype>::clipGradients() {
 	const float clipGradientsLevel = config->_clipGradientsLevel;
-	const double sumsqParamsGrad = computeSumSquareParamsGrad();
-	const double sumsqParamsData = computeSumSquareParamsData();
 
-	const double l2normParamsGrad = sqrt(sumsqParamsGrad);
-	const double l2normParamsData = sqrt(sumsqParamsData);
 
 	if (clipGradientsLevel < 0.0001) {
 		//cout << "Gradient clipping: no scaling down gradients (L2 norm " << 
         //  l2normParamsGrad << ", Weight: " << l2normParamsData << " <= " << 
         //  clipGradientsLevel << ")" << endl;
 	} else {
+		const double sumsqParamsGrad = computeSumSquareParamsGrad();
+		const double sumsqParamsData = computeSumSquareParamsData();
+
+		const double l2normParamsGrad = sqrt(sumsqParamsGrad);
+		const double l2normParamsData = sqrt(sumsqParamsData);
+
+
 		if (l2normParamsGrad > clipGradientsLevel) {
 			const float scale_factor = clipGradientsLevel / (l2normParamsGrad*1);
 

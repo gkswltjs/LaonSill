@@ -24,6 +24,11 @@ void DummyInputLayer<Dtype>::feedforward() {
 }
 
 template <typename Dtype>
+void DummyInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
+	reshape();
+}
+
+template <typename Dtype>
 void DummyInputLayer<Dtype>::reshape() {
 	if (this->_inputData.size() < 1) {
 		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
@@ -31,8 +36,11 @@ void DummyInputLayer<Dtype>::reshape() {
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
-	Layer<Dtype>::_adjustInputShape();
+	bool adjusted = Layer<Dtype>::_adjustInputShape();
+	if (!adjusted)
+		return;
 
+	/*
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
 		if (!Layer<Dtype>::_isInputShapeChanged(i))
@@ -40,6 +48,12 @@ void DummyInputLayer<Dtype>::reshape() {
 
 		this->_inputShape[i] = this->_inputData[i]->getShape();
 	}
+	*/
+	this->_inputData[0]->reshape({16, 3, 224, 224});
+	this->_inputData[1]->reshape({16, 1, 1, 1});
+
+	this->_inputShape[0] = this->_inputData[0]->getShape();
+	this->_inputShape[1] = this->_inputData[1]->getShape();
 
 }
 
@@ -50,7 +64,7 @@ void DummyInputLayer<Dtype>::initialize() {
 
 template<typename Dtype>
 int DummyInputLayer<Dtype>::getNumTrainData() {
-    return 1;
+    return 100000;
 }
 
 template<typename Dtype>

@@ -75,12 +75,13 @@ void artisticStyle() {
 }
 
 
-#define LOAD_WEIGHT 1
+#define LOAD_WEIGHT 0
 
 void vgg16() {
 	const int maxEpochs = 1000;
 	const vector<string> lossLayers = {"loss"};
-	const vector<string> accuracyLayers = {"accuracy/top1", "accuracy/top5"};
+	//const vector<string> accuracyLayers = {"accuracy/top1", "accuracy/top5"};
+	const vector<string> accuracyLayers = {};
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
 #if LOAD_WEIGHT
@@ -380,8 +381,8 @@ int main(int argc, char** argv) {
     char*   testItemName;
 
     // (2) 서버 시작 시간 측정을 시작한다.
-    struct timespec startTime;
-    SPERF_START(SERVER_RUNNING_TIME, &startTime);
+    //struct timespec startTime;
+    //SPERF_START(SERVER_RUNNING_TIME, &startTime);
 	STDOUT_BLOCK(cout << "SOOOA engine starts" << endl;);
 
     // (3) 파라미터, 로깅, job 모듈을 초기화 한다.
@@ -418,8 +419,8 @@ int main(int argc, char** argv) {
     Broker::destroy();
 
     // (7) 서버 종료 시간을 측정하고, 계산하여 서버 실행 시간을 출력한다.
-    SPERF_END(SERVER_RUNNING_TIME, startTime);
-    STDOUT_LOG("server running time : %lf\n", SPERF_TIME(SERVER_RUNNING_TIME));
+    //SPERF_END(SERVER_RUNNING_TIME, startTime);
+    //STDOUT_LOG("server running time : %lf\n", SPERF_TIME(SERVER_RUNNING_TIME));
 	STDOUT_BLOCK(cout << "SOOOA engine ends" << endl;);
 
     InitParam::destroy();
