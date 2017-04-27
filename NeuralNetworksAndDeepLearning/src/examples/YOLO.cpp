@@ -1275,9 +1275,9 @@ void YOLO<Dtype>::runPretrain() {
 
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 	const uint32_t batchSize = 16;
-	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.001f;  // 0.1
+	const uint32_t testInterval = 100;		// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 10000;		// 10000 / batchSize
+	const float baseLearningRate = 0.1f;  // 0.1
     const float lrPower = 4.0;
 
 	const uint32_t stepSize = 100000;
@@ -1316,7 +1316,7 @@ void YOLO<Dtype>::runPretrain() {
 				new NetworkMonitor("loss", NetworkMonitor::PLOT_ONLY),
 				})
 			->lossLayers(lossList)
-            ->epochs(12500)
+            ->epochs(1600000)
             ->optimizer(opt)
 			->build();
 
@@ -1338,10 +1338,7 @@ void YOLO<Dtype>::runPretrain() {
     const uint32_t trainDataSize = inputLayer->getNumTrainData();
     const uint32_t numBatches = trainDataSize / networkConfig->_batchSize - 1;
 
-    for (int i = 0; i < 12499; i++) {
-        network->sgdMiniBatch(i);
-        DebugUtil<Dtype>::printNetworkEdges(stdout, "load network", layersConfig, 0);
-    }
+    network->sgd(1000);
     //networkConfig->save();
 }
 
