@@ -1,0 +1,53 @@
+{
+
+"Base" :
+{
+    "DESC" : "base layer",
+    "PARENT" : "",
+    "LEVEL" : 0,
+    "VARS" :
+        [
+            ["id", "uint32_t", "0"],
+            ["name", "char[1024]", "\"\""],
+            ["inputCount", "int", "0"],
+            ["input0", "char[1024]", "\"\""],
+            ["input1", "char[1024]", "\"\""],
+            ["outputCount", "int", "0"],
+            ["output0", "char[1024]", "\"\""],
+            ["output1", "char[1024]", "\"\""],
+            ["propDownCount", "int", "0"],
+            ["propDown0", "bool", "false"],
+            ["propDown1", "bool", "false"],
+            ["donate", "bool", "false"],
+            ["receive", "bool", "false"],
+            ["donatorID", "int", "0"]
+        ]
+},
+
+"Conv" : 
+{
+    "DESC" : "convolution layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "VARS" : 
+        [   
+            ["filterDimRows", "uint32_t", "0"],
+            ["filterDimCols", "uint32_t", "0"],
+            ["filterDimChannels", "uint32_t", "0"],
+            ["filterDimFilters", "uint32_t", "0"],
+            ["filterDimPads", "uint32_t", "0"],
+            ["filterDimStrides", "uint32_t", "1"],
+            ["weightUpdateParamLRMulti", "float", "1.0"],
+            ["weightUpdateParamDecayMulti", "float", "0.0"],
+            ["biasUpdateParamLRMulti", "float", "1.0"],
+            ["biasUpdateParamDecayMulti", "float", "0.0"],
+            ["weightFillerType", "int", "ParamFillerType::Constant"],
+            ["weightFillerValue", "float", "0.0"],
+            ["biasFillerType", "int", "ParamFillerType::Constant"],
+            ["biasFillerValue", "float", "0.0"],
+            ["deconv", "bool", "false"],
+            ["deconvExtraCell", "int", "0"]
+        ]
+}
+
+}
