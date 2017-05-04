@@ -1,0 +1,53 @@
+본 문서는 Prop 모듈의 간략한 소개 및 사용방법을 기술한다.
+
+* Prop 모듈이란?
+  layer property를 정의하는 모듈이다. 예를 들어서 Convolution Layer의 경우에 stride, pad, 
+ kernel size 등의 값을 정의할 수 있어야 한다. 그러한 값들을 관리해주는 모듈을 뜻한다.
+
+* Prop 등록 방법
+ propDef.json 파일에 등록할 Prop 이름과 그것의 4가지 속성을 json format에 맞게 기입한다.
+
+ [propDef.json]
+    :
+"Conv" : 
+{
+    "DESC" : "convolution layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "VARS" : 
+        [   
+            ["filterDimRows", "uint32_t", "0"],
+            ["filterDimCols", "uint32_t", "0"],
+            ["filterDimChannels", "uint32_t", "0"],
+            ["filterDimFilters", "uint32_t", "0"],
+                     :
+        ]
+},
+                     :
+
+
+* 각각의 속성에 대한 설명
+총 4개의 속성이 정의 된다. 설명은 아래와 같다:
+(1) DESC : 해당 prop에 대한 설명이다. 영어로 작성한다.
+(2) PARENT : 상속받고자 하는 prop을 기입한다. 상속을 받을 것이 없는 경우에는 빈문자열을 기입
+            한다.
+(3) LEVEL : 상속의 관계를 tree로 나타냈을때의 depth를 나타낸다. 가장 상위의 Base prop은 0 
+           이라는 level값을 가진다. Base prop을 상속하는 Conv prop은 1이라는 level 값을
+           가진다. 만약 Conv prop을 상속하는 ABC라는 prop이 있다면 ABC prop은 2 level 값을 
+           가진다.
+(4) VARS : prop에서 정의하는 여러가지 속성값들을 의미한다. VARS는 여러개의 VAR로 정의된다.
+           각각의 VAR은 (VAR의 이름, VAR의 타입, VAR의 초기값) 3가지 튜플로 정의된다.
+           만약 초기값을 특정 헤더파일에 정의되어 있는 타입으로 정의하고 싶다면 해당
+           헤더파일을 genProp.py의 headerFileList에 추가한다.
+ [genProp.py]
+        :
+####################################### Modify here ##########################################
+# if you want to use specific custom type, you should insert header file that the custom type 
+# is defined into headerFileList.
+headerFileList = ["LayerConfig.h"]
+##############################################################################################
+        :
+
+* prop 리스트 생성방법
+ genProp.py를 실행한다.
+            

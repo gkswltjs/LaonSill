@@ -45,6 +45,15 @@ if [ "$?" -ne 0 ]; then
 fi
 cd ../..
 
+echo "[generate prop]"
+cd src/prop
+./genProp.py
+if [ "$?" -ne 0 ]; then
+    echo "ERROR: build stopped"
+    exit -1
+fi
+cd ../..
+
 echo "[generate hotcode]"
 cd src/log
 ./genHotCode.py

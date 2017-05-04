@@ -7,7 +7,7 @@
 I/O시간을 측정한다고 하였을 시에 I/O 크기값을 추가 인자로 정의하여 그 값을 축적시킬 수 있다.
 
 * Performance 등록 방법
- perfDef.json 파일에 등록할 Performance 이름과 그것의 6가지 속성을 json format에 맞께
+ perfDef.json 파일에 등록할 Performance 이름과 그것의 6가지 속성을 json format에 맞게
  기입한다.
 
  - 2개 performance(SERVER_RUNNING_TIME, NETWORK_TRAINING_TIME) 추가 예제
@@ -76,4 +76,4 @@ I/O시간을 측정한다고 하였을 시에 I/O 크기값을 추가 인자로 
            (가변인자명, 가변인자 타입, 가변인자 설명)의 형태로 적는다.
 
 * 퍼포먼스 리스트가 정의된 파일(PerfList.h, PerfList.cpp) 생성방법
-genPerf.py를 실행하면 된다.
+genPerf.py를 실행한다.

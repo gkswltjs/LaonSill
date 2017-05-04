@@ -120,20 +120,20 @@ try:
         for var in varDic[prop]:
             if '[' in var[1]:
                 splited = var[1].replace(']', '@').replace('[', '@').split('@')
-                headerFile.write('        %s %s[%s];\n' % (splited[0], var[0], splited[1]))
+                headerFile.write('        %s _%s_[%s];\n' % (splited[0], var[0], splited[1]))
             else:
-                headerFile.write('        %s %s;\n' % (var[1], var[0]))
+                headerFile.write('        %s _%s_;\n' % (var[1], var[0]))
 
         headerFile.write('\n        %sPropLayer_s() {\n' % prop)
 
         for var in varDic[prop]:
             if '[' in var[1]:
-                headerFile.write('            strcpy(%s, %s);\n' % (var[0], var[2]))
+                headerFile.write('            strcpy(_%s_, %s);\n' % (var[0], var[2]))
             else:
-                headerFile.write('            %s = (%s)%s;\n' % (var[0], var[1], var[2]))
+                headerFile.write('            _%s_ = (%s)%s;\n' % (var[0], var[1], var[2]))
         headerFile.write('\n        }\n')
 
-        headerFile.write('    } %sPropLayer;\n\n' % prop)
+        headerFile.write('    } _%sPropLayer;\n\n' % prop)
 
     for line in headerBottomSentences:
         headerFile.write(line + "\n")
