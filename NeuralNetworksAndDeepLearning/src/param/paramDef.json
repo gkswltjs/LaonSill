@@ -278,6 +278,36 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : true
+},
+
+"MASTER_NODE" : 
+{
+    "DESC" : "specify master node",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : true
+},
+
+"CLUSTER_MODE" : 
+{
+    "DESC" : "specify whether server supports cluster mode or not",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"CLUSTER_CONF_PATH" : 
+{
+    "DESC" : "specify cluster configuration file path.",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "CHAR(1024)",
+    "DEFAULT" : ""
 }
 
 }

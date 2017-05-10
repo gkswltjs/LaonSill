@@ -39,6 +39,7 @@
 #include "DQNImageLearner.h"
 #include "ImageUtil.h"
 #include "DebugUtil.h"
+#include "ResourceManager.h"
 
 #include "GAN.h"
 #include "YOLO.h"
@@ -162,6 +163,10 @@ int main(int argc, char** argv) {
     Broker::init();
     Network<float>::init();
     DQNImageLearner<float>::init();
+
+    if (SPARAM(CLUSTER_MODE)) {
+        ResourceManager::init();
+    }
 
     if (!useDeveloperMode) {
         HotLog::init();

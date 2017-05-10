@@ -48,9 +48,9 @@
  * 이루어져 있습니다.
  *************************************************************************/
 TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
-    {"broker", "subscribe() & publish() function test", BrokerTest::runTest},
+    {"broker", "subscribe & publish function test", BrokerTest::runTest},
     {"client", "communication function test", ClientTest::runTest},
-    {"prop", "layer propperty function test", PropTest::runTest}
+    {"prop", "layer prop function test", PropTest::runTest}
 };
 
 

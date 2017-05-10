@@ -110,6 +110,15 @@ public:
          * +--------------+
          */
 
+        Task,
+        /*
+         *  [Job Elem Schema for Task]
+         * +------------------------+
+         * | physical plan ID (int) | 
+         * +------------------------+
+         */
+      
+
         HaltMachine,
         /*
          *  [Job Elem Schema for HaltMachine]
