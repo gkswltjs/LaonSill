@@ -14,7 +14,7 @@
 
 using namespace std;
 
-bool PropTest::runSimplePropTest() {
+bool PropTest::runSimpleLayerPropTest() {
     // (1) register layer prop
     int networkID = 1;
     int layerID = 3;
@@ -26,28 +26,73 @@ bool PropTest::runSimplePropTest() {
         (void*)convProp);
     PropMgmt::insertLayerProp(newProp);
 
+    _NetworkProp *networkProp = (_NetworkProp*)malloc(sizeof(_NetworkProp));
+    *networkProp = _NetworkProp();
+
+    PropMgmt::insertNetworkProp(networkID, networkProp);
+
     // (2) set layer prop and run
     PropMgmt::update(networkID, layerID);
 
     STDOUT_LOG("initial filter dim strides & pads value : %d, %d\n",
-        SPROP(Conv, filterDimStrides), SPROP(Conv, filterDimPads));
-    SPROP(Conv, filterDimStrides) = 2;
-    SPROP(Conv, filterDimPads) = 1;
+        SLPROP(Conv, filterDimStrides), SLPROP(Conv, filterDimPads));
+    SLPROP(Conv, filterDimStrides) = 2;
+    SLPROP(Conv, filterDimPads) = 1;
     STDOUT_LOG("changed filter dim strides & pads value : %d, %d\n",
-        SPROP(Conv, filterDimStrides), SPROP(Conv, filterDimPads));
+        SLPROP(Conv, filterDimStrides), SLPROP(Conv, filterDimPads));
 
     // (3) clean up layer prop
     PropMgmt::removeLayerProp(networkID);
+    PropMgmt::removeNetworkProp(networkID);
+
+    return true;
+}
+
+bool PropTest::runSimpleNetworkPropTest() {
+    // (1) register network prop
+    int networkID = 2;
+    int layerID = 45;
+
+    _ConvPropLayer *convProp = (_ConvPropLayer*)malloc(sizeof(_ConvPropLayer));
+    *convProp = _ConvPropLayer();
+
+    LayerProp* newProp = new LayerProp(networkID, layerID, (int)Layer<float>::Conv,
+        (void*)convProp);
+    PropMgmt::insertLayerProp(newProp);
+
+    _NetworkProp *networkProp = (_NetworkProp*)malloc(sizeof(_NetworkProp));
+    *networkProp = _NetworkProp();
+
+    PropMgmt::insertNetworkProp(networkID, networkProp);
+
+    // (2) set network prop and run
+    PropMgmt::update(networkID, layerID);
+
+    STDOUT_LOG("initial batchSize value : %u\n", SNPROP(batchSize));
+    SNPROP(batchSize) = 128;
+    STDOUT_LOG("changed batchSize value : %u\n", SNPROP(batchSize));
+
+    // (3) clean up layer prop
+    PropMgmt::removeLayerProp(networkID);
+    PropMgmt::removeNetworkProp(networkID);
 
     return true;
 }
 
 bool PropTest::runTest() {
-    bool result = runSimplePropTest();
+    bool result = runSimpleLayerPropTest();
     if (result) {
-        STDOUT_LOG("*  - simple prop test is success");
+        STDOUT_LOG("*  - simple layer prop test is success");
     } else {
-        STDOUT_LOG("*  - simple prop test is failed");
+        STDOUT_LOG("*  - simple layer prop test is failed");
+        return false;
+    }
+
+    result = runSimpleNetworkPropTest();
+    if (result) {
+        STDOUT_LOG("*  - simple network prop test is success");
+    } else {
+        STDOUT_LOG("*  - simple network prop test is failed");
         return false;
     }
     

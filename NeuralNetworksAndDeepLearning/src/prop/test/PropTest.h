@@ -15,6 +15,7 @@ public:
 
     static bool runTest();
 private:
-    static bool runSimplePropTest();
+    static bool runSimpleLayerPropTest();
+    static bool runSimpleNetworkPropTest();
 };
 #endif /* PROPTEST_H */

@@ -1,13 +1,15 @@
 본 문서는 Prop 모듈의 간략한 소개 및 사용방법을 기술한다.
 
 * Prop 모듈이란?
-  layer property를 정의하는 모듈이다. 예를 들어서 Convolution Layer의 경우에 stride, pad, 
- kernel size 등의 값을 정의할 수 있어야 한다. 그러한 값들을 관리해주는 모듈을 뜻한다.
+  layer property, network property를 정의하는 모듈이다. 예를 들어서 Convolution Layer의 경우에 
+ stride, pad, kernel size 등의 값을 정의할 수 있어야 한다. 그러한 값들을 관리해주는 모듈을 
+ 뜻한다. layer property는 각 layer마다의 설정값을 의미하고, network property는 각 network
+ 마다의 설정값을 의미한다.
 
-* Prop 등록 방법
- propDef.json 파일에 등록할 Prop 이름과 그것의 4가지 속성을 json format에 맞게 기입한다.
+* Layer Property 등록 방법
+ layerPropDef.json 파일에 등록할 Prop 이름과 그것의 4가지 속성을 json format에 맞게 기입한다.
 
- [propDef.json]
+ [layerPropDef.json]
     :
 "Conv" : 
 {
@@ -26,7 +28,6 @@
                      :
 
 
-* 각각의 속성에 대한 설명
 총 4개의 속성이 정의 된다. 설명은 아래와 같다:
 (1) DESC : 해당 prop에 대한 설명이다. 영어로 작성한다.
 (2) PARENT : 상속받고자 하는 prop을 기입한다. 상속을 받을 것이 없는 경우에는 빈문자열을 기입
@@ -39,7 +40,7 @@
            각각의 VAR은 (VAR의 이름, VAR의 타입, VAR의 초기값) 3가지 튜플로 정의된다.
            만약 초기값을 특정 헤더파일에 정의되어 있는 타입으로 정의하고 싶다면 해당
            헤더파일을 genProp.py의 headerFileList에 추가한다.
- [genProp.py]
+ [genLayerPropList.py]
         :
 ####################################### Modify here ##########################################
 # if you want to use specific custom type, you should insert header file that the custom type 
@@ -48,6 +49,10 @@ headerFileList = ["LayerConfig.h"]
 ##############################################################################################
         :
 
+* Network Property 등록 방법
+ layer property 등록방법과 매우 유사하다. networkPropDef.json 파일을 열어서 필요한 property를
+ 추가하면 된다. layer property의 VARS에 추가하는 것과 동일하다.
+
 * prop 리스트 생성방법
- genProp.py를 실행한다.
+ genLayerPropList.py, genNetworkProp.py를 실행한다.
             
