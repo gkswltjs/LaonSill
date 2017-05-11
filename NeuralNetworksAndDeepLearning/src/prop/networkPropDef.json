@@ -1,0 +1,37 @@
+{
+
+"VARS" :
+[
+    ["batchSize", "uint32_t", "1"],
+    ["dop", "uint32_t", "1"],
+    ["epoch", "uint32_t", "1"],
+    ["testInterval", "uint32_t", "1"],
+    ["saveInterval", "uint32_t", "1"],
+    ["stepSize", "uint32_t", "1"],
+    ["baseLearningRate", "float", "1"],
+    ["power", "float", "1.0"],
+    ["momentum", "float", "0.0"],
+    ["weightDecay", "float", "0.0"],
+    ["clipGradientsLevel", "float", "35.0"],
+    ["gamma", "float", "0.0"],
+    ["epsilon", "float", "0.00000001"],
+    ["beta1", "float", "0.9"],
+    ["beta2", "float", "0.999"],
+    ["decayRate", "float", "0.9"],
+    ["savePathPrefix", "char[1024]", "\"\""],
+    ["weightsPath", "char[1024]", "\"\""],
+    ["optimizer", "uint32_t", "1"],
+    ["lrPolicy", "int", "Optimizer::Momentum"],
+    ["phase", "int", "NetworkPhase::TrainPhase"],
+    ["lossLayerCount", "int", "0"],
+    ["lossLayer0", "char[1024]", "\"\""],
+    ["lossLayer1", "char[1024]", "\"\""],
+    ["lossLayer2", "char[1024]", "\"\""],
+    ["lossLayer3", "char[1024]", "\"\""],
+    ["lossLayer4", "char[1024]", "\"\""],
+    ["lossLayer5", "char[1024]", "\"\""],
+    ["lossLayer6", "char[1024]", "\"\""],
+    ["lossLayer7", "char[1024]", "\"\""]
+]
+
+}
