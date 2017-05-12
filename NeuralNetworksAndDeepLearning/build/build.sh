@@ -45,9 +45,18 @@ if [ "$?" -ne 0 ]; then
 fi
 cd ../..
 
-echo "[generate prop]"
+echo "[generate layer prop]"
 cd src/prop
-./genProp.py
+./genLayerPropList.py
+if [ "$?" -ne 0 ]; then
+    echo "ERROR: build stopped"
+    exit -1
+fi
+cd ../..
+
+echo "[generate network prop]"
+cd src/prop
+./genNetworkProp.py
 if [ "$?" -ne 0 ]; then
     echo "ERROR: build stopped"
     exit -1

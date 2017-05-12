@@ -18,20 +18,12 @@
     ["beta1", "float", "0.9"],
     ["beta2", "float", "0.999"],
     ["decayRate", "float", "0.9"],
-    ["savePathPrefix", "char[1024]", "\"\""],
-    ["weightsPath", "char[1024]", "\"\""],
+    ["savePathPrefix", "std::string", "\"\""],
+    ["loadPathPrefix", "std::string", "\"\""],
     ["optimizer", "uint32_t", "Optimizer::Momentum"],
     ["lrPolicy", "int", "LRPolicy::Fixed"],
     ["phase", "int", "NetworkPhase::TrainPhase"],
-    ["lossLayerCount", "int", "0"],
-    ["lossLayer0", "char[1024]", "\"\""],
-    ["lossLayer1", "char[1024]", "\"\""],
-    ["lossLayer2", "char[1024]", "\"\""],
-    ["lossLayer3", "char[1024]", "\"\""],
-    ["lossLayer4", "char[1024]", "\"\""],
-    ["lossLayer5", "char[1024]", "\"\""],
-    ["lossLayer6", "char[1024]", "\"\""],
-    ["lossLayer7", "char[1024]", "\"\""]
+    ["lossLayer", "std::vector<std::string>", ""]
 ]
 
 }

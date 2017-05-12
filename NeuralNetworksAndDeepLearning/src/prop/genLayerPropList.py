@@ -50,6 +50,8 @@ headerTopSentences = [\
 "",\
 "#include <stdint.h>",\
 "#include <string.h>",\
+"#include <vector>",\
+"#include <string>",\
 "",\
 '#include "common.h"',\
 '#include "SysLog.h"',\
@@ -82,6 +84,7 @@ sourceTopSentences = [\
 "",\
 '#include "LayerPropList.h"',\
 '#include "SysLog.h"',\
+"",\
 "",\
 ]
 
@@ -147,17 +150,25 @@ try:
 
         headerFile.write('typedef struct %sPropLayer_s {\n' % prop)
         for var in varDic[prop]:
-            if '[' in var[1]:
+            if 'vector' in var[1]:
+                headerFile.write('    %s _%s_;\n' % (var[1], var[0]))
+            elif 'char[' in var[1]:
                 splited = var[1].replace(']', '@').replace('[', '@').split('@')
                 headerFile.write('    %s _%s_[%s];\n' % (splited[0], var[0], splited[1]))
+            elif 'string' in var[1]:
+                headerFile.write('    %s _%s_;\n' % (var[1], var[0]))
             else:
                 headerFile.write('    %s _%s_;\n' % (var[1], var[0]))
 
         headerFile.write('\n    %sPropLayer_s() {\n' % prop)
 
         for var in varDic[prop]:
-            if '[' in var[1]:
+            if 'vector' in var[1]:
+                headerFile.write('        _%s_ = {%s};\n' % (var[0], var[2]))
+            elif 'char[' in var[1]:
                 headerFile.write('        strcpy(_%s_, %s);\n' % (var[0], var[2]))
+            elif 'string' in var[1]:
+                headerFile.write('        _%s_ = %s;\n' % (var[0], var[2]))
             else:
                 headerFile.write('        _%s_ = (%s)%s;\n' % (var[0], var[1], var[2]))
         headerFile.write('\n    }\n')
@@ -194,9 +205,18 @@ try:
                 else:
                     sourceFile.write(' else if (strcmp(property, "%s") == 0) {\n' % var[0])
 
-                if '[' in var[1]:
+                if 'vector' in var[1]:
+                    sourceFile.write('        %s* val = (%s*)value;\n' % (var[1], var[1]))
+                    sourceFile.write('        for (int i = 0; i < val->size(); i++) {\n')
+                    sourceFile.write('            obj->_%s_.push_back((*val)[i]);\n'\
+                        % var[0])
+                    sourceFile.write('        }\n')
+                elif 'char[' in var[1]:
                     sourceFile.write('        strcpy(obj->_%s_, (const char*)value);\n'\
                         % var[0])
+                elif 'string' in var[1]:
+                    sourceFile.write('        std::string* val = (std::string*)value;\n')
+                    sourceFile.write('        obj->_%s_ = *val;\n' % var[0])
                 else:
                     sourceFile.write('        memcpy((void*)&obj->_%s_, value, sizeof(%s));\n'\
                         % (var[0], var[1]))
@@ -208,10 +228,11 @@ try:
 
     sourceFile.write("void LayerPropList::setProp(void *target, const char* layer,")
     sourceFile.write(" const char* property, void* value) {\n")
+   
+    isFirstCond = True
     for level in range(maxLevel + 1):
         propList = levelDic[level]
 
-        isFirstCond = True
         for prop in propList:
             if isFirstCond:
                 sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)

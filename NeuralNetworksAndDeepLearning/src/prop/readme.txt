@@ -40,6 +40,8 @@
            각각의 VAR은 (VAR의 이름, VAR의 타입, VAR의 초기값) 3가지 튜플로 정의된다.
            만약 초기값을 특정 헤더파일에 정의되어 있는 타입으로 정의하고 싶다면 해당
            헤더파일을 genProp.py의 headerFileList에 추가한다.
+           VAR의 타입은 primitive 형(ex. bool, int, float, ...)과 std::vector, std::string을
+           지원한다. 
  [genLayerPropList.py]
         :
 ####################################### Modify here ##########################################
