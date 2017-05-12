@@ -1,0 +1,35 @@
+[
+    {
+        "name" : "input",
+        "layer" : "ILSVRCInput",
+        "id" : 0,
+        "output" : ["data", "label"],
+        "imageDir" : "/data/ilsvrc12_train"
+    },
+
+    {
+        "name" : "conv1",
+        "layer" : "Conv",
+        "id" : 1,
+        "input" : ["data"],
+        "output" : ["conv1"],
+        "filterDim" : 3,
+    },
+
+    {
+        "name" : "fc1",
+        "layer" : "FullyConnected",
+        "id" : 2,
+        "input" : ["conv1"],
+        "output" : ["fc1"],
+        "nout" : 1000
+    },
+
+    {
+        "name" : "softmax",
+        "layer" : "SoftmaxWithLoss",
+        "id" : 3,
+        "input" : ["fc1", "label"],
+        "output" : ["loss"]
+    }
+]
