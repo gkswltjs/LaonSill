@@ -23,6 +23,8 @@
 #include "PermuteLayer.h"
 #include "FlattenLayer.h"
 #include "PriorBoxLayer.h"
+#include "ConcatLayer.h"
+#include "MultiBoxLossLayer.h"
 
 
 #include <opencv2/core/core.hpp>
@@ -40,8 +42,8 @@ int main(void) {
 	cout.setf(ios::fixed);
 
 	//plainTest();
-	layerTest();
-	//networkTest();
+	//layerTest();
+	networkTest();
 
 	return 0;
 }
@@ -72,7 +74,7 @@ void plainTest() {
 	NormalizeLayer<float>::Builder* builder =
 			new typename NormalizeLayer<float>::Builder();
 	builder->id(0)
-			->name("")
+			->name("conv4_3_norm")
 			->acrossSpatial(false)
 			->scaleFiller(ParamFillerType::Constant, 20.0f)
 			->channelShared(false)
@@ -112,8 +114,7 @@ void plainTest() {
 	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_flat"));
 #endif
 
-
-#if 1
+#if 0
 	PriorBoxLayer<float>::Builder* builder =
 			new typename PriorBoxLayer<float>::Builder();
 	builder->id(0)
@@ -133,17 +134,42 @@ void plainTest() {
 	layer->_inputData.push_back(new Data<float>("conv4_3_norm"));
 	layer->_inputData.push_back(new Data<float>("data"));
 	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_priorbox"));
-#endif
 
 	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
 			->batchSize(2)
 			->build();
 	layer->setNetworkConfig(networkConfig);
-
 	layer->feedforward();
 
 	delete layer;
+#endif
 
+	/*
+	//checkCudaErrors(cudaSetDevice(0));
+	//checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
+
+	cout << "cudnn version: " << CUDNN_VERSION << endl;
+
+
+	int pad = 6;
+	int stride = 1;
+	int dilation = 6;
+
+	cudnnConvolutionDescriptor_t convDesc;
+	checkCUDNN(cudnnCreateConvolutionDescriptor(&convDesc));
+	cudnnStatus_t status = cudnnSetConvolution2dDescriptor(convDesc,
+			pad, pad, stride, stride, dilation, dilation,
+			CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT);
+
+	std::stringstream _error;
+	if (status != CUDNN_STATUS_SUCCESS) {
+	  _error << "CUDNN failure: " << cudnnGetErrorString(status);
+	  FatalError(_error.str());
+	}
+
+	cout << "dilation test done ... " << endl;
+	//checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
+	 */
 }
 
 void layerTest() {
@@ -153,10 +179,11 @@ void layerTest() {
 #if 0
 	ConvLayer<float>::Builder* convBuilder = new typename ConvLayer<float>::Builder();
 	convBuilder->id(10)
-		->name("conv2")
-		->filterDim(5, 5, 96, 256, 1, 2)
-		->inputs({"pool1"})
-		->outputs({"conv2"});
+		->name("fc6")
+		->filterDim(3, 3, 512, 1024, 6, 1)
+		->dilation(6)
+		->inputs({"pool5"})
+		->outputs({"fc6"});
 	layerTestList.push_back(new LearnableLayerTest<float>(convBuilder));
 #endif
 
@@ -397,7 +424,7 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(annotationDataBuilder));
 #endif
 
-#if 1
+#if 0
 	AccuracyLayer<float>::Builder* accuracyBuilder =
 			new typename AccuracyLayer<float>::Builder();
 	accuracyBuilder->id(390)
@@ -408,6 +435,115 @@ void layerTest() {
 			->outputs({"accuracy"});
 	layerTestList.push_back(new LayerTest<float>(accuracyBuilder));
 #endif
+
+#if 0
+	NormalizeLayer<float>::Builder* normalizeBuilder =
+			new typename NormalizeLayer<float>::Builder();
+	normalizeBuilder->id(0)
+			->name("conv4_3_norm")
+			->acrossSpatial(false)
+			->scaleFiller(ParamFillerType::Constant, 20.0f)
+			->channelShared(false)
+			->inputs({"conv4_3_relu4_3_0_split_1"})
+			->outputs({"conv4_3_norm"});
+
+	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
+			->networkPhase(NetworkPhase::TrainPhase)
+			->batchSize(4)
+			->build();
+
+	layerTestList.push_back(new LearnableLayerTest<float>(normalizeBuilder, networkConfig));
+#endif
+
+#if 0
+	PermuteLayer<float>::Builder* builder =
+			new typename PermuteLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm_mbox_loc_perm")
+			->orders({0, 2, 3, 1})
+			->inputs({"conv4_3_norm_mbox_loc"})
+			->outputs({"conv4_3_norm_mbox_loc_perm"});
+
+	layerTestList.push_back(new LayerTest<float>(builder));
+#endif
+
+#if 0
+	FlattenLayer<float>::Builder* builder =
+			new typename FlattenLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm_mbox_loc_flat")
+			->axis(1)
+			->endAxis(3)
+			->inputs({"conv4_3_norm_mbox_loc_perm"})
+			->outputs({"conv4_3_norm_mbox_loc_flat"});
+
+	layerTestList.push_back(new LayerTest<float>(builder));
+#endif
+
+#if 0
+	PriorBoxLayer<float>::Builder* builder =
+			new typename PriorBoxLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm_mbox_priorbox")
+			->minSizes({30.0})
+			->maxSizes({60.0})
+			->aspectRatios({2.0})
+			->flip(true)
+			->clip(false)
+			->variances({0.1, 0.1, 0.2, 0.2})
+			->step(8.0)
+			->offset(0.5)
+			->inputs({"conv4_3_norm_conv4_3_norm_0_split_2", "data_data_0_split_1"})
+			->outputs({"conv4_3_norm_mbox_priorbox"});
+
+	layerTestList.push_back(new LayerTest<float>(builder));
+#endif
+
+#if 1
+	ConcatLayer<float>::Builder* builder =
+			new typename ConcatLayer<float>::Builder();
+	builder->id(0)
+			->name("mbox_loc")
+			->axis(1)
+			->inputs({
+				"conv4_3_norm_mbox_loc_flat",
+				"fc7_mbox_loc_flat",
+				"conv6_2_mbox_loc_flat",
+				"conv7_2_mbox_loc_flat",
+				"conv8_2_mbox_loc_flat",
+				"conv9_2_mbox_loc_flat"})
+			->outputs({"mbox_loc"});
+
+	layerTestList.push_back(new LayerTest<float>(builder));
+#endif
+
+#if 0
+	MultiBoxLossLayer<float>::Builder* builder =
+			new typename MultiBoxLossLayer<float>::Builder();
+	builder->id(0)
+			->name("mbox_loss")
+			->locLossType("SMOOTH_L1")
+			->confLossType("SOFTMAX")
+			->locWeight(1.0)
+			->numClasses(21)
+			->shareLocation(true)
+			->matchType("PER_PREDICTION")
+			->overlapThreshold(0.5)
+			->usePriorForMatching(true)
+			->backgroundLabelId(0)
+			->useDifficultGt(true)
+			->negPosRatio(3.0)
+			->negOverlap(0.5)
+			->codeType("CENTER_SIZE")
+			->ignoreCrossBoundaryBbox(false)
+			->miningType("MAX_NEGATIVE")
+			->propDown({true, true, false, false})
+			->inputs({"mbox_loc", "mbox_conf", "mbox_priorbox", "label"})
+			->outputs({"mbox_loss"});
+
+	layerTestList.push_back(new LayerTest<float>(builder));
+#endif
+
 
 	LayerTestInterface<float>::globalSetUp(gpuid);
 	for (uint32_t i = 0; i < layerTestList.size(); i++) {
@@ -425,8 +561,12 @@ void layerTest() {
 #define NETWORK_VGG19		1
 #define NETWORK_FRCNN		2
 #define NETWORK_FRCNN_TEST	3
-#define NETWORK				NETWORK_FRCNN
+#define NETWORK_SSD			4
+#define NETWORK				NETWORK_SSD
 
+
+
+void saveNetworkParams();
 
 
 void networkTest() {
@@ -478,6 +618,21 @@ void networkTest() {
 	LayersConfig<float>* layersConfig = createFrcnnTestOneShotLayersConfig<float>();
 	const string networkName		= "frcnn";
 	const NetworkPhase networkPhase	= NetworkPhase::TestPhase;
+#elif NETWORK == NETWORK_SSD
+	const int numSteps = 1;
+
+	LayersConfig<float>* layersConfig = createSSDNetLayersConfig<float>();
+	const string networkName		= "ssd";
+	const int batchSize 			= 2;
+	const float baseLearningRate 	= 0.01;
+	const float weightDecay 		= 0.0005;
+	//const float baseLearningRate 	= 1;
+	//const float weightDecay 		= 0.000;
+	const float momentum 			= 0.0;
+	const LRPolicy lrPolicy 		= LRPolicy::Fixed;
+	const int stepSize 				= 50000;
+	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
+	const float gamma 				= 0.1;
 #else
 	cout << "invalid network ... " << endl;
 	exit(1);
@@ -504,10 +659,18 @@ void networkTest() {
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 	networkTest->setUp();
 
-	/*
+	//saveNetworkParams(layersConfig);
+	//exit(1);
+
+	networkTest->updateTest();
+	networkTest->cleanUp();
+	NetworkTestInterface<float>::globalCleanUp();
+}
+
+void saveNetworkParams(LayersConfig<float>* layersConfig) {
 	const string savePathPrefix = "/home/jkim/Dev/SOOOA_HOME/network";
 	ofstream paramOfs(
-			(savePathPrefix+"/VGG_CNN_M_1024_FRCNN_CAFFE.param").c_str(),
+			(savePathPrefix+"/SSD_PRETRAINED.param").c_str(),
 			ios::out | ios::binary);
 
 	uint32_t numLearnableLayers = layersConfig->_learnableLayers.size();
@@ -521,10 +684,6 @@ void networkTest() {
 		layersConfig->_learnableLayers[i]->saveParams(paramOfs);
 	}
 	paramOfs.close();
-	*/
-	networkTest->updateTest();
-	networkTest->cleanUp();
-	NetworkTestInterface<float>::globalCleanUp();
 }
 
 #endif

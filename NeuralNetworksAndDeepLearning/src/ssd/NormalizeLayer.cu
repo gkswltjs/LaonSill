@@ -8,6 +8,8 @@
 #include "NormalizeLayer.h"
 #include "MathFunctions.h"
 #include "NetworkConfig.h"
+#include "SysLog.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
@@ -71,10 +73,15 @@ NormalizeLayer<Dtype>::~NormalizeLayer() {
 
 template <typename Dtype>
 void NormalizeLayer<Dtype>::reshape() {
+	SASSERT(this->_inputData[0]->numAxes() >= 2,
+			"Number of axes of input data must be >= 2.");
+
 	Layer<Dtype>::_adjustInputShape();
 
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
+
+	this->_outputData[0]->reshapeLike(this->_inputData[0]);
 
 	const vector<uint32_t>& dataShape = this->_inputData[0]->getShape();
 	this->buffer_.reshape({1, dataShape[1], dataShape[2], dataShape[3]});
@@ -95,7 +102,10 @@ void NormalizeLayer<Dtype>::reshape() {
 	this->sumSpatialMultiplier_.reshape({1, 1, dataShape[2], dataShape[3]});
 	this->sumSpatialMultiplier_.reset_host_data(false, Dtype(1.0));
 
-	assert(this->_paramsInitialized[0] == false);
+	// initialize에서 처리하는 것이 바람직하지만
+	// 현재 initialize에서 channels를 알 방법이 없어서 reshape에서 처리.
+	// 사실상 다시 reshape되는 상황에서 종료
+	//SASSERT0(this->_paramsInitialized[0] == false);
 	// channel 무관하게 single scale 사용
 	if (this->channelShared) {
 		this->_params[0]->reshape({1, 1, 1, 1});
@@ -108,8 +118,19 @@ void NormalizeLayer<Dtype>::reshape() {
 		this->_paramsHistory[0]->reshape({1, 1, 1, channels});
 		this->_paramsHistory2[0]->reshape({1, 1, 1, channels});
 	}
-	this->scaleFiller.fill(this->_params[0]);
-	this->_paramsInitialized[0] = true;
+
+	if (!this->_paramsInitialized[0]) {
+		this->scaleFiller.fill(this->_params[0]);
+		this->_paramsInitialized[0] = true;
+	}
+
+	if (this->channelShared) {
+		SASSERT(this->_params[0]->getCount() == 1,
+				"Scale size is inconsistent with prototxt config.");
+	} else {
+		SASSERT(this->_params[0]->getCount() == channels,
+				"Scale size is inconsistent with prototxt config.");
+	}
 }
 
 
@@ -126,8 +147,8 @@ void NormalizeLayer<Dtype>::feedforward() {
 		normData = this->norm_.mutable_host_data();
 	} else {
 		// add eps to avoid overflow
-		this->norm_.reset_device_data(false, this->eps);
 		normData = this->norm_.mutable_device_data();
+		soooa_gpu_set<Dtype>(this->norm_.getCount(), Dtype(this->eps), normData);
 	}
 
 	const Dtype* scale;
@@ -139,14 +160,15 @@ void NormalizeLayer<Dtype>::feedforward() {
 	}
 
 	const Dtype* sumChannelMultiplier = this->sumChannelMultiplier_.device_data();
-	int num = this->_inputData[0]->getShape(0);
+	int num = this->_inputData[0]->batches();
 	int dim = this->_inputData[0]->getCount() / num;
-	int spatialDim = this->_inputData[0]->getShape(2) * this->_inputData[0]->getShape(3);
-	int channels = this->_inputData[0]->getShape(1);
+	int spatialDim = this->_inputData[0]->height() * this->_inputData[0]->width();
+	int channels = this->_inputData[0]->channels();
 
 	for (int n = 0; n < num; n++) {
 		// bufferData = inputData^2
 		soooa_gpu_powx<Dtype>(dim, inputData, Dtype(2), bufferData);
+
 		// 이미지 하나 전체에 대해 norm 적용
 		if (this->acrossSpatial) {
 			Dtype normsqr;
@@ -212,10 +234,10 @@ void NormalizeLayer<Dtype>::backpropagation() {
 	const Dtype* sumSpatialMultiplier = this->sumSpatialMultiplier_.device_data();
 
 	int count = this->_outputData[0]->getCount();
-	int num = this->_outputData[0]->getShape(0);
+	int num = this->_outputData[0]->batches();
 	int dim = count / num;
-	int spatialDim = this->_outputData[0]->getShape(2) * this->_outputData[0]->getShape(3);
-	int channels = this->_outputData[0]->getShape(1);
+	int spatialDim = this->_outputData[0]->height() * this->_outputData[0]->width();
+	int channels = this->_outputData[0]->channels();
 
 	// propagate to param
 	if (this->channelShared) {
@@ -323,7 +345,7 @@ void NormalizeLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
 
     // (2) apply optimizer
     Optimizer opt = this->networkConfig->_optimizer;
-    assert(opt == Optimizer::Momentum);
+    SASSERT0(opt == Optimizer::Momentum);
 
 	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
 	soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
@@ -355,6 +377,7 @@ void NormalizeLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
 
 template <typename Dtype>
 void NormalizeLayer<Dtype>::initialize() {
+	SASSERT0(this->_inputs.size() == 1 && this->_outputs.size() == 1);
 
 	this->_params.resize(1);
 	this->_paramsHistory.resize(1);
@@ -365,7 +388,6 @@ void NormalizeLayer<Dtype>::initialize() {
 
 	this->_paramsInitialized.resize(1);
 	this->_paramsInitialized[0] = false;
-
 }
 
 

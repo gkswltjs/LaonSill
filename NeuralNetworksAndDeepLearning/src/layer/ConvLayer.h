@@ -51,6 +51,7 @@ public:
 		update_param _biasUpdateParam;
 		param_filler<Dtype> _weightFiller;
 		param_filler<Dtype> _biasFiller;
+		uint32_t _dilation;
         bool _deconv;
         int _deconvExtraCell;       // deconvolution layer에서 a만큼 더 큰 피처맵(이미지)를 
                                     // 생성할 수 있다. 이때 a는 0이상 stride 미만의 값을 
@@ -74,6 +75,7 @@ public:
 			_weightFiller.value = 0.0f;
 			_biasFiller.type = ParamFillerType::Constant;
 			_biasFiller.value = 0.0f;
+			_dilation = 1;
             _deconv = false;
             _deconvExtraCell = 0;
 			//_activationType = Activation<Dtype>::NoActivation;
@@ -106,6 +108,10 @@ public:
 		Builder* biasFiller(ParamFillerType paramFillerType, double value) {
 			this->_biasFiller.type = paramFillerType;
 			this->_biasFiller.value = value;
+			return this;
+		}
+		Builder* dilation(const uint32_t dilation) {
+			this->_dilation = dilation;
 			return this;
 		}
 		Builder* deconv(bool deconv) {
@@ -235,6 +241,7 @@ protected:
 	update_param bias_update_param;					///< bias 갱신 관련 파라미터 구조체
 	param_filler<Dtype> weight_filler;				///< weight 초기화 관련 파라미터 구조체
 	param_filler<Dtype> bias_filler;				///< bias 초기화 관련 파라미터 구조체
+	uint32_t dilation;
 
 
 

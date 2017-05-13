@@ -113,16 +113,24 @@ private:
 	// acrossSpatial인 경우 이미지 하나 전체에 대해 1개의 norm term. 이미지 갯수만큼
 	// 아닌 경우 이미지 하나에 대해 채널간 norm term, spatialDim만큼의 norm term
 	// norm 자체는 채널간 합, spatial 단위로 통합하느냐 여부에 따라 결정
+	// acrossSpatial-true:  batches x 1 x 1 x 1
+	// acrossSpatial-false: batches x 1 x height x width
 	Data<Dtype> norm_;
 	// 각 spatialDim 단위로 channel간 sum하기 위해 1로 채워진 vector
+	// initialized to all 1s
+	// 1 x channels x 1 x 1
 	Data<Dtype> sumChannelMultiplier_;
+	// 1 x 1 x height x width
 	Data<Dtype> sumSpatialMultiplier_;
 
 	// 1장의 이미지 각 element에 대한 처리 결과를 담기 위한 buffer
+	// 1 x channels x height x width
 	Data<Dtype> buffer_;
 	// 이미지당 channel별 scalar를 저장하기 위한 buffer
+	// 1 x channels x 1 x 1
 	Data<Dtype> bufferChannel_;
 	// 이미지당 spatialDim별 scalar를 저장하기 위한 buffer
+	// 1 x 1 x height x width
 	Data<Dtype> bufferSpatial_;
 };
 

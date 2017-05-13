@@ -33,6 +33,8 @@ void PriorBoxLayer<Dtype>::reshape() {
 
 	const int layerWidth = this->_inputData[0]->width();
 	const int layerHeight = this->_inputData[0]->height();
+
+	/*
 	vector<uint32_t> outputShape(4, 1);
 	// since all images in a batch has same height and width, we only need to
 	// generate one set of priors which can be shared across all images.
@@ -43,6 +45,11 @@ void PriorBoxLayer<Dtype>::reshape() {
 	outputShape[2] = 2;
 	outputShape[3] = layerWidth * layerHeight * this->numPriors * 4;
 	SASSERT0(outputShape[3] > 0);
+	*/
+	vector<uint32_t> outputShape(4, 1);
+	outputShape[0] = 2;
+	outputShape[1] = layerWidth * layerHeight * this->numPriors * 4;
+	SASSERT0(outputShape[1] > 0);
 
 	this->_outputData[0]->reshape(outputShape);
 }
@@ -73,7 +80,7 @@ void PriorBoxLayer<Dtype>::feedforward() {
 		stepW = this->stepW;
 	}
 
-	Dtype* outputData = this->_outputData[0]->mutable_device_data();
+	Dtype* outputData = this->_outputData[0]->mutable_host_data();
 	int dim = layerHeight * layerWidth * this->numPriors * 4;
 	int idx = 0;
 	for (int h = 0; h < layerHeight; h++) {
@@ -137,7 +144,7 @@ void PriorBoxLayer<Dtype>::feedforward() {
 		}
 	}
 	// set the variance.
-	outputData += this->_outputData[0]->offset(0, 0, 1, 0);
+	outputData += this->_outputData[0]->offset(1, 0, 0, 0);
 	if (this->variances.size() == 1) {
 		soooa_set<Dtype>(dim, Dtype(this->variances[0]), outputData);
 	} else {

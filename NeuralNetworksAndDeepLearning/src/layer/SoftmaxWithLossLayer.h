@@ -59,7 +59,10 @@ public:
 			LossLayer<Dtype>::Builder::normalize(normalize);
 			return this;
 		}
-
+		virtual Builder* normalization(const typename LossLayer<Dtype>::NormalizationMode normalization) {
+			LossLayer<Dtype>::Builder::normalization(normalization);
+			return this;
+		}
 		/*
 		virtual Builder* normalizationMode(
             const typename LossLayer<Dtype>::NormalizationMode normalizationMode) {
@@ -97,7 +100,7 @@ public:
 
 private:
 	void initialize();
-	Dtype getNormalizer(int validCount);
+	//Dtype getNormalizer(int validCount);
 
 public:
 	Data<Dtype>* prob;

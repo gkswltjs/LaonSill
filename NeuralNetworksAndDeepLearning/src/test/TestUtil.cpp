@@ -23,7 +23,7 @@ bool hasKey(map<T, S*>& dict, const T& key);
 
 
 void setUpCuda(int gpuid) {
-	assert(gpuid >= 0);
+	SASSERT0(gpuid >= 0);
 
 	checkCudaErrors(cudaSetDevice(gpuid));
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
@@ -93,7 +93,7 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 
 	vector<string> tokens;
 	Tokenize(data_key, tokens, "*", true);
-	assert(tokens.size() == 3);
+	SASSERT0(tokens.size() == 3);
 
 	if (tokens[1] == "params") {
 		for (uint32_t i = 0; i < 4 - shapeSize; i++) {
@@ -105,7 +105,8 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 				shape[i] = 1;
 		}
 	} else if (tokens[1] == "bottom" || tokens[1] == "top" || tokens[1] == "blobs") {
-		assert(shapeSize == 1 || shapeSize == 2 || shapeSize == 4);
+		SASSERT(shapeSize >= 1 && shapeSize <= 4,
+				"shapeSize is %d", shapeSize);
 		if (shapeSize == 1) {
 			shape[0] = npyArray.shape[0];
 			shape[1] = 1;
@@ -119,10 +120,21 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 			shape[2] = npyArray.shape[1];
 			shape[3] = 1;
 			*/
+			/*
 			shape[0] = 1;
 			shape[1] = 1;
 			shape[2] = npyArray.shape[0];
 			shape[3] = npyArray.shape[1];
+			*/
+			shape[0] = npyArray.shape[0];
+			shape[1] = npyArray.shape[1];
+			shape[2] = 1;
+			shape[3] = 1;
+		} else if (shapeSize == 3) {
+			shape[0] = 1;
+			shape[1] = npyArray.shape[0];
+			shape[2] = npyArray.shape[1];
+			shape[3] = npyArray.shape[2];
 		} else if (shapeSize == 4) {
 			shape = npyArray.shape;
 		}
@@ -132,14 +144,14 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 }
 
 const string getDataKeyFromDataName(const string& data_name) {
-	assert(data_name.length() > 5);
+	SASSERT0(data_name.length() > 5);
 	return data_name.substr(0, data_name.length() - 5);
 }
 
 const string getDataTypeFromDataName(const string& data_name) {
-	assert(data_name.length() > 5);
+	SASSERT0(data_name.length() > 5);
 	const string data_type = data_name.substr(data_name.length() - 4);
-	assert(data_type == TYPE_DATA || data_type == TYPE_DIFF);
+	SASSERT0(data_type == TYPE_DATA || data_type == TYPE_DIFF);
 	return data_type;
 }
 
@@ -268,7 +280,7 @@ void fillParam(map<string, Data<float>*>& nameDataMap, const string& param_prefi
 
 		cout << "fill param key: " << key << endl;
 		Data<float>* param = retrieveValueFromMap(nameDataMap, key);
-		assert(param != 0);
+		SASSERT0(param != 0);
 
 		Data<float>* targetParam = paramVec[i];
 		targetParam->set(param, true);
@@ -295,7 +307,7 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 	const string key = data_prefix + dataName;
 
 	Data<float>* data = retrieveValueFromMap(nameDataMap, key);
-	assert(data != 0);
+	SASSERT(data != 0, "Could not find Data named %s", key.c_str());
 
 	bool result = false;
 	if (compareType == 0)
@@ -324,7 +336,7 @@ bool compareParam(map<string, Data<float>*>& nameDataMap, const string& param_pr
 	for (uint32_t i = 0; i < paramVec.size(); i++) {
 		const string key = param_prefix + to_string(i);
 		Data<float>* data = retrieveValueFromMap(nameDataMap, key);
-		assert(data != 0);
+		SASSERT0(data != 0);
 
 		Data<float>* targetData = paramVec[i];
 

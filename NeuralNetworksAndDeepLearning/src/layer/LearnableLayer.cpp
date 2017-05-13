@@ -19,6 +19,16 @@ LearnableLayer<Dtype>::LearnableLayer(const string& name)
 
 
 template <typename Dtype>
+void LearnableLayer<Dtype>::printDataConfig() {
+	Layer<Dtype>::printDataConfig();
+	cout << "\tparams:" << endl;
+	for (int i = 0; i < this->_params.size(); i++) {
+		cout << "\t\t";
+		this->_params[i]->print_shape();
+	}
+}
+
+template <typename Dtype>
 double LearnableLayer<Dtype>::sumSquareParamsData() {
 	double result = 0.0;
 	for(uint32_t i = 0; i < this->_params.size(); i++) {

@@ -185,6 +185,17 @@ Dtype Network<Dtype>::sgd(int epochs) {
     float lossSum = 0.0;
 	//iterations = 0;
 
+
+
+    LayersConfig<Dtype>* layersConfig = getLayersConfig();
+	for (uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->reshape();
+	}
+	for (uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->printDataConfig();
+	}
+
+
 	for (uint32_t epochIndex = 0; epochIndex < epochs; epochIndex++) {
 		config->_status = NetworkStatus::Train;
 
@@ -198,7 +209,7 @@ Dtype Network<Dtype>::sgd(int epochs) {
         //      (나중에 고쳐야 한다.)
 
 
-		LayersConfig<Dtype>* layersConfig = getLayersConfig();
+
 		vector<double> costList(this->config->_lossLayers.size());
 		vector<Dtype> accuracyList(this->config->_accuracyLayers.size());
 		typename map<string, Layer<Dtype>*>::iterator it;
@@ -279,12 +290,6 @@ Dtype Network<Dtype>::sgd(int epochs) {
                 }
 
                 Worker<Dtype>::wakeupPeer();
-
-
-
-                if (this->config->_iterations >= 100) {
-                	exit(1);
-                }
             }
 		}
 

@@ -126,6 +126,9 @@ void Data<Dtype>::reshapeInfer(const vector<int>& shape) {
 		if (shape[i] < 0) {
 			assert(inferredAxis == -1);
 			inferredAxis = i;
+		} else if(shape[i] == 0) {
+			fShape[i] = this->_shape[i];
+			newFixedCount *= this->_shape[i];
 		} else {
 			fShape[i] = shape[i];
 			newFixedCount *= shape[i];

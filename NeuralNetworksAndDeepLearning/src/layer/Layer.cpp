@@ -73,6 +73,21 @@ void Layer<Dtype>::backpropagation() {
 }
 
 template <typename Dtype>
+void Layer<Dtype>::printDataConfig() {
+	cout << "for layer " << this->name << endl;
+	cout << "\tinput:" << endl;
+	for (int i = 0; i < this->_inputData.size(); i++) {
+		cout << "\t\t";
+		this->_inputData[i]->print_shape();
+	}
+	cout << "\toutput:" << endl;
+	for (int i = 0; i < this->_outputData.size(); i++) {
+		cout << "\t\t";
+		this->_outputData[i]->print_shape();
+	}
+}
+
+template <typename Dtype>
 void Layer<Dtype>::initialize(uint32_t id, const string name) {
 	this->id = id;
 	this->name = name;

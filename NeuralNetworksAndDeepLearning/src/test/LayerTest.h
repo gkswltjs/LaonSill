@@ -63,6 +63,7 @@ public:
 				this->layer->_outputData);
 
 		this->layer->backpropagation();
+		//printDataList(this->layer->_inputData, 1);
 
 		compareData(this->nameDataMap, this->layer->name + SIG_BOTTOM,
 			this->layer->_inputData, 1);

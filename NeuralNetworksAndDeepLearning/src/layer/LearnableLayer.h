@@ -53,6 +53,8 @@ public:
 	LearnableLayer(const std::string& name);
 	virtual ~LearnableLayer() {}
 
+	virtual void printDataConfig();
+
 
 	/**
 	 * @details 학습한 파라미터 그레디언트를 파라미터에 업데이트한다.

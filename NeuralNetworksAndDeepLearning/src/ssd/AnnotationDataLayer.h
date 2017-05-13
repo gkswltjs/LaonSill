@@ -176,34 +176,44 @@ public:
 
 	virtual void reshape();
 
+	virtual int getNumTrainData();
+	virtual void shuffleTrainDataSet();
+
 private:
 	void initialize();
-
-	void loadODRawDataPath();
-	void loadODRawDataIm();
-	void loadODRawDataAnno();
-
-	void readAnnotation(ODRawData<Dtype>& odRawData);
-
-	void loadODMetaData();
-
-
 	void shuffle();
-
 
 	void getNextMiniBatch();
 	void getNextMiniBatchInds(std::vector<int>& inds);
 	void getMiniBatch(const std::vector<int>& inds);
 
+	/**
+	 * @details 데이터셋 파일로부터 img, anno 파일 경로로 ODRawDataList 초기화
+	 */
+	void loadODRawDataPath();
+	/**
+	 * @details img 파일을 cv::Mat 형태로 ODRawDataList에 읽어들임. 스케일링 적용.
+	 */
+	void loadODRawDataIm();
+	/**
+	 * @details anno 파일을 ODRawDataList에 읽어들임.
+	 */
+	void loadODRawDataAnno();
+	void readAnnotation(ODRawData<Dtype>& odRawData);
+	void loadODMetaData();
+
 	void buildLabelData(ODMetaData<Dtype>& odMetaData, int bbIdx, Dtype buf[8]);
 
 
+	void verifyData();
+	void printMat(cv::Mat& im, int type);
+	void printArray(Dtype* array, int n);
 private:
 	bool flip;
-	uint32_t imageHeight;
-	uint32_t imageWidth;
+	uint32_t imageHeight;	///< 네트워크로 입력되는 이미지 높이. 리사이즈 높이.
+	uint32_t imageWidth;	///< 네트워크로 입력되는 이미지 너비. 리사이즈 너비.
 
-	std::string imageSetPath;
+	std::string imageSetPath;	///< OD 데이터셋을 정의한 파일의 경로. <img, anno> 페어정보
 	std::string baseDataPath;
 
 	std::vector<Dtype> pixelMeans;
@@ -216,11 +226,7 @@ private:
 	std::vector<int> perm;
 	int cur;
 
-	//uint32_t imsPerBatch;
-
-	//
-	Data<Dtype>* data;
-	Data<Dtype>* label;
+	Data<Dtype> data;	///< feedforward할 data를 준비하는 buffer.
 };
 
 #endif /* ANNOTATIONDATALAYER_H_ */

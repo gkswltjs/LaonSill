@@ -11,6 +11,7 @@
 #include "SoftmaxWithLossLayer.h"
 #include "common.h"
 #include "MathFunctions.h"
+#include "SysLog.h"
 
 #define SOFTMAXWITHLOSSLAYER_LOG 0
 
@@ -59,7 +60,7 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 			this->outerNum = this->_inputData[0]->getCountByAxis(0, this->softmaxAxis);
 			this->innerNum = this->_inputData[0]->getCountByAxis(this->softmaxAxis+1);
 
-			assert(this->outerNum*this->innerNum == this->_inputData[1]->getCount() &&
+			SASSERT(this->outerNum*this->innerNum == this->_inputData[1]->getCount(),
 					"Number of labels must match number of predictions ... ");
 
 			if (this->_outputData.size() > 1) {
@@ -161,7 +162,8 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 
 	// xxx normalizer test -> restored
 	this->_outputData[0]->mutable_host_data()[0] = loss *
-			Dtype(this->lossWeight) / getNormalizer(validCount);
+			Dtype(this->lossWeight) / LossLayer<Dtype>::getNormalizer(this->outerNum,
+					this->innerNum, validCount);
 	//this->_outputData[0]->mutable_host_data()[0] = loss * Dtype(this->lossWeight);
 
 
@@ -245,7 +247,8 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 				this->hasIgnoreLabel)
 			soooa_gpu_asum(nthreads, counts, &validCount);
 
-		const Dtype lossWeight = Dtype(1) / getNormalizer(validCount);
+		const Dtype lossWeight = Dtype(1) / LossLayer<Dtype>::getNormalizer(this->outerNum,
+				this->innerNum, validCount);
 		soooa_gpu_scal(this->prob->getCount(), lossWeight, inputGrad);
 	}
 }
@@ -292,6 +295,7 @@ Dtype SoftmaxWithLossLayer<Dtype>::cost() {
 	return this->_outputData[0]->host_data()[0];
 }
 
+/*
 template <typename Dtype>
 Dtype SoftmaxWithLossLayer<Dtype>::getNormalizer(int validCount) {
 	Dtype normalizer;
@@ -320,6 +324,7 @@ Dtype SoftmaxWithLossLayer<Dtype>::getNormalizer(int validCount) {
 	// particular loss in a multi-task setup. The max prevents NaNs in that case.
 	return max(Dtype(1.0), normalizer);
 }
+*/
 
 
 template class SoftmaxWithLossLayer<float>;

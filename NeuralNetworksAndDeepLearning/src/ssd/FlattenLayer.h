@@ -20,10 +20,12 @@ public:
 	class Builder : public Layer<Dtype>::Builder {
 	public:
 		uint32_t _axis;
+		uint32_t _endAxis;
 
 		Builder() {
 			this->type = Layer<Dtype>::Flatten;
 			this->_axis = 1;
+			this->_endAxis = 3;
 		}
 		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);
@@ -49,6 +51,10 @@ public:
 			this->_axis = axis;
 			return this;
 		}
+		virtual Builder* endAxis(const uint32_t endAxis) {
+			this->_endAxis = endAxis;
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new FlattenLayer(this);
 		}
@@ -66,6 +72,7 @@ private:
 
 private:
 	uint32_t axis;
+	uint32_t endAxis;
 };
 
 #endif /* FLATTENLAYER_H_ */

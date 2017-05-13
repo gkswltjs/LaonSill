@@ -8,6 +8,7 @@
 #include "AnnotationDataLayer.h"
 #include "tinyxml2/tinyxml2.h"
 #include "NetworkConfig.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
@@ -180,6 +181,26 @@ void ODRawData<Dtype>::displayBoundingBoxes(const string& baseDataPath,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename Dtype>
 AnnotationDataLayer<Dtype>::AnnotationDataLayer(Builder* builder)
 : InputLayer<Dtype>(builder),
@@ -189,33 +210,25 @@ AnnotationDataLayer<Dtype>::AnnotationDataLayer(Builder* builder)
   imageSetPath(builder->_imageSetPath),
   baseDataPath(builder->_baseDataPath),
   labelMap(builder->_labelMapPath),
-  pixelMeans(builder->_pixelMeans) {
+  pixelMeans(builder->_pixelMeans),
+  data("data", true) {
 
 	initialize();
 }
 
 template <typename Dtype>
 AnnotationDataLayer<Dtype>::~AnnotationDataLayer() {
-	if (this->data) {
-		delete this->data;
-	}
-	if (this->label) {
-		delete this->label;
-	}
+
 }
 
 
 template <typename Dtype>
 void AnnotationDataLayer<Dtype>::initialize() {
-	this->data = new Data<Dtype>("data", true);
-	this->data->reshape({1, this->imageHeight, this->imageWidth, 3});
-	this->label = new Data<Dtype>("label", true);
-	this->label->reshape({1, 1, 1, 8});
-
+	this->data.reshape({1, this->imageHeight, this->imageWidth, 3});
 	this->labelMap.build();
 
 	loadODRawDataPath();
-	loadODRawDataIm();
+	//loadODRawDataIm();
 	loadODRawDataAnno();
 
 	/*
@@ -226,7 +239,6 @@ void AnnotationDataLayer<Dtype>::initialize() {
 		cout << endl;
 	}
 	*/
-
 	loadODMetaData();
 
 	this->perm.resize(this->odMetaDataList.size());
@@ -242,36 +254,46 @@ void AnnotationDataLayer<Dtype>::reshape() {
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
-	Layer<Dtype>::_adjustInputShape();
-
-	const uint32_t inputSize = this->_inputData.size();
-	for (uint32_t i = 0; i < inputSize; i++) {
-		if (!Layer<Dtype>::_isInputShapeChanged(i))
-			continue;
-
-		// "data"
-		if (i == 0) {
-
-
-		}
-		// "label"
-		else if (i == 1) {
-
-		}
+	bool adjusted = Layer<Dtype>::_adjustInputShape();
+	if (adjusted) {
+		// AnnotationDataLayer에서 inputShape를 확인하지 않을 것이므로
+		// inputShape를 별도로 갱신하지는 않음.
+		// for "data" Data
+		this->_inputData[0]->reshape(
+				{this->networkConfig->_batchSize, 3, this->imageHeight, this->imageWidth});
+		// for "label" Data
+		// 1. item_id 2. group_label 3. instance_id
+		// 4. xmin 5. ymin 6. xmax 7. ymax 8. difficult
+		// cf. [2]: numBBs
+		// numBBs를 max 추정하여 미리 충분히 잡아 두면
+		// 실행시간에 추가 메모리 할당이 없을 것. batch * 10으로 추정
+		//this->_inputData[1]->reshape({1, 1, this->networkConfig->_batchSize * 10, 8});
+		this->_inputData[1]->reshape({1, 1, 2, 8});
 	}
+}
+
+template <typename Dtype>
+int AnnotationDataLayer<Dtype>::getNumTrainData() {
+	return this->odMetaDataList.size();
+}
+
+template <typename Dtype>
+void AnnotationDataLayer<Dtype>::shuffleTrainDataSet() {
+	return;
 }
 
 template <typename Dtype>
 void AnnotationDataLayer<Dtype>::feedforward() {
 	reshape();
 	getNextMiniBatch();
-
+	//verifyData();
 }
 
 template <typename Dtype>
 void AnnotationDataLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 	reshape();
 	getNextMiniBatch();
+	//verifyData();
 }
 
 
@@ -299,13 +321,17 @@ template <typename Dtype>
 void AnnotationDataLayer<Dtype>::loadODRawDataIm() {
 	const int numODRawData = this->odRawDataList.size();
 	for (int i = 0; i < numODRawData; i++) {
+		if (i % 1000 == 0) {
+			cout << "loadODRawDataIm(): " << i << endl;
+		}
+
 		ODRawData<Dtype>& odRawData = this->odRawDataList[i];
 		cv::Mat im = cv::imread(this->baseDataPath + odRawData.imPath);
-		im.convertTo(im, CV_32F);
+		im.convertTo(im, CV_32FC3);
 
-		float imHeightScale = float(this->imageHeight) / float(im.rows);
-		float imWidthScale = float(this->imageWidth) / float(im.cols);
-		cv::resize(im, im, cv::Size(), imHeightScale, imWidthScale, CV_INTER_LINEAR);
+		//float imHeightScale = float(this->imageHeight) / float(im.rows);
+		//float imWidthScale = float(this->imageWidth) / float(im.cols);
+		cv::resize(im, im, cv::Size(this->imageWidth, this->imageHeight), 0, 0, CV_INTER_LINEAR);
 
 		odRawData.im = im;
 	}
@@ -368,9 +394,9 @@ void AnnotationDataLayer<Dtype>::readAnnotation(ODRawData<Dtype>& odRawData) {
 		bndboxElement->FirstChildElement("xmax")->QueryIntText((int*)&boundingBox.xmax);
 		bndboxElement->FirstChildElement("ymax")->QueryIntText((int*)&boundingBox.ymax);
 
-		if (boundingBox.diff == 0) {
+		//if (boundingBox.diff == 0) {
 			odRawData.boundingBoxes.push_back(boundingBox);
-		}
+		//}
 	}
 }
 
@@ -399,6 +425,7 @@ void AnnotationDataLayer<Dtype>::loadODMetaData() {
 template <typename Dtype>
 void AnnotationDataLayer<Dtype>::shuffle() {
 	std::random_shuffle(this->perm.begin(), this->perm.end());
+	//cout << "***shuffle is temporaray disabled ... " << endl;
 	this->cur = 0;
 }
 
@@ -426,6 +453,7 @@ void AnnotationDataLayer<Dtype>::getNextMiniBatchInds(vector<int>& inds) {
 template <typename Dtype>
 void AnnotationDataLayer<Dtype>::getMiniBatch(const vector<int>& inds) {
 
+	// Count total bounding boxes in this batch.
 	uint32_t totalBBs = 0;
 	for (int i = 0; i < inds.size(); i++) {
 		ODMetaData<Dtype>& odMetaData = this->odMetaDataList[inds[i]];
@@ -433,13 +461,16 @@ void AnnotationDataLayer<Dtype>::getMiniBatch(const vector<int>& inds) {
 		totalBBs += odRawData.boundingBoxes.size();
 	}
 
-	this->_outputData[0]->reshape({this->networkConfig->_batchSize, 3, this->imageHeight,
-		this->imageWidth});
+	// "data"의 경우 shape가 초기에 결정, reshape가 필요없음.
+	//this->_outputData[0]->reshape({this->networkConfig->_batchSize, 3, this->imageHeight,
+	//	this->imageWidth});
+	// "label"의 경우 현재 batch의 bounding box 수에 따라 shape 변동.
 	this->_outputData[1]->reshape({1, 1, totalBBs, 8});
 
-	Dtype* hData = this->_outputData[0]->mutable_host_data();
-	Dtype* hLabel = this->_outputData[1]->mutable_host_data();
+	Dtype* dataData = this->_outputData[0]->mutable_host_data();
+	Dtype* labelData = this->_outputData[1]->mutable_host_data();
 
+	// "data" 1개에 대한 shape. cv::Mat의 경우 BGR, BGR, ... 의 구조.
 	const vector<uint32_t> dataShape = {1, this->imageHeight, this->imageWidth, 3};
 	int bbIdx = 0;
 	Dtype buf[8];
@@ -447,9 +478,20 @@ void AnnotationDataLayer<Dtype>::getMiniBatch(const vector<int>& inds) {
 		ODMetaData<Dtype>& odMetaData = this->odMetaDataList[inds[i]];
 		ODRawData<Dtype>& odRawData = this->odRawDataList[odMetaData.rawIdx];
 
+
+		if (odRawData.im.empty()) {
+			cv::Mat im = cv::imread(this->baseDataPath + odRawData.imPath);
+			im.convertTo(im, CV_32FC3);
+			cv::resize(im, im, cv::Size(this->imageWidth, this->imageHeight), 0, 0, CV_INTER_LINEAR);
+			odRawData.im = im;
+		}
+
+		// transform image ... 추가 transform option 추가될 경우 여기서 처리.
+		// 현재는 flip만 적용되어 있음.
 		// flip image
 		cv::Mat copiedIm;
 		if (odMetaData.flip) {
+			// 1 means flipping around y-axis
 			cv::flip(odRawData.im, copiedIm, 1);
 		} else {
 			odRawData.im.copyTo(copiedIm);
@@ -465,30 +507,29 @@ void AnnotationDataLayer<Dtype>::getMiniBatch(const vector<int>& inds) {
 		}
 
 		// data
-		this->data->reshape(dataShape);
-		this->data->set_host_data((Dtype*)copiedIm.data);
-		this->data->transpose({0, 3, 1, 2}); // BGR,BGR,... to BB..,GG..,RR..
+		this->data.reshape(dataShape);
+		this->data.set_host_data((Dtype*)copiedIm.data);
+		this->data.transpose({0, 3, 1, 2}); // BGR,BGR,... to BB..,GG..,RR..
 
-		std::copy(this->data->host_data(), this->data->host_data() + this->data->getCount(),
-				hData + i*this->data->getCount());
+		std::copy(this->data.host_data(), this->data.host_data() + this->data.getCount(),
+				dataData + i * this->data.getCount());
 
 		// label
 		const int numBBs = odRawData.boundingBoxes.size();
 		for (int j = 0; j < numBBs; j++) {
 			buildLabelData(odMetaData, j, buf);
 			buf[0] = i;
-			std::copy(buf, buf + 8, hLabel + bbIdx*8);
+			// XXX: for debugging.
+			buf[2] = inds[i];
+			std::copy(buf, buf + 8, labelData + bbIdx * 8);
 			bbIdx++;
 		}
 	}
 
-	this->_printOn();
-	this->_outputData[0]->print_data({}, false);
-	this->_outputData[1]->print_data({}, false, -1);
-	this->_printOff();
-
-	this->_inputShape[0] = this->_outputData[0]->getShape();
-	this->_inputShape[1] = this->_outputData[1]->getShape();
+	//this->_printOn();
+	//this->_outputData[0]->print_data({}, false);
+	//this->_outputData[1]->print_data({}, false, -1);
+	//this->_printOff();
 }
 
 template <typename Dtype>
@@ -505,6 +546,111 @@ void AnnotationDataLayer<Dtype>::buildLabelData(ODMetaData<Dtype>& odMetaData, i
 		buf[5] = 1.0 - bb.buf[3];				// xmax
 	}
 }
+
+
+
+
+template <typename Dtype>
+void AnnotationDataLayer<Dtype>::verifyData() {
+	STDOUT_LOG("VERIFYING DATA ... ");
+	const string windowName = "AnnotationDataLayer::verifyData()";
+	const int batches = this->networkConfig->_batchSize;
+	const int singleImageSize = this->_outputData[0]->getCountByAxis(1);
+	const Dtype* dataData = this->_outputData[0]->host_data();
+	const Dtype* labelData = this->_outputData[1]->host_data();
+	const uint32_t numBBs = this->_outputData[1]->getShape(2);
+
+	Dtype* data = this->data.mutable_host_data();
+	Dtype buf[8];
+	int bbIdx = 0;
+	for (int i = 0; i < batches; i++) {
+		int idx = int(labelData[bbIdx * 8 + 2]);
+		ODMetaData<Dtype>& odMetaData = this->odMetaDataList[idx];
+		ODRawData<Dtype>& odRawData = this->odRawDataList[odMetaData.rawIdx];
+		//odRawData.displayBoundingBoxes(this->baseDataPath, this->labelMap.colorList);
+
+		this->data.reshape({1, 3, this->imageHeight, this->imageWidth});
+		std::copy(dataData + i * singleImageSize, dataData + (i + 1) * singleImageSize, data);
+
+		// transpose
+		this->data.transpose({0, 2, 3, 1});
+
+		// pixel mean
+		for (int j = 0; j < singleImageSize; j += 3) {
+			data[j + 0] += this->pixelMeans[0];
+			data[j + 1] += this->pixelMeans[1];
+			data[j + 2] += this->pixelMeans[2];
+		}
+
+		cv::Mat im = cv::Mat(this->imageHeight, this->imageWidth, CV_32FC3, data);
+		cv::resize(im, im, cv::Size(odRawData.width, odRawData.height), 0, 0, CV_INTER_LINEAR);
+
+
+		while (bbIdx < numBBs) {
+			idx = int(labelData[bbIdx * 8 + 0]);
+			if (idx == i) {
+				std::copy(labelData + bbIdx * 8, labelData + (bbIdx + 1) * 8, buf);
+				//printArray(buf, 8);
+
+				// 1. label 4. xmin 5. ymin 6. xmax 7. ymax
+				int label = int(buf[1]);
+				int xmin = int(buf[3] * odRawData.width);
+				int ymin = int(buf[4] * odRawData.height);
+				int xmax = int(buf[5] * odRawData.width);
+				int ymax = int(buf[6] * odRawData.height);
+
+				cv::rectangle(im, cv::Point(xmin, ymin), cv::Point(xmax, ymax),
+						this->labelMap.colorList[label], 2);
+				cv::putText(im, this->labelMap.convertIndToLabel(label),
+						cv::Point(xmin, ymin+15.0f), 2, 0.5f,
+						this->labelMap.colorList[label]);
+				bbIdx++;
+			} else {
+				break;
+			}
+		}
+
+		im.convertTo(im, CV_8UC3);
+		cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		cv::imshow(windowName, im);
+		cv::waitKey(0);
+		cv::destroyAllWindows();
+	}
+}
+
+
+template <typename Dtype>
+void AnnotationDataLayer<Dtype>::printMat(cv::Mat& im, int type) {
+
+	if (type == CV_32F) {
+		float* data = (float*)im.data;
+
+		//for (int r = 0; r < )
+
+		for (int i = 0; i < 9; i++) {
+			cout << data[i] << ", ";
+		}
+		cout << endl;
+	} else if (type == CV_8U) {
+		uchar* data = (uchar*)im.data;
+		for (int i = 0; i < 9; i++) {
+			cout << uint32_t(data[i]) << ", ";
+		}
+		cout << endl;
+	}
+}
+
+
+template <typename Dtype>
+void AnnotationDataLayer<Dtype>::printArray(Dtype* array, int n) {
+
+	for (int i = 0; i < n; i++) {
+		cout << array[i] << ", ";
+	}
+	cout << endl;
+}
+
+
 
 
 template class AnnotationDataLayer<float>;

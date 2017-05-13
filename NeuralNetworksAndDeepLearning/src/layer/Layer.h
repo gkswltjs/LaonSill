@@ -257,6 +257,9 @@ public:
 	virtual void backpropagation();
 #endif
 
+
+	virtual void printDataConfig();
+
 protected:
 	/**
 	 * @details 레이어를 초기화한다.

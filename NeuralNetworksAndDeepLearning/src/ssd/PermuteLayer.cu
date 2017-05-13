@@ -53,15 +53,6 @@ void PermuteLayer<Dtype>::reshape() {
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
 
-	/*
-	vector<uint32_t> outputShape(this->numAxes, 1);
-	for (int i = 0; i < this->numAxes; i++) {
-		this->permuteOrder_.mutable_host_data[i] = this->orders[i];
-		outputShape[i] = this->_inputData[0]->getShape(this->orders[i]);
-	}
-	this->_outputData[0]->reshape(outputShape);
-	*/
-
 	vector<uint32_t> outputShape;
 	for (int i = 0; i < this->numAxes; i++) {
 		if (i == this->numAxes - 1) {
@@ -104,7 +95,7 @@ void PermuteLayer<Dtype>::feedforward() {
 		CUDA_POST_KERNEL_CHECK;
 	} else {
 		// if there is no need to permute, we share data to save memory
-		this->_outputData[0]->_data = this->_inputData[0]->_data;
+		this->_outputData[0]->share_data(this->_inputData[0]);
 	}
 }
 
@@ -125,7 +116,8 @@ void PermuteLayer<Dtype>::backpropagation() {
 		CUDA_POST_KERNEL_CHECK;
 	} else {
 		// if there is no need to permute, we share grad to save memory
-		this->_inputData[0]->_grad = this->_outputData[0]->_grad;
+		//this->_inputData[0]->_grad = this->_outputData[0]->_grad;
+		this->_inputData[0]->share_grad(this->_outputData[0]);
 	}
 }
 
@@ -139,8 +131,7 @@ void PermuteLayer<Dtype>::initialize() {
 	for (int i = 0; i < this->orders.size(); i++) {
 		int order = this->orders[i];
 		SASSERT(order < this->numAxes, "order should be less than the input dimension.");
-		if (std::find(this->orders.begin(), this->orders.end(), order) !=
-				this->orders.end()) {
+		if (std::find(orders.begin(), orders.end(), order) != orders.end()) {
 			SASSERT(false, "there are duplicate orders");
 		}
 		orders.push_back(order);
@@ -168,6 +159,10 @@ void PermuteLayer<Dtype>::initialize() {
 	this->permuteOrder_.reshape({this->numAxes, 1, 1, 1});
 	this->oldSteps_.reshape({this->numAxes, 1, 1, 1});
 	this->newSteps_.reshape({this->numAxes, 1, 1, 1});
+
+	for (int i = 0; i < this->numAxes; i++) {
+		this->permuteOrder_.mutable_host_data()[i] = orders[i];
+	}
 
 	this->orders = orders;
 }

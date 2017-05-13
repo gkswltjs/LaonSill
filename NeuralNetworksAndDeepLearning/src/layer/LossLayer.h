@@ -128,6 +128,33 @@ public:
 		Layer<Dtype>::backpropagation();
 	}
 	virtual Dtype cost() = 0;
+	virtual Dtype getNormalizer(const int outerNum, const int innerNum,
+			const int validCount) {
+		Dtype normalizer;
+		switch (this->normalization) {
+		case NormalizationMode::Full:
+			normalizer = Dtype(outerNum * innerNum);
+			break;
+		case NormalizationMode::Valid:
+			if (validCount == -1) {
+				normalizer = Dtype(outerNum * innerNum);
+			} else {
+				normalizer = Dtype(validCount);
+			}
+			break;
+		case LossLayer<Dtype>::NormalizationMode::BatchSize:
+			normalizer = Dtype(outerNum);
+			break;
+		case LossLayer<Dtype>::NormalizationMode::NoNormalization:
+			normalizer = Dtype(1);
+			break;
+		default:
+			SASSERT(false, "Unknown normlization mode.");
+		}
+		// Some useres will have no labels for some examples in order to 'turn off' a
+		// particular loss in a multi-task setup. The max prevents NaNs in that case.
+		return std::max(Dtype(1.0), normalizer);
+	}
 
 protected:
 

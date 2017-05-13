@@ -14,6 +14,7 @@
 #include "Network.h"
 #include "NetworkConfig.h"
 #include "Data.h"
+#include "SysLog.h"
 
 
 #define COPY_INPUT		1
@@ -27,7 +28,7 @@ public:
 	NetworkTest(LayersConfig<Dtype>* layersConfig, const std::string& networkName,
 			const int numSteps)
 	: layersConfig(layersConfig), networkName(networkName), numSteps(numSteps) {
-		assert(this->numSteps > 0);
+		SASSERT0(this->numSteps > 0);
 	}
 
 	virtual ~NetworkTest() {
@@ -44,6 +45,14 @@ public:
 	}
 
 	virtual void setUp() {
+		std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
+		cout << "::: LAYER DATA CONFIGURATION :::" << endl;
+		for (int i = 0; i < layers.size(); i++) {
+			layers[i]->reshape();
+			layers[i]->printDataConfig();
+		}
+
+
 		//buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
 		//		this->networkName + this->paramsOld, this->nameParamsOldMap);
 		//buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
@@ -83,6 +92,7 @@ public:
 			}
 		}
 		cout << "-------------------------------------------------------------------" << endl;
+
 	}
 
 	virtual void cleanUp() {
@@ -99,56 +109,20 @@ public:
 			dataTest(i);
 			logEndTest("FEED FORWARD");
 
-#if 0
-			std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
-			for (int i = 0; i < layers.size(); i++) {
-				Layer<Dtype>* layer = layers[i];
-				for (int j = 0; j < layer->_inputData.size(); j++) {
-					const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
-					Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMap, dataName);
-					layer->_inputData[j]->set_host_data(data, 0, false);
-				}
-			}
-			typename std::map<std::string, Layer<Dtype>*>::iterator itr =
-					this->layersConfig->_nameLayerMap.find("loss_cls");
-			itr->second->_outputData[0]->mutable_host_data()[0] = 3.1143229008f;
-			itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
-
-			itr = this->layersConfig->_nameLayerMap.find("loss_bbox");
-			itr->second->_outputData[0]->mutable_host_data()[0] = 0.1780370474f;
-			itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
-#endif
 
 			// backpropagation
+			replaceDataWithGroundTruth(i);
+
 			logStartTest("BACK PROPAGATION");
 			backward();
-#if 0
-			std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
-			for (int i = 0; i < layers.size(); i++) {
-				Layer<Dtype>* layer = layers[i];
-				for (int j = 0; j < layer->_inputData.size(); j++) {
-					const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
-					Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMap, dataName);
-					layer->_inputData[j]->set_host_grad(data, 0, false);
-				}
-			}
-#endif
 			gradTest(i);
 			logEndTest("BACK PROPAGATION");
-#if 0
-			std::vector<LearnableLayer<Dtype>*>& learnableLayers = this->layersConfig->_learnableLayers;
-			for (int i = 0; i < learnableLayers.size(); i++) {
-				LearnableLayer<Dtype>* learnableLayer = learnableLayers[i];
-				for (int j = 0; j < learnableLayer->_params.size(); j++) {
-					const string key = learnableLayer->name + SIG_PARAMS + to_string(j);
-					Data<float>* param = retrieveValueFromMap(this->nameParamsNewMap, key);
-					assert(param != 0);
-					learnableLayer->_params[j]->set_host_grad(param, 0, false);
-				}
-			}
-#endif
+
 
 			// update & compare result
+			replaceGradWithGroundTruth(i);
+			replaceParamWithGroundTruth(i);
+
 			logStartTest("UPDATE");
 			update();
 			paramTest(i);
@@ -157,7 +131,7 @@ public:
 	}
 
 	void feedInputLayerData(const int nthStep) {
-		assert(nthStep < this->numSteps);
+		SASSERT0(nthStep < this->numSteps);
 		InputLayer<Dtype>* inputLayer = this->layersConfig->_inputLayer;
 
 		for (int i = 0; i < inputLayer->_outputs.size(); i++) {
@@ -166,9 +140,6 @@ public:
 			inputLayer->_outputData[i]->set_host_data(data, 0, true);
 		}
 	}
-
-
-
 
 
 
@@ -206,7 +177,7 @@ private:
 	}
 
 	void dataTest(const int nthStep) {
-		assert(nthStep < this->numSteps);
+		SASSERT0(nthStep < this->numSteps);
 		for (int i = 0; i < this->layersConfig->_layers.size(); i++) {
 			Layer<Dtype>* layer = this->layersConfig->_layers[i];
 			cout << "-----------------------------data test at layer " << layer->name << endl;
@@ -245,7 +216,7 @@ private:
 	}
 
 	void gradTest(const int nthStep) {
-		assert(nthStep < this->numSteps);
+		SASSERT0(nthStep < this->numSteps);
 		// caffe의 backward 과정에서 input layer와
 		// input layer의 다음 레이어 input data에 대해 backward 진행하지 않기 때문에
 		// 적용된 diff가 없으므로 해당 data에 대해서는 체크하지 않는다.
@@ -289,7 +260,7 @@ private:
 	}
 
 	void paramTest(int nthStep) {
-		assert(nthStep < this->numSteps);
+		SASSERT0(nthStep < this->numSteps);
 
 		for (int i = 0; i < this->layersConfig->_learnableLayers.size(); i++) {
 			LearnableLayer<Dtype>* learnableLayer = this->layersConfig->_learnableLayers[i];
@@ -319,6 +290,52 @@ private:
 			}
 		}
 	}
+
+	void replaceDataWithGroundTruth(int stepIdx) {
+		std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
+		for (int i = 0; i < layers.size(); i++) {
+			Layer<Dtype>* layer = layers[i];
+			for (int j = 0; j < layer->_inputData.size(); j++) {
+				const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
+				Data<Dtype>* data =
+						retrieveValueFromMap(this->nameBlobsMapList[stepIdx], dataName);
+				layer->_inputData[j]->set_host_data(data, 0, false);
+			}
+		}
+		typename std::map<std::string, Layer<Dtype>*>::iterator itr =
+				this->layersConfig->_nameLayerMap.find("mbox_loss");
+		itr->second->_outputData[0]->mutable_host_data()[0] = 3.01521993f;
+		itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
+	}
+
+	void replaceGradWithGroundTruth(int stepIdx) {
+		std::vector<Layer<Dtype>*>& layers = this->layersConfig->_layers;
+		for (int i = 0; i < layers.size(); i++) {
+			Layer<Dtype>* layer = layers[i];
+			for (int j = 0; j < layer->_inputData.size(); j++) {
+				const string dataName = BLOBS_PREFIX + layer->_inputData[j]->_name;
+				Data<Dtype>* data =
+						retrieveValueFromMap(this->nameBlobsMapList[stepIdx], dataName);
+				layer->_inputData[j]->set_host_grad(data, 0, false);
+			}
+		}
+	}
+
+	void replaceParamWithGroundTruth(int stepIdx) {
+		std::vector<LearnableLayer<Dtype>*>& learnableLayers =
+				this->layersConfig->_learnableLayers;
+		for (int i = 0; i < learnableLayers.size(); i++) {
+			LearnableLayer<Dtype>* learnableLayer = learnableLayers[i];
+			for (int j = 0; j < learnableLayer->_params.size(); j++) {
+				const string key = learnableLayer->name + SIG_PARAMS + to_string(j);
+				Data<float>* param =
+						retrieveValueFromMap(this->nameParamsMapList[stepIdx], key);
+				SASSERT0(param != 0);
+				learnableLayer->_params[j]->set_host_grad(param, 0, false);
+			}
+		}
+	}
+
 
 
 

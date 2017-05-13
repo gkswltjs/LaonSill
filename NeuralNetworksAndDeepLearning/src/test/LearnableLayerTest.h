@@ -18,8 +18,9 @@ using namespace std;
 template <typename Dtype>
 class LearnableLayerTest : public LayerTestInterface<Dtype> {
 public:
-	LearnableLayerTest(typename LearnableLayer<Dtype>::Builder* builder)
-	: builder(builder), layer(0) {}
+	LearnableLayerTest(typename LearnableLayer<Dtype>::Builder* builder,
+			NetworkConfig<Dtype>* networkConfig = 0)
+	: builder(builder), layer(0), networkConfig(networkConfig) {}
 
 	virtual ~LearnableLayerTest() {
 		cleanUpObject(this->layer);
@@ -34,6 +35,9 @@ public:
 		// 최소 설정만 전달받고 나머지는 npz로부터 추론하는 것이 좋겠다.
 		this->layer = dynamic_cast<LearnableLayer<Dtype>*>(this->builder->build());
 		assert(this->layer != 0);
+		if (this->networkConfig != 0) {
+			this->layer->setNetworkConfig(this->networkConfig);
+		}
 
 		fillLayerDataVec(this->layer->_inputs, this->layer->_inputData);
 		fillLayerDataVec(this->layer->_outputs, this->layer->_outputData);
@@ -90,6 +94,7 @@ public:
 
 
 private:
+	NetworkConfig<Dtype>* networkConfig;
 	typename LearnableLayer<Dtype>::Builder* builder;
 	LearnableLayer<Dtype>* layer;
 

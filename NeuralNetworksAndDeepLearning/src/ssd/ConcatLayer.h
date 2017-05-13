@@ -21,8 +21,10 @@ class ConcatLayer : public Layer<Dtype> {
 public:
 	class Builder : public Layer<Dtype>::Builder {
 	public:
+		int _axis;
 		Builder() {
 			this->type = Layer<Dtype>::Concat;
+			this->_axis = -1;
 		}
 		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);
@@ -44,6 +46,10 @@ public:
 			Layer<Dtype>::Builder::propDown(propDown);
 			return this;
 		}
+		virtual Builder* axis(const int axis) {
+			this->_axis = axis;
+			return this;
+		}
 		Layer<Dtype>* build() {
 			return new ConcatLayer(this);
 		}
@@ -52,7 +58,18 @@ public:
 	ConcatLayer(Builder* builder);
 	virtual ~ConcatLayer();
 
+	virtual void reshape();
+	virtual void feedforward();
+	virtual void backpropagation();
 
+private:
+	void initialize(Builder* builder);
+
+private:
+	int count;
+	int numConcat;
+	int concatInputSize;
+	int concatAxis;
 };
 
 #endif /* CONCATLAYER_H_ */

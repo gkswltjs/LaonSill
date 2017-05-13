@@ -16,7 +16,8 @@ using namespace std;
 
 template <typename Dtype>
 ConvLayer<Dtype>::ConvLayer(Builder* builder)
-: LearnableLayer<Dtype>(builder) {
+: LearnableLayer<Dtype>(builder),
+  dilation(builder->_dilation) {
 	initialize(builder->_filterDim, builder->_weightUpdateParam, builder->_biasUpdateParam,
 			builder->_weightFiller, builder->_biasFiller, builder->_deconv,
             builder->_deconvExtraCell);

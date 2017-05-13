@@ -223,12 +223,25 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 			filter_d.channels, filter_d.filters, filter_d.rows, filter_d.cols));
     }
 
-	//int pad = (filter_d.rows-1)/2;
-	checkCUDNN(cudnnSetConvolution2dDescriptor(convDesc,
-			filter_d.pad, filter_d.pad, filter_d.stride, filter_d.stride, 1, 1,
-			CUDNN_CROSS_CORRELATION));
+	checkCUDNN(cudnnSetConvolution2dDescriptor(this->convDesc,
+			filter_d.pad, filter_d.pad, filter_d.stride, filter_d.stride,
+			this->dilation, this->dilation,
+			CUDNN_CROSS_CORRELATION,
+			CUDNN_DATA_FLOAT));
 
-	//this->activation_fn = ActivationFactory<Dtype>::create(activationType);
+	/*
+    cudnnStatus_t status = cudnnSetConvolution2dDescriptor(this->convDesc,
+    			filter_d.pad, filter_d.pad, filter_d.stride, filter_d.stride,
+    			2, 2,
+    			CUDNN_CROSS_CORRELATION,
+    			CUDNN_DATA_FLOAT);
+
+	std::stringstream _error;
+	if (status != CUDNN_STATUS_SUCCESS) {
+	  _error << "CUDNN failure: " << cudnnGetErrorString(status);
+	  FatalError(_error.str());
+	}
+	*/
 
 	this->d_workspace = 0;
 }
@@ -275,10 +288,10 @@ void ConvLayer<Dtype>::reshape() {
     }
 
     checkCUDNN(cudnnSetTensor4dDescriptor(
-        this->outputTensorDesc,
-        CUDNN_TENSOR_NCHW,
-        CUDNN_DATA_FLOAT,
-        n, c, h, w));
+    		this->outputTensorDesc,
+            CUDNN_TENSOR_NCHW,
+            CUDNN_DATA_FLOAT,
+            n, c, h, w));
 
 	const uint32_t obatches = static_cast<uint32_t>(n);
 	const uint32_t ochannels = static_cast<uint32_t>(c);
@@ -314,7 +327,7 @@ void ConvLayer<Dtype>::reshape() {
 
 	// forward algorithm
     if (!this->deconv) {
-	    checkCUDNN(cudnnGetConvolutionForwardAlgorithm(
+		checkCUDNN(cudnnGetConvolutionForwardAlgorithm(
 			Cuda::cudnnHandle,
 			this->inputTensorDesc,
 			this->filterDesc,
@@ -334,6 +347,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->convFwdAlgo,
 			&convFwdWorkspaceSize));
     } else {
+
 	    checkCUDNN(cudnnGetConvolutionForwardAlgorithm(
 			Cuda::cudnnHandle,
 			this->outputTensorDesc,

@@ -48,6 +48,7 @@ void vgg16();
 void vgg19();
 void fasterRcnnTrain();
 void fasterRcnnTest();
+void ssd();
 
 
 void developerMain() {
@@ -58,10 +59,11 @@ void developerMain() {
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
 	//artisticStyle();
-	vgg16();
+	//vgg16();
 	//vgg19();
 	//fasterRcnnTrain();
 	//fasterRcnnTest();
+	ssd();
 
 	STDOUT_LOG("exit developerMain()");
 }
@@ -74,8 +76,7 @@ void artisticStyle() {
 	delete artisticStyle;
 }
 
-
-#define LOAD_WEIGHT 0
+#define LOAD_WEIGHT 1
 
 void vgg16() {
 	const int maxEpochs = 1000;
@@ -357,6 +358,98 @@ void fasterRcnnTest() {
 
 
 
+
+
+
+void ssd() {
+	const int maxEpochs = 1000;
+	const vector<string> lossLayers = {"mbox_loss"};
+	const vector<string> accuracyLayers = {};
+	const NetworkPhase phase = NetworkPhase::TrainPhase;
+
+#if LOAD_WEIGHT
+	vector<WeightsArg> weightsArgs(1);
+	weightsArgs[0].weightsPath =
+			"/home/jkim/Dev/SOOOA_HOME/network/SSD_PRETRAINED.param";
+#endif
+
+	const uint32_t batchSize = 16;				// 32
+	const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.001f;
+
+	const uint32_t stepSize = 100000;
+	const float weightDecay = 0.0005f;
+	const float momentum = 0.9f;
+	const float clipGradientsLevel = 0.0f;
+	const float gamma = 0.1;
+	const LRPolicy lrPolicy = LRPolicy::Fixed;
+
+	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
+	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
+	STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
+	STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
+	STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
+	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
+	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
+
+	NetworkConfig<float>* networkConfig =
+			(new typename NetworkConfig<float>::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
+			->stepSize(stepSize)
+			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->networkPhase(phase)
+			->gamma(gamma)
+			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+#if LOAD_WEIGHT
+			->weightsArgs(weightsArgs)
+#endif
+			->networkListeners({
+				new NetworkMonitor("mbox_loss", NetworkMonitor::PLOT_ONLY)
+				})
+			->lossLayers(lossLayers)
+			->accuracyLayers(accuracyLayers)
+			->build();
+
+	Util::printVramInfo();
+
+	Network<float>* network = new Network<float>(networkConfig);
+	LayersConfig<float>* layersConfig = createSSDNetLayersConfig<float>();
+
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(network->config);
+	}
+	network->setLayersConfig(layersConfig);
+#if LOAD_WEIGHT
+	network->loadPretrainedWeights();
+#endif
+
+
+	/*
+	Data<float>::printConfig = true;
+	SyncMem<float>::printConfig = true;
+	for (int i = 0; i < layersConfig->_learnableLayers.size(); i++) {
+		for (int j = 0; j < layersConfig->_learnableLayers[i]->_params.size(); j++) {
+			layersConfig->_learnableLayers[i]->_params[j]->print_data({}, false);
+		}
+	}
+	Data<float>::printConfig = false;
+	SyncMem<float>::printConfig = false;
+	*/
+	network->sgd_with_timer(maxEpochs);
+}
+
+
+
+
+
 #define TEST_MODE 0
 
 #if TEST_MODE
@@ -425,140 +518,12 @@ int main(int argc, char** argv) {
 
     InitParam::destroy();
 #else
-    /*
-    //const string source = "/home/jkim/Dev/git/caffe/examples/imagenet/ilsvrc12_train_lmdb";
-    const string source = "/home/jkim/Dev/git/caffe/examples/test/train_lmdb";
-    LMDBDataSet<float>* ds = new LMDBDataSet<float>(source);
-    ds->load();
+    vector<int> vec(1, 1);
+    vec.push_back(4);
 
-    int i = 0;
-    while(true) {
-    	cout << i << endl;
-    	const float* trainData = ds->getTrainDataAt(i);
-    	const float* trainLabel = ds->getTrainLabelAt(i);
-    	i++;
+    for (int i = 0; i < vec.size(); i++) {
+    	cout << vec[i] << endl;
     }
-    delete ds;
-    */
-
-    auto env = lmdb::env::create();
-    //env.set_mapsize(1UL * 1024UL * 1024UL * 1024UL);		// 1GB
-    //env.open("/home/jkim/Dev/git/caffe/examples/test/train_lmdb_256_jpg");
-    env.open("/home/jkim/Dev/git/caffe/examples/imagenet/ilsvrc12_train_lmdb");
-
-    auto rtxn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
-    auto dbi = lmdb::dbi::open(rtxn, nullptr);
-    auto cursor = lmdb::cursor::open(rtxn, dbi);
-
-    string key, value;
-    //lmdb::val key;
-    size_t size = dbi.size(rtxn);
-    vector<string> keys(size);
-    int i = 0;
-    while (cursor.get(key, value, MDB_FIRST)) {
-    	//keys[i++] = key;
-
-    	i++;
-    	if (i % 10000 == 0) {
-    		cout << i << endl;
-    	}
-    }
-
-
-    cout << "size: " << size << ", i: " << i << endl;
-
-
-    //cursor.get()
-    /*
-    cout << "key: " << key << ", size: " << value.size() << endl;
-    key = "00000000_n01843383/n01843383_5825.JPEG";
-    if (dbi.get(rtxn, key)) {
-    	cout << "key: " << key;
-    } else
-    	cout << "failed to get ... " << endl;
-    	*/
-
-
-
-
-
-
-
-    /*
-    unsigned char* ptr = (unsigned char*)(&value.c_str()[12]);
-
-    Data<float>* data = new Data<float>("");
-    data->reshape({1, 3, 224, 224});
-    float* data_ptr = data->mutable_host_data();
-    for (int i = 0; i < 224*224*3; i++) {
-    	data_ptr[i] = float(ptr[i]) / 255;
-    }
-    data->transpose({0, 2, 3, 1});
-    cv::Mat result(224, 224, CV_32FC3, data_ptr);
-    cv::namedWindow("result");
-    cv::imshow("result", result);
-    cv::waitKey();
-    */
-
-#if 0
-    const int numSample = 100;
-    //const int numData = 150545;
-    const int numData = 100;
-    uint8_t data[numSample][numData];	//
-    for (int i = 0; i < numSample; i++) {
-    	for (int j = 0; j < numData; j++) {
-    		data[i][j] = 0;
-    	}
-    }
-
-
-
-    for (int i = 0; i < numSample; i++) {
-    	if (!cursor.get(key, value, MDB_NEXT)) {
-    		break;
-    	}
-    	const uint8_t* ptr = (uint8_t*)value.c_str();
-    	const int size = value.size();
-
-    	/*
-    	for (int j = 0; j < value.size(); j++) {
-    		data[i][j] = ptr[j];
-    	}
-    	*/
-
-
-    	for (int j = 0; j < 50; j++) {
-    		data[i][j] = ptr[j];
-    	}
-    	for (int j = 150530; j < size; j++) {
-    		data[i][50+j-150530] = ptr[j];
-    	}
-
-    	/*
-    	printf("%s(%d): %d, %d\n", key.c_str(), value.size(), ptr[size-4], value[size-3]);
-    	uint8_t upper = ptr[size-4];
-    	uint8_t lower = ptr[size-3];
-    	uint16_t category = 0;
-    	if (upper & 0x80) {
-    		category = (0x7f & upper);
-    		category = (category | (lower << 7));
-    	} else {
-    		category = lower;
-    	}
-    	printf("category: %d\n", category);
-    	*/
-    }
-
-    for (int j = 0; j < 70; j++) {
-    	for (int i = 0; i < numSample; i++) {
-    		printf("%d,", data[i][j]);
-    	}
-    	printf("\n");
-    }
-
-    cursor.close();
-    rtxn.abort();
-#endif
 
 #endif
 
