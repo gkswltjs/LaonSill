@@ -19,19 +19,12 @@ bool PropTest::runSimpleLayerPropTest() {
     int networkID = 1;
     int layerID = 3;
 
-#if 0
-    _ConvPropLayer *convProp = (_ConvPropLayer*)malloc(sizeof(_ConvPropLayer));
-    *convProp = _ConvPropLayer();
-#else
     _ConvPropLayer *convProp = new _ConvPropLayer();
-#endif
-
     LayerProp* newProp = new LayerProp(networkID, layerID, (int)Layer<float>::Conv,
         (void*)convProp);
     PropMgmt::insertLayerProp(newProp);
 
     _NetworkProp *networkProp = new _NetworkProp();
-
     PropMgmt::insertNetworkProp(networkID, networkProp);
 
     // (2) set layer prop and run
@@ -63,7 +56,6 @@ bool PropTest::runSimpleNetworkPropTest() {
     PropMgmt::insertLayerProp(newProp);
 
     _NetworkProp *networkProp = new _NetworkProp();
-
     PropMgmt::insertNetworkProp(networkID, networkProp);
 
     // (2) set network prop and run

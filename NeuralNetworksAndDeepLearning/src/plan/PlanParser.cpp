@@ -40,6 +40,20 @@ int PlanParser::loadNetwork(string filePath) {
         SASSERT(false, "invalid json-format file. file path=%s. error message=%s",
             filePath.c_str(), reader.getFormattedErrorMessages().c_str());
     }
+   
+    // 파싱에 사용할 임시 변수들
+    bool boolValue;
+    int64_t int64Value;
+    uint64_t uint64Value;
+    double doubleValue;
+    string stringValue;
+    vector<bool> boolArrayValue;
+    vector<int64_t> int64ArrayValue;
+    vector<uint64_t> uint64ArrayValue;
+    vector<double> doubleArrayValue;
+    vector<string> stringArrayValue;
+    Json::Value arrayValue;
+
 
     // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
     Network<float>* network = new Network<float>();
@@ -57,22 +71,9 @@ int PlanParser::loadNetwork(string filePath) {
 
         LayerProp* newProp = 
             LayerPropList::createLayerProp(networkID, layerID, layerType.c_str());
-        PropMgmt::insertLayerProp(newProp);
 
         // fill prop
         for (int j = 0; j < keys.size(); j++) {
-            bool boolValue;
-            int64_t int64Value;
-            uint64_t uint64Value;
-            double doubleValue;
-            string stringValue;
-            vector<bool> boolArrayValue;
-            vector<int64_t> int64ArrayValue;
-            vector<uint64_t> uint64ArrayValue;
-            vector<double> doubleArrayValue;
-            vector<string> stringArrayValue;
-            Json::Value arrayValue;
-
             string key = keys[j];
             Json::Value val = layer[key.c_str()];
 
@@ -149,10 +150,79 @@ int PlanParser::loadNetwork(string filePath) {
                     break;
             }
         }
+        PropMgmt::insertLayerProp(newProp);
     }
 
     // (2) get network property
-    Json::Value networkConfList = rootValue["configs"];
+    _NetworkProp *networkProp = new _NetworkProp();
+    Json::Value networkConfDic = rootValue["configs"];
+
+    vector<string> keys = networkConfDic.getMemberNames();
+    for (int i = 0; i < keys.size(); i++) {
+        string key = keys[i];
+        Json::Value val = networkConfDic[key.c_str()];
+
+        switch(val.type()) {
+            case Json::booleanValue:
+                boolValue = val.asBool();
+                NetworkProp::setProp(networkProp, key.c_str(), (void*)&boolValue);
+                break;
+
+            case Json::intValue:
+                int64Value = val.asInt64();
+                NetworkProp::setProp(networkProp, key.c_str(), (void*)&int64Value);
+                break;
+
+            case Json::realValue:
+                doubleValue = val.asDouble();
+                NetworkProp::setProp(networkProp, key.c_str(), (void*)&doubleValue);
+                break;
+
+            case Json::stringValue:
+                stringValue = val.asCString();
+                NetworkProp::setProp(networkProp, key.c_str(), (void*)&stringValue);
+                break;
+
+            case Json::arrayValue:
+                // peek 1st value's type
+                SASSERT0(val.size() > 0);
+                arrayValue = val[0];
+                if (arrayValue.type() == Json::booleanValue) {
+                    for (int k = 0; k < val.size(); k++) {
+                        arrayValue = val[k];
+                        boolArrayValue.push_back(arrayValue.asBool());
+                    }
+                    NetworkProp::setProp(networkProp, key.c_str(), (void*)&boolArrayValue);
+                } else if (arrayValue.type() == Json::intValue) {
+                    for (int k = 0; k < val.size(); k++) {
+                        arrayValue = val[k];
+                        int64ArrayValue.push_back(arrayValue.asInt64());
+                    }
+                    NetworkProp::setProp(networkProp, key.c_str(), (void*)&int64ArrayValue);
+                } else if (arrayValue.type() == Json::realValue) {
+                    for (int k = 0; k < val.size(); k++) {
+                        arrayValue = val[k];
+                        doubleArrayValue.push_back(arrayValue.asDouble());
+                    }
+                    NetworkProp::setProp(networkProp, key.c_str(), (void*)&doubleArrayValue);
+                } else if (arrayValue.type() == Json::stringValue) {
+                    for (int k = 0; k < val.size(); k++) {
+                        arrayValue = val[k];
+                        stringArrayValue.push_back(arrayValue.asString());
+                    }
+                    NetworkProp::setProp(networkProp, key.c_str(), (void*)&stringArrayValue);
+                } else {
+                    SASSERT(false, "Unsupported sub-type for array type. sub_type=%d",
+                        (int)arrayValue.type());
+                }
+                break;
+
+            default:
+                SASSERT(false, "unsupported json-value. type=%d", val.type());
+                break;
+        }
+    }
+    PropMgmt::insertNetworkProp(networkID, networkProp);
 
     fb.close();
 }
