@@ -19,15 +19,18 @@ bool PropTest::runSimpleLayerPropTest() {
     int networkID = 1;
     int layerID = 3;
 
+#if 0
     _ConvPropLayer *convProp = (_ConvPropLayer*)malloc(sizeof(_ConvPropLayer));
     *convProp = _ConvPropLayer();
+#else
+    _ConvPropLayer *convProp = new _ConvPropLayer();
+#endif
 
     LayerProp* newProp = new LayerProp(networkID, layerID, (int)Layer<float>::Conv,
         (void*)convProp);
     PropMgmt::insertLayerProp(newProp);
 
-    _NetworkProp *networkProp = (_NetworkProp*)malloc(sizeof(_NetworkProp));
-    *networkProp = _NetworkProp();
+    _NetworkProp *networkProp = new _NetworkProp();
 
     PropMgmt::insertNetworkProp(networkID, networkProp);
 
@@ -53,15 +56,13 @@ bool PropTest::runSimpleNetworkPropTest() {
     int networkID = 2;
     int layerID = 45;
 
-    _ConvPropLayer *convProp = (_ConvPropLayer*)malloc(sizeof(_ConvPropLayer));
-    *convProp = _ConvPropLayer();
+    _ConvPropLayer *convProp = new _ConvPropLayer();
 
     LayerProp* newProp = new LayerProp(networkID, layerID, (int)Layer<float>::Conv,
         (void*)convProp);
     PropMgmt::insertLayerProp(newProp);
 
-    _NetworkProp *networkProp = (_NetworkProp*)malloc(sizeof(_NetworkProp));
-    *networkProp = _NetworkProp();
+    _NetworkProp *networkProp = new _NetworkProp();
 
     PropMgmt::insertNetworkProp(networkID, networkProp);
 

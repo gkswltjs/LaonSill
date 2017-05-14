@@ -55,6 +55,7 @@ headerTopSentences = [\
 "",\
 '#include "common.h"',\
 '#include "SysLog.h"',\
+'#include "LayerProp.h"',\
 "",\
 ]
 
@@ -145,35 +146,35 @@ try:
             for var in propDic[prop]["VARS"]:
                 varDic[prop].append(var) 
 
-        # (2) generate comment for property layer name
-        headerFile.write('// property layer name : %s\n' % prop)
+            # (2) generate comment for property layer name
+            headerFile.write('// property layer name : %s\n' % prop)
 
-        headerFile.write('typedef struct %sPropLayer_s {\n' % prop)
-        for var in varDic[prop]:
-            if 'vector' in var[1]:
-                headerFile.write('    %s _%s_;\n' % (var[1], var[0]))
-            elif 'char[' in var[1]:
-                splited = var[1].replace(']', '@').replace('[', '@').split('@')
-                headerFile.write('    %s _%s_[%s];\n' % (splited[0], var[0], splited[1]))
-            elif 'string' in var[1]:
-                headerFile.write('    %s _%s_;\n' % (var[1], var[0]))
-            else:
-                headerFile.write('    %s _%s_;\n' % (var[1], var[0]))
+            headerFile.write('typedef struct %sPropLayer_s {\n' % prop)
+            for var in varDic[prop]:
+                if 'vector' in var[1]:
+                    headerFile.write('    %s _%s_;\n' % (var[1], var[0]))
+                elif 'char[' in var[1]:
+                    splited = var[1].replace(']', '@').replace('[', '@').split('@')
+                    headerFile.write('    %s _%s_[%s];\n' % (splited[0], var[0], splited[1]))
+                elif 'string' in var[1]:
+                    headerFile.write('    %s _%s_;\n' % (var[1], var[0]))
+                else:
+                    headerFile.write('    %s _%s_;\n' % (var[1], var[0]))
 
-        headerFile.write('\n    %sPropLayer_s() {\n' % prop)
+            headerFile.write('\n    %sPropLayer_s() {\n' % prop)
 
-        for var in varDic[prop]:
-            if 'vector' in var[1]:
-                headerFile.write('        _%s_ = {%s};\n' % (var[0], var[2]))
-            elif 'char[' in var[1]:
-                headerFile.write('        strcpy(_%s_, %s);\n' % (var[0], var[2]))
-            elif 'string' in var[1]:
-                headerFile.write('        _%s_ = %s;\n' % (var[0], var[2]))
-            else:
-                headerFile.write('        _%s_ = (%s)%s;\n' % (var[0], var[1], var[2]))
-        headerFile.write('\n    }\n')
+            for var in varDic[prop]:
+                if 'vector' in var[1]:
+                    headerFile.write('        _%s_ = {%s};\n' % (var[0], var[2]))
+                elif 'char[' in var[1]:
+                    headerFile.write('        strcpy(_%s_, %s);\n' % (var[0], var[2]))
+                elif 'string' in var[1]:
+                    headerFile.write('        _%s_ = %s;\n' % (var[0], var[2]))
+                else:
+                    headerFile.write('        _%s_ = (%s)%s;\n' % (var[0], var[1], var[2]))
+            headerFile.write('\n    }\n')
 
-        headerFile.write('} _%sPropLayer;\n\n' % prop)
+            headerFile.write('} _%sPropLayer;\n\n' % prop)
 
   
     # write class
@@ -181,7 +182,9 @@ try:
         headerFile.write(line + "\n")
 
     headerFile.write("    static void setProp(void* target, const char* layer,")
-    headerFile.write(" const char* property, void* value);\n\n")
+    headerFile.write(" const char* property, void* value);\n")
+    headerFile.write("    static LayerProp* createLayerProp(int networkID, int layerID,")
+    headerFile.write(" const char* layerName);\n\n")
     headerFile.write("private:\n")
     for level in range(maxLevel + 1):
         propList = levelDic[level]
@@ -206,10 +209,28 @@ try:
                     sourceFile.write(' else if (strcmp(property, "%s") == 0) {\n' % var[0])
 
                 if 'vector' in var[1]:
-                    sourceFile.write('        %s* val = (%s*)value;\n' % (var[1], var[1]))
-                    sourceFile.write('        for (int i = 0; i < val->size(); i++) {\n')
-                    sourceFile.write('            obj->_%s_.push_back((*val)[i]);\n'\
-                        % var[0])
+                    subType = var[1].replace('<', '').replace('>', '').split('vector')[1]
+                    if 'string' in subType:
+                        sourceFile.write('        std::vector<std::string> *val = ')
+                        sourceFile.write('(std::vector<std::string>*)value;\n')
+                    elif subType in ['int', 'unsigned int', 'int32_t', 'uint32_t',\
+                        'int64_t', 'uint64_t', 'long', 'unsigned long', 'short',\
+                        'unsigned short', 'long long', 'unsigned long long']:
+                        sourceFile.write('        std::vector<int64_t> *val = ')
+                        sourceFile.write('(std::vector<int64_t>*)value;\n')
+                    elif subType in ['boolean', 'bool']:
+                        sourceFile.write('        std::vector<bool> *val = ')
+                        sourceFile.write('(std::vector<bool>*)value;\n')
+                    elif subType in ['double', 'float']:
+                        sourceFile.write('        std::vector<double> *val = ')
+                        sourceFile.write('(std::vector<double>*)value;\n')
+                    else:
+                        print 'unsupported subtype for array. subtype = %s' % subType
+                        exit(-1)
+
+                    sourceFile.write('        for (int i = 0; i < (*val).size(); i++) {\n')
+                    sourceFile.write('            obj->_%s_.push_back((%s)(*val)[i]);\n'\
+                        % (var[0], subType))
                     sourceFile.write('        }\n')
                 elif 'char[' in var[1]:
                     sourceFile.write('        strcpy(obj->_%s_, (const char*)value);\n'\
@@ -218,8 +239,8 @@ try:
                     sourceFile.write('        std::string* val = (std::string*)value;\n')
                     sourceFile.write('        obj->_%s_ = *val;\n' % var[0])
                 else:
-                    sourceFile.write('        memcpy((void*)&obj->_%s_, value, sizeof(%s));\n'\
-                        % (var[0], var[1]))
+                    sourceFile.write('        %s* val = (%s*)value;\n' % (var[1], var[1]))
+                    sourceFile.write('        obj->_%s_ = *val;\n' % var[0])
                 sourceFile.write('    }')
             sourceFile.write(' else {\n')
             sourceFile.write('        SASSERT(false, "invalid property.')
@@ -244,6 +265,31 @@ try:
     sourceFile.write(' else {\n')
     sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
     sourceFile.write(', layer);\n    }\n}\n\n')
+
+    sourceFile.write("LayerProp* LayerPropList::createLayerProp(int networkID, int layerID,")
+    sourceFile.write(" const char* layerName) {\n")
+   
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layerName, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layerName, "%s") == 0) {\n' % prop)
+            sourceFile.write('        _%sPropLayer *prop = new _%sPropLayer();\n'\
+                % (prop, prop))
+            sourceFile.write('        return new LayerProp(networkID, layerID,')
+            sourceFile.write(' (int)Layer<float>::%s, (void*)prop);\n' % prop)
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layerName);\n    }\n}\n\n')
 
     for line in headerBottomSentences:
         headerFile.write(line + "\n")

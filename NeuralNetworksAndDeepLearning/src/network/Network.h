@@ -41,6 +41,7 @@ class Network {
 public:
 	//Network(NetworkParam& networkParam);
 	Network(NetworkConfig<Dtype>* networkConfig);
+	Network();
 	/**
 	 * @details Network 생성자
 	 * @param networkListener 네트워크 상태 리스너

@@ -42,6 +42,53 @@
             ["deconv", "bool", "false"],
             ["deconvExtraCell", "int", "0"]
         ]
+},
+
+"FullyConnected" :
+{
+    "DESC" : "fully connected layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "VARS" : 
+        [   
+            ["nOut", "int", "0"],
+            ["weightUpdateParamLRMulti", "float", "1.0"],
+            ["weightUpdateParamDecayMulti", "float", "0.0"],
+            ["biasUpdateParamLRMulti", "float", "1.0"],
+            ["biasUpdateParamDecayMulti", "float", "0.0"],
+            ["weightFillerType", "int", "ParamFillerType::Constant"],
+            ["weightFillerValue", "float", "0.0"],
+            ["biasFillerType", "int", "ParamFillerType::Constant"],
+            ["biasFillerValue", "float", "0.0"],
+            ["axis", "bool", "false"]
+        ]
+
+},
+
+"ILSVRCInput" :
+{
+    "DESC" : "ILSVRC input layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "VARS" : 
+        [   
+            ["imageDir", "std::string", "\"\""],
+            ["resizeImage", "int", "0"],
+            ["resizedImageRow", "int", "0"],
+            ["resizedImageCol", "int", "0"]
+        ]
+
+},
+
+"SoftmaxWithLoss" :
+{
+    "DESC" : "softmax with loss layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "VARS" :
+        [
+            ["softmaxAxis", "uint32_t", "2"]
+        ]
 }
 
 }

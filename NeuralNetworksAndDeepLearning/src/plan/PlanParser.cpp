@@ -17,11 +17,14 @@
 
 #include "jsoncpp/json/json.h"
 #include "PlanParser.h"
+#include "PropMgmt.h"
 #include "SysLog.h"
+#include "LayerPropList.h"
 
 using namespace std;
 
 int PlanParser::loadNetwork(string filePath) {
+    // (1) 우선 network configuration file 파싱부터 진행
     filebuf fb;
     if (fb.open(filePath.c_str(), ios::in) == NULL) {
         SASSERT(false, "cannot open cluster confifuration file. file path=%s",
@@ -38,46 +41,108 @@ int PlanParser::loadNetwork(string filePath) {
             filePath.c_str(), reader.getFormattedErrorMessages().c_str());
     }
 
-    // (1) get layer property
+    // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
+    Network<float>* network = new Network<float>();
+    int networkID = network->getNetworkID();
+
+    // (3) fill layer property
     Json::Value layerList = rootValue["layers"];
     for (int i = 0; i < layerList.size(); i++) {
         Json::Value layer = layerList[i];
-
         vector<string> keys = layer.getMemberNames();
 
+        // XXX: 예외처리 해야 한다!!!!
+        int layerID = layer["id"].asInt();
+        string layerType = layer["layer"].asCString();
+
+        LayerProp* newProp = 
+            LayerPropList::createLayerProp(networkID, layerID, layerType.c_str());
+        PropMgmt::insertLayerProp(newProp);
+
+        // fill prop
         for (int j = 0; j < keys.size(); j++) {
+            bool boolValue;
+            int64_t int64Value;
+            uint64_t uint64Value;
+            double doubleValue;
+            string stringValue;
+            vector<bool> boolArrayValue;
+            vector<int64_t> int64ArrayValue;
+            vector<uint64_t> uint64ArrayValue;
+            vector<double> doubleArrayValue;
+            vector<string> stringArrayValue;
+            Json::Value arrayValue;
+
             string key = keys[j];
             Json::Value val = layer[key.c_str()];
-            
+
+            if (strcmp(key.c_str(), "id") == 0)
+                continue;
+            if (strcmp(key.c_str(), "layer") == 0)
+                continue;
+
             switch(val.type()) {
                 case Json::booleanValue:
-                    cout << "key : " << key << ", value : " << val.asBool() << endl;
+                    boolValue = val.asBool();
+                    LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
+                            key.c_str(), (void*)&boolValue);
                     break;
 
                 case Json::intValue:
-                    cout << "key : " << key << ", value : " << val.asInt() << endl;
-                    break;
-
-                case Json::uintValue:
-                    cout << "key : " << key << ", value : " << val.asUInt() << endl;
+                    int64Value = val.asInt64();
+                    LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
+                            key.c_str(), (void*)&int64Value);
                     break;
 
                 case Json::realValue:
-                    cout << "key : " << key << ", value : " << val.asDouble() << endl;
+                    doubleValue = val.asDouble();
+                    LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
+                            key.c_str(), (void*)&doubleValue);
                     break;
 
                 case Json::stringValue:
-                    cout << "key : " << key << ", value : " << val.asCString() << endl;
+                    stringValue = val.asCString();
+                    LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
+                            key.c_str(), (void*)&stringValue);
                     break;
 
                 case Json::arrayValue:
-                    cout << "key : " << key << ", array size : " << val.size() << endl;
+                    // peek 1st value's type
+                    SASSERT0(val.size() > 0);
+                    arrayValue = val[0];
+                    if (arrayValue.type() == Json::booleanValue) {
+                        for (int k = 0; k < val.size(); k++) {
+                            arrayValue = val[k];
+                            boolArrayValue.push_back(arrayValue.asBool());
+                        }
+                        LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
+                            key.c_str(), (void*)&boolArrayValue);
+                    } else if (arrayValue.type() == Json::intValue) {
+                        for (int k = 0; k < val.size(); k++) {
+                            arrayValue = val[k];
+                            int64ArrayValue.push_back(arrayValue.asInt64());
+                        }
+                        LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
+                            key.c_str(), (void*)&int64ArrayValue);
+                    } else if (arrayValue.type() == Json::realValue) {
+                        for (int k = 0; k < val.size(); k++) {
+                            arrayValue = val[k];
+                            doubleArrayValue.push_back(arrayValue.asDouble());
+                        }
+                        LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
+                            key.c_str(), (void*)&doubleArrayValue);
+                    } else if (arrayValue.type() == Json::stringValue) {
+                        for (int k = 0; k < val.size(); k++) {
+                            arrayValue = val[k];
+                            stringArrayValue.push_back(arrayValue.asString());
+                        }
+                        LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
+                            key.c_str(), (void*)&stringArrayValue);
+                    } else {
+                        SASSERT(false, "Unsupported sub-type for array type. sub_type=%d",
+                            (int)arrayValue.type());
+                    }
                     break;
-
-#if 0   // XXX: not now, but we will be support this type
-                case Json::objectValue:
-                    break;
-#endif
 
                 default:
                     SASSERT(false, "unsupported json-value. type=%d", val.type());

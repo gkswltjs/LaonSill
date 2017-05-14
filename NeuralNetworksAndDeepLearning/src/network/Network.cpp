@@ -45,6 +45,13 @@ Network<Dtype>::Network(NetworkConfig<Dtype>* config)
     Network<Dtype>::networkIDMap[this->networkID] = this;
 }
 
+template <typename Dtype>
+Network<Dtype>::Network() {
+    this->networkID = atomic_fetch_add(&Network<Dtype>::networkIDGen, 1);
+    unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
+    Network<Dtype>::networkIDMap[this->networkID] = this;
+}
+
 template<typename Dtype>
 void Network<Dtype>::init() {
     atomic_store(&Network<Dtype>::networkIDGen, 0);

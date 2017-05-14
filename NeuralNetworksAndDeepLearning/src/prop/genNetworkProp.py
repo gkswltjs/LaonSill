@@ -144,10 +144,28 @@ try:
             sourceFile.write(' else if (strcmp(property, "%s") == 0) {\n' % var[0])
 
         if 'vector' in var[1]:
-            sourceFile.write('        %s* val = (%s*)value;\n' % (var[1], var[1]))
-            sourceFile.write('        for (int i = 0; i < val->size(); i++) {\n')
-            sourceFile.write('            target->_%s_.push_back((*val)[i]);\n'\
-                % var[0])
+            subType = var[1].replace('<', '').replace('>', '').split('vector')[1]
+            if 'string' in subType:
+                sourceFile.write('        std::vector<std::string> *val = ')
+                sourceFile.write('(std::vector<std::string>*)value;\n')
+            elif subType in ['int', 'unsigned int', 'int32_t', 'uint32_t',\
+                'int64_t', 'uint64_t', 'long', 'unsigned long', 'short',\
+                'unsigned short', 'long long', 'unsigned long long']:
+                sourceFile.write('        std::vector<int64_t> *val = ')
+                sourceFile.write('(std::vector<int64_t>*)value;\n')
+            elif subType in ['boolean', 'bool']:
+                sourceFile.write('        std::vector<bool> *val = ')
+                sourceFile.write('(std::vector<bool>*)value;\n')
+            elif subType in ['double', 'float']:
+                sourceFile.write('        std::vector<double> *val = ')
+                sourceFile.write('(std::vector<double>*)value;\n')
+            else:
+                print 'unsupported subtype for array. subtype = %s' % subType
+                exit(-1)
+
+            sourceFile.write('        for (int i = 0; i < (*val).size(); i++) {\n')
+            sourceFile.write('            target->_%s_.push_back((%s)(*val)[i]);\n'\
+                % (var[0], subType))
             sourceFile.write('        }\n')
         elif 'char[' in var[1]:
             sourceFile.write('        strcpy(target->_%s_, (const char*)value);\n'\
@@ -156,8 +174,8 @@ try:
             sourceFile.write('        std::string* val = (std::string*)value;\n')
             sourceFile.write('        target->_%s_ = *val;\n' % var[0])
         else:
-            sourceFile.write('        memcpy((void*)&target->_%s_, value, sizeof(%s));\n'\
-                % (var[0], var[1]))
+            sourceFile.write('        %s* val = (%s*)value;\n' % (var[1], var[1]))
+            sourceFile.write('        target->_%s_ = *val;\n' % var[0])
         sourceFile.write('    }')
                 
     sourceFile.write(' else {\n')

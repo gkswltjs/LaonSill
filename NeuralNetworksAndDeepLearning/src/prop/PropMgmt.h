@@ -16,7 +16,7 @@
 typedef unsigned long   LayerPropKey;
 
 #define MAKE_LAYER_PROP_KEY(networkID, layerID)                                              \
-    (LayerPropKey)((unsigned long)networkID << 16 || (unsigned long)layerID)
+    (LayerPropKey)((unsigned long)networkID << 16 | (unsigned long)layerID)
 
 #define SLPROP(layer, var)                                                                   \
     (((_##layer##PropLayer*)(PropMgmt::curLayerProp->prop))->_##var##_)
