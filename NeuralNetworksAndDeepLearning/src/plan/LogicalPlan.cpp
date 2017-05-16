@@ -14,10 +14,6 @@
 
 using namespace std;
 
-#define LP_FORWARD_PLANID(id)       (id * 3 + 0)
-#define LP_BACKWARD_PLANID(id)      (id * 3 + 1)
-#define LP_UPDATE_PLANID(id)        (id * 3 + 2)
-
 map<int, LogicalPlan*> LogicalPlan::lpMap;
 
 void LogicalPlan::cleanup(int networkID) {

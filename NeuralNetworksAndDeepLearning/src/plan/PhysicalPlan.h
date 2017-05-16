@@ -46,13 +46,11 @@ public:
     int epochIdx;
     int miniBatchIdx;       // current mini-batch (per epoch) count
 
-    void markFinish(int planID);    // 해당 planID에게 dependency가 있는 planID가 완료가
-                                    // 되었음을 알린다.
     bool generatePlan();    // 현 minibatch에 해당하는 작업이 완료되면 그다음 mini batch에
                             // 대한 플랜을 생성한다.
                             // 만약 모든 batch를 다 돌았을 경우에는 false를 반환한다.
 
-    bool runPlan(int layerID, PlanType planType, bool hasLock);
+    bool runPlan(int layerID, PlanType planType);
     bool runPlan();
 
     std::list<int>      readyQueue;
@@ -71,6 +69,10 @@ private:
                                                 // 담고 있는 구조체. 
                                                 // key = networkID, value = plan info 
     static std::mutex               planGlobalMutex;    // planMap, planInfoMap을 보호
+
+    void runLayer(int planID);
+    void markFinish(int planID);    // 해당 planID에게 dependency가 있는 planID가 완료가
+                                    // 되었음을 알린다.
 
     static thread_local int curDOPID;
     static thread_local PhysicalPlan* curPhysicalPlan;

@@ -40,6 +40,7 @@
 #include "ImageUtil.h"
 #include "DebugUtil.h"
 #include "ResourceManager.h"
+#include "PlanOptimizer.h"
 
 #include "GAN.h"
 #include "YOLO.h"
@@ -164,9 +165,8 @@ int main(int argc, char** argv) {
     Network<float>::init();
     DQNImageLearner<float>::init();
 
-    if (SPARAM(CLUSTER_MODE)) {
-        ResourceManager::init();
-    }
+    ResourceManager::init();
+    PlanOptimizer::init();
 
     if (!useDeveloperMode) {
         HotLog::init();

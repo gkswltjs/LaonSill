@@ -43,8 +43,17 @@ bool PhysicalPlan::generatePlan() {
         return true;
     }
 
+
     // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
     unique_lock<mutex> planInfoLock(PhysicalPlan::curPlanInfo->planMutex);
+    if (PhysicalPlan::curPlanInfo->curEpochIndex >= PhysicalPlan::curPlanInfo->epochCount) {
+        planInfoLock.unlock();
+        return false;
+    }
+
+    this->epochIdx = PhysicalPlan::curPlanInfo->curEpochIndex;
+    this->miniBatchIdx = PhysicalPlan::curPlanInfo->curMiniBatchIndex;
+
     if (PhysicalPlan::curPlanInfo->curMiniBatchIndex == 
             PhysicalPlan::curPlanInfo->miniBatchCount - 1) {
         PhysicalPlan::curPlanInfo->curMiniBatchIndex = 0;
@@ -53,25 +62,54 @@ bool PhysicalPlan::generatePlan() {
         PhysicalPlan::curPlanInfo->curMiniBatchIndex += 1;
     }
 
-    if (PhysicalPlan::curPlanInfo->curEpochIndex >= PhysicalPlan::curPlanInfo->epochCount) {
-        planInfoLock.unlock();
-        return false;
+    planInfoLock.unlock();
+
+    // (3) 초기화를 수행한다.
+    this->refCount = planMap.size(); 
+    this->readyQueue = {};
+    for (map<int, PlanDef>::iterator it = planMap.begin(); it != planMap.end(); ++it) {
+        int key = it->first;
+        PlanDef value = it->second;
+      
+        if (value.depCount == 0) {
+            readyQueue.push_back(key);
+        }
+    
+        depRefMap[key] = value.depCount;
     }
 
-    planInfoLock.unlock();
     return true;
 }
 
-bool PhysicalPlan::runPlan(int layerID, PlanType planType, bool hasLock) {
-    if (!hasLock) {
-        unique_lock<mutex> planLock(this->planMutex);
+void PhysicalPlan::runLayer(int planID) {
+    // (1) set context
+    
+    // (2) run layer
+    cout << "run layer (planID=" << planID << endl;
 
-        if (find(this->readyQueue.begin(), this->readyQueue.end(), layerID) != 
-            this->readyQueue.end())
-            return false;
+    // (3) mark
+    markFinish(planID);
+}
+
+bool PhysicalPlan::runPlan(int layerID, PlanType planType) {
+    unique_lock<mutex> planLock(this->planMutex);
+
+    if (find(this->readyQueue.begin(), this->readyQueue.end(), layerID) != 
+        this->readyQueue.end())
+        return false;
+
+    planLock.unlock();
+
+    if (planType == PLANTYPE_FORWARD) {
+        runLayer(LP_FORWARD_PLANID(layerID));
+    } else if (planType == PLANTYPE_BACKWARD) {
+        runLayer(LP_BACKWARD_PLANID(layerID));
+    } else if (planType == PLANTYPE_UPDATE) {
+        runLayer(LP_UPDATE_PLANID(layerID));
+    } else {
+        SASSERT(false, "invalid plan type. plan type=%d", (int)planType);
     }
 
-    // run!!!!
     return true;
 }
 
@@ -87,9 +125,8 @@ bool PhysicalPlan::runPlan() {
     planLock.unlock();
 
     SASSUME0(this->planMap.find(planID) != this->planMap.end());
-    PlanDef planDef = this->planMap[planID];
 
-    this->runPlan(planDef.layerID, planDef.planType, true);
+    runLayer(planID);
     return true;
 }
 

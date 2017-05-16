@@ -17,6 +17,7 @@
 #include "LogicalPlan.h"
 
 // bit exclusive
+#define PLAN_OPT_NONE               0
 #define PLAN_OPT_SINGLE_GPU         1
 #define PLAN_OPT_MULTI_GPU          2 
 #define PLAN_OPT_MULTI_NODE         4
@@ -25,37 +26,31 @@
 
 #define PLAN_OPT_DEFAULT            (PLAN_OPT_SINGLE_GPU|PLAN_OPT_MULTI_GPU)
 
-typedef struct GenPlanDef_t {
-    bool                    use;
-    float                   time;       // cost
-    std::vector<PlanDef>    planDefList;
-} GenPlanDef;
+typedef enum PlanOptPolicy_e {
+    PLAN_OPT_POLICY_USE_FIRST_AVAILABLE_OPTION = 0,
+    PLAN_OPT_POLICY_USE_LAST_AVAILABLE_OPTION,
+    PLAN_OPT_POLICY_USE_BEST_OPTION,
+    PLAN_OPT_POLICY_MAX
+} PlanOptPolicy;
 
-typedef struct GenPlanKey_t {
-    bool operator<(const struct GenPlanKey_t& value) const {
-        if (networkID == value.networkID) {
-            return option < value.option;
-        } else {
-            return networkID < value.networkID;
-        }
-    }
-
-    int networkID;
-    int option;
-} GenPlanKey;
+#define PLAN_OPT_POLICY_DEFAULT     (PLAN_OPT_POLICY_USE_BEST_OPTION)
 
 class PlanOptimizer {
 public: 
     PlanOptimizer() {}
     virtual ~PlanOptimizer() {}
 
-    static int generatePlans(int networkID, int option);
-    static int generatePlans(int networkID);
+    static bool buildPlans(int networkID, int option, PlanOptPolicy policy);
+    static bool buildPlans(int networkID);
 
-    static void cleanupGenPlans(int networkID);
+    static void removePlans(int networkID);
+    static void init();
 
 private:
-    static std::map<GenPlanKey, std::vector<GenPlanDef>> genPlanMap;
+    static void setPlan(int networkID, int option, bool isTest);
+    static void unsetPlan(int networkID);
+    static double testPlan();
+    static std::vector<int> options;
 };
 
 #endif /* PLANOPTIMIZER_H */

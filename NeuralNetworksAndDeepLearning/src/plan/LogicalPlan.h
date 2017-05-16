@@ -13,6 +13,10 @@
 #include <map>
 #include <atomic>
 
+#define LP_FORWARD_PLANID(id)       (id * 3 + 0)
+#define LP_BACKWARD_PLANID(id)      (id * 3 + 1)
+#define LP_UPDATE_PLANID(id)        (id * 3 + 2)
+
 typedef struct PlanAlloc_s {
     int nodeID;
     int devID;
