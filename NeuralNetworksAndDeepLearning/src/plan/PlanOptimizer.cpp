@@ -7,19 +7,20 @@
  */
 
 #include "PlanOptimizer.h"
+#include "ResourceManager.h"
 
 using namespace std;
 
 map<GenPlanKey, vector<GenPlanDef>> PlanOptimizer::genPlanMap;
 
-int PlanOptimizer::generatePlans(int lpID, int option) {
+int PlanOptimizer::generatePlans(int networkID, int option) {
     return 0;
 }
 
-int PlanOptimizer::generatePlans(int lpID) {
-    generatePlans(lpID, PLAN_OPT_DEFAULT);
+int PlanOptimizer::generatePlans(int networkID) {
+    return generatePlans(networkID, PLAN_OPT_DEFAULT);
 }
 
-void PlanOptimizer::cleanupGenPlans(int lpID) {
+void PlanOptimizer::cleanupGenPlans(int networkID) {
 
 }

@@ -24,6 +24,7 @@ class ResourceManager {
 public: 
     ResourceManager() {}
     virtual ~ResourceManager() {}
+    bool isVaildPlanOption(int option);
 
     static void init();
 private:

@@ -17,6 +17,7 @@
 #include "ResourceManager.h"
 #include "SysLog.h"
 #include "Param.h"
+#include "PlanOptimizer.h"
 
 using namespace std;
 
@@ -74,4 +75,33 @@ void ResourceManager::init() {
     }
 
     fb.close();
+}
+
+bool ResourceManager::isVaildPlanOption(int option) {
+    if (option == PLAN_OPT_SINGLE_GPU) {
+        for (int i = 0; i < gpuInfo.size(); i++) {
+            if (gpuInfo[i].nodeID == 0)
+                return true;
+        }
+    } else if (option == PLAN_OPT_MULTI_GPU) {
+        int masterDevCount = 0;
+        for (int i = 0; i < gpuInfo.size(); i++) {
+            if (gpuInfo[i].nodeID == 0)
+                masterDevCount++;
+
+            if (masterDevCount > 1)
+                return true;
+        }
+    } else if (option == PLAN_OPT_MULTI_NODE) {
+        // TODO: 
+        return false;
+    } else if (option == PLAN_OPT_VERTICAL_SPLIT) {
+        // TODO: 
+        return false;
+    } else if (option == PLAN_OPT_HORIZONTAL_SPLIT) {
+        // TODO: 
+        return false;
+    }
+
+    return false;
 }

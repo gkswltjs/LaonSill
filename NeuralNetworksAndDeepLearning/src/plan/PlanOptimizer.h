@@ -33,14 +33,14 @@ typedef struct GenPlanDef_t {
 
 typedef struct GenPlanKey_t {
     bool operator<(const struct GenPlanKey_t& value) const {
-        if (lpID == value.lpID) {
+        if (networkID == value.networkID) {
             return option < value.option;
         } else {
-            return lpID < value.lpID;
+            return networkID < value.networkID;
         }
     }
 
-    int lpID;
+    int networkID;
     int option;
 } GenPlanKey;
 
@@ -49,10 +49,10 @@ public:
     PlanOptimizer() {}
     virtual ~PlanOptimizer() {}
 
-    static int generatePlans(int lpID, int option);
-    static int generatePlans(int lpID);
+    static int generatePlans(int networkID, int option);
+    static int generatePlans(int networkID);
 
-    static void cleanupGenPlans(int lpID);
+    static void cleanupGenPlans(int networkID);
 
 private:
     static std::map<GenPlanKey, std::vector<GenPlanDef>> genPlanMap;

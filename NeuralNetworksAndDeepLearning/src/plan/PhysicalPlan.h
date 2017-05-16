@@ -10,70 +10,70 @@
 #include <map>
 #include <mutex>
 #include <atomic>
+#include <list>
 
 #include "common.h"
+#include "LogicalPlan.h"
 
 #ifndef PHYSICALPLAN_H
 #define PHYSICALPLAN_H 
+
+typedef struct PlanInfo_t {
+    int         networkID;
+    int         dopCount;
+    int         epochCount;
+    int         miniBatchCount;     // per epoch
+
+    int         curEpochIndex;
+    int         curMiniBatchIndex;
+    std::mutex  planMutex;      // mutex for curEpochIndex, curMiniBatchIndex
+} PlanInfo;
 
 class PhysicalPlan {
 public: 
     PhysicalPlan() {}
     virtual ~PhysicalPlan() {}
 
-    uint64_t ppid;                      // physical plan ID
-    std::vector<uint64_t> depList;      // remain dependent ppid list (for debug)
-    std::atomic<int> depCount;          // remain dependent count
-    std::vector<uint64_t> notifyList;   // notify ppid list
-    std::vector<uint64_t> gcList;       // remain garbage collection ppid list (for debug)
-    std::atomic<int> gcCount;           // remain garbage collection count
+    int                         networkID;
+    std::map<int, PlanAlloc>    allocMap;
+    std::map<int, PlanDef>      planMap;
+    std::map<int, int>          depRefMap;      // 각 plan들의 dependency를 관리한다.
 
-    int networkID;
-    int layerID;
-    int lpID;
-    int classType;          // 0: forward, 1: backward, 2: update
-    int nodeID;             // reserved.. 
-    int devID;              // gpu device ID. resered..
+    int                         dopID;
+    int                         refCount;   // 이 값이 0이 되면 해당 mini batch에 대한 plan은
+                                            // 다 수행한 것으로 판단하면 된다.
 
     int epochIdx;
     int miniBatchIdx;       // current mini-batch (per epoch) count
 
-    bool genBatch;          // 특별한 physical plan. Batch당 1개의 physical plan만이 
-                            // 이 값이 true
-                            // 이 physical plan은 다음 batch에 대한 physical plan들을 
-                            // 생성하는 역할을 담당한다.
+    void markFinish(int planID);    // 해당 planID에게 dependency가 있는 planID가 완료가
+                                    // 되었음을 알린다.
+    bool generatePlan();    // 현 minibatch에 해당하는 작업이 완료되면 그다음 mini batch에
+                            // 대한 플랜을 생성한다.
+                            // 만약 모든 batch를 다 돌았을 경우에는 false를 반환한다.
 
-    static std::vector<uint64_t> popReadyPPIDList();
-    static void markFinish(uint64_t ppID);
-    static void genPPList(int networkID, int epochIdx, int miniBatchIdx);
+    bool runPlan(int layerID, PlanType planType, bool hasLock);
+    bool runPlan();
 
-    /*
-     * physical plan 관리법
-     * [developer mode]
-     *   readyPPList = []
-     *   while (모든 minibatch가 끝날때 까지..) {
-     *      genPPList();
-     *      while (true) {
-     *          newPPList = popReadyPPIDList()
-     *          insert new PPList into readyPPList
-     *          if (newPPList is empty)
-     *              break;
-     *                
-     *          pop PP from PPList
-     *          run PP
-     *          markFinish()
-     *      }
-     *  }
-     *
-     * [server-client mode]
-     *     
-     */
+    std::list<int>      readyQueue;
+    std::mutex          planMutex;  // refCount, readyQueue, depRefMap을 보호한다.
+                                    // XXX: 락을 효율적으로 사용하도록 추후에 수정하자.
+
+    static void insertPlan(int networkID, std::vector<PhysicalPlan*> pMap,
+        PlanInfo pInfoMap);
+    static void removePlan(int networkID);
+    static void setCurPlan(int dopID);
 
 private:
-    static std::atomic<uint64_t> ppIDGen;
+    static std::map<int, std::vector<PhysicalPlan*>>    planGlobalMap;    // key = networkID,
+                                                                // value = Physical Plans
+    static std::map<int, PlanInfo*>  planGlobalInfoMap; // 하나의 네트워크에 대한 plan 정보를 
+                                                // 담고 있는 구조체. 
+                                                // key = networkID, value = plan info 
+    static std::mutex               planGlobalMutex;    // planMap, planInfoMap을 보호
 
-    static std::map<uint64_t, PhysicalPlan*>     ppMap;
-    static std::vector<PhysicalPlan*>            ppList;
-    static std::mutex                            ppMutex;
+    static thread_local int curDOPID;
+    static thread_local PhysicalPlan* curPhysicalPlan;
+    static thread_local PlanInfo* curPlanInfo;
 };
 #endif /* PHYSICALPLAN_H */

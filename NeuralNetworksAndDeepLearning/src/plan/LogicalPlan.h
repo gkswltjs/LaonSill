@@ -33,11 +33,12 @@ typedef struct PlanBuildDef_s {
     std::vector<std::string> outputs;   // PlanDef의 빌드를 위해 임시로 사용.
     std::vector<bool> propDowns;       // PlanDef의 빌드를 위해 임시로 사용.
 
+    bool learnable;
+
+    // 아래 3개의 변수는 안쓰는거 같은데.. 좀 생각해보고 지우자..
     bool isDonator;
     bool isReceiver;
     int donatorID;
-
-    bool learnable;
 } PlanBuildDef;
 
 typedef struct PlanDef_s {
@@ -49,8 +50,6 @@ typedef struct PlanDef_s {
 
     int depCount;
     std::vector<int> notifyList;
-
-    std::vector<PlanAlloc> allocList;   // 어떤 노드의 어떤 dev(GPU) ID에서 동작할지를 정의
 } PlanDef;
 
 class LogicalPlan {
