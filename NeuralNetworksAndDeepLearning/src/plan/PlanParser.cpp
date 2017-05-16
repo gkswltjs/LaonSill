@@ -23,6 +23,7 @@
 
 using namespace std;
 
+// XXX: 함수 하나가 엄청 길다... 흠.. 나중에 소스 좀 정리하자..
 int PlanParser::loadNetwork(string filePath) {
     // (1) 우선 network configuration file 파싱부터 진행
     filebuf fb;
@@ -54,6 +55,8 @@ int PlanParser::loadNetwork(string filePath) {
     vector<string> stringArrayValue;
     Json::Value arrayValue;
 
+    // logical plan을 만들기 위한 변수들
+    map<int, PlanBuildDef> planDefMap;
 
     // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
     Network<float>* network = new Network<float>();
@@ -112,6 +115,7 @@ int PlanParser::loadNetwork(string filePath) {
                     SASSERT0(val.size() > 0);
                     arrayValue = val[0];
                     if (arrayValue.type() == Json::booleanValue) {
+                        boolArrayValue = {};
                         for (int k = 0; k < val.size(); k++) {
                             arrayValue = val[k];
                             boolArrayValue.push_back(arrayValue.asBool());
@@ -119,6 +123,7 @@ int PlanParser::loadNetwork(string filePath) {
                         LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
                             key.c_str(), (void*)&boolArrayValue);
                     } else if (arrayValue.type() == Json::intValue) {
+                        int64ArrayValue = {};
                         for (int k = 0; k < val.size(); k++) {
                             arrayValue = val[k];
                             int64ArrayValue.push_back(arrayValue.asInt64());
@@ -126,6 +131,7 @@ int PlanParser::loadNetwork(string filePath) {
                         LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
                             key.c_str(), (void*)&int64ArrayValue);
                     } else if (arrayValue.type() == Json::realValue) {
+                        doubleArrayValue = {};
                         for (int k = 0; k < val.size(); k++) {
                             arrayValue = val[k];
                             doubleArrayValue.push_back(arrayValue.asDouble());
@@ -133,6 +139,7 @@ int PlanParser::loadNetwork(string filePath) {
                         LayerPropList::setProp((void*)newProp->prop, layerType.c_str(),
                             key.c_str(), (void*)&doubleArrayValue);
                     } else if (arrayValue.type() == Json::stringValue) {
+                        stringArrayValue = {};
                         for (int k = 0; k < val.size(); k++) {
                             arrayValue = val[k];
                             stringArrayValue.push_back(arrayValue.asString());
@@ -150,8 +157,43 @@ int PlanParser::loadNetwork(string filePath) {
                     break;
             }
         }
+
+        // new prop를 설정.
         PropMgmt::insertLayerProp(newProp);
+       
+        // plandef 맵에 추가
+        SASSERT(planDefMap.find(layerID) == planDefMap.end(),
+            "layer ID has been declared redundant. layer ID=%d", layerID);
+        PlanBuildDef newPlanDef;
+        newPlanDef.layerID = layerID;
+        newPlanDef.layerType = LayerPropList::getLayerType(layerType.c_str());   // TODO:
+
+        vector<string> inputs = LayerPropList::getInputs(layerType.c_str(), newProp->prop);
+        vector<string> outputs = LayerPropList::getOutputs(layerType.c_str(), newProp->prop);
+        vector<bool> propDowns =
+            LayerPropList::getPropDowns(layerType.c_str(), newProp->prop); 
+
+        for (int j = 0; j < inputs.size(); j++) {
+            newPlanDef.inputs.push_back(inputs[j]);
+        }
+
+        for (int j = 0; j < outputs.size(); j++) {
+            newPlanDef.outputs.push_back(outputs[j]);
+        }
+
+        for (int j = 0; j < propDowns.size(); j++) {
+            newPlanDef.propDowns.push_back(propDowns[j]);
+        }
+
+        newPlanDef.isDonator = LayerPropList::isDonator(layerType.c_str(), newProp->prop);
+        newPlanDef.isReceiver = LayerPropList::isReceiver(layerType.c_str(), newProp->prop);
+        newPlanDef.donatorID = LayerPropList::getDonatorID(layerType.c_str(), newProp->prop);
+        newPlanDef.learnable = LayerPropList::isLearnable(layerType.c_str(), newProp->prop);
+
+        planDefMap[layerID] = newPlanDef;
     }
+
+    LogicalPlan::build(networkID, planDefMap);
 
     // (2) get network property
     _NetworkProp *networkProp = new _NetworkProp();
@@ -188,24 +230,28 @@ int PlanParser::loadNetwork(string filePath) {
                 SASSERT0(val.size() > 0);
                 arrayValue = val[0];
                 if (arrayValue.type() == Json::booleanValue) {
+                    boolArrayValue = {};
                     for (int k = 0; k < val.size(); k++) {
                         arrayValue = val[k];
                         boolArrayValue.push_back(arrayValue.asBool());
                     }
                     NetworkProp::setProp(networkProp, key.c_str(), (void*)&boolArrayValue);
                 } else if (arrayValue.type() == Json::intValue) {
+                    int64ArrayValue = {};
                     for (int k = 0; k < val.size(); k++) {
                         arrayValue = val[k];
                         int64ArrayValue.push_back(arrayValue.asInt64());
                     }
                     NetworkProp::setProp(networkProp, key.c_str(), (void*)&int64ArrayValue);
                 } else if (arrayValue.type() == Json::realValue) {
+                    doubleArrayValue = {};
                     for (int k = 0; k < val.size(); k++) {
                         arrayValue = val[k];
                         doubleArrayValue.push_back(arrayValue.asDouble());
                     }
                     NetworkProp::setProp(networkProp, key.c_str(), (void*)&doubleArrayValue);
                 } else if (arrayValue.type() == Json::stringValue) {
+                    stringArrayValue = {};
                     for (int k = 0; k < val.size(); k++) {
                         arrayValue = val[k];
                         stringArrayValue.push_back(arrayValue.asString());
@@ -225,4 +271,6 @@ int PlanParser::loadNetwork(string filePath) {
     PropMgmt::insertNetworkProp(networkID, networkProp);
 
     fb.close();
+
+    return networkID;
 }

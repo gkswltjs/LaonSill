@@ -10,6 +10,8 @@ import json;
 headerFileList = ["LayerConfig.h"]
 ##############################################################################################
 
+# XXX: source code refactoring is required
+
 def checkParamProperty(propDic, prop, propertyName):
     if not propertyName in propDic[prop]:
         print "ERROR: prop %s does not have %s property" % (prop, propertyName)
@@ -32,6 +34,7 @@ for prop in propDic:
     checkParamProperty(propDic, prop, "DESC")
     checkParamProperty(propDic, prop, "PARENT")
     checkParamProperty(propDic, prop, "LEVEL")
+    checkParamProperty(propDic, prop, "LEARN")
     checkParamProperty(propDic, prop, "VARS")
 
 # (3) generate header file
@@ -164,7 +167,12 @@ try:
             headerFile.write('\n    %sPropLayer_s() {\n' % prop)
 
             for var in varDic[prop]:
-                if 'vector' in var[1]:
+                if var[0] == 'learnable':
+                    if propDic[prop]["LEARN"] == True:
+                        headerFile.write('        _%s_ = true;\n' % var[0])
+                    else:
+                        headerFile.write('        _%s_ = false;\n' % var[0])
+                elif 'vector' in var[1]:
                     headerFile.write('        _%s_ = {%s};\n' % (var[0], var[2]))
                 elif 'char[' in var[1]:
                     headerFile.write('        strcpy(_%s_, %s);\n' % (var[0], var[2]))
@@ -181,11 +189,29 @@ try:
     for line in headerClassDefSentences:
         headerFile.write(line + "\n")
 
+    # declare functions
     headerFile.write("    static void setProp(void* target, const char* layer,")
     headerFile.write(" const char* property, void* value);\n")
     headerFile.write("    static LayerProp* createLayerProp(int networkID, int layerID,")
-    headerFile.write(" const char* layerName);\n\n")
+    headerFile.write(" const char* layerName);\n")
+    headerFile.write("    static int getLayerType(const char* layer);\n")
+    headerFile.write("    static std::vector<std::string> getInputs(")
+    headerFile.write("const char* layer, void* target);\n")
+    headerFile.write("    static std::vector<std::string> getOutputs(")
+    headerFile.write("const char* layer, void* target);\n")
+    headerFile.write("    static std::vector<bool> getPropDowns(")
+    headerFile.write("const char* layer, void* target);\n")
+    headerFile.write("    static bool isDonator(")
+    headerFile.write("const char* layer, void* target);\n")
+    headerFile.write("    static bool isReceiver(")
+    headerFile.write("const char* layer, void* target);\n")
+    headerFile.write("    static int getDonatorID(")
+    headerFile.write("const char* layer, void* target);\n")
+    headerFile.write("    static bool isLearnable(")
+    headerFile.write("const char* layer, void* target);\n\n")
     headerFile.write("private:\n")
+
+    # set property functions
     for level in range(maxLevel + 1):
         propList = levelDic[level]
 
@@ -247,6 +273,7 @@ try:
             sourceFile.write(' layer name=%s, property=%s"')
             sourceFile.write(', "%s", property);\n    }\n}\n\n' % prop) 
 
+    # setProp() function
     sourceFile.write("void LayerPropList::setProp(void *target, const char* layer,")
     sourceFile.write(" const char* property, void* value) {\n")
    
@@ -266,6 +293,7 @@ try:
     sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
     sourceFile.write(', layer);\n    }\n}\n\n')
 
+    # create layer prop function
     sourceFile.write("LayerProp* LayerPropList::createLayerProp(int networkID, int layerID,")
     sourceFile.write(" const char* layerName) {\n")
    
@@ -291,6 +319,190 @@ try:
     sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
     sourceFile.write(', layerName);\n    }\n}\n\n')
 
+    # get layer type function
+    sourceFile.write("int LayerPropList::getLayerType(const char* layer) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
+            sourceFile.write('        return (int)Layer<float>::%s;\n' % prop)
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layer);\n    }\n}\n\n')
+
+    # inputs, outputs, propDownds, isDonator, isReceiver, getDonatorID, isLearnable functions
+    sourceFile.write("std::vector<std::string> LayerPropList::getInputs")
+    sourceFile.write("(const char* layer, void* target) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
+            sourceFile.write('        _%sPropLayer *prop = (_%sPropLayer*)target;\n'\
+                % (prop, prop))
+            sourceFile.write('        return prop->_input_;\n')
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layer);\n    }\n}\n\n')
+
+    sourceFile.write("std::vector<std::string> LayerPropList::getOutputs(")
+    sourceFile.write("const char* layer, void* target) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
+            sourceFile.write('        _%sPropLayer *prop = (_%sPropLayer*)target;\n'\
+                % (prop, prop))
+            sourceFile.write('        return prop->_output_;\n')
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layer);\n    }\n}\n\n')
+
+    sourceFile.write("std::vector<bool> LayerPropList::getPropDowns")
+    sourceFile.write("(const char* layer, void* target) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
+            sourceFile.write('        _%sPropLayer *prop = (_%sPropLayer*)target;\n'\
+                % (prop, prop))
+            sourceFile.write('        return prop->_propDown_;\n')
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layer);\n    }\n}\n\n')
+
+    sourceFile.write("bool LayerPropList::isDonator")
+    sourceFile.write("(const char* layer, void* target) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
+            sourceFile.write('        _%sPropLayer *prop = (_%sPropLayer*)target;\n'\
+                % (prop, prop))
+            sourceFile.write('        return prop->_donate_;\n')
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layer);\n    }\n}\n\n')
+
+    sourceFile.write("bool LayerPropList::isReceiver")
+    sourceFile.write("(const char* layer, void* target) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
+            sourceFile.write('        _%sPropLayer *prop = (_%sPropLayer*)target;\n'\
+                % (prop, prop))
+            sourceFile.write('        return prop->_receive_;\n')
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layer);\n    }\n}\n\n')
+
+    sourceFile.write("int LayerPropList::getDonatorID")
+    sourceFile.write("(const char* layer, void* target) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
+            sourceFile.write('        _%sPropLayer *prop = (_%sPropLayer*)target;\n'\
+                % (prop, prop))
+            sourceFile.write('        return prop->_donatorID_;\n')
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layer);\n    }\n}\n\n')
+
+    sourceFile.write("bool LayerPropList::isLearnable")
+    sourceFile.write("(const char* layer, void* target) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
+            sourceFile.write('        _%sPropLayer *prop = (_%sPropLayer*)target;\n'\
+                % (prop, prop))
+            sourceFile.write('        return prop->_learnable_;\n')
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layer);\n    }\n}\n\n')
+
+    # write header bottom
     for line in headerBottomSentences:
         headerFile.write(line + "\n")
 

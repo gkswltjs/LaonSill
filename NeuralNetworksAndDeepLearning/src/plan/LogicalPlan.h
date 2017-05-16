@@ -18,29 +18,55 @@ typedef struct PlanAlloc_s {
     int devID;
 } PlanAlloc;
 
-typedef struct PlanDef_s {
-    int id;
+typedef enum PlanType_e {
+    PLANTYPE_FORWARD = 0,
+    PLANTYPE_BACKWARD,
+    PLANTYPE_UPDATE,
+    PLANTYPE_MAX
+} PlanType;
+
+typedef struct PlanBuildDef_s {
+    int layerID;
     int layerType;
 
-    std::vector<int> depList;
+    std::vector<std::string> inputs;    // PlanDef의 빌드를 위해 임시로 사용.
+    std::vector<std::string> outputs;   // PlanDef의 빌드를 위해 임시로 사용.
+    std::vector<bool> propDowns;       // PlanDef의 빌드를 위해 임시로 사용.
+
+    bool isDonator;
+    bool isReceiver;
+    int donatorID;
+
+    bool learnable;
+} PlanBuildDef;
+
+typedef struct PlanDef_s {
+    int planID;
+    PlanType planType;
+
+    int layerID;
+    int layerType;
+
     int depCount;
     std::vector<int> notifyList;
-    std::vector<int> gcList;
-    int gcCount;
 
     std::vector<PlanAlloc> allocList;   // 어떤 노드의 어떤 dev(GPU) ID에서 동작할지를 정의
 } PlanDef;
 
 class LogicalPlan {
 public: 
-    LogicalPlan() {}
+    LogicalPlan(int networkID) {
+        this->networkID = networkID; 
+    }
     virtual ~LogicalPlan() {}
 
     int networkID;
-    static void cleanupLogicalPlan(int lpID);
+    static void cleanup(int networkID);
+    static void build(int networkID, std::map<int, PlanBuildDef> planDefMap);
+    std::vector<PlanDef>                ppDefs;  // physical plan Definition
+    static void printPlanDef(int networkID);
 
 private:
-    std::vector<PlanDef>                ppDef;  // physical plan Definition
     static std::map<int, LogicalPlan*>  lpMap;  // logical plan map
                                                 // key : network ID, value : plan def list
 };

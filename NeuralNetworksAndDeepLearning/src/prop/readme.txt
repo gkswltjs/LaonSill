@@ -7,7 +7,7 @@
  마다의 설정값을 의미한다.
 
 * Layer Property 등록 방법
- layerPropDef.json 파일에 등록할 Prop 이름과 그것의 4가지 속성을 json format에 맞게 기입한다.
+ layerPropDef.json 파일에 등록할 Prop 이름과 그것의 5가지 속성을 json format에 맞게 기입한다.
 
  [layerPropDef.json]
     :
@@ -16,6 +16,7 @@
     "DESC" : "convolution layer",
     "PARENT" : "Base",
     "LEVEL" : 1,
+    "LEARN" : true,
     "VARS" : 
         [   
             ["filterDimRows", "uint32_t", "0"],
@@ -36,7 +37,8 @@
            이라는 level값을 가진다. Base prop을 상속하는 Conv prop은 1이라는 level 값을
            가진다. 만약 Conv prop을 상속하는 ABC라는 prop이 있다면 ABC prop은 2 level 값을 
            가진다.
-(4) VARS : prop에서 정의하는 여러가지 속성값들을 의미한다. VARS는 여러개의 VAR로 정의된다.
+(4) LEARN : 학습을 할 수 있는 레이어인지 유무를 결정한다.
+(5) VARS : prop에서 정의하는 여러가지 속성값들을 의미한다. VARS는 여러개의 VAR로 정의된다.
            각각의 VAR은 (VAR의 이름, VAR의 타입, VAR의 초기값) 3가지 튜플로 정의된다.
            만약 초기값을 특정 헤더파일에 정의되어 있는 타입으로 정의하고 싶다면 해당
            헤더파일을 genProp.py의 headerFileList에 추가한다.
