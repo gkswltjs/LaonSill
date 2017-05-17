@@ -105,3 +105,17 @@ bool ResourceManager::isVaildPlanOption(int option) {
 
     return false;
 }
+
+GPUDevInfo ResourceManager::getSingleGPUInfo() {
+    for (int i = 0; i < ResourceManager::gpuInfo.size(); i++) {
+        if (ResourceManager::gpuInfo[i].nodeID != 0)
+            continue;
+
+        return ResourceManager::gpuInfo[i];
+    }
+
+    SASSERT(false, "cannot find gpu device of master node");
+
+    GPUDevInfo dummy;
+    return dummy;
+}

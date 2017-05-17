@@ -5,6 +5,7 @@
     ["batchSize", "uint32_t", "1"],
     ["dop", "uint32_t", "1"],
     ["epoch", "uint32_t", "1"],
+    ["miniBatch", "uint32_t", "1"],
     ["testInterval", "uint32_t", "1"],
     ["saveInterval", "uint32_t", "1"],
     ["stepSize", "uint32_t", "1"],

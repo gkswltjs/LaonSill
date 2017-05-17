@@ -13,9 +13,11 @@
 #include <map>
 #include <atomic>
 
-#define LP_FORWARD_PLANID(id)       (id * 3 + 0)
-#define LP_BACKWARD_PLANID(id)      (id * 3 + 1)
-#define LP_UPDATE_PLANID(id)        (id * 3 + 2)
+#define LP_FORWARD_PLANID(id)               (id * 3 + 0)
+#define LP_BACKWARD_PLANID(id)              (id * 3 + 1)
+#define LP_UPDATE_PLANID(id)                (id * 3 + 2)
+
+#define LP_PLANID_TO_LAYERID(planid)        ((int)((int)planid / 3))
 
 typedef struct PlanAlloc_s {
     int nodeID;
@@ -68,6 +70,7 @@ public:
     static void build(int networkID, std::map<int, PlanBuildDef> planDefMap);
     std::vector<PlanDef>                ppDefs;  // physical plan Definition
     static void printPlanDef(int networkID);
+    static LogicalPlan* getLogicalPlan(int networkID);
 
 private:
     static std::map<int, LogicalPlan*>  lpMap;  // logical plan map

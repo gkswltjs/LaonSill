@@ -47,8 +47,13 @@ public:
     static void init();
 
 private:
-    static void setPlan(int networkID, int option, bool isTest);
-    static void unsetPlan(int networkID);
+    static void setPlanContext(int networkID, int option, bool isTest);
+    static void setSingleGPUPlanContext(int networkID, bool isTest);
+    static void setMultiGPUPlanContext(int networkID, bool isTest);
+    static void setMultiNodePlanContext(int networkID, bool isTest);
+    static void setVerticalSplitPlanContext(int networkID, bool isTest);
+    static void setHorizontalSplitPlanContext(int networkID, bool isTest);
+    static void unsetPlanContext(int networkID);
     static double testPlan();
     static std::vector<int> options;
 };

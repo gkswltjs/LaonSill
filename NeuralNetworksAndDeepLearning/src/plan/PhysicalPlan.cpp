@@ -83,9 +83,12 @@ bool PhysicalPlan::generatePlan() {
 
 void PhysicalPlan::runLayer(int planID) {
     // (1) set context
+    int layerID = LP_PLANID_TO_LAYERID(planID);
+    PropMgmt::update(PropMgmt::curNetworkID, layerID);
     
     // (2) run layer
-    cout << "run layer (planID=" << planID << endl;
+    // TODO:
+    cout << "run layer (planID=" << planID << ")" << endl;
 
     // (3) mark
     markFinish(planID);
@@ -130,7 +133,7 @@ bool PhysicalPlan::runPlan() {
     return true;
 }
 
-void PhysicalPlan::insertPlan(int networkID, vector<PhysicalPlan*> pMap, PlanInfo pInfoMap) {
+void PhysicalPlan::insertPlan(int networkID, vector<PhysicalPlan*> pMap, PlanInfo *pInfoMap) {
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
     SASSERT0(PhysicalPlan::planGlobalMap.find(networkID) == 
             PhysicalPlan::planGlobalMap.end());
@@ -141,16 +144,8 @@ void PhysicalPlan::insertPlan(int networkID, vector<PhysicalPlan*> pMap, PlanInf
 
     SASSERT0(PhysicalPlan::planGlobalInfoMap.find(networkID) ==
             PhysicalPlan::planGlobalInfoMap.end());
-    PlanInfo *newPlanInfo = new PlanInfo();
 
-    newPlanInfo->networkID = pInfoMap.networkID;
-    newPlanInfo->dopCount = pInfoMap.dopCount;
-    newPlanInfo->epochCount = pInfoMap.epochCount;
-    newPlanInfo->miniBatchCount = pInfoMap.miniBatchCount;
-    newPlanInfo->curEpochIndex = 0;
-    newPlanInfo->curMiniBatchIndex = 0;
-
-    PhysicalPlan::planGlobalInfoMap[networkID] = newPlanInfo;
+    PhysicalPlan::planGlobalInfoMap[networkID] = pInfoMap;
 }
 
 void PhysicalPlan::removePlan(int networkID) {

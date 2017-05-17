@@ -308,6 +308,26 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "CHAR(1024)",
     "DEFAULT" : ""
+},
+
+"PLAN_OPT_TEST_MAX_EPOCH_COUNT" : 
+{
+    "DESC" : "specify max epoch count for plan optimizer test module.",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT32",
+    "DEFAULT" : 1 
+},
+
+"PLAN_OPT_TEST_MAX_MINIBATCH_COUNT" : 
+{
+    "DESC" : "specify max mini-batch count for plan optimizer test module.",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT32",
+    "DEFAULT" : 4 
 }
 
 }

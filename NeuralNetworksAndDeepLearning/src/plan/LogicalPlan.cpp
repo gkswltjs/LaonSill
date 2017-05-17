@@ -248,3 +248,12 @@ void LogicalPlan::printPlanDef(int networkID) {
             " notify List : " << tempBuf << endl;);
     }
 }
+
+LogicalPlan* LogicalPlan::getLogicalPlan(int networkID) {
+    SASSERT(LogicalPlan::lpMap.find(networkID) != LogicalPlan::lpMap.end(),
+        "There is no logical plan for the requested network ID. network ID=%d",
+        networkID);
+
+    LogicalPlan* lp = LogicalPlan::lpMap[networkID];
+    return lp;
+}

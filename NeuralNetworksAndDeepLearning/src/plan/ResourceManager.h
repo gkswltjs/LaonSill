@@ -25,6 +25,7 @@ public:
     ResourceManager() {}
     virtual ~ResourceManager() {}
     static bool isVaildPlanOption(int option);
+    static GPUDevInfo getSingleGPUInfo();
 
     static void init();
 private:

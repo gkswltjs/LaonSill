@@ -35,11 +35,15 @@ public:
     virtual ~PhysicalPlan() {}
 
     int                         networkID;
-    std::map<int, PlanAlloc>    allocMap;
-    std::map<int, PlanDef>      planMap;
+    std::map<int, PlanAlloc>    allocMap;       // 특정 레이어를 어느곳에 배치할 것인가
+                                                // key : layer ID, value : PlanAlloc
+    std::map<int, PlanDef>      planMap;        // plan ID별 PlanDef 맵
+                                                // key : planID, value : PlanDef
     std::map<int, int>          depRefMap;      // 각 plan들의 dependency를 관리한다.
+                                                // key : planID, value : remain dependecy
+                                                // count
 
-    int                         dopID;
+    int                         dopID;          // degree of parallelism ID
     int                         refCount;   // 이 값이 0이 되면 해당 mini batch에 대한 plan은
                                             // 다 수행한 것으로 판단하면 된다.
 
@@ -53,12 +57,13 @@ public:
     bool runPlan(int layerID, PlanType planType);
     bool runPlan();
 
-    std::list<int>      readyQueue;
+    std::list<int>      readyQueue; // dependency 문제가 해결이 되어 실행이 될 수 있는
+                                    // planID들의 리스트
     std::mutex          planMutex;  // refCount, readyQueue, depRefMap을 보호한다.
                                     // XXX: 락을 효율적으로 사용하도록 추후에 수정하자.
 
     static void insertPlan(int networkID, std::vector<PhysicalPlan*> pMap,
-        PlanInfo pInfoMap);
+        PlanInfo *pInfoMap);
     static void removePlan(int networkID);
     static void setCurPlan(int dopID);
 
