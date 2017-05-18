@@ -90,7 +90,16 @@ double PlanOptimizer::testPlan() {
     clock_gettime(CLOCK_REALTIME, &startTime);
    
     // TODO: run test
+    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
 
+    bool jobFinish = true;
+    while (jobFinish) {
+        bool canRunPlan = true;
+        while (canRunPlan) {
+            canRunPlan = pp->runPlan();
+        }
+        jobFinish = pp->generatePlan();
+    }
 
     clock_gettime(CLOCK_REALTIME, &endTime);
     double elapsed = (endTime.tv_sec - startTime.tv_sec) +
@@ -98,9 +107,6 @@ double PlanOptimizer::testPlan() {
 
     return elapsed;
 }
-
-#define PLAN_OPTIMIZER_TEST_MAX_MINIBATCH_COUNT         (4)
-#define PLAN_OPTIMIZER_TEST_MAX_EPOCH_COUNT             (1)
 
 void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
     // (1) make physical plan list

@@ -30,7 +30,8 @@ public:
     PropMgmt() {}
     virtual ~PropMgmt() {}
 
-    static void update(int networkID, int layerID);
+    static void updateContext(int networkID, int layerID);
+    static void updateNetworkIDContext(int networkID);
     static void insertLayerProp(LayerProp* layerProp);
     static void removeLayerProp(int networkID);
     static void insertNetworkProp(int networkID, _NetworkProp* networkProp);

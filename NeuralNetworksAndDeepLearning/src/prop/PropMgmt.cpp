@@ -19,7 +19,7 @@ thread_local volatile LayerProp* PropMgmt::curLayerProp;
 thread_local volatile _NetworkProp* PropMgmt::curNetworkProp;
 thread_local volatile int PropMgmt::curNetworkID = -1;
 
-void PropMgmt::update(int networkID, int layerID) {
+void PropMgmt::updateContext(int networkID, int layerID) {
     PropMgmt::curLayerProp = getLayerProp(networkID, layerID);
 
     if (networkID != curNetworkID) {
@@ -99,4 +99,9 @@ void PropMgmt::removeNetworkProp(int networkID) {
     _NetworkProp* networkProp = getNetworkProp(networkID);
     networkPropMap.erase(networkID);
     delete networkProp;
+}
+
+void PropMgmt::updateNetworkIDContext(int networkID) {
+    PropMgmt::curNetworkID = networkID;
+    PropMgmt::curNetworkProp = getNetworkProp(networkID);
 }

@@ -24,7 +24,8 @@
 #define PLAN_OPT_VERTICAL_SPLIT     8
 #define PLAN_OPT_HORIZONTAL_SPLIT   16
 
-#define PLAN_OPT_DEFAULT            (PLAN_OPT_SINGLE_GPU|PLAN_OPT_MULTI_GPU)
+//#define PLAN_OPT_DEFAULT            (PLAN_OPT_SINGLE_GPU|PLAN_OPT_MULTI_GPU)
+#define PLAN_OPT_DEFAULT            (PLAN_OPT_SINGLE_GPU)
 
 typedef enum PlanOptPolicy_e {
     PLAN_OPT_POLICY_USE_FIRST_AVAILABLE_OPTION = 0,
@@ -45,6 +46,7 @@ public:
 
     static void removePlans(int networkID);
     static void init();
+    static double testPlan();
 
 private:
     static void setPlanContext(int networkID, int option, bool isTest);
@@ -54,7 +56,6 @@ private:
     static void setVerticalSplitPlanContext(int networkID, bool isTest);
     static void setHorizontalSplitPlanContext(int networkID, bool isTest);
     static void unsetPlanContext(int networkID);
-    static double testPlan();
     static std::vector<int> options;
 };
 

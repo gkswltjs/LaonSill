@@ -67,6 +67,8 @@ public:
     static void removePlan(int networkID);
     static void setCurPlan(int dopID);
 
+    static PhysicalPlan* getCurPhysicalPlan();
+
 private:
     static std::map<int, std::vector<PhysicalPlan*>>    planGlobalMap;    // key = networkID,
                                                                 // value = Physical Plans

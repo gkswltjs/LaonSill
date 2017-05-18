@@ -28,7 +28,7 @@ bool PropTest::runSimpleLayerPropTest() {
     PropMgmt::insertNetworkProp(networkID, networkProp);
 
     // (2) set layer prop and run
-    PropMgmt::update(networkID, layerID);
+    PropMgmt::updateContext(networkID, layerID);
 
     STDOUT_LOG("initial filter dim strides & pads value : %d, %d\n",
         SLPROP(Conv, filterDimStrides), SLPROP(Conv, filterDimPads));
@@ -59,7 +59,7 @@ bool PropTest::runSimpleNetworkPropTest() {
     PropMgmt::insertNetworkProp(networkID, networkProp);
 
     // (2) set network prop and run
-    PropMgmt::update(networkID, layerID);
+    PropMgmt::updateContext(networkID, layerID);
 
     STDOUT_LOG("initial batchSize value : %u\n", SNPROP(batchSize));
     SNPROP(batchSize) = 128;

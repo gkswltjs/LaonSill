@@ -39,6 +39,8 @@
     "configs" :
     {
         "batchSize" : 4,
+        "epoch" : 2,
+        "miniBatch" : 3,
         "lossLayer" : ["loss"],
         "gamma" : 0.1
     }

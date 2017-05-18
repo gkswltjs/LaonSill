@@ -35,12 +35,13 @@
 #include "test/ClientTest.h"
 #include "test/PropTest.h"
 #include "test/PlanParserTest.h"
+#include "test/PlanOptimizerTest.h"
 
 /**************************************************************************
  * [수정포인트] 추가할 테스트 개수에 맞게 TEST_ITEM_DEF_ARRAY_COUNT 값을
  * 변경시켜 줍니다. 테스트 개수에 all이 포함이 되지는 않습니다.
  *************************************************************************/
-#define TEST_ITEM_DEF_ARRAY_COUNT  4
+#define TEST_ITEM_DEF_ARRAY_COUNT  5
 
 
 /**************************************************************************
@@ -52,7 +53,8 @@ TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
     {"broker", "subscribe & publish function test", BrokerTest::runTest},
     {"client", "communication function test", ClientTest::runTest},
     {"prop", "layer prop function test", PropTest::runTest},
-    {"planparser", "plan parser function test", PlanParserTest::runTest}
+    {"planparser", "plan parser function test", PlanParserTest::runTest},
+    {"planopt", "plan optimizer function test", PlanOptimizerTest::runTest}
 };
 
 

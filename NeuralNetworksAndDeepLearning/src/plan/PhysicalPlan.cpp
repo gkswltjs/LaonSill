@@ -30,6 +30,7 @@ void PhysicalPlan::markFinish(int planID) {
         this->readyQueue.push_back(planID); 
     }
 
+    this->refCount -= 1;
     planLock.unlock();
     SASSUME0(this->depRefMap[planID] >= 0);
 }
@@ -46,11 +47,6 @@ bool PhysicalPlan::generatePlan() {
 
     // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
     unique_lock<mutex> planInfoLock(PhysicalPlan::curPlanInfo->planMutex);
-    if (PhysicalPlan::curPlanInfo->curEpochIndex >= PhysicalPlan::curPlanInfo->epochCount) {
-        planInfoLock.unlock();
-        return false;
-    }
-
     this->epochIdx = PhysicalPlan::curPlanInfo->curEpochIndex;
     this->miniBatchIdx = PhysicalPlan::curPlanInfo->curMiniBatchIndex;
 
@@ -64,8 +60,12 @@ bool PhysicalPlan::generatePlan() {
 
     planInfoLock.unlock();
 
+    if (PhysicalPlan::curPlanInfo->curEpochIndex >= PhysicalPlan::curPlanInfo->epochCount) {
+        return false;
+    }
+
     // (3) 초기화를 수행한다.
-    this->refCount = planMap.size(); 
+    this->refCount = 0;
     this->readyQueue = {};
     for (map<int, PlanDef>::iterator it = planMap.begin(); it != planMap.end(); ++it) {
         int key = it->first;
@@ -73,6 +73,8 @@ bool PhysicalPlan::generatePlan() {
       
         if (value.depCount == 0) {
             readyQueue.push_back(key);
+        } else {
+            this->refCount += 1;
         }
     
         depRefMap[key] = value.depCount;
@@ -84,14 +86,20 @@ bool PhysicalPlan::generatePlan() {
 void PhysicalPlan::runLayer(int planID) {
     // (1) set context
     int layerID = LP_PLANID_TO_LAYERID(planID);
-    PropMgmt::update(PropMgmt::curNetworkID, layerID);
+    PropMgmt::updateContext(PropMgmt::curNetworkID, layerID);
     
     // (2) run layer
     // TODO:
-    cout << "run layer (planID=" << planID << ")" << endl;
+    PlanInfo* planInfo = PhysicalPlan::curPlanInfo;
+    cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
+        planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")" << endl;
 
     // (3) mark
-    markFinish(planID);
+    PlanDef *planDef = &PhysicalPlan::curPhysicalPlan->planMap[planID];
+    for (int i = 0; i < planDef->notifyList.size(); i++) {
+        int targetPlanID = planDef->notifyList[i];
+        markFinish(targetPlanID);
+    }
 }
 
 bool PhysicalPlan::runPlan(int layerID, PlanType planType) {
@@ -184,4 +192,8 @@ void PhysicalPlan::setCurPlan(int dopID) {
     SASSERT0(PhysicalPlan::planGlobalInfoMap.find(networkID) !=
             PhysicalPlan::planGlobalInfoMap.end());
     PhysicalPlan::curPlanInfo = PhysicalPlan::planGlobalInfoMap[networkID];
+}
+
+PhysicalPlan* PhysicalPlan::getCurPhysicalPlan() {
+    return PhysicalPlan::curPhysicalPlan;
 }
