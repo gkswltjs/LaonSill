@@ -11,6 +11,9 @@
 #include "LogicalPlan.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
+#include "Layer.h"
+#include "LayerPropList.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -25,6 +28,15 @@ void LogicalPlan::cleanup(int networkID) {
     LogicalPlan::lpMap.erase(networkID);
 
     delete lp;
+}
+
+PlanDef* LogicalPlan::findPlanDef(LogicalPlan* lp, int planID) {
+    for (int i = 0; i < lp->ppDefs.size(); i++) {
+        if (lp->ppDefs[i].planID == planID)
+            return &lp->ppDefs[i];
+    }
+
+    SASSERT(false, "cannot find plandef for requesting plan ID. planID=%d", planID);
 }
 
 void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
@@ -113,8 +125,8 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
                 continue;
             }
             
-            // output이 곧 자신인 경우(inplace)에 대해서 확인하고, 그에따른 처리를 한다.
-            vector<int> IDList = input2IDMap[outputName];
+            // inplace에 대해서 확인
+            vector<int> IDList = output2IDMap[outputName];
             bool isInplace = false;
             for (int i = 0; i < IDList.size() - 1; i++) {
                 if (key == IDList[i]) {
@@ -124,7 +136,14 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
                 }
             }
 
-            if (!isInplace) {
+            bool isSplit = ((output2IDMap.find(outputName) != output2IDMap.end()) &&
+                    (output2IDMap[outputName].size() > 0) &&
+                    (input2IDMap[outputName].size() > 0) &&
+                    (input2IDMap[outputName].size() < output2IDMap[outputName].size()));
+
+            if (isSplit && isInplace) {
+                newPlanDef.notifyList.pop_back();
+            } else if (!isSplit && !isInplace) {
                 int nextPlanID = LP_FORWARD_PLANID(output2IDMap[outputName][0]);
                 newPlanDef.notifyList.push_back(nextPlanID);
             }
@@ -177,7 +196,14 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
                 }
             }
 
-            if (!isInplace) {
+            bool isSplit = ((output2IDMap.find(inputName) != output2IDMap.end()) &&
+                    (output2IDMap[inputName].size() > 0) &&
+                    (input2IDMap[inputName].size() > 0) &&
+                    (input2IDMap[inputName].size() < output2IDMap[inputName].size()));
+
+            if (isSplit && isInplace) {
+                newPlanDef.notifyList.pop_back();
+            } else if (!isSplit && !isInplace) {
                 int nextPlanID = LP_BACKWARD_PLANID(input2IDMap[inputName][0]);
                 newPlanDef.notifyList.push_back(nextPlanID);
             }
@@ -213,6 +239,119 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
             newPlanDef.depCount = depCount;
             lp->ppDefs.push_back(newPlanDef);
         }
+    }
+
+    // (3-4) generate split layer
+    int curLayerID = LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID;
+
+    for (map<string, vector<int>>::iterator it = input2IDMap.begin();
+        it != input2IDMap.end(); ++it) {
+        string key = it->first;
+        vector<int> inputIDs = it->second;
+
+        if (output2IDMap.find(key) == output2IDMap.end())
+            continue;
+        vector<int> outputIDs = output2IDMap[key];
+
+        if (inputIDs.size() == 0 || outputIDs.size() == 0)
+            continue;
+
+        if (inputIDs.size() == outputIDs.size())
+            continue;
+
+        SASSERT0(inputIDs.size() < outputIDs.size());
+
+        // (3-4-0) prepare names for split layer
+        int splitOutputCount = outputIDs.size() - inputIDs.size() + 1;
+        vector<string> splitLayerOutputDataNames;
+        vector<string> splitLayerInputDataNames;
+        string splitLayerName = key + "_split";
+        char splitLayerTempDataName[64];
+
+        for (int i = 0; i < splitOutputCount; i++) {
+            sprintf(splitLayerTempDataName, "%s_split_%d", key.c_str(), i);
+            splitLayerOutputDataNames.push_back(string(splitLayerTempDataName));
+        }
+        splitLayerInputDataNames.push_back(key);
+
+        // (3-4-1) generate split layer's forward plan
+        PlanDef newPlanDefForward;
+        newPlanDefForward.layerID = curLayerID;
+        newPlanDefForward.planID = LP_FORWARD_PLANID(newPlanDefForward.layerID);
+        newPlanDefForward.planType = PLANTYPE_FORWARD;
+        newPlanDefForward.layerType = (int)Layer<float>::Split;
+        newPlanDefForward.depCount = 1;
+
+        newPlanDefForward.notifyList = {};
+        for (int i = 0; i < splitOutputCount; i++) {
+            int splitOutputID = LP_FORWARD_PLANID(outputIDs[outputIDs.size() - i - 1]);
+            PlanDef* splitOutputPlanDef = LogicalPlan::findPlanDef(lp, splitOutputID);
+            newPlanDefForward.notifyList.push_back(splitOutputID);
+        }
+        int splitInputID = LP_FORWARD_PLANID(inputIDs[inputIDs.size() - 1]);
+        PlanDef* splitInputPlanDef = LogicalPlan::findPlanDef(lp, splitInputID);
+
+        // should erase one of output IDs from notify list
+#if 0
+        for (int i = 0; i < outputIDs.size(); i++) {
+            int removeID = LP_FORWARD_PLANID(outputIDs[i]);
+            splitInputPlanDef->notifyList.erase(
+                remove(splitInputPlanDef->notifyList.begin(),
+                        splitInputPlanDef->notifyList.end(), removeID),
+                splitInputPlanDef->notifyList.end());
+        }
+#endif
+        splitInputPlanDef->notifyList.push_back(newPlanDefForward.planID);
+
+        // (3-4-2) generate split layer's backward plan
+        PlanDef newPlanDefBackward;
+        newPlanDefBackward.layerID = curLayerID;
+        newPlanDefBackward.planID = LP_BACKWARD_PLANID(newPlanDefBackward.layerID);
+        newPlanDefBackward.planType = PLANTYPE_BACKWARD;
+        newPlanDefBackward.layerType = (int)Layer<float>::Split;
+
+        splitOutputCount = outputIDs.size() - inputIDs.size() + 1;
+        newPlanDefBackward.depCount = splitOutputCount;
+
+        for (int i = 0; i < splitOutputCount; i++) {
+            int splitOutputID = LP_BACKWARD_PLANID(outputIDs[outputIDs.size() - i - 1]);
+            PlanDef* splitOutputPlanDef = LogicalPlan::findPlanDef(lp, splitOutputID);
+
+            splitOutputPlanDef->notifyList.push_back(newPlanDefBackward.planID);
+        }
+
+        newPlanDefBackward.notifyList = {};
+        splitInputID = LP_BACKWARD_PLANID(inputIDs[inputIDs.size() - 1]);
+        splitInputPlanDef = LogicalPlan::findPlanDef(lp, splitInputID);
+        //splitInputPlanDef->depCount += 1;
+        newPlanDefBackward.notifyList.push_back(splitInputID);
+
+        lp->ppDefs.push_back(newPlanDefForward);
+        lp->ppDefs.push_back(newPlanDefBackward);
+
+        // (3-4-3) create split layer's prop
+        LayerProp* newProp = LayerPropList::createLayerProp(networkID, curLayerID,
+            "Split");
+        LayerPropList::setProp((void*)newProp->prop, "Split", "id", (void*)&curLayerID);
+        LayerPropList::setProp((void*)newProp->prop, "Split", "name",
+                (void*)&splitLayerName);
+
+        LayerPropList::setProp((void*)newProp->prop, "Split", "input",
+            (void*)&splitLayerInputDataNames);
+        LayerPropList::setProp((void*)newProp->prop, "Split", "output",
+            (void*)&splitLayerOutputDataNames);
+        PropMgmt::insertLayerProp(newProp);
+
+        // (3-4-4) change the data names of the layers associated with the split layer
+        for (int i = 0; i < splitOutputCount; i++) {
+            int splitOutputID = LP_BACKWARD_PLANID(outputIDs[outputIDs.size() - i - 1]);
+            PlanDef* splitOutputPlanDef = LogicalPlan::findPlanDef(lp, splitOutputID);
+            PropMgmt::updateContext(networkID, splitOutputPlanDef->layerID);
+
+            SLPROP(Split, input).push_back(splitLayerOutputDataNames[i]);
+        }
+
+        curLayerID++;
     }
 
     SASSERT(LogicalPlan::lpMap.find(networkID) == LogicalPlan::lpMap.end(),

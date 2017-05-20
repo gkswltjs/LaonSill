@@ -19,6 +19,8 @@
 
 #define LP_PLANID_TO_LAYERID(planid)        ((int)((int)planid / 3))
 
+#define LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID        (100000)
+
 typedef struct PlanAlloc_s {
     int nodeID;
     int devID;
@@ -75,6 +77,7 @@ public:
 private:
     static std::map<int, LogicalPlan*>  lpMap;  // logical plan map
                                                 // key : network ID, value : plan def list
+    static PlanDef* findPlanDef(LogicalPlan* lp, int planID);
 };
 
 #endif /* LOGICALPLAN_H */

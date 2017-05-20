@@ -95,6 +95,30 @@
         [
             ["softmaxAxis", "uint32_t", "2"]
         ]
+},
+
+"Split" :
+{
+    "DESC" : "split layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" :
+        [
+        ]
+},
+
+"Relu" :
+{
+    "DESC" : "relu layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" :
+        [
+            ["useLeaky", "bool", "false"],
+            ["leaky", "double", "0.0"]
+        ]
 }
 
 }

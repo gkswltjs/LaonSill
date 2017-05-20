@@ -70,6 +70,10 @@ int PlanParser::loadNetwork(string filePath) {
 
         // XXX: 예외처리 해야 한다!!!!
         int layerID = layer["id"].asInt();
+        SASSERT(layerID < LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID,
+            "layer ID should less than %d. layer ID=%d",
+            LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID, layerID);
+
         string layerType = layer["layer"].asCString();
 
         LayerProp* newProp = 
@@ -193,7 +197,6 @@ int PlanParser::loadNetwork(string filePath) {
         planDefMap[layerID] = newPlanDef;
     }
 
-    LogicalPlan::build(networkID, planDefMap);
 
     // (2) get network property
     _NetworkProp *networkProp = new _NetworkProp();
@@ -269,6 +272,8 @@ int PlanParser::loadNetwork(string filePath) {
         }
     }
     PropMgmt::insertNetworkProp(networkID, networkProp);
+
+    LogicalPlan::build(networkID, planDefMap);
 
     fb.close();
 

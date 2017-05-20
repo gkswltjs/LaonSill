@@ -92,7 +92,7 @@ void PhysicalPlan::runLayer(int planID) {
     // TODO:
     PlanInfo* planInfo = PhysicalPlan::curPlanInfo;
     cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
-        planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")" << endl;
+        planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")";
 
     // (3) mark
     PlanDef *planDef = &PhysicalPlan::curPhysicalPlan->planMap[planID];
@@ -100,6 +100,31 @@ void PhysicalPlan::runLayer(int planID) {
         int targetPlanID = planDef->notifyList[i];
         markFinish(targetPlanID);
     }
+
+    if (planDef->layerType == Layer<float>::Conv) {
+        cout << " [";
+        for (int i = 0; i < SLPROP(Conv, input).size(); i++) {
+            cout << SLPROP(Conv, input)[i] << " ";
+        }
+        cout << "] => [";
+        for (int i = 0; i < SLPROP(Conv, output).size(); i++) {
+            cout << SLPROP(Conv, output)[i] << " ";
+        }
+        cout << "]" << endl;
+    } else if (planDef->layerType == Layer<float>::FullyConnected) {
+        cout << "[";
+        for (int i = 0; i < SLPROP(FullyConnected, input).size(); i++) {
+            cout << SLPROP(FullyConnected, input)[i] << " ";
+        }
+        cout << "] => [";
+        for (int i = 0; i < SLPROP(FullyConnected, output).size(); i++) {
+            cout << SLPROP(FullyConnected, output)[i] << " ";
+        }
+        cout << "]" << endl;
+    } else {
+        cout << endl;
+    }
+
 }
 
 bool PhysicalPlan::runPlan(int layerID, PlanType planType) {
