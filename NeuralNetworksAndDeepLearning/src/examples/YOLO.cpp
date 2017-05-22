@@ -1349,9 +1349,7 @@ void YOLO<Dtype>::run() {
     // loss layer of Generatoer-Discriminator 0 GAN
 
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
-    vector<WeightsArg> weightsArgs(1);
-    weightsArgs[0].weightsPath =
-        string(SPARAM(NETWORK_SAVE_DIR)) + "/network80072.param";
+    string loadPath = string(SPARAM(NETWORK_SAVE_DIR)) + "/network80072.param";
 
 	const uint32_t batchSize = 8;
 	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
@@ -1388,7 +1386,7 @@ void YOLO<Dtype>::run() {
 			->lrPolicy(lrPolicy)
 			->networkPhase(phase)
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
-            ->weightsArgs(weightsArgs)
+            ->loadPath(loadPath)
 			->networkListeners({
 				new NetworkMonitor("loss", NetworkMonitor::PLOT_ONLY),
 				})

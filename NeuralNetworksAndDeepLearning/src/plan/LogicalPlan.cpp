@@ -39,6 +39,7 @@ PlanDef* LogicalPlan::findPlanDef(LogicalPlan* lp, int planID) {
     SASSERT(false, "cannot find plandef for requesting plan ID. planID=%d", planID);
 }
 
+// XXX: the number of codes for this function is too long!!!!!!! split it
 void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
     // (1) fill input2ID & output2ID map
     map<string, vector<int>> input2IDMap;   // tensor name을 기준으로 input ID map

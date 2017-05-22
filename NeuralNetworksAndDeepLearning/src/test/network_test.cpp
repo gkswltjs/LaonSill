@@ -43,13 +43,13 @@ int main() {
 void setup() {
 	LayersConfig<float>* layersConfig = createCNNSimpleLayersConfig<float>();
 
-	const string weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/network.param";
+	const string loadPath = "/home/jkim/Dev/SOOOA_HOME/network/network.param";
 	const string savePathPrefix = "/home/jkim/Dev/SOOOA_HOME/network";
 	Worker<float>::consumerCount = 1;
 	NetworkConfig<float>* config =
 			(new NetworkConfig<float>::Builder())
 			->savePathPrefix(savePathPrefix)
-			->weightsPath(weightsPath)
+			->loadPath(weightsPath)
 			->build();
 
 	config->layersConfigs[0] = layersConfig;

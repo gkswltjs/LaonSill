@@ -166,8 +166,7 @@ public:
         float _decayRate;   // for RMSprop learning policy
 
         std::string _savePathPrefix;
-        std::string _weightsPath;
-        std::vector<WeightsArg> _weightsArgs;
+        std::string _loadPath;
 
         Optimizer _optimizer;   // optimizer
 		LRPolicy _lrPolicy;     // learning rate policy
@@ -220,12 +219,8 @@ public:
 			this->_savePathPrefix = savePathPrefix;
 			return this;
 		}
-		Builder* weightsPath(std::string weightsPath) {
-			this->_weightsPath = weightsPath;
-			return this;
-		}
-		Builder* weightsArgs(std::vector<WeightsArg> weightsArgs) {
-			this->_weightsArgs = weightsArgs;
+		Builder* loadPath(std::string loadPath) {
+			this->_loadPath = loadPath;
 			return this;
 		}
 		Builder* clipGradientsLevel(float clipGradientsLevel) {
@@ -312,8 +307,7 @@ public:
     float _decayRate;   // for RMSprop learning policy
 
     std::string _savePathPrefix;
-    std::string _weightsPath;
-    std::vector<WeightsArg> _weightsArgs;
+    std::string _loadPath;
 
     std::vector<std::string> _lossLayers;
 
@@ -362,12 +356,8 @@ public:
 		this->_savePathPrefix = savePathPrefix;
 		return this;
 	}
-	NetworkConfig* weightsPath(const std::string weightsPath) {
-		this->_weightsPath = weightsPath;
-		return this;
-	}
-	NetworkConfig* weightsArgs(const std::vector<WeightsArg>& weightsArgs) {
-		this->_weightsArgs = weightsArgs;
+	NetworkConfig* loadPath(const std::string loadPath) {
+		this->_loadPath = loadPath;
 		return this;
 	}
 	NetworkConfig* clipGradientsLevel(float clipGradientsLevel) {

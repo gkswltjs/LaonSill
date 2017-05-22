@@ -208,9 +208,7 @@ int LegacyWork<Dtype>::createNetwork() {
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
 #if LOAD_WEIGHT
-	vector<WeightsArg> weightsArgs(1);
-	weightsArgs[0].weightsPath =
-			"/home/jkim/Dev/SOOOA_HOME/network/network.param";
+    string loadPath = "/home/jkim/Dev/SOOOA_HOME/network/network.param";
 #endif
 	const uint32_t batchSize = 10;
 	const uint32_t testInterval = 1000;			// 10000(목표 샘플수) / batchSize
@@ -251,7 +249,7 @@ int LegacyWork<Dtype>::createNetwork() {
 			->gamma(gamma)
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
 #if LOAD_WEIGHT
-			->weightsArgs(weightsArgs)
+			->loadPath(loadPath)
 #endif
 			->networkListeners({
 				new NetworkMonitor("loss", NetworkMonitor::PLOT_ONLY)

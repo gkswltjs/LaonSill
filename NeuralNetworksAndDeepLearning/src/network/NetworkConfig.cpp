@@ -549,8 +549,7 @@ NetworkConfig<Dtype>* NetworkConfig<Dtype>::Builder::build() {
 			->saveInterval(_saveInterval)
 			->stepSize(_stepSize)
 			->savePathPrefix(_savePathPrefix)
-			->weightsPath(_weightsPath)
-			->weightsArgs(_weightsArgs)
+            ->loadPath(_loadPath)
 			->clipGradientsLevel(_clipGradientsLevel)
 			->lrPolicy(_lrPolicy)
 			->optimizer(_optimizer)
@@ -584,7 +583,7 @@ void NetworkConfig<Dtype>::Builder::print() {
 	cout << "gamma: " << _gamma << endl;
 
 	cout << "savePathPrefix: " << _savePathPrefix << endl;
-	cout << "weightsPath: " << _weightsPath << endl;
+	cout << "loadPath: " << _loadPath << endl;
 	cout << "Optimizer: " << _optimizer << endl;
 	cout << "learningRatePolicy: " << _lrPolicy << endl;
 }

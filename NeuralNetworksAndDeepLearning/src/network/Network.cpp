@@ -654,56 +654,39 @@ void Network<Dtype>::save() {
 
 template <typename Dtype>
 void Network<Dtype>::loadPretrainedWeights() {
-	if (config->_weightsArgs.size() < 1) return;
-
-	const uint32_t numWeightsArgs = config->_weightsArgs.size();
-
 	// load data list from model file
 	map<std::string, Data<float>*> dataMap;
 
-	for (uint32_t i = 0; i < numWeightsArgs; i++) {
-		ifstream ifs(config->_weightsArgs[i].weightsPath, std::ios::in | std::ios::binary);
-		map<string, string>& weightsMap = config->_weightsArgs[i].weightsMap;
+    ifstream ifs(config->_loadPath, std::ios::in | std::ios::binary);
 
-		uint32_t numData;
-		ifs.read((char*)&numData, sizeof(uint32_t));
+    uint32_t numData;
+    ifs.read((char*)&numData, sizeof(uint32_t));
 
-		Data<float>::printConfig = true;
-		cout << "Load Pretrained Weights ... ----------" << endl;
-		for (uint32_t j = 0; j < numData; j++) {
-			Data<float>* data = new Data<float>("", true);
-			data->load(ifs);
+    Data<float>::printConfig = true;
+    cout << "Load Pretrained Weights ... ----------" << endl;
+    for (uint32_t j = 0; j < numData; j++) {
+        Data<float>* data = new Data<float>("", true);
+        data->load(ifs);
 
-			if (data)
-				data->print();
+        if (data)
+            data->print();
 
-			string dataName;
-			if (weightsMap.size() < 1)
-				dataName = data->_name;
-			else {
-				map<string, string>::iterator it;
-				it = weightsMap.find(data->_name);
-				if (it == weightsMap.end()) {
-					dataName = data->_name;
-				} else {
-					dataName = it->second;
-				}
-			}
+        string dataName;
+        dataName = data->_name;
 
-			map<string, Data<float>*>::iterator it;
-			it = dataMap.find(dataName);
-			if (it != dataMap.end()) {
-				cout << dataName << " overwrites ... " << endl;
-				delete it->second;
-			}
+        map<string, Data<float>*>::iterator it;
+        it = dataMap.find(dataName);
+        if (it != dataMap.end()) {
+            cout << dataName << " overwrites ... " << endl;
+            delete it->second;
+        }
 
-			dataMap[dataName] = data;
-			cout << data->_name << " is set to " << dataName << endl;
-		}
-		cout << "--------------------------------------" << endl;
-		Data<float>::printConfig = false;
-		ifs.close();
-	}
+        dataMap[dataName] = data;
+        cout << data->_name << " is set to " << dataName << endl;
+    }
+    cout << "--------------------------------------" << endl;
+    Data<float>::printConfig = false;
+    ifs.close();
 
 	LayersConfig<Dtype>* layersConfig = getLayersConfig();
 	vector<LearnableLayer<Dtype>*> learnableLayers = layersConfig->_learnableLayers;
@@ -717,7 +700,6 @@ void Network<Dtype>::loadPretrainedWeights() {
 	for (it = dataMap.begin(); it != dataMap.end(); it++)
 		delete it->second;
 	dataMap.clear();
-
 }
 
 template <typename Dtype>
