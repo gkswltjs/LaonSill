@@ -16,6 +16,7 @@
 #include "common.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "WorkContext.h"
 
 using namespace std;
 
@@ -170,7 +171,7 @@ void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
     PhysicalPlan::insertPlan(networkID, ppList, planInfo);
 
     // (4) set context
-    PhysicalPlan::setCurPlan(0);
+    WorkContext::updatePlan(0);
 }
 
 void PlanOptimizer::setMultiGPUPlanContext(int networkID, bool isTest) { 

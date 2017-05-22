@@ -12,6 +12,7 @@
 #include "PropMgmt.h"
 #include "common.h"
 #include "StdOutLog.h"
+#include "WorkContext.h"
 
 using namespace std;
 
@@ -19,7 +20,7 @@ using namespace std;
 
 bool PlanOptimizerTest::runSimpleTest() {
     int networkID = PlanParser::loadNetwork(string(PLAN_PARSER_TEST_NETWORK_FILEPATH));
-    PropMgmt::updateNetworkIDContext(networkID);
+    WorkContext::updateNetwork(networkID);
     PlanOptimizer::buildPlans(networkID);
     PlanOptimizer::testPlan();
 

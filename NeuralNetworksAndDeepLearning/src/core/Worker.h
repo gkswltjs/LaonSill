@@ -75,6 +75,8 @@ public:
 
     static bool                                 useWorker;
 
+	static thread_local int                     gpuIdx;
+
 private:
     /**
      * Consumer간의 동기화를 지원하기 위한 변수들
@@ -112,7 +114,6 @@ private:
 
     static std::atomic<int>                     readyCount;
 
-	static thread_local int                     gpuIdx;
 
     static Job*                                 popJob();
 

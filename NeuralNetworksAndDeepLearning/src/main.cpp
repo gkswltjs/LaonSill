@@ -44,6 +44,8 @@
 
 #include "GAN.h"
 #include "YOLO.h"
+#include "LayerFunc.h"
+#include "LayerPropList.h"
 
 using namespace std;
 
@@ -167,6 +169,8 @@ int main(int argc, char** argv) {
 
     ResourceManager::init();
     PlanOptimizer::init();
+    LayerFunc::init();
+    LayerPropList::init();
 
     if (!useDeveloperMode) {
         HotLog::init();
@@ -269,6 +273,7 @@ int main(int argc, char** argv) {
         Communicator::joinThreads();
     }
 
+    LayerFunc::destroy();
     // (6) 로깅 관련 모듈이 점유했던 자원을 해제한다.
     if (!useDeveloperMode)
         HotLog::destroy();

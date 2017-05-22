@@ -236,6 +236,16 @@ public:
 
 public:
     void donateParam(FullyConnectedLayer<Dtype>* receiver);
+
+public:
+    /****************************************************************************
+     * layer callback functions 
+     ****************************************************************************/
+    bool allocInOutTensor(void* tensorPtr, bool isInput, int index);
+    bool allocLayerTensors();
+    bool forwardTensor();
+    bool backwardTensor();
+    bool learnTensor();
 };
 
 #endif /* LAYER_FULLYCONNECTEDLAYER_H_ */

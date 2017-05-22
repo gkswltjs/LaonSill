@@ -9,15 +9,110 @@
 #include "PhysicalPlan.h"
 #include "PropMgmt.h"
 #include "SysLog.h"
+#include "WorkContext.h"
+#include "Param.h"
+#include "Worker.h"
+#include "LayerFunc.h"
 
 using namespace std;
 
 map<int, vector<PhysicalPlan*>>     PhysicalPlan::planGlobalMap;
-map<int, PlanInfo*>                  PhysicalPlan::planGlobalInfoMap;
+map<int, PlanInfo*>                 PhysicalPlan::planGlobalInfoMap;
 mutex                               PhysicalPlan::planGlobalMutex;
-thread_local int                    PhysicalPlan::curDOPID;
-thread_local PhysicalPlan*          PhysicalPlan::curPhysicalPlan; 
-thread_local PlanInfo*              PhysicalPlan::curPlanInfo;
+
+void* PhysicalPlan::allocTensorMem(int layerID, string tensorName, PlanAlloc planAlloc,
+    bool isInput, int index) {
+    if (planAlloc.nodeID != SPARAM(NODE_ID)) {
+        // allocate GPU memory of other nodes.
+        // TODO: 구현!!
+        SASSERT(false, "not implemented yet");
+    }
+
+    int oldGPUIdx = Worker<float>::gpuIdx;
+    if (planAlloc.devID != oldGPUIdx) {
+        checkCudaErrors(cudaSetDevice(planAlloc.devID)); 
+    }
+
+    // XXX: float형 코딩으로 박지 말고, 설정에 따라서 template date type을 설정하도록 수정해야
+    //     한다. 
+    Data<float>* tensor = new Data<float>(tensorName);
+    SASSERT0(tensor != NULL);
+
+    if (planAlloc.devID != oldGPUIdx) {
+        checkCudaErrors(cudaSetDevice(oldGPUIdx));
+    }
+
+    LayerFunc::allocInOutTensor(layerID, (void*)tensor, isInput, index);
+}
+
+void PhysicalPlan::allocateTensorInternal(int networkID) {
+    map<TensorAllocKey, void*> tensorAllocMap;
+    
+    for (map<int, PlanAlloc>::iterator iter = this->allocMap.begin();
+        iter !=this->allocMap.end(); iter++) {
+        int layerID = iter->first;
+        PlanAlloc planAlloc = iter->second;
+
+        WorkContext::updateLayer(networkID, layerID);
+        vector<string> inputs = SLPROP_BASE(input);
+        vector<string> outputs = SLPROP_BASE(output);
+
+        // (1) allocate input/output tensor
+        for (int i = 0; i < inputs.size(); i++) {
+            TensorAllocKey key;
+            key.tensorAlloc = planAlloc;
+            key.tensorName = inputs[i];
+
+            if (tensorAllocMap.find(key) == tensorAllocMap.end()) {
+                void* allocPtr = PhysicalPlan::allocTensorMem(layerID, key.tensorName,
+                    key.tensorAlloc, true, i);
+                SASSERT0(allocPtr != NULL);
+            }
+        }
+
+        for (int i = 0; i < outputs.size(); i++) {
+            TensorAllocKey key;
+            key.tensorAlloc = planAlloc;
+            key.tensorName = outputs[i];
+
+            if (tensorAllocMap.find(key) == tensorAllocMap.end()) {
+                void* allocPtr = PhysicalPlan::allocTensorMem(layerID, key.tensorName,
+                    key.tensorAlloc, false, i);
+                SASSERT0(allocPtr != NULL);
+            }
+        }
+
+        // (2) allocate layer tensor(ex. paramHistory)
+        if (SLPROP_BASE(receive)) {
+            // TODO: 구현
+            SASSERT(false, "not implemented yet");
+        }
+
+        SASSERT0(LayerFunc::allocLayerTensors(layerID) == true);
+
+        if (SLPROP_BASE(donate)) {
+            // TODO: 구현
+            SASSERT(false, "not implemented yet");
+        }
+    }
+}
+
+void PhysicalPlan::allocateTensor(int networkID) {
+    // FIXME: plan lock의 범위가 너무 넓다..
+    unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
+    SASSUME0(PhysicalPlan::planGlobalInfoMap.find(networkID) !=
+            PhysicalPlan::planGlobalInfoMap.end());
+    PlanInfo *planInfo = PhysicalPlan::planGlobalInfoMap[networkID];
+
+    SASSUME0(PhysicalPlan::planGlobalMap.find(networkID) !=
+        PhysicalPlan::planGlobalMap.end());
+    SASSUME0(PhysicalPlan::planGlobalMap[networkID].size() == planInfo->dopCount);
+
+    for (int i = 0; i < planInfo->dopCount; i++) {
+        PhysicalPlan* curPP = PhysicalPlan::planGlobalMap[networkID][i];
+        curPP->allocateTensorInternal(networkID);
+    }
+}
 
 void PhysicalPlan::markFinish(int planID) {
     unique_lock<mutex> planLock(this->planMutex);
@@ -46,21 +141,21 @@ bool PhysicalPlan::generatePlan() {
 
 
     // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
-    unique_lock<mutex> planInfoLock(PhysicalPlan::curPlanInfo->planMutex);
-    this->epochIdx = PhysicalPlan::curPlanInfo->curEpochIndex;
-    this->miniBatchIdx = PhysicalPlan::curPlanInfo->curMiniBatchIndex;
+    unique_lock<mutex> planInfoLock(WorkContext::curPlanInfo->planMutex);
+    this->epochIdx = WorkContext::curPlanInfo->curEpochIndex;
+    this->miniBatchIdx = WorkContext::curPlanInfo->curMiniBatchIndex;
 
-    if (PhysicalPlan::curPlanInfo->curMiniBatchIndex == 
-            PhysicalPlan::curPlanInfo->miniBatchCount - 1) {
-        PhysicalPlan::curPlanInfo->curMiniBatchIndex = 0;
-        PhysicalPlan::curPlanInfo->curEpochIndex += 1;
+    if (WorkContext::curPlanInfo->curMiniBatchIndex == 
+            WorkContext::curPlanInfo->miniBatchCount - 1) {
+        WorkContext::curPlanInfo->curMiniBatchIndex = 0;
+        WorkContext::curPlanInfo->curEpochIndex += 1;
     } else {
-        PhysicalPlan::curPlanInfo->curMiniBatchIndex += 1;
+        WorkContext::curPlanInfo->curMiniBatchIndex += 1;
     }
 
     planInfoLock.unlock();
 
-    if (PhysicalPlan::curPlanInfo->curEpochIndex >= PhysicalPlan::curPlanInfo->epochCount) {
+    if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
         return false;
     }
 
@@ -86,16 +181,16 @@ bool PhysicalPlan::generatePlan() {
 void PhysicalPlan::runLayer(int planID) {
     // (1) set context
     int layerID = LP_PLANID_TO_LAYERID(planID);
-    PropMgmt::updateContext(PropMgmt::curNetworkID, layerID);
+    WorkContext::updateLayer(WorkContext::curNetworkID, layerID);
     
     // (2) run layer
     // TODO:
-    PlanInfo* planInfo = PhysicalPlan::curPlanInfo;
+    PlanInfo* planInfo = WorkContext::curPlanInfo;
     cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
         planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")";
 
     // (3) mark
-    PlanDef *planDef = &PhysicalPlan::curPhysicalPlan->planMap[planID];
+    PlanDef *planDef = &WorkContext::curPhysicalPlan->planMap[planID];
     for (int i = 0; i < planDef->notifyList.size(); i++) {
         int targetPlanID = planDef->notifyList[i];
         markFinish(targetPlanID);
@@ -203,22 +298,19 @@ void PhysicalPlan::removePlan(int networkID) {
     PhysicalPlan::planGlobalInfoMap.erase(networkID);
 }
 
-void PhysicalPlan::setCurPlan(int dopID) {
-    PhysicalPlan::curDOPID = dopID;
-    int networkID = PropMgmt::curNetworkID;
+PhysicalPlan* PhysicalPlan::getCurPhysicalPlan() {
+    return WorkContext::curPhysicalPlan;
+}
 
+void PhysicalPlan::setCurPlan(int networkID, int dopID) {
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
     SASSERT0(PhysicalPlan::planGlobalMap.find(networkID) != 
             PhysicalPlan::planGlobalMap.end());
 
     SASSUME0(dopID < PhysicalPlan::planGlobalMap[networkID].size());
-    PhysicalPlan::curPhysicalPlan = PhysicalPlan::planGlobalMap[networkID][dopID];
+    WorkContext::curPhysicalPlan = PhysicalPlan::planGlobalMap[networkID][dopID];
 
     SASSERT0(PhysicalPlan::planGlobalInfoMap.find(networkID) !=
             PhysicalPlan::planGlobalInfoMap.end());
-    PhysicalPlan::curPlanInfo = PhysicalPlan::planGlobalInfoMap[networkID];
-}
-
-PhysicalPlan* PhysicalPlan::getCurPhysicalPlan() {
-    return PhysicalPlan::curPhysicalPlan;
+    WorkContext::curPlanInfo = PhysicalPlan::planGlobalInfoMap[networkID];
 }

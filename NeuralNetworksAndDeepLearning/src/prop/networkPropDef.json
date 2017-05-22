@@ -20,7 +20,7 @@
     ["beta2", "float", "0.999"],
     ["decayRate", "float", "0.9"],
     ["savePathPrefix", "std::string", "\"\""],
-    ["loadPathPrefix", "std::string", "\"\""],
+    ["loadPath", "std::string", "\"\""],
     ["optimizer", "uint32_t", "Optimizer::Momentum"],
     ["lrPolicy", "int", "LRPolicy::Fixed"],
     ["phase", "int", "NetworkPhase::TrainPhase"],

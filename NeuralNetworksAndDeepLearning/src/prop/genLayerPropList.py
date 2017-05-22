@@ -88,6 +88,7 @@ sourceTopSentences = [\
 "",\
 '#include "LayerPropList.h"',\
 '#include "SysLog.h"',\
+'#include "LayerFunc.h"',\
 "",\
 "",\
 ]
@@ -208,7 +209,8 @@ try:
     headerFile.write("    static int getDonatorID(")
     headerFile.write("const char* layer, void* target);\n")
     headerFile.write("    static bool isLearnable(")
-    headerFile.write("const char* layer, void* target);\n\n")
+    headerFile.write("const char* layer, void* target);\n")
+    headerFile.write("    static void init();\n\n")
     headerFile.write("private:\n")
 
     # set property functions
@@ -501,6 +503,28 @@ try:
     sourceFile.write(' else {\n')
     sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
     sourceFile.write(', layer);\n    }\n}\n\n')
+
+    # init() function
+    sourceFile.write("void LayerPropList::init() {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            if prop == "FullyConnected":
+                sourceFile.write('    //LayerFunc::registerLayerFunc(')
+            else:
+                sourceFile.write('    //LayerFunc::registerLayerFunc(')
+            sourceFile.write('(int)Layer<float>::%s, ' % prop)
+            sourceFile.write('%sLayer::allocInOutTensor, ' % prop)
+            sourceFile.write('%sLayer::allocLayerTensors, ' % prop)
+            sourceFile.write('%sLayer::forwardTensor, ' % prop)
+            sourceFile.write('%sLayer::backwardTensor, ' % prop)
+            sourceFile.write('%sLayer::learnTensor);\n' % prop)
+    sourceFile.write('\n};\n\n')
 
     # write header bottom
     for line in headerBottomSentences:

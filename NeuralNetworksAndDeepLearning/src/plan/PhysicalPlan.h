@@ -6,11 +6,14 @@
  * @details
  */
 
+#include <string.h>
+
 #include <vector>
 #include <map>
 #include <mutex>
 #include <atomic>
 #include <list>
+#include <string>
 
 #include "common.h"
 #include "LogicalPlan.h"
@@ -28,6 +31,23 @@ typedef struct PlanInfo_t {
     int         curMiniBatchIndex;
     std::mutex  planMutex;      // mutex for curEpochIndex, curMiniBatchIndex
 } PlanInfo;
+
+typedef struct TensorAllocKey_t {
+    std::string     tensorName;
+    PlanAlloc       tensorAlloc;
+
+    bool operator < (const struct TensorAllocKey_t &x) const {
+        if (strcmp(tensorName.c_str(), x.tensorName.c_str()) == 0) {
+            if (tensorAlloc.nodeID == x.tensorAlloc.nodeID) {
+                return tensorAlloc.devID < x.tensorAlloc.devID;
+            } else {
+                return tensorAlloc.nodeID < x.tensorAlloc.nodeID;
+            }
+        } else {
+            return tensorName < x.tensorName;
+        }
+    }
+} TensorAllocKey;
 
 class PhysicalPlan {
 public: 
@@ -65,9 +85,12 @@ public:
     static void insertPlan(int networkID, std::vector<PhysicalPlan*> pMap,
         PlanInfo *pInfoMap);
     static void removePlan(int networkID);
-    static void setCurPlan(int dopID);
 
     static PhysicalPlan* getCurPhysicalPlan();
+
+    static void allocateTensor(int networkID);
+
+    static void setCurPlan(int networkID, int dopID);
 
 private:
     static std::map<int, std::vector<PhysicalPlan*>>    planGlobalMap;    // key = networkID,
@@ -81,8 +104,8 @@ private:
     void markFinish(int planID);    // 해당 planID에게 dependency가 있는 planID가 완료가
                                     // 되었음을 알린다.
 
-    static thread_local int curDOPID;
-    static thread_local PhysicalPlan* curPhysicalPlan;
-    static thread_local PlanInfo* curPlanInfo;
+    void allocateTensorInternal(int networkID);
+    static void* allocTensorMem(int layerID, std::string tensorName, PlanAlloc planAlloc,
+                                bool isInput, int index);
 };
 #endif /* PHYSICALPLAN_H */

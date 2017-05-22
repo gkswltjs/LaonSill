@@ -11,6 +11,7 @@
 #include "PropMgmt.h"
 #include "StdOutLog.h"
 #include "Layer.h"
+#include "WorkContext.h"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ bool PropTest::runSimpleLayerPropTest() {
     PropMgmt::insertNetworkProp(networkID, networkProp);
 
     // (2) set layer prop and run
-    PropMgmt::updateContext(networkID, layerID);
+    WorkContext::updateLayer(networkID, layerID);
 
     STDOUT_LOG("initial filter dim strides & pads value : %d, %d\n",
         SLPROP(Conv, filterDimStrides), SLPROP(Conv, filterDimPads));
@@ -59,7 +60,7 @@ bool PropTest::runSimpleNetworkPropTest() {
     PropMgmt::insertNetworkProp(networkID, networkProp);
 
     // (2) set network prop and run
-    PropMgmt::updateContext(networkID, layerID);
+    WorkContext::updateLayer(networkID, layerID);
 
     STDOUT_LOG("initial batchSize value : %u\n", SNPROP(batchSize));
     SNPROP(batchSize) = 128;

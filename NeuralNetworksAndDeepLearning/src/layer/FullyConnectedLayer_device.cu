@@ -805,10 +805,47 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 	*/
 }
 
+template<typename Dtype>
+bool FullyConnectedLayer<Dtype>::allocInOutTensor(void* tensorPtr, bool isInput, int index) {
+    SASSERT(false, "not implemented yet");
+    return true;
+}
+
+template<typename Dtype>
+bool FullyConnectedLayer<Dtype>::allocLayerTensors() {
+    SASSERT(false, "not implemented yet");
+    return true;
+}
+
+template<typename Dtype>
+bool FullyConnectedLayer<Dtype>::forwardTensor() {
+    SASSERT(false, "not implemented yet");
+    return true;
+}
+
+template<typename Dtype>
+bool FullyConnectedLayer<Dtype>::backwardTensor() {
+    SASSERT(false, "not implemented yet");
+    return true;
+}
+
+template<typename Dtype>
+bool FullyConnectedLayer<Dtype>::learnTensor() {
+    SASSERT(false, "not implemented yet");
+    return true;
+}
+
 template FullyConnectedLayer<float>::~FullyConnectedLayer();
 template void FullyConnectedLayer<float>::reshape();
 template void FullyConnectedLayer<float>::update();
 template void FullyConnectedLayer<float>::feedforward();
 template void FullyConnectedLayer<float>::backpropagation();
+
+template bool FullyConnectedLayer<float>::allocInOutTensor(void* tensorPtr, bool isInput,
+    int index);
+template bool FullyConnectedLayer<float>::allocLayerTensors();
+template bool FullyConnectedLayer<float>::forwardTensor();
+template bool FullyConnectedLayer<float>::backwardTensor();
+template bool FullyConnectedLayer<float>::learnTensor();
 
 #endif

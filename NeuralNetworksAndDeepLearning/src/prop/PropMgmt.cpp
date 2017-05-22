@@ -9,23 +9,13 @@
 #include "PropMgmt.h"
 #include "ColdLog.h"
 #include "SysLog.h"
+#include "WorkContext.h"
 
 using namespace std;
 
 map<unsigned long, LayerProp*> PropMgmt::layerPropMap;
 map<int, vector<int>> PropMgmt::net2LayerIDMap;
 map<int, _NetworkProp*> PropMgmt::networkPropMap;
-thread_local volatile LayerProp* PropMgmt::curLayerProp;
-thread_local volatile _NetworkProp* PropMgmt::curNetworkProp;
-thread_local volatile int PropMgmt::curNetworkID = -1;
-
-void PropMgmt::updateContext(int networkID, int layerID) {
-    PropMgmt::curLayerProp = getLayerProp(networkID, layerID);
-
-    if (networkID != curNetworkID) {
-        PropMgmt::curNetworkProp = getNetworkProp(networkID);
-    }
-}
 
 LayerProp* PropMgmt::getLayerProp(int networkID, int layerID) {
     LayerPropKey key = MAKE_LAYER_PROP_KEY(networkID, layerID);
@@ -99,9 +89,4 @@ void PropMgmt::removeNetworkProp(int networkID) {
     _NetworkProp* networkProp = getNetworkProp(networkID);
     networkPropMap.erase(networkID);
     delete networkProp;
-}
-
-void PropMgmt::updateNetworkIDContext(int networkID) {
-    PropMgmt::curNetworkID = networkID;
-    PropMgmt::curNetworkProp = getNetworkProp(networkID);
 }

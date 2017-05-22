@@ -328,6 +328,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "UINT32",
     "DEFAULT" : 4 
+},
+
+"NODE_ID" : 
+{
+    "DESC" : "specify node ID.",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 0 
 }
 
 }

@@ -85,6 +85,7 @@ public:
 
 		Relu,
         DropOut,
+        LayerTypeMax
 	};
 
 

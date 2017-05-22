@@ -14,6 +14,7 @@
 #include "Layer.h"
 #include "LayerPropList.h"
 #include "PropMgmt.h"
+#include "WorkContext.h"
 
 using namespace std;
 
@@ -40,6 +41,13 @@ PlanDef* LogicalPlan::findPlanDef(LogicalPlan* lp, int planID) {
 }
 
 // XXX: the number of codes for this function is too long!!!!!!! split it
+//     build()함수는 아래와 같은 일들을 수행한다.
+//  (1) 각 레이어의 정의(PlanDef)를 토대로 해야할 세부 plan들을 생성
+//  (2) 각 세부 plan들간의 관계(ex 의존성)를 설정
+//  (3) 특수 레이어 케이스(ex. split layer, inplace layer) 처리
+//     - inplace layer : 자신의 인풋과 아웃풋이 동일한 경우
+//     - split layer : A, B, C 3개의 레이어가 존재하는 경우에..
+//                     A의 output이 B,C의 input이 되는 경우를 의미
 void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
     // (1) fill input2ID & output2ID map
     map<string, vector<int>> input2IDMap;   // tensor name을 기준으로 input ID map
@@ -292,16 +300,6 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         int splitInputID = LP_FORWARD_PLANID(inputIDs[inputIDs.size() - 1]);
         PlanDef* splitInputPlanDef = LogicalPlan::findPlanDef(lp, splitInputID);
 
-        // should erase one of output IDs from notify list
-#if 0
-        for (int i = 0; i < outputIDs.size(); i++) {
-            int removeID = LP_FORWARD_PLANID(outputIDs[i]);
-            splitInputPlanDef->notifyList.erase(
-                remove(splitInputPlanDef->notifyList.begin(),
-                        splitInputPlanDef->notifyList.end(), removeID),
-                splitInputPlanDef->notifyList.end());
-        }
-#endif
         splitInputPlanDef->notifyList.push_back(newPlanDefForward.planID);
 
         // (3-4-2) generate split layer's backward plan
@@ -347,7 +345,7 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         for (int i = 0; i < splitOutputCount; i++) {
             int splitOutputID = LP_BACKWARD_PLANID(outputIDs[outputIDs.size() - i - 1]);
             PlanDef* splitOutputPlanDef = LogicalPlan::findPlanDef(lp, splitOutputID);
-            PropMgmt::updateContext(networkID, splitOutputPlanDef->layerID);
+            WorkContext::updateLayer(networkID, splitOutputPlanDef->layerID);
 
             SLPROP(Split, input).push_back(splitLayerOutputDataNames[i]);
         }
