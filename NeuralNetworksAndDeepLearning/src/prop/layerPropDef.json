@@ -20,11 +20,56 @@
         ]
 },
 
+"Input":
+{
+    "DESC" : "input layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" :
+        [
+            ["mean", "std::vector<float>", ""],
+            ["scale", "float", "1.0"],
+            ["source", "std::string", "\"\""],
+            ["sourceType", "std::string", "\"\""],
+            ["numTrainPack", "uint32_t", "1"],
+            ["numTestPack", "uint32_t", "1"]
+        ]
+},
+
+"Loss":
+{
+    "DESC" : "loss layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" :
+        [
+            ["lossWeight", "float", "1.0"],
+            ["hasIgnoreLabel", "bool", "false"],
+            ["ignoreLabel", "int", "-1"],
+            ["hasNormalize", "bool", "false"],
+            ["normalize", "bool", "false"],
+            ["hasNormalization", "bool", "false"],
+            ["normalization", "int", "LossLayer<float>::Valid"]
+        ]
+},
+
+"Learnable":
+{
+    "DESC" : "learnable layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" :
+        []
+},
+
 "Conv" : 
 {
     "DESC" : "convolution layer",
-    "PARENT" : "Base",
-    "LEVEL" : 1,
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
     "LEARN" : true,
     "VARS" : 
         [   
@@ -50,8 +95,8 @@
 "FullyConnected" :
 {
     "DESC" : "fully connected layer",
-    "PARENT" : "Base",
-    "LEVEL" : 1,
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
     "LEARN" : true,
     "VARS" : 
         [   
@@ -72,8 +117,8 @@
 "ILSVRCInput" :
 {
     "DESC" : "ILSVRC input layer",
-    "PARENT" : "Base",
-    "LEVEL" : 1,
+    "PARENT" : "Input",
+    "LEVEL" : 2,
     "LEARN" : false,
     "VARS" : 
         [   
@@ -88,8 +133,8 @@
 "SoftmaxWithLoss" :
 {
     "DESC" : "softmax with loss layer",
-    "PARENT" : "Base",
-    "LEVEL" : 1,
+    "PARENT" : "Loss",
+    "LEVEL" : 2,
     "LEARN" : false,
     "VARS" :
         [

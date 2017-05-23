@@ -7,7 +7,7 @@ import json;
 ####################################### Modify here ##########################################
 # if you want to use specific custom type, you should insert header file that the custom type 
 # is defined into headerFileList.
-headerFileList = ["LayerConfig.h"]
+headerFileList = ["LayerConfig.h", "LossLayer.h"]
 ##############################################################################################
 
 # XXX: source code refactoring is required
@@ -304,7 +304,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             if isFirstCond:
@@ -328,7 +328,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             if isFirstCond:
@@ -350,7 +350,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             if isFirstCond:
@@ -373,7 +373,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             if isFirstCond:
@@ -396,7 +396,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             if isFirstCond:
@@ -419,7 +419,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             if isFirstCond:
@@ -442,7 +442,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             if isFirstCond:
@@ -465,7 +465,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             if isFirstCond:
@@ -488,7 +488,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             if isFirstCond:
@@ -522,7 +522,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop == 'Base':
+            if prop in ['Base', 'Loss', 'Learnable']:
                 continue
 
             sourceFile.write('    LayerFunc::registerLayerFunc(')

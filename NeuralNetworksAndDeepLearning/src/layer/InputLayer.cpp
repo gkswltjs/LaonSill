@@ -12,6 +12,8 @@
 #include "MockDataSet.h"
 #include "Util.h"
 #include "CudaUtils.h"
+#include "SysLog.h"
+#include "PropMgmt.h"
 
 #define INPUTLAYER_LOG 1
 
@@ -250,6 +252,55 @@ int InputLayer<Dtype>::getNumTestData() {
 template<typename Dtype>
 void InputLayer<Dtype>::shuffleTrainDataSet() {
     return this->_dataSet->shuffleTrainDataSet();
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* InputLayer<Dtype>::initLayer() {
+    InputLayer* layer = new InputLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void InputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    InputLayer<Dtype>* layer = (InputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void InputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+
+    InputLayer<Dtype>* layer = (InputLayer<Dtype>*)instancePtr;
+
+    SASSERT0(!isInput);
+
+    SASSERT0(layer->_outputData.size() == index);
+    layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+}
+
+template<typename Dtype>
+bool InputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    InputLayer<Dtype>* layer = (InputLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void InputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "InputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void InputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "InputLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void InputLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "InputLayer.. learn()" << endl;
 }
 
 template class InputLayer<float>;
