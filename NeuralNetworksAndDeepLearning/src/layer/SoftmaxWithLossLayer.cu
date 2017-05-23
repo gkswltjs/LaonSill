@@ -12,6 +12,7 @@
 #include "common.h"
 #include "MathFunctions.h"
 #include "SysLog.h"
+#include "PropMgmt.h"
 
 #define SOFTMAXWITHLOSSLAYER_LOG 0
 
@@ -29,6 +30,10 @@ template <typename Dtype>
 SoftmaxWithLossLayer<Dtype>::~SoftmaxWithLossLayer() {
 	delete this->prob;
 }
+
+template<typename Dtype>
+SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(const string& name) 
+    : LossLayer<Dtype>() {}
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::reshape() {
@@ -358,5 +363,58 @@ Dtype SoftmaxWithLossLayer<Dtype>::getNormalizer(int validCount) {
 	return max(Dtype(1.0), normalizer);
 }
 
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* SoftmaxWithLossLayer<Dtype>::initLayer() {
+    SoftmaxWithLossLayer* layer = new SoftmaxWithLossLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void SoftmaxWithLossLayer<Dtype>::destroyLayer(void* instancePtr) {
+    SoftmaxWithLossLayer<Dtype>* layer = (SoftmaxWithLossLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void SoftmaxWithLossLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+
+    SoftmaxWithLossLayer<Dtype>* layer = (SoftmaxWithLossLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(index < 2);
+        SASSERT0(layer->_inputData.size() == index);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(index == 0);
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool SoftmaxWithLossLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    SoftmaxWithLossLayer<Dtype>* layer = (SoftmaxWithLossLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void SoftmaxWithLossLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "SoftmaxWithLossLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void SoftmaxWithLossLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "SoftmaxWithLossLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void SoftmaxWithLossLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "SoftmaxWithLossLayer.. learn()" << endl;
+}
 
 template class SoftmaxWithLossLayer<float>;

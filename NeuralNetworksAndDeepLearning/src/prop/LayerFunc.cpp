@@ -15,7 +15,7 @@ CBLayerFunc* LayerFunc::layerFuncs;
 void LayerFunc::init() {
     int layerTypeSize = Layer<float>::LayerTypeMax;
 
-    LayerFunc::layerFuncs = (CBLayerFunc*)malloc(sizeof(CBLayerFunc));
+    LayerFunc::layerFuncs = (CBLayerFunc*)malloc(sizeof(CBLayerFunc) * layerTypeSize);
     SASSERT0(LayerFunc::layerFuncs != NULL); 
 }
 
@@ -24,39 +24,52 @@ void LayerFunc::destroy() {
     free(LayerFunc::layerFuncs);
 }
 
-void LayerFunc::registerLayerFunc(int layerTypeID, CBAllocInOutTensor allocInOutTensor,
+void LayerFunc::registerLayerFunc(int layerType, CBInitLayer initLayer,
+    CBDestroyLayer destroyLayer, CBSetInOutTensor setInOutTensor,
     CBAllocLayerTensors allocLayerTensors, CBForward forward, CBBackward backward,
     CBLearn learn) {    
-    SASSERT0(layerTypeID < Layer<float>::LayerTypeMax);
-    LayerFunc::layerFuncs[layerTypeID].allocInOutTensor = allocInOutTensor;
-    LayerFunc::layerFuncs[layerTypeID].allocLayerTensors = allocLayerTensors;
-    LayerFunc::layerFuncs[layerTypeID].forward = forward;
-    LayerFunc::layerFuncs[layerTypeID].backward = backward;
-    LayerFunc::layerFuncs[layerTypeID].learn = learn;
+    SASSERT0(layerType < Layer<float>::LayerTypeMax);
+    LayerFunc::layerFuncs[layerType].initLayer = initLayer;
+    LayerFunc::layerFuncs[layerType].destroyLayer = destroyLayer;
+    LayerFunc::layerFuncs[layerType].setInOutTensor = setInOutTensor;
+    LayerFunc::layerFuncs[layerType].allocLayerTensors = allocLayerTensors;
+    LayerFunc::layerFuncs[layerType].forward = forward;
+    LayerFunc::layerFuncs[layerType].backward = backward;
+    LayerFunc::layerFuncs[layerType].learn = learn;
 }
 
-
-bool LayerFunc::allocInOutTensor(int layerTypeID, void *tensorPtr, bool isInput, int index) {
-    SASSUME0(layerTypeID < Layer<float>::LayerTypeMax);
-    return LayerFunc::layerFuncs[layerTypeID].allocInOutTensor(tensorPtr, isInput, index);
+void* LayerFunc::initLayer(int layerType) {
+    SASSUME0(layerType < Layer<float>::LayerTypeMax);
+    return LayerFunc::layerFuncs[layerType].initLayer();
 }
 
-bool LayerFunc::allocLayerTensors(int layerTypeID) {
-    SASSUME0(layerTypeID < Layer<float>::LayerTypeMax);
-    return LayerFunc::layerFuncs[layerTypeID].allocLayerTensors();
+void LayerFunc::destroyLayer(int layerType, void* instancePtr) {
+    SASSUME0(layerType < Layer<float>::LayerTypeMax);
+    LayerFunc::layerFuncs[layerType].destroyLayer(instancePtr);
 }
 
-bool LayerFunc::runForward(int layerTypeID) {
-    SASSUME0(layerTypeID < Layer<float>::LayerTypeMax);
-    return LayerFunc::layerFuncs[layerTypeID].forward();
+void LayerFunc::setInOutTensor(int layerType, void* instancePtr, void *tensorPtr,
+    bool isInput, int index) {
+    SASSUME0(layerType < Layer<float>::LayerTypeMax);
+    LayerFunc::layerFuncs[layerType].setInOutTensor(instancePtr, tensorPtr, isInput, index);
 }
 
-bool LayerFunc::runBackward(int layerTypeID) {
-    SASSUME0(layerTypeID < Layer<float>::LayerTypeMax);
-    return LayerFunc::layerFuncs[layerTypeID].backward();
+bool LayerFunc::allocLayerTensors(int layerType, void* instancePtr) {
+    SASSUME0(layerType < Layer<float>::LayerTypeMax);
+    return LayerFunc::layerFuncs[layerType].allocLayerTensors(instancePtr);
 }
 
-bool LayerFunc::learn(int layerTypeID) {
-    SASSUME0(layerTypeID < Layer<float>::LayerTypeMax);
-    return LayerFunc::layerFuncs[layerTypeID].learn();
+void LayerFunc::runForward(int layerType, void* instancePtr, int miniBatchIdx) {
+    SASSUME0(layerType < Layer<float>::LayerTypeMax);
+    LayerFunc::layerFuncs[layerType].forward(instancePtr, miniBatchIdx);
+}
+
+void LayerFunc::runBackward(int layerType, void* instancePtr) {
+    SASSUME0(layerType < Layer<float>::LayerTypeMax);
+    LayerFunc::layerFuncs[layerType].backward(instancePtr);
+}
+
+void LayerFunc::learn(int layerType, void* instancePtr) {
+    SASSUME0(layerType < Layer<float>::LayerTypeMax);
+    LayerFunc::layerFuncs[layerType].learn(instancePtr);
 }

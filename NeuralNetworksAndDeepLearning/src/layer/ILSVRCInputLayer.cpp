@@ -20,6 +20,7 @@
 #include "NetworkConfig.h"
 #include "ColdLog.h"
 #include "SysLog.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -34,7 +35,8 @@ const int ILSVRC_CLASS_COUNT     = 1000;
 #define MAKE_LABEL_FOR_SOFTMAX_OUTPUT       1
 
 template<typename Dtype>
-ILSVRCInputLayer<Dtype>::ILSVRCInputLayer() {
+ILSVRCInputLayer<Dtype>::ILSVRCInputLayer(const string& name) 
+: InputLayer<Dtype>(name) {
     initialize("", false, -1, -1);
 }
 
@@ -327,6 +329,54 @@ void ILSVRCInputLayer<Dtype>::shuffleTrainDataSet() {
         reshape();
     }
     shuffleImages();
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* ILSVRCInputLayer<Dtype>::initLayer() {
+    ILSVRCInputLayer* layer = new ILSVRCInputLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void ILSVRCInputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    ILSVRCInputLayer<Dtype>* layer = (ILSVRCInputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void ILSVRCInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    ILSVRCInputLayer<Dtype>* layer = (ILSVRCInputLayer<Dtype>*)instancePtr;
+
+    SASSERT0(!isInput);
+    SASSERT0(index < 2);
+    SASSERT0(layer->_outputData.size() == index);
+    layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+}
+
+template<typename Dtype>
+bool ILSVRCInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    ILSVRCInputLayer<Dtype>* layer = (ILSVRCInputLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void ILSVRCInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "ILSVRCInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void ILSVRCInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "ILSVRCInputLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void ILSVRCInputLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "ILSVRCInputLayer.. learn()" << endl;
 }
 
 template class ILSVRCInputLayer<float>;

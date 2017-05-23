@@ -33,6 +33,8 @@ typedef enum PlanType_e {
     PLANTYPE_MAX
 } PlanType;
 
+#define LP_PLANID_TO_PLANTYPE(planid)       ((PlanType)((int)planid % 3))
+
 typedef struct PlanBuildDef_s {
     int layerID;
     int layerType;

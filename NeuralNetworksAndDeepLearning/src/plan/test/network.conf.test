@@ -36,37 +36,11 @@
         },
 
         {
-            "name" : "fc2",
-            "layer" : "FullyConnected",
-            "id" : 4,
-            "input" : ["fc1"],
-            "output" : ["fc2"],
-            "nOut" : 1000
-        },
-
-        {
-            "name" : "fc3",
-            "layer" : "FullyConnected",
-            "id" : 5,
-            "input" : ["fc1"],
-            "output" : ["fc3"],
-            "nOut" : 1000
-        },
-
-        {
             "name" : "softmax",
             "layer" : "SoftmaxWithLoss",
             "id" : 6,
-            "input" : ["fc2", "label"],
+            "input" : ["fc1", "label"],
             "output" : ["loss"]
-        },
-
-        {
-            "name" : "softmax2",
-            "layer" : "SoftmaxWithLoss",
-            "id" : 7,
-            "input" : ["fc3"],
-            "output" : ["loss2"]
         }
     ],
 

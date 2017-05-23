@@ -15,6 +15,7 @@
 #include "NetworkConfig.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
+#include "PropMgmt.h"
 
 #define FULLYCONNECTEDLAYER_LOG 0
 
@@ -805,47 +806,73 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 	*/
 }
 
-template<typename Dtype>
-bool FullyConnectedLayer<Dtype>::allocInOutTensor(void* tensorPtr, bool isInput, int index) {
-    SASSERT(false, "not implemented yet");
-    return true;
-}
-
-template<typename Dtype>
-bool FullyConnectedLayer<Dtype>::allocLayerTensors() {
-    SASSERT(false, "not implemented yet");
-    return true;
-}
-
-template<typename Dtype>
-bool FullyConnectedLayer<Dtype>::forwardTensor() {
-    SASSERT(false, "not implemented yet");
-    return true;
-}
-
-template<typename Dtype>
-bool FullyConnectedLayer<Dtype>::backwardTensor() {
-    SASSERT(false, "not implemented yet");
-    return true;
-}
-
-template<typename Dtype>
-bool FullyConnectedLayer<Dtype>::learnTensor() {
-    SASSERT(false, "not implemented yet");
-    return true;
-}
-
 template FullyConnectedLayer<float>::~FullyConnectedLayer();
 template void FullyConnectedLayer<float>::reshape();
 template void FullyConnectedLayer<float>::update();
 template void FullyConnectedLayer<float>::feedforward();
 template void FullyConnectedLayer<float>::backpropagation();
 
-template bool FullyConnectedLayer<float>::allocInOutTensor(void* tensorPtr, bool isInput,
-    int index);
-template bool FullyConnectedLayer<float>::allocLayerTensors();
-template bool FullyConnectedLayer<float>::forwardTensor();
-template bool FullyConnectedLayer<float>::backwardTensor();
-template bool FullyConnectedLayer<float>::learnTensor();
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* FullyConnectedLayer<Dtype>::initLayer() {
+    FullyConnectedLayer* fc = new FullyConnectedLayer<Dtype>(SLPROP(FullyConnected, name));
+    return (void*)fc;
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::destroyLayer(void* instancePtr) {
+    FullyConnectedLayer<Dtype>* fc = (FullyConnectedLayer<Dtype>*)instancePtr;
+    delete fc;
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    FullyConnectedLayer<Dtype>* fc = (FullyConnectedLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(fc->_inputData.size() == 0);
+        fc->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(fc->_outputData.size() == 0);
+        fc->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool FullyConnectedLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    FullyConnectedLayer<Dtype>* fc = (FullyConnectedLayer<Dtype>*)instancePtr;
+    //fc->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "FullyConnectedLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "FullyConnectedLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "FullyConnectedLayer.. learn()" << endl;
+}
+
+template void* FullyConnectedLayer<float>::initLayer();
+template void FullyConnectedLayer<float>::destroyLayer(void* instancePtr);
+template void FullyConnectedLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool FullyConnectedLayer<float>::allocLayerTensors(void* instancePtr);
+template void FullyConnectedLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void FullyConnectedLayer<float>::backwardTensor(void* instancePtr);
+template void FullyConnectedLayer<float>::learnTensor(void* instancePtr);
 
 #endif

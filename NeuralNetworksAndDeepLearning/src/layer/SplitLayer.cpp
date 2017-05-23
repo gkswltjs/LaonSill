@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "SplitLayer.h"
+#include "SysLog.h"
+#include "PropMgmt.h"
 
 #define SPLITLAYER_LOG 0
 
@@ -124,6 +126,59 @@ void SplitLayer<Dtype>::backpropagation() {
 		exit(1);
 	}
 #endif
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* SplitLayer<Dtype>::initLayer() {
+    SplitLayer* layer = new SplitLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::destroyLayer(void* instancePtr) {
+    SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+
+    SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        SASSERT0(index == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == index);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool SplitLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "SplitLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "SplitLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "SplitLayer.. learn()" << endl;
 }
 
 template class SplitLayer<float>;

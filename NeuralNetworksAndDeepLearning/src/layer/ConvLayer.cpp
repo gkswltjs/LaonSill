@@ -33,6 +33,9 @@ ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
                bias_filler, deconv, deconvExtraCell);
 }
 
+template<typename Dtype>
+ConvLayer<Dtype>::ConvLayer(const string& name) 
+    : LearnableLayer<Dtype>(name) {}
 
 #ifndef GPU_MODE
 void convolution(const rmat &x, const rmat &w, rmat &result, int stride);

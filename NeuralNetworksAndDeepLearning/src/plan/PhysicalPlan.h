@@ -52,7 +52,7 @@ typedef struct TensorAllocKey_t {
 class PhysicalPlan {
 public: 
     PhysicalPlan() {}
-    virtual ~PhysicalPlan() {}
+    virtual ~PhysicalPlan();
 
     int                         networkID;
     std::map<int, PlanAlloc>    allocMap;       // 특정 레이어를 어느곳에 배치할 것인가
@@ -62,13 +62,14 @@ public:
     std::map<int, int>          depRefMap;      // 각 plan들의 dependency를 관리한다.
                                                 // key : planID, value : remain dependecy
                                                 // count
+    std::map<int, void*>        instanceMap;    // key : layer ID, value : instance pointer
 
     int                         dopID;          // degree of parallelism ID
     int                         refCount;   // 이 값이 0이 되면 해당 mini batch에 대한 plan은
                                             // 다 수행한 것으로 판단하면 된다.
 
     int epochIdx;
-    int miniBatchIdx;       // current mini-batch (per epoch) count
+    int miniBatchIdx;       // current mini-batch (per epoch) index
 
     bool generatePlan();    // 현 minibatch에 해당하는 작업이 완료되면 그다음 mini batch에
                             // 대한 플랜을 생성한다.
@@ -105,7 +106,7 @@ private:
                                     // 되었음을 알린다.
 
     void allocateTensorInternal(int networkID);
-    static void* allocTensorMem(int layerID, std::string tensorName, PlanAlloc planAlloc,
-                                bool isInput, int index);
+    static void* allocTensorMem(int layerType, void* instancePtr, std::string tensorName,
+                                PlanAlloc planAlloc, bool isInput, int index);
 };
 #endif /* PHYSICALPLAN_H */

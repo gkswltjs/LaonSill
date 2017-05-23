@@ -15,6 +15,7 @@
 #include "cuda_runtime.h"
 #include "MathFunctions.h"
 #include <algorithm>
+#include "PropMgmt.h"
 
 #define CONVLAYER_LOG 1
 
@@ -810,5 +811,67 @@ template void ConvLayer<float>::reshape();
 template void ConvLayer<float>::update();
 template void ConvLayer<float>::feedforward();
 template void ConvLayer<float>::backpropagation();
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* ConvLayer<Dtype>::initLayer() {
+    ConvLayer* conv = new ConvLayer<Dtype>(SLPROP(Conv, name));
+    return (void*)conv;
+}
+
+template<typename Dtype>
+void ConvLayer<Dtype>::destroyLayer(void* instancePtr) {
+    ConvLayer<Dtype>* conv = (ConvLayer<Dtype>*)instancePtr;
+    delete conv;
+}
+
+template<typename Dtype>
+void ConvLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    ConvLayer<Dtype>* conv = (ConvLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(conv->_inputData.size() == 0);
+        conv->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(conv->_outputData.size() == 0);
+        conv->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool ConvLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    ConvLayer<Dtype>* conv = (ConvLayer<Dtype>*)instancePtr;
+    //conv->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void ConvLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "ConvLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void ConvLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "ConvLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void ConvLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "ConvLayer.. learn()" << endl;
+}
+
+template void* ConvLayer<float>::initLayer();
+template void ConvLayer<float>::destroyLayer(void* instancePtr);
+template void ConvLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool ConvLayer<float>::allocLayerTensors(void* instancePtr);
+template void ConvLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void ConvLayer<float>::backwardTensor(void* instancePtr);
+template void ConvLayer<float>::learnTensor(void* instancePtr);
 
 #endif

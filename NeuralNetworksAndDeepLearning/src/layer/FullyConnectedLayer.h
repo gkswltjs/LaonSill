@@ -124,6 +124,8 @@ public:
 	 */
 	FullyConnectedLayer(Builder* builder);
 
+    FullyConnectedLayer(const std::string& name);
+
 	virtual ~FullyConnectedLayer();
 
 	//////////////////////////////////////////
@@ -241,11 +243,13 @@ public:
     /****************************************************************************
      * layer callback functions 
      ****************************************************************************/
-    bool allocInOutTensor(void* tensorPtr, bool isInput, int index);
-    bool allocLayerTensors();
-    bool forwardTensor();
-    bool backwardTensor();
-    bool learnTensor();
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* LAYER_FULLYCONNECTEDLAYER_H_ */

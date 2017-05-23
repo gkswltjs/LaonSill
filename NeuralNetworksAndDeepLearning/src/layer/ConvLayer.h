@@ -156,6 +156,8 @@ public:
 	ConvLayer(const std::string name, filter_dim filter_d, update_param weight_update_param, 
               update_param bias_update_param, param_filler<Dtype> weight_filler, 
               param_filler<Dtype> bias_filler, bool deconv, int deconvExtraCell);
+
+    ConvLayer(const std::string& name);
 	/**
 	 * @details ConvLayer 소멸자
 	 */
@@ -257,6 +259,18 @@ public:
     bool deconv;
     int deconvExtraCell;
     void donateParam(ConvLayer<Dtype>* receiver);
+
+public:
+    /****************************************************************************
+     * layer callback functions 
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* LAYER_CONVLAYER_H_ */

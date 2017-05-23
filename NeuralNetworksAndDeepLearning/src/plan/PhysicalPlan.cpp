@@ -20,8 +20,22 @@ map<int, vector<PhysicalPlan*>>     PhysicalPlan::planGlobalMap;
 map<int, PlanInfo*>                 PhysicalPlan::planGlobalInfoMap;
 mutex                               PhysicalPlan::planGlobalMutex;
 
-void* PhysicalPlan::allocTensorMem(int layerID, string tensorName, PlanAlloc planAlloc,
-    bool isInput, int index) {
+PhysicalPlan::~PhysicalPlan() {
+    for (map<int, void*>::iterator iter = instanceMap.begin(); iter != instanceMap.end();
+        ++iter) {
+
+        int layerID = iter->first;
+        void* instancePtr = iter->second;
+
+        SASSUME0(planMap.find(layerID) != planMap.end());
+        int layerType = planMap[layerID].layerType;
+
+        LayerFunc::destroyLayer(layerType, instancePtr);
+    }
+}
+
+void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tensorName,
+    PlanAlloc planAlloc, bool isInput, int index) {
     if (planAlloc.nodeID != SPARAM(NODE_ID)) {
         // allocate GPU memory of other nodes.
         // TODO: 구현!!
@@ -42,7 +56,7 @@ void* PhysicalPlan::allocTensorMem(int layerID, string tensorName, PlanAlloc pla
         checkCudaErrors(cudaSetDevice(oldGPUIdx));
     }
 
-    LayerFunc::allocInOutTensor(layerID, (void*)tensor, isInput, index);
+    LayerFunc::setInOutTensor(layerType, instancePtr, (void*)tensor, isInput, index);
 }
 
 void PhysicalPlan::allocateTensorInternal(int networkID) {
@@ -57,6 +71,17 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
         vector<string> inputs = SLPROP_BASE(input);
         vector<string> outputs = SLPROP_BASE(output);
 
+        SASSUME0(planMap.find(LP_FORWARD_PLANID(layerID)) != planMap.end());
+        int layerType = planMap[LP_FORWARD_PLANID(layerID)].layerType;
+        // When you get the layer type, you can use any plan ID that corresponds to the layer
+        // ID
+
+        // (0) initialize layer instance
+        SASSUME0(this->instanceMap.find(layerID) == this->instanceMap.end());
+        void* instancePtr = LayerFunc::initLayer(layerType);
+        SASSUME0(instancePtr != NULL);
+        this->instanceMap[layerID] = instancePtr;
+
         // (1) allocate input/output tensor
         for (int i = 0; i < inputs.size(); i++) {
             TensorAllocKey key;
@@ -64,8 +89,8 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
             key.tensorName = inputs[i];
 
             if (tensorAllocMap.find(key) == tensorAllocMap.end()) {
-                void* allocPtr = PhysicalPlan::allocTensorMem(layerID, key.tensorName,
-                    key.tensorAlloc, true, i);
+                void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
+                    key.tensorName, key.tensorAlloc, true, i);
                 SASSERT0(allocPtr != NULL);
             }
         }
@@ -76,8 +101,8 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
             key.tensorName = outputs[i];
 
             if (tensorAllocMap.find(key) == tensorAllocMap.end()) {
-                void* allocPtr = PhysicalPlan::allocTensorMem(layerID, key.tensorName,
-                    key.tensorAlloc, false, i);
+                void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
+                    key.tensorName, key.tensorAlloc, false, i);
                 SASSERT0(allocPtr != NULL);
             }
         }
@@ -88,7 +113,7 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
             SASSERT(false, "not implemented yet");
         }
 
-        SASSERT0(LayerFunc::allocLayerTensors(layerID) == true);
+        SASSERT0(LayerFunc::allocLayerTensors(layerType, instancePtr) == true);
 
         if (SLPROP_BASE(donate)) {
             // TODO: 구현
@@ -182,6 +207,8 @@ void PhysicalPlan::runLayer(int planID) {
     // (1) set context
     int layerID = LP_PLANID_TO_LAYERID(planID);
     WorkContext::updateLayer(WorkContext::curNetworkID, layerID);
+
+    PlanType planType = LP_PLANID_TO_PLANTYPE(planID);
     
     // (2) run layer
     // TODO:
@@ -189,37 +216,29 @@ void PhysicalPlan::runLayer(int planID) {
     cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
         planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")";
 
+    // FIXME: 나름 핫 코드영역인데 이렇게 자주 맵을 뒤지면 성능에 안좋다. 수정필요!!
+    SASSUME0(this->planMap.find(planID) != this->planMap.end());
+    int layerType = this->planMap[planID].layerType;
+
+    SASSUME0(this->instanceMap.find(layerID) != this->instanceMap.end());
+    void* instancePtr = this->instanceMap[layerID];
+
+    SASSUME0(planType < PLANTYPE_MAX);
+    if (planType == PLANTYPE_FORWARD) {
+        LayerFunc::runForward(layerType, instancePtr, planInfo->curMiniBatchIndex);
+    } else if (planType == PLANTYPE_BACKWARD) {
+        LayerFunc::runBackward(layerType, instancePtr);
+    } else {
+        SASSUME0(planType == PLANTYPE_UPDATE);
+        LayerFunc::learn(layerType, instancePtr);
+    }
+
     // (3) mark
     PlanDef *planDef = &WorkContext::curPhysicalPlan->planMap[planID];
     for (int i = 0; i < planDef->notifyList.size(); i++) {
         int targetPlanID = planDef->notifyList[i];
         markFinish(targetPlanID);
     }
-
-    if (planDef->layerType == Layer<float>::Conv) {
-        cout << " [";
-        for (int i = 0; i < SLPROP(Conv, input).size(); i++) {
-            cout << SLPROP(Conv, input)[i] << " ";
-        }
-        cout << "] => [";
-        for (int i = 0; i < SLPROP(Conv, output).size(); i++) {
-            cout << SLPROP(Conv, output)[i] << " ";
-        }
-        cout << "]" << endl;
-    } else if (planDef->layerType == Layer<float>::FullyConnected) {
-        cout << "[";
-        for (int i = 0; i < SLPROP(FullyConnected, input).size(); i++) {
-            cout << SLPROP(FullyConnected, input)[i] << " ";
-        }
-        cout << "] => [";
-        for (int i = 0; i < SLPROP(FullyConnected, output).size(); i++) {
-            cout << SLPROP(FullyConnected, output)[i] << " ";
-        }
-        cout << "]" << endl;
-    } else {
-        cout << endl;
-    }
-
 }
 
 bool PhysicalPlan::runPlan(int layerID, PlanType planType) {

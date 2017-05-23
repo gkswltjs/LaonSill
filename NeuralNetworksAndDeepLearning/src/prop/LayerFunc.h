@@ -9,14 +9,18 @@
 #ifndef LAYERFUNC_H
 #define LAYERFUNC_H 
 
-typedef bool (*CBAllocInOutTensor) (void* tensorPtr, bool isInput, int index);
-typedef bool (*CBAllocLayerTensors) ();
-typedef bool (*CBForward) ();
-typedef bool (*CBBackward) ();
-typedef bool (*CBLearn) ();
+typedef void* (*CBInitLayer) ();
+typedef void (*CBDestroyLayer) (void* instancePtr);
+typedef void (*CBSetInOutTensor) (void* instancePtr, void* tensorPtr, bool isInput, int index);
+typedef bool (*CBAllocLayerTensors) (void* instancePtr);
+typedef void (*CBForward) (void* instancePtr, int miniBatchIndex);
+typedef void (*CBBackward) (void* instancePtr);
+typedef void (*CBLearn) (void* instancePtr);
 
 typedef struct CBLayerFunc_s {
-    CBAllocInOutTensor  allocInOutTensor;
+    CBInitLayer         initLayer;
+    CBDestroyLayer      destroyLayer;
+    CBSetInOutTensor    setInOutTensor;
     CBAllocLayerTensors allocLayerTensors;
     CBForward           forward;
     CBBackward          backward;
@@ -30,15 +34,20 @@ public:
 
     static void init();
     static void destroy();
-    static void registerLayerFunc(int layerTypeID, CBAllocInOutTensor allocInOutTensor,
+    static void registerLayerFunc(int layerType, CBInitLayer initLayer,
+                                  CBDestroyLayer destroyLayer,
+                                  CBSetInOutTensor setInOutTensor, 
                                   CBAllocLayerTensors allocLayerTensors, CBForward forward,
                                   CBBackward backward, CBLearn learn);
 
-    static bool allocInOutTensor(int layerTypeID, void *tensorPtr, bool isInput, int index);
-    static bool allocLayerTensors(int layerTypeID);
-    static bool runForward(int layerTypeID);
-    static bool runBackward(int layerTypeID);
-    static bool learn(int layerTypeID);
+    static void* initLayer(int layerType);
+    static void destroyLayer(int layerType, void* instancePtr);
+    static void setInOutTensor(int layerType, void* instancePtr, void *tensorPtr,
+        bool isInput, int index);
+    static bool allocLayerTensors(int layerType, void* instancePtr);
+    static void runForward(int layerType, void* instancePtr, int miniBatchIdx);
+    static void runBackward(int layerType, void* instancePtr);
+    static void learn(int layerType, void* instancePtr);
 private:
     static CBLayerFunc      *layerFuncs;
 };

@@ -55,6 +55,7 @@ public:
 	};
 
 	ReluLayer(Builder* builder);
+    ReluLayer(const std::string& name);
 	virtual ~ReluLayer();
 
 	virtual void reshape();
@@ -74,6 +75,18 @@ protected:
 
     bool useLeaky;      // leaky Relu 사용 여부
     double leaky;       // leaky value
+
+public:
+    /****************************************************************************
+     * layer callback functions 
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* RELULAYER_H_ */

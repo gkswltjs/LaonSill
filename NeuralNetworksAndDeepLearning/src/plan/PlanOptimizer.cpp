@@ -219,6 +219,7 @@ void PlanOptimizer::setPlanContext(int networkID, int option, bool isTest) {
             SASSERT(false, "invalid plan option. option=%d", option);
             break;
     }
+    PhysicalPlan::allocateTensor(networkID);
 }
 
 void PlanOptimizer::unsetPlanContext(int networkID) {

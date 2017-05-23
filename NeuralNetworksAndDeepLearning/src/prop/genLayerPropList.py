@@ -504,8 +504,19 @@ try:
     sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
     sourceFile.write(', layer);\n    }\n}\n\n')
 
+  
+    # include files for init()
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop == 'Base':
+                continue
+
+            sourceFile.write('#include "%sLayer.h"\n' % prop)
+
     # init() function
-    sourceFile.write("void LayerPropList::init() {\n")
+    sourceFile.write("\nvoid LayerPropList::init() {\n")
     isFirstCond = True
     for level in range(maxLevel + 1):
         propList = levelDic[level]
@@ -514,16 +525,15 @@ try:
             if prop == 'Base':
                 continue
 
-            if prop == "FullyConnected":
-                sourceFile.write('    //LayerFunc::registerLayerFunc(')
-            else:
-                sourceFile.write('    //LayerFunc::registerLayerFunc(')
+            sourceFile.write('    LayerFunc::registerLayerFunc(')
             sourceFile.write('(int)Layer<float>::%s, ' % prop)
-            sourceFile.write('%sLayer::allocInOutTensor, ' % prop)
-            sourceFile.write('%sLayer::allocLayerTensors, ' % prop)
-            sourceFile.write('%sLayer::forwardTensor, ' % prop)
-            sourceFile.write('%sLayer::backwardTensor, ' % prop)
-            sourceFile.write('%sLayer::learnTensor);\n' % prop)
+            sourceFile.write('%sLayer<float>::initLayer, ' % prop)
+            sourceFile.write('%sLayer<float>::destroyLayer, ' % prop)
+            sourceFile.write('%sLayer<float>::setInOutTensor, ' % prop)
+            sourceFile.write('%sLayer<float>::allocLayerTensors, ' % prop)
+            sourceFile.write('%sLayer<float>::forwardTensor, ' % prop)
+            sourceFile.write('%sLayer<float>::backwardTensor, ' % prop)
+            sourceFile.write('%sLayer<float>::learnTensor);\n' % prop)
     sourceFile.write('\n};\n\n')
 
     # write header bottom

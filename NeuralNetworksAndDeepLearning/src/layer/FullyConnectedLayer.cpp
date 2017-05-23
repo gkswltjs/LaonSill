@@ -64,7 +64,11 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axi
 	//checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 
-
+template<typename Dtype>
+FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string& name) 
+: LearnableLayer<Dtype>(name) {
+     
+}
 
 #ifndef GPU_MODE
 template <typename Dtype>
@@ -280,6 +284,5 @@ void FullyConnectedLayer<Dtype>::donateParam(FullyConnectedLayer<Dtype>* receive
     }
 #endif
 }
-
 
 template class FullyConnectedLayer<float>;

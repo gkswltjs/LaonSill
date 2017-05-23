@@ -104,7 +104,3 @@ bool Layer<Dtype>::_isInputShapeChanged(uint32_t index) {
 }
 
 template class Layer<float>;
-
-
-
-
