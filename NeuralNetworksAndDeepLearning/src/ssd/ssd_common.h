@@ -85,6 +85,7 @@ public:
 
 	void mapLabelToName(std::map<int, std::string>& labelToName);
 
+	int getCount();
 	void printLabelItemList();
 
 public:

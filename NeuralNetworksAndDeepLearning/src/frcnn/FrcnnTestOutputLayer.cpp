@@ -19,7 +19,8 @@ using namespace std;
 
 template <typename Dtype>
 FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer(Builder* builder)
-: Layer<Dtype>(builder) {
+: Layer<Dtype>(builder),
+  labelMap(builder->_labelMapPath) {
 	this->maxPerImage = builder->_maxPerImage;
 	this->thresh = builder->_thresh;
 	this->vis = builder->_vis;
@@ -182,8 +183,8 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 	vector<vector<Dtype>> clsBoxes;
 	vector<uint32_t> inds;
 
-	for (int clsInd = 1; clsInd < this->classes.size(); clsInd++) {
-		const string& cls = this->classes[clsInd];
+	for (int clsInd = 1; clsInd < this->labelMap.getCount(); clsInd++) {
+		const string& cls = this->labelMap.convertIndToLabel(clsInd);
 
 		fillClsScores(scores, clsInd, clsScores);
 		fillClsBoxes(boxes, clsInd, clsBoxes);
@@ -238,7 +239,7 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 			cv::Point(result[i][3], result[i][4]),
 			boxColors[clsInd-1], 2);
 
-		cv::putText(im, this->classes[clsInd] , cv::Point(result[i][1],
+		cv::putText(im, this->labelMap.convertIndToLabel(clsInd) , cv::Point(result[i][1],
 				result[i][2]+15.0f), 2, 0.5f, boxColors[clsInd-1]);
 	}
 
@@ -299,9 +300,13 @@ void FrcnnTestOutputLayer<Dtype>::fillClsBoxes(vector<vector<Dtype>>& boxes, int
 template <typename Dtype>
 void FrcnnTestOutputLayer<Dtype>::initialize() {
 
+	/*
 	this->classes = {"__background__", "aeroplane", "bicycle", "bird", "boat", "bottle",
 			"bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
 			"person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
+			*/
+
+	labelMap.build();
 
 
 	this->boxColors.push_back(cv::Scalar(10, 163, 240));

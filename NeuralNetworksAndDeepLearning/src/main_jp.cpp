@@ -63,8 +63,8 @@ void developerMain() {
 	//vgg16();
 	//vgg19();
 	//vgg19Test();
-	fasterRcnnTrain();
-	//fasterRcnnTest();
+	//fasterRcnnTrain();
+	fasterRcnnTest();
 	//ssd();
 
 	STDOUT_LOG("exit developerMain()");
@@ -392,7 +392,8 @@ void fasterRcnnTest() {
 
 	vector<WeightsArg> weightsArgs(1);
 	//weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
-	weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
+	//weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_DOOSAN_44000.param";
 	cout << "weight path: " << weightsArgs[0].weightsPath << endl;
 
 	NetworkConfig<float>* networkConfig =

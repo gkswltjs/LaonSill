@@ -9,7 +9,9 @@
 #define FRCNNTESTOUTPUTLAYER_H_
 
 #include "Layer.h"
+#include "SysLog.h"
 #include "frcnn_common.h"
+#include "ssd_common.h"
 
 template <typename Dtype>
 class FrcnnTestOutputLayer : public Layer<Dtype> {
@@ -20,6 +22,7 @@ public:
 		float _thresh;
 		bool _vis;
 		std::string _savePath;
+		std::string _labelMapPath;
 
 		Builder() {
 			this->type = Layer<Dtype>::FrcnnTestOutput;
@@ -44,6 +47,10 @@ public:
 			this->_savePath = savePath;
 			return this;
 		}
+		virtual Builder* labelMapPath(const std::string& labelMapPath) {
+			this->_labelMapPath = labelMapPath;
+			return this;
+		}
 		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);
 			return this;
@@ -65,6 +72,7 @@ public:
 			return this;
 		}
 		Layer<Dtype>* build() {
+			SASSERT0(!this->_labelMapPath.empty());
 			return new FrcnnTestOutputLayer(this);
 		}
 	};
@@ -96,7 +104,10 @@ public:
 	std::string savePath;
 
 	std::vector<cv::Scalar> boxColors;
-	std::vector<std::string> classes;
+	//std::vector<std::string> classes;
+
+	LabelMap<Dtype> labelMap;
+
 };
 
 #endif /* FRCNNTESTOUTPUTLAYER_H_ */

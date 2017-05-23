@@ -122,6 +122,11 @@ void LabelMap<Dtype>::mapLabelToName(map<int, string>& labelToName) {
 }
 
 template <typename Dtype>
+int LabelMap<Dtype>::getCount() {
+	return this->labelItemList.size();
+}
+
+template <typename Dtype>
 void LabelMap<Dtype>::printLabelItemList() {
 	for (int i = 0; i < this->labelItemList.size(); i++) {
 		cout << "label item #" << i << endl;
