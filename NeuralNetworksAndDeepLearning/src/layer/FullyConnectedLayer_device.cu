@@ -134,7 +134,7 @@ __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
  */
 template <typename Dtype>
 __global__ void Dropout(const int n, const Dtype* in, const Dtype* mask,
-		const unsigned int threashold, const float scale, Dtype *out)
+		const unsigned int threshold, const float scale, Dtype *out)
 {
 
 	CUDA_KERNEL_LOOP(index, n) {

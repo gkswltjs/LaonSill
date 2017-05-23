@@ -718,6 +718,9 @@ void NetworkConfig<Dtype>::save() {
 	for (uint32_t i = 0; i < numLearnableLayers; i++) {
 		LearnableLayer<Dtype>* learnableLayer = firstLayersConfig->_learnableLayers[i];
 
+		// ONLY FOR FRCNN & BBOX_PRED LAYER!!!
+		// frcnn의 경우 bbox_pred 레이어의 params에 대해서만
+		// mean, std 적용하여 저장!!!
 		if (roiInputLayer && learnableLayer->name == "bbox_pred") {
 			//Data<Dtype>::printConfig = 1;
 			//SyncMem<Dtype>::printConfig = 1;

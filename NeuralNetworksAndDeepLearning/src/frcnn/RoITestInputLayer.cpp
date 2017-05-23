@@ -150,9 +150,10 @@ IMDB* RoITestInputLayer<Dtype>::getRoidb(const string& imdb_name) {
 
 template <typename Dtype>
 IMDB* RoITestInputLayer<Dtype>::getImdb(const string& imdb_name) {
-	IMDB* imdb = new PascalVOC("pt", "2007",
-			"/home/jkim/Dev/git/py-faster-rcnn-v/data/VOCdevkit2007",
-			this->pixelMeans);
+	//IMDB* imdb = new PascalVOC("pt", "2007",
+	//		"/home/jkim/Dev/git/py-faster-rcnn-v/data/VOCdevkit2007",
+	//		this->pixelMeans);
+	IMDB* imdb = NULL;
 	//imdb->loadGtRoidb();
 
 	return imdb;

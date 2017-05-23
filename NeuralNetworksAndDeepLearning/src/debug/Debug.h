@@ -1578,6 +1578,13 @@ LayersConfig<Dtype>* createFrcnnTrainOneShotLayersConfig() {
 					->id(0)
 					->name("input-data")
 					->numClasses(21)
+					->imageSet("trainval")
+					//->dataName("voc_2007")
+					//->dataPath("/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007/VOC2007")
+					//->labelMapPath("/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007/labelmap_voc.prototxt")
+					->dataName("doosan")
+					->dataPath("/home/jkim/Dev/data/object_detection/doosan")
+					->labelMapPath("/home/jkim/Dev/data/object_detection/doosan/labelmap.txt")
 					->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
 					//->pixelMeans({0.4815f, 0.4547f, 0.4038f})		// RGB
 					->outputs({"data", "im_info", "gt_boxes"}))
@@ -3604,16 +3611,25 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 	return layersConfig;
 }
 
+#if 0
+->layer((new typename DummyInputLayer<Dtype>::Builder())
+					->id(0)
+					->name("data")
+					->outputs({"data", "label"}))
+#endif
 
 
 #define ILSVRC_1000 0
+
+
+
+
 
 template <typename Dtype>
 LayersConfig<Dtype>* createVGG16NetLayersConfig() {
 	const float bias_const = 0.2f;
 
 	LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
-			/*
 			->layer((new typename InputLayer<Dtype>::Builder())
 					->id(0)
 					->name("data")
@@ -3621,14 +3637,6 @@ LayersConfig<Dtype>* createVGG16NetLayersConfig() {
 					->sourceType("LMDB")
 					->mean({104.0f, 117.0f, 123.0f})
 					->outputs({"data", "label"}))
-					*/
-
-			->layer((new typename DummyInputLayer<Dtype>::Builder())
-					->id(0)
-					->name("data")
-					->outputs({"data", "label"}))
-
-
 			// tier 1
 			->layer((new typename ConvLayer<Dtype>::Builder())
 					->id(10)
@@ -3947,7 +3955,6 @@ LayersConfig<Dtype>* createVGG16NetLayersConfig() {
 					->inputs({"fc8", "label"})
 					->outputs({"loss"}))
 
-					/*
 			->layer((new typename AccuracyLayer<Dtype>::Builder())
 					->id(380)
 					->name("accuracy/top1")
@@ -3963,7 +3970,6 @@ LayersConfig<Dtype>* createVGG16NetLayersConfig() {
 					->axis(2)
 					->inputs({"fc8", "label"})
 					->outputs({"accuracy@5"}))
-					*/
 
 			->build();
 

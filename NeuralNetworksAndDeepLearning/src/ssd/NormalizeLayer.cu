@@ -81,6 +81,9 @@ void NormalizeLayer<Dtype>::reshape() {
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
 
+
+	cout << "reshape normalize layer ... " << endl;
+
 	this->_outputData[0]->reshapeLike(this->_inputData[0]);
 
 	const vector<uint32_t>& dataShape = this->_inputData[0]->getShape();
@@ -333,9 +336,9 @@ void NormalizeLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
     const Dtype beta2, Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2,
     Data<Dtype>* data) {
 
-	const uint32_t batches = this->_inputShape[0][0];
+	const uint32_t batches = this->_inputData[0]->batches();
 	const Dtype momentum = this->networkConfig->_momentum;
-	const Dtype negativeOne = -1.0;
+	const Dtype negativeOne = Dtype(-1.0);
 
     if (!Worker<Dtype>::isSingle())
         data->mutable_host_grad();
@@ -347,26 +350,40 @@ void NormalizeLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
     Optimizer opt = this->networkConfig->_optimizer;
     SASSERT0(opt == Optimizer::Momentum);
 
+    this->_printOn();
+
+
+    data->print_data({}, false);
+    data->print_grad({}, false);
 	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
+	data->print_grad({}, false);
+	dataHistory->print_data({}, false);
 	soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
 			d_paramHistoryData);
+	dataHistory->print_data({}, false);
 	soooa_copy(static_cast<int>(paramSize), d_paramHistoryData, d_paramGrad);
-
+	data->print_grad({}, false);
 	// update
+	data->print_data({}, false);
+	data->print_grad({}, false);
 	soooa_gpu_axpy(static_cast<int>(paramSize), negativeOne, d_paramGrad, d_paramData);
+	data->print_data({}, false);
+
+
+	this->_printOff();
 }
 
 
 template <typename Dtype>
 void NormalizeLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
+	cout << "!!!!!!!!!! applyChanges " << endl;
     const uint32_t paramSize = this->_params[0]->getCount();
-    NormalizeLayer<Dtype>* _targetLayer = (NormalizeLayer<Dtype>*)targetLayer;
-
-    _targetLayer->_params[0]->add_device_grad(this->_params[0]);
+    targetLayer->_params[0]->add_device_grad(this->_params[0]);
 }
 
 template <typename Dtype>
 void NormalizeLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
+	cout << "!!!!!!!!!! syncParams " << endl;
     const uint32_t paramSize = this->_params[0]->getCount();
     NormalizeLayer<Dtype>* _targetLayer = (NormalizeLayer<Dtype>*)targetLayer;
 

@@ -1,6 +1,7 @@
 #include <set>
 #include <cmath>
 #include <cfloat>
+#include <csignal>
 #include <algorithm>
 #include <boost/iterator/counting_iterator.hpp>
 
@@ -11,6 +12,17 @@
 
 
 using namespace std;
+
+
+
+bool SortBBoxAscend(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2) {
+	return bbox1.score < bbox2.score;
+}
+
+bool SortBBoxDescend(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2) {
+	return bbox1.score > bbox2.score;
+}
+
 
 
 template <typename T>
@@ -41,7 +53,6 @@ template bool SortScorePairDescend(const pair<float, pair<int, int>>& pair1,
 template <typename Dtype>
 void GetGroundTruth(const Dtype* gtData, const int numGt, const int backgroundLabelId,
 		const bool useDifficultGt, map<int, vector<NormalizedBBox>>* allGtBboxes) {
-
 	allGtBboxes->clear();
 	for (int i = 0; i < numGt; i++) {
 		int startIdx = i * 8;
@@ -75,6 +86,50 @@ void GetGroundTruth(const Dtype* gtData, const int numGt, const int backgroundLa
 template void GetGroundTruth(const float* gtData, const int numGt,
 		const int backgroundLabelId, const bool useDifficultGt,
 		map<int, vector<NormalizedBBox>>* allGtBboxes);
+
+
+template <typename Dtype>
+void GetGroundTruth(const Dtype* gtData, const int numGt, const int backgroundLabelId,
+		const bool useDifficultGt, std::map<int, LabelBBox>* allGtBBoxes) {
+
+	allGtBBoxes->clear();
+	for (int i = 0; i < numGt; i++) {
+		int startIdx = i * 8;
+		int itemId = gtData[startIdx];
+		if (itemId == -1) {
+			break;
+		}
+		NormalizedBBox bbox;
+		int label = gtData[startIdx + 1];
+		SASSERT(backgroundLabelId != label, "Found background label in the dataset.");
+		bool difficult = static_cast<bool>(gtData[startIdx + 7]);
+		if (!useDifficultGt && difficult) {
+			// Skip reading difficult ground truth.
+			continue;
+		}
+		bbox.xmin = gtData[startIdx + 3];
+		bbox.ymin = gtData[startIdx + 4];
+		bbox.xmax = gtData[startIdx + 5];
+		bbox.ymax = gtData[startIdx + 6];
+		bbox.difficult = difficult;
+		float bboxSize = BBoxSize(bbox);
+		bbox.size = bboxSize;
+		(*allGtBBoxes)[itemId][label].push_back(bbox);
+	}
+}
+
+template void GetGroundTruth(const float* gtData, const int numGt,
+		const int backgroundLabelId, const bool useDifficultGt,
+		std::map<int, LabelBBox>* allGtBBoxes);
+
+
+
+
+
+
+
+
+
 
 
 
@@ -246,11 +301,11 @@ void FindMatches(const vector<LabelBBox>& allLocPreds,
 	}
 }
 
-void DecodeBBoxes(const std::vector<NormalizedBBox>& priorBBoxes,
-		const std::vector<std::vector<float>>& priorVariances,
-		const std::string& codeType, const bool varianceEncodedInTarget,
-		const bool clipBBox, const std::vector<NormalizedBBox>& bboxes,
-		std::vector<NormalizedBBox>* decodeBBoxes) {
+void DecodeBBoxes(const vector<NormalizedBBox>& priorBBoxes,
+		const vector<vector<float>>& priorVariances,
+		const string& codeType, const bool varianceEncodedInTarget,
+		const bool clipBBox, const vector<NormalizedBBox>& bboxes,
+		vector<NormalizedBBox>* decodeBBoxes) {
 	SASSERT0(priorBBoxes.size() == priorVariances.size());
 	SASSERT0(priorBBoxes.size() == bboxes.size());
 	int numBBoxes = priorBBoxes.size();
@@ -266,8 +321,8 @@ void DecodeBBoxes(const std::vector<NormalizedBBox>& priorBBoxes,
 	}
 }
 
-void DecodeBBox(const NormalizedBBox& priorBBox, const std::vector<float>& priorVariances,
-		const std::string& codeType, const bool varianceEncodedInTarget,
+void DecodeBBox(const NormalizedBBox& priorBBox, const vector<float>& priorVariances,
+		const string& codeType, const bool varianceEncodedInTarget,
 		const bool clipBBox, const NormalizedBBox& bbox, NormalizedBBox* decodeBBox) {
 
 	if (codeType == "CORNER") {
@@ -519,16 +574,39 @@ float BBoxSize(const NormalizedBBox& bbox, const bool normalized) {
 		// If bbox is invalid (e.g. xmax < xmin or ymax < ymin), return 0.
 		return 0;
 	} else {
-		float width = bbox.xmax - bbox.xmin;
-		float height = bbox.ymax - bbox.ymin;
+		if (bbox.size > 0) {
+			return bbox.size;
+		} else {
+			float width = bbox.xmax - bbox.xmin;
+			float height = bbox.ymax - bbox.ymin;
+			if (normalized) {
+				return width * height;
+			} else {
+				// If bbox is not within range [0, 1]
+				return (width + 1) * (height + 1);
+			}
+		}
+	}
+}
+
+template <typename Dtype>
+Dtype BBoxSize(const Dtype* bbox, const bool normalized) {
+	if (bbox[2] < bbox[0] || bbox[3] < bbox[1]) {
+		// If bbox is invalid (e.g. xmax < xmin or ymax < ymin), return 0.
+		return Dtype(0.);
+	} else {
+		const Dtype width = bbox[2] - bbox[0];
+		const Dtype height = bbox[3] - bbox[1];
 		if (normalized) {
 			return width * height;
 		} else {
-			// If bbox is not within range [0, 1]
+			// If bbox is not within range [0, 1].
 			return (width + 1) * (height + 1);
 		}
 	}
 }
+
+template float BBoxSize(const float* bbox, const bool normalized);
 
 void ClipBBox(const NormalizedBBox& bbox, NormalizedBBox* clipBBox) {
 	clipBBox->xmin = std::max(std::min(bbox.xmin, 1.f), 0.f);
@@ -571,6 +649,32 @@ float JaccardOverlap(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2,
 		return 0.;
 	}
 }
+
+template <typename Dtype>
+Dtype JaccardOverlap(const Dtype* bbox1, const Dtype* bbox2) {
+	if (bbox2[0] > bbox1[2] || bbox2[2] < bbox1[0] ||
+		bbox2[1] > bbox1[3] || bbox2[3] < bbox1[1]) {
+		return Dtype(0.);
+	} else {
+		const Dtype interXMin = std::max(bbox1[0], bbox2[0]);
+		const Dtype interYMin = std::max(bbox1[1], bbox2[1]);
+		const Dtype interXMax = std::min(bbox1[2], bbox2[2]);
+		const Dtype interYMax = std::min(bbox1[3], bbox2[3]);
+
+		const Dtype interWidth = interXMax - interXMin;
+		const Dtype interHeight = interYMax - interYMin;
+		const Dtype interSize = interWidth * interHeight;
+
+		const Dtype bbox1Size = BBoxSize(bbox1);
+		const Dtype bbox2Size = BBoxSize(bbox2);
+
+		return interSize / (bbox1Size + bbox2Size - interSize);
+	}
+}
+
+template float JaccardOverlap(const float* bbox1, const float* bbox2);
+
+
 
 void IntersectBBox(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2,
 		NormalizedBBox* intersectBBox) {
@@ -1516,6 +1620,369 @@ template void EncodeConfPrediction(const float* confData, const int num, const i
 
 
 
+template <typename Dtype>
+void GetConfidenceScores(const Dtype* confData, const int num, const int numPredsPerClass,
+		const int numClasses, std::vector<std::map<int, std::vector<float>>>* confPreds) {
+	confPreds->clear();
+	confPreds->resize(num);
+	for (int i = 0; i < num; i++) {
+		map<int, vector<float>>& labelScores = (*confPreds)[i];
+		for (int p = 0; p < numPredsPerClass; p++) {
+			int startIdx = p * numClasses;
+			for (int c = 0; c < numClasses; c++) {
+				labelScores[c].push_back(confData[startIdx + c]);
+			}
+		}
+		confData += numPredsPerClass * numClasses;
+	}
+}
+
+template void GetConfidenceScores(const float* confData, const int num,
+		const int numPredsPerClass, const int numClasses,
+		std::vector<std::map<int, std::vector<float>>>* confPreds);
+
+template void GetConfidenceScores(const double* confData, const int num,
+		const int numPredsPerClass, const int numClasses,
+		std::vector<std::map<int, std::vector<float>>>* confPreds);
+
+
+
+
+
+
+
+
+void DecodeBBoxesAll(const std::vector<LabelBBox>& allLocPreds,
+		const std::vector<NormalizedBBox>& priorBBoxes,
+		const std::vector<std::vector<float>>& priorVariances,
+		const int num, const bool shareLocation,
+		const int numLocClasses, const int backgroundLabelId,
+		const std::string& codeType, const bool varianceEncodedInTarget,
+		const bool clip, std::vector<LabelBBox>* allDecodeBBoxes) {
+
+	SASSERT0(allLocPreds.size() == num);
+	allDecodeBBoxes->clear();
+	allDecodeBBoxes->resize(num);
+	for (int i = 0; i < num; i++) {
+		// Decode predictions into bboxes.
+		LabelBBox& decodeBBoxes = (*allDecodeBBoxes)[i];
+		for (int c = 0; c < numLocClasses; c++) {
+			int label = shareLocation ? -1 : c;
+			if (label == backgroundLabelId) {
+				// Ignore background class.
+				continue;
+			}
+			if (allLocPreds[i].find(label) == allLocPreds[i].end()) {
+				// Something bad happend if there are no predictions for current label.
+				SASSERT(false, "Could not find location predictions for label %d.", label);
+			}
+			const vector<NormalizedBBox>& labelLocPreds =
+					allLocPreds[i].find(label)->second;
+			DecodeBBoxes(priorBBoxes, priorVariances, codeType, varianceEncodedInTarget, clip,
+					labelLocPreds, &(decodeBBoxes[label]));
+		}
+	}
+}
+
+
+void GetMaxScoreIndex(const vector<float>& scores, const float threshold, const int topK,
+		vector<pair<float, int>>* scoreIndexVec) {
+	// Generate index score pairs.
+	for (int i = 0; i < scores.size(); i++) {
+		if (scores[i] > threshold) {
+			scoreIndexVec->push_back(std::make_pair(scores[i], i));
+		}
+	}
+
+	// Sort the score pair according to the scores in descending order
+	std::stable_sort(scoreIndexVec->begin(), scoreIndexVec->end(),
+			SortScorePairDescend<int>);
+
+	// Keep topK scores if needed.
+	if (topK > -1 && topK < scoreIndexVec->size()) {
+		scoreIndexVec->resize(topK);
+	}
+}
+
+template <typename Dtype>
+void GetMaxScoreIndex(const Dtype* scores, const int num, const float threshold,
+		const int topK, vector<pair<Dtype, int>>* scoreIndexVec) {
+	// Generate index score pairs.
+	for (int i = 0; i < num; i++) {
+		if (scores[i] > threshold) {
+			scoreIndexVec->push_back(std::make_pair(scores[i], i));
+		}
+	}
+
+	// Sort the score pair according to the scores in descending order
+	std::stable_sort(scoreIndexVec->begin(), scoreIndexVec->end(),
+			SortScorePairDescend<int>);
+
+	// Keep topK scores if needed.
+	if (topK > -1 && topK < scoreIndexVec->size()) {
+		scoreIndexVec->resize(topK);
+	}
+}
+
+template void GetMaxScoreIndex(const float* scores, const int num, const float threshold,
+		const int topK, vector<pair<float, int>>* scoreIndexVec);
+
+
+void ApplyNMSFast(const vector<NormalizedBBox>& bboxes, const vector<float>& scores,
+		const float scoreThreshold, const float nmsThreshold,
+		const float eta, const int topK, vector<int>* indices) {
+
+	// Sanity check.
+	SASSERT(bboxes.size() == scores.size(), "bboxes and scores have different size.");
+
+	// Get topK scores (with corresponding indices).
+	vector<pair<float, int>> scoreIndexVec;
+	GetMaxScoreIndex(scores, scoreThreshold, topK, &scoreIndexVec);
+
+	// Do nms.
+	float adaptiveThreshold = nmsThreshold;
+	indices->clear();
+	while (scoreIndexVec.size() != 0) {
+		const int idx = scoreIndexVec.front().second;
+		bool keep = true;
+		for (int k = 0; k < indices->size(); k++) {
+			if (keep) {
+				const int keptIdx = (*indices)[k];
+				float overlap = JaccardOverlap(bboxes[idx], bboxes[keptIdx]);
+				keep = overlap <= adaptiveThreshold;
+			} else {
+				break;
+			}
+		}
+		if (keep) {
+			indices->push_back(idx);
+		}
+		scoreIndexVec.erase(scoreIndexVec.begin());
+		if (keep && eta < 1 && adaptiveThreshold > 0.5) {
+			adaptiveThreshold *= eta;
+		}
+	}
+}
+
+template <typename Dtype>
+void ApplyNMSFast(const Dtype* bboxes, const Dtype* scores, const int num,
+		const float scoreThreshold, const float nmsThreshold, const float eta,
+		const int topK, std::vector<int>* indices) {
+	// Get topK scores (with corresponding indices).
+	vector<pair<float, int>> scoreIndexVec;
+	GetMaxScoreIndex(scores, num, scoreThreshold, topK, &scoreIndexVec);
+
+	// Do nms.
+	float adaptiveThreshold = nmsThreshold;
+	indices->clear();
+	while (scoreIndexVec.size() != 0) {
+		const int idx = scoreIndexVec.front().second;
+		bool keep = true;
+		for (int k = 0; k < indices->size(); k++) {
+			if (keep) {
+				const int keptIdx = (*indices)[k];
+				Dtype overlap = JaccardOverlap(bboxes + idx * 4, bboxes + keptIdx * 4);
+				keep = overlap <= adaptiveThreshold;
+			} else {
+				break;
+			}
+		}
+		if (keep) {
+			indices->push_back(idx);
+		}
+		scoreIndexVec.erase(scoreIndexVec.begin());
+		if (keep && eta < 1 && adaptiveThreshold > 0.5) {
+			adaptiveThreshold *= eta;
+		}
+	}
+}
+
+template void ApplyNMSFast(const float* bboxes, const float* scores, const int num,
+		const float scoreThreshold, const float nmsThreshold, const float eta,
+		const int topK, std::vector<int>* indices);
+
+
+
+void ScaleBBox(const NormalizedBBox& bbox, const int height, const int width,
+		NormalizedBBox* scaleBBox) {
+	scaleBBox->xmin = bbox.xmin * width;
+	scaleBBox->ymin = bbox.ymin * height;
+	scaleBBox->xmax = bbox.xmax * width;
+	scaleBBox->ymax = bbox.ymax * height;
+	scaleBBox->size = 0.f;
+	bool normalized = !(width > 1 || height > 1);
+	scaleBBox->size = BBoxSize(*scaleBBox, normalized);
+	scaleBBox->difficult = bbox.difficult;
+}
+
+
+void OutputBBox(const NormalizedBBox& bbox, const std::pair<int, int>& imgSize,
+		const bool hasResize, NormalizedBBox* outBBox) {
+	// 현재 resize 지원하지 않음.
+	SASSERT0(!hasResize);
+
+	const int height = imgSize.first;
+	const int width = imgSize.second;
+	NormalizedBBox tempBBox = bbox;
+
+	if (hasResize) {
+
+	} else {
+		// Clip the normalized bbox first.
+		ClipBBox(tempBBox, &tempBBox);
+		// Scale the bbox according to the original image size.
+		ScaleBBox(tempBBox, height, width, outBBox);
+	}
+}
+
+cv::Scalar HSV2RGB(const float h, const float s, const float v) {
+	const int h_i = static_cast<int>(h * 6);
+	const float f = h * 6 - h_i;
+	const float p = v * (1 - s);
+	const float q = v * (1 - f*s);
+	const float t = v * (1 - (1 - f) * s);
+	float r, g, b;
+	switch (h_i) {
+	case 0:
+		r = v; g = t; b = p;
+		break;
+	case 1:
+		r = q; g = v; b = p;
+		break;
+	case 2:
+		r = p; g = v; b = t;
+		break;
+	case 3:
+		r = p; g = q; b = v;
+		break;
+	case 4:
+		r = t; g = p; b = v;
+		break;
+	case 5:
+		r = v; g = p; b = q;
+		break;
+	default:
+		r = 1; g = 1; b = 1;
+		break;
+	}
+	return cv::Scalar(r * 255, g * 255, b * 255);
+}
+
+
+
+std::vector<cv::Scalar> GetColors(const int n) {
+	vector<cv::Scalar> colors;
+	cv::RNG rng(12345);
+	const float goldenRatioConjugate = 0.618033988749895;
+	const float s = 0.3;
+	const float v = 0.99;
+	for (int i = 0; i < n; i++) {
+		const float h = std::fmod(rng.uniform(0.f, 1.f) + goldenRatioConjugate, 1.f);
+		colors.push_back(HSV2RGB(h, s, v));
+	}
+	return colors;
+}
+
+static clock_t startClock = clock();
+static cv::VideoWriter capOut;
+
+template <typename Dtype>
+void VisualizeBBox(const std::vector<cv::Mat>& images, Data<Dtype>* detections,
+		const float threshold, const std::vector<cv::Scalar>& colors,
+		const std::map<int, std::string>& labelToDisplayName, const string& saveFile) {
+
+	// Retrieve detections.
+	SASSERT0(detections->width() == 7);
+	const int numDet = detections->height();
+	const int numImg = images.size();
+	if (numDet == 0 || numImg == 0) {
+		return;
+	}
+	// Compute FPS.
+	float fps = numImg / (static_cast<double>(clock() - startClock) / CLOCKS_PER_SEC);
+	const Dtype* detectionsData = detections->host_data();
+	const int width = images[0].cols;
+	const int height = images[0].rows;
+	vector<LabelBBox> allDetections(numImg);
+	for (int i = 0; i < numDet; i++) {
+		const int imgIdx = detectionsData[i * 7];
+		SASSERT0(imgIdx < numImg);
+		const int label = detectionsData[i * 7 + 1];
+		const float score = detectionsData[i * 7 + 2];
+		if (score < threshold) {
+			continue;
+		}
+		NormalizedBBox bbox;
+		bbox.xmin = detectionsData[i * 7 + 3] * width;
+		bbox.ymin = detectionsData[i * 7 + 4] * height;
+		bbox.xmax = detectionsData[i * 7 + 5] * width;
+		bbox.ymax = detectionsData[i * 7 + 6] * height;
+		bbox.score = score;
+		allDetections[imgIdx][label].push_back(bbox);
+	}
+
+	int fontface = cv::FONT_HERSHEY_SIMPLEX;
+	double scale = 1;
+	int thickness = 2;
+	int baseline = 0;
+	char buffer[50];
+	for (int i = 0; i < numImg; i++) {
+		cv::Mat image = images[i];
+		// Show FPS
+		snprintf(buffer, sizeof(buffer), "FPS: %.2f", fps);
+		cv::Size text = cv::getTextSize(buffer, fontface, scale, thickness, &baseline);
+		cv::rectangle(image, cv::Point(0, 0), cv::Point(text.width, text.height + baseline),
+				CV_RGB(255, 255, 255), CV_FILLED);
+		cv::putText(image, buffer, cv::Point(0, text.height + baseline / 2.),
+				fontface, scale, CV_RGB(0, 0, 0), thickness, 8);
+		// Draw bboxes.
+		for (map<int, vector<NormalizedBBox>>::iterator it = allDetections[i].begin();
+				it != allDetections[i].end(); it++) {
+			int label = it->first;
+			string labelName = "Unknown";
+			if (labelToDisplayName.find(label) != labelToDisplayName.end()) {
+				labelName = labelToDisplayName.find(label)->second;
+			}
+			SASSERT0(label < colors.size());
+			const cv::Scalar& color = colors[label];
+			const vector<NormalizedBBox>& bboxes = it->second;
+			for (int j = 0; j < bboxes.size(); j++) {
+				cv::Point topLeftPt(bboxes[j].xmin, bboxes[j].ymin);
+				cv::Point bottomRightPt(bboxes[j].xmax, bboxes[j].ymax);
+				cv::rectangle(image, topLeftPt, bottomRightPt, color, 4);
+				cv::Point bottomLeftPt(bboxes[j].xmin, bboxes[j].ymax);
+				snprintf(buffer, sizeof(buffer), "%s: %.2f", labelName.c_str(),
+						bboxes[j].score);
+				cv::Size text = cv::getTextSize(buffer, fontface, scale, thickness,
+						&baseline);
+				cv::rectangle(image, bottomLeftPt + cv::Point(0, 0),
+						bottomLeftPt + cv::Point(text.width, -text.height - baseline),
+						color, CV_FILLED);
+				cv::putText(image, buffer, bottomLeftPt - cv::Point(0, baseline),
+						fontface, scale, CV_RGB(0, 0, 0), thickness, 8);
+			}
+		}
+		// Save result if required.
+		if (!saveFile.empty()) {
+			if (!capOut.isOpened()) {
+				cv::Size size(image.size().width, image.size().height);
+				cv::VideoWriter outputVideo(saveFile, CV_FOURCC('D', 'I', 'V', 'X'),
+						30, size, true);
+				capOut = outputVideo;
+			}
+			capOut.write(image);
+		}
+		cv::imshow("detections", image);
+		if (cv::waitKey(1) == 27) {
+			raise(SIGINT);
+		}
+	}
+	startClock = clock();
+}
+
+template void VisualizeBBox(const std::vector<cv::Mat>& images, Data<float>* detections,
+		const float threshold, const std::vector<cv::Scalar>& colors,
+		const std::map<int, std::string>& labelToDisplayName, const string& saveFile);
 
 
 
@@ -1526,37 +1993,196 @@ template void EncodeConfPrediction(const float* confData, const int num, const i
 
 
 
+template <typename Dtype>
+void GetDetectionResults(const Dtype* detData, const int numDet, const int backgroundLabelId,
+		map<int, LabelBBox>* allDetections) {
+	allDetections->clear();
+	for (int i = 0; i < numDet; i++) {
+		int startIdx = i * 7;
+		int itemId = detData[startIdx];
+		if (itemId == -1) {
+			continue;
+		}
+		int label = detData[startIdx + 1];
+		SASSERT(backgroundLabelId != label,
+				"Found background label in the detection results.");
+		NormalizedBBox bbox;
+		bbox.score = detData[startIdx + 2];
+		bbox.xmin = detData[startIdx + 3];
+		bbox.ymin = detData[startIdx + 4];
+		bbox.xmax = detData[startIdx + 5];
+		bbox.ymax = detData[startIdx + 6];
+		float bboxSize = BBoxSize(bbox);
+		bbox.size = bboxSize;
+		(*allDetections)[itemId][label].push_back(bbox);
+	}
+}
+
+template void GetDetectionResults(const float* detData, const int numDet,
+		const int backgroundLabelId, map<int, LabelBBox>* allDetections);
 
 
 
+template <typename Dtype>
+__global__ void DecodeBBoxesKernel(const int nthreads, const Dtype* loc_data,
+		const Dtype* prior_data, const int code_type,
+		const bool variance_encoded_in_target, const int num_priors,
+		const bool share_location, const int num_loc_classes, const int background_label_id,
+		const bool clip_bbox, Dtype* bbox_data) {
+	CUDA_KERNEL_LOOP(index, nthreads) {
+		const int i = index % 4;
+		const int c = (index / 4) % num_loc_classes;
+		const int d = (index / 4 / num_loc_classes) % num_priors;
+		if (!share_location && c == background_label_id) {
+			// Ignore background class if not share_location.
+			return;
+		}
+		const int pi = d * 4;
+		const int vi = pi + num_priors * 4;
+		//if (code_type == PriorBoxParameter_CodeType_CORNER) {
+		if (code_type == 0) {
+			if (variance_encoded_in_target) {
+				// variance is encoded in target, we simply need to add the offset
+				// predictions.
+				bbox_data[index] = prior_data[pi + i] + loc_data[index];
+				} else {
+				// variance is encoded in bbox, we need to scale the offset accordingly.
+				bbox_data[index] =
+				prior_data[pi + i] + loc_data[index] * prior_data[vi + i];
+			}
+		//} else if (code_type == PriorBoxParameter_CodeType_CENTER_SIZE) {
+		} else if (code_type == 1) {
+			const Dtype p_xmin = prior_data[pi];
+			const Dtype p_ymin = prior_data[pi + 1];
+			const Dtype p_xmax = prior_data[pi + 2];
+			const Dtype p_ymax = prior_data[pi + 3];
+			const Dtype prior_width = p_xmax - p_xmin;
+			const Dtype prior_height = p_ymax - p_ymin;
+			const Dtype prior_center_x = (p_xmin + p_xmax) / 2.;
+			const Dtype prior_center_y = (p_ymin + p_ymax) / 2.;
+
+			const Dtype xmin = loc_data[index - i];
+			const Dtype ymin = loc_data[index - i + 1];
+			const Dtype xmax = loc_data[index - i + 2];
+			const Dtype ymax = loc_data[index - i + 3];
+
+			Dtype decode_bbox_center_x, decode_bbox_center_y;
+			Dtype decode_bbox_width, decode_bbox_height;
+			if (variance_encoded_in_target) {
+				// variance is encoded in target, we simply need to retore the offset
+				// predictions.
+				decode_bbox_center_x = xmin * prior_width + prior_center_x;
+				decode_bbox_center_y = ymin * prior_height + prior_center_y;
+				decode_bbox_width = exp(xmax) * prior_width;
+				decode_bbox_height = exp(ymax) * prior_height;
+			} else {
+				// variance is encoded in bbox, we need to scale the offset accordingly.
+				decode_bbox_center_x =
+				prior_data[vi] * xmin * prior_width + prior_center_x;
+				decode_bbox_center_y =
+				prior_data[vi + 1] * ymin * prior_height + prior_center_y;
+				decode_bbox_width =
+				exp(prior_data[vi + 2] * xmax) * prior_width;
+				decode_bbox_height =
+				exp(prior_data[vi + 3] * ymax) * prior_height;
+			}
+
+			switch (i) {
+			case 0:
+				bbox_data[index] = decode_bbox_center_x - decode_bbox_width / 2.;
+				break;
+			case 1:
+				bbox_data[index] = decode_bbox_center_y - decode_bbox_height / 2.;
+				break;
+			case 2:
+				bbox_data[index] = decode_bbox_center_x + decode_bbox_width / 2.;
+				break;
+			case 3:
+				bbox_data[index] = decode_bbox_center_y + decode_bbox_height / 2.;
+				break;
+			}
+		//} else if (code_type == PriorBoxParameter_CodeType_CORNER_SIZE) {
+		} else if (code_type == 2) {
+			const Dtype p_xmin = prior_data[pi];
+			const Dtype p_ymin = prior_data[pi + 1];
+			const Dtype p_xmax = prior_data[pi + 2];
+			const Dtype p_ymax = prior_data[pi + 3];
+			const Dtype prior_width = p_xmax - p_xmin;
+			const Dtype prior_height = p_ymax - p_ymin;
+			Dtype p_size;
+			if (i == 0 || i == 2) {
+				p_size = prior_width;
+			} else {
+				p_size = prior_height;
+			}
+			if (variance_encoded_in_target) {
+				// variance is encoded in target, we simply need to add the offset
+				// predictions.
+				bbox_data[index] = prior_data[pi + i] + loc_data[index] * p_size;
+			} else {
+				// variance is encoded in bbox, we need to scale the offset accordingly.
+				bbox_data[index] =
+				prior_data[pi + i] + loc_data[index] * prior_data[vi + i] * p_size;
+			}
+		} else {
+			// Unknown code type.
+		}
+		if (clip_bbox) {
+			bbox_data[index] = max(min(bbox_data[index], Dtype(1.)), Dtype(0.));
+		}
+	}
+}
 
 
+template <typename Dtype>
+void DecodeBBoxesGPU(const int nthreads, const Dtype* locData, const Dtype* priorData,
+		const std::string& codeType, const bool varianceEncodedInTarget,
+		const int numPriors, const bool shareLocation,
+		const int numLocClasses, const int backgroundLabelId,
+		const bool clipBBox, Dtype* bboxData) {
 
+	int codeTypeInt = -1;
+	if (codeType == "CORNER") codeTypeInt = 0;
+	else if (codeType == "CENTER_SIZE") codeTypeInt = 1;
+	else if (codeType == "CORNER_SIZE") codeTypeInt = 2;
 
+	DecodeBBoxesKernel<Dtype><<<SOOOA_GET_BLOCKS(nthreads), SOOOA_CUDA_NUM_THREADS>>>(
+			nthreads, locData, priorData, codeTypeInt, varianceEncodedInTarget, numPriors,
+			shareLocation, numLocClasses, backgroundLabelId, clipBBox, bboxData);
+	  CUDA_POST_KERNEL_CHECK;
+}
 
+template void DecodeBBoxesGPU(const int nthreads, const float* locData, const float* priorData,
+		const std::string& codeType, const bool varianceEncodedInTarget,
+		const int numPriors, const bool shareLocation,
+		const int numLocClasses, const int backgroundLabelId,
+		const bool clipBBox, float* bboxData);
 
+template <typename Dtype>
+__global__ void PermuteDataKernel(const int nthreads, const Dtype* data,
+		const int num_classes, const int num_data, const int num_dim, Dtype* new_data) {
+	CUDA_KERNEL_LOOP(index, nthreads) {
+		const int i = index % num_dim;
+		const int c = (index / num_dim) % num_classes;
+		const int d = (index / num_dim / num_classes) % num_data;
+		const int n = index / num_dim / num_classes / num_data;
+		const int new_index = ((n * num_classes + c) * num_data + d) * num_dim + i;
+		new_data[new_index] = data[index];
+	}
+}
 
+template <typename Dtype>
+void PermuteDataGPU(const int nthreads,
+		const Dtype* data, const int numClasses, const int numData,
+		const int numDim, Dtype* newData) {
+	PermuteDataKernel<Dtype><<<SOOOA_GET_BLOCKS(nthreads), SOOOA_CUDA_NUM_THREADS>>>(
+			nthreads, data, numClasses, numData, numDim, newData);
+	CUDA_POST_KERNEL_CHECK;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+template void PermuteDataGPU(const int nthreads,
+		const float* data, const int numClasses, const int numData,
+		const int numDim, float* newData);
 
 
 

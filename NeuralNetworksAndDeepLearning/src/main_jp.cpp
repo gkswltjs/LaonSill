@@ -46,6 +46,7 @@ using namespace std;
 void artisticStyle();
 void vgg16();
 void vgg19();
+void vgg19Test();
 void fasterRcnnTrain();
 void fasterRcnnTest();
 void ssd();
@@ -61,9 +62,10 @@ void developerMain() {
 	//artisticStyle();
 	//vgg16();
 	//vgg19();
-	//fasterRcnnTrain();
+	//vgg19Test();
+	fasterRcnnTrain();
 	//fasterRcnnTest();
-	ssd();
+	//ssd();
 
 	STDOUT_LOG("exit developerMain()");
 }
@@ -81,8 +83,8 @@ void artisticStyle() {
 void vgg16() {
 	const int maxEpochs = 1000;
 	const vector<string> lossLayers = {"loss"};
-	//const vector<string> accuracyLayers = {"accuracy/top1", "accuracy/top5"};
-	const vector<string> accuracyLayers = {};
+	const vector<string> accuracyLayers = {"accuracy/top1", "accuracy/top5"};
+	//const vector<string> accuracyLayers = {};
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
 #if LOAD_WEIGHT
@@ -91,7 +93,7 @@ void vgg16() {
 			"/home/jkim/Dev/SOOOA_HOME/network/VGG19.param";
 #endif
 	const uint32_t batchSize = 16;
-	const uint32_t testInterval = 1;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 10;			// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
 
@@ -223,6 +225,78 @@ void vgg19() {
 }
 
 
+void vgg19Test() {
+	const int maxEpochs = 1000;
+	const vector<string> lossLayers = {"loss"};
+	const vector<string> accuracyLayers = {"accuracy/top1", "accuracy/top5"};
+	const NetworkPhase phase = NetworkPhase::TrainPhase;
+
+#if LOAD_WEIGHT
+	vector<WeightsArg> weightsArgs(1);
+	weightsArgs[0].weightsPath =
+			"/home/jkim/Dev/SOOOA_HOME/network/VGG19_LMDB_0.01.param";
+#endif
+	const uint32_t batchSize = 20;
+	const uint32_t testInterval = 50;			// 10000(목표 샘플수) / batchSize
+	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
+	const float baseLearningRate = 0.00001f;
+
+	const uint32_t stepSize = 100000;
+	const float weightDecay = 0.0005f;
+	const float momentum = 0.9f;
+	const float clipGradientsLevel = 0.0f;
+	const float gamma = 0.0001;
+	//const LRPolicy lrPolicy = LRPolicy::Step;
+	const LRPolicy lrPolicy = LRPolicy::Fixed;
+
+	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
+	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
+	STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
+	STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
+	STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
+	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
+	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
+
+	NetworkConfig<float>* networkConfig =
+			(new typename NetworkConfig<float>::Builder())
+			->batchSize(batchSize)
+			->baseLearningRate(baseLearningRate)
+			->weightDecay(weightDecay)
+			->momentum(momentum)
+			->testInterval(testInterval)
+			->saveInterval(saveInterval)
+			->stepSize(stepSize)
+			->clipGradientsLevel(clipGradientsLevel)
+			->lrPolicy(lrPolicy)
+			->networkPhase(phase)
+			->gamma(gamma)
+			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+#if LOAD_WEIGHT
+			->weightsArgs(weightsArgs)
+#endif
+			->networkListeners({
+				new NetworkMonitor("loss", NetworkMonitor::PLOT_ONLY)
+				})
+			->lossLayers(lossLayers)
+			->accuracyLayers(accuracyLayers)
+			->build();
+
+	Util::printVramInfo();
+
+	Network<float>* network = new Network<float>(networkConfig);
+	LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<float>();
+
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(network->config);
+	}
+	network->setLayersConfig(layersConfig);
+	network->loadPretrainedWeights();
+
+	network->sgd_with_timer(maxEpochs);
+}
+
+
 void fasterRcnnTrain() {
 	srand((uint32_t)time(NULL));
 
@@ -233,14 +307,15 @@ void fasterRcnnTrain() {
 
 	vector<WeightsArg> weightsArgs(1);
 	//weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024.param";
-	weightsArgs[0].weightsPath = networkSaveDir + "/network600000.param";
+	//weightsArgs[0].weightsPath = networkSaveDir + "/network600000.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
 
 	const uint32_t batchSize = 1;
 	const float baseLearningRate = 0.001f;
 	const LRPolicy lrPolicy = LRPolicy::Step;
 	const float gamma = 0.1;
 	const uint32_t stepSize = 50000;
-	const uint32_t testInterval = 1;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
 	const float momentum = 0.9f;
 	const float weightDecay = 0.0005f;
 

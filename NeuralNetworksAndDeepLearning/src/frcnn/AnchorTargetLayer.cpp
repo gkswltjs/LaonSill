@@ -433,6 +433,15 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	this->_outputData[3]->reshape({1, A * 4, height, width});
 	this->_outputData[3]->print_data("bbox_outside_weights", {}, false);
 	//Data<Dtype>::printConfig = false;
+
+#if ANCHORTARGETLAYER_LOG
+	this->_printOn();
+	for (int i = 0; i < this->_outputData.size(); i++) {
+		this->_outputData[i]->print_data({}, false);
+	}
+	this->_printOff();
+#endif
+
 }
 
 template <typename Dtype>

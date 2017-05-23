@@ -55,22 +55,53 @@ ArtisticStyle<Dtype>::ArtisticStyle() {
 #else
 	//this->style_img			= "/home/jkim/Downloads/sampleR32G64B128.png";
 	//this->content_img		= "/home/jkim/Downloads/sampleR32G64B128.png";
-	this->style_img			= "/data/backup/artistic/starry_night.jpg";
-	this->content_img		= "/data/backup/artistic/johannesburg.jpg";
+	//this->style_img			= "/data/backup/artistic/starry_night.jpg";
+	//this->content_img		= "/data/backup/artistic/johannesburg.jpg";
+	this->style_img			= "/home/jkim/Backups/artistic/starry_night.jpg";
+	this->content_img		= "/home/jkim/Backups/artistic/tubingen_800.jpg";
+	//this->content_img		= "/home/jkim/Backups/artistic/johannesburg.jpg";
 #endif
+
+
+	cv::namedWindow("CONTENT IMAGE");
+
+
+
+
 
 	// 파이썬 기준 테스트를 위해 BGR2RGB COMMENT OUT
 	this->cv_img_style 		= cv::imread(this->style_img);
+
+	const string styleImageWindowName = "STYLE IMAGE";
+	cv::namedWindow(styleImageWindowName);
+	cv::moveWindow(styleImageWindowName, 0, 0);
+	cv::imshow(styleImageWindowName, this->cv_img_style);
+
+
 	this->cv_img_style.convertTo(this->cv_img_style, CV_32F);
 #if SOOOA
 	cv::cvtColor(this->cv_img_style, this->cv_img_style, CV_BGR2RGB);
 #endif
 
 	this->cv_img_content	= cv::imread(this->content_img);
+
+	const string contentImageWindowName = "CONTENT IMAGE";
+	cv::namedWindow(contentImageWindowName);
+	cv::moveWindow(contentImageWindowName, 0, this->cv_img_style.rows + 100);
+	cv::imshow("CONTENT IMAGE", this->cv_img_content);
+
+
+	cv::namedWindow("RESULT");
+	cv::moveWindow("RESULT", this->cv_img_content.cols + 10, this->cv_img_style.rows + 100);
+
 	this->cv_img_content.convertTo(this->cv_img_content, CV_32F);
 #if SOOOA
 	cv::cvtColor(this->cv_img_content, this->cv_img_content, CV_BGR2RGB);
 #endif
+
+
+
+
 
 	load_model();
 	rescale_net({1, 3, 224, 224});
@@ -102,7 +133,8 @@ ArtisticStyle<Dtype>::ArtisticStyle() {
 	cout << endl;
 
 	this->content_type = "content";
-	this->length	= 512;
+	//this->length	= 512;
+	this->length	= 800;
 	this->ratio		= 10000;
 	//this->ratio		= 1000;
 	//this->n_iter	= 512;
@@ -260,7 +292,7 @@ void ArtisticStyle<Dtype>::transfer_style() {
 	// optimize
 	Dtype loss = Dtype(0.0);
 	Data<Dtype>* img0Disp = new Data<Dtype>("img0Disp");
-	cv::namedWindow("result");
+	//cv::namedWindow("RESULT");
 
 	for (int i = 0; i < this->n_iter; i++) {
 		loss += style_optfn(img0);
@@ -324,7 +356,7 @@ void ArtisticStyle<Dtype>::transfer_style() {
 #if SOOOA
 			cv::cvtColor(result, result, CV_RGB2BGR);
 #endif
-			cv::imshow("result", result);
+			cv::imshow("RESULT", result);
 			cv::waitKey(1);
 			cout << "progress: (" << (i+1) << " / " << this->n_iter << ")" << endl;
 		}

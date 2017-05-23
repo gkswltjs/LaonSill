@@ -17,9 +17,29 @@
 typedef std::map<int, std::vector<NormalizedBBox>> LabelBBox;
 
 
+bool SortBBoxAscend(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2);
+
+bool SortBBoxDescend(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2);
+
+
+
+template <typename T>
+bool SortScorePairAscend(const std::pair<float, T>& pair1, const std::pair<float, T>& pair2);
+
+template <typename T>
+bool SortScorePairDescend(const std::pair<float, T>& pair1, const std::pair<float, T>& pair2);
+
+
 template <typename Dtype>
 void GetGroundTruth(const Dtype* gtData, const int numGt, const int backgroundLabelId,
-		const bool useDifficultGt, std::map<int, std::vector<NormalizedBBox>>* allGtBboxes);
+		const bool useDifficultGt, std::map<int, std::vector<NormalizedBBox>>* allGtBBoxes);
+
+template <typename Dtype>
+void GetGroundTruth(const Dtype* gtData, const int numGt, const int backgroundLabelId,
+		const bool useDifficultGt, std::map<int, LabelBBox>* allGtBBoxes);
+
+
+
 
 template <typename Dtype>
 void GetPriorBBoxes(const Dtype* priorData, const int numPriors,
@@ -59,6 +79,9 @@ void MatchBBox(const std::vector<NormalizedBBox>& gtBBoxes,
 
 float BBoxSize(const NormalizedBBox& bbox, const bool normalized = true);
 
+template <typename Dtype>
+Dtype BBoxSize(const Dtype* bbox, const bool normalized = true);
+
 void ClipBBox(const NormalizedBBox& bbox, NormalizedBBox* clipBBox);
 
 bool IsCrossBoundaryBBox(const NormalizedBBox& bbox);
@@ -68,6 +91,13 @@ void IntersectBBox(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2,
 
 float JaccardOverlap(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2,
 		const bool normalized = true);
+
+template <typename Dtype>
+Dtype JaccardOverlap(const Dtype* bbox1, const Dtype* bbox2);
+
+
+
+
 
 template <typename Dtype>
 void EncodeLocPrediction(const std::vector<LabelBBox>& allLocPreds,
@@ -107,6 +137,56 @@ void EncodeConfPrediction(const Dtype* confData, const int num, const int numPri
 		const std::vector<std::vector<int>>& allNegIndices,
 		const std::map<int, std::vector<NormalizedBBox>>& allGtBBoxes,
 		Dtype* confPredData, Dtype* confGtData);
+
+template <typename Dtype>
+void GetConfidenceScores(const Dtype* confData, const int num, const int numPredsPerClass,
+		const int numClasses, std::vector<std::map<int, std::vector<float>>>* confPreds);
+
+// Decode all bboxes in a batch.
+void DecodeBBoxesAll(const std::vector<LabelBBox>& allLocPreds,
+		const std::vector<NormalizedBBox>& priorBBoxes,
+		const std::vector<std::vector<float>>& priorVariances,
+		const int num, const bool shareLocation,
+		const int numLocClasses, const int backgroundLabelId,
+		const std::string& codeType, const bool varianceEncodedInTarget,
+		const bool clip, std::vector<LabelBBox>* allDecodeBBoxes);
+
+void ApplyNMSFast(const std::vector<NormalizedBBox>& bboxes, const std::vector<float>& scores,
+		const float scoreThreshold, const float nmsThreshold, const float eta,
+		const int topK, std::vector<int>* indices);
+
+template <typename Dtype>
+void ApplyNMSFast(const Dtype* bboxes, const Dtype* scores, const int num,
+		const float scoreThreshold, const float nmsThreshold, const float eta,
+		const int topK, std::vector<int>* indices);
+
+void OutputBBox(const NormalizedBBox& bbox, const std::pair<int, int>& imgSize,
+		const bool hasResize, NormalizedBBox* outBBox);
+
+std::vector<cv::Scalar> GetColors(const int n);
+
+template <typename Dtype>
+void VisualizeBBox(const std::vector<cv::Mat>& images, Data<Dtype>* detections,
+		const float threshold, const std::vector<cv::Scalar>& colors,
+		const std::map<int, std::string>& labelToDisplayName, const std::string& saveFile);
+
+template <typename Dtype>
+void GetDetectionResults(const Dtype* detData, const int numDet, const int backgroundLabelId,
+		std::map<int, LabelBBox>* allDetections);
+
+
+template <typename Dtype>
+void DecodeBBoxesGPU(const int nthreads, const Dtype* locData, const Dtype* priorData,
+		const std::string& codeType, const bool varianceEncodedInTarget,
+		const int numPriors, const bool shareLocation,
+		const int numLocClasses, const int backgroundLabelId,
+		const bool clipBBox, Dtype* bboxData);
+
+template <typename Dtype>
+void PermuteDataGPU(const int nthreads,
+		const Dtype* data, const int numClasses, const int numData,
+		const int numDim, Dtype* newData);
+
 
 
 #endif /* BBOXUTIL_H_ */

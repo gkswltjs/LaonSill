@@ -19,6 +19,7 @@
 #include <fstream>
 
 #include "frcnn_common.h"
+#include "ssd_common.h"
 #include "tinyxml2/tinyxml2.h"
 #include "IMDB.h"
 
@@ -29,14 +30,32 @@ using namespace cv;
 
 class PascalVOC : public IMDB {
 public:
-	PascalVOC(const std::string& imageSet, const std::string& year,
-			const std::string& devkitPath, const std::vector<float>& pixelMeans)
-        : IMDB("voc_" + year + "_" + imageSet) {
+	PascalVOC(const std::string& imageSet, const std::string& name,
+			const std::string& dataPath, const std::string& labelMapPath,
+			const std::vector<float>& pixelMeans)
+        : IMDB(name + "_" + imageSet),
+          labelMap(labelMapPath) {
 
-		this->year = year;
+		//this->year = year;
 		this->imageSet = imageSet;
-		this->devkitPath = devkitPath;
-		this->dataPath = devkitPath + "/VOC" + year;
+		//this->devkitPath = devkitPath;
+		//this->dataPath = devkitPath + "/VOC" + year;
+		this->dataPath = dataPath;
+		this->pixelMeans = pixelMeans;
+		//buildClassToInd();
+
+		this->labelMap.build();
+		this->labelMap.printLabelItemList();
+
+
+
+		this->imageExt = ".jpg";
+		loadImageSetIndex();
+	}
+
+	/*
+	void buildClassToInd() {
+
 		this->classes = {
 				"__background__",
 				"aeroplane", "bicycle", "bird", "boat",
@@ -45,19 +64,15 @@ public:
 				"motorbike", "person", "pottedplant",
 				"sheep", "sofa", "train", "tvmonitor"
 		};
-		this->pixelMeans = pixelMeans;
-		buildClassToInd();
-		this->imageExt = ".jpg";
-		loadImageSetIndex();
-	}
 
-	void buildClassToInd() {
+
 		for (uint32_t i = 0; i < numClasses; i++) {
-			printf("Label [%02d]: %s\n", i, classes[i].c_str());
-			classToInd[classes[i]] = i;
-			indToClass[i] = classes[i];
+			printf("Label [%02d]: %s\n", i, this->classes[i].c_str());
+			this->classToInd[this->classes[i]] = i;
+			this->indToClass[i] = this->classes[i];
 		}
 	}
+	*/
 
 	void loadImageSetIndex() {
 		std::string imageSetFile =
@@ -98,6 +113,8 @@ public:
 		Annotation annotation;
 		readAnnotation(filename, annotation);
 
+		//annotation.print();
+
 		roidb.image = imagePathAt(index);
 		roidb.width = annotation.size.width;
 		roidb.height = annotation.size.height;
@@ -123,10 +140,10 @@ public:
 		for (uint32_t i = 0; i < numObjs; i++) {
 			// boxes
 			roidb.boxes[i].resize(4);
-			roidb.boxes[i][0] = annotation.objects[i].xmin-1;	// xmin
-			roidb.boxes[i][1] = annotation.objects[i].ymin-1;	// ymin
-			roidb.boxes[i][2] = annotation.objects[i].xmax-1;	// xmax
-			roidb.boxes[i][3] = annotation.objects[i].ymax-1;	// ymax
+			roidb.boxes[i][0] = std::max(uint32_t(1), annotation.objects[i].xmin) - 1;	// xmin
+			roidb.boxes[i][1] = std::max(uint32_t(1), annotation.objects[i].ymin) - 1;	// ymin
+			roidb.boxes[i][2] = std::max(uint32_t(1), annotation.objects[i].xmax) - 1;	// xmax
+			roidb.boxes[i][3] = std::max(uint32_t(1), annotation.objects[i].ymax) - 1;	// ymax
 
 			// gt_classes
 			roidb.gt_classes[i] = annotation.objects[i].label;
@@ -173,8 +190,10 @@ public:
                 annotationNode->FirstChildElement("object"); objectElement != 0;
 				objectElement = objectElement->NextSiblingElement("object")) {
 			Object object;
-			object.name = objectElement->FirstChildElement("name")->GetText();
-			object.label = convertClassToInd(object.name);
+			//object.name = objectElement->FirstChildElement("name")->GetText();
+			//object.label = convertClassToInd(object.name);
+			object.label = atoi(objectElement->FirstChildElement("name")->GetText());
+			object.name = convertIndToClass(object.label);
 			objectElement->FirstChildElement("difficult")
                          ->QueryIntText((int*)&object.difficult);
 
@@ -193,22 +212,30 @@ public:
 #endif
 	}
 
+
 	uint32_t convertClassToInd(const std::string& cls) {
+		return this->labelMap.convertLabelToInd(cls);
+
+		/*
 		std::map<std::string, uint32_t>::iterator itr = classToInd.find(cls);
 		if (itr == classToInd.end()) {
 			std::cout << "invalid class: " << cls << std::endl;
 			exit(1);
 		}
 		return itr->second;
+		*/
 	}
 
 	std::string convertIndToClass(const uint32_t ind) {
+		return this->labelMap.convertIndToLabel(ind);
+		/*
 		std::map<uint32_t, std::string>::iterator itr = indToClass.find(ind);
 		if (itr == indToClass.end()) {
 			std::cout << "invalid class ind: " << ind << std::endl;
 			exit(1);
 		}
 		return itr->second;
+		*/
 	}
 
 	void getWidths(std::vector<uint32_t>& widths) {
@@ -235,22 +262,23 @@ private:
 	}
 
 	//IMDB imdb;
-	std::string year;
+	//std::string year;
 	std::string imageSet;
-	std::string devkitPath;
 	std::string dataPath;
-	std::map<std::string, uint32_t> classToInd;
-	std::map<uint32_t, std::string> indToClass;
+	//std::map<std::string, uint32_t> classToInd;
+	//std::map<uint32_t, std::string> indToClass;
 	std::string imageExt;
 	//std::vector<std::string> imageIndex;
 	std::vector<uint32_t> widths;
 
 	const uint32_t numClasses = 21;
-	std::vector<std::string> classes;
+	//std::vector<std::string> classes;
 
 	//std::vector<cv::Mat> matList;
 
 	std::vector<float> pixelMeans;
+
+	LabelMap<float> labelMap;
 };
 
 #endif /* PASCALVOC_H_ */

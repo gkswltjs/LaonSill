@@ -25,6 +25,8 @@
 #include "PriorBoxLayer.h"
 #include "ConcatLayer.h"
 #include "MultiBoxLossLayer.h"
+#include "DetectionOutputLayer.h"
+#include "DetectionEvaluateLayer.h"
 
 
 #include <opencv2/core/core.hpp>
@@ -499,7 +501,7 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(builder));
 #endif
 
-#if 1
+#if 0
 	ConcatLayer<float>::Builder* builder =
 			new typename ConcatLayer<float>::Builder();
 	builder->id(0)
@@ -544,6 +546,49 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(builder));
 #endif
 
+#if 1
+	DetectionOutputLayer<float>::Builder* builder =
+			new typename DetectionOutputLayer<float>::Builder();
+	builder->id(0)
+			->name("detection_out")
+			->numClasses(21)
+			->shareLocation(true)
+			->backgroundLabelId(0)
+			->nmsThreshold(0.449999988079)
+			->topK(400)
+			->outputDirectory("/home/jkim/Dev/data/ssd/data/VOCdevkit/results/VOC2007/SSD_300x300/Main")
+			->outputNamePrefix("comp4_det_test_")
+			->outputFormat("VOC")
+			->labelMapFile("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt")
+			->nameSizeFile("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/test_name_size.txt")
+			->numTestImage(4952)
+			->codeType("CENTER_SIZE")
+			->keepTopK(200)
+			->confidenceThreshold(0.00999999977648)
+			->visualize(true)
+			->propDown({false, false, false, false})
+			->inputs({"mbox_loc", "mbox_conf_flatten", "mbox_priorbox", "data_data_0_split_7"})
+			->outputs({"detection_out"});
+
+	layerTestList.push_back(new LayerTest<float>(builder));
+#endif
+
+#if 0
+	DetectionEvaluateLayer<float>::Builder* builder =
+			new typename DetectionEvaluateLayer<float>::Builder();
+	builder->id(0)
+			->name("detection_eval")
+			->numClasses(21)
+			->backgroundLabelId(0)
+			->overlapThreshold(0.5)
+			->evaluateDifficultGt(false)
+			->nameSizeFile("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/test_name_size.txt")
+			->propDown({false, false})
+			->inputs({"detection_out", "label"})
+			->outputs({"detection_eval"});
+
+	layerTestList.push_back(new LayerTest<float>(builder));
+#endif
 
 	LayerTestInterface<float>::globalSetUp(gpuid);
 	for (uint32_t i = 0; i < layerTestList.size(); i++) {
@@ -619,7 +664,7 @@ void networkTest() {
 	const string networkName		= "frcnn";
 	const NetworkPhase networkPhase	= NetworkPhase::TestPhase;
 #elif NETWORK == NETWORK_SSD
-	const int numSteps = 1;
+	const int numSteps = 2;
 
 	LayersConfig<float>* layersConfig = createSSDNetLayersConfig<float>();
 	const string networkName		= "ssd";
@@ -628,6 +673,7 @@ void networkTest() {
 	const float weightDecay 		= 0.0005;
 	//const float baseLearningRate 	= 1;
 	//const float weightDecay 		= 0.000;
+	//const float momentum 			= 0.0;
 	const float momentum 			= 0.0;
 	const LRPolicy lrPolicy 		= LRPolicy::Fixed;
 	const int stepSize 				= 50000;

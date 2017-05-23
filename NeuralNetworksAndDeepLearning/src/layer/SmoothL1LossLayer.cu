@@ -138,20 +138,20 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 			this->diff->mutable_device_data());		// d := b0 - b1
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->_inputData[0]->print_data({}, false, -1);
 	this->_inputData[1]->print_data({}, false, -1);
 	this->diff->print_data({}, false, -1);
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 #endif
 
 	if (hasWeights) {
 
 #if SMOOTHL1LOSSLAYER_LOG
-		Data<Dtype>::printConfig = true;
+		this->_printOn();
 		this->_inputData[2]->print_data({}, false, -1);
 		this->diff->print_data({}, false, -1);
-		Data<Dtype>::printConfig = false;
+		this->_printOff();
 #endif
 		// apply "inside" weights
 		soooa_gpu_mul(
@@ -161,9 +161,9 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 				diff->mutable_device_data());	// d := w_in * (b0 - b1)
 
 #if SMOOTHL1LOSSLAYER_LOG
-		Data<Dtype>::printConfig = true;
+		this->_printOn();
 		this->diff->print_data({}, false, -1);
-		Data<Dtype>::printConfig = false;
+		this->_printOff();
 #endif
 
 	}
@@ -174,19 +174,19 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 	CUDA_POST_KERNEL_CHECK;
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->diff->print_data({}, false, -1);
 	this->errors->print_data({}, false, -1);
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 #endif
 
 	if (hasWeights) {
 
 #if SMOOTHL1LOSSLAYER_LOG
-		Data<Dtype>::printConfig = true;
+		this->_printOn();
 		this->_inputData[3]->print_data({}, false, -1);
 		this->errors->print_data({}, false, -1);
-		Data<Dtype>::printConfig = false;
+		this->_printOff();
 #endif
 
 		// apply "outside" weights
@@ -197,9 +197,9 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 				errors->mutable_device_data());	// d := w_out * SmoothL1(w_in * (b0 - b1))
 
 #if SMOOTHL1LOSSLAYER_LOG
-		Data<Dtype>::printConfig = true;
+		this->_printOn();
 		this->errors->print_data({}, false, -1);
-		Data<Dtype>::printConfig = false;
+		this->_printOff();
 #endif
 	}
 
@@ -209,6 +209,12 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 			this->_inputData[0]->getShape(this->firstAxis);
 	//this->_outputData[0]->mutable_host_data()[0] = loss * Dtype(this->lossWeight);
 	//cout << "smoothl1loss: " << this->_outputData[0]->host_data()[0] << endl;
+
+#if SMOOTHL1LOSSLAYER_LOG
+	this->_printOn();
+	this->_outputData[0]->print_data({}, false);
+	this->_printOff();
+#endif
 }
 
 

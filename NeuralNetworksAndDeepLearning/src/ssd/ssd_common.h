@@ -9,6 +9,92 @@
 #define SSD_COMMON_H_
 
 #include <iostream>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+
+template <typename Dtype>
+class BoundingBox {
+public:
+	void print();
+public:
+	std::string name;
+	int label;
+	// unnormalized coords
+	int xmin;
+	int ymin;
+	int xmax;
+	int ymax;
+
+	int diff;
+
+	// normalized coords, ready for use
+	Dtype buf[8];
+};
+
+// Obejct Detection Raw Data
+template <typename Dtype>
+class ODRawData {
+public:
+	void print();
+	void displayBoundingBoxes(const std::string& baseDataPath,
+			std::vector<cv::Scalar>& colorList);
+public:
+	cv::Mat im;
+	std::string imPath;
+	std::string annoPath;
+
+	int width;
+	int height;
+	int depth;
+
+	std::vector<BoundingBox<Dtype>> boundingBoxes;
+};
+
+// Object Detection Meta Data
+template <typename Dtype>
+class ODMetaData {
+public:
+	int rawIdx;
+	bool flip;
+};
+
+template <typename Dtype>
+class LabelMap {
+public:
+	class LabelItem {
+	public:
+		void print();
+	public:
+		std::string name;
+		int label;
+		std::string displayName;
+	};
+
+
+public:
+	LabelMap();
+	LabelMap(const std::string& labelMapPath);
+	void build();
+
+	void setLabelMapPath(const std::string& labelMapPath);
+
+	int convertLabelToInd(const std::string& label);
+	std::string convertIndToLabel(int ind);
+
+	void mapLabelToName(std::map<int, std::string>& labelToName);
+
+	void printLabelItemList();
+
+public:
+	std::string labelMapPath;
+	std::vector<LabelItem> labelItemList;
+	std::map<std::string, int> labelToIndMap;
+	std::map<int, std::string> indToLabelMap;
+	std::vector<cv::Scalar> colorList;
+};
+
 
 // The normalized bounding box [0, 1] w.r.t. the input image size
 class NormalizedBBox {

@@ -29,6 +29,10 @@ RoIInputLayer<Dtype>::RoIInputLayer(Builder* builder)
 : InputLayer<Dtype>(builder) {
 	this->numClasses = builder->_numClasses;
 	this->pixelMeans = builder->_pixelMeans;
+	this->imageSet = builder->_imageSet;
+	this->dataName = builder->_dataName;
+	this->dataPath = builder->_dataPath;
+	this->labelMapPath = builder->_labelMapPath;
 
 	initialize();
 }
@@ -40,14 +44,15 @@ RoIInputLayer<Dtype>::~RoIInputLayer() {
 
 template <typename Dtype>
 void RoIInputLayer<Dtype>::initialize() {
-	imdb = combinedRoidb("voc_2007_trainval");
+	//imdb = combinedRoidb("voc_2007_trainval");
+	this->imdb = combinedRoidb();
 
-	cout << imdb->roidb.size() << " roidb entries ... " << endl;
+	cout << this->imdb->roidb.size() << " roidb entries ... " << endl;
 
-	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, imdb->roidb.size(), 50, 1);
+	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, this->imdb->roidb.size(), 50, 1);
 
 	// Train a Fast R-CNN network.
-	filterRoidb(imdb->roidb);
+	filterRoidb(this->imdb->roidb);
 
 	cout << "Computing bounding-box regression targets ... " << endl;
 	RoIDBUtil::addBboxRegressionTargets(imdb->roidb, this->bboxMeans, this->bboxStds);
@@ -233,10 +238,11 @@ void RoIInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end
 
 
 template <typename Dtype>
-IMDB* RoIInputLayer<Dtype>::getImdb(const string& imdb_name) {
-	IMDB* imdb = new PascalVOC("trainval", "2007",
-			"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
-			this->pixelMeans);
+IMDB* RoIInputLayer<Dtype>::getImdb() {
+	//IMDB* imdb = new PascalVOC("trainval", "2007",
+	//		"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
+	IMDB* imdb = new PascalVOC(this->imageSet, this->dataName, this->dataPath,
+			this->labelMapPath, this->pixelMeans);
 	imdb->loadGtRoidb();
 
 	return imdb;
@@ -254,8 +260,8 @@ void RoIInputLayer<Dtype>::getTrainingRoidb(IMDB* imdb) {
 }
 
 template <typename Dtype>
-IMDB* RoIInputLayer<Dtype>::getRoidb(const string& imdb_name) {
-	IMDB* imdb = getImdb(imdb_name);
+IMDB* RoIInputLayer<Dtype>::getRoidb() {
+	IMDB* imdb = getImdb();
 	cout << "Loaded dataset " << imdb->name << " for training ... " << endl;
 	getTrainingRoidb(imdb);
 
@@ -263,8 +269,8 @@ IMDB* RoIInputLayer<Dtype>::getRoidb(const string& imdb_name) {
 }
 
 template <typename Dtype>
-IMDB* RoIInputLayer<Dtype>::combinedRoidb(const string& imdb_name) {
-	IMDB* imdb = getRoidb(imdb_name);
+IMDB* RoIInputLayer<Dtype>::combinedRoidb() {
+	IMDB* imdb = getRoidb();
 	return imdb;
 }
 
@@ -346,6 +352,10 @@ void RoIInputLayer<Dtype>::shuffleRoidbInds() {
 	this->cur = 0;
 }
 
+
+
+
+
 template <typename Dtype>
 void RoIInputLayer<Dtype>::getNextMiniBatch() {
 	// Return the blobs to be used for the next minibatch.
@@ -362,16 +372,24 @@ void RoIInputLayer<Dtype>::getNextMiniBatch() {
 	}
 
 
+
 	/*
+	cout << "image: " << imdb->roidb[inds[0]].image << endl;
 	uint32_t index = inds[0];
 	cout << "flipped: " << imdb->roidb[index].flipped << endl;
 	vector<string> boxLabelsText;
-	for (uint32_t i = 0; i < imdb->roidb[index].boxes.size(); i++)
+	for (uint32_t i = 0; i < imdb->roidb[index].boxes.size(); i++) {
 		boxLabelsText.push_back(imdb->convertIndToClass(imdb->roidb[index].gt_classes[i]));
+	}
+	RoIDB& roidb = imdb->roidb[index];
+	cv::Mat im = cv::imread(roidb.image, CV_LOAD_IMAGE_COLOR);
+	if (roidb.flipped) {
+		cv::flip(im, im, 1);
+	}
+	displayBoxesOnImage("INPUT DATA", im, 1, roidb.boxes,
+					roidb.gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
+					*/
 
-	displayBoxesOnImage("TRAIN_GT", imdb->roidb[index].getMat(), 1, imdb->roidb[index].boxes,
-			imdb->roidb[index].gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
-			*/
 
 	getMiniBatch(minibatchDb, inds);
 }
@@ -442,9 +460,6 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 	assert(imScales.size() == 1);	// Single batch only
 	assert(roidb.size() == 1);		// Single batch only
 
-
-
-
 	if (TRAIN_HAS_RPN) {
 		// gt boxes: (x1, y1, x2, y2, cls)
 		vector<uint32_t> gtInds;
@@ -455,11 +470,12 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 		for (uint32_t i = 0; i < numGtInds; i++) {
 			gt_boxes[i].resize(5);
 			gt_boxes[i][0] = roidb[0].boxes[gtInds[i]][0] * imScales[0];
-			gt_boxes[i][1] = roidb[0].boxes[gtInds[i]][1] * imScales[0];;
-			gt_boxes[i][2] = roidb[0].boxes[gtInds[i]][2] * imScales[0];;
-			gt_boxes[i][3] = roidb[0].boxes[gtInds[i]][3] * imScales[0];;
+			gt_boxes[i][1] = roidb[0].boxes[gtInds[i]][1] * imScales[0];
+			gt_boxes[i][2] = roidb[0].boxes[gtInds[i]][2] * imScales[0];
+			gt_boxes[i][3] = roidb[0].boxes[gtInds[i]][3] * imScales[0];
 			gt_boxes[i][4] = roidb[0].gt_classes[gtInds[i]];
 		}
+
 
 		// 벡터를 Data로 변환하는 유틸이 필요!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
 		// im_info
@@ -475,13 +491,11 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
             {1, 1, (uint32_t)gt_boxes.size(), (uint32_t)gt_boxes[0].size()};
 
 
-
 		/*
 		// 최종 scale된 input image, bounding box를 display
 		vector<string> boxLabelsText;
 		for (uint32_t j = 0; j < roidb[0].boxes.size(); j++)
 			boxLabelsText.push_back(imdb->convertIndToClass(roidb[0].gt_classes[j]));
-
 		displayBoxesOnImage("INPUT DATA", processedIms[0], 1, gt_boxes,
 				roidb[0].gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
 				*/
@@ -536,7 +550,7 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 	const uint32_t numImages = roidb.size();
 	for (uint32_t i = 0; i < numImages; i++) {
 		cv::Mat im = roidb[i].getMat();
-#if !ROIINPUTLAYER_LOG
+#if ROIINPUTLAYER_LOG
 		cout << "image: " << roidb[i].image.substr(roidb[i].image.length()-10) <<
 				" (" << im.rows << "x" << im.cols << ")" << ", flip: " << roidb[i].flipped;
 		//cout << "original: " << ((float*)im.data) << endl;
@@ -573,8 +587,8 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 		float imScale = prepImForBlob(im, imResized, this->pixelMeans, targetSize,
 				TRAIN_MAX_SIZE);
 
-		cout << " -> <" << targetSize << ", " << imScale << "> (" <<
-				imResized.rows << "x" << imResized.cols << ")" << endl;
+		//cout << " -> <" << targetSize << ", " << imScale << "> (" <<
+		//		imResized.rows << "x" << imResized.cols << ")" << endl;
 		//cout << "after: " << ((float*)im.data) << ", " << ((float*)imResized.data) << endl;
 		/*
 		string windowName2 = "im purity test result";

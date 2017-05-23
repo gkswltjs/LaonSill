@@ -106,27 +106,31 @@ public:
 			// feedforward
 			logStartTest("FEED FORWARD");
 			forward(i);
-			dataTest(i);
+			//dataTest(i);
 			logEndTest("FEED FORWARD");
-
+			/*
+			typename std::map<std::string, Layer<Dtype>*>::iterator itr =
+					this->layersConfig->_nameLayerMap.find("mbox_loss");
+			printDataList(itr->second->_outputData);
+			exit(1);
+			*/
 
 			// backpropagation
 			replaceDataWithGroundTruth(i);
-
 			logStartTest("BACK PROPAGATION");
 			backward();
-			gradTest(i);
+			//gradTest(i);
 			logEndTest("BACK PROPAGATION");
 
-
 			// update & compare result
-			replaceGradWithGroundTruth(i);
-			replaceParamWithGroundTruth(i);
+			//replaceGradWithGroundTruth(i);
 
 			logStartTest("UPDATE");
 			update();
 			paramTest(i);
 			logEndTest("UPDATE");
+
+			replaceParamWithGroundTruth(i+1, 0);
 		}
 	}
 
@@ -280,11 +284,15 @@ private:
 			*/
 
 			// test final params
-			if (!compareParam(this->nameParamsMapList[nthStep + 1],
-					learnableLayer->name + SIG_PARAMS, learnableLayer->_params, 0)) {
+			bool result = false;
+			result = compareParam(this->nameParamsMapList[nthStep + 1],
+					learnableLayer->name + SIG_PARAMS, learnableLayer->_params, 0);
+			result = compareParam(this->nameParamsMapList[nthStep + 1],
+					learnableLayer->name + SIG_PARAMS, learnableLayer->_params, 1);
+
+			if (!result) {
 				std::cout << "[ERROR] update failed at layer " << learnableLayer->name <<
 						std::endl;
-				//exit(1);
 			} else {
 				std::cout << "update succeed at layer " << learnableLayer->name << std::endl;
 			}
@@ -304,7 +312,8 @@ private:
 		}
 		typename std::map<std::string, Layer<Dtype>*>::iterator itr =
 				this->layersConfig->_nameLayerMap.find("mbox_loss");
-		itr->second->_outputData[0]->mutable_host_data()[0] = 3.01521993f;
+		//itr->second->_outputData[0]->mutable_host_data()[0] = 3.01521993f;
+		itr->second->_outputData[0]->mutable_host_data()[0] = 25.01589775f;
 		itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
 	}
 
@@ -321,7 +330,10 @@ private:
 		}
 	}
 
-	void replaceParamWithGroundTruth(int stepIdx) {
+	void replaceParamWithGroundTruth(int stepIdx, int type) {
+		SASSERT0(stepIdx >= 0);
+		SASSERT0(type == 0 || type == 1);
+
 		std::vector<LearnableLayer<Dtype>*>& learnableLayers =
 				this->layersConfig->_learnableLayers;
 		for (int i = 0; i < learnableLayers.size(); i++) {
@@ -331,28 +343,17 @@ private:
 				Data<float>* param =
 						retrieveValueFromMap(this->nameParamsMapList[stepIdx], key);
 				SASSERT0(param != 0);
-				learnableLayer->_params[j]->set_host_grad(param, 0, false);
+				switch(type) {
+				case 0:
+					learnableLayer->_params[j]->set_host_data(param, 0, false);
+					break;
+				case 1:
+					learnableLayer->_params[j]->set_host_grad(param, 0, false);
+					break;
+				}
 			}
 		}
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	void logStartTest(const std::string& testName) {
 		cout << "<<< " + testName + " TEST ... -------------------------------" << endl;
