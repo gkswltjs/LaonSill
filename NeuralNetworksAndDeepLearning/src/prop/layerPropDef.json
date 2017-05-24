@@ -313,6 +313,187 @@
     "LEVEL" : 1,
     "LEARN" : false,
     "VARS" : []
+},
+
+"DepthConcat" : 
+{
+    "DESC" : "depth concat layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : []
+},
+
+"DummyInput" : 
+{
+    "DESC" : "dummy input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" : []
+},
+
+"LRN" : 
+{
+    "DESC" : "lrn layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["localSize", "uint32_t", "5"],
+	    ["alpha", "double", "0.0001"],
+	    ["beta", "double", "0.75"],
+	    ["k", "double", "2.0"]
+	]
+},
+
+"Pooling" : 
+{
+    "DESC" : "pooling layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["rows", "uint32_t", "1"],
+	    ["cols", "uint32_t", "1"],
+	    ["pad", "uint32_t", "0"],
+	    ["stride", "uint32_t", "1"],
+	    ["poolingType", "int", "PoolingType::Max"]
+	]
+},
+
+"Reshape" : 
+{
+    "DESC" : "reshape layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["shape", "std::vector<std::string>", ""],
+	    ["axis", "int", "0"],
+	    ["numAxis", "int", "-1"]
+	]
+},
+
+"SmoothL1Loss" : 
+{
+    "DESC" : "smooth l1 loss layer",
+    "PARENT" : "Loss",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["sigma", "float", "1.0"],
+	    ["firstAxis", "uint32_t", "0"]
+	]
+},
+
+"Softmax" : 
+{
+    "DESC" : "softmax layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["softmaxAxis", "uint32_t", "2"]
+	]
+},
+
+"AnchorTarget" : 
+{
+    "DESC" : "anchor target layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["featStride", "uint32_t", "16"],
+	    ["allowedBorder", "uint32_t", "0"],
+	    ["scales", "std::vector<uint32_t>", "{8, 16, 32},"]
+	]
+},
+
+"FrcnnTestOutput" : 
+{
+    "DESC" : "frcnn test output layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["maxPerImage", "uint32_t", "100"],
+	    ["thresh", "float", "0.05"],
+	    ["vis", "bool", "false"]
+	]
+},
+
+"Proposal" : 
+{
+    "DESC" : "proposal layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["featStride", "uint32_t", "16"],
+	    ["scales", "std::vector<uint32_t>", "{8, 16, 32},"]
+	]
+},
+
+"ProposalTarget" : 
+{
+    "DESC" : "proposal target layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["numClasses", "uint32_t", "0"]
+	]
+},
+
+"RoIInput" : 
+{
+    "DESC" : "roi input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["numClasses", "uint32_t", "0"],
+	    ["pixelMeans", "std::vector<float>", ""]
+	]
+},
+
+"RoIPooling" : 
+{
+    "DESC" : "roi pooling layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["pooledW", "uint32_t", "6"],
+	    ["pooledH", "uint32_t", "6"],
+	    ["spatialScale", "float", "0.0625"]
+	]
+},
+
+"RoITestInput" : 
+{
+    "DESC" : "roi test input",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" : 
+	[
+	    ["numClasses", "uint32_t", "0"],
+	    ["pixelMeans", "std::vector<float>", ""]
+	]
 }
 
 }

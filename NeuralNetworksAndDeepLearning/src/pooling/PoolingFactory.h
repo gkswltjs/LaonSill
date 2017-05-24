@@ -26,11 +26,11 @@ public:
 	virtual ~PoolingFactory() {}
 
 #ifndef GPU_MODE
-	static Pooling *create(Pooling<Dtype>::Type poolingType) {
+	static Pooling *create(PoolingType poolingType) {
 		switch(poolingType) {
-		case Pooling<Dtype>::Max: return new MaxPooling<Dtype>();
-		case Pooling<Dtype>::Avg: return new AvgPooling<Dtype>();
-		case Pooling<Dtype>::None:
+		case PoolingType::Max: return new MaxPooling<Dtype>();
+		case PoolingType::Avg: return new AvgPooling<Dtype>();
+		case PoolingType::None:
 		default: return 0;
 		}
 	}
@@ -41,11 +41,10 @@ public:
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 * @return 생성한 풀링 객체.
 	 */
-	static Pooling<Dtype>* create(typename Pooling<Dtype>::Type poolingType,
-        pool_dim pool_d) {
+	static Pooling<Dtype>* create(PoolingType poolingType, pool_dim pool_d) {
 		switch(poolingType) {
-		case Pooling<Dtype>::Max: return new MaxPooling<Dtype>(pool_d);
-		case Pooling<Dtype>::Avg: return new AvgPooling<Dtype>(pool_d);
+		case PoolingType::Max: return new MaxPooling<Dtype>(pool_d);
+		case PoolingType::Avg: return new AvgPooling<Dtype>(pool_d);
 		default: return NULL;
 		}
 	}

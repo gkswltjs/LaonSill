@@ -59,6 +59,7 @@ public:
 		}
 	};
 
+	ProposalLayer(const std::string& name);
 	ProposalLayer(Builder* builder);
 	virtual ~ProposalLayer();
 
@@ -76,6 +77,19 @@ private:
 	uint32_t numAnchors;
 	std::vector<uint32_t> scales;
 	std::vector<std::vector<float>> anchors;
+
+
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* PROPOSALLAYER_H_ */

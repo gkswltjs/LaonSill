@@ -11,6 +11,12 @@
 using namespace std;
 
 template <typename Dtype>
+LRNLayer<Dtype>::LRNLayer(const string& name)
+: Layer<Dtype>(name) {
+
+}
+
+template <typename Dtype>
 LRNLayer<Dtype>::LRNLayer(Builder* builder) : Layer<Dtype>(builder) {
 	initialize(builder->_lrnDim);
 }

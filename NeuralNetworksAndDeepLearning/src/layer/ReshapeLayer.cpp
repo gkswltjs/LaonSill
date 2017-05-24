@@ -11,11 +11,18 @@
 #include <vector>
 
 #include "ReshapeLayer.h"
+#include "PropMgmt.h"
 #include "Util.h"
 
 #define RESHAPELAYER_LOG 0
 
 using namespace std;
+
+template <typename Dtype>
+ReshapeLayer<Dtype>::ReshapeLayer(const std::string& name)
+: Layer<Dtype>(name) {
+
+}
 
 template <typename Dtype>
 ReshapeLayer<Dtype>::ReshapeLayer(Builder* builder)
@@ -146,6 +153,71 @@ void ReshapeLayer<Dtype>::initialize() {
 
 
 template class ReshapeLayer<float>;
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* ReshapeLayer<Dtype>::initLayer() {
+    ReshapeLayer* layer = new ReshapeLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void ReshapeLayer<Dtype>::destroyLayer(void* instancePtr) {
+    ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void ReshapeLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool ReshapeLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void ReshapeLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "ReshapeLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void ReshapeLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "ReshapeLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void ReshapeLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "ReshapeLayer.. learn()" << endl;
+}
+
+template void* ReshapeLayer<float>::initLayer();
+template void ReshapeLayer<float>::destroyLayer(void* instancePtr);
+template void ReshapeLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool ReshapeLayer<float>::allocLayerTensors(void* instancePtr);
+template void ReshapeLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void ReshapeLayer<float>::backwardTensor(void* instancePtr);
+template void ReshapeLayer<float>::learnTensor(void* instancePtr);
 
 
 

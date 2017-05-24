@@ -15,12 +15,18 @@
 #include "frcnn_common.h"
 #include "RoIDBUtil.h"
 #include "MockDataSet.h"
+#include "PropMgmt.h"
 
 
 #define ROITESTINPUTLAYER_LOG 0
 
 using namespace std;
-using namespace cv;
+
+template <typename Dtype>
+RoITestInputLayer<Dtype>::RoITestInputLayer(const string& name)
+: InputLayer<Dtype>(name) {
+
+}
 
 template <typename Dtype>
 RoITestInputLayer<Dtype>::RoITestInputLayer(Builder* builder)
@@ -172,7 +178,7 @@ void RoITestInputLayer<Dtype>::getNextMiniBatch() {
 	uint32_t index = this->perm[this->cur];
 
 	const string imagePath = imdb->imagePathAt(index);
-	Mat im = cv::imread(imagePath);
+	cv::Mat im = cv::imread(imagePath);
 	//showImageMat(im, false);
 	cout << "test image: " << imagePath <<
 			" (" << im.rows << "x" << im.cols << ")" << endl;
@@ -244,7 +250,7 @@ void RoITestInputLayer<Dtype>::imDetect(cv::Mat& im) {
 }
 
 template <typename Dtype>
-void RoITestInputLayer<Dtype>::imToBlob(Mat& im) {
+void RoITestInputLayer<Dtype>::imToBlob(cv::Mat& im) {
 	// Convert a list of images into a network input.
 	// Assumes images are already prepared (means subtracted, BGR order, ...)
 
@@ -293,5 +299,75 @@ template<typename Dtype>
 void RoITestInputLayer<Dtype>::shuffleTrainDataSet() {
     return this->_dataSet->shuffleTrainDataSet();
 }
+
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* RoITestInputLayer<Dtype>::initLayer() {
+    RoITestInputLayer* layer = new RoITestInputLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void RoITestInputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void RoITestInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool RoITestInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void RoITestInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "RoITestInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void RoITestInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "RoITestInputLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void RoITestInputLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "RoITestInputLayer.. learn()" << endl;
+}
+
+template void* RoITestInputLayer<float>::initLayer();
+template void RoITestInputLayer<float>::destroyLayer(void* instancePtr);
+template void RoITestInputLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool RoITestInputLayer<float>::allocLayerTensors(void* instancePtr);
+template void RoITestInputLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void RoITestInputLayer<float>::backwardTensor(void* instancePtr);
+template void RoITestInputLayer<float>::learnTensor(void* instancePtr);
+
+
+
+
 
 template class RoITestInputLayer<float>;

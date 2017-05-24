@@ -69,6 +69,7 @@ public:
 		}
 	};
 
+	LRNLayer(const std::string& name);
 	LRNLayer(Builder* builder);
 
 	/**
@@ -95,6 +96,19 @@ protected:
 	cudnnTensorDescriptor_t outputTensorDesc;	///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 	cudnnLRNDescriptor_t lrnDesc;				///< cudnn LRN 연산 정보 구조체
 #endif
+
+
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 
 };
 

@@ -9,6 +9,13 @@
 
 using namespace std;
 
+
+template <typename Dtype>
+PoolingLayer<Dtype>::PoolingLayer(const string& name)
+: Layer<Dtype>(name) {
+
+}
+
 template <typename Dtype>
 PoolingLayer<Dtype>::PoolingLayer(Builder* builder)
 	: Layer<Dtype>(builder) {
@@ -23,9 +30,8 @@ PoolingLayer<Dtype>::~PoolingLayer() {
 }
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::initialize(pool_dim pool_d,
-    typename Pooling<Dtype>::Type poolingType) {
-	this->type = Layer<Dtype>::Pool;
+void PoolingLayer<Dtype>::initialize(pool_dim pool_d, PoolingType poolingType) {
+	this->type = Layer<Dtype>::Pooling;
 	this->pool_d = pool_d;
 	this->pooling_fn = PoolingFactory<Dtype>::create(poolingType, pool_d);
 
@@ -36,8 +42,8 @@ void PoolingLayer<Dtype>::initialize(pool_dim pool_d,
 #ifndef GPU_MODE
 template <typename Dtype>
 void PoolingLayer<Dtype>::initialize(pool_dim pool_d,
-    typename Pooling<Dtype>::Type poolingType) {
-	this->type = Layer<Dtype>::Pool;
+    typename PoolingType poolingType) {
+	this->type = Layer<Dtype>::Pooling;
 
 	this->out_dim.rows = in_dim.rows / pool_d.rows;
 	this->out_dim.cols = in_dim.rows / pool_d.cols;

@@ -91,6 +91,8 @@ public:
 
 	LossLayer()
 		: Layer<Dtype>() {}
+	LossLayer(const std::string& name)
+		: Layer<Dtype>(name) {}
 	LossLayer(Builder* builder)
 		: Layer<Dtype>(builder) {
 

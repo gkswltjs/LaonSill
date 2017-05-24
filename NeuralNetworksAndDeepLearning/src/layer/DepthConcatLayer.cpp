@@ -6,10 +6,17 @@
  */
 
 #include "DepthConcatLayer.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
 //#define DEPTHCONCAT_LOG
+
+template <typename Dtype>
+DepthConcatLayer<Dtype>::DepthConcatLayer(const std::string& name)
+: Layer<Dtype>(name) {
+
+}
 
 template <typename Dtype>
 DepthConcatLayer<Dtype>::DepthConcatLayer(Builder* builder)
@@ -155,3 +162,70 @@ void DepthConcatLayer<Dtype>::backpropagation(uint32_t idx, Layer<Dtype>* next_l
 #endif
 
 template class DepthConcatLayer<float>;
+
+
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* DepthConcatLayer<Dtype>::initLayer() {
+    DepthConcatLayer<Dtype>* layer = new DepthConcatLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void DepthConcatLayer<Dtype>::destroyLayer(void* instancePtr) {
+    DepthConcatLayer<Dtype>* layer = (DepthConcatLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void DepthConcatLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    DepthConcatLayer<Dtype>* layer = (DepthConcatLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool DepthConcatLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    DepthConcatLayer<Dtype>* layer = (DepthConcatLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void DepthConcatLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "DepthConcatLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void DepthConcatLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "DepthConcatLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void DepthConcatLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "DepthConcatLayer.. learn()" << endl;
+}
+
+template void* DepthConcatLayer<float>::initLayer();
+template void DepthConcatLayer<float>::destroyLayer(void* instancePtr);
+template void DepthConcatLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool DepthConcatLayer<float>::allocLayerTensors(void* instancePtr);
+template void DepthConcatLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void DepthConcatLayer<float>::backwardTensor(void* instancePtr);
+template void DepthConcatLayer<float>::learnTensor(void* instancePtr);

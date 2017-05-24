@@ -62,7 +62,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
                 ->id(1004)
                 ->name("pool1_1")
                 ->poolDim(2, 2, 0, 2)
-                ->poolingType(Pooling<Dtype>::Max)
+                ->poolingType(PoolingType::Max)
                 ->inputs({"bn1_1"})
                 ->outputs({"pool1_1"}))
 
@@ -96,7 +96,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
                 ->id(2004)
                 ->name("pool2_1")
                 ->poolDim(2, 2, 0, 2)
-                ->poolingType(Pooling<Dtype>::Max)
+                ->poolingType(PoolingType::Max)
                 ->inputs({"bn2_1"})
                 ->outputs({"pool2_1"}))
 
@@ -202,7 +202,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
                 ->id(3013)
                 ->name("pool3_4")
                 ->poolDim(2, 2, 0, 2)
-                ->poolingType(Pooling<Dtype>::Max)
+                ->poolingType(PoolingType::Max)
                 ->inputs({"bn3_4"})
                 ->outputs({"pool3_4"}))
 
@@ -452,7 +452,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
                 ->id(4031)
                 ->name("pool4_10")
                 ->poolDim(2, 2, 0, 2)
-                ->poolingType(Pooling<Dtype>::Max)
+                ->poolingType(PoolingType::Max)
                 ->inputs({"bn4_10"})
                 ->outputs({"pool4_10"}))
 
@@ -557,7 +557,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
                 ->id(6001)
                 ->name("pool6_1")
                 ->poolDim(2, 2, 0, 2)
-                ->poolingType(Pooling<Dtype>::Avg)
+                ->poolingType(PoolingType::Avg)
                 ->inputs({"bn5_4"})
                 ->outputs({"pool6_1"}))
 
@@ -626,7 +626,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
                 ->id(1004)
                 ->name("pool1_1")
                 ->poolDim(2, 2, 0, 2)
-                ->poolingType(Pooling<Dtype>::Max)
+                ->poolingType(PoolingType::Max)
                 ->inputs({"bn1_1"})
                 ->outputs({"pool1_1"}))
 
@@ -660,7 +660,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
                 ->id(2004)
                 ->name("pool2_1")
                 ->poolDim(2, 2, 0, 2)
-                ->poolingType(Pooling<Dtype>::Max)
+                ->poolingType(PoolingType::Max)
                 ->inputs({"bn2_1"})
                 ->outputs({"pool2_1"}))
 
@@ -767,7 +767,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
                 ->id(3013)
                 ->name("pool3_4")
                 ->poolDim(2, 2, 0, 2)
-                ->poolingType(Pooling<Dtype>::Max)
+                ->poolingType(PoolingType::Max)
                 ->inputs({"bn3_4"})
                 ->outputs({"pool3_4"}))
 
@@ -1018,7 +1018,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
                 ->id(4031)
                 ->name("pool4_10")
                 ->poolDim(2, 2, 0, 2)
-                ->poolingType(Pooling<Dtype>::Max)
+                ->poolingType(PoolingType::Max)
                 ->inputs({"bn4_10"})
                 ->outputs({"pool4_10"}))
 

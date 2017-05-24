@@ -11,12 +11,21 @@
 #include "SoftmaxLayer.h"
 //#include "ActivationFactory.h"
 #include "MathFunctions.h"
+#include "PropMgmt.h"
 
 #if 1
 #define SOFTMAXLAYER_LOG 0
 
 
 using namespace std;
+
+
+template <typename Dtype>
+SoftmaxLayer<Dtype>::SoftmaxLayer(const string& name)
+: Layer<Dtype>(name) {
+
+}
+
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer(Builder* builder)
@@ -361,6 +370,61 @@ void SoftmaxLayer<Dtype>::initialize() {
 	//checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
 }
 */
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* SoftmaxLayer<Dtype>::initLayer() {
+    SoftmaxLayer* layer = new SoftmaxLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void SoftmaxLayer<Dtype>::destroyLayer(void* instancePtr) {
+    SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void SoftmaxLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool SoftmaxLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void SoftmaxLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "SoftmaxLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void SoftmaxLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "SoftmaxLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void SoftmaxLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "SoftmaxLayer.. learn()" << endl;
+}
 
 template class SoftmaxLayer<float>;
 

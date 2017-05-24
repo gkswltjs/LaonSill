@@ -10,14 +10,21 @@
 #include "RoIPoolingLayer.h"
 #include "Cuda.h"
 #include "MathFunctions.h"
+#include "PropMgmt.h"
 
 #define ROIPOOLINGLAYER_LOG 0
 
+using std::max;
+using std::min;
 
+template <typename Dtype>
+RoIPoolingLayer<Dtype>::RoIPoolingLayer(const std::string& name)
+: Layer<Dtype>(name) {
+}
 
 template <typename Dtype>
 RoIPoolingLayer<Dtype>::RoIPoolingLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
+: Layer<Dtype>(builder) {
 	this->pooledW = builder->_pooledW;
 	this->pooledH = builder->_pooledH;
 	this->spatialScale = builder->_spatialScale;
@@ -267,5 +274,66 @@ void RoIPoolingLayer<Dtype>::initialize() {
 
 	this->maxIdx = new Data<int>("maxIdx");
 }
+
+
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* RoIPoolingLayer<Dtype>::initLayer() {
+    RoIPoolingLayer* layer = new RoIPoolingLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::destroyLayer(void* instancePtr) {
+    RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool RoIPoolingLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    std::cout << "RoIPoolingLayer.. forward(). miniBatchIndex : " << miniBatchIdx << std::endl;
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::backwardTensor(void* instancePtr) {
+    std::cout << "RoIPoolingLayer.. backward()" << std::endl;
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::learnTensor(void* instancePtr) {
+    std::cout << "RoIPoolingLayer.. learn()" << std::endl;
+}
+
+
+
 
 template class RoIPoolingLayer<float>;

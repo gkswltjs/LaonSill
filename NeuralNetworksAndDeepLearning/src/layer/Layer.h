@@ -49,7 +49,7 @@ public:
 
 		FullyConnected, 		// Fully Connected 레이어
 		Conv, 					// 컨볼루션 레이어
-		Pool, 					// 풀링 레이어
+		Pooling, 					// 풀링 레이어
 		DepthConcat,			// Depth Concat 레이어
 		Inception, 				// 인셉션 레이어
 		LRN,					// Local Response Normaization 레이어
@@ -85,7 +85,10 @@ public:
 
 		Relu,
         DropOut,
-        LayerTypeMax
+        LayerTypeMax,
+
+
+        DummyInput,
 	};
 
 

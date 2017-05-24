@@ -13,6 +13,7 @@
 #include "BboxTransformUtil.h"
 #include "frcnn_common.h"
 #include "NetworkConfig.h"
+#include "PropMgmt.h"
 
 
 #define PROPOSALLAYER_LOG 0
@@ -20,6 +21,11 @@
 
 using namespace std;
 
+template <typename Dtype>
+ProposalLayer<Dtype>::ProposalLayer(const std::string& name)
+: Layer<Dtype>(name) {
+
+}
 
 template <typename Dtype>
 ProposalLayer<Dtype>::ProposalLayer(Builder* builder)
@@ -357,5 +363,66 @@ void ProposalLayer<Dtype>::_filterBoxes(std::vector<std::vector<float>>& boxes,
 			keep.push_back(i);
 	}
 }
+
+
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* ProposalLayer<Dtype>::initLayer() {
+    ProposalLayer* layer = new ProposalLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void ProposalLayer<Dtype>::destroyLayer(void* instancePtr) {
+    ProposalLayer<Dtype>* layer = (ProposalLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void ProposalLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    ProposalLayer<Dtype>* layer = (ProposalLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool ProposalLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    ProposalLayer<Dtype>* layer = (ProposalLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void ProposalLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "ProposalLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void ProposalLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "ProposalLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void ProposalLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "ProposalLayer.. learn()" << endl;
+}
+
+
+
 
 template class ProposalLayer<float>;

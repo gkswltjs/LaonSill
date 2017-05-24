@@ -10,10 +10,17 @@
 #include "frcnn_common.h"
 #include "GenerateAnchorsUtil.h"
 #include "RoIDBUtil.h"
+#include "PropMgmt.h"
 
 #define ANCHORTARGETLAYER_LOG 0
 
 using namespace std;
+
+template <typename Dtype>
+AnchorTargetLayer<Dtype>::AnchorTargetLayer(const string& name)
+: Layer<Dtype>(name) {
+
+}
 
 template <typename Dtype>
 AnchorTargetLayer<Dtype>::AnchorTargetLayer(Builder* builder)
@@ -483,6 +490,61 @@ void AnchorTargetLayer<Dtype>::_unmap(const vector<vector<float>>& data,
 	for (uint32_t i = 0; i < indsInside.size(); i++) {
 		result[indsInside[i]] = data[i];
 	}
+}
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* AnchorTargetLayer<Dtype>::initLayer() {
+    AnchorTargetLayer* layer = new AnchorTargetLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::destroyLayer(void* instancePtr) {
+    AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool AnchorTargetLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "AnchorTargetLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "AnchorTargetLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "AnchorTargetLayer.. learn()" << endl;
 }
 
 

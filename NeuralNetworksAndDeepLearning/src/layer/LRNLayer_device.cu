@@ -8,6 +8,7 @@
 #ifdef GPU_MODE
 
 #include "LRNLayer.h"
+#include "PropMgmt.h"
 #include "Util.h"
 
 using namespace std;
@@ -67,3 +68,68 @@ template void LRNLayer<float>::feedforward();
 template void LRNLayer<float>::backpropagation();
 
 #endif
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* LRNLayer<Dtype>::initLayer() {
+    LRNLayer* layer = new LRNLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void LRNLayer<Dtype>::destroyLayer(void* instancePtr) {
+    LRNLayer<Dtype>* layer = (LRNLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void LRNLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    LRNLayer<Dtype>* layer = (LRNLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool LRNLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    LRNLayer<Dtype>* layer = (LRNLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void LRNLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "LRNLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void LRNLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "LRNLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void LRNLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "LRNLayer.. learn()" << endl;
+}
+
+template void* LRNLayer<float>::initLayer();
+template void LRNLayer<float>::destroyLayer(void* instancePtr);
+template void LRNLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool LRNLayer<float>::allocLayerTensors(void* instancePtr);
+template void LRNLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void LRNLayer<float>::backwardTensor(void* instancePtr);
+template void LRNLayer<float>::learnTensor(void* instancePtr);

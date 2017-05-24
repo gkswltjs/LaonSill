@@ -64,6 +64,7 @@ public:
 		}
 	};
 
+	RoIInputLayer(const std::string& name);
 	RoIInputLayer(Builder* builder);
 	virtual ~RoIInputLayer();
 
@@ -112,6 +113,20 @@ public:
 	std::vector<std::vector<Data<Dtype>*>> proposalTargetDataList;
 
 	std::vector<cv::Scalar> boxColors;
+
+
+
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* ROIINPUTLAYER_H_ */

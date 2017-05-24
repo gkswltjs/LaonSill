@@ -25,7 +25,7 @@ class AvgPooling : public Pooling<Dtype> {
 #ifndef GPU_MODE
 public:
 	AvgPooling() {
-		this->type = Pooling<Dtype>::Avg;
+		this->type = PoolingType::Avg;
 	}
 	virtual ~AvgPooling() {}
 
@@ -115,7 +115,7 @@ public:
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 */
 	AvgPooling(pool_dim pool_d) {
-		this->type = Pooling<Dtype>::Avg;
+		this->type = PoolingType::Avg;
 
 		checkCUDNN(cudnnCreatePoolingDescriptor(&this->poolDesc));
 

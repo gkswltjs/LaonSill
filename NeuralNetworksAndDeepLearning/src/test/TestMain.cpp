@@ -89,7 +89,7 @@ void layerTest() {
 	poolBuilder->id(42)
 			->name("pool1")
 			->poolDim(2, 2, 0, 2)
-			->poolingType(Pooling<float>::Max)
+			->poolingType(PoolingType::Max)
 			->inputs({"conv1"})
 			->outputs({"pool1"});
 	layerTestList.push_back(new LayerTest<float>(poolBuilder));

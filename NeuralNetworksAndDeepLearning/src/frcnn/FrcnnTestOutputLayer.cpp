@@ -11,11 +11,19 @@
 
 #include "FrcnnTestOutputLayer.h"
 #include "BboxTransformUtil.h"
+#include "PropMgmt.h"
 
 #define FRCNNTESTOUTPUTLAYER_LOG 0
 
 using namespace std;
 
+
+
+template <typename Dtype>
+FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer(const string& name)
+: Layer<Dtype>(name) {
+
+}
 
 template <typename Dtype>
 FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer(Builder* builder)
@@ -475,6 +483,64 @@ void FrcnnTestOutputLayer<Dtype>::initialize() {
 	boxColors.push_back(cv::Scalar(216, 193, 0));
 	*/
 
+}
+
+
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* FrcnnTestOutputLayer<Dtype>::initLayer() {
+    FrcnnTestOutputLayer* layer = new FrcnnTestOutputLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool FrcnnTestOutputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "FrcnnTestOutputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "FrcnnTestOutputLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "FrcnnTestOutputLayer.. learn()" << endl;
 }
 
 

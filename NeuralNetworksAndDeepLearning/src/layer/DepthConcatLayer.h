@@ -64,6 +64,7 @@ public:
 		}
 	};
 
+	DepthConcatLayer(const std::string& name);
 	DepthConcatLayer(Builder* builder);
 	virtual ~DepthConcatLayer();
 
@@ -92,6 +93,19 @@ protected:
     std::vector<int> offsets;
 #else
 #endif
+
+
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* LAYER_DEPTHCONCATLAYER_H_ */

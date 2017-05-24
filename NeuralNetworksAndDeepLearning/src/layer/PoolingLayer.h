@@ -34,15 +34,15 @@ public:
 	class Builder : public Layer<Dtype>::Builder {
 	public:
 		pool_dim _poolDim;								///< 풀링 파라미터
-		typename Pooling<Dtype>::Type _poolingType;		///< 풀링 타입
+		PoolingType _poolingType;		///< 풀링 타입
 
 		Builder() {
-			this->type = Layer<Dtype>::Pool;
+			this->type = Layer<Dtype>::Pooling;
 			_poolDim.cols = 0;
 			_poolDim.rows = 0;
 			_poolDim.pad = 0;
 			_poolDim.stride = 0;
-			_poolingType = Pooling<Dtype>::Max;
+			_poolingType = PoolingType::Max;
 		}
 		Builder* poolDim(uint32_t cols, uint32_t rows, uint32_t pad, uint32_t stride) {
 			this->_poolDim.cols = cols;
@@ -51,7 +51,7 @@ public:
 			this->_poolDim.stride = stride;
 			return this;
 		}
-		Builder* poolingType(typename Pooling<Dtype>::Type poolingType) {
+		Builder* poolingType(PoolingType poolingType) {
 			this->_poolingType = poolingType;
 			return this;
 		}
@@ -80,6 +80,7 @@ public:
 		}
 	};
 
+	PoolingLayer(const std::string& name);
 	/**
 	 * @details PoolingLayer 기본 생성자
 	 */
@@ -96,7 +97,7 @@ public:
 
 
 protected:
-	void initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
+	void initialize(pool_dim pool_d, PoolingType poolingType);
 
 protected:
 	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
@@ -112,7 +113,17 @@ protected:
 #endif
 
 
-
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 

@@ -24,7 +24,6 @@
 
 #define PASCALVOC_LOG 0
 
-using namespace cv;
 
 
 class PascalVOC : public IMDB {
@@ -109,7 +108,7 @@ public:
 #if TEST_MODE
 		roidb.mat.convertTo(roidb.mat, CV_32F);
 #else
-		Mat tempIm;
+		cv::Mat tempIm;
 		roidb.mat.convertTo(roidb.mat, CV_32FC3, 1.0f/255.0f);
 		roidb.mat.copyTo(tempIm);
 		float* tempImPtr = (float*)tempIm.data;

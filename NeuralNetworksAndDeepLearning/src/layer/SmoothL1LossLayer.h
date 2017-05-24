@@ -87,6 +87,7 @@ public:
 		}
 	};
 
+	SmoothL1LossLayer(const std::string& name);
 	SmoothL1LossLayer(Builder* builder);
 	virtual ~SmoothL1LossLayer();
 
@@ -109,6 +110,19 @@ private:
 	bool hasWeights;
 	float sigma2;
 	uint32_t firstAxis;
+
+
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* SMOOTHL1LOSSLAYER_H_ */

@@ -169,7 +169,7 @@ LayersConfig<Dtype>* KistiKeywordPredict<Dtype>::createKistiVGG19NetLayersConfig
                     ->id(5)
                     ->name("pool1")
                     ->poolDim(2, 2, 0, 2)
-                    ->poolingType(Pooling<Dtype>::Max)
+                    ->poolingType(PoolingType::Max)
                     ->inputs({"conv1_2"})
                     ->outputs({"pool1"}))
 
@@ -212,7 +212,7 @@ LayersConfig<Dtype>* KistiKeywordPredict<Dtype>::createKistiVGG19NetLayersConfig
                     ->id(10)
                     ->name("pool2")
                     ->poolDim(2, 2, 0, 2)
-                    ->poolingType(Pooling<Dtype>::Max)
+                    ->poolingType(PoolingType::Max)
                     ->inputs({"conv2_2"})
                     ->outputs({"pool2"}))
 
@@ -289,7 +289,7 @@ LayersConfig<Dtype>* KistiKeywordPredict<Dtype>::createKistiVGG19NetLayersConfig
                     ->id(19)
                     ->name("pool3")
                     ->poolDim(2, 2, 0, 2)
-                    ->poolingType(Pooling<Dtype>::Max)
+                    ->poolingType(PoolingType::Max)
                     ->inputs({"conv3_4"})
                     ->outputs({"pool3"}))
 
@@ -366,7 +366,7 @@ LayersConfig<Dtype>* KistiKeywordPredict<Dtype>::createKistiVGG19NetLayersConfig
                     ->id(28)
                     ->name("pool4")
                     ->poolDim(2, 2, 0, 2)
-                    ->poolingType(Pooling<Dtype>::Max)
+                    ->poolingType(PoolingType::Max)
                     ->inputs({"conv4_4"})
                     ->outputs({"pool4"}))
 
@@ -443,7 +443,7 @@ LayersConfig<Dtype>* KistiKeywordPredict<Dtype>::createKistiVGG19NetLayersConfig
                     ->id(37)
                     ->name("pool5")
                     ->poolDim(2, 2, 0, 2)
-                    ->poolingType(Pooling<Dtype>::Max)
+                    ->poolingType(PoolingType::Max)
                     ->inputs({"conv5_4"})
                     ->outputs({"pool5"}))
 

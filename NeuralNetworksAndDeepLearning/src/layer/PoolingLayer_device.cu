@@ -9,6 +9,7 @@
 #ifdef GPU_MODE
 
 #include "PoolingLayer.h"
+#include "PropMgmt.h"
 
 #define POOLINGLAYER_LOG 1
 
@@ -123,5 +124,73 @@ void PoolingLayer<Dtype>::backpropagation() {
 template void PoolingLayer<float>::reshape();
 template void PoolingLayer<float>::feedforward();
 template void PoolingLayer<float>::backpropagation();
+
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* PoolingLayer<Dtype>::initLayer() {
+    PoolingLayer* layer = new PoolingLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::destroyLayer(void* instancePtr) {
+    PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool PoolingLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "PoolingLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "PoolingLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "PoolingLayer.. learn()" << endl;
+}
+
+template void* PoolingLayer<float>::initLayer();
+template void PoolingLayer<float>::destroyLayer(void* instancePtr);
+template void PoolingLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool PoolingLayer<float>::allocLayerTensors(void* instancePtr);
+template void PoolingLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void PoolingLayer<float>::backwardTensor(void* instancePtr);
+template void PoolingLayer<float>::learnTensor(void* instancePtr);
+
+
 
 #endif

@@ -239,7 +239,8 @@ void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_updat
 	//int pad = (filter_d.rows-1)/2;
 	checkCUDNN(cudnnSetConvolution2dDescriptor(convDesc,
 			filter_d.pad, filter_d.pad, filter_d.stride, filter_d.stride, 1, 1,
-			CUDNN_CROSS_CORRELATION));
+			CUDNN_CROSS_CORRELATION,
+			CUDNN_DATA_FLOAT));
 
 	//this->activation_fn = ActivationFactory<Dtype>::create(activationType);
 

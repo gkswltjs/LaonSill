@@ -22,7 +22,7 @@
 
 using namespace std;
 using namespace tinyxml2;
-using namespace cv;
+
 
 
 void opencv_test();
