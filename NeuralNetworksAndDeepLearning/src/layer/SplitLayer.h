@@ -58,6 +58,10 @@ private:
 
 	virtual void backpropagation();
 
+
+
+
+	int tempCount;
 };
 
 #endif /* SPLITLAYER_H_ */

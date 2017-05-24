@@ -23,6 +23,8 @@ template <typename Dtype>
 SplitLayer<Dtype>::SplitLayer(Builder* builder)
 	: Layer<Dtype>(builder) {
 	initialize();
+
+	tempCount = 0;
 }
 
 
@@ -96,6 +98,17 @@ void SplitLayer<Dtype>::feedforward() {
 template <typename Dtype>
 void SplitLayer<Dtype>::backpropagation() {
 
+	/*
+	if (this->name == "conv4_3_norm_conv4_3_norm_0_split") {
+		this->tempCount++;
+		if (this->tempCount == 2) {
+			for (int i = 0; i < this->_outputData.size(); i++) {
+				cout << this->_outputData[i]->asum_device_grad() << endl;
+			}
+		}
+	}
+	*/
+
 #if SPLITLAYER_LOG
 	const string targetLayer = "rpn/output-split";
 #endif
@@ -124,6 +137,16 @@ void SplitLayer<Dtype>::backpropagation() {
 		exit(1);
 	}
 #endif
+
+	/*
+	if (this->name == "conv4_3_norm_conv4_3_norm_0_split") {
+		if (this->tempCount == 2) {
+			cout << "input asum: " << this->_inputData[0]->asum_device_grad() << endl;
+			exit(1);
+		}
+	}
+	*/
+
 }
 
 template class SplitLayer<float>;

@@ -11,6 +11,8 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 
+#define NORMALIZELAYER_LOG	0
+
 using namespace std;
 
 
@@ -55,8 +57,12 @@ NormalizeLayer<Dtype>::NormalizeLayer(Builder* builder)
   channelShared(builder->_channelShared),
   scaleUpdateParam(builder->_scaleUpdateParam),
   scaleFiller(builder->_scaleFiller),
-  eps(builder->_eps) {
+  eps(builder->_eps),
+  buffer_("buffer"),
+  bufferChannel_("bufferChannel"),
+  bufferSpatial_("bufferSpatial") {
 
+	this->tempCount = 0;
 	initialize();
 }
 
@@ -87,6 +93,8 @@ void NormalizeLayer<Dtype>::reshape() {
 	this->_outputData[0]->reshapeLike(this->_inputData[0]);
 
 	const vector<uint32_t>& dataShape = this->_inputData[0]->getShape();
+	this->_inputShape[0] = dataShape;
+
 	this->buffer_.reshape({1, dataShape[1], dataShape[2], dataShape[3]});
 	this->bufferChannel_.reshape({1, dataShape[1], 1, 1});
 	this->bufferSpatial_.reshape({1, 1, dataShape[2], dataShape[3]});
@@ -210,6 +218,8 @@ void NormalizeLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void NormalizeLayer<Dtype>::backpropagation() {
+	this->tempCount++;
+
 	const Dtype* outputGrad = this->_outputData[0]->device_grad();
 	const Dtype* outputData = this->_outputData[0]->device_data();
 	const Dtype* inputData = this->_inputData[0]->device_data();
@@ -249,16 +259,43 @@ void NormalizeLayer<Dtype>::backpropagation() {
 		soooa_gpu_dot<Dtype>(count, outputData, outputGrad, &a);
 		scaleGrad[0] += a / scale[0];
 	} else {
+		this->_params[0]->reset_device_grad();
 		Dtype* scaleGrad = this->_params[0]->mutable_device_grad();
+
+
 		for (int n = 0; n < num; n++) {
 			// compute a
 			soooa_gpu_mul<Dtype>(dim, outputData + n * dim, outputGrad + n *dim, bufferData);
 			soooa_gpu_gemv<Dtype>(CblasNoTrans, channels, spatialDim, Dtype(1.0),
 					bufferData, sumSpatialMultiplier, Dtype(0.0),
 					bufferChannel);
+
+#if NORMALIZELAYER_LOG
+			if (tempCount == 2) {
+				this->_printOn();
+				this->buffer_.print_data({}, false);
+				cout << "buffer asum: " << this->buffer_.asum_device_data() << endl;
+				this->bufferChannel_.print_data({}, false);
+				cout << "bufferChannel asum: " << this->bufferChannel_.asum_device_data() << endl;
+				this->_printOff();
+			}
+#endif
+
 			// store a / scale[i] in bufferData temporary
 			soooa_gpu_div<Dtype>(channels, bufferChannel, scale, bufferChannel);
 			soooa_gpu_add<Dtype>(channels, bufferChannel, scaleGrad, scaleGrad);
+
+#if NORMALIZELAYER_LOG
+			if (tempCount == 2) {
+				this->_printOn();
+				this->bufferChannel_.print_data({}, false);
+				cout << "bufferChannel asum: " << this->bufferChannel_.asum_device_data() << endl;
+				this->_params[0]->print_grad({}, false);
+				cout << "params asum: " << this->_params[0]->asum_device_grad() << endl;
+				this->_printOff();
+				exit(1);
+			}
+#endif
 		}
 	}
 
@@ -350,7 +387,7 @@ void NormalizeLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
     Optimizer opt = this->networkConfig->_optimizer;
     SASSERT0(opt == Optimizer::Momentum);
 
-    this->_printOn();
+    //this->_printOn();
 
 
     data->print_data({}, false);
@@ -370,7 +407,7 @@ void NormalizeLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
 	data->print_data({}, false);
 
 
-	this->_printOff();
+	//this->_printOff();
 }
 
 

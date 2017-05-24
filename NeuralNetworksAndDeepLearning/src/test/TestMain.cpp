@@ -1,4 +1,4 @@
-#if 0
+#if 1
 
 #include "LayerTestInterface.h"
 #include "LayerTest.h"
@@ -43,15 +43,16 @@ int main(void) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
-	//plainTest();
+	plainTest();
 	//layerTest();
-	networkTest();
+	//networkTest();
 
 	return 0;
 }
 
 
 void plainTest() {
+	cout << "plainTest()" << endl;
 
 #if 0
 	AnnotationDataLayer<float>::Builder* builder =
@@ -145,6 +146,45 @@ void plainTest() {
 
 	delete layer;
 #endif
+
+#if 1
+	AnnotationDataLayer<float>::Builder* builder =
+			new typename AnnotationDataLayer<float>::Builder();
+	builder->id(0)
+			->name("data")
+			->flip(true)
+			->imageHeight(300)
+			->imageWidth(300)
+			->imageSetPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt")
+			->baseDataPath("/home/jkim/Dev/git/caffe_ssd/data/VOCdevkit/")
+			->labelMapPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt")
+			//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			->pixelMeans({104.f, 117.f, 123.f})	// BGR
+			->outputs({"data", "label"});
+
+	AnnotationDataLayer<float>* layer = dynamic_cast<AnnotationDataLayer<float>*>(builder->build());
+	layer->_inputData.push_back(new Data<float>("data"));
+	layer->_inputData.push_back(new Data<float>("label"));
+
+	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
+			->batchSize(32)
+			->build();
+	layer->setNetworkConfig(networkConfig);
+
+	for (int i = 0; i < 100000; i++) {
+		layer->feedforward();
+	}
+
+
+	map<string, int>& refCount = layer->refCount;
+	for (map<string, int>::iterator it = refCount.begin(); it != refCount.end(); it++) {
+		cout << it->first << "\t\t" << it->second << endl;
+	}
+
+	delete layer;
+#endif
+
+
 
 	/*
 	//checkCudaErrors(cudaSetDevice(0));
@@ -417,11 +457,19 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(frcnnTestOutputBuilder));
 #endif
 
-#if 0
+#if 1
 	AnnotationDataLayer<float>::Builder* annotationDataBuilder =
 			new typename AnnotationDataLayer<float>::Builder();
 	annotationDataBuilder->id(0)
 			->name("data")
+			->flip(true)
+			->imageHeight(300)
+			->imageWidth(300)
+			->imageSetPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt")
+			->baseDataPath("/home/jkim/Dev/git/caffe_ssd/data/VOCdevkit/")
+			->labelMapPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt")
+			//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			->pixelMeans({104.f, 117.f, 123.f})	// BGR
 			->outputs({"data", "label"});
 	layerTestList.push_back(new LayerTest<float>(annotationDataBuilder));
 #endif
@@ -546,7 +594,7 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(builder));
 #endif
 
-#if 1
+#if 0
 	DetectionOutputLayer<float>::Builder* builder =
 			new typename DetectionOutputLayer<float>::Builder();
 	builder->id(0)
@@ -664,7 +712,7 @@ void networkTest() {
 	const string networkName		= "frcnn";
 	const NetworkPhase networkPhase	= NetworkPhase::TestPhase;
 #elif NETWORK == NETWORK_SSD
-	const int numSteps = 2;
+	const int numSteps = 3;
 
 	LayersConfig<float>* layersConfig = createSSDNetLayersConfig<float>();
 	const string networkName		= "ssd";

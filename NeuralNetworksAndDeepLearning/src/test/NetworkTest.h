@@ -106,8 +106,9 @@ public:
 			// feedforward
 			logStartTest("FEED FORWARD");
 			forward(i);
-			//dataTest(i);
+			dataTest(i);
 			logEndTest("FEED FORWARD");
+
 			/*
 			typename std::map<std::string, Layer<Dtype>*>::iterator itr =
 					this->layersConfig->_nameLayerMap.find("mbox_loss");
@@ -119,11 +120,11 @@ public:
 			replaceDataWithGroundTruth(i);
 			logStartTest("BACK PROPAGATION");
 			backward();
-			//gradTest(i);
+			gradTest(i);
 			logEndTest("BACK PROPAGATION");
 
 			// update & compare result
-			//replaceGradWithGroundTruth(i);
+			replaceGradWithGroundTruth(i);
 
 			logStartTest("UPDATE");
 			update();
@@ -310,11 +311,22 @@ private:
 				layer->_inputData[j]->set_host_data(data, 0, false);
 			}
 		}
+
+		const string dataName = BLOBS_PREFIX + "mbox_loss";
+		Data<Dtype>* data =
+				retrieveValueFromMap(this->nameBlobsMapList[stepIdx], dataName);
+		Layer<Dtype>* layer = this->layersConfig->_nameLayerMap["mbox_loss"];
+		layer->_outputData[0]->set_host_data(data, 0, false);
+		layer->_outputData[0]->mutable_host_grad()[0] = 1;
+
+
+		/*
 		typename std::map<std::string, Layer<Dtype>*>::iterator itr =
 				this->layersConfig->_nameLayerMap.find("mbox_loss");
 		//itr->second->_outputData[0]->mutable_host_data()[0] = 3.01521993f;
 		itr->second->_outputData[0]->mutable_host_data()[0] = 25.01589775f;
 		itr->second->_outputData[0]->mutable_host_grad()[0] = 1;
+		*/
 	}
 
 	void replaceGradWithGroundTruth(int stepIdx) {
@@ -387,7 +399,7 @@ private:
 	const int numSteps;
 
 	//Network<Dtype>* network;
-	LayersConfig<Dtype>* layersConfig;\
+	LayersConfig<Dtype>* layersConfig;
 
 	//map<string, Data<Dtype>*> nameParamsOldMap;
 	//map<string, Data<Dtype>*> nameParamsNewMap;

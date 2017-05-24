@@ -271,7 +271,38 @@ void AnnotationDataLayer<Dtype>::getMiniBatch(const vector<int>& inds) {
 		ODMetaData<Dtype>& odMetaData = this->odMetaDataList[inds[i]];
 		ODRawData<Dtype>& odRawData = this->odRawDataList[odMetaData.rawIdx];
 		totalBBs += odRawData.boundingBoxes.size();
+
+
+		string key = odRawData.imPath + ((odMetaData.flip) ? "_f" : "");
+		if (refCount.find(key) == refCount.end()) {
+			refCount[key] = 1;
+		} else {
+			refCount[key] += 1;
+		}
 	}
+	return;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	// "data"의 경우 shape가 초기에 결정, reshape가 필요없음.
 	//this->_outputData[0]->reshape({this->networkConfig->_batchSize, 3, this->imageHeight,

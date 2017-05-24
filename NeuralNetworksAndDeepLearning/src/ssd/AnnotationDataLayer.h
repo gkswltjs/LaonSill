@@ -152,6 +152,11 @@ private:
 	int cur;
 
 	Data<Dtype> data;	///< feedforward할 data를 준비하는 buffer.
+
+
+
+public:
+	std::map<std::string, int> refCount;
 };
 
 #endif /* ANNOTATIONDATALAYER_H_ */

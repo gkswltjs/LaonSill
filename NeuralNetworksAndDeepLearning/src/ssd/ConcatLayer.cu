@@ -34,6 +34,8 @@ template <typename Dtype>
 ConcatLayer<Dtype>::ConcatLayer(Builder* builder)
 : Layer<Dtype>(builder) {
 	initialize(builder);
+
+	this->tempCount = 0;
 }
 
 template <typename Dtype>
@@ -129,6 +131,22 @@ void ConcatLayer<Dtype>::backpropagation() {
 		}
 		offsetConcatAxis += inputConcatAxis;
 	}
+
+	/*
+	if (this->name == "mbox_priorbox") {
+		this->tempCount++;
+		if (this->tempCount == 2) {
+			this->_printOn();
+			//this->_outputData[0]->print_grad({}, false, -1);
+			for (int i = 0; i < this->_inputData.size(); i++) {
+				//this->_inputData[i]->print_grad({}, false, -1);
+				cout << this->_inputData[i]->asum_device_grad() << endl;
+			}
+			this->_printOff();
+			exit(1);
+		}
+	}
+	*/
 }
 
 template <typename Dtype>

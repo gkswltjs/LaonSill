@@ -1,4 +1,4 @@
-#if 1
+#if 0
 
 #include <cstdint>
 #include <vector>
@@ -64,8 +64,8 @@ void developerMain() {
 	//vgg19();
 	//vgg19Test();
 	//fasterRcnnTrain();
-	fasterRcnnTest();
-	//ssd();
+	//fasterRcnnTest();
+	ssd();
 
 	STDOUT_LOG("exit developerMain()");
 }
@@ -450,7 +450,7 @@ void ssd() {
 #endif
 
 	const uint32_t batchSize = 16;				// 32
-	const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
+	const uint32_t testInterval = 10;			// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
 	const float baseLearningRate = 0.001f;
 

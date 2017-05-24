@@ -70,6 +70,11 @@ private:
 	int numConcat;
 	int concatInputSize;
 	int concatAxis;
+
+
+
+
+	int tempCount;
 };
 
 #endif /* CONCATLAYER_H_ */

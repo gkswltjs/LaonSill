@@ -132,6 +132,10 @@ private:
 	// 이미지당 spatialDim별 scalar를 저장하기 위한 buffer
 	// 1 x 1 x height x width
 	Data<Dtype> bufferSpatial_;
+
+
+
+	int tempCount;
 };
 
 #endif /* NORMALIZELAYER_H_ */
