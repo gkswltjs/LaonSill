@@ -179,6 +179,8 @@ try:
                     headerFile.write('        strcpy(_%s_, %s);\n' % (var[0], var[2]))
                 elif 'string' in var[1]:
                     headerFile.write('        _%s_ = %s;\n' % (var[0], var[2]))
+                elif '{' in var[2]:
+                    headerFile.write('        _%s_ = %s;\n' % (var[0], var[2]))
                 else:
                     headerFile.write('        _%s_ = (%s)%s;\n' % (var[0], var[1], var[2]))
             headerFile.write('\n    }\n')

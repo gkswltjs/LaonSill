@@ -108,17 +108,17 @@ public:
 };
 
 
-enum NetworkStatus {
+enum NetworkStatus : int {
 	Train = 0,
 	Test = 1
 };
 
-enum NetworkPhase {
+enum NetworkPhase : int {
 	TrainPhase = 0,
 	TestPhase = 1
 };
 
-enum LRPolicy {
+enum LRPolicy : int {
 	Fixed = 0,
 	Step,
 	Exp,
@@ -127,7 +127,7 @@ enum LRPolicy {
 	Poly
 };
 
-enum Optimizer {
+enum Optimizer : int {
     Momentum = 0,
     Vanilla,
     Nesterov,
@@ -415,6 +415,8 @@ public:
 	bool doTest();
 	bool doSave();
 	float getLearningRate();
+
+    static float calcLearningRate();
 
 private:
 	float _rate;

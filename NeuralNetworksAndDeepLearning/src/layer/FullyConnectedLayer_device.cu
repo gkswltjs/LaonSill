@@ -167,13 +167,13 @@ __global__ void AddData(Dtype* dst, const Dtype* src, int N)
 	if (idx >= N)
 		return;
 
-	dst[idx] = dst[idx] + src[idx];
+	dst[idx] = dst[idx] + src[idx]; 
 }
 
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
-    if (this->isReceiver) {
-        Donator<Dtype>::releaseReceiver(this->donatorID);
+    if (SLPROP(FullyConnected, receive)) {
+        Donator<Dtype>::releaseReceiver(SLPROP(FullyConnected, donatorID));
     } else {
         Util::clearVector(this->_params);
         Util::clearVector(this->_paramsHistory);
@@ -207,8 +207,8 @@ void FullyConnectedLayer<Dtype>::reshape() {
 		return;
 
 	this->batches = this->_inputData[0]->getShape(0);
-	this->in_rows = this->_inputData[0]->getCountByAxis(this->axis);
-	this->out_rows = this->n_out;
+	this->in_rows = this->_inputData[0]->getCountByAxis(SLPROP(FullyConnected, axis));
+	this->out_rows = SLPROP(FullyConnected, nOut);
 
 	const uint32_t channels = 1;
 	const uint32_t cols = 1;
@@ -252,11 +252,11 @@ void FullyConnectedLayer<Dtype>::reshape() {
 
 
 	if (!this->_paramsInitialized[Weight]) {
-		this->weight_filler.fill(this->_params[ParamType::Weight]);
+        SLPROP(FullyConnected, weightFiller).fill(this->_params[ParamType::Weight]);
 		this->_paramsInitialized[Weight] = true;
 	}
 	if (!this->_paramsInitialized[Bias]) {
-		this->bias_filler.fill(this->_params[ParamType::Bias]);
+        SLPROP(FullyConnected, weightFiller).fill(this->_params[ParamType::Bias]);
 		this->_paramsInitialized[Bias] = true;
 	}
 
@@ -274,10 +274,10 @@ void FullyConnectedLayer<Dtype>::update() {
 	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
 	const uint32_t weightSize = this->in_rows * this->out_rows;
-	const Dtype regScale = this->networkConfig->_weightDecay *
-			this->weight_update_param.decay_mult;
-	const Dtype learnScale = this->networkConfig->getLearningRate() *
-			this->weight_update_param.lr_mult;
+	const Dtype regScale =
+        SNPROP(weightDecay) * SLPROP(FullyConnected, weightUpdateParam).decay_mult;
+	const Dtype learnScale = NetworkConfig<Dtype>::calcLearningRate() *
+		SLPROP(FullyConnected, weightUpdateParam).lr_mult;
 
     const Dtype epsilon = this->networkConfig->_epsilon;
     const Dtype decayRate = this->networkConfig->_decayRate;
@@ -291,9 +291,10 @@ void FullyConnectedLayer<Dtype>::update() {
 		this->_paramsHistory[Weight], this->_paramsHistory2[Weight], this->_params[Weight]);
 
 	const uint32_t biasSize = out_rows;
-	const Dtype regScale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
-	const Dtype learnScale_b = 
-        this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
+	const Dtype regScale_b = 
+        SNPROP(weightDecay) * SLPROP(FullyConnected, biasUpdateParam).decay_mult;
+	const Dtype learnScale_b = NetworkConfig<float>::calcLearningRate() *
+        SLPROP(FullyConnected, biasUpdateParam).lr_mult;
 
 	_updateParam(biasSize, regScale_b, learnScale_b, epsilon, decayRate, beta1, beta2, 
 		this->_paramsHistory[Bias], this->_paramsHistory2[Bias], this->_params[Bias]);
@@ -327,7 +328,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 #endif
 
     // (2) apply optimizer
-    Optimizer opt = this->networkConfig->_optimizer;
+    Optimizer opt = (Optimizer)SNPROP(optimizer);
     if (opt == Optimizer::Momentum) {
         /****
          * Momentum Alogorithm
@@ -847,7 +848,7 @@ void FullyConnectedLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorP
 template<typename Dtype>
 bool FullyConnectedLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 

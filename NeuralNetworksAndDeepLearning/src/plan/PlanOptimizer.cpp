@@ -154,7 +154,7 @@ void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
     planInfo->networkID = networkID;
     planInfo->dopCount = 1;
 
-    planInfo->epochCount = SNPROP(epoch);
+    planInfo->epochCount = SNPROP(epochs);
     planInfo->miniBatchCount = SNPROP(miniBatch);
 
     if (isTest) {

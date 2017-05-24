@@ -165,6 +165,7 @@ private:
 	void initialize(int n_out, double p_dropout, int axis, update_param weight_update_param,
         update_param bias_update_param, param_filler<Dtype> weight_filler,
         param_filler<Dtype> bias_filler);
+	void initialize();
 
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);

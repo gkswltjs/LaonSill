@@ -211,7 +211,6 @@ void PhysicalPlan::runLayer(int planID) {
     PlanType planType = LP_PLANID_TO_PLANTYPE(planID);
     
     // (2) run layer
-    // TODO:
     PlanInfo* planInfo = WorkContext::curPlanInfo;
     cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
         planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")";

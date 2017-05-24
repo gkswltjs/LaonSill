@@ -4,10 +4,11 @@
 [
     ["batchSize", "uint32_t", "1"],
     ["dop", "uint32_t", "1"],
-    ["epoch", "uint32_t", "1"],
+    ["epochs", "uint32_t", "1"],
     ["miniBatch", "uint32_t", "1"],
     ["testInterval", "uint32_t", "1"],
     ["saveInterval", "uint32_t", "1"],
+    ["iterations", "uint32_t", "0"],
     ["stepSize", "uint32_t", "1"],
     ["baseLearningRate", "float", "1"],
     ["power", "float", "1.0"],
@@ -21,10 +22,11 @@
     ["decayRate", "float", "0.9"],
     ["savePathPrefix", "std::string", "\"\""],
     ["loadPath", "std::string", "\"\""],
-    ["optimizer", "uint32_t", "Optimizer::Momentum"],
+    ["optimizer", "int", "Optimizer::Momentum"],
     ["lrPolicy", "int", "LRPolicy::Fixed"],
     ["phase", "int", "NetworkPhase::TrainPhase"],
-    ["lossLayer", "std::vector<std::string>", ""]
+    ["lossLayer", "std::vector<std::string>", ""],
+    ["rate", "float", "-1.0"]
 ]
 
 }

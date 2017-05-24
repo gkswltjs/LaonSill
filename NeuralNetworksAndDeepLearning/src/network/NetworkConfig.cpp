@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "NetworkConfig.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -686,6 +687,37 @@ float NetworkConfig<Dtype>::getLearningRate() {
 }
 
 
+template <typename Dtype>
+float NetworkConfig<Dtype>::calcLearningRate() {
+	float rate;
+	switch (SNPROP(lrPolicy)) {
+	case Fixed: {
+		rate = SNPROP(baseLearningRate);
+	}
+		break;
+	case Step: {
+		uint32_t currentStep = SNPROP(iterations) / SNPROP(stepSize);
+		rate = SNPROP(baseLearningRate) * pow(SNPROP(gamma), currentStep);
+
+		if (SNPROP(rate) < 0.0f || SNPROP(rate) != rate) {
+			cout << "rate updated: " << rate << endl;
+			SNPROP(rate) = rate;
+		}
+	}
+		break;
+    case Poly: {
+        rate = SNPROP(baseLearningRate) * 
+            pow((1.0 - (float)SNPROP(iterations) / (float)SNPROP(epochs)), SNPROP(power));
+    }
+        break;
+	default: {
+		cout << "not supported lr policy type ... " << endl;
+		exit(1);
+	}
+	}
+
+	return rate;
+}
 
 
 template class NetworkConfig<float>;

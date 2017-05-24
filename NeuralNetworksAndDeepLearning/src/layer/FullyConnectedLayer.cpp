@@ -9,6 +9,7 @@
 #include "Util.h"
 #include "Exception.h"
 #include "SysLog.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -65,9 +66,38 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axi
 }
 
 template<typename Dtype>
+void FullyConnectedLayer<Dtype>::initialize() {
+	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
+	//this->out_dim = io_dim(n_out, 1, 1, 1);
+	this->type = Layer<Dtype>::FullyConnected;
+
+	this->scale = 1. / (1. - SLPROP(FullyConnected, pDropOut));
+
+	this->_params.resize(2);
+	this->_params[ParamType::Weight] = new Data<Dtype>(this->name + "_weight");
+	this->_params[ParamType::Bias] = new Data<Dtype>(this->name + "_bias");
+
+	this->_paramsInitialized.resize(2);
+	this->_paramsInitialized[ParamType::Weight] = false;
+	this->_paramsInitialized[ParamType::Bias] = false;
+
+	this->_paramsHistory.resize(2);
+	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(this->name + "_weight_history");
+	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history");
+
+	this->_paramsHistory2.resize(2);
+	this->_paramsHistory2[ParamType::Weight] = 
+        new Data<Dtype>(this->name + "_weight_history2");
+	this->_paramsHistory2[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history2");
+
+    this->decayedBeta1 = 1.0;
+    this->decayedBeta2 = 1.0;
+}
+
+template<typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string& name) 
 : LearnableLayer<Dtype>(name) {
-     
+    initialize(); 
 }
 
 #ifndef GPU_MODE
@@ -82,21 +112,26 @@ void FullyConnectedLayer<Dtype>::_load(ifstream &ifs, map<Layer *, Layer *> &lay
 
 	double p_dropout;
 	ifs.read((char *)&p_dropout, sizeof(double));
+    SLPROP(FullyConnected, pDropOut) = p_dropOut;
 
 	Activation::Type activationType;
 	ifs.read((char *)&activationType, sizeof(int));
 
 	update_param weight_update_param;
 	ifs.read((char *)&weight_update_param, sizeof(update_param));
+    SLPROP(FullyConnected, weightUpdateParam) = weight_update_param;
 
 	update_param bias_update_param;
 	ifs.read((char *)&bias_update_param, sizeof(update_param));
+    SLPROP(FullyConnected, biasUpdateParam) = bias_update_param;
 
 	param_filler weight_filler;
 	ifs.read((char *)&weight_filler, sizeof(param_filler));
+    SLPROP(FullyConnected, weightFiller) = weight_filler;
 
 	param_filler bias_filler;
 	ifs.read((char *)&bias_filler, sizeof(param_filler));
+    SLPROP(FullyConnected, biasFiller) = bias_filler;
 
 	initialize(p_dropout, weight_update_param, bias_update_param, weight_filler,
                bias_filler, activationType);

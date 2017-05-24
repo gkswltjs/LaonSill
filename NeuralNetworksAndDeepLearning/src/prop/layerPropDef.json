@@ -101,17 +101,13 @@
     "VARS" : 
         [   
             ["nOut", "int", "0"],
-            ["weightUpdateParamLRMulti", "float", "1.0"],
-            ["weightUpdateParamDecayMulti", "float", "0.0"],
-            ["biasUpdateParamLRMulti", "float", "1.0"],
-            ["biasUpdateParamDecayMulti", "float", "0.0"],
-            ["weightFillerType", "int", "ParamFillerType::Constant"],
-            ["weightFillerValue", "float", "0.0"],
-            ["biasFillerType", "int", "ParamFillerType::Constant"],
-            ["biasFillerValue", "float", "0.0"],
+            ["pDropOut", "double", "0.0"],
+            ["weightUpdateParam", "update_param", "{0.0, 1.0}"],
+            ["biasUpdateParam", "update_param", "{0.0, 1.0}"],
+            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"],
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"],
             ["axis", "bool", "false"]
         ]
-
 },
 
 "ILSVRCInput" :
