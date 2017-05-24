@@ -1,13 +1,13 @@
 /**
- * @file YOLOOutputLayer.h
+ * @file YOLOLossLayer.h
  * @date 2017-04-21
  * @author moonhoen lee
  * @brief 
  * @details
  */
 
-#ifndef YOLOOUTPUTLAYER_H
-#define YOLOOUTPUTLAYER_H 
+#ifndef YOLOLOSSLAYER_H
+#define YOLOLOSSLAYER_H 
 
 #include "common.h"
 #include "LossLayer.h"
@@ -17,7 +17,7 @@
 #include "Cost.h"
 
 template<typename Dtype>
-class YOLOOutputLayer : public LossLayer<Dtype> {
+class YOLOLossLayer : public LossLayer<Dtype> {
 public: 
 	class Builder : public LossLayer<Dtype>::Builder {
 	public:
@@ -25,7 +25,7 @@ public:
         float _coord;
 
 		Builder() {
-			this->type = Layer<Dtype>::YoloLoss;
+			this->type = Layer<Dtype>::YOLOLoss;
             this->_noobj = 0.5;
             this->_coord = 5.0;
 		}
@@ -67,13 +67,14 @@ public:
             return this;
         }
 		Layer<Dtype>* build() {
-			return new YOLOOutputLayer(this);
+			return new YOLOLossLayer(this);
 		}
 	};
 
-    YOLOOutputLayer();
-    YOLOOutputLayer(Builder* builder);
-    virtual ~YOLOOutputLayer();
+    YOLOLossLayer();
+    YOLOLossLayer(const std::string& name);
+    YOLOLossLayer(Builder* builder);
+    virtual ~YOLOLossLayer();
 
 	virtual void reshape();
 	virtual void feedforward();
@@ -84,6 +85,18 @@ private:
 	void initialize(float coord, float noobj);
     float noobj;
     float coord;
+
+public:
+    /****************************************************************************
+     * layer callback functions 
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
-#endif /* YOLOOUTPUTLAYER_H */
+#endif /* YOLOLOSSLAYER_H */

@@ -130,6 +130,97 @@
 
 },
 
+"ALEInput" :
+{
+    "DESC" : "Atari Learning Environment input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" : []
+},
+
+"CelebAInput" :
+{
+    "DESC" : "CelebA input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" : 
+        [
+            ["imageDir", "std::string", "\"\""],
+            ["cropImage", "bool", "false"],
+            ["cropLen", "int", "0"],
+            ["resizeImage", "bool", "false"],
+            ["resizedImageRow", "int", "0"],
+            ["resizedImageCol", "int", "0"]
+        ]
+},
+
+"KistiInput" :
+{
+    "DESC" : "KISTI project input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" : 
+        [
+            ["imageDir", "std::string", "\"\""],
+            ["resizedImageRow", "int", "KISTIDATA_DEFAULT_RESIZED_ROW_SIZE"],
+            ["resizedImageCol", "int", "KISTIDATA_DEFAULT_RESIZED_COL_SIZE"],
+            ["train", "bool", "true"]
+        ]
+},
+
+"NoiseInput" :
+{
+    "DESC" : "Noise input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" : 
+        [
+            ["noiseDepth", "int", "100"],
+            ["noiseRangeLow", "double", "-1.0"],
+            ["noiseRangeHigh", "double", "1.0"],
+            ["useLinearTrans", "bool", "false"],
+            ["tranChannels", "int", "1"],
+            ["tranRows", "int", "1"],
+            ["tranCols", "int", "1"],
+            ["tranMean", "double", "0.0"],
+            ["tranVariance", "double", "1.0"],
+            ["regenerateNoise", "bool", "true"]
+        ]
+},
+
+"VOCPascalInput" :
+{
+    "DESC" : "VOC PASCAL input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" : 
+        [
+            ["imageDir", "std::string", "\"\""],
+            ["resizedImageRow", "int", "0"],
+            ["resizedImageCol", "int", "0"],
+            ["resizeImage", "bool", "false"]
+        ]
+},
+
+"BatchNorm" :
+{
+    "DESC" : "batch normalization layer",
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
+    "LEARN" : true,
+    "VARS" : 
+        [   
+            ["epsilon", "double", "0.00001"],
+            ["train", "bool", "true"]
+        ]
+
+},
+
 "SoftmaxWithLoss" :
 {
     "DESC" : "softmax with loss layer",
@@ -139,6 +230,32 @@
     "VARS" :
         [
             ["softmaxAxis", "uint32_t", "2"]
+        ]
+},
+
+"CrossEntropyWithLoss" :
+{
+    "DESC" : "crosss entropy with loss layer",
+    "PARENT" : "Loss",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" :
+        [
+            ["targetValue", "float", "0.0"],
+            ["withSigmoid", "bool", "false"]
+        ]
+},
+
+"YOLOLoss" :
+{
+    "DESC" : "YOLO loss layer",
+    "PARENT" : "Loss",
+    "LEVEL" : 2,
+    "LEARN" : false,
+    "VARS" :
+        [
+            ["noobj", "float", "0.5"],
+            ["coord", "float", "5.0"]
         ]
 },
 
@@ -164,6 +281,38 @@
             ["useLeaky", "bool", "false"],
             ["leaky", "double", "0.0"]
         ]
+},
+
+"Sigmoid2" :
+{
+    "DESC" : "sigmoid 2 layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : []
+},
+
+"DropOut" : 
+{
+    "DESC" : "dropout layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" :
+        [
+            ["probability", "double", "0.5"],
+            ["scale", "double", "0.0"]
+        ]
+
+},
+
+"HyperTangent" : 
+{
+    "DESC" : "hyper tangent layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : false,
+    "VARS" : []
 }
 
 }

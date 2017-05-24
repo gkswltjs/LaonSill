@@ -17,6 +17,8 @@
 #include "NoiseInputLayer.h"
 #include "InputLayer.h"
 #include "NetworkConfig.h"
+#include "SysLog.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -34,6 +36,11 @@ NoiseInputLayer<Dtype>::NoiseInputLayer(const string name, int noiseDepth,
     InputLayer<Dtype>(name) {
     initialize(noiseDepth, noiseRangeLow, noiseRangeHigh, useLinearTrans, tranChannels,
         tranRows, tranCols, tranMean, tranVariance, regenerateNoise);
+}
+
+template<typename Dtype>
+NoiseInputLayer<Dtype>::NoiseInputLayer(const string& name) : InputLayer<Dtype>(name) {
+
 }
 
 template<typename Dtype>
@@ -244,6 +251,54 @@ void NoiseInputLayer<Dtype>::shuffleTrainDataSet() {
     if (this->_dataSet != NULL) {
         return this->_dataSet->shuffleTrainDataSet();
     }
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* NoiseInputLayer<Dtype>::initLayer() {
+    NoiseInputLayer* layer = new NoiseInputLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void NoiseInputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    NoiseInputLayer<Dtype>* layer = (NoiseInputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void NoiseInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    NoiseInputLayer<Dtype>* layer = (NoiseInputLayer<Dtype>*)instancePtr;
+
+    SASSERT0(!isInput);
+    SASSERT0(index == 0);
+    SASSERT0(layer->_outputData.size() == 0);
+    layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+}
+
+template<typename Dtype>
+bool NoiseInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    NoiseInputLayer<Dtype>* layer = (NoiseInputLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void NoiseInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "NoiseInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void NoiseInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "NoiseInputLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void NoiseInputLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "NoiseInputLayer.. learn()" << endl;
 }
 
 template class NoiseInputLayer<float>;

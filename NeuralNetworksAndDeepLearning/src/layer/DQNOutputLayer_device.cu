@@ -7,6 +7,8 @@
  */
 
 #include "DQNOutputLayer.h"
+#include "PropMgmt.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -71,7 +73,6 @@ double DQNOutputLayer<Dtype>::cost() {
     int rowSize = this->_outputData[0]->getShape(2);
 	return this->cost_fn->forward(h_outputData, h_target, rowSize, batchSize);
 }
-
 
 //template void DQNOutputLayer<float>::backpropagation(const uint32_t* target);
 template void DQNOutputLayer<float>::backpropagation();

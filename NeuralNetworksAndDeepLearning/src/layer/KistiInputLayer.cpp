@@ -22,6 +22,7 @@
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "ImageUtil.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -43,6 +44,11 @@ KistiInputLayer<Dtype>::KistiInputLayer(const string name, string imageDir,
     int resizedImageRow, int resizedImageCol, bool train) :
     InputLayer<Dtype>(name) {
     initialize(imageDir, resizedImageRow, resizedImageCol, train);
+}
+
+template<typename Dtype>
+KistiInputLayer<Dtype>::KistiInputLayer(const string& name) : InputLayer<Dtype>(name) {
+    //initialize(imageDir, resizedImageRow, resizedImageCol, train);
 }
 
 template<typename Dtype>
@@ -450,6 +456,59 @@ void KistiInputLayer<Dtype>::shuffleTrainDataSet() {
         reshape();
     }
     shuffleImages();
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* KistiInputLayer<Dtype>::initLayer() {
+    KistiInputLayer* layer = new KistiInputLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void KistiInputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    KistiInputLayer<Dtype>* layer = (KistiInputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void KistiInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    KistiInputLayer<Dtype>* layer = (KistiInputLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool KistiInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    KistiInputLayer<Dtype>* layer = (KistiInputLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void KistiInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "KistiInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void KistiInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "KistiInputLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void KistiInputLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "KistiInputLayer.. learn()" << endl;
 }
 
 template class KistiInputLayer<float>;

@@ -1,5 +1,5 @@
 /**
- * @file YOLOOutputLayer_device.cu
+ * @file YOLOLossLayer_device.cu
  * @date 2017-04-21
  * @author moonhoen lee
  * @brief 
@@ -8,15 +8,16 @@
 
 #include "cuda_runtime.h"
 
-#include "YOLOOutputLayer.h"
+#include "YOLOLossLayer.h"
 #include "Exception.h"
 #include "NetworkConfig.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
-#define YOLOOUTPUTLAYER_LOG         1
+#define YOLOLOSSLAYER_LOG         1
 
 #define YOLO_GRID_COUNT             49
 #define YOLO_GRID_ONE_AXIS_COUNT    7
@@ -211,31 +212,37 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
 }
 
 template <typename Dtype>
-YOLOOutputLayer<Dtype>::YOLOOutputLayer()
+YOLOLossLayer<Dtype>::YOLOLossLayer()
 	: LossLayer<Dtype>() {
 	initialize(0.0, 0.0);
 }
 
 template <typename Dtype>
-YOLOOutputLayer<Dtype>::YOLOOutputLayer(Builder* builder)
+YOLOLossLayer<Dtype>::YOLOLossLayer(const string& name)
+	: LossLayer<Dtype>() {
+	//initialize(0.0, 0.0);
+}
+
+template <typename Dtype>
+YOLOLossLayer<Dtype>::YOLOLossLayer(Builder* builder)
 	: LossLayer<Dtype>(builder) {
 	initialize(builder->_noobj, builder->_coord);
 }
 
 template <typename Dtype>
-void YOLOOutputLayer<Dtype>::initialize(float noobj, float coord) {
-	this->type = Layer<Dtype>::YoloLoss;
+void YOLOLossLayer<Dtype>::initialize(float noobj, float coord) {
+	this->type = Layer<Dtype>::YOLOLoss;
     this->noobj = noobj;
     this->coord = coord;
 }
 
 template<typename Dtype>
-YOLOOutputLayer<Dtype>::~YOLOOutputLayer() {
+YOLOLossLayer<Dtype>::~YOLOLossLayer() {
 
 }
 
 template <typename Dtype>
-void YOLOOutputLayer<Dtype>::reshape() {
+void YOLOLossLayer<Dtype>::reshape() {
 	if (!Layer<Dtype>::_adjustInputShape()) {
         const uint32_t count = Util::vecCountByAxis(this->_inputShape[0], 1);
         const uint32_t inputDataCount = this->_inputData[0]->getCountByAxis(1);
@@ -254,16 +261,16 @@ void YOLOOutputLayer<Dtype>::reshape() {
     const vector<uint32_t>& inputShape2 = this->_inputData[1]->getShape();
 	this->_inputShape[1] = inputShape2;
 
-	STDOUT_COND_LOG(YOLOOUTPUTLAYER_LOG, 
+	STDOUT_COND_LOG(YOLOLOSSLAYER_LOG, 
         "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
         this->name.c_str(), inputShape[0], inputShape[1], inputShape[2], inputShape[3]);
-	STDOUT_COND_LOG(YOLOOUTPUTLAYER_LOG,
+	STDOUT_COND_LOG(YOLOLOSSLAYER_LOG,
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
         this->name.c_str(), inputShape[0], inputShape[1], inputShape[2], inputShape[3]);
 }
 
 template <typename Dtype>
-void YOLOOutputLayer<Dtype>::feedforward() {
+void YOLOLossLayer<Dtype>::feedforward() {
 	reshape();
 
     const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
@@ -279,7 +286,7 @@ void YOLOOutputLayer<Dtype>::feedforward() {
 }
 
 template <typename Dtype>
-void YOLOOutputLayer<Dtype>::backpropagation() {
+void YOLOLossLayer<Dtype>::backpropagation() {
     const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
     int batchCount = inputShape[0];
     int size = batchCount * YOLO_GRID_COUNT;
@@ -295,7 +302,7 @@ void YOLOOutputLayer<Dtype>::backpropagation() {
 }
 
 template <typename Dtype>
-Dtype YOLOOutputLayer<Dtype>::cost() {
+Dtype YOLOLossLayer<Dtype>::cost() {
     const Dtype* outputData = this->_outputData[0]->host_data();
     Dtype avg = 0.0;
 
@@ -309,4 +316,58 @@ Dtype YOLOOutputLayer<Dtype>::cost() {
 	return avg / (Dtype)batchCount;
 }
 
-template class YOLOOutputLayer<float>;
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* YOLOLossLayer<Dtype>::initLayer() {
+    YOLOLossLayer* layer = new YOLOLossLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void YOLOLossLayer<Dtype>::destroyLayer(void* instancePtr) {
+    YOLOLossLayer<Dtype>* layer = (YOLOLossLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void YOLOLossLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+
+    YOLOLossLayer<Dtype>* layer = (YOLOLossLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(index < 2);
+        SASSERT0(layer->_inputData.size() == index);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(index == 0);
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool YOLOLossLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    YOLOLossLayer<Dtype>* layer = (YOLOLossLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void YOLOLossLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "YOLOLossLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void YOLOLossLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "YOLOLossLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void YOLOLossLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "YOLOLossLayer.. learn()" << endl;
+}
+
+template class YOLOLossLayer<float>;

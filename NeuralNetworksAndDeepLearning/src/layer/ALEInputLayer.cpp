@@ -10,11 +10,18 @@
 #include "ALEInputLayer.h"
 #include "InputLayer.h"
 #include "NetworkConfig.h"
+#include "PropMgmt.h"
+#include "SysLog.h"
 
 using namespace std;
 
 template<typename Dtype>
 ALEInputLayer<Dtype>::ALEInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
+	initialize();
+}
+
+template<typename Dtype>
+ALEInputLayer<Dtype>::ALEInputLayer(const string& name) : InputLayer<Dtype>(name) {
 	initialize();
 }
 
@@ -231,6 +238,54 @@ void ALEInputLayer<Dtype>::shuffleTrainDataSet() {
     if (this->_dataSet != NULL) {
         return this->_dataSet->shuffleTrainDataSet();
     }
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* ALEInputLayer<Dtype>::initLayer() {
+    ALEInputLayer* layer = new ALEInputLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void ALEInputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    ALEInputLayer<Dtype>* layer = (ALEInputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void ALEInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    ALEInputLayer<Dtype>* layer = (ALEInputLayer<Dtype>*)instancePtr;
+
+    SASSERT0(!isInput);
+    SASSERT0(index < 2);
+    SASSERT0(layer->_outputData.size() == index);
+    layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+}
+
+template<typename Dtype>
+bool ALEInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    ALEInputLayer<Dtype>* layer = (ALEInputLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void ALEInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "ALEInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void ALEInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "ALEInputLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void ALEInputLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "ALEInputLayer.. learn()" << endl;
 }
 
 template class ALEInputLayer<float>;

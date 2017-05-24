@@ -28,6 +28,12 @@ BatchNormLayer<Dtype>::BatchNormLayer(const string name,
 }
 
 template <typename Dtype>
+BatchNormLayer<Dtype>::BatchNormLayer(const string name)
+: LearnableLayer<Dtype>(name) {
+	//initialize(epsilon, train);
+}
+
+template <typename Dtype>
 void BatchNormLayer<Dtype>::initialize(double epsilon, bool train) {
 	this->type                  = Layer<Dtype>::BatchNorm;
     this->epsilon               = epsilon;

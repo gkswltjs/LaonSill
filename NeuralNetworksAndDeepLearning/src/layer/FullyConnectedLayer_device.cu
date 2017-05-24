@@ -818,14 +818,14 @@ template void FullyConnectedLayer<float>::backpropagation();
  ****************************************************************************/
 template<typename Dtype>
 void* FullyConnectedLayer<Dtype>::initLayer() {
-    FullyConnectedLayer* fc = new FullyConnectedLayer<Dtype>(SLPROP(FullyConnected, name));
-    return (void*)fc;
+    FullyConnectedLayer* layer = new FullyConnectedLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
 }
 
 template<typename Dtype>
 void FullyConnectedLayer<Dtype>::destroyLayer(void* instancePtr) {
-    FullyConnectedLayer<Dtype>* fc = (FullyConnectedLayer<Dtype>*)instancePtr;
-    delete fc;
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    delete layer;
 }
 
 template<typename Dtype>
@@ -833,21 +833,21 @@ void FullyConnectedLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorP
     bool isInput, int index) {
     SASSERT0(index == 0);
 
-    FullyConnectedLayer<Dtype>* fc = (FullyConnectedLayer<Dtype>*)instancePtr;
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
 
     if (isInput) {
-        SASSERT0(fc->_inputData.size() == 0);
-        fc->_inputData.push_back((Data<Dtype>*)tensorPtr);
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
     } else {
-        SASSERT0(fc->_outputData.size() == 0);
-        fc->_outputData.push_back((Data<Dtype>*)tensorPtr);
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
     }
 }
 
 template<typename Dtype>
 bool FullyConnectedLayer<Dtype>::allocLayerTensors(void* instancePtr) {
-    FullyConnectedLayer<Dtype>* fc = (FullyConnectedLayer<Dtype>*)instancePtr;
-    //fc->reshape();
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    //layer->reshape();
     return true;
 }
 

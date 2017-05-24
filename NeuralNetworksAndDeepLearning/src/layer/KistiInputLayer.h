@@ -97,6 +97,7 @@ public:
     
 	KistiInputLayer(const std::string name, const std::string imageDir,
         int resizedImageRow, int resizedImageCol, bool train);
+	KistiInputLayer(const std::string& name);
 	KistiInputLayer(Builder* builder);
 
     virtual ~KistiInputLayer();
@@ -139,5 +140,17 @@ protected:
     Dtype *images;
     Dtype *labels;
     int currentBatchIndex;
+
+public:
+    /****************************************************************************
+     * layer callback functions 
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 #endif /* KISTIINPUTLAYER_H */

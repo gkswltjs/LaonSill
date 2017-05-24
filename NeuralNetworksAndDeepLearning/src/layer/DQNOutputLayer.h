@@ -111,6 +111,7 @@ public:
 
 protected:
 	void initialize();
+
 };
 
 #endif /* DQNOUTPUTLAYER_H */

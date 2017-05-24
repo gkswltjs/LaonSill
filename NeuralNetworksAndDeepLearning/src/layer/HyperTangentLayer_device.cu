@@ -15,6 +15,7 @@
 #include "StdOutLog.h"
 #include "ColdLog.h"
 #include "Perf.h"
+#include "PropMgmt.h"
 
 #define HYPERTANGENT_LOG   1
 
@@ -128,6 +129,59 @@ void HyperTangentLayer<Dtype>::reshape() {
 	STDOUT_COND_LOG(HYPERTANGENT_LOG,
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
         this->name.c_str(), batches, channels, rows, cols);
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* HyperTangentLayer<Dtype>::initLayer() {
+    HyperTangentLayer* layer = new HyperTangentLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void HyperTangentLayer<Dtype>::destroyLayer(void* instancePtr) {
+    HyperTangentLayer<Dtype>* layer = (HyperTangentLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void HyperTangentLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    HyperTangentLayer<Dtype>* layer = (HyperTangentLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool HyperTangentLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    HyperTangentLayer<Dtype>* layer = (HyperTangentLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void HyperTangentLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "HyperTangentLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void HyperTangentLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "HyperTangentLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void HyperTangentLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "HyperTangentLayer.. learn()" << endl;
 }
 
 template class HyperTangentLayer<float>;

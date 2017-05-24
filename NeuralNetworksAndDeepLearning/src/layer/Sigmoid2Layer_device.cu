@@ -8,15 +8,16 @@
 
 #include "cuda_runtime.h"
 
-#include "SigmoidLayer2.h"
+#include "Sigmoid2Layer.h"
 #include "Exception.h"
 #include "NetworkConfig.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "ColdLog.h"
 #include "Perf.h"
+#include "PropMgmt.h"
 
-#define SIGMOIDLAYER2_LOG   1
+#define SIGMOID2LAYER_LOG   1
 
 using namespace std;
 
@@ -44,28 +45,28 @@ __global__ void Backward(const Dtype *outputGrad, const Dtype *output, int size,
 }
 
 template <typename Dtype>
-SigmoidLayer2<Dtype>::SigmoidLayer2() {
+Sigmoid2Layer<Dtype>::Sigmoid2Layer() {
 	this->type = Layer<Dtype>::Sigmoid2;
 }
 
 template <typename Dtype>
-SigmoidLayer2<Dtype>::SigmoidLayer2(Builder* builder)
+Sigmoid2Layer<Dtype>::Sigmoid2Layer(Builder* builder)
 	: Layer<Dtype>(builder) {
 	initialize();
 }
 
 template <typename Dtype>
-SigmoidLayer2<Dtype>::SigmoidLayer2(const string name) : Layer<Dtype>(name) {
+Sigmoid2Layer<Dtype>::Sigmoid2Layer(const string name) : Layer<Dtype>(name) {
 	initialize();
 }
 
 template <typename Dtype>
-void SigmoidLayer2<Dtype>::initialize() {
+void Sigmoid2Layer<Dtype>::initialize() {
 	this->type = Layer<Dtype>::Sigmoid2;
 }
 
 template <typename Dtype>
-void SigmoidLayer2<Dtype>::feedforward() {
+void Sigmoid2Layer<Dtype>::feedforward() {
     const Dtype* inputData = this->_inputData[0]->device_data();
     Dtype* outputData = this->_outputData[0]->mutable_device_data();
     int size = this->_inputData[0]->getCountByAxis(0);
@@ -75,7 +76,7 @@ void SigmoidLayer2<Dtype>::feedforward() {
 }
 
 template <typename Dtype>
-void SigmoidLayer2<Dtype>::backpropagation() {
+void Sigmoid2Layer<Dtype>::backpropagation() {
 	const Dtype* outputGrads = this->_outputData[0]->device_grad();
     const Dtype* output = this->_outputData[0]->device_data();
 	Dtype* inputGrads = this->_inputData[0]->mutable_device_grad();
@@ -86,7 +87,7 @@ void SigmoidLayer2<Dtype>::backpropagation() {
 }
 
 template <typename Dtype>
-void SigmoidLayer2<Dtype>::reshape() {
+void Sigmoid2Layer<Dtype>::reshape() {
 	if (!Layer<Dtype>::_adjustInputShape()) {
 		const uint32_t count = Util::vecCountByAxis(this->_inputShape[0], 1);
 		const uint32_t inputDataCount = this->_inputData[0]->getCountByAxis(1);
@@ -108,12 +109,65 @@ void SigmoidLayer2<Dtype>::reshape() {
 	this->_inputShape[0] = {batches, channels, rows, cols};
 	this->_outputData[0]->reshape({batches, channels, rows, cols});
 
-	STDOUT_COND_LOG(SIGMOIDLAYER2_LOG, 
+	STDOUT_COND_LOG(SIGMOID2LAYER_LOG, 
         "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
         this->name.c_str(), batches, channels, rows, cols);
-	STDOUT_COND_LOG(SIGMOIDLAYER2_LOG,
+	STDOUT_COND_LOG(SIGMOID2LAYER_LOG,
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
         this->name.c_str(), batches, channels, rows, cols);
 }
 
-template class SigmoidLayer2<float>;
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* Sigmoid2Layer<Dtype>::initLayer() {
+    Sigmoid2Layer* layer = new Sigmoid2Layer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void Sigmoid2Layer<Dtype>::destroyLayer(void* instancePtr) {
+    Sigmoid2Layer<Dtype>* layer = (Sigmoid2Layer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void Sigmoid2Layer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    Sigmoid2Layer<Dtype>* layer = (Sigmoid2Layer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool Sigmoid2Layer<Dtype>::allocLayerTensors(void* instancePtr) {
+    Sigmoid2Layer<Dtype>* layer = (Sigmoid2Layer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void Sigmoid2Layer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "Sigmoid2Layer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void Sigmoid2Layer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "Sigmoid2Layer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void Sigmoid2Layer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "Sigmoid2Layer.. learn()" << endl;
+}
+
+template class Sigmoid2Layer<float>;

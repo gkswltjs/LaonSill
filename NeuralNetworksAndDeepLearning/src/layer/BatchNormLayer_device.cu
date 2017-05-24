@@ -16,6 +16,7 @@
 #include "ColdLog.h"
 #include "Perf.h"
 #include "MathFunctions.h"
+#include "PropMgmt.h"
 
 #define BATCHCONDLAYER_LOG  1
 
@@ -765,5 +766,67 @@ template void BatchNormLayer<float>::feedforward();
 template void BatchNormLayer<float>::backpropagation();
 template void BatchNormLayer<float>::applyChanges(LearnableLayer<float> *targetLayer);
 template void BatchNormLayer<float>::syncParams(LearnableLayer<float> *targetLayer);
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* BatchNormLayer<Dtype>::initLayer() {
+    BatchNormLayer* layer = new BatchNormLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void BatchNormLayer<Dtype>::destroyLayer(void* instancePtr) {
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void BatchNormLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool BatchNormLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void BatchNormLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "BatchNormLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void BatchNormLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "BatchNormLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void BatchNormLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "BatchNormLayer.. learn()" << endl;
+}
+
+template void* BatchNormLayer<float>::initLayer();
+template void BatchNormLayer<float>::destroyLayer(void* instancePtr);
+template void BatchNormLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool BatchNormLayer<float>::allocLayerTensors(void* instancePtr);
+template void BatchNormLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void BatchNormLayer<float>::backwardTensor(void* instancePtr);
+template void BatchNormLayer<float>::learnTensor(void* instancePtr);
 
 #endif

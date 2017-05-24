@@ -20,6 +20,7 @@
 #include "NetworkConfig.h"
 #include "ColdLog.h"
 #include "SysLog.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -51,6 +52,12 @@ VOCPascalInputLayer<Dtype>::VOCPascalInputLayer(const string name, string imageD
     bool resizeImage, int resizedImageRow, int resizedImageCol) :
     InputLayer<Dtype>(name) {
     initialize(imageDir, resizeImage, resizedImageRow, resizedImageCol);
+}
+
+template<typename Dtype>
+VOCPascalInputLayer<Dtype>::VOCPascalInputLayer(const string& name)
+: InputLayer<Dtype>(name) {
+    //initialize(imageDir, resizeImage, resizedImageRow, resizedImageCol);
 }
 
 template<typename Dtype>
@@ -353,6 +360,54 @@ void VOCPascalInputLayer<Dtype>::shuffleTrainDataSet() {
         reshape();
     }
     shuffleImages();
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* VOCPascalInputLayer<Dtype>::initLayer() {
+    VOCPascalInputLayer* layer = new VOCPascalInputLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void VOCPascalInputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    VOCPascalInputLayer<Dtype>* layer = (VOCPascalInputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void VOCPascalInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    VOCPascalInputLayer<Dtype>* layer = (VOCPascalInputLayer<Dtype>*)instancePtr;
+
+    SASSERT0(!isInput);
+    SASSERT0(index < 2);
+    SASSERT0(layer->_outputData.size() == index);
+    layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+}
+
+template<typename Dtype>
+bool VOCPascalInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    VOCPascalInputLayer<Dtype>* layer = (VOCPascalInputLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void VOCPascalInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "VOCPascalInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void VOCPascalInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "VOCPascalInputLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void VOCPascalInputLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "VOCPascalInputLayer.. learn()" << endl;
 }
 
 template class VOCPascalInputLayer<float>;

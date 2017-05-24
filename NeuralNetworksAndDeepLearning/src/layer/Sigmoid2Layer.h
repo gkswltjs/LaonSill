@@ -17,7 +17,7 @@
 #include "Cost.h"
 
 template <typename Dtype>
-class SigmoidLayer2 : public Layer<Dtype> {
+class Sigmoid2Layer : public Layer<Dtype> {
 public: 
 	class Builder : public Layer<Dtype>::Builder {
 	public:
@@ -45,7 +45,7 @@ public:
 			return this;
 		}
 		Layer<Dtype>* build() {
-			return new SigmoidLayer2(this);
+			return new Sigmoid2Layer(this);
 		}
 	};
 
@@ -53,11 +53,11 @@ public:
 	 * @details FullyConnectedLayer 기본 생성자
 	 *          내부적으로 레이어 타입만 초기화한다.
 	 */
-	SigmoidLayer2();
-	SigmoidLayer2(Builder* builder);
+	Sigmoid2Layer();
+	Sigmoid2Layer(Builder* builder);
 
-    SigmoidLayer2(const std::string name);
-    virtual ~SigmoidLayer2() {}
+    Sigmoid2Layer(const std::string name);
+    virtual ~Sigmoid2Layer() {}
 
 	virtual void backpropagation();
 	virtual void reshape();
@@ -65,5 +65,17 @@ public:
 
 private:
     void initialize();
+
+public:
+    /****************************************************************************
+     * layer callback functions 
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 #endif /* SIGMOIDLAYER2_H */

@@ -20,6 +20,7 @@
 #include "NetworkConfig.h"
 #include "ColdLog.h"
 #include "SysLog.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -41,6 +42,11 @@ CelebAInputLayer<Dtype>::CelebAInputLayer(const string name, string imageDir, bo
     int cropLen, bool resizeImage, int resizedImageRow, int resizedImageCol) :
     InputLayer<Dtype>(name) {
     initialize(imageDir, cropImage, cropLen, resizeImage, resizedImageRow, resizedImageCol);
+}
+
+template<typename Dtype>
+CelebAInputLayer<Dtype>::CelebAInputLayer(const string& name) : InputLayer<Dtype>(name) {
+    //initialize(imageDir, cropImage, cropLen, resizeImage, resizedImageRow, resizedImageCol);
 }
 
 template<typename Dtype>
@@ -277,6 +283,54 @@ void CelebAInputLayer<Dtype>::shuffleTrainDataSet() {
         reshape();
     }
     shuffleImages();
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* CelebAInputLayer<Dtype>::initLayer() {
+    CelebAInputLayer* layer = new CelebAInputLayer<Dtype>(SLPROP_BASE(name));
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void CelebAInputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    CelebAInputLayer<Dtype>* layer = (CelebAInputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void CelebAInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    CelebAInputLayer<Dtype>* layer = (CelebAInputLayer<Dtype>*)instancePtr;
+
+    SASSERT0(!isInput);
+    SASSERT0(index < 2);
+    SASSERT0(layer->_outputData.size() == index);
+    layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+}
+
+template<typename Dtype>
+bool CelebAInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    CelebAInputLayer<Dtype>* layer = (CelebAInputLayer<Dtype>*)instancePtr;
+    //layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void CelebAInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    cout << "CelebAInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+}
+
+template<typename Dtype>
+void CelebAInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "CelebAInputLayer.. backward()" << endl;
+}
+
+template<typename Dtype>
+void CelebAInputLayer<Dtype>::learnTensor(void* instancePtr) {
+    cout << "CelebAInputLayer.. learn()" << endl;
 }
 
 template class CelebAInputLayer<float>;

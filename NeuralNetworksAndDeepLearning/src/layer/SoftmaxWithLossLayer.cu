@@ -67,7 +67,7 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 
             SASSERT(this->outerNum*this->innerNum == this->_inputData[1]->getCount(),
 			    "Number of labels must match number of predictions ... "
-                "outer num : %d, inner num : %d, input count : %d",
+                "outer num : %d, inner num : %d, input count : %lu",
                 this->outerNum, this->innerNum, this->_inputData[1]->getCount());
 
 #if 0

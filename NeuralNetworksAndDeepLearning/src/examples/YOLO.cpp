@@ -1258,7 +1258,7 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
                 ->inputs({"fc8_1"})
                 ->outputs({"fc8_1"}))
 
-        ->layer((new typename YOLOOutputLayer<Dtype>::Builder())
+        ->layer((new typename YOLOLossLayer<Dtype>::Builder())
                 ->id(9001)
                 ->name("loss")
                 ->inputs({"fc8_1", "label"})

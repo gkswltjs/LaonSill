@@ -22,7 +22,7 @@ public:
 	class Builder : public Layer<Dtype>::Builder {
 	public:
 		Builder() {
-			this->type = Layer<Dtype>::Sigmoid2;
+			this->type = Layer<Dtype>::HyperTangent;
 		}
 		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);
@@ -65,6 +65,18 @@ public:
 
 private:
     void initialize();
+
+public:
+    /****************************************************************************
+     * layer callback functions 
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* HYPERTANGENTLAYER_H */

@@ -44,14 +44,14 @@
 #include "BatchNormLayer.h"
 #include "ReluLayer.h"
 #include "CrossEntropyWithLossLayer.h"
-#include "SigmoidLayer2.h"
+#include "Sigmoid2Layer.h"
 #include "NoiseInputLayer.h"
 #include "HyperTangentLayer.h"
 #include "KistiInputLayer.h"
 #include "VOCPascalInputLayer.h"
 #include "ILSVRCInputLayer.h"
 #include "DropOutLayer.h"
-#include "YOLOOutputLayer.h"
+#include "YOLOLossLayer.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;

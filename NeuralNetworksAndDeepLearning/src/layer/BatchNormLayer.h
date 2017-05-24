@@ -71,6 +71,7 @@ public:
 	BatchNormLayer(Builder* builder);
 
     BatchNormLayer(const std::string name, double epsilon, bool train);
+    BatchNormLayer(const std::string name);
     virtual ~BatchNormLayer();
 
 	//////////////////////////////////////////
@@ -130,5 +131,17 @@ protected:
 	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
         const Dtype epsilon, const Dtype decayRate, const Dtype beta1, const Dtype beta2,
         Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2, Data<Dtype>* data);
+
+public:
+    /****************************************************************************
+     * layer callback functions 
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 #endif /* BATCHNORMLAYER_H */
