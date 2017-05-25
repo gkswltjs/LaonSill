@@ -18,7 +18,7 @@ using namespace std;
 template <typename Dtype>
 SplitLayer<Dtype>::SplitLayer(const std::string& name)
 	: Layer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -42,7 +42,6 @@ void SplitLayer<Dtype>::initialize() {
 template <typename Dtype>
 void SplitLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
-
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
 
@@ -90,7 +89,7 @@ template <typename Dtype>
 void SplitLayer<Dtype>::feedforward() {
 	reshape();
 
-	for (uint32_t i = 0; i < this->_outputs.size(); i++) {
+	for (uint32_t i = 0; i < this->_outputData.size(); i++) {
 		this->_outputData[i]->set_device_data(this->_inputData[0]);
 	}
 }
@@ -103,7 +102,7 @@ void SplitLayer<Dtype>::backpropagation() {
 #endif
 
 	this->_inputData[0]->reset_device_grad();
-	for (uint32_t i = 0; i < this->_outputs.size(); i++) {
+	for (uint32_t i = 0; i < this->_outputData.size(); i++) {
 
 #if SPLITLAYER_LOG
 		if (this->name == targetLayer) {

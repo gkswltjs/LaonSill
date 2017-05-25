@@ -20,7 +20,8 @@ ReluLayer<Dtype>::ReluLayer(Builder* builder)
 template<typename Dtype>
 ReluLayer<Dtype>::ReluLayer(const string& name) 
 : Layer<Dtype>(name) {
-	initialize(false, 0.5);
+	//initialize(false, 0.5);
+	initialize();
 }
 
 template <typename Dtype>
@@ -60,20 +61,14 @@ void ReluLayer<Dtype>::feedforward() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
-    if (this->useLeaky) {
+	const bool useLeaky = SLPROP(Relu, useLeaky);
+    if (useLeaky) {
         applyLeakyForward();
     } else {
 	    checkCUDNN(cudnnActivationForward(Cuda::cudnnHandle, this->activationDesc,
 					&Cuda::alpha, this->tensorDesc, d_inputData,
 					&Cuda::beta, this->tensorDesc, d_outputData));
     }
-
-	/*
-	Data<Dtype>::printConfig = true;
-	this->_inputData[0]->print_data({}, true);
-	this->_outputData[0]->print_data({}, true);
-	Data<Dtype>::printConfig = false;
-	*/
 }
 
 template <typename Dtype>
@@ -83,7 +78,8 @@ void ReluLayer<Dtype>::backpropagation() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 
-    if (this->useLeaky) {
+	const bool useLeaky = SLPROP(Relu, useLeaky);
+    if (useLeaky) {
         applyLeakyBackward();
     } else {
 	    checkCUDNN(cudnnActivationBackward(Cuda::cudnnHandle, this->activationDesc,
@@ -91,13 +87,16 @@ void ReluLayer<Dtype>::backpropagation() {
 					d_outputGrad, this->tensorDesc, d_inputData,
 					&Cuda::beta, this->tensorDesc, d_inputGrad));
     }
+}
 
-	/*
-	Data<Dtype>::printConfig = true;
-	this->_outputData[0]->print_grad({}, true);
-	this->_inputData[0]->print_grad({}, true);
-	Data<Dtype>::printConfig = false;
-	*/
+template <typename Dtype>
+void ReluLayer<Dtype>::initialize() {
+	this->type = Layer<Dtype>::Relu;
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->tensorDesc));
+	checkCUDNN(cudnnCreateActivationDescriptor(&this->activationDesc));
+	checkCUDNN(cudnnSetActivationDescriptor(this->activationDesc, CUDNN_ACTIVATION_RELU,
+			CUDNN_PROPAGATE_NAN, 0.0));
 }
 
 template <typename Dtype>
@@ -107,7 +106,6 @@ void ReluLayer<Dtype>::initialize(bool useLeaky, double leaky) {
     this->leaky = leaky;
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->tensorDesc));
-
 	checkCUDNN(cudnnCreateActivationDescriptor(&this->activationDesc));
 	checkCUDNN(cudnnSetActivationDescriptor(this->activationDesc, CUDNN_ACTIVATION_RELU,
 			CUDNN_PROPAGATE_NAN, 0.0));

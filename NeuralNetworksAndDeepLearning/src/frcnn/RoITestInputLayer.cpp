@@ -25,7 +25,7 @@ using namespace std;
 template <typename Dtype>
 RoITestInputLayer<Dtype>::RoITestInputLayer(const string& name)
 : InputLayer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -47,9 +47,11 @@ template <typename Dtype>
 void RoITestInputLayer<Dtype>::reshape() {
 	// 입력 레이어의 경우 outputs만 사용자가 설정,
 	// inputs에 대해 outputs와 동일하게 Data 참조하도록 강제한다.
-	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+	const vector<string>& outputs = SLPROP(Input, output);
+	vector<string>& inputs = SLPROP(Input, input);
+	if (inputs.size() < 1) {
+		for (uint32_t i = 0; i < outputs.size(); i++) {
+			inputs.push_back(outputs[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
@@ -159,9 +161,9 @@ IMDB* RoITestInputLayer<Dtype>::getRoidb(const string& imdb_name) {
 
 template <typename Dtype>
 IMDB* RoITestInputLayer<Dtype>::getImdb(const string& imdb_name) {
+	const vector<float>& pixelMeans = SLPROP(RoITestInput, pixelMeans);
 	IMDB* imdb = new PascalVOC("test_sample", "2007",
-			"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
-			this->pixelMeans);
+			"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007", pixelMeans);
 	imdb->loadGtRoidb();
 
 	return imdb;
@@ -209,6 +211,7 @@ void RoITestInputLayer<Dtype>::imDetect(cv::Mat& im) {
 	float* tempImPtr = (float*)tempIm.data;
 	float* imPtr = (float*)im.data;
 
+	const vector<float>& pixelMeans = SLPROP(RoITestInput, pixelMeans);
 	// BGR to RGB
 	// bias image to mean 0
 	const uint32_t channels = (uint32_t)im.channels();
@@ -273,10 +276,12 @@ void RoITestInputLayer<Dtype>::imToBlob(cv::Mat& im) {
 	this->_inputData[0]->transpose(channelSwap);
 	this->_inputShape[0] = this->_inputData[0]->getShape();
 
+#if ROITESTINPUTLAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
 			this->name.c_str(),
 			this->_inputShape[0][0], this->_inputShape[0][1],
 			this->_inputShape[0][2], this->_inputShape[0][3]);
+#endif
 
 #if ROITESTINPUTLAYER_LOG
 	Data<Dtype>::printConfig = true;

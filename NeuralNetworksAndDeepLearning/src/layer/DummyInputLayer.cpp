@@ -33,9 +33,11 @@ void DummyInputLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void DummyInputLayer<Dtype>::reshape() {
-	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+	const vector<string>& outputs = SLPROP(Input, output);
+	vector<string>& inputs = SLPROP(Input, input);
+	if (inputs.size() < 1) {
+		for (uint32_t i = 0; i < outputs.size(); i++) {
+			inputs.push_back(outputs[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}

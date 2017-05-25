@@ -74,9 +74,9 @@ private:
 	//Activation<Dtype> *activation_fn;
 
 	// used to carry out sum using BLAS
-	Data<Dtype>* sumMultiplier;
+	Data<Dtype> sumMultiplier;
 	// intermediate data to hold temporary results.
-	Data<Dtype>* scale;
+	Data<Dtype> scale;
 
 	cudnnTensorDescriptor_t inputTensorDesc;
 	cudnnTensorDescriptor_t outputTensorDesc;

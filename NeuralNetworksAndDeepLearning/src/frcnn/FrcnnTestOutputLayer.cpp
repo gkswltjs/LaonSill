@@ -22,7 +22,7 @@ using namespace std;
 template <typename Dtype>
 FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer(const string& name)
 : Layer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -291,12 +291,13 @@ void FrcnnTestOutputLayer<Dtype>::feedforward() {
 	vector<vector<Dtype>> predBox;
 
 	// XXX:
+	const float thresh = SLPROP(FrcnnTestOutput, thresh);
 	// skip j = 0, because it's the background class
 	for (uint32_t i = 1; i < numClasses; i++) {
 		// 현재 class에서 score가 thresh를 넘는 roi index 찾기
 		vector<uint32_t> inds;
 		for (uint32_t j = 0; j < numRois; j++) {
-			if (scores[j][i] > this->thresh)
+			if (scores[j][i] > thresh)
 				inds.push_back(j);
 		}
 		if (inds.size() < 1)
@@ -360,17 +361,18 @@ void FrcnnTestOutputLayer<Dtype>::feedforward() {
 	}
 
 	// Limit to maxPerImage detections *over all classes*
-	if (this->maxPerImage > 0) {
-		cout << "maxPerImage: " << this->maxPerImage << endl;
+	const uint32_t maxPerImage = SLPROP(FrcnnTestOutput, maxPerImage);
+	if (maxPerImage > 0) {
+		cout << "maxPerImage: " << maxPerImage << endl;
 
-		if (all_scores.size() > this->maxPerImage) {
+		if (all_scores.size() > maxPerImage) {
 			sort(all_scores.begin(), all_scores.end());
 
 #if FRCNNTESTOUTPUTLAYER_LOG
 			printArray("all_scores", all_scores);
 #endif
 
-			float imageThresh = all_scores[all_scores.size()-this->maxPerImage];
+			float imageThresh = all_scores[all_scores.size() - maxPerImage];
 			for (uint32_t i = 1; i < numClasses; i++) {
 				typename vector<array<float, 5>>::iterator it;
 				for(it = all_boxes[i].begin(); it != all_boxes[i].end();) {
@@ -456,33 +458,6 @@ void FrcnnTestOutputLayer<Dtype>::initialize() {
 	this->boxColors.push_back(cv::Scalar(169, 171, 0));
 	this->boxColors.push_back(cv::Scalar(255, 0, 170));
 	this->boxColors.push_back(cv::Scalar(0, 193, 216));
-
-	/*
-	boxColors.push_back(cv::Scalar(240, 163, 10));
-	boxColors.push_back(cv::Scalar(130, 90, 44));
-	boxColors.push_back(cv::Scalar(0, 80, 239));
-	boxColors.push_back(cv::Scalar(162, 0, 37));
-	boxColors.push_back(cv::Scalar(27, 161, 226));
-
-	boxColors.push_back(cv::Scalar(216, 0, 115));
-	boxColors.push_back(cv::Scalar(164, 196, 0));
-	boxColors.push_back(cv::Scalar(106, 0, 255));
-	boxColors.push_back(cv::Scalar(96, 169, 23));
-	boxColors.push_back(cv::Scalar(0, 138, 0));
-
-	boxColors.push_back(cv::Scalar(118, 96, 138));
-	boxColors.push_back(cv::Scalar(109, 135, 100));
-	boxColors.push_back(cv::Scalar(250, 104, 0));
-	boxColors.push_back(cv::Scalar(244, 114, 208));
-	boxColors.push_back(cv::Scalar(229, 20, 0));
-
-	boxColors.push_back(cv::Scalar(122, 59, 63));
-	boxColors.push_back(cv::Scalar(100, 118, 135));
-	boxColors.push_back(cv::Scalar(0, 171, 169));
-	boxColors.push_back(cv::Scalar(170, 0, 255));
-	boxColors.push_back(cv::Scalar(216, 193, 0));
-	*/
-
 }
 
 

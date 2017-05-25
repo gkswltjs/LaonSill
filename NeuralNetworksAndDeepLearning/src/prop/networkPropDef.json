@@ -26,7 +26,8 @@
     ["lrPolicy", "int", "LRPolicy::Fixed"],
     ["phase", "int", "NetworkPhase::TrainPhase"],
     ["lossLayer", "std::vector<std::string>", ""],
-    ["rate", "float", "-1.0"]
+    ["rate", "float", "-1.0"],
+	["status", "NetworkStatus", "NetworkStatus::Train"]
 ]
 
 }

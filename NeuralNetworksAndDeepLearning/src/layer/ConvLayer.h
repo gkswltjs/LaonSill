@@ -174,8 +174,6 @@ public:
 	//////////////////////////////////////////
 	// Learnable Layer Method
 	//////////////////////////////////////////
-	using Layer<Dtype>::getName;
-	virtual const std::string getName() { return this->name; }
 	virtual void update();
 	//virtual double sumSquareParamsData();
 	//virtual double sumSquareParamsGrad();
@@ -205,6 +203,7 @@ public:
 
 
 protected:
+    void initialize();
 	void initialize(filter_dim filter_d, update_param weight_update_param,
         update_param bias_update_param, param_filler<Dtype> weight_filler,
         param_filler<Dtype> bias_filler, bool deconv, int deconvExtraCell);

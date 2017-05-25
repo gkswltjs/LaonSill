@@ -85,7 +85,7 @@ private:
 	uint32_t channels;
 	uint32_t height;
 	uint32_t width;
-	Data<int>* maxIdx;
+	Data<int> maxIdx;
 
 
 public:

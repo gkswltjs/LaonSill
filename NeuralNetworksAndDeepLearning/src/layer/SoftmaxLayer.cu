@@ -22,14 +22,18 @@ using namespace std;
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer(const string& name)
-: Layer<Dtype>(name) {
-
+: Layer<Dtype>(name),
+  sumMultiplier("sumMultiplier"),
+  scale("scale") {
+	initialize();
 }
 
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
+: Layer<Dtype>(builder),
+  sumMultiplier("sumMultiplier"),
+  scale("scale") {
 	this->softmaxAxis = builder->_softmaxAxis;
 
 	initialize();
@@ -38,8 +42,8 @@ SoftmaxLayer<Dtype>::SoftmaxLayer(Builder* builder)
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::~SoftmaxLayer() {
-	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
-	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(this->inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(this->outputTensorDesc));
 }
 
 
@@ -47,7 +51,6 @@ SoftmaxLayer<Dtype>::~SoftmaxLayer() {
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
-
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
 
@@ -63,28 +66,25 @@ void SoftmaxLayer<Dtype>::reshape() {
 			inputDataShape[2], inputDataShape[3]);
 #endif
 
+	const uint32_t softmaxAxis = SLPROP(Softmax, softmaxAxis);
 
+	//vector<uint32_t> multDims(1, inputDataShape[softmaxAxis]);
+	this->sumMultiplier.reshape({1, 1, 1, inputDataShape[softmaxAxis]});
+	Dtype* multiplierData = this->sumMultiplier.mutable_host_data();
+	soooa_set(this->sumMultiplier.getCount(), Dtype(1), multiplierData);
 
-
-
-
-	//vector<uint32_t> multDims(1, inputDataShape[this->softmaxAxis]);
-	this->sumMultiplier->reshape({1, 1, 1, inputDataShape[this->softmaxAxis]});
-	Dtype* multiplierData = this->sumMultiplier->mutable_host_data();
-	soooa_set(this->sumMultiplier->getCount(), Dtype(1), multiplierData);
-
-	this->outerNum = this->_inputData[0]->getCountByAxis(0, this->softmaxAxis);
-	this->innerNum = this->_inputData[0]->getCountByAxis(this->softmaxAxis+1);
+	this->outerNum = this->_inputData[0]->getCountByAxis(0, softmaxAxis);
+	this->innerNum = this->_inputData[0]->getCountByAxis(softmaxAxis+1);
 
 	vector<uint32_t> scaleDims = this->_inputData[0]->getShape();
-	scaleDims[this->softmaxAxis] = 1;
-	this->scale->reshape(scaleDims);
+	scaleDims[softmaxAxis] = 1;
+	this->scale.reshape(scaleDims);
 
 
 	//============================================================================
 
 	const uint32_t batches = this->outerNum;
-	const uint32_t channels = this->_inputData[0]->getShape(this->softmaxAxis);
+	const uint32_t channels = this->_inputData[0]->getShape(softmaxAxis);
 	const uint32_t rows = this->innerNum;
 	const uint32_t cols = 1;
 
@@ -113,14 +113,15 @@ void SoftmaxLayer<Dtype>::feedforward() {
 	checkCUDNN(cudnnSoftmaxForward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE,
 			CUDNN_SOFTMAX_MODE_CHANNEL,
 			&Cuda::alpha,
-			inputTensorDesc, inputData,
+			this->inputTensorDesc, inputData,
 			&Cuda::beta,
-			outputTensorDesc, outputData));
+			this->outputTensorDesc, outputData));
 }
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::backpropagation() {
-	if (this->_propDown[0]) {
+	const vector<bool>& propDown = SLPROP(Softmax, propDown);
+	if (propDown[0]) {
 		const Dtype* outputData = this->_outputData[0]->device_data();
 		const Dtype* outputGrad = this->_outputData[0]->device_grad();
 		Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
@@ -128,9 +129,9 @@ void SoftmaxLayer<Dtype>::backpropagation() {
 		checkCUDNN(cudnnSoftmaxBackward(Cuda::cudnnHandle, CUDNN_SOFTMAX_ACCURATE,
 				CUDNN_SOFTMAX_MODE_CHANNEL,
 				&Cuda::alpha,
-				outputTensorDesc, outputData, outputTensorDesc, outputGrad,
+				this->outputTensorDesc, outputData, this->outputTensorDesc, outputGrad,
 				&Cuda::beta,
-				inputTensorDesc, inputGrad));
+				this->inputTensorDesc, inputGrad));
 	}
 }
 
@@ -138,11 +139,8 @@ template <typename Dtype>
 void SoftmaxLayer<Dtype>::initialize() {
 	this->type = Layer<Dtype>::Softmax;
 
-	this->sumMultiplier = new Data<Dtype>("sumMultiplier");
-	this->scale = new Data<Dtype>("scale");
-
-	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
 }
 
 /*
@@ -260,16 +258,16 @@ void SoftmaxLayer<Dtype>::reshape() {
 	// "prob"
 	this->_outputData[0]->reshape(inputDataShape);
 	//vector<uint32_t> multDims(1, inputDataShape[this->softmaxAxis]);
-	this->sumMultiplier->reshape({1, 1, 1, inputDataShape[this->softmaxAxis]});
-	Dtype* multiplierData = this->sumMultiplier->mutable_host_data();
-	soooa_set(this->sumMultiplier->getCount(), Dtype(1), multiplierData);
+	this->sumMultiplier.reshape({1, 1, 1, inputDataShape[this->softmaxAxis]});
+	Dtype* multiplierData = this->sumMultiplier.mutable_host_data();
+	soooa_set(this->sumMultiplier.getCount(), Dtype(1), multiplierData);
 
 	this->outerNum = this->_inputData[0]->getCountByAxis(0, this->softmaxAxis);
 	this->innerNum = this->_inputData[0]->getCountByAxis(this->softmaxAxis+1);
 
 	vector<uint32_t> scaleDims = this->_inputData[0]->getShape();
 	scaleDims[this->softmaxAxis] = 1;
-	this->scale->reshape(scaleDims);
+	this->scale.reshape(scaleDims);
 
 
 	//============================================================================
@@ -304,7 +302,7 @@ void SoftmaxLayer<Dtype>::feedforward() {
 
 	const Dtype* inputData = this->_inputData[0]->device_data();
 	Dtype* outputData = this->_outputData[0]->mutable_device_data();
-	Dtype* scaleData = this->scale->mutable_device_data();
+	Dtype* scaleData = this->scale.mutable_device_data();
 
 	const uint32_t count = this->_inputData[0]->getCount();
 	const uint32_t channels = this->_outputData[0]->getShape(this->softmaxAxis);
@@ -339,7 +337,7 @@ void SoftmaxLayer<Dtype>::backpropagation() {
 	const Dtype* outputGrad = this->_outputData[0]->device_grad();
 	const Dtype* outputData = this->_outputData[0]->device_data();
 	Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
-	Dtype* scaleData = this->scale->mutable_device_data();
+	Dtype* scaleData = this->scale.mutable_device_data();
 
 	const uint32_t count = this->_outputData[0]->getCount();
 	const uint32_t channels = this->_outputData[0]->getShape(this->softmaxAxis);

@@ -19,12 +19,15 @@ using std::min;
 
 template <typename Dtype>
 RoIPoolingLayer<Dtype>::RoIPoolingLayer(const std::string& name)
-: Layer<Dtype>(name) {
+: Layer<Dtype>(name),
+  maxIdx("maxIdx") {
+	initialize();
 }
 
 template <typename Dtype>
 RoIPoolingLayer<Dtype>::RoIPoolingLayer(Builder* builder)
-: Layer<Dtype>(builder) {
+: Layer<Dtype>(builder),
+  maxIdx("maxIdx") {
 	this->pooledW = builder->_pooledW;
 	this->pooledH = builder->_pooledH;
 	this->spatialScale = builder->_spatialScale;
@@ -34,8 +37,6 @@ RoIPoolingLayer<Dtype>::RoIPoolingLayer(Builder* builder)
 
 template <typename Dtype>
 RoIPoolingLayer<Dtype>::~RoIPoolingLayer() {
-	if (this->maxIdx)
-		delete this->maxIdx;
 }
 
 template <typename Dtype>
@@ -47,6 +48,8 @@ void RoIPoolingLayer<Dtype>::reshape() {
 		if (!Layer<Dtype>::_isInputShapeChanged(i))
 			continue;
 
+		const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
+		const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
 		const std::vector<uint32_t>& inputDataShape = this->_inputData[i]->getShape();
 		this->_inputShape[i] = inputDataShape;
 
@@ -57,11 +60,10 @@ void RoIPoolingLayer<Dtype>::reshape() {
 			this->width = this->_inputData[0]->width();
 
 			const std::vector<uint32_t> outputDataShape =
-                { (uint32_t)this->_inputData[1]->height(), this->channels, this->pooledH,
-                    this->pooledW };
+                {(uint32_t)this->_inputData[1]->height(), this->channels, pooledH, pooledW};
 
 			this->_outputData[0]->reshape(outputDataShape);
-			this->maxIdx->reshape(outputDataShape);
+			this->maxIdx.reshape(outputDataShape);
 
 #if ROIPOOLINGLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
@@ -144,15 +146,19 @@ template <typename Dtype>
 void RoIPoolingLayer<Dtype>::feedforward() {
 	reshape();
 
+	const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
+	const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
+	const float spatialScale = SLPROP(RoIPooling, spatialScale);
+
 	const Dtype* inputData = this->_inputData[0]->device_data();
 	const Dtype* inputRois = this->_inputData[1]->device_data();
 	Dtype* outputData = this->_outputData[0]->mutable_device_data();
-	int* argmaxData = this->maxIdx->mutable_device_data();
+	int* argmaxData = this->maxIdx.mutable_device_data();
 	uint32_t count = this->_outputData[0]->getCount();
 
 	ROIPoolForward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-	      count, inputData, this->spatialScale, this->channels, this->height, this->width,
-	      this->pooledH, this->pooledW, inputRois, outputData, argmaxData);
+	      count, inputData, spatialScale, this->channels, this->height, this->width,
+	      pooledH, pooledW, inputRois, outputData, argmaxData);
 
 	CUDA_POST_KERNEL_CHECK;
 }
@@ -246,7 +252,9 @@ __global__ void ROIPoolBackward(
 
 template <typename Dtype>
 void RoIPoolingLayer<Dtype>::backpropagation() {
-	//if (!propDown)
+	const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
+	const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
+	const float spatialScale = SLPROP(RoIPooling, spatialScale);
 
 	const Dtype* inputRois = this->_inputData[1]->device_data();
 	const Dtype* outputGrad = this->_outputData[0]->device_grad();
@@ -254,12 +262,12 @@ void RoIPoolingLayer<Dtype>::backpropagation() {
 	const int count = this->_inputData[0]->getCount();
 
 	soooa_gpu_set(count, Dtype(0.), inputGrad);
-	const int* argmaxData = this->maxIdx->device_data();
+	const int* argmaxData = this->maxIdx.device_data();
 
 	ROIPoolBackward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
 	      count, outputGrad, argmaxData, this->_outputData[0]->batches(),
-	      this->spatialScale, this->channels, this->height, this->width,
-	      this->pooledH, this->pooledW, inputGrad, inputRois);
+	      spatialScale, this->channels, this->height, this->width,
+	      pooledH, pooledW, inputGrad, inputRois);
 
 
 	CUDA_POST_KERNEL_CHECK;
@@ -267,12 +275,11 @@ void RoIPoolingLayer<Dtype>::backpropagation() {
 
 template <typename Dtype>
 void RoIPoolingLayer<Dtype>::initialize() {
-	assert(this->pooledW > 0 &&
-			"pooledW must be > 0");
-	assert(this->pooledH > 0 &&
-			"pooledH must be > 0");
+	const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
+	const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
 
-	this->maxIdx = new Data<int>("maxIdx");
+	SASSERT(pooledW > 0, "pooledW must be > 0");
+	SASSERT(pooledH > 0, "pooledH must be > 0");
 }
 
 

@@ -97,6 +97,7 @@ public:
 
 
 protected:
+	void initialize();
 	void initialize(pool_dim pool_d, PoolingType poolingType);
 
 protected:

@@ -6,6 +6,7 @@
  */
 
 #include "PoolingLayer.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -13,7 +14,7 @@ using namespace std;
 template <typename Dtype>
 PoolingLayer<Dtype>::PoolingLayer(const string& name)
 : Layer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -24,9 +25,20 @@ PoolingLayer<Dtype>::PoolingLayer(Builder* builder)
 
 template <typename Dtype>
 PoolingLayer<Dtype>::~PoolingLayer() {
-	PoolingFactory<Dtype>::destroy(pooling_fn);
-	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
-	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
+	PoolingFactory<Dtype>::destroy(this->pooling_fn);
+	checkCUDNN(cudnnDestroyTensorDescriptor(this->inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(this->outputTensorDesc));
+}
+
+template <typename Dtype>
+void PoolingLayer<Dtype>::initialize() {
+	this->type = Layer<Dtype>::Pooling;
+	const pool_dim& poolDim = SLPROP(Pooling, poolDim);
+	const PoolingType poolingType = SLPROP(Pooling, poolingType);
+	this->pooling_fn = PoolingFactory<Dtype>::create(poolingType, poolDim);
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
 }
 
 template <typename Dtype>
@@ -35,8 +47,8 @@ void PoolingLayer<Dtype>::initialize(pool_dim pool_d, PoolingType poolingType) {
 	this->pool_d = pool_d;
 	this->pooling_fn = PoolingFactory<Dtype>::create(poolingType, pool_d);
 
-	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
 }
 
 #ifndef GPU_MODE

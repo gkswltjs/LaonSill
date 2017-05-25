@@ -104,9 +104,9 @@ private:
 	void initialize();
 
 private:
-	Data<Dtype>* diff;
-	Data<Dtype>* errors;
-	Data<Dtype>* ones;
+	Data<Dtype> diff;
+	Data<Dtype> errors;
+	Data<Dtype> ones;
 	bool hasWeights;
 	float sigma2;
 	uint32_t firstAxis;

@@ -101,7 +101,7 @@ private:
 	Dtype getNormalizer(int validCount);
 
 public:
-	Data<Dtype>* prob;
+	Data<Dtype> prob;
 
 private:
 	uint32_t softmaxAxis;

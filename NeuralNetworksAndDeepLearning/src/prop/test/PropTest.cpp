@@ -32,11 +32,11 @@ bool PropTest::runSimpleLayerPropTest() {
     WorkContext::updateLayer(networkID, layerID);
 
     STDOUT_LOG("initial filter dim strides & pads value : %d, %d\n",
-        SLPROP(Conv, filterDimStrides), SLPROP(Conv, filterDimPads));
-    SLPROP(Conv, filterDimStrides) = 2;
-    SLPROP(Conv, filterDimPads) = 1;
+        SLPROP(Conv, filterDim).stride, SLPROP(Conv, filterDim).pad);
+    SLPROP(Conv, filterDim).stride = 2;
+    SLPROP(Conv, filterDim).pad = 1;
     STDOUT_LOG("changed filter dim strides & pads value : %d, %d\n",
-        SLPROP(Conv, filterDimStrides), SLPROP(Conv, filterDimPads));
+        SLPROP(Conv, filterDim).stride, SLPROP(Conv, filterDim).pad);
 
     // (3) clean up layer prop
     PropMgmt::removeLayerProp(networkID);

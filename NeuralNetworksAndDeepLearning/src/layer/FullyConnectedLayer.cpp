@@ -67,6 +67,8 @@ void FullyConnectedLayer<Dtype>::initialize(int n_out, double p_dropout, int axi
 
 template<typename Dtype>
 void FullyConnectedLayer<Dtype>::initialize() {
+	const string& name = SLPROP_BASE(name);
+
 	// out_dim의 batches는 _shape()에서 in_dim값에 따라 결정된다.
 	//this->out_dim = io_dim(n_out, 1, 1, 1);
 	this->type = Layer<Dtype>::FullyConnected;
@@ -74,21 +76,21 @@ void FullyConnectedLayer<Dtype>::initialize() {
 	this->scale = 1. / (1. - SLPROP(FullyConnected, pDropOut));
 
 	this->_params.resize(2);
-	this->_params[ParamType::Weight] = new Data<Dtype>(this->name + "_weight");
-	this->_params[ParamType::Bias] = new Data<Dtype>(this->name + "_bias");
+	this->_params[ParamType::Weight] = new Data<Dtype>(name + "_weight");
+	this->_params[ParamType::Bias] = new Data<Dtype>(name + "_bias");
 
 	this->_paramsInitialized.resize(2);
 	this->_paramsInitialized[ParamType::Weight] = false;
 	this->_paramsInitialized[ParamType::Bias] = false;
 
 	this->_paramsHistory.resize(2);
-	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(this->name + "_weight_history");
-	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history");
+	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(name + "_weight_history");
+	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(name + "_bias_history");
 
 	this->_paramsHistory2.resize(2);
 	this->_paramsHistory2[ParamType::Weight] = 
-        new Data<Dtype>(this->name + "_weight_history2");
-	this->_paramsHistory2[ParamType::Bias] = new Data<Dtype>(this->name + "_bias_history2");
+        new Data<Dtype>(name + "_weight_history2");
+	this->_paramsHistory2[ParamType::Bias] = new Data<Dtype>(name + "_bias_history2");
 
     this->decayedBeta1 = 1.0;
     this->decayedBeta2 = 1.0;

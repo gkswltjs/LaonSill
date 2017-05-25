@@ -19,7 +19,7 @@ using namespace std;
 template <typename Dtype>
 AnchorTargetLayer<Dtype>::AnchorTargetLayer(const string& name)
 : Layer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -58,13 +58,13 @@ void AnchorTargetLayer<Dtype>::reshape() {
 #endif
 
 	// labels
-	this->_outputData[0]->reshape({1, 1, this->numAnchors*height, width});
+	this->_outputData[0]->reshape({1, 1, this->numAnchors * height, width});
 	// bbox_targets
-	this->_outputData[1]->reshape({1, this->numAnchors*4, height, width});
+	this->_outputData[1]->reshape({1, this->numAnchors * 4, height, width});
 	// bbox_inside_weights
-	this->_outputData[2]->reshape({1, this->numAnchors*4, height, width});
+	this->_outputData[2]->reshape({1, this->numAnchors * 4, height, width});
 	// bbox_outside_weights
-	this->_outputData[3]->reshape({1, this->numAnchors*4, height, width});
+	this->_outputData[3]->reshape({1, this->numAnchors * 4, height, width});
 }
 
 template <typename Dtype>
@@ -125,13 +125,14 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 		shifts[i].resize(4);
 
 
+	const uint32_t featStride = SLPROP(AnchorTarget, featStride);
 	for (uint32_t i = 0; i < height; i++) {
 		for (uint32_t j = 0; j < width; j++) {
 			vector<uint32_t>& shift = shifts[i*width+j];
-			shift[0] = j*this->featStride;
-			shift[2] = j*this->featStride;
-			shift[1] = i*this->featStride;
-			shift[3] = i*this->featStride;
+			shift[0] = j * featStride;
+			shift[2] = j * featStride;
+			shift[1] = i * featStride;
+			shift[3] = i * featStride;
 		}
 	}
 #if ANCHORTARGETLAYER_LOG
@@ -168,14 +169,15 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	vector<vector<float>> anchors;
 
 	// scale된 이미지 height, width
+	const uint32_t allowedBorder = SLPROP(AnchorTarget, allowedBorder);
 	const uint32_t orgHeight = imInfo[0];
 	const uint32_t orgWidth = imInfo[1];
 	for (uint32_t i = 0; i < totalAnchors; i++) {
 		vector<float>& tempAnchor = allAnchors[i];
-		if ((tempAnchor[0] >= -this->allowedBorder) &&
-				(tempAnchor[1] >= -this->allowedBorder) &&
-				(tempAnchor[2] < orgWidth+this->allowedBorder) &&
-				(tempAnchor[3] < orgHeight+this->allowedBorder)) {
+		if ((tempAnchor[0] >= -allowedBorder) &&
+				(tempAnchor[1] >= -allowedBorder) &&
+				(tempAnchor[2] < orgWidth + allowedBorder) &&
+				(tempAnchor[3] < orgHeight + allowedBorder)) {
 			anchors.push_back(tempAnchor);
 			indsInside.push_back(i);
 		}
@@ -438,8 +440,8 @@ void AnchorTargetLayer<Dtype>::backpropagation() {
 
 template <typename Dtype>
 void AnchorTargetLayer<Dtype>::initialize() {
-
-	GenerateAnchorsUtil::generateAnchors(this->anchors, this->scales);
+	const vector<uint32_t>& scales = SLPROP(AnchorTarget, scales);
+	GenerateAnchorsUtil::generateAnchors(this->anchors, scales);
 	this->numAnchors = this->anchors.size();
 
 	print2dArray("anchors", this->anchors);

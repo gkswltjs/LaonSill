@@ -15,9 +15,9 @@ using namespace std;
 
 template <typename Dtype>
 LRNLayer<Dtype>::~LRNLayer() {
-	checkCUDNN(cudnnDestroyTensorDescriptor(inputTensorDesc));
-	checkCUDNN(cudnnDestroyTensorDescriptor(outputTensorDesc));
-	checkCUDNN(cudnnDestroyLRNDescriptor(lrnDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(this->inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(this->outputTensorDesc));
+	checkCUDNN(cudnnDestroyLRNDescriptor(this->lrnDesc));
 }
 
 template <typename Dtype>
@@ -32,6 +32,18 @@ void LRNLayer<Dtype>::initialize(lrn_dim lrn_d) {
                                      lrn_d.beta, lrn_d.k));
 }
 
+template <typename Dtype>
+void LRNLayer<Dtype>::initialize() {
+	this->type = Layer<Dtype>::LRN;
+	const lrn_dim& lrnDim = SLPROP(LRN, lrnDim);
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
+	checkCUDNN(cudnnCreateLRNDescriptor(&this->lrnDesc));
+	checkCUDNN(cudnnSetLRNDescriptor(this->lrnDesc,
+			lrnDim.local_size, lrnDim.alpha, lrnDim.beta, lrnDim.k));
+}
+
 // (1 + alpha/n * sigma(i)(xi^2))^beta
 template <typename Dtype>
 void LRNLayer<Dtype>::feedforward() {
@@ -40,22 +52,25 @@ void LRNLayer<Dtype>::feedforward() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 	checkCUDNN(cudnnLRNCrossChannelForward(Cuda::cudnnHandle,
-			lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
+			this->lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
 			&Cuda::alpha, this->inputTensorDesc, d_inputData,
 			&Cuda::beta, this->outputTensorDesc, d_outputData));
 
-	this->_outputData[0]->print_data(this->name+string("/d_output:"));
+	const string& name = SLPROP_BASE(name);
+	this->_outputData[0]->print_data(name + string("/d_output:"));
 }
 
 template <typename Dtype>
 void LRNLayer<Dtype>::backpropagation() {
-	if (this->_propDown[0]) {
+	const vector<bool>& propDown = SLPROP_BASE(propDown);
+	if (propDown[0]) {
 		const Dtype* d_outputData = this->_outputData[0]->device_data();
 		const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 		const Dtype* d_inputData = this->_inputData[0]->device_data();
 		Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 		checkCUDNN(cudnnLRNCrossChannelBackward(Cuda::cudnnHandle,
-				lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1, &Cuda::alpha, this->outputTensorDesc,
+				this->lrnDesc, CUDNN_LRN_CROSS_CHANNEL_DIM1,
+				&Cuda::alpha, this->outputTensorDesc,
                 d_outputData, this->outputTensorDesc, d_outputGrad,
 				this->inputTensorDesc, d_inputData,
 				&Cuda::beta, this->inputTensorDesc, d_inputGrad));
@@ -64,6 +79,7 @@ void LRNLayer<Dtype>::backpropagation() {
 
 template LRNLayer<float>::~LRNLayer();
 template void LRNLayer<float>::initialize(lrn_dim lrn_d);
+template void LRNLayer<float>::initialize();
 template void LRNLayer<float>::feedforward();
 template void LRNLayer<float>::backpropagation();
 

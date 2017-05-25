@@ -27,7 +27,7 @@ ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
     update_param weight_update_param, update_param bias_update_param,
     param_filler<Dtype> weight_filler, param_filler<Dtype> bias_filler, bool deconv,
     int deconvExtraCell)
-    : LearnableLayer<Dtype>(name) {
+: LearnableLayer<Dtype>(name) {
 
 	initialize(filter_d, weight_update_param, bias_update_param, weight_filler,
                bias_filler, deconv, deconvExtraCell);
@@ -35,7 +35,9 @@ ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
 
 template<typename Dtype>
 ConvLayer<Dtype>::ConvLayer(const string& name) 
-    : LearnableLayer<Dtype>(name) {}
+: LearnableLayer<Dtype>(name) {
+	initialize();
+}
 
 #ifndef GPU_MODE
 void convolution(const rmat &x, const rmat &w, rmat &result, int stride);

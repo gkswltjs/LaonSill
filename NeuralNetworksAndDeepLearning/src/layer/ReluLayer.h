@@ -63,6 +63,7 @@ public:
 	virtual void backpropagation();
 
 protected:
+	void initialize();
 	void initialize(bool useLeaky, double leaky);
     void applyLeakyForward();
     void applyLeakyBackward();

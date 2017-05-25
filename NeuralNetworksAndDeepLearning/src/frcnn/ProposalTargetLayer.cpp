@@ -19,7 +19,7 @@ using namespace std;
 template <typename Dtype>
 ProposalTargetLayer<Dtype>::ProposalTargetLayer(const string& name)
 : Layer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -38,16 +38,17 @@ template <typename Dtype>
 void ProposalTargetLayer<Dtype>::reshape() {
 	bool adjusted = Layer<Dtype>::_adjustInputShape();
 	if (adjusted) {
+		const uint32_t numClasses = SLPROP(ProposalTarget, numClasses);
 		// sampled rois (0, x1, y1, x2, y2)
 		this->_outputData[0]->reshape({1, 1, 1, 5});
 		// labels
 		this->_outputData[1]->reshape({1, 1, 1, 1});
 		// bbox_targets
-		this->_outputData[2]->reshape({1, 1, 1, this->numClasses * 4});
+		this->_outputData[2]->reshape({1, 1, 1, numClasses * 4});
 		// bbox_inside_weights
-		this->_outputData[3]->reshape({1, 1, 1, this->numClasses * 4});
+		this->_outputData[3]->reshape({1, 1, 1, numClasses * 4});
 		// bbox_outside_weights
-		this->_outputData[4]->reshape({1, 1, 1, this->numClasses * 4});
+		this->_outputData[4]->reshape({1, 1, 1, numClasses * 4});
 	}
 }
 
@@ -431,9 +432,10 @@ void ProposalTargetLayer<Dtype>::_getBboxRegressionLabels(
 
 	uint32_t cls;
 	uint32_t start, end;
+	const uint32_t numClasses = SLPROP(ProposalTarget, numClasses);
 	for (uint32_t i = 0; i < numBboxTargets; i++) {
-		bboxTargets[i].resize(4 * this->numClasses);
-		bboxInsideWeights[i].resize(4 * this->numClasses);
+		bboxTargets[i].resize(4 * numClasses);
+		bboxInsideWeights[i].resize(4 * numClasses);
 
 		cls = uint32_t(bboxTargetsData[i][0]);
 		if (cls > 0) {

@@ -15,6 +15,7 @@
 #include "StdOutLog.h"
 #include "ColdLog.h"
 #include "Perf.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -68,8 +69,9 @@ void ReluLayer<Dtype>::applyLeakyBackward() {
     const Dtype* outputGrad = this->_outputData[0]->device_grad();
     Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
 
+    const double leaky = SLPROP(Relu, leaky);
     ApplyLeakyBackward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, outputGrad, inputGrad, size, (Dtype)this->leaky);
+        inputData, outputGrad, inputGrad, size, (Dtype)leaky);
 }
 
 template void ReluLayer<float>::applyLeakyForward();

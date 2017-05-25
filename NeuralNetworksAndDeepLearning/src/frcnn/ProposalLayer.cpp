@@ -24,7 +24,7 @@ using namespace std;
 template <typename Dtype>
 ProposalLayer<Dtype>::ProposalLayer(const std::string& name)
 : Layer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -152,13 +152,14 @@ void ProposalLayer<Dtype>::feedforward() {
 	for (uint32_t i = 0; i < numShifts; i++)
 		shifts[i].resize(4);
 
+	const uint32_t featStride = SLPROP(Proposal, featStride);
 	for (uint32_t i = 0; i < height; i++) {
 		for (uint32_t j = 0; j < width; j++) {
 			vector<uint32_t>& shift = shifts[i*width+j];
-			shift[0] = j*this->featStride;
-			shift[2] = j*this->featStride;
-			shift[1] = i*this->featStride;
-			shift[3] = i*this->featStride;
+			shift[0] = j * featStride;
+			shift[2] = j * featStride;
+			shift[1] = i * featStride;
+			shift[3] = i * featStride;
 		}
 	}
 #if PROPOSALLAYER_LOG
@@ -337,7 +338,8 @@ void ProposalLayer<Dtype>::backpropagation() {
 
 template <typename Dtype>
 void ProposalLayer<Dtype>::initialize() {
-	GenerateAnchorsUtil::generateAnchors(this->anchors, this->scales);
+	const vector<uint32_t>& scales = SLPROP(Proposal, scales);
+	GenerateAnchorsUtil::generateAnchors(this->anchors, scales);
 	this->numAnchors = this->anchors.size();
 
 #if PROPOSALLAYER_LOG

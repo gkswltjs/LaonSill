@@ -13,7 +13,7 @@ using namespace std;
 template <typename Dtype>
 LRNLayer<Dtype>::LRNLayer(const string& name)
 : Layer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -48,15 +48,6 @@ void LRNLayer<Dtype>::reshape() {
 			CUDNN_TENSOR_NCHW,
 			CUDNN_DATA_FLOAT,
 			batches, channels, rows, cols));
-
-	/*
-	this->setInDimension(this->_inputData[0]->getShape());
-	this->out_dim = this->in_dim;
-
-	if(recursive) {
-		Layer<Dtype>::_shape();
-	}
-	*/
 }
 
 #ifndef GPU_MODE

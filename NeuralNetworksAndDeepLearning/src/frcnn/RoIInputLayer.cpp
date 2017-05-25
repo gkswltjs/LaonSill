@@ -26,7 +26,7 @@ using namespace std;
 template <typename Dtype>
 RoIInputLayer<Dtype>::RoIInputLayer(const string& name)
 : InputLayer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -39,21 +39,21 @@ RoIInputLayer<Dtype>::RoIInputLayer(Builder* builder) : InputLayer<Dtype>(builde
 
 template <typename Dtype>
 RoIInputLayer<Dtype>::~RoIInputLayer() {
-	delete imdb;
+	delete this->imdb;
 }
 
 template <typename Dtype>
 void RoIInputLayer<Dtype>::initialize() {
-	imdb = combinedRoidb("voc_2007_trainval");
+	this->imdb = combinedRoidb("voc_2007_trainval");
 
-	cout << imdb->roidb.size() << " roidb entries ... " << endl;
-	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, imdb->roidb.size(), 50, 1);
+	cout << this->imdb->roidb.size() << " roidb entries ... " << endl;
+	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, this->imdb->roidb.size(), 50, 1);
 
 	// Train a Fast R-CNN network.
-	filterRoidb(imdb->roidb);
+	filterRoidb(this->imdb->roidb);
 
 	cout << "Computing bounding-box regression targets ... " << endl;
-	RoIDBUtil::addBboxRegressionTargets(imdb->roidb, bboxMeans, bboxStds);
+	RoIDBUtil::addBboxRegressionTargets(this->imdb->roidb, this->bboxMeans, this->bboxStds);
 
 	shuffleRoidbInds();
 
@@ -120,15 +120,18 @@ void RoIInputLayer<Dtype>::initialize() {
 
 template <typename Dtype>
 void RoIInputLayer<Dtype>::reshape() {
-	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+	const vector<string>& outputs = SLPROP(Input, output);
+	vector<string>& inputs = SLPROP(Input, input);
+	if (inputs.size() < 1) {
+		for (uint32_t i = 0; i < outputs.size(); i++) {
+			inputs.push_back(outputs[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
 
 	Layer<Dtype>::_adjustInputShape();
 
+	const uint32_t numClasses = SLPROP(RoIInput, numClasses);
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
 		if (!Layer<Dtype>::_isInputShapeChanged(i))
@@ -201,19 +204,19 @@ void RoIInputLayer<Dtype>::reshape() {
 			}
 			// "bbox_targets"
 			else if (i == 3) {
-				const vector<uint32_t> bboxTargetsShape = {1, 1, 1, this->numClasses*4};
+				const vector<uint32_t> bboxTargetsShape = {1, 1, 1, numClasses * 4};
 				this->_inputData[3]->reshape(bboxTargetsShape);
 				this->_inputShape[3] = bboxTargetsShape;
 			}
 			// "bbox_inside_weights"
 			else if (i == 4) {
-				const vector<uint32_t> bboxInsideWeights = {1, 1, 1, this->numClasses*4};
+				const vector<uint32_t> bboxInsideWeights = {1, 1, 1, numClasses * 4};
 				this->_inputData[4]->reshape(bboxInsideWeights);
 				this->_inputShape[4] = bboxInsideWeights;
 			}
 			// "bbox_outside_weights"
 			else if (i == 5) {
-				const vector<uint32_t> bboxOutsideWeights = {1, 1, 1, this->numClasses*4};
+				const vector<uint32_t> bboxOutsideWeights = {1, 1, 1, numClasses * 4};
 				this->_inputData[4]->reshape(bboxOutsideWeights);
 				this->_inputShape[4] = bboxOutsideWeights;
 			}
@@ -243,9 +246,10 @@ void RoIInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end
 
 template <typename Dtype>
 IMDB* RoIInputLayer<Dtype>::getImdb(const string& imdb_name) {
+	const vector<float>& pixelMeans = SLPROP(RoIInput, pixelMeans);
 	IMDB* imdb = new PascalVOC("trainval", "2007",
 			"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
-			this->pixelMeans);
+			pixelMeans);
 	imdb->loadGtRoidb();
 
 	return imdb;
@@ -519,6 +523,7 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 		const vector<uint32_t>& scaleInds, vector<float>& imScales) {
 	imScales.clear();
 
+	const vector<float>& pixelMeans = SLPROP(RoIInput, pixelMeans);
 	vector<cv::Mat> processedIms;
 	// Builds an input blob from the images in the roidb at the specified scales.
 	const uint32_t numImages = roidb.size();
@@ -558,7 +563,7 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 
 		uint32_t targetSize = TRAIN_SCALES[scaleInds[i]];
 		cv::Mat imResized;
-		float imScale = prepImForBlob(im, imResized, this->pixelMeans, targetSize,
+		float imScale = prepImForBlob(im, imResized, pixelMeans, targetSize,
 				TRAIN_MAX_SIZE);
 
 		cout << " -> <" << targetSize << ", " << imScale << "> (" <<

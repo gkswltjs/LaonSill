@@ -73,20 +73,11 @@
     "LEARN" : true,
     "VARS" : 
         [   
-            ["filterDimRows", "uint32_t", "0"],
-            ["filterDimCols", "uint32_t", "0"],
-            ["filterDimChannels", "uint32_t", "0"],
-            ["filterDimFilters", "uint32_t", "0"],
-            ["filterDimPads", "uint32_t", "0"],
-            ["filterDimStrides", "uint32_t", "1"],
-            ["weightUpdateParamLRMulti", "float", "1.0"],
-            ["weightUpdateParamDecayMulti", "float", "0.0"],
-            ["biasUpdateParamLRMulti", "float", "1.0"],
-            ["biasUpdateParamDecayMulti", "float", "0.0"],
-            ["weightFillerType", "int", "ParamFillerType::Constant"],
-            ["weightFillerValue", "float", "0.0"],
-            ["biasFillerType", "int", "ParamFillerType::Constant"],
-            ["biasFillerValue", "float", "0.0"],
+	    ["filterDim", "filter_dim", "{0, 0, 0, 0, 0, 1}"],
+	    ["weightUpdateParam", "update_param", "{1.0, 0.0}"],
+	    ["biasUpdateParam", "update_param", "{1.0, 0.0}"],
+	    ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"],
+	    ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"],
             ["deconv", "bool", "false"],
             ["deconvExtraCell", "int", "0"]
         ]
@@ -337,10 +328,7 @@
     "LEARN" : false,
     "VARS" : 
 	[
-	    ["localSize", "uint32_t", "5"],
-	    ["alpha", "double", "0.0001"],
-	    ["beta", "double", "0.75"],
-	    ["k", "double", "2.0"]
+	    ["lrnDim", "lrn_dim", "{5, 0.0001, 0.75, 2.0}"]
 	]
 },
 
@@ -352,11 +340,8 @@
     "LEARN" : false,
     "VARS" : 
 	[
-	    ["rows", "uint32_t", "1"],
-	    ["cols", "uint32_t", "1"],
-	    ["pad", "uint32_t", "0"],
-	    ["stride", "uint32_t", "1"],
-	    ["poolingType", "int", "PoolingType::Max"]
+	    ["poolDim", "pool_dim", "{1, 1, 0, 1}"],
+	    ["poolingType", "PoolingType", "PoolingType::Max"]
 	]
 },
 
@@ -368,7 +353,7 @@
     "LEARN" : false,
     "VARS" : 
 	[
-	    ["shape", "std::vector<std::string>", ""],
+	    ["shape", "std::vector<int>", ""],
 	    ["axis", "int", "0"],
 	    ["numAxis", "int", "-1"]
 	]
@@ -409,7 +394,7 @@
 	[
 	    ["featStride", "uint32_t", "16"],
 	    ["allowedBorder", "uint32_t", "0"],
-	    ["scales", "std::vector<uint32_t>", "{8, 16, 32},"]
+	    ["scales", "std::vector<uint32_t>", "{8, 16, 32}"]
 	]
 },
 
@@ -436,7 +421,7 @@
     "VARS" : 
 	[
 	    ["featStride", "uint32_t", "16"],
-	    ["scales", "std::vector<uint32_t>", "{8, 16, 32},"]
+	    ["scales", "std::vector<uint32_t>", "{8, 16, 32}"]
 	]
 },
 

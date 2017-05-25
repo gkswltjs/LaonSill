@@ -179,7 +179,7 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
         Util::clearVector(this->_paramsHistory);
         Util::clearVector(this->_paramsHistory2);
     }
-	checkCudaErrors(cudaFree(d_onevec));
+	checkCudaErrors(cudaFree(this->d_onevec));
 }
 
 
@@ -188,7 +188,7 @@ void FullyConnectedLayer<Dtype>::reshape() {
 	if (!Layer<Dtype>::_adjustInputShape()) {
 		const uint32_t count = Util::vecCountByAxis(this->_inputShape[0], 1);
 		const uint32_t inputDataCount = this->_inputData[0]->getCountByAxis(1);
-		assert(count == inputDataCount);
+		SASSERT0(count == inputDataCount);
 	}
 
 	/*
@@ -265,7 +265,7 @@ void FullyConnectedLayer<Dtype>::reshape() {
 	FillValues<<<SOOOA_GET_BLOCKS(batches), SOOOA_CUDA_NUM_THREADS>>>(
 			this->d_onevec, batches, 1.0f);
 
-	_mask.reshape(b_out);
+	this->_mask.reshape(b_out);
 }
 
 template <typename Dtype>
@@ -279,10 +279,10 @@ void FullyConnectedLayer<Dtype>::update() {
 	const Dtype learnScale = NetworkConfig<Dtype>::calcLearningRate() *
 		SLPROP(FullyConnected, weightUpdateParam).lr_mult;
 
-    const Dtype epsilon = this->networkConfig->_epsilon;
-    const Dtype decayRate = this->networkConfig->_decayRate;
-    const Dtype beta1 = this->networkConfig->_beta1;
-    const Dtype beta2 = this->networkConfig->_beta2;
+    const Dtype epsilon = SNPROP(epsilon);
+    const Dtype decayRate = SNPROP(decayRate);
+    const Dtype beta1 = SNPROP(beta1);
+    const Dtype beta2 = SNPROP(beta2);
 
     this->decayedBeta1 *= beta1;
     this->decayedBeta2 *= beta2;
@@ -308,7 +308,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 
 	const uint32_t batches = this->_inputShape[0][0];
 	const Dtype normScale = 1.0/batches;
-	const Dtype momentum = this->networkConfig->_momentum;
+	const Dtype momentum = SNPROP(momentum);
 	const Dtype negativeOne = -1.0;
     const Dtype negativeLearnScale = (-1.0) * learnScale;
 
@@ -596,21 +596,23 @@ void FullyConnectedLayer<Dtype>::_computeActivatedData() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_dropoutForward() {
+	const double pDropOut = SLPROP(FullyConnected, pDropOut);
+	const NetworkStatus status = SNPROP(status);
 	// TODO skip when test
-	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
+	if(status == NetworkStatus::Train && pDropOut < 1.0f) {
 		//int b_out = this->out_dim.batchsize();
 		int b_out = this->_outputData[0]->getCount();
-		Dtype* h_mask_mem = _mask.mutable_host_mem();
+		Dtype* h_mask_mem = this->_mask.mutable_host_mem();
 
 		for(int i = 0; i < b_out; i++) {
-			h_mask_mem[i] = ((rand()/(RAND_MAX+1.0) > p_dropout)?1:0);
+			h_mask_mem[i] = ((rand()/(RAND_MAX+1.0) > pDropOut)?1:0);
 		}
 
-		const Dtype* d_mask_mem = _mask.device_mem();
+		const Dtype* d_mask_mem = this->_mask.device_mem();
 		Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
 		Dropout<<<SOOOA_GET_BLOCKS(b_out), SOOOA_CUDA_NUM_THREADS>>>(
-				b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
+				b_out, d_outputData, d_mask_mem, 0, this->scale, d_outputData);
 	}
 }
 
@@ -680,15 +682,17 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_dropoutBackward() {
-	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
+	const double pDropOut = SLPROP(FullyConnected, pDropOut);
+	const NetworkStatus status = SNPROP(status);
+	if(status == NetworkStatus::Train && pDropOut < 1.0f) {
 		const uint32_t batchSize = this->_inputData[0]->getCount();
 
 		this->_outputData[0]->print_grad("outputGrad:");
-		const Dtype* d_mask_mem = _mask.device_mem();
+		const Dtype* d_mask_mem = this->_mask.device_mem();
 		Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
 
 		Dropout<<<SOOOA_GET_BLOCKS(batchSize), SOOOA_CUDA_NUM_THREADS>>>(
-				batchSize, d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
+				batchSize, d_outputGrad, d_mask_mem, 0, this->scale, d_outputGrad);
 
 		//_mask.print("mask:");
 		this->_outputData[0]->print_grad("outputGrad:");

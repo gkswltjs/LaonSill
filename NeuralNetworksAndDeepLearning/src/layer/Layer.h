@@ -19,6 +19,7 @@
 #include "common.h"
 #include "Data.h"
 #include "LayerConfig.h"
+#include "PropMgmt.h"
 
 template <typename Dtype> class NetworkConfig;
 
@@ -190,20 +191,20 @@ public:
 	 * @details 레이어의 이름을 조회한다.
 	 * @return 레이어 이름
 	 */
-	const std::string getName() const { return name; }
+	const std::string getName() const { return SLPROP_BASE(name); }
 	/**
 	 * @biref 레이어의 타입을 조회한다.
 	 * @return 레이어 타입
 	 */
-	typename Layer<Dtype>::LayerType getType() const { return this->type; }
+	typename Layer<Dtype>::LayerType getType() const { return SLPROP_BASE(type); }
 	/**
 	 * @brief 레이어의 입력 데이터 이름 목록을 조회한다.
 	 * @return 레이어 입력 데이터 이름 목록
 	 */
-	std::vector<std::string>& getInputs() { return this->_inputs; }
-	std::vector<std::string>& getOutputs() { return this->_outputs; }
-	uint32_t getInputsSize() const { return this->_inputs.size(); }
-	uint32_t getOutputsSize() const { return this->_outputs.size(); }
+	std::vector<std::string>& getInputs() { return SLPROP_BASE(input); }
+	std::vector<std::string>& getOutputs() { return SLPROP_BASE(output); }
+	uint32_t getInputsSize() const { return SLPROP_BASE(input).size(); }
+	uint32_t getOutputsSize() const { return SLPROP_BASE(output).size(); }
 
 	/**
 	 * @brief 레이어의 입력 데이터 목록을 조회한다.

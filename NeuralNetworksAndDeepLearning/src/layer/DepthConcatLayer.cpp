@@ -15,7 +15,7 @@ using namespace std;
 template <typename Dtype>
 DepthConcatLayer<Dtype>::DepthConcatLayer(const std::string& name)
 : Layer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -67,14 +67,14 @@ void DepthConcatLayer<Dtype>::feedforward() {
 	reshape();
 
 	uint32_t batchOffset = 0;
-	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+	for (uint32_t i = 0; i < this->_inputData.size(); i++) {
 		batchOffset += this->_inputData[i]->getCountByAxis(1);
 	}
 
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 	const uint32_t batchSize = this->_inputData[0]->getShape()[0];
 	uint32_t inBatchOffset = 0;
-	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+	for (uint32_t i = 0; i < this->_inputData.size(); i++) {
 		const Dtype* d_inputData = this->_inputData[i]->device_data();
 		const uint32_t inputCountByChannel = this->_inputData[i]->getCountByAxis(1);
 		if (i > 0) {
@@ -94,14 +94,14 @@ void DepthConcatLayer<Dtype>::feedforward() {
 template <typename Dtype>
 void DepthConcatLayer<Dtype>::backpropagation() {
 	uint32_t batchOffset = 0;
-	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+	for (uint32_t i = 0; i < this->_inputData.size(); i++) {
 		batchOffset += this->_inputData[i]->getCountByAxis(1);
 	}
 
 	const Dtype* d_outputData = this->_outputData[0]->device_data();
 	const uint32_t batchSize = this->_inputData[0]->getShape()[0];
 	uint32_t inBatchOffset = 0;
-	for (uint32_t i = 0; i < this->_inputs.size(); i++) {
+	for (uint32_t i = 0; i < this->_inputData.size(); i++) {
 		Dtype* d_inputData = this->_inputData[i]->mutable_device_data();
 		const uint32_t inputCountByChannel = this->_inputData[i]->getCountByAxis(1);
 		if (i > 0) {

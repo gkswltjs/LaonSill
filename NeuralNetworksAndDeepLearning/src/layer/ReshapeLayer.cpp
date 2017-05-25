@@ -21,7 +21,7 @@ using namespace std;
 template <typename Dtype>
 ReshapeLayer<Dtype>::ReshapeLayer(const std::string& name)
 : Layer<Dtype>(name) {
-
+	initialize();
 }
 
 template <typename Dtype>
@@ -60,7 +60,7 @@ void ReshapeLayer<Dtype>::reshape() {
 			outputDataShape[i] = this->shape[i];
 	}
 	for (uint32_t i = 0; i < copyAxes.size(); i++) {
-		outputDataShape[copyAxes[i]] = inputDataShape[copyAxes[i]];
+		outputDataShape[this->copyAxes[i]] = inputDataShape[this->copyAxes[i]];
 	}
 
 	if (this->inferredAxis >= 0) {
@@ -72,7 +72,7 @@ void ReshapeLayer<Dtype>::reshape() {
 		}
 		assert(inputDataSize % fixedSize == 0 &&
 				"input count must be divisible by the product");
-		outputDataShape[inferredAxis] = inputDataSize / fixedSize;
+		outputDataShape[this->inferredAxis] = inputDataSize / fixedSize;
 	}
 
 	this->_outputData[0]->reshape(outputDataShape);
@@ -128,23 +128,24 @@ void ReshapeLayer<Dtype>::backpropagation() {
 
 template <typename Dtype>
 void ReshapeLayer<Dtype>::initialize() {
-	assert(this->shape.size() == 4);
+	const vector<int>& shape = SLPROP(Reshape, shape);
+	assert(shape.size() == 4);
 
 	this->inferredAxis = -1;
 	this->copyAxes.clear();
-	const uint32_t topNumAxis = this->shape.size();
+	const uint32_t topNumAxis = shape.size();
 	this->constantCount = 1;
 
 	for (uint32_t i = 0; i < topNumAxis; i++) {
-		const int topDim = this->shape[i];
+		const int topDim = shape[i];
 		if (topDim == 0) {
 			copyAxes.push_back(i);
 		} else if (topDim == -1) {
 			assert(inferredAxis == -1 &&
 					"new shape contains multiple -1 dims ... ");
-			inferredAxis = i;
+			this->inferredAxis = i;
 		} else {
-			constantCount *= topDim;
+			this->constantCount *= topDim;
 		}
 	}
 }

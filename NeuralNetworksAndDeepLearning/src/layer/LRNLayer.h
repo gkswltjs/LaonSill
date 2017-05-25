@@ -84,6 +84,7 @@ public:
 
 protected:
 	void initialize(lrn_dim lrn_d);
+	void initialize();
 
 protected:
 	lrn_dim lrn_d;								///< LRN 연산 관련 파라미터 구조체
