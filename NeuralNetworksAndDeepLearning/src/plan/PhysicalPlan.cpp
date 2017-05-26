@@ -27,10 +27,10 @@ PhysicalPlan::~PhysicalPlan() {
         int layerID = iter->first;
         void* instancePtr = iter->second;
 
-        SASSUME0(planMap.find(layerID) != planMap.end());
-        int layerType = planMap[layerID].layerType;
-
-        LayerFunc::destroyLayer(layerType, instancePtr);
+        if (planMap.find(layerID) != planMap.end()) {
+            int layerType = planMap[layerID].layerType;
+            LayerFunc::destroyLayer(layerType, instancePtr);
+        }
     }
 }
 

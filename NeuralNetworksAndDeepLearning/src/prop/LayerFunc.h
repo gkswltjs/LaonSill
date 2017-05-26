@@ -48,6 +48,7 @@ public:
     static void runForward(int layerType, void* instancePtr, int miniBatchIdx);
     static void runBackward(int layerType, void* instancePtr);
     static void learn(int layerType, void* instancePtr);
+
 private:
     static CBLayerFunc      *layerFuncs;
 };

@@ -848,7 +848,7 @@ void FullyConnectedLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorP
 template<typename Dtype>
 bool FullyConnectedLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-    layer->reshape();
+    //layer->reshape();
     return true;
 }
 

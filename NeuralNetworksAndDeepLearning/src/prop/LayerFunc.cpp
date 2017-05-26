@@ -73,3 +73,4 @@ void LayerFunc::learn(int layerType, void* instancePtr) {
     SASSUME0(layerType < Layer<float>::LayerTypeMax);
     LayerFunc::layerFuncs[layerType].learn(instancePtr);
 }
+

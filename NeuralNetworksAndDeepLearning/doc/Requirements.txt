@@ -1,0 +1,13 @@
+* minimum requirements for SOOOA framework
+ (1) CPU : Intel(R) Core(TM) i5-4670 CPU @ 3.40GHz
+ (2) Memory : 8GB
+ (3) OS : Centos 6.8, Ubuntu 14.04
+ (4) Disk : 1TB HDD disk
+ (5) GPU : GeForce GTX 650
+
+* recommanded requirements for SOOOA framework
+ (1) CPU : Intel(R) Core(TM) i7-6850K CPU @ 3.60GHz
+ (2) Memory : 64GB
+ (3) OS : Centos 7.3
+ (4) Disk : 4TB HDD disk, 1TB SSD disk
+ (5) GPU : TITAN X

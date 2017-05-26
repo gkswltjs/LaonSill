@@ -44,6 +44,7 @@
            헤더파일을 genProp.py의 headerFileList에 추가한다.
            VAR의 타입은 primitive 형(ex. bool, int, float, ...)과 std::vector, std::string을
            지원한다. 
+
  [genLayerPropList.py]
         :
 ####################################### Modify here ##########################################

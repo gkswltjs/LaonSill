@@ -16,7 +16,8 @@
             ["donate", "bool", "false"],
             ["receive", "bool", "false"],
             ["donatorID", "int", "0"],
-            ["learnable", "bool", "false"]
+            ["learnable", "bool", "false"],
+            ["innerLayerIDs", "std::vector<int>", ""]
         ]
 },
 

@@ -13,6 +13,7 @@
 #include "MathFunctions.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "InnerLayerFunc.h"
 
 #define SOFTMAXWITHLOSSLAYER_LOG 0
 
@@ -28,12 +29,19 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(Builder* builder)
 
 template <typename Dtype>
 SoftmaxWithLossLayer<Dtype>::~SoftmaxWithLossLayer() {
+#if 0
 	delete this->prob;
+#else
+    InnerLayerFunc::destroyLayer(0);
+#endif
 }
 
 template<typename Dtype>
 SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(const string& name) 
-    : LossLayer<Dtype>() {}
+    : LossLayer<Dtype>() {
+    
+	initialize();
+}
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::reshape() {
@@ -45,9 +53,17 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 				this->name.c_str(), 1, 1, 1, 1);
 #endif
 
+#if 0
 		this->softmaxLayer->_inputData.push_back(this->_inputData[0]);
 		this->softmaxLayer->_outputData.push_back(this->prob);
+#else
+        cout << "set inout tensor" << endl;
+        InnerLayerFunc::setInOutTensor(0, (void*)this->_inputData[0], true, 0);
+        InnerLayerFunc::setInOutTensor(0, NULL, false, 0);
+#endif
 	}
+
+    return;     // XXX: for test...
 
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
@@ -119,6 +135,9 @@ __global__ void SoftmaxLossForwardGPU(
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	reshape();
+
+    InnerLayerFunc::runForward(0, -1);
+    return;     // XXX: for test...
 
 
 	//Data<Dtype>::printConfig = true;
@@ -247,6 +266,9 @@ __global__ void SoftmaxLossBackwardGPU(
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::backpropagation() {
+    InnerLayerFunc::runBackward(0);
+    return;     // XXX: for test...
+
 	assert(!this->_propDown[1] &&
 			"SoftmaxLayer cannot backpropagate to label inputs ... ");
 
@@ -312,8 +334,8 @@ void SoftmaxWithLossLayer<Dtype>::initialize() {
 	//	this->normalization =
 
 
+#if 0
 	this->prob = new Data<Dtype>("prob");
-
 	// XXX: float로 생성하지 않으니 error ...
 	// create inner softmax layer
 	SoftmaxLayer<float>::Builder* softmaxLayerBuilder =
@@ -326,7 +348,9 @@ void SoftmaxWithLossLayer<Dtype>::initialize() {
 		->inputs({"inner_softmax_10_input"})
 		->outputs({"inner_softmax_10_input"});
 	this->softmaxLayer = dynamic_cast<SoftmaxLayer<Dtype>*>(softmaxLayerBuilder->build());
+#endif
 
+    InnerLayerFunc::initLayer(0);
 }
 
 template <typename Dtype>
@@ -398,18 +422,22 @@ void SoftmaxWithLossLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensor
 template<typename Dtype>
 bool SoftmaxWithLossLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     SoftmaxWithLossLayer<Dtype>* layer = (SoftmaxWithLossLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
     cout << "SoftmaxWithLossLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    SoftmaxWithLossLayer<Dtype>* layer = (SoftmaxWithLossLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::backwardTensor(void* instancePtr) {
     cout << "SoftmaxWithLossLayer.. backward()" << endl;
+    SoftmaxWithLossLayer<Dtype>* layer = (SoftmaxWithLossLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>

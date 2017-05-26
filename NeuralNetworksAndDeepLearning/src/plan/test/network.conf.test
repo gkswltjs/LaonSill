@@ -40,14 +40,25 @@
             "layer" : "SoftmaxWithLoss",
             "id" : 6,
             "input" : ["fc1", "label"],
-            "output" : ["loss"]
+            "output" : ["loss"],
+            "innerLayer" : 
+            [
+                {
+                    "name" : "softmaxInnerLayer",
+                    "id" : 7000,
+                    "layer" : "Softmax",
+                    "input" : ["prob"],
+                    "output" : ["softmaxInnerLayer1"],
+                    "softmaxAxis" : 7
+                }
+            ]
         }
     ],
 
     "configs" :
     {
         "batchSize" : 4,
-        "epoch" : 2,
+        "epochs" : 2,
         "miniBatch" : 3,
         "lossLayer" : ["loss"],
         "gamma" : 0.1
