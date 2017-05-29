@@ -153,17 +153,19 @@ bool ReluLayer<Dtype>::allocLayerTensors(void* instancePtr) {
 
 template<typename Dtype>
 void ReluLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "ReluLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    ReluLayer<Dtype>* layer = (ReluLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void ReluLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "ReluLayer.. backward()" << endl;
+    ReluLayer<Dtype>* layer = (ReluLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void ReluLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "ReluLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class ReluLayer<float>;

@@ -338,6 +338,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 0 
+},
+
+"PRINT_RUNLAYER_LOG" : 
+{
+    "DESC" : "specify whether server prints log of the run layer function or not",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
 }
 
 }

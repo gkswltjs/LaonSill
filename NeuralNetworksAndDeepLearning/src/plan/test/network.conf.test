@@ -21,7 +21,7 @@
             "filterDim.rows" : 7,
             "filterDim.cols" : 7,
             "filterDim.channels" : 3,
-            "filterDim.filters" : 16,
+            "filterDim.filters" : 4,
             "filterDim.stride" : 4
         },
 
@@ -55,8 +55,7 @@
                     "id" : 7000,
                     "layer" : "Softmax",
                     "input" : ["prob"],
-                    "output" : ["softmaxInnerLayer1"],
-                    "softmaxAxis" : 7
+                    "output" : ["softmaxInnerLayer1"]
                 }
             ]
         }
@@ -65,8 +64,7 @@
     "configs" :
     {
         "batchSize" : 4,
-        "epochs" : 2,
-        "miniBatch" : 3,
+        "epochs" : 4,
         "lossLayer" : ["loss"],
         "gamma" : 0.1
     }

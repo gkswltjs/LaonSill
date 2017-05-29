@@ -21,6 +21,7 @@
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "WorkContext.h"
 
 using namespace std;
 
@@ -363,12 +364,22 @@ bool ILSVRCInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     ILSVRCInputLayer<Dtype>* layer = (ILSVRCInputLayer<Dtype>*)instancePtr;
     layer->currentBatchIndex = 0;
     layer->reshape();
+
+    if (SNPROP(miniBatch) == 0) {
+        int trainDataNum = layer->getNumTrainData();
+        if (trainDataNum % SNPROP(batchSize) == 0) {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+        } else {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+        }
+        WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+    }
+
     return true;
 }
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "ILSVRCInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
     ILSVRCInputLayer<Dtype>* layer = (ILSVRCInputLayer<Dtype>*)instancePtr;
     layer->currentBatchIndex = miniBatchIdx;
     layer->reshape();
@@ -376,12 +387,12 @@ void ILSVRCInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx)
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "ILSVRCInputLayer.. backward()" << endl;
+    // do nothing..
 }
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "ILSVRCInputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class ILSVRCInputLayer<float>;

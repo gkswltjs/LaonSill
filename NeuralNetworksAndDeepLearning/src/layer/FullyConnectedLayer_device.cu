@@ -308,7 +308,7 @@ void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dt
 
 	const uint32_t batches = this->_inputShape[0][0];
 	const Dtype normScale = 1.0/batches;
-	const Dtype momentum = this->networkConfig->_momentum;
+	const Dtype momentum = SNPROP(momentum);
 	const Dtype negativeOne = -1.0;
     const Dtype negativeLearnScale = (-1.0) * learnScale;
 
@@ -597,7 +597,7 @@ void FullyConnectedLayer<Dtype>::_computeActivatedData() {
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_dropoutForward() {
 	// TODO skip when test
-	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
+	if(SNPROP(status) == NetworkStatus::Train && SLPROP(FullyConnected, pDropOut) < 1.0f) {
 		//int b_out = this->out_dim.batchsize();
 		int b_out = this->_outputData[0]->getCount();
 		Dtype* h_mask_mem = _mask.mutable_host_mem();
@@ -680,7 +680,7 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_dropoutBackward() {
-	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
+	if(SNPROP(status) == NetworkStatus::Train && SLPROP(FullyConnected, pDropOut) < 1.0f) {
 		const uint32_t batchSize = this->_inputData[0]->getCount();
 
 		this->_outputData[0]->print_grad("outputGrad:");
@@ -821,7 +821,6 @@ template<typename Dtype>
 void* FullyConnectedLayer<Dtype>::initLayer() {
     FullyConnectedLayer* layer = new FullyConnectedLayer<Dtype>(SLPROP_BASE(name));
     return (void*)layer;
-    layer->initialize();
 }
 
 template<typename Dtype>
@@ -855,17 +854,20 @@ bool FullyConnectedLayer<Dtype>::allocLayerTensors(void* instancePtr) {
 
 template<typename Dtype>
 void FullyConnectedLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "FullyConnectedLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void FullyConnectedLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "FullyConnectedLayer.. backward()" << endl;
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void FullyConnectedLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "FullyConnectedLayer.. learn()" << endl;
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->update();
 }
 
 template void* FullyConnectedLayer<float>::initLayer();

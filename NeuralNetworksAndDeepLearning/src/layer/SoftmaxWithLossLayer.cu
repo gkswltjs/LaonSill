@@ -29,17 +29,15 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(Builder* builder)
 
 template <typename Dtype>
 SoftmaxWithLossLayer<Dtype>::~SoftmaxWithLossLayer() {
-#if 0
 	delete this->prob;
-#else
     InnerLayerFunc::destroyLayer(0);
-#endif
 }
 
 template<typename Dtype>
 SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(const string& name) 
     : LossLayer<Dtype>() {
-    
+   
+    this->softmaxAxis = SLPROP(SoftmaxWithLoss, softmaxAxis);
 	initialize();
 }
 
@@ -59,11 +57,9 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 #else
         cout << "set inout tensor" << endl;
         InnerLayerFunc::setInOutTensor(0, (void*)this->_inputData[0], true, 0);
-        InnerLayerFunc::setInOutTensor(0, NULL, false, 0);
+        InnerLayerFunc::setInOutTensor(0, (void*)this->prob, false, 0);
 #endif
 	}
-
-    return;     // XXX: for test...
 
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
@@ -136,20 +132,21 @@ template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	reshape();
 
-    InnerLayerFunc::runForward(0, -1);
-    return;     // XXX: for test...
 
 
 	//Data<Dtype>::printConfig = true;
 	//SyncMem<Dtype>::printConfig = true;
 
+#if 0
 	this->_inputData[0]->print_data({}, false);
 	this->_inputData[1]->print_data({}, false);
 
 	this->softmaxLayer->feedforward();
 
 	this->softmaxLayer->_outputData[0]->print_data({}, false);
-
+#else
+    InnerLayerFunc::runForward(0, -1);
+#endif
 
 
 	const Dtype* probData = this->prob->device_data();
@@ -266,13 +263,7 @@ __global__ void SoftmaxLossBackwardGPU(
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::backpropagation() {
-    InnerLayerFunc::runBackward(0);
-    return;     // XXX: for test...
-
-	assert(!this->_propDown[1] &&
-			"SoftmaxLayer cannot backpropagate to label inputs ... ");
-
-	if (this->_propDown[0]) {
+	if (SLPROP_BASE(propDown)[0]) {
 		Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
 		const Dtype* probData = this->prob->device_data();
 		const Dtype* outputData = this->_outputData[0]->device_data();
@@ -334,8 +325,8 @@ void SoftmaxWithLossLayer<Dtype>::initialize() {
 	//	this->normalization =
 
 
-#if 0
 	this->prob = new Data<Dtype>("prob");
+#if 0
 	// XXX: float로 생성하지 않으니 error ...
 	// create inner softmax layer
 	SoftmaxLayer<float>::Builder* softmaxLayerBuilder =
@@ -428,21 +419,19 @@ bool SoftmaxWithLossLayer<Dtype>::allocLayerTensors(void* instancePtr) {
 
 template<typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "SoftmaxWithLossLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
     SoftmaxWithLossLayer<Dtype>* layer = (SoftmaxWithLossLayer<Dtype>*)instancePtr;
     layer->feedforward();
 }
 
 template<typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "SoftmaxWithLossLayer.. backward()" << endl;
     SoftmaxWithLossLayer<Dtype>* layer = (SoftmaxWithLossLayer<Dtype>*)instancePtr;
     layer->backpropagation();
 }
 
 template<typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "SoftmaxWithLossLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class SoftmaxWithLossLayer<float>;

@@ -23,7 +23,8 @@ using namespace std;
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer(const string& name)
 : Layer<Dtype>(name) {
-
+	this->softmaxAxis = SLPROP(Softmax, softmaxAxis);
+    initialize();
 }
 
 
@@ -120,7 +121,7 @@ void SoftmaxLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::backpropagation() {
-	if (this->_propDown[0]) {
+	if (SLPROP_BASE(propDown)[0]) {
 		const Dtype* outputData = this->_outputData[0]->device_data();
 		const Dtype* outputGrad = this->_outputData[0]->device_grad();
 		Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
@@ -407,23 +408,25 @@ void SoftmaxLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool SoftmaxLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void SoftmaxLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "SoftmaxLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void SoftmaxLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "SoftmaxLayer.. backward()" << endl;
+    SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void SoftmaxLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "SoftmaxLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class SoftmaxLayer<float>;

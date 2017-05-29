@@ -13,6 +13,7 @@
 #include "Param.h"
 #include "Worker.h"
 #include "LayerFunc.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
@@ -222,8 +223,9 @@ void PhysicalPlan::runLayer(int planID) {
     
     // (2) run layer
     PlanInfo* planInfo = WorkContext::curPlanInfo;
-    cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
-        planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")";
+    STDOUT_COND_BLOCK(SPARAM(PRINT_RUNLAYER_LOG), 
+        cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
+        planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")" << endl);
 
     // FIXME: 나름 핫 코드영역인데 이렇게 자주 맵을 뒤지면 성능에 안좋다. 수정필요!!
     SASSUME0(this->planMap.find(planID) != this->planMap.end());
