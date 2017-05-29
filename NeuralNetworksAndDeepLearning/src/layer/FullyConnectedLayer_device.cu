@@ -279,10 +279,10 @@ void FullyConnectedLayer<Dtype>::update() {
 	const Dtype learnScale = NetworkConfig<Dtype>::calcLearningRate() *
 		SLPROP(FullyConnected, weightUpdateParam).lr_mult;
 
-    const Dtype epsilon = this->networkConfig->_epsilon;
-    const Dtype decayRate = this->networkConfig->_decayRate;
-    const Dtype beta1 = this->networkConfig->_beta1;
-    const Dtype beta2 = this->networkConfig->_beta2;
+    const Dtype epsilon = SNPROP(epsilon);
+    const Dtype decayRate = SNPROP(decayRate);
+    const Dtype beta1 = SNPROP(beta1);
+    const Dtype beta2 = SNPROP(beta2);
 
     this->decayedBeta1 *= beta1;
     this->decayedBeta2 *= beta2;
@@ -821,6 +821,7 @@ template<typename Dtype>
 void* FullyConnectedLayer<Dtype>::initLayer() {
     FullyConnectedLayer* layer = new FullyConnectedLayer<Dtype>(SLPROP_BASE(name));
     return (void*)layer;
+    layer->initialize();
 }
 
 template<typename Dtype>
@@ -848,7 +849,7 @@ void FullyConnectedLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorP
 template<typename Dtype>
 bool FullyConnectedLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 

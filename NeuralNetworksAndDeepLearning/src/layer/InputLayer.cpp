@@ -88,8 +88,8 @@ void InputLayer<Dtype>::reshape() {
 	// 입력 레이어는 출력 데이터를 입력 데이터와 공유
 	// xxx: 레이어 명시적으로 초기화할 수 있는 위치를 만들어 옮길 것.
 	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+		for (uint32_t i = 0; i < SLPROP_BASE(output).size(); i++) {
+			SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
@@ -204,7 +204,7 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 		//this->_inputData[0]->print_data("data");
 
 		// label
-		if (this->_inputs.size() > 1) {
+		if (SLPROP_BASE(input).size() > 1) {
 			for (uint32_t i = 0; i < batches; i++) {
 				const Dtype* ptr = _dataSet->getTrainLabelAt(baseIndex+i);
 				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
@@ -218,7 +218,7 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
 		}
 
-		if (this->_inputs.size() > 1) {
+		if (SLPROP_BASE(input).size() > 1) {
 			for (uint32_t i = 0; i < batches; i++) {
 				const Dtype* ptr = _dataSet->getTestLabelAt(baseIndex+i);
 				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);

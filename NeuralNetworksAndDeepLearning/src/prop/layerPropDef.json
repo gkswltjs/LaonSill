@@ -74,22 +74,22 @@
     "LEARN" : true,
     "VARS" : 
         [   
-            ["filterDimRows", "uint32_t", "0"],
-            ["filterDimCols", "uint32_t", "0"],
-            ["filterDimChannels", "uint32_t", "0"],
-            ["filterDimFilters", "uint32_t", "0"],
-            ["filterDimPads", "uint32_t", "0"],
-            ["filterDimStrides", "uint32_t", "1"],
-            ["weightUpdateParamLRMulti", "float", "1.0"],
-            ["weightUpdateParamDecayMulti", "float", "0.0"],
-            ["biasUpdateParamLRMulti", "float", "1.0"],
-            ["biasUpdateParamDecayMulti", "float", "0.0"],
-            ["weightFillerType", "int", "ParamFillerType::Constant"],
-            ["weightFillerValue", "float", "0.0"],
-            ["biasFillerType", "int", "ParamFillerType::Constant"],
-            ["biasFillerValue", "float", "0.0"],
             ["deconv", "bool", "false"],
-            ["deconvExtraCell", "int", "0"]
+            ["deconvExtraCell", "int", "0"],
+            ["filterDim", "filter_dim", "{1, 1, 1, 1, 0, 1}",
+                [
+                    ["rows", "uint32_t"], 
+                    ["cols", "uint32_t"],
+                    ["channels", "uint32_t"],
+                    ["filters", "uint32_t"],
+                    ["pad", "uint32_t"],
+                    ["stride", "uint32_t"]
+                ]
+            ],
+            ["weightUpdateParam", "update_param", "{0.0, 1.0}"],
+            ["biasUpdateParam", "update_param", "{0.0, 1.0}"],
+            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"],
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"]
         ]
 },
 
@@ -120,7 +120,7 @@
     "VARS" : 
         [   
             ["imageDir", "std::string", "\"\""],
-            ["resizeImage", "int", "0"],
+            ["resizeImage", "bool", "false"],
             ["resizedImageRow", "int", "0"],
             ["resizedImageCol", "int", "0"]
         ]

@@ -19,10 +19,18 @@
     "LEARN" : true,
     "VARS" : 
         [   
-            ["filterDimRows", "uint32_t", "0"],
-            ["filterDimCols", "uint32_t", "0"],
-            ["filterDimChannels", "uint32_t", "0"],
-            ["filterDimFilters", "uint32_t", "0"],
+            ["deconv", "bool", "false"],
+            ["deconvExtraCell", "int", "0"],
+            ["filterDim", "filter_dim", "{1, 1, 1, 1, 0, 1}",
+                [
+                    ["rows", "uint32_t"], 
+                    ["cols", "uint32_t"],
+                    ["channels", "uint32_t"],
+                    ["filters", "uint32_t"],
+                    ["pad", "uint32_t"],
+                    ["stride", "uint32_t"]
+                ]
+            ],
                      :
         ]
 },
@@ -39,11 +47,13 @@
            가진다.
 (4) LEARN : 학습을 할 수 있는 레이어인지 유무를 결정한다.
 (5) VARS : prop에서 정의하는 여러가지 속성값들을 의미한다. VARS는 여러개의 VAR로 정의된다.
-           각각의 VAR은 (VAR의 이름, VAR의 타입, VAR의 초기값) 3가지 튜플로 정의된다.
+           일반적인 VAR은 (VAR의 이름, VAR의 타입, VAR의 초기값) 3가지 튜플로 정의된다.
            만약 초기값을 특정 헤더파일에 정의되어 있는 타입으로 정의하고 싶다면 해당
            헤더파일을 genProp.py의 headerFileList에 추가한다.
            VAR의 타입은 primitive 형(ex. bool, int, float, ...)과 std::vector, std::string을
            지원한다. 
+           사용자 정의 구조체를 사용하는 경우에는 구조체 변수 정보에 대한 리스트가 추가된다.
+           filterDim과 변수를 참고하길 바란다.
 
  [genLayerPropList.py]
         :

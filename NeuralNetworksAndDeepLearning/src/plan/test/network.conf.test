@@ -6,7 +6,10 @@
             "layer" : "ILSVRCInput",
             "id" : 0,
             "output" : ["data", "label"],
-            "imageDir" : "/data/ilsvrc12_train"
+            "imageDir" : "/data/ilsvrc12_train",
+            "resizeImage" : true,
+            "resizedImageRow" : 224,
+            "resizedImageCol" : 224
         },
 
         {
@@ -15,7 +18,11 @@
             "id" : 1,
             "input" : ["data"],
             "output" : ["conv1"],
-            "filterDimRows" : 3
+            "filterDim.rows" : 7,
+            "filterDim.cols" : 7,
+            "filterDim.channels" : 3,
+            "filterDim.filters" : 16,
+            "filterDim.stride" : 4
         },
 
         {

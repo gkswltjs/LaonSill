@@ -57,6 +57,8 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
     }
 
     LayerFunc::setInOutTensor(layerType, instancePtr, (void*)tensor, isInput, index);
+
+    return (void*)tensor;
 }
 
 void PhysicalPlan::allocateTensorInternal(int networkID) {
@@ -92,6 +94,10 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
                 void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
                     key.tensorName, key.tensorAlloc, true, i);
                 SASSERT0(allocPtr != NULL);
+                tensorAllocMap[key] = allocPtr;
+            } else {
+                void* tensor = tensorAllocMap[key];
+                LayerFunc::setInOutTensor(layerType, instancePtr, tensor, true, i);
             }
         }
 
@@ -104,6 +110,10 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
                 void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
                     key.tensorName, key.tensorAlloc, false, i);
                 SASSERT0(allocPtr != NULL);
+                tensorAllocMap[key] = allocPtr;
+            } else {
+                void* tensor = tensorAllocMap[key];
+                LayerFunc::setInOutTensor(layerType, instancePtr, tensor, false, i);
             }
         }
 

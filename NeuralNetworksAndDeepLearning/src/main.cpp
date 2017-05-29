@@ -249,18 +249,26 @@ int main(int argc, char** argv) {
         // (5-D-2) Listener & Sess threads를 생성.
         Communicator::launchThreads(SPARAM(SESS_COUNT));
 
-        // (5-D-3) 테스트를 실행한다.
+        // (5-D-3) developer mode 처럼 테스트하는 케이스도 있어서...
+        checkCudaErrors(cudaSetDevice(0));
+        checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+        checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
+
+        // (5-D-4) 테스트를 실행한다.
         runTest(testItemName);
 
-        // (5-D-4) release resources 
+        // (5-D-5) release resources 
         Job* haltJob = new Job(Job::HaltMachine);
         Worker<float>::pushJob(haltJob);
 
         Communicator::halt();       // threads will be eventually halt
 
-        // (5-D-5) 각각의 쓰레드들의 종료를 기다린다.
+        // (5-D-6) 각각의 쓰레드들의 종료를 기다린다.
         Worker<float>::joinThreads();
         Communicator::joinThreads();
+
+        // (5-D-7) 자원을 해제 한다.
+        Cuda::destroy();
     } else {
         // (5-E-1) Producer&Consumer를 생성.
         Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));

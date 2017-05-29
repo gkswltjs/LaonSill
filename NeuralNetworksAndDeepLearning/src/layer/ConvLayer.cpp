@@ -11,6 +11,7 @@
 #include "Util.h"
 #include "Exception.h"
 #include "SysLog.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -35,7 +36,12 @@ ConvLayer<Dtype>::ConvLayer(const string name, filter_dim filter_d,
 
 template<typename Dtype>
 ConvLayer<Dtype>::ConvLayer(const string& name) 
-    : LearnableLayer<Dtype>(name) {}
+    : LearnableLayer<Dtype>(name) {
+    
+    initialize(SLPROP(Conv, filterDim), SLPROP(Conv, weightUpdateParam),
+        SLPROP(Conv, biasUpdateParam), SLPROP(Conv, weightFiller), SLPROP(Conv, biasFiller),
+        SLPROP(Conv, deconv), SLPROP(Conv, deconvExtraCell));
+}
 
 #ifndef GPU_MODE
 void convolution(const rmat &x, const rmat &w, rmat &result, int stride);

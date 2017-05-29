@@ -473,14 +473,14 @@ void ConvLayer<Dtype>::reshape() {
 template <typename Dtype>
 void ConvLayer<Dtype>::update() {
 	// update filters ...
-	const uint32_t weightSize = filter_d.size();
-	const Dtype regScale = this->networkConfig->_weightDecay * weight_update_param.decay_mult;
+	const uint32_t weightSize = SLPROP(Conv, filterDim).size();
+	const Dtype regScale = SNPROP(weightDecay) * SLPROP(Conv, weightUpdateParam).decay_mult;
 	const Dtype learnScale = 
-        this->networkConfig->getLearningRate() * weight_update_param.lr_mult;
-    const Dtype epsilon = this->networkConfig->_epsilon;
-    const Dtype decayRate = this->networkConfig->_decayRate;
-    const Dtype beta1 = this->networkConfig->_beta1;
-    const Dtype beta2 = this->networkConfig->_beta2;
+        NetworkConfig<Dtype>::calcLearningRate() * SLPROP(Conv, weightUpdateParam).lr_mult;
+    const Dtype epsilon = SNPROP(epsilon);
+    const Dtype decayRate = SNPROP(decayRate);
+    const Dtype beta1 = SNPROP(beta1);
+    const Dtype beta2 = SNPROP(beta2);
 
     this->decayedBeta1 *= beta1;
     this->decayedBeta2 *= beta2;
@@ -490,9 +490,9 @@ void ConvLayer<Dtype>::update() {
 
 	// update biases ...
 	const uint32_t biasSize = filter_d.filters;
-	const Dtype regScale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
+	const Dtype regScale_b = SNPROP(weightDecay) * SLPROP(Conv, biasUpdateParam).decay_mult;
 	const Dtype learnScale_b = 
-        this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
+        NetworkConfig<Dtype>::calcLearningRate() * SLPROP(Conv, biasUpdateParam).lr_mult;
 
 	_updateParam(biasSize, regScale_b, learnScale_b, epsilon, decayRate, beta1, beta2, 
 		this->_paramsHistory[Bias], this->_paramsHistory2[Bias], this->_params[Bias]);
@@ -505,7 +505,7 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
     Data<Dtype>* data) {
 	const uint32_t batches = this->_inputData[0]->getShape(0);
 	const Dtype normScale = 1.0/batches;
-	const Dtype momentum = this->networkConfig->_momentum;
+	const Dtype momentum = SNPROP(momentum);
 	const Dtype negativeOne = -1.0;
 
     if (!Worker<Dtype>::isSingle())
@@ -526,7 +526,7 @@ void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regSca
 #endif
 
     // (2) apply optimizer
-    Optimizer opt = this->networkConfig->_optimizer;
+    Optimizer opt = (Optimizer)SNPROP(optimizer);
     if (opt == Optimizer::Momentum) {
         /****
          * Momentum Alogorithm
@@ -819,6 +819,10 @@ template void ConvLayer<float>::backpropagation();
 template<typename Dtype>
 void* ConvLayer<Dtype>::initLayer() {
     ConvLayer* conv = new ConvLayer<Dtype>(SLPROP(Conv, name));
+
+    cout << "conv rows : " << SLPROP(Conv, filterDim).rows << ", strides : " <<
+        SLPROP(Conv, filterDim).stride << endl;
+
     return (void*)conv;
 }
 
@@ -847,7 +851,7 @@ void ConvLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool ConvLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     ConvLayer<Dtype>* conv = (ConvLayer<Dtype>*)instancePtr;
-    //conv->reshape();
+    conv->reshape();
     return true;
 }
 

@@ -6,9 +6,13 @@
  * @details
  */
 
+#include <iostream>
+
 #include "LayerFunc.h"
 #include "Layer.h"
 #include "SysLog.h"
+
+using namespace std;
 
 CBLayerFunc* LayerFunc::layerFuncs;
 
@@ -50,6 +54,10 @@ void LayerFunc::destroyLayer(int layerType, void* instancePtr) {
 
 void LayerFunc::setInOutTensor(int layerType, void* instancePtr, void *tensorPtr,
     bool isInput, int index) {
+
+    cout << "layer type : " << layerType << ", tensorPtr : " << tensorPtr <<
+        ", isInput : " << isInput << ", index : " << index << endl;
+
     SASSUME0(layerType < Layer<float>::LayerTypeMax);
     LayerFunc::layerFuncs[layerType].setInOutTensor(instancePtr, tensorPtr, isInput, index);
 }

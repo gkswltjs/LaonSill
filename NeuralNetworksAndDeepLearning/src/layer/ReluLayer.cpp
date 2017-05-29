@@ -20,7 +20,7 @@ ReluLayer<Dtype>::ReluLayer(Builder* builder)
 template<typename Dtype>
 ReluLayer<Dtype>::ReluLayer(const string& name) 
 : Layer<Dtype>(name) {
-	initialize(false, 0.5);
+	initialize(SLPROP(Relu, useLeaky), SLPROP(Relu, leaky));
 }
 
 template <typename Dtype>
@@ -147,7 +147,7 @@ void ReluLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool ReluLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     ReluLayer<Dtype>* layer = (ReluLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 

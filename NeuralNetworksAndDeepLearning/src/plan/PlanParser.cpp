@@ -37,6 +37,17 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
     vector<string> stringArrayValue;
     Json::Value arrayValue;
 
+    bool isStructType = false;
+    string property;
+    string subProperty;
+    size_t pos = key.find('.');
+    if (pos != string::npos) { 
+        property = key.substr(0, pos);
+        subProperty = key.substr(pos+1);
+        isStructType = true;
+        SASSERT0(isLayer);  // layer property만 현재 struct type을 지원한다.
+    }
+
     _NetworkProp* networkProp;
     if (!isLayer) {
         networkProp = (_NetworkProp*)prop;
@@ -45,8 +56,11 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
     switch(val.type()) {
     case Json::booleanValue:
         boolValue = val.asBool();
-        if (isLayer) {
+        if (isLayer && !isStructType) {
             LayerPropList::setProp(prop, layerType.c_str(), key.c_str(), (void*)&boolValue);
+        } else if (isLayer && isStructType) {
+            LayerPropList::setPropStruct(prop, layerType.c_str(), property.c_str(),
+                subProperty.c_str(), (void*)&boolValue);
         } else {
             NetworkProp::setProp(networkProp, key.c_str(), (void*)&boolValue);
         }
@@ -54,8 +68,11 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
 
     case Json::intValue:
         int64Value = val.asInt64();
-        if (isLayer) {
+        if (isLayer && !isStructType) {
             LayerPropList::setProp(prop, layerType.c_str(), key.c_str(), (void*)&int64Value);
+        } else if (isLayer && isStructType) {
+            LayerPropList::setPropStruct(prop, layerType.c_str(), property.c_str(),
+                subProperty.c_str(), (void*)&int64Value);
         } else {
             NetworkProp::setProp(networkProp, key.c_str(), (void*)&int64Value);
         }
@@ -63,8 +80,11 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
 
     case Json::realValue:
         doubleValue = val.asDouble();
-        if (isLayer) {
+        if (isLayer && !isStructType) {
             LayerPropList::setProp(prop, layerType.c_str(), key.c_str(), (void*)&doubleValue);
+        } else if (isLayer && isStructType) {
+            LayerPropList::setPropStruct(prop, layerType.c_str(), property.c_str(),
+                subProperty.c_str(), (void*)&doubleValue);
         } else {
             NetworkProp::setProp(networkProp, key.c_str(), (void*)&doubleValue);
         }
@@ -72,8 +92,11 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
 
     case Json::stringValue:
         stringValue = val.asCString();
-        if (isLayer) {
+        if (isLayer && !isStructType) {
             LayerPropList::setProp(prop, layerType.c_str(), key.c_str(), (void*)&stringValue);
+        } else if (isLayer && isStructType) {
+            LayerPropList::setPropStruct(prop, layerType.c_str(), property.c_str(),
+                subProperty.c_str(), (void*)&stringValue);
         } else {
             NetworkProp::setProp(networkProp, key.c_str(), (void*)&stringValue);
         }
@@ -89,9 +112,12 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
                 arrayValue = val[k];
                 boolArrayValue.push_back(arrayValue.asBool());
             }
-            if (isLayer) {
+            if (isLayer && !isStructType) {
                 LayerPropList::setProp(prop, layerType.c_str(), key.c_str(),
                     (void*)&boolArrayValue);
+            } else if (isLayer && isStructType) {
+                LayerPropList::setPropStruct(prop, layerType.c_str(), property.c_str(),
+                    subProperty.c_str(), (void*)&boolArrayValue);
             } else {
                 NetworkProp::setProp(networkProp, key.c_str(), (void*)&boolArrayValue);
             }
@@ -101,9 +127,12 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
                 arrayValue = val[k];
                 int64ArrayValue.push_back(arrayValue.asInt64());
             }
-            if (isLayer) {
+            if (isLayer && !isStructType) {
                 LayerPropList::setProp(prop, layerType.c_str(), key.c_str(),
                     (void*)&int64ArrayValue);
+            } else if (isLayer && isStructType) {
+                LayerPropList::setPropStruct(prop, layerType.c_str(), property.c_str(),
+                    subProperty.c_str(), (void*)&int64ArrayValue);
             } else {
                 NetworkProp::setProp(networkProp, key.c_str(), (void*)&int64ArrayValue);
             }
@@ -113,9 +142,12 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
                 arrayValue = val[k];
                 doubleArrayValue.push_back(arrayValue.asDouble());
             }
-            if (isLayer) {
+            if (isLayer && !isStructType) {
                 LayerPropList::setProp(prop, layerType.c_str(), key.c_str(),
                     (void*)&doubleArrayValue);
+            } else if (isLayer && isStructType) {
+                LayerPropList::setPropStruct(prop, layerType.c_str(), property.c_str(),
+                    subProperty.c_str(), (void*)&doubleArrayValue);
             } else {
                 NetworkProp::setProp(networkProp, key.c_str(), (void*)&doubleArrayValue);
             }
@@ -126,9 +158,12 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
                 stringArrayValue.push_back(arrayValue.asString());
             }
             
-            if (isLayer) {
+            if (isLayer && !isStructType) {
                 LayerPropList::setProp(prop, layerType.c_str(), key.c_str(),
                     (void*)&stringArrayValue);
+            } else if (isLayer && isStructType) {
+                LayerPropList::setPropStruct(prop, layerType.c_str(), property.c_str(),
+                    subProperty.c_str(), (void*)&stringArrayValue);
             } else {
                 NetworkProp::setProp(networkProp, key.c_str(), (void*)&stringArrayValue);
             }
