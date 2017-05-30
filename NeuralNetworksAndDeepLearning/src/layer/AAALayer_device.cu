@@ -15,15 +15,8 @@
 
 using namespace std;
 
-#ifdef GPU_MODE
-
 template<typename Dtype>
 AAALayer<Dtype>::~AAALayer() {
-
-}
-
-template <typename Dtype>
-void AAALayer<Dtype>::update() {
 
 }
 
@@ -44,8 +37,5 @@ void AAALayer<Dtype>::backpropagation() {
 
 template AAALayer<float>::~AAALayer();
 template void AAALayer<float>::reshape();
-template void AAALayer<float>::update();
 template void AAALayer<float>::feedforward();
 template void AAALayer<float>::backpropagation();
-
-#endif

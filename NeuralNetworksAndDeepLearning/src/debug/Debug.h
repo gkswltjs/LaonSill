@@ -40,7 +40,6 @@
 #include "Pooling.h"
 #include "Param.h"
 #include "ALEInputLayer.h"
-#include "DQNOutputLayer.h"
 #include "FrcnnTestOutputLayer.h"
 #include "BatchNormLayer.h"
 #include "ReluLayer.h"
@@ -59,6 +58,7 @@ template <typename Dtype> class LayersConfig;
 
 
 
+#if 0
 //#define OUTPUTLAYER
 
 
@@ -4514,5 +4514,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 	return layersConfig;
 }
 */
+
+#endif
 
 #endif

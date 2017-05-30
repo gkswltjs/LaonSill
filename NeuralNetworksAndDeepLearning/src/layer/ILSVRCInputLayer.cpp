@@ -36,24 +36,23 @@ const int ILSVRC_CLASS_COUNT     = 1000;
 #define MAKE_LABEL_FOR_SOFTMAX_OUTPUT       1
 
 template<typename Dtype>
-ILSVRCInputLayer<Dtype>::ILSVRCInputLayer(const string& name) 
-: InputLayer<Dtype>(name) {
-    initialize(SLPROP(ILSVRCInput, imageDir), SLPROP(ILSVRCInput, resizeImage),
-        SLPROP(ILSVRCInput, resizedImageRow), SLPROP(ILSVRCInput, resizedImageCol));
-}
+ILSVRCInputLayer<Dtype>::ILSVRCInputLayer() : InputLayer<Dtype>() {
+    this->type = Layer<Dtype>::ILSVRCInput;
 
-template<typename Dtype>
-ILSVRCInputLayer<Dtype>::ILSVRCInputLayer(const string name, string imageDir,
-    bool resizeImage, int resizedImageRow, int resizedImageCol) :
-    InputLayer<Dtype>(name) {
-    initialize(imageDir, resizeImage, resizedImageRow, resizedImageCol);
-}
+    this->imageRow = ILSVRC_IMAGE_ROW;
+    this->imageCol = ILSVRC_IMAGE_COL;
 
-template<typename Dtype>
-ILSVRCInputLayer<Dtype>::ILSVRCInputLayer(Builder* builder) : 
-    InputLayer<Dtype>(builder) {
-	initialize(builder->_imageDir, builder->_resizeImage, builder->_resizedImageRow,
-        builder->_resizedImageCol);
+    if (SLPROP(ILSVRCInput, resizeImage)) {
+        this->imageRow = SLPROP(ILSVRCInput, resizedImageRow);
+        this->imageCol = SLPROP(ILSVRCInput, resizedImageCol);
+    }
+
+    this->imageChannel = ILSVRC_IMAGE_CHANNEL;
+
+    this->images = NULL;
+    this->labels = NULL;
+
+    this->currentBatchIndex = 0;
 }
 
 template<typename Dtype>
@@ -186,7 +185,7 @@ void ILSVRCInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::fillMetas() {
-    string filePath = this->imageDir + "/" + ILSVRC_CLASSFILE_NAME;
+    string filePath = SLPROP(ILSVRCInput, imageDir) + "/" + ILSVRC_CLASSFILE_NAME;
     FILE *fp = fopen(filePath.c_str(), "r");
     SASSERT0(fp != NULL);
 
@@ -289,30 +288,6 @@ void ILSVRCInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* 
 }
 
 template<typename Dtype>
-void ILSVRCInputLayer<Dtype>::initialize(string imageDir, bool resizeImage,
-    int resizedImageRow, int resizedImageCol) {
-
-    this->type = Layer<Dtype>::ILSVRCInput;
-    this->imageDir = imageDir;
-    this->resizeImage = resizeImage;
-
-    this->imageRow = ILSVRC_IMAGE_ROW;
-    this->imageCol = ILSVRC_IMAGE_COL;
-
-    if (resizeImage) {
-        this->imageRow = resizedImageRow;
-        this->imageCol = resizedImageCol;
-    }
-
-    this->imageChannel = ILSVRC_IMAGE_CHANNEL;
-
-    this->images = NULL;
-    this->labels = NULL;
-
-    this->currentBatchIndex = 0;
-}
-
-template<typename Dtype>
 int ILSVRCInputLayer<Dtype>::getNumTrainData() {
     if (this->images == NULL) {
         reshape();
@@ -338,7 +313,7 @@ void ILSVRCInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* ILSVRCInputLayer<Dtype>::initLayer() {
-    ILSVRCInputLayer* layer = new ILSVRCInputLayer<Dtype>(SLPROP_BASE(name));
+    ILSVRCInputLayer* layer = new ILSVRCInputLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -386,7 +361,6 @@ void ILSVRCInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx)
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "backward ILSVRC Input" << endl;
     // do nothing..
 }
 

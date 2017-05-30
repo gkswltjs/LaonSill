@@ -20,6 +20,7 @@ using namespace std;
 
 template<typename Dtype>
 void GAN<Dtype>::setLayerTrain(LayersConfig<Dtype>* lc, bool train) {
+#if 0
     int layerCount = lc->_layers.size();
 
     for (int i = 0; i < layerCount; i++) {
@@ -30,10 +31,12 @@ void GAN<Dtype>::setLayerTrain(LayersConfig<Dtype>* lc, bool train) {
 
         bnLayer->setTrain(train);
     }
+#endif
 }
 
 template <typename Dtype>
 LayersConfig<Dtype>* GAN<Dtype>::createDOfGANLayersConfig() {
+#if 0
 	LayersConfig<Dtype>* layersConfig =
 	    (new typename LayersConfig<Dtype>::Builder())
 
@@ -153,10 +156,14 @@ LayersConfig<Dtype>* GAN<Dtype>::createDOfGANLayersConfig() {
         ->build();
 
 	return layersConfig;
+#else
+    return NULL;
+#endif
 }
 
 template<typename Dtype>
 LayersConfig<Dtype>* GAN<Dtype>::createGD0OfGANLayersConfig() {
+#if 0
 	LayersConfig<Dtype>* layersConfig =
 	    (new typename LayersConfig<Dtype>::Builder())
         ->layer((new typename NoiseInputLayer<Dtype>::Builder())
@@ -378,10 +385,14 @@ LayersConfig<Dtype>* GAN<Dtype>::createGD0OfGANLayersConfig() {
         ->build();
 
 	return layersConfig;
+#else
+    return NULL;
+#endif
 }
 
 template<typename Dtype>
 void GAN<Dtype>::run() {
+#if 0
     // loss layer of Discriminator GAN 
 	const vector<string> llDGAN = { "celossDGAN" };
     // loss layer of Generatoer-Discriminator 0 GAN
@@ -557,7 +568,7 @@ void GAN<Dtype>::run() {
             lossLayer->setTargetValue(0.0);
             noiseInputLayer->setRegenerateNoise(true);
 
-#if 0
+            /*
             if (j % 100 == 0) {
                 setLayerTrain(lcGD0GAN, false);
 
@@ -573,7 +584,7 @@ void GAN<Dtype>::run() {
 
                 setLayerTrain(lcGD0GAN, true);
             }
-#endif
+            */
         }
 
         if (true) {
@@ -593,7 +604,7 @@ void GAN<Dtype>::run() {
         }
     }
 
-#if 0
+    /*
     // noise check
     setLayerTrain(lcGD0GAN, false);
 
@@ -626,9 +637,9 @@ void GAN<Dtype>::run() {
             noise += 0.1;
         }
     }
+    */
 #endif
-
-
 }
+
 
 template class GAN<float>;

@@ -21,6 +21,7 @@ using namespace std;
 
 template<typename Dtype>
 LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
+#if 0
     const float bias_const = 0.2f;
 
     LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
@@ -581,11 +582,15 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloPreLayersConfig() {
         ->build();
 
     return layersConfig;
+#else
+    return NULL;
+#endif
 }
 
 
 template<typename Dtype>
 LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
+#if 0
     const float bias_const = 0.2f;
 
     LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
@@ -1267,10 +1272,14 @@ LayersConfig<Dtype>* YOLO<Dtype>::createYoloLayersConfig() {
         ->build();
 
     return layersConfig;
+#else
+    return NULL;
+#endif
 }
 
 template<typename Dtype>
 void YOLO<Dtype>::runPretrain() {
+#if 0
 	const vector<string> lossList = { "loss" };
 
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
@@ -1340,10 +1349,12 @@ void YOLO<Dtype>::runPretrain() {
 
     network->sgd(1000);
     //networkConfig->save();
+#endif
 }
 
 template<typename Dtype>
 void YOLO<Dtype>::run() {
+#if 0
     // loss layer of Discriminator GAN 
 	const vector<string> lossList = { "loss" };
     // loss layer of Generatoer-Discriminator 0 GAN
@@ -1410,6 +1421,7 @@ void YOLO<Dtype>::run() {
 
     network->sgd(12499);
     //DebugUtil<Dtype>::printNetworkEdges(stderr, "load network", layersConfig, 0);
+#endif
 }
 
 template class YOLO<float>;

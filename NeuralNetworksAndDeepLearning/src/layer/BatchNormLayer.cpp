@@ -15,31 +15,9 @@
 
 using namespace std;
 
-
 template <typename Dtype>
-BatchNormLayer<Dtype>::BatchNormLayer(Builder* builder)
-	: LearnableLayer<Dtype>(builder) {
-	initialize(builder->_epsilon, builder->_train);
-}
-
-template <typename Dtype>
-BatchNormLayer<Dtype>::BatchNormLayer(const string name, 
-    double epsilon, bool train) : LearnableLayer<Dtype>(name) {
-	initialize(epsilon, train);
-}
-
-template <typename Dtype>
-BatchNormLayer<Dtype>::BatchNormLayer(const string name)
-: LearnableLayer<Dtype>(name) {
-	initialize(SLPROP(BatchNorm, epsilon), SLPROP(BatchNorm, train));
-}
-
-template <typename Dtype>
-void BatchNormLayer<Dtype>::initialize(double epsilon, bool train) {
+BatchNormLayer<Dtype>::BatchNormLayer() : LearnableLayer<Dtype>() {
 	this->type                  = Layer<Dtype>::BatchNorm;
-    this->epsilon               = epsilon;
-    this->train                 = train;
-
     this->depth                 = 0;
 
 	this->_paramsInitialized.resize(5);
@@ -84,28 +62,13 @@ void BatchNormLayer<Dtype>::initialize(double epsilon, bool train) {
     this->decayedBeta2 = 1.0;
 }
 
-
-#ifndef GPU_MODE
-template <typename Dtype>
-BatchNormLayer<Dtype>::~BatchNormLayer() {
-    // TODO:
+template<typename Dtype>
+void BatchNormLayer<Dtype>::setTrain(bool train) {
+    SLPROP(BatchNorm, train) = train;
 }
-
-template <typename Dtype>
-void BatchNormLayer<Dtype>::feedforward() {
-    // TODO:
-}
-
-template <typename Dtype>
-void BatchNormLayer<Dtype>::backpropagation(uint32_t idx, Layer *next_layer) {
-    // TODO:
-}
-
-#endif
 
 template<typename Dtype>
 void BatchNormLayer<Dtype>::donateParam(BatchNormLayer<Dtype>* receiver) {
-#if GPU_MODE
     receiver->_params.clear();
     receiver->_paramsHistory.clear();
     receiver->_paramsHistory2.clear();
@@ -125,7 +88,6 @@ void BatchNormLayer<Dtype>::donateParam(BatchNormLayer<Dtype>* receiver) {
     for (int i = 0; i < this->_paramsInitialized.size(); i++) {
         receiver->_paramsInitialized.push_back(this->_paramsInitialized[i]);
     }
-#endif
 }
 
 template class BatchNormLayer<float>;

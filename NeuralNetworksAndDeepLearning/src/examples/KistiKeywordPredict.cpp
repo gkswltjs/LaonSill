@@ -24,6 +24,7 @@ int KistiKeywordPredict<Dtype>::getTop10GuessSuccessCount(const float* data,
     const float* label, int batchCount, int depth, bool train, int epoch, 
     const float* image, int imageBaseIndex, vector<KistiData> etriData) {
 
+#if 0
     int successCnt = 0;
 
 #if 1
@@ -115,11 +116,15 @@ int KistiKeywordPredict<Dtype>::getTop10GuessSuccessCount(const float* data,
 #endif
 
     return successCnt;
+#else
+    return -1;
+#endif
 }
 
 
 template <typename Dtype>
 LayersConfig<Dtype>* KistiKeywordPredict<Dtype>::createKistiVGG19NetLayersConfig() {
+#if 0
     const float bias_const = 0.2f;
 
     LayersConfig<Dtype>* layersConfig = (new typename LayersConfig<Dtype>::Builder())
@@ -517,10 +522,14 @@ LayersConfig<Dtype>* KistiKeywordPredict<Dtype>::createKistiVGG19NetLayersConfig
             ->build();
 
     return layersConfig;
+#else
+    return NULL;
+#endif
 }
 
 template<typename Dtype>
 void KistiKeywordPredict<Dtype>::run() {
+#if 0
     // loss layer of Discriminator GAN 
 	const vector<string> lossList = { "celossKisti" };
     // loss layer of Generatoer-Discriminator 0 GAN
@@ -669,6 +678,7 @@ void KistiKeywordPredict<Dtype>::run() {
     DebugUtil<Dtype>::printNetworkEdges(stdout, "etri", layersConfig, 0);
 #endif
 
+#endif
 }
 
 template class KistiKeywordPredict<float>;

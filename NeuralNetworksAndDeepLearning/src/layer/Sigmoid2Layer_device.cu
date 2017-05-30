@@ -45,23 +45,7 @@ __global__ void Backward(const Dtype *outputGrad, const Dtype *output, int size,
 }
 
 template <typename Dtype>
-Sigmoid2Layer<Dtype>::Sigmoid2Layer() {
-	this->type = Layer<Dtype>::Sigmoid2;
-}
-
-template <typename Dtype>
-Sigmoid2Layer<Dtype>::Sigmoid2Layer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	initialize();
-}
-
-template <typename Dtype>
-Sigmoid2Layer<Dtype>::Sigmoid2Layer(const string name) : Layer<Dtype>(name) {
-	initialize();
-}
-
-template <typename Dtype>
-void Sigmoid2Layer<Dtype>::initialize() {
+Sigmoid2Layer<Dtype>::Sigmoid2Layer() : Layer<Dtype>() {
 	this->type = Layer<Dtype>::Sigmoid2;
 }
 
@@ -122,7 +106,7 @@ void Sigmoid2Layer<Dtype>::reshape() {
  ****************************************************************************/
 template<typename Dtype>
 void* Sigmoid2Layer<Dtype>::initLayer() {
-    Sigmoid2Layer* layer = new Sigmoid2Layer<Dtype>(SLPROP_BASE(name));
+    Sigmoid2Layer* layer = new Sigmoid2Layer<Dtype>();
     return (void*)layer;
 }
 

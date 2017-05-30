@@ -15,6 +15,10 @@ LearnableLayer<Dtype>::LearnableLayer()
 
 }
 
+template<typename Dtype>
+LearnableLayer<Dtype>::LearnableLayer() : Layer<Dtype>() {
+}
+
 
 template <typename Dtype>
 double LearnableLayer<Dtype>::sumSquareParamsData() {

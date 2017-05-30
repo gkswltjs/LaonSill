@@ -33,28 +33,26 @@ const int CELEBA_IMAGE_COL = 178;
 //const int CELEBA_CENTER_CROP_LEN = 108;
 
 template<typename Dtype>
-CelebAInputLayer<Dtype>::CelebAInputLayer() {
-    initialize("", false, -1, false, -1, -1);
-}
+CelebAInputLayer<Dtype>::CelebAInputLayer() : InputLayer<Dtype>() {
+    this->type = Layer<Dtype>::CelebAInput;
 
-template<typename Dtype>
-CelebAInputLayer<Dtype>::CelebAInputLayer(const string name, string imageDir, bool cropImage,
-    int cropLen, bool resizeImage, int resizedImageRow, int resizedImageCol) :
-    InputLayer<Dtype>(name) {
-    initialize(imageDir, cropImage, cropLen, resizeImage, resizedImageRow, resizedImageCol);
-}
+    this->imageRow = CELEBA_IMAGE_ROW;
+    this->imageCol = CELEBA_IMAGE_COL;
 
-template<typename Dtype>
-CelebAInputLayer<Dtype>::CelebAInputLayer(const string& name) : InputLayer<Dtype>(name) {
-    initialize(SLPROP(CelebAInput, imageDir), SLPROP(CelebAInput, cropImage),
-        SLPROP(CelebAInput, cropLen), SLPROP(CelebAInput, resizeImage), 
-        SLPROP(CelebAInput, resizedImageRow), SLPROP(CelebAInput, resizedImageCol));
-}
+    if (SLPROP(CelebAInput, cropImage)) {
+        this->imageRow = SLPROP(CelebAInput, cropLen);
+        this->imageCol = SLPROP(CelebAInput, cropLen);
+    } 
+    
+    if (SLPROP(CelebAInput, resizeImage)) {
+        this->imageRow = SLPROP(CelebAInput, resizedImageRow);
+        this->imageCol = SLPROP(CelebAInput, resizedImageCol);
+    }
 
-template<typename Dtype>
-CelebAInputLayer<Dtype>::CelebAInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
-	initialize(builder->_imageDir, builder->_cropImage, builder->_cropLen,
-        builder->_resizeImage, builder->_resizedImageRow, builder->_resizedImageCol);
+    this->imageChannel = CELEBA_IMAGE_CHANNEL;
+
+    this->images = NULL;
+    this->currentBatchIndex = 0;
 }
 
 template<typename Dtype>
@@ -147,7 +145,7 @@ void CelebAInputLayer<Dtype>::fillImagePaths() {
     struct dirent *entry;
     DIR *dp;
 
-    dp = opendir(this->imageDir.c_str());
+    dp = opendir(SLPROP(CelebAInput, imageDir).c_str());
     if (dp == NULL) {
         COLD_LOG(ColdLog::ERROR, true, "opendir() is failed. errno=%d", errno); 
         SASSERT0("opendir() is failed.");
@@ -157,7 +155,7 @@ void CelebAInputLayer<Dtype>::fillImagePaths() {
         string filename(entry->d_name);
         if (filename.find(".jpg") != string::npos) {
             this->imageIndexes.push_back(this->imagePaths.size());
-            this->imagePaths.push_back(this->imageDir + "/" + filename);
+            this->imagePaths.push_back(SLPROP(CelebAInput, imageDir) + "/" + filename);
         }
     }
 
@@ -189,23 +187,23 @@ void CelebAInputLayer<Dtype>::loadImages(int baseIdx) {
         //SASSERT(imageChannels == CELEBA_IMAGE_CHANNEL, "channel : %d", imageChannels);
 
         cv::Mat croppedImage;
-        if (this->cropImage) {
+        if (SLPROP(CelebAInput, cropImage)) {
             cv::Rect roi;
-            roi.x = (CELEBA_IMAGE_COL - this->cropLen) / 2;
-            roi.y = (CELEBA_IMAGE_ROW - this->cropLen) / 2;
-            roi.width = this->cropLen;
-            roi.height = this->cropLen;
+            roi.x = (CELEBA_IMAGE_COL - SLPROP(CelebAInput, cropLen)) / 2;
+            roi.y = (CELEBA_IMAGE_ROW - SLPROP(CelebAInput, cropLen)) / 2;
+            roi.width = SLPROP(CelebAInput, cropLen);
+            roi.height = SLPROP(CelebAInput, cropLen);
             croppedImage = image(roi);
 
-            if (!this->resizeImage) {
+            if (!SLPROP(CelebAInput, resizeImage)) {
                 loadPixels(croppedImage, i);
             }
         }
 
-        if (this->resizeImage) {
+        if (SLPROP(CelebAInput, resizeImage)) {
             cv::Mat resizedImage;
 
-            if (this->cropImage) {
+            if (SLPROP(CelebAInput, cropImage)) {
                 cv::resize(croppedImage, resizedImage, cv::Size(this->imageRow, this->imageCol));
             } else {
                 cv::resize(image, resizedImage, cv::Size(this->imageRow, this->imageCol));
@@ -239,34 +237,6 @@ void CelebAInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* 
 }
 
 template<typename Dtype>
-void CelebAInputLayer<Dtype>::initialize(string imageDir, bool cropImage, int cropLen,
-    bool resizeImage, int resizedImageRow, int resizedImageCol) {
-    this->type = Layer<Dtype>::CelebAInput;
-    this->imageDir = imageDir;
-    this->cropImage = cropImage;
-    this->resizeImage = resizeImage;
-
-    this->imageRow = CELEBA_IMAGE_ROW;
-    this->imageCol = CELEBA_IMAGE_COL;
-
-    if (cropImage) {
-        this->imageRow = cropLen;
-        this->imageCol = cropLen;
-        this->cropLen = cropLen;
-    } 
-    
-    if (resizeImage) {
-        this->imageRow = resizedImageRow;
-        this->imageCol = resizedImageCol;
-    }
-
-    this->imageChannel = CELEBA_IMAGE_CHANNEL;
-
-    this->images = NULL;
-    this->currentBatchIndex = 0;
-}
-
-template<typename Dtype>
 int CelebAInputLayer<Dtype>::getNumTrainData() {
     if (this->images == NULL) {
         reshape();
@@ -292,7 +262,7 @@ void CelebAInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* CelebAInputLayer<Dtype>::initLayer() {
-    CelebAInputLayer* layer = new CelebAInputLayer<Dtype>(SLPROP_BASE(name));
+    CelebAInputLayer* layer = new CelebAInputLayer<Dtype>();
     return (void*)layer;
 }
 

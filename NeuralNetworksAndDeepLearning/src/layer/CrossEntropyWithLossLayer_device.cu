@@ -166,28 +166,8 @@ __global__ void CEBackwardWithSigmoid2(const Dtype* input, const Dtype* input2, 
 template <typename Dtype>
 CrossEntropyWithLossLayer<Dtype>::CrossEntropyWithLossLayer()
 	: LossLayer<Dtype>() {
-	initialize(0, false);
-}
-
-template <typename Dtype>
-CrossEntropyWithLossLayer<Dtype>::CrossEntropyWithLossLayer(Builder* builder)
-	: LossLayer<Dtype>(builder) {
-	initialize(builder->_targetValue, builder->_withSigmoid);
-}
-
-template <typename Dtype>
-CrossEntropyWithLossLayer<Dtype>::CrossEntropyWithLossLayer(const string& name)
-	: LossLayer<Dtype>() {
-	initialize(SLPROP(CrossEntropyWithLoss, targetValue),
-        SLPROP(CrossEntropyWithLoss, withSigmoid));
-}
-
-template <typename Dtype>
-void CrossEntropyWithLossLayer<Dtype>::initialize(Dtype targetValue, bool withSigmoid) {
 	this->type = Layer<Dtype>::CrossEntropyWithLoss;
-    this->targetValue = targetValue;
     this->depth = 0;
-    this->withSigmoid = withSigmoid;
 }
 
 template<typename Dtype>
@@ -251,14 +231,15 @@ void CrossEntropyWithLossLayer<Dtype>::feedforward() {
 
     int count = this->depth * batchCount;
 
-    if (this->withSigmoid) {
+    if (SLPROP(CrossEntropyWithLoss, withSigmoid)) {
         if (this->_inputData.size() == 2) {
             const Dtype *inputData2 = this->_inputData[1]->device_data();
             CEForwardWithSigmoid2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
                 inputData, inputData2, count, outputData);
         } else {
             CEForwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-                inputData, (Dtype)this->targetValue, count, outputData);
+                inputData, (Dtype)SLPROP(CrossEntropyWithLoss, targetValue), count,
+                outputData);
         }
     } else {
         if (this->_inputData.size() == 2) {
@@ -267,7 +248,8 @@ void CrossEntropyWithLossLayer<Dtype>::feedforward() {
                 inputData, inputData2, count, outputData);
         } else {
             CEForward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-                inputData, (Dtype)this->targetValue, count, outputData);
+                inputData, (Dtype)SLPROP(CrossEntropyWithLoss, targetValue), count,
+                outputData);
         }
     }
 }
@@ -282,14 +264,15 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
 
     int count = batchCount * this->depth;
 
-    if (this->withSigmoid) {
+    if (SLPROP(CrossEntropyWithLoss, withSigmoid)) {
         if (this->_inputData.size() == 2) {
             const Dtype *inputData2 = this->_inputData[1]->device_data();
             CEBackwardWithSigmoid2<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
                 inputData, inputData2, count, inputGrads);
         } else {
             CEBackwardWithSigmoid<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-                inputData, (Dtype)this->targetValue, count, inputGrads);
+                inputData, (Dtype)SLPROP(CrossEntropyWithLoss, targetValue), count,
+                inputGrads);
         }
     } else {
         if (this->_inputData.size() == 2) {
@@ -298,7 +281,8 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
                 inputData, inputData2, count, inputGrads);
         } else {
             CEBackward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-                inputData, (Dtype)this->targetValue, count, inputGrads);
+                inputData, (Dtype)SLPROP(CrossEntropyWithLoss, targetValue), count,
+                inputGrads);
         }
 
     }
@@ -316,7 +300,7 @@ Dtype CrossEntropyWithLossLayer<Dtype>::cost() {
 
 template<typename Dtype>
 void CrossEntropyWithLossLayer<Dtype>::setTargetValue(Dtype value) {
-    this->targetValue = value;
+    SLPROP(CrossEntropyWithLoss, targetValue) = value;
 }
 
 /****************************************************************************
@@ -324,8 +308,7 @@ void CrossEntropyWithLossLayer<Dtype>::setTargetValue(Dtype value) {
  ****************************************************************************/
 template<typename Dtype>
 void* CrossEntropyWithLossLayer<Dtype>::initLayer() {
-    CrossEntropyWithLossLayer* layer = 
-        new CrossEntropyWithLossLayer<Dtype>(SLPROP_BASE(name));
+    CrossEntropyWithLossLayer* layer = new CrossEntropyWithLossLayer<Dtype>();
     return (void*)layer;
 }
 
