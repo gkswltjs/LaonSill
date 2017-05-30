@@ -17,8 +17,7 @@
 using namespace std;
 
 template <typename Dtype>
-ProposalTargetLayer<Dtype>::ProposalTargetLayer(const string& name)
-: Layer<Dtype>(name) {
+ProposalTargetLayer<Dtype>::ProposalTargetLayer() : Layer<Dtype>() {
 	this->type = Layer<Dtype>::ProposalTarget;
 }
 

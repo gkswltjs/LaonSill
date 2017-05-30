@@ -28,27 +28,10 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer()
 	const bool hasNormalization = SLPROP(Loss, hasNormalization);
 	const bool hasNormalize = SLPROP(Loss, hasNormalize);
 	const bool normalize = SLPROP(Loss, normalize);
-	//assert(this->hasNormalize);
 	if (!hasNormalization && hasNormalize)
 		this->normalization = normalize ?
 				LossLayer<Dtype>::NormalizationMode::Valid :
 				LossLayer<Dtype>::NormalizationMode::BatchSize;
-	//else
-	//	this->normalization =
-
-
-	// XXX: float로 생성하지 않으니 error ...
-	// create inner softmax layer
-	SoftmaxLayer<float>::Builder* softmaxLayerBuilder =
-			new typename SoftmaxLayer<float>::Builder();
-
-	softmaxLayerBuilder
-		->id(0)
-		->name("inner_softmax")
-		->softmaxAxis(this->softmaxAxis)
-		->inputs({"inner_softmax_10_input"})
-		->outputs({"inner_softmax_10_input"});
-	this->softmaxLayer = dynamic_cast<SoftmaxLayer<Dtype>*>(softmaxLayerBuilder->build());
 
 	InnerLayerFunc::initLayer(0);
 }
@@ -65,7 +48,7 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 		this->_outputData[0]->reshape({1, 1, 1, 1});
 #if SOFTMAXWITHLOSSLAYER_LOG
 		printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-				this->name.c_str(), 1, 1, 1, 1);
+				SLPROP_BASE(name).c_str(), 1, 1, 1, 1);
 #endif
 
         cout << "set inout tensor" << endl;
@@ -85,9 +68,11 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 		if (i == 0) {
 			this->prob.reshape(inputDataShape);
 
-			//this->softmaxAxis = 1;
-			this->outerNum = this->_inputData[0]->getCountByAxis(0, this->softmaxAxis);
-			this->innerNum = this->_inputData[0]->getCountByAxis(this->softmaxAxis+1);
+			//SLPROP(SoftmaxWithLoss, softmaxAxis) = 1;
+			this->outerNum = this->_inputData[0]->getCountByAxis(0, 
+                    SLPROP(SoftmaxWithLoss, softmaxAxis));
+			this->innerNum = this->_inputData[0]->getCountByAxis(
+                    SLPROP(SoftmaxWithLoss, softmaxAxis)+1);
 
             SASSERT(this->outerNum*this->innerNum == this->_inputData[1]->getCount(),
 			    "Number of labels must match number of predictions ... "
@@ -180,14 +165,14 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 
 	SoftmaxLossForwardGPU<Dtype><<<SOOOA_GET_BLOCKS(nthreads), SOOOA_CUDA_NUM_THREADS>>>(
 			nthreads, probData, label, lossData, this->outerNum, dim,
-			this->innerNum, this->hasIgnoreLabel, this->ignoreLabel, counts);
+			this->innerNum, SLPROP(SoftmaxWithLoss, hasIgnoreLabel), SLPROP(SoftmaxWithLoss, ignoreLabel), counts);
 	//cudaDeviceSynchronize();
 
 
 	//exit(1);
 
 	/*
-	if (this->name == "loss_cls") {
+	if (SLPROP_BASE(name) == "loss_cls") {
 		Data<Dtype>::printConfig = true;
 
 		//this->_inputData[0]->print_data({}, false);
@@ -209,13 +194,13 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	// Only launch another CUDA kernel if we actually need the count of valid
 	// outputs.
 	if (this->normalization == LossLayer<Dtype>::NormalizationMode::Valid &&
-			this->hasIgnoreLabel)
+			SLPROP(SoftmaxWithLoss, hasIgnoreLabel))
 		soooa_gpu_asum(nthreads, counts, &validCount);
 
 	// xxx normalizer test -> restored
 	this->_outputData[0]->mutable_host_data()[0] = loss *
-			Dtype(this->lossWeight) / getNormalizer(validCount);
-	//this->_outputData[0]->mutable_host_data()[0] = loss * Dtype(this->lossWeight);
+			Dtype(SLPROP(SoftmaxWithLoss, lossWeight)) / getNormalizer(validCount);
+	//this->_outputData[0]->mutable_host_data()[0] = loss * Dtype(SLPROP(SoftmaxWithLoss, lossWeight));
 
 
 	//cout << "softmaxwithloss: " << this->_outputData[0]->host_data()[0] << endl;
@@ -291,14 +276,14 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 
 		SoftmaxLossBackwardGPU<Dtype><<<SOOOA_GET_BLOCKS(nthreads),
             SOOOA_CUDA_NUM_THREADS>>>(nthreads, outputData, label, inputGrad,
-            this->outerNum, dim, this->innerNum, this->hasIgnoreLabel, this->ignoreLabel,
+            this->outerNum, dim, this->innerNum, SLPROP(SoftmaxWithLoss, hasIgnoreLabel), SLPROP(SoftmaxWithLoss, ignoreLabel),
             counts);
 
 		Dtype validCount = -1;
 		// Only launch another CUDA kernel if we actually need the count of valid
 		// outputs.
 		if (this->normalization == LossLayer<Dtype>::NormalizationMode::Valid &&
-				this->hasIgnoreLabel)
+				SLPROP(SoftmaxWithLoss, hasIgnoreLabel))
 			soooa_gpu_asum(nthreads, counts, &validCount);
 
 		const Dtype lossWeight = Dtype(1) / getNormalizer(validCount);

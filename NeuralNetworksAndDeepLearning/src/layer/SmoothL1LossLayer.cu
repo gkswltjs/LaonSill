@@ -42,7 +42,7 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 		this->_outputData[0]->reshape({1, 1, 1, 1});
 #if SMOOTHL1LOSSLAYER_LOG
 		printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-				this->name.c_str(), 1, 1, 1, 1);
+				SLPROP_BASE(name).c_str(), 1, 1, 1, 1);
 #endif
 	}
 
@@ -223,7 +223,7 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 	// after forwards, diff holds w_in * (b0 - b1)
 
 	/*
-	if (this->name == "rpn_loss_bbox") {
+	if (SLPROP_BASE(name) == "rpn_loss_bbox") {
 		Data<Dtype>::printConfig = true;
 		this->diff.print_data({}, false);
 		Data<Dtype>::printConfig = false;
@@ -237,7 +237,7 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 	CUDA_POST_KERNEL_CHECK;
 
 	/*
-	if (this->name == "rpn_loss_bbox") {
+	if (SLPROP_BASE(name) == "rpn_loss_bbox") {
 		Data<Dtype>::printConfig = true;
 		this->diff.print_data({}, false);
 		Data<Dtype>::printConfig = false;
@@ -280,7 +280,7 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 	}
 
 	/*
-	if (this->name == "rpn_loss_bbox") {
+	if (SLPROP_BASE(name) == "rpn_loss_bbox") {
 		Data<Dtype>::printConfig = true;
 		this->_inputData[i]->print_grad({}, false);
 		Data<Dtype>::printConfig = false;

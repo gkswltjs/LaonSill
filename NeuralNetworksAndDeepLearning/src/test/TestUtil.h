@@ -15,6 +15,7 @@
 #include "cnpy.h"
 #include "Data.h"
 
+#if 0
 
 const std::string DELIM 		= "*";
 const std::string TYPE_DATA 	= "data";
@@ -79,6 +80,6 @@ S* retrieveValueFromMap(std::map<T, S*>& dict, const T& key);
 
 
 
-
+#endif
 
 #endif /* TESTUTIL_H_ */

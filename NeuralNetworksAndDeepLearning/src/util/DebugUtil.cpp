@@ -116,6 +116,7 @@ void DebugUtil<Dtype>::printLayerEdges(FILE *fp, const char* title, Layer<Dtype>
     }
 }
 
+#if 0
 template<typename Dtype>
 void DebugUtil<Dtype>::printLayerEdgesByLayerIndex(FILE *fp, const char* title,
     LayersConfig<Dtype>* lc, int layerIndex, int indent) {
@@ -147,6 +148,7 @@ void DebugUtil<Dtype>::printNetworkEdges(FILE *fp, const char* title, LayersConf
         printLayerEdgesByLayerIndex(fp, layer->getName().c_str(), lc, i, indent + 2);
     }
 }
+#endif
 
 // XXX: 
 #if 0

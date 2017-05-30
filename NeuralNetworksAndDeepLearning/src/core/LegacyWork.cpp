@@ -179,6 +179,7 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
 
 template <typename Dtype>
 void LegacyWork<Dtype>::cleanupNetwork(Job* job) {
+#if 0
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
 
 	LayersConfig<Dtype>* layersConfig = network->getLayersConfig();
@@ -193,6 +194,7 @@ void LegacyWork<Dtype>::cleanupNetwork(Job* job) {
 			it != layersConfig->_layerDataMap.end(); it++) {
 		delete it->second;
 	}
+#endif
 }
 
 
@@ -208,36 +210,7 @@ void LegacyWork<Dtype>::cleanupNetwork(Job* job) {
 
 template <typename Dtype>
 int LegacyWork<Dtype>::createNetwork() {
-	const vector<string> lossLayers = {"loss"};
-	const NetworkPhase phase = NetworkPhase::TrainPhase;
-
-#if LOAD_WEIGHT
-    string loadPath = "/home/jkim/Dev/SOOOA_HOME/network/network.param";
-#endif
-	const uint32_t batchSize = 10;
-	const uint32_t testInterval = 1000;			// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 10000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.001f;
-	//const uint32_t testInterval = 100;			// 10000(목표 샘플수) / batchSize
-	//const uint32_t saveInterval = 10000;		// 1000000 / batchSize
-	//const float baseLearningRate = 0.01f;
-
-	const uint32_t stepSize = 100000;
-	const float weightDecay = 0.0005f;
-	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
-	const float gamma = 0.0001;
-	//const LRPolicy lrPolicy = LRPolicy::Step;
-	const LRPolicy lrPolicy = LRPolicy::Fixed;
-
-	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
-	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
-	STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
-	STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
-	STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
-	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
-	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
-
+#if 0
 	NetworkConfig<Dtype>* networkConfig =
 			(new typename NetworkConfig<Dtype>::Builder())
 			->batchSize(batchSize)
@@ -260,11 +233,12 @@ int LegacyWork<Dtype>::createNetwork() {
 				})
 			->lossLayers(lossLayers)
 			->build();
+#endif
 
 	Util::printVramInfo();
 
     // 네트워크를 등록한다.
-	Network<Dtype>* network = new Network<Dtype>(networkConfig);
+	Network<Dtype>* network = new Network<Dtype>();
 
     return network->getNetworkID();
 }

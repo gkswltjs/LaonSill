@@ -75,7 +75,7 @@ void ALEInputLayer<Dtype>::reshape() {
 
 #if INPUTLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-					this->name.c_str(), batches, channels, rows, cols);
+					SLPROP_BASE(name).c_str(), batches, channels, rows, cols);
 #endif
 		}
 		// 레이블
@@ -94,7 +94,7 @@ void ALEInputLayer<Dtype>::reshape() {
 
 #if INPUTLAYER_LOG
 			printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
-					this->name.c_str(), batches, channels, rows, cols);
+					SLPROP_BASE(name).c_str(), batches, channels, rows, cols);
 #endif
 		}
 	}

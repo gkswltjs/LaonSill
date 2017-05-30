@@ -15,8 +15,7 @@ using namespace std;
 
 
 template<typename Dtype>
-FullyConnectedLayer<Dtype>::FullyConnectedLayer(const string& name)
-: LearnableLayer<Dtype>(name) {
+FullyConnectedLayer<Dtype>::FullyConnectedLayer() : LearnableLayer<Dtype>() {
 	this->type = Layer<Dtype>::FullyConnected;
 
 	this->scale = 1. / (1. - SLPROP(FullyConnected, pDropOut));

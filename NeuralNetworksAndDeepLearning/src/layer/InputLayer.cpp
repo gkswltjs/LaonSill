@@ -134,7 +134,7 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 			const Dtype* ptr = this->_dataSet->getTrainDataAt(baseIndex+i);
 			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
 		}
-		this->_inputData[0]->scale_device_data(this->_scale);
+		this->_inputData[0]->scale_device_data(SLPROP(Input, scale));
 
 		const uint32_t singleChannelSize = this->_inputData[0]->getCountByAxis(2);
 		const Dtype* mean = this->_dataMean->device_data();

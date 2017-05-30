@@ -31,12 +31,6 @@ public:
 	ConvLayer();
 	virtual ~ConvLayer();
 
-	/**
-	 * @details 컨볼루션 연산 관련 파라미터 구조체를 조회한다.
-	 * @return 컨볼루션 연산 관련 파라미터
-	 */
-	filter_dim &get_filter_dim() { return this->filter_d; }
-
 	virtual void reshape();
 	virtual void feedforward();
 	virtual void backpropagation();

@@ -69,8 +69,8 @@ void ReshapeLayer<Dtype>::reshape() {
 	vector<uint32_t> outputDataShape(dim);
 
 	for (uint32_t i = 0; i < dim; i++) {
-		if (this->shape[i] > 0)
-			outputDataShape[i] = this->shape[i];
+		if (SLPROP(Reshape, shape)[i] > 0)
+			outputDataShape[i] = SLPROP(Reshape, shape)[i];
 	}
 	for (uint32_t i = 0; i < copyAxes.size(); i++) {
 		outputDataShape[this->copyAxes[i]] = inputDataShape[this->copyAxes[i]];
@@ -92,7 +92,7 @@ void ReshapeLayer<Dtype>::reshape() {
 
 #if RESHAPELAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-			this->name.c_str(), outputDataShape[0], outputDataShape[1],
+			SLPROP_BASE(name).c_str(), outputDataShape[0], outputDataShape[1],
 			outputDataShape[2], outputDataShape[3]);
 #endif
 
@@ -126,7 +126,7 @@ void ReshapeLayer<Dtype>::backpropagation() {
 
 
 	/*
-	if (this->name == "rpn_cls_score_reshape") {
+	if (SLPROP_BASE(name) == "rpn_cls_score_reshape") {
 		Data<Dtype>::printConfig = true;
 
 		this->_outputData[0]->print_grad({}, false);

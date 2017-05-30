@@ -232,10 +232,10 @@ void FullyConnectedLayer<Dtype>::reshape() {
 
 	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG, 
         "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), this->batches, channels, this->in_rows, cols);
+        SLPROP_BASE(name).c_str(), this->batches, channels, this->in_rows, cols);
 	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG,
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
-        this->name.c_str(), this->batches, channels, this->out_rows, cols);
+        SLPROP_BASE(name).c_str(), this->batches, channels, this->out_rows, cols);
 
 	const uint32_t u_in = in_rows;
 	const uint32_t u_out = out_rows;
@@ -718,7 +718,7 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 
 	/*
 	if(this->_input->is_nan_grad()) {
-		cout << this->name << " _input gradient nan ... " << endl;
+		cout << SLPROP_BASE(name) << " _input gradient nan ... " << endl;
 		Data<Dtype>::printConfig = 1;
 		this->_input->print_grad("deltaInput:");
 		Data<Dtype>::printConfig = 0;

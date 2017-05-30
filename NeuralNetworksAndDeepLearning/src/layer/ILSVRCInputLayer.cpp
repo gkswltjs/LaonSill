@@ -126,12 +126,12 @@ void ILSVRCInputLayer<Dtype>::reshape() {
 
 #if ILSVRCINPUTLAYER_LOG
     printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), batchSize, this->imageChannel, this->imageRow, this->imageCol);
+        SLPROP_BASE(name).c_str(), batchSize, this->imageChannel, this->imageRow, this->imageCol);
     printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
 #if MAKE_LABEL_FOR_SOFTMAX_OUTPUT
-        this->name.c_str(), batchSize, 1, 1, 1);
+        SLPROP_BASE(name).c_str(), batchSize, 1, 1, 1);
 #else
-        this->name.c_str(), batchSize, 1, ILSVRC_CLASS_COUNT, 1);
+        SLPROP_BASE(name).c_str(), batchSize, 1, ILSVRC_CLASS_COUNT, 1);
 #endif
 
 #endif

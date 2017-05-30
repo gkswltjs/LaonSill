@@ -42,6 +42,11 @@ uint32_t Layer<Dtype>::getOutputsSize() {
     return SLPROP_BASE(output).size();
 }
 
+template<typename Dtype>
+int Layer<Dtype>::getId() {
+   return SLPROP_BASE(id); 
+}
+
 template <typename Dtype>
 Layer<Dtype>::Layer() {
 	const vector<bool>& propDown = SLPROP_BASE(propDown);

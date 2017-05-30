@@ -122,9 +122,9 @@ void VOCPascalInputLayer<Dtype>::reshape() {
 
 #if VOCPASCALINPUTLAYER_LOG
     printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), batchSize, this->imageChannel, this->imageRow, this->imageCol);
+        SLPROP_BASE(name).c_str(), batchSize, this->imageChannel, this->imageRow, this->imageCol);
     printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), batchSize, 1, VOCPASCAL_BOX_COUNT * VOCPASCAL_BOX_ELEM_COUNT, 1);
+        SLPROP_BASE(name).c_str(), batchSize, 1, VOCPASCAL_BOX_COUNT * VOCPASCAL_BOX_ELEM_COUNT, 1);
 #endif
 
     loadImages(this->currentBatchIndex);

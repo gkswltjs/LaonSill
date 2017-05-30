@@ -770,7 +770,7 @@ template void ConvLayer<float>::backpropagation();
  ****************************************************************************/
 template<typename Dtype>
 void* ConvLayer<Dtype>::initLayer() {
-    ConvLayer* layer = new ConvLayer<Dtype>(SLPROP(Conv, name));
+    ConvLayer* layer = new ConvLayer<Dtype>();
     return (void*)layer;
 }
 

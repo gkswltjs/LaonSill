@@ -107,7 +107,7 @@ public:
 	 * @details 레이어에 부여된 유일한 id값을 조회한다.
 	 * @return 레이어 id
 	 */
-	int getId() const { return id; }
+	int getId();
 	/**
 	 * @details 레이어의 이름을 조회한다.
 	 * @return 레이어 이름

@@ -22,8 +22,7 @@
 using namespace std;
 
 template <typename Dtype>
-ProposalLayer<Dtype>::ProposalLayer(const std::string& name)
-: Layer<Dtype>(name) {
+ProposalLayer<Dtype>::ProposalLayer() : Layer<Dtype>() {
 	this->type = Layer<Dtype>::Proposal;
 
 	const vector<uint32_t>& scales = SLPROP(Proposal, scales);
@@ -95,12 +94,12 @@ void ProposalLayer<Dtype>::feedforward() {
 	float nmsThresh;
 	uint32_t minSize;
 
-	if (this->networkConfig->_phase == NetworkPhase::TrainPhase) {
+	if ((NetworkPhase)SNPROP(phase) == NetworkPhase::TrainPhase) {
 		preNmsTopN 	= TRAIN_RPN_PRE_NMS_TOP_N;
 		postNmsTopN	= TRAIN_RPN_POST_NMS_TOP_N;
 		nmsThresh 	= TRAIN_RPN_NMS_THRESH;
 		minSize 	= TRAIN_RPN_MIN_SIZE;
-	} else if (this->networkConfig->_phase == NetworkPhase::TestPhase) {
+	} else if ((NetworkPhase)SNPROP(phase) == NetworkPhase::TestPhase) {
 		preNmsTopN 	= TEST_RPN_PRE_NMS_TOP_N;
 		postNmsTopN = TEST_RPN_POST_NMS_TOP_N;
 		nmsThresh 	= TEST_RPN_NMS_THRESH;

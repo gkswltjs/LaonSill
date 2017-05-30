@@ -49,6 +49,7 @@ public:
 			pooling_fn = NULL;
 		}
 	}
+    
 };
 
 template class PoolingFactory<float>;

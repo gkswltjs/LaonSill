@@ -39,7 +39,7 @@ __global__ void ApplyLeakyForward(const Dtype* input, Dtype* output, int size, D
 
 template <typename Dtype>
 __global__ void ApplyLeakyBackward(const Dtype* input, const Dtype* outputGrad,
-    Dtype* inputGrad, int size, Dtype leaky)
+    Dtype* inputGrad, int size, const double leaky)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
@@ -58,7 +58,7 @@ void ReluLayer<Dtype>::applyLeakyForward() {
     Dtype* outputData = this->_outputData[0]->mutable_device_data();
 
     ApplyLeakyForward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, outputData, size, (Dtype)this->leaky);
+        inputData, outputData, size, (Dtype)SLPROP(Relu, leaky));
 }
 
 template <typename Dtype>
@@ -70,7 +70,7 @@ void ReluLayer<Dtype>::applyLeakyBackward() {
 
     const double leaky = SLPROP(Relu, leaky);
     ApplyLeakyBackward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, outputGrad, inputGrad, size, (Dtype)leaky);
+        inputData, outputGrad, inputGrad, size, leaky);
 }
 
 template void ReluLayer<float>::applyLeakyForward();

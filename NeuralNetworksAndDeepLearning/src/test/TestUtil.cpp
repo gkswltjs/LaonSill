@@ -4,6 +4,8 @@
 #include "LearnableLayer.h"
 #include "NetworkConfig.h"
 
+#if 0
+
 using namespace std;
 using namespace cnpy;
 
@@ -418,6 +420,6 @@ void Tokenize(const string& str, vector<string>& tokens, const string& delimiter
 
 
 
-
+#endif
 
 

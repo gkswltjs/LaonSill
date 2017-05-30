@@ -23,22 +23,7 @@ public:
     BatchNormLayer();
     virtual ~BatchNormLayer();
 
-	//////////////////////////////////////////
-	// Learnable Layer Method
-	//////////////////////////////////////////
-	using Layer<Dtype>::getName;
-	virtual const std::string getName() { return this->name; }
 	virtual void update();
-	//virtual double sumSquareParamsData();
-	//virtual double sumSquareParamsGrad();
-	//virtual void scaleParamsGrad(float scale);
-	//virtual uint32_t boundParams();
-	//virtual uint32_t numParams();
-	//virtual void saveParams(std::ofstream& ofs);
-	//virtual void loadParams(std::ifstream& ifs);
-	//virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
-	//////////////////////////////////////////
-
 	virtual void backpropagation();
 	virtual void reshape();
 	virtual void feedforward();

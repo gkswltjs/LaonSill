@@ -446,7 +446,6 @@ void BatchNormLayer<Dtype>::update() {
     const uint32_t size = this->depth;
 	const Dtype regScale = SNPROP(weightDecay);
 	const Dtype learnScale = NetworkConfig<float>::calcLearningRate();
-    const Dtype epsilon = SNPROP(epsilon);
     const Dtype decayRate = SNPROP(decayRate);
     const Dtype beta1 = SNPROP(beta1);
     const Dtype beta2 = SNPROP(beta2);
@@ -554,10 +553,10 @@ void BatchNormLayer<Dtype>::reshape() {
 
 	STDOUT_COND_LOG(BATCHCONDLAYER_LOG, 
         "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), batches, channels, rows, cols);
+        SLPROP_BASE(name).c_str(), batches, channels, rows, cols);
 	STDOUT_COND_LOG(BATCHCONDLAYER_LOG,
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
-        this->name.c_str(), batches, channels, rows, cols);
+        SLPROP_BASE(name).c_str(), batches, channels, rows, cols);
 
     // Batch Normalization 과정에 필요한 구조체들의 메모리를 할당한다.
     if (this->depth == 0) {

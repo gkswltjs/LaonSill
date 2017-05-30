@@ -63,7 +63,7 @@ void RoIPoolingLayer<Dtype>::reshape() {
 
 #if ROIPOOLINGLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-						this->name.c_str(),
+						SLPROP_BASE(name).c_str(),
 						outputDataShape[0],
 						outputDataShape[1],
 						outputDataShape[2],

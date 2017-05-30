@@ -22,9 +22,7 @@ using namespace std;
 
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer()
-: Layer<Dtype>(name),
-  sumMultiplier("sumMultiplier"),
-  scale("scale") {
+: Layer<Dtype>(), sumMultiplier("sumMultiplier"), scale("scale") {
 	this->type = Layer<Dtype>::Softmax;
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
@@ -54,7 +52,7 @@ void SoftmaxLayer<Dtype>::reshape() {
 
 #if SOFTMAXLAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-			this->name.c_str(), inputDataShape[0], inputDataShape[1],
+			SLPROP_BASE(name).c_str(), inputDataShape[0], inputDataShape[1],
 			inputDataShape[2], inputDataShape[3]);
 #endif
 
@@ -276,7 +274,7 @@ void SoftmaxLayer<Dtype>::reshape() {
 
 #if SOFTMAXLAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-			this->name.c_str(), batches, channels, rows, cols);
+			SLPROP_BASE(name).c_str(), batches, channels, rows, cols);
 #endif
 }
 

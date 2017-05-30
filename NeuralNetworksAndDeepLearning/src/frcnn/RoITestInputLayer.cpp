@@ -96,7 +96,7 @@ void RoITestInputLayer<Dtype>::reshape() {
 
 #if ROITESTINPUTLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-					this->name.c_str(),
+					SLPROP_BASE(name).c_str(),
 					dataShape[0], dataShape[1], dataShape[2], dataShape[3]);
 #endif
 		}
@@ -108,7 +108,7 @@ void RoITestInputLayer<Dtype>::reshape() {
 
 #if ROITESTINPUTLAYER_LOG
 			printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
-					this->name.c_str(),
+					SLPROP_BASE(name).c_str(),
 					iminfoShape[0], iminfoShape[1], iminfoShape[2], iminfoShape[3]);
 #endif
 		}
@@ -263,7 +263,7 @@ void RoITestInputLayer<Dtype>::imToBlob(cv::Mat& im) {
 
 #if ROITESTINPUTLAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-			this->name.c_str(),
+			SLPROP_BASE(name).c_str(),
 			this->_inputShape[0][0], this->_inputShape[0][1],
 			this->_inputShape[0][2], this->_inputShape[0][3]);
 #endif

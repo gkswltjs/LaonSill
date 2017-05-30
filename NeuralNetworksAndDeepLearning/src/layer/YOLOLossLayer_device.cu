@@ -243,10 +243,10 @@ void YOLOLossLayer<Dtype>::reshape() {
 
 	STDOUT_COND_LOG(YOLOLOSSLAYER_LOG, 
         "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), inputShape[0], inputShape[1], inputShape[2], inputShape[3]);
+        SLPROP_BASE(name).c_str(), inputShape[0], inputShape[1], inputShape[2], inputShape[3]);
 	STDOUT_COND_LOG(YOLOLOSSLAYER_LOG,
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
-        this->name.c_str(), inputShape[0], inputShape[1], inputShape[2], inputShape[3]);
+        SLPROP_BASE(name).c_str(), inputShape[0], inputShape[1], inputShape[2], inputShape[3]);
 }
 
 template <typename Dtype>

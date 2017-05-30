@@ -15,7 +15,7 @@
 
 #include <CImg.h>
 
-
+#if 0
 template <typename Dtype>
 class ArtisticStyle {
 public:
@@ -162,5 +162,6 @@ private:
 
 
 };
+#endif
 
 #endif /* ARTISTICSTYLE_H_ */

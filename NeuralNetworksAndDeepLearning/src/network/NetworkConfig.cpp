@@ -13,6 +13,8 @@
 
 using namespace std;
 
+#if 0
+
 template <typename Dtype>
 typename LayersConfig<Dtype>::Builder* LayersConfig<Dtype>::Builder::layer(
 		typename Layer<Dtype>::Builder* layerBuilder) {
@@ -685,6 +687,7 @@ float NetworkConfig<Dtype>::getLearningRate() {
 
 	return rate;
 }
+#endif
 
 
 template <typename Dtype>
@@ -721,5 +724,4 @@ float NetworkConfig<Dtype>::calcLearningRate() {
 
 
 template class NetworkConfig<float>;
-
 

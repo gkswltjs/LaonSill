@@ -361,7 +361,7 @@ void KistiInputLayer<Dtype>::reshape() {
 
 #if ETRIINPUTLAYER_LOG
     printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), batchSize, this->imageChannel, this->imageRow, this->imageCol);
+        SLPROP_BASE(name).c_str(), batchSize, this->imageChannel, this->imageRow, this->imageCol);
 #endif
 
     this->_inputShape[1][0] = batchSize;
@@ -373,7 +373,7 @@ void KistiInputLayer<Dtype>::reshape() {
 
 #if ETRIINPUTLAYER_LOG
     printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), batchSize, 1, ETRIDATA_LABEL_COUNT, 1);
+        SLPROP_BASE(name).c_str(), batchSize, 1, ETRIDATA_LABEL_COUNT, 1);
 #endif
 
     loadImages(this->currentBatchIndex);

@@ -127,7 +127,7 @@ void RoIInputLayer<Dtype>::reshape() {
 
 	#if ROIINPUTLAYER_LOG
 				printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-						this->name.c_str(),
+						SLPROP_BASE(name).c_str(),
 						dataShape[0], dataShape[1], dataShape[2], dataShape[3]);
 	#endif
 			}
@@ -139,7 +139,7 @@ void RoIInputLayer<Dtype>::reshape() {
 
 	#if ROIINPUTLAYER_LOG
 				printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
-						this->name.c_str(),
+						SLPROP_BASE(name).c_str(),
 						iminfoShape[0], iminfoShape[1], iminfoShape[2], iminfoShape[3]);
 	#endif
 			}
@@ -151,7 +151,7 @@ void RoIInputLayer<Dtype>::reshape() {
 
 	#if ROIINPUTLAYER_LOG
 				printf("<%s> layer' output-2 has reshaped as: %dx%dx%dx%d\n",
-						this->name.c_str(),
+						SLPROP_BASE(name).c_str(),
 						gtboxesShape[0], gtboxesShape[1], gtboxesShape[2], gtboxesShape[3]);
 	#endif
 			}
@@ -165,7 +165,7 @@ void RoIInputLayer<Dtype>::reshape() {
 
 #if ROIINPUTLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-					this->name.c_str(),
+					SLPROP_BASE(name).c_str(),
 					dataShape[0], dataShape[1], dataShape[2], dataShape[3]);
 #endif
 			}

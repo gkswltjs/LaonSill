@@ -171,6 +171,7 @@ DQNImageLearner<Dtype>* DQNImageLearner<Dtype>::getLearnerFromID(int dqnID) {
 
 template<typename Dtype>
 int DQNImageLearner<Dtype>::chooseAction(Network<Dtype>* netQ) {
+#if 0
     bool useRandomPolicy;
 
     // (1) exploration vs exploitation by e-soft algorithm
@@ -207,6 +208,9 @@ int DQNImageLearner<Dtype>::chooseAction(Network<Dtype>* netQ) {
     }
 
     return action;
+#else
+    return 0;
+#endif
 }
 
 template<typename Dtype>
@@ -225,6 +229,7 @@ void DQNImageLearner<Dtype>::prepareActiveRMSlots() {
 
 template<typename Dtype>
 void DQNImageLearner<Dtype>::forwardMiniBatch(Network<Dtype>* network, bool isNetQ) {
+#if 0
     int miniBatchCount = SPARAM(DQN_DEFAULT_MINI_BATCH_COUNT);
     vector<Data<Dtype>*> outputData;
 
@@ -246,6 +251,7 @@ void DQNImageLearner<Dtype>::forwardMiniBatch(Network<Dtype>* network, bool isNe
             this->maxQHeadValues[i] = maxQVal;
         }
     }
+#endif
 }
 
 template<typename Dtype>
@@ -264,16 +270,20 @@ void DQNImageLearner<Dtype>::updateQLabelValues() {
 
 template<typename Dtype>
 void DQNImageLearner<Dtype>::backwardMiniBatch(Network<Dtype>* network) {
+#if 0
     network->backPropagateDQNNetwork(this);
+#endif
 }
 
 template<typename Dtype>
 void DQNImageLearner<Dtype>::syncNetworks(Network<Dtype>* netQ, Network<Dtype>* netQHead) {
+#if 0
     this->learningCnt++;
 
     if (this->learningCnt % SPARAM(DQN_DEFAULT_SYNC_NETWORKS_PERIOD) == 0) {
         netQ->syncNetwork(netQHead);
     }
+#endif
 }
 
 template class DQNImageLearner<float>;

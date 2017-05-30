@@ -94,7 +94,7 @@ void SplitLayer<Dtype>::backpropagation() {
 	for (uint32_t i = 0; i < this->_outputData.size(); i++) {
 
 #if SPLITLAYER_LOG
-		if (this->name == targetLayer) {
+		if (SLPROP_BASE(name) == targetLayer) {
 			Data<Dtype>::printConfig = true;
 			this->_outputData[i]->print_grad({}, false);
 			Data<Dtype>::printConfig = false;
@@ -102,7 +102,7 @@ void SplitLayer<Dtype>::backpropagation() {
 #endif
 		this->_inputData[0]->add_device_grad(this->_outputData[i]);
 #if SPLITLAYER_LOG
-		if (this->name == targetLayer) {
+		if (SLPROP_BASE(name) == targetLayer) {
 			Data<Dtype>::printConfig = true;
 			this->_inputData[0]->print_grad({}, false);
 			Data<Dtype>::printConfig = false;
@@ -110,7 +110,7 @@ void SplitLayer<Dtype>::backpropagation() {
 #endif
 	}
 #if SPLITLAYER_LOG
-	if (this->name == targetLayer) {
+	if (SLPROP_BASE(name) == targetLayer) {
 		exit(1);
 	}
 #endif

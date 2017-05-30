@@ -47,6 +47,7 @@ using namespace cimg_library;
  *
  */
 
+#if 0
 
 template <typename Dtype>
 ArtisticStyle<Dtype>::ArtisticStyle(Network<Dtype> *network,
@@ -1101,4 +1102,4 @@ void ArtisticStyle<Dtype>::printCImg(CImg<Dtype>* cimg, const string& head,
 
 
 template class ArtisticStyle<float>;
-
+#endif

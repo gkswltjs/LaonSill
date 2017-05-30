@@ -97,7 +97,7 @@ template void PoolingLayer<float>::backpropagation();
  ****************************************************************************/
 template<typename Dtype>
 void* PoolingLayer<Dtype>::initLayer() {
-    PoolingLayer* layer = new PoolingLayer<Dtype>(SLPROP_BASE(name));
+    PoolingLayer* layer = new PoolingLayer<Dtype>();
     return (void*)layer;
 }
 

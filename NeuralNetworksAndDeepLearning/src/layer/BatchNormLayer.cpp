@@ -28,35 +28,42 @@ BatchNormLayer<Dtype>::BatchNormLayer() : LearnableLayer<Dtype>() {
 	this->_paramsInitialized[ParamType::GlobalCount] = false;
 
 	this->_params.resize(5);
-	this->_params[ParamType::Gamma] = new Data<Dtype>(this->name + "_gamma");
-	this->_params[ParamType::Beta] = new Data<Dtype>(this->name + "_beta");
-	this->_params[ParamType::GlobalMean] = new Data<Dtype>(this->name + "_global_mean");
-	this->_params[ParamType::GlobalVar] = new Data<Dtype>(this->name + "_global_var");
-	this->_params[ParamType::GlobalCount] = new Data<Dtype>(this->name + "_global_count");
+	this->_params[ParamType::Gamma] = new Data<Dtype>(SLPROP_BASE(name) + "_gamma");
+	this->_params[ParamType::Beta] = new Data<Dtype>(SLPROP_BASE(name) + "_beta");
+	this->_params[ParamType::GlobalMean] =
+        new Data<Dtype>(SLPROP_BASE(name) + "_global_mean");
+	this->_params[ParamType::GlobalVar] =
+        new Data<Dtype>(SLPROP_BASE(name) + "_global_var");
+	this->_params[ParamType::GlobalCount] =
+        new Data<Dtype>(SLPROP_BASE(name) + "_global_count");
 
 	this->_paramsHistory.resize(5);
-	this->_paramsHistory[ParamType::Gamma] = new Data<Dtype>(this->name + "_gamma_history");
-	this->_paramsHistory[ParamType::Beta] = new Data<Dtype>(this->name + "_beta_history");
+	this->_paramsHistory[ParamType::Gamma] =
+        new Data<Dtype>(SLPROP_BASE(name) + "_gamma_history");
+	this->_paramsHistory[ParamType::Beta] =
+        new Data<Dtype>(SLPROP_BASE(name) + "_beta_history");
 	this->_paramsHistory[ParamType::GlobalMean] =
-        new Data<Dtype>(this->name + "_global_mean_history");
+        new Data<Dtype>(SLPROP_BASE(name) + "_global_mean_history");
 	this->_paramsHistory[ParamType::GlobalVar] =
-        new Data<Dtype>(this->name + "_global_var_history");
+        new Data<Dtype>(SLPROP_BASE(name) + "_global_var_history");
 	this->_paramsHistory[ParamType::GlobalCount] =
-        new Data<Dtype>(this->name + "_global_count_history");
+        new Data<Dtype>(SLPROP_BASE(name) + "_global_count_history");
 
 	this->_paramsHistory2.resize(5);
-	this->_paramsHistory2[ParamType::Gamma] = new Data<Dtype>(this->name + "_gamma_history2");
-	this->_paramsHistory2[ParamType::Beta] = new Data<Dtype>(this->name + "_beta_history2");
+	this->_paramsHistory2[ParamType::Gamma] =
+        new Data<Dtype>(SLPROP_BASE(name) + "_gamma_history2");
+	this->_paramsHistory2[ParamType::Beta] =
+        new Data<Dtype>(SLPROP_BASE(name) + "_beta_history2");
 	this->_paramsHistory2[ParamType::GlobalMean] =
-        new Data<Dtype>(this->name + "_global_mean_history2");
+        new Data<Dtype>(SLPROP_BASE(name) + "_global_mean_history2");
 	this->_paramsHistory2[ParamType::GlobalVar] =
-        new Data<Dtype>(this->name + "_global_var_history2");
+        new Data<Dtype>(SLPROP_BASE(name) + "_global_var_history2");
 	this->_paramsHistory2[ParamType::GlobalCount] =
-        new Data<Dtype>(this->name + "_global_count_history2");
+        new Data<Dtype>(SLPROP_BASE(name) + "_global_count_history2");
 
-    this->meanSet               = new Data<Dtype>(this->name + "_mean");
-    this->varSet                = new Data<Dtype>(this->name + "_variance");
-    this->normInputSet          = new Data<Dtype>(this->name + "_normalizedInput");
+    this->meanSet               = new Data<Dtype>(SLPROP_BASE(name) + "_mean");
+    this->varSet                = new Data<Dtype>(SLPROP_BASE(name) + "_variance");
+    this->normInputSet          = new Data<Dtype>(SLPROP_BASE(name) + "_normalizedInput");
 
     this->decayedBeta1 = 1.0;
     this->decayedBeta2 = 1.0;

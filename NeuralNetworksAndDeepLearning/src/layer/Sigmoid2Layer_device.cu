@@ -95,10 +95,10 @@ void Sigmoid2Layer<Dtype>::reshape() {
 
 	STDOUT_COND_LOG(SIGMOID2LAYER_LOG, 
         "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), batches, channels, rows, cols);
+        SLPROP_BASE(name).c_str(), batches, channels, rows, cols);
 	STDOUT_COND_LOG(SIGMOID2LAYER_LOG,
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
-        this->name.c_str(), batches, channels, rows, cols);
+        SLPROP_BASE(name).c_str(), batches, channels, rows, cols);
 }
 
 /****************************************************************************
