@@ -46,7 +46,9 @@ CelebAInputLayer<Dtype>::CelebAInputLayer(const string name, string imageDir, bo
 
 template<typename Dtype>
 CelebAInputLayer<Dtype>::CelebAInputLayer(const string& name) : InputLayer<Dtype>(name) {
-    //initialize(imageDir, cropImage, cropLen, resizeImage, resizedImageRow, resizedImageCol);
+    initialize(SLPROP(CelebAInput, imageDir), SLPROP(CelebAInput, cropImage),
+        SLPROP(CelebAInput, cropLen), SLPROP(CelebAInput, resizeImage), 
+        SLPROP(CelebAInput, resizedImageRow), SLPROP(CelebAInput, resizedImageCol));
 }
 
 template<typename Dtype>
@@ -64,7 +66,7 @@ CelebAInputLayer<Dtype>::~CelebAInputLayer() {
 
 template <typename Dtype>
 void CelebAInputLayer<Dtype>::reshape() {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
 
 	if (this->images == NULL) {
         fillImagePaths();
@@ -81,8 +83,8 @@ void CelebAInputLayer<Dtype>::reshape() {
 	}
 
 	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+		for (uint32_t i = 0; i < SLPROP_BASE(output).size(); i++) {
+			SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
@@ -164,7 +166,7 @@ void CelebAInputLayer<Dtype>::fillImagePaths() {
 
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::loadImages(int baseIdx) {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
 
     // (1) load jpeg
     for (int i = 0; i < batchSize; i++) {
@@ -314,23 +316,35 @@ void CelebAInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool CelebAInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     CelebAInputLayer<Dtype>* layer = (CelebAInputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->currentBatchIndex = 0;
+    layer->reshape();
+    
+    if (SNPROP(miniBatch) == 0) {
+        int trainDataNum = layer->getNumTrainData();
+        if (trainDataNum % SNPROP(batchSize) == 0) {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+        } else {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+        }
+        WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+    }
     return true;
 }
 
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "CelebAInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    CelebAInputLayer<Dtype>* layer = (CelebAInputLayer<Dtype>*)instancePtr;
+    layer->feedforward(miniBatchIdx);
 }
 
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "CelebAInputLayer.. backward()" << endl;
+    // do nothing 
 }
 
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "CelebAInputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class CelebAInputLayer<float>;

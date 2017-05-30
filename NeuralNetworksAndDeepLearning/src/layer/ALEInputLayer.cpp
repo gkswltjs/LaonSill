@@ -47,8 +47,8 @@ void ALEInputLayer<Dtype>::reshape() {
 	// 입력 레이어는 출력 데이터를 입력 데이터와 공유
 	// xxx: 레이어 명시적으로 초기화할 수 있는 위치를 만들어 옮길 것.
 	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+		for (uint32_t i = 0; i < SLPROP_BASE(output).size(); i++) {
+			SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
@@ -62,7 +62,7 @@ void ALEInputLayer<Dtype>::reshape() {
 
 		// 데이터
 		if (i == 0) {
-			uint32_t batches = this->networkConfig->_batchSize;
+			uint32_t batches = SNPROP(batchSize);
 			uint32_t channels = this->chCnt;
 			uint32_t rows = this->rowCnt;
 			uint32_t cols = this->colCnt;
@@ -81,7 +81,7 @@ void ALEInputLayer<Dtype>::reshape() {
 		}
 		// 레이블
 		else if (i == 1) {
-			uint32_t batches = this->networkConfig->_batchSize;
+			uint32_t batches = SNPROP(batchSize);
 			uint32_t channels = this->chCnt;
 			uint32_t rows = 1;
 			uint32_t cols = 1;
@@ -150,10 +150,6 @@ template<typename Dtype>
 void ALEInputLayer<Dtype>::initialize() {
     this->type = Layer<Dtype>::ALEInput;
 
-    // 아래의 구조체는 초기화(init())함수에서 할당하지 않는다.
-    // 왜냐하면 networkConfig의 batch size정보가 있어야 할당크기를 정할 수 있는데
-    // networkConfig 정보가 채워지는 타이밍이 초기화 이전이기 때문이다.
-    // 혹시 바꿀 수 있을지 논의해보자.
     this->preparedData = NULL;
     this->preparedLabel = NULL;
     this->allocBatchSize = 0;
@@ -219,7 +215,7 @@ int ALEInputLayer<Dtype>::getNumTrainData() {
     if (this->_dataSet != NULL) {
         return this->_dataSet->getNumTrainData();
     } else {    
-        uint32_t batches = this->networkConfig->_batchSize;
+        uint32_t batches = SNPROP(batchSize);
         return batches;
     }
 }
@@ -269,23 +265,34 @@ void ALEInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool ALEInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     ALEInputLayer<Dtype>* layer = (ALEInputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
+    if (SNPROP(miniBatch) == 0) {
+        int trainDataNum = layer->getNumTrainData();
+        if (trainDataNum % SNPROP(batchSize) == 0) {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+        } else {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+        }
+        WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+    }
     return true;
 }
 
 template<typename Dtype>
 void ALEInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "ALEInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    ALEInputLayer<Dtype>* layer = (ALEInputLayer<Dtype>*)instancePtr;
+    layer->feedforward(miniBatchIdx);
 }
 
 template<typename Dtype>
 void ALEInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "ALEInputLayer.. backward()" << endl;
+    ALEInputLayer<Dtype>* layer = (ALEInputLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void ALEInputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "ALEInputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class ALEInputLayer<float>;

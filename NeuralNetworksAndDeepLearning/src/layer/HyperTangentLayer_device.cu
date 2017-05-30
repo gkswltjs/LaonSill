@@ -165,23 +165,25 @@ void HyperTangentLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr
 template<typename Dtype>
 bool HyperTangentLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     HyperTangentLayer<Dtype>* layer = (HyperTangentLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void HyperTangentLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "HyperTangentLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    HyperTangentLayer<Dtype>* layer = (HyperTangentLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void HyperTangentLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "HyperTangentLayer.. backward()" << endl;
+    HyperTangentLayer<Dtype>* layer = (HyperTangentLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void HyperTangentLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "HyperTangentLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class HyperTangentLayer<float>;

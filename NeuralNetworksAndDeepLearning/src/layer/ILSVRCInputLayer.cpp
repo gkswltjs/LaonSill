@@ -284,7 +284,7 @@ void ILSVRCInputLayer<Dtype>::feedforward() {
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
-    this->currentBatchIndex = baseIndex;    // FIXME: ...
+    this->currentBatchIndex = baseIndex;
     reshape();
 }
 
@@ -381,8 +381,7 @@ bool ILSVRCInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
     ILSVRCInputLayer<Dtype>* layer = (ILSVRCInputLayer<Dtype>*)instancePtr;
-    layer->currentBatchIndex = miniBatchIdx;
-    layer->reshape();
+    layer->feedforward(miniBatchIdx);
 }
 
 template<typename Dtype>

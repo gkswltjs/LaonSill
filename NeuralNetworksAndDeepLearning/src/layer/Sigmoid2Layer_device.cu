@@ -151,23 +151,25 @@ void Sigmoid2Layer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool Sigmoid2Layer<Dtype>::allocLayerTensors(void* instancePtr) {
     Sigmoid2Layer<Dtype>* layer = (Sigmoid2Layer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void Sigmoid2Layer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "Sigmoid2Layer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    Sigmoid2Layer<Dtype>* layer = (Sigmoid2Layer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void Sigmoid2Layer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "Sigmoid2Layer.. backward()" << endl;
+    Sigmoid2Layer<Dtype>* layer = (Sigmoid2Layer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void Sigmoid2Layer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "Sigmoid2Layer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class Sigmoid2Layer<float>;

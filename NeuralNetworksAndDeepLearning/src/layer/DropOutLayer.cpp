@@ -20,7 +20,7 @@ DropOutLayer<Dtype>::DropOutLayer(Builder* builder) : Layer<Dtype>(builder) {
 template<typename Dtype>
 DropOutLayer<Dtype>::DropOutLayer(const string& name) 
 : Layer<Dtype>(name) {
-	//initialize(false, 0.5);
+	initialize(SLPROP(DropOut, scale), SLPROP(DropOut, probability));
 }
 
 template <typename Dtype>
@@ -101,23 +101,25 @@ void DropOutLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool DropOutLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     DropOutLayer<Dtype>* layer = (DropOutLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void DropOutLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "DropOutLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    DropOutLayer<Dtype>* layer = (DropOutLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void DropOutLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "DropOutLayer.. backward()" << endl;
+    DropOutLayer<Dtype>* layer = (DropOutLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void DropOutLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "DropOutLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class DropOutLayer<float>;
