@@ -386,6 +386,7 @@ void ILSVRCInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx)
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+    cout << "backward ILSVRC Input" << endl;
     // do nothing..
 }
 

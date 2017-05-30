@@ -91,10 +91,30 @@
                     ["stride", "uint32_t"]
                 ]
             ],
-            ["weightUpdateParam", "update_param", "{0.0, 1.0}"],
-            ["biasUpdateParam", "update_param", "{0.0, 1.0}"],
-            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"],
-            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"]
+            ["weightUpdateParam", "update_param", "{0.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["biasUpdateParam", "update_param", "{0.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ],
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ]
         ]
 },
 
@@ -109,10 +129,30 @@
         [   
             ["nOut", "int", "0"],
             ["pDropOut", "double", "0.0"],
-            ["weightUpdateParam", "update_param", "{0.0, 1.0}"],
-            ["biasUpdateParam", "update_param", "{0.0, 1.0}"],
-            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"],
-            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}"],
+            ["weightUpdateParam", "update_param", "{0.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["biasUpdateParam", "update_param", "{0.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ],
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ],
             ["axis", "bool", "false"]
         ]
 },

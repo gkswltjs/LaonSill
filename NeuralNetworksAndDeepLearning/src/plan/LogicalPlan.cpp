@@ -187,22 +187,25 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         newPlanDef.depCount = (int)planBuildDef.outputs.size();
         newPlanDef.notifyList = {};
 
-        int propDownCount = 0; 
+        int propDownCount = 0;
+
         for (int i = 0; i < planBuildDef.inputs.size(); i++) {
             // learnable layer의 경우에 update plan에게 notify해줘야 한다.
             if (planBuildDef.learnable && planBuildDef.propDowns[i]) {
                 newPlanDef.notifyList.push_back(LP_UPDATE_PLANID(key)); 
             }
 
+            if (!planBuildDef.propDowns[i])
+                continue;
+
             string inputName = planBuildDef.inputs[i];
 
             // 인풋이 다른 레이어의 아웃풋인지 확인한다. 
-            // 만약 인풋이 다른 레이어의 아웃풋이 아니라면 input layer이다.
-            // input layer는 딱히 알려줘야할 대상은 없다.
+            // 만약 인풋이 다른 레이어의 아웃풋이 아니라면 딱히 알려줘야할 대상은 없다.
             if (input2IDMap.find(inputName) == input2IDMap.end()) {
                 continue;
             }
-                
+
             // input이 곧 자신인 경우(inplace)에 대해서 확인하고, 그에따른 처리를 한다.
             vector<int> IDList = output2IDMap[inputName];
             bool isInplace = false;
