@@ -35,6 +35,7 @@ for prop in propDic:
     checkParamProperty(propDic, prop, "PARENT")
     checkParamProperty(propDic, prop, "LEVEL")
     checkParamProperty(propDic, prop, "LEARN")
+    checkParamProperty(propDic, prop, "PROPDOWN")
     checkParamProperty(propDic, prop, "VARS")
 
 # (3) generate header file
@@ -173,6 +174,12 @@ try:
                         headerFile.write('        _%s_ = true;\n' % var[0])
                     else:
                         headerFile.write('        _%s_ = false;\n' % var[0])
+                elif var[0] == 'defaultPropDown':
+                    for propDownVal in propDic[prop]["PROPDOWN"]:
+                        if propDownVal == True:
+                            headerFile.write('        _%s_.push_back(true);\n' % var[0])
+                        else:
+                            headerFile.write('        _%s_.push_back(false);\n' % var[0])
                 elif 'vector' in var[1]:
                     headerFile.write('        _%s_ = {%s};\n' % (var[0], var[2]))
                 elif 'char[' in var[1]:

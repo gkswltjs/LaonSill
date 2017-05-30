@@ -6,6 +6,7 @@
     "PARENT" : "",
     "LEVEL" : 0,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" :
         [
             ["id", "uint32_t", "0"],
@@ -17,7 +18,8 @@
             ["receive", "bool", "false"],
             ["donatorID", "int", "0"],
             ["learnable", "bool", "false"],
-            ["innerLayerIDs", "std::vector<int>", ""]
+            ["innerLayerIDs", "std::vector<int>", ""],
+            ["defaultPropDown", "std::vector<bool>", ""]
         ]
 },
 
@@ -27,6 +29,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" :
         [
             ["mean", "std::vector<float>", ""],
@@ -44,6 +47,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" :
         [
             ["lossWeight", "float", "1.0"],
@@ -62,8 +66,8 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
-    "VARS" :
-        []
+    "PROPDOWN" : [],
+    "VARS" : []
 },
 
 "Conv" : 
@@ -72,6 +76,7 @@
     "PARENT" : "Learnable",
     "LEVEL" : 2,
     "LEARN" : true,
+    "PROPDOWN" : [],
     "VARS" : 
         [   
             ["deconv", "bool", "false"],
@@ -99,6 +104,7 @@
     "PARENT" : "Learnable",
     "LEVEL" : 2,
     "LEARN" : true,
+    "PROPDOWN" : [],
     "VARS" : 
         [   
             ["nOut", "int", "0"],
@@ -117,6 +123,7 @@
     "PARENT" : "Input",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
         [   
             ["imageDir", "std::string", "\"\""],
@@ -133,6 +140,7 @@
     "PARENT" : "Input",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : []
 },
 
@@ -142,6 +150,7 @@
     "PARENT" : "Input",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
         [
             ["imageDir", "std::string", "\"\""],
@@ -159,6 +168,7 @@
     "PARENT" : "Input",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
         [
             ["imageDir", "std::string", "\"\""],
@@ -174,6 +184,7 @@
     "PARENT" : "Input",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
         [
             ["noiseDepth", "int", "100"],
@@ -195,6 +206,7 @@
     "PARENT" : "Input",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
         [
             ["imageDir", "std::string", "\"\""],
@@ -210,6 +222,7 @@
     "PARENT" : "Learnable",
     "LEVEL" : 2,
     "LEARN" : true,
+    "PROPDOWN" : [],
     "VARS" : 
         [   
             ["epsilon", "double", "0.00001"],
@@ -224,6 +237,7 @@
     "PARENT" : "Loss",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [true, false],
     "VARS" :
         [
             ["softmaxAxis", "uint32_t", "2"]
@@ -236,6 +250,7 @@
     "PARENT" : "Loss",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" :
         [
             ["targetValue", "float", "0.0"],
@@ -249,6 +264,7 @@
     "PARENT" : "Loss",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" :
         [
             ["noobj", "float", "0.5"],
@@ -262,6 +278,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" :
         [
         ]
@@ -273,6 +290,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" :
         [
             ["useLeaky", "bool", "false"],
@@ -286,6 +304,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : []
 },
 
@@ -295,6 +314,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" :
         [
             ["probability", "double", "0.5"],
@@ -309,6 +329,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : []
 },
 
@@ -318,6 +339,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : []
 },
 
@@ -327,6 +349,7 @@
     "PARENT" : "Input",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : []
 },
 
@@ -336,6 +359,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["localSize", "uint32_t", "5"],
@@ -351,6 +375,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["rows", "uint32_t", "1"],
@@ -367,6 +392,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["shape", "std::vector<std::string>", ""],
@@ -381,6 +407,7 @@
     "PARENT" : "Loss",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["sigma", "float", "1.0"],
@@ -394,6 +421,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["softmaxAxis", "uint32_t", "2"]
@@ -406,6 +434,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["featStride", "uint32_t", "16"],
@@ -420,6 +449,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["maxPerImage", "uint32_t", "100"],
@@ -434,6 +464,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["featStride", "uint32_t", "16"],
@@ -447,6 +478,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["numClasses", "uint32_t", "0"]
@@ -459,6 +491,7 @@
     "PARENT" : "Input",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["numClasses", "uint32_t", "0"],
@@ -472,6 +505,7 @@
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["pooledW", "uint32_t", "6"],
@@ -486,6 +520,7 @@
     "PARENT" : "Input",
     "LEVEL" : 2,
     "LEARN" : false,
+    "PROPDOWN" : [],
     "VARS" : 
 	[
 	    ["numClasses", "uint32_t", "0"],

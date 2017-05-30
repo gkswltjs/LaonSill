@@ -263,6 +263,8 @@ __global__ void SoftmaxLossBackwardGPU(
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::backpropagation() {
+    SASSERT0(SLPROP_BASE(propDown)[1] == false);
+
 	if (SLPROP_BASE(propDown)[0]) {
 		Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
 		const Dtype* probData = this->prob->device_data();

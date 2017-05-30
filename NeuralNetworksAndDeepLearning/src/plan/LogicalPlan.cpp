@@ -98,10 +98,17 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
   
         int inputCount = value.inputs.size();
         int propDownCount = value.propDowns.size();
+        WorkContext::updateLayer(networkID, value.layerID);
+
         for (int i = 0; i < inputCount - propDownCount; i++) {
-            planDefMap[key].propDowns.push_back(true);
-            WorkContext::updateLayer(networkID, value.layerID);
-            SLPROP_BASE(propDown).push_back(true);
+            bool propDownVal = true;
+            int propDownIdx = i + propDownCount;
+            if (propDownIdx < SLPROP_BASE(defaultPropDown).size()) {
+                propDownVal = SLPROP_BASE(defaultPropDown)[propDownIdx];
+            }
+                
+            planDefMap[key].propDowns.push_back(propDownVal);
+            SLPROP_BASE(propDown).push_back(propDownVal);
         }
     }
 
