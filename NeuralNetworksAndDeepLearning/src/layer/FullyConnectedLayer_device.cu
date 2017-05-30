@@ -21,7 +21,6 @@
 
 using namespace std;
 
-#ifdef GPU_MODE
 ///////////////////////////////////////////////////////////////////////////////////////////
 // GPU Kernels
 
@@ -453,33 +452,8 @@ template <typename Dtype>
 void FullyConnectedLayer<Dtype>::feedforward() {
 	reshape();
 
-	/*
-	if (this->name == "ip1") {
-		Data<Dtype>::printConfig = true;
-		SyncMem<Dtype>::printConfig = true;
-		this->_inputData[0]->print_data({}, false);
-		this->_params[0]->print_data({}, false);
-		Data<Dtype>::printConfig = false;
-		SyncMem<Dtype>::printConfig = false;
-	}
-	*/
-
-
 	_computeWeightedData();
 	_computeWeightBiasedData();
-	//_computeActivatedData();
-	//_dropoutForward();
-
-	/*
-	if (this->name == "ip1") {
-		Data<Dtype>::printConfig = true;
-		SyncMem<Dtype>::printConfig = true;
-		this->_outputData[0]->print_data({}, false);
-		Data<Dtype>::printConfig = false;
-		SyncMem<Dtype>::printConfig = false;
-	}
-	*/
-
 }
 
 
@@ -575,24 +549,6 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 	this->_params[Bias]->print_data();
 }
 
-/*
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_computeActivatedData() {
-	// Activate weighted sum (+ bias)
-	if (activation_fn) {
-		const Dtype* d_preActivationData = _preActivation->device_data();
-		Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
-		activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_outputData);
-	} else {
-		this->_outputData[0]->set_device_data(_preActivation);
-	}
-
-	//Data<Dtype>::printConfig = true;
-	_preActivation->print_data();
-	this->_outputData[0]->print_data();
-	//Data<Dtype>::printConfig = false;
-}
-*/
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_dropoutForward() {
@@ -666,18 +622,6 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
 	_computeWeightGrad();
 	_computeBiasGrad();
 	_computeInputGrad();
-
-
-	/*
-	Data<Dtype>::printConfig = true;
-	SyncMem<Dtype>::printConfig = true;
-
-	this->_outputData[0]->print_grad({}, false);
-	this->_inputData[0]->print_grad({}, false);
-
-	Data<Dtype>::printConfig = true;
-	SyncMem<Dtype>::printConfig = true;
-	*/
 }
 
 template <typename Dtype>
@@ -699,34 +643,6 @@ void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 	}
 }
 
-/*
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_computePreActivationGrad() {
-	if (activation_fn) {
-		const Dtype* d_y = this->_outputData[0]->device_data();
-		const Dtype* d_dy = this->_outputData[0]->device_grad();
-		const Dtype* d_x = this->_preActivation->device_data();
-		Dtype* d_dx = this->_preActivation->mutable_device_grad();
-		this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
-	}
-	else {
-		this->_preActivation->set_device_grad(this->_outputData[0]);
-	}
-
-	//Data<Dtype>::printConfig = true;
-	this->_outputData[0]->print_grad();
-	this->_preActivation->print_grad();
-	//Data<Dtype>::printConfig = false;
-
-    //if(this->name == "softmaxLayer") {
-        //double sumsq = this->_preActivation->sumsq_device_grad();
-        //cout << "preActivation grad sumsq: " << sumsq << endl;
-    //  Data<Dtype>::printConfig = 1;
-    //  this->_preActivation->print_grad("preActivationGrad:");
-    //  Data<Dtype>::printConfig = 0;
-    //}
-}
-*/
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
@@ -823,7 +739,7 @@ template void FullyConnectedLayer<float>::backpropagation();
  ****************************************************************************/
 template<typename Dtype>
 void* FullyConnectedLayer<Dtype>::initLayer() {
-    FullyConnectedLayer* layer = new FullyConnectedLayer<Dtype>(SLPROP_BASE(name));
+    FullyConnectedLayer* layer = new FullyConnectedLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -883,4 +799,3 @@ template void FullyConnectedLayer<float>::forwardTensor(void* instancePtr, int m
 template void FullyConnectedLayer<float>::backwardTensor(void* instancePtr);
 template void FullyConnectedLayer<float>::learnTensor(void* instancePtr);
 
-#endif

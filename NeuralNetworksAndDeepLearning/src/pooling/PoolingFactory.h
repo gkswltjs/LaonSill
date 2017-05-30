@@ -25,16 +25,6 @@ public:
 	PoolingFactory() {}
 	virtual ~PoolingFactory() {}
 
-#ifndef GPU_MODE
-	static Pooling *create(PoolingType poolingType) {
-		switch(poolingType) {
-		case PoolingType::Max: return new MaxPooling<Dtype>();
-		case PoolingType::Avg: return new AvgPooling<Dtype>();
-		case PoolingType::None:
-		default: return 0;
-		}
-	}
-#else
 	/**
 	 * @details 주어진 풀링 타입에 따라 풀링 객체를 생성하여 반환.
 	 * @param poolingType 생성하고자 하는 풀링 객체의 타입.
@@ -48,7 +38,7 @@ public:
 		default: return NULL;
 		}
 	}
-#endif
+
 	/**
 	 * @details PoolingFactory에서 생성한 풀링 객체를 소멸.
 	 * @param pooling_fn 풀링 객체에 대한 포인터 참조자.

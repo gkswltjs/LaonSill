@@ -19,7 +19,6 @@
 
 using namespace std;
 
-#ifdef GPU_MODE
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // GPU Kernels
@@ -77,4 +76,3 @@ void ReluLayer<Dtype>::applyLeakyBackward() {
 template void ReluLayer<float>::applyLeakyForward();
 template void ReluLayer<float>::applyLeakyBackward();
 
-#endif

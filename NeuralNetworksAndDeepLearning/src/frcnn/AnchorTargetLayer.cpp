@@ -17,25 +17,22 @@
 using namespace std;
 
 template <typename Dtype>
-AnchorTargetLayer<Dtype>::AnchorTargetLayer(const string& name)
-: Layer<Dtype>(name) {
-	initialize();
+AnchorTargetLayer<Dtype>::AnchorTargetLayer()
+: Layer<Dtype>() {
+	this->type = Layer<Dtype>::AnchorTarget;
+
+	const vector<uint32_t>& scales = SLPROP(AnchorTarget, scales);
+	GenerateAnchorsUtil::generateAnchors(this->anchors, scales);
+	this->numAnchors = this->anchors.size();
+
+	print2dArray("anchors", this->anchors);
 }
 
+
 template <typename Dtype>
-AnchorTargetLayer<Dtype>::AnchorTargetLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
+AnchorTargetLayer<Dtype>::~AnchorTargetLayer() {
 
-	this->featStride = builder->_featStride;
-	this->allowedBorder = builder->_allowedBorder;
-	this->scales = builder->_scales;
-
-	initialize();
 }
-
-template <typename Dtype>
-AnchorTargetLayer<Dtype>::~AnchorTargetLayer() {}
-
 
 
 template <typename Dtype>
@@ -438,14 +435,6 @@ void AnchorTargetLayer<Dtype>::backpropagation() {
 	// This layer does not propagate gradients.
 }
 
-template <typename Dtype>
-void AnchorTargetLayer<Dtype>::initialize() {
-	const vector<uint32_t>& scales = SLPROP(AnchorTarget, scales);
-	GenerateAnchorsUtil::generateAnchors(this->anchors, scales);
-	this->numAnchors = this->anchors.size();
-
-	print2dArray("anchors", this->anchors);
-}
 
 template <typename Dtype>
 void AnchorTargetLayer<Dtype>::_computeTargets(
@@ -501,7 +490,7 @@ void AnchorTargetLayer<Dtype>::_unmap(const vector<vector<float>>& data,
  ****************************************************************************/
 template<typename Dtype>
 void* AnchorTargetLayer<Dtype>::initLayer() {
-    AnchorTargetLayer* layer = new AnchorTargetLayer<Dtype>(SLPROP_BASE(name));
+    AnchorTargetLayer* layer = new AnchorTargetLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -530,23 +519,25 @@ void AnchorTargetLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr
 template<typename Dtype>
 bool AnchorTargetLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void AnchorTargetLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "AnchorTargetLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void AnchorTargetLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "AnchorTargetLayer.. backward()" << endl;
+	AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void AnchorTargetLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "AnchorTargetLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 

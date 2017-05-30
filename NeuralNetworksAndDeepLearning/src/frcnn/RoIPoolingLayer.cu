@@ -18,22 +18,18 @@ using std::max;
 using std::min;
 
 template <typename Dtype>
-RoIPoolingLayer<Dtype>::RoIPoolingLayer(const std::string& name)
-: Layer<Dtype>(name),
+RoIPoolingLayer<Dtype>::RoIPoolingLayer()
+: Layer<Dtype>(),
   maxIdx("maxIdx") {
-	initialize();
+	this->type = Layer<Dtype>::RoIPooling;
+
+	const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
+	const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
+
+	SASSERT(pooledW > 0, "pooledW must be > 0");
+	SASSERT(pooledH > 0, "pooledH must be > 0");
 }
 
-template <typename Dtype>
-RoIPoolingLayer<Dtype>::RoIPoolingLayer(Builder* builder)
-: Layer<Dtype>(builder),
-  maxIdx("maxIdx") {
-	this->pooledW = builder->_pooledW;
-	this->pooledH = builder->_pooledH;
-	this->spatialScale = builder->_spatialScale;
-
-	initialize();
-}
 
 template <typename Dtype>
 RoIPoolingLayer<Dtype>::~RoIPoolingLayer() {
@@ -273,17 +269,6 @@ void RoIPoolingLayer<Dtype>::backpropagation() {
 	CUDA_POST_KERNEL_CHECK;
 }
 
-template <typename Dtype>
-void RoIPoolingLayer<Dtype>::initialize() {
-	const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
-	const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
-
-	SASSERT(pooledW > 0, "pooledW must be > 0");
-	SASSERT(pooledH > 0, "pooledH must be > 0");
-}
-
-
-
 
 
 
@@ -292,7 +277,7 @@ void RoIPoolingLayer<Dtype>::initialize() {
  ****************************************************************************/
 template<typename Dtype>
 void* RoIPoolingLayer<Dtype>::initLayer() {
-    RoIPoolingLayer* layer = new RoIPoolingLayer<Dtype>(SLPROP_BASE(name));
+    RoIPoolingLayer* layer = new RoIPoolingLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -321,23 +306,25 @@ void RoIPoolingLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool RoIPoolingLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void RoIPoolingLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    std::cout << "RoIPoolingLayer.. forward(). miniBatchIndex : " << miniBatchIdx << std::endl;
+	RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void RoIPoolingLayer<Dtype>::backwardTensor(void* instancePtr) {
-    std::cout << "RoIPoolingLayer.. backward()" << std::endl;
+	RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void RoIPoolingLayer<Dtype>::learnTensor(void* instancePtr) {
-    std::cout << "RoIPoolingLayer.. learn()" << std::endl;
+    SASSERT0(false);
 }
 
 

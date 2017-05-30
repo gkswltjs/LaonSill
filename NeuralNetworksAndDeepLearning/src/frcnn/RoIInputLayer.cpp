@@ -24,28 +24,11 @@
 using namespace std;
 
 template <typename Dtype>
-RoIInputLayer<Dtype>::RoIInputLayer(const string& name)
-: InputLayer<Dtype>(name) {
-	initialize();
-}
+RoIInputLayer<Dtype>::RoIInputLayer()
+: InputLayer<Dtype>() {
+	this->type = Layer<Dtype>::RoIInput;
 
-template <typename Dtype>
-RoIInputLayer<Dtype>::RoIInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
-	this->numClasses = builder->_numClasses;
-	this->pixelMeans = builder->_pixelMeans;
-
-	initialize();
-}
-
-template <typename Dtype>
-RoIInputLayer<Dtype>::~RoIInputLayer() {
-	delete this->imdb;
-}
-
-template <typename Dtype>
-void RoIInputLayer<Dtype>::initialize() {
 	this->imdb = combinedRoidb("voc_2007_trainval");
-
 	cout << this->imdb->roidb.size() << " roidb entries ... " << endl;
 	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, this->imdb->roidb.size(), 50, 1);
 
@@ -56,9 +39,6 @@ void RoIInputLayer<Dtype>::initialize() {
 	RoIDBUtil::addBboxRegressionTargets(this->imdb->roidb, this->bboxMeans, this->bboxStds);
 
 	shuffleRoidbInds();
-
-
-
 
 
 	if (!TRAIN_HAS_RPN) {
@@ -84,12 +64,6 @@ void RoIInputLayer<Dtype>::initialize() {
 		ifs.close();
 	}
 
-
-
-
-
-
-
 	this->boxColors.push_back(cv::Scalar(10, 163, 240));
 	this->boxColors.push_back(cv::Scalar(44, 90, 130));
 	this->boxColors.push_back(cv::Scalar(239, 80, 0));
@@ -114,9 +88,14 @@ void RoIInputLayer<Dtype>::initialize() {
 	this->boxColors.push_back(cv::Scalar(255, 0, 170));
 	this->boxColors.push_back(cv::Scalar(0, 193, 216));
 
-
-
 }
+
+
+template <typename Dtype>
+RoIInputLayer<Dtype>::~RoIInputLayer() {
+	delete this->imdb;
+}
+
 
 template <typename Dtype>
 void RoIInputLayer<Dtype>::reshape() {
@@ -718,7 +697,7 @@ void RoIInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* RoIInputLayer<Dtype>::initLayer() {
-    RoIInputLayer* layer = new RoIInputLayer<Dtype>(SLPROP_BASE(name));
+    RoIInputLayer* layer = new RoIInputLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -747,23 +726,24 @@ void RoIInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool RoIInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     RoIInputLayer<Dtype>* layer = (RoIInputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void RoIInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "RoIInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	RoIInputLayer<Dtype>* layer = (RoIInputLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void RoIInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "RoIInputLayer.. backward()" << endl;
+	SASSERT0(false);
 }
 
 template<typename Dtype>
 void RoIInputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "RoIInputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template void* RoIInputLayer<float>::initLayer();

@@ -8,6 +8,7 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
+
 #include <cstdint>
 
 #include "common.h"

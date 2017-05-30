@@ -183,10 +183,6 @@ protected:
 	void saveProposalTargets(std::ofstream& ofs);
 
 
-
-#ifndef GPU_MODE
-	int testEvaluateResult(const rvec &output, const rvec &y);
-#else
 	/**
 	 * @details 특정 테스트 데이터 하나에 대해 feedforward된 네트워크를 target값으로 평가한다.
 	 * @param num_labels 데이터셋 레이블 크기 (카테고리의 수)
@@ -195,9 +191,6 @@ protected:
 	 */
 	//void evaluateTestData(const int num_labels, Data* output, const UINT *y);
 	double evaluateTestData(uint32_t batchIndex, std::vector<double>& costList);
-#endif
-
-
 
 
 

@@ -131,9 +131,6 @@ Dtype Network<Dtype>::sgdMiniBatch(uint32_t batchTotalIndex) {
         Worker<Dtype>::consumerIdx;
     config->_iterations++;
 
-#ifndef GPU_MODE
-    inputLayer->reset_nabla(0);
-#endif
     trainBatch(batchIndex);
 
     // UPDATE
@@ -220,10 +217,6 @@ Dtype Network<Dtype>::sgd(int epochs) {
             uint32_t batchIndex = batchTotalIndex * Worker<Dtype>::consumerCount +
                 Worker<Dtype>::consumerIdx;
 			config->_iterations++;
-
-#ifndef GPU_MODE
-			inputLayer->reset_nabla(0);
-#endif
 			trainBatch(batchIndex);
 
 
@@ -381,95 +374,6 @@ void Network<Dtype>::test() {
 }
 
 
-#ifndef GPU_MODE
-template <typename Dtype>
-void Network<Dtype>::feedforward(const rcube &input, const char *end) {
-	//cout << "feedforward()" << endl;
-	inputLayer->feedforward(0, input, end);
-
-}
-
-template <typename Dtype>
-void Network<Dtype>::updateMiniBatch(int nthMiniBatch, int miniBatchSize) {
-
-#if 0
-	int baseIndex = nthMiniBatch*miniBatchSize;
-	for(int i = 0; i < miniBatchSize; i++) {
-		backprop(dataSet->getTrainDataAt(baseIndex+i));
-	}
-
-	int n = dataSet->getTrainData();
-
-	//cout << "update()" << endl;
-	//inputLayer->update(0, n, miniBatchSize);
-#endif
-}
-
-template <typename Dtype>
-void Network<Dtype>::backprop(const DataSample &dataSample) {
-	//Timer timer;
-	//timer.start();
-	// feedforward
-	feedforward(dataSample.getData());
-
-	//cout << "time for feed forward: ";
-	//timer.stop();
-
-	//timer.start();
-	//cout << "backpropagation()" << endl;
-	for(UINT i = 0; i < outputLayers.size(); i++) {
-		//outputLayers[i]->cost(dataSample.getTarget());
-	}
-	//cout << "time for backward: ";
-	//timer.stop();
-}
-
-/*
-double Network<Dtype>::totalCost(const vector<const DataSample *> &dataSet, double lambda) {
-	double cost = 0.0;
-	int dataSize = dataSet.size();
-
-	for(int i = 0; i < dataSize; i++) {
-		vec activation = feedforward(dataSet[i]->getData());
-		cost += this->cost->fn(&activation, dataSet[i]->getTarget());
-	}
-	cost /= dataSize;
-
-	// add weight decay term of cost
-	for(int i = 1; i < numLayers; i++) {
-		cost += 0.5*(lambda/dataSize)*accu(square(*weights[i]));
-	}
-	return cost;
-}
-
-double Network<Dtype>::accuracy(const vector<const DataSample *> &dataSet) {
-	int total = 0;
-	int dataSize = dataSet.size();
-	for(int i = 0; i < dataSize; i++) {
-		const DataSample *dataSample = dataSet[i];
-		Util::printVec(dataSample->getData(), "data");
-		Util::printVec(dataSample->getTarget(), "target");
-		total += testEvaluateResult(feedforward(dataSample->getData()),
-                                    dataSample->getTarget());
-	}
-	return total/(double)dataSize;
-}
-*/
-
-template <typename Dtype>
-int Network<Dtype>::testEvaluateResult(const rvec &output, const rvec &y) {
-	//Util::printVec(&evaluateResult, "result");
-	//Util::printVec(y, "y");
-
-	uword rrow, yrow;
-	output.max(rrow);
-	y.max(yrow);
-
-	if(rrow == yrow) return 1;
-	else return 0;
-}
-#else
-
 
 template <typename Dtype>
 void Network<Dtype>::trainBatch(uint32_t batchIndex) {
@@ -478,8 +382,6 @@ void Network<Dtype>::trainBatch(uint32_t batchIndex) {
 	if (config->_phase == NetworkPhase::TrainPhase)
 		_backpropagation(batchIndex);
 }
-
-#endif
 
 template <typename Dtype>
 void Network<Dtype>::applyUpdate() {

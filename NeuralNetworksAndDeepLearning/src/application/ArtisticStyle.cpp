@@ -6,9 +6,6 @@
  */
 
 
-//#ifndef GPU_MODE
-
-
 #include <stdint.h>
 #include <vector>
 
@@ -1105,4 +1102,3 @@ void ArtisticStyle<Dtype>::printCImg(CImg<Dtype>* cimg, const string& head,
 
 template class ArtisticStyle<float>;
 
-//#endif

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "ReshapeLayer.h"
+#include "SysLog.h"
 #include "PropMgmt.h"
 #include "Util.h"
 
@@ -19,19 +20,31 @@
 using namespace std;
 
 template <typename Dtype>
-ReshapeLayer<Dtype>::ReshapeLayer(const std::string& name)
-: Layer<Dtype>(name) {
-	initialize();
+ReshapeLayer<Dtype>::ReshapeLayer()
+: Layer<Dtype>() {
+	this->type = Layer<Dtype>::Reshape;
+
+	const vector<int>& shape = SLPROP(Reshape, shape);
+	SASSERT0(shape.size() == 4);
+
+	this->inferredAxis = -1;
+	this->copyAxes.clear();
+	const uint32_t topNumAxis = shape.size();
+	this->constantCount = 1;
+
+	for (uint32_t i = 0; i < topNumAxis; i++) {
+		const int topDim = shape[i];
+		if (topDim == 0) {
+			copyAxes.push_back(i);
+		} else if (topDim == -1) {
+			SASSERT(inferredAxis == -1, "new shape contains multiple -1 dims ... ");
+			this->inferredAxis = i;
+		} else {
+			this->constantCount *= topDim;
+		}
+	}
 }
 
-template <typename Dtype>
-ReshapeLayer<Dtype>::ReshapeLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	this->shape = builder->_shape;
-	this->axis = builder->_axis;
-	this->numAxes = builder->_numAxes;
-	initialize();
-}
 
 template <typename Dtype>
 ReshapeLayer<Dtype>::~ReshapeLayer() {
@@ -125,34 +138,6 @@ void ReshapeLayer<Dtype>::backpropagation() {
 }
 
 
-
-template <typename Dtype>
-void ReshapeLayer<Dtype>::initialize() {
-	const vector<int>& shape = SLPROP(Reshape, shape);
-	assert(shape.size() == 4);
-
-	this->inferredAxis = -1;
-	this->copyAxes.clear();
-	const uint32_t topNumAxis = shape.size();
-	this->constantCount = 1;
-
-	for (uint32_t i = 0; i < topNumAxis; i++) {
-		const int topDim = shape[i];
-		if (topDim == 0) {
-			copyAxes.push_back(i);
-		} else if (topDim == -1) {
-			assert(inferredAxis == -1 &&
-					"new shape contains multiple -1 dims ... ");
-			this->inferredAxis = i;
-		} else {
-			this->constantCount *= topDim;
-		}
-	}
-}
-
-
-
-
 template class ReshapeLayer<float>;
 
 
@@ -163,7 +148,7 @@ template class ReshapeLayer<float>;
  ****************************************************************************/
 template<typename Dtype>
 void* ReshapeLayer<Dtype>::initLayer() {
-    ReshapeLayer* layer = new ReshapeLayer<Dtype>(SLPROP_BASE(name));
+    ReshapeLayer* layer = new ReshapeLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -192,23 +177,25 @@ void ReshapeLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool ReshapeLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void ReshapeLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "ReshapeLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void ReshapeLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "ReshapeLayer.. backward()" << endl;
+	ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void ReshapeLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "ReshapeLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template void* ReshapeLayer<float>::initLayer();

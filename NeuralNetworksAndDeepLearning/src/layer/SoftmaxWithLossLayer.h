@@ -19,76 +19,7 @@
 template <typename Dtype>
 class SoftmaxWithLossLayer : public LossLayer<Dtype> {
 public:
-	class Builder : public LossLayer<Dtype>::Builder {
-	public:
-		uint32_t _softmaxAxis;
-
-		Builder() {
-			this->type = Layer<Dtype>::SoftmaxWithLoss;
-			this->_softmaxAxis = 2;
-		}
-		virtual Builder* name(const std::string name) {
-			LossLayer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			LossLayer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			LossLayer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			LossLayer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			LossLayer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-		virtual Builder* lossWeight(const float lossWeight) {
-			LossLayer<Dtype>::Builder::lossWeight(lossWeight);
-			return this;
-		}
-		virtual Builder* ignoreLabel(const int ignoreLabel) {
-			LossLayer<Dtype>::Builder::ignoreLabel(ignoreLabel);
-			return this;
-		}
-		virtual Builder* normalize(const bool normalize) {
-			LossLayer<Dtype>::Builder::normalize(normalize);
-			return this;
-		}
-
-		/*
-		virtual Builder* normalizationMode(
-            const typename LossLayer<Dtype>::NormalizationMode normalizationMode) {
-			LossLayer<Dtype>::Builder::normalizationMode(normalizationMode);
-			return this;
-		}
-		*/
-
-		virtual Builder* softmaxAxis(const uint32_t softmaxAxis) {
-			this->_softmaxAxis = softmaxAxis;
-			return this;
-		}
-		Layer<Dtype>* build() {
-			if (this->_propDown.size() != this->_inputs.size()) {
-				this->_propDown.resize(this->_inputs.size());
-
-				for (uint32_t i = 0; i < this->_inputs.size(); i++) {
-					if (i == 0)
-						this->_propDown[0] = true;
-					else
-						this->_propDown[i] = false;
-				}
-			}
-			return new SoftmaxWithLossLayer(this);
-		}
-	};
-
-	SoftmaxWithLossLayer(Builder* builder);
-    SoftmaxWithLossLayer(const std::string& name);
+    SoftmaxWithLossLayer();
 	virtual ~SoftmaxWithLossLayer();
 
 	virtual void reshape();
@@ -97,14 +28,12 @@ public:
 	virtual Dtype cost();
 
 private:
-	void initialize();
 	Dtype getNormalizer(int validCount);
 
 public:
 	Data<Dtype> prob;
 
 private:
-	uint32_t softmaxAxis;
 	uint32_t outerNum;
 	uint32_t innerNum;
 

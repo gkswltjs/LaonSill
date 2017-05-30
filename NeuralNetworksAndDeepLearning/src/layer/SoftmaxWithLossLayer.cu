@@ -20,18 +20,37 @@
 using namespace std;
 
 template<typename Dtype>
-SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(const string& name)
+SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer()
 : LossLayer<Dtype>(),
   prob("prob") {
-	initialize();
-}
+	this->type = Layer<Dtype>::SoftmaxWithLoss;
 
-template <typename Dtype>
-SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(Builder* builder)
-: LossLayer<Dtype>(builder),
-  prob("prob") {
-	this->softmaxAxis = builder->_softmaxAxis;
-	initialize();
+	const bool hasNormalization = SLPROP(Loss, hasNormalization);
+	const bool hasNormalize = SLPROP(Loss, hasNormalize);
+	const bool normalize = SLPROP(Loss, normalize);
+	//assert(this->hasNormalize);
+	if (!hasNormalization && hasNormalize)
+		this->normalization = normalize ?
+				LossLayer<Dtype>::NormalizationMode::Valid :
+				LossLayer<Dtype>::NormalizationMode::BatchSize;
+	//else
+	//	this->normalization =
+
+
+	// XXX: float로 생성하지 않으니 error ...
+	// create inner softmax layer
+	SoftmaxLayer<float>::Builder* softmaxLayerBuilder =
+			new typename SoftmaxLayer<float>::Builder();
+
+	softmaxLayerBuilder
+		->id(0)
+		->name("inner_softmax")
+		->softmaxAxis(this->softmaxAxis)
+		->inputs({"inner_softmax_10_input"})
+		->outputs({"inner_softmax_10_input"});
+	this->softmaxLayer = dynamic_cast<SoftmaxLayer<Dtype>*>(softmaxLayerBuilder->build());
+
+	InnerLayerFunc::initLayer(0);
 }
 
 template <typename Dtype>
@@ -304,39 +323,6 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 
 
 
-
-template <typename Dtype>
-void SoftmaxWithLossLayer<Dtype>::initialize() {
-	this->type = Layer<Dtype>::SoftmaxWithLoss;
-
-	const bool hasNormalization = SLPROP(Loss, hasNormalization);
-	const bool hasNormalize = SLPROP(Loss, hasNormalize);
-	const bool normalize = SLPROP(Loss, normalize);
-	//assert(this->hasNormalize);
-	if (!hasNormalization && hasNormalize)
-		this->normalization = normalize ?
-				LossLayer<Dtype>::NormalizationMode::Valid :
-				LossLayer<Dtype>::NormalizationMode::BatchSize;
-	//else
-	//	this->normalization =
-
-
-	// XXX: float로 생성하지 않으니 error ...
-	// create inner softmax layer
-	SoftmaxLayer<float>::Builder* softmaxLayerBuilder =
-			new typename SoftmaxLayer<float>::Builder();
-
-	softmaxLayerBuilder
-		->id(0)
-		->name("inner_softmax")
-		->softmaxAxis(this->softmaxAxis)
-		->inputs({"inner_softmax_10_input"})
-		->outputs({"inner_softmax_10_input"});
-	this->softmaxLayer = dynamic_cast<SoftmaxLayer<Dtype>*>(softmaxLayerBuilder->build());
-
-    InnerLayerFunc::initLayer(0);
-}
-
 template <typename Dtype>
 Dtype SoftmaxWithLossLayer<Dtype>::cost() {
 	return this->_outputData[0]->host_data()[0];
@@ -375,7 +361,7 @@ Dtype SoftmaxWithLossLayer<Dtype>::getNormalizer(int validCount) {
  ****************************************************************************/
 template<typename Dtype>
 void* SoftmaxWithLossLayer<Dtype>::initLayer() {
-    SoftmaxWithLossLayer* layer = new SoftmaxWithLossLayer<Dtype>(SLPROP_BASE(name));
+    SoftmaxWithLossLayer* layer = new SoftmaxWithLossLayer<Dtype>();
     return (void*)layer;
 }
 

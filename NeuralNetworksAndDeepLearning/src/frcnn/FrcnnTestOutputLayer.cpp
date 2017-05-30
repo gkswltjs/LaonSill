@@ -17,23 +17,36 @@
 
 using namespace std;
 
-
-
 template <typename Dtype>
-FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer(const string& name)
-: Layer<Dtype>(name) {
-	initialize();
+FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer()
+: Layer<Dtype>() {
+	this->type = Layer<Dtype>::FrcnnTestOutput;
+
+	this->boxColors.push_back(cv::Scalar(10, 163, 240));
+	this->boxColors.push_back(cv::Scalar(44, 90, 130));
+	this->boxColors.push_back(cv::Scalar(239, 80, 0));
+	this->boxColors.push_back(cv::Scalar(37, 0, 162));
+	this->boxColors.push_back(cv::Scalar(226, 161, 27));
+
+	this->boxColors.push_back(cv::Scalar(115, 0, 216));
+	this->boxColors.push_back(cv::Scalar(0, 196, 164));
+	this->boxColors.push_back(cv::Scalar(255, 0, 106));
+	this->boxColors.push_back(cv::Scalar(23, 169, 96));
+	this->boxColors.push_back(cv::Scalar(0, 138, 0));
+
+	this->boxColors.push_back(cv::Scalar(138, 96, 118));
+	this->boxColors.push_back(cv::Scalar(100, 135, 109));
+	this->boxColors.push_back(cv::Scalar(0, 104, 250));
+	this->boxColors.push_back(cv::Scalar(208, 114, 244));
+	this->boxColors.push_back(cv::Scalar(0, 20, 229));
+
+	this->boxColors.push_back(cv::Scalar(63, 59, 122));
+	this->boxColors.push_back(cv::Scalar(135, 118, 100));
+	this->boxColors.push_back(cv::Scalar(169, 171, 0));
+	this->boxColors.push_back(cv::Scalar(255, 0, 170));
+	this->boxColors.push_back(cv::Scalar(0, 193, 216));
 }
 
-template <typename Dtype>
-FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer(Builder* builder)
-: Layer<Dtype>(builder) {
-	this->maxPerImage = builder->_maxPerImage;
-	this->thresh = builder->_thresh;
-	this->vis = builder->_vis;
-
-	initialize();
-}
 
 template <typename Dtype>
 FrcnnTestOutputLayer<Dtype>::~FrcnnTestOutputLayer() {
@@ -430,36 +443,6 @@ void FrcnnTestOutputLayer<Dtype>::feedforward() {
 }
 
 
-template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::initialize() {
-
-	//boxColors.resize(20);
-
-	this->boxColors.push_back(cv::Scalar(10, 163, 240));
-	this->boxColors.push_back(cv::Scalar(44, 90, 130));
-	this->boxColors.push_back(cv::Scalar(239, 80, 0));
-	this->boxColors.push_back(cv::Scalar(37, 0, 162));
-	this->boxColors.push_back(cv::Scalar(226, 161, 27));
-
-	this->boxColors.push_back(cv::Scalar(115, 0, 216));
-	this->boxColors.push_back(cv::Scalar(0, 196, 164));
-	this->boxColors.push_back(cv::Scalar(255, 0, 106));
-	this->boxColors.push_back(cv::Scalar(23, 169, 96));
-	this->boxColors.push_back(cv::Scalar(0, 138, 0));
-
-	this->boxColors.push_back(cv::Scalar(138, 96, 118));
-	this->boxColors.push_back(cv::Scalar(100, 135, 109));
-	this->boxColors.push_back(cv::Scalar(0, 104, 250));
-	this->boxColors.push_back(cv::Scalar(208, 114, 244));
-	this->boxColors.push_back(cv::Scalar(0, 20, 229));
-
-	this->boxColors.push_back(cv::Scalar(63, 59, 122));
-	this->boxColors.push_back(cv::Scalar(135, 118, 100));
-	this->boxColors.push_back(cv::Scalar(169, 171, 0));
-	this->boxColors.push_back(cv::Scalar(255, 0, 170));
-	this->boxColors.push_back(cv::Scalar(0, 193, 216));
-}
-
 
 
 
@@ -470,7 +453,7 @@ void FrcnnTestOutputLayer<Dtype>::initialize() {
  ****************************************************************************/
 template<typename Dtype>
 void* FrcnnTestOutputLayer<Dtype>::initLayer() {
-    FrcnnTestOutputLayer* layer = new FrcnnTestOutputLayer<Dtype>(SLPROP_BASE(name));
+    FrcnnTestOutputLayer* layer = new FrcnnTestOutputLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -499,23 +482,25 @@ void FrcnnTestOutputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensor
 template<typename Dtype>
 bool FrcnnTestOutputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void FrcnnTestOutputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "FrcnnTestOutputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void FrcnnTestOutputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "FrcnnTestOutputLayer.. backward()" << endl;
+	FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void FrcnnTestOutputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "FrcnnTestOutputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 

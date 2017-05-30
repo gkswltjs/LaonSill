@@ -5,35 +5,16 @@
  *      Author: jhkim
  */
 
-#ifdef GPU_MODE
-
 #include "LRNLayer.h"
 #include "PropMgmt.h"
 #include "Util.h"
 
 using namespace std;
 
-template <typename Dtype>
-LRNLayer<Dtype>::~LRNLayer() {
-	checkCUDNN(cudnnDestroyTensorDescriptor(this->inputTensorDesc));
-	checkCUDNN(cudnnDestroyTensorDescriptor(this->outputTensorDesc));
-	checkCUDNN(cudnnDestroyLRNDescriptor(this->lrnDesc));
-}
 
 template <typename Dtype>
-void LRNLayer<Dtype>::initialize(lrn_dim lrn_d) {
-	this->type = Layer<Dtype>::LRN;
-	this->lrn_d = lrn_d;
-
-	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
-	checkCUDNN(cudnnCreateLRNDescriptor(&lrnDesc));
-	checkCUDNN(cudnnSetLRNDescriptor(lrnDesc, lrn_d.local_size, lrn_d.alpha, 
-                                     lrn_d.beta, lrn_d.k));
-}
-
-template <typename Dtype>
-void LRNLayer<Dtype>::initialize() {
+LRNLayer<Dtype>::LRNLayer()
+: Layer<Dtype>() {
 	this->type = Layer<Dtype>::LRN;
 	const lrn_dim& lrnDim = SLPROP(LRN, lrnDim);
 
@@ -43,6 +24,15 @@ void LRNLayer<Dtype>::initialize() {
 	checkCUDNN(cudnnSetLRNDescriptor(this->lrnDesc,
 			lrnDim.local_size, lrnDim.alpha, lrnDim.beta, lrnDim.k));
 }
+
+
+template <typename Dtype>
+LRNLayer<Dtype>::~LRNLayer() {
+	checkCUDNN(cudnnDestroyTensorDescriptor(this->inputTensorDesc));
+	checkCUDNN(cudnnDestroyTensorDescriptor(this->outputTensorDesc));
+	checkCUDNN(cudnnDestroyLRNDescriptor(this->lrnDesc));
+}
+
 
 // (1 + alpha/n * sigma(i)(xi^2))^beta
 template <typename Dtype>
@@ -77,14 +67,10 @@ void LRNLayer<Dtype>::backpropagation() {
 	}
 }
 
+template LRNLayer<float>::LRNLayer();
 template LRNLayer<float>::~LRNLayer();
-template void LRNLayer<float>::initialize(lrn_dim lrn_d);
-template void LRNLayer<float>::initialize();
 template void LRNLayer<float>::feedforward();
 template void LRNLayer<float>::backpropagation();
-
-#endif
-
 
 
 
@@ -93,7 +79,7 @@ template void LRNLayer<float>::backpropagation();
  ****************************************************************************/
 template<typename Dtype>
 void* LRNLayer<Dtype>::initLayer() {
-    LRNLayer* layer = new LRNLayer<Dtype>(SLPROP_BASE(name));
+    LRNLayer* layer = new LRNLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -122,23 +108,25 @@ void LRNLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool LRNLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     LRNLayer<Dtype>* layer = (LRNLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void LRNLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "LRNLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	LRNLayer<Dtype>* layer = (LRNLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void LRNLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "LRNLayer.. backward()" << endl;
+	LRNLayer<Dtype>* layer = (LRNLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void LRNLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "LRNLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template void* LRNLayer<float>::initLayer();

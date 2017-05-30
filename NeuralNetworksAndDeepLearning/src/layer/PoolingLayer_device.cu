@@ -6,8 +6,6 @@
  */
 
 
-#ifdef GPU_MODE
-
 #include "PoolingLayer.h"
 #include "PropMgmt.h"
 
@@ -128,23 +126,25 @@ void PoolingLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool PoolingLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void PoolingLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "PoolingLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void PoolingLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "PoolingLayer.. backward()" << endl;
+	PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void PoolingLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "PoolingLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template void* PoolingLayer<float>::initLayer();
@@ -157,5 +157,3 @@ template void PoolingLayer<float>::backwardTensor(void* instancePtr);
 template void PoolingLayer<float>::learnTensor(void* instancePtr);
 
 
-
-#endif

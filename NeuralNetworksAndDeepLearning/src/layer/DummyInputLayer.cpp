@@ -10,20 +10,16 @@
 
 using namespace std;
 
-template <typename Dtype>
-DummyInputLayer<Dtype>::DummyInputLayer(Builder* builder)
-: InputLayer<Dtype>(builder) {
-	initialize();
-}
-
 template<typename Dtype>
-DummyInputLayer<Dtype>::DummyInputLayer(const string& name)
-: InputLayer<Dtype>(name) {
-    initialize();
+DummyInputLayer<Dtype>::DummyInputLayer()
+: InputLayer<Dtype>() {
+	this->type = Layer<Dtype>::DummyInput;
 }
 
 template <typename Dtype>
-DummyInputLayer<Dtype>::~DummyInputLayer() {}
+DummyInputLayer<Dtype>::~DummyInputLayer() {
+
+}
 
 
 template <typename Dtype>
@@ -53,10 +49,6 @@ void DummyInputLayer<Dtype>::reshape() {
 
 }
 
-template <typename Dtype>
-void DummyInputLayer<Dtype>::initialize() {
-
-}
 
 template<typename Dtype>
 int DummyInputLayer<Dtype>::getNumTrainData() {
@@ -82,7 +74,7 @@ template class DummyInputLayer<float>;
  ****************************************************************************/
 template<typename Dtype>
 void* DummyInputLayer<Dtype>::initLayer() {
-    DummyInputLayer* layer = new DummyInputLayer<Dtype>(SLPROP_BASE(name));
+    DummyInputLayer* layer = new DummyInputLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -111,23 +103,24 @@ void DummyInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool DummyInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     DummyInputLayer<Dtype>* layer = (DummyInputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void DummyInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "DummyInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	DummyInputLayer<Dtype>* layer = (DummyInputLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void DummyInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "DummyInputLayer.. backward()" << endl;
+    SASSERT0(false);
 }
 
 template<typename Dtype>
 void DummyInputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "DummyInputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template void* DummyInputLayer<float>::initLayer();

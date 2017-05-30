@@ -10,12 +10,10 @@
 using namespace std;
 
 template <typename Dtype>
-LearnableLayer<Dtype>::LearnableLayer(Builder* builder)
-: Layer<Dtype>(builder) {}
+LearnableLayer<Dtype>::LearnableLayer()
+: Layer<Dtype>() {
 
-template <typename Dtype>
-LearnableLayer<Dtype>::LearnableLayer(const string& name)
-: Layer<Dtype>(name) {}
+}
 
 
 template <typename Dtype>

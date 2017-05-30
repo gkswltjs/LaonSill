@@ -19,15 +19,9 @@ using namespace std;
 template <typename Dtype>
 ProposalTargetLayer<Dtype>::ProposalTargetLayer(const string& name)
 : Layer<Dtype>(name) {
-	initialize();
+	this->type = Layer<Dtype>::ProposalTarget;
 }
 
-template <typename Dtype>
-ProposalTargetLayer<Dtype>::ProposalTargetLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	this->numClasses = builder->_numClasses;
-	initialize();
-}
 
 template <typename Dtype>
 ProposalTargetLayer<Dtype>::~ProposalTargetLayer() {
@@ -175,10 +169,6 @@ void ProposalTargetLayer<Dtype>::backpropagation() {
 	// This layer does not propagate gradients.
 }
 
-template <typename Dtype>
-void ProposalTargetLayer<Dtype>::initialize() {
-
-}
 
 template <typename Dtype>
 void ProposalTargetLayer<Dtype>::_sampleRois(
@@ -467,7 +457,7 @@ void ProposalTargetLayer<Dtype>::_getBboxRegressionLabels(
  ****************************************************************************/
 template<typename Dtype>
 void* ProposalTargetLayer<Dtype>::initLayer() {
-    ProposalTargetLayer* layer = new ProposalTargetLayer<Dtype>(SLPROP_BASE(name));
+    ProposalTargetLayer* layer = new ProposalTargetLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -496,23 +486,25 @@ void ProposalTargetLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorP
 template<typename Dtype>
 bool ProposalTargetLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     ProposalTargetLayer<Dtype>* layer = (ProposalTargetLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void ProposalTargetLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "ProposalTargetLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	ProposalTargetLayer<Dtype>* layer = (ProposalTargetLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void ProposalTargetLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "ProposalTargetLayer.. backward()" << endl;
+	ProposalTargetLayer<Dtype>* layer = (ProposalTargetLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void ProposalTargetLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "ProposalTargetLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 

@@ -18,24 +18,14 @@ using namespace std;
 
 
 template <typename Dtype>
-SmoothL1LossLayer<Dtype>::SmoothL1LossLayer(const string& name)
-: LossLayer<Dtype>(name),
+SmoothL1LossLayer<Dtype>::SmoothL1LossLayer()
+: LossLayer<Dtype>(),
   diff("diff"),
   errors("errors"),
   ones("ones") {
-	initialize();
+	this->type = Layer<Dtype>::SmoothL1Loss;
 }
 
-template <typename Dtype>
-SmoothL1LossLayer<Dtype>::SmoothL1LossLayer(Builder* builder)
-: LossLayer<Dtype>(builder),
-  diff("diff"),
-  errors("errors"),
-  ones("ones") {
-	this->sigma2 = builder->_sigma * builder->_sigma;
-	this->firstAxis = builder->_firstAxis;
-	initialize();
-}
 
 template <typename Dtype>
 SmoothL1LossLayer<Dtype>::~SmoothL1LossLayer() {
@@ -306,20 +296,13 @@ Dtype SmoothL1LossLayer<Dtype>::cost() {
 
 
 
-template <typename Dtype>
-void SmoothL1LossLayer<Dtype>::initialize() {
-
-}
-
-
-
 
 /****************************************************************************
  * layer callback functions
  ****************************************************************************/
 template<typename Dtype>
 void* SmoothL1LossLayer<Dtype>::initLayer() {
-    SmoothL1LossLayer* layer = new SmoothL1LossLayer<Dtype>(SLPROP_BASE(name));
+    SmoothL1LossLayer* layer = new SmoothL1LossLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -348,23 +331,25 @@ void SmoothL1LossLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr
 template<typename Dtype>
 bool SmoothL1LossLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void SmoothL1LossLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "SmoothL1LossLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void SmoothL1LossLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "SmoothL1LossLayer.. backward()" << endl;
+	SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void SmoothL1LossLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "SmoothL1LossLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 

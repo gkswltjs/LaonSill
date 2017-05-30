@@ -21,22 +21,14 @@ using namespace std;
 
 
 template <typename Dtype>
-SoftmaxLayer<Dtype>::SoftmaxLayer(const string& name)
+SoftmaxLayer<Dtype>::SoftmaxLayer()
 : Layer<Dtype>(name),
   sumMultiplier("sumMultiplier"),
   scale("scale") {
-	initialize();
-}
+	this->type = Layer<Dtype>::Softmax;
 
-
-template <typename Dtype>
-SoftmaxLayer<Dtype>::SoftmaxLayer(Builder* builder)
-: Layer<Dtype>(builder),
-  sumMultiplier("sumMultiplier"),
-  scale("scale") {
-	this->softmaxAxis = builder->_softmaxAxis;
-
-	initialize();
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
 }
 
 
@@ -133,14 +125,6 @@ void SoftmaxLayer<Dtype>::backpropagation() {
 				&Cuda::beta,
 				this->inputTensorDesc, inputGrad));
 	}
-}
-
-template <typename Dtype>
-void SoftmaxLayer<Dtype>::initialize() {
-	this->type = Layer<Dtype>::Softmax;
-
-	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
 }
 
 /*
@@ -376,7 +360,7 @@ void SoftmaxLayer<Dtype>::initialize() {
  ****************************************************************************/
 template<typename Dtype>
 void* SoftmaxLayer<Dtype>::initLayer() {
-    SoftmaxLayer* layer = new SoftmaxLayer<Dtype>(SLPROP_BASE(name));
+    SoftmaxLayer* layer = new SoftmaxLayer<Dtype>();
     return (void*)layer;
 }
 

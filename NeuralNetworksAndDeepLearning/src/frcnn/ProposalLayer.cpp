@@ -24,22 +24,24 @@ using namespace std;
 template <typename Dtype>
 ProposalLayer<Dtype>::ProposalLayer(const std::string& name)
 : Layer<Dtype>(name) {
-	initialize();
+	this->type = Layer<Dtype>::Proposal;
+
+	const vector<uint32_t>& scales = SLPROP(Proposal, scales);
+	GenerateAnchorsUtil::generateAnchors(this->anchors, scales);
+	this->numAnchors = this->anchors.size();
+
+#if PROPOSALLAYER_LOG
+	cout << "featStride: " << this->featStride << endl;
+	print2dArray("anchors", this->anchors);
+#endif
 }
 
-template <typename Dtype>
-ProposalLayer<Dtype>::ProposalLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	this->featStride = builder->_featStride;
-	this->scales = builder->_scales;
-
-	initialize();
-}
 
 template <typename Dtype>
 ProposalLayer<Dtype>::~ProposalLayer() {
 
 }
+
 
 template <typename Dtype>
 void ProposalLayer<Dtype>::reshape() {
@@ -336,17 +338,6 @@ void ProposalLayer<Dtype>::backpropagation() {
 
 }
 
-template <typename Dtype>
-void ProposalLayer<Dtype>::initialize() {
-	const vector<uint32_t>& scales = SLPROP(Proposal, scales);
-	GenerateAnchorsUtil::generateAnchors(this->anchors, scales);
-	this->numAnchors = this->anchors.size();
-
-#if PROPOSALLAYER_LOG
-	cout << "featStride: " << this->featStride << endl;
-	print2dArray("anchors", this->anchors);
-#endif
-}
 
 template <typename Dtype>
 void ProposalLayer<Dtype>::_filterBoxes(std::vector<std::vector<float>>& boxes,
@@ -376,7 +367,7 @@ void ProposalLayer<Dtype>::_filterBoxes(std::vector<std::vector<float>>& boxes,
  ****************************************************************************/
 template<typename Dtype>
 void* ProposalLayer<Dtype>::initLayer() {
-    ProposalLayer* layer = new ProposalLayer<Dtype>(SLPROP_BASE(name));
+    ProposalLayer* layer = new ProposalLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -405,23 +396,25 @@ void ProposalLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool ProposalLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     ProposalLayer<Dtype>* layer = (ProposalLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void ProposalLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "ProposalLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	ProposalLayer<Dtype>* layer = (ProposalLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void ProposalLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "ProposalLayer.. backward()" << endl;
+	ProposalLayer<Dtype>* layer = (ProposalLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void ProposalLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "ProposalLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 

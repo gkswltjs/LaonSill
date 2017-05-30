@@ -22,13 +22,8 @@ using namespace std;
 template <typename Dtype>
 InputLayer<Dtype>::InputLayer()
 : Layer<Dtype>() {
-    this->_dataSet = NULL;
-	initialize();
-}
+	this->type = Layer<Dtype>::Input;
 
-template <typename Dtype>
-InputLayer<Dtype>::InputLayer(const string name)
-: Layer<Dtype>(name) {
     this->_dataSet = NULL;
     this->_dataMean = new Data<Dtype>("dataMean");
 
@@ -54,50 +49,8 @@ InputLayer<Dtype>::InputLayer(const string name)
 	} else {
 		SASSERT(false, "Unsupported Input Source Type: %s", sourceType.c_str());
 	}
-	initialize();
 }
 
-template <typename Dtype>
-InputLayer<Dtype>::InputLayer(Builder* builder)
-: Layer<Dtype>(builder) {
-
-	this->_scale = builder->_scale;
-	this->_dataMean = new Data<Dtype>("dataMean");
-
-	if (builder->_sourceType == "ImagePack") {
-		this->_dataSet = new ImagePackDataSet<Dtype>(
-				builder->_source+"/train_data",
-				builder->_source+"/train_label",
-				builder->_numTrainPack,
-				builder->_source+"/test_data",
-				builder->_source+"/test_label",
-				builder->_numTestPack);
-		//this->_dataSet->setMean({0.13066047740});
-
-
-		//this->_dataSet->setMean(builder->_mean);
-
-		int numChannels = builder->_mean.size();
-		this->_dataMean->reshape({1, 1, 1, numChannels});
-		for (int i = 0; i < numChannels; i++) {
-			this->_dataMean->mutable_host_data()[i] = builder->_mean[i];
-		}
-
-		this->_dataSet->load();
-
-	} else if (builder->_sourceType == "Mock") {
-		this->_dataSet = new MockDataSet<Dtype>(
-				4, 4, 3, 10, 10, 10
-				);
-		this->_dataSet->load();
-	} else {
-        _dataSet = NULL;
-		//cout << "Unsuppored Input Source Type: " << builder->_sourceType;
-		//exit(1);
-	}
-
-	initialize();
-}
 
 template <typename Dtype>
 InputLayer<Dtype>::~InputLayer() {
@@ -215,11 +168,6 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
     }
 }
 
-template <typename Dtype>
-void InputLayer<Dtype>::initialize() {
-	this->type = Layer<Dtype>::Input;
-}
-
 template<typename Dtype>
 int InputLayer<Dtype>::getNumTrainData() {
     return this->_dataSet->getNumTrainData();
@@ -240,7 +188,7 @@ void InputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* InputLayer<Dtype>::initLayer() {
-    InputLayer* layer = new InputLayer<Dtype>(SLPROP_BASE(name));
+    InputLayer* layer = new InputLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -265,23 +213,24 @@ void InputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool InputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     InputLayer<Dtype>* layer = (InputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void InputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "InputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	InputLayer<Dtype>* layer = (InputLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void InputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "InputLayer.. backward()" << endl;
+	SASSERT0(false);
 }
 
 template<typename Dtype>
 void InputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "InputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class InputLayer<float>;

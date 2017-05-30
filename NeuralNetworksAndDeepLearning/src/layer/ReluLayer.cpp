@@ -11,16 +11,16 @@
 
 using namespace std;
 
-template <typename Dtype>
-ReluLayer<Dtype>::ReluLayer(Builder* builder)
-: Layer<Dtype>(builder) {
-	initialize(builder->_useLeaky, builder->_leaky);
-}
 
 template<typename Dtype>
-ReluLayer<Dtype>::ReluLayer(const string& name) 
-: Layer<Dtype>(name) {
-	initialize();
+ReluLayer<Dtype>::ReluLayer()
+: Layer<Dtype>() {
+	this->type = Layer<Dtype>::Relu;
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->tensorDesc));
+	checkCUDNN(cudnnCreateActivationDescriptor(&this->activationDesc));
+	checkCUDNN(cudnnSetActivationDescriptor(this->activationDesc, CUDNN_ACTIVATION_RELU,
+			CUDNN_PROPAGATE_NAN, 0.0));
 }
 
 template <typename Dtype>
@@ -88,34 +88,13 @@ void ReluLayer<Dtype>::backpropagation() {
     }
 }
 
-template <typename Dtype>
-void ReluLayer<Dtype>::initialize() {
-	this->type = Layer<Dtype>::Relu;
-
-	checkCUDNN(cudnnCreateTensorDescriptor(&this->tensorDesc));
-	checkCUDNN(cudnnCreateActivationDescriptor(&this->activationDesc));
-	checkCUDNN(cudnnSetActivationDescriptor(this->activationDesc, CUDNN_ACTIVATION_RELU,
-			CUDNN_PROPAGATE_NAN, 0.0));
-}
-
-template <typename Dtype>
-void ReluLayer<Dtype>::initialize(bool useLeaky, double leaky) {
-	this->type = Layer<Dtype>::Relu;
-    this->useLeaky = useLeaky;
-    this->leaky = leaky;
-
-	checkCUDNN(cudnnCreateTensorDescriptor(&this->tensorDesc));
-	checkCUDNN(cudnnCreateActivationDescriptor(&this->activationDesc));
-	checkCUDNN(cudnnSetActivationDescriptor(this->activationDesc, CUDNN_ACTIVATION_RELU,
-			CUDNN_PROPAGATE_NAN, 0.0));
-}
 
 /****************************************************************************
  * layer callback functions 
  ****************************************************************************/
 template<typename Dtype>
 void* ReluLayer<Dtype>::initLayer() {
-    ReluLayer* layer = new ReluLayer<Dtype>(SLPROP_BASE(name));
+    ReluLayer* layer = new ReluLayer<Dtype>();
     return (void*)layer;
 }
 

@@ -45,20 +45,6 @@ public:
 	//virtual void initialize_weight(int n_in, rcube &weight)=0;
 
 
-#ifndef GPU_MODE
-	/**
-	 * activation function
-	 */
-	virtual void forward(const rcube &z, rcube &activation)=0;
-
-	/**
-	 * activation derivation
-	 * 실제 weighted sum값을 이용하여 계산하여야 하지만
-	 * 현재까지 activation으로도 계산이 가능하여 파라미터를 activation으로 지정
-	 * weighted sum값이 필요한 케이스에 수정이 필요
-	 */
-	virtual void backward(const rcube &activation, rcube &da)=0;
-#else
 	/**
 	 * @details 입력값에 대해 활성화 함수를 적용한 값을 반환.
 	 * @param z 활성화 함수를 적용할 입력값을 담고 있는 장치 메모리 포인터.
@@ -80,7 +66,6 @@ public:
 	 */
 	virtual void backward(const cudnnTensorDescriptor_t& desc,  const Dtype* y,
         const Dtype* dy, const Dtype* x, Dtype* dx) = 0;
-#endif
 
 protected:
 	Type type;			///< 현재 Activation 객체의 Activation 타입.

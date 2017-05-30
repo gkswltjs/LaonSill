@@ -13,23 +13,15 @@ using namespace std;
 //#define DEPTHCONCAT_LOG
 
 template <typename Dtype>
-DepthConcatLayer<Dtype>::DepthConcatLayer(const std::string& name)
-: Layer<Dtype>(name) {
-	initialize();
-}
-
-template <typename Dtype>
-DepthConcatLayer<Dtype>::DepthConcatLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	initialize();
-}
-
-template <typename Dtype>
-DepthConcatLayer<Dtype>::~DepthConcatLayer() {}
-
-template <typename Dtype>
-void DepthConcatLayer<Dtype>::initialize() {
+DepthConcatLayer<Dtype>::DepthConcatLayer()
+: Layer<Dtype>() {
 	this->type = Layer<Dtype>::DepthConcat;
+}
+
+
+template <typename Dtype>
+DepthConcatLayer<Dtype>::~DepthConcatLayer() {
+
 }
 
 template <typename Dtype>
@@ -117,49 +109,6 @@ void DepthConcatLayer<Dtype>::backpropagation() {
 	}
 }
 
-#ifndef GPU_MODE
-template <typename Dtype>
-void DepthConcatLayer<Dtype>::initialize() {
-	this->type = Layer<Dtype>::DepthConcat;
-
-	this->offsetIndex = 0;
-	this->input.reset();
-	this->delta_input.set_size(size(output));
-	this->delta_input.zeros();
-}
-
-template <typename Dtype>
-void DepthConcatLayer<Dtype>::feedforward(uint32_t idx, const rcube &input,
-    const char *end=0) {
-	this->input = join_slices(this->input, input);
-	Util::printCube(this->input, "input:");
-
-	this->offsets.push_back(this->input.n_slices);
-
-	if(!isLastPrevLayerRequest(idx)) return;
-
-	this->output = this->input;
-
-	propFeedforward(this->output, end);
-
-	// backward pass에서 input을 사용하지 않으므로 여기서 reset할 수 있음
-	this->input.reset();
-	this->offsetIndex = 0;
-}
-
-template <typename Dtype>
-void DepthConcatLayer<Dtype>::backpropagation(uint32_t idx, Layer<Dtype>* next_layer) {
-	Util::printCube(delta_input, "delta_input:");
-	rcube w_next_delta(size(delta_input));
-	Util::convertCube(next_layer->getDeltaInput(), delta_input);
-	delta_input += w_next_delta;
-	// delta_input = join_slices(this->delta_input, next_layer->getDeltaInput());
-	if(!isLastNextLayerRequest(idx)) return;
-
-	propBackpropagation();
-	this->delta_input.zeros();
-}
-#endif
 
 template class DepthConcatLayer<float>;
 
@@ -173,7 +122,7 @@ template class DepthConcatLayer<float>;
  ****************************************************************************/
 template<typename Dtype>
 void* DepthConcatLayer<Dtype>::initLayer() {
-    DepthConcatLayer<Dtype>* layer = new DepthConcatLayer<Dtype>(SLPROP_BASE(name));
+    DepthConcatLayer<Dtype>* layer = new DepthConcatLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -202,23 +151,25 @@ void DepthConcatLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool DepthConcatLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     DepthConcatLayer<Dtype>* layer = (DepthConcatLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void DepthConcatLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "DepthConcatLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	DepthConcatLayer<Dtype>* layer = (DepthConcatLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void DepthConcatLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "DepthConcatLayer.. backward()" << endl;
+	DepthConcatLayer<Dtype>* layer = (DepthConcatLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void DepthConcatLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "DepthConcatLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template void* DepthConcatLayer<float>::initLayer();

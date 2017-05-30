@@ -26,93 +26,16 @@
 template <typename Dtype>
 class PoolingLayer : public Layer<Dtype> {
 public:
-	/**
-	 * @brief 풀링 레이어 객체 빌더
-	 * @details 풀링 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
-	 *          해당 파라미터를 만족하는 풀링 레이어 객체를 생성한다.
-	 */
-	class Builder : public Layer<Dtype>::Builder {
-	public:
-		pool_dim _poolDim;								///< 풀링 파라미터
-		PoolingType _poolingType;		///< 풀링 타입
-
-		Builder() {
-			this->type = Layer<Dtype>::Pooling;
-			_poolDim.cols = 0;
-			_poolDim.rows = 0;
-			_poolDim.pad = 0;
-			_poolDim.stride = 0;
-			_poolingType = PoolingType::Max;
-		}
-		Builder* poolDim(uint32_t cols, uint32_t rows, uint32_t pad, uint32_t stride) {
-			this->_poolDim.cols = cols;
-			this->_poolDim.rows = rows;
-			this->_poolDim.pad = pad;
-			this->_poolDim.stride = stride;
-			return this;
-		}
-		Builder* poolingType(PoolingType poolingType) {
-			this->_poolingType = poolingType;
-			return this;
-		}
-		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-		Layer<Dtype>* build() {
-			return new PoolingLayer(this);
-		}
-	};
-
-	PoolingLayer(const std::string& name);
-	/**
-	 * @details PoolingLayer 기본 생성자
-	 */
-	PoolingLayer(Builder* builder);
-	/**
-	 * @details PoolingLayer 소멸자
-	 */
+	PoolingLayer();
 	virtual ~PoolingLayer();
-
 
 	virtual void reshape();
 	virtual void feedforward();
 	virtual void backpropagation();
 
-
 protected:
-	void initialize();
-	void initialize(pool_dim pool_d, PoolingType poolingType);
-
-protected:
-	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
-	Pooling<Dtype> *pooling_fn;			///< 풀링 객체
-
-#ifndef GPU_MODE
-	ucube pool_map;
-	rcube delta;
-	rcube delta_input;
-#else
 	cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t outputTensorDesc;	///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
-#endif
-
 
 public:
     /****************************************************************************

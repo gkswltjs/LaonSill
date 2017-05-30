@@ -16,28 +16,17 @@
 using namespace std;
 
 template <typename Dtype>
-SplitLayer<Dtype>::SplitLayer(const std::string& name)
-	: Layer<Dtype>(name) {
-	initialize();
-}
-
-template <typename Dtype>
-SplitLayer<Dtype>::SplitLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	initialize();
+SplitLayer<Dtype>::SplitLayer()
+	: Layer<Dtype>() {
+	this->type = Layer<Dtype>::Split;
 }
 
 
-
 template <typename Dtype>
-SplitLayer<Dtype>::~SplitLayer() {}
-
-
-
-template <typename Dtype>
-void SplitLayer<Dtype>::initialize() {
+SplitLayer<Dtype>::~SplitLayer() {
 
 }
+
 
 template <typename Dtype>
 void SplitLayer<Dtype>::reshape() {
@@ -132,7 +121,7 @@ void SplitLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* SplitLayer<Dtype>::initLayer() {
-    SplitLayer* layer = new SplitLayer<Dtype>(SLPROP_BASE(name));
+    SplitLayer* layer = new SplitLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -161,23 +150,25 @@ void SplitLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool SplitLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void SplitLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "SplitLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+	SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+	layer->feedforward();
 }
 
 template<typename Dtype>
 void SplitLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "SplitLayer.. backward()" << endl;
+	SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
 }
 
 template<typename Dtype>
 void SplitLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "SplitLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class SplitLayer<float>;

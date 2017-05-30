@@ -9,8 +9,6 @@
 #define ARTISTICSTYLE_H_
 
 
-//#ifndef GPU_MODE
-
 #include "common.h"
 #include "Network.h"
 #include "StatGraphPlotter.h"
@@ -164,7 +162,5 @@ private:
 
 
 };
-
-//#endif
 
 #endif /* ARTISTICSTYLE_H_ */

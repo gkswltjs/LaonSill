@@ -5,8 +5,6 @@
  *      Author: jhkim
  */
 
-
-#ifdef GPU_MODE
 #include "ConvLayer.h"
 #include "FullyConnectedLayer.h"
 #include "Util.h"
@@ -131,6 +129,81 @@ __global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
 }
 
 
+template<typename Dtype>
+ConvLayer<Dtype>::ConvLayer()
+: LearnableLayer<Dtype>() {
+	this->type = Layer<Dtype>::Conv;
+
+	const string& name = SLPROP_BASE(name);
+	const filter_dim& filterDim = SLPROP(Conv, filterDim);
+	param_filler<Dtype>& weightFiller = SLPROP(Conv, weightFiller);
+	param_filler<Dtype>& biasFiller = SLPROP(Conv, biasFiller);
+	const bool deconv = SLPROP(Conv, deconv);
+
+	if (!deconv)
+		this->type = Layer<Dtype>::Conv;
+	else
+		this->type = Layer<Dtype>::Deconv;
+	const int filter_size = filterDim.size();
+
+	this->_params.resize(2);
+	this->_params[Filter] = new Data<Dtype>(name + "_filter");
+	this->_params[Bias] = new Data<Dtype>(name + "_bias");
+	this->_params[Filter]->reshape(
+		{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
+	this->_params[Bias]->reshape({filterDim.filters, 1, 1, 1});
+
+	weightFiller.fill(this->_params[Filter]);
+	biasFiller.fill(this->_params[Bias]);
+
+	this->_paramsHistory.resize(2);
+	this->_paramsHistory[Filter] = new Data<Dtype>(name + "_filter_history");
+	this->_paramsHistory[Bias] = new Data<Dtype>(name + "_bias_history");
+	this->_paramsHistory[Filter]->reshape(
+		{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
+	this->_paramsHistory[Bias]->reshape({filterDim.filters, 1, 1, 1});
+
+	this->_paramsHistory2.resize(2);
+	this->_paramsHistory2[Filter] = new Data<Dtype>(name + "_filter_history2");
+	this->_paramsHistory2[Bias] = new Data<Dtype>(name + "_bias_history2");
+	this->_paramsHistory2[Filter]->reshape(
+		{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
+	this->_paramsHistory2[Bias]->reshape({filterDim.filters, 1, 1, 1});
+
+	this->_paramsInitialized.resize(2);
+	this->_paramsInitialized[Filter] = false;
+	this->_paramsInitialized[Bias] = false;
+
+	this->decayedBeta1 = 1.0;
+	this->decayedBeta2 = 1.0;
+
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
+	checkCUDNN(cudnnCreateTensorDescriptor(&this->biasTensorDesc));
+	checkCUDNN(cudnnCreateFilterDescriptor(&this->filterDesc));
+	checkCUDNN(cudnnCreateConvolutionDescriptor(&this->convDesc));
+
+	checkCUDNN(cudnnSetTensor4dDescriptor(this->biasTensorDesc,
+			CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, filterDim.filters, 1, 1));
+
+	if (!deconv) {
+		checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
+			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
+			filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols));
+	} else {
+		checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
+			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
+			filterDim.channels, filterDim.filters, filterDim.rows, filterDim.cols));
+	}
+
+	//int pad = (filterDim.rows-1)/2;
+	checkCUDNN(cudnnSetConvolution2dDescriptor(this->convDesc,
+			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride, 1, 1,
+			CUDNN_CROSS_CORRELATION,
+			CUDNN_DATA_FLOAT));
+
+	this->d_workspace = 0;
+}
 
 template <typename Dtype>
 ConvLayer<Dtype>::~ConvLayer() {
@@ -145,7 +218,7 @@ ConvLayer<Dtype>::~ConvLayer() {
         delete this->_paramsHistory[ParamType::Bias];
         delete this->_paramsHistory2[ParamType::Filter];
         delete this->_paramsHistory2[ParamType::Bias];
-        
+
         this->_paramsHistory.clear();
         this->_paramsHistory2.clear();
     }
@@ -159,161 +232,6 @@ ConvLayer<Dtype>::~ConvLayer() {
 	checkCUDNN(cudnnDestroyConvolutionDescriptor(this->convDesc));
 }
 
-template <typename Dtype>
-void ConvLayer<Dtype>::initialize() {
-	const string& name = SLPROP_BASE(name);
-	const filter_dim& filterDim = SLPROP(Conv, filterDim);
-	param_filler<Dtype>& weightFiller = SLPROP(Conv, weightFiller);
-	param_filler<Dtype>& biasFiller = SLPROP(Conv, biasFiller);
-	const bool deconv = SLPROP(Conv, deconv);
-
-    if (!deconv)
-	    this->type = Layer<Dtype>::Conv;
-    else
-	    this->type = Layer<Dtype>::Deconv;
-	const int filter_size = filterDim.size();
-
-	this->_params.resize(2);
-	this->_params[Filter] = new Data<Dtype>(name + "_filter");
-	this->_params[Bias] = new Data<Dtype>(name + "_bias");
-	this->_params[Filter]->reshape(
-        {filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
-	this->_params[Bias]->reshape({filterDim.filters, 1, 1, 1});
-
-    weightFiller.fill(this->_params[Filter]);
-    biasFiller.fill(this->_params[Bias]);
-
-	this->_paramsHistory.resize(2);
-	this->_paramsHistory[Filter] = new Data<Dtype>(name + "_filter_history");
-	this->_paramsHistory[Bias] = new Data<Dtype>(name + "_bias_history");
-	this->_paramsHistory[Filter]->reshape(
-        {filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
-	this->_paramsHistory[Bias]->reshape({filterDim.filters, 1, 1, 1});
-
-	this->_paramsHistory2.resize(2);
-	this->_paramsHistory2[Filter] = new Data<Dtype>(name + "_filter_history2");
-	this->_paramsHistory2[Bias] = new Data<Dtype>(name + "_bias_history2");
-	this->_paramsHistory2[Filter]->reshape(
-        {filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
-	this->_paramsHistory2[Bias]->reshape({filterDim.filters, 1, 1, 1});
-
-	this->_paramsInitialized.resize(2);
-	this->_paramsInitialized[Filter] = false;
-	this->_paramsInitialized[Bias] = false;
-
-    this->decayedBeta1 = 1.0;
-    this->decayedBeta2 = 1.0;
-
-	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&this->biasTensorDesc));
-	checkCUDNN(cudnnCreateFilterDescriptor(&this->filterDesc));
-	checkCUDNN(cudnnCreateConvolutionDescriptor(&this->convDesc));
-
-	checkCUDNN(cudnnSetTensor4dDescriptor(this->biasTensorDesc,
-			CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, filterDim.filters, 1, 1));
-
-    if (!deconv) {
-	    checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
-			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
-			filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols));
-    } else {
-	    checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
-			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
-			filterDim.channels, filterDim.filters, filterDim.rows, filterDim.cols));
-    }
-
-	//int pad = (filterDim.rows-1)/2;
-	checkCUDNN(cudnnSetConvolution2dDescriptor(this->convDesc,
-			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride, 1, 1,
-			CUDNN_CROSS_CORRELATION,
-			CUDNN_DATA_FLOAT));
-
-	this->d_workspace = 0;
-}
-
-template <typename Dtype>
-void ConvLayer<Dtype>::initialize(filter_dim filter_d, update_param weight_update_param,
-    update_param bias_update_param, param_filler<Dtype> weight_filler,
-    param_filler<Dtype> bias_filler, bool deconv, int deconvExtraCell) {
-
-    if (!deconv)
-	    this->type = Layer<Dtype>::Conv;
-    else
-	    this->type = Layer<Dtype>::Deconv;
-
-    this->deconv = deconv;
-    this->deconvExtraCell = deconvExtraCell;
-	this->filter_d = filter_d;
-
-	this->weight_update_param = weight_update_param;
-	this->bias_update_param = bias_update_param;
-	this->weight_filler = weight_filler;
-	this->bias_filler = bias_filler;
-
-	const int filter_size = filter_d.size();
-
-	this->_params.resize(2);
-	this->_params[Filter] = new Data<Dtype>(this->name + "_filter");
-	this->_params[Bias] = new Data<Dtype>(this->name + "_bias");
-	this->_params[Filter]->reshape(
-        {filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
-	this->_params[Bias]->reshape({filter_d.filters, 1, 1, 1});
-
-    weight_filler.fill(this->_params[Filter]);
-    bias_filler.fill(this->_params[Bias]);
-
-	this->_paramsHistory.resize(2);
-	this->_paramsHistory[Filter] = new Data<Dtype>(this->name + "_filter_history");
-	this->_paramsHistory[Bias] = new Data<Dtype>(this->name + "_bias_history");
-	this->_paramsHistory[Filter]->reshape(
-        {filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
-	this->_paramsHistory[Bias]->reshape({filter_d.filters, 1, 1, 1});
-
-	this->_paramsHistory2.resize(2);
-	this->_paramsHistory2[Filter] = new Data<Dtype>(this->name + "_filter_history2");
-	this->_paramsHistory2[Bias] = new Data<Dtype>(this->name + "_bias_history2");
-	this->_paramsHistory2[Filter]->reshape(
-        {filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols});
-	this->_paramsHistory2[Bias]->reshape({filter_d.filters, 1, 1, 1});
-
-	this->_paramsInitialized.resize(2);
-	this->_paramsInitialized[Filter] = false;
-	this->_paramsInitialized[Bias] = false;
-
-    this->decayedBeta1 = 1.0;
-    this->decayedBeta2 = 1.0;
-
-	checkCUDNN(cudnnCreateTensorDescriptor(&inputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&outputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&biasTensorDesc));
-	checkCUDNN(cudnnCreateFilterDescriptor(&filterDesc));
-	checkCUDNN(cudnnCreateConvolutionDescriptor(&convDesc));
-
-	checkCUDNN(cudnnSetTensor4dDescriptor(biasTensorDesc,
-			CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,
-			1, filter_d.filters, 1, 1));
-
-    if (!this->deconv) {
-	    checkCUDNN(cudnnSetFilter4dDescriptor(filterDesc,
-			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
-			filter_d.filters, filter_d.channels, filter_d.rows, filter_d.cols));
-    } else {
-	    checkCUDNN(cudnnSetFilter4dDescriptor(filterDesc,
-			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
-			filter_d.channels, filter_d.filters, filter_d.rows, filter_d.cols));
-    }
-
-	//int pad = (filter_d.rows-1)/2;
-	checkCUDNN(cudnnSetConvolution2dDescriptor(convDesc,
-			filter_d.pad, filter_d.pad, filter_d.stride, filter_d.stride, 1, 1,
-			CUDNN_CROSS_CORRELATION,
-			CUDNN_DATA_FLOAT));
-
-	//this->activation_fn = ActivationFactory<Dtype>::create(activationType);
-
-	this->d_workspace = 0;
-}
 
 template <typename Dtype>
 void ConvLayer<Dtype>::reshape() {
@@ -757,26 +675,6 @@ void ConvLayer<Dtype>::_computeFiltersConvolutionData() {
 			&Cuda::alpha, this->outputTensorDesc, d_outputData));
 }
 
-/*
-template <typename Dtype>
-void ConvLayer<Dtype>::_computeActivationData() {
-	// Activate filtered result
-	if (activation_fn) {
-		const Dtype* d_preActivationData = _preActivation->device_data();
-		Dtype* d_output = this->_outputData[0]->mutable_device_data();
-		activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_output);
-	} else {
-		this->_outputData[0]->set_device_data(_preActivation);
-	}
-
-#if CONVLAYER_LOG
-	_preActivation->print_data();
-	this->_outputData[0]->print_data();
-#endif
-}
-*/
-
-
 
 template <typename Dtype>
 void ConvLayer<Dtype>::backpropagation() {
@@ -787,30 +685,6 @@ void ConvLayer<Dtype>::backpropagation() {
 		_computeInputGrad();
 	}
 }
-
-
-/*
-template <typename Dtype>
-void ConvLayer<Dtype>::_computePreActivationGrad() {
-#if CONVLAYER_LOG
-	this->_outputData[0]->print_grad();
-	this->_outputData[0]->print_data();
-#endif
-
-	if (activation_fn) {
-		const Dtype* d_outputData = this->_outputData[0]->device_data();
-		const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
-		const Dtype* d_preActivationData = _preActivation->device_data();
-		Dtype* d_preActivationGrad = _preActivation->mutable_device_grad();
-
-		activation_fn->backward(this->outputTensorDesc,
-				d_outputData, d_outputGrad, d_preActivationData, d_preActivationGrad);
-	} else {
-		this->_preActivation->set_device_grad(this->_outputData[0]);
-	}
-}
-*/
-
 
 
 template <typename Dtype>
@@ -884,12 +758,8 @@ void ConvLayer<Dtype>::_computeInputGrad() {
 #endif
 }
 
-template void ConvLayer<float>::initialize();
+template ConvLayer<float>::ConvLayer();
 template ConvLayer<float>::~ConvLayer();
-template void ConvLayer<float>::initialize(filter_dim filter_d,
-    update_param weight_update_param, update_param bias_update_param,
-    param_filler<float> weight_filler, param_filler<float> bias_filler, bool deconv,
-    int deconvExtraCell);
 template void ConvLayer<float>::reshape();
 template void ConvLayer<float>::update();
 template void ConvLayer<float>::feedforward();
@@ -960,4 +830,3 @@ template void ConvLayer<float>::forwardTensor(void* instancePtr, int miniBatchId
 template void ConvLayer<float>::backwardTensor(void* instancePtr);
 template void ConvLayer<float>::learnTensor(void* instancePtr);
 
-#endif

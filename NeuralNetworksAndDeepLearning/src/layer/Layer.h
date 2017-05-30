@@ -89,69 +89,6 @@ public:
         LayerTypeMax
 	};
 
-
-	/**
-	 * @brief 레이어 객체 빌더
-	 * @details 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
-	 *          해당 파라미터를 만족하는 레이어 객체를 생성한다.
-	 */
-	class Builder {
-	public:
-		LayerType type;
-        std::string _name;							///< 레이어의 이름
-		uint32_t _id;								///< 레이어의 아이디
-
-        std::vector<std::string> _inputs;
-        std::vector<std::string> _outputs;
-
-        std::vector<bool> _propDown;
-
-        bool _isDonator;
-        bool _isReceiver;
-        uint32_t _donatorID;
-
-		Builder() {
-			type = Layer<Dtype>::None;
-			_name = "";
-
-            this->_isDonator = false;
-            this->_isReceiver = false;
-            this->_donatorID = 0;
-		}
-		virtual ~Builder() {}
-		virtual Builder* name(const std::string name) {
-			this->_name = name;
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			this->_id = id;
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			this->_inputs = inputs;
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			this->_outputs = outputs;
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			this->_propDown = propDown;
-			return this;
-		}
-        Builder* donate() {
-            this->_isDonator = true;
-			return this;
-        }
-        Builder* receive(uint32_t donatorID) {
-            this->_isReceiver = true;
-            this->_donatorID = donatorID;
-			return this;
-        }
-
-		virtual Layer<Dtype>* build() = 0;
-	};
-
 	////////////////////////////////////////////////////////////////////
 	// CONSTRUCTOR & DESCTRUCTOR
 	////////////////////////////////////////////////////////////////////
@@ -159,20 +96,7 @@ public:
 	/**
 	 * @details 레이어 클래스 기본 생성자
 	 */
-	Layer() {}
-	/**
-	 * @details 레이어 클래스 빌더 생성자
-	 * @param builder 레이어의 설정 정보를 담고 있는 객체
-	 */
-	Layer(Builder* builder);
-	/**
-	 * @details 레이어 클래스 생성자
-	 * @param name 레이어 이름에 대한 문자열 포인터
-	 */
-	Layer(const std::string& name);
-	/**
-	 * @details 레이어 클래스 소멸자
-	 */
+	Layer();
 	virtual ~Layer();
 
 	////////////////////////////////////////////////////////////////////
@@ -225,22 +149,7 @@ public:
 	 * @param in_dim 현재 레이어의 입력 데이터 구조정보
 	 */
 	virtual void reshape();
-	/**
-	 * @details 이미 shape가 구성된 레이어의 shape를 변경하고 다음 레이어들에 대해 reshape()를
-     *         요청한다.
-	 * @param idx 요청을 보낸 이전 레이어의 id
-	 * @param in_dim 새롭게 변경할 현재 레이어의 입력 데이터 구조정보
-	 */
 
-#ifndef GPU_MODE
-	/**
-	 * @details batch단위로 누적된 gradient를 초기화하고 다음 레이어들에 대해 reset_nabla()를
-     *          요청한다.
-	 * @param idx 요청을 보낸 이전 레이어의 id
-	 * @todo GPU_MODE에서 사용하지 않는다.
-	 */
-	virtual void reset_nabla(uint32_t idx);
-#else
 	/**
 	 * @details 레이어 입력값을 전달받아 출력값을 계산하고 다음 레이어들에 대해
      *          feedforward()를 요청한다.
@@ -250,30 +159,16 @@ public:
 	 */
 	virtual void feedforward();
 	virtual void backpropagation();
-#endif
+
 
 protected:
-	/**
-	 * @details 레이어를 초기화한다.
-	 * @param name 레이어의 이름 문자열 포인터
-	 */
-	void initialize(uint32_t id, const std::string name);
-
 	bool _adjustInputShape();
 	bool _isInputShapeChanged(uint32_t index);
 
 public:
-	std::vector<std::string> _inputs;					///< 레이어 입력 데이터 이름 목록 벡터
-	std::vector<std::string> _outputs;					///< 레이어 출력 데이터 이름 목록 벡터
-
 	std::vector<Data<Dtype>*> _inputData;				///< 레이어 입력 데이터 목록 벡터
 	std::vector<Data<Dtype>*> _outputData;				///< 레이어 출력 데이터 목록 벡터
-
-
 	Layer<Dtype>::LayerType type;					    ///< 레이어의 타입
-
-	int id;												///< 레이어의 고유 아이디
-	std::string name;									///< 레이어의 이름
 
     // FIXME: 디버깅 때문에 임시로 protected -> public으로 변수를 변경하였음..
     // inputShape는 input에 대한 메타이다.
@@ -285,7 +180,7 @@ public:
 protected:
 	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
 
-	std::vector<bool> _propDown;
+	//std::vector<bool> _propDown;
 
 	static const int LAYER_NAME_LENGTH = 32;
 };

@@ -47,13 +47,6 @@ public:
 	 * @return 풀링 타입
 	 */
 	PoolingType getType() const { return this->type; }
-
-#ifndef GPU_MODE
-	virtual void forward(const pool_dim &pool_d, const rcube &input, ucube &pool_map,
-        rcube &output)=0;
-	virtual void backward(const pool_dim &pool_d, const rcube &input, ucube &pool_map,
-        rcube &output)=0;
-#else
 	cudnnPoolingDescriptor_t getPoolDesc() const { return poolDesc; }
 
 	/**
@@ -77,7 +70,6 @@ public:
 	virtual void backward(const cudnnTensorDescriptor_t yDesc, const Dtype* y, 
         const Dtype* dy, const cudnnTensorDescriptor_t xDesc, const Dtype* x, Dtype* dx)=0;
 
-#endif
 
 protected:
 	PoolingType type;									///< 풀링 타입
