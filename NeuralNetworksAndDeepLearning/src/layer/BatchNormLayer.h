@@ -20,58 +20,7 @@
 template <typename Dtype>
 class BatchNormLayer : public LearnableLayer<Dtype> {
 public: 
-
-	class Builder : public LearnableLayer<Dtype>::Builder {
-	public:
-		typename Activation<Dtype>::Type _activationType;	///< weighted sum에 적용할 활성화
-
-        /* batch normalization related variables */
-        double      _epsilon;   // Small value added to variance to avoid dividing 
-                                // by zero. default value = 0.00001
-        bool        _train;
-                                        
-		Builder() {
-			this->type = Layer<Dtype>::BatchNorm;
-            _epsilon = 0.00001;
-            _train = true;
-		}
-		virtual Builder* name(const std::string name) {
-			LearnableLayer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			LearnableLayer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			LearnableLayer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			LearnableLayer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			LearnableLayer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-		Builder* epsilon(double epsilon) {
-			this->_epsilon = epsilon;
-			return this;
-		}
-        Builder* train(bool train) {
-            this->_train = train;
-            return this;
-        }
-		Layer<Dtype>* build() {
-			return new BatchNormLayer(this);
-		}
-	};
-
-	BatchNormLayer(Builder* builder);
-
-    BatchNormLayer(const std::string name, double epsilon, bool train);
-    BatchNormLayer(const std::string name);
+    BatchNormLayer();
     virtual ~BatchNormLayer();
 
 	//////////////////////////////////////////
@@ -95,14 +44,9 @@ public:
 	virtual void feedforward();
 
 private:
-    void initialize(double epsilon, bool train);
-
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);
 
-    double      epsilon;                // Small value added to variance to avoid dividing 
-                                        // by zero. default value = 0.001
-    bool        train;
     int         depth;
 
     Data<Dtype>    *meanSet;            // mean
@@ -117,7 +61,7 @@ private:
     void        computeShiftGrad();
 public:
     void        donateParam(BatchNormLayer<Dtype>* receiver);
-    void        setTrain(bool train) { this->train = train; }
+    void        setTrain(bool train);
 
 protected:
     enum ParamType {

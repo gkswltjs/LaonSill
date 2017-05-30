@@ -16,13 +16,12 @@
 using namespace std;
 
 template<typename Dtype>
-ALEInputLayer<Dtype>::ALEInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
-	initialize();
-}
+ALEInputLayer<Dtype>::ALEInputLayer() : InputLayer<Dtype>() {
+    this->type = Layer<Dtype>::ALEInput;
 
-template<typename Dtype>
-ALEInputLayer<Dtype>::ALEInputLayer(const string& name) : InputLayer<Dtype>(name) {
-	initialize();
+    this->preparedData = NULL;
+    this->preparedLabel = NULL;
+    this->allocBatchSize = 0;
 }
 
 template<typename Dtype>
@@ -147,15 +146,6 @@ void ALEInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end
 }
 
 template<typename Dtype>
-void ALEInputLayer<Dtype>::initialize() {
-    this->type = Layer<Dtype>::ALEInput;
-
-    this->preparedData = NULL;
-    this->preparedLabel = NULL;
-    this->allocBatchSize = 0;
-}
-
-template<typename Dtype>
 void ALEInputLayer<Dtype>::fillData(DQNImageLearner<Dtype> *learner, bool useState1) {
 	const vector<uint32_t>& inputShape = this->_inputShape[0];
 	const uint32_t batchSize = inputShape[0];
@@ -241,7 +231,7 @@ void ALEInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* ALEInputLayer<Dtype>::initLayer() {
-    ALEInputLayer* layer = new ALEInputLayer<Dtype>(SLPROP_BASE(name));
+    ALEInputLayer* layer = new ALEInputLayer<Dtype>();
     return (void*)layer;
 }
 

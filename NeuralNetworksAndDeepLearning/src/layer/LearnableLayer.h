@@ -51,6 +51,7 @@ public:
 
 	LearnableLayer(Builder* builder);
 	LearnableLayer(const std::string& name);
+    LearnableLayer();
 	virtual ~LearnableLayer() {}
 
 

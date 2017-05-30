@@ -35,27 +35,15 @@ const int ETRIDATA_IMAGE_CHANNEL = 3;
 const int ETRIDATA_LABEL_COUNT = 1000;
 
 template<typename Dtype>
-KistiInputLayer<Dtype>::KistiInputLayer() {
-    initialize("", -1, -1, true);
-}
+KistiInputLayer<Dtype>::KistiInputLayer() : InputLayer<Dtype>() {
+    this->type = Layer<Dtype>::KistiInput;
+    this->imageRow = SLPROP(KistiInput, resizedImageRow);
+    this->imageCol = SLPROP(KistiInput, resizedImageCol);
+    this->imageChannel = ETRIDATA_IMAGE_CHANNEL;
 
-template<typename Dtype>
-KistiInputLayer<Dtype>::KistiInputLayer(const string name, string imageDir,
-    int resizedImageRow, int resizedImageCol, bool train) :
-    InputLayer<Dtype>(name) {
-    initialize(imageDir, resizedImageRow, resizedImageCol, train);
-}
-
-template<typename Dtype>
-KistiInputLayer<Dtype>::KistiInputLayer(const string& name) : InputLayer<Dtype>(name) {
-    initialize(SLPROP(KistiInput, imageDir), SLPROP(KistiInput, resizedImageRow),
-        SLPROP(KistiInput, resizedImageCol), SLPROP(KistiInput, train));
-}
-
-template<typename Dtype>
-KistiInputLayer<Dtype>::KistiInputLayer(Builder* builder) : InputLayer<Dtype>(builder) {
-	initialize(builder->_imageDir, builder->_resizedImageRow, builder->_resizedImageCol,
-        builder->_train);
+    this->images = NULL;
+    this->labels = NULL;
+    this->currentBatchIndex = 0;
 }
 
 template<typename Dtype>
@@ -72,7 +60,8 @@ KistiInputLayer<Dtype>::~KistiInputLayer() {
 template<typename Dtype>
 void KistiInputLayer<Dtype>::prepareKeywordMap() {
     int index = 0;
-    string top1000KeywordFilePath = this->imageDir + "/" + ETRI_TOP1000_KEYWORD_FILENAME;
+    string top1000KeywordFilePath =
+        SLPROP(KistiInput, imageDir) + "/" + ETRI_TOP1000_KEYWORD_FILENAME;
 
     ifstream input(top1000KeywordFilePath.c_str());
     string line;
@@ -181,7 +170,7 @@ void KistiInputLayer<Dtype>::prepareData() {
     struct dirent *entry;
     DIR *dp;
 
-    dp = opendir(this->imageDir.c_str());
+    dp = opendir(SLPROP(KistiInput, imageDir).c_str());
     SASSERT0(dp != NULL);
 
     int step = 0;
@@ -192,7 +181,7 @@ void KistiInputLayer<Dtype>::prepareData() {
         if (fileName == "." || fileName == "..")
             continue;
 
-        string filePath = this->imageDir + "/" + fileName;
+        string filePath = SLPROP(KistiInput, imageDir) + "/" + fileName;
 
         if (stat (filePath.c_str(), &s) == 0) {
             if (s.st_mode & S_IFDIR) {
@@ -253,7 +242,7 @@ void KistiInputLayer<Dtype>::loadImages(int batchIndex) {
     for (int i = 0; i < batchSize; i++) {
         int index = baseIndex + i;
 
-        if (this->train) {
+        if (SLPROP(KistiInput, train)) {
             SASSERT(index < this->trainData.size(),
                 "index sholud be less than data count. index=%d, data count=%d",
                 index, (int)this->trainData.size());
@@ -267,7 +256,7 @@ void KistiInputLayer<Dtype>::loadImages(int batchIndex) {
         string imagePath;
 
         // XXX: 
-        if (this->train)
+        if (SLPROP(KistiInput, train))
             imagePath = this->trainData[index].filePath;
         else
             imagePath = this->testData[index].filePath;
@@ -296,7 +285,7 @@ void KistiInputLayer<Dtype>::loadLabels(int batchIndex) {
     for (int i = 0; i < batchSize; i++) {
         int index = baseIndex + i;
 
-        if (this->train) {
+        if (SLPROP(KistiInput, train)) {
             SASSERT(index < this->trainData.size(),
                 "index sholud be less than data count. index=%d, data count=%d",
                 index, (int)this->trainData.size());
@@ -309,7 +298,7 @@ void KistiInputLayer<Dtype>::loadLabels(int batchIndex) {
         vector<int> curLabels;
 
         // XXX: 
-        if (this->train)
+        if (SLPROP(KistiInput, train))
             curLabels = this->trainData[index].labels;
         else
             curLabels = this->testData[index].labels;
@@ -420,21 +409,6 @@ void KistiInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* e
 }
 
 template<typename Dtype>
-void KistiInputLayer<Dtype>::initialize(string imageDir, int resizedImageRow,
-    int resizedImageCol, bool train) {
-    this->type = Layer<Dtype>::KistiInput;
-    this->imageDir = imageDir;
-    this->imageRow = resizedImageRow;
-    this->imageCol = resizedImageCol;
-    this->imageChannel = ETRIDATA_IMAGE_CHANNEL;
-    this->train = train;
-
-    this->images = NULL;
-    this->labels = NULL;
-    this->currentBatchIndex = 0;
-}
-
-template<typename Dtype>
 int KistiInputLayer<Dtype>::getNumTrainData() {
     if (this->images == NULL) {
         reshape();
@@ -459,12 +433,17 @@ void KistiInputLayer<Dtype>::shuffleTrainDataSet() {
     shuffleImages();
 }
 
+template<typename Dtype>
+void KistiInputLayer<Dtype>::setTrain(bool train) {
+    SLPROP(KistiInput, train) = train;
+}
+
 /****************************************************************************
  * layer callback functions 
  ****************************************************************************/
 template<typename Dtype>
 void* KistiInputLayer<Dtype>::initLayer() {
-    KistiInputLayer* layer = new KistiInputLayer<Dtype>(SLPROP_BASE(name));
+    KistiInputLayer* layer = new KistiInputLayer<Dtype>();
     return (void*)layer;
 }
 

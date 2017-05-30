@@ -32,11 +32,14 @@ using namespace std;
 #if !ARTISTIC_TEST
 template <typename Dtype>
 void LegacyWork<Dtype>::buildNetwork(Job* job) {
+#if 0
     // XXX: 현재는 CCN Double Layer만 생성하도록 되어 있다. 수정필요!!!
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(job->getIntValue(0));
 
 	// (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
+
 	LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<Dtype>();
+
     //LayersConfig<float>* layersConfig = createSplitLayersConfig<Dtype>();
     //LayersConfig<float>* layersConfig = createLeNetLayersConfig<Dtype>();
 
@@ -46,6 +49,7 @@ void LegacyWork<Dtype>::buildNetwork(Job* job) {
 	}
 	network->setLayersConfig(layersConfig);
 	network->loadPretrainedWeights();
+#endif
 }
 
 template <typename Dtype>

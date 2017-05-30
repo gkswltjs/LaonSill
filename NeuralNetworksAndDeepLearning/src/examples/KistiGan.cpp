@@ -23,6 +23,7 @@ using namespace std;
 
 template<typename Dtype>
 void KistiGan<Dtype>::setLayerTrain(LayersConfig<Dtype>* lc, bool train) {
+#if 0
     int layerCount = lc->_layers.size();
 
     for (int i = 0; i < layerCount; i++) {
@@ -33,10 +34,12 @@ void KistiGan<Dtype>::setLayerTrain(LayersConfig<Dtype>* lc, bool train) {
 
         bnLayer->setTrain(train);
     }
+#endif
 }
 
 template <typename Dtype>
 LayersConfig<Dtype>* KistiGan<Dtype>::createDOfGANLayersConfig() {
+#if 0
 	LayersConfig<Dtype>* layersConfig =
 	    (new typename LayersConfig<Dtype>::Builder())
 
@@ -176,10 +179,14 @@ LayersConfig<Dtype>* KistiGan<Dtype>::createDOfGANLayersConfig() {
         ->build();
 
 	return layersConfig;
+#else
+    return NULL;
+#endif
 }
 
 template<typename Dtype>
 LayersConfig<Dtype>* KistiGan<Dtype>::createGD0OfGANLayersConfig() {
+#if 0
 	LayersConfig<Dtype>* layersConfig =
 	    (new typename LayersConfig<Dtype>::Builder())
         ->layer((new typename NoiseInputLayer<Dtype>::Builder())
@@ -401,10 +408,14 @@ LayersConfig<Dtype>* KistiGan<Dtype>::createGD0OfGANLayersConfig() {
         ->build();
 
 	return layersConfig;
+#else
+    return NULL;
+#endif
 }
 
 template<typename Dtype>
 void KistiGan<Dtype>::run() {
+#if 0
     // loss layer of Discriminator GAN 
 	const vector<string> llDGAN = { "celossDGAN" };
     // loss layer of Generatoer-Discriminator 0 GAN
@@ -651,7 +662,7 @@ void KistiGan<Dtype>::run() {
     }
 #endif
 
-
+#endif
 }
 
 template class KistiGan<float>;

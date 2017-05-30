@@ -63,6 +63,7 @@ void DQNWork<Dtype>::cleanupDQNImageLearner(Job* job) {
 template<typename Dtype>
 void DQNWork<Dtype>::buildDQNNetwork(DQNImageLearner<Dtype>* learner,
     Network<Dtype>* network) {
+#if 0
     // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
 	LayersConfig<float>* layersConfig = createDQNLayersConfig<float>();
 
@@ -81,6 +82,7 @@ void DQNWork<Dtype>::buildDQNNetwork(DQNImageLearner<Dtype>* learner,
 
     // (4) network에 layersConfig 정보를 등록한다.
     network->setLayersConfig(layersConfig);
+#endif
 }
 
 template<typename Dtype>

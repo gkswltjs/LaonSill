@@ -43,29 +43,23 @@ const int VOCPASCAL_BOX_ELEM_COUNT  = (6 + VOCPASCAL_CLASS_COUNT);
 const int VOCPASCAL_GRID_COUNT      = 7;
 
 template<typename Dtype>
-VOCPascalInputLayer<Dtype>::VOCPascalInputLayer() {
-    initialize("", false, -1, -1);
-}
+VOCPascalInputLayer<Dtype>::VOCPascalInputLayer() : InputLayer<Dtype>() {
+    this->type = Layer<Dtype>::VOCPascalInput;
 
-template<typename Dtype>
-VOCPascalInputLayer<Dtype>::VOCPascalInputLayer(const string name, string imageDir,
-    bool resizeImage, int resizedImageRow, int resizedImageCol) :
-    InputLayer<Dtype>(name) {
-    initialize(imageDir, resizeImage, resizedImageRow, resizedImageCol);
-}
+    this->imageRow = VOCPASCAL_IMAGE_ROW;
+    this->imageCol = VOCPASCAL_IMAGE_COL;
 
-template<typename Dtype>
-VOCPascalInputLayer<Dtype>::VOCPascalInputLayer(const string& name)
-: InputLayer<Dtype>(name) {
-    initialize(SLPROP(VOCPascalInput, imageDir), SLPROP(VOCPascalInput, resizeImage),
-        SLPROP(VOCPascalInput, resizedImageRow), SLPROP(VOCPascalInput, resizedImageCol));
-}
+    if (SLPROP(VOCPascalInput, resizeImage)) {
+        this->imageRow = SLPROP(VOCPascalInput, resizedImageRow);
+        this->imageCol = SLPROP(VOCPascalInput, resizedImageCol);
+    }
 
-template<typename Dtype>
-VOCPascalInputLayer<Dtype>::VOCPascalInputLayer(Builder* builder) : 
-    InputLayer<Dtype>(builder) {
-	initialize(builder->_imageDir, builder->_resizeImage, builder->_resizedImageRow,
-        builder->_resizedImageCol);
+    this->imageChannel = VOCPASCAL_IMAGE_CHANNEL;
+
+    this->images = NULL;
+    this->labels = NULL;
+
+    this->currentBatchIndex = 0;
 }
 
 template<typename Dtype>
@@ -178,7 +172,7 @@ void VOCPascalInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
 
 template<typename Dtype>
 void VOCPascalInputLayer<Dtype>::fillMetas() {
-    string filePath = this->imageDir + "/" + VOCPASCAL_METAFILE_NAME;
+    string filePath = SLPROP(VOCPascalInput, imageDir) + "/" + VOCPASCAL_METAFILE_NAME;
     FILE *fp = fopen(filePath.c_str(), "r");
     SASSERT0(fp != NULL);
 
@@ -320,29 +314,6 @@ void VOCPascalInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const cha
 }
 
 template<typename Dtype>
-void VOCPascalInputLayer<Dtype>::initialize(string imageDir, bool resizeImage,
-    int resizedImageRow, int resizedImageCol) {
-    this->type = Layer<Dtype>::VOCPascalInput;
-    this->imageDir = imageDir;
-    this->resizeImage = resizeImage;
-
-    this->imageRow = VOCPASCAL_IMAGE_ROW;
-    this->imageCol = VOCPASCAL_IMAGE_COL;
-
-    if (resizeImage) {
-        this->imageRow = resizedImageRow;
-        this->imageCol = resizedImageCol;
-    }
-
-    this->imageChannel = VOCPASCAL_IMAGE_CHANNEL;
-
-    this->images = NULL;
-    this->labels = NULL;
-
-    this->currentBatchIndex = 0;
-}
-
-template<typename Dtype>
 int VOCPascalInputLayer<Dtype>::getNumTrainData() {
     if (this->images == NULL) {
         reshape();
@@ -368,7 +339,7 @@ void VOCPascalInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* VOCPascalInputLayer<Dtype>::initLayer() {
-    VOCPascalInputLayer* layer = new VOCPascalInputLayer<Dtype>(SLPROP_BASE(name));
+    VOCPascalInputLayer* layer = new VOCPascalInputLayer<Dtype>();
     return (void*)layer;
 }
 

@@ -50,22 +50,6 @@ HyperTangentLayer<Dtype>::HyperTangentLayer() {
 }
 
 template <typename Dtype>
-HyperTangentLayer<Dtype>::HyperTangentLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	initialize();
-}
-
-template <typename Dtype>
-HyperTangentLayer<Dtype>::HyperTangentLayer(const string name) : Layer<Dtype>(name) {
-	initialize();
-}
-
-template <typename Dtype>
-void HyperTangentLayer<Dtype>::initialize() {
-	this->type = Layer<Dtype>::HyperTangent;
-}
-
-template <typename Dtype>
 void HyperTangentLayer<Dtype>::feedforward() {
     reshape();
     const Dtype* inputData = this->_inputData[0]->device_data();
@@ -74,19 +58,6 @@ void HyperTangentLayer<Dtype>::feedforward() {
 
     HyperTangentForward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         inputData, size, outputData);
-
-#if 0
-    {
-        cout << "Hyperbolic Tangent Forward : ";
-        const Dtype* inputDataDebug = this->_inputData[0]->host_data();
-        const Dtype* outputDataDebug = this->_outputData[0]->host_data();
-        for (int i = 0; i < 10; i++) {
-            cout << inputDataDebug[i] << "/" << outputDataDebug[i] << "/" <<
-                tanh(inputDataDebug[i]) << " ";
-        }
-        cout << endl;
-    }
-#endif
 }
 
 template <typename Dtype>
@@ -136,7 +107,7 @@ void HyperTangentLayer<Dtype>::reshape() {
  ****************************************************************************/
 template<typename Dtype>
 void* HyperTangentLayer<Dtype>::initLayer() {
-    HyperTangentLayer* layer = new HyperTangentLayer<Dtype>(SLPROP_BASE(name));
+    HyperTangentLayer* layer = new HyperTangentLayer<Dtype>();
     return (void*)layer;
 }
 

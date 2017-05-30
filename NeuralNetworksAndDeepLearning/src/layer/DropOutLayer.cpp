@@ -13,18 +13,16 @@
 using namespace std;
 
 template <typename Dtype>
-DropOutLayer<Dtype>::DropOutLayer(Builder* builder) : Layer<Dtype>(builder) {
-	initialize(builder->_scale, builder->_probability);
+DropOutLayer<Dtype>::DropOutLayer() : Layer<Dtype>() {
+	this->type = Layer<Dtype>::DropOut;
+
+    shared_ptr<SyncMem<Dtype>> tempMask(new SyncMem<Dtype>());
+    this->mask = tempMask;
 }
 
 template<typename Dtype>
-DropOutLayer<Dtype>::DropOutLayer(const string& name) 
-: Layer<Dtype>(name) {
-	initialize(SLPROP(DropOut, scale), SLPROP(DropOut, probability));
-}
-
-template <typename Dtype>
 DropOutLayer<Dtype>::~DropOutLayer() {
+
 }
 
 template <typename Dtype>
@@ -57,22 +55,12 @@ void DropOutLayer<Dtype>::backpropagation() {
     doDropOutBackward();
 }
 
-template <typename Dtype>
-void DropOutLayer<Dtype>::initialize(double scale, double probability) {
-	this->type = Layer<Dtype>::DropOut;
-    this->scale = scale;
-    this->probability = probability;
-
-    shared_ptr<SyncMem<Dtype>> tempMask(new SyncMem<Dtype>());
-    this->mask = tempMask;
-}
-
 /****************************************************************************
  * layer callback functions 
  ****************************************************************************/
 template<typename Dtype>
 void* DropOutLayer<Dtype>::initLayer() {
-    DropOutLayer* layer = new DropOutLayer<Dtype>(SLPROP_BASE(name));
+    DropOutLayer* layer = new DropOutLayer<Dtype>();
     return (void*)layer;
 }
 

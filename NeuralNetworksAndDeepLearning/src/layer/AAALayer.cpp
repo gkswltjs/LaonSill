@@ -14,75 +14,63 @@
 using namespace std;
 
 template <typename Dtype>
-AAALayer<Dtype>::AAALayer(Builder* builder)
-	: LearnableLayer<Dtype>(builder) {
-	initialize(builder->_var1, builder->_var2);
+AAALayer<Dtype>::AAALayer() : Layer<Dtype>() {
+    this->type = Layer<float>::AAA;
 }
 
-template <typename Dtype>
-AAALayer<Dtype>::AAALayer(
-    const string name, int var1, double var2) : LearnableLayer<Dtype>(name) {
-	initialize(var1, var2);
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* AAALayer<Dtype>::initLayer() {
+    AAALayer* layer = new AAALayer<Dtype>();
+    return (void*)layer;
 }
 
-template <typename Dtype>
-void AAALayer<Dtype>::initialize(int var1, double var2) {
-	this->type = Layer<Dtype>::AAA;
-	this->var1 = var1;
-    this->var2 = var2;
+template<typename Dtype>
+void AAALayer<Dtype>::destroyLayer(void* instancePtr) {
+    AAALayer<Dtype>* layer = (AAALayer<Dtype>*)instancePtr;
+    delete layer;
 }
 
-/*
-template <typename Dtype>
-double AAALayer<Dtype>::sumSquareParamsData() {
-	return 0.0;
+template<typename Dtype>
+void AAALayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    AAALayer<Dtype>* layer = (AAALayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
 }
 
-template <typename Dtype>
-double AAALayer<Dtype>::sumSquareParamsGrad() {
-	return 0.0;
+template<typename Dtype>
+bool AAALayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    AAALayer<Dtype>* layer = (AAALayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
 }
 
-template <typename Dtype>
-void AAALayer<Dtype>::scaleParamsGrad(float scale) {
+template<typename Dtype>
+void AAALayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    AAALayer<Dtype>* layer = (AAALayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
-template <typename Dtype>
-uint32_t AAALayer<Dtype>::boundParams() {
-	return 1;
+template<typename Dtype>
+void AAALayer<Dtype>::backwardTensor(void* instancePtr) {
+    AAALayer<Dtype>* layer = (AAALayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
-template <typename Dtype>
-uint32_t AAALayer<Dtype>::numParams() {
-	return 1;
+template<typename Dtype>
+void AAALayer<Dtype>::learnTensor(void* instancePtr) {
+    SASSERT0(false);
 }
-
-template <typename Dtype>
-void AAALayer<Dtype>::saveParams(ofstream& ofs) {
-}
-
-template <typename Dtype>
-void AAALayer<Dtype>::loadParams(ifstream& ifs) {
-}
-
-template <typename Dtype>
-void AAALayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
-}
-*/
-
-#ifndef GPU_MODE
-template <typename Dtype>
-AAALayer<Dtype>::~AAALayer() {
-}
-
-template <typename Dtype>
-void AAALayer<Dtype>::feedforward() {
-}
-
-template <typename Dtype>
-void AAALayer<Dtype>::backpropagation(uint32_t idx, Layer *next_layer) {
-}
-
-#endif
 
 template class AAALayer<float>;

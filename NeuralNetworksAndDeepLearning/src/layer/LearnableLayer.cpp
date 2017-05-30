@@ -17,6 +17,10 @@ template <typename Dtype>
 LearnableLayer<Dtype>::LearnableLayer(const string& name)
 : Layer<Dtype>(name) {}
 
+template<typename Dtype>
+LearnableLayer<Dtype>::LearnableLayer() : Layer<Dtype>() {
+}
+
 
 template <typename Dtype>
 double LearnableLayer<Dtype>::sumSquareParamsData() {

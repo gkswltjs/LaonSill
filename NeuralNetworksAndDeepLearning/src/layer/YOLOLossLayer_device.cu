@@ -212,28 +212,8 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
 }
 
 template <typename Dtype>
-YOLOLossLayer<Dtype>::YOLOLossLayer()
-	: LossLayer<Dtype>() {
-	initialize(0.0, 0.0);
-}
-
-template <typename Dtype>
-YOLOLossLayer<Dtype>::YOLOLossLayer(const string& name)
-	: LossLayer<Dtype>() {
-	initialize(SLPROP(YOLOLoss, noobj), SLPROP(YOLOLoss, coord));
-}
-
-template <typename Dtype>
-YOLOLossLayer<Dtype>::YOLOLossLayer(Builder* builder)
-	: LossLayer<Dtype>(builder) {
-	initialize(builder->_noobj, builder->_coord);
-}
-
-template <typename Dtype>
-void YOLOLossLayer<Dtype>::initialize(float noobj, float coord) {
+YOLOLossLayer<Dtype>::YOLOLossLayer() : LossLayer<Dtype>() {
 	this->type = Layer<Dtype>::YOLOLoss;
-    this->noobj = noobj;
-    this->coord = coord;
 }
 
 template<typename Dtype>
@@ -282,7 +262,8 @@ void YOLOLossLayer<Dtype>::feedforward() {
     Dtype *outputData = this->_outputData[0]->mutable_device_data();
 
     YoloForward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, inputData2, size, (Dtype)this->noobj, (Dtype)this->coord, outputData);
+        inputData, inputData2, size, (Dtype)SLPROP(YOLOLoss, noobj),
+        (Dtype)SLPROP(YOLOLoss, coord), outputData);
 }
 
 template <typename Dtype>
@@ -297,8 +278,8 @@ void YOLOLossLayer<Dtype>::backpropagation() {
     Dtype *outputGrad = this->_outputData[0]->mutable_device_grad();
 
     YoloBackward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, inputData2, outputData, size, (Dtype)this->noobj, (Dtype)this->coord,
-        outputGrad);
+        inputData, inputData2, outputData, size, (Dtype)SLPROP(YOLOLoss, noobj),
+        (Dtype)SLPROP(YOLOLoss, coord), outputGrad);
 }
 
 template <typename Dtype>
@@ -321,7 +302,7 @@ Dtype YOLOLossLayer<Dtype>::cost() {
  ****************************************************************************/
 template<typename Dtype>
 void* YOLOLossLayer<Dtype>::initLayer() {
-    YOLOLossLayer* layer = new YOLOLossLayer<Dtype>(SLPROP_BASE(name));
+    YOLOLossLayer* layer = new YOLOLossLayer<Dtype>();
     return (void*)layer;
 }
 

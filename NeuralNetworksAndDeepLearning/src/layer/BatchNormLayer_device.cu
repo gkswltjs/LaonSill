@@ -22,8 +22,6 @@
 
 using namespace std;
 
-#ifdef GPU_MODE
-
 // FIXME: 커널함수들 더 빨리 동작시킬 수 있게 수정 필요 
 //        ex. 중간 계산값을 메모리로 들고 있는 방식
 
@@ -456,13 +454,13 @@ void BatchNormLayer<Dtype>::update() {
     this->decayedBeta1 *= beta1;
     this->decayedBeta2 *= beta2;
 
-	_updateParam(size, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
-		this->_paramsHistory[ParamType::Gamma], this->_paramsHistory2[ParamType::Gamma],
-        this->_params[ParamType::Gamma]);
+	_updateParam(size, regScale, learnScale, SLPROP(BatchNorm, epsilon), decayRate,
+        beta1, beta2, this->_paramsHistory[ParamType::Gamma],
+        this->_paramsHistory2[ParamType::Gamma], this->_params[ParamType::Gamma]);
 
-	_updateParam(size, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
-		this->_paramsHistory[ParamType::Beta], this->_paramsHistory2[ParamType::Beta],
-        this->_params[ParamType::Beta]);
+	_updateParam(size, regScale, learnScale, SLPROP(BatchNorm, epsilon), decayRate,
+        beta1, beta2, this->_paramsHistory[ParamType::Beta],
+        this->_paramsHistory2[ParamType::Beta], this->_params[ParamType::Beta]);
 }
 
 template <typename Dtype>
@@ -479,7 +477,7 @@ void BatchNormLayer<Dtype>::feedforward() {
     const Dtype* inputData = this->_inputData[0]->device_data();
     Dtype* outputData = this->_outputData[0]->mutable_device_data();
 
-	if (this->train) {
+	if (SLPROP(BatchNorm, train)) {
         Dtype* means = this->meanSet->mutable_device_data();
         Dtype* vars = this->varSet->mutable_device_data();
 
@@ -503,7 +501,7 @@ void BatchNormLayer<Dtype>::feedforward() {
         const Dtype* betas = this->_params[ParamType::Beta]->device_data();
         Normalize<<<SOOOA_GET_BLOCKS(this->depth * batchCount), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, means, vars, gammas, betas, this->depth, batchCount,
-            (Dtype)this->epsilon, normInputs, outputData);
+            (Dtype)SLPROP(BatchNorm, epsilon), normInputs, outputData);
 
         // (5) global meanSets과 varianceSets를 갱신한다.
         Dtype* counter = this->_params[ParamType::GlobalCount]->mutable_host_data();
@@ -526,7 +524,7 @@ void BatchNormLayer<Dtype>::feedforward() {
 
         Inference<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
             inputData, globalMeans, globalVars, gammas, betas, this->depth, batchCount,
-            counter[0], (Dtype)this->epsilon, outputData);
+            counter[0], (Dtype)SLPROP(BatchNorm, epsilon), outputData);
     }
 
     SPERF_END(BATCHNORM_LAYER_FWTIME, startTime);
@@ -641,7 +639,7 @@ void BatchNormLayer<Dtype>::computeVarianceGrad() {
     const Dtype* vars = this->varSet->device_data();
 
     ComputeVarianceGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
-        normInputGrads, inputData, means, vars, (Dtype)this->epsilon, depth, batchCount,
+        normInputGrads, inputData, means, vars, (Dtype)SLPROP(BatchNorm, epsilon), depth, batchCount,
         varGrads);
 }
 
@@ -658,7 +656,7 @@ void BatchNormLayer<Dtype>::computeMeanGrad() {
 
     ComputeMeanGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
         normInputGrads, vars, varGrads, inputData, means, depth, batchCount,
-        (Dtype)this->epsilon, meanGrads);
+        (Dtype)SLPROP(BatchNorm, epsilon), meanGrads);
 }
 
 template <typename Dtype>
@@ -675,7 +673,7 @@ void BatchNormLayer<Dtype>::computeInputGrad() {
 
     ComputeInputGrad<<<SOOOA_GET_BLOCKS(this->depth), SOOOA_CUDA_NUM_THREADS>>>(
         normInputGrads, vars, varGrads, inputData, means, meanGrads, depth, batchCount,
-        (Dtype)this->epsilon, inputGrads);
+        (Dtype)SLPROP(BatchNorm, epsilon), inputGrads);
 }
 
 template <typename Dtype>
@@ -770,7 +768,7 @@ template void BatchNormLayer<float>::syncParams(LearnableLayer<float> *targetLay
  ****************************************************************************/
 template<typename Dtype>
 void* BatchNormLayer<Dtype>::initLayer() {
-    BatchNormLayer* layer = new BatchNormLayer<Dtype>(SLPROP_BASE(name));
+    BatchNormLayer* layer = new BatchNormLayer<Dtype>();
     return (void*)layer;
 }
 
@@ -829,5 +827,3 @@ template bool BatchNormLayer<float>::allocLayerTensors(void* instancePtr);
 template void BatchNormLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
 template void BatchNormLayer<float>::backwardTensor(void* instancePtr);
 template void BatchNormLayer<float>::learnTensor(void* instancePtr);
-
-#endif
