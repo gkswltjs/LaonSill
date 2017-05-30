@@ -36,9 +36,6 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer() : LearnableLayer<Dtype>() {
 	this->_paramsHistory2[ParamType::Weight] = 
 		new Data<Dtype>(name + "_weight_history2");
 	this->_paramsHistory2[ParamType::Bias] = new Data<Dtype>(name + "_bias_history2");
-
-	this->decayedBeta1 = 1.0;
-	this->decayedBeta2 = 1.0;
 }
 
 

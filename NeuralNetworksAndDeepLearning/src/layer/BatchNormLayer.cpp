@@ -63,9 +63,6 @@ BatchNormLayer<Dtype>::BatchNormLayer() : LearnableLayer<Dtype>() {
     this->meanSet               = new Data<Dtype>(SLPROP_BASE(name) + "_mean");
     this->varSet                = new Data<Dtype>(SLPROP_BASE(name) + "_variance");
     this->normInputSet          = new Data<Dtype>(SLPROP_BASE(name) + "_normalizedInput");
-
-    this->decayedBeta1 = 1.0;
-    this->decayedBeta2 = 1.0;
 }
 
 template<typename Dtype>

@@ -13,6 +13,7 @@
 #include "MathFunctions.h"
 #include <algorithm>
 #include "PropMgmt.h"
+#include "Update.h"
 
 #define CONVLAYER_LOG 1
 
@@ -35,98 +36,6 @@ __global__ void AddArrayOfConvLayer(Dtype* dst, const Dtype* src, int N)
 
 	dst[idx] = dst[idx] + src[idx];
 }
-
-template <typename Dtype>
-__global__ void DoNesterov(int size, const Dtype* dx, Dtype* v_prev, Dtype* v, Dtype* x,
-    const Dtype mu, const Dtype lr)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= size)
-		return;
-
-    /****
-     * Nesterov Alogorithm
-     *
-     * v_prev = v # back this up
-     * v = mu * v - learning_rate * dx # velocity update stays the same
-     * x += -mu * v_prev + (1 + mu) * v # position update changes form
-     *
-     */
-
-    v_prev[idx] = v[idx];
-    v[idx] = mu * v[idx] - lr * dx[idx];
-    x[idx] += (-1.0) * mu * v_prev[idx] + (1 + mu) * v[idx];
-}
-
-template <typename Dtype>
-__global__ void DoAdagrad(int size, const Dtype* dx, Dtype* cache, Dtype* x,
-    const Dtype lr, const Dtype eps)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= size)
-		return;
-
-    /****
-     * Adagrad Alogorithm
-     *
-     * cache += dx**2
-     * x += -learning_rate * dx / (sqrt(cache) + eps)
-     *
-     */
-
-    cache[idx] += dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrtf(cache[idx]) + eps);
-}
-
-template <typename Dtype>
-__global__ void DoRMSprop(int size, const Dtype* dx, Dtype* cache, Dtype* x,
-    const Dtype lr, const Dtype eps, const Dtype dr)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= size)
-		return;
-
-    /****
-     * RMSprop
-     *
-     * cache = decay_rate * cache + (1 - decay_rate) * dx**2
-     * x += - learning_rate * dx / (sqrt(cache) + eps)
-     *
-     */
-
-    cache[idx] = dr * cache[idx] + (1.0 - dr) * dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrtf(cache[idx]) + eps);
-}
-
-#define USE_TENSORFLOW_ADAM         0
-
-template <typename Dtype>
-__global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
-    const Dtype lr, const Dtype eps, const Dtype beta1, const Dtype beta2,
-    const Dtype decayedBeta1, const Dtype decayedBeta2)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= size)
-		return;
-
-    /****
-     * Adam
-     *
-     * m = beta1 * m + (1 - beta1) * dx
-     * v = beta2 * v + (1 - beta2) * (dx**2)
-     * x += -learning_rate * m / (sqrt(v) + eps)
-     *
-     */
-    m[idx] = beta1 * m[idx] + (1.0 - beta1) * dx[idx];
-    v[idx] = beta2 * v[idx] + (1.0 - beta2) * dx[idx] * dx[idx];
-#if USE_TENSORFLOW_ADAM
-    Dtype learningRate = lr * sqrtf(1.0 - decayedBeta2) / (1.0 - decayedBeta1);
-    x[idx] += (-1.0) * learningRate * m[idx] / (sqrtf(v[idx]) + eps);
-#else
-    x[idx] += (-1.0) * lr * m[idx] / (sqrtf(v[idx]) + eps);
-#endif
-}
-
 
 template<typename Dtype>
 ConvLayer<Dtype>::ConvLayer()
@@ -172,9 +81,6 @@ ConvLayer<Dtype>::ConvLayer()
 	this->_paramsInitialized.resize(2);
 	this->_paramsInitialized[Filter] = false;
 	this->_paramsInitialized[Bias] = false;
-
-	this->decayedBeta1 = 1.0;
-	this->decayedBeta2 = 1.0;
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
@@ -475,11 +381,12 @@ void ConvLayer<Dtype>::update() {
 	const Dtype regScale = weightDecay * weightUpdateParam.decay_mult;
 	const Dtype learnScale = 
 			NetworkConfig<Dtype>::calcLearningRate() * weightUpdateParam.lr_mult;
-    this->decayedBeta1 *= beta1;
-    this->decayedBeta2 *= beta2;
+    SLPROP(Conv, decayedBeta1) *= beta1;
+    SLPROP(Conv, decayedBeta2) *= beta2;
 
-	_updateParam(weightSize, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
-		this->_paramsHistory[Filter], this->_paramsHistory2[Filter], this->_params[Filter]);
+	Update<Dtype>::updateParam(weightSize, regScale, learnScale, epsilon, decayRate, beta1,
+        beta2, this->_paramsHistory[Filter], this->_paramsHistory2[Filter],
+        this->_params[Filter], SLPROP(Conv, decayedBeta1), SLPROP(Conv, decayedBeta2));
 
 	// update biases ...
 	const uint32_t biasSize = filterDim.filters;
@@ -487,117 +394,9 @@ void ConvLayer<Dtype>::update() {
 	const Dtype learnScale_b = 
 			NetworkConfig<Dtype>::calcLearningRate() * biasUpdateParam.lr_mult;
 
-	_updateParam(biasSize, regScale_b, learnScale_b, epsilon, decayRate, beta1, beta2, 
-		this->_paramsHistory[Bias], this->_paramsHistory2[Bias], this->_params[Bias]);
-}
-
-template <typename Dtype>
-void ConvLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale,
-    const Dtype learnScale, const Dtype epsilon, const Dtype decayRate, const Dtype beta1, 
-    const Dtype beta2, Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2,
-    Data<Dtype>* data) {
-	const uint32_t batches = this->_inputData[0]->getShape(0);
-	const Dtype normScale = 1.0/batches;
-	const Dtype momentum = SNPROP(momentum);
-	const Dtype negativeOne = -1.0;
-	const Optimizer optimizer = (Optimizer)SNPROP(optimizer);
-
-    if (!Worker<Dtype>::isSingle())
-        data->mutable_host_grad();
-
-	Dtype* d_paramGrad = data->mutable_device_grad();   // should update grad
-	Dtype* d_paramData = data->mutable_device_data();
-	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
-	Dtype* d_paramHistoryData2 = dataHistory2->mutable_device_data();
-
-
-    // FIXME: FullyConnectedLayer에 동일한 코드가 있음. 추후에 정리 필요
-    // (1) do normalization & regularization
-    //  FIXME: 이것도 옵션으로 정규화를 할지 여부를 설정할 수 있었으면 좋겠음.
-#if 0
-    checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
-        &regScale, d_paramData, 1, d_paramGrad, 1));	// regularize
-#endif
-
-    // (2) apply optimizer
-    if (optimizer == Optimizer::Momentum) {
-        /****
-         * Momentum Alogorithm
-         *
-         * v = mu * v - learning_rate * dx
-         * x += v
-         *
-         */
-
-    	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
-		soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
-			d_paramHistoryData);
-		soooa_copy(static_cast<int>(paramSize), d_paramHistoryData, d_paramGrad);
-		// update
-		soooa_gpu_axpy(static_cast<int>(paramSize), negativeOne, d_paramGrad, d_paramData);
-    } else if (optimizer == Optimizer::Vanilla) {
-        /****
-         * Vanilla Alogorithm
-         *
-         * x += -learning_rate * dx
-         *
-         */
-    	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &learnScale, d_paramGrad, 1));				//
-    	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &negativeOne, d_paramGrad, 1, d_paramData, 1));		// update
-    } else if (optimizer == Optimizer::Nesterov) {
-        /****
-         * Nesterov Alogorithm
-         *
-         * v_prev = v # back this up
-         * v = mu * v - learning_rate * dx # velocity update stays the same
-         * x += -mu * v_prev + (1 + mu) * v # position update changes form
-         *
-         */
-	    DoNesterov<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
-            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
-            d_paramHistoryData2, d_paramData, momentum, learnScale);
-    } else if (optimizer == Optimizer::Adagrad) {
-        /****
-         * Adagrad Alogorithm
-         *
-         * cache += dx**2
-         * x += -learning_rate * dx / (sqrt(cache) + eps)
-         *
-         */
-	    DoAdagrad<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
-            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
-            d_paramData, learnScale, epsilon);
-
-    } else if (optimizer == Optimizer::RMSprop) {
-        /****
-         * RMSprop
-         *
-         * cache = decay_rate * cache + (1 - decay_rate) * dx**2
-         * x += - learning_rate * dx / (sqrt(cache) + eps)
-         *
-         */
-	    DoRMSprop<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
-            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
-            d_paramData, learnScale, epsilon, decayRate);
-
-    } else if (optimizer == Optimizer::Adam) {
-        /****
-         * Adam
-         *
-         * m = beta1 * m + (1 - beta1) * dx
-         * v = beta2 * v + (1 - beta2) * (dx**2)
-         * x += -learning_rate * m / (sqrt(v) + eps)
-         *
-         */
-	    DoAdam<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
-            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData, d_paramHistoryData2,
-            d_paramData, learnScale, epsilon, beta1, beta2, this->decayedBeta1,
-            this->decayedBeta2);
-    } else {
-        SASSERT(false, "invalid optimizer. optimizer=%d", (int)optimizer);
-    }
+	Update<Dtype>::updateParam(biasSize, regScale_b, learnScale_b, epsilon, decayRate, beta1,
+        beta2, this->_paramsHistory[Bias], this->_paramsHistory2[Bias], this->_params[Bias],
+        SLPROP(Conv, decayedBeta1), SLPROP(Conv, decayedBeta2));
 }
 
 template <typename Dtype>

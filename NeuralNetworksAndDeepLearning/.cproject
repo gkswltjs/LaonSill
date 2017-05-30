@@ -26,6 +26,7 @@
 								<option id="nvcc.compiler.include.paths.1724077056" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/prop&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/updater&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/plan&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
@@ -156,6 +157,7 @@
 							<tool commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets  ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.698493937" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.5633418" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/updater&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/plan&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/prop&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
@@ -286,6 +288,7 @@
 								<option id="nvcc.compiler.include.paths.1273640845" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/plan&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/updater&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/prop&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
@@ -414,6 +417,7 @@
 							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets  ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.1035527359" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.1815451746" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/updater&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/plan&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/prop&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>

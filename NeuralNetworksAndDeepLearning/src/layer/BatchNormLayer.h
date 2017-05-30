@@ -54,10 +54,6 @@ protected:
         GlobalCount
     };
 
-	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
-        const Dtype epsilon, const Dtype decayRate, const Dtype beta1, const Dtype beta2,
-        Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2, Data<Dtype>* data);
-
 public:
     /****************************************************************************
      * layer callback functions 

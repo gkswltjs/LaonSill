@@ -44,10 +44,6 @@ protected:
 	void _computeBiasGrad();
 	void _computeInputGrad();
 
-    // FIXME: 파라미터가 너무 많다. 구조화해서 줄이자.
-	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
-        const Dtype epsilon, const Dtype decayRate, const Dtype beta1, const Dtype beta2,
-        Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2, Data<Dtype>* data);
 	void _dropoutForward();
 	void _dropoutBackward();
 

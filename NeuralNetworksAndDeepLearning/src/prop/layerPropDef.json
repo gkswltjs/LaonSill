@@ -67,7 +67,11 @@
     "LEVEL" : 1,
     "LEARN" : false,
     "PROPDOWN" : [],
-    "VARS" : []
+    "VARS" : 
+        [
+            ["decayedBeta1", "float", "1.0"], 
+            ["decayedBeta2", "float", "1.0"]
+        ]
 },
 
 "Conv" : 
