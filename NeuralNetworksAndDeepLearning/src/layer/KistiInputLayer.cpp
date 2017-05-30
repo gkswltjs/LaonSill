@@ -48,7 +48,8 @@ KistiInputLayer<Dtype>::KistiInputLayer(const string name, string imageDir,
 
 template<typename Dtype>
 KistiInputLayer<Dtype>::KistiInputLayer(const string& name) : InputLayer<Dtype>(name) {
-    //initialize(imageDir, resizedImageRow, resizedImageCol, train);
+    initialize(SLPROP(KistiInput, imageDir), SLPROP(KistiInput, resizedImageRow),
+        SLPROP(KistiInput, resizedImageCol), SLPROP(KistiInput, train));
 }
 
 template<typename Dtype>
@@ -246,7 +247,7 @@ void KistiInputLayer<Dtype>::loadPixels(cv::Mat image, int imageIndex) {
 
 template<typename Dtype>
 void KistiInputLayer<Dtype>::loadImages(int batchIndex) {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
     int baseIndex = batchIndex;
 
     for (int i = 0; i < batchSize; i++) {
@@ -286,7 +287,7 @@ void KistiInputLayer<Dtype>::loadImages(int batchIndex) {
 
 template<typename Dtype>
 void KistiInputLayer<Dtype>::loadLabels(int batchIndex) {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
     int baseIndex = batchIndex;
 
     int totalSize = sizeof(Dtype) * ETRIDATA_LABEL_COUNT * batchSize;
@@ -323,7 +324,7 @@ void KistiInputLayer<Dtype>::loadLabels(int batchIndex) {
 
 template <typename Dtype>
 void KistiInputLayer<Dtype>::reshape() {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
 
     if (this->images == NULL) {
         unsigned long allocSize = 
@@ -354,8 +355,8 @@ void KistiInputLayer<Dtype>::reshape() {
 	}
 
 	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+		for (uint32_t i = 0; i < SLPROP_BASE(output).size(); i++) {
+		    SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
     }
@@ -492,23 +493,36 @@ void KistiInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool KistiInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     KistiInputLayer<Dtype>* layer = (KistiInputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->currentBatchIndex = 0;
+    layer->reshape();
+
+    if (SNPROP(miniBatch) == 0) {
+        int trainDataNum = layer->getNumTrainData();
+        if (trainDataNum % SNPROP(batchSize) == 0) {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+        } else {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+        }
+        WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+    }
+
     return true;
 }
 
 template<typename Dtype>
 void KistiInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "KistiInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    KistiInputLayer<Dtype>* layer = (KistiInputLayer<Dtype>*)instancePtr;
+    layer->feedforward(miniBatchIdx);
 }
 
 template<typename Dtype>
 void KistiInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "KistiInputLayer.. backward()" << endl;
+    // do nothing
 }
 
 template<typename Dtype>
 void KistiInputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "KistiInputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class KistiInputLayer<float>;

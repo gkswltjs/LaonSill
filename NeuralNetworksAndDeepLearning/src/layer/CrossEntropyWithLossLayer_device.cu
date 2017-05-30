@@ -178,7 +178,8 @@ CrossEntropyWithLossLayer<Dtype>::CrossEntropyWithLossLayer(Builder* builder)
 template <typename Dtype>
 CrossEntropyWithLossLayer<Dtype>::CrossEntropyWithLossLayer(const string& name)
 	: LossLayer<Dtype>() {
-	//initialize(0, false);
+	initialize(SLPROP(CrossEntropyWithLoss, targetValue),
+        SLPROP(CrossEntropyWithLoss, withSigmoid));
 }
 
 template <typename Dtype>
@@ -354,23 +355,25 @@ void CrossEntropyWithLossLayer<Dtype>::setInOutTensor(void* instancePtr, void* t
 template<typename Dtype>
 bool CrossEntropyWithLossLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     CrossEntropyWithLossLayer<Dtype>* layer = (CrossEntropyWithLossLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void CrossEntropyWithLossLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "CrossEntropyWithLossLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    CrossEntropyWithLossLayer<Dtype>* layer = (CrossEntropyWithLossLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void CrossEntropyWithLossLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "CrossEntropyWithLossLayer.. backward()" << endl;
+    CrossEntropyWithLossLayer<Dtype>* layer = (CrossEntropyWithLossLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void CrossEntropyWithLossLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "CrossEntropyWithLossLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class CrossEntropyWithLossLayer<float>;

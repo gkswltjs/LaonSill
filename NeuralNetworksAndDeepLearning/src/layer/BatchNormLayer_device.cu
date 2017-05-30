@@ -342,7 +342,7 @@ void BatchNormLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
 
 	const uint32_t batches = this->_inputShape[0][0];
 	const Dtype normScale = 1.0/batches;
-	const Dtype momentum = this->networkConfig->_momentum;
+	const Dtype momentum = SNPROP(momentum);
 	const Dtype negativeOne = -1.0;
     const Dtype negativeLearnScale = (-1.0) * learnScale;
 
@@ -362,7 +362,7 @@ void BatchNormLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
 #endif
 
     // (2) apply optimizer
-    Optimizer opt = this->networkConfig->_optimizer;
+    Optimizer opt = (Optimizer)SNPROP(optimizer);
     if (opt == Optimizer::Momentum) {
         /****
          * Momentum Alogorithm
@@ -446,12 +446,12 @@ void BatchNormLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
 template <typename Dtype>
 void BatchNormLayer<Dtype>::update() {
     const uint32_t size = this->depth;
-	const Dtype regScale = this->networkConfig->_weightDecay;
-	const Dtype learnScale = this->networkConfig->getLearningRate();
-    const Dtype epsilon = this->networkConfig->_epsilon;
-    const Dtype decayRate = this->networkConfig->_decayRate;
-    const Dtype beta1 = this->networkConfig->_beta1;
-    const Dtype beta2 = this->networkConfig->_beta2;
+	const Dtype regScale = SNPROP(weightDecay);
+	const Dtype learnScale = NetworkConfig<float>::calcLearningRate();
+    const Dtype epsilon = SNPROP(epsilon);
+    const Dtype decayRate = SNPROP(decayRate);
+    const Dtype beta1 = SNPROP(beta1);
+    const Dtype beta2 = SNPROP(beta2);
 
     this->decayedBeta1 *= beta1;
     this->decayedBeta2 *= beta2;
@@ -545,8 +545,6 @@ void BatchNormLayer<Dtype>::reshape() {
 
 	const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
 
-    // XXX: 현재 FC에 대해서만 생각하였음
-    // TODO: Conv Layer에 대한 구현 필요
 	uint32_t batches = inputShape[0];
 	uint32_t channels = inputShape[1];
 	uint32_t rows = inputShape[2];
@@ -801,23 +799,26 @@ void BatchNormLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool BatchNormLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void BatchNormLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "BatchNormLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void BatchNormLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "BatchNormLayer.. backward()" << endl;
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void BatchNormLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "BatchNormLayer.. learn()" << endl;
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    layer->update();
 }
 
 template void* BatchNormLayer<float>::initLayer();

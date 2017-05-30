@@ -40,7 +40,11 @@ NoiseInputLayer<Dtype>::NoiseInputLayer(const string name, int noiseDepth,
 
 template<typename Dtype>
 NoiseInputLayer<Dtype>::NoiseInputLayer(const string& name) : InputLayer<Dtype>(name) {
-
+    initialize(SLPROP(NoiseInput, noiseDepth), SLPROP(NoiseInput, noiseRangeLow),
+        SLPROP(NoiseInput, noiseRangeHigh), SLPROP(NoiseInput, useLinearTrans),
+        SLPROP(NoiseInput, tranChannels), SLPROP(NoiseInput, tranRows),
+        SLPROP(NoiseInput, tranCols), SLPROP(NoiseInput, tranMean),
+        SLPROP(NoiseInput, tranVariance), SLPROP(NoiseInput, regenerateNoise));
 }
 
 template<typename Dtype>
@@ -65,7 +69,7 @@ NoiseInputLayer<Dtype>::~NoiseInputLayer() {
 
 template <typename Dtype>
 bool NoiseInputLayer<Dtype>::prepareUniformArray() {
-    uint32_t batchSize = this->networkConfig->_batchSize;
+    uint32_t batchSize = SNPROP(batchSize);
 	RNGType rng;
     unsigned int seedValue = static_cast<unsigned int>(time(NULL)+getpid());
     rng.seed(seedValue);
@@ -98,7 +102,7 @@ bool NoiseInputLayer<Dtype>::prepareUniformArray() {
 template <typename Dtype>
 void NoiseInputLayer<Dtype>::prepareLinearTranMatrix() {
 	/*
-    uint32_t batchSize = this->networkConfig->_batchSize;
+    uint32_t batchSize = SNPROP(batchSize);
 
 	RNGType rng;
     rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
@@ -143,7 +147,7 @@ void NoiseInputLayer<Dtype>::prepareLinearTranMatrix() {
 
 template <typename Dtype>
 void NoiseInputLayer<Dtype>::reshape() {
-    uint32_t batchSize = this->networkConfig->_batchSize;
+    uint32_t batchSize = SNPROP(batchSize);
 
     bool isNoiseGenerated = prepareUniformArray();
 
@@ -152,8 +156,8 @@ void NoiseInputLayer<Dtype>::reshape() {
     }
 
 	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+		for (uint32_t i = 0; i < SLPROP_BASE(output).size(); i++) {
+		    SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
@@ -232,7 +236,7 @@ int NoiseInputLayer<Dtype>::getNumTrainData() {
     if (this->_dataSet != NULL) {
         return this->_dataSet->getNumTrainData();
     } else {    
-        uint32_t batches = this->networkConfig->_batchSize;
+        uint32_t batches = SNPROP(batchSize);
         return batches;
     }
 }
@@ -282,23 +286,35 @@ void NoiseInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool NoiseInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     NoiseInputLayer<Dtype>* layer = (NoiseInputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
+
+    if (SNPROP(miniBatch) == 0) {
+        int trainDataNum = layer->getNumTrainData();
+        if (trainDataNum % SNPROP(batchSize) == 0) {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+        } else {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+        }
+        WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+    }
+
     return true;
 }
 
 template<typename Dtype>
 void NoiseInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "NoiseInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    NoiseInputLayer<Dtype>* layer = (NoiseInputLayer<Dtype>*)instancePtr;
+    layer->feedforward(miniBatchIdx);
 }
 
 template<typename Dtype>
 void NoiseInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "NoiseInputLayer.. backward()" << endl;
+    // do nothing..
 }
 
 template<typename Dtype>
 void NoiseInputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "NoiseInputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class NoiseInputLayer<float>;

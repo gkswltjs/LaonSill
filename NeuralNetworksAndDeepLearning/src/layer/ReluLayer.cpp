@@ -20,7 +20,6 @@ ReluLayer<Dtype>::ReluLayer(Builder* builder)
 template<typename Dtype>
 ReluLayer<Dtype>::ReluLayer(const string& name) 
 : Layer<Dtype>(name) {
-	//initialize(false, 0.5);
 	initialize();
 }
 
@@ -145,23 +144,25 @@ void ReluLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool ReluLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     ReluLayer<Dtype>* layer = (ReluLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void ReluLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "ReluLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    ReluLayer<Dtype>* layer = (ReluLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void ReluLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "ReluLayer.. backward()" << endl;
+    ReluLayer<Dtype>* layer = (ReluLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void ReluLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "ReluLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class ReluLayer<float>;

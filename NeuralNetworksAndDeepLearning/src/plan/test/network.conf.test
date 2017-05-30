@@ -6,7 +6,10 @@
             "layer" : "ILSVRCInput",
             "id" : 0,
             "output" : ["data", "label"],
-            "imageDir" : "/data/ilsvrc12_train"
+            "imageDir" : "/data/ilsvrc12_train",
+            "resizeImage" : true,
+            "resizedImageRow" : 224,
+            "resizedImageCol" : 224
         },
 
         {
@@ -15,7 +18,11 @@
             "id" : 1,
             "input" : ["data"],
             "output" : ["conv1"],
-            "filterDimRows" : 3
+            "filterDim.rows" : 7,
+            "filterDim.cols" : 7,
+            "filterDim.channels" : 3,
+            "filterDim.filters" : 4,
+            "filterDim.stride" : 4
         },
 
         {
@@ -40,15 +47,24 @@
             "layer" : "SoftmaxWithLoss",
             "id" : 6,
             "input" : ["fc1", "label"],
-            "output" : ["loss"]
+            "output" : ["loss"],
+            "innerLayer" : 
+            [
+                {
+                    "name" : "softmaxInnerLayer",
+                    "id" : 7000,
+                    "layer" : "Softmax",
+                    "input" : ["prob"],
+                    "output" : ["softmaxInnerLayer1"]
+                }
+            ]
         }
     ],
 
     "configs" :
     {
         "batchSize" : 4,
-        "epoch" : 2,
-        "miniBatch" : 3,
+        "epochs" : 4,
         "lossLayer" : ["loss"],
         "gamma" : 0.1
     }

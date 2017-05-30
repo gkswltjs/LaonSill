@@ -220,7 +220,7 @@ YOLOLossLayer<Dtype>::YOLOLossLayer()
 template <typename Dtype>
 YOLOLossLayer<Dtype>::YOLOLossLayer(const string& name)
 	: LossLayer<Dtype>() {
-	//initialize(0.0, 0.0);
+	initialize(SLPROP(YOLOLoss, noobj), SLPROP(YOLOLoss, coord));
 }
 
 template <typename Dtype>
@@ -351,23 +351,25 @@ void YOLOLossLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool YOLOLossLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     YOLOLossLayer<Dtype>* layer = (YOLOLossLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void YOLOLossLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "YOLOLossLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    YOLOLossLayer<Dtype>* layer = (YOLOLossLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void YOLOLossLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "YOLOLossLayer.. backward()" << endl;
+    YOLOLossLayer<Dtype>* layer = (YOLOLossLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void YOLOLossLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "YOLOLossLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class YOLOLossLayer<float>;

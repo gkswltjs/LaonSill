@@ -405,23 +405,25 @@ void SoftmaxLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool SoftmaxLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void SoftmaxLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "SoftmaxLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void SoftmaxLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "SoftmaxLayer.. backward()" << endl;
+    SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void SoftmaxLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "SoftmaxLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class SoftmaxLayer<float>;

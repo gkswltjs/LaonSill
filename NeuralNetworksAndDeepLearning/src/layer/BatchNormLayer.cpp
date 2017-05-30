@@ -11,6 +11,7 @@
 #include "Exception.h"
 #include "SysLog.h"
 #include "ColdLog.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -30,7 +31,7 @@ BatchNormLayer<Dtype>::BatchNormLayer(const string name,
 template <typename Dtype>
 BatchNormLayer<Dtype>::BatchNormLayer(const string name)
 : LearnableLayer<Dtype>(name) {
-	//initialize(epsilon, train);
+	initialize(SLPROP(BatchNorm, epsilon), SLPROP(BatchNorm, train));
 }
 
 template <typename Dtype>

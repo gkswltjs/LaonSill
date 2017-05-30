@@ -5,7 +5,7 @@
     ["batchSize", "uint32_t", "1"],
     ["dop", "uint32_t", "1"],
     ["epochs", "uint32_t", "1"],
-    ["miniBatch", "uint32_t", "1"],
+    ["miniBatch", "uint32_t", "0"],
     ["testInterval", "uint32_t", "1"],
     ["saveInterval", "uint32_t", "1"],
     ["iterations", "uint32_t", "0"],
@@ -27,7 +27,7 @@
     ["phase", "int", "NetworkPhase::TrainPhase"],
     ["lossLayer", "std::vector<std::string>", ""],
     ["rate", "float", "-1.0"],
-	["status", "NetworkStatus", "NetworkStatus::Train"]
+    ["status", "int", "NetworkStatus::Train"]
 ]
 
 }

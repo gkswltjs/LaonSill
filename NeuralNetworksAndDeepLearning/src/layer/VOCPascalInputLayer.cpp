@@ -57,7 +57,8 @@ VOCPascalInputLayer<Dtype>::VOCPascalInputLayer(const string name, string imageD
 template<typename Dtype>
 VOCPascalInputLayer<Dtype>::VOCPascalInputLayer(const string& name)
 : InputLayer<Dtype>(name) {
-    //initialize(imageDir, resizeImage, resizedImageRow, resizedImageCol);
+    initialize(SLPROP(VOCPascalInput, imageDir), SLPROP(VOCPascalInput, resizeImage),
+        SLPROP(VOCPascalInput, resizedImageRow), SLPROP(VOCPascalInput, resizedImageCol));
 }
 
 template<typename Dtype>
@@ -76,7 +77,7 @@ VOCPascalInputLayer<Dtype>::~VOCPascalInputLayer() {
 
 template <typename Dtype>
 void VOCPascalInputLayer<Dtype>::reshape() {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
 
 	if (this->images == NULL) {
         SASSERT0(this->labels == NULL);
@@ -105,8 +106,8 @@ void VOCPascalInputLayer<Dtype>::reshape() {
     }
 
 	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+		for (uint32_t i = 0; i < SLPROP_BASE(output).size(); i++) {
+			SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
@@ -244,7 +245,7 @@ void VOCPascalInputLayer<Dtype>::fillMetas() {
 
 template<typename Dtype>
 void VOCPascalInputLayer<Dtype>::loadImages(int baseIdx) {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
 
     for (int i = 0; i < batchSize; i++) {
         int index = i + baseIdx;
@@ -269,7 +270,7 @@ void VOCPascalInputLayer<Dtype>::loadImages(int baseIdx) {
 
 template<typename Dtype>
 void VOCPascalInputLayer<Dtype>::loadLabels(int baseIdx) {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
 
     for (int i = 0; i < batchSize; i++) {
         int index = i + baseIdx;
@@ -391,23 +392,36 @@ void VOCPascalInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorP
 template<typename Dtype>
 bool VOCPascalInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     VOCPascalInputLayer<Dtype>* layer = (VOCPascalInputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->currentBatchIndex = 0;
+    layer->reshape();
+
+    if (SNPROP(miniBatch) == 0) {
+        int trainDataNum = layer->getNumTrainData();
+        if (trainDataNum % SNPROP(batchSize) == 0) {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+        } else {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+        }
+        WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+    }
+
     return true;
 }
 
 template<typename Dtype>
 void VOCPascalInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "VOCPascalInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    VOCPascalInputLayer<Dtype>* layer = (VOCPascalInputLayer<Dtype>*)instancePtr;
+    layer->feedforward(miniBatchIdx);
 }
 
 template<typename Dtype>
 void VOCPascalInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "VOCPascalInputLayer.. backward()" << endl;
+    // do nothing..
 }
 
 template<typename Dtype>
 void VOCPascalInputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "VOCPascalInputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class VOCPascalInputLayer<float>;

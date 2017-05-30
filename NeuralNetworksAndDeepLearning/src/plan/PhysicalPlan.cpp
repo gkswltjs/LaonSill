@@ -13,6 +13,7 @@
 #include "Param.h"
 #include "Worker.h"
 #include "LayerFunc.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
@@ -27,10 +28,10 @@ PhysicalPlan::~PhysicalPlan() {
         int layerID = iter->first;
         void* instancePtr = iter->second;
 
-        SASSUME0(planMap.find(layerID) != planMap.end());
-        int layerType = planMap[layerID].layerType;
-
-        LayerFunc::destroyLayer(layerType, instancePtr);
+        if (planMap.find(layerID) != planMap.end()) {
+            int layerType = planMap[layerID].layerType;
+            LayerFunc::destroyLayer(layerType, instancePtr);
+        }
     }
 }
 
@@ -57,6 +58,8 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
     }
 
     LayerFunc::setInOutTensor(layerType, instancePtr, (void*)tensor, isInput, index);
+
+    return (void*)tensor;
 }
 
 void PhysicalPlan::allocateTensorInternal(int networkID) {
@@ -92,6 +95,10 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
                 void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
                     key.tensorName, key.tensorAlloc, true, i);
                 SASSERT0(allocPtr != NULL);
+                tensorAllocMap[key] = allocPtr;
+            } else {
+                void* tensor = tensorAllocMap[key];
+                LayerFunc::setInOutTensor(layerType, instancePtr, tensor, true, i);
             }
         }
 
@@ -104,6 +111,10 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
                 void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
                     key.tensorName, key.tensorAlloc, false, i);
                 SASSERT0(allocPtr != NULL);
+                tensorAllocMap[key] = allocPtr;
+            } else {
+                void* tensor = tensorAllocMap[key];
+                LayerFunc::setInOutTensor(layerType, instancePtr, tensor, false, i);
             }
         }
 
@@ -212,8 +223,9 @@ void PhysicalPlan::runLayer(int planID) {
     
     // (2) run layer
     PlanInfo* planInfo = WorkContext::curPlanInfo;
-    cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
-        planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")";
+    STDOUT_COND_BLOCK(SPARAM(PRINT_RUNLAYER_LOG), 
+        cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
+        planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")" << endl);
 
     // FIXME: 나름 핫 코드영역인데 이렇게 자주 맵을 뒤지면 성능에 안좋다. 수정필요!!
     SASSUME0(this->planMap.find(planID) != this->planMap.end());

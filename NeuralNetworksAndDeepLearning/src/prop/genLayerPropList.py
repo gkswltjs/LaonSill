@@ -35,6 +35,7 @@ for prop in propDic:
     checkParamProperty(propDic, prop, "PARENT")
     checkParamProperty(propDic, prop, "LEVEL")
     checkParamProperty(propDic, prop, "LEARN")
+    checkParamProperty(propDic, prop, "PROPDOWN")
     checkParamProperty(propDic, prop, "VARS")
 
 # (3) generate header file
@@ -173,6 +174,12 @@ try:
                         headerFile.write('        _%s_ = true;\n' % var[0])
                     else:
                         headerFile.write('        _%s_ = false;\n' % var[0])
+                elif var[0] == 'defaultPropDown':
+                    for propDownVal in propDic[prop]["PROPDOWN"]:
+                        if propDownVal == True:
+                            headerFile.write('        _%s_.push_back(true);\n' % var[0])
+                        else:
+                            headerFile.write('        _%s_.push_back(false);\n' % var[0])
                 elif 'vector' in var[1]:
                     headerFile.write('        _%s_ = {%s};\n' % (var[0], var[2]))
                 elif 'char[' in var[1]:
@@ -195,6 +202,8 @@ try:
     # declare functions
     headerFile.write("    static void setProp(void* target, const char* layer,")
     headerFile.write(" const char* property, void* value);\n")
+    headerFile.write("    static void setPropStruct(void* target, const char* layer,")
+    headerFile.write(" const char* property, const char* subProperty, void* value);\n")
     headerFile.write("    static LayerProp* createLayerProp(int networkID, int layerID,")
     headerFile.write(" const char* layerName);\n")
     headerFile.write("    static int getLayerType(const char* layer);\n")
@@ -232,6 +241,9 @@ try:
             isFirstCond = True
 
             for var in varDic[prop]:
+                if len(var) > 3:
+                    continue
+
                 if isFirstCond:
                     sourceFile.write('    if (strcmp(property, "%s") == 0) {\n' % var[0])
                     isFirstCond = False
@@ -272,10 +284,99 @@ try:
                     sourceFile.write('        %s* val = (%s*)value;\n' % (var[1], var[1]))
                     sourceFile.write('        obj->_%s_ = *val;\n' % var[0])
                 sourceFile.write('    }')
-            sourceFile.write(' else {\n')
-            sourceFile.write('        SASSERT(false, "invalid property.')
+
+            if isFirstCond == True:
+                sourceFile.write('    SASSERT(false, "invalid property.')
+            else:
+                sourceFile.write(' else {\n')
+                sourceFile.write('        SASSERT(false, "invalid property.')
             sourceFile.write(' layer name=%s, property=%s"')
-            sourceFile.write(', "%s", property);\n    }\n}\n\n' % prop) 
+            if isFirstCond == True:
+                sourceFile.write(', "%s", property);\n}\n\n' % prop) 
+            else:
+                sourceFile.write(', "%s", property);\n    }\n}\n\n' % prop) 
+
+    # set property struct functions (support user-defined structure)
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            headerFile.write(\
+                "    static void set%sStruct(void* target, const char* property, " % prop)
+            headerFile.write(\
+                "const char* surProperty, void* value);\n")
+            sourceFile.write(\
+            "void LayerPropList::set%sStruct(void* target, const char* property, " % prop)
+            sourceFile.write("const char* subProperty, void* value) {\n")
+            sourceFile.write('    _%sPropLayer* obj = (_%sPropLayer*)target;\n\n'\
+                % (prop, prop))
+
+            isFirstCond = True
+
+            for var in varDic[prop]:
+                if len(var) < 4:
+                    continue
+
+                # XXX: too many if & else if
+                #      This routine is only called during the network initialization phase,
+                #      so you don't have to worry about performance.... really?..;;
+
+                for (subVar, subVarType) in var[3]:
+                    if isFirstCond:
+                        sourceFile.write('    if ((strcmp(property, "%s") == 0) && ' % var[0])
+                        sourceFile.write('(strcmp(subProperty, "%s") == 0)) {\n' % subVar)
+                        isFirstCond = False
+                    else:
+                        sourceFile.write(' else if ((strcmp(property, "%s") == 0) && ' % var[0])
+                        sourceFile.write('(strcmp(subProperty, "%s") == 0)) {\n' % subVar)
+
+                    if 'vector' in subVarType:
+                        subType = subVarType.replace('<', '').replace('>', '').split('vector')[1]
+                        if 'string' in subType:
+                            sourceFile.write('        std::vector<std::string> *val = ')
+                            sourceFile.write('(std::vector<std::string>*)value;\n')
+                        elif subType in ['int', 'unsigned int', 'int32_t', 'uint32_t',\
+                            'int64_t', 'uint64_t', 'long', 'unsigned long', 'short',\
+                            'unsigned short', 'long long', 'unsigned long long']:
+                            sourceFile.write('        std::vector<int64_t> *val = ')
+                            sourceFile.write('(std::vector<int64_t>*)value;\n')
+                        elif subType in ['boolean', 'bool']:
+                            sourceFile.write('        std::vector<bool> *val = ')
+                            sourceFile.write('(std::vector<bool>*)value;\n')
+                        elif subType in ['double', 'float']:
+                            sourceFile.write('        std::vector<double> *val = ')
+                            sourceFile.write('(std::vector<double>*)value;\n')
+                        else:
+                            print 'unsupported subtype for array. subtype = %s' % subType
+                            exit(-1)
+
+                        sourceFile.write('        for (int i = 0; i < (*val).size(); i++) {\n')
+                        sourceFile.write('            obj->_%s_.%s.push_back((%s)(*val)[i]);\n'\
+                            % (var[0], subVar, subType))
+                        sourceFile.write('        }\n')
+                    elif 'char[' in subVarType:
+                        sourceFile.write('        strcpy(obj->_%s_.%s, (const char*)value);\n'\
+                            % (var[0], subVar))
+                    elif 'string' in subVarType:
+                        sourceFile.write('        std::string* val = (std::string*)value;\n')
+                        sourceFile.write('        obj->_%s_.%s = *val;\n' % (var[0], subVar))
+                    else:
+                        sourceFile.write('        %s* val = (%s*)value;\n'\
+                                % (subVarType, subVarType))
+                        sourceFile.write('        obj->_%s_.%s = *val;\n' % (var[0], subVar))
+                    sourceFile.write('    }')
+
+            if isFirstCond == True:
+                sourceFile.write('    SASSERT(false, "invalid property.')
+            else:
+                sourceFile.write(' else {\n')
+                sourceFile.write('        SASSERT(false, "invalid property.')
+            sourceFile.write(' layer name=%s, property=%s"')
+
+            if isFirstCond == True:
+                sourceFile.write(', "%s", property);\n}\n\n' % prop) 
+            else:
+                sourceFile.write(', "%s", property);\n    }\n}\n\n' % prop) 
 
     # setProp() function
     sourceFile.write("void LayerPropList::setProp(void *target, const char* layer,")
@@ -292,6 +393,26 @@ try:
             else:
                 sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
             sourceFile.write('        set%s(target, property, value);\n' % prop) 
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
+    sourceFile.write(', layer);\n    }\n}\n\n')
+
+    sourceFile.write("void LayerPropList::setPropStruct(void *target, const char* layer,")
+    sourceFile.write(" const char* property, const char* subProperty, void* value) {\n")
+   
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if isFirstCond:
+                sourceFile.write('    if (strcmp(layer, "%s") == 0) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (strcmp(layer, "%s") == 0) {\n' % prop)
+            sourceFile.write('        set%sStruct(target, property, subProperty, value);\n'\
+                    % prop) 
             sourceFile.write('    }')
     sourceFile.write(' else {\n')
     sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')

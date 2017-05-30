@@ -19,7 +19,7 @@ DummyInputLayer<Dtype>::DummyInputLayer(Builder* builder)
 template<typename Dtype>
 DummyInputLayer<Dtype>::DummyInputLayer(const string& name)
 : InputLayer<Dtype>(name) {
-
+    initialize();
 }
 
 template <typename Dtype>

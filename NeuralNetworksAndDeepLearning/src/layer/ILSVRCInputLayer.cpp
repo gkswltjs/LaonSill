@@ -21,6 +21,7 @@
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "WorkContext.h"
 
 using namespace std;
 
@@ -37,7 +38,8 @@ const int ILSVRC_CLASS_COUNT     = 1000;
 template<typename Dtype>
 ILSVRCInputLayer<Dtype>::ILSVRCInputLayer(const string& name) 
 : InputLayer<Dtype>(name) {
-    initialize("", false, -1, -1);
+    initialize(SLPROP(ILSVRCInput, imageDir), SLPROP(ILSVRCInput, resizeImage),
+        SLPROP(ILSVRCInput, resizedImageRow), SLPROP(ILSVRCInput, resizedImageCol));
 }
 
 template<typename Dtype>
@@ -67,7 +69,7 @@ ILSVRCInputLayer<Dtype>::~ILSVRCInputLayer() {
 
 template <typename Dtype>
 void ILSVRCInputLayer<Dtype>::reshape() {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
 
 	if (this->images == NULL) {
         SASSERT0(this->labels == NULL);
@@ -99,8 +101,8 @@ void ILSVRCInputLayer<Dtype>::reshape() {
     }
 
 	if (this->_inputData.size() < 1) {
-		for (uint32_t i = 0; i < this->_outputs.size(); i++) {
-			this->_inputs.push_back(this->_outputs[i]);
+		for (uint32_t i = 0; i < SLPROP_BASE(output).size(); i++) {
+			SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
@@ -217,7 +219,7 @@ void ILSVRCInputLayer<Dtype>::fillMetas() {
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::loadImages(int baseIdx) {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
 
     for (int i = 0; i < batchSize; i++) {
         int index = i + baseIdx;
@@ -240,7 +242,7 @@ void ILSVRCInputLayer<Dtype>::loadImages(int baseIdx) {
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::loadLabels(int baseIdx) {
-    int batchSize = this->networkConfig->_batchSize;
+    int batchSize = SNPROP(batchSize);
 
     for (int i = 0; i < batchSize; i++) {
         int index = i + baseIdx;
@@ -282,7 +284,7 @@ void ILSVRCInputLayer<Dtype>::feedforward() {
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
-    this->currentBatchIndex = baseIndex;    // FIXME: ...
+    this->currentBatchIndex = baseIndex;
     reshape();
 }
 
@@ -360,23 +362,37 @@ void ILSVRCInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 template<typename Dtype>
 bool ILSVRCInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     ILSVRCInputLayer<Dtype>* layer = (ILSVRCInputLayer<Dtype>*)instancePtr;
-    //layer->reshape();
+    layer->currentBatchIndex = 0;
+    layer->reshape();
+
+    if (SNPROP(miniBatch) == 0) {
+        int trainDataNum = layer->getNumTrainData();
+        if (trainDataNum % SNPROP(batchSize) == 0) {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+        } else {
+            SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+        }
+        WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+    }
+
     return true;
 }
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "ILSVRCInputLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    ILSVRCInputLayer<Dtype>* layer = (ILSVRCInputLayer<Dtype>*)instancePtr;
+    layer->feedforward(miniBatchIdx);
 }
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "ILSVRCInputLayer.. backward()" << endl;
+    cout << "backward ILSVRC Input" << endl;
+    // do nothing..
 }
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "ILSVRCInputLayer.. learn()" << endl;
+    SASSERT0(false);
 }
 
 template class ILSVRCInputLayer<float>;

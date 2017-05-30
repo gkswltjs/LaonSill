@@ -858,17 +858,20 @@ bool FullyConnectedLayer<Dtype>::allocLayerTensors(void* instancePtr) {
 
 template<typename Dtype>
 void FullyConnectedLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "FullyConnectedLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void FullyConnectedLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "FullyConnectedLayer.. backward()" << endl;
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void FullyConnectedLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "FullyConnectedLayer.. learn()" << endl;
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->update();
 }
 
 template void* FullyConnectedLayer<float>::initLayer();

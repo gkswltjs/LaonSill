@@ -553,7 +553,6 @@ void ConvLayer<Dtype>::update() {
 	const float beta1 = SNPROP(beta1);
 	const float beta2 = SNPROP(beta2);
 
-
 	// update filters ...
 	const uint32_t weightSize = filterDim.size();
 	const Dtype regScale = weightDecay * weightUpdateParam.decay_mult;
@@ -781,7 +780,7 @@ void ConvLayer<Dtype>::_computeActivationData() {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::backpropagation() {
-	if (this->_propDown[0]) {
+	if (SLPROP_BASE(propDown)[0]) {
 		//_computePreActivationGrad();
 		_computeFiltersGrad();
 		_computeBiasesGrad();
@@ -901,14 +900,14 @@ template void ConvLayer<float>::backpropagation();
  ****************************************************************************/
 template<typename Dtype>
 void* ConvLayer<Dtype>::initLayer() {
-    ConvLayer* conv = new ConvLayer<Dtype>(SLPROP(Conv, name));
-    return (void*)conv;
+    ConvLayer* layer = new ConvLayer<Dtype>(SLPROP(Conv, name));
+    return (void*)layer;
 }
 
 template<typename Dtype>
 void ConvLayer<Dtype>::destroyLayer(void* instancePtr) {
-    ConvLayer<Dtype>* conv = (ConvLayer<Dtype>*)instancePtr;
-    delete conv;
+    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
+    delete layer;
 }
 
 template<typename Dtype>
@@ -916,37 +915,40 @@ void ConvLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
     SASSERT0(index == 0);
 
-    ConvLayer<Dtype>* conv = (ConvLayer<Dtype>*)instancePtr;
+    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
 
     if (isInput) {
-        SASSERT0(conv->_inputData.size() == 0);
-        conv->_inputData.push_back((Data<Dtype>*)tensorPtr);
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
     } else {
-        SASSERT0(conv->_outputData.size() == 0);
-        conv->_outputData.push_back((Data<Dtype>*)tensorPtr);
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
     }
 }
 
 template<typename Dtype>
 bool ConvLayer<Dtype>::allocLayerTensors(void* instancePtr) {
-    ConvLayer<Dtype>* conv = (ConvLayer<Dtype>*)instancePtr;
-    //conv->reshape();
+    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
+    layer->reshape();
     return true;
 }
 
 template<typename Dtype>
 void ConvLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    cout << "ConvLayer.. forward(). miniBatchIndex : " << miniBatchIdx << endl;
+    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
+    layer->feedforward();
 }
 
 template<typename Dtype>
 void ConvLayer<Dtype>::backwardTensor(void* instancePtr) {
-    cout << "ConvLayer.. backward()" << endl;
+    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
 }
 
 template<typename Dtype>
 void ConvLayer<Dtype>::learnTensor(void* instancePtr) {
-    cout << "ConvLayer.. learn()" << endl;
+    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
+    layer->update();
 }
 
 template void* ConvLayer<float>::initLayer();
