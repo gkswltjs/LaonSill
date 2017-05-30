@@ -1,4 +1,4 @@
-#if 1
+#if 0
 
 #include "LayerTestInterface.h"
 #include "LayerTest.h"
@@ -43,9 +43,9 @@ int main(void) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
-	plainTest();
+	//plainTest();
 	//layerTest();
-	//networkTest();
+	networkTest();
 
 	return 0;
 }
@@ -147,7 +147,7 @@ void plainTest() {
 	delete layer;
 #endif
 
-#if 1
+#if 0
 	AnnotationDataLayer<float>::Builder* builder =
 			new typename AnnotationDataLayer<float>::Builder();
 	builder->id(0)
@@ -183,8 +183,6 @@ void plainTest() {
 
 	delete layer;
 #endif
-
-
 
 	/*
 	//checkCudaErrors(cudaSetDevice(0));
@@ -655,11 +653,12 @@ void layerTest() {
 #define NETWORK_FRCNN		2
 #define NETWORK_FRCNN_TEST	3
 #define NETWORK_SSD			4
-#define NETWORK				NETWORK_SSD
+#define NETWORK_SSD_TEST	5
+#define NETWORK				NETWORK_SSD_TEST
 
 
 
-void saveNetworkParams();
+void saveNetworkParams(LayersConfig<float>* layersConfig);
 
 
 void networkTest() {
@@ -727,6 +726,22 @@ void networkTest() {
 	const int stepSize 				= 50000;
 	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
 	const float gamma 				= 0.1;
+#elif NETWORK == NETWORK_SSD_TEST
+	const int numSteps = 1;
+
+	LayersConfig<float>* layersConfig = createSSDNetTestLayersConfig<float>();
+	const string networkName		= "ssd";
+	const int batchSize 			= 2;
+	const float baseLearningRate 	= 0.01;
+	const float weightDecay 		= 0.0005;
+	//const float baseLearningRate 	= 1;
+	//const float weightDecay 		= 0.000;
+	//const float momentum 			= 0.0;
+	const float momentum 			= 0.0;
+	const LRPolicy lrPolicy 		= LRPolicy::Fixed;
+	const int stepSize 				= 50000;
+	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
+	const float gamma 				= 0.1;
 #else
 	cout << "invalid network ... " << endl;
 	exit(1);
@@ -764,7 +779,7 @@ void networkTest() {
 void saveNetworkParams(LayersConfig<float>* layersConfig) {
 	const string savePathPrefix = "/home/jkim/Dev/SOOOA_HOME/network";
 	ofstream paramOfs(
-			(savePathPrefix+"/SSD_PRETRAINED.param").c_str(),
+			(savePathPrefix+"/SSD_CAFFE_TRAINED.param").c_str(),
 			ios::out | ios::binary);
 
 	uint32_t numLearnableLayers = layersConfig->_learnableLayers.size();

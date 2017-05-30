@@ -86,9 +86,15 @@ void DetectionOutputLayer<Dtype>::reshape() {
 		this->confPermute.reshapeLike(this->_inputData[1]);
 	}
 
-	this->numPriors = this->_inputData[2]->width() / 4;
+	this->numPriors = this->_inputData[2]->channels() / 4;
+
+	//cout << "numPriors: " << this->numPriors << ", numLocClasses: " << this->numLocClasses << endl;
+	//this->_inputData[0]->print_shape();
 	SASSERT(this->numPriors * this->numLocClasses * 4 == this->_inputData[0]->channels(),
 			"Number of priors must match number of location predictions.");
+
+	//cout << "numClasses: " << this->numClasses << endl;
+	//this->_inputData[1]->print_shape();
 	SASSERT(this->numPriors * this->numClasses == this->_inputData[1]->channels(),
 			"Number of priors must match number of confidence predictions.");
 	// num() and channels() are 1.
@@ -217,7 +223,7 @@ void DetectionOutputLayer<Dtype>::feedforward() {
 	int count = 0;
 	boost::filesystem::path outputDirectory(this->outputDirectory);
 	for (int i = 0; i < num; i++) {
-		const int confIdx = i * numClasses * numPriors;
+		const int confIdx = i * this->numClasses * this->numPriors;
 		int bboxIdx;
 		if (this->shareLocation) {
 			bboxIdx = i * this->numPriors * 4;
@@ -294,7 +300,9 @@ void DetectionOutputLayer<Dtype>::feedforward() {
 
 		if (this->needSave) {
 			this->nameCount++;
+			cout << "nameCount: " << this->nameCount << ", numTestImage: " << this->numTestImage << endl;
 			if (this->nameCount % this->numTestImage == 0) {
+				cout << "meet the condition!" << endl;
 				if (this->outputFormat == "VOC") {
 					map<string, std::ofstream*> outfiles;
 					for (int c = 0; c < this->numClasses; c++) {

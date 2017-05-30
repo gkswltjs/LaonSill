@@ -1,4 +1,4 @@
-#if 0
+#if 1
 
 #include <cstdint>
 #include <vector>
@@ -50,6 +50,7 @@ void vgg19Test();
 void fasterRcnnTrain();
 void fasterRcnnTest();
 void ssd();
+void ssdTest();
 
 
 void developerMain() {
@@ -64,8 +65,9 @@ void developerMain() {
 	//vgg19();
 	//vgg19Test();
 	//fasterRcnnTrain();
-	//fasterRcnnTest();
-	ssd();
+	fasterRcnnTest();
+	//ssd();
+	//ssdTest();
 
 	STDOUT_LOG("exit developerMain()");
 }
@@ -392,8 +394,8 @@ void fasterRcnnTest() {
 
 	vector<WeightsArg> weightsArgs(1);
 	//weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
-	//weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
-	weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_DOOSAN_44000.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
+	//weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_DOOSAN_44000.param";
 	cout << "weight path: " << weightsArgs[0].weightsPath << endl;
 
 	NetworkConfig<float>* networkConfig =
@@ -520,6 +522,83 @@ void ssd() {
 	SyncMem<float>::printConfig = false;
 	*/
 	network->sgd_with_timer(maxEpochs);
+}
+
+
+
+void ssdTest() {
+	const int maxEpochs = 1;
+	const vector<string> lossLayers = {"mbox_loss"};
+	const vector<string> accuracyLayers = {};
+	const NetworkPhase phase = NetworkPhase::TrainPhase;
+
+	vector<WeightsArg> weightsArgs(1);
+	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_240000.param";
+	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_CAFFE_TRAINED.param";
+
+	const uint32_t batchSize = 8;				// 32
+	const uint32_t testInterval = 10;			// 10000(목표 샘플수) / batchSize
+	//const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
+	//const float baseLearningRate = 0.001f;
+	//const uint32_t stepSize = 100000;
+	//const float weightDecay = 0.0005f;
+	//const float momentum = 0.9f;
+	//const float clipGradientsLevel = 0.0f;
+	//const float gamma = 0.1;
+	//const LRPolicy lrPolicy = LRPolicy::Fixed;
+
+	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
+	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
+	//STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
+	//STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
+	//STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
+	//STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
+	//STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
+
+	NetworkConfig<float>* networkConfig =
+			(new typename NetworkConfig<float>::Builder())
+			->batchSize(batchSize)
+			//->baseLearningRate(baseLearningRate)
+			//->weightDecay(weightDecay)
+			//->momentum(momentum)
+			->testInterval(testInterval)
+			//->saveInterval(saveInterval)
+			//->stepSize(stepSize)
+			//->clipGradientsLevel(clipGradientsLevel)
+			//->lrPolicy(lrPolicy)
+			->networkPhase(phase)
+			//->gamma(gamma)
+			//->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
+			->weightsArgs(weightsArgs)
+			->networkListeners({
+				new NetworkMonitor("mbox_loss", NetworkMonitor::PLOT_ONLY)
+				})
+			->lossLayers(lossLayers)
+			->accuracyLayers(accuracyLayers)
+			->build();
+
+	Util::printVramInfo();
+
+	Network<float>* network = new Network<float>(networkConfig);
+	LayersConfig<float>* layersConfig = createSSDNetTestLayersConfig<float>();
+
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(network->config);
+	}
+	network->setLayersConfig(layersConfig);
+	network->loadPretrainedWeights();
+
+
+	//network->sgd_with_timer(maxEpochs);
+
+	InputLayer<float>* inputLayer = layersConfig->_inputLayer;
+	for (int i = 0; i < 619; i++) {
+		inputLayer->feedforward(0);
+		for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
+			layersConfig->_layers[i]->feedforward();
+		}
+	}
 }
 
 

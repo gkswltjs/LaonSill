@@ -101,7 +101,9 @@ void GetGroundTruth(const Dtype* gtData, const int numGt, const int backgroundLa
 		}
 		NormalizedBBox bbox;
 		int label = gtData[startIdx + 1];
-		SASSERT(backgroundLabelId != label, "Found background label in the dataset.");
+		if (backgroundLabelId == label) {
+			SASSERT(backgroundLabelId != label, "Found background label in the dataset.");
+		}
 		bool difficult = static_cast<bool>(gtData[startIdx + 7]);
 		if (!useDifficultGt && difficult) {
 			// Skip reading difficult ground truth.

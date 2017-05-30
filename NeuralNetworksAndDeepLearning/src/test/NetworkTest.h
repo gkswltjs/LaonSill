@@ -58,7 +58,9 @@ public:
 		//buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
 		//		this->networkName + this->paramsNew, this->nameParamsNewMap);
 
-		for (int i = 0; i <= this->numSteps; i++) {
+		// XXX: inference test를 위해 = 제거,
+		// 일반 테스트시 '<' --> '<='로 복구해야 함!!!
+		for (int i = 0; i < this->numSteps; i++) {
 			const string strIdx = to_string(i);
 			map<string, Data<Dtype>*> nameParamsMap;
 			buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",

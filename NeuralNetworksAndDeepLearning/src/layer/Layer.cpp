@@ -12,6 +12,7 @@
 
 #include "Exception.h"
 #include "NetworkConfig.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -27,7 +28,7 @@ Layer<Dtype>::Layer(Builder* builder) {
 
 	// 사용자가 지정한 propDown이 있는 경우, input의 수와 일치하면 그대로 사용
 	if (builder->_propDown.size() > 0) {
-		assert(builder->_propDown.size() == this->_inputs.size());
+		SASSERT0(builder->_propDown.size() == this->_inputs.size());
 		this->_propDown = builder->_propDown;
 	}
 	// 사용자가 지정한 propDown이 없는 경우, 첫번째 입력에 대해 propDown, 나머지 입력에 대해

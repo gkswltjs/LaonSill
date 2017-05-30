@@ -190,12 +190,6 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 				}
 				const vector<NormalizedBBox>& bboxes = iit->second;
 				for (int i = 0; i < bboxes.size(); i++) {
-
-					if (numDet == 592) {
-						cout << endl;
-					}
-
-
 					outputData[numDet * 5] = imageId;
 					outputData[numDet * 5 + 1] = label;
 					outputData[numDet * 5 + 2] = bboxes[i].score;
@@ -216,12 +210,6 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 				if (labelBBoxes.find(label) == labelBBoxes.end()) {
 					// No ground truth for current label. All detections become falsePos.
 					for (int i = 0; i < bboxes.size(); i++) {
-
-						if (numDet == 592) {
-							cout << endl;
-						}
-
-
 						outputData[numDet * 5] = imageId;
 						outputData[numDet * 5 + 1] = label;
 						outputData[numDet * 5 + 2] = bboxes[i].score;
@@ -243,12 +231,6 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 					// Sort detections in descend order based on scores.
 					std::sort(bboxes.begin(), bboxes.end(), SortBBoxDescend);
 					for (int i = 0; i < bboxes.size(); i++) {
-
-						if (numDet == 592) {
-							cout << endl;
-						}
-
-
 						outputData[numDet * 5] = imageId;
 						outputData[numDet * 5 + 1] = label;
 						outputData[numDet * 5 + 2] = bboxes[i].score;
