@@ -402,7 +402,14 @@
     "PROPDOWN" : [],
     "VARS" : 
 	[
-	    ["lrnDim", "lrn_dim", "{5, 0.0001, 0.75, 2.0}"]
+	    ["lrnDim", "lrn_dim", "{5, 0.0001, 0.75, 2.0}",
+	    	[
+	    		["local_size", "uint32_t"],
+	    		["alpha", "double"],
+	    		["beta", "double"],
+	    		["k", "double"]
+	    	]
+	    ]
 	]
 },
 
@@ -415,7 +422,14 @@
     "PROPDOWN" : [],
     "VARS" : 
 	[
-	    ["poolDim", "pool_dim", "{1, 1, 0, 1}"],
+	    ["poolDim", "pool_dim", "{1, 1, 0, 1}",
+	    	[
+	    			["rows", "uint32_t"],
+	    			["cols", "uint32_t"],
+	    			["pad", "uint32_t"],
+	    			["stride", "uint32_t"]
+	    	]
+	    ],
 	    ["poolingType", "PoolingType", "PoolingType::Max"]
 	]
 },
