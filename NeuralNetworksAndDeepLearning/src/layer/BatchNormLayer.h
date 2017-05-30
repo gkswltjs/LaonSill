@@ -13,9 +13,6 @@
 #include "BaseLayer.h"
 #include "LearnableLayer.h"
 #include "LayerConfig.h"
-#include "Activation.h"
-#include "ActivationFactory.h"
-#include "Cost.h"
 
 template <typename Dtype>
 class BatchNormLayer : public LearnableLayer<Dtype> {

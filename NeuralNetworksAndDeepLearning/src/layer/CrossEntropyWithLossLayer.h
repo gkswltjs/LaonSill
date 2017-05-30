@@ -12,9 +12,6 @@
 #include "common.h"
 #include "LossLayer.h"
 #include "LayerConfig.h"
-#include "Activation.h"
-#include "ActivationFactory.h"
-#include "Cost.h"
 
 template <typename Dtype>
 class CrossEntropyWithLossLayer : public LossLayer<Dtype> {

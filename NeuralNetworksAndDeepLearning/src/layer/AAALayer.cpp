@@ -8,7 +8,6 @@
 
 #include "AAALayer.h"
 #include "Util.h"
-#include "Exception.h"
 #include "SysLog.h"
 
 using namespace std;

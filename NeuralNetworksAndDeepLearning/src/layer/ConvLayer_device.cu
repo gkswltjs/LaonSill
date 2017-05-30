@@ -8,7 +8,6 @@
 #include "ConvLayer.h"
 #include "FullyConnectedLayer.h"
 #include "Util.h"
-#include "Exception.h"
 #include "NetworkConfig.h"
 #include "cuda_runtime.h"
 #include "MathFunctions.h"

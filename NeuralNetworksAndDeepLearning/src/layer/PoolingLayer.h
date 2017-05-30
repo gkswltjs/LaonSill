@@ -14,7 +14,6 @@
 #include "BaseLayer.h"
 #include "Pooling.h"
 #include "PoolingFactory.h"
-#include "Exception.h"
 
 /**
  * @brief 풀링 레이어

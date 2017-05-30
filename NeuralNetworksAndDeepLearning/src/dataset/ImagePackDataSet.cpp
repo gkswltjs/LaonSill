@@ -11,7 +11,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "Exception.h"
 #include "UByteImage.h"
 #include "Util.h"
 #include "ImagePackDataSet.h"

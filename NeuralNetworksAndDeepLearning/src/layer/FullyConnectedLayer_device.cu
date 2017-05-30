@@ -11,7 +11,6 @@
 #include "FullyConnectedLayer.h"
 #include "MathFunctions.h"
 #include "Util.h"
-#include "Exception.h"
 #include "NetworkConfig.h"
 #include "SysLog.h"
 #include "StdOutLog.h"

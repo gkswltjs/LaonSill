@@ -7,7 +7,6 @@
 
 #include "FullyConnectedLayer.h"
 #include "Util.h"
-#include "Exception.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
 

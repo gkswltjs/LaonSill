@@ -11,10 +11,6 @@
 
 #include "common.h"
 #include "BaseLayer.h"
-#include "Exception.h"
-
-
-
 
 /**
  * @brief Depth Concatenation 레이어

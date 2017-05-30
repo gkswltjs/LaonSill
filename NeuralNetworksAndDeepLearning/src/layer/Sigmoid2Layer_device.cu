@@ -9,7 +9,6 @@
 #include "cuda_runtime.h"
 
 #include "Sigmoid2Layer.h"
-#include "Exception.h"
 #include "NetworkConfig.h"
 #include "SysLog.h"
 #include "StdOutLog.h"

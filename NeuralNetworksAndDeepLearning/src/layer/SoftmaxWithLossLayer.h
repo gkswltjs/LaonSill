@@ -12,8 +12,6 @@
 #include "common.h"
 #include "LossLayer.h"
 #include "SoftmaxLayer.h"
-#include "Activation.h"
-#include "Cost.h"
 #include "Cuda.h"
 
 template <typename Dtype>
@@ -38,9 +36,6 @@ private:
 	uint32_t innerNum;
 
 	SoftmaxLayer<Dtype>* softmaxLayer;
-
-	Activation<Dtype> *activation_fn;
-	Cost<Dtype>* cost_fn;
 
 	cudnnTensorDescriptor_t inputTensorDesc;
 	cudnnTensorDescriptor_t probTensorDesc;

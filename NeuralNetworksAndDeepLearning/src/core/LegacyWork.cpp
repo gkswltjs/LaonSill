@@ -16,9 +16,6 @@
 #include "ColdLog.h"
 #include "StdOutLog.h"
 #include "Debug.h"
-#include "Evaluation.h"
-#include "Top1Evaluation.h"
-#include "Top5Evaluation.h"
 #include "NetworkMonitor.h"
 #include "ArtisticStyle.h"
 
@@ -297,8 +294,8 @@ int LegacyWork<Dtype>::createNetwork() {
 	//const NetworkPhase phase = NetworkPhase::TestPhase;
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 #else
-	vector<WeightsArg> weightsArgs(1);
-	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/network210000.param.bak";
+	//vector<WeightsArg> weightsArgs(1);
+	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/network210000.param.bak";
 	const vector<string> lossLayers = {};
 	const NetworkPhase phase = NetworkPhase::TestPhase;
 #endif

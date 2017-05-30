@@ -9,7 +9,6 @@
 #include "cuda_runtime.h"
 
 #include "DropOutLayer.h"
-#include "Exception.h"
 #include "NetworkConfig.h"
 #include "SysLog.h"
 #include "StdOutLog.h"

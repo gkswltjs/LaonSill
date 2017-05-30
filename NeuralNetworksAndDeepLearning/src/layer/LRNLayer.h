@@ -12,7 +12,6 @@
 #include "common.h"
 #include "BaseLayer.h"
 #include "LayerConfig.h"
-#include "Exception.h"
 
 /**
  * @brief Local Response Normalization 레이어

@@ -15,7 +15,6 @@
 #include <string>
 
 #include "common.h"
-#include "Activation.h"
 #include "Util.h"
 #include "BaseLayer.h"
 #include "LearnableLayer.h"

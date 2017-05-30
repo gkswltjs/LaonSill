@@ -10,14 +10,11 @@
 #define NETWORK_H_
 
 #include "common.h"
-#include "Cost.h"
-#include "Activation.h"
 #include "NetworkListener.h"
 #include "BaseLayer.h"
 #include "InputLayer.h"
 #include "ALEInputLayer.h"
 #include "LayerConfig.h"
-#include "Evaluation.h"
 #include "Worker.h"
 #include "NetworkConfig.h"
 #include "DQNImageLearner.h"

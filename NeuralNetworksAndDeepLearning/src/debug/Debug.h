@@ -12,7 +12,6 @@
 #include <cstdint>
 
 #include "common.h"
-#include "Activation.h"
 #include "DataSet.h"
 #include "MockDataSet.h"
 #include "ImagePackDataSet.h"

@@ -8,7 +8,6 @@
 
 #include "BatchNormLayer.h"
 #include "Util.h"
-#include "Exception.h"
 #include "SysLog.h"
 #include "ColdLog.h"
 #include "PropMgmt.h"

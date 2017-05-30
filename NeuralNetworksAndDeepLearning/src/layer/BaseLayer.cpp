@@ -10,7 +10,6 @@
 #include <stddef.h>
 #include <utility>
 
-#include "Exception.h"
 #include "NetworkConfig.h"
 #include "SysLog.h"
 #include "PropMgmt.h"

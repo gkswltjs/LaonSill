@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "common.h"
-#include "Evaluation.h"
 #include "BaseLayer.h"
 #include "InputLayer.h"
 #include "LearnableLayer.h"
@@ -23,21 +22,12 @@
 #include "LossLayer.h"
 #include "NetworkListener.h"
 #include "Worker.h"
-#include "Top1Evaluation.h"
-#include "Top5Evaluation.h"
 #include "SysLog.h"
 #include "Donator.h"
 
 
 //template <typename Dtype> class DataSet;
 template <typename Dtype> class Worker;
-
-
-struct WeightsArg {
-	std::string weightsPath;
-	//std::vector<std::string> weights;
-	std::map<std::string, std::string> weightsMap;
-};
 
 #if 0 
 template <typename Dtype>
