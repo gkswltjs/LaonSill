@@ -13,7 +13,34 @@
 #include "Exception.h"
 #include "NetworkConfig.h"
 
+#include "PropMgmt.h"
+
 using namespace std;
+
+template<typename Dtype>
+const string Layer<Dtype>::getName() {
+    return SLPROP_BASE(name);
+}
+
+template<typename Dtype>
+vector<string>& Layer<Dtype>::getInputs() { 
+    return SLPROP_BASE(input);
+}
+
+template<typename Dtype>
+vector<string>& Layer<Dtype>::getOutputs() {
+    return SLPROP_BASE(output);
+}
+
+template<typename Dtype>
+uint32_t Layer<Dtype>::getInputsSize() {
+    return SLPROP_BASE(input).size();
+}
+
+template<typename Dtype>
+uint32_t Layer<Dtype>::getOutputsSize() {
+    return SLPROP_BASE(output).size();
+}
 
 template <typename Dtype>
 Layer<Dtype>::Layer(const string& name) {
