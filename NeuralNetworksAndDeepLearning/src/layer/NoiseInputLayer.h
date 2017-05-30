@@ -13,7 +13,7 @@
 
 #include "common.h"
 #include "InputLayer.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 template <typename Dtype>
 class NoiseInputLayer : public InputLayer<Dtype> {

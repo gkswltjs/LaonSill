@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 template <typename Dtype>
 class RoIPoolingLayer : public Layer<Dtype> {

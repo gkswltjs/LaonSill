@@ -1,6 +1,6 @@
 #include "TestUtil.h"
 #include "Cuda.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "LearnableLayer.h"
 #include "NetworkConfig.h"
 

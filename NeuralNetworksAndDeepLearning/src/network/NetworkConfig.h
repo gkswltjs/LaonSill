@@ -16,7 +16,7 @@
 
 #include "common.h"
 #include "Evaluation.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "InputLayer.h"
 #include "LearnableLayer.h"
 #include "SplitLayer.h"

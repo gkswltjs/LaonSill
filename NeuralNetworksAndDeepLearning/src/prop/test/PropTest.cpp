@@ -10,7 +10,7 @@
 #include "common.h"
 #include "PropMgmt.h"
 #include "StdOutLog.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "WorkContext.h"
 
 using namespace std;

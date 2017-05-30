@@ -13,7 +13,7 @@
 #include "Cost.h"
 #include "Activation.h"
 #include "NetworkListener.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "InputLayer.h"
 #include "ALEInputLayer.h"
 #include "LayerConfig.h"

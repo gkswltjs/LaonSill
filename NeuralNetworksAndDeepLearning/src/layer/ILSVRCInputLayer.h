@@ -16,7 +16,7 @@
 
 #include "common.h"
 #include "InputLayer.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 typedef struct ILSVRCMeta_s {
     std::string filePath;

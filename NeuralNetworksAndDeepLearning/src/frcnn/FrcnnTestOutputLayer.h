@@ -8,7 +8,7 @@
 #ifndef FRCNNTESTOUTPUTLAYER_H_
 #define FRCNNTESTOUTPUTLAYER_H_
 
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "frcnn_common.h"
 
 template <typename Dtype>

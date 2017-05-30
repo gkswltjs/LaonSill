@@ -10,7 +10,7 @@
 #define LAYER_LRNLAYER_H_
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "LayerConfig.h"
 #include "Exception.h"
 

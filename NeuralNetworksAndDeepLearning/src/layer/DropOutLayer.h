@@ -12,7 +12,7 @@
 #include <memory>
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "LayerConfig.h"
 #include "SyncMem.h"
 

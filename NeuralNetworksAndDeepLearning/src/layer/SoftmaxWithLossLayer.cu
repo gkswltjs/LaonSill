@@ -29,7 +29,7 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer()
 	const bool hasNormalize = SLPROP(Loss, hasNormalize);
 	const bool normalize = SLPROP(Loss, normalize);
 	if (!hasNormalization && hasNormalize)
-		this->normalization = normalize ?
+		SLPROP(SoftmaxWithLoss, normalization) = normalize ?
 				LossLayer<Dtype>::NormalizationMode::Valid :
 				LossLayer<Dtype>::NormalizationMode::BatchSize;
 
@@ -193,7 +193,7 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	Dtype validCount = -1;
 	// Only launch another CUDA kernel if we actually need the count of valid
 	// outputs.
-	if (this->normalization == LossLayer<Dtype>::NormalizationMode::Valid &&
+	if (SLPROP(SoftmaxWithLoss, normalization) == LossLayer<Dtype>::NormalizationMode::Valid &&
 			SLPROP(SoftmaxWithLoss, hasIgnoreLabel))
 		soooa_gpu_asum(nthreads, counts, &validCount);
 
@@ -282,7 +282,7 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 		Dtype validCount = -1;
 		// Only launch another CUDA kernel if we actually need the count of valid
 		// outputs.
-		if (this->normalization == LossLayer<Dtype>::NormalizationMode::Valid &&
+		if (SLPROP(SoftmaxWithLoss, normalization) == LossLayer<Dtype>::NormalizationMode::Valid &&
 				SLPROP(SoftmaxWithLoss, hasIgnoreLabel))
 			soooa_gpu_asum(nthreads, counts, &validCount);
 
@@ -316,7 +316,7 @@ Dtype SoftmaxWithLossLayer<Dtype>::cost() {
 template <typename Dtype>
 Dtype SoftmaxWithLossLayer<Dtype>::getNormalizer(int validCount) {
 	Dtype normalizer;
-	switch (this->normalization) {
+	switch (SLPROP(SoftmaxWithLoss, normalization)) {
 	case LossLayer<Dtype>::NormalizationMode::Full:
 		normalizer = Dtype(this->outerNum * this->innerNum);
 		break;

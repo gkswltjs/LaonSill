@@ -15,7 +15,7 @@
 
 #include "common.h"
 #include "InputLayer.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 #define KISTIDATA_DEFAULT_RESIZED_ROW_SIZE       224
 #define KISTIDATA_DEFAULT_RESIZED_COL_SIZE       224

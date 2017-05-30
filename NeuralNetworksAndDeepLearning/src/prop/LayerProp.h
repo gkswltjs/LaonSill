@@ -9,7 +9,7 @@
 #ifndef LAYERPROP_H
 #define LAYERPROP_H 
 
-#include "Layer.h"
+#include "BaseLayer.h"
 
 class LayerProp {
 public: 

@@ -8,9 +8,7 @@
 #ifndef SPLITLAYER_H_
 #define SPLITLAYER_H_
 
-
-
-#include "Layer.h"
+#include "BaseLayer.h"
 
 template <typename Dtype>
 class SplitLayer : public Layer<Dtype> {

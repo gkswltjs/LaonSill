@@ -10,7 +10,7 @@
 #define LAYER_DEPTHCONCATLAYER_H_
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "Exception.h"
 
 

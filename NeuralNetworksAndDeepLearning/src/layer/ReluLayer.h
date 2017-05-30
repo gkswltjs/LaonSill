@@ -9,7 +9,7 @@
 #define RELULAYER_H_
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 template <typename Dtype>
 class ReluLayer : public Layer<Dtype> {

@@ -11,7 +11,7 @@
 #define LAYER_POOLINGLAYER_H_
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "Pooling.h"
 #include "PoolingFactory.h"
 #include "Exception.h"

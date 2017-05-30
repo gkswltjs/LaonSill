@@ -10,7 +10,7 @@
 #define BATCHNORMLAYER_H 
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "LearnableLayer.h"
 #include "LayerConfig.h"
 #include "Activation.h"

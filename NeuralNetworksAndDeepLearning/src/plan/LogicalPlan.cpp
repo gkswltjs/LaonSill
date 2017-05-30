@@ -11,7 +11,7 @@
 #include "LogicalPlan.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "LayerPropList.h"
 #include "PropMgmt.h"
 #include "WorkContext.h"

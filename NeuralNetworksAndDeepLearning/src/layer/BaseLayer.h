@@ -1,5 +1,5 @@
 /**
- * @file	Layer.h
+ * @file	BaseLayer.h
  * @date	2016/5/10
  * @author	jhkim
  * @brief

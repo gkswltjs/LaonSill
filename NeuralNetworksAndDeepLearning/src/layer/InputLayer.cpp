@@ -46,8 +46,6 @@ InputLayer<Dtype>::InputLayer()
 	} else if (sourceType == "Mock") {
 		this->_dataSet = new MockDataSet<Dtype>(4, 4, 3, 10, 10, 10);
 		this->_dataSet->load();
-	} else {
-		SASSERT(false, "Unsupported Input Source Type: %s", sourceType.c_str());
 	}
 }
 

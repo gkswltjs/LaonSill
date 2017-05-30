@@ -7,7 +7,7 @@
  */
 
 #include "Donator.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "ConvLayer.h"
 #include "BatchNormLayer.h"
 #include "FullyConnectedLayer.h"

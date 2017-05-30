@@ -17,7 +17,7 @@
 
 #include "common.h"
 #include "Util.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "DataSet.h"
 
 /**

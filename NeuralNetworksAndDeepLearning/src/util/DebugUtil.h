@@ -13,7 +13,7 @@
 
 #include "common.h"
 #include "NetworkConfig.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 template<typename Dtype>
 class DebugUtil {

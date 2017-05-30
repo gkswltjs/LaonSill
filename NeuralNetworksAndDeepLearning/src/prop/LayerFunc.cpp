@@ -9,7 +9,7 @@
 #include <iostream>
 
 #include "LayerFunc.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "SysLog.h"
 
 using namespace std;

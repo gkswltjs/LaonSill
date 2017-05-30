@@ -11,7 +11,7 @@
 
 #include "common.h"
 #include "frcnn_common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "RoIInputLayer.h"
 #include "ImagePackDataSet.h"
 #include "PascalVOC.h"

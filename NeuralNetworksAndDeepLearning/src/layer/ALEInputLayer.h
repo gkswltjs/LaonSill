@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "DQNState.h"
 #include "DQNTransition.h"
 #include "DQNImageLearner.h"

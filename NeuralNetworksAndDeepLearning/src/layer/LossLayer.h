@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 template <typename Dtype>
 class LossLayer : public Layer<Dtype> {
@@ -36,10 +36,6 @@ public:
 		Layer<Dtype>::backpropagation();
 	}
 	virtual Dtype cost() = 0;
-
-protected:
-	NormalizationMode normalization;
-
 };
 
 #endif /* LOSSLAYER_H_ */

@@ -10,7 +10,7 @@
 #include <cfloat>
 
 #include "DataSet.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "SoftmaxWithLossLayer.h"
 #include "LossLayer.h"
 #include "Util.h"

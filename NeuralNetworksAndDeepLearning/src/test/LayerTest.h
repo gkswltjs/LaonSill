@@ -10,7 +10,7 @@
 
 #include "LayerTestInterface.h"
 #include "TestUtil.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 using namespace std;
 

@@ -11,7 +11,7 @@
 #if 1
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 //#include "Activation.h"
 #include "Cuda.h"
 

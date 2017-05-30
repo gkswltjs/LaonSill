@@ -9,11 +9,10 @@
 #define RESHAPELAYER_H_
 
 
-#if 1
 #include <vector>
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 
 template <typename Dtype>
@@ -44,7 +43,5 @@ public:
     static void backwardTensor(void* instancePtr);
     static void learnTensor(void* instancePtr);
 };
-
-#endif
 
 #endif /* RESHAPELAYER_H_ */

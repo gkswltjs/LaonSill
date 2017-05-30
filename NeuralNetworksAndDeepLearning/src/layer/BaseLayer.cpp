@@ -5,7 +5,7 @@
  *      Author: jhkim
  */
 
-#include "Layer.h"
+#include "BaseLayer.h"
 
 #include <stddef.h>
 #include <utility>
@@ -49,9 +49,6 @@ int Layer<Dtype>::getId() {
 
 template <typename Dtype>
 Layer<Dtype>::Layer() {
-	const vector<bool>& propDown = SLPROP_BASE(propDown);
-	const vector<string>& inputs = SLPROP_BASE(input);
-	SASSERT0(propDown.size() == inputs.size());
 }
 
 template <typename Dtype>
