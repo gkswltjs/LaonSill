@@ -58,12 +58,6 @@ public:
     virtual void syncParams(LearnableLayer<Dtype> *targetLayer) {}
     virtual void receiveParam(LearnableLayer<Dtype>* donatorLayer) {}
 
-    void fillDonatorInfo(bool isDonator, bool isReceiver, uint32_t donatorID) {
-        this->isDonator = isDonator;
-        this->isReceiver = isReceiver;
-        this->donatorID = donatorID;
-    }
-
 protected:
 	virtual void _updateParam(const uint32_t paramSize, const Dtype regScale,
                               const Dtype learnScale, Data<Dtype>* dataHistory,
@@ -74,11 +68,6 @@ public:
 	std::vector<Data<Dtype>*> _paramsHistory;
 	std::vector<Data<Dtype>*> _paramsHistory2;
 	std::vector<bool> _paramsInitialized;
-
-public:
-    bool isDonator;
-    bool isReceiver;
-    uint32_t donatorID;
 };
 
 #endif /* LEARNABLELAYER_H_ */

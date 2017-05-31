@@ -9,7 +9,7 @@
 #include "Worker.h"
 
 #include "Debug.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "Param.h"
 #include "ColdLog.h"
 #include "HotLog.h"

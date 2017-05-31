@@ -229,7 +229,7 @@ __global__ void ComputeShiftGrad(const Dtype *outputGrads, int depth, int batchC
 
 template<typename Dtype>
 BatchNormLayer<Dtype>::~BatchNormLayer() {
-    if (this->isReceiver) {
+    if (SLPROP_BASE(receive)) {
         Donator<Dtype>::releaseReceiver(SLPROP_BASE(donatorID));
     } else {
         Util::clearVector(this->_params);

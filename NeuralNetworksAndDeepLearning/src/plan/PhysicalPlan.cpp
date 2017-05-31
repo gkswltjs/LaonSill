@@ -14,6 +14,8 @@
 #include "Worker.h"
 #include "LayerFunc.h"
 #include "StdOutLog.h"
+#include "LearnableLayer.h"
+#include "Donator.h"
 
 using namespace std;
 
@@ -118,17 +120,25 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
             }
         }
 
-        // (2) allocate layer tensor(ex. paramHistory)
-        if (SLPROP_BASE(receive)) {
-            // TODO: 구현
-            SASSERT(false, "not implemented yet");
-        }
-
         SASSERT0(LayerFunc::allocLayerTensors(layerType, instancePtr) == true);
 
-        if (SLPROP_BASE(donate)) {
-            // TODO: 구현
-            SASSERT(false, "not implemented yet");
+        if (SLPROP_BASE(learnable)) {
+            if (SLPROP_BASE(donate))
+                SLPROP_BASE(donatorID) = SLPROP_BASE(id);
+
+            LearnableLayer<float>* learnableLayer = (LearnableLayer<float>*)instancePtr;
+
+            if (SLPROP_BASE(receive)) {
+                SASSERT0(!SLPROP_BASE(donate));
+                SASSERT0(SLPROP_BASE(donatorID) >= 0);
+                Donator<float>::receive(SLPROP_BASE(donatorID), instancePtr);
+            }
+
+            if (SLPROP_BASE(donate)) {
+                SASSERT0(!SLPROP_BASE(receive));
+                SASSERT0(SLPROP_BASE(donatorID) >= 0);
+                Donator<float>::donate(SLPROP_BASE(donatorID), instancePtr);
+            }
         }
     }
 }

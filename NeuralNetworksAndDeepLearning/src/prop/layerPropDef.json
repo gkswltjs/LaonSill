@@ -16,7 +16,7 @@
             ["propDown", "std::vector<bool>", ""],
             ["donate", "bool", "false"],
             ["receive", "bool", "false"],
-            ["donatorID", "int", "0"],
+            ["donatorID", "int", "-1"],
             ["learnable", "bool", "false"],
             ["innerLayerIDs", "std::vector<int>", ""],
             ["defaultPropDown", "std::vector<bool>", ""]

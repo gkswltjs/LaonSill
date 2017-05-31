@@ -113,7 +113,7 @@ ConvLayer<Dtype>::ConvLayer()
 
 template <typename Dtype>
 ConvLayer<Dtype>::~ConvLayer() {
-    if (this->isReceiver) {
+    if (SLPROP_BASE(receive)) {
         Donator<Dtype>::releaseReceiver(SLPROP_BASE(donatorID));
     } else {
         delete this->_params[ParamType::Filter];
