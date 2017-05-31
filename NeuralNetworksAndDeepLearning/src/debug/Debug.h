@@ -35,7 +35,6 @@
 #include "ProposalLayer.h"
 #include "ProposalTargetLayer.h"
 #include "RoIPoolingLayer.h"
-#include "NetworkConfig.h"
 #include "Pooling.h"
 #include "Param.h"
 #include "ALEInputLayer.h"
@@ -51,6 +50,7 @@
 #include "ILSVRCInputLayer.h"
 #include "DropOutLayer.h"
 #include "YOLOLossLayer.h"
+#include "Network.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;

@@ -18,7 +18,7 @@
 #include "common.h"
 #include "KistiInputLayer.h"
 #include "InputLayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "ImageUtil.h"

@@ -10,7 +10,6 @@
 #include "DQNWork.h"
 #include "SysLog.h"
 #include "Network.h"
-#include "NetworkConfig.h"
 #include "LegacyWork.h"
 #include "Broker.h"
 #include "Debug.h"

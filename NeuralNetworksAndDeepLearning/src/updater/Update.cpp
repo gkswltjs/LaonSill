@@ -10,7 +10,7 @@
 #include "PropMgmt.h"
 #include "SysLog.h"
 #include "Worker.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "MathFunctions.h"
 
 template<typename Dtype>
@@ -108,6 +108,49 @@ void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
     } else {
         SASSERT(false, "invalid optimizer. optimizer=%d", (int)opt);
     }
+}
+
+/**
+ * learning rate policy (from CAFFE definition)
+ *    - fixed: always return base_lr.
+ *    - step: return base_lr * gamma ^ (floor(iter / step))
+ *    - exp: return base_lr * gamma ^ iter
+ *    - inv: return base_lr * (1 + gamma * iter) ^ (- power)
+ *    - multistep: similar to step but it allows non uniform steps defined by
+ *      stepvalue
+ *    - poly: the effective learning rate follows a polynomial decay, to be
+ *      zero by the max_iter. return base_lr (1 - iter/max_iter) ^ (power)
+ *    - sigmoid: the effective learning rate follows a sigmod decay
+ *      return base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))))
+ */
+template <typename Dtype>
+float Update<Dtype>::calcLearningRate() {
+	float rate;
+	switch (SNPROP(lrPolicy)) {
+        case Fixed: {
+            rate = SNPROP(baseLearningRate);
+        }
+            break;
+        case Step: {
+            uint32_t currentStep = SNPROP(iterations) / SNPROP(stepSize);
+            rate = SNPROP(baseLearningRate) * pow(SNPROP(gamma), currentStep);
+
+            if (SNPROP(rate) < 0.0f || SNPROP(rate) != rate) {
+                SNPROP(rate) = rate;
+            }
+        }
+            break;
+        case Poly: {
+            rate = SNPROP(baseLearningRate) * 
+                pow((1.0 - (float)SNPROP(iterations) / (float)SNPROP(epochs)), SNPROP(power));
+        }
+            break;
+        default: {
+            exit(1);
+        }
+	}
+
+	return rate;
 }
 
 template class Update<float>;

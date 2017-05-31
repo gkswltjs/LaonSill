@@ -9,7 +9,7 @@
 #include "cuda_runtime.h"
 
 #include "BatchNormLayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "ColdLog.h"
@@ -17,6 +17,7 @@
 #include "MathFunctions.h"
 #include "PropMgmt.h"
 #include "Update.h"
+#include "Donator.h"
 
 #define BATCHCONDLAYER_LOG  1
 
@@ -229,7 +230,7 @@ __global__ void ComputeShiftGrad(const Dtype *outputGrads, int depth, int batchC
 template<typename Dtype>
 BatchNormLayer<Dtype>::~BatchNormLayer() {
     if (this->isReceiver) {
-        Donator<Dtype>::releaseReceiver(this->donatorID);
+        Donator<Dtype>::releaseReceiver(SLPROP_BASE(donatorID));
     } else {
         Util::clearVector(this->_params);
         Util::clearVector(this->_paramsHistory);
@@ -244,7 +245,7 @@ template <typename Dtype>
 void BatchNormLayer<Dtype>::update() {
     const uint32_t size = this->depth;
 	const Dtype regScale = SNPROP(weightDecay);
-	const Dtype learnScale = NetworkConfig<float>::calcLearningRate();
+	const Dtype learnScale = Update<float>::calcLearningRate();
     const Dtype decayRate = SNPROP(decayRate);
     const Dtype beta1 = SNPROP(beta1);
     const Dtype beta2 = SNPROP(beta2);

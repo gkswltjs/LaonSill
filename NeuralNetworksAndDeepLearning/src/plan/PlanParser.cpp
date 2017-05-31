@@ -333,5 +333,7 @@ int PlanParser::loadNetwork(string filePath) {
 
     fb.close();
 
+    network->setLoaded();
+
     return networkID;
 }

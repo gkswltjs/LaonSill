@@ -66,7 +66,7 @@ bool PlanOptimizer::buildPlans(int networkID, int option, PlanOptPolicy policy) 
 
     for (int i = 0; i < availableOptions.size(); i++) {
         setPlanContext(networkID, availableOptions[i], true);
-        double curElapsedTime = testPlan();
+        double curElapsedTime = runPlan();
 
         if (isFirst) {
             bestOption = availableOptions[i];
@@ -86,7 +86,7 @@ bool PlanOptimizer::buildPlans(int networkID) {
     return buildPlans(networkID, PLAN_OPT_DEFAULT, PLAN_OPT_POLICY_DEFAULT);
 }
 
-double PlanOptimizer::testPlan() {
+double PlanOptimizer::runPlan() {
     struct timespec startTime, endTime;
     clock_gettime(CLOCK_REALTIME, &startTime);
    
@@ -220,6 +220,7 @@ void PlanOptimizer::setPlanContext(int networkID, int option, bool isTest) {
             break;
     }
     PhysicalPlan::allocateTensor(networkID);
+    PhysicalPlan::loadNetwork();
 }
 
 void PlanOptimizer::unsetPlanContext(int networkID) {

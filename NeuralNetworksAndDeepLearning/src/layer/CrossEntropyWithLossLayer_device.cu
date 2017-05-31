@@ -9,7 +9,7 @@
 #include "cuda_runtime.h"
 
 #include "CrossEntropyWithLossLayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "PropMgmt.h"

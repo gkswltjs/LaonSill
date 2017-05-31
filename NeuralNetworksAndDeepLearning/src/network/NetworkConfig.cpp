@@ -689,7 +689,7 @@ float NetworkConfig<Dtype>::getLearningRate() {
 }
 #endif
 
-
+#if 0
 template <typename Dtype>
 float NetworkConfig<Dtype>::calcLearningRate() {
 	float rate;
@@ -721,6 +721,7 @@ float NetworkConfig<Dtype>::calcLearningRate() {
 
 	return rate;
 }
+#endif
 
 
 template class NetworkConfig<float>;

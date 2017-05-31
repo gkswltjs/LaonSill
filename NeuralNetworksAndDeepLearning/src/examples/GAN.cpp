@@ -12,7 +12,7 @@
 #include "Debug.h"
 #include "GAN.h"
 #include "StdOutLog.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "NetworkMonitor.h"
 #include "ImageUtil.h"
 

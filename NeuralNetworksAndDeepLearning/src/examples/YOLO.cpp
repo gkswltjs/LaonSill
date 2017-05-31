@@ -12,7 +12,7 @@
 #include "Debug.h"
 #include "YOLO.h"
 #include "StdOutLog.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "NetworkMonitor.h"
 #include "ImageUtil.h"
 #include "DebugUtil.h"

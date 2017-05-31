@@ -93,6 +93,9 @@ public:
 
     static void setCurPlan(int networkID, int dopID);
 
+    static void saveNetwork(bool checkCond);
+    static void loadNetwork();
+
 private:
     static std::map<int, std::vector<PhysicalPlan*>>    planGlobalMap;    // key = networkID,
                                                                 // value = Physical Plans

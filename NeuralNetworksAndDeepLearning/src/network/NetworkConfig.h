@@ -54,7 +54,7 @@ public:
 };
 #endif
 
-
+#if 0
 enum NetworkStatus : int {
 	Train = 0,
 	Test = 1
@@ -82,7 +82,7 @@ enum Optimizer : int {
     RMSprop,
     Adam
 };
-
+#endif
 
 template <typename Dtype>
 class NetworkConfig {
@@ -223,9 +223,9 @@ public:
 	bool doTest();
 	bool doSave();
 	float getLearningRate();
-#endif
 
     static float calcLearningRate();
+#endif
 
 #if 0
 private:

@@ -16,7 +16,7 @@
 #include "common.h"
 #include "NoiseInputLayer.h"
 #include "InputLayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
 

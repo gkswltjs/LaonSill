@@ -9,7 +9,7 @@
 #include "common.h"
 #include "ALEInputLayer.h"
 #include "InputLayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "PropMgmt.h"
 #include "SysLog.h"
 

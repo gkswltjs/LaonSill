@@ -66,6 +66,10 @@
         "batchSize" : 4,
         "epochs" : 4,
         "lossLayer" : ["loss"],
-        "gamma" : 0.1
+        "gamma" : 0.1,
+        "miniBatch" : 50,
+        "saveInterval" : 50,
+        "savePathPrefix" : "",
+        "loadPath" : "/home/monhoney/SOOOA_HOME/network/200.param"
     }
 }

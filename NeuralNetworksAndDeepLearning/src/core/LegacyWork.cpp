@@ -12,7 +12,6 @@
 #include "common.h"
 #include "LegacyWork.h"
 #include "Network.h"
-#include "NetworkConfig.h"
 #include "ColdLog.h"
 #include "StdOutLog.h"
 #include "Debug.h"
@@ -57,7 +56,7 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
 
     COLD_LOG(ColdLog::INFO, true, "training network starts(maxEpoch: %d).", maxEpochs);
 
-    network->sgd_with_timer(maxEpochs);
+    network->run_with_timer(maxEpochs);
 
     // XXX: save() 함수 확인 다시하자.
     //if (consumerIdx == 0)
@@ -163,7 +162,7 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
 
     COLD_LOG(ColdLog::INFO, true, "training network starts(maxEpoch: %d).", maxEpochs);
 
-    network->sgd_with_timer(maxEpochs);
+    network->run_with_timer(maxEpochs);
 
     // XXX: save() 함수 확인 다시하자.
     //if (consumerIdx == 0)

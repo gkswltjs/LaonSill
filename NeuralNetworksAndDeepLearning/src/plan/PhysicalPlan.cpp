@@ -166,6 +166,34 @@ void PhysicalPlan::markFinish(int planID) {
     SASSUME0(this->depRefMap[planID] >= 0);
 }
 
+void PhysicalPlan::saveNetwork(bool checkCond) {
+    if (checkCond) {
+        bool saveNetwork = false;
+
+        if ((SNPROP(saveInterval) != 0) &&
+            ((SNPROP(iterations) % SNPROP(saveInterval)) == 0)) {
+            saveNetwork = true;
+        } 
+
+        if (!saveNetwork)
+            return;
+    }
+
+    int networkID = WorkContext::curNetworkID;
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->save();
+}
+
+void PhysicalPlan::loadNetwork() {
+    if (SNPROP(loadPath) == "")
+        return;
+    
+    int networkID = WorkContext::curNetworkID;
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->load();
+
+}
+
 bool PhysicalPlan::generatePlan() {
     // (1) mini batch를 다 돌았는지 확인한다.
     // FIXME: plan lock의 범위가 좀 넓다.. 최적화 고민해보자.
@@ -174,7 +202,6 @@ bool PhysicalPlan::generatePlan() {
         planLock.unlock();
         return true;
     }
-
 
     // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
     unique_lock<mutex> planInfoLock(WorkContext::curPlanInfo->planMutex);
@@ -188,10 +215,21 @@ bool PhysicalPlan::generatePlan() {
     } else {
         WorkContext::curPlanInfo->curMiniBatchIndex += 1;
     }
+    SNPROP(iterations) += 1;
 
+    bool saveNetwork = false;
+    if ((SNPROP(saveInterval) != 0) &&
+        ((SNPROP(iterations) % SNPROP(saveInterval)) == 0)) {
+        saveNetwork = true;
+    }
     planInfoLock.unlock();
 
     if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
+        planLock.unlock();
+
+        if (saveNetwork)
+            PhysicalPlan::saveNetwork(false);
+            
         return false;
     }
 
@@ -210,6 +248,11 @@ bool PhysicalPlan::generatePlan() {
     
         depRefMap[key] = value.depCount;
     }
+
+    planLock.unlock();
+
+    if (saveNetwork)
+        PhysicalPlan::saveNetwork(false);
 
     return true;
 }

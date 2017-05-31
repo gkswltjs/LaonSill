@@ -46,7 +46,7 @@ public:
 
     static void removePlans(int networkID);
     static void init();
-    static double testPlan();
+    static double runPlan();
 
 private:
     static void setPlanContext(int networkID, int option, bool isTest);

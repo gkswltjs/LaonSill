@@ -5,6 +5,8 @@
  *      Author: jhkim
  */
 
+#include <stdlib.h>
+
 #include <vector>
 #include <map>
 #include <cfloat>
@@ -20,9 +22,15 @@
 #include "Network.h"
 #include "SysLog.h"
 #include "DebugUtil.h"
+#include "WorkContext.h"
+#include "PhysicalPlan.h"
+#include "PlanOptimizer.h"
+#include "PropMgmt.h"
+#include "LearnableLayer.h"
 
 using namespace std;
 
+extern const char*  SOOOA_HOME_ENVNAME;
 
 template<typename Dtype>
 atomic<int>         Network<Dtype>::networkIDGen;
@@ -36,6 +44,7 @@ Network<Dtype>::Network() {
     this->networkID = atomic_fetch_add(&Network<Dtype>::networkIDGen, 1);
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
     Network<Dtype>::networkIDMap[this->networkID] = this;
+    this->isLoaded = false;
 }
 
 template<typename Dtype>
@@ -59,13 +68,10 @@ Network<Dtype>::~Network() {
 }
 
 template <typename Dtype>
-void Network<Dtype>::sgd_with_timer(int epochs) {
+void Network<Dtype>::run_with_timer(int epochs) {
     struct timespec startTime;
     SPERF_START(NETWORK_TRAINING_TESTTIME, &startTime);
-    // XXX: 임시
-    //epochs = 1000000;
-    //epochs = 1;
-	sgd(epochs);
+	run(epochs);
 
     SPERF_END(NETWORK_TRAINING_TESTTIME, startTime, epochs);
     STDOUT_BLOCK(cout << "Total Training Time : " << SPERF_TIME(NETWORK_TRAINING_TESTTIME)
@@ -73,26 +79,71 @@ void Network<Dtype>::sgd_with_timer(int epochs) {
 }
 
 template<typename Dtype>
-Dtype Network<Dtype>::sgd(int epochs) {
-    return 0.0;
+void Network<Dtype>::run(int epochs) {
+    SASSERT0(this->isLoaded);
+
+    WorkContext::updateNetwork(this->networkID); 
+    SNPROP(epochs) = epochs;
+    PlanOptimizer::buildPlans(networkID);
+    PlanOptimizer::runPlan();
 }
 
 template <typename Dtype>
 void Network<Dtype>::save() {
-    // TODO : 반드시 구현 필요
-#if 0
-	config->save();
-#endif
+    string path;
+	if (SNPROP(savePathPrefix) == "") {
+        path = string(getenv(SOOOA_HOME_ENVNAME)) + "/network/" +
+            to_string(SNPROP(iterations)) + ".param";
+    } else {
+        path = SNPROP(savePathPrefix) + to_string(SNPROP(iterations)) + ".param";
+    }
+
+	// save learned params
+	ofstream paramOfs(path.c_str(), ios::out | ios::binary);
+
+	uint32_t numParams = 0;
+    WorkContext::updateNetwork(this->networkID);
+    PhysicalPlan* pp = WorkContext::curPhysicalPlan;
+    for (map<int, void*>::iterator iter = pp->instanceMap.begin();
+        iter != pp->instanceMap.end(); iter++) {
+        int layerID = iter->first;
+        void* instancePtr = iter->second;
+
+        WorkContext::updateLayer(this->networkID, layerID);
+        if (!SLPROP_BASE(learnable))
+            continue;
+
+        LearnableLayer<Dtype>* ll = (LearnableLayer<Dtype>*)instancePtr;
+        numParams += ll->numParams();
+    }
+
+	paramOfs.write((char*)&numParams, sizeof(uint32_t));
+    for (map<int, void*>::iterator iter = pp->instanceMap.begin();
+        iter != pp->instanceMap.end(); iter++) {
+        int layerID = iter->first;
+        void* instancePtr = iter->second;
+
+        WorkContext::updateLayer(this->networkID, layerID);
+        if (!SLPROP_BASE(learnable))
+            continue;
+
+        LearnableLayer<Dtype>* ll = (LearnableLayer<Dtype>*)instancePtr;
+        ll->saveParams(paramOfs);
+    }
+
+	paramOfs.close();
+
+    if (SPARAM(PRINT_EDGELOG_AFTER_NETWORKSAVE))
+        DebugUtil<Dtype>::printNetworkEdges(stderr, "network save result", this->networkID, 0);
 }
 
 template <typename Dtype>
 void Network<Dtype>::load() {
     // TODO : 반드시 구현 필요
-#if 0
 	// load data list from model file
 	map<std::string, Data<float>*> dataMap;
 
-    ifstream ifs(config->_loadPath, std::ios::in | std::ios::binary);
+    ifstream ifs(SNPROP(loadPath), std::ios::in | std::ios::binary);
 
     uint32_t numData;
     ifs.read((char*)&numData, sizeof(uint32_t));
@@ -123,34 +174,57 @@ void Network<Dtype>::load() {
     Data<float>::printConfig = false;
     ifs.close();
 
-	LayersConfig<Dtype>* layersConfig = getLayersConfig();
-	vector<LearnableLayer<Dtype>*> learnableLayers = layersConfig->_learnableLayers;
-	const uint32_t numLearnableLayers = learnableLayers.size();
+    WorkContext::updateNetwork(this->networkID);
+    PhysicalPlan* pp = WorkContext::curPhysicalPlan;
+    for (map<int, void*>::iterator iter = pp->instanceMap.begin();
+        iter != pp->instanceMap.end(); iter++) {
+        int layerID = iter->first;
+        void* instancePtr = iter->second;
 
-	for (uint32_t i = 0; i < numLearnableLayers; i++) {
-		learnableLayers[i]->loadParams(dataMap);
-	}
+        WorkContext::updateLayer(this->networkID, layerID);
+        if (!SLPROP_BASE(learnable))
+            continue;
+
+        LearnableLayer<Dtype>* ll = (LearnableLayer<Dtype>*)instancePtr;
+        ll->loadParams(dataMap);
+    }
 
 	map<std::string, Data<float>*>::iterator it;
 	for (it = dataMap.begin(); it != dataMap.end(); it++)
 		delete it->second;
 	dataMap.clear();
-#endif
+
+    if (SPARAM(PRINT_EDGELOG_AFTER_NETWORKLOAD))
+        DebugUtil<Dtype>::printNetworkEdges(stderr, "network load result", this->networkID, 0);
 }
 
 template <typename Dtype>
-Layer<Dtype>* Network<Dtype>::findLayer(const string name) {
-    // TODO: 구현 필요
-#if 0
-	//return getLayersConfig()->_inputLayer->find(0, name);
-	map<string, Layer<Dtype>*>& nameLayerMap = getLayersConfig()->_nameLayerMap;
-	typename map<string, Layer<Dtype>*>::iterator it = nameLayerMap.find(name);
-	if(it != nameLayerMap.end()) {
-		return it->second;
-	} else {
-		return 0;
-	}
-#endif
+Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
+    SASSERT0(this->networkID == WorkContext::curNetworkID);
+    PhysicalPlan* pp = WorkContext::curPhysicalPlan;
+
+    Layer<Dtype>* layer;
+    bool foundLayer = false;
+    for (map<int, void*>::iterator iter = pp->instanceMap.begin();
+        iter != pp->instanceMap.end(); iter++) {
+        int layerID = iter->first;
+        void* instancePtr = iter->second;
+
+        WorkContext::updateLayer(this->networkID, layerID);
+
+        layer = (Layer<Dtype>*)instancePtr;
+
+        // FIXME: 현재 linear search. 너무 속도가 느리면 개선하자.
+        if (SLPROP_BASE(name) == layerName) {
+            foundLayer = true;
+            break;
+        }
+    }
+
+    if (foundLayer)
+        return layer;
+    else
+        return NULL;
 }
 
 template class Network<float>;

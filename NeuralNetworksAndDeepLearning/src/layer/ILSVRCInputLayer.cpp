@@ -17,7 +17,7 @@
 #include "common.h"
 #include "ILSVRCInputLayer.h"
 #include "InputLayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "PropMgmt.h"

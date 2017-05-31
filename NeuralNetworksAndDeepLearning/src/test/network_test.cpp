@@ -7,7 +7,6 @@
 #include <map>
 
 #include "Network.h"
-#include "NetworkConfig.h"
 #include "Util.h"
 #include "Cuda.h"
 #include "Debug.h"

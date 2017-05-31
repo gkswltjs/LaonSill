@@ -17,7 +17,7 @@
 #include "common.h"
 #include "CelebAInputLayer.h"
 #include "InputLayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "PropMgmt.h"

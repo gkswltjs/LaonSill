@@ -8,12 +8,13 @@
 #include "ConvLayer.h"
 #include "FullyConnectedLayer.h"
 #include "Util.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "cuda_runtime.h"
 #include "MathFunctions.h"
 #include <algorithm>
 #include "PropMgmt.h"
 #include "Update.h"
+#include "Donator.h"
 
 #define CONVLAYER_LOG 1
 
@@ -113,7 +114,7 @@ ConvLayer<Dtype>::ConvLayer()
 template <typename Dtype>
 ConvLayer<Dtype>::~ConvLayer() {
     if (this->isReceiver) {
-        Donator<Dtype>::releaseReceiver(this->donatorID);
+        Donator<Dtype>::releaseReceiver(SLPROP_BASE(donatorID));
     } else {
         delete this->_params[ParamType::Filter];
         delete this->_params[ParamType::Bias];
@@ -380,7 +381,7 @@ void ConvLayer<Dtype>::update() {
 	const uint32_t weightSize = filterDim.size();
 	const Dtype regScale = weightDecay * weightUpdateParam.decay_mult;
 	const Dtype learnScale = 
-			NetworkConfig<Dtype>::calcLearningRate() * weightUpdateParam.lr_mult;
+			Update<Dtype>::calcLearningRate() * weightUpdateParam.lr_mult;
     SLPROP(Conv, decayedBeta1) *= beta1;
     SLPROP(Conv, decayedBeta2) *= beta2;
 
@@ -392,7 +393,7 @@ void ConvLayer<Dtype>::update() {
 	const uint32_t biasSize = filterDim.filters;
 	const Dtype regScale_b = weightDecay * biasUpdateParam.decay_mult;
 	const Dtype learnScale_b = 
-			NetworkConfig<Dtype>::calcLearningRate() * biasUpdateParam.lr_mult;
+			Update<Dtype>::calcLearningRate() * biasUpdateParam.lr_mult;
 
 	Update<Dtype>::updateParam(biasSize, regScale_b, learnScale_b, epsilon, decayRate, beta1,
         beta2, this->_paramsHistory[Bias], this->_paramsHistory2[Bias], this->_params[Bias],

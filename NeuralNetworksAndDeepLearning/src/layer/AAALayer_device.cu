@@ -9,7 +9,7 @@
 #include "cuda_runtime.h"
 
 #include "AAALayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "SysLog.h"
 
 using namespace std;

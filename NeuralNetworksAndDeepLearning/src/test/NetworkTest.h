@@ -12,7 +12,6 @@
 #include "TestUtil.h"
 #include "Util.h"
 #include "Network.h"
-#include "NetworkConfig.h"
 #include "Data.h"
 
 template <typename Dtype>

@@ -16,12 +16,39 @@
 #include "ALEInputLayer.h"
 #include "LayerConfig.h"
 #include "Worker.h"
-#include "NetworkConfig.h"
 #include "DQNImageLearner.h"
 
 template <typename Dtype> class DataSet;
 //template <typename Dtype> class LayersConfig;
 template <typename Dtype> class DQNImageLearner;
+
+enum NetworkStatus : int {
+	Train = 0,
+	Test = 1
+};
+
+enum NetworkPhase : int {
+	TrainPhase = 0,
+	TestPhase = 1
+};
+
+enum LRPolicy : int {
+	Fixed = 0,
+	Step,
+	Exp,
+	Inv,
+	Multistep,
+	Poly
+};
+
+enum Optimizer : int {
+    Momentum = 0,
+    Vanilla,
+    Nesterov,
+    Adagrad,
+    RMSprop,
+    Adam
+};
 
 /**
  * @brief 네트워크 기본 클래스
@@ -52,16 +79,16 @@ public:
     static void init();
 
 	/**
-	 * @details sgd()를 수행한다. 시간을 측정하기 위한 임시 함수.
-	 * @param epochs sgd를 수행할 최대 epoch
+	 * @details run()을 수행한다. 시간을 측정하는 것이 목적.
+	 * @param epochs run()을 수행할 최대 epoch
 	 */
-	void sgd_with_timer(int epochs);
+	void run_with_timer(int epochs);
 
 	/**
 	 * @details stochastic gradient descent를 수행한다.
-	 * @param epochs sgd를 수행할 최대 epoch
+	 * @param epochs run()을 수행할 최대 epoch
 	 */
-	Dtype sgd(int epochs);
+	void run(int epochs);
 
 
 	/**
@@ -80,18 +107,20 @@ public:
 	 * @param name 찾을 레이어의 이름
 	 * @return 찾은 레이어에 대한 포인터
 	 */
-	Layer<Dtype>* findLayer(const std::string name);
+	Layer<Dtype>* findLayer(const std::string layerName);
 
 
 public:
     int                                     getNetworkID() { return this->networkID; }
     static Network<Dtype>*                  getNetworkFromID(int networkID);
+    void                                    setLoaded() { this->isLoaded = true; }
 
 private:
     int                                     networkID;
     static std::atomic<int>                 networkIDGen;
     static std::map<int, Network<Dtype>*>   networkIDMap;
     static std::mutex                       networkIDMapMutex;
+    bool                                    isLoaded;
 };
 
 

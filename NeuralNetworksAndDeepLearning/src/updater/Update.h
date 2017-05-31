@@ -36,6 +36,8 @@ public:
     static void doAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
         const Dtype lr, const Dtype eps, const Dtype beta1, const Dtype beta2,
         const Dtype decayedBeta1, const Dtype decayedBeta2);
+
+    static float calcLearningRate();
 };
 
 #endif /* UPDATE_H */

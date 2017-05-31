@@ -11,11 +11,12 @@
 #include "FullyConnectedLayer.h"
 #include "MathFunctions.h"
 #include "Util.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "PropMgmt.h"
 #include "Update.h"
+#include "Donator.h"
 
 #define FULLYCONNECTEDLAYER_LOG 0
 
@@ -183,7 +184,7 @@ void FullyConnectedLayer<Dtype>::update() {
 	const uint32_t weightSize = this->in_rows * this->out_rows;
 	const Dtype regScale =
         SNPROP(weightDecay) * SLPROP(FullyConnected, weightUpdateParam).decay_mult;
-	const Dtype learnScale = NetworkConfig<Dtype>::calcLearningRate() *
+	const Dtype learnScale = Update<Dtype>::calcLearningRate() *
 		SLPROP(FullyConnected, weightUpdateParam).lr_mult;
 
     const Dtype epsilon = SNPROP(epsilon);
@@ -202,7 +203,7 @@ void FullyConnectedLayer<Dtype>::update() {
 	const uint32_t biasSize = out_rows;
 	const Dtype regScale_b = 
         SNPROP(weightDecay) * SLPROP(FullyConnected, biasUpdateParam).decay_mult;
-	const Dtype learnScale_b = NetworkConfig<float>::calcLearningRate() *
+	const Dtype learnScale_b = Update<Dtype>::calcLearningRate() *
         SLPROP(FullyConnected, biasUpdateParam).lr_mult;
 
 	Update<Dtype>::updateParam(biasSize, regScale_b, learnScale_b, epsilon, decayRate, beta1,

@@ -2,7 +2,7 @@
 #include "Cuda.h"
 #include "BaseLayer.h"
 #include "LearnableLayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 
 #if 0
 

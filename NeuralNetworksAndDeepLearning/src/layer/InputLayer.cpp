@@ -7,7 +7,7 @@
 
 
 #include "InputLayer.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "ImagePackDataSet.h"
 #include "MockDataSet.h"
 #include "Util.h"

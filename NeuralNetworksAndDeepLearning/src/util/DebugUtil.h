@@ -12,7 +12,7 @@
 #include <string>
 
 #include "common.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "BaseLayer.h"
 
 template<typename Dtype>
@@ -32,13 +32,10 @@ public:
     static void printEdges(FILE *fp, const char* title, Data<Dtype>* data, int flags,
         int indent);
     static void printLayerEdges(FILE *fp, const char* title, Layer<Dtype>* layer, int indent);
-#if 0
-    static void printLayerEdgesByLayerIndex(FILE *fp, const char* title,
-        LayersConfig<Dtype>* lc, int layerIndex, int indent);
-    static void printLayerEdgesByLayerName(FILE *fp, const char* title,
-        LayersConfig<Dtype>* lc, std::string layerName, int indent);
-    static void printNetworkEdges(FILE *fp, const char* title, LayersConfig<Dtype>* lc,
-        int indent);
-#endif
+    static void printLayerEdgesByLayerID(FILE *fp, const char* title, int networkID,
+        int layerID, int indent);
+    static void printLayerEdgesByLayerName(FILE *fp, const char* title, int networkID,
+        std::string layerName, int indent);
+    static void printNetworkEdges(FILE *fp, const char* title, int networkID, int indent);
 };
 #endif /* DEBUGUTIL_H */

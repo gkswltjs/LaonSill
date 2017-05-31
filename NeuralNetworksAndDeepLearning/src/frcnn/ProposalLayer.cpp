@@ -12,7 +12,7 @@
 #include "GenerateAnchorsUtil.h"
 #include "BboxTransformUtil.h"
 #include "frcnn_common.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "PropMgmt.h"
 
 
