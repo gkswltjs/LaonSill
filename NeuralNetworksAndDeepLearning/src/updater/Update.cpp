@@ -19,6 +19,9 @@ void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
     const Dtype beta1, const Dtype beta2, Data<Dtype>* dataHistory,
     Data<Dtype>* dataHistory2, Data<Dtype>* data, float decayedBeta1, float decayedBeta2) {
 
+    if (!SLPROP_BASE(updateGrad))
+        return;
+
 	const uint32_t batches = SNPROP(batchSize);
 	const Dtype normScale = 1.0/batches;
 	const Dtype momentum = SNPROP(momentum);
@@ -142,7 +145,8 @@ float Update<Dtype>::calcLearningRate() {
             break;
         case Poly: {
             rate = SNPROP(baseLearningRate) * 
-                pow((1.0 - (float)SNPROP(iterations) / (float)SNPROP(epochs)), SNPROP(power));
+                pow(1.0 - (float)SNPROP(iterations) / 
+                           ((float)SNPROP(epochs) * (float)SNPROP(miniBatch)), SNPROP(power));
         }
             break;
         default: {

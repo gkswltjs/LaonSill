@@ -281,8 +281,17 @@ try:
                     sourceFile.write('        std::string* val = (std::string*)value;\n')
                     sourceFile.write('        obj->_%s_ = *val;\n' % var[0])
                 else:
-                    sourceFile.write('        %s* val = (%s*)value;\n' % (var[1], var[1]))
-                    sourceFile.write('        obj->_%s_ = *val;\n' % var[0])
+                    if var[1] in ['int', 'unsigned int', 'int32_t', 'uint32_t',\
+                        'int64_t', 'uint64_t', 'long', 'unsigned long', 'short',\
+                        'unsigned short', 'long long', 'unsigned long long']:
+                        sourceFile.write('        int64_t* val = (int64_t*)value;\n')
+                    elif var[1] in ['boolean', 'bool']:
+                        sourceFile.write('        bool* val = (bool*)value;\n')
+                    elif var[1] in ['double', 'float']:
+                        sourceFile.write('        double* val = (double*)value;\n')
+                    else: # XXX: we assume that all user-defined type can be converted as int
+                        sourceFile.write('        int64_t* val = (int64_t*)value;\n')
+                    sourceFile.write('        obj->_%s_ = (%s)*val;\n' % (var[0], var[1]))
                 sourceFile.write('    }')
 
             if isFirstCond == True:
@@ -361,9 +370,19 @@ try:
                         sourceFile.write('        std::string* val = (std::string*)value;\n')
                         sourceFile.write('        obj->_%s_.%s = *val;\n' % (var[0], subVar))
                     else:
-                        sourceFile.write('        %s* val = (%s*)value;\n'\
-                                % (subVarType, subVarType))
-                        sourceFile.write('        obj->_%s_.%s = *val;\n' % (var[0], subVar))
+                        if subVarType in ['int', 'unsigned int', 'int32_t', 'uint32_t',\
+                            'int64_t', 'uint64_t', 'long', 'unsigned long', 'short',\
+                            'unsigned short', 'long long', 'unsigned long long']:
+                            sourceFile.write('        int64_t* val = (int64_t*)value;\n')
+                        elif subVarType in ['boolean', 'bool']:
+                            sourceFile.write('        bool* val = (bool*)value;\n')
+                        elif subVarType in ['double', 'float']:
+                            sourceFile.write('        double* val = (double*)value;\n')
+                        else: 
+                        # XXX: we assume that all user-defined type can be converted as int
+                            sourceFile.write('        int64_t* val = (int64_t*)value;\n')
+                        sourceFile.write('        obj->_%s_.%s = (%s)*val;\n' %\
+                                (var[0], subVar, subVarType))
                     sourceFile.write('    }')
 
             if isFirstCond == True:

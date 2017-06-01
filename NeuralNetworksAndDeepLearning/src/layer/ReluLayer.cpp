@@ -8,8 +8,11 @@
 #include "ReluLayer.h"
 #include "PropMgmt.h"
 #include "SysLog.h"
+#include "StdOutLog.h"
 
 using namespace std;
+
+#define RELULAYER_LOG 1
 
 
 template<typename Dtype>
@@ -51,6 +54,13 @@ void ReluLayer<Dtype>::reshape() {
 			batches, channels, rows, cols));
 
 	this->_outputData[0]->reshape(inputShape);
+
+	STDOUT_COND_LOG(RELULAYER_LOG, 
+        "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
+        SLPROP_BASE(name).c_str(), batches, channels, rows, cols);
+	STDOUT_COND_LOG(RELULAYER_LOG,
+	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
+        SLPROP_BASE(name).c_str(), batches, channels, rows, cols);
 }
 
 template <typename Dtype>

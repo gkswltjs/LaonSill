@@ -20,8 +20,6 @@
 #include "Data.h"
 #include "LayerConfig.h"
 
-template <typename Dtype> class NetworkConfig;
-
 /**
  * @brief 레이어 베이스 추상 클래스, 모든 레이어는 이 클래스를 상속받아 구현한다.
  * @details
@@ -135,14 +133,6 @@ public:
 	std::vector<Data<Dtype>*>& getOutputData() { return this->_outputData; }
 
 	/**
-	 * @details 레이어에 네트워크 설정값을 설정한다.
-	 * @param networkConfig 네트워크 설정값 객체
-	 */
-	virtual void setNetworkConfig(NetworkConfig<Dtype>* networkConfig) { 
-        this->networkConfig = networkConfig; 
-    }
-
-	/**
 	 * @details 현재 레이어의 입력/출력 데이터 구조정보에 의존성이 있는 자료구조들을 구성하고
      *         초기화하고 다음 레이어들에 대해 shape()를 요청한다.
 	 * @param idx 요청을 보낸 이전 레이어의 id
@@ -178,8 +168,6 @@ public:
 	std::vector<std::vector<uint32_t>> _inputShape;
 
 protected:
-	NetworkConfig<Dtype>* networkConfig;				///< 레이어가 속한 네트워크의 설정
-
 	//std::vector<bool> _propDown;
 
 	static const int LAYER_NAME_LENGTH = 32;

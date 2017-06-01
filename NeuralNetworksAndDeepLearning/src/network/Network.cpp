@@ -82,10 +82,13 @@ template<typename Dtype>
 void Network<Dtype>::run(int epochs) {
     SASSERT0(this->isLoaded);
 
+    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(this->networkID); 
     SNPROP(epochs) = epochs;
     PlanOptimizer::buildPlans(networkID);
     PlanOptimizer::runPlan();
+
+    WorkContext::updateNetwork(oldNetworkID);
 }
 
 template <typename Dtype>
@@ -102,6 +105,7 @@ void Network<Dtype>::save() {
 	ofstream paramOfs(path.c_str(), ios::out | ios::binary);
 
 	uint32_t numParams = 0;
+    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(this->networkID);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
     for (map<int, void*>::iterator iter = pp->instanceMap.begin();
@@ -133,8 +137,12 @@ void Network<Dtype>::save() {
 
 	paramOfs.close();
 
-    if (SPARAM(PRINT_EDGELOG_AFTER_NETWORKSAVE))
-        DebugUtil<Dtype>::printNetworkEdges(stderr, "network save result", this->networkID, 0);
+    if (SPARAM(PRINT_EDGELOG_AFTER_NETWORKSAVE)) {
+        DebugUtil<Dtype>::printNetworkEdges(stderr, "network save result", this->networkID,
+            0);
+    }
+
+    WorkContext::updateNetwork(oldNetworkID);
 }
 
 template <typename Dtype>
@@ -174,6 +182,7 @@ void Network<Dtype>::load() {
     Data<float>::printConfig = false;
     ifs.close();
 
+    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(this->networkID);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
     for (map<int, void*>::iterator iter = pp->instanceMap.begin();
@@ -194,13 +203,18 @@ void Network<Dtype>::load() {
 		delete it->second;
 	dataMap.clear();
 
-    if (SPARAM(PRINT_EDGELOG_AFTER_NETWORKLOAD))
-        DebugUtil<Dtype>::printNetworkEdges(stderr, "network load result", this->networkID, 0);
+    if (SPARAM(PRINT_EDGELOG_AFTER_NETWORKLOAD)) {
+        DebugUtil<Dtype>::printNetworkEdges(stderr, "network load result", this->networkID,
+            0);
+    }
+
+    WorkContext::updateNetwork(oldNetworkID);
 }
 
 template <typename Dtype>
 Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
-    SASSERT0(this->networkID == WorkContext::curNetworkID);
+    int oldNetworkID = WorkContext::curNetworkID;
+    WorkContext::updateNetwork(this->networkID);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
 
     Layer<Dtype>* layer;
@@ -221,10 +235,39 @@ Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
         }
     }
 
+    WorkContext::updateNetwork(oldNetworkID);
+
     if (foundLayer)
         return layer;
     else
         return NULL;
+}
+
+template <typename Dtype>
+vector<Layer<Dtype>*> Network<Dtype>::findLayersByType(int layerType) {
+    vector<Layer<Dtype>*> result;
+
+    int oldNetworkID = WorkContext::curNetworkID;
+    WorkContext::updateNetwork(this->networkID);
+    PhysicalPlan* pp = WorkContext::curPhysicalPlan;
+
+    bool foundLayer = false;
+    for (map<int, void*>::iterator iter = pp->instanceMap.begin();
+        iter != pp->instanceMap.end(); iter++) {
+        int layerID = iter->first;
+        void* instancePtr = iter->second;
+
+        WorkContext::updateLayer(this->networkID, layerID);
+
+        // FIXME: 현재 linear search. 너무 속도가 느리면 개선하자.
+        if (WorkContext::curLayerProp->layerType == layerType) {
+            result.push_back((Layer<Dtype>*)instancePtr);
+        }
+    }
+
+    WorkContext::updateNetwork(oldNetworkID);
+
+    return result;
 }
 
 template class Network<float>;

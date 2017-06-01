@@ -125,7 +125,7 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 	const uint32_t batches = inputShape[0];
 	const uint32_t unitSize = Util::vecCountByAxis(inputShape, 1);
 
-	NetworkStatus status = SNPROP(status);
+	NetworkStatus status = (NetworkStatus)SNPROP(status);
 	if (status == NetworkStatus::Train) {
 		// data
 		for (uint32_t i = 0; i < batches; i++) {

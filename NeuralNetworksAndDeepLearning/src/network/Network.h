@@ -79,13 +79,13 @@ public:
     static void init();
 
 	/**
-	 * @details run()을 수행한다. 시간을 측정하는 것이 목적.
+	 * @details run()을 수행하면서 시간을 측정한다.
 	 * @param epochs run()을 수행할 최대 epoch
 	 */
 	void run_with_timer(int epochs);
 
 	/**
-	 * @details stochastic gradient descent를 수행한다.
+	 * @details 네트워크를 실행한다. (예를 들자면 stochastic gradient descent를 수행한다.)
 	 * @param epochs run()을 수행할 최대 epoch
 	 */
 	void run(int epochs);
@@ -108,6 +108,8 @@ public:
 	 * @return 찾은 레이어에 대한 포인터
 	 */
 	Layer<Dtype>* findLayer(const std::string layerName);
+
+    std::vector<Layer<Dtype>*> findLayersByType(int layerType);
 
 
 public:

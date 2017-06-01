@@ -27,7 +27,7 @@
     ["phase", "int", "NetworkPhase::TrainPhase"],
     ["lossLayer", "std::vector<std::string>", ""],
     ["rate", "float", "-1.0"],
-    ["status", "NetworkStatus", "NetworkStatus::Train"]
+    ["status", "int", "NetworkStatus::Train"]
 ]
 
 }

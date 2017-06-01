@@ -15,23 +15,20 @@
 #include "Network.h"
 #include "NetworkMonitor.h"
 #include "ImageUtil.h"
+#include "PlanParser.h"
 
 using namespace std;
 
 template<typename Dtype>
-void GAN<Dtype>::setLayerTrain(LayersConfig<Dtype>* lc, bool train) {
-#if 0
-    int layerCount = lc->_layers.size();
+void GAN<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
+    vector<Layer<Dtype>*> layers = network->findLayersByType((int)Layer<Dtype>::BatchNorm);
 
-    for (int i = 0; i < layerCount; i++) {
-        BatchNormLayer<Dtype>* bnLayer = dynamic_cast<BatchNormLayer<Dtype>*>(lc->_layers[i]);
-
-        if (bnLayer == NULL)
-            continue;
+    for (int i = 0; i < layers.size(); i++) {
+        BatchNormLayer<Dtype>* bnLayer = dynamic_cast<BatchNormLayer<Dtype>*>(layers[i]);
+        SASSUME0(bnLayer != NULL);
 
         bnLayer->setTrain(train);
     }
-#endif
 }
 
 template <typename Dtype>
@@ -390,8 +387,15 @@ LayersConfig<Dtype>* GAN<Dtype>::createGD0OfGANLayersConfig() {
 #endif
 }
 
+#define EXAMPLE_GAN_NETWORKG_FILEPATH               ("../src/examples/GAN/networkG.json")
+
 template<typename Dtype>
 void GAN<Dtype>::run() {
+    //int networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKG_FILEPATH));
+    int networkID = PlanParser::loadNetwork("/home/monhoney/networkG.json");
+    Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
+    network->run(400);
+
 #if 0
     // loss layer of Discriminator GAN 
 	const vector<string> llDGAN = { "celossDGAN" };

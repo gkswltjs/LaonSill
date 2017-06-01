@@ -38,7 +38,7 @@
 #include "ResourceManager.h"
 #include "PlanOptimizer.h"
 
-#include "GAN.h"
+#include "GAN/GAN.h"
 #include "YOLO.h"
 #include "LayerFunc.h"
 #include "LayerPropList.h"
@@ -60,7 +60,8 @@ void developerMain() {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-    YOLO<float>::runPretrain();
+    GAN<float>::run();
+    //YOLO<float>::runPretrain();
     //YOLO<float>::run();
 
     STDOUT_LOG("exit developerMain()");

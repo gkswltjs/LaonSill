@@ -9,6 +9,8 @@
 #ifndef GAN_H
 #define GAN_H 
 
+#include "Network.h"
+
 template<typename Dtype>
 class GAN {
 public: 
@@ -17,8 +19,9 @@ public:
 
     static void run();
 private:
-    static void setLayerTrain(LayersConfig<Dtype>* lc, bool train);
+    static void setLayerTrain(Network<Dtype>* lc, bool train);
     static LayersConfig<Dtype>* createDOfGANLayersConfig();
     static LayersConfig<Dtype>* createGD0OfGANLayersConfig();
 };
+
 #endif /* GAN_H */

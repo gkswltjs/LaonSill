@@ -201,8 +201,6 @@ void PlanParser::handleInnerLayer(int networkID, Json::Value vals, string parent
             string key = keys[j];
             Json::Value val = innerLayer[key.c_str()];
 
-            if (strcmp(key.c_str(), "id") == 0)
-                continue;
             if (strcmp(key.c_str(), "layer") == 0)
                 continue;
 
@@ -267,8 +265,6 @@ int PlanParser::loadNetwork(string filePath) {
             string key = keys[j];
             Json::Value val = layer[key.c_str()];
 
-            if (strcmp(key.c_str(), "id") == 0)
-                continue;
             if (strcmp(key.c_str(), "layer") == 0)
                 continue;
 
@@ -328,6 +324,8 @@ int PlanParser::loadNetwork(string filePath) {
         setPropValue(val, false, "", key,  (void*)networkProp);
     }
     PropMgmt::insertNetworkProp(networkID, networkProp);
+
+    WorkContext::updateNetwork(networkID);
 
     LogicalPlan::build(networkID, planDefMap);
 

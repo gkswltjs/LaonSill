@@ -47,7 +47,8 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
 
     int oldGPUIdx = Worker<float>::gpuIdx;
     if (planAlloc.devID != oldGPUIdx) {
-        checkCudaErrors(cudaSetDevice(planAlloc.devID)); 
+        cout << "set device!!" << endl;
+        //checkCudaErrors(cudaSetDevice(planAlloc.devID)); 
     }
 
     // XXX: float형 코딩으로 박지 말고, 설정에 따라서 template date type을 설정하도록 수정해야
@@ -56,7 +57,8 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
     SASSERT0(tensor != NULL);
 
     if (planAlloc.devID != oldGPUIdx) {
-        checkCudaErrors(cudaSetDevice(oldGPUIdx));
+        cout << "set device!!" << endl;
+        //checkCudaErrors(cudaSetDevice(oldGPUIdx));
     }
 
     LayerFunc::setInOutTensor(layerType, instancePtr, (void*)tensor, isInput, index);

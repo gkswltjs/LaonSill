@@ -16,6 +16,8 @@
 #include "Update.h"
 #include "Donator.h"
 
+//#define USE_OLD_CUDNN       1
+
 #define CONVLAYER_LOG 1
 
 using namespace std;
@@ -105,8 +107,12 @@ ConvLayer<Dtype>::ConvLayer()
 	//int pad = (filterDim.rows-1)/2;
 	checkCUDNN(cudnnSetConvolution2dDescriptor(this->convDesc,
 			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride, 1, 1,
-			CUDNN_CROSS_CORRELATION,
-			CUDNN_DATA_FLOAT));
+			CUDNN_CROSS_CORRELATION
+#if USE_OLD_CUDNN
+            )); 
+#else
+			,CUDNN_DATA_FLOAT));
+#endif
 
 	this->d_workspace = 0;
 }
@@ -214,7 +220,8 @@ void ConvLayer<Dtype>::reshape() {
 	const int b_in = batches * channels * rows * cols;
 	const int b_out = n * c * h * w;
 
-	const size_t memoryLimitInBytes = 8 << 20;
+	//const size_t memoryLimitInBytes = 8 << 20;
+	const size_t memoryLimitInBytes = 8 << 25;
 	//const size_t memoryLimitInBytes = 0;
 
 	size_t convFwdWorkspaceSize;
@@ -231,6 +238,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->outputTensorDesc,
 			//CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
 			CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
+			//CUDNN_CONVOLUTION_FWD_NO_WORKSPACE,
 			memoryLimitInBytes,
 			&this->convFwdAlgo));
 
@@ -251,6 +259,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->inputTensorDesc,
 			//CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
 			CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
+			//CUDNN_CONVOLUTION_FWD_NO_WORKSPACE,
 			8<<20,
 			&this->convFwdAlgo));
 
@@ -274,6 +283,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->filterDesc,
 			//CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
 			CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+			//CUDNN_CONVOLUTION_BWD_FILTER_NO_WORKSPACE,
 			memoryLimitInBytes,
 			&this->convBwdFilterAlgo));
 
@@ -294,6 +304,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->filterDesc,
 			//CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
 			CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+			//CUDNN_CONVOLUTION_BWD_FILTER_NO_WORKSPACE,
 			8<<20,
 			&this->convBwdFilterAlgo));
 
@@ -317,6 +328,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->inputTensorDesc,
 			//CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
 			CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
+            //CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE,
 			memoryLimitInBytes,
 			&this->convBwdDataAlgo));
 
@@ -337,6 +349,7 @@ void ConvLayer<Dtype>::reshape() {
 			this->outputTensorDesc,
 			//CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
 			CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
+            //CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE,
 			8<<20,
 			&this->convBwdDataAlgo));
 
@@ -502,13 +515,13 @@ void ConvLayer<Dtype>::_computeFiltersGrad() {
     if (!deconv) {
 	    checkCUDNN(cudnnConvolutionBackwardFilter(Cuda::cudnnHandle,
 			&Cuda::alpha, this->inputTensorDesc, d_inputData, this->outputTensorDesc,
-            d_outputGrad, this->convDesc, this->convBwdFilterAlgo, this->d_workspace, this->workspaceSize,
-			&Cuda::beta, this->filterDesc, d_filtersGrad));
+            d_outputGrad, this->convDesc, this->convBwdFilterAlgo, this->d_workspace,
+            this->workspaceSize, &Cuda::beta, this->filterDesc, d_filtersGrad));
     } else {
 	    checkCUDNN(cudnnConvolutionBackwardFilter(Cuda::cudnnHandle,
 			&Cuda::alpha, this->outputTensorDesc, d_outputGrad, this->inputTensorDesc,
-            d_inputData, this->convDesc, this->convBwdFilterAlgo, this->d_workspace, this->workspaceSize,
-			&Cuda::beta, this->filterDesc, d_filtersGrad));
+            d_inputData, this->convDesc, this->convBwdFilterAlgo, this->d_workspace,
+            this->workspaceSize, &Cuda::beta, this->filterDesc, d_filtersGrad));
     }
 
 #if CONVLAYER_LOG
@@ -542,11 +555,11 @@ void ConvLayer<Dtype>::_computeInputGrad() {
     if (!deconv) {
         checkCUDNN(cudnnConvolutionBackwardData(Cuda::cudnnHandle,
 			&Cuda::alpha, this->filterDesc, d_filtersData, this->outputTensorDesc,
-            d_outputGrad, this->convDesc, this->convBwdDataAlgo, this->d_workspace, this->workspaceSize,
-			&Cuda::beta, this->inputTensorDesc, d_inputGrad));
+            d_outputGrad, this->convDesc, this->convBwdDataAlgo, this->d_workspace,
+            this->workspaceSize, &Cuda::beta, this->inputTensorDesc, d_inputGrad));
     } else {
-	    checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle,
-			&Cuda::alpha, this->outputTensorDesc, d_outputGrad, this->filterDesc, d_filtersData,
+	    checkCUDNN(cudnnConvolutionForward(Cuda::cudnnHandle, &Cuda::alpha,
+            this->outputTensorDesc, d_outputGrad, this->filterDesc, d_filtersData,
             this->convDesc, this->convFwdAlgo, this->d_workspace, this->workspaceSize,
 			&Cuda::beta, this->inputTensorDesc, d_inputGrad));
     }

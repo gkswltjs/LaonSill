@@ -18,7 +18,7 @@
 #include "Update.h"
 #include "Donator.h"
 
-#define FULLYCONNECTEDLAYER_LOG 0
+#define FULLYCONNECTEDLAYER_LOG 1
 
 using namespace std;
 
@@ -357,7 +357,7 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_dropoutForward() {
 	const double pDropOut = SLPROP(FullyConnected, pDropOut);
-	const NetworkStatus status = SNPROP(status);
+	const NetworkStatus status = (NetworkStatus)SNPROP(status);
 	// TODO skip when test
 	if(status == NetworkStatus::Train && pDropOut < 1.0f) {
 		//int b_out = this->out_dim.batchsize();
@@ -431,7 +431,7 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_dropoutBackward() {
 	const double pDropOut = SLPROP(FullyConnected, pDropOut);
-	const NetworkStatus status = SNPROP(status);
+	const NetworkStatus status = (NetworkStatus)SNPROP(status);
 	if(status == NetworkStatus::Train && pDropOut < 1.0f) {
 		const uint32_t batchSize = this->_inputData[0]->getCount();
 
@@ -538,62 +538,7 @@ template void FullyConnectedLayer<float>::feedforward();
 template void FullyConnectedLayer<float>::backpropagation();
 
 
-/****************************************************************************
- * layer callback functions 
- ****************************************************************************/
-template<typename Dtype>
-void* FullyConnectedLayer<Dtype>::initLayer() {
-    FullyConnectedLayer* layer = new FullyConnectedLayer<Dtype>();
-    return (void*)layer;
-}
-
-template<typename Dtype>
-void FullyConnectedLayer<Dtype>::destroyLayer(void* instancePtr) {
-    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-    delete layer;
-}
-
-template<typename Dtype>
-void FullyConnectedLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
-    bool isInput, int index) {
-    SASSERT0(index == 0);
-
-    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-
-    if (isInput) {
-        SASSERT0(layer->_inputData.size() == 0);
-        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
-    } else {
-        SASSERT0(layer->_outputData.size() == 0);
-        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
-    }
-}
-
-template<typename Dtype>
-bool FullyConnectedLayer<Dtype>::allocLayerTensors(void* instancePtr) {
-    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-    layer->reshape();
-    return true;
-}
-
-template<typename Dtype>
-void FullyConnectedLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-    layer->feedforward();
-}
-
-template<typename Dtype>
-void FullyConnectedLayer<Dtype>::backwardTensor(void* instancePtr) {
-    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-    layer->backpropagation();
-}
-
-template<typename Dtype>
-void FullyConnectedLayer<Dtype>::learnTensor(void* instancePtr) {
-    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-    layer->update();
-}
-
+/*
 template void* FullyConnectedLayer<float>::initLayer();
 template void FullyConnectedLayer<float>::destroyLayer(void* instancePtr);
 template void FullyConnectedLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
@@ -602,4 +547,4 @@ template bool FullyConnectedLayer<float>::allocLayerTensors(void* instancePtr);
 template void FullyConnectedLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
 template void FullyConnectedLayer<float>::backwardTensor(void* instancePtr);
 template void FullyConnectedLayer<float>::learnTensor(void* instancePtr);
-
+*/

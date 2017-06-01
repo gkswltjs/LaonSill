@@ -44,4 +44,60 @@ void FullyConnectedLayer<Dtype>::donateParam(FullyConnectedLayer<Dtype>* receive
 
 }
 
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* FullyConnectedLayer<Dtype>::initLayer() {
+    FullyConnectedLayer* layer = new FullyConnectedLayer<Dtype>();
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::destroyLayer(void* instancePtr) {
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool FullyConnectedLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->feedforward();
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::backwardTensor(void* instancePtr) {
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
+}
+
+template<typename Dtype>
+void FullyConnectedLayer<Dtype>::learnTensor(void* instancePtr) {
+    FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
+    layer->update();
+}
+
 template class FullyConnectedLayer<float>;
