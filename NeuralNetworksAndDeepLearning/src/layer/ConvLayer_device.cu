@@ -18,7 +18,7 @@
 
 //#define USE_OLD_CUDNN       1
 
-#define CONVLAYER_LOG 1
+#define CONVLAYER_LOG 0
 
 using namespace std;
 
@@ -370,7 +370,9 @@ void ConvLayer<Dtype>::reshape() {
 
 
 	if (this->workspaceSize > 0) {
+#if CONVLAYER_LOG
 		cout << name << "'s workspace: " << this->workspaceSize << endl;
+#endif
 		if (this->d_workspace) {
 			checkCudaErrors(cudaFree(this->d_workspace));
 			this->d_workspace = 0;

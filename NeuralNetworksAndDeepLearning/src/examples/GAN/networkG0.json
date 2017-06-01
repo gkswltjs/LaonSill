@@ -21,7 +21,9 @@
             "weightFiller.type" : 2,
             "weightFiller.value" : 0.02,
             "biasFiller.type" : 0,
-            "biasFiller.value" : 0.0
+            "biasFiller.value" : 0.0,
+            "donate" : true,
+            "updateGrad" : false
         },
 
         {
@@ -38,7 +40,9 @@
             "layer" : "BatchNorm",
             "id" : 10002,
             "input" : ["reshape0"],
-            "output" : ["bn/noiseInput"]
+            "output" : ["bn/noiseInput"],
+            "donate" : true,
+            "updateGrad" : false
         },
 
         {
@@ -65,7 +69,9 @@
             "filterDim.channels" : 512,
             "filterDim.filters" : 256,
             "filterDim.pad" : 1,
-            "filterDim.stride" : 2
+            "filterDim.stride" : 2,
+            "donate" : true,
+            "updateGrad" : false
         },
 
         {
@@ -73,7 +79,9 @@
             "layer" : "BatchNorm",
             "id" : 10005,
             "input" : ["deconv1"],
-            "output" : ["bn/deconv1"]
+            "output" : ["bn/deconv1"],
+            "donate" : true,
+            "updateGrad" : false
         },
 
         {
@@ -100,7 +108,9 @@
             "filterDim.channels" : 256,
             "filterDim.filters" : 128,
             "filterDim.pad" : 1,
-            "filterDim.stride" : 2
+            "filterDim.stride" : 2,
+            "donate" : true,
+            "updateGrad" : false
         },
 
         {
@@ -108,7 +118,9 @@
             "layer" : "BatchNorm",
             "id" : 10008,
             "input" : ["deconv2"],
-            "output" : ["bn/deconv2"]
+            "output" : ["bn/deconv2"],
+            "donate" : true,
+            "updateGrad" : false
         },
 
         {
@@ -135,7 +147,9 @@
             "filterDim.channels" : 128,
             "filterDim.filters" : 64,
             "filterDim.pad" : 1,
-            "filterDim.stride" : 2
+            "filterDim.stride" : 2,
+            "donate" : true,
+            "updateGrad" : false
         },
 
         {
@@ -143,7 +157,9 @@
             "layer" : "BatchNorm",
             "id" : 10011,
             "input" : ["deconv3"],
-            "output" : ["bn/deconv3"]
+            "output" : ["bn/deconv3"],
+            "donate" : true,
+            "updateGrad" : false
         },
 
         {
@@ -170,7 +186,9 @@
             "filterDim.channels" : 64,
             "filterDim.filters" : 3,
             "filterDim.pad" : 1,
-            "filterDim.stride" : 2
+            "filterDim.stride" : 2,
+            "donate" : true,
+            "updateGrad" : false
         },
 
         {
@@ -197,7 +215,8 @@
             "filterDim.filters" : 64,
             "filterDim.pad" : 1,
             "filterDim.stride" : 2,
-            "donate" : true
+            "donate" : true,
+            "updateGrad" : true
         },
 
         {
@@ -226,7 +245,8 @@
             "filterDim.filters" : 128,
             "filterDim.pad" : 1,
             "filterDim.stride" : 2,
-            "donate" : true
+            "donate" : true,
+            "updateGrad" : true
         },
 
         {
@@ -235,7 +255,8 @@
             "id" : 10019,
             "input" : ["conv2"],
             "output" : ["bn/conv2"],
-            "donate" : true
+            "donate" : true,
+            "updateGrad" : true
         },
 
         {
@@ -264,7 +285,8 @@
             "filterDim.filters" : 256,
             "filterDim.pad" : 1,
             "filterDim.stride" : 2,
-            "donate" : true
+            "donate" : true,
+            "updateGrad" : true
         },
 
         {
@@ -273,7 +295,8 @@
             "id" : 10022,
             "input" : ["conv3"],
             "output" : ["bn/conv3"],
-            "donate" : true
+            "donate" : true,
+            "updateGrad" : true
         },
 
         {
@@ -302,7 +325,8 @@
             "filterDim.filters" : 512,
             "filterDim.pad" : 1,
             "filterDim.stride" : 2,
-            "donate" : true
+            "donate" : true,
+            "updateGrad" : true
         },
 
         {
@@ -311,7 +335,8 @@
             "id" : 10025,
             "input" : ["conv4"],
             "output" : ["bn/conv4"],
-            "donate" : true
+            "donate" : true,
+            "updateGrad" : true
         },
 
         {
@@ -335,7 +360,8 @@
             "weightFiller.value" : 0.02,
             "biasFiller.type" : 0,
             "biasFiller.value" : 0.0,
-            "donate" : true
+            "donate" : true,
+            "updateGrad" : true
         },
 
         {
@@ -368,6 +394,6 @@
         "optimizer" : 5,
         "beta1" : 0.5,
         "beta2" : 0.999,
-        "miniBatch" : 1
+        "miniBatch" : 0
     }
 }

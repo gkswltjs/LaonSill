@@ -18,7 +18,7 @@
 #include "Update.h"
 #include "Donator.h"
 
-#define FULLYCONNECTEDLAYER_LOG 1
+#define FULLYCONNECTEDLAYER_LOG 0
 
 using namespace std;
 

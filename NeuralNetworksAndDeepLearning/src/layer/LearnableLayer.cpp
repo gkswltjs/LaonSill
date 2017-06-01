@@ -96,6 +96,4 @@ void LearnableLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
 	}
 }
 
-
-
 template class LearnableLayer<float>;

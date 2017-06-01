@@ -269,34 +269,36 @@ bool PhysicalPlan::generatePlan() {
     return true;
 }
 
-void PhysicalPlan::runLayer(int planID) {
+void PhysicalPlan::runLayer(int planID, bool inference) {
     // (1) set context
     int layerID = LP_PLANID_TO_LAYERID(planID);
     WorkContext::updateLayer(WorkContext::curNetworkID, layerID);
-
     PlanType planType = LP_PLANID_TO_PLANTYPE(planID);
     
     // (2) run layer
-    PlanInfo* planInfo = WorkContext::curPlanInfo;
-    STDOUT_COND_BLOCK(SPARAM(PRINT_RUNLAYER_LOG), 
+    if (!inference || (planType == PLANTYPE_FORWARD)) {
+        PlanInfo* planInfo = WorkContext::curPlanInfo;
+        STDOUT_COND_BLOCK(SPARAM(PRINT_RUNLAYER_LOG), 
         cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
-        planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")" << endl);
+            planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")" << endl);
 
-    // FIXME: 나름 핫 코드영역인데 이렇게 자주 맵을 뒤지면 성능에 안좋다. 수정필요!!
-    SASSUME0(this->planMap.find(planID) != this->planMap.end());
-    int layerType = this->planMap[planID].layerType;
 
-    SASSUME0(this->instanceMap.find(layerID) != this->instanceMap.end());
-    void* instancePtr = this->instanceMap[layerID];
+        // FIXME: 나름 핫 코드영역인데 이렇게 자주 맵을 뒤지면 성능에 안좋다. 수정필요!!
+        SASSUME0(this->planMap.find(planID) != this->planMap.end());
+        int layerType = this->planMap[planID].layerType;
 
-    SASSUME0(planType < PLANTYPE_MAX);
-    if (planType == PLANTYPE_FORWARD) {
-        LayerFunc::runForward(layerType, instancePtr, planInfo->curMiniBatchIndex);
-    } else if (planType == PLANTYPE_BACKWARD) {
-        LayerFunc::runBackward(layerType, instancePtr);
-    } else {
-        SASSUME0(planType == PLANTYPE_UPDATE);
-        LayerFunc::learn(layerType, instancePtr);
+        SASSUME0(this->instanceMap.find(layerID) != this->instanceMap.end());
+        void* instancePtr = this->instanceMap[layerID];
+
+        SASSUME0(planType < PLANTYPE_MAX);
+        if (planType == PLANTYPE_FORWARD) {
+            LayerFunc::runForward(layerType, instancePtr, planInfo->curMiniBatchIndex);
+        } else if (planType == PLANTYPE_BACKWARD) {
+            LayerFunc::runBackward(layerType, instancePtr);
+        } else {
+            SASSUME0(planType == PLANTYPE_UPDATE);
+            LayerFunc::learn(layerType, instancePtr);
+        }
     }
 
     // (3) mark
@@ -307,7 +309,7 @@ void PhysicalPlan::runLayer(int planID) {
     }
 }
 
-bool PhysicalPlan::runPlan(int layerID, PlanType planType) {
+bool PhysicalPlan::runPlan(int layerID, PlanType planType, bool inference) {
     unique_lock<mutex> planLock(this->planMutex);
 
     if (find(this->readyQueue.begin(), this->readyQueue.end(), layerID) != 
@@ -317,11 +319,11 @@ bool PhysicalPlan::runPlan(int layerID, PlanType planType) {
     planLock.unlock();
 
     if (planType == PLANTYPE_FORWARD) {
-        runLayer(LP_FORWARD_PLANID(layerID));
+        runLayer(LP_FORWARD_PLANID(layerID), inference);
     } else if (planType == PLANTYPE_BACKWARD) {
-        runLayer(LP_BACKWARD_PLANID(layerID));
+        runLayer(LP_BACKWARD_PLANID(layerID), inference);
     } else if (planType == PLANTYPE_UPDATE) {
-        runLayer(LP_UPDATE_PLANID(layerID));
+        runLayer(LP_UPDATE_PLANID(layerID), inference);
     } else {
         SASSERT(false, "invalid plan type. plan type=%d", (int)planType);
     }
@@ -329,7 +331,7 @@ bool PhysicalPlan::runPlan(int layerID, PlanType planType) {
     return true;
 }
 
-bool PhysicalPlan::runPlan() {
+bool PhysicalPlan::runPlan(bool inference) {
     unique_lock<mutex> planLock(this->planMutex);
     
     if (this->readyQueue.size() == 0) {
@@ -342,7 +344,7 @@ bool PhysicalPlan::runPlan() {
 
     SASSUME0(this->planMap.find(planID) != this->planMap.end());
 
-    runLayer(planID);
+    runLayer(planID, inference);
     return true;
 }
 

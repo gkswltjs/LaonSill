@@ -14,7 +14,7 @@
 #include "StdOutLog.h"
 #include "PropMgmt.h"
 
-#define CROSSENTROPYWITHLOSSLAYER_LOG   1
+#define CROSSENTROPYWITHLOSSLAYER_LOG   0
 
 using namespace std;
 

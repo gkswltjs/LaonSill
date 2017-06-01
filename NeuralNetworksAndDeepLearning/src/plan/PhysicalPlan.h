@@ -75,8 +75,8 @@ public:
                             // 대한 플랜을 생성한다.
                             // 만약 모든 batch를 다 돌았을 경우에는 false를 반환한다.
 
-    bool runPlan(int layerID, PlanType planType);
-    bool runPlan();
+    bool runPlan(int layerID, PlanType planType, bool inference);
+    bool runPlan(bool inference);
 
     std::list<int>      readyQueue; // dependency 문제가 해결이 되어 실행이 될 수 있는
                                     // planID들의 리스트
@@ -104,7 +104,7 @@ private:
                                                 // key = networkID, value = plan info 
     static std::mutex               planGlobalMutex;    // planMap, planInfoMap을 보호
 
-    void runLayer(int planID);
+    void runLayer(int planID, bool inference);
     void markFinish(int planID);    // 해당 planID에게 dependency가 있는 planID가 완료가
                                     // 되었음을 알린다.
 

@@ -82,13 +82,13 @@ public:
 	 * @details run()을 수행하면서 시간을 측정한다.
 	 * @param epochs run()을 수행할 최대 epoch
 	 */
-	void run_with_timer(int epochs);
+	void run_with_timer(int epochs, bool buildPlan, bool inference);
 
 	/**
 	 * @details 네트워크를 실행한다. (예를 들자면 stochastic gradient descent를 수행한다.)
 	 * @param epochs run()을 수행할 최대 epoch
 	 */
-	void run(int epochs);
+	void run(int epochs, bool buildPlan, bool inference);
 
 
 	/**

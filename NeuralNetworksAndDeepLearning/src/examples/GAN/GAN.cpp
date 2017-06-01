@@ -16,6 +16,7 @@
 #include "NetworkMonitor.h"
 #include "ImageUtil.h"
 #include "PlanParser.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -387,109 +388,49 @@ LayersConfig<Dtype>* GAN<Dtype>::createGD0OfGANLayersConfig() {
 #endif
 }
 
-#define EXAMPLE_GAN_NETWORKG_FILEPATH               ("../src/examples/GAN/networkG.json")
+#define EXAMPLE_GAN_NETWORKG0_FILEPATH              ("../src/examples/GAN/networkG0.json")
+#define EXAMPLE_GAN_NETWORKD_FILEPATH               ("../src/examples/GAN/networkD.json")
+#define EXAMPLE_GAN_NETWORKG1_FILEPATH              ("../src/examples/GAN/networkG1.json")
 
 template<typename Dtype>
 void GAN<Dtype>::run() {
-    //int networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKG_FILEPATH));
-    int networkID = PlanParser::loadNetwork("/home/monhoney/networkG.json");
-    Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
-    network->run(400);
+    int networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKG0_FILEPATH));
+    Network<Dtype>* networkG0 = Network<Dtype>::getNetworkFromID(networkID);
+
+    networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKD_FILEPATH));
+    Network<Dtype>* networkD = Network<Dtype>::getNetworkFromID(networkID);
+
+    networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKG1_FILEPATH));
+    Network<Dtype>* networkG1 = Network<Dtype>::getNetworkFromID(networkID);
+
+    bool buildPlan = true;
+    for (int i = 0; i < 100000; i++) {
+        cout << "epoch : " << i << endl;
+        networkG0->run(1, buildPlan, false);
+        networkD->run(1, buildPlan, false);
+        networkG1->run(2, buildPlan, false);
+        buildPlan = false;
+
+        if (i % 10 == 0) {
+            int oldMiniBatch = SNPROP(miniBatch);
+            SNPROP(miniBatch) = 1;
+
+            setLayerTrain(networkG1, false);
+            networkG1->run(1, buildPlan, true);
+
+            ConvLayer<Dtype>* convLayer = (ConvLayer<Dtype>*)networkG1->findLayer("conv1");
+            const Dtype* host_data = convLayer->_inputData[0]->host_data();
+            ImageUtil<Dtype>::saveImage(host_data, 64, 3, 64, 64, "");
+
+            SNPROP(miniBatch) = oldMiniBatch;
+            setLayerTrain(networkG1, true);
+        }
+    }
 
 #if 0
-    // loss layer of Discriminator GAN 
-	const vector<string> llDGAN = { "celossDGAN" };
-    // loss layer of Generatoer-Discriminator 0 GAN
-	const vector<string> llGD0GAN = { "celossGD0GAN" };
-
-	const NetworkPhase phase = NetworkPhase::TrainPhase;
-	const uint32_t batchSize = 64;
-	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.0002f;
-
-	const uint32_t stepSize = 100000;
-	const float weightDecay = 0.0001f;
-	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
-	const float gamma = 0.1;
-	const LRPolicy lrPolicy = LRPolicy::Fixed;
-
-    const Optimizer opt = Optimizer::Adam;
-    //const Optimizer opt = Optimizer::Momentum;
-
-	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
-	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
-	STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
-	STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
-	STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
-	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
-	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
-
-	NetworkConfig<Dtype>* ncDGAN =
-			(new typename NetworkConfig<Dtype>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->stepSize(stepSize)
-			->clipGradientsLevel(clipGradientsLevel)
-			->lrPolicy(lrPolicy)
-			->networkPhase(phase)
-			->gamma(gamma)
-			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
-			->networkListeners({
-				new NetworkMonitor("celossDGAN", NetworkMonitor::PLOT_ONLY),
-				})
-			->lossLayers(llDGAN)
-            ->optimizer(opt)
-            ->beta(0.5, 0.999)
-			->build();
-
-	NetworkConfig<Dtype>* ncGD0GAN =
-			(new typename NetworkConfig<Dtype>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->stepSize(stepSize)
-			->clipGradientsLevel(clipGradientsLevel)
-			->lrPolicy(lrPolicy)
-			->networkPhase(phase)
-			->gamma(gamma)
-			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
-			->networkListeners({
-				new NetworkMonitor("celossGD0GAN", NetworkMonitor::PLOT_ONLY),
-				})
-			->lossLayers(llGD0GAN)
-            ->optimizer(opt)
-            ->beta(0.5, 0.999)
-			->build();
-
-	Util::printVramInfo();
-
- 	Network<Dtype>* networkDGAN = new Network<Dtype>(ncDGAN);
- 	Network<Dtype>* networkGD0GAN = new Network<Dtype>(ncGD0GAN);
-
-    // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<Dtype>* lcGD0GAN = createGD0OfGANLayersConfig();
-	LayersConfig<Dtype>* lcDGAN = createDOfGANLayersConfig();
- 	networkGD0GAN->setLayersConfig(lcGD0GAN);
- 	networkDGAN->setLayersConfig(lcDGAN);
-
 	// (2) network config 정보를 layer들에게 전달한다.
-	for (uint32_t i = 0; i < lcDGAN->_layers.size(); i++)
-		lcDGAN->_layers[i]->setNetworkConfig(ncDGAN);
-
-	for (uint32_t i = 0; i < lcGD0GAN->_layers.size(); i++)
-		lcGD0GAN->_layers[i]->setNetworkConfig(ncGD0GAN);
-
     for (int i = 0; i < 100000; i++) {  // epoch
-        cout << "epoch=" << i << endl;
+        cout << "real epoch=" << i << endl;
 
         InputLayer<Dtype>* inputLayer = lcDGAN->_inputLayer;
         inputLayer->reshape();  // to fill training data
@@ -608,7 +549,6 @@ void GAN<Dtype>::run() {
         }
     }
 
-    /*
     // noise check
     setLayerTrain(lcGD0GAN, false);
 
@@ -641,7 +581,6 @@ void GAN<Dtype>::run() {
             noise += 0.1;
         }
     }
-    */
 #endif
 }
 

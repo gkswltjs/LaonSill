@@ -68,10 +68,10 @@ Network<Dtype>::~Network() {
 }
 
 template <typename Dtype>
-void Network<Dtype>::run_with_timer(int epochs) {
+void Network<Dtype>::run_with_timer(int epochs, bool buildPlan, bool inference) {
     struct timespec startTime;
     SPERF_START(NETWORK_TRAINING_TESTTIME, &startTime);
-	run(epochs);
+	run(epochs, buildPlan, inference);
 
     SPERF_END(NETWORK_TRAINING_TESTTIME, startTime, epochs);
     STDOUT_BLOCK(cout << "Total Training Time : " << SPERF_TIME(NETWORK_TRAINING_TESTTIME)
@@ -79,14 +79,21 @@ void Network<Dtype>::run_with_timer(int epochs) {
 }
 
 template<typename Dtype>
-void Network<Dtype>::run(int epochs) {
+void Network<Dtype>::run(int epochs, bool buildPlan, bool inference) {
     SASSERT0(this->isLoaded);
 
     int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(this->networkID); 
     SNPROP(epochs) = epochs;
-    PlanOptimizer::buildPlans(networkID);
-    PlanOptimizer::runPlan();
+
+    if (buildPlan)
+        PlanOptimizer::buildPlans(networkID);
+    else {
+        PlanInfo* planInfo = WorkContext::curPlanInfo;
+        planInfo->curEpochIndex = 0;
+        planInfo->curMiniBatchIndex = 0;
+    }
+    PlanOptimizer::runPlan(inference);
 
     WorkContext::updateNetwork(oldNetworkID);
 }

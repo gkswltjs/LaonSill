@@ -12,7 +12,7 @@
 
 using namespace std;
 
-#define RELULAYER_LOG 1
+#define RELULAYER_LOG 0
 
 
 template<typename Dtype>

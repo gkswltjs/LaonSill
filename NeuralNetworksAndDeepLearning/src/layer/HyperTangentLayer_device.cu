@@ -16,7 +16,7 @@
 #include "Perf.h"
 #include "PropMgmt.h"
 
-#define HYPERTANGENT_LOG   1
+#define HYPERTANGENT_LOG   0
 
 using namespace std;
 
