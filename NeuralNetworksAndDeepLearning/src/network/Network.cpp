@@ -89,9 +89,17 @@ void Network<Dtype>::run(int epochs, bool buildPlan, bool inference) {
     if (buildPlan)
         PlanOptimizer::buildPlans(networkID);
     else {
+        // XXX:
+        WorkContext::updatePlan(WorkContext::curDOPID);
         PlanInfo* planInfo = WorkContext::curPlanInfo;
         planInfo->curEpochIndex = 0;
-        planInfo->curMiniBatchIndex = 0;
+        planInfo->curMiniBatchIndex = -1;
+
+        PhysicalPlan* pp = WorkContext::curPhysicalPlan;
+        SASSUME0(pp->readyQueue.size() == 0);
+        SASSUME0(pp->refCount == 0);
+
+        SNPROP(iterations) = 0;
     }
     PlanOptimizer::runPlan(inference);
 
