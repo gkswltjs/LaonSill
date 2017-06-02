@@ -30,8 +30,8 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer()
 	const bool normalize = SLPROP(Loss, normalize);
 	if (!hasNormalization && hasNormalize)
 		SLPROP(SoftmaxWithLoss, normalization) = normalize ?
-				LossLayer<Dtype>::NormalizationMode::Valid :
-				LossLayer<Dtype>::NormalizationMode::BatchSize;
+				NormalizationMode::Valid :
+				NormalizationMode::BatchSize;
 
 	InnerLayerFunc::initLayer(0);
 }
@@ -193,7 +193,7 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 	Dtype validCount = -1;
 	// Only launch another CUDA kernel if we actually need the count of valid
 	// outputs.
-	if (SLPROP(SoftmaxWithLoss, normalization) == LossLayer<Dtype>::NormalizationMode::Valid &&
+	if (SLPROP(SoftmaxWithLoss, normalization) == NormalizationMode::Valid &&
 			SLPROP(SoftmaxWithLoss, hasIgnoreLabel))
 		soooa_gpu_asum(nthreads, counts, &validCount);
 
@@ -282,7 +282,7 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 		Dtype validCount = -1;
 		// Only launch another CUDA kernel if we actually need the count of valid
 		// outputs.
-		if (SLPROP(SoftmaxWithLoss, normalization) == LossLayer<Dtype>::NormalizationMode::Valid &&
+		if (SLPROP(SoftmaxWithLoss, normalization) == NormalizationMode::Valid &&
 				SLPROP(SoftmaxWithLoss, hasIgnoreLabel))
 			soooa_gpu_asum(nthreads, counts, &validCount);
 
@@ -317,20 +317,20 @@ template <typename Dtype>
 Dtype SoftmaxWithLossLayer<Dtype>::getNormalizer(int validCount) {
 	Dtype normalizer;
 	switch (SLPROP(SoftmaxWithLoss, normalization)) {
-	case LossLayer<Dtype>::NormalizationMode::Full:
+	case NormalizationMode::Full:
 		normalizer = Dtype(this->outerNum * this->innerNum);
 		break;
-	case LossLayer<Dtype>::NormalizationMode::Valid:
+	case NormalizationMode::Valid:
 		if (validCount == -1) {
 			normalizer = Dtype(this->outerNum * this->innerNum);
 		} else {
 			normalizer = Dtype(validCount);
 		}
 		break;
-	case LossLayer<Dtype>::NormalizationMode::BatchSize:
+	case NormalizationMode::BatchSize:
 		normalizer = Dtype(this->outerNum);
 		break;
-	case LossLayer<Dtype>::NormalizationMode::NoNormalization:
+	case NormalizationMode::NoNormalization:
 		normalizer = Dtype(1);
 		break;
 	default:

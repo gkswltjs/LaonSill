@@ -7,7 +7,7 @@ import json;
 ####################################### Modify here ##########################################
 # if you want to use specific custom type, you should insert header file that the custom type 
 # is defined into headerFileList.
-headerFileList = ["LayerConfig.h", "LossLayer.h", "KistiInputLayer.h", "Pooling.h"]
+headerFileList = ["EnumDef.h", "KistiInputLayer.h"]
 ##############################################################################################
 
 # XXX: source code refactoring is required
@@ -285,13 +285,19 @@ try:
                         'int64_t', 'uint64_t', 'long', 'unsigned long', 'short',\
                         'unsigned short', 'long long', 'unsigned long long']:
                         sourceFile.write('        int64_t* val = (int64_t*)value;\n')
+                        sourceFile.write('        obj->_%s_ = (%s)*val;\n' % (var[0], var[1]))
                     elif var[1] in ['boolean', 'bool']:
                         sourceFile.write('        bool* val = (bool*)value;\n')
+                        sourceFile.write('        obj->_%s_ = (%s)*val;\n' % (var[0], var[1]))
                     elif var[1] in ['double', 'float']:
                         sourceFile.write('        double* val = (double*)value;\n')
+                        sourceFile.write('        obj->_%s_ = (%s)*val;\n' % (var[0], var[1]))
                     else: # XXX: we assume that all user-defined type can be converted as int
-                        sourceFile.write('        int64_t* val = (int64_t*)value;\n')
-                    sourceFile.write('        obj->_%s_ = (%s)*val;\n' % (var[0], var[1]))
+                        sourceFile.write('        SASSERT0(EnumDef::isEnumType("%s"));\n'\
+                            % var[1])
+                        sourceFile.write('        std::string* val = (std::string*)value;\n')
+                        sourceFile.write('        obj->_%s_ = ' % var[0])
+                        sourceFile.write('(%s)EnumDef::convertEnumValue(*val);\n' % var[1])
                 sourceFile.write('    }')
 
             if isFirstCond == True:
@@ -374,15 +380,25 @@ try:
                             'int64_t', 'uint64_t', 'long', 'unsigned long', 'short',\
                             'unsigned short', 'long long', 'unsigned long long']:
                             sourceFile.write('        int64_t* val = (int64_t*)value;\n')
+                            sourceFile.write('        obj->_%s_.%s = (%s)*val;\n' %\
+                                (var[0], subVar, subVarType))
                         elif subVarType in ['boolean', 'bool']:
                             sourceFile.write('        bool* val = (bool*)value;\n')
+                            sourceFile.write('        obj->_%s_.%s = (%s)*val;\n' %\
+                                (var[0], subVar, subVarType))
                         elif subVarType in ['double', 'float']:
                             sourceFile.write('        double* val = (double*)value;\n')
-                        else: 
-                        # XXX: we assume that all user-defined type can be converted as int
-                            sourceFile.write('        int64_t* val = (int64_t*)value;\n')
-                        sourceFile.write('        obj->_%s_.%s = (%s)*val;\n' %\
+                            sourceFile.write('        obj->_%s_.%s = (%s)*val;\n' %\
                                 (var[0], subVar, subVarType))
+                        else:
+                        # XXX: we assume that all user-defined type can be converted as int
+                            sourceFile.write('        SASSERT0(EnumDef::isEnumType("%s"));\n'\
+                                % subVarType)
+                            sourceFile.write('        std::string* val = ')
+                            sourceFile.write('(std::string*)value;\n')
+                            sourceFile.write('        obj->_%s_ = ' % var[0])
+                            sourceFile.write('(%s)EnumDef::convertEnumValue(*val);\n'\
+                                % subVarType)
                     sourceFile.write('    }')
 
             if isFirstCond == True:

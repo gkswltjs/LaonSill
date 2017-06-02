@@ -19,6 +19,7 @@
 #include "PropMgmt.h"
 #include "SysLog.h"
 #include "LayerPropList.h"
+#include "Network.h"
 
 using namespace std;
 

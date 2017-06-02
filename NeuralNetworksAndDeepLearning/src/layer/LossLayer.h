@@ -12,17 +12,11 @@
 
 #include "common.h"
 #include "BaseLayer.h"
+#include "EnumDef.h"
 
 template <typename Dtype>
 class LossLayer : public Layer<Dtype> {
 public:
-	enum NormalizationMode {
-		Full = 0,
-		Valid,
-		BatchSize,
-		NoNormalization
-	};
-
 	LossLayer() : Layer<Dtype>() {}
 	virtual ~LossLayer() {}
 

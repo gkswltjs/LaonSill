@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-"""genNProp.py: """
+"""genNetworkProp.py: """
 
 import json;
 
 ####################################### Modify here ##########################################
 # if you want to use specific custom type, you should insert header file that the custom type 
 # is defined into headerFileList.
-headerFileList = ["Network.h"]
+headerFileList = ["EnumDef.h"]
 ##############################################################################################
 
 def checkParamProperty(propDic, prop, propertyName):
@@ -180,14 +180,19 @@ try:
                 'int64_t', 'uint64_t', 'long', 'unsigned long', 'short',\
                 'unsigned short', 'long long', 'unsigned long long']:
                 sourceFile.write('        int64_t* val = (int64_t*)value;\n')
+                sourceFile.write('        target->_%s_ = (%s)*val;\n' % (var[0], var[1]))
             elif var[1] in ['boolean', 'bool']:
                 sourceFile.write('        bool* val = (bool*)value;\n')
+                sourceFile.write('        target->_%s_ = (%s)*val;\n' % (var[0], var[1]))
             elif var[1] in ['double', 'float']:
                 sourceFile.write('        double* val = (double*)value;\n')
+                sourceFile.write('        target->_%s_ = (%s)*val;\n' % (var[0], var[1]))
             else:
-                # XXX: we assume that all user-defined type can be converted as int
-                sourceFile.write('        int64_t* val = (int64_t*)value;\n')
-            sourceFile.write('        target->_%s_ = (%s)*val;\n' % (var[0], var[1]))
+            # XXX: we assume that all user-defined type can be converted as int
+                sourceFile.write('        SASSERT0(EnumDef::isEnumType("%s"));\n' % var[1])
+                sourceFile.write('        std::string* val = (std::string*)value;\n')
+                sourceFile.write('        target->_%s_ = ' % var[0])
+                sourceFile.write('(%s)EnumDef::convertEnumValue(*val);\n' % var[1])
         sourceFile.write('    }')
                 
     sourceFile.write(' else {\n')
@@ -204,3 +209,4 @@ except Exception as e:
 
 finally:
     headerFile.close()
+    sourceFile.close()

@@ -22,12 +22,12 @@
     ["decayRate", "float", "0.9"],
     ["savePathPrefix", "std::string", "\"\""],
     ["loadPath", "std::string", "\"\""],
-    ["optimizer", "int", "Optimizer::Momentum"],
-    ["lrPolicy", "int", "LRPolicy::Fixed"],
-    ["phase", "int", "NetworkPhase::TrainPhase"],
+    ["optimizer", "Optimizer", "Optimizer::Momentum"],
+    ["lrPolicy", "LRPolicy", "LRPolicy::Fixed"],
+    ["phase", "NetworkPhase", "NetworkPhase::TrainPhase"],
     ["lossLayer", "std::vector<std::string>", ""],
     ["rate", "float", "-1.0"],
-    ["status", "int", "NetworkStatus::Train"]
+    ["status", "NetworkStatus", "NetworkStatus::Train"]
 ]
 
 }

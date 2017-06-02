@@ -17,38 +17,11 @@
 #include "LayerConfig.h"
 #include "Worker.h"
 #include "DQNImageLearner.h"
+#include "EnumDef.h"
 
 template <typename Dtype> class DataSet;
 //template <typename Dtype> class LayersConfig;
 template <typename Dtype> class DQNImageLearner;
-
-enum NetworkStatus : int {
-	Train = 0,
-	Test = 1
-};
-
-enum NetworkPhase : int {
-	TrainPhase = 0,
-	TestPhase = 1
-};
-
-enum LRPolicy : int {
-	Fixed = 0,
-	Step,
-	Exp,
-	Inv,
-	Multistep,
-	Poly
-};
-
-enum Optimizer : int {
-    Momentum = 0,
-    Vanilla,
-    Nesterov,
-    Adagrad,
-    RMSprop,
-    Adam
-};
 
 /**
  * @brief 네트워크 기본 클래스
@@ -82,14 +55,19 @@ public:
 	 * @details run()을 수행하면서 시간을 측정한다.
 	 * @param epochs run()을 수행할 최대 epoch
 	 */
-	void run_with_timer(int epochs, bool buildPlan, bool inference);
+	void run_with_timer(bool inference);
 
 	/**
 	 * @details 네트워크를 실행한다. (예를 들자면 stochastic gradient descent를 수행한다.)
 	 * @param epochs run()을 수행할 최대 epoch
 	 */
-	void run(int epochs, bool buildPlan, bool inference);
+	void run(bool inference);
 
+    void build(int epochs);
+
+    void reset();
+
+    void runMiniBatch(bool inference, int miniBatchIdx);
 
 	/**
 	 * @details 네트워크를 파일에 쓴다.

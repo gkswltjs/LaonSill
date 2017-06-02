@@ -234,9 +234,13 @@ bool PhysicalPlan::generatePlan() {
         ((SNPROP(iterations) % SNPROP(saveInterval)) == 0)) {
         saveNetwork = true;
     }
-    planInfoLock.unlock();
 
     if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
+        WorkContext::curPlanInfo->curEpochIndex -= 1;
+        WorkContext::curPlanInfo->curMiniBatchIndex =
+            WorkContext::curPlanInfo->miniBatchCount - 1;
+
+        planInfoLock.unlock();
         planLock.unlock();
 
         if (saveNetwork)
@@ -244,6 +248,7 @@ bool PhysicalPlan::generatePlan() {
             
         return false;
     }
+    planInfoLock.unlock();
 
     // (3) 초기화를 수행한다.
     this->refCount = 0;

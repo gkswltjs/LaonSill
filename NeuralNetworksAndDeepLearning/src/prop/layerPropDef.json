@@ -57,7 +57,7 @@
             ["hasNormalize", "bool", "false"],
             ["normalize", "bool", "false"],
             ["hasNormalization", "bool", "false"],
-            ["normalization", "int", "LossLayer<float>::Valid"]
+            ["normalization", "NormalizationMode", "NormalizationMode::Valid"]
         ]
 },
 

@@ -396,35 +396,39 @@ template<typename Dtype>
 void GAN<Dtype>::run() {
     int networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKG0_FILEPATH));
     Network<Dtype>* networkG0 = Network<Dtype>::getNetworkFromID(networkID);
+    networkG0->build(1);
 
     networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKD_FILEPATH));
     Network<Dtype>* networkD = Network<Dtype>::getNetworkFromID(networkID);
+    networkD->build(1);
+    CelebAInputLayer<Dtype>* inputLayer =
+        (CelebAInputLayer<Dtype>*)networkD->findLayer("celebAInput");
+    int miniBatchCount = inputLayer->getNumTrainData() / SNPROP(batchSize) - 1;
 
     networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKG1_FILEPATH));
     Network<Dtype>* networkG1 = Network<Dtype>::getNetworkFromID(networkID);
+    networkG1->build(1);
 
-    bool buildPlan = true;
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 10000; i++) {
         cout << "epoch : " << i << endl;
-        networkG0->run(1, buildPlan, false);
-        networkD->run(1, buildPlan, false);
-        networkG1->run(2, buildPlan, false);
-        buildPlan = false;
+        for (int j = 0; j < miniBatchCount; j++) {
+            networkG0->runMiniBatch(false, 0);
+            networkD->runMiniBatch(false, j);
+            networkG1->runMiniBatch(false, 0);
+            networkG1->runMiniBatch(false, 0);
 
-        if (i % 10 == 0) {
-            int oldMiniBatch = SNPROP(miniBatch);
-            SNPROP(miniBatch) = 1;
-
-            setLayerTrain(networkG1, false);
-            networkG1->run(1, buildPlan, true);
-
-            ConvLayer<Dtype>* convLayer = (ConvLayer<Dtype>*)networkG1->findLayer("conv1");
-            const Dtype* host_data = convLayer->_inputData[0]->host_data();
-            ImageUtil<Dtype>::saveImage(host_data, 64, 3, 64, 64, "");
-
-            SNPROP(miniBatch) = oldMiniBatch;
-            setLayerTrain(networkG1, true);
+            if (j % 100 == 0)
+                cout << "minibatch " << j << " is done." << endl;
         }
+
+        setLayerTrain(networkG1, false);
+        networkG1->runMiniBatch(true, 0);
+
+        ConvLayer<Dtype>* convLayer = (ConvLayer<Dtype>*)networkG1->findLayer("conv1");
+        const Dtype* host_data = convLayer->_inputData[0]->host_data();
+        ImageUtil<Dtype>::saveImage(host_data, 64, 3, 64, 64, "");
+
+        setLayerTrain(networkG1, true);
     }
 
 #if 0

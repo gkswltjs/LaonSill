@@ -1,10 +1,11 @@
 본 문서는 Prop 모듈의 간략한 소개 및 사용방법을 기술한다.
 
 * Prop 모듈이란?
-  layer property, network property를 정의하는 모듈이다. 예를 들어서 Convolution Layer의 경우에 
- stride, pad, kernel size 등의 값을 정의할 수 있어야 한다. 그러한 값들을 관리해주는 모듈을 
- 뜻한다. layer property는 각 layer마다의 설정값을 의미하고, network property는 각 network
- 마다의 설정값을 의미한다.
+  enum definition, layer property, network property를 정의하는 모듈이다. 예를 들어서 
+  Convolution Layer의 경우에 stride, pad, kernel size 등의 값을 정의할 수 있어야 한다.
+  그러한 값들을 관리해주는 모듈을 뜻한다. layer property는 각 layer마다의 설정값을 의미하고, 
+  network property는 각 network 마다의 설정값을 의미한다. enum definition은 사용자가 정의한
+  enumeration type을 의미한다.
 
 * Layer Property 등록 방법
  layerPropDef.json 파일에 등록할 Prop 이름과 그것의 5가지 속성을 json format에 맞게 기입한다.
@@ -65,7 +66,7 @@
 ####################################### Modify here ##########################################
 # if you want to use specific custom type, you should insert header file that the custom type 
 # is defined into headerFileList.
-headerFileList = ["LayerConfig.h"]
+headerFileList = ["EnumDef.h, KistiInputLayer.h"]
 ##############################################################################################
         :
 
@@ -75,4 +76,19 @@ headerFileList = ["LayerConfig.h"]
 
 * prop 리스트 생성방법
  genLayerPropList.py, genNetworkProp.py를 실행한다.
-            
+
+* enum definition 등록 방법
+ enumDef.json파일 열어서 정의하고자 하는 enumeration type 이름과 enumeration들을 열거하면
+ 된다. 예를 들어서 ParamFillerType은 3가지 enum값(ParamFillerType::Constant,
+   ParamFillerType::Xavier, ParamfillerType::Gaussian)을 가지고 싶다고 한다면 아래와 
+ 같이 수정을 하면 된다.
+
+ [enumDef.json]
+       :
+    {
+        "NAME" : "ParamFillerType",
+        "ENUM" : ["Constant", "Xavier", "Gaussian"]
+    },
+           
+* enum definition 생성 방법
+ genEnumpy를 실행한다.

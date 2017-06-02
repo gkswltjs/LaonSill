@@ -56,7 +56,8 @@ void LegacyWork<Dtype>::trainNetwork(Job *job) {
 
     COLD_LOG(ColdLog::INFO, true, "training network starts(maxEpoch: %d).", maxEpochs);
 
-    network->run_with_timer(maxEpochs, true, false);
+    network->build(maxEpochs);
+    network->run_with_timer(false);
 
     // XXX: save() 함수 확인 다시하자.
     //if (consumerIdx == 0)

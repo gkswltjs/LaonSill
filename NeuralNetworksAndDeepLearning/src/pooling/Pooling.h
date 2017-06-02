@@ -10,18 +10,7 @@
 #define POOLING_POOLING_H_
 
 #include "common.h"
-
-/**
- * @brief 풀링 타입 열거형
- * @details	지원하는 풀링 타입 열거,
- *          현재 Max, Average 풀링을 지원.
- */
-enum PoolingType {
-	NoPooling=0,	// 풀링을 적용하지 않는다.
-	Max=1,			// 최대 풀링을 적용한다.
-	Avg=2			// 평균 풀링을 적용한다.
-};
-
+#include "EnumDef.h"
 
 
 /**

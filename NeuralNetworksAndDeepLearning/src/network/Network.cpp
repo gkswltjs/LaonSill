@@ -68,42 +68,77 @@ Network<Dtype>::~Network() {
 }
 
 template <typename Dtype>
-void Network<Dtype>::run_with_timer(int epochs, bool buildPlan, bool inference) {
+void Network<Dtype>::run_with_timer( bool inference) {
     struct timespec startTime;
     SPERF_START(NETWORK_TRAINING_TESTTIME, &startTime);
-	run(epochs, buildPlan, inference);
+	run(inference);
 
-    SPERF_END(NETWORK_TRAINING_TESTTIME, startTime, epochs);
+    SPERF_END(NETWORK_TRAINING_TESTTIME, startTime, SNPROP(epochs));
     STDOUT_BLOCK(cout << "Total Training Time : " << SPERF_TIME(NETWORK_TRAINING_TESTTIME)
                     << endl;);
 }
 
 template<typename Dtype>
-void Network<Dtype>::run(int epochs, bool buildPlan, bool inference) {
+void Network<Dtype>::build(int epochs) {
     SASSERT0(this->isLoaded);
-
-    int oldNetworkID = WorkContext::curNetworkID;
+        
     WorkContext::updateNetwork(this->networkID); 
     SNPROP(epochs) = epochs;
 
-    if (buildPlan)
-        PlanOptimizer::buildPlans(networkID);
-    else {
-        // XXX:
-        WorkContext::updatePlan(WorkContext::curDOPID);
-        PlanInfo* planInfo = WorkContext::curPlanInfo;
-        planInfo->curEpochIndex = 0;
-        planInfo->curMiniBatchIndex = -1;
+    PlanOptimizer::buildPlans(networkID);
+}
 
-        PhysicalPlan* pp = WorkContext::curPhysicalPlan;
-        SASSUME0(pp->readyQueue.size() == 0);
-        SASSUME0(pp->refCount == 0);
+template<typename Dtype>
+void Network<Dtype>::reset() {
+    SASSERT0(this->isLoaded);
 
-        SNPROP(iterations) = 0;
-    }
+    WorkContext::updateNetwork(this->networkID); 
+
+    PlanInfo* planInfo = WorkContext::curPlanInfo;
+    planInfo->curEpochIndex = 0;
+    planInfo->curMiniBatchIndex = -1;
+    SNPROP(iterations) = 0;
+}
+
+template<typename Dtype>
+void Network<Dtype>::run(bool inference) {
+    SASSERT0(this->isLoaded);
+
+    WorkContext::updateNetwork(this->networkID); 
+    WorkContext::updatePlan(WorkContext::curDOPID);
+
+    PlanOptimizer::runPlan(inference);
+}
+
+template<typename Dtype>
+void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
+    SASSERT0(this->isLoaded);
+
+    WorkContext::updateNetwork(this->networkID); 
+    WorkContext::updatePlan(WorkContext::curDOPID);
+
+    PlanInfo* planInfo = WorkContext::curPlanInfo;
+
+    SASSERT0(miniBatchIdx >= 0);
+    SASSERT0(miniBatchIdx < planInfo->miniBatchCount);
+
+    int oldEpochIdx = planInfo->curEpochIndex;
+    int oldMiniBatchIdx = planInfo->curMiniBatchIndex;
+    int oldEpochCount = planInfo->epochCount;
+    int oldMiniBatchCount = planInfo->miniBatchCount;
+
+    planInfo->curMiniBatchIndex = miniBatchIdx - 1;
+    planInfo->curEpochIndex = 0;
+    planInfo->miniBatchCount = miniBatchIdx + 1;
+    planInfo->epochCount = 1;
+    SNPROP(iterations) = 0;
+
     PlanOptimizer::runPlan(inference);
 
-    WorkContext::updateNetwork(oldNetworkID);
+    planInfo->curEpochIndex = oldEpochIdx;
+    planInfo->curMiniBatchIndex = oldMiniBatchIdx;
+    planInfo->epochCount = oldEpochCount;
+    planInfo->miniBatchCount = oldMiniBatchCount;
 }
 
 template <typename Dtype>
