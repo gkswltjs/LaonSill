@@ -65,9 +65,6 @@ public:
     uint32_t out_rows;
 
 public:
-    void donateParam(FullyConnectedLayer<Dtype>* receiver);
-
-public:
     /****************************************************************************
      * layer callback functions 
      ****************************************************************************/

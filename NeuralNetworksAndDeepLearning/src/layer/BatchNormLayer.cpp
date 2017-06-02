@@ -70,27 +70,60 @@ void BatchNormLayer<Dtype>::setTrain(bool train) {
     SLPROP(BatchNorm, train) = train;
 }
 
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
 template<typename Dtype>
-void BatchNormLayer<Dtype>::donateParam(BatchNormLayer<Dtype>* receiver) {
-    receiver->_params.clear();
-    receiver->_paramsHistory.clear();
-    receiver->_paramsHistory2.clear();
-    receiver->_paramsInitialized.clear();
+void* BatchNormLayer<Dtype>::initLayer() {
+    BatchNormLayer* layer = new BatchNormLayer<Dtype>();
+    return (void*)layer;
+}
 
-    for (int i = 0; i < this->_params.size(); i++) {
-        receiver->_params.push_back(this->_params[i]);
+template<typename Dtype>
+void BatchNormLayer<Dtype>::destroyLayer(void* instancePtr) {
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void BatchNormLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
     }
+}
 
-    SASSERT0(this->_paramsHistory.size() == this->_paramsHistory2.size());
+template<typename Dtype>
+bool BatchNormLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
+}
 
-    for (int i = 0; i < this->_paramsHistory.size(); i++) {
-        receiver->_paramsHistory.push_back(this->_paramsHistory[i]);
-        receiver->_paramsHistory2.push_back(this->_paramsHistory2[i]);
-    }
+template<typename Dtype>
+void BatchNormLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    layer->feedforward();
+}
 
-    for (int i = 0; i < this->_paramsInitialized.size(); i++) {
-        receiver->_paramsInitialized.push_back(this->_paramsInitialized[i]);
-    }
+template<typename Dtype>
+void BatchNormLayer<Dtype>::backwardTensor(void* instancePtr) {
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    layer->backpropagation();
+}
+
+template<typename Dtype>
+void BatchNormLayer<Dtype>::learnTensor(void* instancePtr) {
+    BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
+    layer->update();
 }
 
 template class BatchNormLayer<float>;

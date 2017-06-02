@@ -38,12 +38,6 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer() : LearnableLayer<Dtype>() {
 	this->_paramsHistory2[ParamType::Bias] = new Data<Dtype>(name + "_bias_history2");
 }
 
-
-template<typename Dtype>
-void FullyConnectedLayer<Dtype>::donateParam(FullyConnectedLayer<Dtype>* receiver) {
-
-}
-
 /****************************************************************************
  * layer callback functions 
  ****************************************************************************/

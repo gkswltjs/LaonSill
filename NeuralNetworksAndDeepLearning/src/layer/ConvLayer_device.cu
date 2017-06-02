@@ -220,8 +220,7 @@ void ConvLayer<Dtype>::reshape() {
 	const int b_in = batches * channels * rows * cols;
 	const int b_out = n * c * h * w;
 
-	//const size_t memoryLimitInBytes = 8 << 20;
-	const size_t memoryLimitInBytes = 8 << 25;
+	const size_t memoryLimitInBytes = 8 << 20;
 	//const size_t memoryLimitInBytes = 0;
 
 	size_t convFwdWorkspaceSize;
@@ -578,69 +577,3 @@ template void ConvLayer<float>::reshape();
 template void ConvLayer<float>::update();
 template void ConvLayer<float>::feedforward();
 template void ConvLayer<float>::backpropagation();
-
-/****************************************************************************
- * layer callback functions 
- ****************************************************************************/
-template<typename Dtype>
-void* ConvLayer<Dtype>::initLayer() {
-    ConvLayer* layer = new ConvLayer<Dtype>();
-    return (void*)layer;
-}
-
-template<typename Dtype>
-void ConvLayer<Dtype>::destroyLayer(void* instancePtr) {
-    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
-    delete layer;
-}
-
-template<typename Dtype>
-void ConvLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
-    bool isInput, int index) {
-    SASSERT0(index == 0);
-
-    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
-
-    if (isInput) {
-        SASSERT0(layer->_inputData.size() == 0);
-        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
-    } else {
-        SASSERT0(layer->_outputData.size() == 0);
-        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
-    }
-}
-
-template<typename Dtype>
-bool ConvLayer<Dtype>::allocLayerTensors(void* instancePtr) {
-    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
-    layer->reshape();
-    return true;
-}
-
-template<typename Dtype>
-void ConvLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
-    layer->feedforward();
-}
-
-template<typename Dtype>
-void ConvLayer<Dtype>::backwardTensor(void* instancePtr) {
-    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
-    layer->backpropagation();
-}
-
-template<typename Dtype>
-void ConvLayer<Dtype>::learnTensor(void* instancePtr) {
-    ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
-    layer->update();
-}
-
-template void* ConvLayer<float>::initLayer();
-template void ConvLayer<float>::destroyLayer(void* instancePtr);
-template void ConvLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
-    bool isInput, int index);
-template bool ConvLayer<float>::allocLayerTensors(void* instancePtr);
-template void ConvLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
-template void ConvLayer<float>::backwardTensor(void* instancePtr);
-template void ConvLayer<float>::learnTensor(void* instancePtr);
-

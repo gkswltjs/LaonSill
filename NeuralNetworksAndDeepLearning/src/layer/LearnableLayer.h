@@ -58,6 +58,8 @@ public:
     virtual void syncParams(LearnableLayer<Dtype> *targetLayer) {}
     virtual void receiveParam(LearnableLayer<Dtype>* donatorLayer) {}
 
+    void donateParam(LearnableLayer<Dtype>* receiver);
+
 protected:
 	virtual void _updateParam(const uint32_t paramSize, const Dtype regScale,
                               const Dtype learnScale, Data<Dtype>* dataHistory,

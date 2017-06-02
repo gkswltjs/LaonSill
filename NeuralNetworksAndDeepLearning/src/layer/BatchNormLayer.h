@@ -42,7 +42,6 @@ private:
     void        computeScaleGrad();
     void        computeShiftGrad();
 public:
-    void        donateParam(BatchNormLayer<Dtype>* receiver);
     void        setTrain(bool train);
 
 protected:

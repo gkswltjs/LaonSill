@@ -67,7 +67,6 @@ protected:
 public:
     bool deconv;
     int deconvExtraCell;
-    void donateParam(ConvLayer<Dtype>* receiver);
 
 public:
     /****************************************************************************

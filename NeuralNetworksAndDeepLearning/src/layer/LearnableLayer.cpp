@@ -6,6 +6,7 @@
  */
 
 #include "LearnableLayer.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -94,6 +95,29 @@ void LearnableLayer<Dtype>::loadParams(map<string, Data<Dtype>*>& dataMap) {
 		this->_params[i]->set_device_with_host_data(it->second->host_data());
 		this->_paramsInitialized[i] = true;
 	}
+}
+
+template<typename Dtype>
+void LearnableLayer<Dtype>::donateParam(LearnableLayer<Dtype>* receiver) {
+    receiver->_params.clear();
+    receiver->_paramsHistory.clear();
+    receiver->_paramsHistory2.clear();
+    receiver->_paramsInitialized.clear();
+
+    for (int i = 0; i < this->_params.size(); i++) {
+        receiver->_params.push_back(this->_params[i]);
+    }
+
+    SASSERT0(this->_paramsHistory.size() == this->_paramsHistory2.size());
+
+    for (int i = 0; i < this->_paramsHistory.size(); i++) {
+        receiver->_paramsHistory.push_back(this->_paramsHistory[i]);
+        receiver->_paramsHistory2.push_back(this->_paramsHistory2[i]);
+    }
+
+    for (int i = 0; i < this->_paramsInitialized.size(); i++) {
+        receiver->_paramsInitialized.push_back(this->_paramsInitialized[i]);
+    }
 }
 
 template class LearnableLayer<float>;
