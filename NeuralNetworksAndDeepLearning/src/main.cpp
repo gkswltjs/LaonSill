@@ -1,4 +1,5 @@
 #if 1
+#include <unistd.h>
 #include <fcntl.h>
 #include <cstdint>
 #include <vector>
@@ -37,6 +38,8 @@
 #include "DebugUtil.h"
 #include "ResourceManager.h"
 #include "PlanOptimizer.h"
+#include "WorkContext.h"
+#include "PlanParser.h"
 
 #include "GAN/GAN.h"
 #include "YOLO.h"
@@ -67,23 +70,22 @@ void developerMain() {
     STDOUT_LOG("exit developerMain()");
 }
 
-void loadJobFile(const char* fileName, Json::Value& rootValue) {
-    filebuf fb;
-    if (fb.open(fileName, ios::in) == NULL) {
-        fprintf(stderr, "ERROR: cannot open %s\n", fileName);
-        exit(EXIT_FAILURE);
-    }
+void singleJobMain(const char* jobFilePath) {
+    STDOUT_LOG("enter single job(%s)", jobFilePath);
 
-    istream is(&fb);
-    Json::Reader reader;
-    bool parse = reader.parse(is, rootValue);
+    SASSERT(access(jobFilePath, F_OK) != -1,
+        "cannot access single job filepath. filepath=%s", jobFilePath);
 
-    if (!parse) {
-        fprintf(stderr, "ERROR: invalid json-format file.\n");
-        fprintf(stderr, "%s\n", reader.getFormattedErrorMessages().c_str());
-        fb.close();
-        exit(EXIT_FAILURE);
-    }
+    checkCudaErrors(cudaSetDevice(0));
+	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
+
+    int networkID = PlanParser::loadNetwork(jobFilePath);
+    WorkContext::updateNetwork(networkID);
+    PlanOptimizer::buildPlans(networkID);
+    PlanOptimizer::runPlan(true);
+
+    STDOUT_LOG("exit single job(%s)", jobFilePath);
 }
 
 int main(int argc, char** argv) {
@@ -95,15 +97,13 @@ int main(int argc, char** argv) {
 
     bool    useDeveloperMode = false; 
     bool    useSingleJobMode = false;
-    bool    useRLMode = false;
     bool    useTestMode = false;
 
     char*   singleJobFilePath;
-    char*   romFilePath;
     char*   testItemName;
 
     // (1) 옵션을 읽는다.
-    while ((opt = getopt(argc, argv, "vdf:a:t:")) != -1) {
+    while ((opt = getopt(argc, argv, "vdf:t:")) != -1) {
         switch (opt) {
         case 'v':
             printf("%s version %d.%d.%d\n", argv[0], SPARAM(VERSION_MAJOR),
@@ -111,27 +111,20 @@ int main(int argc, char** argv) {
             exit(EXIT_SUCCESS);
 
         case 'd':
-            if (useSingleJobMode | useRLMode | useTestMode)
+            if (useSingleJobMode | useTestMode)
                 printUsageAndExit(argv[0]);
             useDeveloperMode = true;
             break;
 
         case 'f':
-            if (useDeveloperMode | useRLMode | useTestMode)
+            if (useDeveloperMode | useTestMode)
                 printUsageAndExit(argv[0]);
             useSingleJobMode = true;
             singleJobFilePath = optarg;
             break;
 
-        case 'a':
-            if (useDeveloperMode | useSingleJobMode | useTestMode)
-                printUsageAndExit(argv[0]);
-            useRLMode = true;
-            romFilePath = optarg;
-            break;
-
         case 't':
-            if (useSingleJobMode | useDeveloperMode | useRLMode)
+            if (useSingleJobMode | useDeveloperMode)
                 printUsageAndExit(argv[0]);
             useTestMode = true;
             testItemName = optarg;
@@ -194,51 +187,15 @@ int main(int argc, char** argv) {
         // (5-A-3) 자원을 해제 한다.
         Cuda::destroy();
     } else if (useSingleJobMode) {
-        // FIXME: we do not support this mode until declaration of job type is done
-#if 0
-        // TODO: 아직 만들다 말았음
-        // (5-B-1) Job File(JSON format)을 로딩한다.
-        Json::Value rootValue;
-        loadJobFile(singleJobFilePath, rootValue);
+        // (5-B-1) Cuda를 생성한다.
+        Cuda::create(SPARAM(GPU_COUNT));
+        COLD_LOG(ColdLog::INFO, true, "CUDA is initialized");
 
-        // (5-B-2) Producer&Consumer를 생성.
-        Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
-        
-        // (5-B-3) Network를 생성한다.
-        // TODO: Network configuration에 대한 정의 필요
-        // XXX: 1개의 Network만 있다고 가정하고 있음.
-        string networkConf = rootValue.get("Network", "").asString();
-        int networkId = Worker<float>::createNetwork();
-        Network<float>* network = Worker<float>::getNetwork(networkId); 
-        SASSUME0(network);
-        
-        // (5-B-4) Job을 생성한다.
-        // TODO: Job configuration에 대한 정의 필요
-        Json::Value jobConfList = rootValue["Job"];
-        for (int jobIndex = 0; jobIndex < jobConfList.size(); jobIndex++) {
-            Json::Value jobConf = jobConfList[jobIndex];
-            SASSUME0(jobConf.size() == 2);
-            
-            Job* newJob = new Job((Job::JobType)(jobConf[0].asInt()), network,
-                                (jobConf[1].asInt()));
-            Worker<float>::pushJob(newJob);
-        }
-#endif
-        
-        // (5-B-5) Worker Thread (Producer& Consumer)를 종료를 요청한다.
-        Job* haltJob = new Job(Job::HaltMachine);
-        Worker<float>::pushJob(haltJob);
+        // (5-B-2) DeveloperMain()함수를 호출한다.
+        singleJobMain(singleJobFilePath);
 
-        // (5-B-6) Producer&Consumer를 종료를 기다린다.
-        Worker<float>::joinThreads();
-    } else if (useRLMode) {
-        // (5-C-1) Producer&Consumer를 생성.
-        Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
-
-        // (5-C-3) Layer를 생성한다.
-        Atari::run(romFilePath);
-
-        Worker<float>::joinThreads();
+        // (5-B-3) 자원을 해제 한다.
+        Cuda::destroy();
     } else if (useTestMode) {
         // (5-D-1) Producer&Consumer를 생성.
         Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
@@ -280,7 +237,7 @@ int main(int argc, char** argv) {
 
     LayerFunc::destroy();
     // (6) 로깅 관련 모듈이 점유했던 자원을 해제한다.
-    if (!useDeveloperMode)
+    if (!useDeveloperMode && !useSingleJobMode)
         HotLog::destroy();
     ColdLog::destroy();
     SysLog::destroy();

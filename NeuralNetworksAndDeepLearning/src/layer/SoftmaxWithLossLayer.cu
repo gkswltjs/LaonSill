@@ -51,7 +51,6 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 				SLPROP_BASE(name).c_str(), 1, 1, 1, 1);
 #endif
 
-        cout << "set inout tensor" << endl;
         InnerLayerFunc::setInOutTensor(0, (void*)this->_inputData[0], true, 0);
         InnerLayerFunc::setInOutTensor(0, (void*)&this->prob, false, 0);
 	}
