@@ -207,6 +207,7 @@ try:
     headerFile.write("    static LayerProp* createLayerProp(int networkID, int layerID,")
     headerFile.write(" const char* layerName);\n")
     headerFile.write("    static int getLayerType(const char* layer);\n")
+    headerFile.write("    static std::string getLayerName(int layerType);\n")
     headerFile.write("    static std::vector<std::string> getInputs(")
     headerFile.write("const char* layer, void* target);\n")
     headerFile.write("    static std::vector<std::string> getOutputs(")
@@ -499,6 +500,26 @@ try:
     sourceFile.write(' else {\n')
     sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
     sourceFile.write(', layer);\n    }\n}\n\n')
+
+    sourceFile.write("std::string LayerPropList::getLayerName(int layerType) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop in ['Base', 'Loss', 'Learnable']:
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (layerType == (int)Layer<float>::%s) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (layerType == (int)Layer<float>::%s) {\n' % prop)
+            sourceFile.write('        return std::string("%s");\n' % prop)
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer type. layer type=%d"')
+    sourceFile.write(', layerType);\n    }\n}\n\n')
 
     # inputs, outputs, propDownds, isDonator, isReceiver, getDonatorID, isLearnable functions
     sourceFile.write("std::vector<std::string> LayerPropList::getInputs")

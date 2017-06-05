@@ -218,33 +218,11 @@ void PlanParser::handleInnerLayer(int networkID, Json::Value vals, string parent
         (void*)&innerIDList);
 }
 
-// XXX: 함수 하나가 엄청 길다... 흠.. 나중에 소스 좀 정리하자..
-int PlanParser::loadNetwork(string filePath) {
-    // (1) 우선 network configuration file 파싱부터 진행
-    filebuf fb;
-    if (fb.open(filePath.c_str(), ios::in) == NULL) {
-        SASSERT(false, "cannot open cluster confifuration file. file path=%s",
-            filePath.c_str());
-    }
-
-    Json::Value rootValue;
-    istream is(&fb);
-    Json::Reader reader;
-    bool parse = reader.parse(is, rootValue);
-
-    if (!parse) {
-        SASSERT(false, "invalid json-format file. file path=%s. error message=%s",
-            filePath.c_str(), reader.getFormattedErrorMessages().c_str());
-    }
-   
+void PlanParser::buildNetwork(int networkID, Json::Value rootValue) {
     // logical plan을 만들기 위한 변수들
     map<int, PlanBuildDef> planDefMap;
 
-    // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
-    Network<float>* network = new Network<float>();
-    int networkID = network->getNetworkID();
-
-    // (3) fill layer property
+    // (1) fill layer property
     Json::Value layerList = rootValue["layers"];
     for (int i = 0; i < layerList.size(); i++) {
         Json::Value layer = layerList[i];
@@ -312,7 +290,6 @@ int PlanParser::loadNetwork(string filePath) {
         planDefMap[layerID] = newPlanDef;
     }
 
-
     // (2) get network property
     _NetworkProp *networkProp = new _NetworkProp();
     Json::Value networkConfDic = rootValue["configs"];
@@ -329,6 +306,33 @@ int PlanParser::loadNetwork(string filePath) {
     WorkContext::updateNetwork(networkID);
 
     LogicalPlan::build(networkID, planDefMap);
+}
+
+// XXX: 함수 하나가 엄청 길다... 흠.. 나중에 소스 좀 정리하자..
+int PlanParser::loadNetwork(string filePath) {
+    // (1) 우선 network configuration file 파싱부터 진행
+    filebuf fb;
+    if (fb.open(filePath.c_str(), ios::in) == NULL) {
+        SASSERT(false, "cannot open cluster confifuration file. file path=%s",
+            filePath.c_str());
+    }
+
+    Json::Value rootValue;
+    istream is(&fb);
+    Json::Reader reader;
+    bool parse = reader.parse(is, rootValue);
+
+    if (!parse) {
+        SASSERT(false, "invalid json-format file. file path=%s. error message=%s",
+            filePath.c_str(), reader.getFormattedErrorMessages().c_str());
+    }
+   
+    // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
+    Network<float>* network = new Network<float>();
+    int networkID = network->getNetworkID();
+
+    // (3) 네트워크 빌드
+    buildNetwork(networkID, rootValue);
 
     fb.close();
 
