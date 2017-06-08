@@ -10,6 +10,7 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
+#include <opencv2/highgui/highgui.hpp>
 //#include "layer/LayerConfig.h"
 #include <string>
 #include <fstream>

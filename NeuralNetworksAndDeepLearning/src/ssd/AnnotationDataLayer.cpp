@@ -332,7 +332,7 @@ void AnnotationDataLayer<Dtype>::getMiniBatch(const vector<int>& inds) {
 			buildLabelData(odMetaData, j, buf);
 			buf[0] = i;
 			// XXX: for debugging.
-			buf[2] = inds[i];
+			//buf[2] = inds[i];
 			std::copy(buf, buf + 8, labelData + bbIdx * 8);
 			bbIdx++;
 		}

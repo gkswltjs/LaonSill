@@ -49,6 +49,7 @@ void vgg19();
 void vgg19Test();
 void fasterRcnnTrain();
 void fasterRcnnTest();
+void fasterRcnnVideoTest();
 void ssd();
 void ssdTest();
 
@@ -65,8 +66,9 @@ void developerMain() {
 	//vgg19();
 	//vgg19Test();
 	//fasterRcnnTrain();
-	fasterRcnnTest();
-	//ssd();
+	//fasterRcnnTest();
+	//fasterRcnnVideoTest();
+	ssd();
 	//ssdTest();
 
 	STDOUT_LOG("exit developerMain()");
@@ -393,8 +395,8 @@ void fasterRcnnTest() {
 	const string networkSaveDir = SPARAM(NETWORK_SAVE_DIR);
 
 	vector<WeightsArg> weightsArgs(1);
-	//weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
-	weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
+	weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
+	//weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
 	//weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_DOOSAN_44000.param";
 	cout << "weight path: " << weightsArgs[0].weightsPath << endl;
 
@@ -433,6 +435,52 @@ void fasterRcnnTest() {
 }
 
 
+void fasterRcnnVideoTest() {
+	srand((uint32_t)time(NULL));
+
+	const int maxEpochs = 1000;
+	const NetworkPhase phase = NetworkPhase::TestPhase;
+	const string networkSaveDir = SPARAM(NETWORK_SAVE_DIR);
+
+	vector<WeightsArg> weightsArgs(1);
+	weightsArgs[0].weightsPath = networkSaveDir + "/VGG_CNN_M_1024_FRCNN_CAFFE.param";
+	//weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_600000.param";
+	//weightsArgs[0].weightsPath = networkSaveDir + "/SOOOA_FRCNN_DOOSAN_44000.param";
+	cout << "weight path: " << weightsArgs[0].weightsPath << endl;
+
+	NetworkConfig<float>* networkConfig =
+			(new typename NetworkConfig<float>::Builder())
+			->networkPhase(phase)
+			->weightsArgs(weightsArgs)
+			->build();
+
+	Network<float>* network = new Network<float>(networkConfig);
+	LayersConfig<float>* layersConfig = createFrcnnVideoTestOneShotLayersConfig<float>();
+
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(network->config);
+	}
+	network->setLayersConfig(layersConfig);
+	network->loadPretrainedWeights();
+
+	RoITestInputLayer<float>* inputLayer = dynamic_cast<RoITestInputLayer<float>*>(layersConfig->_layers[0]);
+
+
+
+	//struct timespec startTime;
+	//SPERF_START(SERVER_RUNNING_TIME, &startTime);
+
+	//const int imageSize = inputLayer->imdb->imageIndex.size();
+	while (true) {
+		network->_feedforward(0);
+	}
+
+	//SPERF_END(SERVER_RUNNING_TIME, startTime);
+	//float time = SPERF_TIME(SERVER_RUNNING_TIME);
+	//STDOUT_LOG("server running time : %lf for %d images (%lf fps)\n",
+	//		time, imageSize, imageSize / time);
+}
 
 
 
@@ -447,8 +495,8 @@ void ssd() {
 
 #if LOAD_WEIGHT
 	vector<WeightsArg> weightsArgs(1);
-	weightsArgs[0].weightsPath =
-			"/home/jkim/Dev/SOOOA_HOME/network/SSD_PRETRAINED.param";
+	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_PRETRAINED.param";
+	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_CAFFE_TRAINED.param";
 #endif
 
 	const uint32_t batchSize = 16;				// 32
@@ -510,7 +558,7 @@ void ssd() {
 #endif
 
 
-	/*
+#if 0
 	Data<float>::printConfig = true;
 	SyncMem<float>::printConfig = true;
 	for (int i = 0; i < layersConfig->_learnableLayers.size(); i++) {
@@ -520,7 +568,10 @@ void ssd() {
 	}
 	Data<float>::printConfig = false;
 	SyncMem<float>::printConfig = false;
-	*/
+	exit(1);
+#endif
+
+
 	network->sgd_with_timer(maxEpochs);
 }
 

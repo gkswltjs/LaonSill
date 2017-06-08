@@ -54,7 +54,7 @@ int main(void) {
 void plainTest() {
 	cout << "plainTest()" << endl;
 
-#if 0
+#if 1
 	AnnotationDataLayer<float>::Builder* builder =
 			new typename AnnotationDataLayer<float>::Builder();
 	builder->id(0)
@@ -65,12 +65,31 @@ void plainTest() {
 			->imageSetPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt")
 			->baseDataPath("/home/jkim/Dev/git/caffe_ssd/data/VOCdevkit/")
 			->labelMapPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt")
-			->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			//->pixelMeans({104.f, 117.f, 123.f})	// BGR
+			->pixelMeans({0.f, 0.f, 0.f})	// BGR
 			->outputs({"data", "label"});
 
 	Layer<float>* layer = builder->build();
 	layer->_outputData.push_back(new Data<float>("data"));
 	layer->_outputData.push_back(new Data<float>("label"));
+
+	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
+			->batchSize(1)
+			->build();
+	layer->setNetworkConfig(networkConfig);
+	layer->feedforward();
+
+	Data<float>::printConfig = true;
+	SyncMem<float>::printConfig = true;
+
+	layer->_outputData[0]->print_data({}, false);
+	layer->_outputData[1]->print_data({}, false, -1);
+
+	SyncMem<float>::printConfig = false;
+	Data<float>::printConfig = false;
+
+	delete layer;
 #endif
 
 #if 0
@@ -182,6 +201,53 @@ void plainTest() {
 	}
 
 	delete layer;
+#endif
+
+#if 0
+	cv::VideoCapture cap("/home/jkim/Downloads/frcnn_ok.mp4");
+	if (!cap.isOpened()) {
+		return;
+	}
+	cv::VideoCapture cap1("/home/jkim/Downloads/frcnn_ok.mp4");
+	if (!cap1.isOpened()) {
+		return;
+	}
+	cv::Mat im;
+	if (!cap.read(im)) {
+		cout << "error at cap" << endl;
+	}
+	if (cap1.read(im)) {
+		cout << "error at cap1" << endl;
+	}
+	exit(1);
+
+
+	//cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('A', 'V', 'C', '1'));
+	//int codec = int(cap.get(CV_CAP_PROP_FOURCC));
+	//cout << codec << endl;
+	double fps = cap.get(CV_CAP_PROP_FPS);
+	cout << "fps: " << fps << endl;
+	size_t frameCount = size_t(cap.get(CV_CAP_PROP_FRAME_COUNT));
+	cv::namedWindow("Video", 1);
+	while (1) {
+		size_t posFrames = size_t(cap.get(CV_CAP_PROP_POS_FRAMES));
+
+		cv::Mat frame;
+		for (int i = 0; i < 3; i++) {
+			if (!cap.grab()) {
+				cout << "end of video ... " << endl;
+				cap.release();
+				return;
+			}
+		}
+		cap.retrieve(frame);
+		imshow("Video", frame);
+		if (cv::waitKey(30) == 'c') break;
+	}
+
+	cap.release();
+
+
 #endif
 
 	/*
@@ -654,7 +720,7 @@ void layerTest() {
 #define NETWORK_FRCNN_TEST	3
 #define NETWORK_SSD			4
 #define NETWORK_SSD_TEST	5
-#define NETWORK				NETWORK_SSD_TEST
+#define NETWORK				NETWORK_SSD
 
 
 
@@ -715,8 +781,8 @@ void networkTest() {
 
 	LayersConfig<float>* layersConfig = createSSDNetLayersConfig<float>();
 	const string networkName		= "ssd";
-	const int batchSize 			= 2;
-	const float baseLearningRate 	= 0.01;
+	const int batchSize 			= 1;
+	const float baseLearningRate 	= 0.001;
 	const float weightDecay 		= 0.0005;
 	//const float baseLearningRate 	= 1;
 	//const float weightDecay 		= 0.000;
@@ -746,6 +812,15 @@ void networkTest() {
 	cout << "invalid network ... " << endl;
 	exit(1);
 #endif
+
+
+
+#if 0
+	vector<WeightsArg> weightsArgs(1);
+	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_PRETRAINED.param";
+	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_CAFFE_TRAINED.param";
+#endif
+
 	NetworkConfig<float>* networkConfig =
 		(new typename NetworkConfig<float>::Builder())
 		//->networkPhase(networkPhase)
@@ -758,19 +833,44 @@ void networkTest() {
 		->lrPolicy(lrPolicy)
 		->networkPhase(networkPhase)
 		->gamma(gamma)
+#if 0
+		->weightsArgs(weightsArgs)
+#endif
 		->build();
 
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
 	}
 
+
+#if 0
+	Network<float>* network = new Network<float>(networkConfig);
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(network->config);
+	}
+	network->setLayersConfig(layersConfig);
+	network->loadPretrainedWeights();
+#endif
+
+#if 0
+	Data<float>::printConfig = true;
+	SyncMem<float>::printConfig = true;
+	for (int i = 0; i < layersConfig->_learnableLayers.size(); i++) {
+		for (int j = 0; j < layersConfig->_learnableLayers[i]->_params.size(); j++) {
+			layersConfig->_learnableLayers[i]->_params[j]->print_data({}, false);
+		}
+	}
+	Data<float>::printConfig = false;
+	SyncMem<float>::printConfig = false;
+	exit(1);
+#endif
+
 	NetworkTest<float>* networkTest = new NetworkTest<float>(layersConfig, networkName, numSteps);
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 	networkTest->setUp();
-
 	//saveNetworkParams(layersConfig);
 	//exit(1);
-
 	networkTest->updateTest();
 	networkTest->cleanUp();
 	NetworkTestInterface<float>::globalCleanUp();

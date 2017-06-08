@@ -65,6 +65,7 @@ void MultiBoxLossLayer<Dtype>::reshape() {
 			"Number of priors must match number of confidence predictions.");
 
 	this->_outputData[0]->reshape({1, 1, 1, 1});
+	this->_outputData[0]->mutable_host_grad()[0] = this->lossWeight;
 }
 
 template <typename Dtype>
@@ -83,8 +84,7 @@ void MultiBoxLossLayer<Dtype>::feedforward() {
 			&allGtBBoxes);
 
 #if MULTIBOXLOSSLAYER_LOG
-	map<int, vector<NormalizedBBox>>::iterator it;
-	for (it = allGtBBoxes.begin(); it != allGtBBoxes.end(); it++) {
+	for (auto it = allGtBBoxes.begin(); it != allGtBBoxes.end(); it++) {
 		cout << "for itemId: " << it->first << endl;
 		for (int i = 0; i < it->second.size(); i++) {
 			cout << "\t" << i << endl;
@@ -312,17 +312,25 @@ void MultiBoxLossLayer<Dtype>::backpropagation() {
 	SASSERT(!this->_propDown[2], "MultiBoxLossLayer cannot backpropagate to prior inputs.");
 	SASSERT(!this->_propDown[3], "MultiBoxLossLayer cannot backpropagate to label inputs.");
 
+	//this->_printOn();
+	//this->_inputData[0]->print_data({}, false, -1);
+
 	// Back propagate on location prediction.
 	if (this->_propDown[0]) {
 		Dtype* locInputGrad = this->_inputData[0]->mutable_host_grad();
 		soooa_set(this->_inputData[0]->getCount(), Dtype(0), locInputGrad);
+		//this->_inputData[0]->print_grad({}, false, -1);
+
 		if (this->numMatches >= 1) {
 			vector<bool> locPropDown;
 			// Only back propagate on prediction, not ground truth.
 			locPropDown.push_back(true);
 			locPropDown.push_back(false);
 			this->locLossLayer->_propDown = locPropDown;
+
+			//this->locLoss.print_grad({}, false, -1);
 			this->locLossLayer->backpropagation();
+			//this->locPred.print_grad({}, false, -1);
 
 			// Scale gradient.
 			Dtype normalizer = LossLayer<Dtype>::getNormalizer(this->num, this->numPriors,
@@ -330,6 +338,8 @@ void MultiBoxLossLayer<Dtype>::backpropagation() {
 			Dtype lossWeight = this->_outputData[0]->host_grad()[0] / normalizer;
 			soooa_gpu_scal(this->locPred.getCount(), lossWeight,
 					this->locPred.mutable_device_grad());
+			//this->locPred.print_grad({}, false, -1);
+
 			// Copy gradient back to inputData[0]
 			const Dtype* locPredGrad = this->locPred.host_grad();
 			int count = 0;
@@ -343,15 +353,17 @@ void MultiBoxLossLayer<Dtype>::backpropagation() {
 							continue;
 						}
 						// Copy the grad to the right place.
-						int startIdx = locClasses * 4 * j + label * 4;
+						int startIdx = this->locClasses * 4 * j + label * 4;
 						soooa_copy<Dtype>(4, locPredGrad + count * 4, locInputGrad + startIdx);
 						count++;
 					}
 				}
 				locInputGrad += this->_inputData[0]->offset(1);
 			}
+			//this->_inputData[0]->print_grad({}, false, -1);
 		}
 	}
+	//this->_printOff();
 
 	// Back propagate on confidence prediction.
 	if (this->_propDown[1]) {

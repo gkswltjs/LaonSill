@@ -21,7 +21,6 @@
 #define ROIINPUTLAYER_LOG 0
 
 using namespace std;
-using namespace cv;
 
 
 template <typename Dtype>
@@ -675,7 +674,7 @@ float RoIInputLayer<Dtype>::prepImForBlob(cv::Mat& im, cv::Mat& imResized,
 }
 
 template <typename Dtype>
-void RoIInputLayer<Dtype>::imListToBlob(vector<Mat>& ims) {
+void RoIInputLayer<Dtype>::imListToBlob(vector<cv::Mat>& ims) {
 	// Convert a list of images into a network input.
 	// Assumes images are already prepared (means subtracted, BGR order, ...)
 

@@ -25,7 +25,7 @@ const std::string SIG_PARAMS 	= DELIM + "params" + DELIM;
 const std::string BLOBS_PREFIX	= "anonymous" + DELIM + "blobs" + DELIM;
 const std::string NPZ_PATH 		= "/home/jkim/Dev/data/numpy_array/";
 
-const float COMPARE_ERROR 		= 1.0e-7;
+const float COMPARE_ERROR 		= 1.0e-5;
 
 
 // cuda device 설정

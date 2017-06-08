@@ -25,8 +25,6 @@
 
 #define PASCALVOC_LOG 0
 
-using namespace cv;
-
 
 class PascalVOC : public IMDB {
 public:

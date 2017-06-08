@@ -781,11 +781,9 @@ void Network<Dtype>::_feedforward(uint32_t batchIndex) {
 	int baseIndex = batchIndex*config->_batchSize;
 
 	inputLayer->feedforward(baseIndex);
+
 	for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
-		//cout << layersConfig->_layers[i]->name << ": feedforward ... " << endl;
 		layersConfig->_layers[i]->feedforward();
-		//cout << "output sumsq of " << layersConfig->_layers[i]->name << ":\t\t" <<
-		//		layersConfig->_layers[i]->_outputData[0]->sumsq_device_data() << endl;
 	}
 }
 

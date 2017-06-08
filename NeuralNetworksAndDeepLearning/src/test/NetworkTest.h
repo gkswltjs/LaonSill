@@ -60,7 +60,7 @@ public:
 
 		// XXX: inference test를 위해 = 제거,
 		// 일반 테스트시 '<' --> '<='로 복구해야 함!!!
-		for (int i = 0; i < this->numSteps; i++) {
+		for (int i = 0; i <= this->numSteps; i++) {
 			const string strIdx = to_string(i);
 			map<string, Data<Dtype>*> nameParamsMap;
 			buildNameDataMapFromNpzFile(NPZ_PATH + this->networkName + "/",
@@ -111,29 +111,33 @@ public:
 			dataTest(i);
 			logEndTest("FEED FORWARD");
 
-			/*
-			typename std::map<std::string, Layer<Dtype>*>::iterator itr =
-					this->layersConfig->_nameLayerMap.find("mbox_loss");
+
+#if 1
+			auto itr = this->layersConfig->_nameLayerMap.find("mbox_loss");
 			printDataList(itr->second->_outputData);
-			exit(1);
-			*/
+			printDataList(itr->second->_outputData, 1);
+			//exit(1);
+#endif
 
 			// backpropagation
-			replaceDataWithGroundTruth(i);
+			//replaceDataWithGroundTruth(i);
 			logStartTest("BACK PROPAGATION");
 			backward();
 			gradTest(i);
 			logEndTest("BACK PROPAGATION");
 
+
+			exit(1);
+
 			// update & compare result
-			replaceGradWithGroundTruth(i);
+			//replaceGradWithGroundTruth(i);
 
 			logStartTest("UPDATE");
 			update();
 			paramTest(i);
 			logEndTest("UPDATE");
 
-			replaceParamWithGroundTruth(i+1, 0);
+			//replaceParamWithGroundTruth(i+1, 0);
 		}
 	}
 
@@ -244,7 +248,7 @@ private:
 
 	void update() {
 		std::set<std::string> targetLayerSet;
-		//targetLayerSet.insert("conv2");
+		//targetLayerSet.insert("conv2_1");
 		//targetLayerSet.insert("rpn_conv/3x3");
 
 		std::cout.precision(15);
@@ -319,7 +323,7 @@ private:
 				retrieveValueFromMap(this->nameBlobsMapList[stepIdx], dataName);
 		Layer<Dtype>* layer = this->layersConfig->_nameLayerMap["mbox_loss"];
 		layer->_outputData[0]->set_host_data(data, 0, false);
-		layer->_outputData[0]->mutable_host_grad()[0] = 1;
+		layer->_outputData[0]->set_host_grad(data, 0, false);
 
 
 		/*

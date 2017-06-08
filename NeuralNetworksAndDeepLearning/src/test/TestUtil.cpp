@@ -309,6 +309,16 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 	Data<float>* data = retrieveValueFromMap(nameDataMap, key);
 	SASSERT(data != 0, "Could not find Data named %s", key.c_str());
 
+	/*
+	if (compareType == 1 && dataName == "mbox_loc") {
+		Data<float>::printConfig = true;
+		SyncMem<float>::printConfig = true;
+		targetData->print_grad({}, false, -1);
+		data->print_grad({}, false, -1);
+		exit(1);
+	}
+	*/
+
 	bool result = false;
 	if (compareType == 0)
 		result = targetData->compareData(data, COMPARE_ERROR);
