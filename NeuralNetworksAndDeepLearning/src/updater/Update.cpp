@@ -28,8 +28,10 @@ void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
 	const Dtype negativeOne = -1.0;
     const Dtype negativeLearnScale = (-1.0) * learnScale;
 
+#if 0
     if (!Worker<Dtype>::isSingle())
         data->mutable_host_grad();
+#endif
 
 	Dtype* d_paramGrad = data->mutable_device_grad();
 	Dtype* d_paramData = data->mutable_device_data();

@@ -22,6 +22,7 @@
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "LegacyWork.h"
+#include "ThreadMgmt.h"
 
 using namespace std;
 
@@ -228,7 +229,7 @@ bool Communicator::handleHaltMachineMsg(MessageHeader recvMsgHdr, char* recvMsg,
 
     // (1) Worker Thread (Producer& Consumer)를 종료한다.
     Job* haltJob = new Job(Job::HaltMachine);
-    Worker<float>::pushJob(haltJob);
+    Worker::pushJob(haltJob);
 
     // (2) Listener, Session 쓰레드 들을 모두 종료한다.
     Communicator::halt();       // threads will be eventually halt
@@ -354,7 +355,7 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
         free(jobElemTypes);
 
     // (2) job을 job queue에 넣는다.
-    Worker<float>::pushJob(newJob);
+    Worker::pushJob(newJob);
 
     // (3) reply
     replyMsgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
@@ -523,8 +524,8 @@ void Communicator::launchThreads(int sessCount) {
     atomic_store(&Communicator::runningSessCount, 0);
     atomic_store(&Communicator::sessHaltCount, 0);
 
-    // (2) Worker의 준비가 될때까지 기다린다.
-    while (!Worker<float>::isReady()) {
+    // (2) ThreadMgmt의 준비가 될때까지 기다린다.
+    while (!ThreadMgmt::isReady()) {
         sleep(1);
     }
 

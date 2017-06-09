@@ -59,6 +59,14 @@ Job::Job(Job::JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
                     (void*)&jobElemTypes[offset], sizeof(int));
                 offset += sizeof(float) * this->jobElemDefs[i].arrayCount;
                 break;
+            case Job::StringType:
+                offset += sizeof(int);
+                this->jobElemDefs[i].elemOffset = offset;
+                memcpy((void*)&this->jobElemDefs[i].arrayCount,
+                    (void*)jobElemTypes[offset], sizeof(int));
+                offset += sizeof(char) * this->jobElemDefs[i].arrayCount;
+                break;
+
             default:
                 COLD_LOG(ColdLog::ERROR, true,
                     "invalid job elem type. request elem type=%d", jobElemTypes[i]);
@@ -120,7 +128,7 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     SASSERT0(this->jobElemDefs != NULL);
 
     int elemCnt = 1;
-    if (jobElemType == Job::FloatArrayType) {
+    if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         SASSERT0(arrayCount > 0);
         elemCnt = arrayCount;
     }
@@ -134,13 +142,16 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
         case Job::FloatArrayType:
             elemSize = sizeof(float);
             break;
+        case Job::StringType:
+            elemSize = sizeof(char);
+            break;
         default:
             SASSERT(false, "invalid job elem type. job elem type=%d", (int)jobElemType);
     }
 
     int elemValueSize = elemCnt * elemSize;
 
-    if (jobElemType == Job::FloatArrayType) {
+    if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         int arrayAllocSize = tempJobElemValueSize + elemValueSize + sizeof(int);
         // array size만큼을 고려해 줘야 한다.
         this->jobElemValues = (char*)malloc(arrayAllocSize);
@@ -164,13 +175,13 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     this->jobElemDefs[curJobElemIdx].elemType = jobElemType;
     this->jobElemDefs[curJobElemIdx].elemOffset = tempJobElemValueSize;
 
-    if (jobElemType == Job::FloatArrayType)
+    if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType)
         this->jobElemDefs[curJobElemIdx].elemOffset += sizeof(int);
 
     this->jobElemDefs[curJobElemIdx].arrayCount = arrayCount;
 
     // fill job elem value
-    if (jobElemType == Job::FloatArrayType) {
+    if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         memcpy((void*)&this->jobElemValues[tempJobElemValueSize], (void*)&arrayCount,
             sizeof(int));
     }
@@ -225,6 +236,15 @@ float Job::getFloatArrayValue(int elemIdx, int arrayIdx) {
     return floatArray[arrayIdx];
 }
 
+const char* Job::getStringValue(int elemIdx) {
+    bool isValid = isValidElemValue(Job::StringType, elemIdx);
+    SASSUME0(isValid == true);
+
+    int elemOffset = this->jobElemDefs[elemIdx].elemOffset;
+    char *charArray = (char*)(&this->jobElemValues[elemOffset]);
+    return (const char*)charArray;
+}
+
 Job::JobElemDef Job::getJobElemDef(int elemIdx) {
     SASSUME0(this->isVaildElemIdx(elemIdx));
 
@@ -247,6 +267,11 @@ int Job::getJobElemValueSize() {
             case Job::FloatArrayType:
                 totalSize += sizeof(int);
                 totalSize += sizeof(float) * this->jobElemDefs[i].arrayCount;
+                break;
+
+            case Job::StringType:
+                totalSize += sizeof(int);
+                totalSize += sizeof(char) * this->jobElemDefs[i].arrayCount;
                 break;
 
             default:

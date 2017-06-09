@@ -90,7 +90,6 @@ double PlanOptimizer::runPlan(bool inference) {
     struct timespec startTime, endTime;
     clock_gettime(CLOCK_REALTIME, &startTime);
    
-    // TODO: run test
     PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
 
     bool jobFinish = true;

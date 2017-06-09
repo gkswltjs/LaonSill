@@ -18,152 +18,48 @@
 #include "Broker.h"
 #include "DQNWork.h"
 #include "LegacyWork.h"
+#include "ThreadMgmt.h"
 
 using namespace std;
 
-template<typename Dtype>
-atomic<int> Worker<Dtype>::runningPeerCount;
-template<typename Dtype>
-mutex Worker<Dtype>::peerMutex;
-template<typename Dtype>
-condition_variable Worker<Dtype>::peerCondVar;
-template<typename Dtype>
-thread_local atomic<long> Worker<Dtype>::peerStep;
-template<typename Dtype>
-atomic<long> Worker<Dtype>::peerDoneStep;
+thread_local int        Worker::gpuIdx;
 
-template<typename Dtype>
-int Worker<Dtype>::consumerCount = 1;
-template <typename Dtype>
-thread_local int Worker<Dtype>::consumerIdx = 0;
-template<typename Dtype>
-volatile void* Worker<Dtype>::consumerJob;
+list<Job*>              Worker::jobQueue;
+mutex                   Worker::jobQueueMutex;
 
-template<typename Dtype>
-mutex Worker<Dtype>::consumerMutex;
-template<typename Dtype>
-condition_variable Worker<Dtype>::consumerCondVar;
-template<typename Dtype>
-vector<ConsumerStatus::Type> Worker<Dtype>::consumerStatuses;
-template<typename Dtype>
-thread_local long Worker<Dtype>::consumerJobStep;
-template<typename Dtype>
-long Worker<Dtype>::consumerCurJobStep;
-template<typename Dtype>
-atomic<int> Worker<Dtype>::wakeupConsumerJobCount;
+list<int>               Worker::jcReadyQueue;   /* job consumer ready queue */
+mutex                   Worker::jcReadyMutex;
 
-template<typename Dtype>
-mutex Worker<Dtype>::producerMutex;
-template<typename Dtype>
-condition_variable Worker<Dtype>::producerCondVar;
+vector<TaskQueue*>      Worker::taskQueues;
 
-template <typename Dtype>
-list<Job*> Worker<Dtype>::jobQueue;
-template <typename Dtype>
-mutex Worker<Dtype>::jobQueueMutex;
+thread*                 Worker::producer;
+vector<thread>          Worker::consumers;
 
-template <typename Dtype>
-thread_local int Worker<Dtype>::gpuIdx;
-
-template<typename Dtype>
-thread* Worker<Dtype>::producer;
-template<typename Dtype>
-vector<thread> Worker<Dtype>::consumers;
-
-template<typename Dtype>
-atomic<int> Worker<Dtype>::readyCount;
-
-template<typename Dtype>
-bool Worker<Dtype>::useWorker = false;
-
-template <typename Dtype>
-bool Worker<Dtype>::isReady() {
-    int readyCount = atomic_load(&Worker<Dtype>::readyCount);
-
-    if (readyCount < 1)     // 1 producer + N consumer >= 2
-        return false;
-
-    if (readyCount != Worker<Dtype>::consumerCount + 1)
-        return false;
-    
-    return true;
-}
-
-const int PRODUCER_PERIODIC_CHECK_MSEC_TIME = 3 * 1000;
-
-template <typename Dtype>
-void Worker<Dtype>::producerThread() {
+void Worker::producerThread() {
+    ThreadMgmt::setThreadReady();
     COLD_LOG(ColdLog::INFO, true, "producer thread starts");
-    atomic_fetch_add(&Worker<Dtype>::readyCount, 1); 
     
     HotLog::initForThread();
 
     // (1) 서버가 준비 될때까지 대기 한다.
-    while (!Worker<Dtype>::isReady()) {
+    while (ThreadMgmt::isReady()) {
         sleep(0);
     }
 
+    int threadID = ThreadMgmt::getThreadID(ThreadType::Producer, 0);
+
     // (2) 메인 루프
     while (true) {
-        unique_lock<mutex> producerLock(Worker<Dtype>::producerMutex);
-        Worker<Dtype>::producerCondVar.wait_for(producerLock,
-            chrono::milliseconds(PRODUCER_PERIODIC_CHECK_MSEC_TIME));
-        producerLock.unlock();
+        ThreadEvent event =
+            ThreadMgmt::wait(threadID, SPARAM(PRODUCER_PERIODIC_CHECK_TIME_MS)); 
+        int wakeupCount = Worker::getJobCount();
+        vector<int> jcIDs = Worker::getReadyJCs(wakeupCount);
 
-        // (2-1) 멈춘 Consumer Thread를 재개
-        //     더 최적화 할 수 있으나.. 그다지 성능향상이 필요없는 부분이라.. 대충짰음.
-        long peerDoneStep = atomic_load(&Worker<Dtype>::peerDoneStep);
-        for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
-            long peerStep = atomic_load(&Worker<Dtype>::peerStep);
-
-            if (peerStep < peerDoneStep) {
-                unique_lock<mutex> peerLock(Worker<Dtype>::peerMutex);
-                Worker<Dtype>::peerCondVar.notify_all();
-                peerLock.unlock();
-                break; 
-            }
-        }
-        
-        // (2-2) Consumer Thread가 종료 되었으면 job이 있는지 확인
-        bool canStartNewJob = true;
-        for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
-            if (Worker<Dtype>::consumerStatuses[i] == ConsumerStatus::Running) {
-                canStartNewJob = false;
-                break;
-            }
+        for (int i = 0; i < jcIDs.size(); i++) {
+            ThreadMgmt::signal(i, ThreadEvent::Wakeup);
         }
 
-        if (!canStartNewJob)
-            continue;
-
-        Job* job = popJob();
-        if (job == NULL)
-            continue;
-
-        // (2-3) consumer thread들을 깨운다.
-        Worker<Dtype>::consumerCurJobStep += 1L;
-
-        consumerJob = job;
-        atomic_store(&Worker<Dtype>::wakeupConsumerJobCount, 0);
-
-        atomic_store(&Worker<Dtype>::peerDoneStep, 0L);
-        atomic_store(&Worker<Dtype>::runningPeerCount, Worker<Dtype>::consumerCount);
-
-        unique_lock<mutex> consumerLock(Worker<Dtype>::consumerMutex);
-        Worker<Dtype>::consumerCondVar.notify_all();
-        consumerLock.unlock();
-
-        // (2-4) 혹시 안깨워진 consumer가 있는지 체크하고 깨운다.
-        while (atomic_load(&Worker<Dtype>::wakeupConsumerJobCount) <
-                Worker<Dtype>::consumerCount) {
-            consumerLock.lock();
-            Worker<Dtype>::consumerCondVar.notify_all();
-            consumerLock.unlock();
-            sleep(0);
-        }
-
-        // (2-5) 종료를 요청한 작업인 경우 종료 한다.
-        if (job->getType() == Job::HaltMachine)
+        if (event == ThreadEvent::Halt)
             break;
     }
 
@@ -171,18 +67,21 @@ void Worker<Dtype>::producerThread() {
     HotLog::markExit();
 }
 
-template <typename Dtype>
-void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
+void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
+    ThreadMgmt::setThreadReady();
     bool doLoop = true;
-	Worker<Dtype>::consumerIdx = consumerIdx;
-	Worker<Dtype>::gpuIdx = gpuIdx;
-    Worker<Dtype>::consumerJobStep = 0L;
-    atomic_fetch_add(&Worker<Dtype>::readyCount, 1); 
+	Worker::gpuIdx = gpuIdx;
 
     HotLog::initForThread();
 
-    COLD_LOG(ColdLog::INFO, true, "consumer thread #%d (GPU:#%d) starts", consumerIdx,
+    COLD_LOG(ColdLog::INFO, true, "task consumer thread #%d (GPU:#%d) starts", consumerIdx,
         gpuIdx);
+
+    while (ThreadMgmt::isReady()) {
+        sleep(0);
+    }
+
+    int threadID = ThreadMgmt::getThreadID(ThreadType::TaskConsumer, consumerIdx);
 
 	// 리소스 초기화
 	checkCudaErrors(cudaSetDevice(gpuIdx));
@@ -190,63 +89,11 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
     while (doLoop) {
-        unique_lock<mutex> consumerLock(Worker<Dtype>::consumerMutex);
-        Worker<Dtype>::consumerCondVar.wait(consumerLock,
-            [] { return (Worker<Dtype>::consumerCurJobStep == 
-                        Worker<Dtype>::consumerJobStep + 1L); });
-        consumerLock.unlock();
-        Worker<Dtype>::consumerJobStep += 1L;
-        atomic_fetch_add(&Worker<Dtype>::wakeupConsumerJobCount, 1);
-        atomic_store(&Worker<Dtype>::peerStep, 0L);
+        ThreadEvent event =
+            ThreadMgmt::wait(threadID, SPARAM(TASK_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
 
-        Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Running;
-        Job* job = (Job*)Worker::consumerJob;
-
-        switch (job->getType()) {
-            case Job::BuildNetwork:
-                LegacyWork<Dtype>::buildNetwork(job);
-                break;
-
-            case Job::TrainNetwork:
-                LegacyWork<Dtype>::trainNetwork(job);
-                break;
-
-            case Job::CleanupNetwork:
-                LegacyWork<Dtype>::cleanupNetwork(job);
-                break;
-
-            /* DQN related Jobs */
-            case Job::CreateDQNImageLearner:
-                DQNWork<Dtype>::createDQNImageLearner(job);
-                break;
-
-            case Job::CleanupDQNImageLearner:
-                DQNWork<Dtype>::cleanupDQNImageLearner(job);
-                break;
-
-            case Job::BuildDQNNetworks:
-                DQNWork<Dtype>::buildDQNNetworks(job);
-                break;
-
-            case Job::StepDQNImageLearner:
-                DQNWork<Dtype>::stepDQNImageLearner(job);
-                break;
-
-            case Job::HaltMachine:
-                doLoop = false;
-                Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
-                break;
-
-            default:
-                SASSERT(false, "Invalid job type");
-        }
-
-        Worker<Dtype>::consumerStatuses[consumerIdx] = ConsumerStatus::Waiting;
-        // resource 해제
-        if (atomic_fetch_sub(&job->refCnt, 1) == 1) {
-            delete job;
-            job = NULL;
-        }
+        if (event == ThreadEvent::Halt)
+            break;
     }
 
 	// 리소스 정리
@@ -254,80 +101,100 @@ void Worker<Dtype>::consumerThread(int consumerIdx, int gpuIdx) {
 	checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
 
     HotLog::markExit();
-    COLD_LOG(ColdLog::INFO, true, "consumer thread #%d (GPU:#%d) ends", consumerIdx, gpuIdx);
+    COLD_LOG(ColdLog::INFO, true, "task consumer thread #%d (GPU:#%d) ends", consumerIdx,
+        gpuIdx);
 }
 
-template <typename Dtype>
-void Worker<Dtype>::launchThreads(int consumerCount) {
+void Worker::jobConsumerThread(int consumerIdx) {
+    ThreadMgmt::setThreadReady();
+    bool doLoop = true;
+
+    HotLog::initForThread();
+
+    COLD_LOG(ColdLog::INFO, true, "job consumer thread #%d (GPU:#%d) starts", consumerIdx,
+        gpuIdx);
+
+    while (ThreadMgmt::isReady()) {
+        sleep(0);
+    }
+    
+    int threadID = ThreadMgmt::getThreadID(ThreadType::JobConsumer, consumerIdx);
+
+    while (doLoop) {
+        ThreadEvent event =
+            ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
+
+        Job* job = Worker::popJob();
+        if (job == NULL)
+            continue;
+
+        switch (job->getType()) {
+            case Job::HaltMachine:
+                doLoop = false;
+                ThreadMgmt::signalAll(ThreadEvent::Halt);
+                break;
+
+            default:
+                SASSERT(false, "Invalid job type");
+        }
+
+        if (event == ThreadEvent::Halt)
+            break;
+    }
+
+    HotLog::markExit();
+    COLD_LOG(ColdLog::INFO, true, "job consumer thread #%d (GPU:#%d) ends", consumerIdx,
+        gpuIdx);
+}
+
+void Worker::launchThreads(int taskConsumerCount, int jobConsumerCount) {
     // (1) Cuda를 생성한다.
     Cuda::create(SPARAM(GPU_COUNT));
     COLD_LOG(ColdLog::INFO, true, "CUDA is initialized");
 
-    Worker<Dtype>::useWorker = true;
-
     // (2) Worker Count를 설정한다.
-    if (consumerCount > Cuda::gpuCount) {
+    if (taskConsumerCount > Cuda::gpuCount) {
         SYS_LOG("ERROR: Invalid GPU count of Worker. ");
         SYS_LOG("There are %d available GPU but requested GPU count of Worker is %d.",
-            Cuda::gpuCount, consumerCount);
+            Cuda::gpuCount, taskConsumerCount);
         exit(1);
     }
-	Worker<Dtype>::consumerCount = consumerCount;
-    Worker<Dtype>::consumerCurJobStep = 0L;
-    Worker<Dtype>::consumerStatuses.assign(consumerCount, ConsumerStatus::Waiting);
 
 	// (3) producer 쓰레드를 생성한다.
-    Worker<Dtype>::producer = new thread(producerThread);
+    Worker::producer = new thread(producerThread);
 
 	// (4) consumer 쓰레드들을 생성한다.
-	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
-		Worker<Dtype>::consumers.push_back(thread(consumerThread, i, Cuda::availableGPU[i]));
-	}
-}
+	for (int i = 0; i < SPARAM(GPU_COUNT); i++) {
+		Worker::consumers.push_back(thread(taskConsumerThread, i, Cuda::availableGPU[i]));
+        TaskQueue *tq = new TaskQueue();
+        Worker::taskQueues.push_back(tq);
+    }
 
-template <typename Dtype>
-void Worker<Dtype>::joinThreads() {
-	for (int i = 0; i < Worker<Dtype>::consumerCount; i++) {
-		Worker<Dtype>::consumers[i].join();
-	}
-
-	Worker<Dtype>::producer->join();
-	delete Worker<Dtype>::producer;
-    Worker<Dtype>::producer = NULL;
-}
-
-template <typename Dtype>
-bool Worker<Dtype>::waitPeer() {
-    // XXX: 아래의 코드는 오직 1개의 GPU를 사용하는 developer mode에서만 유효하다.
-    if (!useWorker)
-        return true;
-
-    if (atomic_fetch_sub(&Worker<Dtype>::runningPeerCount, 1) == 1) {
-        atomic_store(&Worker<Dtype>::runningPeerCount, Worker<Dtype>::consumerCount);
-        return true; 
-    } else {
-        unique_lock<mutex> peerLock(Worker<Dtype>::peerMutex);
-        Worker<Dtype>::peerCondVar.wait(peerLock, []
-            { return (atomic_load(&Worker<Dtype>::peerDoneStep) ==
-                atomic_load(&Worker<Dtype>::peerStep) + 1L); });
-        peerLock.unlock();
-
-        atomic_fetch_add(&Worker<Dtype>::peerStep, 1L);
-        return false;
+    for (int i = 0; i < SPARAM(JOB_CONSUMER_COUNT); i++) {
+        Worker::consumers.push_back(thread(jobConsumerThread, i));
+        Worker::jcReadyQueue.push_back(i);
     }
 }
 
-template <typename Dtype>
-void Worker<Dtype>::wakeupPeer() {
-    atomic_fetch_add(&Worker<Dtype>::peerStep, 1L);
-    atomic_fetch_add(&Worker<Dtype>::peerDoneStep, 1L);
-    unique_lock<mutex> peerLock(Worker<Dtype>::peerMutex);
-    Worker<Dtype>::peerCondVar.notify_all();
-    peerLock.unlock();
+void Worker::joinThreads() {
+	for (int i = 0; i < Worker::consumers.size(); i++) {
+		Worker::consumers[i].join();
+        // XXX: 그냥 쓰레드는 메모리해제 관련하여 아무 작업도 필요 없나? 확인해봐야 함!!
+	}
+    Worker::consumers.clear();
+
+	Worker::producer->join();
+	delete Worker::producer;
+    Worker::producer = NULL;
+
+    for (int i = 0; i < Worker::taskQueues.size(); i++) {
+        delete Worker::taskQueues[i];
+    }
+
+    Worker::taskQueues.clear();
 }
 
-template <typename Dtype>
-int Worker<Dtype>::pushJob(Job* job) {
+int Worker::pushJob(Job* job) {
     int pubJobID = -1;
 
     // (1) pubJob이 있는 경우에 pubJob을 생성하고 pubJob ID를 할당받는다.
@@ -341,35 +208,65 @@ int Worker<Dtype>::pushJob(Job* job) {
     }
 
     // (2) job queue에 job을 넣는다.
-    Worker<Dtype>::jobQueueMutex.lock();
-    Worker<Dtype>::jobQueue.push_back(job);
-    Worker<Dtype>::jobQueueMutex.unlock();
+    Worker::jobQueueMutex.lock();
+    Worker::jobQueue.push_back(job);
+    Worker::jobQueueMutex.unlock();
 
     // (3) 프로듀서에게 새로운 잡이 추가되었음을 알려준다.
-    unique_lock<mutex> producerLock(Worker<Dtype>::producerMutex);
-    Worker<Dtype>::producerCondVar.notify_one();
-    producerLock.unlock();
+    ThreadMgmt::signal(ThreadMgmt::getThreadID(ThreadType::Producer, 0), ThreadEvent::Wakeup);
 
     return pubJobID;
 }
 
-template <typename Dtype>
-Job* Worker<Dtype>::popJob() {
+Job* Worker::popJob() {
     Job* popedJob;
-    Worker<Dtype>::jobQueueMutex.lock();
+    Worker::jobQueueMutex.lock();
     
-    if (Worker<Dtype>::jobQueue.empty()) {
-        Worker<Dtype>::jobQueueMutex.unlock();
+    if (Worker::jobQueue.empty()) {
+        Worker::jobQueueMutex.unlock();
         return NULL;
     }
 
-    popedJob = Worker<Dtype>::jobQueue.front();
-    Worker<Dtype>::jobQueue.pop_front();
-    Worker<Dtype>::jobQueueMutex.unlock();
-
-    atomic_store(&popedJob->refCnt, Worker<Dtype>::consumerCount);
+    popedJob = Worker::jobQueue.front();
+    Worker::jobQueue.pop_front();
+    Worker::jobQueueMutex.unlock();
 
     return popedJob;
 }
 
-template class Worker<float>;
+int Worker::getJobCount() {
+    Worker::jobQueueMutex.lock();
+    return jobQueue.size();
+}
+
+void Worker::insertJCReadyQueue(int consumerIdx) {
+    unique_lock<mutex> lock(Worker::jcReadyMutex);
+    jcReadyQueue.push_back(consumerIdx);
+}
+
+vector<int> Worker::getReadyJCs(int count) {
+    vector<int> result;
+    unique_lock<mutex> lock(Worker::jcReadyMutex);
+    for (int i = 0; i < count; i++) {
+        if (Worker::jcReadyQueue.empty())
+            break;
+
+        int popedJCIdx = Worker::jcReadyQueue.front();
+        Worker::jcReadyQueue.pop_front();
+        result.push_back(popedJCIdx);
+    }
+    lock.unlock();
+    return result;
+}
+
+void Worker::addTaskQueue(int consumerIdx, int networkID, int dopID) {
+    TaskDef taskDef;
+    taskDef.networkID = networkID;
+    taskDef.dopID = dopID;
+
+    SASSUME0(consumerIdx < Worker::taskQueues.size());
+    TaskQueue* tq = Worker::taskQueues[consumerIdx];
+
+    unique_lock<mutex> lock(tq->mutex);
+    tq->taskDefs.push_back(taskDef);
+}

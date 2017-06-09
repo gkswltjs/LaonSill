@@ -28,6 +28,7 @@ public:
         IntType = 0,                // int
         FloatType,              // float
         FloatArrayType,         // length(int) + (float * length)
+        StringType,             // length(int) + (char * length)
         ElemTypeMax
     };
 
@@ -135,6 +136,32 @@ public:
          * | A (int) | B (float) | C (float array, 100) | D (int) |
          * +------------------------------------------------------+
          */
+
+        CreateNetworkFromFile,
+        /*
+         *  [Job Elem Schema for CreateNetworkFromFile]
+         * +----------------------+
+         * | JSONFilePath(string) |
+         * +----------------------+
+         */
+
+        CreateNetwork,
+        /*
+         *  [Job Elem Schema for CreateNetwork]
+         * +---------------------------+
+         * | NetworkDefinition(string) |
+         * +---------------------------+
+         */
+
+        DestroyNetwork,
+        /*
+         *  [Job Elem Schema for DestroyNetwork]
+         * +-----------------+
+         * | NetworkID (int) |
+         * +-----------------+
+         */
+
+
         JobTypeMax
     };
 
@@ -160,6 +187,7 @@ public:
     float               getFloatValue(int elemIdx);
     float              *getFloatArray(int elemIdx);
     float               getFloatArrayValue(int elemIdx, int arrayIdx);
+    const char*         getStringValue(int elemIdx);
     JobElemDef          getJobElemDef(int elemIdx);
 
     int                 getJobSize();

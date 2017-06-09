@@ -31,7 +31,7 @@ void AtariNN::createDQNImageLearner() {
     job->addJobElem(Job::IntType, 1, (void*)&this->actionCount);
 
     // (2) push job & get pub-job(job result) ID
-    int pubJobID = Worker<float>::pushJob(job);
+    int pubJobID = Worker::pushJob(job);
 
     // (3) subscribe pub-job(job result)
     SASSERT0(pubJobID != -1);
@@ -56,7 +56,7 @@ void AtariNN::buildDQNNetworks() {
     job->addJobElem(Job::IntType, 1, (void*)&this->networkQHeadID);
 
     // (2) push job
-    Worker<float>::pushJob(job);
+    Worker::pushJob(job);
 }
 
 int AtariNN::stepNetwork(float lastReward, int lastAction, int lastTerm, float* state) {
@@ -72,7 +72,7 @@ int AtariNN::stepNetwork(float lastReward, int lastAction, int lastTerm, float* 
     job->addJobElem(Job::FloatArrayType, stateCount, (void*)state);
 
     // (2) push job & get pub-job(job result) ID
-    int pubJobID = Worker<float>::pushJob(job);
+    int pubJobID = Worker::pushJob(job);
 
     // (3) subscribe pub-job(job result)
     SASSERT0(pubJobID != -1);
@@ -92,14 +92,14 @@ void AtariNN::cleanupDQNImageLearner() {
     // (1) cleanup networks
     Job *delQNetJob = new Job(Job::CleanupNetwork);
     delQNetJob->addJobElem(Job::IntType, 1, (void*)&this->networkQID);
-    Worker<float>::pushJob(delQNetJob);
+    Worker::pushJob(delQNetJob);
 
     Job *delQHeadNetJob = new Job(Job::CleanupNetwork);
     delQNetJob->addJobElem(Job::IntType, 1, (void*)&this->networkQHeadID);
-    Worker<float>::pushJob(delQHeadNetJob);
+    Worker::pushJob(delQHeadNetJob);
 
     // (2) cleanup learner
     Job *delJob = new Job(Job::CleanupDQNImageLearner);
     delJob->addJobElem(Job::IntType, 1, (void*)&this->dqnImageLearnerID);
-    Worker<float>::pushJob(delJob);
+    Worker::pushJob(delJob);
 }

@@ -10,14 +10,14 @@
     "DEFAULT" : 8 
 },
 
-"CONSUMER_COUNT" : 
+"JOB_CONSUMER_COUNT" : 
 {
-    "DESC" : "specify consumer thread count.",
+    "DESC" : "specify job consumer thread count.",
     "MANDATORY" : false,
     "MUTABLE" : true,
     "SCOPE" : "SESSION",
     "TYPE" : "UINT32",
-    "DEFAULT" : 2 
+    "DEFAULT" : 8 
 },
 
 "NETWORK_SAVE_DIR" : 
@@ -254,10 +254,10 @@
 {
     "DESC" : "specify GPU device count.",
     "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SESSION",
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
     "TYPE" : "UINT32",
-    "DEFAULT" : 1 
+    "DEFAULT" : 2 
 },
 
 "IMAGEUTIL_SAVE_DIR" : 
@@ -368,6 +368,66 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : false
+},
+
+"COUT_PRECISION" : 
+{
+    "DESC" : "specify cout precision",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 7 
+},
+
+"PRODUCER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the producer checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 3000 
+},
+
+"TASK_CONSUMER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the task consumer checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"JOB_CONSUMER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the job consumer checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"SENDER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the sender checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"RECEIVER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the receiver checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
 }
 
 }

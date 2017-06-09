@@ -40,6 +40,9 @@
 #include "PlanOptimizer.h"
 #include "WorkContext.h"
 #include "PlanParser.h"
+#include "ThreadMgmt.h"
+#include "Sender.h"
+#include "Receiver.h"
 
 #include "GAN/GAN.h"
 #include "YOLO.h"
@@ -162,20 +165,32 @@ int main(int argc, char** argv) {
     LayerFunc::init();
     LayerPropList::init();
 
-    if (!useDeveloperMode) {
+    int threadCount;    // 쓰레드 개수. flusher thread, main thread 개수는 제외
+    if (useDeveloperMode || useSingleJobMode) {
+        threadCount = 0;
+    } else {
+        threadCount = SPARAM(SESS_COUNT) + SPARAM(JOB_CONSUMER_COUNT) +
+            SPARAM(GPU_COUNT) + 1 /* producer thread */ +
+            2 /* network sender & network receiver */;
+    }
+
+    if (threadCount > 0) {
+        // 핫 로그는 여러쓰레드에서 동작하게 되어 있다.
+        threadCount = ThreadMgmt::init();
         HotLog::init();
-    	HotLog::launchThread(SPARAM(CONSUMER_COUNT) + 1);
+    	HotLog::launchThread(threadCount);
     }
     SYS_LOG("Logging system is initialized...");
 
     // (4) 뉴럴 네트워크 관련 기본 설정을 한다.
-    //     TODO: SPARAM의 인자로 대체하자.
-	cout.precision(7);
+	cout.precision(SPARAM(COUT_PRECISION));
 	cout.setf(ios::fixed);
 	Util::setOutstream(&cout);
 	Util::setPrint(false);
 
     // (5) 모드에 따른 동작을 수행한다.
+    // DeveloperMode와 SingleJobMode는 1쓰레드(메인쓰레드)로만 동작을 한다.
+    // TestMode와 DefaultMode(ServerClientMode)는 여러 쓰레드로 동작을 하게 된다.
     if (useDeveloperMode) {
         // (5-A-1) Cuda를 생성한다.
         Cuda::create(SPARAM(GPU_COUNT));
@@ -198,7 +213,9 @@ int main(int argc, char** argv) {
         Cuda::destroy();
     } else if (useTestMode) {
         // (5-D-1) Producer&Consumer를 생성.
-        Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
+        Worker::launchThreads(SPARAM(GPU_COUNT), SPARAM(JOB_CONSUMER_COUNT));
+        Sender::launchThread();
+        Receiver::launchThread();
 
         // (5-D-2) Listener & Sess threads를 생성.
         Communicator::launchThreads(SPARAM(SESS_COUNT));
@@ -213,32 +230,34 @@ int main(int argc, char** argv) {
 
         // (5-D-5) release resources 
         Job* haltJob = new Job(Job::HaltMachine);
-        Worker<float>::pushJob(haltJob);
+        Worker::pushJob(haltJob);
 
         Communicator::halt();       // threads will be eventually halt
 
         // (5-D-6) 각각의 쓰레드들의 종료를 기다린다.
-        Worker<float>::joinThreads();
+        Worker::joinThreads();
         Communicator::joinThreads();
 
         // (5-D-7) 자원을 해제 한다.
         Cuda::destroy();
     } else {
         // (5-E-1) Producer&Consumer를 생성.
-        Worker<float>::launchThreads(SPARAM(CONSUMER_COUNT));
+        Worker::launchThreads(SPARAM(GPU_COUNT), SPARAM(JOB_CONSUMER_COUNT));
 
         // (5-E-2) Listener & Sess threads를 생성.
         Communicator::launchThreads(SPARAM(SESS_COUNT));
 
         // (5-E-3) 각각의 쓰레드들의 종료를 기다린다.
-        Worker<float>::joinThreads();
+        Worker::joinThreads();
         Communicator::joinThreads();
     }
 
     LayerFunc::destroy();
     // (6) 로깅 관련 모듈이 점유했던 자원을 해제한다.
-    if (!useDeveloperMode && !useSingleJobMode)
+    if (threadCount > 0) {
+        ThreadMgmt::destroy();
         HotLog::destroy();
+    }
     ColdLog::destroy();
     SysLog::destroy();
     Broker::destroy();
@@ -251,8 +270,6 @@ int main(int argc, char** argv) {
     InitParam::destroy();
 	exit(EXIT_SUCCESS);
 }
-
-
 
 #else
 

@@ -16,6 +16,7 @@
 #include "StdOutLog.h"
 #include "LearnableLayer.h"
 #include "Donator.h"
+#include "Network.h"
 
 using namespace std;
 
@@ -45,7 +46,7 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
         SASSERT(false, "not implemented yet");
     }
 
-    int oldGPUIdx = Worker<float>::gpuIdx;
+    int oldGPUIdx = Worker::gpuIdx;
     if (planAlloc.devID != oldGPUIdx) {
         cout << "set device!!" << endl;
         //checkCudaErrors(cudaSetDevice(planAlloc.devID)); 
