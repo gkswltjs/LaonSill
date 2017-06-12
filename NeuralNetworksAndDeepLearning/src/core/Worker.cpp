@@ -19,6 +19,7 @@
 #include "DQNWork.h"
 #include "LegacyWork.h"
 #include "ThreadMgmt.h"
+#include "Updater.h"
 
 using namespace std;
 
@@ -91,6 +92,42 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
     while (doLoop) {
         ThreadEvent event =
             ThreadMgmt::wait(threadID, SPARAM(TASK_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
+
+        if (event == ThreadEvent::Wakeup || event == ThreadEvent::Timeout) {
+            vector<TaskDef> taskDefs;
+            vector<UpdaterTaskDef> updaterTaskDefs;
+
+            vector<TaskDef> removeTaskDefs;
+            vector<UpdaterTaskDef> remainUpdaterTaskDefs;
+
+            TaskQueue *tq = taskQueues[consumerIdx];
+            unique_lock<mutex> lock(tq->mutex);
+
+            while (!tq->updaterTaskDefs.empty()) {
+                updaterTaskDefs.push_back(tq->updaterTaskDefs.front());
+                tq->updaterTaskDefs.pop_front();
+            }
+
+            for (int i = 0; i < tq->taskDefs.size(); i++) {
+                taskDefs.push_back(tq->taskDefs[i]);
+            }
+            lock.unlock();
+
+            for (int i = 0; i < updaterTaskDefs.size(); i++) {
+                bool ret = Updater::updateParam(updaterTaskDefs[i].networkID, 
+                    updaterTaskDefs[i].layerID, updaterTaskDefs[i].paramType,
+                    updaterTaskDefs[i].planID, updaterTaskDefs[i].dopID,
+                    updaterTaskDefs[i].updateContext, updaterTaskDefs[i].tensorParamPtr,
+                    NULL, NULL, false);
+
+                if (!ret)
+                    remainUpdaterTaskDefs.push_back(updaterTaskDefs[i]);
+            }
+
+            for (int i = 0; i < taskDefs.size(); i++) {
+                // TODO: run run run
+            }
+        }
 
         if (event == ThreadEvent::Halt)
             break;
@@ -269,4 +306,23 @@ void Worker::addTaskQueue(int consumerIdx, int networkID, int dopID) {
 
     unique_lock<mutex> lock(tq->mutex);
     tq->taskDefs.push_back(taskDef);
+}
+
+void Worker::addUpdaterTask(int consumerIdx, int networkID, int dopID, int layerID,
+    int paramType, int planID, UpdateContext context, void* tensorParamPtr) {
+
+    UpdaterTaskDef def;
+    def.networkID = networkID;
+    def.dopID = dopID;
+    def.layerID = layerID;
+    def.paramType = paramType;
+    def.planID = planID;
+    def.updateContext = context;
+    def.tensorParamPtr = tensorParamPtr;
+
+    SASSUME0(consumerIdx < Worker::taskQueues.size());
+    TaskQueue* tq = Worker::taskQueues[consumerIdx];
+
+    unique_lock<mutex> lock(tq->mutex);
+    tq->updaterTaskDefs.push_back(def);
 }

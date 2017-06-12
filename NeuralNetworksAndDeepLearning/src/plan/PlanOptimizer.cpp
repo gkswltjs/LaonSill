@@ -137,6 +137,11 @@ void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
 
         if (planDef.depCount == 0) {
             pp->readyQueue.push_back(planDef.planID);
+        } else if (planDef.planType == PLANTYPE_UPDATE) {
+            int paramCount = LayerPropList::getLearnableParamCount(planDef.layerType);
+            SASSUME0(paramCount >= 1);
+            pp->refCount += paramCount;
+            pp->depRefMap[planDef.planID] += (paramCount - 1);
         } else {
             pp->refCount += 1;
         }

@@ -20,6 +20,17 @@
 
 #include "common.h"
 #include "Job.h"
+#include "Update.h"
+
+typedef struct UpdaterTaskDef_s {
+    int                 networkID;
+    int                 dopID;
+    int                 layerID;
+    int                 paramType;
+    int                 planID;
+    UpdateContext       updateContext;
+    void*               tensorParamPtr;
+} UpdaterTaskDef;
 
 typedef struct TaskDef_s {
     int networkID;
@@ -27,8 +38,9 @@ typedef struct TaskDef_s {
 } TaskDef;
 
 typedef struct TaskQueue_s {
-    std::mutex              mutex;
-    std::vector<TaskDef>    taskDefs;
+    std::mutex                      mutex;
+    std::vector<TaskDef>            taskDefs;
+    std::list<UpdaterTaskDef>       updaterTaskDefs;
 } TaskQueue;
 
 class Worker {
@@ -42,6 +54,13 @@ public:
     static int                                  pushJob(Job* job);
                                                 /* called by Sess Thread, Receiver Thread */
 	static thread_local int                     gpuIdx;
+
+    static void                                 addUpdaterTask(int consumerIdx, 
+                                                               int networkID, int dopID,
+                                                               int layerID, int paramType,
+                                                               int planID,
+                                                               UpdateContext context,
+                                                               void* tensorParamPtr);
 
 private:
     /**

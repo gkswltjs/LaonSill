@@ -16,6 +16,7 @@
 #include "StdOutLog.h"
 #include "PropMgmt.h"
 #include "Update.h"
+#include "Updater.h"
 #include "Donator.h"
 
 #define FULLYCONNECTEDLAYER_LOG 0
@@ -187,18 +188,17 @@ void FullyConnectedLayer<Dtype>::update() {
 	const Dtype learnScale = Update<Dtype>::calcLearningRate() *
 		SLPROP(FullyConnected, weightUpdateParam).lr_mult;
 
-    const Dtype epsilon = SNPROP(epsilon);
-    const Dtype decayRate = SNPROP(decayRate);
     const Dtype beta1 = SNPROP(beta1);
     const Dtype beta2 = SNPROP(beta2);
 
     SLPROP(FullyConnected, decayedBeta1) *= beta1;
     SLPROP(FullyConnected, decayedBeta2) *= beta2;
 
-	Update<Dtype>::updateParam(weightSize, regScale, learnScale, epsilon, decayRate, beta1,
-        beta2, this->_paramsHistory[Weight], this->_paramsHistory2[Weight],
-        this->_params[Weight], SLPROP(FullyConnected, decayedBeta1),
-        SLPROP(FullyConnected, decayedBeta2));
+    UpdateContext contextWeight = 
+        Update<Dtype>::makeContext(weightSize, regScale, learnScale);
+
+	Updater::updateParam(Weight, contextWeight, (void*)this->_paramsHistory[Weight],
+        (void*)this->_paramsHistory2[Weight], (void*)this->_params[Weight]);
 
 	const uint32_t biasSize = out_rows;
 	const Dtype regScale_b = 
@@ -206,9 +206,11 @@ void FullyConnectedLayer<Dtype>::update() {
 	const Dtype learnScale_b = Update<Dtype>::calcLearningRate() *
         SLPROP(FullyConnected, biasUpdateParam).lr_mult;
 
-	Update<Dtype>::updateParam(biasSize, regScale_b, learnScale_b, epsilon, decayRate, beta1,
-        beta2, this->_paramsHistory[Bias], this->_paramsHistory2[Bias], this->_params[Bias],
-        SLPROP(FullyConnected, decayedBeta1), SLPROP(FullyConnected, decayedBeta2));
+    UpdateContext contextBias = 
+        Update<Dtype>::makeContext(biasSize, regScale_b, learnScale_b);
+
+	Updater::updateParam(Bias, contextBias, (void*)this->_paramsHistory[Bias],
+        (void*)this->_paramsHistory2[Bias], (void*)this->_params[Bias]);
 }
 
 template <typename Dtype>

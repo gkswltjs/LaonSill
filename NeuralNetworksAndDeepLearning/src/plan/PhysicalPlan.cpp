@@ -163,20 +163,34 @@ void PhysicalPlan::allocateTensor(int networkID) {
     }
 }
 
-void PhysicalPlan::markFinish(int planID) {
+void PhysicalPlan::markFinish(int planID, int count) {
     unique_lock<mutex> planLock(this->planMutex);
 
     SASSUME(this->depRefMap.find(planID) != this->depRefMap.end(),
         "There is no ref map for requesting plan ID. planID=%d", planID);
-    this->depRefMap[planID] -= 1;
+    this->depRefMap[planID] -= count;
     
     if (this->depRefMap[planID] == 0) {
         this->readyQueue.push_back(planID); 
     }
 
-    this->refCount -= 1;
+    this->refCount -= count;
     planLock.unlock();
     SASSUME0(this->depRefMap[planID] >= 0);
+}
+
+void PhysicalPlan::markFinish(int networkID, int dopID, int planID, int count) {
+    int oldNetworkID = WorkContext::curNetworkID;
+    int oldDOPID = WorkContext::curDOPID;
+
+    WorkContext::updateNetwork(networkID);
+    WorkContext::updatePlan(dopID);
+
+    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+    pp->markFinish(planID, count);
+
+    WorkContext::updateNetwork(oldNetworkID);
+    WorkContext::updatePlan(oldDOPID);
 }
 
 void PhysicalPlan::saveNetwork(bool checkCond) {
@@ -281,7 +295,12 @@ void PhysicalPlan::runLayer(int planID, bool inference) {
     WorkContext::updateLayer(WorkContext::curNetworkID, layerID);
     PlanType planType = LP_PLANID_TO_PLANTYPE(planID);
     
+    // FIXME: 나름 핫 코드영역인데 이렇게 자주 맵을 뒤지면 성능에 안좋다. 수정필요!!
+    SASSUME0(this->planMap.find(planID) != this->planMap.end());
+    int layerType = this->planMap[planID].layerType;
+
     // (2) run layer
+    bool doMarkFinish = true;
     if (!inference || (planType == PLANTYPE_FORWARD)) {
         PlanInfo* planInfo = WorkContext::curPlanInfo;
         STDOUT_COND_BLOCK(SPARAM(PRINT_RUNLAYER_LOG), 
@@ -289,29 +308,38 @@ void PhysicalPlan::runLayer(int planID, bool inference) {
             planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")" << endl);
 
 
-        // FIXME: 나름 핫 코드영역인데 이렇게 자주 맵을 뒤지면 성능에 안좋다. 수정필요!!
-        SASSUME0(this->planMap.find(planID) != this->planMap.end());
-        int layerType = this->planMap[planID].layerType;
-
         SASSUME0(this->instanceMap.find(layerID) != this->instanceMap.end());
         void* instancePtr = this->instanceMap[layerID];
 
         SASSUME0(planType < PLANTYPE_MAX);
         if (planType == PLANTYPE_FORWARD) {
-            LayerFunc::runForward(layerType, instancePtr, planInfo->curMiniBatchIndex);
+            LayerFunc::runForward(layerType, instancePtr, 
+                                                 planInfo->curMiniBatchIndex);
         } else if (planType == PLANTYPE_BACKWARD) {
             LayerFunc::runBackward(layerType, instancePtr);
         } else {
             SASSUME0(planType == PLANTYPE_UPDATE);
             LayerFunc::learn(layerType, instancePtr);
+            doMarkFinish = false;       // update는 내부적으로 mark finish한다.
         }
     }
 
     // (3) mark
+    if (!doMarkFinish)
+        return;
+
     PlanDef *planDef = &WorkContext::curPhysicalPlan->planMap[planID];
     for (int i = 0; i < planDef->notifyList.size(); i++) {
         int targetPlanID = planDef->notifyList[i];
-        markFinish(targetPlanID);
+        int markCount = 1;
+
+        if (planType == PLANTYPE_UPDATE) {
+            int paramCount = LayerPropList::getLearnableParamCount(layerType);
+            SASSUME0(paramCount >= 1);
+            markCount = paramCount;
+        }
+
+        markFinish(targetPlanID, markCount);
     }
 }
 
@@ -406,4 +434,13 @@ void PhysicalPlan::setCurPlan(int networkID, int dopID) {
     SASSERT0(PhysicalPlan::planGlobalInfoMap.find(networkID) !=
             PhysicalPlan::planGlobalInfoMap.end());
     WorkContext::curPlanInfo = PhysicalPlan::planGlobalInfoMap[networkID];
+}
+
+int PhysicalPlan::getDOPCount(int networkID) {
+    unique_lock<mutex> planInfoLock(PhysicalPlan::planGlobalMutex);
+    SASSUME0(PhysicalPlan::planGlobalInfoMap.find(networkID) !=
+            PhysicalPlan::planGlobalInfoMap.end());
+    PlanInfo* planInfo = PhysicalPlan::planGlobalInfoMap[networkID];
+    planInfoLock.unlock();
+    return planInfo->dopCount;
 }

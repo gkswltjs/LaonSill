@@ -25,6 +25,9 @@ typedef unsigned long   LayerPropKey;
 #define SLPROP_BASE(var)                                                                     \
     (((_BasePropLayer*)(WorkContext::curLayerProp->prop))->_##var##_)
 
+#define SLPROP_LEARN(var)                                                                    \
+    (((_LearnablePropLayer*)(WorkContext::curLayerProp->prop))->_##var##_)
+
 #define SNPROP(var)                                                                          \
     (WorkContext::curNetworkProp->_##var##_)
 

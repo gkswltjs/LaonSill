@@ -14,6 +14,7 @@
 #include <algorithm>
 #include "PropMgmt.h"
 #include "Update.h"
+#include "Updater.h"
 #include "Donator.h"
 
 //#define USE_OLD_CUDNN       1
@@ -386,8 +387,6 @@ void ConvLayer<Dtype>::update() {
 	const update_param& weightUpdateParam = SLPROP(Conv, weightUpdateParam);
 	const update_param& biasUpdateParam = SLPROP(Conv, biasUpdateParam);
 	const float weightDecay = SNPROP(weightDecay);
-	const float epsilon = SNPROP(epsilon);
-	const float decayRate = SNPROP(decayRate);
 	const float beta1 = SNPROP(beta1);
 	const float beta2 = SNPROP(beta2);
 
@@ -399,9 +398,11 @@ void ConvLayer<Dtype>::update() {
     SLPROP(Conv, decayedBeta1) *= beta1;
     SLPROP(Conv, decayedBeta2) *= beta2;
 
-	Update<Dtype>::updateParam(weightSize, regScale, learnScale, epsilon, decayRate, beta1,
-        beta2, this->_paramsHistory[Filter], this->_paramsHistory2[Filter],
-        this->_params[Filter], SLPROP(Conv, decayedBeta1), SLPROP(Conv, decayedBeta2));
+    UpdateContext contextFilter = 
+        Update<Dtype>::makeContext(weightSize, regScale, learnScale);
+
+	Updater::updateParam(Filter, contextFilter, (void*)this->_paramsHistory[Filter], 
+        (void*)this->_paramsHistory2[Filter], (void*)this->_params[Filter]);
 
 	// update biases ...
 	const uint32_t biasSize = filterDim.filters;
@@ -409,9 +410,10 @@ void ConvLayer<Dtype>::update() {
 	const Dtype learnScale_b = 
 			Update<Dtype>::calcLearningRate() * biasUpdateParam.lr_mult;
 
-	Update<Dtype>::updateParam(biasSize, regScale_b, learnScale_b, epsilon, decayRate, beta1,
-        beta2, this->_paramsHistory[Bias], this->_paramsHistory2[Bias], this->_params[Bias],
-        SLPROP(Conv, decayedBeta1), SLPROP(Conv, decayedBeta2));
+    UpdateContext contextBias = 
+        Update<Dtype>::makeContext(biasSize, regScale_b, learnScale_b);
+	Updater::updateParam(Bias, contextBias, (void*)this->_paramsHistory[Bias],
+        (void*)this->_paramsHistory2[Bias], (void*)this->_params[Bias]);
 }
 
 template <typename Dtype>

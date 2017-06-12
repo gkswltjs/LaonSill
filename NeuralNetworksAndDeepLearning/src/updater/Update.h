@@ -12,17 +12,26 @@
 #include "common.h"
 #include "Data.h"
 
+typedef struct UpdateContext_s {
+    int     paramSize;
+    float   regScale;
+    float   learnScale;
+    float   epsilon;
+    float   decayRate;
+    float   beta1;
+    float   beta2;
+    float   decayedBeta1;
+    float   decayedBeta2;
+} UpdateContext;
+
 template<typename Dtype>
 class Update {
 public: 
     Update() {}
     virtual ~Update() {}
 
-    static void updateParam(const uint32_t paramSize, const Dtype regScale,
-        const Dtype learnScale, const Dtype epsilon, const Dtype decayRate,
-        const Dtype beta1, const Dtype beta2, Data<Dtype>* dataHistory,
-        Data<Dtype>* dataHistory2, Data<Dtype>* data, float decayedBeta1,
-        float decayedBeta2);
+    static void updateParam(UpdateContext context, Data<Dtype>* dataHistory,
+        Data<Dtype>* dataHistory2, Data<Dtype>* data);
 
     static void doNesterov(int size, const Dtype* dx, Dtype* v_prev, Dtype* v, Dtype* x,
         const Dtype mu, const Dtype lr);
@@ -38,6 +47,8 @@ public:
         const Dtype decayedBeta1, const Dtype decayedBeta2);
 
     static float calcLearningRate();
+
+    static UpdateContext makeContext(int paramSize, float regScale, float learnScale);
 };
 
 #endif /* UPDATE_H */

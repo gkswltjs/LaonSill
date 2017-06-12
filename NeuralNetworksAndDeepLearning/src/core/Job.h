@@ -111,13 +111,6 @@ public:
          * +--------------+
          */
 
-        Task,
-        /*
-         *  [Job Elem Schema for Task]
-         * +------------------------+
-         * | physical plan ID (int) | 
-         * +------------------------+
-         */
       
 
         HaltMachine,
@@ -151,6 +144,14 @@ public:
          * +---------------------------+
          * | NetworkDefinition(string) |
          * +---------------------------+
+         */
+
+        CreateNetworkReply,
+        /*
+         *  [Job Elem Schema for CreateNetworkReply]
+         * +----------------+
+         * | NetworkID(int) |
+         * +----------------+
          */
 
         DestroyNetwork,

@@ -170,7 +170,7 @@ try:
 
             for var in varDic[prop]:
                 if var[0] == 'learnable':
-                    if propDic[prop]["LEARN"] == True:
+                    if propDic[prop]["LEARN"] > 0:
                         headerFile.write('        _%s_ = true;\n' % var[0])
                     else:
                         headerFile.write('        _%s_ = false;\n' % var[0])
@@ -222,6 +222,7 @@ try:
     headerFile.write("const char* layer, void* target);\n")
     headerFile.write("    static bool isLearnable(")
     headerFile.write("const char* layer, void* target);\n")
+    headerFile.write("    static int getLearnableParamCount(int layerType);\n")
     headerFile.write("    static void init();\n\n")
     headerFile.write("private:\n")
 
@@ -500,6 +501,27 @@ try:
     sourceFile.write(' else {\n')
     sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')
     sourceFile.write(', layer);\n    }\n}\n\n')
+
+    # get layer type function
+    sourceFile.write("int LayerPropList::getLearnableParamCount(int layerType) {\n")
+    isFirstCond = True
+    for level in range(maxLevel + 1):
+        propList = levelDic[level]
+
+        for prop in propList:
+            if prop in ['Base', 'Loss', 'Learnable']:
+                continue
+
+            if isFirstCond:
+                sourceFile.write('    if (layerType == (int)Layer<float>::%s) {\n' % prop)
+                isFirstCond = False
+            else:
+                sourceFile.write(' else if (layerType == (int)Layer<float>::%s) {\n' % prop)
+            sourceFile.write('        return %d;\n' % propDic[prop]["LEARN"])
+            sourceFile.write('    }')
+    sourceFile.write(' else {\n')
+    sourceFile.write('        SASSERT(false, "invalid layer. layer type=%d"')
+    sourceFile.write(', layerType);\n    }\n}\n\n')
 
     sourceFile.write("std::string LayerPropList::getLayerName(int layerType) {\n")
     isFirstCond = True

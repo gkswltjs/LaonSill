@@ -17,6 +17,7 @@
 #include "MathFunctions.h"
 #include "PropMgmt.h"
 #include "Update.h"
+#include "Updater.h"
 #include "Donator.h"
 
 #define BATCHCONDLAYER_LOG  0
@@ -246,22 +247,23 @@ void BatchNormLayer<Dtype>::update() {
     const uint32_t size = this->depth;
 	const Dtype regScale = SNPROP(weightDecay);
 	const Dtype learnScale = Update<float>::calcLearningRate();
-    const Dtype decayRate = SNPROP(decayRate);
     const Dtype beta1 = SNPROP(beta1);
     const Dtype beta2 = SNPROP(beta2);
 
     SLPROP(BatchNorm, decayedBeta1) *= beta1;
     SLPROP(BatchNorm, decayedBeta2) *= beta2;
 
-	Update<Dtype>::updateParam(size, regScale, learnScale, SLPROP(BatchNorm, epsilon),
-        decayRate, beta1, beta2, this->_paramsHistory[ParamType::Gamma],
-        this->_paramsHistory2[ParamType::Gamma], this->_params[ParamType::Gamma],
-        SLPROP(BatchNorm, decayedBeta1), SLPROP(BatchNorm, decayedBeta2));
+    UpdateContext context = Update<Dtype>::makeContext(size, regScale, learnScale);
 
-	Update<Dtype>::updateParam(size, regScale, learnScale, SLPROP(BatchNorm, epsilon),
-        decayRate, beta1, beta2, this->_paramsHistory[ParamType::Beta],
-        this->_paramsHistory2[ParamType::Beta], this->_params[ParamType::Beta],
-        SLPROP(BatchNorm, decayedBeta1), SLPROP(BatchNorm, decayedBeta2));
+	Updater::updateParam((int)ParamType::Gamma, context, 
+        (void*)this->_paramsHistory[ParamType::Gamma],
+        (void*)this->_paramsHistory2[ParamType::Gamma],
+        (void*)this->_params[ParamType::Gamma]);
+
+	Updater::updateParam((int)ParamType::Beta, context, 
+        (void*)this->_paramsHistory[ParamType::Beta],
+        (void*)this->_paramsHistory2[ParamType::Beta],
+        (void*)this->_params[ParamType::Beta]);
 }
 
 template <typename Dtype>

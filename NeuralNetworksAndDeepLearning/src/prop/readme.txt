@@ -17,7 +17,7 @@
     "DESC" : "convolution layer",
     "PARENT" : "Base",
     "LEVEL" : 1,
-    "LEARN" : true,
+    "LEARN" : 2,
     "PROPDOWN" : [true],
     "VARS" : 
         [   
@@ -47,7 +47,7 @@
            이라는 level값을 가진다. Base prop을 상속하는 Conv prop은 1이라는 level 값을
            가진다. 만약 Conv prop을 상속하는 ABC라는 prop이 있다면 ABC prop은 2 level 값을 
            가진다.
-(4) LEARN : 학습을 할 수 있는 레이어인지 유무를 결정한다.
+(4) LEARN : 학습 파라미터의 개수를 기입한다. 1이상이면 학습을 할 수 있는 레이어이다.
 (5) PROPDOWN : default propDown 값을 설정한다. 사용자가 propDown값을 정의하지 않은 경우에
               여기서 설정된 default propDown 값을 갖게 된다. 이 값을 비어있는 array로 정의
               를 하는 경우에는 default propDown은 input 개수만큼 true가 설정이 되는 것과

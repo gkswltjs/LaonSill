@@ -14,13 +14,21 @@
 #include "MathFunctions.h"
 
 template<typename Dtype>
-void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
-    const Dtype learnScale, const Dtype epsilon, const Dtype decayRate,
-    const Dtype beta1, const Dtype beta2, Data<Dtype>* dataHistory,
-    Data<Dtype>* dataHistory2, Data<Dtype>* data, float decayedBeta1, float decayedBeta2) {
+void Update<Dtype>::updateParam(UpdateContext context, Data<Dtype>* dataHistory,
+    Data<Dtype>* dataHistory2, Data<Dtype>* data) {
 
     if (!SLPROP_BASE(updateGrad))
         return;
+
+    int paramSize = context.paramSize;
+    Dtype regScale = (Dtype)context.regScale;
+    Dtype learnScale = (Dtype)context.learnScale;
+    Dtype epsilon = (Dtype)context.epsilon;
+    Dtype decayRate = (Dtype)context.decayRate;
+    Dtype beta1 = (Dtype)context.beta1;
+    Dtype beta2 = (Dtype)context.beta2;
+    Dtype decayedBeta1 = (Dtype)context.decayedBeta1;
+    Dtype decayedBeta2 = (Dtype)context.decayedBeta2;
 
 	const uint32_t batches = SNPROP(batchSize);
 	const Dtype normScale = 1.0/batches;
@@ -48,12 +56,12 @@ void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
          * x += v
          *
          */
-    	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
-		soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
+    	soooa_gpu_axpy(paramSize, regScale, d_paramData, d_paramGrad);
+		soooa_gpu_axpby(paramSize, learnScale, d_paramGrad, momentum,
 				d_paramHistoryData);
-		soooa_copy(static_cast<int>(paramSize), d_paramHistoryData, d_paramGrad);
+		soooa_copy(paramSize, d_paramHistoryData, d_paramGrad);
 		// update
-		soooa_gpu_axpy(static_cast<int>(paramSize), negativeOne, d_paramGrad, d_paramData);
+		soooa_gpu_axpy(paramSize, negativeOne, d_paramGrad, d_paramData);
     } else if (opt == Optimizer::Vanilla) {
         /****
          * Vanilla Alogorithm
@@ -61,9 +69,9 @@ void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
          * x += -learning_rate * dx
          *
          */
-    	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
+    	checkCudaErrors(cublasSscal(Cuda::cublasHandle, paramSize,
             &learnScale, d_paramGrad, 1));				//
-    	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
+    	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, paramSize,
             &negativeOne, d_paramGrad, 1, d_paramData, 1));		// update
     } else if (opt == Optimizer::Nesterov) {
         /****
@@ -74,7 +82,7 @@ void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
          * x += -mu * v_prev + (1 + mu) * v # position update changes form
          *
          */
-	    Update<Dtype>::doNesterov(static_cast<int>(paramSize), d_paramGrad,
+	    Update<Dtype>::doNesterov(paramSize, d_paramGrad,
             d_paramHistoryData, d_paramHistoryData2, d_paramData, momentum, learnScale);
     } else if (opt == Optimizer::Adagrad) {
         /****
@@ -84,7 +92,7 @@ void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
          * x += -learning_rate * dx / (sqrt(cache) + eps)
          *
          */
-	    Update<Dtype>::doAdagrad(static_cast<int>(paramSize), d_paramGrad,
+	    Update<Dtype>::doAdagrad(paramSize, d_paramGrad,
             d_paramHistoryData, d_paramData, learnScale, epsilon);
 
     } else if (opt == Optimizer::RMSprop) {
@@ -95,7 +103,7 @@ void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
          * x += - learning_rate * dx / (sqrt(cache) + eps)
          *
          */
-	    Update<Dtype>::doRMSprop(static_cast<int>(paramSize), d_paramGrad,
+	    Update<Dtype>::doRMSprop(paramSize, d_paramGrad,
             d_paramHistoryData, d_paramData, learnScale, epsilon, decayRate);
 
     } else if (opt == Optimizer::Adam) {
@@ -107,7 +115,7 @@ void Update<Dtype>::updateParam(const uint32_t paramSize, const Dtype regScale,
          * x += -learning_rate * m / (sqrt(v) + eps)
          *
          */
-	    Update<Dtype>::doAdam(static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
+	    Update<Dtype>::doAdam(paramSize, d_paramGrad, d_paramHistoryData,
             d_paramHistoryData2, d_paramData, learnScale, epsilon, beta1, beta2,
             decayedBeta1, decayedBeta2);
     } else {
@@ -157,6 +165,22 @@ float Update<Dtype>::calcLearningRate() {
 	}
 
 	return rate;
+}
+
+template<typename Dtype>
+UpdateContext Update<Dtype>::makeContext(int paramSize, float regScale, float learnScale) {
+    UpdateContext context;
+    context.paramSize = paramSize;
+    context.regScale = regScale;
+    context.learnScale = learnScale;
+    context.epsilon = SNPROP(epsilon);
+    context.decayRate = SNPROP(decayRate);
+    context.beta1 = SNPROP(beta1);
+    context.beta2 = SNPROP(beta2);
+    context.decayedBeta1 = SLPROP_LEARN(decayedBeta1);
+    context.decayedBeta2 = SLPROP_LEARN(decayedBeta2);
+
+    return context;
 }
 
 template class Update<float>;
