@@ -23,6 +23,7 @@ AnnotationDataLayer<Dtype>::AnnotationDataLayer(Builder* builder)
   baseDataPath(builder->_baseDataPath),
   labelMap(builder->_labelMapPath),
   pixelMeans(builder->_pixelMeans),
+  bShuffle(builder->_shuffle),
   data("data", true) {
 
 	initialize();
@@ -236,7 +237,9 @@ void AnnotationDataLayer<Dtype>::loadODMetaData() {
 
 template <typename Dtype>
 void AnnotationDataLayer<Dtype>::shuffle() {
-	std::random_shuffle(this->perm.begin(), this->perm.end());
+	if (this->bShuffle) {
+		std::random_shuffle(this->perm.begin(), this->perm.end());
+	}
 	//cout << "***shuffle is temporaray disabled ... " << endl;
 	this->cur = 0;
 }

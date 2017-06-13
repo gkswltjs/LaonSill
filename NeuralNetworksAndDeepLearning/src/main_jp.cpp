@@ -68,8 +68,8 @@ void developerMain() {
 	//fasterRcnnTrain();
 	//fasterRcnnTest();
 	//fasterRcnnVideoTest();
-	ssd();
-	//ssdTest();
+	//ssd();
+	ssdTest();
 
 	STDOUT_LOG("exit developerMain()");
 }
@@ -584,10 +584,10 @@ void ssdTest() {
 	const NetworkPhase phase = NetworkPhase::TrainPhase;
 
 	vector<WeightsArg> weightsArgs(1);
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_240000.param";
-	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_CAFFE_TRAINED.param";
+	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_50000.param";
+	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_CAFFE_TRAINED.param";
 
-	const uint32_t batchSize = 8;				// 32
+	const uint32_t batchSize = 16;				// 32
 	const uint32_t testInterval = 10;			// 10000(목표 샘플수) / batchSize
 	//const uint32_t saveInterval = 1000000;		// 1000000 / batchSize
 	//const float baseLearningRate = 0.001f;
@@ -644,7 +644,9 @@ void ssdTest() {
 	//network->sgd_with_timer(maxEpochs);
 
 	InputLayer<float>* inputLayer = layersConfig->_inputLayer;
-	for (int i = 0; i < 619; i++) {
+	//for (int i = 0; i < 619; i++) {
+	for (int i = 0; i < 150; i++) {
+	//for (int i = 0; i < 3; i++) {
 		inputLayer->feedforward(0);
 		for (uint32_t i = 1; i < layersConfig->_layers.size(); i++) {
 			layersConfig->_layers[i]->feedforward();

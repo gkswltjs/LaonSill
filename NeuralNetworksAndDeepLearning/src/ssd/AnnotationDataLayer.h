@@ -32,12 +32,15 @@ public:
 
 		std::vector<Dtype> _pixelMeans;
 
+		bool _shuffle;
+
 		Builder() {
 			this->type = Layer<Dtype>::AnnotationData;
 			this->_flip = false;
 			this->_imageHeight = 300;
 			this->_imageWidth = 300;
 			this->_pixelMeans = {Dtype(0.0), Dtype(0.0), Dtype(0.0)};
+			this->_shuffle = true;
 		}
 		virtual Builder* name(const std::string name) {
 			Layer<Dtype>::Builder::name(name);
@@ -85,6 +88,10 @@ public:
 		}
 		virtual Builder* pixelMeans(const std::vector<float>& pixelMeans) {
 			this->_pixelMeans = pixelMeans;
+			return this;
+		}
+		virtual Builder* shuffle(const bool shuffle) {
+			this->_shuffle = shuffle;
 			return this;
 		}
 		Layer<Dtype>* build() {
@@ -142,6 +149,7 @@ private:
 	std::string baseDataPath;
 
 	std::vector<Dtype> pixelMeans;
+	bool bShuffle;
 
 	std::vector<ODRawData<Dtype>> odRawDataList;
 	std::vector<ODMetaData<Dtype>> odMetaDataList;
