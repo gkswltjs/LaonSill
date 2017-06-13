@@ -16,7 +16,7 @@ using namespace std;
 int ThreadMgmt::threadCount;
 vector<ThreadContext*> ThreadMgmt::contextArray;
 int* ThreadMgmt::threadIDBaseArray;
-atomic<int> ThreadMgmt::readyCount;
+volatile atomic<int> ThreadMgmt::readyCount;
 
 int ThreadMgmt::init() {
     ThreadMgmt::threadCount = 1 +   /* producer count */

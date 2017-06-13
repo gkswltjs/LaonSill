@@ -76,6 +76,10 @@ void Client::pushJob(int fd, char* buf, Job* job) {
                         bufOffset, buf);
                 }
                 break;
+            case Job::StringType:
+                bufOffset = MsgSerializer::serializeString(job->getStringValue(i),
+                        jobElemDef.arrayCount, bufOffset, buf);
+                break;
             default:
                 SASSERT(0, "Invalid job elem type. job elem type=%d", jobElemDef.elemType);
                 break;

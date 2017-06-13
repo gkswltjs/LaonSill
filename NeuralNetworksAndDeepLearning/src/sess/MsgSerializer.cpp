@@ -51,6 +51,16 @@ int MsgSerializer::deserializeFloat(float& data, int offset, char* msg) {
     return offset + sizeof(int);
 }
 
+int MsgSerializer::serializeString(const char* data, int len, int offset, char* msg) {
+    memcpy((void*)(msg + offset), (void*)data, sizeof(char) * len);
+    return offset + sizeof(char) * len;
+}
+
+int MsgSerializer::deserializeString(char* data, int len, int offset, char* msg) {
+    memcpy((void*)data, (void*)(msg + offset), sizeof(char) * len);
+    return offset + sizeof(char) * len;
+}
+
 int MsgSerializer::serializeMsgHdr(MessageHeader msgHdr, char* msg) {
     // @See: MessageHeader.h
     int offset = 0;

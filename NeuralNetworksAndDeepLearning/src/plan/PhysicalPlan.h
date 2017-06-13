@@ -97,7 +97,7 @@ public:
     static void loadNetwork();
 
     static int getDOPCount(int networkID);
-    static void markFinish(int networkID, int dopID, int planID, int count);   
+    static void markFinish(int networkID, int dopID, int planID);   
 
 private:
     static std::map<int, std::vector<PhysicalPlan*>>    planGlobalMap;    // key = networkID,
@@ -108,8 +108,7 @@ private:
     static std::mutex               planGlobalMutex;    // planMap, planInfoMap을 보호
 
     void runLayer(int planID, bool inference);
-    void markFinish(int planID, int count);     // 해당 planID에게 dependency가 있는 planID가
-                                                // 완료가 되었음을 알린다.
+    void markFinish(int targetPlanID);     
 
     void allocateTensorInternal(int networkID);
     static void* allocTensorMem(int layerType, void* instancePtr, std::string tensorName,

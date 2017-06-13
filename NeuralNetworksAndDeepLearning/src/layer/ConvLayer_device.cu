@@ -86,6 +86,22 @@ ConvLayer<Dtype>::ConvLayer()
 	this->_paramsInitialized[Filter] = false;
 	this->_paramsInitialized[Bias] = false;
 
+    if (this->updateParams.size() == 0) {
+        UpdateParam upFilter;
+        upFilter.paramType = Filter;
+        upFilter.paramDataPtr = (void*)this->_params[Filter];
+        upFilter.paramHis1Ptr = (void*)this->_paramsHistory[Filter];
+        upFilter.paramHis2Ptr = (void*)this->_paramsHistory2[Filter];
+        this->updateParams.push_back(upFilter);
+
+        UpdateParam upBias;
+        upBias.paramType = Bias;
+        upBias.paramDataPtr = (void*)this->_params[Bias];
+        upBias.paramHis1Ptr = (void*)this->_paramsHistory[Bias];
+        upBias.paramHis2Ptr = (void*)this->_paramsHistory2[Bias];
+        this->updateParams.push_back(upBias);
+    }
+
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->biasTensorDesc));
@@ -143,6 +159,8 @@ ConvLayer<Dtype>::~ConvLayer() {
 	checkCUDNN(cudnnDestroyTensorDescriptor(this->biasTensorDesc));
 	checkCUDNN(cudnnDestroyFilterDescriptor(this->filterDesc));
 	checkCUDNN(cudnnDestroyConvolutionDescriptor(this->convDesc));
+
+    this->updateParams.clear();
 }
 
 
@@ -401,9 +419,6 @@ void ConvLayer<Dtype>::update() {
     UpdateContext contextFilter = 
         Update<Dtype>::makeContext(weightSize, regScale, learnScale);
 
-	Updater::updateParam(Filter, contextFilter, (void*)this->_paramsHistory[Filter], 
-        (void*)this->_paramsHistory2[Filter], (void*)this->_params[Filter]);
-
 	// update biases ...
 	const uint32_t biasSize = filterDim.filters;
 	const Dtype regScale_b = weightDecay * biasUpdateParam.decay_mult;
@@ -412,8 +427,12 @@ void ConvLayer<Dtype>::update() {
 
     UpdateContext contextBias = 
         Update<Dtype>::makeContext(biasSize, regScale_b, learnScale_b);
-	Updater::updateParam(Bias, contextBias, (void*)this->_paramsHistory[Bias],
-        (void*)this->_paramsHistory2[Bias], (void*)this->_params[Bias]);
+
+    SASSUME0(this->updateParams.size() == 2);
+    this->updateParams[Filter].context = contextFilter;
+    this->updateParams[Bias].context = contextBias;
+
+    Updater::updateParams(this->updateParams);
 }
 
 template <typename Dtype>

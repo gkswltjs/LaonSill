@@ -24,6 +24,14 @@ typedef struct UpdateContext_s {
     float   decayedBeta2;
 } UpdateContext;
 
+typedef struct UpdateParam_s {
+    int             paramType;
+    UpdateContext   context;
+    void*           paramDataPtr;
+    void*           paramHis1Ptr;
+    void*           paramHis2Ptr;
+} UpdateParam;
+
 template<typename Dtype>
 class Update {
 public: 

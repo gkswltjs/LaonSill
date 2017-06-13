@@ -14,6 +14,7 @@
 #include "Cuda.h"
 #include "Data.h"
 #include "BaseLayer.h"
+#include "Update.h"
 
 /**
  * @brief 학습하는 레이어에서 구현해야하는 베이스 추상 클래스,
@@ -70,6 +71,7 @@ public:
 	std::vector<Data<Dtype>*> _paramsHistory;
 	std::vector<Data<Dtype>*> _paramsHistory2;
 	std::vector<bool> _paramsInitialized;
+    std::vector<UpdateParam> updateParams;
 };
 
 #endif /* LEARNABLELAYER_H_ */

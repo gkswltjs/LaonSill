@@ -240,6 +240,8 @@ BatchNormLayer<Dtype>::~BatchNormLayer() {
 
     SASSERT0(this->normInputSet != NULL);
     free(this->normInputSet);
+
+    this->updateParams.clear();
 }
 
 template <typename Dtype>
@@ -255,15 +257,11 @@ void BatchNormLayer<Dtype>::update() {
 
     UpdateContext context = Update<Dtype>::makeContext(size, regScale, learnScale);
 
-	Updater::updateParam((int)ParamType::Gamma, context, 
-        (void*)this->_paramsHistory[ParamType::Gamma],
-        (void*)this->_paramsHistory2[ParamType::Gamma],
-        (void*)this->_params[ParamType::Gamma]);
+    SASSUME0(this->updateParams.size() == 2);
+    this->updateParams[Gamma].context = context;
+    this->updateParams[Beta].context = context;
 
-	Updater::updateParam((int)ParamType::Beta, context, 
-        (void*)this->_paramsHistory[ParamType::Beta],
-        (void*)this->_paramsHistory2[ParamType::Beta],
-        (void*)this->_params[ParamType::Beta]);
+    Updater::updateParams(this->updateParams);
 }
 
 template <typename Dtype>
@@ -414,6 +412,22 @@ void BatchNormLayer<Dtype>::reshape() {
         this->_paramsInitialized[ParamType::GlobalCount] = true;
     } else {
         SASSERT0(this->depth == depth);
+    }
+
+    if (this->updateParams.size() == 0) {
+        UpdateParam upGamma;
+        upGamma.paramType = Gamma;
+        upGamma.paramDataPtr = (void*)this->_params[Gamma];
+        upGamma.paramHis1Ptr = (void*)this->_paramsHistory[Gamma];
+        upGamma.paramHis2Ptr = (void*)this->_paramsHistory2[Gamma];
+        this->updateParams.push_back(upGamma);
+
+        UpdateParam upBeta;
+        upBeta.paramType = Beta;
+        upBeta.paramDataPtr = (void*)this->_params[Beta];
+        upBeta.paramHis1Ptr = (void*)this->_paramsHistory[Beta];
+        upBeta.paramHis2Ptr = (void*)this->_paramsHistory2[Beta];
+        this->updateParams.push_back(upBeta);
     }
 }
 

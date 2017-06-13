@@ -23,8 +23,12 @@ public:
     static int  serializeFloat(float data, int offset, char* msg);
     static int  deserializeFloat(float& data, int offset, char* msg);
 
+    static int  serializeString(const char* data, int len, int offset, char* msg);
+    static int  deserializeString(char* data, int len, int offset, char* msg);
+
     static int  serializeMsgHdr(MessageHeader msgHdr, char* msg);
     static int  deserializeMsgHdr(MessageHeader& msgHdr, char* msg);
+
 };
 
 #endif /* SERIALIZER_H */

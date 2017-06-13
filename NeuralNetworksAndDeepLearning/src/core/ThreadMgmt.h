@@ -65,6 +65,6 @@ private:
     static int                          threadCount;
     static std::vector<ThreadContext*>  contextArray;
     static int                         *threadIDBaseArray;
-    static std::atomic<int>             readyCount;
+    static volatile std::atomic<int>    readyCount;
 };
 #endif /* THREADMGMT_H */

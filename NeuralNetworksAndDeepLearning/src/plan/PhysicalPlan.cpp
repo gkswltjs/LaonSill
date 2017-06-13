@@ -31,8 +31,9 @@ PhysicalPlan::~PhysicalPlan() {
         int layerID = iter->first;
         void* instancePtr = iter->second;
 
-        if (planMap.find(layerID) != planMap.end()) {
-            int layerType = planMap[layerID].layerType;
+        int forwardPlanID = LP_FORWARD_PLANID(layerID);
+        if (planMap.find(forwardPlanID) != planMap.end()) {
+            int layerType = planMap[forwardPlanID].layerType;
             LayerFunc::destroyLayer(layerType, instancePtr);
         }
     }
@@ -163,23 +164,23 @@ void PhysicalPlan::allocateTensor(int networkID) {
     }
 }
 
-void PhysicalPlan::markFinish(int planID, int count) {
+void PhysicalPlan::markFinish(int targetPlanID) {
     unique_lock<mutex> planLock(this->planMutex);
 
-    SASSUME(this->depRefMap.find(planID) != this->depRefMap.end(),
-        "There is no ref map for requesting plan ID. planID=%d", planID);
-    this->depRefMap[planID] -= count;
+    SASSUME(this->depRefMap.find(targetPlanID) != this->depRefMap.end(),
+        "There is no ref map for requesting plan ID. targetPlanID=%d", targetPlanID);
+    this->depRefMap[targetPlanID] -= 1;
     
-    if (this->depRefMap[planID] == 0) {
-        this->readyQueue.push_back(planID); 
+    if (this->depRefMap[targetPlanID] == 0) {
+        this->readyQueue.push_back(targetPlanID); 
     }
 
-    this->refCount -= count;
+    this->refCount -= 1;
     planLock.unlock();
-    SASSUME0(this->depRefMap[planID] >= 0);
+    SASSUME0(this->depRefMap[targetPlanID] >= 0);
 }
 
-void PhysicalPlan::markFinish(int networkID, int dopID, int planID, int count) {
+void PhysicalPlan::markFinish(int networkID, int dopID, int planID) {
     int oldNetworkID = WorkContext::curNetworkID;
     int oldDOPID = WorkContext::curDOPID;
 
@@ -187,7 +188,11 @@ void PhysicalPlan::markFinish(int networkID, int dopID, int planID, int count) {
     WorkContext::updatePlan(dopID);
 
     PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
-    pp->markFinish(planID, count);
+    PlanDef planDef = pp->planMap[planID];
+    for (int i = 0; i < planDef.notifyList.size(); i++) {
+        int targetPlanID = planDef.notifyList[i];
+        pp->markFinish(targetPlanID);
+    }
 
     WorkContext::updateNetwork(oldNetworkID);
     WorkContext::updatePlan(oldDOPID);
@@ -272,13 +277,13 @@ bool PhysicalPlan::generatePlan() {
         int key = it->first;
         PlanDef value = it->second;
       
+        depRefMap[key] = value.depCount;
+
         if (value.depCount == 0) {
             readyQueue.push_back(key);
         } else {
             this->refCount += 1;
         }
-    
-        depRefMap[key] = value.depCount;
     }
 
     planLock.unlock();
@@ -331,15 +336,7 @@ void PhysicalPlan::runLayer(int planID, bool inference) {
     PlanDef *planDef = &WorkContext::curPhysicalPlan->planMap[planID];
     for (int i = 0; i < planDef->notifyList.size(); i++) {
         int targetPlanID = planDef->notifyList[i];
-        int markCount = 1;
-
-        if (planType == PLANTYPE_UPDATE) {
-            int paramCount = LayerPropList::getLearnableParamCount(layerType);
-            SASSUME0(paramCount >= 1);
-            markCount = paramCount;
-        }
-
-        markFinish(targetPlanID, markCount);
+        markFinish(targetPlanID);
     }
 }
 

@@ -89,6 +89,8 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
         Util::clearVector(this->_paramsHistory2);
     }
 	checkCudaErrors(cudaFree(this->d_onevec));
+
+    this->updateParams.clear();
 }
 
 
@@ -169,6 +171,22 @@ void FullyConnectedLayer<Dtype>::reshape() {
 		this->_paramsInitialized[Bias] = true;
 	}
 
+    if (this->updateParams.size() == 0) {
+        UpdateParam upWeight;
+        upWeight.paramType = Weight;
+        upWeight.paramDataPtr = (void*)this->_params[Weight];
+        upWeight.paramHis1Ptr = (void*)this->_paramsHistory[Weight];
+        upWeight.paramHis2Ptr = (void*)this->_paramsHistory2[Weight];
+        this->updateParams.push_back(upWeight);
+
+        UpdateParam upBias;
+        upBias.paramType = Bias;
+        upBias.paramDataPtr = (void*)this->_params[Bias];
+        upBias.paramHis1Ptr = (void*)this->_paramsHistory[Bias];
+        upBias.paramHis2Ptr = (void*)this->_paramsHistory2[Bias];
+        this->updateParams.push_back(upBias);
+    }
+
 	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*batches));
 	//FillValues<<<RoundUp(batches, BW), BW>>>(this->d_onevec, batches, 1.0f);
 	FillValues<<<SOOOA_GET_BLOCKS(batches), SOOOA_CUDA_NUM_THREADS>>>(
@@ -197,9 +215,6 @@ void FullyConnectedLayer<Dtype>::update() {
     UpdateContext contextWeight = 
         Update<Dtype>::makeContext(weightSize, regScale, learnScale);
 
-	Updater::updateParam(Weight, contextWeight, (void*)this->_paramsHistory[Weight],
-        (void*)this->_paramsHistory2[Weight], (void*)this->_params[Weight]);
-
 	const uint32_t biasSize = out_rows;
 	const Dtype regScale_b = 
         SNPROP(weightDecay) * SLPROP(FullyConnected, biasUpdateParam).decay_mult;
@@ -209,8 +224,11 @@ void FullyConnectedLayer<Dtype>::update() {
     UpdateContext contextBias = 
         Update<Dtype>::makeContext(biasSize, regScale_b, learnScale_b);
 
-	Updater::updateParam(Bias, contextBias, (void*)this->_paramsHistory[Bias],
-        (void*)this->_paramsHistory2[Bias], (void*)this->_params[Bias]);
+    SASSUME0(this->updateParams.size() == 2);
+    this->updateParams[Weight].context = contextWeight;
+    this->updateParams[Bias].context = contextBias;
+
+	Updater::updateParams(this->updateParams);
 }
 
 template <typename Dtype>

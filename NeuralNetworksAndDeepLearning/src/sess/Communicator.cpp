@@ -318,6 +318,7 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
     int         tempInt;
     float       tempFloat;
     float      *tempFloatArray = NULL;
+    char       *tempString = NULL;
     for (int i = 0; i < jobElemCnt; i++) {
         switch ((Job::JobElemType)jobElemTypes[i]) {
             case Job::IntType:
@@ -332,9 +333,9 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
 
             case Job::FloatArrayType:
                 offset = MsgSerializer::deserializeInt(tempArrayCount, offset, recvMsg);
-                SASSERT0(tempFloatArray == NULL);
+                SASSUME0(tempFloatArray == NULL);
                 tempFloatArray = (float*)malloc(sizeof(float) * tempArrayCount);
-                SASSERT0(tempFloatArray != NULL);
+                SASSUME0(tempFloatArray != NULL);
 
                 for (int j = 0; j < tempArrayCount; j++) {
                     offset = MsgSerializer::deserializeFloat(tempFloatArray[j], offset,
@@ -343,6 +344,19 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
                 newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
                     (void*)tempFloatArray);
                 free(tempFloatArray);
+                break;
+
+            case Job::StringType:
+                offset = MsgSerializer::deserializeInt(tempArrayCount, offset, recvMsg);
+                SASSUME0(tempString == NULL);
+                tempString = (char*)malloc(sizeof(char) * tempArrayCount);
+                SASSUME0(tempString != NULL);
+
+                offset = MsgSerializer::deserializeString(tempString, tempArrayCount, offset,
+                        recvMsg);
+                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
+                    (void*)tempString);
+                free(tempString);
                 break;
 
             default:

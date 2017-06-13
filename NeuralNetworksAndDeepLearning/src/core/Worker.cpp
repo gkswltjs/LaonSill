@@ -43,7 +43,7 @@ void Worker::producerThread() {
     HotLog::initForThread();
 
     // (1) 서버가 준비 될때까지 대기 한다.
-    while (ThreadMgmt::isReady()) {
+    while (!ThreadMgmt::isReady()) {
         sleep(0);
     }
 
@@ -57,7 +57,8 @@ void Worker::producerThread() {
         vector<int> jcIDs = Worker::getReadyJCs(wakeupCount);
 
         for (int i = 0; i < jcIDs.size(); i++) {
-            ThreadMgmt::signal(i, ThreadEvent::Wakeup);
+            int targetThreadID = ThreadMgmt::getThreadID(ThreadType::JobConsumer, jcIDs[i]);
+            ThreadMgmt::signal(targetThreadID, ThreadEvent::Wakeup);
         }
 
         if (event == ThreadEvent::Halt)
@@ -78,7 +79,7 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
     COLD_LOG(ColdLog::INFO, true, "task consumer thread #%d (GPU:#%d) starts", consumerIdx,
         gpuIdx);
 
-    while (ThreadMgmt::isReady()) {
+    while (!ThreadMgmt::isReady()) {
         sleep(0);
     }
 
@@ -89,19 +90,25 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
+    vector<UpdaterTaskDef*> remainUpdaterTaskDefs;
     while (doLoop) {
         ThreadEvent event =
             ThreadMgmt::wait(threadID, SPARAM(TASK_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
 
         if (event == ThreadEvent::Wakeup || event == ThreadEvent::Timeout) {
             vector<TaskDef> taskDefs;
-            vector<UpdaterTaskDef> updaterTaskDefs;
+            vector<UpdaterTaskDef*> updaterTaskDefs;
 
             vector<TaskDef> removeTaskDefs;
-            vector<UpdaterTaskDef> remainUpdaterTaskDefs;
 
             TaskQueue *tq = taskQueues[consumerIdx];
             unique_lock<mutex> lock(tq->mutex);
+
+            // 전에 못했던 것들을 먼저 updaterTaskDefs에 추가한다.
+            for (int i = 0; i < remainUpdaterTaskDefs.size(); i++) {
+                updaterTaskDefs.push_back(remainUpdaterTaskDefs[i]);
+            }
+            remainUpdaterTaskDefs.clear();
 
             while (!tq->updaterTaskDefs.empty()) {
                 updaterTaskDefs.push_back(tq->updaterTaskDefs.front());
@@ -113,20 +120,28 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
             }
             lock.unlock();
 
+            bool hasRemainTask = false;
             for (int i = 0; i < updaterTaskDefs.size(); i++) {
-                bool ret = Updater::updateParam(updaterTaskDefs[i].networkID, 
-                    updaterTaskDefs[i].layerID, updaterTaskDefs[i].paramType,
-                    updaterTaskDefs[i].planID, updaterTaskDefs[i].dopID,
-                    updaterTaskDefs[i].updateContext, updaterTaskDefs[i].tensorParamPtr,
-                    NULL, NULL, false);
+                bool ret = Updater::updateParams(updaterTaskDefs[i]->networkID, 
+                    updaterTaskDefs[i]->layerID, updaterTaskDefs[i]->planID,
+                    updaterTaskDefs[i]->dopID, updaterTaskDefs[i]->updateParams, false);
 
-                if (!ret)
+                if (!ret) {
                     remainUpdaterTaskDefs.push_back(updaterTaskDefs[i]);
+                    hasRemainTask = true;
+                } else {
+                    delete updaterTaskDefs[i];
+                }
             }
 
             for (int i = 0; i < taskDefs.size(); i++) {
                 // TODO: run run run
             }
+
+            // 남은 task가 있다면 자기 스스로를 깨운다.
+            if (hasRemainTask)
+                ThreadMgmt::signal(threadID, ThreadEvent::Wakeup);
+                
         }
 
         if (event == ThreadEvent::Halt)
@@ -151,15 +166,19 @@ void Worker::jobConsumerThread(int consumerIdx) {
     COLD_LOG(ColdLog::INFO, true, "job consumer thread #%d (GPU:#%d) starts", consumerIdx,
         gpuIdx);
 
-    while (ThreadMgmt::isReady()) {
+    while (!ThreadMgmt::isReady()) {
         sleep(0);
     }
-    
+
     int threadID = ThreadMgmt::getThreadID(ThreadType::JobConsumer, consumerIdx);
 
     while (doLoop) {
         ThreadEvent event =
             ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
+
+        if (event == ThreadEvent::Halt) {
+            break;
+        }
 
         Job* job = Worker::popJob();
         if (job == NULL)
@@ -175,8 +194,6 @@ void Worker::jobConsumerThread(int consumerIdx) {
                 SASSERT(false, "Invalid job type");
         }
 
-        if (event == ThreadEvent::Halt)
-            break;
     }
 
     HotLog::markExit();
@@ -272,7 +289,7 @@ Job* Worker::popJob() {
 }
 
 int Worker::getJobCount() {
-    Worker::jobQueueMutex.lock();
+    unique_lock<mutex> lock(Worker::jobQueueMutex);
     return jobQueue.size();
 }
 
@@ -309,20 +326,28 @@ void Worker::addTaskQueue(int consumerIdx, int networkID, int dopID) {
 }
 
 void Worker::addUpdaterTask(int consumerIdx, int networkID, int dopID, int layerID,
-    int paramType, int planID, UpdateContext context, void* tensorParamPtr) {
+    int planID, vector<UpdateParam> updateParams) {
 
-    UpdaterTaskDef def;
-    def.networkID = networkID;
-    def.dopID = dopID;
-    def.layerID = layerID;
-    def.paramType = paramType;
-    def.planID = planID;
-    def.updateContext = context;
-    def.tensorParamPtr = tensorParamPtr;
+    UpdaterTaskDef *def = new UpdaterTaskDef(); // 이거는 Task Consumer가 메모리 해제한다.
+    def->networkID = networkID;
+    def->dopID = dopID;
+    def->layerID = layerID;
+    def->planID = planID;
+    for (int i = 0 ; i < updateParams.size(); i++)
+        def->updateParams.push_back(updateParams[i]);
 
     SASSUME0(consumerIdx < Worker::taskQueues.size());
     TaskQueue* tq = Worker::taskQueues[consumerIdx];
 
     unique_lock<mutex> lock(tq->mutex);
     tq->updaterTaskDefs.push_back(def);
+}
+
+int Worker::getConsumerIdx(int devIdx) {
+    for (int i = 0; i < Cuda::availableGPU.size(); i++) {
+        if (Cuda::availableGPU[i] == devIdx)
+            return i;
+    }
+
+    return -1;
 }

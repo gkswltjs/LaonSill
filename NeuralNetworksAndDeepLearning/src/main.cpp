@@ -170,9 +170,7 @@ int main(int argc, char** argv) {
     if (useDeveloperMode || useSingleJobMode) {
         threadCount = 0;
     } else {
-        threadCount = SPARAM(SESS_COUNT) + SPARAM(JOB_CONSUMER_COUNT) +
-            SPARAM(GPU_COUNT) + 1 /* producer thread */ +
-            2 /* network sender & network receiver */;
+        threadCount = 1;
     }
 
     if (threadCount > 0) {
@@ -225,6 +223,10 @@ int main(int argc, char** argv) {
         checkCudaErrors(cudaSetDevice(0));
         checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
         checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
+
+        while (!ThreadMgmt::isReady()) {
+            sleep(0);
+        }
 
         // (5-D-4) 테스트를 실행한다.
         runTest(testItemName);
