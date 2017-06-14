@@ -43,6 +43,7 @@
 #include "ThreadMgmt.h"
 #include "Sender.h"
 #include "Receiver.h"
+#include "Task.h"
 
 #include "GAN/GAN.h"
 #include "YOLO.h"
@@ -157,6 +158,7 @@ int main(int argc, char** argv) {
     SysLog::init();
     ColdLog::init();
     Job::init();
+    Task::init();
     Broker::init();
     Network<float>::init();
     DQNImageLearner<float>::init();
@@ -255,6 +257,7 @@ int main(int argc, char** argv) {
         Communicator::joinThreads();
     }
 
+    Task::destroy();
     LayerFunc::destroy();
     // (6) 로깅 관련 모듈이 점유했던 자원을 해제한다.
     if (threadCount > 0) {

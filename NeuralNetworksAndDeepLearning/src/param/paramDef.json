@@ -428,6 +428,36 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 1000 
+},
+
+"TASKPOOL_ALLOCTENSOR_ELEM_COUNT" : 
+{
+    "DESC" : "specify element count of alloc tensor of the task pool",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"TASKPOOL_UPDATETENSOR_ELEM_COUNT" : 
+{
+    "DESC" : "specify element count of update tensor of the task pool",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"TASKPOOL_RUNPLAN_ELEM_COUNT" : 
+{
+    "DESC" : "specify element count of run plan of the task pool",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
 }
 
 }
