@@ -1,116 +1,149 @@
-#if 0
+#if 1
 
-#include <stddef.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <cstdint>
+#include <vector>
 #include <iostream>
 #include <fstream>
-#include <sstream>
-#include <vector>
-#include <string.h>
-#include <map>
-#include <cfloat>
-#include <cassert>
-#include <cmath>
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
 
-#include "Data.h"
+#include "cuda/Cuda.h"
 
+#include "gnuplot-iostream.h"
 
-#include "3rd_party/tinyxml2/tinyxml2.h"
+#include "jsoncpp/json/json.h"
 
+#include "common.h"
+#include "DataSet.h"
+#include "MockDataSet.h"
+#include "Debug.h"
+#include "NetworkMonitor.h"
+#include "Network.h"
+#include "Util.h"
+#include "Worker.h"
+#include "Job.h"
+#include "Communicator.h"
+#include "Client.h"
+#include "InitParam.h"
+#include "Param.h"
+#include "ColdLog.h"
+#include "SysLog.h"
+#include "HotLog.h"
+#include "StdOutLog.h"
+#include "Perf.h"
+#include "Atari.h"
+#include "Broker.h"
+#include "test.h"
+#include "DQNImageLearner.h"
+#include "ImageUtil.h"
+#include "DebugUtil.h"
+#include "ResourceManager.h"
+#include "PlanOptimizer.h"
+#include "WorkContext.h"
+#include "PlanParser.h"
+#include "ThreadMgmt.h"
+#include "Sender.h"
+#include "Receiver.h"
+
+#include "frcnn/FRCNN.h"
+#include "YOLO.h"
+#include "LayerFunc.h"
+#include "LayerPropList.h"
+
+#include "StdOutLog.h"
 
 using namespace std;
-using namespace tinyxml2;
 
 
 
-void opencv_test();
-template <typename PtrType, typename PrtType>
-void print_mat(cv::Mat& im);
-void show_mat(cv::Mat& im);
-void convert(cv::Mat& im, const vector<float>& pixelMeans);
+void developerMain() {
+    STDOUT_LOG("enter developerMain()");
 
-int main(void) {
+    checkCudaErrors(cudaSetDevice(0));
+	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-	opencv_test();
+    FRCNN<float>::run();
 
-	return 0;
+    STDOUT_LOG("exit developerMain()");
 }
 
 
-void opencv_test() {
-	cv::Mat image = cv::imread("/home/jkim/Downloads/sampleR32G64B128.png", CV_LOAD_IMAGE_COLOR);
-	print_mat<unsigned char, unsigned int>(image);
+int main(int argc, char** argv) {
+    int     opt;
 
-	convert(image, {0.1, 0.2, 0.3});
-	print_mat<float, float>(image);
+
+    // 처음 생각했던 것보다 실행모드의 개수가 늘었다.
+    // 모드가 하나만 더 추가되면 그냥 enum type으로 모드를 정의하도록 하자.
+
+    bool    useDeveloperMode = false;
+    bool    useSingleJobMode = false;
+    bool    useTestMode = false;
+
+    char*   singleJobFilePath;
+    char*   testItemName;
+
+
+    // (2) 서버 시작 시간 측정을 시작한다.
+    struct timespec startTime;
+    SPERF_START(SERVER_RUNNING_TIME, &startTime);
+	STDOUT_BLOCK(cout << "SOOOA engine starts" << endl;);
+
+    // (3) 파라미터, 로깅, job 모듈을 초기화 한다.
+    InitParam::init();
+    Perf::init();
+    SysLog::init();
+    ColdLog::init();
+    Job::init();
+    Broker::init();
+    Network<float>::init();
+    DQNImageLearner<float>::init();
+
+    ResourceManager::init();
+    PlanOptimizer::init();
+    LayerFunc::init();
+    LayerPropList::init();
+
+    int threadCount = 0;
+    SYS_LOG("Logging system is initialized...");
+
+    // (4) 뉴럴 네트워크 관련 기본 설정을 한다.
+	cout.precision(SPARAM(COUT_PRECISION));
+	cout.setf(ios::fixed);
+	Util::setOutstream(&cout);
+	Util::setPrint(false);
+
+    // (5) 모드에 따른 동작을 수행한다.
+    // DeveloperMode와 SingleJobMode는 1쓰레드(메인쓰레드)로만 동작을 한다.
+    // TestMode와 DefaultMode(ServerClientMode)는 여러 쓰레드로 동작을 하게 된다.
+
+	// (5-A-1) Cuda를 생성한다.
+	Cuda::create(SPARAM(GPU_COUNT));
+	COLD_LOG(ColdLog::INFO, true, "CUDA is initialized");
+
+	// (5-A-2) DeveloperMain()함수를 호출한다.
+	developerMain();
+
+	// (5-A-3) 자원을 해제 한다.
+	Cuda::destroy();
+
+    LayerFunc::destroy();
+    // (6) 로깅 관련 모듈이 점유했던 자원을 해제한다.
+    if (threadCount > 0) {
+        ThreadMgmt::destroy();
+        HotLog::destroy();
+    }
+    ColdLog::destroy();
+    SysLog::destroy();
+    Broker::destroy();
+
+    // (7) 서버 종료 시간을 측정하고, 계산하여 서버 실행 시간을 출력한다.
+    SPERF_END(SERVER_RUNNING_TIME, startTime);
+    STDOUT_LOG("server running time : %lf\n", SPERF_TIME(SERVER_RUNNING_TIME));
+	STDOUT_BLOCK(cout << "SOOOA engine ends" << endl;);
+
+    InitParam::destroy();
+	exit(EXIT_SUCCESS);
 }
-
-template <typename PtrType, typename PrtType>
-void print_mat(cv::Mat& im) {
-	cout << "rows: " << im.rows << ", cols: " << im.cols <<
-				", channels: " << im.channels() << endl;
-
-	const size_t numImElems = im.rows*im.cols*im.channels();
-	const int rowElemSize = im.cols*im.channels();
-	const int colElemSize = im.channels();
-
-	for (int i = 0; i < im.rows; i++) {
-		for (int j = 0; j < im.cols; j++) {
-			cout << "[";
-			for (int k = 0; k < im.channels(); k++) {
-				cout << (PrtType)((PtrType*)im.data)[i*rowElemSize+j*colElemSize+k] << ",";
-			}
-			cout << "],";
-		}
-		cout << endl;
-	}
-}
-
-void show_mat(cv::Mat& im) {
-	namedWindow("MyWindow", CV_WINDOW_AUTOSIZE);
-	imshow("MyWindow", im);
-
-	cv::resize(im, im, cv::Size(), 1.5, 1.5, CV_INTER_LINEAR);
-
-	namedWindow("resize", CV_WINDOW_AUTOSIZE);
-	imshow("resize", im);
-
-	waitKey(0);
-	destroyAllWindows();
-}
-
-
-void convert(cv::Mat& im, const vector<float>& pixelMeans) {
-	// Mean subtract and scale an image for use in a blob
-	// cv::Mat, BGR이 cols만큼 반복, 다시 해당 row가 rows만큼 반복
-	const uint32_t channels = im.channels();
-	// XXX: 3채널 컬러 이미지로 강제
-	assert(channels == 3);
-	assert(channels == pixelMeans.size());
-
-	Mat tempIm;
-	im.convertTo(im, CV_32FC3, 1.0f/255.0f);
-	im.copyTo(tempIm);
-
-	float* imPtr = (float*)im.data;
-	float* tempImPtr = (float*)tempIm.data;
-	uint32_t rowUnit, colUnit;
-	for (uint32_t i = 0; i < im.rows; i++) {
-		rowUnit = i * im.cols * channels;
-		for (uint32_t j = 0; j < im.cols; j++) {
-			colUnit = j * channels;
-
-			// imPtr: target, reordered as rgb
-			// tempImPtr: source, ordered as bgr
-			// pixelMeans: ordered as rgb
-			imPtr[rowUnit + colUnit + 0] = tempImPtr[rowUnit + colUnit + 2] - pixelMeans[0];
-			imPtr[rowUnit + colUnit + 1] = tempImPtr[rowUnit + colUnit + 1] - pixelMeans[1];
-			imPtr[rowUnit + colUnit + 2] = tempImPtr[rowUnit + colUnit + 0] - pixelMeans[2];
-		}
-	}
-}
-
 
 #endif

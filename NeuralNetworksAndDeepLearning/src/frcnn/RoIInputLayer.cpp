@@ -710,7 +710,8 @@ void RoIInputLayer<Dtype>::destroyLayer(void* instancePtr) {
 template<typename Dtype>
 void RoIInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
-    SASSERT0(index == 0);
+	// XXX
+    SASSERT0(index < 3);
 
     RoIInputLayer<Dtype>* layer = (RoIInputLayer<Dtype>*)instancePtr;
 
@@ -718,7 +719,7 @@ void RoIInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
         SASSERT0(layer->_inputData.size() == 0);
         layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
     } else {
-        SASSERT0(layer->_outputData.size() == 0);
+        SASSERT0(layer->_outputData.size() == index);
         layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
     }
 }

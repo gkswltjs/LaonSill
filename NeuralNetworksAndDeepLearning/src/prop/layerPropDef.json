@@ -548,6 +548,10 @@
     "VARS" : 
 	[
 	    ["numClasses", "uint32_t", "0"],
+		["imageSet", "std::string", "\"\""],
+		["dataName", "std::string", "\"\""],
+		["dataPath", "std::string", "\"\""],
+		["labelMapPath", "std::string", "\"\""],
 	    ["pixelMeans", "std::vector<float>", ""]
 	]
 },
