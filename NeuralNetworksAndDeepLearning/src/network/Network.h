@@ -73,11 +73,13 @@ public:
 	 * @details 네트워크를 파일에 쓴다.
 	 * @param filename 네트워크를 쓸 파일의 경로
 	 */
+    void save(std::string path);
 	void save();
 	/**
 	 * @details 네트워크를 파일로부터 읽는다.
 	 * @param filename 네트워크를 읽을 파일의 경로
 	 */
+    void load(std::string path);
 	void load();
 
 	/**

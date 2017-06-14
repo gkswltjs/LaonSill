@@ -20,6 +20,7 @@
 #include "LegacyWork.h"
 #include "ThreadMgmt.h"
 #include "Updater.h"
+#include "WorkContext.h"
 
 using namespace std;
 
@@ -135,7 +136,10 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
             }
 
             for (int i = 0; i < taskDefs.size(); i++) {
-                // TODO: run run run
+                WorkContext::updateNetwork(taskDefs[i].networkID);
+                WorkContext::updatePlan(taskDefs[i].dopID);
+
+                
             }
 
             // 남은 task가 있다면 자기 스스로를 깨운다.

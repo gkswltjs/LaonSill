@@ -141,16 +141,8 @@ void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
     planInfo->miniBatchCount = oldMiniBatchCount;
 }
 
-template <typename Dtype>
-void Network<Dtype>::save() {
-    string path;
-	if (SNPROP(savePathPrefix) == "") {
-        path = string(getenv(SOOOA_HOME_ENVNAME)) + "/network/" +
-            to_string(SNPROP(iterations)) + ".param";
-    } else {
-        path = SNPROP(savePathPrefix) + to_string(SNPROP(iterations)) + ".param";
-    }
-
+template<typename Dtype>
+void Network<Dtype>::save(string path) {
 	// save learned params
 	ofstream paramOfs(path.c_str(), ios::out | ios::binary);
 
@@ -193,15 +185,30 @@ void Network<Dtype>::save() {
     }
 
     WorkContext::updateNetwork(oldNetworkID);
+
 }
 
 template <typename Dtype>
-void Network<Dtype>::load() {
+void Network<Dtype>::save() {
+    string path;
+	if (SNPROP(savePathPrefix) == "") {
+        path = string(getenv(SOOOA_HOME_ENVNAME)) + "/network/" +
+            to_string(SNPROP(iterations)) + ".param";
+    } else {
+        path = SNPROP(savePathPrefix) + to_string(SNPROP(iterations)) + ".param";
+    }
+
+    save(path);
+}
+
+template <typename Dtype>
+void Network<Dtype>::load(string path) {
+    ifstream ifs(path, std::ios::in | std::ios::binary);
+
     // TODO : 반드시 구현 필요
 	// load data list from model file
 	map<std::string, Data<float>*> dataMap;
 
-    ifstream ifs(SNPROP(loadPath), std::ios::in | std::ios::binary);
 
     uint32_t numData;
     ifs.read((char*)&numData, sizeof(uint32_t));
@@ -259,6 +266,12 @@ void Network<Dtype>::load() {
     }
 
     WorkContext::updateNetwork(oldNetworkID);
+
+}
+
+template <typename Dtype>
+void Network<Dtype>::load() {
+    load(SNPROP(loadPath));
 }
 
 template <typename Dtype>

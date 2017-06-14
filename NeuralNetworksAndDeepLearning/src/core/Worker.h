@@ -30,9 +30,14 @@ typedef struct UpdaterTaskDef_s {
     std::vector<UpdateParam>    updateParams;
 } UpdaterTaskDef;
 
+typedef enum TaskCmd_s {
+    
+} TaskCmd;
+
 typedef struct TaskDef_s {
-    int networkID;
-    int dopID;
+    int     networkID;
+    int     dopID;
+    TaskCmd cmd;
 } TaskDef;
 
 typedef struct TaskQueue_s {

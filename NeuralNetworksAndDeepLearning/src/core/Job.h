@@ -34,6 +34,7 @@ public:
 
     enum JobType : int {
         // belows will be deprecated
+#if 0
         BuildNetwork = 0,
         /*
          *  [Job Elem Schema for BuildNetwork]
@@ -41,6 +42,7 @@ public:
          * | network Id (int) |
          * +------------------+
          */
+#endif
         TrainNetwork,
         /*
          *  [Job Elem Schema for TrainNetwork]
@@ -162,6 +164,102 @@ public:
          * +-----------------+
          */
 
+        RunNetwork,
+        /*
+         *  [Job Elem Schema for RunNetwork]
+         * +-----------------------------------+
+         * | NetworkID (int) | inference (int) |
+         * +-----------------+-----------------+
+         */
+
+        RunNetworkReply,
+        /*
+         *  [Job Elem Schema for RunNetworkReply]
+         * +------+
+         * | None |
+         * +------+
+         */
+
+        BuildNetwork,
+        /*
+         *  [Job Elem Schema for BuildNetwork]
+         * +--------------------------------+
+         * | NetworkID (int) | epochs (int) |
+         * +-----------------+--------------+
+         */
+
+        BuildNetworkReply,
+        /*
+         *  [Job Elem Schema for BuildNetworkReply]
+         * +------+
+         * | None |
+         * +------+
+         */
+
+        ResetNetwork,
+        /*
+         *  [Job Elem Schema for ResetNetwork]
+         * +-----------------+
+         * | NetworkID (int) |
+         * +-----------------+
+         */
+
+        ResetNetworkReply,
+        /*
+         *  [Job Elem Schema for ResetNetworkReply]
+         * +------+
+         * | None |
+         * +------+
+         */
+
+        RunNetworkMiniBatch,
+        /*
+         *  [Job Elem Schema for RunNetworkMiniBatch]
+         * +-----------------------------------+--------------------+
+         * | NetworkID (int) | inference (int) | miniBatchIdx (int) |
+         * +-----------------+-----------------+--------------------+
+         */
+
+        RunNetworkMiniBatchReply,
+        /*
+         *  [Job Elem Schema for RunNetworkMiniBatchReply]
+         * +------+
+         * | None |
+         * +------+
+         */
+
+        SaveNetwork,
+        /*
+         *  [Job Elem Schema for SaveNetwork]
+         * +------------------------------------+
+         * | NetworkID (int) | filePath(string) |
+         * +-----------------+------------------+
+         */
+
+        SaveNetworkReply,
+        /*
+         *  [Job Elem Schema for SaveNetworkReply]
+         * +------+
+         * | None |
+         * +------+
+         */
+        
+        LoadNetwork,
+        /*
+         *  [Job Elem Schema for LoadNetwork]
+         * +------------------------------------+
+         * | NetworkID (int) | filePath(string) |
+         * +-----------------+------------------+
+         */
+
+        LoadNetworkReply,
+        /*
+         *  [Job Elem Schema for LoadNetworkReply]
+         * +------+
+         * | None |
+         * +------+
+         */
+        
 
         JobTypeMax
     };
