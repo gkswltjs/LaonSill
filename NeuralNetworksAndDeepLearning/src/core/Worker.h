@@ -21,47 +21,35 @@
 #include "common.h"
 #include "Job.h"
 #include "Update.h"
-
-typedef struct UpdaterTaskDef_s {
-    int                         networkID;
-    int                         dopID;
-    int                         layerID;
-    int                         planID;
-    std::vector<UpdateParam>    updateParams;
-} UpdaterTaskDef;
-
-typedef enum TaskCmd_s {
-    
-} TaskCmd;
-
-typedef struct TaskDef_s {
-    int     networkID;
-    int     dopID;
-    TaskCmd cmd;
-} TaskDef;
+#include "Task.h"
 
 typedef struct TaskQueue_s {
-    std::mutex                      mutex;
-    std::vector<TaskDef>            taskDefs;
-    std::list<UpdaterTaskDef*>      updaterTaskDefs;
+    std::mutex                  mutex;
+    std::list<TaskBase*>        tasks;
 } TaskQueue;
 
 class Worker {
 public:
-	                                    Worker() {}
-	virtual                            ~Worker() {}
+	                           Worker() {}
+	virtual                   ~Worker() {}
 
-	static void                         launchThreads(int taskConsumerCount, 
-                                                      int jobConsumerCount);
-    static void                         joinThreads();
-    static int                          pushJob(Job* job);
-                                        /* called by Sess Thread, Receiver Thread */
-	static thread_local int             gpuIdx;
+	static void                launchThreads(int taskConsumerCount, 
+                                             int jobConsumerCount);
+    static void                joinThreads();
+    static int                 pushJob(Job* job);
+                               /* called by Sess Thread, Receiver Thread */
+	static thread_local int    gpuIdx;
 
-    static void                         addUpdaterTask(int consumerIdx, int networkID, 
-                                                       int dopID, int layerID, int planID,
-                                                       std::vector<UpdateParam> updateParams);
-    static int                          getConsumerIdx(int devIdx);
+    static int                 getConsumerIdx(int devIdx);
+
+    
+    static void                addAllocTensorTask(int consumerIdx, int nodeID, int devID,
+                                                  int requestThreadID,
+                                                  std::string tensorName);
+    static void                addRunPlanTask(int consumerIdx, int networkID, int dopID);
+    static void                addUpdateTensorTask(int consumerIdx, int networkID,
+                                                   int dopID, int layerID, int planID,
+                                                   std::vector<UpdateParam> updateParams);
 
 private:
     /**
@@ -89,9 +77,10 @@ private:
 	static void                         taskConsumerThread(int consumerIdx,
                                                            int gpuIdx);
     static std::vector<TaskQueue*>      taskQueues;
-    static void                         addTaskQueue(int consumerIdx, int networkID,
-                                                             int dopID);
 
+    static bool                         handleAllocTensorTask(TaskAllocTensor *task);
+    static bool                         handleUpdateTensorTask(TaskUpdateTensor* task);
+    static bool                         handleRunPlanTask(TaskRunPlan* task);
 
     /*
      * variables for joining thread

@@ -31,10 +31,12 @@ typedef struct TaskPool_s {
 } TaskPool;
 
 typedef struct TaskBase_s {
+    TaskType    taskType;
     int         elemID;
 } TaskBase;
 
 typedef struct TaskAllocTensor_s {
+    TaskType    taskType;
     int         elemID;
     int         nodeID;
     int         devID;
@@ -43,6 +45,7 @@ typedef struct TaskAllocTensor_s {
 } TaskAllocTensor;
 
 typedef struct TaskUpdateTensor_s {
+    TaskType                    taskType;
     int                         elemID;
     int                         networkID;
     int                         dopID;
@@ -52,9 +55,10 @@ typedef struct TaskUpdateTensor_s {
 } TaskUpdateTensor;
 
 typedef struct TaskRunPlan_s {
-    int     elemID;
-    int     networkID;
-    int     dopID;
+    TaskType    taskType;
+    int         elemID;
+    int         networkID;
+    int         dopID;
 } TaskRunPlan;
 
 class Task {

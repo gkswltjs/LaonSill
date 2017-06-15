@@ -70,6 +70,28 @@ void Worker::producerThread() {
     HotLog::markExit();
 }
 
+bool Worker::handleAllocTensorTask(TaskAllocTensor* task) {
+
+}
+
+bool Worker::handleUpdateTensorTask(TaskUpdateTensor* task) {
+#if 0
+                bool ret = Updater::updateParams(tasks[i]->networkID, 
+                    tasks[i]->layerID, tasks[i]->planID,
+                    tasks[i]->dopID, tasks[i]->updateParams, false);
+#endif
+}
+
+bool Worker::handleRunPlanTask(TaskRunPlan* task) {
+#if 0
+            for (int i = 0; i < taskDefs.size(); i++) {
+                WorkContext::updateNetwork(taskDefs[i].networkID);
+                WorkContext::updatePlan(taskDefs[i].dopID);
+            }
+
+#endif
+}
+
 void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
     ThreadMgmt::setThreadReady();
     bool doLoop = true;
@@ -91,61 +113,59 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-    vector<UpdaterTaskDef*> remainUpdaterTaskDefs;
+    vector<TaskBase*> remainTasks;
     while (doLoop) {
         ThreadEvent event =
             ThreadMgmt::wait(threadID, SPARAM(TASK_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
 
         if (event == ThreadEvent::Wakeup || event == ThreadEvent::Timeout) {
-            vector<TaskDef> taskDefs;
-            vector<UpdaterTaskDef*> updaterTaskDefs;
-
-            vector<TaskDef> removeTaskDefs;
+            vector<TaskBase*> tasks;
 
             TaskQueue *tq = taskQueues[consumerIdx];
             unique_lock<mutex> lock(tq->mutex);
 
-            // 전에 못했던 것들을 먼저 updaterTaskDefs에 추가한다.
-            for (int i = 0; i < remainUpdaterTaskDefs.size(); i++) {
-                updaterTaskDefs.push_back(remainUpdaterTaskDefs[i]);
-            }
-            remainUpdaterTaskDefs.clear();
-
-            while (!tq->updaterTaskDefs.empty()) {
-                updaterTaskDefs.push_back(tq->updaterTaskDefs.front());
-                tq->updaterTaskDefs.pop_front();
-            }
-
-            for (int i = 0; i < tq->taskDefs.size(); i++) {
-                taskDefs.push_back(tq->taskDefs[i]);
+            while (!tq->tasks.empty()) {
+                tasks.push_back(tq->tasks.front());
+                tq->tasks.pop_front();
             }
             lock.unlock();
 
+            for (int i = 0; i < remainTasks.size(); i++) {
+                tasks.push_back(remainTasks[i]);
+            }
+            remainTasks.clear();
+
             bool hasRemainTask = false;
-            for (int i = 0; i < updaterTaskDefs.size(); i++) {
-                bool ret = Updater::updateParams(updaterTaskDefs[i]->networkID, 
-                    updaterTaskDefs[i]->layerID, updaterTaskDefs[i]->planID,
-                    updaterTaskDefs[i]->dopID, updaterTaskDefs[i]->updateParams, false);
+            for (int i = 0; i < tasks.size(); i++) {
+                bool ret;
+                switch (tasks[i]->taskType) {
+                    case TaskType::AllocTensor:
+                        ret = handleAllocTensorTask((TaskAllocTensor*)tasks[i]);
+                        break;
+
+                    case TaskType::UpdateTensor:
+                        ret = handleUpdateTensorTask((TaskUpdateTensor*)tasks[i]);
+                        break;
+
+                    case TaskType::RunPlan:
+                        ret = handleRunPlanTask((TaskRunPlan*)tasks[i]);
+                        break;
+
+                    default:
+                        SASSUME0(false);
+                }
 
                 if (!ret) {
-                    remainUpdaterTaskDefs.push_back(updaterTaskDefs[i]);
+                    remainTasks.push_back(tasks[i]);
                     hasRemainTask = true;
                 } else {
-                    delete updaterTaskDefs[i];
+                    Task::releaseElem(tasks[i]->taskType, (void*)tasks[i]);
                 }
-            }
-
-            for (int i = 0; i < taskDefs.size(); i++) {
-                WorkContext::updateNetwork(taskDefs[i].networkID);
-                WorkContext::updatePlan(taskDefs[i].dopID);
-
-                
             }
 
             // 남은 task가 있다면 자기 스스로를 깨운다.
             if (hasRemainTask)
                 ThreadMgmt::signal(threadID, ThreadEvent::Wakeup);
-                
         }
 
         if (event == ThreadEvent::Halt)
@@ -317,34 +337,56 @@ vector<int> Worker::getReadyJCs(int count) {
     return result;
 }
 
-void Worker::addTaskQueue(int consumerIdx, int networkID, int dopID) {
-    TaskDef taskDef;
-    taskDef.networkID = networkID;
-    taskDef.dopID = dopID;
+void Worker::addAllocTensorTask(int consumerIdx, int nodeID, int devID, int requestThreadID,
+    string tensorName) {
+    TaskAllocTensor* task = (TaskAllocTensor*)Task::getElem(TaskType::AllocTensor);
+    SASSUME0(task != NULL);     // pool이 넉넉하지 않을때에 대한 전략이 반드시 필요하다
+
+    task->nodeID = nodeID;
+    task->devID = devID;
+    task->requestThreadID = requestThreadID;
+    task->tensorName = tensorName;
 
     SASSUME0(consumerIdx < Worker::taskQueues.size());
     TaskQueue* tq = Worker::taskQueues[consumerIdx];
 
     unique_lock<mutex> lock(tq->mutex);
-    tq->taskDefs.push_back(taskDef);
+    tq->tasks.push_back((TaskBase*)task);
 }
 
-void Worker::addUpdaterTask(int consumerIdx, int networkID, int dopID, int layerID,
-    int planID, vector<UpdateParam> updateParams) {
+void Worker::addRunPlanTask(int consumerIdx, int networkID, int dopID) {
+    TaskRunPlan* task = (TaskRunPlan*)Task::getElem(TaskType::RunPlan);
+    SASSUME0(task != NULL);     // pool이 넉넉하지 않을때에 대한 전략이 반드시 필요하다
 
-    UpdaterTaskDef *def = new UpdaterTaskDef(); // 이거는 Task Consumer가 메모리 해제한다.
-    def->networkID = networkID;
-    def->dopID = dopID;
-    def->layerID = layerID;
-    def->planID = planID;
-    for (int i = 0 ; i < updateParams.size(); i++)
-        def->updateParams.push_back(updateParams[i]);
+    task->networkID = networkID;
+    task->dopID = dopID;
 
     SASSUME0(consumerIdx < Worker::taskQueues.size());
     TaskQueue* tq = Worker::taskQueues[consumerIdx];
 
     unique_lock<mutex> lock(tq->mutex);
-    tq->updaterTaskDefs.push_back(def);
+    tq->tasks.push_back((TaskBase*)task);
+}
+
+void Worker::addUpdateTensorTask(int consumerIdx, int networkID, int dopID, int layerID,
+    int planID, vector<UpdateParam> updateParams) {
+
+    TaskUpdateTensor* task = (TaskUpdateTensor*)Task::getElem(TaskType::UpdateTensor);
+    SASSUME0(task != NULL);
+
+    task->networkID = networkID;
+    task->dopID = dopID;
+    task->layerID = layerID;
+    task->planID = planID;
+
+    for (int i = 0 ; i < updateParams.size(); i++)
+        task->updateParams.push_back(updateParams[i]);
+
+    SASSUME0(consumerIdx < Worker::taskQueues.size());
+    TaskQueue* tq = Worker::taskQueues[consumerIdx];
+
+    unique_lock<mutex> lock(tq->mutex);
+    tq->tasks.push_back((TaskBase*)task);
 }
 
 int Worker::getConsumerIdx(int devIdx) {
