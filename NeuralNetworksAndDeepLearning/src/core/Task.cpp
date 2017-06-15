@@ -60,6 +60,7 @@ void Task::allocTaskPool(TaskType taskType) {
        
         TaskBase* tb = (TaskBase*)elem;
         tb->elemID = i;
+        tb->taskType = taskType;
 
         tp->alloc.push_back(elem);
         tp->freeElemIDList.push_back(i);

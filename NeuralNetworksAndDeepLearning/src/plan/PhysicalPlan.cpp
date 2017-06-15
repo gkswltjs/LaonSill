@@ -68,13 +68,65 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
     return (void*)tensor;
 }
 
+vector<int> PhysicalPlan::getOrderedLayerIDs(int networkID) {
+    map<string, int> doneTensorMap; 
+    map<int, int> doneLayerIDMap;
+
+    vector<int> layerIDs;
+
+    while (true) {
+        for (map<int, PlanAlloc>::iterator iter = this->allocMap.begin();
+            iter !=this->allocMap.end(); iter++) {
+            int layerID = iter->first;
+
+            if (doneLayerIDMap.find(layerID) != doneLayerIDMap.end())
+                continue;
+
+            WorkContext::updateLayer(networkID, layerID);
+            vector<string> inputs = SLPROP_BASE(input);
+            vector<string> outputs = SLPROP_BASE(output);
+
+            bool needTensor = false;
+            for (int i = 0; i < inputs.size(); i++) {
+                if (doneTensorMap.find(inputs[i]) == doneTensorMap.end()) {
+                    needTensor = true;
+                    break;
+                }
+            }
+
+            if (needTensor)
+                continue;
+
+            for (int i = 0; i < outputs.size(); i++) {
+                if (doneTensorMap.find(outputs[i]) == doneTensorMap.end())
+                    doneTensorMap[outputs[i]] = 1;
+            }
+
+            doneLayerIDMap[layerID] = 1;
+            layerIDs.push_back(layerID);
+        }
+
+        if (layerIDs.size() == this->allocMap.size())
+            break;
+    }
+
+    cout << "ordered layerIDs : ";
+    for (int i = 0; i < layerIDs.size(); i++) {
+        cout << layerIDs[i] << " ";
+    }
+    cout << endl;
+
+    return layerIDs;
+}
+
 void PhysicalPlan::allocateTensorInternal(int networkID) {
+    vector<int> orderedIDs = getOrderedLayerIDs(networkID);
+
     map<TensorAllocKey, void*> tensorAllocMap;
-    
-    for (map<int, PlanAlloc>::iterator iter = this->allocMap.begin();
-        iter !=this->allocMap.end(); iter++) {
-        int layerID = iter->first;
-        PlanAlloc planAlloc = iter->second;
+    for (int orderedLayerIdx = 0; orderedLayerIdx < orderedIDs.size(); orderedLayerIdx++) {
+        int layerID = orderedIDs[orderedLayerIdx];
+        SASSUME0(this->allocMap.find(layerID) != this->allocMap.end());
+        PlanAlloc planAlloc = this->allocMap[layerID];
 
         WorkContext::updateLayer(networkID, layerID);
         vector<string> inputs = SLPROP_BASE(input);

@@ -110,6 +110,7 @@ private:
     void runLayer(int planID, bool inference);
     void markFinish(int targetPlanID);     
 
+    std::vector<int> getOrderedLayerIDs(int networkID);
     void allocateTensorInternal(int networkID);
     static void* allocTensorMem(int layerType, void* instancePtr, std::string tensorName,
                                 PlanAlloc planAlloc, bool isInput, int index);

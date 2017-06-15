@@ -166,7 +166,7 @@ bool Updater::updateParams(int networkID, int layerID, int planID, int dopID,
             // makes an updater task and inserts it into updater task queue
             int consumerIdx = Worker::getConsumerIdx(Worker::gpuIdx);
             SASSUME0(consumerIdx >= 0);
-            Worker::addUpdaterTask(consumerIdx, networkID, dopID, layerID, planID,
+            Worker::addUpdateTensorTask(consumerIdx, networkID, dopID, layerID, planID,
                 updateParams);
             return false;
         }
