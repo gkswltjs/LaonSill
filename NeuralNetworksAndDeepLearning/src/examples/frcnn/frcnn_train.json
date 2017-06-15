@@ -483,7 +483,7 @@
 	"configs" :
 	{
 		"batchSize" : 1, 
-		"epochs" : 1000, 
+		"epochs" : 5, 
 		"lossLayer" : ["rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"],
 		"gamma" : 0.1,
 		"saveInterval" : 10000,
@@ -495,7 +495,7 @@
 		"clipGradientsLevel" : 0.0,
 		"lrPolicy" : "Step",
 		"optimizer" : "Momentum",
-		"loadPath" : "/home/jkim/Dev/SOOOA_HOME/network"
+		"loadPath" : "/home/jkim/Dev/SOOOA_HOME/network/VGG_CNN_M_1024_FRCNN_CAFFE.param"
 	}
 
 }

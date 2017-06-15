@@ -503,15 +503,15 @@ void AnchorTargetLayer<Dtype>::destroyLayer(void* instancePtr) {
 template<typename Dtype>
 void AnchorTargetLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
-    SASSERT0(index == 0);
+    SASSERT0(index < 4);
 
     AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
 
     if (isInput) {
-        SASSERT0(layer->_inputData.size() == 0);
+        SASSERT0(layer->_inputData.size() == index);
         layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
     } else {
-        SASSERT0(layer->_outputData.size() == 0);
+        SASSERT0(layer->_outputData.size() == index);
         layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
     }
 }

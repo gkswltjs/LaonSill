@@ -40,6 +40,7 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 				"If weights are used, must specify both inside and outside weights");
 
 		this->_outputData[0]->reshape({1, 1, 1, 1});
+		this->_outputData[0]->mutable_host_grad()[0] = SLPROP(Loss, lossWeight);
 #if SMOOTHL1LOSSLAYER_LOG
 		printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
 				SLPROP_BASE(name).c_str(), 1, 1, 1, 1);
@@ -65,24 +66,43 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 		}
 		// rpn_bbox_targets
 		else if (i == 1) {
-			SASSERT0(this->_inputData[0]->channels() == this->_inputData[1]->channels());
-			SASSERT0(this->_inputData[0]->height() == this->_inputData[1]->height());
-			SASSERT0(this->_inputData[0]->width() == this->_inputData[1]->width());
+			// XXX: FullyConnectedLayer의 output이 (batches, 1, rows, 1)의 현 구조를 반영,
+			// 강제로 bbox_targets의 shape를 조정
+			if (this->_inputData[0]->getShape() != this->_inputData[1]->getShape()) {
+				this->_inputData[1]->reshape({this->_inputData[1]->getShape(2), 1,
+					this->_inputData[1]->getShape(3), 1});
+				assert(this->_inputData[0]->getShape() == this->_inputData[1]->getShape());
+			}
+			//assert(this->_inputData[0]->channels() == this->_inputData[1]->channels());
+			//assert(this->_inputData[0]->height() == this->_inputData[1]->height());
+			//assert(this->_inputData[0]->width() == this->_inputData[1]->width());
 		}
 		// rpn_bbox_inside_weights
 		else if (i == 2) {
 			if (this->hasWeights) {
-				SASSERT0(this->_inputData[0]->channels() == this->_inputData[2]->channels());
-				SASSERT0(this->_inputData[0]->height() == this->_inputData[2]->height());
-				SASSERT0(this->_inputData[0]->width() == this->_inputData[2]->width());
+				if (this->_inputData[0]->getShape() != this->_inputData[2]->getShape()) {
+					this->_inputData[2]->reshape({this->_inputData[2]->getShape(2), 1,
+						this->_inputData[2]->getShape(3), 1});
+					assert(this->_inputData[0]->getShape() ==
+							this->_inputData[2]->getShape());
+				}
+				//assert(this->_inputData[0]->channels() == this->_inputData[2]->channels());
+				//assert(this->_inputData[0]->height() == this->_inputData[2]->height());
+				//assert(this->_inputData[0]->width() == this->_inputData[2]->width());
 			}
 		}
 		// rpn_bbox_outside_weights
 		else if (i == 3) {
 			if (this->hasWeights) {
-				SASSERT0(this->_inputData[0]->channels() == this->_inputData[3]->channels());
-				SASSERT0(this->_inputData[0]->height() == this->_inputData[3]->height());
-				SASSERT0(this->_inputData[0]->width() == this->_inputData[3]->width());
+				if (this->_inputData[0]->getShape() != this->_inputData[3]->getShape()) {
+					this->_inputData[3]->reshape({this->_inputData[3]->getShape(2), 1,
+						this->_inputData[3]->getShape(3), 1});
+					assert(this->_inputData[0]->getShape() ==
+							this->_inputData[3]->getShape());
+				}
+				//assert(this->_inputData[0]->channels() == this->_inputData[3]->channels());
+				//assert(this->_inputData[0]->height() == this->_inputData[3]->height());
+				//assert(this->_inputData[0]->width() == this->_inputData[3]->width());
 			}
 		}
 	}
@@ -315,15 +335,19 @@ void SmoothL1LossLayer<Dtype>::destroyLayer(void* instancePtr) {
 template<typename Dtype>
 void SmoothL1LossLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
-    SASSERT0(index == 0);
+	if (isInput) {
+		SASSERT0(index < 4);
+	} else {
+		SASSERT0(index == 0);
+	}
 
     SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
 
     if (isInput) {
-        SASSERT0(layer->_inputData.size() == 0);
+        SASSERT0(layer->_inputData.size() == index);
         layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
     } else {
-        SASSERT0(layer->_outputData.size() == 0);
+        SASSERT0(layer->_outputData.size() == index);
         layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
     }
 }

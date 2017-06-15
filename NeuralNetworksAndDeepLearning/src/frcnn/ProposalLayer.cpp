@@ -379,15 +379,19 @@ void ProposalLayer<Dtype>::destroyLayer(void* instancePtr) {
 template<typename Dtype>
 void ProposalLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
-    SASSERT0(index == 0);
+	if (isInput) {
+		SASSERT0(index < 3);
+	} else {
+		SASSERT0(index < 1);
+	}
 
     ProposalLayer<Dtype>* layer = (ProposalLayer<Dtype>*)instancePtr;
 
     if (isInput) {
-        SASSERT0(layer->_inputData.size() == 0);
+        SASSERT0(layer->_inputData.size() == index);
         layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
     } else {
-        SASSERT0(layer->_outputData.size() == 0);
+        SASSERT0(layer->_outputData.size() == index);
         layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
     }
 }
