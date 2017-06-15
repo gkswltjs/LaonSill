@@ -48,6 +48,8 @@ PlanDef* LogicalPlan::findPlanDef(LogicalPlan* lp, int planID) {
 //     - inplace layer : 자신의 인풋과 아웃풋이 동일한 경우
 //     - split layer : A, B, C 3개의 레이어가 존재하는 경우에..
 //                     A의 output이 B,C의 input이 되는 경우를 의미
+//
+//  planDefMap : key=>layerID, value=>PlanBuildDef
 void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
     // (1) fill input2ID & output2ID map
     map<string, vector<int>> input2IDMap;   // tensor name을 기준으로 input ID map
@@ -286,11 +288,25 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         int splitOutputCount = outputIDs.size() - inputIDs.size() + 1;
         vector<string> splitLayerOutputDataNames;
         vector<string> splitLayerInputDataNames;
-        string splitLayerName = key + "_split";
+
+        int frontSplitLayerID = inputIDs[inputIDs.size() - 1];
+        WorkContext::updateLayer(networkID, frontSplitLayerID);
+
+        int splitLayerDataIdx = -1;
+        for (int i = 0; i < SLPROP_BASE(output).size(); i++) {
+            if (SLPROP_BASE(output)[i] == key) {
+                splitLayerDataIdx = i;
+                break;
+            }
+        }
+        SASSUME0(splitLayerDataIdx >= 0);
+
+        string splitLayerName = key + "_" + SLPROP_BASE(name) + "_" +
+            to_string(splitLayerDataIdx) + "_split";
         char splitLayerTempDataName[64];
 
         for (int i = 0; i < splitOutputCount; i++) {
-            sprintf(splitLayerTempDataName, "%s_split_%d", key.c_str(), i);
+            sprintf(splitLayerTempDataName, "%s_%d", splitLayerName.c_str(), i);
             splitLayerOutputDataNames.push_back(string(splitLayerTempDataName));
         }
         splitLayerInputDataNames.push_back(key);
@@ -359,7 +375,15 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
             PlanDef* splitOutputPlanDef = LogicalPlan::findPlanDef(lp, splitOutputID);
             WorkContext::updateLayer(networkID, splitOutputPlanDef->layerID);
 
-            SLPROP(Split, input).push_back(splitLayerOutputDataNames[i]);
+            bool found = false;
+            for (int j = 0; j < SLPROP_BASE(input).size(); j++) {
+                if (SLPROP_BASE(input)[j] == key) {
+                    SLPROP_BASE(input)[j] = splitLayerOutputDataNames[i];
+                    found = true;
+                    break;
+                }
+            }
+            SASSUME0(found == true);
         }
 
         curLayerID++;
