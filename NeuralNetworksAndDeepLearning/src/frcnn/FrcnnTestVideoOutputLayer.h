@@ -1,12 +1,12 @@
 /*
- * FrcnnTestOutputLayer.h
+ * FrcnnTestVideoOutputLayer.h
  *
- *  Created on: Dec 16, 2016
+ *  Created on: May 30, 2017
  *      Author: jkim
  */
 
-#ifndef FRCNNTESTOUTPUTLAYER_H_
-#define FRCNNTESTOUTPUTLAYER_H_
+#ifndef FRCNNTESTVIDEOOUTPUTLAYER_H_
+#define FRCNNTESTVIDEOOUTPUTLAYER_H_
 
 #include "BaseLayer.h"
 #include "SysLog.h"
@@ -14,10 +14,10 @@
 #include "ssd_common.h"
 
 template <typename Dtype>
-class FrcnnTestOutputLayer : public Layer<Dtype> {
+class FrcnnTestVideoOutputLayer : public Layer<Dtype> {
 public:
-	FrcnnTestOutputLayer();
-	virtual ~FrcnnTestOutputLayer();
+	FrcnnTestVideoOutputLayer();
+	virtual ~FrcnnTestVideoOutputLayer();
 
 	virtual void reshape();
 	virtual void feedforward();
@@ -39,7 +39,6 @@ public:
 	std::vector<cv::Scalar> boxColors;
 	LabelMap<Dtype> labelMap;
 
-
 public:
     /****************************************************************************
      * layer callback functions
@@ -53,4 +52,4 @@ public:
     static void learnTensor(void* instancePtr);
 };
 
-#endif /* FRCNNTESTOUTPUTLAYER_H_ */
+#endif /* FRCNNTESTVIDEOOUTPUTLAYER_H_ */

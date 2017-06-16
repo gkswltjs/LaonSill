@@ -19,6 +19,7 @@
 #include "common.h"
 #include "Data.h"
 #include "LayerConfig.h"
+#include "SysLog.h"
 
 /**
  * @brief 레이어 베이스 추상 클래스, 모든 레이어는 이 클래스를 상속받아 구현한다.
@@ -79,9 +80,22 @@ public:
 		RoIPooling,				//
 		RoIInput,
 		RoITestInput,
+		RoITestVideoInput,
 		FrcnnTestOutput,
+		FrcnnTestVideoOutput,
+
+		AnnotationData,
+		Normalize,
+		Permute,
+		Flatten,
+		PriorBox,
+		Concat,
+		MultiBoxLoss,
+		DetectionOutput,
+		DetectionEvaluate,
 
 		Relu,
+		Accuracy,
         DropOut,
         DummyInput,
         LayerTypeMax
@@ -150,10 +164,14 @@ public:
 	virtual void feedforward();
 	virtual void backpropagation();
 
+	virtual void printDataConfig();
 
 protected:
 	bool _adjustInputShape();
 	bool _isInputShapeChanged(uint32_t index);
+
+	void _printOn();
+	void _printOff();
 
 public:
 	std::vector<Data<Dtype>*> _inputData;				///< 레이어 입력 데이터 목록 벡터

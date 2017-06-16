@@ -36,22 +36,24 @@ public:
 			RoIDBUtil::computeTargets(roidb[i]);
 		}
 
-		//std::vector<std::vector<float>> means;
-		//np_tile({0.0f, 0.0f, 0.0f, 0.0f}, numClasses, means);
+
+		assert(TRAIN_BBOX_NORMALIZE_TARGETS_PRECOMPUTED);
 		np_tile(TRAIN_BBOX_NORMALIZE_MEANS, numClasses, means);
 #if ROIDBUTIL_LOG
 		print2dArray("bbox target means", means);
 #endif
-
-		//std::vector<std::vector<float>> stds;
-		//np_tile({0.1f, 0.1f, 0.2f, 0.2f}, numClasses, stds);
 		np_tile(TRAIN_BBOX_NORMALIZE_STDS, numClasses, stds);
 #if ROIDBUTIL_LOG
 		print2dArray("bbox target stdeves", stds);
 #endif
 
 
-		/*
+		// XXX: 정답 box로 target을 구했기 때문에 target값이 모두 0,
+		// 따라서 표준 mean, std로 normalize해봤자 항상 0,
+		// 현재로는 의미가 없어서 빼두지만 custom mean, std를 사용할 경우
+		// 적절히 처리를 해줘야 할 것.
+		// 까먹을 가능성도 있는데 !!!
+#if 0
 		// Normalize targets
 		std::cout << "Normalizing targets" << std::endl;
 		for (uint32_t i = 0; i < numImages; i++) {
@@ -71,7 +73,7 @@ public:
 			print2dArray("bbox_targets", targets);
 #endif
 		}
-		*/
+#endif
 	}
 
 	static void computeTargets(RoIDB& roidb) {

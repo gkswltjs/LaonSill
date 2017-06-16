@@ -39,6 +39,7 @@ uint32_t SyncMem<float>::bound_mem() {
 	checkCudaErrors(cudaMemcpy(_d_int, &_h_int, sizeof(uint32_t), cudaMemcpyHostToDevice));
 	BoundMem<<<SOOOA_GET_BLOCKS((unsigned int)_size), SOOOA_CUDA_NUM_THREADS>>>(
 			d_mem, bound, _d_int, (unsigned int)_size);
+	CUDA_POST_KERNEL_CHECK;
 	checkCudaErrors(cudaMemcpyAsync(&_h_int, _d_int, sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
 	return _h_int;

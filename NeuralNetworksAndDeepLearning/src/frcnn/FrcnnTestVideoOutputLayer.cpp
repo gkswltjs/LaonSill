@@ -1,7 +1,7 @@
 /*
- * FrcnnTestOutputLayer.cpp
+ * FrcnnTestVideoOutputLayer.cpp
  *
- *  Created on: Dec 16, 2016
+ *  Created on: May 30, 2017
  *      Author: jkim
  */
 
@@ -9,26 +9,25 @@
 #include <array>
 
 
-#include "FrcnnTestOutputLayer.h"
+#include "FrcnnTestVideoOutputLayer.h"
 #include "BboxTransformUtil.h"
 #include "PropMgmt.h"
 
-#define FRCNNTESTOUTPUTLAYER_LOG 0
+#define FRCNNTESTVIDEOOUTPUTLAYER_LOG 0
 
 using namespace std;
 
 
 template <typename Dtype>
-FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer()
+FrcnnTestVideoOutputLayer<Dtype>::FrcnnTestVideoOutputLayer()
 : Layer<Dtype>(),
-  labelMap(SLPROP(FrcnnTestOutput, labelMapPath)) {
-	this->type = Layer<Dtype>::FrcnnTestOutput;
+  labelMap(SLPROP(FrcnnTestVideoOutput, labelMapPath)) {
+	this->type = Layer<Dtype>::FrcnnTestVideoOutput;
 	/*
 	this->classes = {"__background__", "aeroplane", "bicycle", "bird", "boat", "bottle",
 			"bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
 			"person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
 			*/
-
 	this->labelMap.build();
 
 	this->boxColors.push_back(cv::Scalar(10, 163, 240));
@@ -54,14 +53,18 @@ FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer()
 	this->boxColors.push_back(cv::Scalar(169, 171, 0));
 	this->boxColors.push_back(cv::Scalar(255, 0, 170));
 	this->boxColors.push_back(cv::Scalar(0, 193, 216));
+
+	cv::namedWindow("result");
 }
 
 template <typename Dtype>
-FrcnnTestOutputLayer<Dtype>::~FrcnnTestOutputLayer() {}
+FrcnnTestVideoOutputLayer<Dtype>::~FrcnnTestVideoOutputLayer() {
+
+}
 
 
 template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::reshape() {
+void FrcnnTestVideoOutputLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
 
 	const uint32_t inputSize = this->_inputData.size();
@@ -79,7 +82,7 @@ void FrcnnTestOutputLayer<Dtype>::reshape() {
 
 
 template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::feedforward() {
+void FrcnnTestVideoOutputLayer<Dtype>::feedforward() {
 	reshape();
 
 	vector<vector<Dtype>> scores;
@@ -91,9 +94,9 @@ void FrcnnTestOutputLayer<Dtype>::feedforward() {
 
 
 template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::imDetect(vector<vector<Dtype>>& scores, vector<vector<Dtype>>& predBoxes) {
+void FrcnnTestVideoOutputLayer<Dtype>::imDetect(vector<vector<Dtype>>& scores, vector<vector<Dtype>>& predBoxes) {
 
-#if FRCNNTESTOUTPUTLAYER_LOG
+#if FRCNNTESTVIDEOOUTPUTLAYER_LOG_LOG
 	this->_printOn();
 	this->_inputData[0]->print_data({}, false, -1);		// rois
 	this->_inputData[1]->print_data({}, false, -1);		// im_info
@@ -128,7 +131,7 @@ void FrcnnTestOutputLayer<Dtype>::imDetect(vector<vector<Dtype>>& scores, vector
 		*/
 	}
 
-#if FRCNNTESTOUTPUTLAYER_LOG
+#if FRCNNTESTVIDEOOUTPUTLAYER_LOG
 	print2dArray("boxes", boxes);
 	this->_printOn();
 	this->_inputData[3]->print_data({}, false);
@@ -150,7 +153,7 @@ void FrcnnTestOutputLayer<Dtype>::imDetect(vector<vector<Dtype>>& scores, vector
 	//BboxTransformUtil::clipBoxes(predBoxes,
 	//		{round(imHeight), round(imWidth)});
 
-#if FRCNNTESTOUTPUTLAYER_LOG
+#if FRCNNTESTVIDEOOUTPUTLAYER_LOG
 	print2dArray("boxes", boxes);
 	//print2dArray("scores", scores);
 	print2dArray("predBoxes", predBoxes);
@@ -158,7 +161,7 @@ void FrcnnTestOutputLayer<Dtype>::imDetect(vector<vector<Dtype>>& scores, vector
 }
 
 template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
+void FrcnnTestVideoOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 		vector<vector<Dtype>>& boxes) {
 
 
@@ -198,7 +201,7 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 
 
 
-	const Dtype confThresh = Dtype(0.7);
+	const Dtype confThresh = Dtype(SLPROP(FrcnnTestVideoOutput, thresh));
 	const Dtype nmsThresh = Dtype(0.3);
 
 	vector<vector<float>> result;
@@ -247,14 +250,28 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 		}
 	}
 
-	if (Util::imagePath.size() == 0)
-		Util::imagePath = "/home/jkim/Dev/git/py-faster-rcnn-v/data/demo/000010.jpg";
+
+
+	/*
+	cv::Mat im;
+	for (int i = 0; i < 3; i++) {
+		if (!this->cap.grab()) {
+			cout << "end of video ... " << endl;
+			cv::waitKey(0);
+			exit(1);
+		}
+	}
+	this->cap.retrieve(im);
+	*/
+
+	//cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
+
+	Dtype* data = this->_inputData[4]->mutable_host_data();
+	cv::Mat im = cv::Mat(this->_inputData[4]->getShape(1), this->_inputData[4]->getShape(2), CV_32FC3, data);
+	im.convertTo(im, CV_8UC3);
 
 
 
-	//const Dtype imScale = this->_inputData[1]->host_data()[2];
-	cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
-	//cv::resize(im, im, cv::Size(), imScale, imScale, CV_INTER_LINEAR);
 	uint32_t numBoxes = result.size();
 
 	for (uint32_t i = 0; i < numBoxes; i++) {
@@ -268,17 +285,18 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 				result[i][2]+15.0f), 2, 0.5f, boxColors[clsInd-1]);
 	}
 
-	if (SLPROP(FrcnnTestOutput, savePath) == "") {
+	if (SLPROP(FrcnnTestVideoOutput, savePath) == "") {
 		const string windowName = "result";
-		cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		//cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
 		cv::imshow(windowName, im);
 
-		if (true) {
-			cv::waitKey(0);
+		if (cv::waitKey(30) == 'c') {
 			cv::destroyAllWindows();
+			exit(1);
 		}
 	} else {
-		cv::imwrite(SLPROP(FrcnnTestOutput, savePath) + "/" + Util::imagePath.substr(Util::imagePath.length()-10), im);
+		//cv::imwrite(SLPROP(FrcnnTestVideoOutput, savePath) + "/" + Util::imagePath.substr(Util::imagePath.length()-10), im);
+		//cv::imwrite(SLPROP(FrcnnTestVideoOutput, savePath) + "/" + to_string(this->fps++) + ".jpg", im);
 	}
 
 	/*
@@ -290,7 +308,7 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 }
 
 template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::fillClsScores(vector<vector<Dtype>>& scores, int clsInd,
+void FrcnnTestVideoOutputLayer<Dtype>::fillClsScores(vector<vector<Dtype>>& scores, int clsInd,
 		vector<Dtype>& clsScores) {
 
 	const int size = scores.size();
@@ -301,7 +319,7 @@ void FrcnnTestOutputLayer<Dtype>::fillClsScores(vector<vector<Dtype>>& scores, i
 }
 
 template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::fillClsBoxes(vector<vector<Dtype>>& boxes, int clsInd,
+void FrcnnTestVideoOutputLayer<Dtype>::fillClsBoxes(vector<vector<Dtype>>& boxes, int clsInd,
 		vector<vector<Dtype>>& clsBoxes) {
 	const int size = boxes.size();
 	clsBoxes.resize(size);
@@ -323,23 +341,23 @@ void FrcnnTestOutputLayer<Dtype>::fillClsBoxes(vector<vector<Dtype>>& boxes, int
  * layer callback functions
  ****************************************************************************/
 template<typename Dtype>
-void* FrcnnTestOutputLayer<Dtype>::initLayer() {
-    FrcnnTestOutputLayer* layer = new FrcnnTestOutputLayer<Dtype>();
+void* FrcnnTestVideoOutputLayer<Dtype>::initLayer() {
+    FrcnnTestVideoOutputLayer* layer = new FrcnnTestVideoOutputLayer<Dtype>();
     return (void*)layer;
 }
 
 template<typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::destroyLayer(void* instancePtr) {
-    FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+void FrcnnTestVideoOutputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    FrcnnTestVideoOutputLayer<Dtype>* layer = (FrcnnTestVideoOutputLayer<Dtype>*)instancePtr;
     delete layer;
 }
 
 template<typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+void FrcnnTestVideoOutputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
     SASSERT0(index == 0);
 
-    FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+    FrcnnTestVideoOutputLayer<Dtype>* layer = (FrcnnTestVideoOutputLayer<Dtype>*)instancePtr;
 
     if (isInput) {
         SASSERT0(layer->_inputData.size() == 0);
@@ -351,48 +369,31 @@ void FrcnnTestOutputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensor
 }
 
 template<typename Dtype>
-bool FrcnnTestOutputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
-    FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+bool FrcnnTestVideoOutputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    FrcnnTestVideoOutputLayer<Dtype>* layer = (FrcnnTestVideoOutputLayer<Dtype>*)instancePtr;
     layer->reshape();
     return true;
 }
 
 template<typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-	FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+void FrcnnTestVideoOutputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	FrcnnTestVideoOutputLayer<Dtype>* layer = (FrcnnTestVideoOutputLayer<Dtype>*)instancePtr;
 	layer->feedforward();
 }
 
 template<typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::backwardTensor(void* instancePtr) {
-	FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+void FrcnnTestVideoOutputLayer<Dtype>::backwardTensor(void* instancePtr) {
+	FrcnnTestVideoOutputLayer<Dtype>* layer = (FrcnnTestVideoOutputLayer<Dtype>*)instancePtr;
 	layer->backpropagation();
 }
 
 template<typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::learnTensor(void* instancePtr) {
+void FrcnnTestVideoOutputLayer<Dtype>::learnTensor(void* instancePtr) {
     SASSERT0(false);
 }
 
 
-template class FrcnnTestOutputLayer<float>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+template class FrcnnTestVideoOutputLayer<float>;
 
 
 

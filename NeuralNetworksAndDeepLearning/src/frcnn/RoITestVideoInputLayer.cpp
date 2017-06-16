@@ -1,7 +1,7 @@
 /*
- * RoITestInputLayer.cpp
+ * RoITestVideoInputLayer.cpp
  *
- *  Created on: Dec 16, 2016
+ *  Created on: May 30, 2017
  *      Author: jkim
  */
 
@@ -10,30 +10,28 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "common.h"
-#include "RoITestInputLayer.h"
+#include "RoITestVideoInputLayer.h"
 #include "PascalVOC.h"
 #include "frcnn_common.h"
 #include "RoIDBUtil.h"
 #include "MockDataSet.h"
+#include "SysLog.h"
+#include "Util.h"
 #include "PropMgmt.h"
 
 
-#define ROITESTINPUTLAYER_LOG 0
+#define ROITESTVIDEOINPUTLAYER_LOG 0
 
 using namespace std;
 
 template <typename Dtype>
-RoITestInputLayer<Dtype>::RoITestInputLayer()
-: InputLayer<Dtype>() {
-	this->type = Layer<Dtype>::RoITestInput;
+RoITestVideoInputLayer<Dtype>::RoITestVideoInputLayer()
+: InputLayer<Dtype>(),
+  cap(SLPROP(RoITestVideoInput, videoPath)) {
+	this->type = Layer<Dtype>::RoITestVideoInput;
 
-	this->imdb = getImdb("voc_2007_test");
-	const uint32_t numImages = imdb->imageIndex.size();
-	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, numImages, 50, 1);
-
-	this->perm.resize(numImages);
-	iota(this->perm.begin(), this->perm.end(), 0);
-	this->cur = 0;
+	SASSERT(this->cap.isOpened(), "Could not open video %s", SLPROP(RoITestVideoInput, videoPath).c_str());
+	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, 1, 50, 1);
 
 	this->boxColors.push_back(cv::Scalar(10, 163, 240));
 	this->boxColors.push_back(cv::Scalar(44, 90, 130));
@@ -59,16 +57,17 @@ RoITestInputLayer<Dtype>::RoITestInputLayer()
 	this->boxColors.push_back(cv::Scalar(255, 0, 170));
 	this->boxColors.push_back(cv::Scalar(0, 193, 216));
 
+
 }
 
 template <typename Dtype>
-RoITestInputLayer<Dtype>::~RoITestInputLayer() {
-	delete imdb;
+RoITestVideoInputLayer<Dtype>::~RoITestVideoInputLayer() {
+
 }
 
 
 template <typename Dtype>
-void RoITestInputLayer<Dtype>::reshape() {
+void RoITestVideoInputLayer<Dtype>::reshape() {
 	// 입력 레이어의 경우 outputs만 사용자가 설정,
 	// inputs에 대해 outputs와 동일하게 Data 참조하도록 강제한다.
 	if (this->_inputData.size() < 1) {
@@ -92,9 +91,9 @@ void RoITestInputLayer<Dtype>::reshape() {
 			this->_inputData[0]->reshape(dataShape);
 			this->_inputShape[0] = dataShape;
 
-#if ROITESTINPUTLAYER_LOG
+#if ROITESTVIDEOINPUTLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-					SLPROP_BASE(name).c_str(),
+					this->name.c_str(),
 					dataShape[0], dataShape[1], dataShape[2], dataShape[3]);
 #endif
 		}
@@ -104,11 +103,17 @@ void RoITestInputLayer<Dtype>::reshape() {
 			this->_inputShape[1] = iminfoShape;
 			this->_inputData[1]->reshape(iminfoShape);
 
-#if ROITESTINPUTLAYER_LOG
+#if ROITESTVIDEOINPUTLAYER_LOG
 			printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
-					SLPROP_BASE(name).c_str(),
+					this->name.c_str(),
 					iminfoShape[0], iminfoShape[1], iminfoShape[2], iminfoShape[3]);
 #endif
+		}
+		// "raw_im"
+		else if (i == 2) {
+			const vector<uint32_t> rawImShape = {1, 1, 1, 1};
+			this->_inputShape[2] = rawImShape;
+			this->_inputData[2]->reshape(rawImShape);
 		}
 	}
 }
@@ -116,101 +121,52 @@ void RoITestInputLayer<Dtype>::reshape() {
 
 
 template <typename Dtype>
-void RoITestInputLayer<Dtype>::feedforward() {
+void RoITestVideoInputLayer<Dtype>::feedforward() {
 	reshape();
 	getNextMiniBatch();
 }
 
 template <typename Dtype>
-void RoITestInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
+void RoITestVideoInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 	reshape();
 	getNextMiniBatch();
 }
 
 
 template <typename Dtype>
-IMDB* RoITestInputLayer<Dtype>::combinedRoidb(const string& imdb_name) {
-	IMDB* imdb = getRoidb(imdb_name);
-	return imdb;
+void RoITestVideoInputLayer<Dtype>::getNextMiniBatch() {
+	cv::Mat frame;
+	for (int i = 0; i < 3; i++) {
+		if (!this->cap.grab()) {
+			cout << "END OF VIDEO ... " << endl;
+			exit(1);
+		}
+	}
+	this->cap.retrieve(frame);
+	getImageBlob(frame);
 }
 
-template <typename Dtype>
-IMDB* RoITestInputLayer<Dtype>::getRoidb(const string& imdb_name) {
-
-	cout << "Loaded dataset " << imdb->name << " for testing ... " << endl;
-
-	return imdb;
-}
 
 template <typename Dtype>
-IMDB* RoITestInputLayer<Dtype>::getImdb(const string& imdb_name) {
-	IMDB* imdb = new PascalVOC(SLPROP(RoITestInput, imageSet), SLPROP(RoITestInput, dataName),
-			SLPROP(RoITestInput, dataPath), SLPROP(RoITestInput, labelMapPath),
-			SLPROP(RoITestInput, pixelMeans));
-
-	//"pt", "2007",
-	//"/home/jkim/Dev/git/py-faster-rcnn-v/data/VOCdevkit2007",
-	//SLPROP(RoITestInput, pixelMeans));
-	//imdb->loadGtRoidb();
-
-	return imdb;
-}
-
-template <typename Dtype>
-void RoITestInputLayer<Dtype>::getNextMiniBatch() {
-	//if (this->cur >= this->imdb->imageIndex.size()) {
-		//this->cur = 0;
-	//}
-
-
-	uint32_t index = this->perm[this->cur];
-
-	const string imagePath = imdb->imagePathAt(index);
-	Util::imagePath = imagePath;
-	cv::Mat im = cv::imread(imagePath);
-	//showImageMat(im, false);
-	cout << "test image: " << imagePath <<
-			" (" << im.rows << "x" << im.cols << ")" << endl;
-
-	/*
-	vector<string> boxLabelsText;
-	for (uint32_t i = 0; i < imdb->roidb[index].boxes.size(); i++)
-		boxLabelsText.push_back(imdb->convertIndToClass(imdb->roidb[index].gt_classes[i]));
-
-	displayBoxesOnImage("TEST_GT", imagePath, 1, imdb->roidb[index].boxes,
-			imdb->roidb[index].gt_classes, boxLabelsText, this->boxColors, 0, -1, false);
-			*/
-
-	// Mat으로 input data에 해당하는 'data'와 'im_info' Data 초기화
-	// feedforward 준비 완료
-	getBlobs(im);
-
-	this->cur++;
-}
-
-template <typename Dtype>
-void RoITestInputLayer<Dtype>::imDetect(cv::Mat& im) {
-
-}
-
-template <typename Dtype>
-float RoITestInputLayer<Dtype>::getBlobs(cv::Mat& im) {
-	return getImageBlob(im);
-}
-
-template <typename Dtype>
-float RoITestInputLayer<Dtype>::getImageBlob(cv::Mat& im) {
+float RoITestVideoInputLayer<Dtype>::getImageBlob(cv::Mat& im) {
 	cv::Mat imOrig;
 	im.copyTo(imOrig);
 	imOrig.convertTo(imOrig, CV_32F);
+
+
+	im.convertTo(im, CV_32FC3);
+	const vector<uint32_t> rawImShape = {1, (uint32_t)im.rows, (uint32_t)im.cols, 3};
+	this->_inputData[2]->reshape(rawImShape);
+	this->_inputData[2]->set_host_data((Dtype*)im.data);
+
 
 	float* imPtr = (float*)imOrig.data;
 
 	int n = imOrig.rows * imOrig.cols * imOrig.channels();
 	for (int i = 0; i < n; i+=3) {
-		imPtr[i+0] -= SLPROP(RoITestInput, pixelMeans)[0];
-		imPtr[i+1] -= SLPROP(RoITestInput, pixelMeans)[1];
-		imPtr[i+2] -= SLPROP(RoITestInput, pixelMeans)[2];
+		imPtr[i+0] -= SLPROP(RoITestVideoInput, pixelMeans)[0];
+		imPtr[i+1] -= SLPROP(RoITestVideoInput, pixelMeans)[1];
+		imPtr[i+2] -= SLPROP(RoITestVideoInput, pixelMeans)[2];
 	}
 
 	const vector<uint32_t> imShape = {(uint32_t)imOrig.cols, (uint32_t)imOrig.rows,
@@ -248,59 +204,26 @@ float RoITestInputLayer<Dtype>::getImageBlob(cv::Mat& im) {
 
 
 
-
-
-
-template <typename Dtype>
-void RoITestInputLayer<Dtype>::imToBlob(cv::Mat& im) {
-	// Convert a list of images into a network input.
-	// Assumes images are already prepared (means subtracted, BGR order, ...)
-
-	vector<uint32_t> maxShape = {(uint32_t)im.rows, (uint32_t)im.cols,
-			(uint32_t)im.channels()};
-
-	const vector<uint32_t> inputShape = {1, maxShape[0], maxShape[1], 3};
-	this->_inputData[0]->reshape(inputShape);
-	this->_inputData[0]->set_host_data((Dtype*)im.data);
-
-#if ROITESTINPUTLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	this->_inputData[0]->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-#endif
-
-	// Move channels (axis 3) to axis 1
-	// Axis order will become: (batch elem, channel, height, width)
-	const vector<uint32_t> channelSwap = {0, 3, 1, 2};
-	this->_inputData[0]->transpose(channelSwap);
-	this->_inputShape[0] = this->_inputData[0]->getShape();
-
-	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-			SLPROP_BASE(name).c_str(),
-			this->_inputShape[0][0], this->_inputShape[0][1],
-			this->_inputShape[0][2], this->_inputShape[0][3]);
-
-#if ROITESTINPUTLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	this->_inputData[0]->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-#endif
-}
-
 template<typename Dtype>
-int RoITestInputLayer<Dtype>::getNumTrainData() {
+int RoITestVideoInputLayer<Dtype>::getNumTrainData() {
     return this->_dataSet->getNumTrainData();
 }
 
 template<typename Dtype>
-int RoITestInputLayer<Dtype>::getNumTestData() {
+int RoITestVideoInputLayer<Dtype>::getNumTestData() {
     return this->_dataSet->getNumTestData();
 }
 
 template<typename Dtype>
-void RoITestInputLayer<Dtype>::shuffleTrainDataSet() {
+void RoITestVideoInputLayer<Dtype>::shuffleTrainDataSet() {
     return this->_dataSet->shuffleTrainDataSet();
 }
+
+
+
+
+
+
 
 
 
@@ -310,23 +233,23 @@ void RoITestInputLayer<Dtype>::shuffleTrainDataSet() {
  * layer callback functions
  ****************************************************************************/
 template<typename Dtype>
-void* RoITestInputLayer<Dtype>::initLayer() {
-    RoITestInputLayer* layer = new RoITestInputLayer<Dtype>();
+void* RoITestVideoInputLayer<Dtype>::initLayer() {
+    RoITestVideoInputLayer* layer = new RoITestVideoInputLayer<Dtype>();
     return (void*)layer;
 }
 
 template<typename Dtype>
-void RoITestInputLayer<Dtype>::destroyLayer(void* instancePtr) {
-    RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
+void RoITestVideoInputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    RoITestVideoInputLayer<Dtype>* layer = (RoITestVideoInputLayer<Dtype>*)instancePtr;
     delete layer;
 }
 
 template<typename Dtype>
-void RoITestInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+void RoITestVideoInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
     SASSERT0(index == 0);
 
-    RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
+    RoITestVideoInputLayer<Dtype>* layer = (RoITestVideoInputLayer<Dtype>*)instancePtr;
 
     if (isInput) {
         SASSERT0(layer->_inputData.size() == 0);
@@ -338,28 +261,32 @@ void RoITestInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr
 }
 
 template<typename Dtype>
-bool RoITestInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
-    RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
+bool RoITestVideoInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    RoITestVideoInputLayer<Dtype>* layer = (RoITestVideoInputLayer<Dtype>*)instancePtr;
     layer->reshape();
     return true;
 }
 
 template<typename Dtype>
-void RoITestInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-	RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
+void RoITestVideoInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	RoITestVideoInputLayer<Dtype>* layer = (RoITestVideoInputLayer<Dtype>*)instancePtr;
 	layer->feedforward();
 }
 
 template<typename Dtype>
-void RoITestInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+void RoITestVideoInputLayer<Dtype>::backwardTensor(void* instancePtr) {
     SASSERT0(false);
 }
 
 template<typename Dtype>
-void RoITestInputLayer<Dtype>::learnTensor(void* instancePtr) {
+void RoITestVideoInputLayer<Dtype>::learnTensor(void* instancePtr) {
     SASSERT0(false);
 }
 
 
 
-template class RoITestInputLayer<float>;
+
+
+
+
+template class RoITestVideoInputLayer<float>;

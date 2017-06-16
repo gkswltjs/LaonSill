@@ -18,21 +18,18 @@ using namespace std;
 
 template <typename Dtype>
 AnchorTargetLayer<Dtype>::AnchorTargetLayer()
-: Layer<Dtype>() {
+	: Layer<Dtype>() {
 	this->type = Layer<Dtype>::AnchorTarget;
 
-	const vector<uint32_t>& scales = SLPROP(AnchorTarget, scales);
-	GenerateAnchorsUtil::generateAnchors(this->anchors, scales);
+	GenerateAnchorsUtil::generateAnchors(this->anchors, SLPROP(AnchorTarget, scales));
 	this->numAnchors = this->anchors.size();
 
 	print2dArray("anchors", this->anchors);
 }
 
-
 template <typename Dtype>
-AnchorTargetLayer<Dtype>::~AnchorTargetLayer() {
+AnchorTargetLayer<Dtype>::~AnchorTargetLayer() {}
 
-}
 
 
 template <typename Dtype>
@@ -55,13 +52,13 @@ void AnchorTargetLayer<Dtype>::reshape() {
 #endif
 
 	// labels
-	this->_outputData[0]->reshape({1, 1, this->numAnchors * height, width});
+	this->_outputData[0]->reshape({1, 1, this->numAnchors*height, width});
 	// bbox_targets
-	this->_outputData[1]->reshape({1, this->numAnchors * 4, height, width});
+	this->_outputData[1]->reshape({1, this->numAnchors*4, height, width});
 	// bbox_inside_weights
-	this->_outputData[2]->reshape({1, this->numAnchors * 4, height, width});
+	this->_outputData[2]->reshape({1, this->numAnchors*4, height, width});
 	// bbox_outside_weights
-	this->_outputData[3]->reshape({1, this->numAnchors * 4, height, width});
+	this->_outputData[3]->reshape({1, this->numAnchors*4, height, width});
 }
 
 template <typename Dtype>
@@ -122,14 +119,13 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 		shifts[i].resize(4);
 
 
-	const uint32_t featStride = SLPROP(AnchorTarget, featStride);
 	for (uint32_t i = 0; i < height; i++) {
 		for (uint32_t j = 0; j < width; j++) {
 			vector<uint32_t>& shift = shifts[i*width+j];
-			shift[0] = j * featStride;
-			shift[2] = j * featStride;
-			shift[1] = i * featStride;
-			shift[3] = i * featStride;
+			shift[0] = j * SLPROP(AnchorTarget, featStride);
+			shift[2] = j * SLPROP(AnchorTarget, featStride);
+			shift[1] = i * SLPROP(AnchorTarget, featStride);
+			shift[3] = i * SLPROP(AnchorTarget, featStride);
 		}
 	}
 #if ANCHORTARGETLAYER_LOG
@@ -166,15 +162,14 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	vector<vector<float>> anchors;
 
 	// scale된 이미지 height, width
-	const uint32_t allowedBorder = SLPROP(AnchorTarget, allowedBorder);
 	const uint32_t orgHeight = imInfo[0];
 	const uint32_t orgWidth = imInfo[1];
 	for (uint32_t i = 0; i < totalAnchors; i++) {
 		vector<float>& tempAnchor = allAnchors[i];
-		if ((tempAnchor[0] >= -allowedBorder) &&
-				(tempAnchor[1] >= -allowedBorder) &&
-				(tempAnchor[2] < orgWidth + allowedBorder) &&
-				(tempAnchor[3] < orgHeight + allowedBorder)) {
+		if ((tempAnchor[0] >= -SLPROP(AnchorTarget, allowedBorder)) &&
+			(tempAnchor[1] >= -SLPROP(AnchorTarget, allowedBorder)) &&
+			(tempAnchor[2] < orgWidth + SLPROP(AnchorTarget, allowedBorder)) &&
+			(tempAnchor[3] < orgHeight + SLPROP(AnchorTarget, allowedBorder))) {
 			anchors.push_back(tempAnchor);
 			indsInside.push_back(i);
 		}
@@ -285,17 +280,25 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	np_where_s(labels, EQ, 1, fgInds);
 	uint32_t finalNumFg = fgInds.size();
 	if (fgInds.size() > numFg) {
-#if TEST_MODE
-		for (uint32_t i = numFg; i < fgInds.size(); i++) {
-			labels[fgInds[i]] = -1;
-		}
-		finalNumFg = numFg;
-#else
+#if !SOOOA_DEBUG
 		vector<uint32_t> disableInds;
 		npr_choice(fgInds, fgInds.size()-numFg, disableInds);
+
+		assert(disableInds.size() == fgInds.size() - numFg);
+
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumFg -= disableInds.size();
+
+		assert(finalNumFg == numFg);
+
+
+
+#else
+		for (int i = 0; i < fgInds.size() - numFg; i++) {
+			labels[fgInds[i]] = -1;
+		}
+		finalNumFg = numFg;
 #endif
 	}
 
@@ -306,19 +309,22 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	uint32_t finalNumBg = bgInds.size();
 	if (bgInds.size() > numBg) {
 		vector<uint32_t> disableInds;
-#if TEST_MODE
-		// XXX: 디버깅 문제로 임시 -> 원복함 -------------------------------------------------
-		for (uint32_t i = numBg; i < bgInds.size(); i++) {
-			labels[bgInds[i]] = -1;
-		}
-		finalNumBg = numBg;
-#else
+#if !SOOOA_DEBUG
 		npr_choice(bgInds, bgInds.size()-numBg, disableInds);
+
+		assert(disableInds.size() == bgInds.size() - numBg);
+
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumBg -= disableInds.size();
+
+		assert(finalNumBg == numBg);
+#else
+		for (int i = 0; i < bgInds.size() - numBg; i++) {
+			labels[bgInds[i]] = -1;
+		}
+		finalNumBg = numBg;
 #endif
-		// ---------------------------------------------------------
 	}
 
 	vector<vector<float>> bboxTargets;
@@ -428,12 +434,22 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	this->_outputData[3]->reshape({1, A * 4, height, width});
 	this->_outputData[3]->print_data("bbox_outside_weights", {}, false);
 	//Data<Dtype>::printConfig = false;
+
+#if ANCHORTARGETLAYER_LOG
+	this->_printOn();
+	for (int i = 0; i < this->_outputData.size(); i++) {
+		this->_outputData[i]->print_data({}, false);
+	}
+	this->_printOff();
+#endif
+
 }
 
 template <typename Dtype>
 void AnchorTargetLayer<Dtype>::backpropagation() {
 	// This layer does not propagate gradients.
 }
+
 
 
 template <typename Dtype>
@@ -482,6 +498,9 @@ void AnchorTargetLayer<Dtype>::_unmap(const vector<vector<float>>& data,
 		result[indsInside[i]] = data[i];
 	}
 }
+
+
+
 
 
 

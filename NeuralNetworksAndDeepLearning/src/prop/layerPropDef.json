@@ -507,7 +507,26 @@
 	[
 	    ["maxPerImage", "uint32_t", "100"],
 	    ["thresh", "float", "0.05"],
-	    ["vis", "bool", "false"]
+	    ["vis", "bool", "false"],
+	    ["savePath", "std::string", "\"\""],
+	    ["labelMapPath", "std::string", "\"\""]
+	]
+},
+
+"FrcnnTestVideoOutput" : 
+{
+    "DESC" : "frcnn test video output layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["maxPerImage", "uint32_t", "100"],
+	    ["thresh", "float", "0.05"],
+	    ["vis", "bool", "false"],
+	    ["savePath", "std::string", "\"\""],
+	    ["labelMapPath", "std::string", "\"\""]
 	]
 },
 
@@ -581,6 +600,27 @@
     "VARS" : 
 	[
 	    ["numClasses", "uint32_t", "0"],
+		["imageSet", "std::string", "\"\""],
+		["dataName", "std::string", "\"\""],
+		["dataPath", "std::string", "\"\""],
+		["labelMapPath", "std::string", "\"\""],
+
+	    ["pixelMeans", "std::vector<float>", ""]
+	]
+},
+
+"RoITestVideoInput" : 
+{
+    "DESC" : "roi test video input",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["numClasses", "uint32_t", "0"],
+		["videoPath", "std::string", "\"\""],
+		["fps", "int", "10"],
 	    ["pixelMeans", "std::vector<float>", ""]
 	]
 }

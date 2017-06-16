@@ -250,7 +250,7 @@
 			"name" : "rpn_bbox_pred",
 			"layer" : "Conv",
 			"id" : 180,
-			"input" : ["rpn/output"],
+			"input" : ["rpn/output"], 
 			"output" : ["rpn_bbox_pred"],
 			"filterDim.rows" : 1,
 			"filterDim.cols" : 1,
@@ -484,7 +484,6 @@
 	{
 		"batchSize" : 1, 
 		"epochs" : 5, 
-		"lossLayer" : ["rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"],
 		"gamma" : 0.1,
 		"saveInterval" : 10000,
 		"savePathPrefix" : "", 

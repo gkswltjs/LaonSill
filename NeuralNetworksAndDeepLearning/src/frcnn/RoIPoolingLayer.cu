@@ -14,8 +14,7 @@
 
 #define ROIPOOLINGLAYER_LOG 0
 
-using std::max;
-using std::min;
+
 
 template <typename Dtype>
 RoIPoolingLayer<Dtype>::RoIPoolingLayer()
@@ -23,17 +22,15 @@ RoIPoolingLayer<Dtype>::RoIPoolingLayer()
   maxIdx("maxIdx") {
 	this->type = Layer<Dtype>::RoIPooling;
 
-	const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
-	const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
+	assert(SLPROP(RoIPooling, pooledW) > 0 &&
+			"pooledW must be > 0");
+	assert(SLPROP(RoIPooling, pooledH) > 0 &&
+			"pooledH must be > 0");
 
-	SASSERT(pooledW > 0, "pooledW must be > 0");
-	SASSERT(pooledH > 0, "pooledH must be > 0");
 }
-
 
 template <typename Dtype>
-RoIPoolingLayer<Dtype>::~RoIPoolingLayer() {
-}
+RoIPoolingLayer<Dtype>::~RoIPoolingLayer() {}
 
 template <typename Dtype>
 void RoIPoolingLayer<Dtype>::reshape() {
@@ -44,8 +41,6 @@ void RoIPoolingLayer<Dtype>::reshape() {
 		if (!Layer<Dtype>::_isInputShapeChanged(i))
 			continue;
 
-		const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
-		const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
 		const std::vector<uint32_t>& inputDataShape = this->_inputData[i]->getShape();
 		this->_inputShape[i] = inputDataShape;
 
@@ -56,14 +51,15 @@ void RoIPoolingLayer<Dtype>::reshape() {
 			this->width = this->_inputData[0]->width();
 
 			const std::vector<uint32_t> outputDataShape =
-                {(uint32_t)this->_inputData[1]->height(), this->channels, pooledH, pooledW};
+                { (uint32_t)this->_inputData[1]->height(), this->channels, SLPROP(RoIPooling, pooledH),
+                    SLPROP(RoIPooling, pooledW) };
 
 			this->_outputData[0]->reshape(outputDataShape);
 			this->maxIdx.reshape(outputDataShape);
 
 #if ROIPOOLINGLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-						SLPROP_BASE(name).c_str(),
+						this->name.c_str(),
 						outputDataShape[0],
 						outputDataShape[1],
 						outputDataShape[2],
@@ -142,10 +138,6 @@ template <typename Dtype>
 void RoIPoolingLayer<Dtype>::feedforward() {
 	reshape();
 
-	const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
-	const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
-	const float spatialScale = SLPROP(RoIPooling, spatialScale);
-
 	const Dtype* inputData = this->_inputData[0]->device_data();
 	const Dtype* inputRois = this->_inputData[1]->device_data();
 	Dtype* outputData = this->_outputData[0]->mutable_device_data();
@@ -153,9 +145,8 @@ void RoIPoolingLayer<Dtype>::feedforward() {
 	uint32_t count = this->_outputData[0]->getCount();
 
 	ROIPoolForward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-	      count, inputData, spatialScale, this->channels, this->height, this->width,
-	      pooledH, pooledW, inputRois, outputData, argmaxData);
-
+	      count, inputData, SLPROP(RoIPooling, spatialScale), this->channels, this->height, this->width,
+	      SLPROP(RoIPooling, pooledH), SLPROP(RoIPooling, pooledW), inputRois, outputData, argmaxData);
 	CUDA_POST_KERNEL_CHECK;
 }
 
@@ -248,9 +239,7 @@ __global__ void ROIPoolBackward(
 
 template <typename Dtype>
 void RoIPoolingLayer<Dtype>::backpropagation() {
-	const uint32_t pooledW = SLPROP(RoIPooling, pooledW);
-	const uint32_t pooledH = SLPROP(RoIPooling, pooledH);
-	const float spatialScale = SLPROP(RoIPooling, spatialScale);
+	//if (!propDown)
 
 	const Dtype* inputRois = this->_inputData[1]->device_data();
 	const Dtype* outputGrad = this->_outputData[0]->device_grad();
@@ -262,13 +251,10 @@ void RoIPoolingLayer<Dtype>::backpropagation() {
 
 	ROIPoolBackward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
 	      count, outputGrad, argmaxData, this->_outputData[0]->batches(),
-	      spatialScale, this->channels, this->height, this->width,
-	      pooledH, pooledW, inputGrad, inputRois);
-
-
+	      SLPROP(RoIPooling, spatialScale), this->channels, this->height, this->width,
+	      SLPROP(RoIPooling, pooledH), SLPROP(RoIPooling, pooledW), inputGrad, inputRois);
 	CUDA_POST_KERNEL_CHECK;
 }
-
 
 
 
@@ -330,8 +316,5 @@ template<typename Dtype>
 void RoIPoolingLayer<Dtype>::learnTensor(void* instancePtr) {
     SASSERT0(false);
 }
-
-
-
 
 template class RoIPoolingLayer<float>;

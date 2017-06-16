@@ -16,32 +16,30 @@
 
 using namespace std;
 
+
 template <typename Dtype>
-ProposalTargetLayer<Dtype>::ProposalTargetLayer() : Layer<Dtype>() {
+ProposalTargetLayer<Dtype>::ProposalTargetLayer()
+	: Layer<Dtype>() {
 	this->type = Layer<Dtype>::ProposalTarget;
 }
 
-
 template <typename Dtype>
-ProposalTargetLayer<Dtype>::~ProposalTargetLayer() {
-
-}
+ProposalTargetLayer<Dtype>::~ProposalTargetLayer() {}
 
 template <typename Dtype>
 void ProposalTargetLayer<Dtype>::reshape() {
 	bool adjusted = Layer<Dtype>::_adjustInputShape();
 	if (adjusted) {
-		const uint32_t numClasses = SLPROP(ProposalTarget, numClasses);
 		// sampled rois (0, x1, y1, x2, y2)
 		this->_outputData[0]->reshape({1, 1, 1, 5});
 		// labels
 		this->_outputData[1]->reshape({1, 1, 1, 1});
 		// bbox_targets
-		this->_outputData[2]->reshape({1, 1, 1, numClasses * 4});
+		this->_outputData[2]->reshape({1, 1, 1, SLPROP(ProposalTarget, numClasses) * 4});
 		// bbox_inside_weights
-		this->_outputData[3]->reshape({1, 1, 1, numClasses * 4});
+		this->_outputData[3]->reshape({1, 1, 1, SLPROP(ProposalTarget, numClasses) * 4});
 		// bbox_outside_weights
-		this->_outputData[4]->reshape({1, 1, 1, numClasses * 4});
+		this->_outputData[4]->reshape({1, 1, 1, SLPROP(ProposalTarget, numClasses) * 4});
 	}
 }
 
@@ -54,17 +52,15 @@ void ProposalTargetLayer<Dtype>::feedforward() {
 	vector<vector<float>> allRois;
 	fill2dVecWithData(this->_inputData[0], allRois);
 
-#if PROPOSALTARGETLAYER_LOG
-	cout << "# of all rois: " << allRois.size() << endl;
-	print2dArray("allRois", allRois);
-#endif
-
 	// GT boxes (x1, y1, x2, y2, label)
 	// TODO(rbg): it's annoying that sometimes I have extra info before
 	// and other times after box coordinates -- normalize to one format
 	vector<vector<float>> gtBoxes;
 	fill2dVecWithData(this->_inputData[1], gtBoxes);
+
 #if PROPOSALTARGETLAYER_LOG
+	cout << "# of all rois: " << allRois.size() << endl;
+	print2dArray("allRois", allRois);
 	print2dArray("gtBoxes", gtBoxes);
 #endif
 
@@ -108,7 +104,6 @@ void ProposalTargetLayer<Dtype>::feedforward() {
 	this->_outputData[1]->fill_host_with_1d_vec(labels);
 
 	const uint32_t numTargets = bboxTargets.size();
-
 	const uint32_t numTargetElem = bboxTargets[0].size();
 
 	// bboxTargets
@@ -169,6 +164,7 @@ void ProposalTargetLayer<Dtype>::backpropagation() {
 }
 
 
+
 template <typename Dtype>
 void ProposalTargetLayer<Dtype>::_sampleRois(
 		const vector<vector<float>>& allRois,
@@ -223,13 +219,20 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 
 	// Sample foreground regions without replacement
 	if (fgInds.size() > 0) {
-#if TEST_MODE
-		if (fgInds.size() > fgRoisPerThisImage)
-			fgInds.erase(fgInds.begin()+fgRoisPerThisImage, fgInds.end());
-#else
+#if !SOOOA_DEBUG
 		vector<uint32_t> tempFgInds;
 		npr_choice(fgInds, fgRoisPerThisImage, tempFgInds);
+		/*
+		assert(tempFgInds.size() == fgRoisPerThisImage);
+		cout << "proposal target layer fg inds of size: " << fgRoisPerThisImage << endl;
+		for (int i = 0; i < tempFgInds.size(); i++) {
+			assert(std::find(fgInds.begin(), fgInds.end(), tempFgInds[i]) != fgInds.end());
+		}
+		*/
 		fgInds = tempFgInds;
+#else
+		if (fgInds.size() > fgRoisPerThisImage)
+			fgInds.erase(fgInds.begin()+fgRoisPerThisImage, fgInds.end());
 #endif
 	}
 #if PROPOSALTARGETLAYER_LOG
@@ -249,13 +252,20 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
         uint32_t(std::min((int)(roisPerImage - fgRoisPerThisImage), (int)bgInds.size()));
 	// Sample background regions without replacement
 	if (bgInds.size() > 0) {
-#if TEST_MODE
-		if (bgInds.size() > bgRoisPerThisImage)
-			bgInds.erase(bgInds.begin()+bgRoisPerThisImage, bgInds.end());
-#else
+#if !SOOOA_DEBUG
 		vector<uint32_t> tempBgInds;
 		npr_choice(bgInds, bgRoisPerThisImage, tempBgInds);
+		/*
+		assert(tempBgInds.size() == bgRoisPerThisImage);
+		cout << "proposal target layer bg inds of size: " << bgRoisPerThisImage << endl;
+		for (int i = 0; i < tempBgInds.size(); i++) {
+			assert(std::find(bgInds.begin(), bgInds.end(), tempBgInds[i]) != bgInds.end());
+		}
+		*/
 		bgInds = tempBgInds;
+#else
+		if (bgInds.size() > bgRoisPerThisImage)
+			bgInds.erase(bgInds.begin()+bgRoisPerThisImage, bgInds.end());
 #endif
 	}
 #if PROPOSALTARGETLAYER_LOG
@@ -376,7 +386,6 @@ void ProposalTargetLayer<Dtype>::_computeTargets(
 	BboxTransformUtil::bboxTransform(exRois, exRoisOffset, gtRois, gtRoisOffset,
 			targets, targetsOffset);
 
-	/*
 	if (TRAIN_BBOX_NORMALIZE_TARGETS_PRECOMPUTED) {
 		for (uint32_t i = 0; i < numRois; i++) {
 			vector<float>& target = targets[i];
@@ -390,7 +399,6 @@ void ProposalTargetLayer<Dtype>::_computeTargets(
 					TRAIN_BBOX_NORMALIZE_MEANS[3]) / TRAIN_BBOX_NORMALIZE_STDS[3];
 		}
 	}
-	*/
 
 	//vec_2d_pad(1, targets);
 	for (uint32_t i = 0; i < numRois; i++) {
@@ -421,10 +429,9 @@ void ProposalTargetLayer<Dtype>::_getBboxRegressionLabels(
 
 	uint32_t cls;
 	uint32_t start, end;
-	const uint32_t numClasses = SLPROP(ProposalTarget, numClasses);
 	for (uint32_t i = 0; i < numBboxTargets; i++) {
-		bboxTargets[i].resize(4 * numClasses);
-		bboxInsideWeights[i].resize(4 * numClasses);
+		bboxTargets[i].resize(4 * SLPROP(ProposalTarget, numClasses));
+		bboxInsideWeights[i].resize(4 * SLPROP(ProposalTarget, numClasses));
 
 		cls = uint32_t(bboxTargetsData[i][0]);
 		if (cls > 0) {
@@ -447,9 +454,6 @@ void ProposalTargetLayer<Dtype>::_getBboxRegressionLabels(
 		}
 	}
 }
-
-
-
 
 /****************************************************************************
  * layer callback functions

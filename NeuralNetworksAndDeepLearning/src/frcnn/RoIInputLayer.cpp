@@ -23,12 +23,13 @@
 
 using namespace std;
 
+
 template <typename Dtype>
 RoIInputLayer<Dtype>::RoIInputLayer()
 : InputLayer<Dtype>() {
 	this->type = Layer<Dtype>::RoIInput;
 
-	this->imdb = combinedRoidb("voc_2007_trainval");
+	this->imdb = combinedRoidb();
 	cout << this->imdb->roidb.size() << " roidb entries ... " << endl;
 	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, this->imdb->roidb.size(), 50, 1);
 
@@ -36,7 +37,7 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 	filterRoidb(this->imdb->roidb);
 
 	cout << "Computing bounding-box regression targets ... " << endl;
-	RoIDBUtil::addBboxRegressionTargets(this->imdb->roidb, this->bboxMeans, this->bboxStds);
+	RoIDBUtil::addBboxRegressionTargets(imdb->roidb, this->bboxMeans, this->bboxStds);
 
 	shuffleRoidbInds();
 
@@ -87,30 +88,26 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 	this->boxColors.push_back(cv::Scalar(169, 171, 0));
 	this->boxColors.push_back(cv::Scalar(255, 0, 170));
 	this->boxColors.push_back(cv::Scalar(0, 193, 216));
-
 }
-
 
 template <typename Dtype>
 RoIInputLayer<Dtype>::~RoIInputLayer() {
-	delete this->imdb;
+	delete imdb;
 }
+
 
 
 template <typename Dtype>
 void RoIInputLayer<Dtype>::reshape() {
-	const vector<string>& outputs = SLPROP(Input, output);
-	vector<string>& inputs = SLPROP(Input, input);
-	if (inputs.size() < 1) {
-		for (uint32_t i = 0; i < outputs.size(); i++) {
-			inputs.push_back(outputs[i]);
+	if (this->_inputData.size() < 1) {
+		for (uint32_t i = 0; i < SLPROP_BASE(output).size(); i++) {
+			SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
 
 	Layer<Dtype>::_adjustInputShape();
 
-	const uint32_t numClasses = SLPROP(RoIInput, numClasses);
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
 		if (!Layer<Dtype>::_isInputShapeChanged(i))
@@ -127,7 +124,7 @@ void RoIInputLayer<Dtype>::reshape() {
 
 	#if ROIINPUTLAYER_LOG
 				printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-						SLPROP_BASE(name).c_str(),
+						this->name.c_str(),
 						dataShape[0], dataShape[1], dataShape[2], dataShape[3]);
 	#endif
 			}
@@ -139,7 +136,7 @@ void RoIInputLayer<Dtype>::reshape() {
 
 	#if ROIINPUTLAYER_LOG
 				printf("<%s> layer' output-1 has reshaped as: %dx%dx%dx%d\n",
-						SLPROP_BASE(name).c_str(),
+						this->name.c_str(),
 						iminfoShape[0], iminfoShape[1], iminfoShape[2], iminfoShape[3]);
 	#endif
 			}
@@ -151,7 +148,7 @@ void RoIInputLayer<Dtype>::reshape() {
 
 	#if ROIINPUTLAYER_LOG
 				printf("<%s> layer' output-2 has reshaped as: %dx%dx%dx%d\n",
-						SLPROP_BASE(name).c_str(),
+						this->name.c_str(),
 						gtboxesShape[0], gtboxesShape[1], gtboxesShape[2], gtboxesShape[3]);
 	#endif
 			}
@@ -165,7 +162,7 @@ void RoIInputLayer<Dtype>::reshape() {
 
 #if ROIINPUTLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-					SLPROP_BASE(name).c_str(),
+					this->name.c_str(),
 					dataShape[0], dataShape[1], dataShape[2], dataShape[3]);
 #endif
 			}
@@ -183,19 +180,19 @@ void RoIInputLayer<Dtype>::reshape() {
 			}
 			// "bbox_targets"
 			else if (i == 3) {
-				const vector<uint32_t> bboxTargetsShape = {1, 1, 1, numClasses * 4};
+				const vector<uint32_t> bboxTargetsShape = {1, 1, 1, SLPROP(RoIInput, numClasses) * 4};
 				this->_inputData[3]->reshape(bboxTargetsShape);
 				this->_inputShape[3] = bboxTargetsShape;
 			}
 			// "bbox_inside_weights"
 			else if (i == 4) {
-				const vector<uint32_t> bboxInsideWeights = {1, 1, 1, numClasses * 4};
+				const vector<uint32_t> bboxInsideWeights = {1, 1, 1, SLPROP(RoIInput, numClasses) * 4};
 				this->_inputData[4]->reshape(bboxInsideWeights);
 				this->_inputShape[4] = bboxInsideWeights;
 			}
 			// "bbox_outside_weights"
 			else if (i == 5) {
-				const vector<uint32_t> bboxOutsideWeights = {1, 1, 1, numClasses * 4};
+				const vector<uint32_t> bboxOutsideWeights = {1, 1, 1, SLPROP(RoIInput, numClasses) * 4};
 				this->_inputData[4]->reshape(bboxOutsideWeights);
 				this->_inputShape[4] = bboxOutsideWeights;
 			}
@@ -224,11 +221,11 @@ void RoIInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end
 
 
 template <typename Dtype>
-IMDB* RoIInputLayer<Dtype>::getImdb(const string& imdb_name) {
-	const vector<float>& pixelMeans = SLPROP(RoIInput, pixelMeans);
-	IMDB* imdb = new PascalVOC("trainval", "2007",
-			"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
-			pixelMeans);
+IMDB* RoIInputLayer<Dtype>::getImdb() {
+	//IMDB* imdb = new PascalVOC("trainval", "2007",
+	//		"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
+	IMDB* imdb = new PascalVOC(SLPROP(RoIInput, imageSet), SLPROP(RoIInput, dataName), SLPROP(RoIInput, dataPath),
+			SLPROP(RoIInput, labelMapPath), SLPROP(RoIInput, pixelMeans));
 	imdb->loadGtRoidb();
 
 	return imdb;
@@ -246,8 +243,8 @@ void RoIInputLayer<Dtype>::getTrainingRoidb(IMDB* imdb) {
 }
 
 template <typename Dtype>
-IMDB* RoIInputLayer<Dtype>::getRoidb(const string& imdb_name) {
-	IMDB* imdb = getImdb(imdb_name);
+IMDB* RoIInputLayer<Dtype>::getRoidb() {
+	IMDB* imdb = getImdb();
 	cout << "Loaded dataset " << imdb->name << " for training ... " << endl;
 	getTrainingRoidb(imdb);
 
@@ -255,8 +252,8 @@ IMDB* RoIInputLayer<Dtype>::getRoidb(const string& imdb_name) {
 }
 
 template <typename Dtype>
-IMDB* RoIInputLayer<Dtype>::combinedRoidb(const string& imdb_name) {
-	IMDB* imdb = getRoidb(imdb_name);
+IMDB* RoIInputLayer<Dtype>::combinedRoidb() {
+	IMDB* imdb = getRoidb();
 	return imdb;
 }
 
@@ -300,14 +297,7 @@ void RoIInputLayer<Dtype>::filterRoidb(vector<RoIDB>& roidb) {
 template <typename Dtype>
 void RoIInputLayer<Dtype>::shuffleRoidbInds() {
 	// Randomly permute the training roidb
-	// if cfg.TRAIN.ASPECT_GROUPING
-
-#if TEST_MODE
-	const uint32_t numRoidb = imdb->roidb.size();
-	this->perm.resize(numRoidb);
-	for (uint32_t i = 0; i < numRoidb; i++)
-		this->perm[i] = i;
-#else
+#if !SOOOA_DEBUG
 	vector<uint32_t> horzInds;
 	vector<uint32_t> vertInds;
 	const vector<RoIDB>& roidb = imdb->roidb;
@@ -339,9 +329,15 @@ void RoIInputLayer<Dtype>::shuffleRoidbInds() {
 		perm[i*2] = inds[i][0];
 		perm[i*2+1] = inds[i][1];
 	}
+#else
+	np_arange(0, this->imdb->roidb.size(), this->perm);
 #endif
 	this->cur = 0;
 }
+
+
+
+
 
 template <typename Dtype>
 void RoIInputLayer<Dtype>::getNextMiniBatch() {
@@ -359,16 +355,24 @@ void RoIInputLayer<Dtype>::getNextMiniBatch() {
 	}
 
 
+
 	/*
+	cout << "image: " << imdb->roidb[inds[0]].image << endl;
 	uint32_t index = inds[0];
 	cout << "flipped: " << imdb->roidb[index].flipped << endl;
 	vector<string> boxLabelsText;
-	for (uint32_t i = 0; i < imdb->roidb[index].boxes.size(); i++)
+	for (uint32_t i = 0; i < imdb->roidb[index].boxes.size(); i++) {
 		boxLabelsText.push_back(imdb->convertIndToClass(imdb->roidb[index].gt_classes[i]));
+	}
+	RoIDB& roidb = imdb->roidb[index];
+	cv::Mat im = cv::imread(roidb.image, CV_LOAD_IMAGE_COLOR);
+	if (roidb.flipped) {
+		cv::flip(im, im, 1);
+	}
+	displayBoxesOnImage("INPUT DATA", im, 1, roidb.boxes,
+					roidb.gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
+					*/
 
-	displayBoxesOnImage("TRAIN_GT", imdb->roidb[index].getMat(), 1, imdb->roidb[index].boxes,
-			imdb->roidb[index].gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
-			*/
 
 	getMiniBatch(minibatchDb, inds);
 }
@@ -386,7 +390,7 @@ void RoIInputLayer<Dtype>::getNextMiniBatchInds(vector<uint32_t>& inds) {
 	inds.insert(inds.end(), this->perm.begin() + this->cur,
 			this->perm.begin() + this->cur + TRAIN_IMS_PER_BATCH);
 
-	cout << this->cur << ": ";
+	//cout << this->cur << ": ";
 	this->cur += TRAIN_IMS_PER_BATCH;
 }
 
@@ -398,7 +402,33 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 	const uint32_t numImages = roidb.size();
 	// Sample random scales to use for each image in this batch
 	vector<uint32_t> randomScaleInds;
+#if !SOOOA_DEBUG
 	npr_randint(0, TRAIN_SCALES.size(), numImages, randomScaleInds);
+#else
+	randomScaleInds.resize(numImages);
+	std::fill(randomScaleInds.begin(), randomScaleInds.end(), 0);
+#endif
+	//assert(randomScaleInds.size() == 1);
+	//cout << "randomScaleInds: " << randomScaleInds[0] << endl;
+
+
+
+	/*
+	InputStat* ptr;
+	string key = roidb[0].image.substr(roidb[0].image.length()-10);
+	if (inputStatMap.find(key) != inputStatMap.end()) {
+		ptr = inputStatMap[key];
+	} else {
+		ptr = new InputStat();
+		inputStatMap[key] = ptr;
+	}
+	if (roidb[0].flipped) ptr->fcnt++;
+	else ptr->nfcnt++;
+	ptr->scaleCnt[randomScaleInds[0]]++;
+
+	return;
+	*/
+
 
 	assert(TRAIN_BATCH_SIZE % numImages == 0);
 
@@ -413,9 +443,6 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 	assert(imScales.size() == 1);	// Single batch only
 	assert(roidb.size() == 1);		// Single batch only
 
-
-
-
 	if (TRAIN_HAS_RPN) {
 		// gt boxes: (x1, y1, x2, y2, cls)
 		vector<uint32_t> gtInds;
@@ -426,11 +453,12 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 		for (uint32_t i = 0; i < numGtInds; i++) {
 			gt_boxes[i].resize(5);
 			gt_boxes[i][0] = roidb[0].boxes[gtInds[i]][0] * imScales[0];
-			gt_boxes[i][1] = roidb[0].boxes[gtInds[i]][1] * imScales[0];;
-			gt_boxes[i][2] = roidb[0].boxes[gtInds[i]][2] * imScales[0];;
-			gt_boxes[i][3] = roidb[0].boxes[gtInds[i]][3] * imScales[0];;
+			gt_boxes[i][1] = roidb[0].boxes[gtInds[i]][1] * imScales[0];
+			gt_boxes[i][2] = roidb[0].boxes[gtInds[i]][2] * imScales[0];
+			gt_boxes[i][3] = roidb[0].boxes[gtInds[i]][3] * imScales[0];
 			gt_boxes[i][4] = roidb[0].gt_classes[gtInds[i]];
 		}
+
 
 		// 벡터를 Data로 변환하는 유틸이 필요!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
 		// im_info
@@ -446,13 +474,11 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
             {1, 1, (uint32_t)gt_boxes.size(), (uint32_t)gt_boxes[0].size()};
 
 
-
 		/*
 		// 최종 scale된 input image, bounding box를 display
 		vector<string> boxLabelsText;
 		for (uint32_t j = 0; j < roidb[0].boxes.size(); j++)
 			boxLabelsText.push_back(imdb->convertIndToClass(roidb[0].gt_classes[j]));
-
 		displayBoxesOnImage("INPUT DATA", processedIms[0], 1, gt_boxes,
 				roidb[0].gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
 				*/
@@ -502,13 +528,12 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 		const vector<uint32_t>& scaleInds, vector<float>& imScales) {
 	imScales.clear();
 
-	const vector<float>& pixelMeans = SLPROP(RoIInput, pixelMeans);
 	vector<cv::Mat> processedIms;
 	// Builds an input blob from the images in the roidb at the specified scales.
 	const uint32_t numImages = roidb.size();
 	for (uint32_t i = 0; i < numImages; i++) {
 		cv::Mat im = roidb[i].getMat();
-#if !ROIINPUTLAYER_LOG
+#if ROIINPUTLAYER_LOG
 		cout << "image: " << roidb[i].image.substr(roidb[i].image.length()-10) <<
 				" (" << im.rows << "x" << im.cols << ")" << ", flip: " << roidb[i].flipped;
 		//cout << "original: " << ((float*)im.data) << endl;
@@ -542,11 +567,11 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 
 		uint32_t targetSize = TRAIN_SCALES[scaleInds[i]];
 		cv::Mat imResized;
-		float imScale = prepImForBlob(im, imResized, pixelMeans, targetSize,
+		float imScale = prepImForBlob(im, imResized, SLPROP(RoIInput, pixelMeans), targetSize,
 				TRAIN_MAX_SIZE);
 
-		cout << " -> <" << targetSize << ", " << imScale << "> (" <<
-				imResized.rows << "x" << imResized.cols << ")" << endl;
+		//cout << " -> <" << targetSize << ", " << imScale << "> (" <<
+		//		imResized.rows << "x" << imResized.cols << ")" << endl;
 		//cout << "after: " << ((float*)im.data) << ", " << ((float*)imResized.data) << endl;
 		/*
 		string windowName2 = "im purity test result";
@@ -614,8 +639,6 @@ float RoIInputLayer<Dtype>::prepImForBlob(cv::Mat& im, cv::Mat& imResized,
 		}
 	}
 	*/
-
-
 
 	const vector<uint32_t> imShape = {(uint32_t)im.cols, (uint32_t)im.rows,
 			channels};
@@ -692,6 +715,7 @@ void RoIInputLayer<Dtype>::shuffleTrainDataSet() {
 
 
 
+
 /****************************************************************************
  * layer callback functions
  ****************************************************************************/
@@ -746,14 +770,5 @@ template<typename Dtype>
 void RoIInputLayer<Dtype>::learnTensor(void* instancePtr) {
     SASSERT0(false);
 }
-
-template void* RoIInputLayer<float>::initLayer();
-template void RoIInputLayer<float>::destroyLayer(void* instancePtr);
-template void RoIInputLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
-    bool isInput, int index);
-template bool RoIInputLayer<float>::allocLayerTensors(void* instancePtr);
-template void RoIInputLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
-template void RoIInputLayer<float>::backwardTensor(void* instancePtr);
-template void RoIInputLayer<float>::learnTensor(void* instancePtr);
 
 template class RoIInputLayer<float>;
