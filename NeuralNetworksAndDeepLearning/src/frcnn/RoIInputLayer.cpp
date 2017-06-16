@@ -435,7 +435,8 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 		// 벡터를 Data로 변환하는 유틸이 필요!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
 		// im_info
 		vector<vector<float>> imInfoData;
-		imInfoData.push_back({this->_inputShape[0][2], this->_inputShape[0][3], imScales[0]});
+		imInfoData.push_back({(float)this->_inputShape[0][2], (float)this->_inputShape[0][3],
+                (float)imScales[0]});
 		fillDataWith2dVec(imInfoData, this->_inputData[1]);
 		//fillDataWith2dVec(inputShape1, this->_inputData[1]);
 		this->_inputShape[1] = {1, 1, 1, 3};

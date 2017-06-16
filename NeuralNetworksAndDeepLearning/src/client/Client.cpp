@@ -140,45 +140,14 @@ void Client::clientMain(const char* hostname, int portno) {
     SASSERT0(ret == Communicator::Success);
     SASSERT0(msgHdr.getMsgType() == MessageHeader::WelcomeReply);
 
-    // (4-1) send create network msg
-    cout << "send create-network msg" << endl;
-    msgHdr.setMsgType(MessageHeader::CreateNetwork);
-    msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
-    MsgSerializer::serializeMsgHdr(msgHdr, buf);
-    ret = Communicator::sendMessage(sockFd, msgHdr, buf);
-    SASSERT0(ret == Communicator::Success);
-
-    // (4-2) recv create network reply msg & get networkId
-    // see handleCreateNetworkMsg()@Communicator.cpp
-    ret = Communicator::recvMessage(sockFd, msgHdr, buf, false);
-    SASSERT0(ret == Communicator::Success);
-    SASSERT0(msgHdr.getMsgType() == MessageHeader::CreateNetworkReply);
-    int networkId;
-    MsgSerializer::deserializeInt(networkId, MessageHeader::MESSAGE_HEADER_SIZE, buf);
-    cout << "recv create-network msg & created network ID is " << networkId << endl;
-
-    // (5-1) build layer
-    cout << "push build-network job" << endl;
-    Job* buildNetworkJob = new Job(Job::BuildNetwork);
-    buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkId);
-    Client::pushJob(sockFd, buf, buildNetworkJob);
-    delete buildNetworkJob;
-    
-    // (5-2) train network
-    cout << "push train-network job" << endl;
-    Job* trainNetworkJob = new Job(Job::TrainNetwork);
-    trainNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkId);
-    int maxEpochCount = 2;
-    trainNetworkJob->addJobElem(Job::IntType, 1, (void*)&maxEpochCount);
-    Client::pushJob(sockFd, buf, trainNetworkJob);
-    delete trainNetworkJob;
-
-    // (5-3) cleanup layer
-    cout << "push cleanup-network job" << endl;
-    Job* cleanupNetworkJob = new Job(Job::CleanupNetwork);
-    cleanupNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkId);
-    Client::pushJob(sockFd, buf, cleanupNetworkJob);
-    delete cleanupNetworkJob;
+    // (4) create network
+    cout << "send create-network job" << endl;
+    Job* createNetworkJob = new Job(Job::CreateNetworkFromFile);
+    string networkFilePath = "network.conf.test";
+    createNetworkJob->addJobElem(Job::StringType, strlen(networkFilePath.c_str()) - 1,
+        (void*)networkFilePath.c_str());
+    Client::pushJob(sockFd, buf, createNetworkJob);
+    delete createNetworkJob;
 
     // (6) send Halt Msg
     cout << "send halt msg" << endl;

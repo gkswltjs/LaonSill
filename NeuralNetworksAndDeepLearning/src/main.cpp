@@ -58,8 +58,7 @@ using namespace std;
 
 void printUsageAndExit(char* prog) {
     fprintf(stderr,
-        "Usage: %s [-v] [-d | -f networkFilePath | -a romFilePath | -t testItemName]\n",
-        prog);
+        "Usage: %s [-v] [-d exampleName | -f networkFilePath | -t testItemName]\n", prog);
     exit(EXIT_FAILURE);
 }
 
