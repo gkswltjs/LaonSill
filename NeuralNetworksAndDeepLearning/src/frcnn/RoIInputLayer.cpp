@@ -227,7 +227,7 @@ template <typename Dtype>
 IMDB* RoIInputLayer<Dtype>::getImdb(const string& imdb_name) {
 	const vector<float>& pixelMeans = SLPROP(RoIInput, pixelMeans);
 	IMDB* imdb = new PascalVOC("trainval", "2007",
-			"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
+			"/data/VOCdevkit/VOCdevkit",
 			pixelMeans);
 	imdb->loadGtRoidb();
 
@@ -739,7 +739,7 @@ void RoIInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
 
 template<typename Dtype>
 void RoIInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-	SASSERT0(false);
+    // do nothing
 }
 
 template<typename Dtype>

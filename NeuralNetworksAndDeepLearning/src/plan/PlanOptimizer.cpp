@@ -92,13 +92,13 @@ double PlanOptimizer::runPlan(bool inference) {
    
     PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
 
-    bool jobFinish = true;
-    while (jobFinish) {
+    bool jobRemain = true;
+    while (jobRemain) {
         bool canRunPlan = true;
         while (canRunPlan) {
             canRunPlan = pp->runPlan(inference);
         }
-        jobFinish = pp->generatePlan();
+        jobRemain = pp->generatePlan();
     }
 
     clock_gettime(CLOCK_REALTIME, &endTime);

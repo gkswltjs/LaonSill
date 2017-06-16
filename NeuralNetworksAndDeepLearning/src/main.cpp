@@ -46,6 +46,7 @@
 #include "Task.h"
 
 #include "GAN/GAN.h"
+#include "frcnn/FRCNN.h"
 #include "YOLO.h"
 #include "LayerFunc.h"
 #include "LayerPropList.h"
@@ -69,8 +70,7 @@ void developerMain() {
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
     GAN<float>::run();
-    //YOLO<float>::runPretrain();
-    //YOLO<float>::run();
+    //FRCNN<float>::run();
 
     STDOUT_LOG("exit developerMain()");
 }
@@ -108,6 +108,7 @@ int main(int argc, char** argv) {
     char*   testItemName;
 
     // (1) 옵션을 읽는다.
+    WorkContext::curBootMode = BootMode::ServerClientMode;
     while ((opt = getopt(argc, argv, "vdf:t:")) != -1) {
         switch (opt) {
         case 'v':
@@ -119,6 +120,7 @@ int main(int argc, char** argv) {
             if (useSingleJobMode | useTestMode)
                 printUsageAndExit(argv[0]);
             useDeveloperMode = true;
+            WorkContext::curBootMode = BootMode::DeveloperMode;
             break;
 
         case 'f':
@@ -126,6 +128,7 @@ int main(int argc, char** argv) {
                 printUsageAndExit(argv[0]);
             useSingleJobMode = true;
             singleJobFilePath = optarg;
+            WorkContext::curBootMode = BootMode::SingleJobMode;
             break;
 
         case 't':
@@ -134,6 +137,7 @@ int main(int argc, char** argv) {
             useTestMode = true;
             testItemName = optarg;
             checkTestItem(testItemName);
+            WorkContext::curBootMode = BootMode::TestMode;
             break;
 
         default:    /* ? */

@@ -17,6 +17,9 @@
 #include "LearnableLayer.h"
 #include "Donator.h"
 #include "Network.h"
+#include "Task.h"
+#include "ThreadMgmt.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -47,25 +50,27 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
         SASSERT(false, "not implemented yet");
     }
 
-    int oldGPUIdx = Worker::gpuIdx;
-    if (planAlloc.devID != oldGPUIdx) {
-        cout << "set device!!" << endl;
-        //checkCudaErrors(cudaSetDevice(planAlloc.devID)); 
+    void *tensorPtr;
+    if (WorkContext::curBootMode == BootMode::DeveloperMode ||
+        WorkContext::curBootMode == TestMode) {
+        Data<float>* tensor = new Data<float>(tensorName);
+        SASSERT0(tensor != NULL);
+
+        tensorPtr = (void*)tensor;
+    } else {
+        int consumerIdx = Worker::getConsumerIdx(planAlloc.devID);
+        TaskAllocTensor* task = Worker::addAllocTensorTask(consumerIdx, SPARAM(NODE_ID),
+            planAlloc.devID, WorkContext::curThreadID, tensorName);   
+        
+        ThreadMgmt::wait(WorkContext::curThreadID, 0);
+
+        SASSUME0(task->step = TaskAllocTensorStep::WaitCaller);
+        tensorPtr = (void*)task->tensorPtr;
+        task->step = TaskAllocTensorStep::Done;
     }
 
-    // XXX: float형 코딩으로 박지 말고, 설정에 따라서 template date type을 설정하도록 수정해야
-    //     한다. 
-    Data<float>* tensor = new Data<float>(tensorName);
-    SASSERT0(tensor != NULL);
-
-    if (planAlloc.devID != oldGPUIdx) {
-        cout << "set device!!" << endl;
-        //checkCudaErrors(cudaSetDevice(oldGPUIdx));
-    }
-
-    LayerFunc::setInOutTensor(layerType, instancePtr, (void*)tensor, isInput, index);
-
-    return (void*)tensor;
+    LayerFunc::setInOutTensor(layerType, instancePtr, tensorPtr, isInput, index);
+    return tensorPtr;
 }
 
 vector<int> PhysicalPlan::getOrderedLayerIDs(int networkID) {
@@ -109,12 +114,6 @@ vector<int> PhysicalPlan::getOrderedLayerIDs(int networkID) {
         if (layerIDs.size() == this->allocMap.size())
             break;
     }
-
-    cout << "ordered layerIDs : ";
-    for (int i = 0; i < layerIDs.size(); i++) {
-        cout << layerIDs[i] << " ";
-    }
-    cout << endl;
 
     return layerIDs;
 }
@@ -225,9 +224,9 @@ void PhysicalPlan::markFinish(int targetPlanID) {
     
     if (this->depRefMap[targetPlanID] == 0) {
         this->readyQueue.push_back(targetPlanID); 
+        this->refCount -= 1;
     }
 
-    this->refCount -= 1;
     planLock.unlock();
     SASSUME0(this->depRefMap[targetPlanID] >= 0);
 }
@@ -241,6 +240,7 @@ void PhysicalPlan::markFinish(int networkID, int dopID, int planID) {
 
     PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
     PlanDef planDef = pp->planMap[planID];
+
     for (int i = 0; i < planDef.notifyList.size(); i++) {
         int targetPlanID = planDef.notifyList[i];
         pp->markFinish(targetPlanID);

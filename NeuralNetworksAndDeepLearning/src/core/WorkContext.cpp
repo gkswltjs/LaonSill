@@ -14,10 +14,12 @@ using namespace std;
 thread_local int            WorkContext::curDOPID;
 thread_local PhysicalPlan*  WorkContext::curPhysicalPlan;
 thread_local PlanInfo*      WorkContext::curPlanInfo;
+thread_local int            WorkContext::curThreadID;
 
 thread_local LayerProp*     WorkContext::curLayerProp;
 thread_local _NetworkProp*  WorkContext::curNetworkProp;
 thread_local int            WorkContext::curNetworkID;
+BootMode                    WorkContext::curBootMode;
 
 void WorkContext::updateNetwork(int networkID) {
     WorkContext::curNetworkID = networkID;

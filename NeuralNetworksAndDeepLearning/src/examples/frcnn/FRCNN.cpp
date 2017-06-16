@@ -32,8 +32,7 @@ void FRCNN<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
     }
 }
 
-//#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("../src/examples/frcnn/frcnn_train.json")
-#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/soooa/src/examples/frcnn/frcnn_train.json")
+#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("../src/examples/frcnn/frcnn_train.json")
 
 template<typename Dtype>
 void FRCNN<Dtype>::run() {

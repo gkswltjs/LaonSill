@@ -71,25 +71,51 @@ void Worker::producerThread() {
 }
 
 bool Worker::handleAllocTensorTask(TaskAllocTensor* task) {
+    if (task->nodeID != SPARAM(NODE_ID)) {
+        // alloc tensor to other nodes.
+        SASSERT0(false);        // not implemented yet
+    }
 
+    // XXX: float형 코딩으로 박지 말고, 설정에 따라서 template date type을 설정하도록 수정해야
+    //     한다. 
+    if (task->step == TaskAllocTensorStep::Alloc) {
+        Data<float>* tensor = new Data<float>(task->tensorName);
+        SASSERT0(tensor != NULL);
+
+        task->tensorPtr = tensor;
+        task->step = TaskAllocTensorStep::WaitCaller;
+        
+        ThreadMgmt::signal(task->requestThreadID, ThreadEvent::Wakeup);
+    }
+
+    if (task->step == TaskAllocTensorStep::Done)
+        return true;
+    else
+        return false;
 }
 
 bool Worker::handleUpdateTensorTask(TaskUpdateTensor* task) {
-#if 0
-                bool ret = Updater::updateParams(tasks[i]->networkID, 
-                    tasks[i]->layerID, tasks[i]->planID,
-                    tasks[i]->dopID, tasks[i]->updateParams, false);
-#endif
+    bool ret = Updater::updateParams(task->networkID, task->layerID, task->planID,
+        task->dopID, task->updateParams, false);
+    return ret;
 }
 
 bool Worker::handleRunPlanTask(TaskRunPlan* task) {
-#if 0
-            for (int i = 0; i < taskDefs.size(); i++) {
-                WorkContext::updateNetwork(taskDefs[i].networkID);
-                WorkContext::updatePlan(taskDefs[i].dopID);
-            }
+    WorkContext::updateNetwork(task->networkID);
+    WorkContext::updatePlan(task->dopID);
 
-#endif
+    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+    bool canRunPlan = true;
+    while (canRunPlan) {
+        canRunPlan = pp->runPlan(task->inference);
+    }
+
+    bool jobRemain = pp->generatePlan();
+
+    if (jobRemain)
+        return false;
+    else
+        return true;
 }
 
 void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
@@ -137,25 +163,25 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
 
             bool hasRemainTask = false;
             for (int i = 0; i < tasks.size(); i++) {
-                bool ret;
+                bool taskDone;
                 switch (tasks[i]->taskType) {
                     case TaskType::AllocTensor:
-                        ret = handleAllocTensorTask((TaskAllocTensor*)tasks[i]);
+                        taskDone = handleAllocTensorTask((TaskAllocTensor*)tasks[i]);
                         break;
 
                     case TaskType::UpdateTensor:
-                        ret = handleUpdateTensorTask((TaskUpdateTensor*)tasks[i]);
+                        taskDone = handleUpdateTensorTask((TaskUpdateTensor*)tasks[i]);
                         break;
 
                     case TaskType::RunPlan:
-                        ret = handleRunPlanTask((TaskRunPlan*)tasks[i]);
+                        taskDone = handleRunPlanTask((TaskRunPlan*)tasks[i]);
                         break;
 
                     default:
                         SASSUME0(false);
                 }
 
-                if (!ret) {
+                if (!taskDone) {
                     remainTasks.push_back(tasks[i]);
                     hasRemainTask = true;
                 } else {
@@ -337,8 +363,8 @@ vector<int> Worker::getReadyJCs(int count) {
     return result;
 }
 
-void Worker::addAllocTensorTask(int consumerIdx, int nodeID, int devID, int requestThreadID,
-    string tensorName) {
+TaskAllocTensor* Worker::addAllocTensorTask(int consumerIdx, int nodeID, int devID,
+    int requestThreadID, string tensorName) {
     TaskAllocTensor* task = (TaskAllocTensor*)Task::getElem(TaskType::AllocTensor);
     SASSUME0(task != NULL);     // pool이 넉넉하지 않을때에 대한 전략이 반드시 필요하다
 
@@ -346,20 +372,24 @@ void Worker::addAllocTensorTask(int consumerIdx, int nodeID, int devID, int requ
     task->devID = devID;
     task->requestThreadID = requestThreadID;
     task->tensorName = tensorName;
+    task->step = TaskAllocTensorStep::Alloc;
 
     SASSUME0(consumerIdx < Worker::taskQueues.size());
     TaskQueue* tq = Worker::taskQueues[consumerIdx];
 
     unique_lock<mutex> lock(tq->mutex);
     tq->tasks.push_back((TaskBase*)task);
+
+    return task;
 }
 
-void Worker::addRunPlanTask(int consumerIdx, int networkID, int dopID) {
+void Worker::addRunPlanTask(int consumerIdx, int networkID, int dopID, bool inference) {
     TaskRunPlan* task = (TaskRunPlan*)Task::getElem(TaskType::RunPlan);
     SASSUME0(task != NULL);     // pool이 넉넉하지 않을때에 대한 전략이 반드시 필요하다
 
     task->networkID = networkID;
     task->dopID = dopID;
+    task->inference = inference;
 
     SASSUME0(consumerIdx < Worker::taskQueues.size());
     TaskQueue* tq = Worker::taskQueues[consumerIdx];

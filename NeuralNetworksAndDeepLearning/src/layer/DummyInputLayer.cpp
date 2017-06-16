@@ -115,7 +115,6 @@ void DummyInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) 
 
 template<typename Dtype>
 void DummyInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-    SASSERT0(false);
 }
 
 template<typename Dtype>
