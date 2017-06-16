@@ -15,6 +15,14 @@
 #include "LayerProp.h"
 #include "NetworkProp.h"
 
+typedef enum BootMode_e {
+    ServerClientMode = 0,
+    DeveloperMode,
+    SingleJobMode,
+    TestMode,
+    BootModeMax
+} BootMode;
+
 class WorkContext {
 public: 
     WorkContext() {}
@@ -24,6 +32,7 @@ public:
     static thread_local int                     curDOPID;
     static thread_local PhysicalPlan*           curPhysicalPlan;
     static thread_local PlanInfo*               curPlanInfo;
+    static thread_local int                     curThreadID;
 
     static thread_local LayerProp*              curLayerProp;
     static thread_local _NetworkProp*           curNetworkProp;
@@ -32,5 +41,7 @@ public:
     static void updateNetwork(int networkID);
     static void updateLayer(int networkID, int layerID);
     static void updatePlan(int dopID);
+
+    static BootMode                             curBootMode;
 };
 #endif /* WORKCONTEXT_H */

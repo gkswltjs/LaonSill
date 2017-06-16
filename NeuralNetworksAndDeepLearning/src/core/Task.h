@@ -35,13 +35,21 @@ typedef struct TaskBase_s {
     int         elemID;
 } TaskBase;
 
+typedef enum TaskAllocTensorStep_e {
+    Alloc = 0,
+    WaitCaller,
+    Done
+} TaskAllocTensorStep;
+
 typedef struct TaskAllocTensor_s {
-    TaskType    taskType;
-    int         elemID;
-    int         nodeID;
-    int         devID;
-    int         requestThreadID; 
-    std::string tensorName;
+    TaskType                        taskType;
+    int                             elemID;
+    int                             nodeID;
+    int                             devID;
+    int                             requestThreadID; 
+    std::string                     tensorName;
+    volatile TaskAllocTensorStep    step;
+    volatile void*                  tensorPtr;
 } TaskAllocTensor;
 
 typedef struct TaskUpdateTensor_s {
@@ -59,6 +67,7 @@ typedef struct TaskRunPlan_s {
     int         elemID;
     int         networkID;
     int         dopID;
+    bool        inference;
 } TaskRunPlan;
 
 class Task {

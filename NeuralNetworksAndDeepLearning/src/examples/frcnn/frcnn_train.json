@@ -9,8 +9,8 @@
 			"numClasses" : 21,
 			"imageSet" : "trainval", 
 			"dataName" : "voc_2007",
-			"dataPath" : "/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007/VOC2007",
-			"labelMapPath" : "/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007/labelmap_voc.prototxt",
+			"dataPath" : "/data/VOCdevkit/VOCdevkit/VOC2007",
+			"labelMapPath" : "/data/VOCdevkit/VOCdevkit/VOC2007/labelmap_voc.prototxt",
 			"pixelMeans" : [102.9801, 115.9465, 122.7717]
 		},
 
@@ -493,8 +493,7 @@
 		"momentum" : 0.9,
 		"clipGradientsLevel" : 0.0,
 		"lrPolicy" : "Step",
-		"optimizer" : "Momentum",
-		"loadPath" : "/home/jkim/Dev/SOOOA_HOME/network/VGG_CNN_M_1024_FRCNN_CAFFE.param"
+		"optimizer" : "Momentum"
 	}
 
 }

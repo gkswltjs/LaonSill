@@ -20,8 +20,6 @@ public:
     static void run();
 private:
     static void setLayerTrain(Network<Dtype>* lc, bool train);
-    static LayersConfig<Dtype>* createDOfGANLayersConfig();
-    static LayersConfig<Dtype>* createGD0OfGANLayersConfig();
 };
 
 #endif /* GAN_H */

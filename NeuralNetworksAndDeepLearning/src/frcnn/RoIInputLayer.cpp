@@ -763,7 +763,7 @@ void RoIInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
 
 template<typename Dtype>
 void RoIInputLayer<Dtype>::backwardTensor(void* instancePtr) {
-	SASSERT0(false);
+    // do nothing
 }
 
 template<typename Dtype>

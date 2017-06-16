@@ -131,7 +131,7 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         newPlanDef.layerID = key;
         newPlanDef.layerType = planBuildDef.layerType;
 
-        newPlanDef.depCount = (int)planBuildDef.inputs.size();
+        newPlanDef.depCount = 0;
         newPlanDef.notifyList = {};
 
         for (int i = 0; i < planBuildDef.outputs.size(); i++) {
@@ -156,16 +156,20 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
                 }
             }
 
-            bool isSplit = ((output2IDMap.find(outputName) != output2IDMap.end()) &&
-                    (output2IDMap[outputName].size() > 0) &&
-                    (input2IDMap[outputName].size() > 0) &&
-                    (input2IDMap[outputName].size() < output2IDMap[outputName].size()));
-
-            if (isSplit && isInplace) {
-                newPlanDef.notifyList.pop_back();
-            } else if (!isSplit && !isInplace) {
+            if (!isInplace) {
                 int nextPlanID = LP_FORWARD_PLANID(output2IDMap[outputName][0]);
                 newPlanDef.notifyList.push_back(nextPlanID);
+            }
+
+            bool isSplit = ((output2IDMap[outputName].size() > 0) &&
+                    (input2IDMap[outputName].size() > 0) &&
+                    (input2IDMap[outputName].size() < output2IDMap[outputName].size()) &&
+                    (input2IDMap[outputName][input2IDMap[outputName].size() - 1] == 
+                     newPlanDef.layerID));
+
+            // 뒤에서 split case에 대해서는 처리하기 때문
+            if (isSplit) {
+                newPlanDef.notifyList.pop_back();
             }
         }
 
@@ -186,7 +190,7 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         newPlanDef.layerID = key;
         newPlanDef.layerType = planBuildDef.layerType;
 
-        newPlanDef.depCount = (int)planBuildDef.outputs.size();
+        newPlanDef.depCount = 0;
         newPlanDef.notifyList = {};
 
         int propDownCount = 0;
@@ -219,14 +223,7 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
                 }
             }
 
-            bool isSplit = ((output2IDMap.find(inputName) != output2IDMap.end()) &&
-                    (output2IDMap[inputName].size() > 0) &&
-                    (input2IDMap[inputName].size() > 0) &&
-                    (input2IDMap[inputName].size() < output2IDMap[inputName].size()));
-
-            if (isSplit && isInplace) {
-                newPlanDef.notifyList.pop_back();
-            } else if (!isSplit && !isInplace) {
+            if (!isInplace) {
                 int nextPlanID = LP_BACKWARD_PLANID(input2IDMap[inputName][0]);
                 newPlanDef.notifyList.push_back(nextPlanID);
             }
@@ -249,6 +246,8 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         newPlanDef.layerID = key;
         newPlanDef.layerType = planBuildDef.layerType;
 
+        newPlanDef.depCount = 0;
+
         newPlanDef.notifyList = {};
         int depCount = 0;
         for (int i = 0; i < planBuildDef.inputs.size(); i++) {
@@ -259,7 +258,6 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         }
 
         if (depCount > 0) {
-            newPlanDef.depCount = depCount;
             lp->ppDefs.push_back(newPlanDef);
         }
     }
@@ -317,7 +315,7 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         newPlanDefForward.planID = LP_FORWARD_PLANID(newPlanDefForward.layerID);
         newPlanDefForward.planType = PLANTYPE_FORWARD;
         newPlanDefForward.layerType = (int)Layer<float>::Split;
-        newPlanDefForward.depCount = 1;
+        newPlanDefForward.depCount = 0;
 
         newPlanDefForward.notifyList = {};
         for (int i = 0; i < splitOutputCount; i++) {
@@ -338,7 +336,7 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         newPlanDefBackward.layerType = (int)Layer<float>::Split;
 
         splitOutputCount = outputIDs.size() - inputIDs.size() + 1;
-        newPlanDefBackward.depCount = splitOutputCount;
+        newPlanDefBackward.depCount = 0;
 
         for (int i = 0; i < splitOutputCount; i++) {
             int splitOutputID = LP_BACKWARD_PLANID(outputIDs[outputIDs.size() - i - 1]);
@@ -350,7 +348,6 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         newPlanDefBackward.notifyList = {};
         splitInputID = LP_BACKWARD_PLANID(inputIDs[inputIDs.size() - 1]);
         splitInputPlanDef = LogicalPlan::findPlanDef(lp, splitInputID);
-        //splitInputPlanDef->depCount += 1;
         newPlanDefBackward.notifyList.push_back(splitInputID);
 
         lp->ppDefs.push_back(newPlanDefForward);
@@ -387,6 +384,39 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         }
 
         curLayerID++;
+    }
+
+    // (3-5) fill dep count
+    map<int, int> depCountMap;  // key = planID, value = depCount
+    for (int i = 0; i < lp->ppDefs.size(); i++) {
+        PlanDef planDef = lp->ppDefs[i];
+        for (int j = 0; j < planDef.notifyList.size(); j++) {
+            int targetPlanID = planDef.notifyList[j];
+
+            if (depCountMap.find(targetPlanID) == depCountMap.end())
+                depCountMap[targetPlanID] = 1;
+            else
+                depCountMap[targetPlanID] += 1;
+        }
+    }
+
+    for (int i = 0; i < lp->ppDefs.size(); i++) {
+        PlanDef *planDef = &lp->ppDefs[i];
+        if (depCountMap.find(planDef->planID) != depCountMap.end()) {
+            planDef->depCount = depCountMap[planDef->planID];
+        } else {
+            planDef->depCount = 0;
+        }
+    }
+
+    // (3-6) 필요없는 플랜 제거
+    for (vector<PlanDef>::iterator iter = lp->ppDefs.begin(); iter != lp->ppDefs.end();) {
+        PlanDef planDef = (*iter);
+        if ((planDef.notifyList.size() == 0) && (planDef.depCount == 0)) {
+            iter = lp->ppDefs.erase(iter);
+        } else {
+            iter++;
+        }
     }
 
     SASSERT(LogicalPlan::lpMap.find(networkID) == LogicalPlan::lpMap.end(),

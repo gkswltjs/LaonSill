@@ -5,7 +5,11 @@
 /.cproject
 /.project
 /DebugClient/
+/DebugClientGen/
+/DebugGen/
 /ReleaseClient/
+/ReleaseClientGen/
+/ReleaseGen/
 /src/param/Param.cpp
 /src/param/Param.h
 /src/log/HotCode.h
@@ -13,3 +17,4 @@
 /src/perf/PerfList.h
 /src/perf/PerfList.cpp
 /ReleaseClient/
+/src/frcnn/bak/

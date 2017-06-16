@@ -43,10 +43,11 @@ public:
     static int                 getConsumerIdx(int devIdx);
 
     
-    static void                addAllocTensorTask(int consumerIdx, int nodeID, int devID,
+    static TaskAllocTensor*    addAllocTensorTask(int consumerIdx, int nodeID, int devID,
                                                   int requestThreadID,
                                                   std::string tensorName);
-    static void                addRunPlanTask(int consumerIdx, int networkID, int dopID);
+    static void                addRunPlanTask(int consumerIdx, int networkID, int dopID,
+                                              bool inference);
     static void                addUpdateTensorTask(int consumerIdx, int networkID,
                                                    int dopID, int layerID, int planID,
                                                    std::vector<UpdateParam> updateParams);
