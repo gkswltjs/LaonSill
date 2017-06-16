@@ -50,6 +50,7 @@
 #include "YOLO.h"
 #include "LayerFunc.h"
 #include "LayerPropList.h"
+#include "Examples.h"
 
 using namespace std;
 
@@ -62,15 +63,14 @@ void printUsageAndExit(char* prog) {
     exit(EXIT_FAILURE);
 }
 
-void developerMain() {
+void developerMain(const char* itemName) {
     STDOUT_LOG("enter developerMain()");
 
     checkCudaErrors(cudaSetDevice(0));
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-    GAN<float>::run();
-    //FRCNN<float>::run();
+    Examples::run(itemName);
 
     STDOUT_LOG("exit developerMain()");
 }
@@ -106,10 +106,11 @@ int main(int argc, char** argv) {
 
     char*   singleJobFilePath;
     char*   testItemName;
+    char*   exampleName;
 
     // (1) 옵션을 읽는다.
     WorkContext::curBootMode = BootMode::ServerClientMode;
-    while ((opt = getopt(argc, argv, "vdf:t:")) != -1) {
+    while ((opt = getopt(argc, argv, "vd:f:t:")) != -1) {
         switch (opt) {
         case 'v':
             printf("%s version %d.%d.%d\n", argv[0], SPARAM(VERSION_MAJOR),
@@ -120,7 +121,9 @@ int main(int argc, char** argv) {
             if (useSingleJobMode | useTestMode)
                 printUsageAndExit(argv[0]);
             useDeveloperMode = true;
+            exampleName = optarg;
             WorkContext::curBootMode = BootMode::DeveloperMode;
+            Examples::checkItem(exampleName);
             break;
 
         case 'f':
@@ -202,7 +205,7 @@ int main(int argc, char** argv) {
         COLD_LOG(ColdLog::INFO, true, "CUDA is initialized");
 
         // (5-A-2) DeveloperMain()함수를 호출한다.
-        developerMain();
+        developerMain(exampleName);
 
         // (5-A-3) 자원을 해제 한다.
         Cuda::destroy();
