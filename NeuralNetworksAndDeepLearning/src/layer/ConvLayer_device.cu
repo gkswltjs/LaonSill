@@ -230,10 +230,6 @@ void ConvLayer<Dtype>::reshape() {
 	this->_outputData[0]->reshape({obatches, ochannels, orows, ocols});
 
 
-	//int u_in = this->in_dim.unitsize();
-	//int u_out = this->out_dim.unitsize();
-	//int b_in = this->in_dim.batchsize();
-	//int b_out = this->out_dim.batchsize();
 	const int u_in = channels * rows * cols;
 	const int u_out = c * h * w;
 	const int b_in = batches * channels * rows * cols;

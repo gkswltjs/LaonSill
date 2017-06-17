@@ -154,6 +154,10 @@ void FullyConnectedLayer<Dtype>::reshape() {
 	const uint32_t b_in = batches * in_rows;
 	const uint32_t b_out = batches * out_rows;
 
+	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG,
+	    "<%s> layer reshape info (u_in, u_out, b_in, b_out) : %dx%dx%dx%d\n", 
+        SLPROP_BASE(name).c_str(), u_in, u_out, b_in, b_out);
+
 	this->_params[ParamType::Weight]->reshape({1, 1, u_out, u_in});
 	this->_params[ParamType::Bias]->reshape({1, u_out, 1, 1});
 	this->_paramsHistory[ParamType::Weight]->reshape({1, 1, u_out, u_in});
@@ -188,7 +192,6 @@ void FullyConnectedLayer<Dtype>::reshape() {
     }
 
 	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*batches));
-	//FillValues<<<RoundUp(batches, BW), BW>>>(this->d_onevec, batches, 1.0f);
 	FillValues<<<SOOOA_GET_BLOCKS(batches), SOOOA_CUDA_NUM_THREADS>>>(
 			this->d_onevec, batches, 1.0f);
 

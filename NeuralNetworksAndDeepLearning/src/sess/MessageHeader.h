@@ -33,9 +33,6 @@ public:
         PushJob = 10,
         PushJobReply,
 
-        CreateNetwork = 20,
-        CreateNetworkReply,
-
         GoodBye = 90,
 
         HaltMachine = 100,

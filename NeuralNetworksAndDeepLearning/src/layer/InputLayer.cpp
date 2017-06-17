@@ -37,7 +37,7 @@ InputLayer<Dtype>::InputLayer()
 				source + "/test_data", source + "/test_label", numTestPack);
 
 		const vector<float>& mean = SLPROP(Input, mean);
-		int numChannels = mean.size();
+		unsigned int numChannels = (unsigned int)mean.size();
 		this->_dataMean->reshape({1, 1, 1, numChannels});
 		for (int i = 0; i < numChannels; i++) {
 			this->_dataMean->mutable_host_data()[i] = mean[i];

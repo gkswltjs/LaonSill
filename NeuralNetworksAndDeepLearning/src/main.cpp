@@ -58,8 +58,7 @@ using namespace std;
 
 void printUsageAndExit(char* prog) {
     fprintf(stderr,
-        "Usage: %s [-v] [-d | -f networkFilePath | -a romFilePath | -t testItemName]\n",
-        prog);
+        "Usage: %s [-v] [-d exampleName | -f networkFilePath | -t testItemName]\n", prog);
     exit(EXIT_FAILURE);
 }
 
@@ -255,6 +254,8 @@ int main(int argc, char** argv) {
     } else {
         // (5-E-1) Producer&Consumer를 생성.
         Worker::launchThreads(SPARAM(GPU_COUNT), SPARAM(JOB_CONSUMER_COUNT));
+        Sender::launchThread();
+        Receiver::launchThread();
 
         // (5-E-2) Listener & Sess threads를 생성.
         Communicator::launchThreads(SPARAM(SESS_COUNT));
@@ -293,4 +294,3 @@ int main(int argc, char** argv) {
 }
 #endif
 #endif
-

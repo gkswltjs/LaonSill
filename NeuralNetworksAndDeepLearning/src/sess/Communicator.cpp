@@ -257,7 +257,7 @@ bool Communicator::handleGoodByeMsg(MessageHeader recvMsgHdr, char* recvMsg,
 // |------------------|
 bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
-
+#if 0
     // (1) create network.
     int networkId = LegacyWork<float>::createNetwork();
 
@@ -279,7 +279,7 @@ bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMs
     int offset;
     offset = MsgSerializer::serializeMsgHdr(replyMsgHdr, sendBuffer);
     offset = MsgSerializer::serializeInt(networkId, offset, sendBuffer);
-
+#endif
     return true;
 }
 
@@ -467,12 +467,6 @@ void Communicator::sessThread(int sessId) {
                 break;
             case MessageHeader::PushJob:
                 needReply = Communicator::handlePushJobMsg(
-                    recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
-                    replyMsgHdr, replyMsg, replyBigMsg);
-                break;
-
-            case MessageHeader::CreateNetwork:
-                needReply = Communicator::handleCreateNetworkMsg(
                     recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
                     replyMsgHdr, replyMsg, replyBigMsg);
                 break;

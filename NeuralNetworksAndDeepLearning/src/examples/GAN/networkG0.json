@@ -383,6 +383,7 @@
         "lossLayer" : ["celossGD0GAN"],
         "gamma" : 0.1,
         "saveInterval" : 1000000,
+        "testInterval" : 100,
         "savePathPrefix" : "",
         "baseLearningRate" : 0.0002,
         "stepSize" : 100000,

@@ -114,7 +114,7 @@ void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
     GPUDevInfo devInfo = ResourceManager::getSingleGPUInfo();
 
     LogicalPlan* lp = LogicalPlan::getLogicalPlan(networkID);
-    PhysicalPlan* pp = new PhysicalPlan();
+    PhysicalPlan* pp = new PhysicalPlan(SNPROP(lossLayer));
 
     pp->networkID = networkID;
     pp->refCount = 0;

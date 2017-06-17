@@ -240,6 +240,11 @@ void Worker::jobConsumerThread(int consumerIdx) {
                 ThreadMgmt::signalAll(ThreadEvent::Halt);
                 break;
 
+            case Job::CreateNetworkFromFile:
+                cout << "handle create-network job. jsonfilePath : " <<
+                    job->getStringValue(0) << "." << endl; 
+                break;
+
             default:
                 SASSERT(false, "Invalid job type");
         }

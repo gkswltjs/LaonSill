@@ -47,7 +47,6 @@ void FRCNN<Dtype>::run() {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(1);
 
-
 #if !INFERENCE
     for (int i = 0; i < 10000; i++) {
         cout << "epoch : " << i << endl;
