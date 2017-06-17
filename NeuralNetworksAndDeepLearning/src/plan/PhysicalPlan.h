@@ -17,6 +17,7 @@
 
 #include "common.h"
 #include "LogicalPlan.h"
+#include "LossConsole.h"
 
 #ifndef PHYSICALPLAN_H
 #define PHYSICALPLAN_H 
@@ -51,7 +52,7 @@ typedef struct TensorAllocKey_t {
 
 class PhysicalPlan {
 public: 
-    PhysicalPlan() {}
+    PhysicalPlan(std::vector<std::string> lossNames);
     virtual ~PhysicalPlan();
 
     int                         networkID;
@@ -114,5 +115,8 @@ private:
     void allocateTensorInternal(int networkID);
     static void* allocTensorMem(int layerType, void* instancePtr, std::string tensorName,
                                 PlanAlloc planAlloc, bool isInput, int index);
+
+    LossConsole *lossConsole;       // FIXME: 이름이... 이상하다 ㅠ_ㅠ 좋은걸로 바꿔줘요
+    void calcLoss();
 };
 #endif /* PHYSICALPLAN_H */

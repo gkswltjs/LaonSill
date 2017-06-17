@@ -20,12 +20,18 @@
 #include "Task.h"
 #include "ThreadMgmt.h"
 #include "SysLog.h"
+#include "LossLayer.h"
 
 using namespace std;
 
 map<int, vector<PhysicalPlan*>>     PhysicalPlan::planGlobalMap;
 map<int, PlanInfo*>                 PhysicalPlan::planGlobalInfoMap;
 mutex                               PhysicalPlan::planGlobalMutex;
+
+PhysicalPlan::PhysicalPlan(vector<string> lossNames) {
+    this->lossConsole = new LossConsole(lossNames);
+    SASSUME0(this->lossConsole);
+}
 
 PhysicalPlan::~PhysicalPlan() {
     for (map<int, void*>::iterator iter = instanceMap.begin(); iter != instanceMap.end();
@@ -278,6 +284,25 @@ void PhysicalPlan::loadNetwork() {
 
 }
 
+void PhysicalPlan::calcLoss() {
+    if (SNPROP(testInterval) == 0)
+        return;
+
+    for (int i = 0; i < SNPROP(lossLayer).size(); i++) {
+        string lossLayerName = SNPROP(lossLayer)[i];
+        Network<float>* network = Network<float>::getNetworkFromID(WorkContext::curNetworkID);
+        Layer<float>* layer = network->findLayer(lossLayerName);
+        LossLayer<float>* lossLayer = (LossLayer<float>*)layer;
+
+        lossConsole->addValue(i, (float)lossLayer->cost());
+    }
+
+    if (SNPROP(iterations) % SNPROP(testInterval) == 0) {
+        lossConsole->printLoss(stdout);
+        lossConsole->clear();
+    }
+}
+
 bool PhysicalPlan::generatePlan() {
     // (1) mini batch를 다 돌았는지 확인한다.
     // FIXME: plan lock의 범위가 좀 넓다.. 최적화 고민해보자.
@@ -306,6 +331,8 @@ bool PhysicalPlan::generatePlan() {
         ((SNPROP(iterations) % SNPROP(saveInterval)) == 0)) {
         saveNetwork = true;
     }
+
+    calcLoss();
 
     if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
         WorkContext::curPlanInfo->curEpochIndex -= 1;

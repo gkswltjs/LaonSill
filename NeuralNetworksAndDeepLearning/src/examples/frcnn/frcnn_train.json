@@ -487,6 +487,7 @@
 		"lossLayer" : ["rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"],
 		"gamma" : 0.1,
 		"saveInterval" : 10000,
+		"testInterval" : 10,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,
 		"stepSize" : 50000,
