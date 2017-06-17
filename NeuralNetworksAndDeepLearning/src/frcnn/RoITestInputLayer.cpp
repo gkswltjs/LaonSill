@@ -324,15 +324,19 @@ void RoITestInputLayer<Dtype>::destroyLayer(void* instancePtr) {
 template<typename Dtype>
 void RoITestInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
-    SASSERT0(index == 0);
+	if (isInput) {
+		SASSERT0(false);
+	} else {
+		SASSERT0(index < 2);
+	}
 
     RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
 
     if (isInput) {
-        SASSERT0(layer->_inputData.size() == 0);
+        SASSERT0(layer->_inputData.size() == index);
         layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
     } else {
-        SASSERT0(layer->_outputData.size() == 0);
+        SASSERT0(layer->_outputData.size() == index);
         layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
     }
 }
@@ -341,6 +345,17 @@ template<typename Dtype>
 bool RoITestInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
     layer->reshape();
+
+    if (SNPROP(miniBatch) == 0) {
+		int trainDataNum = layer->getNumTrainData();
+		if (trainDataNum % SNPROP(batchSize) == 0) {
+			SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+		} else {
+			SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+		}
+		WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+	}
+
     return true;
 }
 

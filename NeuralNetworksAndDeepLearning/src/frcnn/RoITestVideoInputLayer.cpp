@@ -264,6 +264,17 @@ template<typename Dtype>
 bool RoITestVideoInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     RoITestVideoInputLayer<Dtype>* layer = (RoITestVideoInputLayer<Dtype>*)instancePtr;
     layer->reshape();
+
+    if (SNPROP(miniBatch) == 0) {
+		int trainDataNum = layer->getNumTrainData();
+		if (trainDataNum % SNPROP(batchSize) == 0) {
+			SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+		} else {
+			SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+		}
+		WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+	}
+
     return true;
 }
 

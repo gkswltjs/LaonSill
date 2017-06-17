@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     // 처음 생각했던 것보다 실행모드의 개수가 늘었다.
     // 모드가 하나만 더 추가되면 그냥 enum type으로 모드를 정의하도록 하자.
 
-    bool    useDeveloperMode = false; 
+    bool    useDeveloperMode = false;
     bool    useSingleJobMode = false;
     bool    useTestMode = false;
 
@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
 
         default:    /* ? */
             printUsageAndExit(argv[0]);
-            break; 
+            break;
         }
     }
 
@@ -240,7 +240,7 @@ int main(int argc, char** argv) {
         // (5-D-4) 테스트를 실행한다.
         runTest(testItemName);
 
-        // (5-D-5) release resources 
+        // (5-D-5) release resources
         Job* haltJob = new Job(Job::HaltMachine);
         Worker::pushJob(haltJob);
 

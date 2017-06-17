@@ -31,10 +31,9 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 
 	this->imdb = combinedRoidb();
 	cout << this->imdb->roidb.size() << " roidb entries ... " << endl;
-	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, this->imdb->roidb.size(), 50, 1);
-
 	// Train a Fast R-CNN network.
 	filterRoidb(this->imdb->roidb);
+	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, this->imdb->roidb.size(), 50, 1);
 
 	cout << "Computing bounding-box regression targets ... " << endl;
 	RoIDBUtil::addBboxRegressionTargets(imdb->roidb, this->bboxMeans, this->bboxStds);
@@ -535,7 +534,7 @@ vector<cv::Mat> RoIInputLayer<Dtype>::getImageBlob(const vector<RoIDB>& roidb,
 		cv::Mat im = roidb[i].getMat();
 #if ROIINPUTLAYER_LOG
 		cout << "image: " << roidb[i].image.substr(roidb[i].image.length()-10) <<
-				" (" << im.rows << "x" << im.cols << ")" << ", flip: " << roidb[i].flipped;
+				" (" << im.rows << "x" << im.cols << ")" << ", flip: " << roidb[i].flipped << endl;
 		//cout << "original: " << ((float*)im.data) << endl;
 #endif
 		// XXX: for test
@@ -752,6 +751,17 @@ template<typename Dtype>
 bool RoIInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     RoIInputLayer<Dtype>* layer = (RoIInputLayer<Dtype>*)instancePtr;
     layer->reshape();
+
+    if (SNPROP(miniBatch) == 0) {
+		int trainDataNum = layer->getNumTrainData();
+		if (trainDataNum % SNPROP(batchSize) == 0) {
+			SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+		} else {
+			SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+		}
+		WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+	}
+
     return true;
 }
 

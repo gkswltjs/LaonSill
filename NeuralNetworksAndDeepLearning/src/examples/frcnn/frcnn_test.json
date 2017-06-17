@@ -3,11 +3,11 @@
 	[
 		{
 			"name" : "input-data",
-			"layer" : "RoIInput",
+			"layer" : "RoITestInput",
 			"id" : 0,
-			"output" : ["data", "im_info", "gt_boxes"],
+			"output" : ["data", "im_info"],
 			"numClasses" : 21,
-			"imageSet" : "trainval", 
+			"imageSet" : "test", 
 			"dataName" : "voc_2007",
 			"dataPath" : "/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007/VOC2007",
 			"labelMapPath" : "/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007/labelmap_voc.prototxt",
@@ -278,51 +278,6 @@
 		},
 
 		{
-			"name" : "rpn-data",
-			"layer" : "AnchorTarget",
-			"id" : 200,
-			"input" : ["rpn_cls_score", "gt_boxes", "im_info", "data"],
-			"output" : ["rpn_labels", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"],
-			"propDown" : [false, false, false, false],
-			"featStride" : 16
-		},
-
-		{
-			"name" : "rpn_loss_cls",
-			"layer" : "SoftmaxWithLoss",
-			"id" : 210,
-			"input" : ["rpn_cls_score_reshape", "rpn_labels"],
-			"output" : ["rpn_cls_loss"],
-			"propDown" : [true, false],
-			"lossWeight": 1.0,
-			"ignoreLabel" : -1,
-			"normalize" : true,
-			"softmaxAxis" : 1,
-			"innerLayer" :
-			[
-				{
-					"name" : "inner_softmax",
-					"id" : 7000,
-					"layer" : "Softmax",
-					"input" : ["inner_softmax_7000_input"],
-					"output" : ["inner_softmax_7000_input"],
-					"softmaxAxis" : 1
-				}
-			]	
-		},
-
-		{
-			"name" : "rpn_loss_bbox",
-			"layer" : "SmoothL1Loss",
-			"id" : 220,
-			"input" : ["rpn_bbox_pred", "rpn_bbox_targets", "rpn_bbox_inside_weights", "rpn_bbox_outside_weights"],
-			"output" : ["rpn_loss_bbox"],
-			"propDown" : [true, true, false, false],
-			"lossWeight" : 1.0,
-			"sigma" : 3.0	
-		},
-
-		{
 			"name" : "rpn_cls_prob",
 			"layer" : "Softmax",
 			"id" : 230,
@@ -347,19 +302,9 @@
 			"layer" : "Proposal",
 			"id" : 250,
 			"input" : ["rpn_cls_prob_reshape", "rpn_bbox_pred", "im_info"],
-			"output" : ["rpn_rois"],
+			"output" : ["rois"],
 			"propDown" : [false, false, false],
 			"featStride" : 16
-		},
-
-		{
-			"name" : "roi-data",
-			"layer" : "ProposalTarget",
-			"id" : 260,
-			"input" : ["rpn_rois", "gt_boxes"],
-			"output" : ["rois", "labels", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"],
-			"propDown" : [false, false],
-			"numClasses" : 21
 		},
 
 		{
@@ -450,33 +395,22 @@
 		},
 
 		{
-			"name" : "loss_cls",
-			"layer" : "SoftmaxWithLoss",
+			"name" : "cls_prob",
+			"layer" : "Softmax",
 			"id" : 340,
-			"input" : ["cls_score", "labels"],
-			"output" : ["loss_cls"],
-			"propDown" : [true, false],
-			"lossWeight": 1.0,
-			"innerLayer" :
-			[
-				{
-					"name" : "inner_softmax",
-					"id" : 7001,
-					"layer" : "Softmax",
-					"input" : ["inner_softmax_7001_input"],
-					"output" : ["inner_softmax_7001_input"]
-				}
-			]	
+			"input" : ["cls_score"],
+			"output" : ["cls_prob"]
 		},
 
 		{
-			"name" : "loss_bbox",
-			"layer" : "SmoothL1Loss",
+			"name" : "test_output",
+			"layer" : "FrcnnTestOutput",
 			"id" : 350,
-			"input" : ["bbox_pred", "bbox_targets", "bbox_inside_weights", "bbox_outside_weights"],
+			"input" : ["rois", "im_info", "cls_prob", "bbox_pred"],
 			"output" : ["loss_bbox"],
-			"propDown" : [true, true, false, false],
-			"lossWeight" : 1.0
+			"labelMapPath" : "/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007/labelmap_voc.prototxt",
+			"thresh" : 0.5,
+			"savePath" : "/home/jkim/frcnn/outputs"
 		}
 	],
 
@@ -484,19 +418,8 @@
 	{
 		"batchSize" : 1, 
 		"epochs" : 5, 
-		"lossLayer" : ["rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"],
-		"gamma" : 0.1,
-		"testInterval" : 10,
-		"saveInterval" : 10000,
-		"savePathPrefix" : "", 
-		"baseLearningRate" : 0.001,
-		"stepSize" : 50000,
-		"weightDecay" : 0.0005,
-		"momentum" : 0.9,
-		"clipGradientsLevel" : 0.0,
-		"lrPolicy" : "Step",
-		"optimizer" : "Momentum",
-		"loadPath" : "/home/jkim/Dev/SOOOA_HOME/network/VGG_CNN_M_1024_FRCNN_CAFFE.param"
+		"phase" : "TestPhase",
+		"loadPath" : "/home/jkim/Dev/SOOOA_HOME/network/SOOOA_FRCNN_600000.param"
 	}
 
 }

@@ -21,52 +21,44 @@
 					<folderInfo id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085." name="/" resourcePath="">
 						<toolChain errorParsers="" id="com.nvidia.cuda.ide.toolchain.eight_zero.1919755204" name="CUDA Toolkit 8.0" superClass="com.nvidia.cuda.ide.toolchain.eight_zero">
 							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.91398679" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Debug" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="com.nvidia.cuda.ide.builder.1934992930" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder">
-								<outputEntries>
-									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="Debug"/>
-									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="Release"/>
-									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="DebugClient"/>
-									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="ReleaseClient"/>
-								</outputEntries>
-							</builder>
+							<builder buildPath="${workspace_loc:/NeuralNetworksAndDeepLearning}/Debug" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="com.nvidia.cuda.ide.builder.1934992930" keepEnvironmentInBuildfile="false" name="CUDA Toolkit 8.0 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
 							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS}  -Wno-deprecated-gpu-targets ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.71694175" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.1724077056" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/prop"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/tensor"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/updater"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/plan"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/examples"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/dqn"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/ale/include"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/cnpy"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/lmdbxx"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/nms"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/frcnn"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/ssd"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/client"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/core"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/cuda"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/debug"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/log"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/monitor"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/param"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/pooling"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/application"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/common"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/dataset"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/layer"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/network"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/perf"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/sess"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/util"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/test"/>
-									<listOptionValue builtIn="false" value="/opt/gnuplot-iostream"/>
-									<listOptionValue builtIn="false" value="/opt/CImg"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/ale/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/ssd&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/debug&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/exception&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/log&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/monitor&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/param&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/pooling&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/application&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/common&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cost&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dataset&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/evaluation&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/layer&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/network&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/test&quot;"/>
+									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
+									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 									<listOptionValue builtIn="false" value="/usr/include/SDL"/>
-									<listOptionValue builtIn="false" value="/usr/local/include/hdf5"/>
 								</option>
 								<option id="nvcc.compiler.deviceDebug.1255593931" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug" value="true" valueType="boolean"/>
 								<option id="nvcc.compiler.option.level.439035553" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level" value="true" valueType="boolean"/>
@@ -95,7 +87,6 @@
 									<listOptionValue builtIn="false" value="opencv_highgui"/>
 									<listOptionValue builtIn="false" value="opencv_imgproc"/>
 									<listOptionValue builtIn="false" value="z"/>
-									<listOptionValue builtIn="false" value="gpu_nms"/>
 									<listOptionValue builtIn="false" value="SDL"/>
 									<listOptionValue builtIn="false" value="ale"/>
 									<listOptionValue builtIn="false" value="cublas"/>
@@ -124,50 +115,12 @@
 							</tool>
 							<tool id="nvcc.archiver.base.103192293" name="NVCC Archiver" superClass="nvcc.archiver.base"/>
 							<tool command="as" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.GASErrorParser" id="com.nvidia.host.assembler.1156624740" name="Host Assembler" superClass="com.nvidia.host.assembler">
-								<option id="gnu.both.asm.option.include.paths.1145647657" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/prop"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/tensor"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/updater"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/plan"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/examples"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/dqn"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/ale/include"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/cnpy"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/lmdbxx"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/3rd_party/nms"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/frcnn"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/ssd"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/client"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/core"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/cuda"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/debug"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/log"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/monitor"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/param"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/pooling"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/application"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/common"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/dataset"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/layer"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/network"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/perf"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/sess"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/util"/>
-									<listOptionValue builtIn="false" value="/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/test"/>
-									<listOptionValue builtIn="false" value="/opt/gnuplot-iostream"/>
-									<listOptionValue builtIn="false" value="/opt/CImg"/>
-									<listOptionValue builtIn="false" value="/usr/include/SDL"/>
-									<listOptionValue builtIn="false" value="/usr/local/include/hdf5"/>
-								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1331215730" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="src|nms" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
@@ -205,10 +158,6 @@
 							<tool commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets  ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.698493937" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.5633418" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/tensor&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/updater&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/plan&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/prop&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}&quot;"/>
@@ -217,19 +166,23 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/ssd&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/debug&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/exception&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/log&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/monitor&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/param&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/pooling&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/application&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/common&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cost&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dataset&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/evaluation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/layer&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/network&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
@@ -242,7 +195,7 @@
 								</option>
 								<option id="nvcc.compiler.deviceDebug.108489364" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug" value="true" valueType="boolean"/>
 								<option id="nvcc.compiler.option.level.1039857387" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level" value="true" valueType="boolean"/>
-								<option defaultValue="nvcc.compiler.optimization.level.none" id="nvcc.compiler.optimization.level.383940984" name="Optimization Level" superClass="nvcc.compiler.optimization.level" value="nvcc.compiler.optimization.level.none" valueType="enumerated"/>
+								<option defaultValue="nvcc.compiler.optimization.level.none" id="nvcc.compiler.optimization.level.383940984" name="Optimization Level" superClass="nvcc.compiler.optimization.level" value="nvcc.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="nvcc.compiler.pic.184961637" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic"/>
 								<option id="nvcc.compiler.def.symbols.829168339" name="Defined symbols (-D)" superClass="nvcc.compiler.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="GPU_MODE"/>
@@ -298,7 +251,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="nms|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
@@ -336,10 +289,6 @@
 							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.1612776178" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.1273640845" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/tensor&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/plan&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/updater&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/prop&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}&quot;"/>
@@ -348,19 +297,23 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/ssd&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/debug&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/exception&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/log&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/monitor&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/param&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/pooling&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/application&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/common&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cost&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dataset&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/evaluation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/layer&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/network&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
@@ -429,7 +382,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="nms|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
@@ -467,10 +420,6 @@
 							<tool command="nvcc" commandLinePattern="${COMMAND} ${FLAGS} -Wno-deprecated-gpu-targets  ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="org.eclipse.cdt.core.VCErrorParser;nvcc.errorParser;org.eclipse.cdt.core.GCCErrorParser" id="nvcc.compiler.base.1035527359" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.include.paths.1815451746" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/tensor&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/updater&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/plan&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/prop&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/examples&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dqn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}&quot;"/>
@@ -479,19 +428,23 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/cnpy&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/lmdbxx&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/activation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/frcnn&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/ssd&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/client&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cuda&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/debug&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/exception&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/log&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/monitor&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/param&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/pooling&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/application&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/common&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/cost&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/dataset&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/evaluation&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/layer&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/network&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/perf&quot;"/>
@@ -561,7 +514,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="nms|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
@@ -607,14 +560,8 @@
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;nvcc.compiler.base.71694175;nvcc.compiler.input.cpp.1999772657">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.debug.215061865;cdt.managedbuild.tool.gnu.cpp.compiler.input.602092895">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;nvcc.compiler.base.71694175;nvcc.compiler.input.c.1923731997">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;cdt.managedbuild.tool.gnu.c.compiler.mingw.exe.debug.1479118279;cdt.managedbuild.tool.gnu.c.compiler.input.285345351">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
@@ -622,16 +569,13 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.release.467933896;cdt.managedbuild.config.gnu.mingw.exe.release.467933896.;cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.434521137;cdt.managedbuild.tool.gnu.cpp.compiler.input.1412707538">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278.;nvcc.compiler.base.1035527359;nvcc.compiler.input.cpp.1070225711">
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.;nvcc.compiler.base.698493937;nvcc.compiler.input.cpp.2072575433">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.;nvcc.compiler.base.698493937;nvcc.compiler.input.cu.1645151746">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.;nvcc.compiler.base.698493937;nvcc.compiler.input.cpp.2072575433">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;nvcc.compiler.base.71694175;nvcc.compiler.input.cu.1584389715">
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278.;nvcc.compiler.base.1035527359;nvcc.compiler.input.cpp.1070225711">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278.;nvcc.compiler.base.1035527359;nvcc.compiler.input.cu.2075985056">
@@ -640,11 +584,11 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278.;nvcc.compiler.base.1035527359;nvcc.compiler.input.c.1078164640">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.release.467933896;cdt.managedbuild.config.gnu.mingw.exe.release.467933896.;cdt.managedbuild.tool.gnu.c.compiler.mingw.exe.release.1466500324;cdt.managedbuild.tool.gnu.c.compiler.input.305431018">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.;nvcc.compiler.base.698493937;nvcc.compiler.input.c.1548193653">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.release.467933896;cdt.managedbuild.config.gnu.mingw.exe.release.467933896.;cdt.managedbuild.tool.gnu.c.compiler.mingw.exe.release.1466500324;cdt.managedbuild.tool.gnu.c.compiler.input.305431018">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>
