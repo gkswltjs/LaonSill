@@ -72,6 +72,21 @@ void Layer<Dtype>::backpropagation() {
 }
 
 template <typename Dtype>
+void Layer<Dtype>::printDataConfig() {
+	cout << "for layer " << SLPROP_BASE(name) << endl;
+	cout << "\tinput:" << endl;
+	for (int i = 0; i < this->_inputData.size(); i++) {
+		cout << "\t\t";
+		this->_inputData[i]->print_shape();
+	}
+	cout << "\toutput:" << endl;
+	for (int i = 0; i < this->_outputData.size(); i++) {
+		cout << "\t\t";
+		this->_outputData[i]->print_shape();
+	}
+}
+
+template <typename Dtype>
 bool Layer<Dtype>::_adjustInputShape() {
 	const uint32_t inputSize = _inputData.size();
 
@@ -94,6 +109,20 @@ bool Layer<Dtype>::_isInputShapeChanged(uint32_t index) {
 
 	return (this->_inputData[index]->getCount() == 0 ||
 			this->_inputData[index]->getShape() != this->_inputShape[index]);
+}
+
+
+
+template <typename Dtype>
+void Layer<Dtype>::_printOn() {
+	Data<Dtype>::printConfig = 1;
+	SyncMem<Dtype>::printConfig = 1;
+}
+
+template <typename Dtype>
+void Layer<Dtype>::_printOff() {
+	Data<Dtype>::printConfig = 0;
+	SyncMem<Dtype>::printConfig = 0;
 }
 
 template class Layer<float>;

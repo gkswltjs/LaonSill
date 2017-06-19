@@ -12,6 +12,7 @@
 
 #include "SyncMem.h"
 #include "Cuda.h"
+#include "MathFunctions.h"
 
 //#define SYNCMEM_LOG
 
@@ -169,9 +170,15 @@ void SyncMem<Dtype>::reset_host_mem(const bool setZero, const Dtype value) {
 }
 
 template <typename Dtype>
-void SyncMem<Dtype>::reset_device_mem() {
+void SyncMem<Dtype>::reset_device_mem(const bool setZero, const Dtype value) {
 	checkMemValidity();
-	checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_size));
+
+	if (setZero) {
+		checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_size));
+	} else {
+		soooa_gpu_set(_size, value, _device_mem);
+	}
+
 	//_device_mem_updated = true;
 	setDeviceMemUpdated();
 }
@@ -300,16 +307,18 @@ void SyncMem<Dtype>::checkHostMemAndUpdateDeviceMem(bool reset) {
 
 template <typename Dtype>
 void SyncMem<Dtype>::checkMemValidity() {
+	/*
 	assert(_size > 0 &&
 			_host_mem != NULL &&
 			_device_mem != NULL &&
 			"assign mem before using ... ");
-	/*
+			*/
 	if (_size <= 0 &&
 				_host_mem == NULL &&
-				_device_mem == NULL)
+				_device_mem == NULL) {
 		cout << "assign mem before using ... " << endl;
-		*/
+		exit(1);
+	}
 }
 
 template <typename Dtype>
@@ -406,7 +415,7 @@ void SyncMem<Dtype>::print(const string& head, const bool printData) {
 
 template <typename Dtype>
 void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape,
-    const bool cmo, const bool printData) {
+    const bool cmo, const bool printData, const int summary) {
 
 	if (!printConfig)
 		return;
@@ -420,7 +429,7 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape,
 		checkDeviceMemAndUpdateHostMem(false);
 		const Dtype* data = _host_mem;
 
-		uint32_t i,j,k,l;
+		int i,j,k,l;
 
 		const uint32_t batches = shape[0];
 		const uint32_t channels = shape[1];
@@ -450,19 +459,45 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape,
 				(*outstream) << endl;
 			}
 		} else {
+
+			//int summary = 6;
+			int first = -1;
+			int last = -1;
+			if (summary > 0) {
+				first = (summary + 1) / 2;
+				last = summary - first;
+			}
+
 			for(i = 0; i < batches; i++) {
-				for(j = 0; j < channels; j++) {
-					(*outstream) << "[" << i << "x" << j << "]" << endl;
-					for(k = 0; k < rows; k++) {
-						for(l = 0; l < cols; l++) {
-							(*outstream) << data[i*batchElem + j*channelElem + k*cols + l]
-                                << ", ";
+				if (summary <= 0 || (batches <= summary || (i < first || i >= batches - last))) {
+					for(j = 0; j < channels; j++) {
+						if (summary <= 0 || (channels <= summary || (j < first || j >= channels - last))) {
+							(*outstream) << "[" << i << "x" << j << "]" << endl;
+							for(k = 0; k < rows; k++) {
+								if (summary <= 0 || (rows <= summary || (k < first || k >= rows - last))) {
+									(*outstream) << k << "\t";
+									for(l = 0; l < cols; l++) {
+										if (summary <= 0 || (cols <= summary || (l < first || l >= cols - last))) {
+											(*outstream) << data[i*batchElem +
+											    j*channelElem + k*cols + l] << ", ";
+										} else if (l == first) {
+											cout << " ... , ";
+										}
+									}
+									(*outstream) << endl;
+								} else if (k == first) {
+									cout << " ... " << endl;
+								}
+							}
+							(*outstream) << endl;
+						} else if (j == first) {
+							cout << " ... " << endl;
 						}
-						(*outstream) << endl;
 					}
 					(*outstream) << endl;
+				} else if (i == first) {
+					cout << " ... " << endl;
 				}
-				(*outstream) << endl;
 			}
 		}
 		(*outstream) << "-------------------------------------" << endl;

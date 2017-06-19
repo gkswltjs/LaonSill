@@ -14,6 +14,8 @@
 #include "DataSet.h"
 #include "InputLayer.h"
 #include "IMDB.h"
+#include "SysLog.h"
+
 
 template <typename Dtype>
 class RoIInputLayer : public InputLayer<Dtype> {
@@ -32,10 +34,10 @@ public:
 	void reshape();
 
 private:
-	IMDB* getImdb(const std::string& imdb_name);
+	IMDB* getImdb();
 	void getTrainingRoidb(IMDB* imdb);
-	IMDB* getRoidb(const std::string& imdb_name);
-	IMDB* combinedRoidb(const std::string& imdb_name);
+	IMDB* getRoidb();
+	IMDB* combinedRoidb();
 	bool isValidRoidb(RoIDB& roidb);
 	void filterRoidb(std::vector<RoIDB>& roidb);
 
@@ -61,7 +63,6 @@ public:
 	std::vector<std::vector<Data<Dtype>*>> proposalTargetDataList;
 
 	std::vector<cv::Scalar> boxColors;
-
 
 
 public:

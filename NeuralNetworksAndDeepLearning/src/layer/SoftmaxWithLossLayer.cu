@@ -46,6 +46,8 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 	bool adjusted = Layer<Dtype>::_adjustInputShape();
 	if (adjusted) {
 		this->_outputData[0]->reshape({1, 1, 1, 1});
+		this->_outputData[0]->mutable_host_grad()[0] = SLPROP(Loss, lossWeight);
+
 #if SOFTMAXWITHLOSSLAYER_LOG
 		printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
 				SLPROP_BASE(name).c_str(), 1, 1, 1, 1);

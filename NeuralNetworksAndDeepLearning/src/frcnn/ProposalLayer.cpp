@@ -21,26 +21,25 @@
 
 using namespace std;
 
+
 template <typename Dtype>
-ProposalLayer<Dtype>::ProposalLayer() : Layer<Dtype>() {
+ProposalLayer<Dtype>::ProposalLayer()
+	: Layer<Dtype>() {
 	this->type = Layer<Dtype>::Proposal;
 
-	const vector<uint32_t>& scales = SLPROP(Proposal, scales);
-	GenerateAnchorsUtil::generateAnchors(this->anchors, scales);
+	GenerateAnchorsUtil::generateAnchors(this->anchors, SLPROP(Proposal, scales));
 	this->numAnchors = this->anchors.size();
 
 #if PROPOSALLAYER_LOG
-	cout << "featStride: " << this->featStride << endl;
+	cout << "featStride: " << SLPROP(Proposal, featStride) << endl;
 	print2dArray("anchors", this->anchors);
 #endif
 }
-
 
 template <typename Dtype>
 ProposalLayer<Dtype>::~ProposalLayer() {
 
 }
-
 
 template <typename Dtype>
 void ProposalLayer<Dtype>::reshape() {
@@ -94,12 +93,12 @@ void ProposalLayer<Dtype>::feedforward() {
 	float nmsThresh;
 	uint32_t minSize;
 
-	if ((NetworkPhase)SNPROP(phase) == NetworkPhase::TrainPhase) {
+	if (SNPROP(phase) == NetworkPhase::TrainPhase) {
 		preNmsTopN 	= TRAIN_RPN_PRE_NMS_TOP_N;
 		postNmsTopN	= TRAIN_RPN_POST_NMS_TOP_N;
 		nmsThresh 	= TRAIN_RPN_NMS_THRESH;
 		minSize 	= TRAIN_RPN_MIN_SIZE;
-	} else if ((NetworkPhase)SNPROP(phase) == NetworkPhase::TestPhase) {
+	} else if (SNPROP(phase) == NetworkPhase::TestPhase) {
 		preNmsTopN 	= TEST_RPN_PRE_NMS_TOP_N;
 		postNmsTopN = TEST_RPN_POST_NMS_TOP_N;
 		nmsThresh 	= TEST_RPN_NMS_THRESH;
@@ -114,11 +113,10 @@ void ProposalLayer<Dtype>::feedforward() {
 
 
 #if PROPOSALLAYER_LOG
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->_inputData[1]->print_data({}, false);
 	scoresData->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-
+	this->_printOff();
 #endif
 
 	Data<Dtype>* bboxDeltas = new Data<Dtype>("bboxDeltas");
@@ -130,10 +128,10 @@ void ProposalLayer<Dtype>::feedforward() {
 	cout << "im_size: (" << imInfo->host_data()[0] << ", " <<
 			imInfo->host_data()[1] << ")" << endl;
 	cout << "scale: " << imInfo->host_data()[2] << endl;
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	bboxDeltas->print_data({}, false);
 	imInfo->print_data({}, false);
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 #endif
 
 	// 1. Generate propsals from bbox deltas and shifted anchors
@@ -153,14 +151,13 @@ void ProposalLayer<Dtype>::feedforward() {
 	for (uint32_t i = 0; i < numShifts; i++)
 		shifts[i].resize(4);
 
-	const uint32_t featStride = SLPROP(Proposal, featStride);
 	for (uint32_t i = 0; i < height; i++) {
 		for (uint32_t j = 0; j < width; j++) {
 			vector<uint32_t>& shift = shifts[i*width+j];
-			shift[0] = j * featStride;
-			shift[2] = j * featStride;
-			shift[1] = i * featStride;
-			shift[3] = i * featStride;
+			shift[0] = j * SLPROP(Proposal, featStride);
+			shift[2] = j * SLPROP(Proposal, featStride);
+			shift[1] = i * SLPROP(Proposal, featStride);
+			shift[3] = i * SLPROP(Proposal, featStride);
 		}
 	}
 #if PROPOSALLAYER_LOG
@@ -218,6 +215,11 @@ void ProposalLayer<Dtype>::feedforward() {
 	fill1dVecWithData(scoresData, scores);
 	delete scoresData;
 
+#if PROPOSALLAYER_LOG
+	this->_printOn();
+	bboxDeltas->print_data({}, false);
+	this->_printOff();
+#endif
 	// Convert anchors into proposals via bbox transformations
 	vector<vector<Dtype>> proposals;
 	BboxTransformUtil::bboxTransformInv(anchors, bboxDeltas, proposals);
@@ -240,6 +242,9 @@ void ProposalLayer<Dtype>::feedforward() {
 	// (NOTE: convert minSize to input image scale stored in imInfo[2])
 	vector<uint32_t> keep;
 	_filterBoxes(proposals, minSize * imInfo->host_data()[2], keep);
+
+	//cout << "num of proposals: " << proposals.size() << ", keep: " << keep.size() << endl;
+
 	proposals = vec_keep_by_index(proposals, keep);
 	scores = vec_keep_by_index(scores, keep);
 #if PROPOSALLAYER_LOG
@@ -251,10 +256,18 @@ void ProposalLayer<Dtype>::feedforward() {
 	// 4. sort all (proposal, score) pairs by score from highest to lowest
 	// 5. take preNmsTopN (e.g. 6000)
 	vector<uint32_t> order(scores.size());
-#if TEST_MODE
-	for (uint32_t i = 0; i < order.size(); i++)
-		order[i] = i;
+#if !SOOOA_DEBUG
+	iota(order.begin(), order.end(), 0);
+	vec_argsort(scores, order);
+	/*
+	std::cout << "proposal layer sort result: " << std::endl;
+	for (int i = 0; i < scores.size(); i++) {
+		std::cout << "\tscore: " << scores[order[i]] << std::endl;
+	}
+	*/
 #else
+	//string path = "/home/jkim/Dev/data/numpy_array/order.npz";
+	//loadPredefinedOrder(path, order);
 	iota(order.begin(), order.end(), 0);
 	vec_argsort(scores, order);
 #endif
@@ -264,7 +277,6 @@ void ProposalLayer<Dtype>::feedforward() {
 		cout << order[i] << "\t: " << scores[order[i]] << endl;
 	}
 #endif
-
 	if (preNmsTopN > 0 && preNmsTopN < order.size())
 		order.erase(order.begin() + preNmsTopN, order.end());
 	proposals = vec_keep_by_index(proposals, order);
@@ -279,34 +291,19 @@ void ProposalLayer<Dtype>::feedforward() {
 	// 6. apply nms (e.g. threshold = 0.7)
 	// 7. take postNmsTopN (e.g. 300)
 	// 8. return the top proposals (->RoIs top)
-#if TEST_MODE
-	keep.resize(postNmsTopN);
-	iota(keep.begin(), keep.end(), 0);
-#else
 
 	nms(proposals, scores, nmsThresh, keep);
-	/*
-	const uint32_t numDets = proposals.size();
-	float* dets = new float[numDets*5];
-	for (uint32_t i = 0; i < numDets; i++) {
-		dets[i*5+0] = proposals[i][0];
-		dets[i*5+1] = proposals[i][1];
-		dets[i*5+2] = proposals[i][2];
-		dets[i*5+3] = proposals[i][3];
-		dets[i*5+4] = scores[i];
-	}
-	nms(dets, numDets, nmsThresh, keep);
-	delete [] dets;
-	*/
 
-#endif
 	if (postNmsTopN > 0 && postNmsTopN < keep.size())
 		keep.erase(keep.begin() + postNmsTopN, keep.end());
 	proposals = vec_keep_by_index(proposals, keep);
-
-	//printArray("scores", scores);
 	scores = vec_keep_by_index(scores, keep);
-	//printArray("scores", scores);
+
+#if PROPOSALLAYER_LOG
+	printArray("keep", keep);
+	print2dArray("proposals", proposals);
+	printArray("scores", scores);
+#endif
 
 	// Output rois data
 	// Our RPN implementation only supports a single input image, so all
@@ -318,9 +315,9 @@ void ProposalLayer<Dtype>::feedforward() {
 #if PROPOSALLAYER_LOG
 	cout << "# of proposals: " << proposals.size() << endl;
 	print2dArray("proposals", proposals);
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->_outputData[0]->print_data({}, false);
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 	printArray("scores", scores);
 #endif
 
@@ -330,6 +327,39 @@ void ProposalLayer<Dtype>::feedforward() {
 		assert(this->_outputData.size() == 1);
 	}
 	delete imInfo;
+
+
+	/*
+	cout << "rois shape: " << endl;
+	print2dArray("rois", proposals);
+
+	const string windowName = "rois";
+	uint32_t numBoxes = proposals.size();
+
+	Dtype scale = this->_inputData[2]->host_data()[2];
+	int boxOffset = 1;
+	cout << "scale: " << scale << endl;
+	const int onceSize = 5;
+
+	for (int j = 0; j < (numBoxes / onceSize); j++) {
+		cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
+		cv::resize(im, im, cv::Size(), scale, scale, CV_INTER_LINEAR);
+
+		for (uint32_t i = j*onceSize; i < (j+1)*onceSize; i++) {
+			cv::rectangle(im, cv::Point(proposals[i][boxOffset+0], proposals[i][boxOffset+1]),
+				cv::Point(proposals[i][boxOffset+2], proposals[i][boxOffset+3]),
+				cv::Scalar(0, 0, 255), 2);
+		}
+
+		cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		cv::imshow(windowName, im);
+
+		if (pause) {
+			cv::waitKey(0);
+			cv::destroyAllWindows();
+		}
+	}
+	*/
 }
 
 template <typename Dtype>
@@ -342,7 +372,6 @@ template <typename Dtype>
 void ProposalLayer<Dtype>::_filterBoxes(std::vector<std::vector<float>>& boxes,
 		const float minSize, std::vector<uint32_t>& keep) {
 	// Remove all boxes with any side smaller than minSize
-
 	keep.clear();
 	float ws, hs;
 	const uint32_t numBoxes = boxes.size();
@@ -353,11 +382,11 @@ void ProposalLayer<Dtype>::_filterBoxes(std::vector<std::vector<float>>& boxes,
 
 		if (ws >= minSize && hs >= minSize)
 			keep.push_back(i);
+		//else
+		//	cout << "ws: " << ws << ", hs:" << hs << endl;
 	}
+	//exit(1);
 }
-
-
-
 
 
 
@@ -419,8 +448,6 @@ template<typename Dtype>
 void ProposalLayer<Dtype>::learnTensor(void* instancePtr) {
     SASSERT0(false);
 }
-
-
 
 
 template class ProposalLayer<float>;

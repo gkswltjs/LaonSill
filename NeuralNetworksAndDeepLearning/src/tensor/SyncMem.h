@@ -86,7 +86,7 @@ public:
 	/**
 	 * @details 디바이스 메모리를 0으로 초기화한다.
 	 */
-	void reset_device_mem();
+	void reset_device_mem(const bool setZero=true, const Dtype value=0.0);
 
 	/**
 	 * @details 호스트 메모리에 주어진 호스트 포인터의 메모리값을 더한다.
@@ -139,7 +139,7 @@ public:
 	 * @param shape 출력 포맷 shape (batches, columns, rows, columns)
 	 */
 	void print(const std::string& head, const std::vector<uint32_t>& shape,
-        const bool cmo=true, const bool printData=true);
+        const bool cmo=true, const bool printData=true, const int summary = 6);
 
 	static void setOutstream(std::ostream *outstream) {
 		SyncMem<Dtype>::outstream = outstream;

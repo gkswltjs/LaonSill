@@ -29,6 +29,7 @@ public:
 	virtual void backpropagation();
 
 private:
+	void initialize();
 	void _sampleRois(
 			const std::vector<std::vector<float>>& allRois,
 			const std::vector<std::vector<float>>& gtBoxes,

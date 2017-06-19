@@ -126,6 +126,9 @@ void Data<Dtype>::reshapeInfer(const vector<int>& shape) {
 		if (shape[i] < 0) {
 			assert(inferredAxis == -1);
 			inferredAxis = i;
+		} else if(shape[i] == 0) {
+			fShape[i] = this->_shape[i];
+			newFixedCount *= this->_shape[i];
 		} else {
 			fShape[i] = shape[i];
 			newFixedCount *= shape[i];
@@ -196,9 +199,9 @@ void Data<Dtype>::reset_host_data(const bool setZero, const Dtype value) {
 }
 
 template <typename Dtype>
-void Data<Dtype>::reset_device_data() {
+void Data<Dtype>::reset_device_data(const bool setZero, const Dtype value) {
 	assert(!this->_hostOnly);
-	_data->reset_device_mem();
+	_data->reset_device_mem(setZero, value);
 }
 
 template <typename Dtype>
@@ -219,7 +222,14 @@ void Data<Dtype>::set(Data<Dtype>* data, bool reshape) {
 	if (reshape)
 		this->reshapeLike(data);
 
-	assert(_shape == data->getShape());
+	//assert(_shape == data->getShape());
+	//assert(_count == data->getCount());
+	if (this->_count != data->getCount()) {
+		cout << "Data::set() _count != data->getCount()" << endl;
+		this->print_shape();
+		data->print_shape();
+		exit(1);
+	}
 
 	if (this->_hostOnly || data->_hostOnly) {
 		this->set_host_data(data);
@@ -394,18 +404,19 @@ void Data<Dtype>::print() {
 
 template <typename Dtype>
 void Data<Dtype>::print_data(const string& head, const vector<uint32_t>& shape,
-		const bool cmo) {
+		const bool cmo, const int summary) {
 	if (!printConfig) return;
 
 	if (shape.size() > 0)
-		_data->print(head, shape, cmo);
+		this->_data->print(head, shape, cmo, true, summary);
 	else
-		_data->print(head, _shape, cmo);
+		this->_data->print(head, this->_shape, cmo, true, summary);
 }
 
 template <typename Dtype>
-void Data<Dtype>::print_data(const vector<uint32_t>& shape, const bool cmo) {
-	print_data(_name+"-data", shape, cmo);
+void Data<Dtype>::print_data(const vector<uint32_t>& shape, const bool cmo,
+		const int summary) {
+	print_data(_name+"-data", shape, cmo, summary);
 }
 
 template <typename Dtype>
@@ -417,18 +428,28 @@ void Data<Dtype>::print_data_flatten() {
 
 template <typename Dtype>
 void Data<Dtype>::print_grad(const string& head, const vector<uint32_t>& shape,
-		const bool cmo) {
+		const bool cmo, const int summary) {
 	if (!printConfig) return;
 
 	if (shape.size() > 0)
-		_grad->print(head, shape, cmo);
+		_grad->print(head, shape, cmo, true, summary);
 	else
-		_grad->print(head, _shape, cmo);
+		_grad->print(head, _shape, cmo, true, summary);
 }
 
 template <typename Dtype>
-void Data<Dtype>::print_grad(const vector<uint32_t>& shape, const bool cmo) {
-	print_grad(_name+"-grad", shape, cmo);
+void Data<Dtype>::print_grad(const vector<uint32_t>& shape, const bool cmo,
+		const int summary) {
+	print_grad(_name+"-grad", shape, cmo, summary);
+}
+
+template <typename Dtype>
+void Data<Dtype>::print_shape() {
+	cout << this->_name << "\'s shape: (";
+	for (int i = 0; i < this->_shape.size(); i++) {
+		cout << this->_shape[i] << ", ";
+	}
+	cout << ")" << endl;
 }
 
 template <typename Dtype>
@@ -609,6 +630,7 @@ Data<Dtype>* Data<Dtype>::range(const vector<int>& startIndex,
 	return result;
 }
 
+/*
 template <typename Dtype>
 void Data<Dtype>::transpose(const vector<uint32_t>& t) {
 
@@ -637,6 +659,46 @@ void Data<Dtype>::transpose(const vector<uint32_t>& t) {
 			for (sIndex[2] = 0; sIndex[2] < _shape[2]; sIndex[2]++) {
 				for (sIndex[3] = 0; sIndex[3] < _shape[3]; sIndex[3]++) {
 					dstData[d0Index*d0Size + d1Index*d1Size + d2Index*d2Size + d3Index] =
+						srcData[sIndex[0]*s0Size + sIndex[1]*s1Size +
+                                sIndex[2]*s2Size + sIndex[3]];
+				}
+			}
+		}
+	}
+	set_host_data(temp);
+	delete temp;
+
+	this->_shape = {d0Index, d1Index, d2Index, d3Index};
+}
+*/
+
+template <typename Dtype>
+void Data<Dtype>::transpose(const vector<uint32_t>& t) {
+	Data<Dtype>* temp = new Data<Dtype>("temp");
+	temp->reshape({_shape[t[0]], _shape[t[1]], _shape[t[2]], _shape[t[3]]});
+
+	const uint32_t s0Size = this->getCountByAxis(1);
+	const uint32_t s1Size = this->getCountByAxis(2);
+	const uint32_t s2Size = this->getCountByAxis(3);
+
+	const uint32_t d0Size = temp->getCountByAxis(1);
+	const uint32_t d1Size = temp->getCountByAxis(2);
+	const uint32_t d2Size = temp->getCountByAxis(3);
+
+	uint32_t sIndex[4];
+	uint32_t& d0Index = sIndex[t[0]];
+	uint32_t& d1Index = sIndex[t[1]];
+	uint32_t& d2Index = sIndex[t[2]];
+	uint32_t& d3Index = sIndex[t[3]];
+
+	const Dtype* srcData = host_data();
+	Dtype* dstData = temp->mutable_host_data();
+
+	for (sIndex[0] = 0; sIndex[0] < this->_shape[0]; sIndex[0]++) {
+		for (sIndex[1] = 0; sIndex[1] < this->_shape[1]; sIndex[1]++) {
+			for (sIndex[2] = 0; sIndex[2] < this->_shape[2]; sIndex[2]++) {
+				for (sIndex[3] = 0; sIndex[3] < this->_shape[3]; sIndex[3]++) {
+					dstData[d0Index*d0Size + d1Index*d1Size + d2Index*d2Size + d3Index] =
 						srcData[sIndex[0]*s0Size + sIndex[1]*s1Size + 
                                 sIndex[2]*s2Size + sIndex[3]];
 				}
@@ -655,7 +717,14 @@ bool Data<Dtype>::compareData(
 		const Dtype error) {
 
 	//assert(this->getShape() == data->getShape());
-	assert(this->getCount() == data->getCount());
+	//assert(this->getCount() == data->getCount());
+	//if (this->getShape() != data->getShape()) {
+	if (this->getCount() != data->getCount()) {
+		cout << "data count inconsistent! at Data::compareData() ... " << endl;
+		this->print_shape();
+		data->print_shape();
+		exit(1);
+	}
 
 	const uint32_t count = this->getCount();
 	const Dtype* data1Ptr = this->host_data();
@@ -677,12 +746,21 @@ bool Data<Dtype>::compareData(
 			for (uint32_t k = 0; k < height; k++) {
 				for (uint32_t l = 0; l < width; l++) {
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
-					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
+					/*
+					if (data1Ptr[index] * data2Ptr[index] < 0) {
+						cout << "---data is opposite at (" << i << "," << j << "," <<
+								k << "," << l << ")" << endl;
+						cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
+								data2Ptr[index] << endl;
+					}
+					*/
+					float diff = fabs(data1Ptr[index]-data2Ptr[index]);
+					if (diff > error) {
 						if (errorCnt < 10) {
 							cout << "data is different at (" << i << "," << j << "," <<
 									k << "," << l << ")" << endl;
-							cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
-									data2Ptr[index] << endl;
+							cout << "data1: " << data1Ptr[index] << ", data2: " <<
+									data2Ptr[index] << ", diff: " << diff << endl;
 						}
 						errorCnt++;
 						result = false;
@@ -696,6 +774,8 @@ bool Data<Dtype>::compareData(
 	return result;
 }
 
+
+/*
 template <typename Dtype>
 bool Data<Dtype>::compareData(
 		Data<Dtype>* data1,
@@ -742,13 +822,22 @@ bool Data<Dtype>::compareData(
 			data2->_name << ">: " << result << "(" << errorCnt << ")" << endl;
 	return result;
 }
+*/
 
 template <typename Dtype>
 bool Data<Dtype>::compareGrad(
 		Data<Dtype>* data,
 		const Dtype error) {
 
-	assert(this->getShape() == data->getShape());
+	//assert(this->getShape() == data->getShape());
+	//assert(this->getCount() == data->getCount());
+	//if (this->getShape() != data->getShape()) {
+	if (this->getCount() != data->getCount()) {
+		cout << "data count inconsistent! at Data::compareGrad() ... " << endl;
+		this->print_shape();
+		data->print_shape();
+		exit(1);
+	}
 
 	const uint32_t count = this->getCount();
 	const Dtype* data1Ptr = this->host_grad();
@@ -770,12 +859,13 @@ bool Data<Dtype>::compareGrad(
 			for (uint32_t k = 0; k < height; k++) {
 				for (uint32_t l = 0; l < width; l++) {
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
-					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
+					float diff = fabs(data1Ptr[index]-data2Ptr[index]);
+					if (diff > error) {
 						if (errorCnt < 10) {
 							cout << "grad is different at (" << i << "x" << j << "x" <<
 									k << "x" << l << ")" << endl;
-							cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
-									data2Ptr[index] << endl;
+							cout << "grad1: " << data1Ptr[index] << ", grad2: " <<
+									data2Ptr[index] << ", diff: " << diff << endl;
 						}
 						errorCnt++;
 						result = false;
@@ -789,6 +879,7 @@ bool Data<Dtype>::compareGrad(
 	return result;
 }
 
+/*
 template <typename Dtype>
 bool Data<Dtype>::compareGrad(
 		Data<Dtype>* data1,
@@ -835,6 +926,7 @@ bool Data<Dtype>::compareGrad(
 			data2->_name << ">: " << result << "(" << errorCnt << ")" << endl;
 	return result;
 }
+*/
 
 template class Data<float>;
 template class Data<int>;

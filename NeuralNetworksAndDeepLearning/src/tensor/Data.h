@@ -15,6 +15,7 @@
 #include "common.h"
 #include "Util.h"
 #include "SyncMem.h"
+#include "SysLog.h"
 
 /**
  * @brief Layer 특정 단계에서의 data, gradient를 pair로 warpping, util method를 제공하는
@@ -25,7 +26,7 @@ template <typename Dtype>
 class Data {
 public:
 	//Data(const bool hostOnly=false);
-	Data(const std::string& name, const bool hostOnly=false);
+	Data(const std::string& name = "", const bool hostOnly=false);
 	Data(Data<Dtype>* data, const bool hostOnly=false);
 	Data(const std::string& name, Data<Dtype>* data, uint32_t type,
         const bool hostOnly=false);
@@ -184,7 +185,7 @@ public:
 	/**
 	 * @details 데이터의 디바이스 메모리를 0으로 초기화한다.
 	 */
-	void reset_device_data();
+	void reset_device_data(const bool setZero=true, const Dtype value=0.0);
 	/**
 	 * @details 그레디언트의 호스트 메모리를 0으로 초기화한다.
 	 */
@@ -320,6 +321,21 @@ public:
 
 	inline uint32_t numAxes() const { return _shape.size(); }
 
+	inline int offset(const int n, const int c = 0, const int h = 0, const int w = 0) const {
+		SASSERT0(n >= 0);
+		SASSERT0(n <= batches());
+		SASSERT0(c >= 0);
+		SASSERT0(c <= channels());
+		SASSERT0(h >= 0);
+		SASSERT0(h <= height());
+		SASSERT0(w >= 0);
+		SASSERT0(w <= width());
+		return ((n * channels() + c) * height() + h) * width() + w;
+	}
+
+
+
+
 	bool is_nan_data() { return _data->is_nan_mem(); }
 	bool is_nan_grad() { return _grad->is_nan_mem(); }
 	bool is_inf_data() { return _data->is_inf_mem(); }
@@ -343,16 +359,25 @@ public:
 	 */
 	// cmo == true 데이터가 메모리에 물리적으로 cmo로 저장되어 있는데 일반 행렬의 순(rmo)로 출력하는 경우
 	void print_data(const std::string& head, const std::vector<uint32_t>& shape = {},
-			const bool cmo=true);
-	void print_data(const std::vector<uint32_t>& shape = {}, const bool cmo=true);
+			const bool cmo=true, const int summary = 6);
+	void print_data(const std::vector<uint32_t>& shape = {}, const bool cmo=true,
+			const int summary = 6);
 	void print_data_flatten();
+
+	void print_shape();
+
 	/**
 	 * @details 그레디언트를 shape에 따라 화면에 출력한다.
 	 * @param head 출력할 때 헤드에 쓰일 문구
 	 */
 	void print_grad(const std::string& head, const std::vector<uint32_t>& shape = {},
-			const bool cmo=true);
-	void print_grad(const std::vector<uint32_t>& shape = {}, const bool cmo=true);
+			const bool cmo=true, const int summary = 6);
+	void print_grad(const std::vector<uint32_t>& shape = {}, const bool cmo=true,
+			const int summary = 6);
+
+
+
+
 
 	void fill_host_with_1d_vec(const std::vector<int>& array,
 			const std::vector<uint32_t>& transpose={0, 1, 2, 3});
@@ -366,12 +391,12 @@ public:
 	void transpose(const std::vector<uint32_t>& t);
 
 	bool compareData(Data<Dtype>* data, const Dtype error = Dtype(0.001));
-	static bool compareData(Data<Dtype>* data1, Data<Dtype>* data2,
-			const Dtype error = Dtype(0.001));
+	//static bool compareData(Data<Dtype>* data1, Data<Dtype>* data2,
+	//		const Dtype error = Dtype(0.001));
 
 	bool compareGrad(Data<Dtype>* data, const Dtype error = Dtype(0.001));
-	static bool compareGrad(Data<Dtype>* data1,	Data<Dtype>* data2,
-			const Dtype error = Dtype(0.001));
+	//static bool compareGrad(Data<Dtype>* data1,	Data<Dtype>* data2,
+	//		const Dtype error = Dtype(0.001));
 
 public:
 	//std::shared_ptr<Data<Dtype>> _input;

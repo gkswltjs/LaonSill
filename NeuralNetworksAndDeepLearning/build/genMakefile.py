@@ -17,7 +17,7 @@ symbolDic["ReleaseClient"]      = ["GPU_MODE", "CLIENT_MODE"]
 
 libList = ["cudart", "opencv_core", "cublas", "cudnn", "boost_system", "boost_filesystem",\
          "opencv_highgui", "opencv_imgproc", "opencv_features2d", "z", "SDL", "ale",\
- 	 "boost_iostreams", "X11", "opencv_cudev", "opencv_imgcodecs", "openblas", "blas"]
+ 	 "boost_iostreams", "X11", "openblas", "blas", "gpu_nms", "lmdb"]
 
 targetNameDic = dict()  # key : configure name, value : target name
 targetNameDic["Debug"]          = "SoooaServerDebug"
@@ -33,8 +33,8 @@ dirNameDic["ReleaseClient"]     = "ReleaseClientGen"
 
 subDirList = []     # directories under src directory
 
-supportArch             = "compute_35"
-supportCode             = "sm_35"
+supportArch             = "compute_60"
+supportCode             = "sm_60"
 
 sourceHomeDirEnvName    = 'SOOOA_BUILD_PATH'
 

@@ -9,7 +9,7 @@
 #include "PoolingLayer.h"
 #include "PropMgmt.h"
 
-#define POOLINGLAYER_LOG 1
+#define POOLINGLAYER_LOG 0
 
 using namespace std;
 

@@ -1,12 +1,12 @@
 /*
- * RoITestInputLayer.h
+ * RoITestVideoInputLayer.h
  *
- *  Created on: Dec 16, 2016
+ *  Created on: May 30, 2017
  *      Author: jkim
  */
 
-#ifndef ROITESTINPUTLAYER_H_
-#define ROITESTINPUTLAYER_H_
+#ifndef ROITESTVIDEOINPUTLAYER_H_
+#define ROITESTVIDEOINPUTLAYER_H_
 
 #include <opencv2/highgui/highgui.hpp>
 
@@ -15,14 +15,14 @@
 #include "IMDB.h"
 
 template <typename Dtype>
-class RoITestInputLayer : public InputLayer<Dtype> {
+class RoITestVideoInputLayer : public InputLayer<Dtype> {
 public:
-	RoITestInputLayer();
-	virtual ~RoITestInputLayer();
+	RoITestVideoInputLayer();
+	virtual ~RoITestVideoInputLayer();
 
-    int getNumTrainData();
-    int getNumTestData();
-    void shuffleTrainDataSet();
+	int getNumTrainData();
+	int getNumTestData();
+	void shuffleTrainDataSet();
 
 	virtual void reshape();
 	virtual void feedforward();
@@ -31,23 +31,16 @@ public:
 
 private:
 	void getNextMiniBatch();
-
-	void imDetect(cv::Mat& im);
-	float getBlobs(cv::Mat& im);
 	float getImageBlob(cv::Mat& im);
 	void imToBlob(cv::Mat& im);
 
 	IMDB* combinedRoidb(const std::string& imdb_name);
 	IMDB* getRoidb(const std::string& imdb_name);
-	IMDB* getImdb(const std::string& imdb_name);
 
 
 public:
-	IMDB* imdb;
-	std::vector<uint32_t> perm;
-	uint32_t cur;
-
 	std::vector<cv::Scalar> boxColors;
+	cv::VideoCapture cap;
 
 
 public:
@@ -63,22 +56,4 @@ public:
     static void learnTensor(void* instancePtr);
 };
 
-#endif /* ROITESTINPUTLAYER_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif /* ROITESTVIDEOINPUTLAYER_H_ */
