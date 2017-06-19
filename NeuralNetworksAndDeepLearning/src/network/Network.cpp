@@ -111,6 +111,16 @@ void Network<Dtype>::run(bool inference) {
 }
 
 template<typename Dtype>
+void Network<Dtype>::runPlanType(PlanType planType, bool inference) {
+    SASSERT0(this->isLoaded);
+
+    WorkContext::updateNetwork(this->networkID); 
+    WorkContext::updatePlan(WorkContext::curDOPID);
+
+    PlanOptimizer::runPlanByType(planType, inference);
+}
+
+template<typename Dtype>
 void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
     SASSERT0(this->isLoaded);
 
@@ -327,6 +337,20 @@ vector<Layer<Dtype>*> Network<Dtype>::findLayersByType(int layerType) {
             result.push_back((Layer<Dtype>*)instancePtr);
         }
     }
+
+    WorkContext::updateNetwork(oldNetworkID);
+
+    return result;
+}
+
+template<typename Dtype>
+Data<Dtype>* Network<Dtype>::findTensor(int nodeID, int devID, string tensorName) {
+    int oldNetworkID = WorkContext::curNetworkID;
+    WorkContext::updateNetwork(this->networkID);
+    PhysicalPlan* pp = WorkContext::curPhysicalPlan;
+
+    // XXX: does not consider multi-device, multi-node situation
+    Data<Dtype>* result = (Data<Dtype>*)pp->getTensor(nodeID, devID, tensorName);
 
     WorkContext::updateNetwork(oldNetworkID);
 

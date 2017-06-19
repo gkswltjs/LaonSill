@@ -66,7 +66,7 @@
     {
         "batchSize" : 4,
         "epochs" : 4,
-        "lossLayer" : ["loss"],
+        "lossLayer" : ["softmax"],
         "gamma" : 0.1,
         "miniBatch" : 50
     }

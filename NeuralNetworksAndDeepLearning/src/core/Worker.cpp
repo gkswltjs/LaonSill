@@ -110,7 +110,7 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
         canRunPlan = pp->runPlan(task->inference);
     }
 
-    bool jobRemain = pp->generatePlan();
+    bool jobRemain = pp->generatePlan(true);
 
     if (jobRemain)
         return false;

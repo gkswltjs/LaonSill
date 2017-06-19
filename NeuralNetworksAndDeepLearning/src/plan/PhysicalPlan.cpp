@@ -127,7 +127,6 @@ vector<int> PhysicalPlan::getOrderedLayerIDs(int networkID) {
 void PhysicalPlan::allocateTensorInternal(int networkID) {
     vector<int> orderedIDs = getOrderedLayerIDs(networkID);
 
-    map<TensorAllocKey, void*> tensorAllocMap;
     for (int orderedLayerIdx = 0; orderedLayerIdx < orderedIDs.size(); orderedLayerIdx++) {
         int layerID = orderedIDs[orderedLayerIdx];
         SASSUME0(this->allocMap.find(layerID) != this->allocMap.end());
@@ -221,7 +220,7 @@ void PhysicalPlan::allocateTensor(int networkID) {
     }
 }
 
-void PhysicalPlan::markFinish(int targetPlanID) {
+void PhysicalPlan::notifyFinish(int targetPlanID) {
     unique_lock<mutex> planLock(this->planMutex);
 
     SASSUME(this->depRefMap.find(targetPlanID) != this->depRefMap.end(),
@@ -230,11 +229,24 @@ void PhysicalPlan::markFinish(int targetPlanID) {
     
     if (this->depRefMap[targetPlanID] == 0) {
         this->readyQueue.push_back(targetPlanID); 
-        this->refCount -= 1;
     }
 
     planLock.unlock();
     SASSUME0(this->depRefMap[targetPlanID] >= 0);
+}
+
+void PhysicalPlan::markDone(int planID) {
+    unique_lock<mutex> planLock(this->planMutex);
+
+    SASSUME(this->depRefMap.find(planID) != this->depRefMap.end(),
+        "There is no ref map for requesting plan ID. planID=%d", planID);
+
+    this->refCount -= 1;
+    this->planTypeRCMap[LP_PLANID_TO_PLANTYPE(planID)] -= 1;
+    planLock.unlock();
+
+    SASSUME0(this->refCount >= 0);
+    SASSUME0(this->planTypeRCMap[LP_PLANID_TO_PLANTYPE(planID)] >= 0);
 }
 
 void PhysicalPlan::markFinish(int networkID, int dopID, int planID) {
@@ -249,8 +261,9 @@ void PhysicalPlan::markFinish(int networkID, int dopID, int planID) {
 
     for (int i = 0; i < planDef.notifyList.size(); i++) {
         int targetPlanID = planDef.notifyList[i];
-        pp->markFinish(targetPlanID);
+        pp->notifyFinish(targetPlanID);
     }
+    pp->markDone(planID);
 
     WorkContext::updateNetwork(oldNetworkID);
     WorkContext::updatePlan(oldDOPID);
@@ -303,7 +316,7 @@ void PhysicalPlan::calcLoss() {
     }
 }
 
-bool PhysicalPlan::generatePlan() {
+bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     // (1) mini batch를 다 돌았는지 확인한다.
     // FIXME: plan lock의 범위가 좀 넓다.. 최적화 고민해보자.
     unique_lock<mutex> planLock(this->planMutex);
@@ -350,18 +363,25 @@ bool PhysicalPlan::generatePlan() {
     planInfoLock.unlock();
 
     // (3) 초기화를 수행한다.
-    this->refCount = 0;
-    this->readyQueue = {};
-    for (map<int, PlanDef>::iterator it = planMap.begin(); it != planMap.end(); ++it) {
-        int key = it->first;
-        PlanDef value = it->second;
-      
-        depRefMap[key] = value.depCount;
+    if (genNextMiniBatch) {
+        this->refCount = 0;
+        for (int i = 0 ; i < PlanType::PLANTYPE_MAX; i++) {
+            this->planTypeRCMap[(PlanType)i] = 0;
+        }
+        this->readyQueue = {};
+        for (map<int, PlanDef>::iterator it = planMap.begin(); it != planMap.end(); ++it) {
+            int key = it->first;
+            PlanDef value = it->second;
+          
+            depRefMap[key] = value.depCount;
 
-        if (value.depCount == 0) {
-            readyQueue.push_back(key);
-        } else {
+            if (value.depCount == 0) {
+                readyQueue.push_back(key);
+            }
+
             this->refCount += 1;
+            SASSUME0(value.planType < PlanType::PLANTYPE_MAX);
+            this->planTypeRCMap[value.planType] += 1;
         }
     }
 
@@ -415,29 +435,41 @@ void PhysicalPlan::runLayer(int planID, bool inference) {
     PlanDef *planDef = &WorkContext::curPhysicalPlan->planMap[planID];
     for (int i = 0; i < planDef->notifyList.size(); i++) {
         int targetPlanID = planDef->notifyList[i];
-        markFinish(targetPlanID);
+        notifyFinish(targetPlanID);
     }
+    markDone(planID);
 }
 
 bool PhysicalPlan::runPlan(int layerID, PlanType planType, bool inference) {
-    unique_lock<mutex> planLock(this->planMutex);
-
-    if (find(this->readyQueue.begin(), this->readyQueue.end(), layerID) != 
-        this->readyQueue.end())
-        return false;
-
-    planLock.unlock();
-
+    int targetPlanID;
     if (planType == PLANTYPE_FORWARD) {
-        runLayer(LP_FORWARD_PLANID(layerID), inference);
+        targetPlanID = LP_FORWARD_PLANID(layerID);
     } else if (planType == PLANTYPE_BACKWARD) {
-        runLayer(LP_BACKWARD_PLANID(layerID), inference);
+        targetPlanID = LP_BACKWARD_PLANID(layerID);
     } else if (planType == PLANTYPE_UPDATE) {
-        runLayer(LP_UPDATE_PLANID(layerID), inference);
+        targetPlanID = LP_UPDATE_PLANID(layerID);
     } else {
         SASSERT(false, "invalid plan type. plan type=%d", (int)planType);
     }
 
+    bool found = false;
+    unique_lock<mutex> planLock(this->planMutex);
+    for (list<int>::iterator iter = this->readyQueue.begin(); iter != this->readyQueue.end();
+        iter++) {
+        int value = (*iter);
+        if (value == targetPlanID) {
+            found = true;
+            this->readyQueue.erase(iter);
+            break;
+        }
+    }
+
+    planLock.unlock();
+
+    if (!found)
+        return false;
+
+    runLayer(targetPlanID, inference);
     return true;
 }
 
@@ -456,6 +488,29 @@ bool PhysicalPlan::runPlan(bool inference) {
 
     runLayer(planID, inference);
     return true;
+}
+
+bool PhysicalPlan::runPlan(PlanType planType, bool inference) {
+    bool found = false;
+    int targetPlanID;
+    unique_lock<mutex> planLock(this->planMutex);
+    for (list<int>::iterator iter = this->readyQueue.begin(); iter != this->readyQueue.end();
+        iter++) {
+        int value = (*iter);
+        if (planType == LP_PLANID_TO_PLANTYPE(value)) {
+            found = true;
+            targetPlanID = value;
+            this->readyQueue.erase(iter);
+            break;
+        }
+    }
+
+    planLock.unlock();
+
+    if (!found)
+        return false;
+
+    runLayer(targetPlanID, inference);
 }
 
 void PhysicalPlan::insertPlan(int networkID, vector<PhysicalPlan*> pMap, PlanInfo *pInfoMap) {
@@ -519,4 +574,15 @@ int PhysicalPlan::getDOPCount(int networkID) {
     PlanInfo* planInfo = PhysicalPlan::planGlobalInfoMap[networkID];
     planInfoLock.unlock();
     return planInfo->dopCount;
+}
+
+void* PhysicalPlan::getTensor(int nodeID, int devID, string tensorName) {
+    TensorAllocKey key;
+    key.tensorAlloc.nodeID = nodeID;
+    key.tensorAlloc.devID = devID;
+    key.tensorName = tensorName;
+    if (tensorAllocMap.find(key) == tensorAllocMap.end())
+        return NULL;
+    else
+        return tensorAllocMap[key];
 }

@@ -86,6 +86,37 @@ bool PlanOptimizer::buildPlans(int networkID) {
     return buildPlans(networkID, PLAN_OPT_DEFAULT, PLAN_OPT_POLICY_DEFAULT);
 }
 
+double PlanOptimizer::runPlanByType(PlanType planType, bool inference) {
+    struct timespec startTime, endTime;
+    clock_gettime(CLOCK_REALTIME, &startTime);
+   
+    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+
+    bool jobRemain = true;
+    while (jobRemain) {
+        bool canRunPlan = true;
+        while (canRunPlan) {
+            canRunPlan = pp->runPlan(planType, inference);
+        }
+
+        unique_lock<mutex> planLock(pp->planMutex);
+        bool exitLoop = false;
+        if (pp->planTypeRCMap[planType] == 0)
+            exitLoop = true;
+        planLock.unlock();
+
+        if (exitLoop)
+            break;
+    }
+    jobRemain = pp->generatePlan(true);
+
+    clock_gettime(CLOCK_REALTIME, &endTime);
+    double elapsed = (endTime.tv_sec - startTime.tv_sec) +
+        + (endTime.tv_nsec - startTime.tv_nsec) / 1000000000.0;
+
+    return elapsed;
+}
+
 double PlanOptimizer::runPlan(bool inference) {
     struct timespec startTime, endTime;
     clock_gettime(CLOCK_REALTIME, &startTime);
@@ -98,7 +129,7 @@ double PlanOptimizer::runPlan(bool inference) {
         while (canRunPlan) {
             canRunPlan = pp->runPlan(inference);
         }
-        jobRemain = pp->generatePlan();
+        jobRemain = pp->generatePlan(true);
     }
 
     clock_gettime(CLOCK_REALTIME, &endTime);
@@ -118,6 +149,9 @@ void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
 
     pp->networkID = networkID;
     pp->refCount = 0;
+    for (int i = 0; i < PLANTYPE_MAX; i++) {
+        pp->planTypeRCMap[(PlanType)i] = 0;
+    }
 
     for (int i = 0; i < lp->ppDefs.size(); i++) {
         PlanDef planDef = lp->ppDefs[i];
@@ -137,9 +171,11 @@ void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
 
         if (planDef.depCount == 0) {
             pp->readyQueue.push_back(planDef.planID);
-        } else {
-            pp->refCount += 1;
         }
+
+        pp->refCount += 1;
+        SASSUME0(planDef.planType < PlanType::PLANTYPE_MAX);
+        pp->planTypeRCMap[planDef.planType] += 1;
     }
 
     pp->dopID = 0;

@@ -18,9 +18,9 @@
 #include "Worker.h"
 #include "DQNImageLearner.h"
 #include "EnumDef.h"
+#include "LogicalPlan.h"
 
 template <typename Dtype> class DataSet;
-//template <typename Dtype> class LayersConfig;
 template <typename Dtype> class DQNImageLearner;
 
 /**
@@ -36,19 +36,19 @@ template <typename Dtype> class DQNImageLearner;
 template <typename Dtype>
 class Network {
 public:
-	//Network(NetworkParam& networkParam);
-	Network();
 	/**
 	 * @details Network 생성자
-	 * @param networkListener 네트워크 상태 리스너
 	 */
-	//Network(NetworkListener *networkListener=0);
+	Network();
 
 	/**
 	 * @details Network 소멸자
 	 */
 	virtual ~Network();
 
+	/**
+	 * @details Network 초기화 함수
+	 */
     static void init();
 
 	/**
@@ -58,28 +58,59 @@ public:
 	void run_with_timer(bool inference);
 
 	/**
-	 * @details 네트워크를 실행한다. (예를 들자면 stochastic gradient descent를 수행한다.)
-	 * @param epochs run()을 수행할 최대 epoch
+	 * @details 네트워크를 실행한다.
+	 * @param inference     inference 여부를 결정
 	 */
 	void run(bool inference);
 
+	/**
+	 * @details 네트워크를 plantype별로 1번의 mini batch를 실행한다. 이 함수를 호출한 이후에
+     *          다시 reset()함수를 호출할 필요는 없다.
+     * @param planType      planType (forward, backward, update)
+	 * @param inference     inference 여부를 결정
+	 */
+    void runPlanType(PlanType planType, bool inference);
+
+	/**
+	 * @details 네트워크를 준비한다.
+	 * @param epochs run()을 수행할 최대 epoch
+	 */
     void build(int epochs);
 
+	/**
+	 * @details 네트워크를 초기화 한다. 한번 네트워크를 실행하고, 다시 그 네트워크를
+     *          실행하고자 할때 이 함수를 호출한다.
+	 */
     void reset();
 
+	/**
+	 * @details minibatch 1회를 수행한다.
+     * @param inference     inference 여부를 결정
+     * @param miniBatchIdx  수행할 mini batch index
+	 */
     void runMiniBatch(bool inference, int miniBatchIdx);
 
 	/**
 	 * @details 네트워크를 파일에 쓴다.
-	 * @param filename 네트워크를 쓸 파일의 경로
+	 * @param path 네트워크를 쓸 파일의 경로
 	 */
     void save(std::string path);
+
+	/**
+	 * @details 네트워크를 파일에 쓴다. 네트워크 파일경로는 미리 지정이 되어 있어야 한다.
+	 */
 	void save();
+
 	/**
 	 * @details 네트워크를 파일로부터 읽는다.
 	 * @param filename 네트워크를 읽을 파일의 경로
 	 */
     void load(std::string path);
+
+	/**
+	 * @details 네트워크를 파일로부터 읽는다. 네트워크 파일경로는 미리 지정이 되어 있어야
+     *          한다.
+	 */
 	void load();
 
 	/**
@@ -89,12 +120,39 @@ public:
 	 */
 	Layer<Dtype>* findLayer(const std::string layerName);
 
+	/**
+	 * @details 네트워크에서 특정 레이어타입을 가지고 있는 모든 레이어를 반환한다.
+	 * @param layerType 찾을 레이어타입
+	 * @return 레이어포인트 어레이
+	 */
     std::vector<Layer<Dtype>*> findLayersByType(int layerType);
 
+	/**
+	 * @details 네트워크에서 특정 텐서를 찾아서 반환한다.
+	 * @param nodeID        노드 아이디
+     * @param devID         디바이스 아이디
+     * @param tensorName    찾을 텐서이름
+	 * @return 텐서포인터를 반환
+	 */
+    Data<Dtype>* findTensor(int nodeID, int devID, std::string tensorName);
 
-public:
+
+    /**
+     * @details 네트워크 아이디를 반환한다.
+     * @return  네트워크 아이디
+     */
     int                                     getNetworkID() { return this->networkID; }
+
+    /**
+     * @details 특정 네트워크 아이디를 가지고 있는 네트워크를 반환한다.
+     * @param networkID     네트워크 아이디
+     * @return  네트워크 포인터를 반환
+     */
     static Network<Dtype>*                  getNetworkFromID(int networkID);
+
+    /**
+     * @details 네트워크 정의가 로드되었음을 설정한다.
+     */
     void                                    setLoaded() { this->isLoaded = true; }
 
 private:

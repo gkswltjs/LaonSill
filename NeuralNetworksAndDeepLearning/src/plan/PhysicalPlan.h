@@ -64,6 +64,7 @@ public:
                                                 // key : planID, value : remain dependecy
                                                 // count
     std::map<int, void*>        instanceMap;    // key : layer ID, value : instance pointer
+    std::map<PlanType, int>     planTypeRCMap; // Reference Count per plan type map 
 
     int                         dopID;          // degree of parallelism ID
     int                         refCount;   // 이 값이 0이 되면 해당 mini batch에 대한 plan은
@@ -72,11 +73,12 @@ public:
     int epochIdx;
     int miniBatchIdx;       // current mini-batch (per epoch) index
 
-    bool generatePlan();    // 현 minibatch에 해당하는 작업이 완료되면 그다음 mini batch에
-                            // 대한 플랜을 생성한다.
-                            // 만약 모든 batch를 다 돌았을 경우에는 false를 반환한다.
+    bool generatePlan(bool genNextMiniBatch);    
+    // 현 minibatch에 해당하는 작업이 완료되면 그다음 mini batch에 대한 플랜을 생성한다.
+    // 만약 모든 batch를 다 돌았을 경우에는 false를 반환한다.
 
     bool runPlan(int layerID, PlanType planType, bool inference);
+    bool runPlan(PlanType planType, bool inference);
     bool runPlan(bool inference);
 
     std::list<int>      readyQueue; // dependency 문제가 해결이 되어 실행이 될 수 있는
@@ -100,6 +102,8 @@ public:
     static int getDOPCount(int networkID);
     static void markFinish(int networkID, int dopID, int planID);   
 
+    void* getTensor(int nodeID, int devID, std::string tensorName);
+
 private:
     static std::map<int, std::vector<PhysicalPlan*>>    planGlobalMap;    // key = networkID,
                                                                 // value = Physical Plans
@@ -109,7 +113,8 @@ private:
     static std::mutex               planGlobalMutex;    // planMap, planInfoMap을 보호
 
     void runLayer(int planID, bool inference);
-    void markFinish(int targetPlanID);     
+    void notifyFinish(int targetPlanID);
+    void markDone(int planID);     
 
     std::vector<int> getOrderedLayerIDs(int networkID);
     void allocateTensorInternal(int networkID);
@@ -118,5 +123,7 @@ private:
 
     LossConsole *lossConsole;       // FIXME: 이름이... 이상하다 ㅠ_ㅠ 좋은걸로 바꿔줘요
     void calcLoss();
+
+    std::map<TensorAllocKey, void*> tensorAllocMap;
 };
 #endif /* PHYSICALPLAN_H */

@@ -6,7 +6,7 @@
     ["dop", "uint32_t", "1"],
     ["epochs", "uint32_t", "1"],
     ["miniBatch", "uint32_t", "0"],
-    ["testInterval", "uint32_t", "1"],
+    ["testInterval", "uint32_t", "0"],
     ["saveInterval", "uint32_t", "0"],
     ["iterations", "uint32_t", "0"],
     ["stepSize", "uint32_t", "1"],

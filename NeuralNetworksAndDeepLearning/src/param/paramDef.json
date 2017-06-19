@@ -458,6 +458,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 1000 
+},
+
+"PRINT_LAYERFUNC_LOG" : 
+{
+    "DESC" : "specify whether server prints log of layer func module or not",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
 }
 
 }
