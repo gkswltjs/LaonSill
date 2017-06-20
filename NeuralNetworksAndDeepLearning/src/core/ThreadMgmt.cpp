@@ -10,6 +10,7 @@
 
 #include "ThreadMgmt.h"
 #include "SysLog.h"
+#include "WorkContext.h"
 
 using namespace std;
 
@@ -111,12 +112,20 @@ ThreadEvent ThreadMgmt::wait(int threadID, unsigned long timeout) {
             return event;
     }
     unique_lock<mutex> lock(context->mutex);
-    bool getEventInTime = context->cv.wait_for(lock, chrono::milliseconds(timeout),
-        [context]{ return context->flag; });
+    bool getEventInTime = true;
+    if (timeout == 0UL) {
+        context->cv.wait(lock);
+    } else {
+        cv_status status = context->cv.wait_for(lock, chrono::milliseconds(timeout));
+        if (status == cv_status::timeout) {
+            getEventInTime = false;
+        }
+    }
     context->flag = false;
 
-    if (!getEventInTime)
+    if (!getEventInTime) {
         atomic_fetch_or(&context->event, (unsigned long)ThreadEvent::Timeout);
+    }
 
     ThreadEvent event = (ThreadEvent)atomic_exchange(&context->event, (unsigned long)0UL);
 
@@ -139,6 +148,7 @@ bool ThreadMgmt::isReady() {
     return true;
 }
 
-void ThreadMgmt::setThreadReady() {
+void ThreadMgmt::setThreadReady(int threadID) {
+    WorkContext::curThreadID = threadID;
     atomic_fetch_add(&ThreadMgmt::readyCount, 1); 
 }

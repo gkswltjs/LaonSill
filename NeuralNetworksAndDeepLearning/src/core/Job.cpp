@@ -355,7 +355,8 @@ int Job::getJobID() {
 
 bool Job::hasPubJob() {
     if ((this->jobType == Job::CreateDQNImageLearner) ||
-        (this->jobType == Job::StepDQNImageLearner))
+        (this->jobType == Job::StepDQNImageLearner) ||
+        (this->jobType == Job::CreateNetworkFromFile))
         return true;
 
     return false;

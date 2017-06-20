@@ -43,14 +43,19 @@ public:
     static int                 getConsumerIdx(int devIdx);
 
     
-    static TaskAllocTensor*    addAllocTensorTask(int consumerIdx, int nodeID, int devID,
+    static TaskAllocTensor*    addAllocTensorTask(int consumerIdx, int nodeID, 
+                                                  int devID,
                                                   int requestThreadID,
                                                   std::string tensorName);
-    static void                addRunPlanTask(int consumerIdx, int networkID, int dopID,
+    static void                 addRunPlanTask(int consumerIdx, int networkID, int dopID,
                                               bool inference);
-    static void                addUpdateTensorTask(int consumerIdx, int networkID,
+    static void                 addUpdateTensorTask(int consumerIdx, int networkID,
                                                    int dopID, int layerID, int planID,
                                                    std::vector<UpdateParam> updateParams);
+    static void                 addAllocLayerTask(int consumerIdx, int networkID, int dopID,
+                                                  int layerID, int nodeID, int devID,
+                                                  int requestThreadID, int layerType,
+                                                  void* instancePtr);
 
 private:
     /**
@@ -82,6 +87,7 @@ private:
     static bool                         handleAllocTensorTask(TaskAllocTensor *task);
     static bool                         handleUpdateTensorTask(TaskUpdateTensor* task);
     static bool                         handleRunPlanTask(TaskRunPlan* task);
+    static bool                         handleAllocLayerTask(TaskAllocLayer* task);
 
     /*
      * variables for joining thread

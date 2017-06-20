@@ -20,14 +20,15 @@ typedef enum TaskType_e {
     AllocTensor = 0,
     UpdateTensor,
     RunPlan,
+    AllocLayer,
     TaskTypeMax
 } TaskType;
 
 typedef struct TaskPool_s {
-    TaskType            taskType;
-    std::vector<void*>  alloc;
-    std::list<int>      freeElemIDList;
-    std::mutex          mutex;
+    TaskType                    taskType;
+    std::vector<void*>          alloc;
+    std::list<int>              freeElemIDList;
+    std::mutex                  mutex;
 } TaskPool;
 
 typedef struct TaskBase_s {
@@ -37,7 +38,6 @@ typedef struct TaskBase_s {
 
 typedef enum TaskAllocTensorStep_e {
     Alloc = 0,
-    WaitCaller,
     Done
 } TaskAllocTensorStep;
 
@@ -69,6 +69,19 @@ typedef struct TaskRunPlan_s {
     int         dopID;
     bool        inference;
 } TaskRunPlan;
+
+typedef struct TaskAllocLayer_s {
+    TaskType    taskType;
+    int         elemID;
+    int         networkID;
+    int         dopID;
+    int         layerID;
+    int         nodeID;
+    int         devID;
+    int         requestThreadID;
+    int         layerType;
+    void*       instancePtr;
+} TaskAllocLayer;
 
 class Task {
 public: 

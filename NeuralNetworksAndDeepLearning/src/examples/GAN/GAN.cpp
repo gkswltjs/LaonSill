@@ -68,7 +68,7 @@ void GAN<Dtype>::run() {
         setLayerTrain(networkG1, false);
         networkG1->runMiniBatch(true, 0);
 
-#if 0
+#if 1
         ConvLayer<Dtype>* convLayer = (ConvLayer<Dtype>*)networkG1->findLayer("conv1");
         const Dtype* host_data = convLayer->_inputData[0]->host_data();
 #else

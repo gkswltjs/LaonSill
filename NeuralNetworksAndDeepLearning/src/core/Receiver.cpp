@@ -17,7 +17,9 @@ using namespace std;
 thread* Receiver::receiver;
 
 void Receiver::receiverThread() {
-    ThreadMgmt::setThreadReady();
+    int threadID = ThreadMgmt::getThreadID(ThreadType::Receiver, 0);
+
+    ThreadMgmt::setThreadReady(threadID);
     COLD_LOG(ColdLog::INFO, true, "receiver thread starts");
     
     HotLog::initForThread();
@@ -26,8 +28,6 @@ void Receiver::receiverThread() {
     while (!ThreadMgmt::isReady()) {
         sleep(0);
     }
-
-    int threadID = ThreadMgmt::getThreadID(ThreadType::Receiver, 0);
 
     // (2) 메인 루프
     while (true) {

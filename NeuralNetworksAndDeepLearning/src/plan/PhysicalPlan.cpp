@@ -65,14 +65,15 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
         tensorPtr = (void*)tensor;
     } else {
         int consumerIdx = Worker::getConsumerIdx(planAlloc.devID);
-        TaskAllocTensor* task = Worker::addAllocTensorTask(consumerIdx, SPARAM(NODE_ID),
-            planAlloc.devID, WorkContext::curThreadID, tensorName);   
+        TaskAllocTensor* task =
+            Worker::addAllocTensorTask(consumerIdx,
+            SPARAM(NODE_ID), planAlloc.devID, WorkContext::curThreadID, tensorName);   
         
         ThreadMgmt::wait(WorkContext::curThreadID, 0);
 
-        SASSUME0(task->step = TaskAllocTensorStep::WaitCaller);
+        SASSUME0(task->step == TaskAllocTensorStep::Done);
         tensorPtr = (void*)task->tensorPtr;
-        task->step = TaskAllocTensorStep::Done;
+        Task::releaseElem(TaskType::AllocTensor, (void*)task); 
     }
 
     LayerFunc::setInOutTensor(layerType, instancePtr, tensorPtr, isInput, index);
@@ -124,7 +125,7 @@ vector<int> PhysicalPlan::getOrderedLayerIDs(int networkID) {
     return layerIDs;
 }
 
-void PhysicalPlan::allocateTensorInternal(int networkID) {
+void PhysicalPlan::allocateTensorInternal(int networkID, int dopID) {
     vector<int> orderedIDs = getOrderedLayerIDs(networkID);
 
     for (int orderedLayerIdx = 0; orderedLayerIdx < orderedIDs.size(); orderedLayerIdx++) {
@@ -180,7 +181,18 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
             }
         }
 
-        SASSERT0(LayerFunc::allocLayerTensors(layerType, instancePtr) == true);
+        if (WorkContext::curBootMode == BootMode::DeveloperMode ||
+            WorkContext::curBootMode == TestMode) {
+            SASSERT0(LayerFunc::allocLayerTensors(layerType, instancePtr) == true);
+        } else {
+            SASSUME0(planAlloc.nodeID == SPARAM(NODE_ID));  // TODO: 다른 노드에 대한건 나중에
+            
+            int consumerIdx = Worker::getConsumerIdx(planAlloc.devID);
+            Worker::addAllocLayerTask(consumerIdx, networkID, dopID, layerID, SPARAM(NODE_ID),
+                    planAlloc.devID, WorkContext::curThreadID, layerType, instancePtr);
+            
+            ThreadMgmt::wait(WorkContext::curThreadID, 0);
+        }
 
         if (SLPROP_BASE(learnable)) {
             if (SLPROP_BASE(donate))
@@ -204,7 +216,6 @@ void PhysicalPlan::allocateTensorInternal(int networkID) {
 }
 
 void PhysicalPlan::allocateTensor(int networkID) {
-    // FIXME: plan lock의 범위가 너무 넓다..
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
     SASSUME0(PhysicalPlan::planGlobalInfoMap.find(networkID) !=
             PhysicalPlan::planGlobalInfoMap.end());
@@ -214,9 +225,15 @@ void PhysicalPlan::allocateTensor(int networkID) {
         PhysicalPlan::planGlobalMap.end());
     SASSUME0(PhysicalPlan::planGlobalMap[networkID].size() == planInfo->dopCount);
 
+    vector<PhysicalPlan*> curPPs;
     for (int i = 0; i < planInfo->dopCount; i++) {
         PhysicalPlan* curPP = PhysicalPlan::planGlobalMap[networkID][i];
-        curPP->allocateTensorInternal(networkID);
+        curPPs.push_back(curPP);
+    }
+    planLock.unlock();
+
+    for (int i = 0; i < curPPs.size(); i++) {
+        curPPs[i]->allocateTensorInternal(networkID, i);
     }
 }
 

@@ -34,6 +34,10 @@ void Task::allocTaskPool(TaskType taskType) {
             elemCount = SPARAM(TASKPOOL_RUNPLAN_ELEM_COUNT);
             break;
 
+        case TaskType::AllocLayer:
+            elemCount = SPARAM(TASKPOOL_ALLOCLAYER_ELEM_COUNT);
+            break;
+
         default:
             SASSERT0(false);
     }
@@ -51,6 +55,10 @@ void Task::allocTaskPool(TaskType taskType) {
 
             case TaskType::RunPlan:
                 elem = (void*)(new TaskRunPlan());
+                break;
+
+            case TaskType::AllocLayer:
+                elem = (void*)(new TaskAllocLayer());
                 break;
 
             default:
@@ -90,6 +98,10 @@ void Task::releaseTaskPool(TaskType taskType) {
                 delete (TaskRunPlan*)taskPools[taskType]->alloc[i];
                 break;
 
+            case TaskType::AllocLayer:
+                delete (TaskAllocLayer*)taskPools[taskType]->alloc[i];
+                break;
+
             default:
                 SASSERT0(false);
         }
@@ -119,6 +131,7 @@ void* Task::getElem(TaskType taskType) {
 
     int elemID = tp->freeElemIDList.front();
     tp->freeElemIDList.pop_front();
+
     lock.unlock();
 
     return tp->alloc[elemID];

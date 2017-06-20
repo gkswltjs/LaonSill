@@ -58,7 +58,7 @@ public:
     static void signalAll(ThreadEvent event);
     static ThreadEvent wait(int threadID, unsigned long timeout);
     static int getThreadID(ThreadType type, int offset);
-    static void setThreadReady();
+    static void setThreadReady(int threadID);
     static bool isReady();
 
 private:

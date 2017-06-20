@@ -40,52 +40,9 @@ int Client::connectRetry(int sockFd, const struct sockaddr *sockAddr, socklen_t 
 
 void Client::pushJob(int fd, char* buf, Job* job) {
     // see handlePushJobMsg()@Communicator.cpp && JobType enumeration @ Job.h
-    // (1) send msg
+    // (1) send job msg
     MessageHeader msgHdr;
-    msgHdr.setMsgType(MessageHeader::PushJob);
-    msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE + job->getJobSize());
-
-    // (2) serialize job
-    //     무조건 serialize하도록 하였다.
-    //     TODO: float array의 경우에 많은 데이터를 일일히 serialize하는 것에 대한 
-    //     코스트가 크기 때문에 serialize를 하지 않는 옵션을 만들어야 한다.
-    int bufOffset = MsgSerializer::serializeMsgHdr(msgHdr, buf);
-    bufOffset = MsgSerializer::serializeInt((int)job->getJobID(), bufOffset, buf);
-    bufOffset = MsgSerializer::serializeInt((int)job->getType(), bufOffset, buf);
-    bufOffset = MsgSerializer::serializeInt(job->getJobElemCount(), bufOffset, buf);
-
-    for (int i = 0; i < job->getJobElemCount(); i++) {
-        Job::JobElemDef jobElemDef = job->getJobElemDef(i);
-        bufOffset = MsgSerializer::serializeInt(jobElemDef.elemType, bufOffset, buf);
-    }
-
-    for (int i = 0; i < job->getJobElemCount(); i++) {
-        Job::JobElemDef jobElemDef = job->getJobElemDef(i);
-
-        switch (jobElemDef.elemType) {
-            case Job::IntType:
-                bufOffset = MsgSerializer::serializeInt(job->getIntValue(i), bufOffset, buf);
-                break;
-            case Job::FloatType:
-                bufOffset = MsgSerializer::serializeFloat(job->getFloatValue(i),
-                    bufOffset, buf);
-                break;
-            case Job::FloatArrayType:
-                for (int j = 0; j < jobElemDef.arrayCount; j++) {
-                    bufOffset = MsgSerializer::serializeFloat(job->getFloatArrayValue(i, j),
-                        bufOffset, buf);
-                }
-                break;
-            case Job::StringType:
-                bufOffset = MsgSerializer::serializeString(job->getStringValue(i),
-                        jobElemDef.arrayCount, bufOffset, buf);
-                break;
-            default:
-                SASSERT(0, "Invalid job elem type. job elem type=%d", jobElemDef.elemType);
-                break;
-        }
-    }
-
+    Communicator::sendJobToBuffer(msgHdr, job, buf);
     Communicator::CommRetType ret = Communicator::sendMessage(fd, msgHdr, buf);
     SASSERT0(ret == Communicator::Success);
 
@@ -144,11 +101,12 @@ void Client::clientMain(const char* hostname, int portno) {
     cout << "send create-network job" << endl;
     Job* createNetworkJob = new Job(Job::CreateNetworkFromFile);
     string networkFilePath = "network.conf.test";
-    createNetworkJob->addJobElem(Job::StringType, strlen(networkFilePath.c_str()) - 1,
+    createNetworkJob->addJobElem(Job::StringType, strlen(networkFilePath.c_str()),
         (void*)networkFilePath.c_str());
     Client::pushJob(sockFd, buf, createNetworkJob);
     delete createNetworkJob;
 
+#if 0
     // (6) send Halt Msg
     cout << "send halt msg" << endl;
     msgHdr.setMsgType(MessageHeader::HaltMachine);
@@ -156,6 +114,9 @@ void Client::clientMain(const char* hostname, int portno) {
     MsgSerializer::serializeMsgHdr(msgHdr, buf);
     ret = Communicator::sendMessage(sockFd, msgHdr, buf);
     SASSERT0(ret == Communicator::Success);
+#endif
+
+    sleep (100000);
 
     // XXX: process should wait until send buffer is empty
     // cleanup resrouce & exit

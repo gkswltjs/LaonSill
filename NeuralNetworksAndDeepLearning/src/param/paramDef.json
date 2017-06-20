@@ -460,11 +460,31 @@
     "DEFAULT" : 1000 
 },
 
+"TASKPOOL_ALLOCLAYER_ELEM_COUNT" : 
+{
+    "DESC" : "specify element count of alloc layer of the task pool",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
 "PRINT_LAYERFUNC_LOG" : 
 {
     "DESC" : "specify whether server prints log of layer func module or not",
     "MANDATORY" : false,
     "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"COMMUNICATOR_REUSE_ADDR" : 
+{
+    "DESC" : "specify whether server reuse address or not",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : false

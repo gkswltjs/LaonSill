@@ -19,7 +19,8 @@ using namespace std;
 thread* Sender::sender;
 
 void Sender::senderThread() {
-    ThreadMgmt::setThreadReady();
+    int threadID = ThreadMgmt::getThreadID(ThreadType::Sender, 0);
+    ThreadMgmt::setThreadReady(threadID);
     COLD_LOG(ColdLog::INFO, true, "sender thread starts");
     
     HotLog::initForThread();
@@ -29,7 +30,6 @@ void Sender::senderThread() {
         sleep(0);
     }
 
-    int threadID = ThreadMgmt::getThreadID(ThreadType::Sender, 0);
 
     // (2) 메인 루프
     while (true) {

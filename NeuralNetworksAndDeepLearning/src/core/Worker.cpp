@@ -21,6 +21,8 @@
 #include "ThreadMgmt.h"
 #include "Updater.h"
 #include "WorkContext.h"
+#include "PlanParser.h"
+#include "LayerFunc.h"
 
 using namespace std;
 
@@ -38,7 +40,8 @@ thread*                 Worker::producer;
 vector<thread>          Worker::consumers;
 
 void Worker::producerThread() {
-    ThreadMgmt::setThreadReady();
+    int threadID = ThreadMgmt::getThreadID(ThreadType::Producer, 0);
+    ThreadMgmt::setThreadReady(threadID);
     COLD_LOG(ColdLog::INFO, true, "producer thread starts");
     
     HotLog::initForThread();
@@ -48,7 +51,6 @@ void Worker::producerThread() {
         sleep(0);
     }
 
-    int threadID = ThreadMgmt::getThreadID(ThreadType::Producer, 0);
 
     // (2) 메인 루프
     while (true) {
@@ -83,15 +85,12 @@ bool Worker::handleAllocTensorTask(TaskAllocTensor* task) {
         SASSERT0(tensor != NULL);
 
         task->tensorPtr = tensor;
-        task->step = TaskAllocTensorStep::WaitCaller;
+        task->step = TaskAllocTensorStep::Done;
         
         ThreadMgmt::signal(task->requestThreadID, ThreadEvent::Wakeup);
     }
 
-    if (task->step == TaskAllocTensorStep::Done)
-        return true;
-    else
-        return false;
+    return true;
 }
 
 bool Worker::handleUpdateTensorTask(TaskUpdateTensor* task) {
@@ -118,8 +117,24 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
         return true;
 }
 
+bool Worker::handleAllocLayerTask(TaskAllocLayer* task) {
+    if (task->nodeID != SPARAM(NODE_ID)) {
+        // alloc tensor to other nodes.
+        SASSERT0(false);        // not implemented yet
+    }
+
+    WorkContext::updateLayer(task->networkID, task->layerID);
+    WorkContext::updatePlan(task->dopID);
+
+    SASSERT0(LayerFunc::allocLayerTensors(task->layerType, task->instancePtr) == true);
+    ThreadMgmt::signal(task->requestThreadID, ThreadEvent::Wakeup);
+
+    return true;
+}
+
 void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
-    ThreadMgmt::setThreadReady();
+    int threadID = ThreadMgmt::getThreadID(ThreadType::TaskConsumer, consumerIdx);
+    ThreadMgmt::setThreadReady(threadID);
     bool doLoop = true;
 	Worker::gpuIdx = gpuIdx;
 
@@ -132,7 +147,6 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
         sleep(0);
     }
 
-    int threadID = ThreadMgmt::getThreadID(ThreadType::TaskConsumer, consumerIdx);
 
 	// 리소스 초기화
 	checkCudaErrors(cudaSetDevice(gpuIdx));
@@ -177,6 +191,10 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
                         taskDone = handleRunPlanTask((TaskRunPlan*)tasks[i]);
                         break;
 
+                    case TaskType::AllocLayer:
+                        taskDone = handleAllocLayerTask((TaskAllocLayer*)tasks[i]);
+                        break;
+
                     default:
                         SASSUME0(false);
                 }
@@ -184,7 +202,8 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
                 if (!taskDone) {
                     remainTasks.push_back(tasks[i]);
                     hasRemainTask = true;
-                } else {
+                } else if (tasks[i]->taskType != TaskType::AllocTensor) {
+                    // Alloc Tensor의 경우에는 caller가 release한다.
                     Task::releaseElem(tasks[i]->taskType, (void*)tasks[i]);
                 }
             }
@@ -208,7 +227,8 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
 }
 
 void Worker::jobConsumerThread(int consumerIdx) {
-    ThreadMgmt::setThreadReady();
+    int threadID = ThreadMgmt::getThreadID(ThreadType::JobConsumer, consumerIdx);
+    ThreadMgmt::setThreadReady(threadID);
     bool doLoop = true;
 
     HotLog::initForThread();
@@ -220,7 +240,6 @@ void Worker::jobConsumerThread(int consumerIdx) {
         sleep(0);
     }
 
-    int threadID = ThreadMgmt::getThreadID(ThreadType::JobConsumer, consumerIdx);
 
     while (doLoop) {
         ThreadEvent event =
@@ -241,8 +260,15 @@ void Worker::jobConsumerThread(int consumerIdx) {
                 break;
 
             case Job::CreateNetworkFromFile:
-                cout << "handle create-network job. jsonfilePath : " <<
-                    job->getStringValue(0) << "." << endl; 
+                {
+                    string filePath = string(job->getStringValue(0));
+                    cout << "handle create-network job. jsonfilePath : '" <<
+                        filePath << "'." << endl; 
+                    int networkID = PlanParser::loadNetwork(filePath);
+                    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+                    network->build(10);
+                    cout << "done" << endl;
+                }
                 break;
 
             default:
@@ -416,6 +442,28 @@ void Worker::addUpdateTensorTask(int consumerIdx, int networkID, int dopID, int 
 
     for (int i = 0 ; i < updateParams.size(); i++)
         task->updateParams.push_back(updateParams[i]);
+
+    SASSUME0(consumerIdx < Worker::taskQueues.size());
+    TaskQueue* tq = Worker::taskQueues[consumerIdx];
+
+    unique_lock<mutex> lock(tq->mutex);
+    tq->tasks.push_back((TaskBase*)task);
+}
+
+void Worker::addAllocLayerTask(int consumerIdx, int networkID, int dopID, int layerID,
+    int nodeID, int devID, int requestThreadID, int layerType, void* instancePtr) {
+    
+    TaskAllocLayer* task = (TaskAllocLayer*)Task::getElem(TaskType::AllocLayer);
+    SASSUME0(task != NULL);
+
+    task->networkID = networkID;
+    task->dopID = dopID;
+    task->layerID = layerID;
+    task->nodeID = nodeID;
+    task->devID = devID;
+    task->requestThreadID = requestThreadID;
+    task->layerType = layerType;
+    task->instancePtr = instancePtr;
 
     SASSUME0(consumerIdx < Worker::taskQueues.size());
     TaskQueue* tq = Worker::taskQueues[consumerIdx];

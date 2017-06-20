@@ -117,7 +117,7 @@ private:
     void markDone(int planID);     
 
     std::vector<int> getOrderedLayerIDs(int networkID);
-    void allocateTensorInternal(int networkID);
+    void allocateTensorInternal(int networkID, int dopID);
     static void* allocTensorMem(int layerType, void* instancePtr, std::string tensorName,
                                 PlanAlloc planAlloc, bool isInput, int index);
 

@@ -18,7 +18,7 @@ thread_local int            WorkContext::curThreadID;
 
 thread_local LayerProp*     WorkContext::curLayerProp;
 thread_local _NetworkProp*  WorkContext::curNetworkProp;
-thread_local int            WorkContext::curNetworkID;
+thread_local int            WorkContext::curNetworkID = -1;
 BootMode                    WorkContext::curBootMode;
 
 void WorkContext::updateNetwork(int networkID) {
