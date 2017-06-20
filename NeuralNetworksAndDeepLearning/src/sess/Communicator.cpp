@@ -21,7 +21,6 @@
 #include "Param.h"
 #include "ColdLog.h"
 #include "SysLog.h"
-#include "LegacyWork.h"
 #include "ThreadMgmt.h"
 #include "Broker.h"
 

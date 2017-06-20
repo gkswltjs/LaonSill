@@ -179,16 +179,6 @@
 
 },
 
-"ALEInput" :
-{
-    "DESC" : "Atari Learning Environment input layer",
-    "PARENT" : "Input",
-    "LEVEL" : 2,
-    "LEARN" : 0,
-    "PROPDOWN" : [],
-    "VARS" : []
-},
-
 "CelebAInput" :
 {
     "DESC" : "CelebA input layer",

@@ -30,10 +30,8 @@
 #include "HotLog.h"
 #include "StdOutLog.h"
 #include "Perf.h"
-#include "Atari.h"
 #include "Broker.h"
 #include "test.h"
-#include "DQNImageLearner.h"
 #include "ImageUtil.h"
 #include "DebugUtil.h"
 #include "ResourceManager.h"
@@ -45,8 +43,6 @@
 #include "Receiver.h"
 #include "Task.h"
 
-#include "GAN/GAN.h"
-#include "frcnn/FRCNN.h"
 #include "YOLO.h"
 #include "LayerFunc.h"
 #include "LayerPropList.h"
@@ -167,7 +163,6 @@ int main(int argc, char** argv) {
     Task::init();
     Broker::init();
     Network<float>::init();
-    DQNImageLearner<float>::init();
 
     ResourceManager::init();
     PlanOptimizer::init();

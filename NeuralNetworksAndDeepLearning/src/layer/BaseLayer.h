@@ -37,10 +37,8 @@ public:
 	 */
 	enum LayerType : int {
 		None = 0,
-        AAA,                    // template class
 		Input, 					// 입력 레이어
         NoiseInput,             // noise 입력 레이어
-        ALEInput,               // ALE 입력 레이어
         CelebAInput,            // CelebA 입력 레이어
         KistiInput,             // Kisti project input layer. (FIXME: name;;;)
         VOCPascalInput,         // VOC PASCAL data
@@ -55,7 +53,6 @@ public:
 		Sigmoid, 				// 시그모이드 레이어
 		Softmax,				// 소프트맥스 레이어
 		Split,					//
-        DQNOutput,              // DQN Output 레이어
 
         Deconv,                 // deconvolution 레이어
                                 // 엄밀히 말하면 transpose convolution layer 혹은

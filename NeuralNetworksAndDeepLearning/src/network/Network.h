@@ -13,10 +13,8 @@
 #include "NetworkListener.h"
 #include "BaseLayer.h"
 #include "InputLayer.h"
-#include "ALEInputLayer.h"
 #include "LayerConfig.h"
 #include "Worker.h"
-#include "DQNImageLearner.h"
 #include "EnumDef.h"
 #include "LogicalPlan.h"
 

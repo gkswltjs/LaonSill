@@ -37,7 +37,6 @@
 #include "RoIPoolingLayer.h"
 #include "Pooling.h"
 #include "Param.h"
-#include "ALEInputLayer.h"
 #include "FrcnnTestOutputLayer.h"
 #include "BatchNormLayer.h"
 #include "ReluLayer.h"
