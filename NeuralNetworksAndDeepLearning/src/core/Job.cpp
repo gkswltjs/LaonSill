@@ -13,18 +13,34 @@
 
 using namespace std;
 
-atomic<int> Job::jobIDGen;
+atomic<int>         Job::jobIDGen;
 
-map<int, Job*> Job::reqPubJobMap;
-mutex Job::reqPubJobMapMutex;
+map<int, Job*>      Job::reqPubJobMap;
+mutex               Job::reqPubJobMapMutex;
+
+vector<JobType>     Job::pubJobTypeMap;
 
 void Job::init() {
     atomic_store(&Job::jobIDGen, 0);
+
+    for (int i = 0; i < JobTypeMax; i++) {
+        Job::pubJobTypeMap.push_back(JobTypeMax);
+    }
+
+    // FIXME: 자동 코드 생성으로 대체하자.
+    Job::pubJobTypeMap[CreateNetworkFromFile]       = CreateNetworkReply;
+    Job::pubJobTypeMap[CreateNetwork]               = CreateNetworkReply;
+    Job::pubJobTypeMap[RunNetwork]                  = RunNetworkReply;
+    Job::pubJobTypeMap[BuildNetwork]                = BuildNetworkReply;
+    Job::pubJobTypeMap[ResetNetwork]                = ResetNetworkReply;
+    Job::pubJobTypeMap[RunNetworkMiniBatch]         = RunNetworkMiniBatchReply;
+    Job::pubJobTypeMap[SaveNetwork]                 = SaveNetworkReply;
+    Job::pubJobTypeMap[LoadNetwork]                 = LoadNetworkReply;
 }
 
-Job::Job(Job::JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
+Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
     char *jobElemValues) {
-    SASSERT0(jobType < Job::JobTypeMax);
+    SASSERT0(jobType < JobTypeMax);
     this->jobType = jobType;
     this->jobElemCnt = jobElemCnt;
  
@@ -88,7 +104,7 @@ Job::Job(Job::JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
     atomic_store(&this->taskIDGen, 1);
 }
 
-Job::Job(Job::JobType jobType) {
+Job::Job(JobType jobType) {
     // for incremental building usage
     this->jobType = jobType;
     this->jobElemCnt = 0;
@@ -354,20 +370,15 @@ int Job::getJobID() {
 }
 
 bool Job::hasPubJob() {
-    if ((this->jobType == Job::CreateDQNImageLearner) ||
-        (this->jobType == Job::StepDQNImageLearner) ||
-        (this->jobType == Job::CreateNetworkFromFile))
-        return true;
+    SASSUME0(Job::getType() < JobTypeMax);
 
-    return false;
+    if (Job::pubJobTypeMap[Job::getType()] == JobTypeMax)
+        return false;
+
+    return true;
 }
 
-Job::JobType Job::getPubJobType() {
-    if (this->jobType == Job::CreateDQNImageLearner)
-        return Job::CreateDQNImageLearnerResult;
-
-    if (this->jobType == Job::StepDQNImageLearner)
-        return Job::StepDQNImageLearnerResult;
-
-    return Job::JobTypeMax;     // meaningless
+JobType Job::getPubJobType() {
+    SASSUME0(Job::getType() < JobTypeMax);
+    return Job::pubJobTypeMap[Job::getType()];
 }

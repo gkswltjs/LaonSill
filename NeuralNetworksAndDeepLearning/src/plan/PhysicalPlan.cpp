@@ -57,7 +57,7 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
     }
 
     void *tensorPtr;
-    if (WorkContext::curBootMode == BootMode::DeveloperMode ||
+    if (WorkContext::curBootMode == DeveloperMode ||
         WorkContext::curBootMode == TestMode) {
         Data<float>* tensor = new Data<float>(tensorName);
         SASSERT0(tensor != NULL);
@@ -571,6 +571,14 @@ PhysicalPlan* PhysicalPlan::getCurPhysicalPlan() {
     return WorkContext::curPhysicalPlan;
 }
 
+void PhysicalPlan::setCurPlanInfo(int networkID) {
+    unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
+    if (PhysicalPlan::planGlobalInfoMap.find(networkID) != 
+        PhysicalPlan::planGlobalInfoMap.end()) {
+        WorkContext::curPlanInfo = PhysicalPlan::planGlobalInfoMap[networkID];
+    }
+}
+
 void PhysicalPlan::setCurPlan(int networkID, int dopID) {
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
     SASSERT0(PhysicalPlan::planGlobalMap.find(networkID) != 
@@ -578,10 +586,6 @@ void PhysicalPlan::setCurPlan(int networkID, int dopID) {
 
     SASSUME0(dopID < PhysicalPlan::planGlobalMap[networkID].size());
     WorkContext::curPhysicalPlan = PhysicalPlan::planGlobalMap[networkID][dopID];
-
-    SASSERT0(PhysicalPlan::planGlobalInfoMap.find(networkID) !=
-            PhysicalPlan::planGlobalInfoMap.end());
-    WorkContext::curPlanInfo = PhysicalPlan::planGlobalInfoMap[networkID];
 }
 
 int PhysicalPlan::getDOPCount(int networkID) {

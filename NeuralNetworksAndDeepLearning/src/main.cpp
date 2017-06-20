@@ -87,7 +87,7 @@ void singleJobMain(const char* jobFilePath) {
     int networkID = PlanParser::loadNetwork(jobFilePath);
     WorkContext::updateNetwork(networkID);
     PlanOptimizer::buildPlans(networkID);
-    PlanOptimizer::runPlan(true);
+    PlanOptimizer::runPlan(networkID, true);
 
     STDOUT_LOG("exit single job(%s)", jobFilePath);
 }
@@ -240,7 +240,7 @@ int main(int argc, char** argv) {
         runTest(testItemName);
 
         // (5-D-5) release resources
-        Job* haltJob = new Job(Job::HaltMachine);
+        Job* haltJob = new Job(JobType::HaltMachine);
         Worker::pushJob(haltJob);
 
         Communicator::halt();       // threads will be eventually halt

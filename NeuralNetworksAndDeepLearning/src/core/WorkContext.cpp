@@ -24,6 +24,7 @@ BootMode                    WorkContext::curBootMode;
 void WorkContext::updateNetwork(int networkID) {
     WorkContext::curNetworkID = networkID;
     WorkContext::curNetworkProp = PropMgmt::getNetworkProp(networkID);
+    PhysicalPlan::setCurPlanInfo(networkID);
 }
 
 void WorkContext::updateLayer(int networkID, int layerID) {

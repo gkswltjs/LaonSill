@@ -24,7 +24,7 @@ AtariNN::AtariNN(int rowCount, int colCount, int channelCount, int actionCount) 
 
 void AtariNN::createDQNImageLearner() {
     // (1) create job
-    Job* job = new Job(Job::CreateDQNImageLearner);
+    Job* job = new Job(JobType::CreateDQNImageLearner);
     job->addJobElem(Job::IntType, 1, (void*)&this->rowCount);
     job->addJobElem(Job::IntType, 1, (void*)&this->colCount);
     job->addJobElem(Job::IntType, 1, (void*)&this->channelCount);
@@ -50,7 +50,7 @@ void AtariNN::createDQNImageLearner() {
 
 void AtariNN::buildDQNNetworks() {
     // (1) create job
-    Job* job = new Job(Job::BuildDQNNetworks);
+    Job* job = new Job(JobType::BuildDQNNetworks);
     job->addJobElem(Job::IntType, 1, (void*)&this->dqnImageLearnerID);
     job->addJobElem(Job::IntType, 1, (void*)&this->networkQID);
     job->addJobElem(Job::IntType, 1, (void*)&this->networkQHeadID);
@@ -61,7 +61,7 @@ void AtariNN::buildDQNNetworks() {
 
 int AtariNN::stepNetwork(float lastReward, int lastAction, int lastTerm, float* state) {
     // (1) push StepDQNImageLearner Job
-    Job* job = new Job(Job::StepDQNImageLearner);
+    Job* job = new Job(JobType::StepDQNImageLearner);
     job->addJobElem(Job::IntType, 1, (void*)&this->dqnImageLearnerID);
     job->addJobElem(Job::IntType, 1, (void*)&this->networkQID);
     job->addJobElem(Job::IntType, 1, (void*)&this->networkQHeadID);
@@ -90,16 +90,16 @@ int AtariNN::stepNetwork(float lastReward, int lastAction, int lastTerm, float* 
 
 void AtariNN::cleanupDQNImageLearner() {
     // (1) cleanup networks
-    Job *delQNetJob = new Job(Job::CleanupNetwork);
+    Job *delQNetJob = new Job(JobType::CleanupNetwork);
     delQNetJob->addJobElem(Job::IntType, 1, (void*)&this->networkQID);
     Worker::pushJob(delQNetJob);
 
-    Job *delQHeadNetJob = new Job(Job::CleanupNetwork);
+    Job *delQHeadNetJob = new Job(JobType::CleanupNetwork);
     delQNetJob->addJobElem(Job::IntType, 1, (void*)&this->networkQHeadID);
     Worker::pushJob(delQHeadNetJob);
 
     // (2) cleanup learner
-    Job *delJob = new Job(Job::CleanupDQNImageLearner);
+    Job *delJob = new Job(JobType::CleanupDQNImageLearner);
     delJob->addJobElem(Job::IntType, 1, (void*)&this->dqnImageLearnerID);
     Worker::pushJob(delJob);
 }

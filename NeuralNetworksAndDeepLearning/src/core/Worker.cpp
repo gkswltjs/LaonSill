@@ -242,6 +242,7 @@ void Worker::jobConsumerThread(int consumerIdx) {
 
 
     while (doLoop) {
+
         ThreadEvent event =
             ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
 
@@ -254,27 +255,32 @@ void Worker::jobConsumerThread(int consumerIdx) {
             continue;
 
         switch (job->getType()) {
-            case Job::HaltMachine:
+            case JobType::HaltMachine:
                 doLoop = false;
                 ThreadMgmt::signalAll(ThreadEvent::Halt);
                 break;
 
-            case Job::CreateNetworkFromFile:
+            case JobType::CreateNetworkFromFile:
                 {
-                    string filePath = string(job->getStringValue(0));
-                    cout << "handle create-network job. jsonfilePath : '" <<
-                        filePath << "'." << endl; 
-                    int networkID = PlanParser::loadNetwork(filePath);
-                    Network<float>* network = Network<float>::getNetworkFromID(networkID);
-                    network->build(10);
-                    cout << "done" << endl;
+                    int networkID = PlanParser::loadNetwork(string(job->getStringValue(0)));
+
+                    SASSUME0(job->hasPubJob());
+                    unique_lock<mutex> reqPubJobMapLock(Job::reqPubJobMapMutex); 
+                    Job *pubJob = Job::reqPubJobMap[job->getJobID()];
+                    SASSUME0(pubJob != NULL);
+                    Job::reqPubJobMap.erase(job->getJobID());
+                    reqPubJobMapLock.unlock();
+                    SASSUME0(pubJob->getType() == job->getPubJobType());
+
+                    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+
+                    Broker::publish(job->getJobID(), pubJob);
                 }
                 break;
 
             default:
                 SASSERT(false, "Invalid job type");
         }
-
     }
 
     HotLog::markExit();

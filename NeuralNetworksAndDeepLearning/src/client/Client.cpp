@@ -38,7 +38,7 @@ int Client::connectRetry(int sockFd, const struct sockaddr *sockAddr, socklen_t 
     return -1;
 }
 
-void Client::pushJob(int fd, char* buf, Job* job) {
+void Client::sendJob(int fd, char* buf, Job* job) {
     // see handlePushJobMsg()@Communicator.cpp && JobType enumeration @ Job.h
     // (1) send job msg
     MessageHeader msgHdr;
@@ -50,6 +50,16 @@ void Client::pushJob(int fd, char* buf, Job* job) {
     ret = Communicator::recvMessage(fd, msgHdr, buf, false);
     SASSERT0(ret == Communicator::Success);
     SASSERT0(msgHdr.getMsgType() == MessageHeader::PushJobReply);
+}
+
+void Client::recvJob(int fd, char* buf, Job** job) {
+    // see handlePushJobMsg()@Communicator.cpp && JobType enumeration @ Job.h
+    MessageHeader msgHdr;
+    Communicator::CommRetType ret = Communicator::recvMessage(fd, msgHdr, buf, false);
+    SASSERT0(ret == Communicator::Success);
+    SASSERT0(msgHdr.getMsgType() == MessageHeader::PushJob);
+
+    Communicator::recvJobFromBuffer(job, buf);
 }
 
 void Client::clientMain(const char* hostname, int portno) {
@@ -99,12 +109,19 @@ void Client::clientMain(const char* hostname, int portno) {
 
     // (4) create network
     cout << "send create-network job" << endl;
-    Job* createNetworkJob = new Job(Job::CreateNetworkFromFile);
+    Job* createNetworkJob = new Job(JobType::CreateNetworkFromFile);
     string networkFilePath = "network.conf.test";
     createNetworkJob->addJobElem(Job::StringType, strlen(networkFilePath.c_str()),
         (void*)networkFilePath.c_str());
-    Client::pushJob(sockFd, buf, createNetworkJob);
+    Client::sendJob(sockFd, buf, createNetworkJob);
     delete createNetworkJob;
+
+    Job* createNetworkReplyJob;
+    recvJob(sockFd, buf, &createNetworkReplyJob);
+    SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
+    int networkID = createNetworkReplyJob->getIntValue(0);
+    cout << "created network ID : " << networkID << endl;
+    delete createNetworkReplyJob;
 
 #if 0
     // (6) send Halt Msg
@@ -114,9 +131,15 @@ void Client::clientMain(const char* hostname, int portno) {
     MsgSerializer::serializeMsgHdr(msgHdr, buf);
     ret = Communicator::sendMessage(sockFd, msgHdr, buf);
     SASSERT0(ret == Communicator::Success);
+#else
+    // (6) send goodbye msg
+    cout << "send goodbye msg" << endl;
+    msgHdr.setMsgType(MessageHeader::GoodBye);
+    msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
+    MsgSerializer::serializeMsgHdr(msgHdr, buf);
+    ret = Communicator::sendMessage(sockFd, msgHdr, buf);
+    SASSERT0(ret == Communicator::Success);
 #endif
-
-    sleep (100000);
 
     // XXX: process should wait until send buffer is empty
     // cleanup resrouce & exit

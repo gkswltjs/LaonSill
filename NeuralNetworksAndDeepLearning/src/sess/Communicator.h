@@ -80,7 +80,7 @@ private:
     static bool 		                handleCreateNetworkMsg(MessageHeader recvMsgHdr,
                                             char* recvMsg, MessageHeader& replyMsgHdr, 
                                             char* replyMsg, char*& replyBigMsg);
-    static bool 				        handlePushJobMsg(MessageHeader recvMsgHdr,
+    static bool 				        handlePushJobMsg(int fd, MessageHeader recvMsgHdr,
                                             char* recvMsg, MessageHeader& replyMsgHdr,
                                             char* replyMsg, char*& replyBigMsg);
     static bool                         handleHaltMachineMsg(MessageHeader recvMsgHdr,

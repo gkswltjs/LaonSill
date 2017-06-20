@@ -95,6 +95,7 @@ public:
     static void allocateTensor(int networkID);
 
     static void setCurPlan(int networkID, int dopID);
+    static void setCurPlanInfo(int networkID);
 
     static void saveNetwork(bool checkCond);
     static void loadNetwork();

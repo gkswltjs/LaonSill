@@ -46,8 +46,8 @@ public:
 
     static void removePlans(int networkID);
     static void init();
-    static double runPlan(bool inference);
-    static double runPlanByType(PlanType planType, bool inference);
+    static double runPlan(int networkID, bool inference);
+    static double runPlanByType(int networkID, PlanType planType, bool inference);
 
 private:
     static void setPlanContext(int networkID, int option, bool isTest);

@@ -23,6 +23,7 @@
 #include "SysLog.h"
 #include "LegacyWork.h"
 #include "ThreadMgmt.h"
+#include "Broker.h"
 
 using namespace std;
 
@@ -285,7 +286,7 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
     offset = MsgSerializer::deserializeInt(jobType, offset, recvMsg);
     offset = MsgSerializer::deserializeInt(jobElemCnt, offset, recvMsg);
 
-    Job* newJob = new Job((Job::JobType)jobType);
+    Job* newJob = new Job((JobType)jobType);
 
     int *jobElemTypes = NULL;
     if (jobElemCnt > 0) {
@@ -371,7 +372,7 @@ bool Communicator::handleHaltMachineMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
 
     // (1) Worker Thread (Producer& Consumer)를 종료한다.
-    Job* haltJob = new Job(Job::HaltMachine);
+    Job* haltJob = new Job(JobType::HaltMachine);
     Worker::pushJob(haltJob);
 
     // (2) Listener, Session 쓰레드 들을 모두 종료한다.
@@ -432,7 +433,7 @@ bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMs
 // | JobID  | JobType | JobElemCnt | JobElemTypes      | JobElems |
 // | int(4) | int(4)  | int(4)     | int(4)*JobElemCnt | variable |
 // +--------+---------+------------+-------------------+----------+
-bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
+bool Communicator::handlePushJobMsg(int fd, MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
 
     // (1) job을 얻는다.
@@ -449,23 +450,24 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
     SASSERT(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE, "");
     MsgSerializer::serializeMsgHdr(replyMsgHdr, replyMsg);
 
-#if 1
+#if 0
     return true;
 #else
     if (!newJob->hasPubJob()) 
         return true;
 
-    CommRetType replyRet = Communicator::sendMessage(fd, replyMsgHdr, 
-        (recvBigMsg == NULL ? replyMsg : replyBigMsg));
+    CommRetType replyRet = Communicator::sendMessage(fd, replyMsgHdr, replyMsg);
     SASSUME0(replyRet == CommRetType::Success);
 
     Job* subscribedJob = NULL;
-    Broker::BorkerRetType retType;
-    retType = Broker::subscribe(newJob->getJobID(), &usbscribedJob, Broker::Blocking);
+    Broker::BrokerRetType retType;
+    retType = Broker::subscribe(newJob->getJobID(), &subscribedJob, Broker::Blocking);
     SASSERT0(retType == Broker::Success);
 
-    // 위에서 이미 reply 했기 때문에..
-    return false;
+    sendJobToBuffer(replyMsgHdr, subscribedJob, replyMsg);
+
+    delete subscribedJob;
+    return true;
 #endif
 }
 
@@ -554,7 +556,7 @@ void Communicator::sessThread(int sessId) {
                     replyMsgHdr, replyMsg, replyBigMsg);
                 break;
             case MessageHeader::PushJob:
-                needReply = Communicator::handlePushJobMsg(
+                needReply = Communicator::handlePushJobMsg(fd, 
                     recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
                     replyMsgHdr, replyMsg, replyBigMsg);
                 break;

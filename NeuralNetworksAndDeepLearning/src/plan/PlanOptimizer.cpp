@@ -17,6 +17,7 @@
 #include "SysLog.h"
 #include "PropMgmt.h"
 #include "WorkContext.h"
+#include "Worker.h"
 
 using namespace std;
 
@@ -66,7 +67,7 @@ bool PlanOptimizer::buildPlans(int networkID, int option, PlanOptPolicy policy) 
 
     for (int i = 0; i < availableOptions.size(); i++) {
         setPlanContext(networkID, availableOptions[i], true);
-        double curElapsedTime = runPlan(true);
+        double curElapsedTime = runPlan(networkID, true);
 
         if (isFirst) {
             bestOption = availableOptions[i];
@@ -86,55 +87,78 @@ bool PlanOptimizer::buildPlans(int networkID) {
     return buildPlans(networkID, PLAN_OPT_DEFAULT, PLAN_OPT_POLICY_DEFAULT);
 }
 
-double PlanOptimizer::runPlanByType(PlanType planType, bool inference) {
+double PlanOptimizer::runPlanByType(int networkID, PlanType planType, bool inference) {
     struct timespec startTime, endTime;
     clock_gettime(CLOCK_REALTIME, &startTime);
+    double elapsed = 0.0;
    
-    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+    if ((WorkContext::curBootMode == DeveloperMode) ||
+        (WorkContext::curBootMode == TestMode)) {
 
-    bool jobRemain = true;
-    while (jobRemain) {
-        bool canRunPlan = true;
-        while (canRunPlan) {
-            canRunPlan = pp->runPlan(planType, inference);
+        WorkContext::updateNetwork(networkID);
+        WorkContext::updatePlan(0);
+
+        PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+        bool jobRemain = true;
+        while (jobRemain) {
+            bool canRunPlan = true;
+            while (canRunPlan) {
+                canRunPlan = pp->runPlan(planType, inference);
+            }
+
+            unique_lock<mutex> planLock(pp->planMutex);
+            bool exitLoop = false;
+            if (pp->planTypeRCMap[planType] == 0)
+                exitLoop = true;
+            planLock.unlock();
+
+            if (exitLoop)
+                break;
         }
+        jobRemain = pp->generatePlan(true);
 
-        unique_lock<mutex> planLock(pp->planMutex);
-        bool exitLoop = false;
-        if (pp->planTypeRCMap[planType] == 0)
-            exitLoop = true;
-        planLock.unlock();
-
-        if (exitLoop)
-            break;
+        clock_gettime(CLOCK_REALTIME, &endTime);
+        elapsed = (endTime.tv_sec - startTime.tv_sec) +
+            + (endTime.tv_nsec - startTime.tv_nsec) / 1000000000.0;
+    } else {
+        SASSERT(false, "not implemented yet");
     }
-    jobRemain = pp->generatePlan(true);
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    double elapsed = (endTime.tv_sec - startTime.tv_sec) +
-        + (endTime.tv_nsec - startTime.tv_nsec) / 1000000000.0;
 
     return elapsed;
 }
 
-double PlanOptimizer::runPlan(bool inference) {
+double PlanOptimizer::runPlan(int networkID, bool inference) {
     struct timespec startTime, endTime;
-    clock_gettime(CLOCK_REALTIME, &startTime);
-   
-    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+    double elapsed = 0.0;
 
-    bool jobRemain = true;
-    while (jobRemain) {
-        bool canRunPlan = true;
-        while (canRunPlan) {
-            canRunPlan = pp->runPlan(inference);
+    if ((WorkContext::curBootMode == DeveloperMode) ||
+        (WorkContext::curBootMode == TestMode)) {
+
+        WorkContext::updateNetwork(networkID);
+        WorkContext::updatePlan(0);
+
+        PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+        clock_gettime(CLOCK_REALTIME, &startTime);
+        bool jobRemain = true;
+        while (jobRemain) {
+            bool canRunPlan = true;
+            while (canRunPlan) {
+                canRunPlan = pp->runPlan(inference);
+            }
+            jobRemain = pp->generatePlan(true);
         }
-        jobRemain = pp->generatePlan(true);
-    }
 
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    double elapsed = (endTime.tv_sec - startTime.tv_sec) +
-        + (endTime.tv_nsec - startTime.tv_nsec) / 1000000000.0;
+        clock_gettime(CLOCK_REALTIME, &endTime);
+        elapsed = (endTime.tv_sec - startTime.tv_sec) +
+            + (endTime.tv_nsec - startTime.tv_nsec) / 1000000000.0;
+    } else {
+        WorkContext::updateNetwork(networkID);
+        for (int i = 0; i < WorkContext::curPlanInfo->dopCount; i++) {
+            int consumerIdx = i;        // XXX: 멀티 노드 환경에서는 더 고려해야 한다.
+            WorkContext::updatePlan(i);
+            Worker::addRunPlanTask(i, networkID, i, inference);
+        }
+    }
 
     return elapsed;
 }

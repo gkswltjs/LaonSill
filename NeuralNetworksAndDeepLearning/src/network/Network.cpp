@@ -103,21 +103,13 @@ void Network<Dtype>::reset() {
 template<typename Dtype>
 void Network<Dtype>::run(bool inference) {
     SASSERT0(this->isLoaded);
-
-    WorkContext::updateNetwork(this->networkID); 
-    WorkContext::updatePlan(WorkContext::curDOPID);
-
-    PlanOptimizer::runPlan(inference);
+    PlanOptimizer::runPlan(this->networkID, inference);
 }
 
 template<typename Dtype>
 void Network<Dtype>::runPlanType(PlanType planType, bool inference) {
     SASSERT0(this->isLoaded);
-
-    WorkContext::updateNetwork(this->networkID); 
-    WorkContext::updatePlan(WorkContext::curDOPID);
-
-    PlanOptimizer::runPlanByType(planType, inference);
+    PlanOptimizer::runPlanByType(this->networkID, planType, inference);
 }
 
 template<typename Dtype>
@@ -143,7 +135,7 @@ void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
     planInfo->epochCount = 1;
     SNPROP(iterations) = 0;
 
-    PlanOptimizer::runPlan(inference);
+    PlanOptimizer::runPlan(this->networkID, inference);
 
     planInfo->curEpochIndex = oldEpochIdx;
     planInfo->curMiniBatchIndex = oldMiniBatchIdx;
