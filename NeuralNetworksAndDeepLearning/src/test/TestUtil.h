@@ -15,7 +15,6 @@
 #include "cnpy.h"
 #include "Data.h"
 
-#if 0
 
 const std::string DELIM 		= "*";
 const std::string TYPE_DATA 	= "data";
@@ -24,9 +23,9 @@ const std::string SIG_BOTTOM 	= DELIM + "bottom" + DELIM;
 const std::string SIG_TOP 		= DELIM + "top" + DELIM;
 const std::string SIG_PARAMS 	= DELIM + "params" + DELIM;
 const std::string BLOBS_PREFIX	= "anonymous" + DELIM + "blobs" + DELIM;
-const std::string NPZ_PATH 		= "/home/monhoney/caffe_soa_test/save/";
+const std::string NPZ_PATH 		= "/home/jkim/Dev/data/numpy_array/";
 
-const float COMPARE_ERROR 		= 0.00001;
+const float COMPARE_ERROR 		= 1.0e-5;
 
 
 // cuda device 설정
@@ -62,7 +61,7 @@ bool compareParam(std::map<std::string, Data<float>*>& nameDataMap,
 
 
 void printNpzFiles(cnpy::npz_t& cnpy_npz);
-void printNameDataMap(std::map<std::string, Data<float>*>& nameDataMap, bool printData);
+void printNameDataMap(const std::string& name, std::map<std::string, Data<float>*>& nameDataMap, bool printData);
 void printData(std::vector<Data<float>*>& dataVec);
 
 void printConfigOn();
@@ -80,6 +79,6 @@ S* retrieveValueFromMap(std::map<T, S*>& dict, const T& key);
 
 
 
-#endif
+
 
 #endif /* TESTUTIL_H_ */

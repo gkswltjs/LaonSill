@@ -1,10 +1,9 @@
 #include "TestUtil.h"
 #include "Cuda.h"
-#include "BaseLayer.h"
+#include "Layer.h"
 #include "LearnableLayer.h"
-#include "Network.h"
-
-#if 0
+#include "NetworkConfig.h"
+#include "SysLog.h"
 
 using namespace std;
 using namespace cnpy;
@@ -24,7 +23,7 @@ bool hasKey(map<T, S*>& dict, const T& key);
 
 
 void setUpCuda(int gpuid) {
-	assert(gpuid >= 0);
+	SASSERT0(gpuid >= 0);
 
 	checkCudaErrors(cudaSetDevice(gpuid));
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
@@ -40,7 +39,13 @@ void cleanUpCuda() {
 void buildNameDataMapFromNpzFile(const string& npz_path, const string& layer_name,
 		map<string, Data<float>*>& nameDataMap) {
 
-	const string npz_file = npz_path + layer_name + ".npz";
+	char from = '/';
+	char to = '*';
+	string safe_layer_name = layer_name;
+	std::replace(safe_layer_name.begin(), safe_layer_name.end(), from, to);
+	cout << "layer_name has changed from " << layer_name << " to " << safe_layer_name << endl;
+
+	const string npz_file = npz_path + safe_layer_name + ".npz";
 	npz_t cnpy_npz = npz_load(npz_file);
 	printNpzFiles(cnpy_npz);
 
@@ -88,7 +93,7 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 
 	vector<string> tokens;
 	Tokenize(data_key, tokens, "*", true);
-	assert(tokens.size() == 3);
+	SASSERT0(tokens.size() == 3);
 
 	if (tokens[1] == "params") {
 		for (uint32_t i = 0; i < 4 - shapeSize; i++) {
@@ -100,17 +105,36 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 				shape[i] = 1;
 		}
 	} else if (tokens[1] == "bottom" || tokens[1] == "top" || tokens[1] == "blobs") {
-		assert(shapeSize == 1 || shapeSize == 2 || shapeSize == 4);
+		SASSERT(shapeSize >= 1 && shapeSize <= 4,
+				"shapeSize is %d", shapeSize);
 		if (shapeSize == 1) {
 			shape[0] = npyArray.shape[0];
 			shape[1] = 1;
 			shape[2] = 1;
 			shape[3] = 1;
 		} else if (shapeSize == 2) {
+			cout << "***********CAUTION: Consult with JHKIM!!!************" << endl;
+			/*
 			shape[0] = npyArray.shape[0];
 			shape[1] = 1;
 			shape[2] = npyArray.shape[1];
 			shape[3] = 1;
+			*/
+			/*
+			shape[0] = 1;
+			shape[1] = 1;
+			shape[2] = npyArray.shape[0];
+			shape[3] = npyArray.shape[1];
+			*/
+			shape[0] = npyArray.shape[0];
+			shape[1] = npyArray.shape[1];
+			shape[2] = 1;
+			shape[3] = 1;
+		} else if (shapeSize == 3) {
+			shape[0] = 1;
+			shape[1] = npyArray.shape[0];
+			shape[2] = npyArray.shape[1];
+			shape[3] = npyArray.shape[2];
 		} else if (shapeSize == 4) {
 			shape = npyArray.shape;
 		}
@@ -120,14 +144,14 @@ const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray) {
 }
 
 const string getDataKeyFromDataName(const string& data_name) {
-	assert(data_name.length() > 5);
+	SASSERT0(data_name.length() > 5);
 	return data_name.substr(0, data_name.length() - 5);
 }
 
 const string getDataTypeFromDataName(const string& data_name) {
-	assert(data_name.length() > 5);
+	SASSERT0(data_name.length() > 5);
 	const string data_type = data_name.substr(data_name.length() - 4);
-	assert(data_type == TYPE_DATA || data_type == TYPE_DIFF);
+	SASSERT0(data_type == TYPE_DATA || data_type == TYPE_DIFF);
 	return data_type;
 }
 
@@ -184,9 +208,10 @@ void printNpzFiles(npz_t& cnpy_npz) {
 	cout << "----------------------------------" << endl;
 }
 
-void printNameDataMap(map<string, Data<float>*>& nameDataMap, bool printData) {
+void printNameDataMap(const string& name, map<string, Data<float>*>& nameDataMap, bool printData) {
 	printConfigOn();
 
+	cout << "printNameDataMap: " << name << endl;
 	for (typename map<string, Data<float>*>::iterator itr = nameDataMap.begin();
 			itr != nameDataMap.end(); itr++) {
 
@@ -194,7 +219,7 @@ void printNameDataMap(map<string, Data<float>*>& nameDataMap, bool printData) {
 			itr->second->print_data({}, false);
 			itr->second->print_grad({}, false);
 		} else
-			cout << itr->first << endl;
+			itr->second->print_shape();
 	}
 
 	printConfigOff();
@@ -240,7 +265,7 @@ void fillData(map<string, Data<float>*>& nameDataMap, const string& data_prefix,
 		const string key = data_prefix + dataName;
 
 		Data<float>* data = retrieveValueFromMap(nameDataMap, key);
-		assert(data != 0);
+		SASSERT(data != 0, "couldnt find data %s ... \n", key.c_str());
 
 		Data<float>* targetData = dataVec[i];
 		targetData->set(data, true);
@@ -255,57 +280,16 @@ void fillParam(map<string, Data<float>*>& nameDataMap, const string& param_prefi
 
 		cout << "fill param key: " << key << endl;
 		Data<float>* param = retrieveValueFromMap(nameDataMap, key);
-		assert(param != 0);
+		SASSERT0(param != 0);
 
 		Data<float>* targetParam = paramVec[i];
 		targetParam->set(param, true);
-
-
-		/*
-		printConfigOn();
-		param->print_data({}, false);
-		targetParam->print_data({}, false);
-		printConfigOff();
-		*/
 	}
 }
 
 
 bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_prefix,
 		vector<Data<float>*>& dataVec, uint32_t compareType) {
-
-	/*
-	bool final_result = true;
-	for (uint32_t i = 0; i < dataVec.size(); i++) {
-		const string dataName = dataVec[i]->_name;
-		const string key = data_prefix + dataName;
-
-		Data<float>* data = retrieveValueFromMap(nameDataMap, key);
-		assert(data != 0);
-
-		Data<float>* targetData = dataVec[i];
-
-		bool partial_result = false;
-		if (compareType == 0)
-			partial_result = targetData->compareData(data, COMPARE_ERROR);
-		else
-			partial_result = targetData->compareGrad(data, COMPARE_ERROR);
-
-		if (!partial_result) {
-			printConfigOn();
-			if (compareType == 0) {
-				data->print_data({}, false);
-				targetData->print_data({}, false);
-			} else {
-				data->print_grad({}, false);
-				targetData->print_grad({}, false);
-			}
-			printConfigOff();
-		}
-		final_result = final_result && partial_result;
-	}
-	return final_result;
-	*/
 
 	bool final_result = true;
 	for (uint32_t i = 0; i < dataVec.size(); i++) {
@@ -323,7 +307,17 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 	const string key = data_prefix + dataName;
 
 	Data<float>* data = retrieveValueFromMap(nameDataMap, key);
-	assert(data != 0);
+	SASSERT(data != 0, "Could not find Data named %s", key.c_str());
+
+	/*
+	if (compareType == 1 && dataName == "mbox_loc") {
+		Data<float>::printConfig = true;
+		SyncMem<float>::printConfig = true;
+		targetData->print_grad({}, false, -1);
+		data->print_grad({}, false, -1);
+		exit(1);
+	}
+	*/
 
 	bool result = false;
 	if (compareType == 0)
@@ -340,23 +334,19 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 			data->print_grad({}, false);
 			targetData->print_grad({}, false);
 		}
-		printConfigOff();
+		//printConfigOff();
 	}
 	return result;
 }
 
-
-
-
-
-
 bool compareParam(map<string, Data<float>*>& nameDataMap, const string& param_prefix,
 		vector<Data<float>*>& paramVec, uint32_t compareType) {
 
+	bool finalResult = true;
 	for (uint32_t i = 0; i < paramVec.size(); i++) {
 		const string key = param_prefix + to_string(i);
 		Data<float>* data = retrieveValueFromMap(nameDataMap, key);
-		assert(data != 0);
+		SASSERT0(data != 0);
 
 		Data<float>* targetData = paramVec[i];
 
@@ -372,13 +362,27 @@ bool compareParam(map<string, Data<float>*>& nameDataMap, const string& param_pr
 		printConfigOff();
 		*/
 
+		bool result = false;
+
 		if (compareType == 0)
-			//assert(targetData->compareData(data, COMPARE_ERROR));
-			return targetData->compareData(data, COMPARE_ERROR);
+			result = targetData->compareData(data, COMPARE_ERROR);
 		else
-			//assert(targetData->compareGrad(data, COMPARE_ERROR));
-			return targetData->compareGrad(data, COMPARE_ERROR);
+			result = targetData->compareGrad(data, COMPARE_ERROR);
+
+		if (!result) {
+			//printConfigOn();
+			if (compareType == 0) {
+				data->print_data({}, false);
+				targetData->print_data({}, false);
+			} else {
+				data->print_grad({}, false);
+				targetData->print_grad({}, false);
+			}
+			//printConfigOff();
+		}
+		finalResult = finalResult && result;
 	}
+	return finalResult;
 }
 
 
@@ -420,6 +424,6 @@ void Tokenize(const string& str, vector<string>& tokens, const string& delimiter
 
 
 
-#endif
+
 
 
