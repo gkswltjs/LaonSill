@@ -216,6 +216,8 @@ void PhysicalPlan::allocateTensorInternal(int networkID, int dopID) {
 }
 
 void PhysicalPlan::allocateTensor(int networkID) {
+    WorkContext::updateNetwork(networkID);
+
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
     SASSUME0(PhysicalPlan::planGlobalInfoMap.find(networkID) !=
             PhysicalPlan::planGlobalInfoMap.end());
@@ -233,6 +235,7 @@ void PhysicalPlan::allocateTensor(int networkID) {
     planLock.unlock();
 
     for (int i = 0; i < curPPs.size(); i++) {
+        WorkContext::updatePlan(i);
         curPPs[i]->allocateTensorInternal(networkID, i);
     }
 }
