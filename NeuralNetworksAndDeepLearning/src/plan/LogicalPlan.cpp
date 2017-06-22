@@ -422,6 +422,7 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
         }
     }
 
+    // (3-7) Logical Plan에 등록
     unique_lock<mutex> lock(LogicalPlan::lpMapMutex);
     SASSERT(LogicalPlan::lpMap.find(networkID) == LogicalPlan::lpMap.end(),
         "network ID has been declared redundant. network ID=%d", networkID);
@@ -468,4 +469,18 @@ LogicalPlan* LogicalPlan::getLogicalPlan(int networkID) {
     LogicalPlan* lp = LogicalPlan::lpMap[networkID];
     lock.unlock();
     return lp;
+}
+
+bool LogicalPlan::isInnerLayer(int networkID, int layerID) {
+    LogicalPlan* lp = LogicalPlan::getLogicalPlan(networkID);
+    unique_lock<mutex> lock(lp->layerTypeMutex);
+    SASSUME0(lp->layerTypeMap.find(layerID) != lp->layerTypeMap.end());
+    return lp->layerTypeMap[layerID]; 
+}
+
+void LogicalPlan::setLayerType(int networkID, int layerID, bool isInner) {
+    LogicalPlan* lp = LogicalPlan::getLogicalPlan(networkID);
+    unique_lock<mutex> lock(lp->layerTypeMutex);
+    SASSUME0(lp->layerTypeMap.find(layerID) == lp->layerTypeMap.end());
+    lp->layerTypeMap[layerID] = isInner;
 }

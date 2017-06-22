@@ -234,7 +234,7 @@ private:
     bool                isVaildElemIdx(int elemIdx);
     bool                isValidElemValue(JobElemType elemType, int elemIdx);
     bool                isValidElemArrayValue(JobElemType elemType, int elemIdx,
-                            int arrayIdx);
+                                              int arrayIdx);
 
 
     static std::atomic<int>         jobIDGen;

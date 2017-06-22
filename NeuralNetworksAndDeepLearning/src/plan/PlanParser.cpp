@@ -180,8 +180,8 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
     }
 }
 
-void PlanParser::handleInnerLayer(int networkID, Json::Value vals, string parentLayerType,
-    void* parentProp) {
+vector<int64_t> PlanParser::handleInnerLayer(int networkID, Json::Value vals,
+    string parentLayerType, void* parentProp) {
     vector<int64_t> innerIDList;
 
     for (int i = 0; i < vals.size(); i++) {
@@ -216,11 +216,16 @@ void PlanParser::handleInnerLayer(int networkID, Json::Value vals, string parent
 
     LayerPropList::setProp(parentProp, parentLayerType.c_str(), "innerLayerIDs",
         (void*)&innerIDList);
+
+    return innerIDList;
 }
 
 void PlanParser::buildNetwork(int networkID, Json::Value rootValue) {
     // logical plan을 만들기 위한 변수들
-    map<int, PlanBuildDef> planDefMap;
+    map<int, PlanBuildDef> planDefMap;  // key : layerID
+
+    vector<int> innerLayerIDList;
+    vector<int> layerIDList;
 
     // (1) fill layer property
     Json::Value layerList = rootValue["layers"];
@@ -233,6 +238,8 @@ void PlanParser::buildNetwork(int networkID, Json::Value rootValue) {
         SASSERT(layerID < LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID,
             "layer ID should less than %d. layer ID=%d",
             LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID, layerID);
+
+        layerIDList.push_back(layerID);
 
         string layerType = layer["layer"].asCString();
 
@@ -248,7 +255,11 @@ void PlanParser::buildNetwork(int networkID, Json::Value rootValue) {
                 continue;
 
             if (strcmp(key.c_str(), "innerLayer") == 0) {
-                handleInnerLayer(networkID, val, layerType, newProp->prop);
+                vector<int64_t> innerLayerIDs = 
+                    handleInnerLayer(networkID, val, layerType, newProp->prop);
+
+                for (int k = 0; k < innerLayerIDs.size(); k++)
+                    innerLayerIDList.push_back((int)innerLayerIDs[k]);
                 continue;
             }
 
@@ -306,6 +317,14 @@ void PlanParser::buildNetwork(int networkID, Json::Value rootValue) {
     WorkContext::updateNetwork(networkID);
 
     LogicalPlan::build(networkID, planDefMap);
+
+    for (int i = 0; i < layerIDList.size(); i++) {
+        LogicalPlan::setLayerType(networkID, layerIDList[i], false);
+    }
+
+    for (int i = 0; i < innerLayerIDList.size(); i++) {
+        LogicalPlan::setLayerType(networkID, innerLayerIDList[i], true);
+    }
 }
 
 int PlanParser::loadNetwork(string filePath) {

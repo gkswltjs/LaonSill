@@ -148,6 +148,8 @@ public:
      */
     static Network<Dtype>*                  getNetworkFromID(int networkID);
 
+    bool                                    isInnerLayer(int layerID);
+
     /**
      * @details 네트워크 정의가 로드되었음을 설정한다.
      */

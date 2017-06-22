@@ -71,5 +71,16 @@ public:
                                                   std::string filePathInServer,
                                                   NetworkHandle& netHandle);
     static ClientError      destroyNetwork(ClientHandle handle, NetworkHandle& netHandle);
+    static ClientError      buildNetwork(ClientHandle handle, NetworkHandle netHandle,
+                                         int epochs);
+    static ClientError      resetNetwork(ClientHandle handle, NetworkHandle netHandle);
+    static ClientError      runNetwork(ClientHandle handle, NetworkHandle netHandle,
+                                       bool inference);
+    static ClientError      runNetworkMiniBatch(ClientHandle handle, NetworkHandle netHandle,
+                                                bool inference, int miniBatchIdx);
+    static ClientError      saveNetwork(ClientHandle handle, NetworkHandle netHandle,
+                                        std::string filePath); 
+    static ClientError      loadNetwork(ClientHandle handle, NetworkHandle netHandle,
+                                        std::string filePath); 
 };
 #endif /* CLIENTAPI_H */

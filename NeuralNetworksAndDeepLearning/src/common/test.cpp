@@ -41,6 +41,7 @@
 #else
 #include "test/CreateNetworkFromFileTest.h"
 #include "test/CreateNetworkTest.h"
+#include "test/RunNetworkTest.h"
 #endif
 
 /**************************************************************************
@@ -50,7 +51,7 @@
 #ifndef CLIENT_MODE
 #define TEST_ITEM_DEF_ARRAY_COUNT  6
 #else
-#define TEST_ITEM_DEF_ARRAY_COUNT  2
+#define TEST_ITEM_DEF_ARRAY_COUNT  3
 #endif
 
 /**************************************************************************
@@ -70,7 +71,8 @@ TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
 #else
 TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
     {"createnetfile", "create network from file test", CreateNetworkFromFileTest::runTest},
-    {"createnet", "create network test", CreateNetworkTest::runTest}
+    {"createnet", "create network test", CreateNetworkTest::runTest},
+    {"runnet", "run network test", RunNetworkTest::runTest}
 };
 #endif
 

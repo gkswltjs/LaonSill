@@ -179,3 +179,89 @@ ClientError ClientAPI::destroyNetwork(ClientHandle handle, NetworkHandle& netHan
     return ClientError::Success;
 }
 
+ClientError ClientAPI::buildNetwork(ClientHandle handle, NetworkHandle netHandle,
+    int epochs) {
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    Job* buildNetworkJob = new Job(JobType::BuildNetwork);
+    buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&epochs);
+    Client::sendJob(handle.sockFD, handle.buffer, buildNetworkJob);
+    delete buildNetworkJob;
+
+    return ClientError::Success;
+}
+
+ClientError ClientAPI::resetNetwork(ClientHandle handle, NetworkHandle netHandle) {
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    Job* resetNetworkJob = new Job(JobType::ResetNetwork);
+    resetNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    Client::sendJob(handle.sockFD, handle.buffer, resetNetworkJob);
+    delete resetNetworkJob;
+
+    return ClientError::Success;
+}
+
+ClientError ClientAPI::runNetwork(ClientHandle handle, NetworkHandle netHandle, 
+    bool inference) {
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    Job* runNetworkJob = new Job(JobType::RunNetwork);
+    runNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    int inferenceInt = (int)inference;
+    runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inferenceInt);
+    Client::sendJob(handle.sockFD, handle.buffer, runNetworkJob);
+    delete runNetworkJob;
+
+    return ClientError::Success;
+}
+
+ClientError ClientAPI::runNetworkMiniBatch(ClientHandle handle, NetworkHandle netHandle,
+    bool inference, int miniBatchIdx) {
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    Job* runNetworkJob = new Job(JobType::RunNetworkMiniBatch);
+    runNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    int inferenceInt = (int)inference;
+    runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inferenceInt);
+    runNetworkJob->addJobElem(Job::IntType, 1, (void*)&miniBatchIdx);
+    Client::sendJob(handle.sockFD, handle.buffer, runNetworkJob);
+    delete runNetworkJob;
+
+    return ClientError::Success;
+}
+
+ClientError ClientAPI::saveNetwork(ClientHandle handle, NetworkHandle netHandle,
+    std::string filePath) {
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    Job* saveNetworkJob = new Job(JobType::SaveNetwork);
+    saveNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    saveNetworkJob->addJobElem(Job::StringType, strlen(filePath.c_str()),
+        (void*)filePath.c_str());
+    Client::sendJob(handle.sockFD, handle.buffer, saveNetworkJob);
+    delete saveNetworkJob;
+
+    return ClientError::Success;
+}
+
+ClientError ClientAPI::loadNetwork(ClientHandle handle, NetworkHandle netHandle,
+    std::string filePath) {
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    Job* loadNetworkJob = new Job(JobType::LoadNetwork);
+    loadNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    loadNetworkJob->addJobElem(Job::StringType, strlen(filePath.c_str()),
+        (void*)filePath.c_str());
+    Client::sendJob(handle.sockFD, handle.buffer, loadNetworkJob);
+    delete loadNetworkJob;
+
+    return ClientError::Success;
+}
