@@ -237,9 +237,7 @@ void Worker::jobConsumerThread(int consumerIdx) {
         sleep(0);
     }
 
-
     while (doLoop) {
-
         ThreadEvent event =
             ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
 
@@ -251,38 +249,68 @@ void Worker::jobConsumerThread(int consumerIdx) {
         if (job == NULL)
             continue;
 
-        switch (job->getType()) {
-            case JobType::HaltMachine:
-                doLoop = false;
-                ThreadMgmt::signalAll(ThreadEvent::Halt);
-                break;
-
-            case JobType::CreateNetworkFromFile:
-                {
-                    int networkID = PlanParser::loadNetwork(string(job->getStringValue(0)));
-
-                    SASSUME0(job->hasPubJob());
-                    unique_lock<mutex> reqPubJobMapLock(Job::reqPubJobMapMutex); 
-                    Job *pubJob = Job::reqPubJobMap[job->getJobID()];
-                    SASSUME0(pubJob != NULL);
-                    Job::reqPubJobMap.erase(job->getJobID());
-                    reqPubJobMapLock.unlock();
-                    SASSUME0(pubJob->getType() == job->getPubJobType());
-
-                    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
-
-                    Broker::publish(job->getJobID(), pubJob);
-                }
-                break;
-
-            default:
-                SASSERT(false, "Invalid job type");
-        }
+        doLoop = handleJob(job);
     }
 
     HotLog::markExit();
     COLD_LOG(ColdLog::INFO, true, "job consumer thread #%d (GPU:#%d) ends", consumerIdx,
         gpuIdx);
+}
+
+void Worker::handleCreateNetworkFromFileJob(Job* job) {
+    int networkID = PlanParser::loadNetwork(string(job->getStringValue(0)));
+
+    SASSUME0(job->hasPubJob());
+    unique_lock<mutex> reqPubJobMapLock(Job::reqPubJobMapMutex); 
+    Job *pubJob = Job::reqPubJobMap[job->getJobID()];
+    SASSUME0(pubJob != NULL);
+    Job::reqPubJobMap.erase(job->getJobID());
+    reqPubJobMapLock.unlock();
+    SASSUME0(pubJob->getType() == job->getPubJobType());
+
+    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleCreateNetwork(Job* job) {
+    int networkID = PlanParser::loadNetworkByJSONString(string(job->getStringValue(0)));
+
+    SASSUME0(job->hasPubJob());
+    unique_lock<mutex> reqPubJobMapLock(Job::reqPubJobMapMutex); 
+    Job *pubJob = Job::reqPubJobMap[job->getJobID()];
+    SASSUME0(pubJob != NULL);
+    Job::reqPubJobMap.erase(job->getJobID());
+    reqPubJobMapLock.unlock();
+    SASSUME0(pubJob->getType() == job->getPubJobType());
+
+    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+bool Worker::handleJob(Job* job) {
+    bool doLoop = true;
+
+    switch (job->getType()) {
+        case JobType::HaltMachine:
+            doLoop = false;
+            ThreadMgmt::signalAll(ThreadEvent::Halt);
+            break;
+
+        case JobType::CreateNetworkFromFile:
+            handleCreateNetworkFromFileJob(job);
+            break;
+
+        case JobType::CreateNetwork:
+            handleCreateNetwork(job);
+            break;
+
+        default:
+            SASSERT(false, "Invalid job type");
+    }
+
+    return doLoop;
 }
 
 void Worker::launchThreads(int taskConsumerCount, int jobConsumerCount) {

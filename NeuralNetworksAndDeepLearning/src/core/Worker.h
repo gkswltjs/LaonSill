@@ -76,6 +76,10 @@ private:
     static void                         insertJCReadyQueue(int consumerIdx);
     static std::vector<int>             getReadyJCs(int count);
 
+    static bool                         handleJob(Job* job);
+    static void                         handleCreateNetworkFromFileJob(Job* job);
+    static void                         handleCreateNetwork(Job* job);
+
 
     /**
      * variables and functions for task consumer

@@ -271,7 +271,6 @@ void Communicator::sendJobToBuffer(MessageHeader &msgHdr, Job* job, char* buf) {
                 break;
         }
     }
-
 }
 
 void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {

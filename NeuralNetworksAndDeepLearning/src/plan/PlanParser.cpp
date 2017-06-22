@@ -308,7 +308,6 @@ void PlanParser::buildNetwork(int networkID, Json::Value rootValue) {
     LogicalPlan::build(networkID, planDefMap);
 }
 
-// XXX: 함수 하나가 엄청 길다... 흠.. 나중에 소스 좀 정리하자..
 int PlanParser::loadNetwork(string filePath) {
     // (1) 우선 network configuration file 파싱부터 진행
     filebuf fb;
@@ -335,6 +334,28 @@ int PlanParser::loadNetwork(string filePath) {
     buildNetwork(networkID, rootValue);
 
     fb.close();
+
+    network->setLoaded();
+
+    return networkID;
+}
+
+int PlanParser::loadNetworkByJSONString(string jsonString) {
+    Json::Value rootValue;
+    Json::Reader reader;
+    bool parse = reader.parse(jsonString, rootValue);
+
+    if (!parse) {
+        SASSERT(false, "invalid jsonstring. jsonString=%s. error message=%s",
+            jsonString.c_str(), reader.getFormattedErrorMessages().c_str());
+    }
+   
+    // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
+    Network<float>* network = new Network<float>();
+    int networkID = network->getNetworkID();
+
+    // (3) 네트워크 빌드
+    buildNetwork(networkID, rootValue);
 
     network->setLoaded();
 

@@ -21,6 +21,7 @@ public:
     virtual ~PlanParser() {}
 
     static int loadNetwork(std::string filePath);
+    static int loadNetworkByJSONString(std::string jsonString);
     static void buildNetwork(int networkID, Json::Value val);
 private:
     static void setPropValue(Json::Value val, bool isLayer, std::string layerType,
