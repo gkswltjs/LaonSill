@@ -12,6 +12,7 @@
 #include <vector>
 #include <map>
 #include <atomic>
+#include <mutex>
 
 #define LP_FORWARD_PLANID(id)               (id * 3 + 0)
 #define LP_BACKWARD_PLANID(id)              (id * 3 + 1)
@@ -76,10 +77,18 @@ public:
     static void printPlanDef(int networkID);
     static LogicalPlan* getLogicalPlan(int networkID);
 
+    static bool isInnerLayer(int networkID, int layerID);
+    static void setLayerType(int networkID, int layerID, bool isInner);
+
 private:
     static std::map<int, LogicalPlan*>  lpMap;  // logical plan map
                                                 // key : network ID, value : plan def list
+    static std::mutex                   lpMapMutex;
     static PlanDef* findPlanDef(LogicalPlan* lp, int planID);
+
+    std::map<int, bool>                 layerTypeMap;   // key : layerID, 
+                                                        // value : true(innerLayer)
+    std::mutex                          layerTypeMutex;
 };
 
 #endif /* LOGICALPLAN_H */

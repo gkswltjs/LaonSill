@@ -34,6 +34,13 @@ PhysicalPlan::PhysicalPlan(vector<string> lossNames) {
 }
 
 PhysicalPlan::~PhysicalPlan() {
+    for (map<TensorAllocKey, void*>::iterator iter = this->tensorAllocMap.begin();
+        iter != this->tensorAllocMap.end(); iter++) {
+        void* value = iter->second;
+        Data<float>* dataPtr = (Data<float>*)value;
+        delete dataPtr;
+    }
+
     for (map<int, void*>::iterator iter = instanceMap.begin(); iter != instanceMap.end();
         ++iter) {
 

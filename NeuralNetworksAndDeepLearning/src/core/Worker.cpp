@@ -20,6 +20,7 @@
 #include "WorkContext.h"
 #include "PlanParser.h"
 #include "LayerFunc.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -237,9 +238,7 @@ void Worker::jobConsumerThread(int consumerIdx) {
         sleep(0);
     }
 
-
     while (doLoop) {
-
         ThreadEvent event =
             ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
 
@@ -251,38 +250,179 @@ void Worker::jobConsumerThread(int consumerIdx) {
         if (job == NULL)
             continue;
 
-        switch (job->getType()) {
-            case JobType::HaltMachine:
-                doLoop = false;
-                ThreadMgmt::signalAll(ThreadEvent::Halt);
-                break;
-
-            case JobType::CreateNetworkFromFile:
-                {
-                    int networkID = PlanParser::loadNetwork(string(job->getStringValue(0)));
-
-                    SASSUME0(job->hasPubJob());
-                    unique_lock<mutex> reqPubJobMapLock(Job::reqPubJobMapMutex); 
-                    Job *pubJob = Job::reqPubJobMap[job->getJobID()];
-                    SASSUME0(pubJob != NULL);
-                    Job::reqPubJobMap.erase(job->getJobID());
-                    reqPubJobMapLock.unlock();
-                    SASSUME0(pubJob->getType() == job->getPubJobType());
-
-                    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
-
-                    Broker::publish(job->getJobID(), pubJob);
-                }
-                break;
-
-            default:
-                SASSERT(false, "Invalid job type");
-        }
+        doLoop = handleJob(job);
     }
 
     HotLog::markExit();
     COLD_LOG(ColdLog::INFO, true, "job consumer thread #%d (GPU:#%d) ends", consumerIdx,
         gpuIdx);
+}
+
+Job* Worker::getPubJob(Job* job) {
+    SASSUME0(job->hasPubJob());
+    unique_lock<mutex> reqPubJobMapLock(Job::reqPubJobMapMutex); 
+    Job *pubJob = Job::reqPubJobMap[job->getJobID()];
+    SASSUME0(pubJob != NULL);
+    Job::reqPubJobMap.erase(job->getJobID());
+    reqPubJobMapLock.unlock();
+    SASSUME0(pubJob->getType() == job->getPubJobType());
+    return pubJob;
+}
+
+void Worker::handleCreateNetworkFromFileJob(Job* job) {
+    int networkID = PlanParser::loadNetwork(string(job->getStringValue(0)));
+    
+    Job* pubJob = getPubJob(job);
+    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleCreateNetwork(Job* job) {
+    int networkID = PlanParser::loadNetworkByJSONString(string(job->getStringValue(0)));
+
+    Job* pubJob = getPubJob(job);
+    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleDestroyNetwork(Job* job) {
+    int networkID = job->getIntValue(0);
+
+    // XXX: 네트워크가 제거될 수 있는 상황인지에 대한 파악을 해야하고, 그것에 따른 에러처리가
+    //      필요하다.
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    SASSERT0(network->getLoaded());
+
+    LogicalPlan::cleanup(networkID);
+
+    if (network->getBuilt())
+        PhysicalPlan::removePlan(networkID);
+
+    PropMgmt::removeNetworkProp(networkID);
+    PropMgmt::removeLayerProp(networkID);
+
+    delete network;
+}
+
+void Worker::handleBuildNetwork(Job* job) {
+    int networkID = job->getIntValue(0);
+    int epochs = job->getIntValue(1);
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->build(epochs);
+
+    Job* pubJob = getPubJob(job);
+    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleResetNetwork(Job* job) {
+    int networkID = job->getIntValue(0);
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->reset();
+
+    Job* pubJob = getPubJob(job);
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleRunNetwork(Job* job) {
+    int networkID = job->getIntValue(0);
+    int inference = job->getIntValue(1);
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->run((bool)inference);
+
+    Job* pubJob = getPubJob(job);
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleRunNetworkMiniBatch(Job* job) {
+    int networkID = job->getIntValue(0);
+    int inference = job->getIntValue(1);
+    int miniBatchIdx = job->getIntValue(2);
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->runMiniBatch((bool)inference, miniBatchIdx);
+
+    Job* pubJob = getPubJob(job);
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleSaveNetwork(Job* job) {
+    int networkID = job->getIntValue(0);
+    string filePath = string(job->getStringValue(1));
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->save(filePath);
+
+    Job* pubJob = getPubJob(job);
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleLoadNetwork(Job* job) {
+    int networkID = job->getIntValue(0);
+    string filePath = string(job->getStringValue(1));
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->load(filePath);
+
+    Job* pubJob = getPubJob(job);
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+bool Worker::handleJob(Job* job) {
+    bool doLoop = true;
+
+    switch (job->getType()) {
+        case JobType::HaltMachine:
+            doLoop = false;
+            ThreadMgmt::signalAll(ThreadEvent::Halt);
+            break;
+
+        case JobType::CreateNetworkFromFile:
+            handleCreateNetworkFromFileJob(job);
+            break;
+
+        case JobType::CreateNetwork:
+            handleCreateNetwork(job);
+            break;
+
+        case JobType::DestroyNetwork:
+            handleDestroyNetwork(job);
+            break;
+
+        case JobType::BuildNetwork:
+            handleBuildNetwork(job);
+            break;
+
+        case JobType::ResetNetwork:
+            handleResetNetwork(job);
+            break;
+
+        case JobType::RunNetwork:
+            handleRunNetwork(job);
+            break;
+
+        case JobType::RunNetworkMiniBatch:
+            handleRunNetworkMiniBatch(job);
+            break;
+
+        case JobType::SaveNetwork:
+            handleSaveNetwork(job);
+            break;
+
+        case JobType::LoadNetwork:
+            handleLoadNetwork(job);
+            break;
+
+        default:
+            SASSERT(false, "Invalid job type");
+    }
+
+    return doLoop;
 }
 
 void Worker::launchThreads(int taskConsumerCount, int jobConsumerCount) {

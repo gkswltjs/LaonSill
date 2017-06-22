@@ -31,36 +31,50 @@
  * 따라서, test라는 폴더명을 붙이고, include path를 추가해야 한다는 점을
  * 유의 바랍니다.
  *************************************************************************/
+#ifndef CLIENT_MODE
 #include "test/BrokerTest.h"
-#include "test/ClientTest.h"
 #include "test/PropTest.h"
 #include "test/PlanParserTest.h"
 #include "test/PlanOptimizerTest.h"
 #include "test/PlanBuilderTest.h"
 #include "test/NetworkRunByPlanTest.h"
+#else
+#include "test/CreateNetworkFromFileTest.h"
+#include "test/CreateNetworkTest.h"
+#include "test/RunNetworkTest.h"
+#endif
 
 /**************************************************************************
  * [수정포인트] 추가할 테스트 개수에 맞게 TEST_ITEM_DEF_ARRAY_COUNT 값을
  * 변경시켜 줍니다. 테스트 개수에 all이 포함이 되지는 않습니다.
  *************************************************************************/
-#define TEST_ITEM_DEF_ARRAY_COUNT  7
-
+#ifndef CLIENT_MODE
+#define TEST_ITEM_DEF_ARRAY_COUNT  6
+#else
+#define TEST_ITEM_DEF_ARRAY_COUNT  3
+#endif
 
 /**************************************************************************
  * [수정포인트] 추가할 테스트의 정의를 testItemDefArray의 뒷 부분에 기입
  * 합니다. 테스트의 정의는 {"테스트이름", "테스트설명", 테스트콜백함수}로
  * 이루어져 있습니다.
  *************************************************************************/
+#ifndef CLIENT_MODE
 TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
     {"broker", "subscribe & publish function test", BrokerTest::runTest},
-    {"client", "communication function test", ClientTest::runTest},
     {"prop", "layer prop function test", PropTest::runTest},
     {"planparser", "plan parser function test", PlanParserTest::runTest},
     {"planopt", "plan optimizer function test", PlanOptimizerTest::runTest},
     {"planbuilder", "plan builder function test", PlanBuilderTest::runTest},
     {"runbyplan", "running network by plantype function test", NetworkRunByPlanTest::runTest}
 };
-
+#else
+TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
+    {"createnetfile", "create network from file test", CreateNetworkFromFileTest::runTest},
+    {"createnet", "create network test", CreateNetworkTest::runTest},
+    {"runnet", "run network test", RunNetworkTest::runTest}
+};
+#endif
 
 /**************************************************************************
  * 아래 코드 부터는 "[수정포인트]"가 없으니 신경쓰지 않아도 됩니다 :)

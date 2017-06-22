@@ -75,6 +75,18 @@ private:
     static std::mutex                   jcReadyMutex;
     static void                         insertJCReadyQueue(int consumerIdx);
     static std::vector<int>             getReadyJCs(int count);
+    static Job*                         getPubJob(Job* job);
+
+    static bool                         handleJob(Job* job);
+    static void                         handleCreateNetworkFromFileJob(Job* job);
+    static void                         handleCreateNetwork(Job* job);
+    static void                         handleDestroyNetwork(Job* job);
+    static void                         handleBuildNetwork(Job* job);
+    static void                         handleResetNetwork(Job* job);
+    static void                         handleRunNetwork(Job*job);
+    static void                         handleRunNetworkMiniBatch(Job* job);
+    static void                         handleSaveNetwork(Job* job);
+    static void                         handleLoadNetwork(Job* job);
 
 
     /**

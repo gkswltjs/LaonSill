@@ -27,6 +27,7 @@
 #include "PlanOptimizer.h"
 #include "PropMgmt.h"
 #include "LearnableLayer.h"
+#include "LogicalPlan.h"
 
 using namespace std;
 
@@ -45,6 +46,7 @@ Network<Dtype>::Network() {
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
     Network<Dtype>::networkIDMap[this->networkID] = this;
     this->isLoaded = false;
+    this->isBuilt = false;
 }
 
 template<typename Dtype>
@@ -347,6 +349,11 @@ Data<Dtype>* Network<Dtype>::findTensor(int nodeID, int devID, string tensorName
     WorkContext::updateNetwork(oldNetworkID);
 
     return result;
+}
+
+template<typename Dtype>
+bool Network<Dtype>::isInnerLayer(int layerID) {
+    return LogicalPlan::isInnerLayer(this->networkID, layerID);
 }
 
 template class Network<float>;
