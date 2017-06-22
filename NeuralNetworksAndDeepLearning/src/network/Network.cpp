@@ -45,6 +45,7 @@ Network<Dtype>::Network() {
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
     Network<Dtype>::networkIDMap[this->networkID] = this;
     this->isLoaded = false;
+    this->isBuilt = false;
 }
 
 template<typename Dtype>

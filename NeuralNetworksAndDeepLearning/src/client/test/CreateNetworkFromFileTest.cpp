@@ -32,6 +32,8 @@ bool CreateNetworkFromFileTest::runSimpleTest() {
     SASSERT0(ret == ClientError::Success);
     ret = ClientAPI::createNetworkFromFile(handle, NETWORK_FILEPATH, netHandle);
     SASSERT0(ret == ClientError::Success);
+    ret = ClientAPI::destroyNetwork(handle, netHandle);
+    SASSERT0(ret == ClientError::Success);
     ret = ClientAPI::releaseSession(handle);
     SASSERT0(ret == ClientError::Success);
 

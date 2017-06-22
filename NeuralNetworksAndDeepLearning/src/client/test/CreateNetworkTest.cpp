@@ -33,6 +33,8 @@ bool CreateNetworkTest::runSimpleTest() {
     SASSERT0(ret == ClientError::Success);
     ret = ClientAPI::createNetwork(handle, content, netHandle);
     SASSERT0(ret == ClientError::Success);
+    ret = ClientAPI::destroyNetwork(handle, netHandle);
+    SASSERT0(ret == ClientError::Success);
     ret = ClientAPI::releaseSession(handle);
     SASSERT0(ret == ClientError::Success);
 

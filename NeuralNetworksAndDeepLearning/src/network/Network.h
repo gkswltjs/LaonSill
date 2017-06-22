@@ -152,6 +152,11 @@ public:
      * @details 네트워크 정의가 로드되었음을 설정한다.
      */
     void                                    setLoaded() { this->isLoaded = true; }
+    bool                                    getLoaded() { return this->isLoaded; }
+
+    void                                    setBuilt() { this->isBuilt = true; }
+    void                                    unsetBuilt() { this->isBuilt = false; }
+    bool                                    getBuilt() { return this->isBuilt; }
 
 private:
     int                                     networkID;
@@ -159,6 +164,7 @@ private:
     static std::map<int, Network<Dtype>*>   networkIDMap;
     static std::mutex                       networkIDMapMutex;
     bool                                    isLoaded;
+    bool                                    isBuilt;
 };
 
 

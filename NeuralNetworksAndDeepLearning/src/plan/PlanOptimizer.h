@@ -44,7 +44,6 @@ public:
     static bool buildPlans(int networkID, int option, PlanOptPolicy policy);
     static bool buildPlans(int networkID);
 
-    static void removePlans(int networkID);
     static void init();
     static double runPlan(int networkID, bool inference);
     static double runPlanByType(int networkID, PlanType planType, bool inference);

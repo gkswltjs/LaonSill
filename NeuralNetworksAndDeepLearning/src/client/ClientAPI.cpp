@@ -67,7 +67,6 @@ ClientError ClientAPI::getSession(ClientHandle &handle) {
     }
 
     // (3-1) send welcome msg
-    cout << "send welcome msg" << endl;
     handle.buffer = (char*)malloc(MessageHeader::MESSAGE_DEFAULT_SIZE);
     if (handle.buffer == NULL) {
         close(handle.sockFD);
@@ -86,7 +85,6 @@ ClientError ClientAPI::getSession(ClientHandle &handle) {
     }
 
     // (3-2) recv welcome reply msg
-    cout << "recv welcome msg" << endl;
     ret = Communicator::recvMessage(handle.sockFD, msgHdr, handle.buffer, false);
     SASSERT0(ret == Communicator::Success);
     SASSERT0(msgHdr.getMsgType() == MessageHeader::WelcomeReply);
@@ -103,7 +101,6 @@ ClientError ClientAPI::releaseSession(ClientHandle handle) {
     if (!handle.hasSession)
         return ClientError::NoSession;
 
-    cout << "send goodbye msg" << endl;
     MessageHeader msgHdr;
     msgHdr.setMsgType(MessageHeader::GoodBye);
     msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
@@ -127,7 +124,6 @@ ClientError ClientAPI::createNetwork(ClientHandle handle, std::string networkDef
     if (!handle.hasSession)
         return ClientError::NoSession;
 
-    cout << "send create-network job" << endl;
     Job* createNetworkJob = new Job(JobType::CreateNetwork);
     createNetworkJob->addJobElem(Job::StringType, strlen(networkDef.c_str()),
         (void*)networkDef.c_str());
@@ -138,8 +134,10 @@ ClientError ClientAPI::createNetwork(ClientHandle handle, std::string networkDef
     Client::recvJob(handle.sockFD, handle.buffer, &createNetworkReplyJob);
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     int networkID = createNetworkReplyJob->getIntValue(0);
-    cout << "created network ID : " << networkID << endl;
     delete createNetworkReplyJob;
+
+    netHandle.networkID = networkID;
+    netHandle.created = true;
 
     return ClientError::Success;
 }
@@ -150,7 +148,6 @@ ClientError ClientAPI::createNetworkFromFile(ClientHandle handle,
     if (!handle.hasSession)
         return ClientError::NoSession;
 
-    cout << "send create-network-from-file job" << endl;
     Job* createNetworkFromFileJob = new Job(JobType::CreateNetworkFromFile);
     createNetworkFromFileJob->addJobElem(Job::StringType, strlen(filePathInServer.c_str()),
         (void*)filePathInServer.c_str());
@@ -161,9 +158,24 @@ ClientError ClientAPI::createNetworkFromFile(ClientHandle handle,
     Client::recvJob(handle.sockFD, handle.buffer, &createNetworkReplyJob);
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     int networkID = createNetworkReplyJob->getIntValue(0);
-    cout << "created network ID : " << networkID << endl;
-    netHandle.networkID = networkID;
     delete createNetworkReplyJob;
+
+    netHandle.networkID = networkID;
+    netHandle.created = true;
 
     return ClientError::Success;
 }
+
+ClientError ClientAPI::destroyNetwork(ClientHandle handle, NetworkHandle& netHandle) {
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    Job* destroyNetworkJob = new Job(JobType::DestroyNetwork);
+    destroyNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    Client::sendJob(handle.sockFD, handle.buffer, destroyNetworkJob);
+    delete destroyNetworkJob;
+
+    netHandle.created = false;
+    return ClientError::Success;
+}
+

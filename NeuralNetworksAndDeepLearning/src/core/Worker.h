@@ -79,6 +79,7 @@ private:
     static bool                         handleJob(Job* job);
     static void                         handleCreateNetworkFromFileJob(Job* job);
     static void                         handleCreateNetwork(Job* job);
+    static void                         handleDestroyNetwork(Job* job);
 
 
     /**

@@ -20,6 +20,7 @@
 #include "WorkContext.h"
 #include "PlanParser.h"
 #include "LayerFunc.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -289,6 +290,27 @@ void Worker::handleCreateNetwork(Job* job) {
     Broker::publish(job->getJobID(), pubJob);
 }
 
+void Worker::handleDestroyNetwork(Job* job) {
+    int networkID = job->getIntValue(0);
+
+    // XXX: 네트워크가 제거될 수 있는 상황인지에 대한 파악을 해야하고, 그것에 따른 에러처리가
+    //      필요하다.
+
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    SASSERT0(network->getLoaded());
+
+    LogicalPlan::cleanup(networkID);
+
+    if (network->getBuilt())
+        PhysicalPlan::removePlan(networkID);
+
+    PropMgmt::removeNetworkProp(networkID);
+    PropMgmt::removeLayerProp(networkID);
+
+    delete network;
+}
+
 bool Worker::handleJob(Job* job) {
     bool doLoop = true;
 
@@ -304,6 +326,10 @@ bool Worker::handleJob(Job* job) {
 
         case JobType::CreateNetwork:
             handleCreateNetwork(job);
+            break;
+
+        case JobType::DestroyNetwork:
+            handleDestroyNetwork(job);
             break;
 
         default:

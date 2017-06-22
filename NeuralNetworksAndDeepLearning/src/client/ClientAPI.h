@@ -20,6 +20,12 @@ typedef struct ClientHandle_s {
     char*   buffer;
     int     bufLen;
     bool    hasSession;
+
+    ClientHandle_s() {
+        buffer = NULL;
+        bufLen = 0;
+        hasSession = false;
+    }
 } ClientHandle;
 
 typedef enum ClientError_s {
@@ -34,11 +40,18 @@ typedef enum ClientError_s {
     RecvMessageFailed,
     HaveSessionAlready,
     NoSession,
+    NotCreatedNetwork,
     SessErrorMax
 } ClientError;
 
 typedef struct NetworkHandle_s {
-    int networkID;
+    int     networkID;
+    bool    created;
+
+    NetworkHandle_s() {
+        networkID = -1;
+        created = false;
+    }
 } NetworkHandle;
 
 class ClientAPI {
@@ -57,5 +70,6 @@ public:
     static ClientError      createNetworkFromFile(ClientHandle handle,
                                                   std::string filePathInServer,
                                                   NetworkHandle& netHandle);
+    static ClientError      destroyNetwork(ClientHandle handle, NetworkHandle& netHandle);
 };
 #endif /* CLIENTAPI_H */

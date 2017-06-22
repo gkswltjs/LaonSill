@@ -12,6 +12,7 @@
 #include <vector>
 #include <map>
 #include <atomic>
+#include <mutex>
 
 #define LP_FORWARD_PLANID(id)               (id * 3 + 0)
 #define LP_BACKWARD_PLANID(id)              (id * 3 + 1)
@@ -79,6 +80,7 @@ public:
 private:
     static std::map<int, LogicalPlan*>  lpMap;  // logical plan map
                                                 // key : network ID, value : plan def list
+    static std::mutex                   lpMapMutex;
     static PlanDef* findPlanDef(LogicalPlan* lp, int planID);
 };
 

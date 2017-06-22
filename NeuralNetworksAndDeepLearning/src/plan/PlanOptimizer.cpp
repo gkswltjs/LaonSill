@@ -18,6 +18,7 @@
 #include "PropMgmt.h"
 #include "WorkContext.h"
 #include "Worker.h"
+#include "Network.h"
 
 using namespace std;
 
@@ -280,8 +281,14 @@ void PlanOptimizer::setPlanContext(int networkID, int option, bool isTest) {
     }
     PhysicalPlan::allocateTensor(networkID);
     PhysicalPlan::loadNetwork();
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->setBuilt();
 }
 
 void PlanOptimizer::unsetPlanContext(int networkID) {
     PhysicalPlan::removePlan(networkID);
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    network->unsetBuilt();
 }
