@@ -94,7 +94,8 @@ double PlanOptimizer::runPlanByType(int networkID, PlanType planType, bool infer
     double elapsed = 0.0;
    
     if ((WorkContext::curBootMode == DeveloperMode) ||
-        (WorkContext::curBootMode == TestMode)) {
+        (WorkContext::curBootMode == TestMode) ||
+        (WorkContext::curBootMode == SingleJobMode)) {
 
         WorkContext::updateNetwork(networkID);
         WorkContext::updatePlan(0);
@@ -133,7 +134,8 @@ double PlanOptimizer::runPlan(int networkID, bool inference) {
     double elapsed = 0.0;
 
     if ((WorkContext::curBootMode == DeveloperMode) ||
-        (WorkContext::curBootMode == TestMode)) {
+        (WorkContext::curBootMode == TestMode) ||
+        (WorkContext::curBootMode == SingleJobMode)) {
 
         WorkContext::updateNetwork(networkID);
         WorkContext::updatePlan(0);
@@ -157,7 +159,7 @@ double PlanOptimizer::runPlan(int networkID, bool inference) {
         for (int i = 0; i < WorkContext::curPlanInfo->dopCount; i++) {
             int consumerIdx = i;        // XXX: 멀티 노드 환경에서는 더 고려해야 한다.
             WorkContext::updatePlan(i);
-            Worker::addRunPlanTask(i, networkID, i, inference);
+            Worker::addRunPlanTask(i, networkID, i, inference, WorkContext::curThreadID);
         }
     }
 
@@ -213,6 +215,7 @@ void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
     PlanInfo *planInfo = new PlanInfo();
     planInfo->networkID = networkID;
     planInfo->dopCount = 1;
+    planInfo->doneCount = 0;
 
     planInfo->epochCount = SNPROP(epochs);
     planInfo->miniBatchCount = SNPROP(miniBatch);

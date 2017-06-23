@@ -99,6 +99,7 @@ void Network<Dtype>::reset() {
     PlanInfo* planInfo = WorkContext::curPlanInfo;
     planInfo->curEpochIndex = 0;
     planInfo->curMiniBatchIndex = -1;
+    planInfo->doneCount = 0;
     SNPROP(iterations) = 0;
 }
 
@@ -126,10 +127,12 @@ void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
     SASSERT0(miniBatchIdx >= 0);
     SASSERT0(miniBatchIdx < planInfo->miniBatchCount);
 
+#if 0
     int oldEpochIdx = planInfo->curEpochIndex;
     int oldMiniBatchIdx = planInfo->curMiniBatchIndex;
     int oldEpochCount = planInfo->epochCount;
     int oldMiniBatchCount = planInfo->miniBatchCount;
+#endif
 
     planInfo->curMiniBatchIndex = miniBatchIdx - 1;
     planInfo->curEpochIndex = 0;
@@ -138,11 +141,12 @@ void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
     SNPROP(iterations) = 0;
 
     PlanOptimizer::runPlan(this->networkID, inference);
-
+#if 0
     planInfo->curEpochIndex = oldEpochIdx;
     planInfo->curMiniBatchIndex = oldMiniBatchIdx;
     planInfo->epochCount = oldEpochCount;
     planInfo->miniBatchCount = oldMiniBatchCount;
+#endif
 }
 
 template<typename Dtype>
@@ -353,6 +357,9 @@ Data<Dtype>* Network<Dtype>::findTensor(int nodeID, int devID, string tensorName
 
 template<typename Dtype>
 bool Network<Dtype>::isInnerLayer(int layerID) {
+    if (layerID >= SPARAM(SPLITLAYER_START_LAYERID))
+        return false;
+
     return LogicalPlan::isInnerLayer(this->networkID, layerID);
 }
 

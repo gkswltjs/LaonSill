@@ -109,10 +109,21 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
 
     bool jobRemain = pp->generatePlan(true);
 
-    if (jobRemain)
+    if (jobRemain) {
         return false;
-    else
+    } else {
+        bool runFinished = false;
+        unique_lock<mutex> lock(WorkContext::curPlanInfo->planMutex);
+        WorkContext::curPlanInfo->doneCount += 1;
+        if (WorkContext::curPlanInfo->doneCount == WorkContext::curPlanInfo->dopCount)
+            runFinished = true;
+        lock.unlock();
+
+        if (runFinished) {
+            ThreadMgmt::signal(task->requestThreadID, ThreadEvent::Wakeup); 
+        }
         return true;
+    }
 }
 
 bool Worker::handleAllocLayerTask(TaskAllocLayer* task) {
@@ -557,13 +568,15 @@ TaskAllocTensor* Worker::addAllocTensorTask(int consumerIdx, int nodeID, int dev
     return task;
 }
 
-void Worker::addRunPlanTask(int consumerIdx, int networkID, int dopID, bool inference) {
+void Worker::addRunPlanTask(int consumerIdx, int networkID, int dopID, bool inference,
+    int requestThreadID) {
     TaskRunPlan* task = (TaskRunPlan*)Task::getElem(TaskType::RunPlan);
     SASSUME0(task != NULL);     // pool이 넉넉하지 않을때에 대한 전략이 반드시 필요하다
 
     task->networkID = networkID;
     task->dopID = dopID;
     task->inference = inference;
+    task->requestThreadID = requestThreadID;
 
     SASSUME0(consumerIdx < Worker::taskQueues.size());
     TaskQueue* tq = Worker::taskQueues[consumerIdx];

@@ -33,7 +33,7 @@ void Job::init() {
     Job::pubJobTypeMap[RunNetwork]                  = RunNetworkReply;
     Job::pubJobTypeMap[BuildNetwork]                = BuildNetworkReply;
     Job::pubJobTypeMap[ResetNetwork]                = ResetNetworkReply;
-    Job::pubJobTypeMap[RunNetworkMiniBatch]         = RunNetworkMiniBatchReply;
+    Job::pubJobTypeMap[RunNetworkMiniBatch]         = RunNetworkReply;
     Job::pubJobTypeMap[SaveNetwork]                 = SaveNetworkReply;
     Job::pubJobTypeMap[LoadNetwork]                 = LoadNetworkReply;
 }

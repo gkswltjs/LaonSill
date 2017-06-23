@@ -30,7 +30,8 @@ typedef struct PlanInfo_t {
 
     int         curEpochIndex;
     int         curMiniBatchIndex;
-    std::mutex  planMutex;      // mutex for curEpochIndex, curMiniBatchIndex
+    int         doneCount;       
+    std::mutex  planMutex;      // mutex for curEpochIndex, curMiniBatchIndex, doneCount
 } PlanInfo;
 
 typedef struct TensorAllocKey_t {

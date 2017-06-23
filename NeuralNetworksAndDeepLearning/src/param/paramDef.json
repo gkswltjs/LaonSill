@@ -488,6 +488,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : false
+},
+
+"SPLITLAYER_START_LAYERID" : 
+{
+    "DESC" : "specify start layer ID of split layer",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 100000 
 }
 
 }

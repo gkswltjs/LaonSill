@@ -50,6 +50,7 @@ PhysicalPlan::~PhysicalPlan() {
         int forwardPlanID = LP_FORWARD_PLANID(layerID);
         if (planMap.find(forwardPlanID) != planMap.end()) {
             int layerType = planMap[forwardPlanID].layerType;
+            WorkContext::updateLayer(WorkContext::curNetworkID, layerID);
             LayerFunc::destroyLayer(layerType, instancePtr);
         }
     }
@@ -65,7 +66,8 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
 
     void *tensorPtr;
     if (WorkContext::curBootMode == DeveloperMode ||
-        WorkContext::curBootMode == TestMode) {
+        WorkContext::curBootMode == TestMode ||
+        WorkContext::curBootMode == SingleJobMode) {
         Data<float>* tensor = new Data<float>(tensorName);
         SASSERT0(tensor != NULL);
 
@@ -188,8 +190,9 @@ void PhysicalPlan::allocateTensorInternal(int networkID, int dopID) {
             }
         }
 
-        if (WorkContext::curBootMode == BootMode::DeveloperMode ||
-            WorkContext::curBootMode == TestMode) {
+        if (WorkContext::curBootMode == DeveloperMode ||
+            WorkContext::curBootMode == TestMode ||
+            WorkContext::curBootMode == SingleJobMode) {
             SASSERT0(LayerFunc::allocLayerTensors(layerType, instancePtr) == true);
         } else {
             SASSUME0(planAlloc.nodeID == SPARAM(NODE_ID));  // TODO: 다른 노드에 대한건 나중에
@@ -353,6 +356,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     }
 
     // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
+    // FIXME: planInfoLock 범위가 너무 크다!!!
     unique_lock<mutex> planInfoLock(WorkContext::curPlanInfo->planMutex);
     this->epochIdx = WorkContext::curPlanInfo->curEpochIndex;
     this->miniBatchIdx = WorkContext::curPlanInfo->curMiniBatchIndex;
@@ -372,8 +376,6 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         saveNetwork = true;
     }
 
-    calcLoss();
-
     if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
         WorkContext::curPlanInfo->curEpochIndex -= 1;
         WorkContext::curPlanInfo->curMiniBatchIndex =
@@ -382,12 +384,15 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         planInfoLock.unlock();
         planLock.unlock();
 
+        calcLoss();
         if (saveNetwork)
             PhysicalPlan::saveNetwork(false);
             
         return false;
     }
     planInfoLock.unlock();
+
+    calcLoss();
 
     // (3) 초기화를 수행한다.
     if (genNextMiniBatch) {
@@ -556,6 +561,8 @@ void PhysicalPlan::insertPlan(int networkID, vector<PhysicalPlan*> pMap, PlanInf
 }
 
 void PhysicalPlan::removePlan(int networkID) {
+    WorkContext::updateNetwork(networkID);
+
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
     SASSERT0(PhysicalPlan::planGlobalMap.find(networkID) != 
             PhysicalPlan::planGlobalMap.end());

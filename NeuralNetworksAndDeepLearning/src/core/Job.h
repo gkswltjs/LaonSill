@@ -81,6 +81,14 @@ typedef enum JobType_e {
      * +-----------------+-----------------+
      */
 
+    RunNetworkMiniBatch,
+    /*
+     *  [Job Elem Schema for RunNetworkMiniBatch]
+     * +-----------------------------------+--------------------+
+     * | NetworkID (int) | inference (int) | miniBatchIdx (int) |
+     * +-----------------+-----------------+--------------------+
+     */
+
     RunNetworkReply,
     /*
      *  [Job Elem Schema for RunNetworkReply]
@@ -121,21 +129,6 @@ typedef enum JobType_e {
      * +------+
      */
 
-    RunNetworkMiniBatch,
-    /*
-     *  [Job Elem Schema for RunNetworkMiniBatch]
-     * +-----------------------------------+--------------------+
-     * | NetworkID (int) | inference (int) | miniBatchIdx (int) |
-     * +-----------------+-----------------+--------------------+
-     */
-
-    RunNetworkMiniBatchReply,
-    /*
-     *  [Job Elem Schema for RunNetworkMiniBatchReply]
-     * +------+
-     * | None |
-     * +------+
-     */
 
     SaveNetwork,
     /*

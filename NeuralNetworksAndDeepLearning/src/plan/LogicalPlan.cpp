@@ -266,7 +266,7 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
     }
 
     // (3-4) generate split layer
-    int curLayerID = LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID;
+    int curLayerID = SPARAM(SPLITLAYER_START_LAYERID);
 
     for (map<string, vector<int>>::iterator it = input2IDMap.begin();
         it != input2IDMap.end(); ++it) {
