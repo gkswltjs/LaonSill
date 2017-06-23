@@ -198,7 +198,7 @@ public:
     float               getFloatValue(int elemIdx);
     float              *getFloatArray(int elemIdx);
     float               getFloatArrayValue(int elemIdx, int arrayIdx);
-    const char*         getStringValue(int elemIdx);
+    std::string         getStringValue(int elemIdx);
     JobElemDef          getJobElemDef(int elemIdx);
 
     int                 getJobSize();

@@ -120,33 +120,20 @@ void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
     SASSERT0(this->isLoaded);
 
     WorkContext::updateNetwork(this->networkID); 
-    WorkContext::updatePlan(WorkContext::curDOPID);
+    WorkContext::updatePlan(WorkContext::curDOPID, true);
 
     PlanInfo* planInfo = WorkContext::curPlanInfo;
 
     SASSERT0(miniBatchIdx >= 0);
-    SASSERT0(miniBatchIdx < planInfo->miniBatchCount);
-
-#if 0
-    int oldEpochIdx = planInfo->curEpochIndex;
-    int oldMiniBatchIdx = planInfo->curMiniBatchIndex;
-    int oldEpochCount = planInfo->epochCount;
-    int oldMiniBatchCount = planInfo->miniBatchCount;
-#endif
 
     planInfo->curMiniBatchIndex = miniBatchIdx - 1;
     planInfo->curEpochIndex = 0;
     planInfo->miniBatchCount = miniBatchIdx + 1;
     planInfo->epochCount = 1;
+    planInfo->doneCount = 0;
     SNPROP(iterations) = 0;
 
     PlanOptimizer::runPlan(this->networkID, inference);
-#if 0
-    planInfo->curEpochIndex = oldEpochIdx;
-    planInfo->curMiniBatchIndex = oldMiniBatchIdx;
-    planInfo->epochCount = oldEpochCount;
-    planInfo->miniBatchCount = oldMiniBatchCount;
-#endif
 }
 
 template<typename Dtype>
@@ -155,8 +142,8 @@ void Network<Dtype>::save(string path) {
 	ofstream paramOfs(path.c_str(), ios::out | ios::binary);
 
 	uint32_t numParams = 0;
-    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(this->networkID);
+    WorkContext::updatePlan(0, true);   // 아무 dopID에서 가져가도 상관없을꺼 같다.
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
     for (map<int, void*>::iterator iter = pp->instanceMap.begin();
         iter != pp->instanceMap.end(); iter++) {
@@ -191,9 +178,6 @@ void Network<Dtype>::save(string path) {
         DebugUtil<Dtype>::printNetworkEdges(stderr, "network save result", this->networkID,
             0);
     }
-
-    WorkContext::updateNetwork(oldNetworkID);
-
 }
 
 template <typename Dtype>
@@ -247,8 +231,8 @@ void Network<Dtype>::load(string path) {
     Data<float>::printConfig = false;
     ifs.close();
 
-    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(this->networkID);
+    WorkContext::updatePlan(0, true);   // 아무 dopID에서 가져가도 상관없을꺼 같다.
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
     for (map<int, void*>::iterator iter = pp->instanceMap.begin();
         iter != pp->instanceMap.end(); iter++) {
@@ -272,9 +256,6 @@ void Network<Dtype>::load(string path) {
         DebugUtil<Dtype>::printNetworkEdges(stderr, "network load result", this->networkID,
             0);
     }
-
-    WorkContext::updateNetwork(oldNetworkID);
-
 }
 
 template <typename Dtype>

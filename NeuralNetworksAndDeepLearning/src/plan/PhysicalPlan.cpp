@@ -245,7 +245,7 @@ void PhysicalPlan::allocateTensor(int networkID) {
     planLock.unlock();
 
     for (int i = 0; i < curPPs.size(); i++) {
-        WorkContext::updatePlan(i);
+        WorkContext::updatePlan(i, true);
         curPPs[i]->allocateTensorInternal(networkID, i);
     }
 }
@@ -284,7 +284,7 @@ void PhysicalPlan::markFinish(int networkID, int dopID, int planID) {
     int oldDOPID = WorkContext::curDOPID;
 
     WorkContext::updateNetwork(networkID);
-    WorkContext::updatePlan(dopID);
+    WorkContext::updatePlan(dopID, true);
 
     PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
     PlanDef planDef = pp->planMap[planID];
@@ -296,7 +296,7 @@ void PhysicalPlan::markFinish(int networkID, int dopID, int planID) {
     pp->markDone(planID);
 
     WorkContext::updateNetwork(oldNetworkID);
-    WorkContext::updatePlan(oldDOPID);
+    WorkContext::updatePlan(oldDOPID, true);
 }
 
 void PhysicalPlan::saveNetwork(bool checkCond) {
@@ -567,10 +567,12 @@ void PhysicalPlan::removePlan(int networkID) {
     SASSERT0(PhysicalPlan::planGlobalMap.find(networkID) != 
             PhysicalPlan::planGlobalMap.end());
 
+    // XXX: 이거 task consumer에서 처리해야 한다.
     vector<PhysicalPlan*>::iterator iter;
     for (iter = PhysicalPlan::planGlobalMap[networkID].begin(); 
             iter != PhysicalPlan::planGlobalMap[networkID].end(); ) {
         PhysicalPlan* pp = (PhysicalPlan*)(*iter);
+        WorkContext::updatePlan(pp->dopID, false);
         delete pp;
 
         iter = PhysicalPlan::planGlobalMap[networkID].erase(iter);
@@ -596,13 +598,19 @@ void PhysicalPlan::setCurPlanInfo(int networkID) {
     }
 }
 
-void PhysicalPlan::setCurPlan(int networkID, int dopID) {
-    unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
+void PhysicalPlan::setCurPlan(int networkID, int dopID, bool acquireLock) {
+
+    if (acquireLock)
+        PhysicalPlan::planGlobalMutex.lock();
+
     SASSERT0(PhysicalPlan::planGlobalMap.find(networkID) != 
             PhysicalPlan::planGlobalMap.end());
 
     SASSUME0(dopID < PhysicalPlan::planGlobalMap[networkID].size());
     WorkContext::curPhysicalPlan = PhysicalPlan::planGlobalMap[networkID][dopID];
+
+    if (acquireLock)
+        PhysicalPlan::planGlobalMutex.unlock();
 }
 
 int PhysicalPlan::getDOPCount(int networkID) {

@@ -99,7 +99,7 @@ bool Worker::handleUpdateTensorTask(TaskUpdateTensor* task) {
 
 bool Worker::handleRunPlanTask(TaskRunPlan* task) {
     WorkContext::updateNetwork(task->networkID);
-    WorkContext::updatePlan(task->dopID);
+    WorkContext::updatePlan(task->dopID, true);
 
     PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
     bool canRunPlan = true;
@@ -133,7 +133,7 @@ bool Worker::handleAllocLayerTask(TaskAllocLayer* task) {
     }
 
     WorkContext::updateLayer(task->networkID, task->layerID);
-    WorkContext::updatePlan(task->dopID);
+    WorkContext::updatePlan(task->dopID, true);
 
     SASSERT0(LayerFunc::allocLayerTensors(task->layerType, task->instancePtr) == true);
     ThreadMgmt::signal(task->requestThreadID, ThreadEvent::Wakeup);
@@ -281,7 +281,7 @@ Job* Worker::getPubJob(Job* job) {
 }
 
 void Worker::handleCreateNetworkFromFileJob(Job* job) {
-    int networkID = PlanParser::loadNetwork(string(job->getStringValue(0)));
+    int networkID = PlanParser::loadNetwork(job->getStringValue(0));
     
     Job* pubJob = getPubJob(job);
     pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
@@ -290,7 +290,7 @@ void Worker::handleCreateNetworkFromFileJob(Job* job) {
 }
 
 void Worker::handleCreateNetwork(Job* job) {
-    int networkID = PlanParser::loadNetworkByJSONString(string(job->getStringValue(0)));
+    int networkID = PlanParser::loadNetworkByJSONString(job->getStringValue(0));
 
     Job* pubJob = getPubJob(job);
     pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
@@ -346,6 +346,8 @@ void Worker::handleRunNetwork(Job* job) {
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->run((bool)inference);
 
+    ThreadMgmt::wait(WorkContext::curThreadID, 0);
+
     Job* pubJob = getPubJob(job);
     Broker::publish(job->getJobID(), pubJob);
 }
@@ -358,13 +360,15 @@ void Worker::handleRunNetworkMiniBatch(Job* job) {
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->runMiniBatch((bool)inference, miniBatchIdx);
 
+    ThreadMgmt::wait(WorkContext::curThreadID, 0);
+
     Job* pubJob = getPubJob(job);
     Broker::publish(job->getJobID(), pubJob);
 }
 
 void Worker::handleSaveNetwork(Job* job) {
     int networkID = job->getIntValue(0);
-    string filePath = string(job->getStringValue(1));
+    string filePath = job->getStringValue(1);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->save(filePath);
@@ -375,7 +379,7 @@ void Worker::handleSaveNetwork(Job* job) {
 
 void Worker::handleLoadNetwork(Job* job) {
     int networkID = job->getIntValue(0);
-    string filePath = string(job->getStringValue(1));
+    string filePath = job->getStringValue(1);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->load(filePath);

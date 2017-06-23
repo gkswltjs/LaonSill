@@ -98,7 +98,7 @@ double PlanOptimizer::runPlanByType(int networkID, PlanType planType, bool infer
         (WorkContext::curBootMode == SingleJobMode)) {
 
         WorkContext::updateNetwork(networkID);
-        WorkContext::updatePlan(0);
+        WorkContext::updatePlan(0, true);
 
         PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
         bool jobRemain = true;
@@ -138,7 +138,7 @@ double PlanOptimizer::runPlan(int networkID, bool inference) {
         (WorkContext::curBootMode == SingleJobMode)) {
 
         WorkContext::updateNetwork(networkID);
-        WorkContext::updatePlan(0);
+        WorkContext::updatePlan(0, true);
 
         PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
         clock_gettime(CLOCK_REALTIME, &startTime);
@@ -158,7 +158,7 @@ double PlanOptimizer::runPlan(int networkID, bool inference) {
         WorkContext::updateNetwork(networkID);
         for (int i = 0; i < WorkContext::curPlanInfo->dopCount; i++) {
             int consumerIdx = i;        // XXX: 멀티 노드 환경에서는 더 고려해야 한다.
-            WorkContext::updatePlan(i);
+            WorkContext::updatePlan(i, true);
             Worker::addRunPlanTask(i, networkID, i, inference, WorkContext::curThreadID);
         }
     }
@@ -234,7 +234,7 @@ void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
     PhysicalPlan::insertPlan(networkID, ppList, planInfo);
 
     // (4) set context
-    WorkContext::updatePlan(0);
+    WorkContext::updatePlan(0, true);
 }
 
 void PlanOptimizer::setMultiGPUPlanContext(int networkID, bool isTest) { 

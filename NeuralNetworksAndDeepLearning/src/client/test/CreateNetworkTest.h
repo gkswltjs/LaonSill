@@ -16,5 +16,6 @@ public:
 
 private:
     static bool runSimpleTest();
+    static bool runCreateNetworkFromFileTest();
 };
 #endif /* CREATENETWORKTEST_H */
