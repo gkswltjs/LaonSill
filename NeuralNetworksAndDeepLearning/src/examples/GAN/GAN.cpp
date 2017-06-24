@@ -65,20 +65,20 @@ void GAN<Dtype>::run() {
                 cout << "minibatch " << j << " is done." << endl;
         }
 
-        setLayerTrain(networkG1, false);
-        networkG1->runMiniBatch(true, 0);
+        setLayerTrain(networkG0, false);
+        networkG0->runMiniBatch(true, 0);
 
 #if 1
-        ConvLayer<Dtype>* convLayer = (ConvLayer<Dtype>*)networkG1->findLayer("conv1");
+        ConvLayer<Dtype>* convLayer = (ConvLayer<Dtype>*)networkG0->findLayer("conv1");
         const Dtype* host_data = convLayer->_inputData[0]->host_data();
 #else
-        Data<Dtype>* tensor = networkG1->findTensor(0, 0, "conv1");
+        Data<Dtype>* tensor = networkG0->findTensor(0, 0, "conv1");
         SASSUME0(tensor != NULL);
         const Dtype* host_data = tensor->host_data();
 #endif
         ImageUtil<Dtype>::saveImage(host_data, 64, 3, 64, 64, "");
 
-        setLayerTrain(networkG1, true);
+        setLayerTrain(networkG0, true);
     }
 }
 

@@ -376,6 +376,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         saveNetwork = true;
     }
 
+
     if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
         WorkContext::curPlanInfo->curEpochIndex -= 1;
         WorkContext::curPlanInfo->curMiniBatchIndex =
@@ -384,15 +385,14 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         planInfoLock.unlock();
         planLock.unlock();
 
-        calcLoss();
         if (saveNetwork)
             PhysicalPlan::saveNetwork(false);
             
+        calcLoss();
+
         return false;
     }
     planInfoLock.unlock();
-
-    calcLoss();
 
     // (3) 초기화를 수행한다.
     if (genNextMiniBatch) {
@@ -419,10 +419,33 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
 
     planLock.unlock();
 
+    calcLoss();
+
     if (saveNetwork)
         PhysicalPlan::saveNetwork(false);
 
     return true;
+}
+
+void PhysicalPlan::reset() {
+    this->refCount = 0;
+    unique_lock<mutex> planLock(this->planMutex);
+    this->readyQueue.clear();
+    
+    for (map<int, PlanDef>::iterator it = planMap.begin(); it != planMap.end(); ++it) {
+        int key = it->first;
+        PlanDef value = it->second;
+      
+        depRefMap[key] = value.depCount;
+
+        if (value.depCount == 0) {
+            readyQueue.push_back(key);
+        }
+
+        this->refCount += 1;
+        SASSUME0(value.planType < PlanType::PLANTYPE_MAX);
+        this->planTypeRCMap[value.planType] += 1;
+    }
 }
 
 void PhysicalPlan::runLayer(int planID, bool inference) {

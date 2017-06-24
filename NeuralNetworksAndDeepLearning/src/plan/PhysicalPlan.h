@@ -106,6 +106,8 @@ public:
 
     void* getTensor(int nodeID, int devID, std::string tensorName);
 
+    void reset();
+
 private:
     static std::map<int, std::vector<PhysicalPlan*>>    planGlobalMap;    // key = networkID,
                                                                 // value = Physical Plans

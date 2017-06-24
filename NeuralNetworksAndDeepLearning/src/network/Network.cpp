@@ -98,9 +98,11 @@ void Network<Dtype>::reset() {
 
     PlanInfo* planInfo = WorkContext::curPlanInfo;
     planInfo->curEpochIndex = 0;
-    planInfo->curMiniBatchIndex = -1;
+    planInfo->curMiniBatchIndex = 0;
     planInfo->doneCount = 0;
     SNPROP(iterations) = 0;
+    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+    pp->reset();
 }
 
 template<typename Dtype>
@@ -126,12 +128,13 @@ void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
 
     SASSERT0(miniBatchIdx >= 0);
 
-    planInfo->curMiniBatchIndex = miniBatchIdx - 1;
+    planInfo->curMiniBatchIndex = miniBatchIdx;
     planInfo->curEpochIndex = 0;
     planInfo->miniBatchCount = miniBatchIdx + 1;
     planInfo->epochCount = 1;
     planInfo->doneCount = 0;
-    SNPROP(iterations) = 0;
+    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+    pp->reset();
 
     PlanOptimizer::runPlan(this->networkID, inference);
 }
@@ -287,8 +290,6 @@ Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
         }
     }
 
-    WorkContext::updateNetwork(oldNetworkID);
-
     if (foundLayer)
         return layer;
     else
@@ -299,8 +300,8 @@ template <typename Dtype>
 vector<Layer<Dtype>*> Network<Dtype>::findLayersByType(int layerType) {
     vector<Layer<Dtype>*> result;
 
-    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(this->networkID);
+    WorkContext::updatePlan(WorkContext::curDOPID, true);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
 
     bool foundLayer = false;
@@ -316,8 +317,6 @@ vector<Layer<Dtype>*> Network<Dtype>::findLayersByType(int layerType) {
             result.push_back((Layer<Dtype>*)instancePtr);
         }
     }
-
-    WorkContext::updateNetwork(oldNetworkID);
 
     return result;
 }
