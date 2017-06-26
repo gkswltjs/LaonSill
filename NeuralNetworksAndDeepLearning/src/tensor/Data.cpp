@@ -11,6 +11,7 @@
 
 #include "Cuda.h"
 #include "Data.h"
+#include "SysLog.h"
 
 //#define DATA_LOG
 using namespace std;
@@ -103,8 +104,8 @@ bool isValidShapeValue(const vector<uint32_t>& shape) {
 
 template <typename Dtype>
 void Data<Dtype>::reshape(const vector<uint32_t>& shape) {
-	assert(isValidShapeSize(shape, SHAPE_SIZE));
-	assert(isValidShapeValue(shape));
+	SASSERT0(isValidShapeSize(shape, SHAPE_SIZE));
+	SASSERT0(isValidShapeValue(shape));
 	_shape = shape;
 
 	_count = 1;
@@ -124,7 +125,7 @@ void Data<Dtype>::reshapeInfer(const vector<int>& shape) {
 	uint32_t newFixedCount = 1;
 	for (uint32_t i = 0; i < shape.size(); i++) {
 		if (shape[i] < 0) {
-			assert(inferredAxis == -1);
+			SASSERT0(inferredAxis == -1);
 			inferredAxis = i;
 		} else if(shape[i] == 0) {
 			fShape[i] = this->_shape[i];
@@ -135,7 +136,7 @@ void Data<Dtype>::reshapeInfer(const vector<int>& shape) {
 		}
 	}
 
-	assert(_count % newFixedCount == 0);
+	SASSERT0(_count % newFixedCount == 0);
 	fShape[inferredAxis] = _count / newFixedCount;
 
 	reshape(fShape);
@@ -153,7 +154,7 @@ const Dtype* Data<Dtype>::host_data() {
 
 template <typename Dtype>
 const Dtype* Data<Dtype>::device_data() {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	return _data->device_mem();
 }
 
@@ -164,7 +165,7 @@ const Dtype* Data<Dtype>::host_grad() {
 
 template <typename Dtype>
 const Dtype* Data<Dtype>::device_grad() {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	return _grad->device_mem();
 }
 
@@ -175,9 +176,9 @@ Dtype* Data<Dtype>::mutable_host_data() {
 
 template <typename Dtype>
 Dtype* Data<Dtype>::mutable_device_data() {
-	//assert(!this->_hostOnly);
+	//SASSERT0(!this->_hostOnly);
 	if (this->_hostOnly) {
-		assert(!this->_hostOnly);
+		SASSERT0(!this->_hostOnly);
 	}
 	return _data->mutable_device_mem();
 }
@@ -189,7 +190,7 @@ Dtype* Data<Dtype>::mutable_host_grad() {
 
 template <typename Dtype>
 Dtype* Data<Dtype>::mutable_device_grad() {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	return _grad->mutable_device_mem();
 }
 
@@ -200,7 +201,7 @@ void Data<Dtype>::reset_host_data(const bool setZero, const Dtype value) {
 
 template <typename Dtype>
 void Data<Dtype>::reset_device_data(const bool setZero, const Dtype value) {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	_data->reset_device_mem(setZero, value);
 }
 
@@ -211,7 +212,7 @@ void Data<Dtype>::reset_host_grad() {
 
 template <typename Dtype>
 void Data<Dtype>::reset_device_grad() {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	_grad->reset_device_mem();
 }
 
@@ -222,8 +223,8 @@ void Data<Dtype>::set(Data<Dtype>* data, bool reshape) {
 	if (reshape)
 		this->reshapeLike(data);
 
-	//assert(_shape == data->getShape());
-	//assert(_count == data->getCount());
+	//SASSERT0(_shape == data->getShape());
+	//SASSERT0(_count == data->getCount());
 	if (this->_count != data->getCount()) {
 		cout << "Data::set() _count != data->getCount()" << endl;
 		this->print_shape();
@@ -254,13 +255,13 @@ void Data<Dtype>::set_host_with_device_data(const Dtype* data) {
 template <typename Dtype>
 void Data<Dtype>::set_device_with_host_data(const Dtype* data, const size_t offset,
     const size_t size) {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	_data->set_mem(data, SyncMemCopyType::HostToDevice, offset, size);
 }
 
 template <typename Dtype>
 void Data<Dtype>::set_device_data(const Dtype* data) {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	_data->set_mem(data, SyncMemCopyType::DeviceToDevice);
 }
 
@@ -271,7 +272,7 @@ void Data<Dtype>::set_host_grad(const Dtype* grad) {
 
 template <typename Dtype>
 void Data<Dtype>::set_device_grad(const Dtype* grad) {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	_grad->set_mem(grad, SyncMemCopyType::DeviceToDevice);
 }
 
@@ -282,7 +283,7 @@ void Data<Dtype>::add_host_data(const Dtype* data) {
 
 template <typename Dtype>
 void Data<Dtype>::add_device_data(const Dtype* data) {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	_data->add_device_mem(data);
 }
 
@@ -293,7 +294,7 @@ void Data<Dtype>::add_host_grad(const Dtype* grad) {
 
 template <typename Dtype>
 void Data<Dtype>::add_device_grad(const Dtype* grad) {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	_grad->add_device_mem(grad);
 }
 
@@ -304,7 +305,7 @@ void Data<Dtype>::scale_host_data(const float scale) {
 
 template <typename Dtype>
 void Data<Dtype>::scale_device_data(const float scale) {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	_data->scale_device_mem(scale);
 }
 
@@ -315,31 +316,31 @@ void Data<Dtype>::scale_host_grad(const float scale) {
 
 template <typename Dtype>
 void Data<Dtype>::scale_device_grad(const float scale) {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	_grad->scale_device_mem(scale);
 }
 
 template <typename Dtype>
 double Data<Dtype>::sumsq_device_data() {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	return _data->sumsq_device_mem();
 }
 
 template <typename Dtype>
 double Data<Dtype>::sumsq_device_grad() {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	return _grad->sumsq_device_mem();
 }
 
 template <typename Dtype>
 double Data<Dtype>::asum_device_data() {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	return _data->asum_device_mem();
 }
 
 template <typename Dtype>
 double Data<Dtype>::asum_device_grad() {
-	assert(!this->_hostOnly);
+	SASSERT0(!this->_hostOnly);
 	return _grad->asum_device_mem();
 }
 
@@ -455,7 +456,7 @@ void Data<Dtype>::print_shape() {
 template <typename Dtype>
 void Data<Dtype>::fill_host_with_1d_vec(const vector<int>& array,
 			const vector<uint32_t>& transpose) {
-	assert(array.size() > 0);
+	SASSERT0(array.size() > 0);
 	const uint32_t dim1 = array.size();
 
 	Dtype* dataPtr = mutable_host_data();
@@ -493,7 +494,7 @@ void Data<Dtype>::fill_host_with_1d_vec(const vector<int>& array,
 template <typename Dtype>
 void Data<Dtype>::fill_host_with_1d_vec(const vector<uint32_t>& array,
 			const vector<uint32_t>& transpose) {
-	assert(array.size() > 0);
+	SASSERT0(array.size() > 0);
 	const uint32_t dim1 = array.size();
 
 	Dtype* dataPtr = mutable_host_data();
@@ -530,11 +531,11 @@ void Data<Dtype>::fill_host_with_1d_vec(const vector<uint32_t>& array,
 template <typename Dtype>
 void Data<Dtype>::fill_host_with_2d_vec(const vector<vector<float>>& array,
 		const vector<uint32_t>& transpose) {
-	assert(array.size() > 0);
+	SASSERT0(array.size() > 0);
 	const uint32_t dim1 = array.size();
 	const uint32_t dim2 = array[0].size();
 
-	assert(_shape[3]%dim2 == 0);
+	SASSERT0(_shape[3]%dim2 == 0);
 
 	const uint32_t tBatchSize = 
         _shape[transpose[1]]*_shape[transpose[2]]*_shape[transpose[3]];
@@ -577,8 +578,8 @@ Data<Dtype>* Data<Dtype>::range(const vector<int>& startIndex,
 		const vector<int>& endIndex) {
 
 	const uint32_t shapeSize = _shape.size();
-	assert(startIndex.size() == shapeSize);
-	assert(endIndex.size() == shapeSize);
+	SASSERT0(startIndex.size() == shapeSize);
+	SASSERT0(endIndex.size() == shapeSize);
 
 	vector<uint32_t> fStartIndex(shapeSize);
 	vector<uint32_t> fEndIndex(shapeSize);
@@ -588,7 +589,7 @@ Data<Dtype>* Data<Dtype>::range(const vector<int>& startIndex,
 			fStartIndex[i] = 0;
 		else
 			fStartIndex[i] = startIndex[i];
-		assert(fStartIndex[i] < _shape[i]);
+		SASSERT0(fStartIndex[i] < _shape[i]);
 	}
 
 	for (uint32_t i = 0; i < shapeSize; i++) {
@@ -596,8 +597,8 @@ Data<Dtype>* Data<Dtype>::range(const vector<int>& startIndex,
 			fEndIndex[i] = _shape[i];
 		else
 			fEndIndex[i] = endIndex[i];
-		assert(fEndIndex[i] <= _shape[i]);
-		assert(fEndIndex[i] > fStartIndex[i]);
+		SASSERT0(fEndIndex[i] <= _shape[i]);
+		SASSERT0(fEndIndex[i] > fStartIndex[i]);
 	}
 
 	Data<Dtype>* result = new Data<Dtype>("result");
@@ -716,8 +717,8 @@ bool Data<Dtype>::compareData(
 		Data<Dtype>* data,
 		const Dtype error) {
 
-	//assert(this->getShape() == data->getShape());
-	//assert(this->getCount() == data->getCount());
+	//SASSERT0(this->getShape() == data->getShape());
+	//SASSERT0(this->getCount() == data->getCount());
 	//if (this->getShape() != data->getShape()) {
 	if (this->getCount() != data->getCount()) {
 		cout << "data count inconsistent! at Data::compareData() ... " << endl;
@@ -782,7 +783,7 @@ bool Data<Dtype>::compareData(
 		Data<Dtype>* data2,
 		const Dtype error) {
 
-	assert(data1->getShape() == data2->getShape());
+	SASSERT0(data1->getShape() == data2->getShape());
 
 	const uint32_t count = data1->getCount();
 	const Dtype* data1Ptr = data1->host_data();
@@ -829,8 +830,8 @@ bool Data<Dtype>::compareGrad(
 		Data<Dtype>* data,
 		const Dtype error) {
 
-	//assert(this->getShape() == data->getShape());
-	//assert(this->getCount() == data->getCount());
+	//SASSERT0(this->getShape() == data->getShape());
+	//SASSERT0(this->getCount() == data->getCount());
 	//if (this->getShape() != data->getShape()) {
 	if (this->getCount() != data->getCount()) {
 		cout << "data count inconsistent! at Data::compareGrad() ... " << endl;
@@ -886,7 +887,7 @@ bool Data<Dtype>::compareGrad(
 		Data<Dtype>* data2,
 		const Dtype error) {
 
-	assert(data1->getShape() == data2->getShape());
+	SASSERT0(data1->getShape() == data2->getShape());
 
 	const uint32_t count = data1->getCount();
 	const Dtype* data1Ptr = data1->host_grad();

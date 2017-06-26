@@ -389,6 +389,11 @@ void RoIInputLayer<Dtype>::getNextMiniBatchInds(vector<uint32_t>& inds) {
 	inds.insert(inds.end(), this->perm.begin() + this->cur,
 			this->perm.begin() + this->cur + TRAIN_IMS_PER_BATCH);
 
+	//for (int i = 0; i < inds.size(); i++) {
+	//	cout << inds[i] << ", ";
+	//}
+	//cout << endl;
+
 	//cout << this->cur << ": ";
 	this->cur += TRAIN_IMS_PER_BATCH;
 }

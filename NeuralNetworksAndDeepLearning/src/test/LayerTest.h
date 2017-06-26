@@ -10,7 +10,7 @@
 
 #include "LayerTestInterface.h"
 #include "TestUtil.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 using namespace std;
 
@@ -18,6 +18,7 @@ using namespace std;
 template <typename Dtype>
 class LayerTest : public LayerTestInterface<Dtype> {
 public:
+#if 0
 	LayerTest(typename Layer<Dtype>::Builder* builder,
 			NetworkConfig<Dtype>* networkConfig = 0)
 	: builder(builder), layer(0), networkConfig(networkConfig) {}
@@ -95,6 +96,7 @@ private:
 	Layer<Dtype>* layer;
 
 	map<string, Data<Dtype>*> nameDataMap;
+#endif
 };
 
 

@@ -1,12 +1,12 @@
 #include "TestUtil.h"
 #include "Cuda.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "LearnableLayer.h"
-#include "NetworkConfig.h"
 #include "SysLog.h"
 
 using namespace std;
 using namespace cnpy;
+
 
 
 const vector<uint32_t> getShape(const string& data_key, NpyArray& npyArray);
@@ -192,10 +192,10 @@ void cleanUpObject(T* obj) {
 		delete obj;
 }
 template void cleanUpObject(Layer<float>* obj);
-template void cleanUpObject(Layer<float>::Builder* obj);
+//template void cleanUpObject(Layer<float>::Builder* obj);
 template void cleanUpObject(LearnableLayer<float>* obj);
-template void cleanUpObject(LearnableLayer<float>::Builder* obj);
-template void cleanUpObject(LayersConfig<float>* obj);
+//template void cleanUpObject(LearnableLayer<float>::Builder* obj);
+//template void cleanUpObject(LayersConfig<float>* obj);
 
 
 
@@ -301,23 +301,49 @@ bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_pref
 	return final_result;
 }
 
+bool isSplitDataName(string dataName) {
+	const string delimiter = "_";
+
+	size_t pos = 0;
+	vector<string> tokens;
+	while ((pos = dataName.find(delimiter)) != std::string::npos) {
+		string token = dataName.substr(0, pos);
+		if (token.length() > 0) {
+			tokens.push_back(token);
+		}
+		dataName.erase(0, pos + delimiter.length());
+	}
+	if (dataName.length() > 0) {
+		tokens.push_back(dataName);
+	}
+
+	const int tokenSize = tokens.size();
+	if (tokenSize < 5) {
+		return false;
+	}
+
+	// 결정적이지는 않음.
+	// 일반 사용자의 레이어에 이런 케이스가 없다고 가정함
+	return (tokens[tokenSize - 2] == "split");
+}
+
 bool compareData(map<string, Data<float>*>& nameDataMap, const string& data_prefix,
 		Data<float>* targetData, uint32_t compareType) {
 	const string dataName = targetData->_name;
 	const string key = data_prefix + dataName;
 
+
+	// dataName이 splitLayer의 output에 해당하는 경우 일단 무시 ...
+	if (isSplitDataName(dataName)) {
+		cout << "SPLIT DATA: " << dataName << endl;
+		return false;
+	}
+
+
+
+
 	Data<float>* data = retrieveValueFromMap(nameDataMap, key);
 	SASSERT(data != 0, "Could not find Data named %s", key.c_str());
-
-	/*
-	if (compareType == 1 && dataName == "mbox_loc") {
-		Data<float>::printConfig = true;
-		SyncMem<float>::printConfig = true;
-		targetData->print_grad({}, false, -1);
-		data->print_grad({}, false, -1);
-		exit(1);
-	}
-	*/
 
 	bool result = false;
 	if (compareType == 0)
@@ -409,21 +435,3 @@ void Tokenize(const string& str, vector<string>& tokens, const string& delimiter
 		cout << "---------------------------------" << endl;
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

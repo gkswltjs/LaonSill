@@ -91,6 +91,10 @@ void singleJobMain(const char* jobFilePath) {
 int main(int argc, char** argv) {
     int     opt;
 
+
+    // 처음 생각했던 것보다 실행모드의 개수가 늘었다.
+    // 모드가 하나만 더 추가되면 그냥 enum type으로 모드를 정의하도록 하자.
+
     bool    useDeveloperMode = false;
     bool    useSingleJobMode = false;
     bool    useTestMode = false;
@@ -278,46 +282,9 @@ int main(int argc, char** argv) {
 
 #else
 
-void printUsageAndExit(char* prog) {
-    fprintf(stderr, "Usage: %s [-v] | -t testItemName]\n", prog);
-    exit(EXIT_FAILURE);
-}
-
 const char          SERVER_HOSTNAME[] = {"localhost"};
 int main(int argc, char** argv) {
-    int     opt;
-
-    bool    useTestMode = false;
-
-    char*   testItemName;
-
-    // (1) 옵션을 읽는다.
-    WorkContext::curBootMode = BootMode::ServerClientMode;
-    while ((opt = getopt(argc, argv, "vt:")) != -1) {
-        switch (opt) {
-        case 'v':
-            printf("%s version %d.%d.%d\n", argv[0], SPARAM(VERSION_MAJOR),
-                SPARAM(VERSION_MINOR), SPARAM(VERSION_PATCH));
-            exit(EXIT_SUCCESS);
-
-        case 't':
-            useTestMode = true;
-            testItemName = optarg;
-            checkTestItem(testItemName);
-            break;
-
-        default:    /* ? */
-            printUsageAndExit(argv[0]);
-            break;
-        }
-    }
-
-    if (useTestMode) {
-        runTest(testItemName);
-    } else {
-        Client::clientMain(SERVER_HOSTNAME, Communicator::LISTENER_PORT);
-    }
-
+    Client::clientMain(SERVER_HOSTNAME, Communicator::LISTENER_PORT);
 	exit(EXIT_SUCCESS);
 }
 #endif

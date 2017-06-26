@@ -223,7 +223,7 @@ void InputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
 
 template<typename Dtype>
 void InputLayer<Dtype>::backwardTensor(void* instancePtr) {
-	SASSERT0(false);
+	// do nothing
 }
 
 template<typename Dtype>

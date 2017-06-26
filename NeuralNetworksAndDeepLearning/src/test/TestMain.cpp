@@ -1,8 +1,12 @@
-#if 1
+#if 0
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 
 #include "LayerTestInterface.h"
 #include "LayerTest.h"
-#include "LayerInputTest.h"
 #include "LearnableLayerTest.h"
 
 #include "ConvLayer.h"
@@ -10,7 +14,6 @@
 #include "ReluLayer.h"
 #include "PoolingLayer.h"
 #include "SoftmaxWithLossLayer.h"
-#include "AccuracyLayer.h"
 
 #include "NetworkTestInterface.h"
 #include "NetworkTest.h"
@@ -18,28 +21,31 @@
 #include "TestUtil.h"
 #include "Debug.h"
 
-#include "AnnotationDataLayer.h"
-#include "NormalizeLayer.h"
-#include "PermuteLayer.h"
-#include "FlattenLayer.h"
-#include "PriorBoxLayer.h"
-#include "ConcatLayer.h"
-#include "MultiBoxLossLayer.h"
-#include "DetectionOutputLayer.h"
-#include "DetectionEvaluateLayer.h"
-
-
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "PlanParser.h"
+#include "WorkContext.h"
+#include "PhysicalPlan.h"
+#include "LearnableLayer.h"
+#include "PropMgmt.h"
+#include "InitParam.h"
+#include "Perf.h"
+#include "ColdLog.h"
+#include "Broker.h"
+#include "ResourceManager.h"
+#include "PlanOptimizer.h"
+#include "LayerFunc.h"
 #include "gpu_nms.hpp"
 #include "cnpy.h"
+
+
+
+using namespace std;
 
 void plainTest();
 void layerTest();
 void networkTest();
 
 int main(void) {
+	cout << "begin test ... " << endl;
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
@@ -47,10 +53,12 @@ int main(void) {
 	//layerTest();
 	networkTest();
 
+	cout << "end test ... " << endl;
 	return 0;
 }
 
 
+#if 0
 void plainTest() {
 	cout << "plainTest()" << endl;
 
@@ -712,6 +720,11 @@ void layerTest() {
 	}
 	LayerTestInterface<float>::globalCleanUp();
 }
+#endif
+
+
+
+
 
 
 #define NETWORK_LENET		0
@@ -720,28 +733,42 @@ void layerTest() {
 #define NETWORK_FRCNN_TEST	3
 #define NETWORK_SSD			4
 #define NETWORK_SSD_TEST	5
-#define NETWORK				NETWORK_SSD
+#define NETWORK				NETWORK_FRCNN
 
+#define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/examples/LeNet/lenet_train_test.json")
+#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/examples/frcnn/frcnn_train_test.json")
 
-
-void saveNetworkParams(LayersConfig<float>* layersConfig);
+//void saveNetworkParams(LayersConfig<float>* layersConfig);
 
 
 void networkTest() {
 	const int gpuid 				= 0;
 
+
+	WorkContext::curBootMode = BootMode::DeveloperMode;
+
+	InitParam::init();
+	Perf::init();
+	SysLog::init();
+	ColdLog::init();
+	Job::init();
+	Task::init();
+	Broker::init();
+	Network<float>::init();
+
+	ResourceManager::init();
+	PlanOptimizer::init();
+	LayerFunc::init();
+	LayerPropList::init();
+
+	Util::setOutstream(&cout);
+	Util::setPrint(false);
+
+
 #if NETWORK == NETWORK_LENET
-	// LENET
-	LayersConfig<float>* layersConfig = createLeNetLayersConfig<float>();
-	const string networkName		= "lenet";
-	const int batchSize 			= 64;
-	const float baseLearningRate 	= 0.01;
-	const float weightDecay 		= 0.0005;
-	const float momentum 			= 0.0;
-	const LRPolicy lrPolicy 		= LRPolicy::Fixed;
-	const int stepSize 				= 20000;
-	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
-	const float gamma 				= 0.0001;
+	const string networkFilePath = string(EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH);
+	const string networkName = "lenet";
+	const int numSteps = 3;
 #elif NETWORK == NETWORK_VGG19
 	// VGG19
 	//LayersConfig<float>* layersConfig = createVGG19NetLayersConfig<float>();
@@ -756,8 +783,11 @@ void networkTest() {
 	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
 	const float gamma 				= 0.96;
 #elif NETWORK == NETWORK_FRCNN
+	const string networkFilePath = string(EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH);
+	const string networkName = "frcnn";
 	const int numSteps = 2;
 
+	/*
 	// FRCNN
 	LayersConfig<float>* layersConfig = createFrcnnTrainOneShotLayersConfig<float>();
 	const string networkName		= "frcnn";
@@ -771,6 +801,7 @@ void networkTest() {
 	const int stepSize 				= 50000;
 	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
 	const float gamma 				= 0.1;
+	*/
 #elif NETWORK == NETWORK_FRCNN_TEST
 	// FRCNN_TEST
 	LayersConfig<float>* layersConfig = createFrcnnTestOneShotLayersConfig<float>();
@@ -816,34 +847,6 @@ void networkTest() {
 
 
 #if 0
-	vector<WeightsArg> weightsArgs(1);
-	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_PRETRAINED.param";
-	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/SSD_CAFFE_TRAINED.param";
-#endif
-
-	NetworkConfig<float>* networkConfig =
-		(new typename NetworkConfig<float>::Builder())
-		//->networkPhase(networkPhase)
-		//->build();
-		->batchSize(batchSize)
-		->baseLearningRate(baseLearningRate)
-		->weightDecay(weightDecay)
-		->momentum(momentum)
-		->stepSize(stepSize)
-		->lrPolicy(lrPolicy)
-		->networkPhase(networkPhase)
-		->gamma(gamma)
-#if 0
-		->weightsArgs(weightsArgs)
-#endif
-		->build();
-
-	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
-		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
-	}
-
-
-#if 0
 	Network<float>* network = new Network<float>(networkConfig);
 	// (2) network config 정보를 layer들에게 전달한다.
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
@@ -866,16 +869,20 @@ void networkTest() {
 	exit(1);
 #endif
 
-	NetworkTest<float>* networkTest = new NetworkTest<float>(layersConfig, networkName, numSteps);
 	NetworkTestInterface<float>::globalSetUp(gpuid);
+
+	NetworkTest<float>* networkTest =
+			new NetworkTest<float>(networkFilePath, networkName, numSteps);
+
 	networkTest->setUp();
-	//saveNetworkParams(layersConfig);
-	//exit(1);
 	networkTest->updateTest();
 	networkTest->cleanUp();
+
 	NetworkTestInterface<float>::globalCleanUp();
 }
 
+
+#if 0
 void saveNetworkParams(LayersConfig<float>* layersConfig) {
 	const string savePathPrefix = "/home/jkim/Dev/SOOOA_HOME/network";
 	ofstream paramOfs(
@@ -894,5 +901,7 @@ void saveNetworkParams(LayersConfig<float>* layersConfig) {
 	}
 	paramOfs.close();
 }
+#endif
+
 
 #endif

@@ -11,6 +11,7 @@
 #include "GenerateAnchorsUtil.h"
 #include "RoIDBUtil.h"
 #include "PropMgmt.h"
+#include "SysLog.h"
 
 #define ANCHORTARGETLAYER_LOG 0
 
@@ -74,7 +75,7 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	// measture GT overlap
 
 	// Only single item batches are supported.
-	assert(this->_inputData[0]->getShape(0) == 1);
+	SASSERT0(this->_inputData[0]->getShape(0) == 1);
 
 	// map of shape (..., H, W)
 	// XXX: 디버깅 때문에 Height에 -1 한 것!!! 반드시 원복해야 함 !!!
@@ -284,13 +285,13 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 		vector<uint32_t> disableInds;
 		npr_choice(fgInds, fgInds.size()-numFg, disableInds);
 
-		assert(disableInds.size() == fgInds.size() - numFg);
+		SASSERT0(disableInds.size() == fgInds.size() - numFg);
 
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumFg -= disableInds.size();
 
-		assert(finalNumFg == numFg);
+		SASSERT0(finalNumFg == numFg);
 
 
 
@@ -312,13 +313,13 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 #if !SOOOA_DEBUG
 		npr_choice(bgInds, bgInds.size()-numBg, disableInds);
 
-		assert(disableInds.size() == bgInds.size() - numBg);
+		SASSERT0(disableInds.size() == bgInds.size() - numBg);
 
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumBg -= disableInds.size();
 
-		assert(finalNumBg == numBg);
+		SASSERT0(finalNumBg == numBg);
 #else
 		for (int i = 0; i < bgInds.size() - numBg; i++) {
 			labels[bgInds[i]] = -1;
@@ -359,7 +360,7 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 
 	vector<vector<float>> bboxOutsideWeights(labels.size());
 	// XXX: supports only negative trainRpnPositiveWeight so far...
-	assert(TRAIN_RPN_POSITIVE_WEIGHT < 0);
+	SASSERT0(TRAIN_RPN_POSITIVE_WEIGHT < 0);
 	const float uniformWeight = 1.0f / (finalNumFg + finalNumBg);
 	const vector<float> positiveWeights = {uniformWeight, uniformWeight,
 			uniformWeight, uniformWeight};
@@ -458,9 +459,9 @@ void AnchorTargetLayer<Dtype>::_computeTargets(
 		const vector<vector<float>>& gtRois,
 		vector<vector<float>>& bboxTargets) {
 
-	assert(exRois.size() == gtRois.size());
-	//assert(exRois[0].size() == 4);
-	//assert(gtRois[0].size() == 5);
+	SASSERT0(exRois.size() == gtRois.size());
+	//SASSERT0(exRois[0].size() == 4);
+	//SASSERT0(gtRois[0].size() == 5);
 
 	bboxTargets.resize(exRois.size());
 	for (uint32_t i = 0; i < exRois.size(); i++) {

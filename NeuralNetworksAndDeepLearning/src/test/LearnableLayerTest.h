@@ -18,6 +18,7 @@ using namespace std;
 template <typename Dtype>
 class LearnableLayerTest : public LayerTestInterface<Dtype> {
 public:
+#if 0
 	LearnableLayerTest(typename LearnableLayer<Dtype>::Builder* builder,
 			NetworkConfig<Dtype>* networkConfig = 0)
 	: builder(builder), layer(0), networkConfig(networkConfig) {}
@@ -99,6 +100,7 @@ private:
 	LearnableLayer<Dtype>* layer;
 
 	map<string, Data<Dtype>*> nameDataMap;
+#endif
 };
 
 

@@ -25,9 +25,6 @@ public:
 	virtual void backpropagation();
 	virtual Dtype cost();
 
-private:
-	Dtype getNormalizer(int validCount);
-
 public:
 	Data<Dtype> prob;
 

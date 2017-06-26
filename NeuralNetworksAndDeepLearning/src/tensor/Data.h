@@ -413,9 +413,10 @@ private:
 
 	bool _hostOnly;
 
-	const static uint32_t SHAPE_SIZE = 4;
+
 
 public:
+	const static uint32_t SHAPE_SIZE = 4;
 	static uint32_t printConfig;
 };
 
