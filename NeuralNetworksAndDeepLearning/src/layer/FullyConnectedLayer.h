@@ -37,6 +37,8 @@ public:
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);
 
+    virtual void saveParams(std::ofstream& ofs);
+
 protected:
 	void _computeWeightedData();
 	void _computeWeightBiasedData();

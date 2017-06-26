@@ -45,14 +45,13 @@ template<typename Dtype>
 void FRCNN<Dtype>::run() {
     int networkID = PlanParser::loadNetwork(string(EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
-    network->build(10);
+    network->build(100);
 
 #if !INFERENCE
     network->run(false);
 
 #else
-    PhysicalPlan* pp = WorkContext::curPhysicalPlan;
-    pp->runPlan(true);
+    network->run(true);
 #endif
 
 }

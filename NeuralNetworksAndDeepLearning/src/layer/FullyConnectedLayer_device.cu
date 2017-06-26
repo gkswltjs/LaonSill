@@ -18,6 +18,7 @@
 #include "Update.h"
 #include "Updater.h"
 #include "Donator.h"
+#include "frcnn_common.h"
 
 #define FULLYCONNECTEDLAYER_LOG 0
 
@@ -274,6 +275,89 @@ void FullyConnectedLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) 
     memcpy(this->_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
         biasSize);
 }
+
+
+
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::saveParams(ofstream& ofs) {
+	if (this->_inputData.size() == 1) {
+		cout << SLPROP_BASE(name) << " saves as usual ... " << endl;
+		LearnableLayer<Dtype>::saveParams(ofs);
+	} else {
+		cout << SLPROP_BASE(name) << " saves as special ... " << endl;
+
+
+
+
+		uint32_t numParams = this->_params.size();
+
+		vector<vector<float>> bboxMeans;
+		vector<vector<float>> bboxStds;
+		fill2dVecWithData(this->_inputData[1], bboxMeans);
+		fill2dVecWithData(this->_inputData[2], bboxStds);
+
+
+		/*
+		this->_inputData[1]->print_shape();
+		this->_inputData[2]->print_shape();
+		this->_params[0]->print_shape();
+		this->_params[1]->print_shape();
+		exit(1);
+		*/
+
+
+		Data<Dtype>* param0 = this->_params[0];
+		Data<Dtype> orig0(param0->_name, true);
+		orig0.reshapeLike(param0);
+
+		const Dtype* srcPtr0 = param0->host_data();
+		Dtype* dstPtr0 = orig0.mutable_host_data();
+
+		const int numRows0 = param0->getShape(2);
+		const int numCols0 = param0->getShape(3);
+		int index;
+		int id1, id2;
+		for (int row = 0; row < numRows0; row++) {
+			id2 = row / 4;
+			id1 = row % 4;
+			for (int col = 0; col < numCols0; col++) {
+				index = row * numCols0 + col;
+				dstPtr0[index] = srcPtr0[index] * bboxStds[id2][id1];
+			}
+		}
+
+
+
+		Data<Dtype>* param1 = this->_params[1];
+		Data<Dtype> orig1(param1->_name, true);
+		orig1.reshapeLike(param1);
+
+		const Dtype* srcPtr1 = param1->host_data();
+		Dtype* dstPtr1 = orig1.mutable_host_data();
+
+		const int numRows1 = param1->getShape(1);
+		for (int row = 0; row < numRows1; row++) {
+			id2 = row / 4;
+			id1 = row % 4;
+			dstPtr1[row] = srcPtr1[row] * bboxStds[id2][id1] + bboxMeans[id2][id1];
+		}
+		orig0.save(ofs);
+		orig1.save(ofs);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::feedforward() {

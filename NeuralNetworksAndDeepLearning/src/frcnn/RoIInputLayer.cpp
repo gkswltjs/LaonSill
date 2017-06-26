@@ -105,7 +105,15 @@ void RoIInputLayer<Dtype>::reshape() {
 		}
 	}
 
-	Layer<Dtype>::_adjustInputShape();
+	bool adjusted = Layer<Dtype>::_adjustInputShape();
+	if (adjusted) {
+		if (this->_inputData.size() > 3) {
+			fillDataWith2dVec(this->bboxMeans, this->_inputData[3]);
+		}
+		if (this->_inputData.size() > 4) {
+			fillDataWith2dVec(this->bboxStds, this->_inputData[4]);
+		}
+	}
 
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
@@ -740,7 +748,7 @@ template<typename Dtype>
 void RoIInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
 	// XXX
-    SASSERT0(index < 3);
+    SASSERT0(index < 5);
 
     RoIInputLayer<Dtype>* layer = (RoIInputLayer<Dtype>*)instancePtr;
 

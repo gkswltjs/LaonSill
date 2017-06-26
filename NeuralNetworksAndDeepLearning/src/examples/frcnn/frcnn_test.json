@@ -26,10 +26,10 @@
 			"filterDim.filters" : 96,
 			"filterDim.pad" : 0,
 			"filterDim.stride" : 2,
-			"weightUpdateParam.lr_mult" : 0,
-			"weightUpdateParam.decay_mult" : 0,
-			"biasUpdateParam.lr_mult" : 0,
-			"biasUpdateParam.decay_mult" : 0
+			"weightUpdateParam.lr_mult" : 0.0,
+			"weightUpdateParam.decay_mult" : 0.0,
+			"biasUpdateParam.lr_mult" : 0.0,
+			"biasUpdateParam.decay_mult" : 0.0
 		},
 
 		{
@@ -77,10 +77,10 @@
 			"filterDim.filters" : 256,
 			"filterDim.pad" : 1,
 			"filterDim.stride" : 2,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0
 		},
 
 		{
@@ -128,10 +128,10 @@
 			"filterDim.filters" : 512,
 			"filterDim.pad" : 1,
 			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0
 		},
 
 		{
@@ -154,10 +154,10 @@
 			"filterDim.filters" : 512,
 			"filterDim.pad" : 1,
 			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0
 		},
 
 		{
@@ -180,10 +180,10 @@
 			"filterDim.filters" : 512,
 			"filterDim.pad" : 1,
 			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0
 		},
 
 		{
@@ -206,10 +206,10 @@
 			"filterDim.filters" : 256,
 			"filterDim.pad" : 1,
 			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1,
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
 			"weightFiller.value" : 0.01,
 			"biasFiller.type" : "Constant",
@@ -236,10 +236,10 @@
 			"filterDim.filters" : 18,
 			"filterDim.pad" : 0,
 			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1,
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
 			"weightFiller.value" : 0.01,
 			"biasFiller.type" : "Constant",
@@ -258,10 +258,10 @@
 			"filterDim.filters" : 36,
 			"filterDim.pad" : 0,
 			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1,
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
 			"weightFiller.value" : 0.01,
 			"biasFiller.type" : "Constant",
@@ -325,10 +325,10 @@
 			"input" : ["pool5"],
 			"output" : ["fc6"],
 			"nOut" : 4096,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1			
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0			
 		},
 
 		{
@@ -346,10 +346,10 @@
 			"input" : ["fc6"],
 			"output" : ["fc7"],
 			"nOut" : 1024,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1			
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0			
 		},
 
 		{
@@ -367,10 +367,10 @@
 			"input" : ["fc7"],
 			"output" : ["cls_score"],
 			"nOut" : 21,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1,
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
 			"weightFiller.value" : 0.01,
 			"biasFiller.type" : "Constant",
@@ -384,10 +384,10 @@
 			"input" : ["fc7"],
 			"output" : ["bbox_pred"],
 			"nOut" : 84,
-			"weightUpdateParam.lr_mult" : 1,
-			"weightUpdateParam.decay_mult" : 1,
-			"biasUpdateParam.lr_mult" : 2,
-			"biasUpdateParam.decay_mult" : 1,
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
 			"weightFiller.value" : 0.001,
 			"biasFiller.type" : "Constant",
