@@ -188,9 +188,9 @@ vector<int64_t> PlanParser::handleInnerLayer(int networkID, Json::Value vals,
         Json::Value innerLayer = vals[i];
 
         int layerID = innerLayer["id"].asInt();
-        SASSERT(layerID < LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID,
+        SASSERT(layerID < SPARAM(SPLITLAYER_START_LAYERID),
             "layer ID should less than %d. layer ID=%d",
-            LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID, layerID);
+            SPARAM(SPLITLAYER_START_LAYERID), layerID);
         string layerType = innerLayer["layer"].asCString();
 
         LayerProp* innerProp = 
@@ -235,9 +235,9 @@ void PlanParser::buildNetwork(int networkID, Json::Value rootValue) {
 
         // XXX: 예외처리 해야 한다!!!!
         int layerID = layer["id"].asInt();
-        SASSERT(layerID < LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID,
+        SASSERT(layerID < SPARAM(SPLITLAYER_START_LAYERID),
             "layer ID should less than %d. layer ID=%d",
-            LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID, layerID);
+            SPARAM(SPLITLAYER_START_LAYERID), layerID);
 
         layerIDList.push_back(layerID);
 

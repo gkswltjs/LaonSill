@@ -22,7 +22,8 @@
             "filterDim.cols" : 7,
             "filterDim.channels" : 3,
             "filterDim.filters" : 4,
-            "filterDim.stride" : 4
+            "filterDim.stride" : 4,
+            "weightUpdateParam.lr_mult" : 2.0
         },
 
         {

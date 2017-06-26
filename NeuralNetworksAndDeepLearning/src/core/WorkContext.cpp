@@ -22,6 +22,9 @@ thread_local int            WorkContext::curNetworkID = -1;
 BootMode                    WorkContext::curBootMode;
 
 void WorkContext::updateNetwork(int networkID) {
+    if (networkID < 0)
+        return;
+
     WorkContext::curNetworkID = networkID;
     WorkContext::curNetworkProp = PropMgmt::getNetworkProp(networkID);
     PhysicalPlan::setCurPlanInfo(networkID);
@@ -35,9 +38,9 @@ void WorkContext::updateLayer(int networkID, int layerID) {
     WorkContext::curLayerProp = PropMgmt::getLayerProp(networkID, layerID);
 }
 
-void WorkContext::updatePlan(int dopID) {
+void WorkContext::updatePlan(int dopID, bool acquireLock) {
     WorkContext::curDOPID = dopID;
     int networkID = WorkContext::curNetworkID;
 
-    PhysicalPlan::setCurPlan(networkID, dopID);
+    PhysicalPlan::setCurPlan(networkID, dopID, acquireLock);
 }

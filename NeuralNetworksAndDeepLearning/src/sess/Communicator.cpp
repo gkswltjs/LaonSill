@@ -263,7 +263,7 @@ void Communicator::sendJobToBuffer(MessageHeader &msgHdr, Job* job, char* buf) {
             case Job::StringType:
                 bufOffset = MsgSerializer::serializeInt(jobElemDef.arrayCount, bufOffset,
                         buf);
-                bufOffset = MsgSerializer::serializeString(job->getStringValue(i),
+                bufOffset = MsgSerializer::serializeString(job->getStringValue(i).c_str(),
                         jobElemDef.arrayCount, bufOffset, buf);
                 break;
             default:

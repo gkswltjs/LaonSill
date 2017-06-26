@@ -20,8 +20,6 @@
 
 #define LP_PLANID_TO_LAYERID(planid)        ((int)((int)planid / 3))
 
-#define LOGICAL_PLAN_MAX_USER_DEFINED_LAYERID        (100000)
-
 typedef struct PlanAlloc_s {
     int nodeID;
     int devID;

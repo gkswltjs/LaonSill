@@ -30,7 +30,8 @@ typedef struct PlanInfo_t {
 
     int         curEpochIndex;
     int         curMiniBatchIndex;
-    std::mutex  planMutex;      // mutex for curEpochIndex, curMiniBatchIndex
+    int         doneCount;       
+    std::mutex  planMutex;      // mutex for curEpochIndex, curMiniBatchIndex, doneCount
 } PlanInfo;
 
 typedef struct TensorAllocKey_t {
@@ -94,7 +95,7 @@ public:
 
     static void allocateTensor(int networkID);
 
-    static void setCurPlan(int networkID, int dopID);
+    static void setCurPlan(int networkID, int dopID, bool acquireLock);
     static void setCurPlanInfo(int networkID);
 
     static void saveNetwork(bool checkCond);
@@ -104,6 +105,8 @@ public:
     static void markFinish(int networkID, int dopID, int planID);   
 
     void* getTensor(int nodeID, int devID, std::string tensorName);
+
+    void reset();
 
 private:
     static std::map<int, std::vector<PhysicalPlan*>>    planGlobalMap;    // key = networkID,

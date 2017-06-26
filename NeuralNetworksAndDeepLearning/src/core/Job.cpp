@@ -33,7 +33,7 @@ void Job::init() {
     Job::pubJobTypeMap[RunNetwork]                  = RunNetworkReply;
     Job::pubJobTypeMap[BuildNetwork]                = BuildNetworkReply;
     Job::pubJobTypeMap[ResetNetwork]                = ResetNetworkReply;
-    Job::pubJobTypeMap[RunNetworkMiniBatch]         = RunNetworkMiniBatchReply;
+    Job::pubJobTypeMap[RunNetworkMiniBatch]         = RunNetworkReply;
     Job::pubJobTypeMap[SaveNetwork]                 = SaveNetworkReply;
     Job::pubJobTypeMap[LoadNetwork]                 = LoadNetworkReply;
 }
@@ -147,6 +147,9 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         SASSERT0(arrayCount > 0);
         elemCnt = arrayCount;
+
+        if (jobElemType == Job::StringType)
+            elemCnt += 1;       // for \0
     }
 
     int elemSize;
@@ -200,6 +203,10 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         memcpy((void*)&this->jobElemValues[tempJobElemValueSize], (void*)&arrayCount,
             sizeof(int));
+
+        if (jobElemType == Job::StringType) {
+            memset((void*)&this->jobElemValues[tempJobElemValueSize + arrayCount], '\0', 1);
+        }
     }
 
     memcpy((void*)&this->jobElemValues[this->jobElemDefs[curJobElemIdx].elemOffset],
@@ -252,13 +259,18 @@ float Job::getFloatArrayValue(int elemIdx, int arrayIdx) {
     return floatArray[arrayIdx];
 }
 
-const char* Job::getStringValue(int elemIdx) {
+std::string Job::getStringValue(int elemIdx) {
     bool isValid = isValidElemValue(Job::StringType, elemIdx);
     SASSUME0(isValid == true);
 
     int elemOffset = this->jobElemDefs[elemIdx].elemOffset;
     char *charArray = (char*)(&this->jobElemValues[elemOffset]);
-    return (const char*)charArray;
+    char *temp = (char*)malloc(sizeof(char) * this->jobElemDefs[elemIdx].arrayCount);
+    SASSUME0(temp != NULL);
+    strncpy(temp, charArray, this->jobElemDefs[elemIdx].arrayCount);
+    string resultString(temp);
+    free(temp);
+    return resultString;
 }
 
 Job::JobElemDef Job::getJobElemDef(int elemIdx) {

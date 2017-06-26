@@ -260,7 +260,7 @@
     "PROPDOWN" : [],
     "VARS" : 
         [   
-            ["epsilon", "double", "0.00001"],
+            ["epsilon", "double", "0.0000001"],
             ["train", "bool", "true"]
         ]
 

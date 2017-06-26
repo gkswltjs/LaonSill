@@ -65,6 +65,7 @@ typedef struct TaskUpdateTensor_s {
 typedef struct TaskRunPlan_s {
     TaskType    taskType;
     int         elemID;
+    int         requestThreadID;
     int         networkID;
     int         dopID;
     bool        inference;

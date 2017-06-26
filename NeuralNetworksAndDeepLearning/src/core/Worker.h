@@ -48,7 +48,7 @@ public:
                                                   int requestThreadID,
                                                   std::string tensorName);
     static void                 addRunPlanTask(int consumerIdx, int networkID, int dopID,
-                                              bool inference);
+                                              bool inference, int requestThreadID);
     static void                 addUpdateTensorTask(int consumerIdx, int networkID,
                                                    int dopID, int layerID, int planID,
                                                    std::vector<UpdateParam> updateParams);
