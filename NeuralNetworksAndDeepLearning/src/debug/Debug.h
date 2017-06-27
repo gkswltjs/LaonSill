@@ -3695,6 +3695,7 @@ LayersConfig<Dtype>* createVGG19NetArtisticLayersConfig() {
 					->inputs({"relu1_2"})
 #else
 					->inputs({"conv1_2"})
+#endif
 					->outputs({"pool1"}))
 
 			// tier 2
@@ -3741,6 +3742,7 @@ LayersConfig<Dtype>* createVGG19NetArtisticLayersConfig() {
 					->inputs({"relu2_2"})
 #else
 					->inputs({"conv2_2"})
+#endif
 					->outputs({"pool2"}))
 
 			// tier 3
@@ -3821,6 +3823,7 @@ LayersConfig<Dtype>* createVGG19NetArtisticLayersConfig() {
 					->inputs({"relu3_4"})
 #else
 					->inputs({"conv3_4"})
+#endif
 					->outputs({"pool3"}))
 
 			// tier 4

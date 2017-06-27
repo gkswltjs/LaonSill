@@ -35,7 +35,6 @@
 #include "LayerFunc.h"
 #include "gpu_nms.hpp"
 #include "cnpy.h"
-#include "tools/ParamManipulator.h"
 
 
 
@@ -50,58 +49,243 @@ int main(void) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
-	plainTest();
+	//plainTest();
 	//layerTest();
-	//networkTest();
+	networkTest();
 
 	cout << "end test ... " << endl;
 	return 0;
 }
 
 
+#if 0
 void plainTest() {
 	cout << "plainTest()" << endl;
 
-	ParamManipulator<float> pm(
-			"/home/jkim/Dev/SOOOA_HOME/network/frcnn_240000.param",
-			"/home/jkim/Dev/SOOOA_HOME/network/frcnn_240000_dn.param");
-	pm.printParamList();
-	//pm.changeParamName("rpn_conv/3x3_filter", "param_manipulator_test");
-	//vector<pair<string, string>> namePairList;
-	//namePairList.push_back(make_pair("conv1_filter", "conv1_weight"));
-	//namePairList.push_back(make_pair("conv2_filter", "conv2_weight"));
-	//namePairList.push_back(make_pair("conv3_filter", "conv3_weight"));
-	//pm.changeParamNames(namePairList);
+#if 1
+	AnnotationDataLayer<float>::Builder* builder =
+			new typename AnnotationDataLayer<float>::Builder();
+	builder->id(0)
+			->name("data")
+			->flip(true)
+			->imageHeight(300)
+			->imageWidth(300)
+			->imageSetPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt")
+			->baseDataPath("/home/jkim/Dev/git/caffe_ssd/data/VOCdevkit/")
+			->labelMapPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt")
+			//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			//->pixelMeans({104.f, 117.f, 123.f})	// BGR
+			->pixelMeans({0.f, 0.f, 0.f})	// BGR
+			->outputs({"data", "label"});
 
-	pm.denormalizeParams({"bbox_pred_weight", "bbox_pred_bias"},
-			{0.f, 0.f, 0.f, 0.f}, {0.1f, 0.1f, 0.2f, 0.2f});
+	Layer<float>* layer = builder->build();
+	layer->_outputData.push_back(new Data<float>("data"));
+	layer->_outputData.push_back(new Data<float>("label"));
 
+	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
+			->batchSize(1)
+			->build();
+	layer->setNetworkConfig(networkConfig);
+	layer->feedforward();
 
+	Data<float>::printConfig = true;
+	SyncMem<float>::printConfig = true;
 
+	layer->_outputData[0]->print_data({}, false);
+	layer->_outputData[1]->print_data({}, false, -1);
 
-	//pm.printParamList();
-	pm.save();
+	SyncMem<float>::printConfig = false;
+	Data<float>::printConfig = false;
 
-
-
-
-
-	/*
-	void printParamList();
-
-	void changeParamNames(const std::vector<std::pair<std::string, std::string>>& namePairList);
-	void changeParamName(const std::string& oldParamName, const std::string& newParamName);
-	void denormalizeParams(const std::vector<std::string>& paramNames,
-			const std::vector<float>& means, const std::vector<float>& stds);
-
-	void save();
-	*/
-
-}
-
-
+	delete layer;
+#endif
 
 #if 0
+	NormalizeLayer<float>::Builder* builder =
+			new typename NormalizeLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm")
+			->acrossSpatial(false)
+			->scaleFiller(ParamFillerType::Constant, 20.0f)
+			->channelShared(false)
+			->inputs({"conv4_3"})
+			->outputs({"conv4_3_norm"});
+
+	Layer<float>* layer = builder->build();
+	layer->_inputData.push_back(new Data<float>("conv4_3"));
+	layer->_outputData.push_back(new Data<float>("conv4_3_norm"));
+#endif
+
+#if 0
+	PermuteLayer<float>::Builder* builder =
+			new typename PermuteLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm_mbox_loc_perm")
+			->orders({0, 2, 3, 1})
+			->inputs({"conv4_3_norm_mbox_loc"})
+			->outputs({"conv4_3_norm_mbox_loc_perm"});
+
+	Layer<float>* layer = builder->build();
+	layer->_inputData.push_back(new Data<float>("conv4_3_norm_mbox_loc"));
+	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_perm"));
+#endif
+
+#if 0
+	FlattenLayer<float>::Builder* builder =
+			new typename FlattenLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm_mbox_loc_flat")
+			->axis(1)
+			->inputs({"conv4_3_norm_mbox_loc_perm"})
+			->outputs({"conv4_3_norm_mbox_loc_flat"});
+
+	Layer<float>* layer = builder->build();
+	layer->_inputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_perm"));
+	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_flat"));
+#endif
+
+#if 0
+	PriorBoxLayer<float>::Builder* builder =
+			new typename PriorBoxLayer<float>::Builder();
+	builder->id(0)
+			->name("conv4_3_norm_mbox_priorbox")
+			->minSizes({30.0})
+			->maxSizes({60.0})
+			->aspectRatios({2.0})
+			->flip(true)
+			->clip(false)
+			->variances({0.1, 0.1, 0.2, 0.2})
+			->step(8.0)
+			->offset(0.5)
+			->inputs({"conv4_3_norm", "data"})
+			->outputs({"conv4_3_norm_mbox_priorbox"});
+
+	Layer<float>* layer = builder->build();
+	layer->_inputData.push_back(new Data<float>("conv4_3_norm"));
+	layer->_inputData.push_back(new Data<float>("data"));
+	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_priorbox"));
+
+	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
+			->batchSize(2)
+			->build();
+	layer->setNetworkConfig(networkConfig);
+	layer->feedforward();
+
+	delete layer;
+#endif
+
+#if 0
+	AnnotationDataLayer<float>::Builder* builder =
+			new typename AnnotationDataLayer<float>::Builder();
+	builder->id(0)
+			->name("data")
+			->flip(true)
+			->imageHeight(300)
+			->imageWidth(300)
+			->imageSetPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt")
+			->baseDataPath("/home/jkim/Dev/git/caffe_ssd/data/VOCdevkit/")
+			->labelMapPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt")
+			//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
+			->pixelMeans({104.f, 117.f, 123.f})	// BGR
+			->outputs({"data", "label"});
+
+	AnnotationDataLayer<float>* layer = dynamic_cast<AnnotationDataLayer<float>*>(builder->build());
+	layer->_inputData.push_back(new Data<float>("data"));
+	layer->_inputData.push_back(new Data<float>("label"));
+
+	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
+			->batchSize(32)
+			->build();
+	layer->setNetworkConfig(networkConfig);
+
+	for (int i = 0; i < 100000; i++) {
+		layer->feedforward();
+	}
+
+
+	map<string, int>& refCount = layer->refCount;
+	for (map<string, int>::iterator it = refCount.begin(); it != refCount.end(); it++) {
+		cout << it->first << "\t\t" << it->second << endl;
+	}
+
+	delete layer;
+#endif
+
+#if 0
+	cv::VideoCapture cap("/home/jkim/Downloads/frcnn_ok.mp4");
+	if (!cap.isOpened()) {
+		return;
+	}
+	cv::VideoCapture cap1("/home/jkim/Downloads/frcnn_ok.mp4");
+	if (!cap1.isOpened()) {
+		return;
+	}
+	cv::Mat im;
+	if (!cap.read(im)) {
+		cout << "error at cap" << endl;
+	}
+	if (cap1.read(im)) {
+		cout << "error at cap1" << endl;
+	}
+	exit(1);
+
+
+	//cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('A', 'V', 'C', '1'));
+	//int codec = int(cap.get(CV_CAP_PROP_FOURCC));
+	//cout << codec << endl;
+	double fps = cap.get(CV_CAP_PROP_FPS);
+	cout << "fps: " << fps << endl;
+	size_t frameCount = size_t(cap.get(CV_CAP_PROP_FRAME_COUNT));
+	cv::namedWindow("Video", 1);
+	while (1) {
+		size_t posFrames = size_t(cap.get(CV_CAP_PROP_POS_FRAMES));
+
+		cv::Mat frame;
+		for (int i = 0; i < 3; i++) {
+			if (!cap.grab()) {
+				cout << "end of video ... " << endl;
+				cap.release();
+				return;
+			}
+		}
+		cap.retrieve(frame);
+		imshow("Video", frame);
+		if (cv::waitKey(30) == 'c') break;
+	}
+
+	cap.release();
+
+
+#endif
+
+	/*
+	//checkCudaErrors(cudaSetDevice(0));
+	//checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
+
+	cout << "cudnn version: " << CUDNN_VERSION << endl;
+
+
+	int pad = 6;
+	int stride = 1;
+	int dilation = 6;
+
+	cudnnConvolutionDescriptor_t convDesc;
+	checkCUDNN(cudnnCreateConvolutionDescriptor(&convDesc));
+	cudnnStatus_t status = cudnnSetConvolution2dDescriptor(convDesc,
+			pad, pad, stride, stride, dilation, dilation,
+			CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT);
+
+	std::stringstream _error;
+	if (status != CUDNN_STATUS_SUCCESS) {
+	  _error << "CUDNN failure: " << cudnnGetErrorString(status);
+	  FatalError(_error.str());
+	}
+
+	cout << "dilation test done ... " << endl;
+	//checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
+	 */
+}
+
 void layerTest() {
 	const int gpuid = 0;
 	vector<LayerTestInterface<float>*> layerTestList;
@@ -138,7 +322,7 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(reluBuilder));
 #endif
 
-#if 1
+#if 0
 	PoolingLayer<float>::Builder* poolBuilder =
 			new typename PoolingLayer<float>::Builder();
 	poolBuilder->id(3)
@@ -158,47 +342,6 @@ void layerTest() {
 			->inputs({"ip2", "label"})
 			->outputs({"loss"});
 	layerTestList.push_back(new LayerTest<float>(softmaxWithLossBuilder));
-#endif
-
-#if 0
-	LRNLayer<float>::Builder* lrnBuilder =
-			new typename LRNLayer<float>::Builder();
-	lrnBuilder->id(42)
-			->name("pool1/norm1")
-			->lrnDim(5, 0.0001, 0.75, 1.0)
-			->inputs({"pool1/3x3_s2"})
-			->outputs({"pool1/norm1"});
-	layerTestList.push_back(new LayerTest<float>(lrnBuilder));
-#endif
-
-#if 0
-	DepthConcatLayer<float>::Builder* depthConcatBuilder =
-			new typename DepthConcatLayer<float>::Builder();
-	depthConcatBuilder->id(24)
-			->name("inception_3a/output")
-			->propDown({true, true, true, true})
-			->inputs({
-				"inception_3a/1x1",
-				"inception_3a/3x3",
-				"inception_3a/5x5",
-				"inception_3a/pool_proj"})
-			->outputs({"inception_3a/output"});
-
-	layerTestList.push_back(new LayerTest<float>(depthConcatBuilder));
-#endif
-
-#if 0
-	SplitLayer<float>::Builder* splitBuilder =
-			new typename SplitLayer<float>::Builder();
-	splitBuilder->id(24)
-			->name("pool2/3x3_s2_pool2/3x3_s2_0_split")
-			->inputs({"pool2/3x3_s2"})
-			->outputs({"pool2/3x3_s2_pool2/3x3_s2_0_split_0",
-				"pool2/3x3_s2_pool2/3x3_s2_0_split_1",
-				"pool2/3x3_s2_pool2/3x3_s2_0_split_2",
-				"pool2/3x3_s2_pool2/3x3_s2_0_split_3"});
-
-	layerTestList.push_back(new LayerTest<float>(splitBuilder));
 #endif
 
 #if 0
@@ -695,7 +838,7 @@ void networkTest() {
 	const LRPolicy lrPolicy 		= LRPolicy::Fixed;
 	const int stepSize 				= 50000;
 	const NetworkPhase networkPhase	= NetworkPhase::TrainPhase;
-	const float gamma 				= 0.96;
+	const float gamma 				= 0.1;
 #else
 	cout << "invalid network ... " << endl;
 	exit(1);

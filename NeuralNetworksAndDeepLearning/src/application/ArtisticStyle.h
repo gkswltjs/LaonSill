@@ -4,6 +4,7 @@
  *  Created on: Mar 17, 2017
  *      Author: jkim
  */
+#if 0
 
 #ifndef ARTISTICSTYLE_H_
 #define ARTISTICSTYLE_H_
@@ -12,10 +13,11 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "common.h"
+#include <map>
+
 #include "Network.h"
 
-#if 0
+
 template <typename Dtype>
 class ArtisticStyle {
 public:
@@ -119,6 +121,8 @@ private:
 
 
 };
-#endif
 
 #endif /* ARTISTICSTYLE_H_ */
+
+
+#endif

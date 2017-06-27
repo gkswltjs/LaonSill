@@ -4,9 +4,7 @@
  *  Created on: Mar 17, 2017
  *      Author: jkim
  */
-#include <stdint.h>
-#include <vector>
-
+#if 0
 #include "ArtisticStyle.h"
 
 #include <stdint.h>
@@ -17,7 +15,6 @@
 
 #include "NetworkMonitor.h"
 #include "Debug.h"
-#include "NetworkConfig.h"
 #include "Param.h"
 #include "MathFunctions.h"
 #include "cnpy.h"
@@ -39,7 +36,7 @@ using namespace cnpy;
 
 // SOOOA 모델로 테스트인지 여부(RGB 모델),
 // false인 경우 CAFFE MODEL이고 이는 BGR 기준의 모델을 말함
-#define SOOOA				1
+#define SOOOA				0
 
 
 // BGRBGRBGR ... 순으로 들어있음. 255 scale (8, 12, 3), BGR순
@@ -57,29 +54,69 @@ ArtisticStyle<Dtype>::ArtisticStyle() {
 #else
 	//this->style_img			= "/home/jkim/Downloads/sampleR32G64B128.png";
 	//this->content_img		= "/home/jkim/Downloads/sampleR32G64B128.png";
-	this->style_img			= "/data/backup/artistic/starry_night.jpg";
-	this->content_img		= "/data/backup/artistic/johannesburg.jpg";
+	//this->style_img			= "/data/backup/artistic/starry_night.jpg";
+	//this->content_img		= "/data/backup/artistic/johannesburg.jpg";
+	this->style_img			= "/home/jkim/Backups/artistic/starry_night.jpg";
+	this->content_img		= "/home/jkim/Backups/artistic/tubingen_800.jpg";
+	//this->content_img		= "/home/jkim/Backups/artistic/johannesburg.jpg";
 #endif
+
+
+	cv::namedWindow("CONTENT IMAGE");
+
+
+
+
 
 	// 파이썬 기준 테스트를 위해 BGR2RGB COMMENT OUT
 	this->cv_img_style 		= cv::imread(this->style_img);
+
+	const string styleImageWindowName = "STYLE IMAGE";
+	cv::namedWindow(styleImageWindowName);
+	cv::moveWindow(styleImageWindowName, 0, 0);
+	cv::imshow(styleImageWindowName, this->cv_img_style);
+
+
 	this->cv_img_style.convertTo(this->cv_img_style, CV_32F);
 #if SOOOA
 	cv::cvtColor(this->cv_img_style, this->cv_img_style, CV_BGR2RGB);
 #endif
 
 	this->cv_img_content	= cv::imread(this->content_img);
+
+	const string contentImageWindowName = "CONTENT IMAGE";
+	cv::namedWindow(contentImageWindowName);
+	cv::moveWindow(contentImageWindowName, 0, this->cv_img_style.rows + 100);
+	cv::imshow("CONTENT IMAGE", this->cv_img_content);
+
+
+	cv::namedWindow("RESULT");
+	cv::moveWindow("RESULT", this->cv_img_content.cols + 10, this->cv_img_style.rows + 100);
+
 	this->cv_img_content.convertTo(this->cv_img_content, CV_32F);
 #if SOOOA
 	cv::cvtColor(this->cv_img_content, this->cv_img_content, CV_BGR2RGB);
 #endif
 
+
+
+
+
 	load_model();
 	rescale_net({1, 3, 224, 224});
 	//rescale_net({1, 3, (uint32_t)this->cv_img_style.rows, (uint32_t)this->cv_img_style.cols});
 
+	map<string, Dtype> content_weight;
+	map<string, Dtype> style_weight;
+	content_weight["conv4_2"]	= Dtype(1.0);
+	style_weight["conv1_1"]		= Dtype(0.2);
+	style_weight["conv2_1"]		= Dtype(0.2);
+	style_weight["conv3_1"]		= Dtype(0.2);
+	style_weight["conv4_1"]		= Dtype(0.2);
+	style_weight["conv5_1"]		= Dtype(0.2);
+	this->weights["content"]	= content_weight;
+	this->weights["style"]		= style_weight;
 
-#if 0
 	for (int i = 0; i < this->_layers.size(); i++) {
 		const string& layerName = this->_layers[i]->name;
 		if (this->weights["style"].find(layerName) != this->weights["style"].end() ||
@@ -95,7 +132,8 @@ ArtisticStyle<Dtype>::ArtisticStyle() {
 	cout << endl;
 
 	this->content_type = "content";
-	this->length	= 512;
+	//this->length	= 512;
+	this->length	= 800;
 	this->ratio		= 10000;
 	//this->ratio		= 1000;
 	//this->n_iter	= 512;
@@ -253,7 +291,7 @@ void ArtisticStyle<Dtype>::transfer_style() {
 	// optimize
 	Dtype loss = Dtype(0.0);
 	Data<Dtype>* img0Disp = new Data<Dtype>("img0Disp");
-	cv::namedWindow("result");
+	//cv::namedWindow("RESULT");
 
 	for (int i = 0; i < this->n_iter; i++) {
 		loss += style_optfn(img0);
@@ -317,7 +355,7 @@ void ArtisticStyle<Dtype>::transfer_style() {
 #if SOOOA
 			cv::cvtColor(result, result, CV_RGB2BGR);
 #endif
-			cv::imshow("result", result);
+			cv::imshow("RESULT", result);
 			cv::waitKey(1);
 			cout << "progress: (" << (i+1) << " / " << this->n_iter << ")" << endl;
 		}
@@ -339,6 +377,7 @@ void ArtisticStyle<Dtype>::load_model() {
 	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/VGG19.param";
 #else
 	weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/VGG19_CAFFE_ARTISTICPARTONLY.param";
+	//weightsArgs[0].weightsPath = "/home/jkim/Dev/SOOOA_HOME/network/VGG19_LMDB_0.01.param";
 #endif
 #endif
 	const uint32_t batchSize = 10;
@@ -433,7 +472,7 @@ void ArtisticStyle<Dtype>::load_model() {
 	map<string, Data<Dtype>*> nameParamsOldMap;
 	const string& path = "/home/jkim/";
 	buildNameDataMapFromNpzFile("/home/jkim/", "vgg19_params_old", nameParamsOldMap);
-	printNameDataMap(nameParamsOldMap, false);
+	printNameDataMap("nameParamsOldMap", nameParamsOldMap, false);
 
 	vector<LearnableLayer<Dtype>*>& learnableLayers = layersConfig->_learnableLayers;
 	for (int i = 0; i < learnableLayers.size(); i++) {
@@ -874,5 +913,29 @@ Data<Dtype>* ArtisticStyle<Dtype>::_generateInitialInput() {
 
 
 template class ArtisticStyle<float>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #endif
