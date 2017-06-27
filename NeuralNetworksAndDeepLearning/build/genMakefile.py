@@ -16,7 +16,7 @@ symbolDic["Release"]            = ["GPU_MODE"]
 symbolDic["ReleaseClient"]      = ["GPU_MODE", "CLIENT_MODE"]
 
 libList = ["cudart", "opencv_core", "cublas", "cudnn", "boost_system", "boost_filesystem",\
-         "opencv_highgui", "opencv_imgproc", "opencv_features2d", "z", \
+         "opencv_highgui", "opencv_imgproc", "opencv_imagecodecs", "opencv_features2d", "z", \
  	 "boost_iostreams", "X11", "openblas", "blas", "gpu_nms", "lmdb"]
 
 targetNameDic = dict()  # key : configure name, value : target name

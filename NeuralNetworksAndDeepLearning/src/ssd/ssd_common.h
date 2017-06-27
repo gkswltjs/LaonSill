@@ -9,6 +9,7 @@
 #define SSD_COMMON_H_
 
 #include <iostream>
+#include <map>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
