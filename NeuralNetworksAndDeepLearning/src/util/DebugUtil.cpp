@@ -108,8 +108,8 @@ void DebugUtil<Dtype>::printLayerEdges(FILE *fp, const char* title, Layer<Dtype>
 template<typename Dtype>
 void DebugUtil<Dtype>::printLayerEdgesByLayerID(FILE *fp, const char* title,
     int networkID, int layerID, int indent) {
-    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(networkID);
+    WorkContext::updatePlan(WorkContext::curDOPID, true);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
 
     SASSERT(pp->instanceMap.find(layerID) != pp->instanceMap.end(),
@@ -118,16 +118,14 @@ void DebugUtil<Dtype>::printLayerEdgesByLayerID(FILE *fp, const char* title,
     Layer<Dtype>* layer = (Layer<Dtype>*)pp->instanceMap[layerID];
     WorkContext::updateLayer(networkID, layerID);
     printLayerEdges(fp, SLPROP_BASE(name).c_str(), layer, indent + 2);
-
-    WorkContext::updateNetwork(oldNetworkID);
 }
 
 template<typename Dtype>
 void DebugUtil<Dtype>::printLayerEdgesByLayerName(FILE *fp, const char* title,
     int networkID, string layerName, int indent) {
 
-    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(networkID);
+    WorkContext::updatePlan(WorkContext::curDOPID, true);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
 
     Layer<Dtype>* layer;
@@ -150,7 +148,6 @@ void DebugUtil<Dtype>::printLayerEdgesByLayerName(FILE *fp, const char* title,
     }
 
     SASSERT(foundLayer, "invalid layer name. layer name=%s", layerName.c_str());
-    WorkContext::updateNetwork(oldNetworkID);
 }
 
 template<typename Dtype>
@@ -159,8 +156,8 @@ void DebugUtil<Dtype>::printNetworkEdges(FILE *fp, const char* title, int networ
     printIndent(fp, indent);
     fprintf(fp, "network : %s\n", title);
 
-    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(networkID);
+    WorkContext::updatePlan(WorkContext::curDOPID, true);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
 
     for (map<int, void*>::iterator iter = pp->instanceMap.begin();
@@ -173,8 +170,37 @@ void DebugUtil<Dtype>::printNetworkEdges(FILE *fp, const char* title, int networ
         Layer<Dtype>* layer = (Layer<Dtype>*)instancePtr;
         printLayerEdges(fp, SLPROP_BASE(name).c_str(), layer, indent + 2);
     }
+}
 
-    WorkContext::updateNetwork(oldNetworkID);
+template<typename Dtype>
+void DebugUtil<Dtype>::printNetworkParams(FILE *fp, const char* title, int networkID,
+    int indent) {
+    printIndent(fp, indent);
+    fprintf(fp, "network : %s\n", title);
+
+    WorkContext::updateNetwork(networkID);
+    WorkContext::updatePlan(WorkContext::curDOPID, true);
+    PhysicalPlan* pp = WorkContext::curPhysicalPlan;
+
+    for (map<int, void*>::iterator iter = pp->instanceMap.begin();
+        iter != pp->instanceMap.end(); iter++) {
+        int layerID = iter->first;
+        void* instancePtr = iter->second;
+
+        WorkContext::updateLayer(networkID, layerID);
+
+        Layer<Dtype>* layer = (Layer<Dtype>*)instancePtr;
+
+        LearnableLayer<Dtype>* lLayer = 
+            dynamic_cast<LearnableLayer<Dtype>*>(layer);
+        if (lLayer) {
+            fprintf(fp, "layer : %s\n", SLPROP_BASE(name).c_str());
+            for (int i = 0; i < lLayer->_params.size(); i++) {
+                fprintf(fp, "- %p, %p, %p\n", lLayer->_params[i], lLayer->_paramsHistory[i],
+                    lLayer->_paramsHistory2[i]);
+            }
+        }
+    }
 }
 
 template class DebugUtil<float>;

@@ -41,6 +41,7 @@ public:
     static void updateNetwork(int networkID);
     static void updateLayer(int networkID, int layerID);
     static void updatePlan(int dopID, bool acquireLock);
+    static void printContext(FILE* fp);
 
     static BootMode                             curBootMode;
 };

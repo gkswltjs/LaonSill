@@ -83,7 +83,12 @@ void singleJobMain(const char* jobFilePath) {
     int networkID = PlanParser::loadNetwork(jobFilePath);
     WorkContext::updateNetwork(networkID);
     PlanOptimizer::buildPlans(networkID);
-    PlanOptimizer::runPlan(networkID, true);
+
+    if ((NetworkStatus)SNPROP(status) == NetworkStatus::Train) {
+        PlanOptimizer::runPlan(networkID, false);
+    } else {
+        PlanOptimizer::runPlan(networkID, true);
+    }
 
     STDOUT_LOG("exit single job(%s)", jobFilePath);
 }

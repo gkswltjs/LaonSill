@@ -46,9 +46,6 @@ protected:
 	void _computeBiasGrad();
 	void _computeInputGrad();
 
-	void _dropoutForward();
-	void _dropoutBackward();
-
 	enum ParamType {
 		Weight = 0,
 		Bias = 1

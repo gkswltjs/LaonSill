@@ -462,31 +462,7 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 
 
 template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_dropoutForward() {
-	const double pDropOut = SLPROP(FullyConnected, pDropOut);
-	const NetworkStatus status = (NetworkStatus)SNPROP(status);
-	// TODO skip when test
-	if(status == NetworkStatus::Train && pDropOut < 1.0f) {
-		//int b_out = this->out_dim.batchsize();
-		int b_out = this->_outputData[0]->getCount();
-		Dtype* h_mask_mem = this->_mask.mutable_host_mem();
-
-		for(int i = 0; i < b_out; i++) {
-			h_mask_mem[i] = ((rand()/(RAND_MAX+1.0) > pDropOut)?1:0);
-		}
-
-		const Dtype* d_mask_mem = this->_mask.device_mem();
-		Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
-
-		Dropout<<<SOOOA_GET_BLOCKS(b_out), SOOOA_CUDA_NUM_THREADS>>>(
-				b_out, d_outputData, d_mask_mem, 0, this->scale, d_outputData);
-	}
-}
-
-template <typename Dtype>
 void FullyConnectedLayer<Dtype>::backpropagation() {
-	//_dropoutBackward();
-
     /*
      * 아래와 같은 simple한 network layer가 있다고 가정하자.
      *
@@ -534,26 +510,6 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
 	_computeBiasGrad();
 	_computeInputGrad();
 }
-
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_dropoutBackward() {
-	const double pDropOut = SLPROP(FullyConnected, pDropOut);
-	const NetworkStatus status = (NetworkStatus)SNPROP(status);
-	if(status == NetworkStatus::Train && pDropOut < 1.0f) {
-		const uint32_t batchSize = this->_inputData[0]->getCount();
-
-		this->_outputData[0]->print_grad("outputGrad:");
-		const Dtype* d_mask_mem = this->_mask.device_mem();
-		Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
-
-		Dropout<<<SOOOA_GET_BLOCKS(batchSize), SOOOA_CUDA_NUM_THREADS>>>(
-				batchSize, d_outputGrad, d_mask_mem, 0, this->scale, d_outputGrad);
-
-		//_mask.print("mask:");
-		this->_outputData[0]->print_grad("outputGrad:");
-	}
-}
-
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightGrad() {

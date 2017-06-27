@@ -37,5 +37,6 @@ public:
     static void printLayerEdgesByLayerName(FILE *fp, const char* title, int networkID,
         std::string layerName, int indent);
     static void printNetworkEdges(FILE *fp, const char* title, int networkID, int indent);
+    static void printNetworkParams(FILE *fp, const char* title, int networkID, int indent);
 };
 #endif /* DEBUGUTIL_H */

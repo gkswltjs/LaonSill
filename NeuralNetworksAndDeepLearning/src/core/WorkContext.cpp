@@ -44,3 +44,10 @@ void WorkContext::updatePlan(int dopID, bool acquireLock) {
 
     PhysicalPlan::setCurPlan(networkID, dopID, acquireLock);
 }
+
+void WorkContext::printContext(FILE *fp) {
+    fprintf(fp,
+        "networkID = %d, dopID = %d, PhysicalPlan : %p, LayerProp : %p, NetworkProp : %p\n",
+        WorkContext::curNetworkID, WorkContext::curDOPID, WorkContext::curPhysicalPlan,
+        WorkContext::curLayerProp, WorkContext::curNetworkProp);
+}

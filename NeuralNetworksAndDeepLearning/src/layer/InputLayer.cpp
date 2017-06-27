@@ -125,44 +125,27 @@ void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
 	const uint32_t batches = inputShape[0];
 	const uint32_t unitSize = Util::vecCountByAxis(inputShape, 1);
 
-	NetworkStatus status = (NetworkStatus)SNPROP(status);
-	if (status == NetworkStatus::Train) {
-		// data
-		for (uint32_t i = 0; i < batches; i++) {
-			const Dtype* ptr = this->_dataSet->getTrainDataAt(baseIndex+i);
-			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
-		}
-		this->_inputData[0]->scale_device_data(SLPROP(Input, scale));
+    // data
+    for (uint32_t i = 0; i < batches; i++) {
+        const Dtype* ptr = this->_dataSet->getTrainDataAt(baseIndex+i);
+        this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
+    }
+    this->_inputData[0]->scale_device_data(SLPROP(Input, scale));
 
-		const uint32_t singleChannelSize = this->_inputData[0]->getCountByAxis(2);
-		const Dtype* mean = this->_dataMean->device_data();
+    const uint32_t singleChannelSize = this->_inputData[0]->getCountByAxis(2);
+    const Dtype* mean = this->_dataMean->device_data();
 
-		for (uint32_t i = 0; i < batches; i++) {
-			Dtype* data = this->_inputData[0]->mutable_device_data() + i*unitSize;
-			soooa_sub_channel_mean(unitSize, singleChannelSize, mean, data);
-		}
+    for (uint32_t i = 0; i < batches; i++) {
+        Dtype* data = this->_inputData[0]->mutable_device_data() + i*unitSize;
+        soooa_sub_channel_mean(unitSize, singleChannelSize, mean, data);
+    }
 
-		// label
-		if (this->_inputData.size() > 1) {
-			for (uint32_t i = 0; i < batches; i++) {
-				const Dtype* ptr = this->_dataSet->getTrainLabelAt(baseIndex+i);
-				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
-			}
-		}
-	} else if (status == NetworkStatus::Test) {
-		for(uint32_t i = 0; i < batches; i++) {
-			const Dtype* ptr = this->_dataSet->getTestDataAt(baseIndex+i);
-			this->_inputData[0]->set_device_with_host_data(ptr, i*unitSize, unitSize);
-		}
-
-		if (this->_inputData.size() > 1) {
-			for (uint32_t i = 0; i < batches; i++) {
-				const Dtype* ptr = this->_dataSet->getTestLabelAt(baseIndex+i);
-				this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
-			}
-		}
-	} else {
-        SASSERT(false, "Invalid network status =%d", status);
+    // label
+    if (this->_inputData.size() > 1) {
+        for (uint32_t i = 0; i < batches; i++) {
+            const Dtype* ptr = this->_dataSet->getTrainLabelAt(baseIndex+i);
+            this->_inputData[1]->set_device_with_host_data(ptr, i, 1);
+        }
     }
 }
 

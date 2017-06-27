@@ -103,6 +103,7 @@ void LearnableLayer<Dtype>::donateParam(LearnableLayer<Dtype>* receiver) {
     receiver->_paramsHistory.clear();
     receiver->_paramsHistory2.clear();
     receiver->_paramsInitialized.clear();
+    receiver->updateParams.clear();
 
     for (int i = 0; i < this->_params.size(); i++) {
         receiver->_params.push_back(this->_params[i]);
@@ -117,6 +118,10 @@ void LearnableLayer<Dtype>::donateParam(LearnableLayer<Dtype>* receiver) {
 
     for (int i = 0; i < this->_paramsInitialized.size(); i++) {
         receiver->_paramsInitialized.push_back(this->_paramsInitialized[i]);
+    }
+
+    for (int i = 0; i < this->updateParams.size(); i++) {
+        receiver->updateParams.push_back(this->updateParams[i]);
     }
 }
 

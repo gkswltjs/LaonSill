@@ -18,6 +18,8 @@
 #include "PlanParser.h"
 #include "PropMgmt.h"
 
+#include "DebugUtil.h"
+
 using namespace std;
 
 template<typename Dtype>
@@ -56,6 +58,7 @@ void GAN<Dtype>::run() {
     for (int i = 0; i < 10000; i++) {
         cout << "epoch : " << i << endl;
         for (int j = 0; j < miniBatchCount; j++) {
+
             networkG0->runMiniBatch(false, 0);
             networkD->runMiniBatch(false, j);
             networkG1->runMiniBatch(false, 0);
@@ -65,20 +68,14 @@ void GAN<Dtype>::run() {
                 cout << "minibatch " << j << " is done." << endl;
         }
 
-        setLayerTrain(networkG0, false);
-        networkG0->runMiniBatch(true, 0);
+        setLayerTrain(networkG1, false);
+        networkG1->runMiniBatch(true, 0);
 
-#if 1
-        ConvLayer<Dtype>* convLayer = (ConvLayer<Dtype>*)networkG0->findLayer("conv1");
+        ConvLayer<Dtype>* convLayer = (ConvLayer<Dtype>*)networkG1->findLayer("conv1");
         const Dtype* host_data = convLayer->_inputData[0]->host_data();
-#else
-        Data<Dtype>* tensor = networkG0->findTensor(0, 0, "conv1");
-        SASSUME0(tensor != NULL);
-        const Dtype* host_data = tensor->host_data();
-#endif
         ImageUtil<Dtype>::saveImage(host_data, 64, 3, 64, 64, "");
 
-        setLayerTrain(networkG0, true);
+        setLayerTrain(networkG1, true);
     }
 }
 

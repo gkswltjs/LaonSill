@@ -115,7 +115,7 @@ void Update<Dtype>::updateParam(UpdateContext context, Data<Dtype>* dataHistory,
          * x += -learning_rate * m / (sqrt(v) + eps)
          *
          */
-	    Update<Dtype>::doAdam(paramSize, d_paramGrad, d_paramHistoryData,
+        Update<Dtype>::doAdam(paramSize, d_paramGrad, d_paramHistoryData,
             d_paramHistoryData2, d_paramData, learnScale, epsilon, beta1, beta2,
             decayedBeta1, decayedBeta2);
     } else {
