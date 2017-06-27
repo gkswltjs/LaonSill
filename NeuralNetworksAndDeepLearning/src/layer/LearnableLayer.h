@@ -13,7 +13,8 @@
 #include "common.h"
 #include "Cuda.h"
 #include "Data.h"
-#include "Layer.h"
+#include "BaseLayer.h"
+#include "Update.h"
 
 /**
  * @brief 학습하는 레이어에서 구현해야하는 베이스 추상 클래스,
@@ -22,35 +23,7 @@
 template <typename Dtype>
 class LearnableLayer : public Layer<Dtype> {
 public:
-	class Builder : public Layer<Dtype>::Builder {
-	public:
-		Builder() {}
-		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-		Layer<Dtype>* build() = 0;
-	};
-
-
-	LearnableLayer(Builder* builder);
-	LearnableLayer(const std::string& name);
+	LearnableLayer();
 	virtual ~LearnableLayer() {}
 
 
@@ -86,26 +59,19 @@ public:
     virtual void syncParams(LearnableLayer<Dtype> *targetLayer) {}
     virtual void receiveParam(LearnableLayer<Dtype>* donatorLayer) {}
 
-    void fillDonatorInfo(bool isDonator, bool isReceiver, uint32_t donatorID) {
-        this->isDonator = isDonator;
-        this->isReceiver = isReceiver;
-        this->donatorID = donatorID;
-    }
+    void donateParam(LearnableLayer<Dtype>* receiver);
 
 protected:
-	virtual void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
-            Data<Dtype>* dataHistory, Data<Dtype>* data) {};
+	virtual void _updateParam(const uint32_t paramSize, const Dtype regScale,
+                              const Dtype learnScale, Data<Dtype>* dataHistory,
+                              Data<Dtype>* data) {};
 
 public:
 	std::vector<Data<Dtype>*> _params;
 	std::vector<Data<Dtype>*> _paramsHistory;
 	std::vector<Data<Dtype>*> _paramsHistory2;
 	std::vector<bool> _paramsInitialized;
-
-public:
-    bool isDonator;
-    bool isReceiver;
-    uint32_t donatorID;
+    std::vector<UpdateParam> updateParams;
 };
 
 #endif /* LEARNABLELAYER_H_ */

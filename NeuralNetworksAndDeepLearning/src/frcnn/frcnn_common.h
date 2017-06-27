@@ -11,7 +11,6 @@
 
 #include <iostream>
 #include <ostream>
-#include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
@@ -25,10 +24,13 @@
 
 #include "common.h"
 #include "Data.h"
-//#include "nms/gpu_nms.hpp"
-
+#include "cnpy.h"
+#include "gpu_nms.hpp"
+#include "SysLog.h"
 #define FRCNN_TRAIN 1
 
+
+#define SOOOA_DEBUG	0
 
 
 const uint32_t GT = 0;
@@ -112,7 +114,7 @@ const float TRAIN_RPN_POSITIVE_WEIGHT = -1.0f;
 // Scales to use during testing (can list multiple scales)
 // Each scale is the pixel size of an image's shortest side
 //const std::vector<uint32_t> TEST_SCALES = {600};
-const std::vector<uint32_t> TEST_SCALES = {500};
+const std::vector<uint32_t> TEST_SCALES = {600};
 
 // Max pixel size of the longest side of a scaled input image
 const uint32_t TEST_MAX_SIZE = 1000;
@@ -144,6 +146,19 @@ const uint32_t TEST_RPN_POST_NMS_TOP_N = 300;
 const uint32_t TEST_RPN_MIN_SIZE = 16;
 
 
+// The mapping from image coordinates to feature map coordinates might cause
+// some boxes that are distinct in image space to become identical in feature
+// coordinates. If DEDUP_BOXES > 0, then DEDUP_BOXES is used as the scale factor
+// for identifying duplicate boxes.
+// 1/16 is correct for {Alex,Caffe}Net, VGG_CNN_M_1024, and VGG16
+const float TEST_DEDUP_BOXES = 1.0f / 16.0f;
+
+
+
+
+
+
+static void loadPredefinedOrder(const std::string& path, std::vector<uint32_t>& order);
 
 
 
@@ -323,9 +338,9 @@ template <typename Dtype>
 static void np_maxByAxis(const std::vector<std::vector<Dtype>>& array,
 		std::vector<Dtype>& result) {
 	const uint32_t numArrayElem = array.size();
-	assert(numArrayElem > 0);
+	SASSERT0(numArrayElem > 0);
 	const uint32_t numAxisElem = array[0].size();
-	assert(numAxisElem > 0);
+	SASSERT0(numAxisElem > 0);
 
 	result.clear();
 	result.resize(numArrayElem);
@@ -348,12 +363,12 @@ template <typename Dtype>
 static void np_array_value_by_index_array(const std::vector<std::vector<Dtype>>& array,
 		const uint32_t axis, const std::vector<uint32_t>& inAxisIndex,
 		std::vector<Dtype>& result) {
-	assert(axis >= 0 && axis < 2);
+	SASSERT0(axis >= 0 && axis < 2);
 
 	const uint32_t numArrayElem = array.size();
-	assert(numArrayElem > 0);
+	SASSERT0(numArrayElem > 0);
 	const uint32_t numAxisElem = array[0].size();
-	assert(numAxisElem > 0);
+	SASSERT0(numAxisElem > 0);
 
 	result.clear();
 
@@ -379,9 +394,9 @@ template <typename Dtype>
 static void np_array_max(const std::vector<std::vector<Dtype>>& array,
 		std::vector<Dtype>& result) {
 	const uint32_t numArrayElem = array.size();
-	assert(numArrayElem > 0);
+	SASSERT0(numArrayElem > 0);
 	const uint32_t numAxisElem = array[0].size();
-	assert(numAxisElem > 0);
+	SASSERT0(numAxisElem > 0);
 
 	result.clear();
 	result.resize(numAxisElem);
@@ -427,7 +442,7 @@ template <typename Dtype1, typename Dtype2>
 static void np_array_elementwise_mul(const std::vector<Dtype1>& a,
 		const std::vector<Dtype2>& b, std::vector<Dtype2>& result) {
 
-	assert(a.size() == b.size());
+	SASSERT0(a.size() == b.size());
 
 	const uint32_t arraySize = a.size();
 	result.resize(arraySize);
@@ -456,7 +471,7 @@ static Dtype np_min(const std::vector<Dtype>& array,
 		uint32_t begin, uint32_t end) {
 	Dtype min;
 	const uint32_t arraySize = array.size();
-	assert(end < arraySize);
+	SASSERT0(end < arraySize);
 
 	for (uint32_t i = begin; i < end; i++) {
 		if (i == 0) min = array[0];
@@ -470,7 +485,7 @@ static Dtype np_max(const std::vector<Dtype>& array,
 		uint32_t begin, uint32_t end) {
 	Dtype max;
 	const uint32_t arraySize = array.size();
-	assert(end < arraySize);
+	SASSERT0(end < arraySize);
 
 	for (uint32_t i = begin; i < end; i++) {
 		if (i == 0) max = array[0];
@@ -527,12 +542,12 @@ static void np_maximum(const Dtype value, const std::vector<Dtype>& array,
 template <typename Dtype>
 static void np_argmax(const std::vector<std::vector<Dtype>>& array, const uint32_t axis,
 		std::vector<uint32_t>& result) {
-	assert(axis >= 0 && axis < 2);
+	SASSERT0(axis >= 0 && axis < 2);
 
 	const uint32_t numArrayElem = array.size();
-	assert(numArrayElem >= 1);
+	SASSERT0(numArrayElem >= 1);
 	const uint32_t numAxisElem = array[0].size();
-	assert(numAxisElem >= 1);
+	SASSERT0(numAxisElem >= 1);
 
 	result.clear();
 
@@ -623,8 +638,8 @@ template <typename Dtype>
 static void np_where_s(const std::vector<std::vector<Dtype>>& array, const Dtype criteria,
 		const uint32_t loc, std::vector<uint32_t>& result) {
 	const uint32_t numArrayElem = array.size();
-	assert(numArrayElem > 0);
-	assert(loc < array[0].size());
+	SASSERT0(numArrayElem > 0);
+	SASSERT0(loc < array[0].size());
 
 	result.clear();
 	for (uint32_t i = 0; i < numArrayElem; i++) {
@@ -646,7 +661,7 @@ static void np_where_s(const std::vector<std::vector<Dtype>>& array,
 	if (array.size() < 1)
 		return;
 
-	assert(array[0].size() == criteria.size());
+	SASSERT0(array[0].size() == criteria.size());
 
 	const uint32_t numArrayElem = array.size();
 	const uint32_t numAxisElem = criteria.size();
@@ -745,7 +760,7 @@ static void npr_choice(const std::vector<Dtype>& array, const uint32_t size,
 		std::vector<Dtype>& result) {
 
 	const uint32_t arraySize = array.size();
-	assert(size <= arraySize);
+	SASSERT0(size <= arraySize);
 
 	std::vector<uint32_t> indexArray(arraySize);
 	iota(indexArray.begin(), indexArray.end(), 0);
@@ -758,14 +773,13 @@ static void npr_choice(const std::vector<Dtype>& array, const uint32_t size,
 	//printArray("result-final", result);
 }
 
-static std::vector<uint32_t> np_arange(int start, int stop) {
-	assert(start < stop);
+static void np_arange(int start, int stop, std::vector<uint32_t>& result) {
+	SASSERT0(start < stop);
 
-	std::vector<uint32_t> result;
+	result.clear();
 	for (int i = start; i < stop; i++) {
 		result.push_back(i);
 	}
-	return result;
 }
 
 template <typename Dtype>
@@ -778,7 +792,7 @@ static void py_arrayElemsWithArrayInds(const std::vector<Dtype>& array,
 	//result.clear();
 	result.resize(indsSize);
 	for (uint32_t i = 0; i < indsSize; i++) {
-		assert(inds[i] < arraySize);
+		SASSERT0(inds[i] < arraySize);
 		result[i] = array[inds[i]];
 	}
 }
@@ -797,7 +811,9 @@ static Dtype vec_max(const std::vector<Dtype>& array) {
 template <typename Dtype, typename Dtype2>
 static void fillDataWith2dVec(const std::vector<std::vector<Dtype>>& array,
 		Data<Dtype2>* data) {
-	assert(array.size() > 0);
+	if (array.size() < 1) {
+		SASSERT0(array.size() > 0);
+	}
 
 	const uint32_t dim1 = array.size();
 	const uint32_t dim2 = array[0].size();
@@ -814,12 +830,12 @@ static void fillDataWith2dVec(const std::vector<std::vector<Dtype>>& array,
 template <typename Dtype, typename Dtype2>
 static void fillDataWith2dVec(const std::vector<std::vector<Dtype>>& array,
 		const std::vector<uint32_t>& transpose,	Data<Dtype2>* data) {
-	assert(array.size() > 0);
+	SASSERT0(array.size() > 0);
 	const uint32_t dim1 = array.size();
 	const uint32_t dim2 = array[0].size();
 
 	const std::vector<uint32_t>& shape = data->getShape();
-	assert(shape[3]%dim2 == 0);
+	SASSERT0(shape[3]%dim2 == 0);
 
 	const uint32_t tBatchSize = shape[transpose[1]]*shape[transpose[2]]*shape[transpose[3]];
 	const uint32_t tHeightSize = shape[transpose[2]]*shape[transpose[3]];
@@ -860,7 +876,7 @@ template <typename Dtype, typename Dtype2>
 static void fillDataWith1dVec(const std::vector<Dtype>& array,
 		const std::vector<uint32_t>& transpose,
 		Data<Dtype2>* data) {
-	assert(array.size() > 0);
+	SASSERT0(array.size() > 0);
 	const uint32_t dim1 = array.size();
 
 	const std::vector<uint32_t>& shape = data->getShape();
@@ -902,9 +918,9 @@ static void fill1dVecWithData(Data<Dtype>* data,
 		std::vector<Dtype2>& array) {
 
 	const std::vector<uint32_t>& dataShape = data->getShape();
-	assert(dataShape[0] == 1);
-	assert(dataShape[1] == 1);
-	assert(dataShape[2] == 1);
+	SASSERT0(dataShape[0] == 1);
+	SASSERT0(dataShape[1] == 1);
+	SASSERT0(dataShape[2] == 1);
 
 	const uint32_t dim1 = dataShape[3];
 	array.resize(dim1);
@@ -920,11 +936,29 @@ static void fill2dVecWithData(Data<Dtype>* data,
 		std::vector<std::vector<Dtype2>>& array) {
 
 	const std::vector<uint32_t>& dataShape = data->getShape();
-	assert(dataShape[0] == 1);
-	assert(dataShape[1] == 1);
 
-	const uint32_t dim1 = dataShape[2];
-	const uint32_t dim2 = dataShape[3];
+	int dim1 = 0;
+	int dim2 = 0;
+	for (int i = 0; i < dataShape.size(); i++) {
+		if (dataShape[i] > 1) {
+			if (dim1 == 0) dim1 = dataShape[i];
+			else if (dim2 == 0) dim2 = dataShape[i];
+			else {
+				std::cout << "fill2dVecWithData: invalid data shape ... " << std::endl;
+			}
+		}
+	}
+
+	if (dim1 == 0 || dim2 == 0) {
+		dim1 = dataShape[2];
+		dim2 = dataShape[3];
+	}
+
+	SASSERT0(dim1*dim2 == data->getCount());
+
+
+	//SASSERT0(dataShape[0] == 1);
+	//SASSERT0(dataShape[1] == 1);
 
 	array.resize(dim1);
 	const Dtype* dataPtr = data->host_data();
@@ -953,7 +987,7 @@ static std::vector<Dtype> vec_keep_by_index(const std::vector<Dtype>& array,
 template <typename Dtype>
 static void vec_argsort(const std::vector<Dtype>& array, std::vector<uint32_t>& arg,
     int order=0) {
-	assert(order == 0 || order == 1);
+	SASSERT0(order == 0 || order == 1);
 
 	const uint32_t arraySize = array.size();
 	//arg.resize(arraySize);
@@ -1017,123 +1051,113 @@ static std::string cv_type2str(int type) {
 */
 
 
+static void nms(std::vector<std::vector<float>>& proposals, std::vector<float>& scores,
+		const float thresh, std::vector<uint32_t>& keep) {
+	SASSERT0(proposals.size() > 0 && proposals.size() == scores.size());
 
-/*
-static void nms(const float* dets, const int numDets, const float nmsThresh,
-		std::vector<uint32_t>& keep) {
+	//const float thresh = 0.7f;
+	const int device_id = 0;
+	const int boxes_num = proposals.size();
+	const int boxes_dim = proposals[0].size() + 1;
 
-	int* keep_out = new int[numDets];
-	int num_out;
+	/*
+	float* dets = 0;
+	const std::string det_file = "/home/jkim/Dev/data/numpy_array/dets.npz";
+	cnpy::npz_t cnpy_det = cnpy::npz_load(det_file);
 
-	// XXX:
-	_nms(keep_out, &num_out, dets, numDets, 5, nmsThresh, 0);
+	std::vector<int> shape;
+	for (cnpy::npz_t::iterator itr = cnpy_det.begin(); itr != cnpy_det.end(); itr++) {
+		cnpy::NpyArray npyArray = itr->second;
 
-	//for (uint32_t i = 0; i < postNmsTopN; i++)
-	//	keep_out[i] = i;
-	//num_out = postNmsTopN;
+		boxes_num = itr->second.shape[0];
+		boxes_dim = itr->second.shape[1];
+		int n = boxes_num * boxes_dim;
+		dets = new float[n];
 
-	keep.resize(num_out);
-	keep.assign(keep_out, keep_out + num_out);
-	delete [] keep_out;
-}
-*/
-
-
-
-#define NMS_LOG 0
-static void nms(std::vector<std::vector<float>>& dets1,
-			std::vector<float>& scores, const float thresh, std::vector<uint32_t>& keep) {
-	const uint32_t numDets = dets1.size();
-
-	std::vector<float> x1(numDets);
-	std::vector<float> y1(numDets);
-	std::vector<float> x2(numDets);
-	std::vector<float> y2(numDets);
-	//std::vector<float> scores(numDets);
-
-	std::vector<float> areas(numDets);
-	for (uint32_t i = 0; i < numDets; i++) {
-		std::vector<float>& det1 = dets1[i];
-		x1[i] = det1[0];
-		y1[i] = det1[1];
-		x2[i] = det1[2];
-		y2[i] = det1[3];
-		areas[i] = (x2[i] - x1[i] + 1) * (y2[i] - y1[i] + 1);
+		float* srcPtr = (float*)npyArray.data;
+		for (int i = 0; i < n; i++) {
+			dets[i] = srcPtr[i];
+		}
 	}
+	*/
 
-#if NMS_LOG
-	printArray("areas", areas);
-#endif
+	int num_out;
+	int _keep[boxes_num];
+	//float scores[boxes_num];
+	float sorted_dets[boxes_num][boxes_dim];
+	//vector<int> order(boxes_num);
 
-	std::vector<uint32_t> order(numDets), tempOrder;
+	//keep.resize(boxes_num);
+
+	std::vector<uint32_t> order(scores.size());
+#if !SOOOA_DEBUG
 	iota(order.begin(), order.end(), 0);
 	vec_argsort(scores, order);
 
-#if NMS_LOG
-	for (uint32_t i = 0; i < numDets; i++) {
-		std::cout << i << ": " << order[i] << ", score: " << scores[order[i]] << std::endl;
+	/*
+	std::cout << "nms sort result: " << std::endl;
+	for (int i = 0; i < std::min((int)scores.size(), (int)30); i++) {
+		std::cout << "\tscore: " << scores[order[i]] << std::endl;
 	}
+	*/
+
+#else
+	//const std::string path = "/home/jkim/Dev/data/numpy_array/order.npz";
+	//loadPredefinedOrder(path, order);
+	// 이미 정렬된 score를 기준으로 정렬하므로 0부터 순차적인 배열이 만들어진다.
+	iota(order.begin(), order.end(), 0);
+	//printArray("order", order);
 #endif
 
+	for (int i = 0; i < boxes_num; i++) {
+		sorted_dets[i][0] = proposals[order[i]][0];
+		sorted_dets[i][1] = proposals[order[i]][1];
+		sorted_dets[i][2] = proposals[order[i]][2];
+		sorted_dets[i][3] = proposals[order[i]][3];
+		sorted_dets[i][4] = scores[order[i]];
+	}
 
-	keep.clear();
-	std::vector<float> xx1, yy1, xx2, yy2;
-	std::vector<float> w, h, inter, ovr;
+	_nms(&_keep[0], &num_out, &sorted_dets[0][0], boxes_num, boxes_dim, thresh, device_id);
 
-	uint32_t i;
-	while (order.size() > 0) {
-		i = order[0];
-		keep.push_back(i);
-		np_maximum(x1[i], x1, order, 1, xx1);
-		np_maximum(y1[i], y1, order, 1, yy1);
-		np_minimum(x2[i], x2, order, 1, xx2);
-		np_minimum(y2[i], y2, order, 1, yy2);
+	keep.resize(num_out);
+	for (int i = 0; i < num_out; i++)
+		keep[i] = order[_keep[i]];
 
-#if NMS_LOG
-		printArray("xx1", xx1);
-		printArray("yy1", yy1);
-		printArray("xx2", xx2);
-		printArray("yy2", yy2);
-#endif
+	//printArray("keep", keep);
 
-		const uint32_t nextSize = order.size()-1;
-		w.resize(nextSize);
-		h.resize(nextSize);
-		inter.resize(nextSize);
-		ovr.resize(nextSize);
-
-		for (uint32_t k = 0; k < nextSize; k++) {
-			w[k] = std::max(0.0f, xx2[k] - xx1[k] + 1);
-			h[k] = std::max(0.0f, yy2[k] - yy1[k] + 1);
-			inter[k] = w[k] * h[k];
-			ovr[k] = inter[k] / (areas[i] + areas[order[k+1]] - inter[k]);
+	/*
+	for (int i = 0; i < num_out; i++) {
+		std::cout << i << ": ";
+		for (int j = 0; j < boxes_dim; j++) {
+			if (j < boxes_dim - 1)
+				std::cout << proposals[order[keep[i]]][j] << ", ";
+			else
+				std::cout << scores[order[keep[i]]] << std::endl;
 		}
+	}
+	*/
+}
 
-#if NMS_LOG
-		printArray("w", w);
-		printArray("h", h);
-		printArray("inter", inter);
-		printArray("ovr", ovr);
-#endif
 
-		std::vector<uint32_t> inds;
-		np_where_s(ovr, LE, thresh, inds);
+static void loadPredefinedOrder(const std::string& path, std::vector<uint32_t>& order) {
+	cnpy::npz_t cnpy_order = cnpy::npz_load(path);
+	for (cnpy::npz_t::iterator itr = cnpy_order.begin(); itr != cnpy_order.end(); itr++) {
+		cnpy::NpyArray npyArray = itr->second;
 
-#if NMS_LOG
-		printArray("inds", inds);
-#endif
+		int n = itr->second.shape[0];
+		order.resize(n);
 
-		tempOrder.resize(inds.size());
-		for (uint32_t k = 0; k < inds.size(); k++) {
-			tempOrder[k] = order[inds[k]+1];
+		long* srcPtr = (long*)npyArray.data;
+		for (int i = 0; i < n; i++) {
+			order[i] = uint32_t(srcPtr[i]);
 		}
-		order = tempOrder;
-
-#if NMS_LOG
-		printArray("order", order);
-#endif
 	}
 }
+
+
+
+
+
 
 struct Size {
 	uint32_t width;

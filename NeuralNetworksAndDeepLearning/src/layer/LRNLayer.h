@@ -10,9 +10,8 @@
 #define LAYER_LRNLAYER_H_
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "LayerConfig.h"
-#include "Exception.h"
 
 /**
  * @brief Local Response Normalization 레이어
@@ -26,80 +25,29 @@
 template <typename Dtype>
 class LRNLayer : public Layer<Dtype> {
 public:
-	/**
-	 * @brief LRN 레이어 객체 빌더
-	 * @details LRN 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
-	 *          해당 파라미터를 만족하는 LRN 레이어 객체를 생성한다.
-	 */
-	class Builder : public Layer<Dtype>::Builder {
-	public:
-		lrn_dim _lrnDim;
-		Builder() {
-			this->type = Layer<Dtype>::LRN;
-
-			this->_lrnDim.local_size = 5;
-			this->_lrnDim.alpha = 1.0;
-			this->_lrnDim.beta = 0.75;
-			this->_lrnDim.k = 1.0;
-		}
-		Builder* lrnDim(uint32_t local_size, double alpha, double beta, double k) {
-			this->_lrnDim.local_size = local_size;
-			this->_lrnDim.alpha = alpha;
-			this->_lrnDim.beta = beta;
-			this->_lrnDim.k = k;
-			return this;
-		}
-		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-		Layer<Dtype>* build() {
-			return new LRNLayer(this);
-		}
-	};
-
-	LRNLayer(Builder* builder);
-
-	/**
-	 * @details LRNLayer 소멸자
-	 */
+	LRNLayer();
 	virtual ~LRNLayer();
-
 
 	virtual void reshape();
 	virtual void feedforward();
 	virtual void backpropagation();
 
 protected:
-	void initialize(lrn_dim lrn_d);
-
-protected:
-	lrn_dim lrn_d;								///< LRN 연산 관련 파라미터 구조체
-
-#ifndef GPU_MODE
-	rcube delta_input;
-	rcube z;	// beta powered 전의 weighted sum 상태의 norm term
-#else
 	cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t outputTensorDesc;	///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 	cudnnLRNDescriptor_t lrnDesc;				///< cudnn LRN 연산 정보 구조체
-#endif
+
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 
 };
 

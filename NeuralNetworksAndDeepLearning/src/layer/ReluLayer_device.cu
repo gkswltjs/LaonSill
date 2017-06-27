@@ -9,16 +9,15 @@
 #include "cuda_runtime.h"
 
 #include "ReluLayer.h"
-#include "Exception.h"
-#include "NetworkConfig.h"
+#include "Network.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "ColdLog.h"
 #include "Perf.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
-#ifdef GPU_MODE
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // GPU Kernels
@@ -39,7 +38,7 @@ __global__ void ApplyLeakyForward(const Dtype* input, Dtype* output, int size, D
 
 template <typename Dtype>
 __global__ void ApplyLeakyBackward(const Dtype* input, const Dtype* outputGrad,
-    Dtype* inputGrad, int size, Dtype leaky)
+    Dtype* inputGrad, int size, const double leaky)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
@@ -58,7 +57,7 @@ void ReluLayer<Dtype>::applyLeakyForward() {
     Dtype* outputData = this->_outputData[0]->mutable_device_data();
 
     ApplyLeakyForward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, outputData, size, (Dtype)this->leaky);
+        inputData, outputData, size, (Dtype)SLPROP(Relu, leaky));
 }
 
 template <typename Dtype>
@@ -68,11 +67,11 @@ void ReluLayer<Dtype>::applyLeakyBackward() {
     const Dtype* outputGrad = this->_outputData[0]->device_grad();
     Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
 
+    const double leaky = SLPROP(Relu, leaky);
     ApplyLeakyBackward<<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, outputGrad, inputGrad, size, (Dtype)this->leaky);
+        inputData, outputGrad, inputGrad, size, leaky);
 }
 
 template void ReluLayer<float>::applyLeakyForward();
 template void ReluLayer<float>::applyLeakyBackward();
 
-#endif

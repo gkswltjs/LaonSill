@@ -19,8 +19,9 @@ public:
                         Client() {}
     virtual            ~Client() {}
     static void         clientMain(const char* hostname, int portno);
-private:
-    static void         pushJob(int fd, char* buf, Job* job);
+
+    static void         sendJob(int fd, char* buf, Job* job);
+    static void         recvJob(int fd, char* buf, Job** job);
     static int          connectRetry(int socketFd, const struct sockaddr *sockAddr,
                             socklen_t sockLen);
 };

@@ -20,6 +20,7 @@
 #include "SessContext.h"
 #include "MessageHeader.h"
 #include "MsgSerializer.h"
+#include "Job.h"
 
 class Communicator {
 public:
@@ -42,8 +43,11 @@ public:
     static void                         joinThreads();
     static void                         halt();
 
+    static void                         sendJobToBuffer(MessageHeader &msgHdr, Job* job,
+                                                        char* buf);
+    static void                         recvJobFromBuffer(Job** job, char* buf);
     static CommRetType                  recvMessage(int fd, MessageHeader& msgHdr, char* buf,
-                                            bool skipMsgPeek);
+                                                    bool skipMsgPeek);
     static CommRetType                  sendMessage(int fd, MessageHeader msgHdr, char* buf);
 private: 
     static int                          sessCount;
@@ -76,7 +80,7 @@ private:
     static bool 		                handleCreateNetworkMsg(MessageHeader recvMsgHdr,
                                             char* recvMsg, MessageHeader& replyMsgHdr, 
                                             char* replyMsg, char*& replyBigMsg);
-    static bool 				        handlePushJobMsg(MessageHeader recvMsgHdr,
+    static bool 				        handlePushJobMsg(int fd, MessageHeader recvMsgHdr,
                                             char* recvMsg, MessageHeader& replyMsgHdr,
                                             char* replyMsg, char*& replyBigMsg);
     static bool                         handleHaltMachineMsg(MessageHeader recvMsgHdr,

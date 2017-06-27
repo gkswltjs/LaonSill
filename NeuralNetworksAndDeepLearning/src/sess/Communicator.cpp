@@ -21,7 +21,8 @@
 #include "Param.h"
 #include "ColdLog.h"
 #include "SysLog.h"
-#include "LegacyWork.h"
+#include "ThreadMgmt.h"
+#include "Broker.h"
 
 using namespace std;
 
@@ -123,6 +124,16 @@ void Communicator::listenerThread() {
     serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     serverAddr.sin_port = htons(LISTENER_PORT);
 
+    if (SPARAM(COMMUNICATOR_REUSE_ADDR)) {
+        int reuse = 1;
+        if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int)) == -1) {
+            int err = errno;
+            COLD_LOG(ColdLog::ERROR, true, "setsockopt() failed. errno=%d", err);
+            close(socketFd);
+            SASSERT(false, "setsockopt() failed. err=%d", err);
+        }
+    }
+
     // (1) bind
     if (bind(socketFd, (struct sockaddr*)&serverAddr, sizeof(struct sockaddr_in)) == -1) {
         int err = errno;
@@ -211,6 +222,138 @@ void Communicator::listenerThread() {
     close(socketFd);
 }
 
+void Communicator::sendJobToBuffer(MessageHeader &msgHdr, Job* job, char* buf) {
+    // (1) send msg
+    msgHdr.setMsgType(MessageHeader::PushJob);
+    msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE + job->getJobSize());
+
+    // (2) serialize job
+    //     무조건 serialize하도록 하였다.
+    //     TODO: float array의 경우에 많은 데이터를 일일히 serialize하는 것에 대한 
+    //     코스트가 크기 때문에 serialize를 하지 않는 옵션을 만들어야 한다.
+    int bufOffset = MsgSerializer::serializeMsgHdr(msgHdr, buf);
+    bufOffset = MsgSerializer::serializeInt((int)job->getJobID(), bufOffset, buf);
+    bufOffset = MsgSerializer::serializeInt((int)job->getType(), bufOffset, buf);
+    bufOffset = MsgSerializer::serializeInt(job->getJobElemCount(), bufOffset, buf);
+
+    for (int i = 0; i < job->getJobElemCount(); i++) {
+        Job::JobElemDef jobElemDef = job->getJobElemDef(i);
+        bufOffset = MsgSerializer::serializeInt(jobElemDef.elemType, bufOffset, buf);
+    }
+
+    for (int i = 0; i < job->getJobElemCount(); i++) {
+        Job::JobElemDef jobElemDef = job->getJobElemDef(i);
+
+        switch (jobElemDef.elemType) {
+            case Job::IntType:
+                bufOffset = MsgSerializer::serializeInt(job->getIntValue(i), bufOffset, buf);
+                break;
+            case Job::FloatType:
+                bufOffset = MsgSerializer::serializeFloat(job->getFloatValue(i),
+                    bufOffset, buf);
+                break;
+            case Job::FloatArrayType:
+                bufOffset = MsgSerializer::serializeInt(jobElemDef.arrayCount, bufOffset,
+                        buf);
+                for (int j = 0; j < jobElemDef.arrayCount; j++) {
+                    bufOffset = MsgSerializer::serializeFloat(job->getFloatArrayValue(i, j),
+                        bufOffset, buf);
+                }
+                break;
+            case Job::StringType:
+                bufOffset = MsgSerializer::serializeInt(jobElemDef.arrayCount, bufOffset,
+                        buf);
+                bufOffset = MsgSerializer::serializeString(job->getStringValue(i).c_str(),
+                        jobElemDef.arrayCount, bufOffset, buf);
+                break;
+            default:
+                SASSERT(0, "Invalid job elem type. job elem type=%d", jobElemDef.elemType);
+                break;
+        }
+    }
+}
+
+void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
+    // (1) create job
+    int             jobID;
+    int             jobType;
+    int             jobElemCnt;
+    int             offset = MessageHeader::MESSAGE_HEADER_SIZE;
+
+    offset = MsgSerializer::deserializeInt(jobID, offset, recvMsg);
+    offset = MsgSerializer::deserializeInt(jobType, offset, recvMsg);
+    offset = MsgSerializer::deserializeInt(jobElemCnt, offset, recvMsg);
+
+    Job* newJob = new Job((JobType)jobType);
+
+    int *jobElemTypes = NULL;
+    if (jobElemCnt > 0) {
+        jobElemTypes = (int*)malloc(sizeof(int) * jobElemCnt);
+        SASSERT0(jobElemTypes != NULL);
+    }
+
+    for (int i = 0 ; i < jobElemCnt; i++) {
+        offset = MsgSerializer::deserializeInt(jobElemTypes[i], offset, recvMsg);
+    }
+
+    // FIXME: should split source :)
+    int         tempArrayCount;
+    int         tempInt;
+    float       tempFloat;
+    float      *tempFloatArray = NULL;
+    char       *tempString = NULL;
+    for (int i = 0; i < jobElemCnt; i++) {
+        switch ((Job::JobElemType)jobElemTypes[i]) {
+            case Job::IntType:
+                offset = MsgSerializer::deserializeInt(tempInt, offset, recvMsg);
+                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], 1, (void*)&tempInt);
+                break;
+
+            case Job::FloatType:
+                offset = MsgSerializer::deserializeFloat(tempFloat, offset, recvMsg);
+                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], 1, (void*)&tempFloat);
+                break;
+
+            case Job::FloatArrayType:
+                offset = MsgSerializer::deserializeInt(tempArrayCount, offset, recvMsg);
+                SASSUME0(tempFloatArray == NULL);
+                tempFloatArray = (float*)malloc(sizeof(float) * tempArrayCount);
+                SASSUME0(tempFloatArray != NULL);
+
+                for (int j = 0; j < tempArrayCount; j++) {
+                    offset = MsgSerializer::deserializeFloat(tempFloatArray[j], offset,
+                            recvMsg);
+                }
+                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
+                    (void*)tempFloatArray);
+                free(tempFloatArray);
+                break;
+
+            case Job::StringType:
+                offset = MsgSerializer::deserializeInt(tempArrayCount, offset, recvMsg);
+                SASSUME0(tempString == NULL);
+                tempString = (char*)malloc(sizeof(char) * tempArrayCount);
+                SASSUME0(tempString != NULL);
+
+                offset = MsgSerializer::deserializeString(tempString, tempArrayCount, offset,
+                        recvMsg);
+                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
+                    (void*)tempString);
+                free(tempString);
+                break;
+
+            default:
+                SASSERT(false, "invalid job elem type. elem type=%d", jobElemTypes[i]);
+                break;
+        }
+    }
+
+    if (jobElemTypes != NULL)
+        free(jobElemTypes);
+
+    *job = newJob;
+}
+
 bool Communicator::handleWelcomeMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
 
@@ -227,8 +370,8 @@ bool Communicator::handleHaltMachineMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
 
     // (1) Worker Thread (Producer& Consumer)를 종료한다.
-    Job* haltJob = new Job(Job::HaltMachine);
-    Worker<float>::pushJob(haltJob);
+    Job* haltJob = new Job(JobType::HaltMachine);
+    Worker::pushJob(haltJob);
 
     // (2) Listener, Session 쓰레드 들을 모두 종료한다.
     Communicator::halt();       // threads will be eventually halt
@@ -256,7 +399,7 @@ bool Communicator::handleGoodByeMsg(MessageHeader recvMsgHdr, char* recvMsg,
 // |------------------|
 bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
-
+#if 0
     // (1) create network.
     int networkId = LegacyWork<float>::createNetwork();
 
@@ -278,7 +421,7 @@ bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMs
     int offset;
     offset = MsgSerializer::serializeMsgHdr(replyMsgHdr, sendBuffer);
     offset = MsgSerializer::serializeInt(networkId, offset, sendBuffer);
-
+#endif
     return true;
 }
 
@@ -288,73 +431,15 @@ bool Communicator::handleCreateNetworkMsg(MessageHeader recvMsgHdr, char* recvMs
 // | JobID  | JobType | JobElemCnt | JobElemTypes      | JobElems |
 // | int(4) | int(4)  | int(4)     | int(4)*JobElemCnt | variable |
 // +--------+---------+------------+-------------------+----------+
-bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
+bool Communicator::handlePushJobMsg(int fd, MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
-    // (1) create job
-    int             jobID;
-    int             jobType;
-    int             jobElemCnt;
-    int             offset = MessageHeader::MESSAGE_HEADER_SIZE;
 
-    offset = MsgSerializer::deserializeInt(jobID, offset, recvMsg);
-    offset = MsgSerializer::deserializeInt(jobType, offset, recvMsg);
-    offset = MsgSerializer::deserializeInt(jobElemCnt, offset, recvMsg);
-
-    Job* newJob = new Job((Job::JobType)jobType);
-
-    int *jobElemTypes = NULL;
-    if (jobElemCnt > 0) {
-        jobElemTypes = (int*)malloc(sizeof(int) * jobElemCnt);
-        SASSERT0(jobElemTypes != NULL);
-    }
-
-    for (int i = 0 ; i < jobElemCnt; i++) {
-        offset = MsgSerializer::deserializeInt(jobElemTypes[i], offset, recvMsg);
-    }
-
-    // FIXME: should split source :)
-    int         tempArrayCount;
-    int         tempInt;
-    float       tempFloat;
-    float      *tempFloatArray = NULL;
-    for (int i = 0; i < jobElemCnt; i++) {
-        switch ((Job::JobElemType)jobElemTypes[i]) {
-            case Job::IntType:
-                offset = MsgSerializer::deserializeInt(tempInt, offset, recvMsg);
-                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], 1, (void*)&tempInt);
-                break;
-
-            case Job::FloatType:
-                offset = MsgSerializer::deserializeFloat(tempFloat, offset, recvMsg);
-                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], 1, (void*)&tempFloat);
-                break;
-
-            case Job::FloatArrayType:
-                offset = MsgSerializer::deserializeInt(tempArrayCount, offset, recvMsg);
-                SASSERT0(tempFloatArray == NULL);
-                tempFloatArray = (float*)malloc(sizeof(float) * tempArrayCount);
-                SASSERT0(tempFloatArray != NULL);
-
-                for (int j = 0; j < tempArrayCount; j++) {
-                    offset = MsgSerializer::deserializeFloat(tempFloatArray[j], offset,
-                            recvMsg);
-                }
-                newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
-                    (void*)tempFloatArray);
-                free(tempFloatArray);
-                break;
-
-            default:
-                SASSERT(false, "invalid job elem type. elem type=%d", jobElemTypes[i]);
-                break;
-        }
-    }
-
-    if (jobElemTypes != NULL)
-        free(jobElemTypes);
+    // (1) job을 얻는다.
+    Job* newJob;
+    Communicator::recvJobFromBuffer(&newJob, recvMsg);
 
     // (2) job을 job queue에 넣는다.
-    Worker<float>::pushJob(newJob);
+    Worker::pushJob(newJob);
 
     // (3) reply
     replyMsgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
@@ -363,7 +448,25 @@ bool Communicator::handlePushJobMsg(MessageHeader recvMsgHdr, char* recvMsg,
     SASSERT(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE, "");
     MsgSerializer::serializeMsgHdr(replyMsgHdr, replyMsg);
 
+#if 0
     return true;
+#else
+    if (!newJob->hasPubJob()) 
+        return true;
+
+    CommRetType replyRet = Communicator::sendMessage(fd, replyMsgHdr, replyMsg);
+    SASSUME0(replyRet == CommRetType::Success);
+
+    Job* subscribedJob = NULL;
+    Broker::BrokerRetType retType;
+    retType = Broker::subscribe(newJob->getJobID(), &subscribedJob, Broker::Blocking);
+    SASSERT0(retType == Broker::Success);
+
+    sendJobToBuffer(replyMsgHdr, subscribedJob, replyMsg);
+
+    delete subscribedJob;
+    return true;
+#endif
 }
 
 void Communicator::sessThread(int sessId) {
@@ -451,13 +554,7 @@ void Communicator::sessThread(int sessId) {
                     replyMsgHdr, replyMsg, replyBigMsg);
                 break;
             case MessageHeader::PushJob:
-                needReply = Communicator::handlePushJobMsg(
-                    recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
-                    replyMsgHdr, replyMsg, replyBigMsg);
-                break;
-
-            case MessageHeader::CreateNetwork:
-                needReply = Communicator::handleCreateNetworkMsg(
+                needReply = Communicator::handlePushJobMsg(fd, 
                     recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
                     replyMsgHdr, replyMsg, replyBigMsg);
                 break;
@@ -523,8 +620,8 @@ void Communicator::launchThreads(int sessCount) {
     atomic_store(&Communicator::runningSessCount, 0);
     atomic_store(&Communicator::sessHaltCount, 0);
 
-    // (2) Worker의 준비가 될때까지 기다린다.
-    while (!Worker<float>::isReady()) {
+    // (2) ThreadMgmt의 준비가 될때까지 기다린다.
+    while (!ThreadMgmt::isReady()) {
         sleep(1);
     }
 

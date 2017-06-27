@@ -38,50 +38,11 @@ int Client::connectRetry(int sockFd, const struct sockaddr *sockAddr, socklen_t 
     return -1;
 }
 
-void Client::pushJob(int fd, char* buf, Job* job) {
+void Client::sendJob(int fd, char* buf, Job* job) {
     // see handlePushJobMsg()@Communicator.cpp && JobType enumeration @ Job.h
-    // (1) send msg
+    // (1) send job msg
     MessageHeader msgHdr;
-    msgHdr.setMsgType(MessageHeader::PushJob);
-    msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE + job->getJobSize());
-
-    // (2) serialize job
-    //     무조건 serialize하도록 하였다.
-    //     TODO: float array의 경우에 많은 데이터를 일일히 serialize하는 것에 대한 
-    //     코스트가 크기 때문에 serialize를 하지 않는 옵션을 만들어야 한다.
-    int bufOffset = MsgSerializer::serializeMsgHdr(msgHdr, buf);
-    bufOffset = MsgSerializer::serializeInt((int)job->getJobID(), bufOffset, buf);
-    bufOffset = MsgSerializer::serializeInt((int)job->getType(), bufOffset, buf);
-    bufOffset = MsgSerializer::serializeInt(job->getJobElemCount(), bufOffset, buf);
-
-    for (int i = 0; i < job->getJobElemCount(); i++) {
-        Job::JobElemDef jobElemDef = job->getJobElemDef(i);
-        bufOffset = MsgSerializer::serializeInt(jobElemDef.elemType, bufOffset, buf);
-    }
-
-    for (int i = 0; i < job->getJobElemCount(); i++) {
-        Job::JobElemDef jobElemDef = job->getJobElemDef(i);
-
-        switch (jobElemDef.elemType) {
-            case Job::IntType:
-                bufOffset = MsgSerializer::serializeInt(job->getIntValue(i), bufOffset, buf);
-                break;
-            case Job::FloatType:
-                bufOffset = MsgSerializer::serializeFloat(job->getFloatValue(i),
-                    bufOffset, buf);
-                break;
-            case Job::FloatArrayType:
-                for (int j = 0; j < jobElemDef.arrayCount; j++) {
-                    bufOffset = MsgSerializer::serializeFloat(job->getFloatArrayValue(i, j),
-                        bufOffset, buf);
-                }
-                break;
-            default:
-                SASSERT(0, "Invalid job elem type. job elem type=%d", jobElemDef.elemType);
-                break;
-        }
-    }
-
+    Communicator::sendJobToBuffer(msgHdr, job, buf);
     Communicator::CommRetType ret = Communicator::sendMessage(fd, msgHdr, buf);
     SASSERT0(ret == Communicator::Success);
 
@@ -89,6 +50,16 @@ void Client::pushJob(int fd, char* buf, Job* job) {
     ret = Communicator::recvMessage(fd, msgHdr, buf, false);
     SASSERT0(ret == Communicator::Success);
     SASSERT0(msgHdr.getMsgType() == MessageHeader::PushJobReply);
+}
+
+void Client::recvJob(int fd, char* buf, Job** job) {
+    // see handlePushJobMsg()@Communicator.cpp && JobType enumeration @ Job.h
+    MessageHeader msgHdr;
+    Communicator::CommRetType ret = Communicator::recvMessage(fd, msgHdr, buf, false);
+    SASSERT0(ret == Communicator::Success);
+    SASSERT0(msgHdr.getMsgType() == MessageHeader::PushJob);
+
+    Communicator::recvJobFromBuffer(job, buf);
 }
 
 void Client::clientMain(const char* hostname, int portno) {
@@ -136,46 +107,23 @@ void Client::clientMain(const char* hostname, int portno) {
     SASSERT0(ret == Communicator::Success);
     SASSERT0(msgHdr.getMsgType() == MessageHeader::WelcomeReply);
 
-    // (4-1) send create network msg
-    cout << "send create-network msg" << endl;
-    msgHdr.setMsgType(MessageHeader::CreateNetwork);
-    msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
-    MsgSerializer::serializeMsgHdr(msgHdr, buf);
-    ret = Communicator::sendMessage(sockFd, msgHdr, buf);
-    SASSERT0(ret == Communicator::Success);
+    // (4) create network
+    cout << "send create-network job" << endl;
+    Job* createNetworkJob = new Job(JobType::CreateNetworkFromFile);
+    string networkFilePath = "network.conf.test";
+    createNetworkJob->addJobElem(Job::StringType, strlen(networkFilePath.c_str()),
+        (void*)networkFilePath.c_str());
+    Client::sendJob(sockFd, buf, createNetworkJob);
+    delete createNetworkJob;
 
-    // (4-2) recv create network reply msg & get networkId
-    // see handleCreateNetworkMsg()@Communicator.cpp
-    ret = Communicator::recvMessage(sockFd, msgHdr, buf, false);
-    SASSERT0(ret == Communicator::Success);
-    SASSERT0(msgHdr.getMsgType() == MessageHeader::CreateNetworkReply);
-    int networkId;
-    MsgSerializer::deserializeInt(networkId, MessageHeader::MESSAGE_HEADER_SIZE, buf);
-    cout << "recv create-network msg & created network ID is " << networkId << endl;
+    Job* createNetworkReplyJob;
+    recvJob(sockFd, buf, &createNetworkReplyJob);
+    SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
+    int networkID = createNetworkReplyJob->getIntValue(0);
+    cout << "created network ID : " << networkID << endl;
+    delete createNetworkReplyJob;
 
-    // (5-1) build layer
-    cout << "push build-network job" << endl;
-    Job* buildNetworkJob = new Job(Job::BuildNetwork);
-    buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkId);
-    Client::pushJob(sockFd, buf, buildNetworkJob);
-    delete buildNetworkJob;
-    
-    // (5-2) train network
-    cout << "push train-network job" << endl;
-    Job* trainNetworkJob = new Job(Job::TrainNetwork);
-    trainNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkId);
-    int maxEpochCount = 2;
-    trainNetworkJob->addJobElem(Job::IntType, 1, (void*)&maxEpochCount);
-    Client::pushJob(sockFd, buf, trainNetworkJob);
-    delete trainNetworkJob;
-
-    // (5-3) cleanup layer
-    cout << "push cleanup-network job" << endl;
-    Job* cleanupNetworkJob = new Job(Job::CleanupNetwork);
-    cleanupNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkId);
-    Client::pushJob(sockFd, buf, cleanupNetworkJob);
-    delete cleanupNetworkJob;
-
+#if 0
     // (6) send Halt Msg
     cout << "send halt msg" << endl;
     msgHdr.setMsgType(MessageHeader::HaltMachine);
@@ -183,6 +131,15 @@ void Client::clientMain(const char* hostname, int portno) {
     MsgSerializer::serializeMsgHdr(msgHdr, buf);
     ret = Communicator::sendMessage(sockFd, msgHdr, buf);
     SASSERT0(ret == Communicator::Success);
+#else
+    // (6) send goodbye msg
+    cout << "send goodbye msg" << endl;
+    msgHdr.setMsgType(MessageHeader::GoodBye);
+    msgHdr.setMsgLen(MessageHeader::MESSAGE_HEADER_SIZE);
+    MsgSerializer::serializeMsgHdr(msgHdr, buf);
+    ret = Communicator::sendMessage(sockFd, msgHdr, buf);
+    SASSERT0(ret == Communicator::Success);
+#endif
 
     // XXX: process should wait until send buffer is empty
     // cleanup resrouce & exit

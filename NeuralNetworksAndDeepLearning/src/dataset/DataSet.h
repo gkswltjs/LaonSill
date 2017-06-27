@@ -15,7 +15,6 @@
 
 #include "common.h"
 #include "Util.h"
-#include "Exception.h"
 
 template <typename Dtype>
 class DataSet {

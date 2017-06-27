@@ -10,26 +10,27 @@
 #include "RoIPoolingLayer.h"
 #include "Cuda.h"
 #include "MathFunctions.h"
+#include "PropMgmt.h"
 
 #define ROIPOOLINGLAYER_LOG 0
 
 
 
 template <typename Dtype>
-RoIPoolingLayer<Dtype>::RoIPoolingLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	this->pooledW = builder->_pooledW;
-	this->pooledH = builder->_pooledH;
-	this->spatialScale = builder->_spatialScale;
+RoIPoolingLayer<Dtype>::RoIPoolingLayer()
+: Layer<Dtype>(),
+  maxIdx("maxIdx") {
+	this->type = Layer<Dtype>::RoIPooling;
 
-	initialize();
+	assert(SLPROP(RoIPooling, pooledW) > 0 &&
+			"pooledW must be > 0");
+	assert(SLPROP(RoIPooling, pooledH) > 0 &&
+			"pooledH must be > 0");
+
 }
 
 template <typename Dtype>
-RoIPoolingLayer<Dtype>::~RoIPoolingLayer() {
-	if (this->maxIdx)
-		delete this->maxIdx;
-}
+RoIPoolingLayer<Dtype>::~RoIPoolingLayer() {}
 
 template <typename Dtype>
 void RoIPoolingLayer<Dtype>::reshape() {
@@ -50,11 +51,11 @@ void RoIPoolingLayer<Dtype>::reshape() {
 			this->width = this->_inputData[0]->width();
 
 			const std::vector<uint32_t> outputDataShape =
-                { (uint32_t)this->_inputData[1]->height(), this->channels, this->pooledH,
-                    this->pooledW };
+                { (uint32_t)this->_inputData[1]->height(), this->channels, SLPROP(RoIPooling, pooledH),
+                    SLPROP(RoIPooling, pooledW) };
 
 			this->_outputData[0]->reshape(outputDataShape);
-			this->maxIdx->reshape(outputDataShape);
+			this->maxIdx.reshape(outputDataShape);
 
 #if ROIPOOLINGLAYER_LOG
 			printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
@@ -140,13 +141,12 @@ void RoIPoolingLayer<Dtype>::feedforward() {
 	const Dtype* inputData = this->_inputData[0]->device_data();
 	const Dtype* inputRois = this->_inputData[1]->device_data();
 	Dtype* outputData = this->_outputData[0]->mutable_device_data();
-	int* argmaxData = this->maxIdx->mutable_device_data();
+	int* argmaxData = this->maxIdx.mutable_device_data();
 	uint32_t count = this->_outputData[0]->getCount();
 
 	ROIPoolForward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-	      count, inputData, this->spatialScale, this->channels, this->height, this->width,
-	      this->pooledH, this->pooledW, inputRois, outputData, argmaxData);
-
+	      count, inputData, SLPROP(RoIPooling, spatialScale), this->channels, this->height, this->width,
+	      SLPROP(RoIPooling, pooledH), SLPROP(RoIPooling, pooledW), inputRois, outputData, argmaxData);
 	CUDA_POST_KERNEL_CHECK;
 }
 
@@ -247,25 +247,74 @@ void RoIPoolingLayer<Dtype>::backpropagation() {
 	const int count = this->_inputData[0]->getCount();
 
 	soooa_gpu_set(count, Dtype(0.), inputGrad);
-	const int* argmaxData = this->maxIdx->device_data();
+	const int* argmaxData = this->maxIdx.device_data();
 
 	ROIPoolBackward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
 	      count, outputGrad, argmaxData, this->_outputData[0]->batches(),
-	      this->spatialScale, this->channels, this->height, this->width,
-	      this->pooledH, this->pooledW, inputGrad, inputRois);
-
-
+	      SLPROP(RoIPooling, spatialScale), this->channels, this->height, this->width,
+	      SLPROP(RoIPooling, pooledH), SLPROP(RoIPooling, pooledW), inputGrad, inputRois);
 	CUDA_POST_KERNEL_CHECK;
 }
 
-template <typename Dtype>
-void RoIPoolingLayer<Dtype>::initialize() {
-	assert(this->pooledW > 0 &&
-			"pooledW must be > 0");
-	assert(this->pooledH > 0 &&
-			"pooledH must be > 0");
 
-	this->maxIdx = new Data<int>("maxIdx");
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* RoIPoolingLayer<Dtype>::initLayer() {
+    RoIPoolingLayer* layer = new RoIPoolingLayer<Dtype>();
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::destroyLayer(void* instancePtr) {
+    RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+	if (isInput) {
+		SASSERT0(index < 2);
+	} else {
+		SASSERT0(index < 1);
+	}
+
+    RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == index);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == index);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool RoIPoolingLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+	layer->feedforward();
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::backwardTensor(void* instancePtr) {
+	RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
+}
+
+template<typename Dtype>
+void RoIPoolingLayer<Dtype>::learnTensor(void* instancePtr) {
+    SASSERT0(false);
 }
 
 template class RoIPoolingLayer<float>;

@@ -10,20 +10,22 @@
 #include "frcnn_common.h"
 #include "GenerateAnchorsUtil.h"
 #include "RoIDBUtil.h"
+#include "PropMgmt.h"
+#include "SysLog.h"
 
 #define ANCHORTARGETLAYER_LOG 0
 
 using namespace std;
 
 template <typename Dtype>
-AnchorTargetLayer<Dtype>::AnchorTargetLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
+AnchorTargetLayer<Dtype>::AnchorTargetLayer()
+	: Layer<Dtype>() {
+	this->type = Layer<Dtype>::AnchorTarget;
 
-	this->featStride = builder->_featStride;
-	this->allowedBorder = builder->_allowedBorder;
-	this->scales = builder->_scales;
+	GenerateAnchorsUtil::generateAnchors(this->anchors, SLPROP(AnchorTarget, scales));
+	this->numAnchors = this->anchors.size();
 
-	initialize();
+	print2dArray("anchors", this->anchors);
 }
 
 template <typename Dtype>
@@ -73,7 +75,7 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	// measture GT overlap
 
 	// Only single item batches are supported.
-	assert(this->_inputData[0]->getShape(0) == 1);
+	SASSERT0(this->_inputData[0]->getShape(0) == 1);
 
 	// map of shape (..., H, W)
 	// XXX: 디버깅 때문에 Height에 -1 한 것!!! 반드시 원복해야 함 !!!
@@ -121,10 +123,10 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	for (uint32_t i = 0; i < height; i++) {
 		for (uint32_t j = 0; j < width; j++) {
 			vector<uint32_t>& shift = shifts[i*width+j];
-			shift[0] = j*this->featStride;
-			shift[2] = j*this->featStride;
-			shift[1] = i*this->featStride;
-			shift[3] = i*this->featStride;
+			shift[0] = j * SLPROP(AnchorTarget, featStride);
+			shift[2] = j * SLPROP(AnchorTarget, featStride);
+			shift[1] = i * SLPROP(AnchorTarget, featStride);
+			shift[3] = i * SLPROP(AnchorTarget, featStride);
 		}
 	}
 #if ANCHORTARGETLAYER_LOG
@@ -165,10 +167,10 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	const uint32_t orgWidth = imInfo[1];
 	for (uint32_t i = 0; i < totalAnchors; i++) {
 		vector<float>& tempAnchor = allAnchors[i];
-		if ((tempAnchor[0] >= -this->allowedBorder) &&
-				(tempAnchor[1] >= -this->allowedBorder) &&
-				(tempAnchor[2] < orgWidth+this->allowedBorder) &&
-				(tempAnchor[3] < orgHeight+this->allowedBorder)) {
+		if ((tempAnchor[0] >= -SLPROP(AnchorTarget, allowedBorder)) &&
+			(tempAnchor[1] >= -SLPROP(AnchorTarget, allowedBorder)) &&
+			(tempAnchor[2] < orgWidth + SLPROP(AnchorTarget, allowedBorder)) &&
+			(tempAnchor[3] < orgHeight + SLPROP(AnchorTarget, allowedBorder))) {
 			anchors.push_back(tempAnchor);
 			indsInside.push_back(i);
 		}
@@ -279,17 +281,25 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	np_where_s(labels, EQ, 1, fgInds);
 	uint32_t finalNumFg = fgInds.size();
 	if (fgInds.size() > numFg) {
-#if TEST_MODE
-		for (uint32_t i = numFg; i < fgInds.size(); i++) {
-			labels[fgInds[i]] = -1;
-		}
-		finalNumFg = numFg;
-#else
+#if !SOOOA_DEBUG
 		vector<uint32_t> disableInds;
 		npr_choice(fgInds, fgInds.size()-numFg, disableInds);
+
+		SASSERT0(disableInds.size() == fgInds.size() - numFg);
+
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumFg -= disableInds.size();
+
+		SASSERT0(finalNumFg == numFg);
+
+
+
+#else
+		for (int i = 0; i < fgInds.size() - numFg; i++) {
+			labels[fgInds[i]] = -1;
+		}
+		finalNumFg = numFg;
 #endif
 	}
 
@@ -300,19 +310,22 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	uint32_t finalNumBg = bgInds.size();
 	if (bgInds.size() > numBg) {
 		vector<uint32_t> disableInds;
-#if TEST_MODE
-		// XXX: 디버깅 문제로 임시 -> 원복함 -------------------------------------------------
-		for (uint32_t i = numBg; i < bgInds.size(); i++) {
-			labels[bgInds[i]] = -1;
-		}
-		finalNumBg = numBg;
-#else
+#if !SOOOA_DEBUG
 		npr_choice(bgInds, bgInds.size()-numBg, disableInds);
+
+		SASSERT0(disableInds.size() == bgInds.size() - numBg);
+
 		for (uint32_t i = 0; i < disableInds.size(); i++)
 			labels[disableInds[i]] = -1;
 		finalNumBg -= disableInds.size();
+
+		SASSERT0(finalNumBg == numBg);
+#else
+		for (int i = 0; i < bgInds.size() - numBg; i++) {
+			labels[bgInds[i]] = -1;
+		}
+		finalNumBg = numBg;
 #endif
-		// ---------------------------------------------------------
 	}
 
 	vector<vector<float>> bboxTargets;
@@ -347,7 +360,7 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 
 	vector<vector<float>> bboxOutsideWeights(labels.size());
 	// XXX: supports only negative trainRpnPositiveWeight so far...
-	assert(TRAIN_RPN_POSITIVE_WEIGHT < 0);
+	SASSERT0(TRAIN_RPN_POSITIVE_WEIGHT < 0);
 	const float uniformWeight = 1.0f / (finalNumFg + finalNumBg);
 	const vector<float> positiveWeights = {uniformWeight, uniformWeight,
 			uniformWeight, uniformWeight};
@@ -422,6 +435,15 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	this->_outputData[3]->reshape({1, A * 4, height, width});
 	this->_outputData[3]->print_data("bbox_outside_weights", {}, false);
 	//Data<Dtype>::printConfig = false;
+
+#if ANCHORTARGETLAYER_LOG
+	this->_printOn();
+	for (int i = 0; i < this->_outputData.size(); i++) {
+		this->_outputData[i]->print_data({}, false);
+	}
+	this->_printOff();
+#endif
+
 }
 
 template <typename Dtype>
@@ -429,14 +451,7 @@ void AnchorTargetLayer<Dtype>::backpropagation() {
 	// This layer does not propagate gradients.
 }
 
-template <typename Dtype>
-void AnchorTargetLayer<Dtype>::initialize() {
 
-	GenerateAnchorsUtil::generateAnchors(this->anchors, this->scales);
-	this->numAnchors = this->anchors.size();
-
-	print2dArray("anchors", this->anchors);
-}
 
 template <typename Dtype>
 void AnchorTargetLayer<Dtype>::_computeTargets(
@@ -444,9 +459,9 @@ void AnchorTargetLayer<Dtype>::_computeTargets(
 		const vector<vector<float>>& gtRois,
 		vector<vector<float>>& bboxTargets) {
 
-	assert(exRois.size() == gtRois.size());
-	//assert(exRois[0].size() == 4);
-	//assert(gtRois[0].size() == 5);
+	SASSERT0(exRois.size() == gtRois.size());
+	//SASSERT0(exRois[0].size() == 4);
+	//SASSERT0(gtRois[0].size() == 5);
 
 	bboxTargets.resize(exRois.size());
 	for (uint32_t i = 0; i < exRois.size(); i++) {
@@ -483,6 +498,66 @@ void AnchorTargetLayer<Dtype>::_unmap(const vector<vector<float>>& data,
 	for (uint32_t i = 0; i < indsInside.size(); i++) {
 		result[indsInside[i]] = data[i];
 	}
+}
+
+
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* AnchorTargetLayer<Dtype>::initLayer() {
+    AnchorTargetLayer* layer = new AnchorTargetLayer<Dtype>();
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::destroyLayer(void* instancePtr) {
+    AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index < 4);
+
+    AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == index);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == index);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool AnchorTargetLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+	layer->feedforward();
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::backwardTensor(void* instancePtr) {
+	AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
+}
+
+template<typename Dtype>
+void AnchorTargetLayer<Dtype>::learnTensor(void* instancePtr) {
+    SASSERT0(false);
 }
 
 

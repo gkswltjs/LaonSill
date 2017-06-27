@@ -8,10 +8,10 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
+
 #include <cstdint>
 
 #include "common.h"
-#include "Activation.h"
 #include "DataSet.h"
 #include "MockDataSet.h"
 #include "ImagePackDataSet.h"
@@ -35,24 +35,28 @@
 #include "ProposalLayer.h"
 #include "ProposalTargetLayer.h"
 #include "RoIPoolingLayer.h"
-#include "NetworkConfig.h"
 #include "Pooling.h"
 #include "Param.h"
-#include "ALEInputLayer.h"
-#include "DQNOutputLayer.h"
 #include "FrcnnTestOutputLayer.h"
 #include "BatchNormLayer.h"
 #include "ReluLayer.h"
 #include "CrossEntropyWithLossLayer.h"
-#include "SigmoidLayer2.h"
+#include "Sigmoid2Layer.h"
 #include "NoiseInputLayer.h"
 #include "HyperTangentLayer.h"
+#include "KistiInputLayer.h"
+#include "VOCPascalInputLayer.h"
+#include "ILSVRCInputLayer.h"
+#include "DropOutLayer.h"
+#include "YOLOLossLayer.h"
+#include "Network.h"
 
 template <typename Dtype> class DataSet;
 template <typename Dtype> class LayersConfig;
 
 
 
+#if 0
 //#define OUTPUTLAYER
 
 
@@ -219,488 +223,6 @@ LayersConfig<Dtype>* createDQNLayersConfig() {
 }
 
 template <typename Dtype>
-LayersConfig<Dtype>* createDOfGANLayersConfig() {
-	LayersConfig<Dtype>* layersConfig =
-	    (new typename LayersConfig<Dtype>::Builder())
-        ->layer((new typename CelebAInputLayer<Dtype>::Builder())
-                ->id(1)
-                ->name("CelebAInputLayer")
-                ->imageDir(std::string(SPARAM(BASE_DATA_DIR))
-                    + std::string("/celebA"))
-                ->source(std::string(SPARAM(BASE_DATA_DIR))
-                    + std::string("/celebA"))
-                ->cropImage(64,64)
-                ->sourceType("ImagePack")
-                ->outputs({"data"}))
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(2)
-                ->name("ConvLayer1")
-                ->filterDim(5, 5, 3, 64, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"data"})
-                ->outputs({"conv1"})
-                ->donate())
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(4)
-                ->leaky(0.2)
-                ->name("LeakyRelu1")
-                ->inputs({"conv1"})
-                ->outputs({"lrelu1"}))
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(5)
-                ->name("ConvLayer2")
-                ->filterDim(5, 5, 64, 128, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"lrelu1"})
-                ->outputs({"conv2"})
-                ->donate())
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(6)
-                ->name("BNLayer/conv2")
-                ->inputs({"conv2"})
-                ->outputs({"BN/conv2"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(7)
-                ->leaky(0.2)
-                ->name("LeakyRelu2")
-                ->inputs({"BN/conv2"})
-                ->outputs({"lrelu2"}))
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(8)
-                ->name("convLayer3")
-                ->filterDim(5, 5, 128, 256, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"lrelu2"})
-                ->outputs({"conv3"})
-                ->donate())
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(9)
-                ->name("BNLayer/conv3")
-                ->inputs({"conv3"})
-                ->outputs({"BN/conv3"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(10)
-                ->leaky(0.2)
-                ->name("LeakyRelu3")
-                ->inputs({"BN/conv3"})
-                ->outputs({"lrelu3"}))
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(11)
-                ->name("convLayer4")
-                ->filterDim(5, 5, 256, 512, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"lrelu3"})
-                ->outputs({"conv4"})
-                ->donate())
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(12)
-                ->name("BNLayer/conv4")
-                ->inputs({"conv4"})
-                ->outputs({"BN/conv4"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(13)
-                ->leaky(0.2)
-                ->name("LeakyRelu4")
-                ->inputs({"BN/conv4"})
-                ->outputs({"lrelu4"}))
-        ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
-                ->id(14)
-                ->name("fc1")
-                ->nOut(1)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"lrelu4"})
-                ->outputs({"fc1"})
-                ->donate())
-        ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
-                ->id(15)
-                ->targetValue(1.0)
-                ->withSigmoid(true)
-                ->name("celossDGAN")
-                ->inputs({"fc1"})
-                ->outputs({"prob"}))
-        ->build();
-
-	return layersConfig;
-}
-
-#define USE_CONV_INSTEAD_OF_DECONV      0
-#define INSERT_BN                       0
-
-template <typename Dtype>
-LayersConfig<Dtype>* createGD0OfGANLayersConfig() {
-	LayersConfig<Dtype>* layersConfig =
-	    (new typename LayersConfig<Dtype>::Builder())
-        ->layer((new typename NoiseInputLayer<Dtype>::Builder())
-                ->id(9999)
-                ->name("NoiseInputLayer")
-                ->noise(100, -1.0, 1.0)
-                //->linear(1024, 4, 4, 0, 0.02)
-                ->outputs({"noise"})
-                )
-        ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
-                ->id(10000)
-                ->name("fc0")
-                ->nOut(4 * 4 * 1024)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"noise"})
-                ->outputs({"fc0"}))
-        ->layer((new typename ReshapeLayer<Dtype>::Builder())
-                ->id(10001)
-                ->name("reshape")
-                ->shape({-1, 1024, 4, 4})
-                ->inputs({"fc0"})
-                ->outputs({"reshape0"}))
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(10002)
-                ->name("BNLayer/noiseInput")
-                ->inputs({"reshape0"})
-                ->outputs({"BN/noiseInput"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(10003)
-                ->name("ReluForNoise")
-                ->inputs({"BN/noiseInput"})
-                ->outputs({"relu/noiseInput"}))
-#if USE_CONV_INSTEAD_OF_DECONV
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10004)
-                ->name("DeconvLayer1")
-                ->filterDim(3, 3, 1024, 512, 3, 1)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu/noiseInput"})
-                ->outputs({"deconv1"}))
-#else
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10004)
-                ->name("DeconvLayer1")
-                ->filterDim(5, 5, 1024, 512, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu/noiseInput"})
-                ->outputs({"deconv1"})
-                ->deconv(true)
-                ->deconvExtraCell(1))
-#endif
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(10005)
-                ->name("BNLayer/deconv1")
-                ->inputs({"deconv1"})
-                ->outputs({"BN/deconv1"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(10006)
-                ->name("Relu1")
-                ->inputs({"BN/deconv1"})
-                ->outputs({"relu1"}))
-#if USE_CONV_INSTEAD_OF_DECONV
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10007)
-                ->name("DeconvLayer2")
-                ->filterDim(5, 5, 512, 256, 6, 1)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu1"})
-                ->outputs({"deconv2"}))
-#else
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10007)
-                ->name("DeconvLayer2")
-                ->filterDim(5, 5, 512, 256, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu1"})
-                ->outputs({"deconv2"})
-                ->deconv(true)
-                ->deconvExtraCell(1))
-#endif
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(10008)
-                ->name("BNLayer/deconv2")
-                ->inputs({"deconv2"})
-                ->outputs({"BN/deconv2"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(10009)
-                ->name("Relu2")
-                ->inputs({"BN/deconv2"})
-                ->outputs({"relu2"}))
-#if USE_CONV_INSTEAD_OF_DECONV
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10010)
-                ->name("DeconvLayer3")
-                ->filterDim(5, 5, 256, 128, 10, 1)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu2"})
-                ->outputs({"deconv3"}))
-#else
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10010)
-                ->name("DeconvLayer3")
-                ->filterDim(5, 5, 256, 128, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu2"})
-                ->outputs({"deconv3"})
-                ->deconv(true)
-                ->deconvExtraCell(1))
-#endif
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(10011)
-                ->name("BNLayer/deconv3")
-                ->inputs({"deconv3"})
-                ->outputs({"BN/deconv3"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(10012)
-                ->name("Relu3")
-                ->inputs({"BN/deconv3"})
-                ->outputs({"relu3"}))
-#if USE_CONV_INSTEAD_OF_DECONV
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10013)
-                ->name("DeconvLayer4")
-                ->filterDim(5, 5, 128, 3, 18, 1)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu3"})
-                ->outputs({"deconv4"}))
-#else
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10013)
-                ->name("DeconvLayer4")
-                ->filterDim(5, 5, 128, 3, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"relu3"})
-                ->outputs({"deconv4"})
-                ->deconv(true)
-                ->deconvExtraCell(1))
-
-#endif
-
-#if INSERT_BN
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(9997)
-                ->name("BNLayer/deconv4")
-                ->inputs({"deconv4"})
-                ->outputs({"BN/deconv4"}))
-        ->layer((new typename HyperTangentLayer<Dtype>::Builder())
-                ->id(10014)
-                ->name("hypertangent")
-                ->inputs({"BN/deconv4"})
-                ->outputs({"hypertangent"}))
-#else
-        ->layer((new typename HyperTangentLayer<Dtype>::Builder())
-                ->id(10014)
-                ->name("hypertangent")
-                ->inputs({"deconv4"})
-                ->outputs({"hypertangent"}))
-#endif
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10015)
-                ->name("ConvLayer1")
-                ->filterDim(5, 5, 3, 64, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"hypertangent"})
-                ->outputs({"conv1"})
-                ->receive(2))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(10017)
-                ->leaky(0.2)
-                ->name("LeakyRelu1")
-                ->inputs({"conv1"})
-                ->outputs({"lrelu1"}))
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10018)
-                ->name("ConvLayer2")
-                ->filterDim(5, 5, 64, 128, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"lrelu1"})
-                ->outputs({"conv2"})
-                ->receive(5))
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(10019)
-                ->name("BNLayer/conv2")
-                ->inputs({"conv2"})
-                ->outputs({"BN/conv2"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(10020)
-                ->leaky(0.2)
-                ->name("LeakyRelu2")
-                ->inputs({"BN/conv2"})
-                ->outputs({"lrelu2"}))
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10021)
-                ->name("convLayer3")
-                ->filterDim(5, 5, 128, 256, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"lrelu2"})
-                ->outputs({"conv3"})
-                ->receive(8))
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(10022)
-                ->name("BNLayer/conv3")
-                ->inputs({"conv3"})
-                ->outputs({"BN/conv3"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(10023)
-                ->leaky(0.2)
-                ->name("LeakyRelu3")
-                ->inputs({"BN/conv3"})
-                ->outputs({"lrelu3"}))
-        ->layer((new typename ConvLayer<Dtype>::Builder())
-                ->id(10024)
-                ->name("convLayer4")
-                ->filterDim(5, 5, 256, 512, 2, 2)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"lrelu3"})
-                ->outputs({"conv4"})
-                ->receive(11))
-        ->layer((new typename BatchNormLayer<Dtype>::Builder())
-                ->id(10025)
-                ->name("BNLayer/conv4")
-                ->inputs({"conv4"})
-                ->outputs({"BN/conv4"}))
-        ->layer((new typename ReluLayer<Dtype>::Builder())
-                ->id(10026)
-                ->leaky(0.2)
-                ->name("LeakyRelu4")
-                ->inputs({"BN/conv4"})
-                ->outputs({"lrelu4"}))
-        ->layer((new typename FullyConnectedLayer<Dtype>::Builder())
-                ->id(10027)
-                ->name("fc1")
-                ->nOut(1)
-                ->weightUpdateParam(1, 0)
-                ->biasUpdateParam(1, 0)
-                ->weightFiller(ParamFillerType::Gaussian, 0.02)
-                ->biasFiller(ParamFillerType::Constant, 0.0)
-                ->inputs({"lrelu4"})
-                ->outputs({"fc1"})
-                ->receive(14))
-        ->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
-                ->id(10028)
-                ->targetValue(0.0)
-                ->withSigmoid(true)
-                ->name("celossGD0GAN")
-                ->inputs({"fc1"})
-                ->outputs({"prob"}))
-
-        ->build();
-
-	return layersConfig;
-}
-
-template <typename Dtype>
-LayersConfig<Dtype>* createCNNSimpleLayersConfig3() {
-	LayersConfig<Dtype>* layersConfig =
-			(new typename LayersConfig<Dtype>::Builder())
-
-#if 1
-			->layer((new typename CelebAInputLayer<Dtype>::Builder())
-					->id(0)
-					->name("celebAInputLayer")
-					->imageDir(std::string(SPARAM(BASE_DATA_DIR))
-                        + std::string("/celebA"))
-					->source(std::string(SPARAM(BASE_DATA_DIR))
-                        + std::string("/celebA"))
-                    ->cropImage(128,128)
-					->sourceType("ImagePack")
-					->outputs({"data"})
-					)
-#else
-			->layer((new typename InputLayer<Dtype>::Builder())
-					->id(0)
-					->name("inputLayer")
-					->source(std::string(SPARAM(BASE_DATA_DIR))
-                        + std::string("/mnist"))
-					->sourceType("ImagePack")
-					->mean({0.13066047740})
-					->outputs({"data", "label"})
-					)
-
-#endif
-			->layer((new typename ConvLayer<Dtype>::Builder())
-					->id(1)
-					->name("convLayer1")
-					->filterDim(3, 3, 3, 10, 1, 1)
-					->weightUpdateParam(1, 1)
-					->biasUpdateParam(2, 0)
-					->weightFiller(ParamFillerType::Xavier, 0.1)
-					->biasFiller(ParamFillerType::Constant, 0.2)
-					->inputs({"data"})
-					->outputs({"deconv1"}))
-
-			->layer((new typename ReluLayer<Dtype>::Builder())
-					->id(3)
-					->name("relu1")
-					->inputs({"deconv1"})
-					->outputs({"relu1"}))
-
-
-			->layer((new typename SigmoidLayer2<Dtype>::Builder())
-					->id(8)
-					->name("sigmoid2")
-					->inputs({"relu1"})
-					->outputs({"sigmoid2"}))
-
-			->layer((new typename CrossEntropyWithLossLayer<Dtype>::Builder())
-					->id(9)
-					->name("celossDGAN")
-					->inputs({"sigmoid2"})
-					->outputs({"prob"}))
-
-			->build();
-
-	return layersConfig;
-}
-
-
-template <typename Dtype>
 LayersConfig<Dtype>* createLeNetLayersConfig() {
 	LayersConfig<Dtype>* layersConfig =
 			(new typename LayersConfig<Dtype>::Builder())
@@ -729,7 +251,7 @@ LayersConfig<Dtype>* createLeNetLayersConfig() {
 					->id(2)
 					->name("pool1")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv1"})
 					->outputs({"pool1"}))
 
@@ -748,7 +270,7 @@ LayersConfig<Dtype>* createLeNetLayersConfig() {
 					->id(4)
 					->name("pool2")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv2"})
 					->outputs({"pool2"}))
 
@@ -827,7 +349,7 @@ LayersConfig<Dtype>* createSplitLayersConfig() {
 					->id(2)
 					->name("pool1")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv1"})
 					->outputs({"pool1"}))
 
@@ -857,7 +379,7 @@ LayersConfig<Dtype>* createSplitLayersConfig() {
 					->id(4)
 					->name("pool2")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv2"})
 					->outputs({"pool2"}))
 
@@ -1169,7 +691,7 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig2() {
 					->id(4)
 					->name("poolingLayer1")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"relu1"})
 					->outputs({"pool1/3x3_s1"}))
 
@@ -1243,7 +765,7 @@ LayersConfig<Dtype>* createCNNSimpleLayersConfig() {
 					->id(3)
 					->name("poolingLayer1")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"relu1"})
 					->outputs({"pool1/3x3_s1"}))
 
@@ -1307,7 +829,7 @@ LayersConfig<Dtype>* createCNNDoubleLayersConfig() {
 					->id(2)
 					->name("poolingLayer1")
 					->poolDim(3, 3, 1, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"convLayer1"})
 					->outputs({"poolingLayer1"}))
 
@@ -1327,7 +849,7 @@ LayersConfig<Dtype>* createCNNDoubleLayersConfig() {
 					->id(4)
 					->name("poolingLayer2")
 					->poolDim(3, 3, 1, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"convLayer2"})
 					->outputs({"poolingLayer2"}))
 
@@ -1405,7 +927,7 @@ LayersConfig<Dtype>* createVggCnnM1024LayersConfig() {
 					->id(3)
 					->name("pool1")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm1"})
 					->outputs({"pool1"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -1430,7 +952,7 @@ LayersConfig<Dtype>* createVggCnnM1024LayersConfig() {
 					->id(6)
 					->name("pool2")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm2"})
 					->outputs({"pool2"}))
 
@@ -1485,7 +1007,7 @@ LayersConfig<Dtype>* createVggCnnM1024LayersConfig() {
 					->id(10)
 					->name("pool5")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv5"})
 					->outputs({"pool5"}))
 
@@ -1590,7 +1112,7 @@ LayersConfig<Dtype>* createFrcnnTrainOneShotLayersConfig() {
 					->id(3)
 					->name("pool1:rpn")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm1_rpn"})
 					->propDown({false})
 					->outputs({"pool1_rpn"}))
@@ -1615,7 +1137,7 @@ LayersConfig<Dtype>* createFrcnnTrainOneShotLayersConfig() {
 					->id(6)
 					->name("pool2:rpn")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm2_rpn"})
 					->propDown({false})
 					->outputs({"pool2_rpn"}))
@@ -1807,7 +1329,7 @@ LayersConfig<Dtype>* createFrcnnTrainOneShotLayersConfig() {
 					->id(23)
 					->name("pool1:detect")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm1_detect"})
 					->outputs({"pool1_detect"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -1829,7 +1351,7 @@ LayersConfig<Dtype>* createFrcnnTrainOneShotLayersConfig() {
 					->id(26)
 					->name("pool2:detect")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm2_detect"})
 					->outputs({"pool2_detect"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -2013,7 +1535,7 @@ LayersConfig<Dtype>* createFrcnnTestOneShotLayersConfig() {
 					->id(3)
 					->name("pool1:rpn")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm1_rpn"})
 					->outputs({"pool1_rpn"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -2035,7 +1557,7 @@ LayersConfig<Dtype>* createFrcnnTestOneShotLayersConfig() {
 					->id(6)
 					->name("pool2:rpn")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm2_rpn"})
 					->outputs({"pool2_rpn"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -2171,7 +1693,7 @@ LayersConfig<Dtype>* createFrcnnTestOneShotLayersConfig() {
 					->id(23)
 					->name("pool1:detect")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm1_detect"})
 					->outputs({"pool1_detect"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -2193,7 +1715,7 @@ LayersConfig<Dtype>* createFrcnnTestOneShotLayersConfig() {
 					->id(26)
 					->name("pool2:detect")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm2_detect"})
 					->outputs({"pool2_detect"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -2377,7 +1899,7 @@ LayersConfig<Dtype>* createFrcnnTestLayersConfig() {
 					->id(3)
 					->name("pool1")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm1"})
 					->outputs({"pool1"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -2399,7 +1921,7 @@ LayersConfig<Dtype>* createFrcnnTestLayersConfig() {
 					->id(6)
 					->name("pool2")
 					->poolDim(3, 3, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"norm2"})
 					->outputs({"pool2"}))
 			->layer((new typename ConvLayer<Dtype>::Builder())
@@ -2632,7 +2154,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(2)
 					->name("pool1/3x3_s2")
 					->poolDim(3, 3, 1, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv1/7x7_s2"})
 					->outputs({"pool1/3x3_s2"})
 					)
@@ -2678,7 +2200,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(7)
 					->name("pool2/3x3_s2")
 					->poolDim(3, 3, 1, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv2/norm2"})
 					->outputs({"pool2/3x3_s2"})
 					)
@@ -2755,7 +2277,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(13)
 					->name("inception_3a/pool")
 					->poolDim(3, 3, 1, 1)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"pool2/3x3_s2"})
 					->outputs({"inception_3a/pool"})
 					)
@@ -2855,7 +2377,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(21)
 					->name("inception_3b/pool")
 					->poolDim(3, 3, 1, 1)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"inception_3a/output"})
 					->outputs({"inception_3b/pool"})
 					//->prevLayerIndices({15})
@@ -2891,7 +2413,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(24)
 					->name("pool3/3x3_s2")
 					->poolDim(3, 3, 1, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"inception_3b/output"})
 					->outputs({"pool3/3x3_s2"})
 					//->prevLayerIndices({23})
@@ -2975,7 +2497,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(30)
 					->name("inception_4a/pool")
 					->poolDim(3, 3, 1, 1)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"pool3/3x3_s2"})
 					->outputs({"inception_4a/pool"})
 					//->prevLayerIndices({24})
@@ -3085,7 +2607,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(38)
 					->name("inception_4b/pool")
 					->poolDim(3, 3, 1, 1)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"inception_4a/output"})
 					->outputs({"inception_4b/pool"})
 					//->prevLayerIndices({32})
@@ -3195,7 +2717,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(46)
 					->name("inception_4c/pool")
 					->poolDim(3, 3, 1, 1)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"inception_4b/output"})
 					->outputs({"inception_4c/pool"})
 					//->prevLayerIndices({40})
@@ -3306,7 +2828,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(54)
 					->name("inception_4d/pool")
 					->poolDim(3, 3, 1, 1)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"inception_4c/output"})
 					->outputs({"inception_4d/pool"})
 					//->prevLayerIndices({48})
@@ -3414,7 +2936,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(62)
 					->name("inception_4e/pool")
 					->poolDim(3, 3, 1, 1)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"inception_4d/output"})
 					->outputs({"inception_4e/pool"})
 					//->prevLayerIndices({56})
@@ -3448,7 +2970,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(65)
 					->name("pool4/3x3_s2")
 					->poolDim(3, 3, 1, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"inception_4e/output"})
 					->outputs({"pool4/3x3_s2"})
 					//->prevLayerIndices({64})
@@ -3532,7 +3054,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(71)
 					->name("inception_5a/pool")
 					->poolDim(3, 3, 1, 1)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"pool4/3x3_s2"})
 					->outputs({"inception_5a/pool"})
 					//->prevLayerIndices({65})
@@ -3642,7 +3164,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(79)
 					->name("inception_5b/pool")
 					->poolDim(3, 3, 1, 1)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"inception_5a/output"})
 					->outputs({"inception_5b/pool"})
 					//->prevLayerIndices({73})
@@ -3678,7 +3200,7 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 					->id(82)
 					->name("pool5/7x7_s1")
 					->poolDim(7, 7, 3, 0, 4)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					->inputs({"inception_5b/output"})
 					->outputs({"pool5/7x7_s1"})
 					//->prevLayerIndices({81})
@@ -3703,7 +3225,6 @@ LayersConfig<Dtype>* createGoogLeNetInception5BLayersConfig() {
 
 	return layersConfig;
 }
-
 
 
 #define ILSVRC_1000 0
@@ -3779,7 +3300,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->id(5)
 					->name("pool1")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv1_2"})
 					->outputs({"pool1"}))
 
@@ -3822,7 +3343,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->id(10)
 					->name("pool2")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv2_2"})
 					->outputs({"pool2"}))
 
@@ -3899,7 +3420,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->id(19)
 					->name("pool3")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv3_4"})
 					->outputs({"pool3"}))
 
@@ -3976,7 +3497,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->id(28)
 					->name("pool4")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv4_4"})
 					->outputs({"pool4"}))
 
@@ -4053,7 +3574,7 @@ LayersConfig<Dtype>* createVGG19NetLayersConfig() {
 					->id(37)
 					->name("pool5")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Max)
+					->poolingType(PoolingType::Max)
 					->inputs({"conv5_4"})
 					->outputs({"pool5"}))
 
@@ -4169,7 +3690,10 @@ LayersConfig<Dtype>* createVGG19NetArtisticLayersConfig() {
 					->id(5)
 					->name("pool1")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
+#if RELU
+					->inputs({"relu1_2"})
+#else
 					->inputs({"conv1_2"})
 					->outputs({"pool1"}))
 
@@ -4212,7 +3736,10 @@ LayersConfig<Dtype>* createVGG19NetArtisticLayersConfig() {
 					->id(10)
 					->name("pool2")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
+#if RELU
+					->inputs({"relu2_2"})
+#else
 					->inputs({"conv2_2"})
 					->outputs({"pool2"}))
 
@@ -4289,7 +3816,10 @@ LayersConfig<Dtype>* createVGG19NetArtisticLayersConfig() {
 					->id(19)
 					->name("pool3")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
+#if RELU
+					->inputs({"relu3_4"})
+#else
 					->inputs({"conv3_4"})
 					->outputs({"pool3"}))
 
@@ -4366,8 +3896,8 @@ LayersConfig<Dtype>* createVGG19NetArtisticLayersConfig() {
 					->id(28)
 					->name("pool4")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
-					->inputs({"conv4_4"})
+					->poolingType(PoolingType::Avg)
+					->inputs({"relu4_4"})
 					->outputs({"pool4"}))
 
 			// tier 5
@@ -4443,8 +3973,8 @@ LayersConfig<Dtype>* createVGG19NetArtisticLayersConfig() {
 					->id(37)
 					->name("pool5")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
-					->inputs({"conv5_4"})
+					->poolingType(PoolingType::Avg)
+					->inputs({"relu5_4"})
 					->outputs({"pool5"}))
 
 /*
@@ -4559,7 +4089,7 @@ LayersConfig<Dtype>* createVGG19NetArtisticTestLayersConfig() {
 					->id(5)
 					->name("pool1")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					->inputs({"relu1_2"})
 					->outputs({"pool1"}))
 
@@ -4598,7 +4128,7 @@ LayersConfig<Dtype>* createVGG19NetArtisticTestLayersConfig() {
 					->id(10)
 					->name("pool2")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					->inputs({"relu2_2"})
 					->outputs({"pool2"}))
 
@@ -4660,7 +4190,7 @@ LayersConfig<Dtype>* createVGG19NetArtisticTestLayersConfig() {
 					->id(19)
 					->name("pool3")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					->inputs({"relu3_4"})
 					->outputs({"pool3"}))
 
@@ -4723,7 +4253,7 @@ LayersConfig<Dtype>* createVGG19NetArtisticTestLayersConfig() {
 					->id(28)
 					->name("pool4")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					->inputs({"relu4_4"})
 					->outputs({"pool4"}))
 
@@ -4798,7 +4328,7 @@ LayersConfig<Dtype>* createVGG19NetArtisticTestLayersConfig() {
 					->id(37)
 					->name("pool5")
 					->poolDim(2, 2, 0, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					->inputs({"relu5_4"})
 					->outputs({"pool5"}))
 
@@ -4920,7 +4450,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 					->id(3)
 					->name("pool1")
 					->poolDim(poolKernel, poolKernel, (poolKernel-1)/2, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					//->prevLayerIndices({2})
 					//->nextLayerIndices({4})
 					)
@@ -4958,7 +4488,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 					->id(6)
 					->name("pool2")
 					->poolDim(poolKernel, poolKernel, (poolKernel-1)/2, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					//->prevLayerIndices({5})
 					//->nextLayerIndices({7})
 					)
@@ -5025,7 +4555,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 					->id(11)
 					->name("pool3")
 					->poolDim(poolKernel, poolKernel, (poolKernel-1)/2, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					//->prevLayerIndices({10})
 					//->nextLayerIndices({12})
 					)
@@ -5092,7 +4622,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 					->id(16)
 					->name("pool4")
 					->poolDim(poolKernel, poolKernel, (poolKernel-1)/2, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					//->prevLayerIndices({15})
 					//->nextLayerIndices({17})
 					)
@@ -5159,7 +4689,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 					->id(21)
 					->name("pool5")
 					->poolDim(poolKernel, poolKernel, (poolKernel-1)/2, 2)
-					->poolingType(Pooling<Dtype>::Avg)
+					->poolingType(PoolingType::Avg)
 					//->prevLayerIndices({20})
 					//->nextLayerIndices({24})
 					)
@@ -5217,5 +4747,7 @@ LayersConfig<Dtype>* createVGG19NetLayersArtisticConfig() {
 	return layersConfig;
 }
 */
+
+#endif
 
 #endif

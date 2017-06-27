@@ -15,9 +15,8 @@
 #include <string>
 
 #include "common.h"
-#include "Activation.h"
 #include "Util.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "LearnableLayer.h"
 #include "LayerConfig.h"
 
@@ -28,199 +27,23 @@
 template <typename Dtype>
 class ConvLayer : public LearnableLayer<Dtype> {
 public:
-	/**
-	 * @brief 컨볼루션 레이어 객체 빌더
-	 * @details 컨볼루션 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
-	 *          해당 파라미터를 만족하는 컨볼루션 레이어 객체를 생성한다.
-     *
-     *
-     *          [convolution layer output]
-     *          o = rounding off((i + 2p - k) / s) + 1
-     *          o : output, p : padding, k : kernel, s : stride
-     *
-     *          [deconvolution layer output]
-     *          o = s * (i - 1) + a + k - 2p
-     *          o : output, s : stride, i : input, a : _deconvExtraCell, 
-     *          k : kernel, p : padding
-     *
-	 */
-	class Builder : public LearnableLayer<Dtype>::Builder {
-	public:
-		filter_dim _filterDim;
-		update_param _weightUpdateParam;
-		update_param _biasUpdateParam;
-		param_filler<Dtype> _weightFiller;
-		param_filler<Dtype> _biasFiller;
-        bool _deconv;
-        int _deconvExtraCell;       // deconvolution layer에서 a만큼 더 큰 피처맵(이미지)를 
-                                    // 생성할 수 있다. 이때 a는 0이상 stride 미만의 값을 
-                                    // 가진다.
-                                    // XXX: 이름이 구리다. 예쁜 이름으로 바꿔주세요 :)
-		//typename Activation<Dtype>::Type _activationType;
-
-		Builder() {
-			this->type = Layer<Dtype>::Conv;
-			_filterDim.rows = 0;
-			_filterDim.cols = 0;
-			_filterDim.channels = 0;
-			_filterDim.filters = 0;
-			_filterDim.pad = 0;
-			_filterDim.stride = 0;
-			_weightUpdateParam.lr_mult = 1.0;
-			_weightUpdateParam.decay_mult = 0.0;
-			_biasUpdateParam.lr_mult = 1.0;
-			_biasUpdateParam.decay_mult = 0.0;
-			_weightFiller.type = ParamFillerType::Constant;
-			_weightFiller.value = 0.0f;
-			_biasFiller.type = ParamFillerType::Constant;
-			_biasFiller.value = 0.0f;
-            _deconv = false;
-            _deconvExtraCell = 0;
-			//_activationType = Activation<Dtype>::NoActivation;
-		}
-		Builder* filterDim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
-				uint32_t pad, uint32_t stride) {
-			_filterDim.rows = rows;
-			_filterDim.cols = cols;
-			_filterDim.channels = channels;
-			_filterDim.filters = filters;
-			_filterDim.pad = pad;
-			_filterDim.stride = stride;
-			return this;
-		}
-		Builder* weightUpdateParam(double lr_mult, double decay_mult) {
-			this->_weightUpdateParam.lr_mult = lr_mult;
-			this->_weightUpdateParam.decay_mult = decay_mult;
-			return this;
-		}
-		Builder* biasUpdateParam(double lr_mult, double decay_mult) {
-			this->_biasUpdateParam.lr_mult = lr_mult;
-			this->_biasUpdateParam.decay_mult = decay_mult;
-			return this;
-		}
-		Builder* weightFiller(ParamFillerType weightFillerType, double value) {
-			this->_weightFiller.type = weightFillerType;
-			this->_weightFiller.value = value;
-			return this;
-		}
-		Builder* biasFiller(ParamFillerType paramFillerType, double value) {
-			this->_biasFiller.type = paramFillerType;
-			this->_biasFiller.value = value;
-			return this;
-		}
-		Builder* deconv(bool deconv) {
-			this->_deconv = deconv;
-			return this;
-		}
-		Builder* deconvExtraCell(int deconvExtraCell) {
-			this->_deconvExtraCell = deconvExtraCell;
-			return this;
-		}
-		virtual Builder* name(const std::string name) {
-			LearnableLayer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			LearnableLayer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			LearnableLayer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			LearnableLayer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			LearnableLayer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-
-		Layer<Dtype>* build() {
-			return new ConvLayer(this);
-		}
-
-	};
-
-	ConvLayer(Builder* builder);
-	/**
-	 * @details ConvLayer 생성자
-	 * @param filter_d 컨볼루션 연산 관련 파라미터 구조체
-	 * @param weight_update_param weight 갱신 관련 파라미터 구조체
-	 * @param bias_update_param bias 갱신 관련 파라미터 구조체
-	 * @param weight_filler filter 초기화 관련 파라미터 구조체
-	 * @param bias_filler bias 초기화 관련 파라미터 구조체
-	 * @param activationType 컨볼루션 결과에 적용할 활성화 타입
-	 */
-	ConvLayer(const std::string name, filter_dim filter_d, update_param weight_update_param, 
-              update_param bias_update_param, param_filler<Dtype> weight_filler, 
-              param_filler<Dtype> bias_filler, bool deconv, int deconvExtraCell);
-	/**
-	 * @details ConvLayer 소멸자
-	 */
+	ConvLayer();
 	virtual ~ConvLayer();
-
-	/**
-	 * @details 컨볼루션 연산 관련 파라미터 구조체를 조회한다.
-	 * @return 컨볼루션 연산 관련 파라미터
-	 */
-	filter_dim &get_filter_dim() { return this->filter_d; }
-
-
-
-	//////////////////////////////////////////
-	// Learnable Layer Method
-	//////////////////////////////////////////
-	using Layer<Dtype>::getName;
-	virtual const std::string getName() { return this->name; }
-	virtual void update();
-	//virtual double sumSquareParamsData();
-	//virtual double sumSquareParamsGrad();
-	//virtual void scaleParamsGrad(float scale);
-	//virtual double testParamAbnormality();
-	//virtual uint32_t boundParams();
-	//virtual uint32_t numParams();
-	//virtual void saveParams(std::ofstream& ofs);
-	//virtual void loadParams(std::ifstream& ifs);
-	//virtual void loadParams(std::map<std::string, Data<Dtype>*>& dataMap);
-	//////////////////////////////////////////
 
 	virtual void reshape();
 	virtual void feedforward();
 	virtual void backpropagation();
-
-
 	
     //
+	virtual void update();
     void applyChanges(LearnableLayer<Dtype> *targetLayer);
     void syncParams(LearnableLayer<Dtype> *targetLayer);
 
-
-
-
-
-
-
 protected:
-	void initialize(filter_dim filter_d, update_param weight_update_param,
-        update_param bias_update_param, param_filler<Dtype> weight_filler,
-        param_filler<Dtype> bias_filler, bool deconv, int deconvExtraCell);
-
-
-
 	void _computeFiltersConvolutionData();
-	//void _computeActivationData();
-
-	//void _computePreActivationGrad();
 	void _computeFiltersGrad();
 	void _computeBiasesGrad();
 	void _computeInputGrad();
-
-    // FIXME: 파라미터가 너무 많다. 구조화해서 줄이자.
-	void _updateParam(const uint32_t paramSize, const Dtype regScale, const Dtype learnScale,
-        const Dtype epsilon, const Dtype decayRate, const Dtype beta1, const Dtype beta2,
-        Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2, Data<Dtype>* data);
 
 	enum ParamType {
 		Filter = 0,
@@ -228,18 +51,6 @@ protected:
 	};
 
 protected:
-	filter_dim filter_d;							///< 컨볼루션 연산 관련 파라미터 구조체
-	//Activation<Dtype> *activation_fn;				///< 활성화 객체
-
-	update_param weight_update_param;				///< weight 갱신 관련 파라미터 구조체
-	update_param bias_update_param;					///< bias 갱신 관련 파라미터 구조체
-	param_filler<Dtype> weight_filler;				///< weight 초기화 관련 파라미터 구조체
-	param_filler<Dtype> bias_filler;				///< bias 초기화 관련 파라미터 구조체
-
-
-
-#ifndef GPU_MODE
-#else
 	cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t outputTensorDesc;	///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t biasTensorDesc;		///< cudnn bias 구조 정보 구조체
@@ -251,12 +62,23 @@ protected:
 
 	size_t workspaceSize;	///< cudnn forward, backward에 필요한 작업공간 GPU 메모리 사이즈
 	void *d_workspace;		///< cudnn forward, backward에 필요한 작업공간 장치 메모리 포인터
-#endif
+
 
 public:
     bool deconv;
     int deconvExtraCell;
-    void donateParam(ConvLayer<Dtype>* receiver);
+
+public:
+    /****************************************************************************
+     * layer callback functions 
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* LAYER_CONVLAYER_H_ */

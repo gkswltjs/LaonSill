@@ -21,6 +21,7 @@
 // Adapted from the CUDNN classification code
 // sample: https://developer.nvidia.com/cuDNN
 
+#if 0
 #define FatalError(s) do {                                             \
     std::stringstream _where, _message;                                \
     _where << __FILE__ << ':' << __LINE__;                             \
@@ -29,6 +30,16 @@
     cudaDeviceReset();                                                 \
     exit(1);                                                           \
 } while(0)
+#else
+#define FatalError(s) do {                                             \
+    std::stringstream _where, _message;                                \
+    _where << __FILE__ << ':' << __LINE__;                             \
+    _message << std::string(s) + "\n" << __FILE__ << ':' << __LINE__;  \
+    std::cerr << _message.str() << "\nAborting...\n";                  \
+    cudaDeviceReset();                                                 \
+    assert(0);                                                           \
+} while(0)
+#endif
 
 #define checkCUDNN(status) do {                                        \
     std::stringstream _error;                                          \

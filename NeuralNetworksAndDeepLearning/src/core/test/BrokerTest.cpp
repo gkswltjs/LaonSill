@@ -18,7 +18,7 @@ using namespace std;
 
 bool BrokerTest::runSimplePubSubTest() {
     // (1) create job
-    Job *testJob = new Job(Job::TestJob);
+    Job *testJob = new Job(JobType::TestJob);
     int A = 10;
     float B = 3.77;
     float C[100];
@@ -48,7 +48,7 @@ bool BrokerTest::runSimplePubSubTest() {
     }
 
     // (4) check type & value of subscribed job
-    if (subscribedJob->getType() != Job::TestJob) {
+    if (subscribedJob->getType() != JobType::TestJob) {
         STDOUT_LOG("invalid type of subscribed job. job type=%d",
             (int)subscribedJob->getType());
         delete subscribedJob;
@@ -80,7 +80,7 @@ bool BrokerTest::runSimplePubSubTest() {
 }
 
 static void pubLateThread() {
-    Job *testJob = new Job(Job::TestJob);
+    Job *testJob = new Job(JobType::TestJob);
     int A = 10;
     float B = 3.77;
     float C[100];
@@ -124,7 +124,7 @@ bool BrokerTest::runBlockingPubSubTest() {
         return false;
     }
 
-    if (subscribedJob->getType() != Job::TestJob) {
+    if (subscribedJob->getType() != JobType::TestJob) {
         STDOUT_LOG("invalid type of subscribed job. job type=%d",
             (int)subscribedJob->getType());
 

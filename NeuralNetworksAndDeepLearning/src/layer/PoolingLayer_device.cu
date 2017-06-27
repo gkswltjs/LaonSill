@@ -5,10 +5,8 @@
  *      Author: jhkim
  */
 
-
-#ifdef GPU_MODE
-
 #include "PoolingLayer.h"
+#include "PropMgmt.h"
 
 #define POOLINGLAYER_LOG 0
 
@@ -41,20 +39,22 @@ void PoolingLayer<Dtype>::reshape() {
 			&n, &c, &h, &w));
 			*/
 
-	int pooledHeight = static_cast<int>(ceil(static_cast<float>(
-			rows + 2 * this->pool_d.pad - this->pool_d.rows) / this->pool_d.stride)) + 1;
-	int pooledWidth = static_cast<int>(ceil(static_cast<float>(
-			cols + 2 * this->pool_d.pad - this->pool_d.cols) / this->pool_d.stride)) + 1;
+	pool_dim pool_d = SLPROP(Pooling, poolDim);
 
-	if (this->pool_d.pad) {
-		if ((pooledHeight - 1) * this->pool_d.stride >= rows + this->pool_d.pad) {
+	int pooledHeight = static_cast<int>(ceil(static_cast<float>(
+			rows + 2 * pool_d.pad - pool_d.rows) / pool_d.stride)) + 1;
+	int pooledWidth = static_cast<int>(ceil(static_cast<float>(
+			cols + 2 * pool_d.pad - pool_d.cols) / pool_d.stride)) + 1;
+
+	if (pool_d.pad) {
+		if ((pooledHeight - 1) * pool_d.stride >= rows + pool_d.pad) {
 			pooledHeight--;
 		}
-		if ((pooledWidth - 1) * this->pool_d.stride >= cols + this->pool_d.pad) {
+		if ((pooledWidth - 1) * pool_d.stride >= cols + pool_d.pad) {
 			pooledWidth--;
 		}
-		assert((pooledHeight - 1) * this->pool_d.stride < rows + this->pool_d.pad);
-		assert((pooledWidth - 1) * this->pool_d.stride < cols + this->pool_d.pad);
+		assert((pooledHeight - 1) * pool_d.stride < rows + pool_d.pad);
+		assert((pooledWidth - 1) * pool_d.stride < cols + pool_d.pad);
 	}
 
 	checkCUDNN(cudnnSetTensor4dDescriptor(
@@ -118,28 +118,19 @@ void PoolingLayer<Dtype>::feedforward() {
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
 
-	this->_inputData[0]->print_data();
-
 	this->pooling_fn->forward(this->inputTensorDesc, d_inputData,
 			this->outputTensorDesc, d_outputData);
-
-	this->_outputData[0]->print_data();
 }
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::backpropagation() {
-	if (this->_propDown[0]) {
-		this->_outputData[0]->print_data();
-		this->_inputData[0]->print_data();
-
+	if (SLPROP_BASE(propDown)[0]) {
 		const Dtype* d_outputData = this->_outputData[0]->device_data();
 		const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 		const Dtype* d_inputData = this->_inputData[0]->device_data();
 		Dtype* d_inputGrad = this->_inputData[0]->mutable_device_grad();
 		this->pooling_fn->backward(this->outputTensorDesc, d_outputData, d_outputGrad,
 				this->inputTensorDesc, d_inputData, d_inputGrad);
-
-		this->_inputData[0]->print_grad();
 	}
 }
 
@@ -148,4 +139,72 @@ template void PoolingLayer<float>::reshape();
 template void PoolingLayer<float>::feedforward();
 template void PoolingLayer<float>::backpropagation();
 
-#endif
+
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* PoolingLayer<Dtype>::initLayer() {
+    PoolingLayer* layer = new PoolingLayer<Dtype>();
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::destroyLayer(void* instancePtr) {
+    PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
+
+    PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool PoolingLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+	layer->feedforward();
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::backwardTensor(void* instancePtr) {
+	PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
+}
+
+template<typename Dtype>
+void PoolingLayer<Dtype>::learnTensor(void* instancePtr) {
+    SASSERT0(false);
+}
+
+template void* PoolingLayer<float>::initLayer();
+template void PoolingLayer<float>::destroyLayer(void* instancePtr);
+template void PoolingLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool PoolingLayer<float>::allocLayerTensors(void* instancePtr);
+template void PoolingLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void PoolingLayer<float>::backwardTensor(void* instancePtr);
+template void PoolingLayer<float>::learnTensor(void* instancePtr);
+
+

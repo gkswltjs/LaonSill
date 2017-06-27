@@ -1,0 +1,624 @@
+{
+
+"Base" :
+{
+    "DESC" : "base layer",
+    "PARENT" : "",
+    "LEVEL" : 0,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+            ["id", "uint32_t", "0"],
+            ["name", "std::string", "\"\""],
+            ["input", "std::vector<std::string>", ""],
+            ["output", "std::vector<std::string>", ""],
+            ["propDown", "std::vector<bool>", ""],
+            ["donate", "bool", "false"],
+            ["receive", "bool", "false"],
+            ["donatorID", "int", "-1"],
+            ["learnable", "bool", "false"],
+            ["innerLayerIDs", "std::vector<int>", ""],
+            ["defaultPropDown", "std::vector<bool>", ""],
+            ["updateGrad", "bool", "true"]
+        ]
+},
+
+"Input":
+{
+    "DESC" : "input layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+            ["mean", "std::vector<float>", ""],
+            ["scale", "float", "1.0"],
+            ["source", "std::string", "\"\""],
+            ["sourceType", "std::string", "\"\""],
+            ["numTrainPack", "uint32_t", "1"],
+            ["numTestPack", "uint32_t", "1"]
+        ]
+},
+
+"Loss":
+{
+    "DESC" : "loss layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+            ["lossWeight", "float", "1.0"],
+            ["hasIgnoreLabel", "bool", "false"],
+            ["ignoreLabel", "int", "-1"],
+            ["hasNormalize", "bool", "false"],
+            ["normalize", "bool", "false"],
+            ["hasNormalization", "bool", "false"],
+            ["normalization", "NormalizationMode", "NormalizationMode::Valid"]
+        ]
+},
+
+"Learnable":
+{
+    "DESC" : "learnable layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [
+            ["decayedBeta1", "float", "1.0"], 
+            ["decayedBeta2", "float", "1.0"]
+        ]
+},
+
+"Conv" : 
+{
+    "DESC" : "convolution layer",
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
+    "LEARN" : 2,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [   
+            ["deconv", "bool", "false"],
+            ["deconvExtraCell", "int", "0"],
+            ["filterDim", "filter_dim", "{1, 1, 1, 1, 0, 1}",
+                [
+                    ["rows", "uint32_t"], 
+                    ["cols", "uint32_t"],
+                    ["channels", "uint32_t"],
+                    ["filters", "uint32_t"],
+                    ["pad", "uint32_t"],
+                    ["stride", "uint32_t"]
+                ]
+            ],
+            ["weightUpdateParam", "update_param", "{1.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["biasUpdateParam", "update_param", "{1.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ],
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ]
+        ]
+},
+
+"FullyConnected" :
+{
+    "DESC" : "fully connected layer",
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
+    "LEARN" : 2,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [   
+            ["nOut", "int", "0"],
+            ["pDropOut", "double", "0.0"],
+            ["weightUpdateParam", "update_param", "{1.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["biasUpdateParam", "update_param", "{1.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ],
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ],
+            ["axis", "int", "1"]
+        ]
+},
+
+"ILSVRCInput" :
+{
+    "DESC" : "ILSVRC input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [   
+            ["imageDir", "std::string", "\"\""],
+            ["resizeImage", "bool", "false"],
+            ["resizedImageRow", "int", "0"],
+            ["resizedImageCol", "int", "0"]
+        ]
+
+},
+
+"CelebAInput" :
+{
+    "DESC" : "CelebA input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [
+            ["imageDir", "std::string", "\"\""],
+            ["cropImage", "bool", "false"],
+            ["cropLen", "int", "0"],
+            ["resizeImage", "bool", "false"],
+            ["resizedImageRow", "int", "0"],
+            ["resizedImageCol", "int", "0"]
+        ]
+},
+
+"KistiInput" :
+{
+    "DESC" : "KISTI project input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [
+            ["imageDir", "std::string", "\"\""],
+            ["resizedImageRow", "int", "KISTIDATA_DEFAULT_RESIZED_ROW_SIZE"],
+            ["resizedImageCol", "int", "KISTIDATA_DEFAULT_RESIZED_COL_SIZE"],
+            ["train", "bool", "true"]
+        ]
+},
+
+"NoiseInput" :
+{
+    "DESC" : "Noise input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [
+            ["noiseDepth", "int", "100"],
+            ["noiseRangeLow", "double", "-1.0"],
+            ["noiseRangeHigh", "double", "1.0"],
+            ["useLinearTrans", "bool", "false"],
+            ["tranChannels", "int", "1"],
+            ["tranRows", "int", "1"],
+            ["tranCols", "int", "1"],
+            ["tranMean", "double", "0.0"],
+            ["tranVariance", "double", "1.0"],
+            ["regenerateNoise", "bool", "true"]
+        ]
+},
+
+"VOCPascalInput" :
+{
+    "DESC" : "VOC PASCAL input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [
+            ["imageDir", "std::string", "\"\""],
+            ["resizedImageRow", "int", "0"],
+            ["resizedImageCol", "int", "0"],
+            ["resizeImage", "bool", "false"]
+        ]
+},
+
+"BatchNorm" :
+{
+    "DESC" : "batch normalization layer",
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
+    "LEARN" : 2,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [   
+            ["epsilon", "double", "0.0000001"],
+            ["train", "bool", "true"]
+        ]
+
+},
+
+"SoftmaxWithLoss" :
+{
+    "DESC" : "softmax with loss layer",
+    "PARENT" : "Loss",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [true, false],
+    "VARS" :
+        [
+            ["softmaxAxis", "uint32_t", "2"]
+        ]
+},
+
+"CrossEntropyWithLoss" :
+{
+    "DESC" : "crosss entropy with loss layer",
+    "PARENT" : "Loss",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+            ["targetValue", "float", "0.0"],
+            ["withSigmoid", "bool", "false"]
+        ]
+},
+
+"YOLOLoss" :
+{
+    "DESC" : "YOLO loss layer",
+    "PARENT" : "Loss",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+            ["noobj", "float", "0.5"],
+            ["coord", "float", "5.0"]
+        ]
+},
+
+"Split" :
+{
+    "DESC" : "split layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+        ]
+},
+
+"Relu" :
+{
+    "DESC" : "relu layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+            ["useLeaky", "bool", "false"],
+            ["leaky", "double", "0.0"]
+        ]
+},
+
+"Sigmoid2" :
+{
+    "DESC" : "sigmoid 2 layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : []
+},
+
+"DropOut" : 
+{
+    "DESC" : "dropout layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+            ["probability", "double", "0.5"],
+            ["scale", "double", "0.0"]
+        ]
+
+},
+
+"HyperTangent" : 
+{
+    "DESC" : "hyper tangent layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : []
+},
+
+"DepthConcat" : 
+{
+    "DESC" : "depth concat layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : []
+},
+
+"DummyInput" : 
+{
+    "DESC" : "dummy input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["shapes", "std::vector<uint32_t>", ""],
+		["numClasses", "uint32_t", "1"],
+		["numTrainData", "uint32_t", "1"],
+		["numTestData", "uint32_t", "1"]
+	]
+},
+
+"LRN" : 
+{
+    "DESC" : "lrn layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["lrnDim", "lrn_dim", "{5, 0.0001, 0.75, 2.0}",
+	    	[
+	    		["local_size", "uint32_t"],
+	    		["alpha", "double"],
+	    		["beta", "double"],
+	    		["k", "double"]
+	    	]
+	    ]
+	]
+},
+
+"Pooling" : 
+{
+    "DESC" : "pooling layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["poolDim", "pool_dim", "{1, 1, 0, 1}",
+	    	[
+	    			["rows", "uint32_t"],
+	    			["cols", "uint32_t"],
+	    			["pad", "uint32_t"],
+	    			["stride", "uint32_t"]
+	    	]
+	    ],
+	    ["poolingType", "PoolingType", "PoolingType::Max"]
+	]
+},
+
+"Reshape" : 
+{
+    "DESC" : "reshape layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["shape", "std::vector<int>", ""],
+	    ["axis", "int", "0"],
+	    ["numAxis", "int", "-1"]
+	]
+},
+
+"SmoothL1Loss" : 
+{
+    "DESC" : "smooth l1 loss layer",
+    "PARENT" : "Loss",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["sigma", "float", "1.0"],
+	    ["firstAxis", "uint32_t", "0"]
+	]
+},
+
+"Softmax" : 
+{
+    "DESC" : "softmax layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["softmaxAxis", "uint32_t", "2"]
+	]
+},
+
+"AnchorTarget" : 
+{
+    "DESC" : "anchor target layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["featStride", "uint32_t", "16"],
+	    ["allowedBorder", "uint32_t", "0"],
+	    ["scales", "std::vector<uint32_t>", "{8, 16, 32}"]
+	]
+},
+
+"FrcnnTestOutput" : 
+{
+    "DESC" : "frcnn test output layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["maxPerImage", "uint32_t", "100"],
+	    ["thresh", "float", "0.05"],
+	    ["vis", "bool", "false"],
+	    ["savePath", "std::string", "\"\""],
+	    ["labelMapPath", "std::string", "\"\""]
+	]
+},
+
+"FrcnnTestVideoOutput" : 
+{
+    "DESC" : "frcnn test video output layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["maxPerImage", "uint32_t", "100"],
+	    ["thresh", "float", "0.05"],
+	    ["vis", "bool", "false"],
+	    ["savePath", "std::string", "\"\""],
+	    ["labelMapPath", "std::string", "\"\""]
+	]
+},
+
+"Proposal" : 
+{
+    "DESC" : "proposal layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["featStride", "uint32_t", "16"],
+	    ["scales", "std::vector<uint32_t>", "{8, 16, 32}"]
+	]
+},
+
+"ProposalTarget" : 
+{
+    "DESC" : "proposal target layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["numClasses", "uint32_t", "0"]
+	]
+},
+
+"RoIInput" : 
+{
+    "DESC" : "roi input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["numClasses", "uint32_t", "0"],
+		["imageSet", "std::string", "\"\""],
+		["dataName", "std::string", "\"\""],
+		["dataPath", "std::string", "\"\""],
+		["labelMapPath", "std::string", "\"\""],
+	    ["pixelMeans", "std::vector<float>", ""]
+	]
+},
+
+"RoIPooling" : 
+{
+    "DESC" : "roi pooling layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["pooledW", "uint32_t", "6"],
+	    ["pooledH", "uint32_t", "6"],
+	    ["spatialScale", "float", "0.0625"]
+	]
+},
+
+"RoITestInput" : 
+{
+    "DESC" : "roi test input",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["numClasses", "uint32_t", "0"],
+		["imageSet", "std::string", "\"\""],
+		["dataName", "std::string", "\"\""],
+		["dataPath", "std::string", "\"\""],
+		["labelMapPath", "std::string", "\"\""],
+
+	    ["pixelMeans", "std::vector<float>", ""]
+	]
+},
+
+"RoITestVideoInput" : 
+{
+    "DESC" : "roi test video input",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["numClasses", "uint32_t", "0"],
+		["videoPath", "std::string", "\"\""],
+		["fps", "int", "10"],
+	    ["pixelMeans", "std::vector<float>", ""]
+	]
+}
+
+}

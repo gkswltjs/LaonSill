@@ -12,6 +12,7 @@
 #include <atomic>
 #include <map>
 #include <mutex>
+#include <vector>
 
 /*
  * Job Description
@@ -22,111 +23,157 @@
  * +--------------------+
  */
 
+typedef enum JobType_e {
+    HaltMachine,
+    /*
+     *  [Job Elem Schema for HaltMachine]
+     * +------+
+     * | None |
+     * +------+
+     */
+
+
+    TestJob,
+    /*
+     *  [Job Elem Schema for TestJob]
+     * +------------------------------------------------------+
+     * | A (int) | B (float) | C (float array, 100) | D (int) |
+     * +------------------------------------------------------+
+     */
+
+    CreateNetworkFromFile,
+    /*
+     *  [Job Elem Schema for CreateNetworkFromFile]
+     * +----------------------+
+     * | JSONFilePath(string) |
+     * +----------------------+
+     */
+
+    CreateNetwork,
+    /*
+     *  [Job Elem Schema for CreateNetwork]
+     * +---------------------------+
+     * | NetworkDefinition(string) |
+     * +---------------------------+
+     */
+
+    CreateNetworkReply,
+    /*
+     *  [Job Elem Schema for CreateNetworkReply]
+     * +----------------+
+     * | NetworkID(int) |
+     * +----------------+
+     */
+
+    DestroyNetwork,
+    /*
+     *  [Job Elem Schema for DestroyNetwork]
+     * +-----------------+
+     * | NetworkID (int) |
+     * +-----------------+
+     */
+
+    RunNetwork,
+    /*
+     *  [Job Elem Schema for RunNetwork]
+     * +-----------------------------------+
+     * | NetworkID (int) | inference (int) |
+     * +-----------------+-----------------+
+     */
+
+    RunNetworkMiniBatch,
+    /*
+     *  [Job Elem Schema for RunNetworkMiniBatch]
+     * +-----------------------------------+--------------------+
+     * | NetworkID (int) | inference (int) | miniBatchIdx (int) |
+     * +-----------------+-----------------+--------------------+
+     */
+
+    RunNetworkReply,
+    /*
+     *  [Job Elem Schema for RunNetworkReply]
+     * +------+
+     * | None |
+     * +------+
+     */
+
+    BuildNetwork,
+    /*
+     *  [Job Elem Schema for BuildNetwork]
+     * +--------------------------------+
+     * | NetworkID (int) | epochs (int) |
+     * +-----------------+--------------+
+     */
+
+    BuildNetworkReply,
+    /*
+     *  [Job Elem Schema for BuildNetworkReply]
+     * +------+
+     * | None |
+     * +------+
+     */
+
+    ResetNetwork,
+    /*
+     *  [Job Elem Schema for ResetNetwork]
+     * +-----------------+
+     * | NetworkID (int) |
+     * +-----------------+
+     */
+
+    ResetNetworkReply,
+    /*
+     *  [Job Elem Schema for ResetNetworkReply]
+     * +------+
+     * | None |
+     * +------+
+     */
+
+
+    SaveNetwork,
+    /*
+     *  [Job Elem Schema for SaveNetwork]
+     * +------------------------------------+
+     * | NetworkID (int) | filePath(string) |
+     * +-----------------+------------------+
+     */
+
+    SaveNetworkReply,
+    /*
+     *  [Job Elem Schema for SaveNetworkReply]
+     * +------+
+     * | None |
+     * +------+
+     */
+    
+    LoadNetwork,
+    /*
+     *  [Job Elem Schema for LoadNetwork]
+     * +------------------------------------+
+     * | NetworkID (int) | filePath(string) |
+     * +-----------------+------------------+
+     */
+
+    LoadNetworkReply,
+    /*
+     *  [Job Elem Schema for LoadNetworkReply]
+     * +------+
+     * | None |
+     * +------+
+     */
+    
+    JobTypeMax
+
+} JobType;
+
 class Job {
 public:
     enum JobElemType : int {
         IntType = 0,                // int
         FloatType,              // float
         FloatArrayType,         // length(int) + (float * length)
+        StringType,             // length(int) + (char * length)
         ElemTypeMax
-    };
-
-    enum JobType : int {
-        // belows will be deprecated
-        BuildNetwork = 0,
-        /*
-         *  [Job Elem Schema for BuildNetwork]
-         * +------------------+
-         * | network Id (int) |
-         * +------------------+
-         */
-        TrainNetwork,
-        /*
-         *  [Job Elem Schema for TrainNetwork]
-         * +------------------+-------------------+
-         * | network Id (int) | batch count (int) |
-         * +------------------+-------------------+
-         */
-        CleanupNetwork,
-        /*
-         *  [Job Elem Schema for CleanupNetwork]
-         * +------------------+
-         * | network Id (int) |
-         * +------------------+
-         */
-
-        CreateDQNImageLearner,
-        /*
-         *  [Job Elem Schema for CreateDQNImageLearner]
-         * +-----------------+--------------------+---------------------+
-         * | row count (int) | column count (int) | channel count (int) |
-         * +-----------------+--------------------+---------------------+
-         * | avilable action count (int) | 
-         * +-----------------------------+
-         */
-
-        CleanupDQNImageLearner,
-        /*
-         *  [Job Elem Schema for CleanupDQNImageLearner]
-         * +----------------------------+
-         * | DQN Image learner ID (int) |
-         * +----------------------------+
-         */
-
-        CreateDQNImageLearnerResult,
-        /*
-         *  [Job Elem Schema for CreateDQNImageResult]
-         * +----------------------------+--------------------+-------------------------+
-         * | DQN Image learner ID (int) | network Q ID (int) | network Q head ID (int) |
-         * +----------------------------+--------------------+-------------------------+
-         */
-
-        // DQN related jobs
-        BuildDQNNetworks,
-        /*
-         *  [Job Elem Schema for BuildDQNNetwork]
-         * +----------------------------+--------------------+-------------------------+
-         * | DQN Image learner ID (int) | network Q ID (int) | network Q head ID (int) |
-         * +----------------------------+--------------------+-------------------------+
-         */
-
-        StepDQNImageLearner,
-        /*
-         *  [Job Elem Schema for StepDQNImageLearner]
-         * +----------------------------+--------------------+-------------------------+
-         * | DQN Image learner ID (int) | network Q ID (int) | network Q head ID (int) |
-         * +---------------------------------------------------------------------------+
-         * | reward t-1 (float) | action t-1 (int) | term t-1 (int) |
-         * +--------------------------------------------------------+
-         * | state t (float array, 4 * 84 * 84) |
-         * +------------------------------------+
-         */
-
-        StepDQNImageLearnerResult,
-        /*
-         *  [Job Elem Schema for StepDQNImageLearnerResult]
-         * +--------------+
-         * | action (int) |
-         * +--------------+
-         */
-
-        HaltMachine,
-        /*
-         *  [Job Elem Schema for HaltMachine]
-         * +------+
-         * | None |
-         * +------+
-         */
-
-
-        TestJob,
-        /*
-         *  [Job Elem Schema for TestJob]
-         * +------------------------------------------------------+
-         * | A (int) | B (float) | C (float array, 100) | D (int) |
-         * +------------------------------------------------------+
-         */
-        JobTypeMax
     };
 
     typedef struct JobElemDef_s {
@@ -151,6 +198,7 @@ public:
     float               getFloatValue(int elemIdx);
     float              *getFloatArray(int elemIdx);
     float               getFloatArrayValue(int elemIdx, int arrayIdx);
+    std::string         getStringValue(int elemIdx);
     JobElemDef          getJobElemDef(int elemIdx);
 
     int                 getJobSize();
@@ -179,13 +227,15 @@ private:
     bool                isVaildElemIdx(int elemIdx);
     bool                isValidElemValue(JobElemType elemType, int elemIdx);
     bool                isValidElemArrayValue(JobElemType elemType, int elemIdx,
-                            int arrayIdx);
+                                              int arrayIdx);
 
 
     static std::atomic<int>         jobIDGen;
     std::atomic<int>                taskIDGen;
 
     int                             jobID;
+
+    static std::vector<JobType>     pubJobTypeMap;
 };
 
 #endif /* JOB_H */

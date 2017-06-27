@@ -25,31 +25,20 @@ public:
 	PoolingFactory() {}
 	virtual ~PoolingFactory() {}
 
-#ifndef GPU_MODE
-	static Pooling *create(Pooling<Dtype>::Type poolingType) {
-		switch(poolingType) {
-		case Pooling<Dtype>::Max: return new MaxPooling<Dtype>();
-		case Pooling<Dtype>::Avg: return new AvgPooling<Dtype>();
-		case Pooling<Dtype>::None:
-		default: return 0;
-		}
-	}
-#else
 	/**
 	 * @details 주어진 풀링 타입에 따라 풀링 객체를 생성하여 반환.
 	 * @param poolingType 생성하고자 하는 풀링 객체의 타입.
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 * @return 생성한 풀링 객체.
 	 */
-	static Pooling<Dtype>* create(typename Pooling<Dtype>::Type poolingType,
-        pool_dim pool_d) {
+	static Pooling<Dtype>* create(PoolingType poolingType, pool_dim pool_d) {
 		switch(poolingType) {
-		case Pooling<Dtype>::Max: return new MaxPooling<Dtype>(pool_d);
-		case Pooling<Dtype>::Avg: return new AvgPooling<Dtype>(pool_d);
+		case PoolingType::Max: return new MaxPooling<Dtype>(pool_d);
+		case PoolingType::Avg: return new AvgPooling<Dtype>(pool_d);
 		default: return NULL;
 		}
 	}
-#endif
+
 	/**
 	 * @details PoolingFactory에서 생성한 풀링 객체를 소멸.
 	 * @param pooling_fn 풀링 객체에 대한 포인터 참조자.
@@ -60,6 +49,7 @@ public:
 			pooling_fn = NULL;
 		}
 	}
+    
 };
 
 template class PoolingFactory<float>;

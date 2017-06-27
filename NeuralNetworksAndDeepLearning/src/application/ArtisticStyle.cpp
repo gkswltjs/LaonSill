@@ -4,6 +4,8 @@
  *  Created on: Mar 17, 2017
  *      Author: jkim
  */
+#include <stdint.h>
+#include <vector>
 
 #include "ArtisticStyle.h"
 
@@ -76,17 +78,8 @@ ArtisticStyle<Dtype>::ArtisticStyle() {
 	rescale_net({1, 3, 224, 224});
 	//rescale_net({1, 3, (uint32_t)this->cv_img_style.rows, (uint32_t)this->cv_img_style.cols});
 
-	map<string, Dtype> content_weight;
-	map<string, Dtype> style_weight;
-	content_weight["conv4_2"]	= Dtype(1.0);
-	style_weight["conv1_1"]		= Dtype(0.2);
-	style_weight["conv2_1"]		= Dtype(0.2);
-	style_weight["conv3_1"]		= Dtype(0.2);
-	style_weight["conv4_1"]		= Dtype(0.2);
-	style_weight["conv5_1"]		= Dtype(0.2);
-	this->weights["content"]	= content_weight;
-	this->weights["style"]		= style_weight;
 
+#if 0
 	for (int i = 0; i < this->_layers.size(); i++) {
 		const string& layerName = this->_layers[i]->name;
 		if (this->weights["style"].find(layerName) != this->weights["style"].end() ||
@@ -882,28 +875,4 @@ Data<Dtype>* ArtisticStyle<Dtype>::_generateInitialInput() {
 
 template class ArtisticStyle<float>;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif

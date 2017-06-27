@@ -20,107 +20,92 @@
 
 #include "common.h"
 #include "Job.h"
-#include "Network.h"
-#include "DQNImageLearner.h"
+#include "Update.h"
+#include "Task.h"
 
-template <typename Dtype> class Network;
+typedef struct TaskQueue_s {
+    std::mutex                  mutex;
+    std::list<TaskBase*>        tasks;
+} TaskQueue;
 
-class ConsumerStatus {
-public:
-    enum Type {
-        Waiting = 0,
-        Running,
-    };
-
-    ConsumerStatus () {};
-    virtual ~ConsumerStatus() {};
-};
-
-
-/**
- * @brief 각종 유틸리티 함수들을 정적으로 포함하는 클래스
- * @details
- */
-template <typename Dtype>
 class Worker {
 public:
-	Worker() {
-        Worker<Dtype>::readyCount = 0;
-        Worker<Dtype>::consumerCount = 0;
-    }
-	virtual ~Worker() {}
+	                           Worker() {}
+	virtual                   ~Worker() {}
 
-    /**
-     * consumer에 대한 정보를 담고 있는 변수들
-     */
-	static int                                  consumerCount;
-	static thread_local int                     consumerIdx;
+	static void                launchThreads(int taskConsumerCount, 
+                                             int jobConsumerCount);
+    static void                joinThreads();
+    static int                 pushJob(Job* job);
+                               /* called by Sess Thread, Receiver Thread */
+	static thread_local int    gpuIdx;
 
-    static bool                                 isSingle() { return (consumerCount == 1); }
+    static int                 getConsumerIdx(int devIdx);
 
-    /**
-     * @return      마지막으로 깨어난 consumer는 true, 그 외에는 false를 반환
-     */
-    static bool                                 waitPeer();
-    static void                                 wakeupPeer();
-
-	/**
-	 * @brief producer, consumer 쓰레드를 실행한다.
-	 * @param network producer 쓰레드가 담당할 network
-	 */
-	static void                                 launchThreads(int consumerCount);
-    static void                                 joinThreads();
-    static int                                  pushJob(Job* job);
-    static bool                                 isReady();
-
-    static bool                                 useWorker;
+    
+    static TaskAllocTensor*    addAllocTensorTask(int consumerIdx, int nodeID, 
+                                                  int devID,
+                                                  int requestThreadID,
+                                                  std::string tensorName);
+    static void                 addRunPlanTask(int consumerIdx, int networkID, int dopID,
+                                              bool inference, int requestThreadID);
+    static void                 addUpdateTensorTask(int consumerIdx, int networkID,
+                                                   int dopID, int layerID, int planID,
+                                                   std::vector<UpdateParam> updateParams);
+    static void                 addAllocLayerTask(int consumerIdx, int networkID, int dopID,
+                                                  int layerID, int nodeID, int devID,
+                                                  int requestThreadID, int layerType,
+                                                  void* instancePtr);
 
 private:
     /**
-     * Consumer간의 동기화를 지원하기 위한 변수들
-     *
-     *  작업 A,B가 있다. 각각의 작업은 A = {A1, A2, A3, ... An}, B = {B1, B2, ... Bn}로 나눠 
-     * 작업이 수행이 될 수 있다. n개의 consumer들은 A1, A2에 대한 작업을 수행한다. B라는
-     * 작업은 모든 A라는 작업이 종료가 되고 수행이 되어야 한다. 이 때 n개의 consumer가 A라는
-     * 작업을 끝내고, B라는 작업을 수행하기 위한 동기화가 필요하다. 
-     */
-    static std::atomic<int>                     runningPeerCount;
-	static std::mutex                           peerMutex;
-	static std::condition_variable              peerCondVar;
-	static thread_local std::atomic<long>       peerStep;
-    static std::atomic<long>                    peerDoneStep;
-
-    /**
-     * consumer에 대한 job control을 위한 변수들
-     */
-	static std::mutex                           consumerMutex;
-	static std::condition_variable              consumerCondVar;
-    static std::vector<ConsumerStatus::Type>    consumerStatuses;
-    static thread_local long                    consumerJobStep;
-    static long                                 consumerCurJobStep;
-    static std::atomic<int>                     wakeupConsumerJobCount;
-    static volatile void*                       consumerJob;
-
-    /**
      * producer에 대한 job control을 위한 변수들
      */
-	static std::mutex                           producerMutex;
-	static std::condition_variable              producerCondVar;
+    static std::list<Job*>              jobQueue;
+    static std::mutex                   jobQueueMutex;
+    static Job*                         popJob();
+    static int                          getJobCount();
+	static void                         producerThread();
 
-    static std::list<Job*>                      jobQueue;
-    static std::mutex                           jobQueueMutex;
+    /**
+     * variables and functions for job consumer
+     */
+	static void                         jobConsumerThread(int consumerIdx);
+    static std::list<int>               jcReadyQueue;   /* job consumer ready queue */
+    static std::mutex                   jcReadyMutex;
+    static void                         insertJCReadyQueue(int consumerIdx);
+    static std::vector<int>             getReadyJCs(int count);
+    static Job*                         getPubJob(Job* job);
 
-    static std::atomic<int>                     readyCount;
+    static bool                         handleJob(Job* job);
+    static void                         handleCreateNetworkFromFileJob(Job* job);
+    static void                         handleCreateNetwork(Job* job);
+    static void                         handleDestroyNetwork(Job* job);
+    static void                         handleBuildNetwork(Job* job);
+    static void                         handleResetNetwork(Job* job);
+    static void                         handleRunNetwork(Job*job);
+    static void                         handleRunNetworkMiniBatch(Job* job);
+    static void                         handleSaveNetwork(Job* job);
+    static void                         handleLoadNetwork(Job* job);
 
-	static thread_local int                     gpuIdx;
 
-    static Job*                                 popJob();
+    /**
+     * variables and functions for task consumer
+     */
+	static void                         taskConsumerThread(int consumerIdx,
+                                                           int gpuIdx);
+    static std::vector<TaskQueue*>      taskQueues;
 
-	static void                                 producerThread();
-	static void                                 consumerThread(int consumerIdx, int gpuIdx);
+    static bool                         handleAllocTensorTask(TaskAllocTensor *task);
+    static bool                         handleUpdateTensorTask(TaskUpdateTensor* task);
+    static bool                         handleRunPlanTask(TaskRunPlan* task);
+    static bool                         handleAllocLayerTask(TaskAllocLayer* task);
 
-	static std::thread*                         producer;
-	static std::vector<std::thread>             consumers;
+    /*
+     * variables for joining thread
+     */
+	static std::thread*                 producer;
+	static std::vector<std::thread>     consumers;  // for join threads
 };
 
 #endif /* WORKER_H_ */

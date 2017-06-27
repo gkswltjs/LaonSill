@@ -10,6 +10,8 @@
 #define POOLING_POOLING_H_
 
 #include "common.h"
+#include "EnumDef.h"
+
 
 /**
  * @brief Pooling 구현 클래스의 베이스 추상 클래스.
@@ -27,30 +29,13 @@ public:
 	 */
 	virtual ~Pooling() {}
 
-	/**
-	 * @brief 풀링 타입 열거형
-	 * @details	지원하는 풀링 타입 열거,
-	 *          현재 Max, Average 풀링을 지원.
-	 */
-	enum Type {
-		NoPooling=0,	// 풀링을 적용하지 않는다.
-		Max=1,			// 최대 풀링을 적용한다.
-		Avg=2			// 평균 풀링을 적용한다.
-	};
 
 
 	/**
 	 * @details 풀링 타입을 조회한다.
 	 * @return 풀링 타입
 	 */
-	Type getType() const { return this->type; }
-
-#ifndef GPU_MODE
-	virtual void forward(const pool_dim &pool_d, const rcube &input, ucube &pool_map,
-        rcube &output)=0;
-	virtual void backward(const pool_dim &pool_d, const rcube &input, ucube &pool_map,
-        rcube &output)=0;
-#else
+	PoolingType getType() const { return this->type; }
 	cudnnPoolingDescriptor_t getPoolDesc() const { return poolDesc; }
 
 	/**
@@ -74,10 +59,9 @@ public:
 	virtual void backward(const cudnnTensorDescriptor_t yDesc, const Dtype* y, 
         const Dtype* dy, const cudnnTensorDescriptor_t xDesc, const Dtype* x, Dtype* dx)=0;
 
-#endif
 
 protected:
-	Type type;									///< 풀링 타입
+	PoolingType type;									///< 풀링 타입
 	cudnnPoolingDescriptor_t poolDesc;			///< cudnn 풀링 연산 정보 구조체
 
 };

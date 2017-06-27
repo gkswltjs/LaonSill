@@ -9,24 +9,26 @@
 
 #include "SmoothL1LossLayer.h"
 #include "MathFunctions.h"
+#include "PropMgmt.h"
+#include "SysLog.h"
 
 #define SMOOTHL1LOSSLAYER_LOG 0
 
 using namespace std;
 
+
 template <typename Dtype>
-SmoothL1LossLayer<Dtype>::SmoothL1LossLayer(Builder* builder)
-	: LossLayer<Dtype>(builder) {
-	this->sigma2 = builder->_sigma * builder->_sigma;
-	this->firstAxis = builder->_firstAxis;
-	initialize();
+SmoothL1LossLayer<Dtype>::SmoothL1LossLayer()
+: LossLayer<Dtype>(),
+  diff("diff"),
+  errors("errors"),
+  ones("ones") {
+	this->type = Layer<Dtype>::SmoothL1Loss;
 }
+
 
 template <typename Dtype>
 SmoothL1LossLayer<Dtype>::~SmoothL1LossLayer() {
-	delete diff;
-	delete errors;
-	delete ones;
 }
 
 template <typename Dtype>
@@ -34,16 +36,14 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 	bool adjusted = Layer<Dtype>::_adjustInputShape();
 	if (adjusted) {
 		this->hasWeights = (this->_inputData.size() >= 3);
-		if (this->hasWeights && this->_inputData.size() != 4) {
-			cout << "If weights are used, must specify both inside and outside weights" << 
-                endl;
-			exit(-1);
-		}
+		SASSERT(this->hasWeights && this->_inputData.size() == 4,
+				"If weights are used, must specify both inside and outside weights");
 
 		this->_outputData[0]->reshape({1, 1, 1, 1});
+		this->_outputData[0]->mutable_host_grad()[0] = SLPROP(Loss, lossWeight);
 #if SMOOTHL1LOSSLAYER_LOG
 		printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-				this->name.c_str(), 1, 1, 1, 1);
+				SLPROP_BASE(name).c_str(), 1, 1, 1, 1);
 #endif
 	}
 
@@ -52,43 +52,57 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 		if (!Layer<Dtype>::_isInputShapeChanged(i))
 			continue;
 
-		//Data<Dtype>::printConfig = true;
-		//this->_inputData[i]->print();
-		//Data<Dtype>::printConfig = false;
-
-
 		const vector<uint32_t>& inputDataShape = this->_inputData[i]->getShape();
 		this->_inputShape[i] = inputDataShape;
 
 		// rpn_bbox_pred
 		if (i == 0) {
-			this->diff->reshape(inputDataShape);
-			this->errors->reshape(inputDataShape);
+			this->diff.reshape(inputDataShape);
+			this->errors.reshape(inputDataShape);
 			// vector of ones used to sum
-			this->ones->reshape(inputDataShape);
-			this->ones->reset_host_data(false, 1.0f);
+			this->ones.reshape(inputDataShape);
+			this->ones.reset_host_data(false, 1.0f);
 
 		}
 		// rpn_bbox_targets
 		else if (i == 1) {
-			assert(this->_inputData[0]->channels() == this->_inputData[1]->channels());
-			assert(this->_inputData[0]->height() == this->_inputData[1]->height());
-			assert(this->_inputData[0]->width() == this->_inputData[1]->width());
+			// XXX: FullyConnectedLayer의 output이 (batches, 1, rows, 1)의 현 구조를 반영,
+			// 강제로 bbox_targets의 shape를 조정
+			if (this->_inputData[0]->getShape() != this->_inputData[1]->getShape()) {
+				this->_inputData[1]->reshape({this->_inputData[1]->getShape(2), 1,
+					this->_inputData[1]->getShape(3), 1});
+				assert(this->_inputData[0]->getShape() == this->_inputData[1]->getShape());
+			}
+			//assert(this->_inputData[0]->channels() == this->_inputData[1]->channels());
+			//assert(this->_inputData[0]->height() == this->_inputData[1]->height());
+			//assert(this->_inputData[0]->width() == this->_inputData[1]->width());
 		}
 		// rpn_bbox_inside_weights
 		else if (i == 2) {
 			if (this->hasWeights) {
-				assert(this->_inputData[0]->channels() == this->_inputData[2]->channels());
-				assert(this->_inputData[0]->height() == this->_inputData[2]->height());
-				assert(this->_inputData[0]->width() == this->_inputData[2]->width());
+				if (this->_inputData[0]->getShape() != this->_inputData[2]->getShape()) {
+					this->_inputData[2]->reshape({this->_inputData[2]->getShape(2), 1,
+						this->_inputData[2]->getShape(3), 1});
+					assert(this->_inputData[0]->getShape() ==
+							this->_inputData[2]->getShape());
+				}
+				//assert(this->_inputData[0]->channels() == this->_inputData[2]->channels());
+				//assert(this->_inputData[0]->height() == this->_inputData[2]->height());
+				//assert(this->_inputData[0]->width() == this->_inputData[2]->width());
 			}
 		}
 		// rpn_bbox_outside_weights
 		else if (i == 3) {
 			if (this->hasWeights) {
-				assert(this->_inputData[0]->channels() == this->_inputData[3]->channels());
-				assert(this->_inputData[0]->height() == this->_inputData[3]->height());
-				assert(this->_inputData[0]->width() == this->_inputData[3]->width());
+				if (this->_inputData[0]->getShape() != this->_inputData[3]->getShape()) {
+					this->_inputData[3]->reshape({this->_inputData[3]->getShape(2), 1,
+						this->_inputData[3]->getShape(3), 1});
+					assert(this->_inputData[0]->getShape() ==
+							this->_inputData[3]->getShape());
+				}
+				//assert(this->_inputData[0]->channels() == this->_inputData[3]->channels());
+				//assert(this->_inputData[0]->height() == this->_inputData[3]->height());
+				//assert(this->_inputData[0]->width() == this->_inputData[3]->width());
 			}
 		}
 	}
@@ -115,32 +129,14 @@ template <typename Dtype>
 void SmoothL1LossLayer<Dtype>::feedforward() {
 	reshape();
 
-	/*
-	if (this->name == "rpn_loss_bbox") {
-		Data<Dtype>::printConfig = true;
-		this->_inputData[0]->print_data({}, false);
-		this->_inputData[1]->print_data({}, false);
-		this->_inputData[2]->print_data({}, false);
-		this->_inputData[3]->print_data({}, false);
-		Data<Dtype>::printConfig = false;
-	}
-	*/
-
 	const uint32_t count = this->_inputData[0]->getCount();
 	// prediction (inputData[0]) - target (inputData[1]) => diff
 	soooa_gpu_sub(
 			count,
 			this->_inputData[0]->device_data(),
 			this->_inputData[1]->device_data(),
-			diff->mutable_device_data());		// d := b0 - b1
+			this->diff.mutable_device_data());		// d := b0 - b1
 
-	/*
-	Data<Dtype>::printConfig = true;
-	this->_inputData[0]->print_data({}, false);
-	this->_inputData[1]->print_data({}, false);
-	diff->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-	*/
 
 #if SMOOTHL1LOSSLAYER_LOG
 	Data<Dtype>::printConfig = true;
@@ -151,51 +147,52 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 	Data<Dtype>::printConfig = true;
 	this->_inputData[0]->print_data();
 	this->_inputData[1]->print_data();
-	this->diff->print_data();
+	this->diff.print_data();
 	Data<Dtype>::printConfig = false;
 #endif
 
-	if (hasWeights) {
+	if (this->hasWeights) {
 
 #if SMOOTHL1LOSSLAYER_LOG
 	Data<Dtype>::printConfig = true;
 	this->_inputData[2]->print_data();
-	this->diff->print_data();
+	this->diff.print_data();
 	Data<Dtype>::printConfig = false;
 #endif
 		// apply "inside" weights
 		soooa_gpu_mul(
 				count,
 				this->_inputData[2]->device_data(),
-				diff->device_data(),
-				diff->mutable_device_data());	// d := w_in * (b0 - b1)
+				this->diff.device_data(),
+				this->diff.mutable_device_data());	// d := w_in * (b0 - b1)
 
 #if SMOOTHL1LOSSLAYER_LOG
 	Data<Dtype>::printConfig = true;
-	this->diff->print_data();
+	this->diff.print_data();
 	Data<Dtype>::printConfig = false;
 #endif
 
 	}
 
 	// smoothL1Forward
+	const float sigma2 = SLPROP(SmoothL1Loss, sigma) * SLPROP(SmoothL1Loss, sigma);
 	SmoothL1Forward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-	      count, diff->device_data(), errors->mutable_device_data(), this->sigma2);
+	      count, this->diff.device_data(), this->errors.mutable_device_data(), sigma2);
 	CUDA_POST_KERNEL_CHECK;
 
 #if SMOOTHL1LOSSLAYER_LOG
 	Data<Dtype>::printConfig = true;
-	this->diff->print_data();
-	this->errors->print_data();
+	this->diff.print_data();
+	this->errors.print_data();
 	Data<Dtype>::printConfig = false;
 #endif
 
-	if (hasWeights) {
+	if (this->hasWeights) {
 
 #if SMOOTHL1LOSSLAYER_LOG
 	Data<Dtype>::printConfig = true;
 	this->_inputData[3]->print_data();
-	this->errors->print_data();
+	this->errors.print_data();
 	Data<Dtype>::printConfig = false;
 #endif
 
@@ -203,20 +200,22 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 		soooa_gpu_mul(
 				count,
 				this->_inputData[3]->device_data(),
-				errors->device_data(),
-				errors->mutable_device_data());	// d := w_out * SmoothL1(w_in * (b0 - b1))
+				this->errors.device_data(),
+				this->errors.mutable_device_data());	// d := w_out * SmoothL1(w_in * (b0 - b1))
 
 #if SMOOTHL1LOSSLAYER_LOG
 	Data<Dtype>::printConfig = true;
-	this->errors->print_data();
+	this->errors.print_data();
 	Data<Dtype>::printConfig = false;
 #endif
 	}
 
+	const uint32_t firstAxis = SLPROP(SmoothL1Loss, firstAxis);
+	const float lossWeight = SLPROP(Loss, lossWeight);
 	Dtype loss;
-	soooa_gpu_dot(count, ones->device_data(), errors->device_data(), &loss);
-	this->_outputData[0]->mutable_host_data()[0] = loss * Dtype(this->lossWeight) /
-			this->_inputData[0]->getShape(this->firstAxis);
+	soooa_gpu_dot(count, this->ones.device_data(), this->errors.device_data(), &loss);
+	this->_outputData[0]->mutable_host_data()[0] = loss * Dtype(lossWeight) /
+			this->_inputData[0]->getShape(firstAxis);
 	//this->_outputData[0]->mutable_host_data()[0] = loss * Dtype(this->lossWeight);
 	//cout << "smoothl1loss: " << this->_outputData[0]->host_data()[0] << endl;
 }
@@ -244,43 +243,46 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 	// after forwards, diff holds w_in * (b0 - b1)
 
 	/*
-	if (this->name == "rpn_loss_bbox") {
+	if (SLPROP_BASE(name) == "rpn_loss_bbox") {
 		Data<Dtype>::printConfig = true;
-		diff->print_data({}, false);
+		this->diff.print_data({}, false);
 		Data<Dtype>::printConfig = false;
 	}
 	*/
 
-
-	const uint32_t count = diff->getCount();
+	const float sigma2 = SLPROP(SmoothL1Loss, sigma) * SLPROP(SmoothL1Loss, sigma);
+	const uint32_t count = this->diff.getCount();
 	SmoothL1Backward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
-			count, diff->device_data(), diff->mutable_device_data(), this->sigma2);
+			count, this->diff.device_data(), this->diff.mutable_device_data(), sigma2);
 	CUDA_POST_KERNEL_CHECK;
 
 	/*
-	if (this->name == "rpn_loss_bbox") {
+	if (SLPROP_BASE(name) == "rpn_loss_bbox") {
 		Data<Dtype>::printConfig = true;
-		diff->print_data({}, false);
+		this->diff.print_data({}, false);
 		Data<Dtype>::printConfig = false;
 	}
 	*/
 
+	const vector<bool> propDown = SLPROP_BASE(propDown);
+	const uint32_t firstAxis = SLPROP(SmoothL1Loss, firstAxis);
 	for (uint32_t i = 0; i < 2; i++) {
-		if (this->_propDown[i]) {
+		if (propDown[i]) {
 			const Dtype sign = (i == 0) ? 1 : -1;
 			// XXX: caffe, top[0]->cpu_diff()[0]에 대해서 set하는 부분을 찾을 수 없고
 			// 현재 특수한 값이 들어 있는 것이 아닌 1의 값이 들어있어 상수 1.0f으로 대체
 			//const Dtype alpha = sign * this->_outputData[0]->host_grad()[0] /
 			//		this->_inputData[i]->batches();
+
 			const Dtype alpha = sign * Dtype(1) /
-					this->_inputData[i]->getShape(this->firstAxis);
+					this->_inputData[i]->getShape(firstAxis);
 			soooa_gpu_axpby(
 					count,
 					alpha,
-					diff->device_data(),
+					this->diff.device_data(),
 					Dtype(0),
 					this->_inputData[i]->mutable_device_grad());
-			if (hasWeights) {
+			if (this->hasWeights) {
 				// Scale by "inside" weight
 				soooa_gpu_mul(
 						count,
@@ -298,7 +300,7 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 	}
 
 	/*
-	if (this->name == "rpn_loss_bbox") {
+	if (SLPROP_BASE(name) == "rpn_loss_bbox") {
 		Data<Dtype>::printConfig = true;
 		this->_inputData[i]->print_grad({}, false);
 		Data<Dtype>::printConfig = false;
@@ -314,11 +316,71 @@ Dtype SmoothL1LossLayer<Dtype>::cost() {
 
 
 
-template <typename Dtype>
-void SmoothL1LossLayer<Dtype>::initialize() {
-	diff = new Data<Dtype>("diff");
-	errors = new Data<Dtype>("errors");
-	ones = new Data<Dtype>("ones");
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* SmoothL1LossLayer<Dtype>::initLayer() {
+    SmoothL1LossLayer* layer = new SmoothL1LossLayer<Dtype>();
+    return (void*)layer;
 }
 
+template<typename Dtype>
+void SmoothL1LossLayer<Dtype>::destroyLayer(void* instancePtr) {
+    SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void SmoothL1LossLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+	if (isInput) {
+		SASSERT0(index < 4);
+	} else {
+		SASSERT0(index == 0);
+	}
+
+    SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == index);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == index);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool SmoothL1LossLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void SmoothL1LossLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
+	layer->feedforward();
+}
+
+template<typename Dtype>
+void SmoothL1LossLayer<Dtype>::backwardTensor(void* instancePtr) {
+	SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
+}
+
+template<typename Dtype>
+void SmoothL1LossLayer<Dtype>::learnTensor(void* instancePtr) {
+    SASSERT0(false);
+}
+
+
+
 template class SmoothL1LossLayer<float>;
+
+
+
+
+

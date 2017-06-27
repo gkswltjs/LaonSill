@@ -8,39 +8,29 @@
 #include <vector>
 
 #include "SplitLayer.h"
+#include "SysLog.h"
+#include "PropMgmt.h"
 
 #define SPLITLAYER_LOG 0
 
 using namespace std;
 
 template <typename Dtype>
-SplitLayer<Dtype>::SplitLayer(const std::string& name)
-	: Layer<Dtype>(name) {
-
-}
-
-template <typename Dtype>
-SplitLayer<Dtype>::SplitLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	initialize();
+SplitLayer<Dtype>::SplitLayer()
+	: Layer<Dtype>() {
+	this->type = Layer<Dtype>::Split;
 }
 
 
-
 template <typename Dtype>
-SplitLayer<Dtype>::~SplitLayer() {}
-
-
-
-template <typename Dtype>
-void SplitLayer<Dtype>::initialize() {
+SplitLayer<Dtype>::~SplitLayer() {
 
 }
+
 
 template <typename Dtype>
 void SplitLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
-
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
 
@@ -88,7 +78,7 @@ template <typename Dtype>
 void SplitLayer<Dtype>::feedforward() {
 	reshape();
 
-	for (uint32_t i = 0; i < this->_outputs.size(); i++) {
+	for (uint32_t i = 0; i < this->_outputData.size(); i++) {
 		this->_outputData[i]->set_device_data(this->_inputData[0]);
 	}
 }
@@ -101,10 +91,10 @@ void SplitLayer<Dtype>::backpropagation() {
 #endif
 
 	this->_inputData[0]->reset_device_grad();
-	for (uint32_t i = 0; i < this->_outputs.size(); i++) {
+	for (uint32_t i = 0; i < this->_outputData.size(); i++) {
 
 #if SPLITLAYER_LOG
-		if (this->name == targetLayer) {
+		if (SLPROP_BASE(name) == targetLayer) {
 			Data<Dtype>::printConfig = true;
 			this->_outputData[i]->print_grad({}, false);
 			Data<Dtype>::printConfig = false;
@@ -112,7 +102,7 @@ void SplitLayer<Dtype>::backpropagation() {
 #endif
 		this->_inputData[0]->add_device_grad(this->_outputData[i]);
 #if SPLITLAYER_LOG
-		if (this->name == targetLayer) {
+		if (SLPROP_BASE(name) == targetLayer) {
 			Data<Dtype>::printConfig = true;
 			this->_inputData[0]->print_grad({}, false);
 			Data<Dtype>::printConfig = false;
@@ -120,10 +110,65 @@ void SplitLayer<Dtype>::backpropagation() {
 #endif
 	}
 #if SPLITLAYER_LOG
-	if (this->name == targetLayer) {
+	if (SLPROP_BASE(name) == targetLayer) {
 		exit(1);
 	}
 #endif
+}
+
+/****************************************************************************
+ * layer callback functions 
+ ****************************************************************************/
+template<typename Dtype>
+void* SplitLayer<Dtype>::initLayer() {
+    SplitLayer* layer = new SplitLayer<Dtype>();
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::destroyLayer(void* instancePtr) {
+    SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+
+    SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        SASSERT0(index == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == index);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool SplitLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+	layer->feedforward();
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::backwardTensor(void* instancePtr) {
+	SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
+}
+
+template<typename Dtype>
+void SplitLayer<Dtype>::learnTensor(void* instancePtr) {
+    SASSERT0(false);
 }
 
 template class SplitLayer<float>;

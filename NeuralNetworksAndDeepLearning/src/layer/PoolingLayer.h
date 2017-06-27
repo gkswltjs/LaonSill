@@ -11,10 +11,9 @@
 #define LAYER_POOLINGLAYER_H_
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "Pooling.h"
 #include "PoolingFactory.h"
-#include "Exception.h"
 
 /**
  * @brief 풀링 레이어
@@ -26,93 +25,29 @@
 template <typename Dtype>
 class PoolingLayer : public Layer<Dtype> {
 public:
-	/**
-	 * @brief 풀링 레이어 객체 빌더
-	 * @details 풀링 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를 통해
-	 *          해당 파라미터를 만족하는 풀링 레이어 객체를 생성한다.
-	 */
-	class Builder : public Layer<Dtype>::Builder {
-	public:
-		pool_dim _poolDim;								///< 풀링 파라미터
-		typename Pooling<Dtype>::Type _poolingType;		///< 풀링 타입
-
-		Builder() {
-			this->type = Layer<Dtype>::Pool;
-			_poolDim.cols = 0;
-			_poolDim.rows = 0;
-			_poolDim.pad = 0;
-			_poolDim.stride = 0;
-			_poolingType = Pooling<Dtype>::Max;
-		}
-		Builder* poolDim(uint32_t cols, uint32_t rows, uint32_t pad, uint32_t stride) {
-			this->_poolDim.cols = cols;
-			this->_poolDim.rows = rows;
-			this->_poolDim.pad = pad;
-			this->_poolDim.stride = stride;
-			return this;
-		}
-		Builder* poolingType(typename Pooling<Dtype>::Type poolingType) {
-			this->_poolingType = poolingType;
-			return this;
-		}
-		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-		Layer<Dtype>* build() {
-			return new PoolingLayer(this);
-		}
-	};
-
-	/**
-	 * @details PoolingLayer 기본 생성자
-	 */
-	PoolingLayer(Builder* builder);
-	/**
-	 * @details PoolingLayer 소멸자
-	 */
+	PoolingLayer();
 	virtual ~PoolingLayer();
-
 
 	virtual void reshape();
 	virtual void feedforward();
 	virtual void backpropagation();
 
-
 protected:
-	void initialize(pool_dim pool_d, typename Pooling<Dtype>::Type poolingType);
-
-protected:
-	pool_dim pool_d;				///< 풀링 연산 관련 파라미터 구조체
-	Pooling<Dtype> *pooling_fn;			///< 풀링 객체
-
-#ifndef GPU_MODE
-	ucube pool_map;
-	rcube delta;
-	rcube delta_input;
-#else
 	cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t outputTensorDesc;	///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
-#endif
+    Pooling<Dtype>* pooling_fn;
 
-
-
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 

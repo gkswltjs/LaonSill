@@ -64,3 +64,6 @@ paramDef.json 파일에 파라미터 이름과 그것의 6가지 속성을 json 
 
 (2) Param.cpp, Param.h파일은 git에 관리되지 않아야 한다. genParam.py와 paramDef.json 파일만
   관리 되도록 주의한다.
+
+(3) 빌드시에 make clean으로 확실히 지워주고 빌드하지 않으면 오동작하는 경우를 발견하였다. 
+  (원인은 아직 파악하지 못함.) 반드시 make clean하고 사용하자.

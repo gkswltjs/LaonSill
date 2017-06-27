@@ -1,0 +1,41 @@
+{
+
+"CONF" :
+[
+    {
+        "NAME" : "ParamFillerType",
+        "ENUM" : ["Constant", "Xavier", "Gaussian"]
+    },
+
+    {
+        "NAME" : "NormalizationMode",
+        "ENUM" : ["Full", "Valid", "BatchSize", "NoNormalization"]
+    },
+
+    {
+        "NAME" : "PoolingType",
+        "ENUM" : ["NoPooling", "Max", "Avg"]
+    },
+
+    {
+        "NAME" : "Optimizer",
+        "ENUM" : ["Momentum", "Vanilla", "Nesterov", "Adagrad", "RMSprop", "Adam"]
+    },
+
+    {
+        "NAME" : "LRPolicy",
+        "ENUM" : ["Fixed", "Step", "Exp", "Inv", "Multistep", "Poly"]
+    },
+
+    {
+        "NAME" : "NetworkPhase",
+        "ENUM" : ["TrainPhase", "TestPhase"]
+    },
+
+    {
+        "NAME" : "NetworkStatus",
+        "ENUM" : ["Train", "Test"]
+    }
+]
+
+}

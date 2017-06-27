@@ -1,5 +1,7 @@
-#if 1
+#if 0
 
+#include <unistd.h>
+#include <fcntl.h>
 #include <cstdint>
 #include <vector>
 #include <iostream>
@@ -15,12 +17,8 @@
 #include "DataSet.h"
 #include "MockDataSet.h"
 #include "Debug.h"
-#include "Evaluation.h"
-#include "Top1Evaluation.h"
-#include "Top5Evaluation.h"
 #include "NetworkMonitor.h"
 #include "Network.h"
-#include "NetworkConfig.h"
 #include "Util.h"
 #include "Worker.h"
 #include "Job.h"
@@ -38,9 +36,25 @@
 #include "test.h"
 #include "DQNImageLearner.h"
 #include "ImageUtil.h"
-#include "ArtisticStyle.h"
+#include "DebugUtil.h"
+#include "ResourceManager.h"
+#include "PlanOptimizer.h"
+#include "WorkContext.h"
+#include "PlanParser.h"
+#include "ThreadMgmt.h"
+#include "Sender.h"
+#include "Receiver.h"
+
+#include "frcnn/FRCNN.h"
+#include "YOLO.h"
+#include "LayerFunc.h"
+#include "LayerPropList.h"
+
+#include "StdOutLog.h"
 
 using namespace std;
+
+
 
 void developerMain() {
     STDOUT_LOG("enter developerMain()");
@@ -49,63 +63,26 @@ void developerMain() {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-
-	ArtisticStyle<float>* artisticStyle = new ArtisticStyle<float>(/*
-
-#if !SMALL_TEST
-			"/data/backup/artistic/tubingen_320.jpg",
-			//"/home/jkim/Downloads/sampleR32G64B128.png",
-			"/data/backup/artistic/starry_night_320.jpg",
-			//"/data/backup/artistic/composition_320.jpg",
-			{"conv4_2"},
-			{"conv1_1"},
-#else
-			"/data/backup/artistic/tubingen_16.jpg",
-			"/data/backup/artistic/starry_night_16.jpg",
-			//{"conv1_1"},
-			{},
-			{"conv1_1", "conv2_1"},
-#endif
-			1.0f,					// contentReconstructionFactor
-			100.0f,					// styleReconstructionFactor
-			100.0,					// learningRate
-			"relu4_2",				// end
-			true,					// plotContentCost
-			true					// plotStyleCost*/
-	);
-
-	artisticStyle->transfer_style();
-	delete artisticStyle;
-
-
+    FRCNN<float>::run();
 
     STDOUT_LOG("exit developerMain()");
 }
 
 
-#define TEST_MODE 1
-
-#if TEST_MODE
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-#include "lmdb++.h"
-#include "MathFunctions.h"
-#endif
-
 int main(int argc, char** argv) {
-#if !TEST_MODE
     int     opt;
 
 
     // 처음 생각했던 것보다 실행모드의 개수가 늘었다.
     // 모드가 하나만 더 추가되면 그냥 enum type으로 모드를 정의하도록 하자.
 
-    bool    useDeveloperMode = true;
+    bool    useDeveloperMode = false;
+    bool    useSingleJobMode = false;
+    bool    useTestMode = false;
+
     char*   singleJobFilePath;
-    char*   romFilePath;
     char*   testItemName;
+
 
     // (2) 서버 시작 시간 측정을 시작한다.
     struct timespec startTime;
@@ -122,14 +99,23 @@ int main(int argc, char** argv) {
     Network<float>::init();
     DQNImageLearner<float>::init();
 
+    ResourceManager::init();
+    PlanOptimizer::init();
+    LayerFunc::init();
+    LayerPropList::init();
+
+    int threadCount = 0;
     SYS_LOG("Logging system is initialized...");
 
     // (4) 뉴럴 네트워크 관련 기본 설정을 한다.
-    //     TODO: SPARAM의 인자로 대체하자.
-	cout.precision(7);
+	cout.precision(SPARAM(COUT_PRECISION));
 	cout.setf(ios::fixed);
 	Util::setOutstream(&cout);
 	Util::setPrint(false);
+
+    // (5) 모드에 따른 동작을 수행한다.
+    // DeveloperMode와 SingleJobMode는 1쓰레드(메인쓰레드)로만 동작을 한다.
+    // TestMode와 DefaultMode(ServerClientMode)는 여러 쓰레드로 동작을 하게 된다.
 
 	// (5-A-1) Cuda를 생성한다.
 	Cuda::create(SPARAM(GPU_COUNT));
@@ -141,6 +127,12 @@ int main(int argc, char** argv) {
 	// (5-A-3) 자원을 해제 한다.
 	Cuda::destroy();
 
+    LayerFunc::destroy();
+    // (6) 로깅 관련 모듈이 점유했던 자원을 해제한다.
+    if (threadCount > 0) {
+        ThreadMgmt::destroy();
+        HotLog::destroy();
+    }
     ColdLog::destroy();
     SysLog::destroy();
     Broker::destroy();
@@ -151,41 +143,7 @@ int main(int argc, char** argv) {
 	STDOUT_BLOCK(cout << "SOOOA engine ends" << endl;);
 
     InitParam::destroy();
-#else
-
-    auto env = lmdb::env::create();
-    //env.set_mapsize(1UL * 1024UL * 1024UL * 1024UL);		// 1GB
-    env.open("/home/jkim/Dev/git/caffe/examples/imagenet/ilsvrc12_train_lmdb");
-
-    auto rtxn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
-    auto dbi = lmdb::dbi::open(rtxn, nullptr);
-    auto cursor = lmdb::cursor::open(rtxn, dbi);
-    string key, value;
-    //while (cursor.get(key, value, MDB_NEXT)) {
-    cursor.get(key, value, MDB_NEXT);
-    cout << "key: " << key << ", value: " << value << endl;
-    //}
-    cursor.close();
-    rtxn.abort();
-
-#endif
-
 	exit(EXIT_SUCCESS);
 }
 
-
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-

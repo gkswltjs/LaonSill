@@ -19,6 +19,7 @@
 #include "common.h"
 #include "Util.h"
 #include "Data.h"
+#include "EnumDef.h"
 
 
 
@@ -28,21 +29,6 @@
 //typedef unsigned int UINT;
 
 typedef boost::mt19937 RNGType;
-
-
-
-
-/**
- * @brief 학습 파라미터 초기화 타입 열거형
- * @details	지원하는 학습 파라미터 초기화 타입 열거,
- *          현재 Constant, Xavier, Gaussian을 지원.
- */
-enum class ParamFillerType {
-	Constant=0,			// 특정값으로 초기화
-	Xavier,				// 특정 범위의 uniform distribution을 따르는 값으로 초기화
-	Gaussian			// Gaussian distribution을 따르는 값으로 초기화
-};
-
 
 /**
  * @brief 데이터의 구조정보를 정의하는 구조체

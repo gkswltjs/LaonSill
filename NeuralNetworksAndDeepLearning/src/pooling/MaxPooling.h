@@ -24,7 +24,7 @@ class MaxPooling : public Pooling<Dtype> {
 #ifndef GPU_MODE
 public:
 	MaxPooling() {
-		this->type = Pooling<Dtype>::Max;
+		this->type = PoolingType::Max;
 	}
 	virtual ~MaxPooling() {}
 
@@ -116,7 +116,7 @@ public:
 	 * @param pool_d 풀링 연산 관련 파라미터 구조체
 	 */
 	MaxPooling(pool_dim pool_d) {
-		this->type = Pooling<Dtype>::Max;
+		this->type = PoolingType::Max;
 
 		checkCUDNN(cudnnCreatePoolingDescriptor(&this->poolDesc));
 

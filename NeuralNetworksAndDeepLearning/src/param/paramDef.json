@@ -10,14 +10,14 @@
     "DEFAULT" : 8 
 },
 
-"CONSUMER_COUNT" : 
+"JOB_CONSUMER_COUNT" : 
 {
-    "DESC" : "specify consumer thread count.",
+    "DESC" : "specify job consumer thread count.",
     "MANDATORY" : false,
     "MUTABLE" : true,
     "SCOPE" : "SESSION",
     "TYPE" : "UINT32",
-    "DEFAULT" : 2 
+    "DEFAULT" : 8 
 },
 
 "NETWORK_SAVE_DIR" : 
@@ -254,10 +254,10 @@
 {
     "DESC" : "specify GPU device count.",
     "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SESSION",
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
     "TYPE" : "UINT32",
-    "DEFAULT" : 1 
+    "DEFAULT" : 2 
 },
 
 "IMAGEUTIL_SAVE_DIR" : 
@@ -268,6 +268,236 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "CHAR(1024)",
     "DEFAULT" : ""
+},
+
+"PLOTING_OPTION" : 
+{
+    "DESC" : "specify plotting option",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : true
+},
+
+"MASTER_NODE" : 
+{
+    "DESC" : "specify master node",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : true
+},
+
+"CLUSTER_MODE" : 
+{
+    "DESC" : "specify whether server supports cluster mode or not",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"CLUSTER_CONF_PATH" : 
+{
+    "DESC" : "specify cluster configuration file path.",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "CHAR(1024)",
+    "DEFAULT" : ""
+},
+
+"PLAN_OPT_TEST_MAX_EPOCH_COUNT" : 
+{
+    "DESC" : "specify max epoch count for plan optimizer test module.",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT32",
+    "DEFAULT" : 1 
+},
+
+"PLAN_OPT_TEST_MAX_MINIBATCH_COUNT" : 
+{
+    "DESC" : "specify max mini-batch count for plan optimizer test module.",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT32",
+    "DEFAULT" : 4 
+},
+
+"NODE_ID" : 
+{
+    "DESC" : "specify node ID.",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 0 
+},
+
+"PRINT_RUNLAYER_LOG" : 
+{
+    "DESC" : "specify whether server prints log of the run layer function or not",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"PRINT_EDGELOG_AFTER_NETWORKLOAD" : 
+{
+    "DESC" : "specify whether server prints edge log after loading network or not",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"PRINT_EDGELOG_AFTER_NETWORKSAVE" : 
+{
+    "DESC" : "specify whether server prints edge log after saving network or not",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"COUT_PRECISION" : 
+{
+    "DESC" : "specify cout precision",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 7 
+},
+
+"PRODUCER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the producer checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 3000 
+},
+
+"TASK_CONSUMER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the task consumer checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"JOB_CONSUMER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the job consumer checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"SENDER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the sender checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"RECEIVER_PERIODIC_CHECK_TIME_MS" : 
+{
+    "DESC" : "it is the period of time the receiver checks the job",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"TASKPOOL_ALLOCTENSOR_ELEM_COUNT" : 
+{
+    "DESC" : "specify element count of alloc tensor of the task pool",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"TASKPOOL_UPDATETENSOR_ELEM_COUNT" : 
+{
+    "DESC" : "specify element count of update tensor of the task pool",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"TASKPOOL_RUNPLAN_ELEM_COUNT" : 
+{
+    "DESC" : "specify element count of run plan of the task pool",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"TASKPOOL_ALLOCLAYER_ELEM_COUNT" : 
+{
+    "DESC" : "specify element count of alloc layer of the task pool",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 1000 
+},
+
+"PRINT_LAYERFUNC_LOG" : 
+{
+    "DESC" : "specify whether server prints log of layer func module or not",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"COMMUNICATOR_REUSE_ADDR" : 
+{
+    "DESC" : "specify whether server reuse address or not",
+    "MANDATORY" : false,
+    "MUTABLE" : true,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"SPLITLAYER_START_LAYERID" : 
+{
+    "DESC" : "specify start layer ID of split layer",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 100000 
 }
 
 }

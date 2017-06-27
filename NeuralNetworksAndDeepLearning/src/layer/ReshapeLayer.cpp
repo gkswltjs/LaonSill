@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "ReshapeLayer.h"
+#include "SysLog.h"
+#include "PropMgmt.h"
 #include "Util.h"
 
 #define RESHAPELAYER_LOG 0
@@ -18,13 +20,31 @@
 using namespace std;
 
 template <typename Dtype>
-ReshapeLayer<Dtype>::ReshapeLayer(Builder* builder)
-	: Layer<Dtype>(builder) {
-	this->shape = builder->_shape;
-	this->axis = builder->_axis;
-	this->numAxes = builder->_numAxes;
-	initialize();
+ReshapeLayer<Dtype>::ReshapeLayer()
+: Layer<Dtype>() {
+	this->type = Layer<Dtype>::Reshape;
+
+	const vector<int>& shape = SLPROP(Reshape, shape);
+	SASSERT0(shape.size() == 4);
+
+	this->inferredAxis = -1;
+	this->copyAxes.clear();
+	const uint32_t topNumAxis = shape.size();
+	this->constantCount = 1;
+
+	for (uint32_t i = 0; i < topNumAxis; i++) {
+		const int topDim = shape[i];
+		if (topDim == 0) {
+			copyAxes.push_back(i);
+		} else if (topDim == -1) {
+			SASSERT(inferredAxis == -1, "new shape contains multiple -1 dims ... ");
+			this->inferredAxis = i;
+		} else {
+			this->constantCount *= topDim;
+		}
+	}
 }
+
 
 template <typename Dtype>
 ReshapeLayer<Dtype>::~ReshapeLayer() {
@@ -49,11 +69,11 @@ void ReshapeLayer<Dtype>::reshape() {
 	vector<uint32_t> outputDataShape(dim);
 
 	for (uint32_t i = 0; i < dim; i++) {
-		if (this->shape[i] > 0)
-			outputDataShape[i] = this->shape[i];
+		if (SLPROP(Reshape, shape)[i] > 0)
+			outputDataShape[i] = SLPROP(Reshape, shape)[i];
 	}
 	for (uint32_t i = 0; i < copyAxes.size(); i++) {
-		outputDataShape[copyAxes[i]] = inputDataShape[copyAxes[i]];
+		outputDataShape[this->copyAxes[i]] = inputDataShape[this->copyAxes[i]];
 	}
 
 	if (this->inferredAxis >= 0) {
@@ -65,14 +85,14 @@ void ReshapeLayer<Dtype>::reshape() {
 		}
 		assert(inputDataSize % fixedSize == 0 &&
 				"input count must be divisible by the product");
-		outputDataShape[inferredAxis] = inputDataSize / fixedSize;
+		outputDataShape[this->inferredAxis] = inputDataSize / fixedSize;
 	}
 
 	this->_outputData[0]->reshape(outputDataShape);
 
 #if RESHAPELAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-			this->name.c_str(), outputDataShape[0], outputDataShape[1],
+			SLPROP_BASE(name).c_str(), outputDataShape[0], outputDataShape[1],
 			outputDataShape[2], outputDataShape[3]);
 #endif
 
@@ -106,7 +126,7 @@ void ReshapeLayer<Dtype>::backpropagation() {
 
 
 	/*
-	if (this->name == "rpn_cls_score_reshape") {
+	if (SLPROP_BASE(name) == "rpn_cls_score_reshape") {
 		Data<Dtype>::printConfig = true;
 
 		this->_outputData[0]->print_grad({}, false);
@@ -118,34 +138,74 @@ void ReshapeLayer<Dtype>::backpropagation() {
 }
 
 
+template class ReshapeLayer<float>;
 
-template <typename Dtype>
-void ReshapeLayer<Dtype>::initialize() {
-	assert(this->shape.size() == 4);
 
-	this->inferredAxis = -1;
-	this->copyAxes.clear();
-	const uint32_t topNumAxis = this->shape.size();
-	this->constantCount = 1;
 
-	for (uint32_t i = 0; i < topNumAxis; i++) {
-		const int topDim = this->shape[i];
-		if (topDim == 0) {
-			copyAxes.push_back(i);
-		} else if (topDim == -1) {
-			assert(inferredAxis == -1 &&
-					"new shape contains multiple -1 dims ... ");
-			inferredAxis = i;
-		} else {
-			constantCount *= topDim;
-		}
-	}
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* ReshapeLayer<Dtype>::initLayer() {
+    ReshapeLayer* layer = new ReshapeLayer<Dtype>();
+    return (void*)layer;
 }
 
+template<typename Dtype>
+void ReshapeLayer<Dtype>::destroyLayer(void* instancePtr) {
+    ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
+    delete layer;
+}
 
+template<typename Dtype>
+void ReshapeLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+    SASSERT0(index == 0);
 
+    ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
 
-template class ReshapeLayer<float>;
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == 0);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == 0);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool ReshapeLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void ReshapeLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
+	layer->feedforward();
+}
+
+template<typename Dtype>
+void ReshapeLayer<Dtype>::backwardTensor(void* instancePtr) {
+	ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
+}
+
+template<typename Dtype>
+void ReshapeLayer<Dtype>::learnTensor(void* instancePtr) {
+    SASSERT0(false);
+}
+
+template void* ReshapeLayer<float>::initLayer();
+template void ReshapeLayer<float>::destroyLayer(void* instancePtr);
+template void ReshapeLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool ReshapeLayer<float>::allocLayerTensors(void* instancePtr);
+template void ReshapeLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void ReshapeLayer<float>::backwardTensor(void* instancePtr);
+template void ReshapeLayer<float>::learnTensor(void* instancePtr);
 
 
 

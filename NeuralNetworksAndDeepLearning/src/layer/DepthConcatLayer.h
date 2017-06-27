@@ -10,11 +10,7 @@
 #define LAYER_DEPTHCONCATLAYER_H_
 
 #include "common.h"
-#include "Layer.h"
-#include "Exception.h"
-
-
-
+#include "BaseLayer.h"
 
 /**
  * @brief Depth Concatenation 레이어
@@ -28,43 +24,7 @@
 template <typename Dtype>
 class DepthConcatLayer : public Layer<Dtype> {
 public:
-	/**
-	 * @brief Depth Concatenation 레이어 객체 빌더
-	 * @details Depth Concatenation 레이어를 생성할 때 필요한 파라미터들을 설정하고 build()를
-     *                              통해 해당 파라미터를 만족하는 Depth Concatenation 레이어
-     *                              객체를 생성한다.
-	 */
-	class Builder : public Layer<Dtype>::Builder {
-	public:
-		Builder() {
-			this->type = Layer<Dtype>::DepthConcat;
-		}
-		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-		Layer<Dtype>* build() {
-			return new DepthConcatLayer(this);
-		}
-	};
-
-	DepthConcatLayer(Builder* builder);
+	DepthConcatLayer();
 	virtual ~DepthConcatLayer();
 
 	virtual void reshape();
@@ -72,8 +32,6 @@ public:
 	virtual void backpropagation();
 
 protected:
-	void initialize();
-
 	/**
 	 * @details _concat()에서 입력값이 합산되는 방식이 아니므로 합산에 대해
 	 *          scaling을 적용하는 기본 _scaleInput()을 재정의하여 scale하지 않도록 한다.
@@ -85,17 +43,17 @@ protected:
 	 */
 	virtual void _scaleGradient() {};
 
-protected:
-#ifndef GPU_MODE
-	rcube delta_input;
-	rcube delta_input_sub;
-    std::vector<int> offsets;
-#else
-#endif
-
-    int concatAxis;
-    int concatInputSize;
-    int numConcats;
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* LAYER_DEPTHCONCATLAYER_H_ */

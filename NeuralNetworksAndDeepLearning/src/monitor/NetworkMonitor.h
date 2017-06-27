@@ -42,13 +42,17 @@ public:
 		}
 
 		loggerSize = 1;
-		if(mode == PLOT_AND_WRITE) loggerSize = 2;
+		if (mode == PLOT_AND_WRITE) loggerSize = 2;
 
-		if(mode == PLOT_ONLY || mode == PLOT_AND_WRITE) {
-			costLogger.push_back(new StatGraphPlotter());
-			accuracyLogger.push_back(new StatGraphPlotter());
-			gradSumsqLogger.push_back(new StatGraphPlotter(250, 10));
-			dataSumsqLogger.push_back(new StatGraphPlotter(250, 10));
+		if (mode == PLOT_ONLY || mode == PLOT_AND_WRITE) {
+            if (SPARAM(PLOTING_OPTION)) {
+                costLogger.push_back(new StatGraphPlotter());
+                accuracyLogger.push_back(new StatGraphPlotter());
+                gradSumsqLogger.push_back(new StatGraphPlotter(250, 10));
+                dataSumsqLogger.push_back(new StatGraphPlotter(250, 10));
+            } else {
+                loggerSize--;
+            }
 		}
 		if (mode == WRITE_ONLY || mode == PLOT_AND_WRITE) {
 			const std::string postfix = now();

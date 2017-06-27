@@ -7,7 +7,7 @@
  */
 
 #include "Donator.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "ConvLayer.h"
 #include "BatchNormLayer.h"
 #include "FullyConnectedLayer.h"
@@ -57,25 +57,7 @@ void Donator<Dtype>::receive(uint32_t donatorID, void* layerPtr) {
         "donator layer type=%d, receiver layer type=%d",
         (int)donatorLayer->type, (int)receiverLayer->type);
 
-    if (donatorLayer->type == Layer<Dtype>::Conv || 
-        donatorLayer->type == Layer<Dtype>::Deconv) {
-        ConvLayer<Dtype>* donator = dynamic_cast<ConvLayer<Dtype>*>(donatorLayer);
-        ConvLayer<Dtype>* receiver = dynamic_cast<ConvLayer<Dtype>*>(receiverLayer);
-        donator->donateParam(receiver);
-    } else if (donatorLayer->type == Layer<Dtype>::FullyConnected) {
-        FullyConnectedLayer<Dtype>* donator =
-            dynamic_cast<FullyConnectedLayer<Dtype>*>(donatorLayer);
-        FullyConnectedLayer<Dtype>* receiver = 
-            dynamic_cast<FullyConnectedLayer<Dtype>*>(receiverLayer);
-        donator->donateParam(receiver);
-    } else if (donatorLayer->type == Layer<Dtype>::BatchNorm) {
-        ConvLayer<Dtype>* donator = dynamic_cast<ConvLayer<Dtype>*>(donatorLayer);
-        ConvLayer<Dtype>* receiver = dynamic_cast<ConvLayer<Dtype>*>(receiverLayer);
-        donator->donateParam(receiver);
-    } else {
-        COLD_LOG(ColdLog::WARNING, true, "layer(type=%d) does not support donate function",
-            donatorLayer->type);
-    }
+    donatorLearnableLayer->donateParam(receiverLearnableLayer);
 }
 
 template<typename Dtype>

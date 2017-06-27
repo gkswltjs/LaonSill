@@ -11,55 +11,12 @@
 #include <vector>
 
 #include "common.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 
 template <typename Dtype>
 class ProposalLayer : public Layer<Dtype> {
 public:
-	class Builder : public Layer<Dtype>::Builder {
-	public:
-		uint32_t _featStride;
-		std::vector<uint32_t> _scales;
-
-		Builder() {
-			this->type = Layer<Dtype>::Proposal;
-			this->_featStride = 16;
-			this->_scales = {8, 16, 32};
-		}
-		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-		virtual Builder* featStride(const uint32_t featStride) {
-			this->_featStride = featStride;
-			return this;
-		}
-		virtual Builder* scales(const std::vector<uint32_t>& scales) {
-			this->_scales = scales;
-			return this;
-		}
-		Layer<Dtype>* build() {
-			return new ProposalLayer(this);
-		}
-	};
-
-	ProposalLayer(Builder* builder);
+	ProposalLayer();
 	virtual ~ProposalLayer();
 
 	virtual void reshape();
@@ -67,15 +24,25 @@ public:
 	virtual void backpropagation();
 
 private:
-	void initialize();
 	void _filterBoxes(std::vector<std::vector<float>>& boxes,
 			const float minSize, std::vector<uint32_t>& keep);
 
 private:
-	uint32_t featStride;
 	uint32_t numAnchors;
-	std::vector<uint32_t> scales;
 	std::vector<std::vector<float>> anchors;
+
+
+public:
+    /****************************************************************************
+     * layer callback functions
+     ****************************************************************************/
+    static void* initLayer();
+    static void destroyLayer(void* instancePtr);
+    static void setInOutTensor(void* instancePtr, void* tensorPtr, bool isInput, int index);
+    static bool allocLayerTensors(void* instancePtr);
+    static void forwardTensor(void* instancePtr, int miniBatchIndex);
+    static void backwardTensor(void* instancePtr);
+    static void learnTensor(void* instancePtr);
 };
 
 #endif /* PROPOSALLAYER_H_ */

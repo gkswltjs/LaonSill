@@ -11,17 +11,19 @@
 #include "FullyConnectedLayer.h"
 #include "MathFunctions.h"
 #include "Util.h"
-#include "Exception.h"
-#include "NetworkConfig.h"
-#include "MathFunctions.h"
+#include "Network.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
+#include "PropMgmt.h"
+#include "Update.h"
+#include "Updater.h"
+#include "Donator.h"
+#include "frcnn_common.h"
 
 #define FULLYCONNECTEDLAYER_LOG 0
 
 using namespace std;
 
-#ifdef GPU_MODE
 ///////////////////////////////////////////////////////////////////////////////////////////
 // GPU Kernels
 
@@ -38,89 +40,6 @@ __global__ void FillValues(Dtype *vec, int size, Dtype value)
 	if (idx >= size)
 		return;
 	vec[idx] = value;
-}
-
-template <typename Dtype>
-__global__ void DoNesterov(int size, const Dtype* dx, Dtype* v_prev, Dtype* v, Dtype* x,
-    const Dtype mu, const Dtype lr)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= size)
-		return;
-
-    /****
-     * Nesterov Alogorithm
-     *
-     * v_prev = v # back this up
-     * v = mu * v - learning_rate * dx # velocity update stays the same
-     * x += -mu * v_prev + (1 + mu) * v # position update changes form
-     *
-     */
-
-    v_prev[idx] = v[idx];
-    v[idx] = mu * v[idx] - lr * dx[idx];
-    x[idx] += (-1.0) * mu * v_prev[idx] + (1 + mu) * v[idx];
-}
-
-template <typename Dtype>
-__global__ void DoAdagrad(int size, const Dtype* dx, Dtype* cache, Dtype* x,
-    const Dtype lr, const Dtype eps)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= size)
-		return;
-
-    /****
-     * Adagrad Alogorithm
-     *
-     * cache += dx**2
-     * x += -learning_rate * dx / (sqrt(cache) + eps)
-     *
-     */
-
-    cache[idx] += dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
-}
-
-template <typename Dtype>
-__global__ void DoRMSprop(int size, const Dtype* dx, Dtype* cache, Dtype* x,
-    const Dtype lr, const Dtype eps, const Dtype dr)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= size)
-		return;
-
-    /****
-     * RMSprop
-     *
-     * cache = decay_rate * cache + (1 - decay_rate) * dx**2
-     * x += - learning_rate * dx / (sqrt(cache) + eps)
-     *
-     */
-
-    cache[idx] = dr * cache[idx] + (1.0 - dr) * dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * dx[idx] / (sqrt(cache[idx]) + eps);
-}
-
-template <typename Dtype>
-__global__ void DoAdam(int size, const Dtype* dx, Dtype* m, Dtype* v, Dtype* x,
-    const Dtype lr, const Dtype eps, const Dtype beta1, const Dtype beta2)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= size)
-		return;
-
-    /****
-     * Adam
-     *
-     * m = beta1 * m + (1 - beta1) * dx
-     * v = beta2 * v + (1 - beta2) * (dx**2)
-     * x += -learning_rate * m / (sqrt(v) + eps)
-     *
-     */
-    m[idx] = beta1 * m[idx] + (1.0 - beta1) * dx[idx];
-    v[idx] = beta2 * v[idx] + (1.0 - beta2) * dx[idx] * dx[idx];
-    x[idx] += (-1.0) * lr * m[idx] / (sqrt(v[idx]) + eps);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -158,19 +77,21 @@ __global__ void AddData(Dtype* dst, const Dtype* src, int N)
 	if (idx >= N)
 		return;
 
-	dst[idx] = dst[idx] + src[idx];
+	dst[idx] = dst[idx] + src[idx]; 
 }
 
 template <typename Dtype>
 FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
-    if (this->isReceiver) {
-        Donator<Dtype>::releaseReceiver(this->donatorID);
+    if (SLPROP(FullyConnected, receive)) {
+        Donator<Dtype>::releaseReceiver(SLPROP(FullyConnected, donatorID));
     } else {
         Util::clearVector(this->_params);
         Util::clearVector(this->_paramsHistory);
         Util::clearVector(this->_paramsHistory2);
     }
-	checkCudaErrors(cudaFree(d_onevec));
+	checkCudaErrors(cudaFree(this->d_onevec));
+
+    this->updateParams.clear();
 }
 
 
@@ -179,7 +100,7 @@ void FullyConnectedLayer<Dtype>::reshape() {
 	if (!Layer<Dtype>::_adjustInputShape()) {
 		const uint32_t count = Util::vecCountByAxis(this->_inputShape[0], 1);
 		const uint32_t inputDataCount = this->_inputData[0]->getCountByAxis(1);
-		assert(count == inputDataCount);
+		SASSERT0(count == inputDataCount);
 	}
 
 	/*
@@ -198,8 +119,8 @@ void FullyConnectedLayer<Dtype>::reshape() {
 		return;
 
 	this->batches = this->_inputData[0]->getShape(0);
-	this->in_rows = this->_inputData[0]->getCountByAxis(this->axis);
-	this->out_rows = this->n_out;
+	this->in_rows = this->_inputData[0]->getCountByAxis(SLPROP(FullyConnected, axis));
+	this->out_rows = SLPROP(FullyConnected, nOut);
 
 	const uint32_t channels = 1;
 	const uint32_t cols = 1;
@@ -224,15 +145,19 @@ void FullyConnectedLayer<Dtype>::reshape() {
 
 	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG, 
         "<%s> layer' input-0 has reshaped as: %dx%dx%dx%d\n",
-        this->name.c_str(), this->batches, channels, this->in_rows, cols);
+        SLPROP_BASE(name).c_str(), this->batches, channels, this->in_rows, cols);
 	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG,
 	    "<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n", 
-        this->name.c_str(), this->batches, channels, this->out_rows, cols);
+        SLPROP_BASE(name).c_str(), this->batches, channels, this->out_rows, cols);
 
 	const uint32_t u_in = in_rows;
 	const uint32_t u_out = out_rows;
 	const uint32_t b_in = batches * in_rows;
 	const uint32_t b_out = batches * out_rows;
+
+	STDOUT_COND_LOG(FULLYCONNECTEDLAYER_LOG,
+	    "<%s> layer reshape info (u_in, u_out, b_in, b_out) : %dx%dx%dx%d\n", 
+        SLPROP_BASE(name).c_str(), u_in, u_out, b_in, b_out);
 
 	this->_params[ParamType::Weight]->reshape({1, 1, u_out, u_in});
 	this->_params[ParamType::Bias]->reshape({1, u_out, 1, 1});
@@ -243,20 +168,35 @@ void FullyConnectedLayer<Dtype>::reshape() {
 
 
 	if (!this->_paramsInitialized[Weight]) {
-		this->weight_filler.fill(this->_params[ParamType::Weight]);
+        SLPROP(FullyConnected, weightFiller).fill(this->_params[ParamType::Weight]);
 		this->_paramsInitialized[Weight] = true;
 	}
 	if (!this->_paramsInitialized[Bias]) {
-		this->bias_filler.fill(this->_params[ParamType::Bias]);
+        SLPROP(FullyConnected, weightFiller).fill(this->_params[ParamType::Bias]);
 		this->_paramsInitialized[Bias] = true;
 	}
 
+    if (this->updateParams.size() == 0) {
+        UpdateParam upWeight;
+        upWeight.paramType = Weight;
+        upWeight.paramDataPtr = (void*)this->_params[Weight];
+        upWeight.paramHis1Ptr = (void*)this->_paramsHistory[Weight];
+        upWeight.paramHis2Ptr = (void*)this->_paramsHistory2[Weight];
+        this->updateParams.push_back(upWeight);
+
+        UpdateParam upBias;
+        upBias.paramType = Bias;
+        upBias.paramDataPtr = (void*)this->_params[Bias];
+        upBias.paramHis1Ptr = (void*)this->_paramsHistory[Bias];
+        upBias.paramHis2Ptr = (void*)this->_paramsHistory2[Bias];
+        this->updateParams.push_back(upBias);
+    }
+
 	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*batches));
-	//FillValues<<<RoundUp(batches, BW), BW>>>(this->d_onevec, batches, 1.0f);
 	FillValues<<<SOOOA_GET_BLOCKS(batches), SOOOA_CUDA_NUM_THREADS>>>(
 			this->d_onevec, batches, 1.0f);
 
-	_mask.reshape(b_out);
+	this->_mask.reshape(b_out);
 }
 
 template <typename Dtype>
@@ -265,133 +205,34 @@ void FullyConnectedLayer<Dtype>::update() {
 	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
 
 	const uint32_t weightSize = this->in_rows * this->out_rows;
-	const Dtype regScale = this->networkConfig->_weightDecay *
-			this->weight_update_param.decay_mult;
-	const Dtype learnScale = this->networkConfig->getLearningRate() *
-			this->weight_update_param.lr_mult;
+	const Dtype regScale =
+        SNPROP(weightDecay) * SLPROP(FullyConnected, weightUpdateParam).decay_mult;
+	const Dtype learnScale = Update<Dtype>::calcLearningRate() *
+		SLPROP(FullyConnected, weightUpdateParam).lr_mult;
 
-    const Dtype epsilon = this->networkConfig->_epsilon;
-    const Dtype decayRate = this->networkConfig->_decayRate;
-    const Dtype beta1 = this->networkConfig->_beta1;
-    const Dtype beta2 = this->networkConfig->_beta2;
+    const Dtype beta1 = SNPROP(beta1);
+    const Dtype beta2 = SNPROP(beta2);
 
-	_updateParam(weightSize, regScale, learnScale, epsilon, decayRate, beta1, beta2, 
-		this->_paramsHistory[Weight], this->_paramsHistory2[Weight], this->_params[Weight]);
+    SLPROP(FullyConnected, decayedBeta1) *= beta1;
+    SLPROP(FullyConnected, decayedBeta2) *= beta2;
+
+    UpdateContext contextWeight = 
+        Update<Dtype>::makeContext(weightSize, regScale, learnScale);
 
 	const uint32_t biasSize = out_rows;
-	const Dtype regScale_b = this->networkConfig->_weightDecay * bias_update_param.decay_mult;
-	const Dtype learnScale_b = 
-        this->networkConfig->getLearningRate() * bias_update_param.lr_mult;
+	const Dtype regScale_b = 
+        SNPROP(weightDecay) * SLPROP(FullyConnected, biasUpdateParam).decay_mult;
+	const Dtype learnScale_b = Update<Dtype>::calcLearningRate() *
+        SLPROP(FullyConnected, biasUpdateParam).lr_mult;
 
-	_updateParam(biasSize, regScale_b, learnScale_b, epsilon, decayRate, beta1, beta2, 
-		this->_paramsHistory[Bias], this->_paramsHistory2[Bias], this->_params[Bias]);
-}
+    UpdateContext contextBias = 
+        Update<Dtype>::makeContext(biasSize, regScale_b, learnScale_b);
 
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype regScale,
-    const Dtype learnScale, const Dtype epsilon, const Dtype decayRate, const Dtype beta1, 
-    const Dtype beta2, Data<Dtype>* dataHistory, Data<Dtype>* dataHistory2,
-    Data<Dtype>* data) {
+    SASSUME0(this->updateParams.size() == 2);
+    this->updateParams[Weight].context = contextWeight;
+    this->updateParams[Bias].context = contextBias;
 
-	const uint32_t batches = this->_inputShape[0][0];
-	const Dtype normScale = 1.0/batches;
-	const Dtype momentum = this->networkConfig->_momentum;
-	const Dtype negativeOne = -1.0;
-    const Dtype negativeLearnScale = (-1.0) * learnScale;
-
-    if (!Worker<Dtype>::isSingle())
-        data->mutable_host_grad();
-	Dtype* d_paramGrad = data->mutable_device_grad();
-	Dtype* d_paramData = data->mutable_device_data();
-	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
-	Dtype* d_paramHistoryData2 = dataHistory2->mutable_device_data();
-
-    // FIXME: ConvLayer에 동일한 코드가 있음. 추후에 정리 필요
-    // (1) do normalization & regularization
-    //  FIXME: 이것도 옵션으로 정규화를 할지 여부를 설정할 수 있었으면 좋겠음.
-#if 0
-    checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
-        &regScale, d_paramData, 1, d_paramGrad, 1));	// regularize
-#endif
-
-    // (2) apply optimizer
-    Optimizer opt = this->networkConfig->_optimizer;
-    if (opt == Optimizer::Momentum) {
-        /****
-         * Momentum Alogorithm
-         *
-         * v = mu * v - learning_rate * dx
-         * x += v
-         *
-         */
-    	soooa_gpu_axpy(static_cast<int>(paramSize), regScale, d_paramData, d_paramGrad);
-		soooa_gpu_axpby(static_cast<int>(paramSize), learnScale, d_paramGrad, momentum,
-				d_paramHistoryData);
-		soooa_copy(static_cast<int>(paramSize), d_paramHistoryData, d_paramGrad);
-		// update
-		soooa_gpu_axpy(static_cast<int>(paramSize), negativeOne, d_paramGrad, d_paramData);
-    } else if (opt == Optimizer::Vanilla) {
-        /****
-         * Vanilla Alogorithm
-         *
-         * x += -learning_rate * dx
-         *
-         */
-    	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &learnScale, d_paramGrad, 1));				//
-    	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(paramSize),
-            &negativeOne, d_paramGrad, 1, d_paramData, 1));		// update
-    } else if (opt == Optimizer::Nesterov) {
-        /****
-         * Nesterov Alogorithm
-         *
-         * v_prev = v # back this up
-         * v = mu * v - learning_rate * dx # velocity update stays the same
-         * x += -mu * v_prev + (1 + mu) * v # position update changes form
-         *
-         */
-	    DoNesterov<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
-            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
-            d_paramHistoryData2, d_paramData, momentum, learnScale);
-    } else if (opt == Optimizer::Adagrad) {
-        /****
-         * Adagrad Alogorithm
-         *
-         * cache += dx**2
-         * x += -learning_rate * dx / (sqrt(cache) + eps)
-         *
-         */
-	    DoAdagrad<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
-            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
-            d_paramData, learnScale, epsilon);
-
-    } else if (opt == Optimizer::RMSprop) {
-        /****
-         * RMSprop
-         *
-         * cache = decay_rate * cache + (1 - decay_rate) * dx**2
-         * x += - learning_rate * dx / (sqrt(cache) + eps)
-         *
-         */
-	    DoRMSprop<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
-            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData,
-            d_paramData, learnScale, epsilon, decayRate);
-
-    } else if (opt == Optimizer::Adam) {
-        /****
-         * Adam
-         *
-         * m = beta1 * m + (1 - beta1) * dx
-         * v = beta2 * v + (1 - beta2) * (dx**2)
-         * x += -learning_rate * m / (sqrt(v) + eps)
-         *
-         */
-	    DoAdam<<<SOOOA_GET_BLOCKS(static_cast<int>(paramSize)), SOOOA_CUDA_NUM_THREADS>>>(
-            static_cast<int>(paramSize), d_paramGrad, d_paramHistoryData, d_paramHistoryData2,
-            d_paramData, learnScale, epsilon, beta1, beta2);
-    } else {
-        SASSERT(false, "invalid optimizer. optimizer=%d", (int)opt);
-    }
+	Updater::updateParams(this->updateParams);
 }
 
 template <typename Dtype>
@@ -435,37 +276,95 @@ void FullyConnectedLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) 
         biasSize);
 }
 
+
+
+
+template <typename Dtype>
+void FullyConnectedLayer<Dtype>::saveParams(ofstream& ofs) {
+	if (this->_inputData.size() == 1) {
+		cout << SLPROP_BASE(name) << " saves as usual ... " << endl;
+		LearnableLayer<Dtype>::saveParams(ofs);
+	} else {
+		cout << SLPROP_BASE(name) << " saves as special ... " << endl;
+
+
+
+
+		uint32_t numParams = this->_params.size();
+
+		vector<vector<float>> bboxMeans;
+		vector<vector<float>> bboxStds;
+		fill2dVecWithData(this->_inputData[1], bboxMeans);
+		fill2dVecWithData(this->_inputData[2], bboxStds);
+
+
+		/*
+		this->_inputData[1]->print_shape();
+		this->_inputData[2]->print_shape();
+		this->_params[0]->print_shape();
+		this->_params[1]->print_shape();
+		exit(1);
+		*/
+
+
+		Data<Dtype>* param0 = this->_params[0];
+		Data<Dtype> orig0(param0->_name, true);
+		orig0.reshapeLike(param0);
+
+		const Dtype* srcPtr0 = param0->host_data();
+		Dtype* dstPtr0 = orig0.mutable_host_data();
+
+		const int numRows0 = param0->getShape(2);
+		const int numCols0 = param0->getShape(3);
+		int index;
+		int id1, id2;
+		for (int row = 0; row < numRows0; row++) {
+			id2 = row / 4;
+			id1 = row % 4;
+			for (int col = 0; col < numCols0; col++) {
+				index = row * numCols0 + col;
+				dstPtr0[index] = srcPtr0[index] * bboxStds[id2][id1];
+			}
+		}
+
+
+
+		Data<Dtype>* param1 = this->_params[1];
+		Data<Dtype> orig1(param1->_name, true);
+		orig1.reshapeLike(param1);
+
+		const Dtype* srcPtr1 = param1->host_data();
+		Dtype* dstPtr1 = orig1.mutable_host_data();
+
+		const int numRows1 = param1->getShape(1);
+		for (int row = 0; row < numRows1; row++) {
+			id2 = row / 4;
+			id1 = row % 4;
+			dstPtr1[row] = srcPtr1[row] * bboxStds[id2][id1] + bboxMeans[id2][id1];
+		}
+		orig0.save(ofs);
+		orig1.save(ofs);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::feedforward() {
 	reshape();
 
-	/*
-	if (this->name == "ip1") {
-		Data<Dtype>::printConfig = true;
-		SyncMem<Dtype>::printConfig = true;
-		this->_inputData[0]->print_data({}, false);
-		this->_params[0]->print_data({}, false);
-		Data<Dtype>::printConfig = false;
-		SyncMem<Dtype>::printConfig = false;
-	}
-	*/
-
-
 	_computeWeightedData();
 	_computeWeightBiasedData();
-	//_computeActivatedData();
-	//_dropoutForward();
-
-	/*
-	if (this->name == "ip1") {
-		Data<Dtype>::printConfig = true;
-		SyncMem<Dtype>::printConfig = true;
-		this->_outputData[0]->print_data({}, false);
-		Data<Dtype>::printConfig = false;
-		SyncMem<Dtype>::printConfig = false;
-	}
-	*/
-
 }
 
 
@@ -561,49 +460,9 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 	this->_params[Bias]->print_data();
 }
 
-/*
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_computeActivatedData() {
-	// Activate weighted sum (+ bias)
-	if (activation_fn) {
-		const Dtype* d_preActivationData = _preActivation->device_data();
-		Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
-		activation_fn->forward(this->outputTensorDesc, d_preActivationData, d_outputData);
-	} else {
-		this->_outputData[0]->set_device_data(_preActivation);
-	}
-
-	//Data<Dtype>::printConfig = true;
-	_preActivation->print_data();
-	this->_outputData[0]->print_data();
-	//Data<Dtype>::printConfig = false;
-}
-*/
-
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_dropoutForward() {
-	// TODO skip when test
-	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
-		//int b_out = this->out_dim.batchsize();
-		int b_out = this->_outputData[0]->getCount();
-		Dtype* h_mask_mem = _mask.mutable_host_mem();
-
-		for(int i = 0; i < b_out; i++) {
-			h_mask_mem[i] = ((rand()/(RAND_MAX+1.0) > p_dropout)?1:0);
-		}
-
-		const Dtype* d_mask_mem = _mask.device_mem();
-		Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
-
-		Dropout<<<SOOOA_GET_BLOCKS(b_out), SOOOA_CUDA_NUM_THREADS>>>(
-				b_out, d_outputData, d_mask_mem, 0, scale, d_outputData);
-	}
-}
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::backpropagation() {
-	//_dropoutBackward();
-
     /*
      * 아래와 같은 simple한 network layer가 있다고 가정하자.
      *
@@ -650,65 +509,7 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
 	_computeWeightGrad();
 	_computeBiasGrad();
 	_computeInputGrad();
-
-
-	/*
-	Data<Dtype>::printConfig = true;
-	SyncMem<Dtype>::printConfig = true;
-
-	this->_outputData[0]->print_grad({}, false);
-	this->_inputData[0]->print_grad({}, false);
-
-	Data<Dtype>::printConfig = true;
-	SyncMem<Dtype>::printConfig = true;
-	*/
 }
-
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_dropoutBackward() {
-	if(this->networkConfig->_status == NetworkStatus::Train && p_dropout < 1.0f) {
-		const uint32_t batchSize = this->_inputData[0]->getCount();
-
-		this->_outputData[0]->print_grad("outputGrad:");
-		const Dtype* d_mask_mem = _mask.device_mem();
-		Dtype* d_outputGrad = this->_outputData[0]->mutable_device_grad();
-
-		Dropout<<<SOOOA_GET_BLOCKS(batchSize), SOOOA_CUDA_NUM_THREADS>>>(
-				batchSize, d_outputGrad, d_mask_mem, 0, scale, d_outputGrad);
-
-		//_mask.print("mask:");
-		this->_outputData[0]->print_grad("outputGrad:");
-	}
-}
-
-/*
-template <typename Dtype>
-void FullyConnectedLayer<Dtype>::_computePreActivationGrad() {
-	if (activation_fn) {
-		const Dtype* d_y = this->_outputData[0]->device_data();
-		const Dtype* d_dy = this->_outputData[0]->device_grad();
-		const Dtype* d_x = this->_preActivation->device_data();
-		Dtype* d_dx = this->_preActivation->mutable_device_grad();
-		this->activation_fn->backward(this->outputTensorDesc, d_y, d_dy, d_x, d_dx);
-	}
-	else {
-		this->_preActivation->set_device_grad(this->_outputData[0]);
-	}
-
-	//Data<Dtype>::printConfig = true;
-	this->_outputData[0]->print_grad();
-	this->_preActivation->print_grad();
-	//Data<Dtype>::printConfig = false;
-
-    //if(this->name == "softmaxLayer") {
-        //double sumsq = this->_preActivation->sumsq_device_grad();
-        //cout << "preActivation grad sumsq: " << sumsq << endl;
-    //  Data<Dtype>::printConfig = 1;
-    //  this->_preActivation->print_grad("preActivationGrad:");
-    //  Data<Dtype>::printConfig = 0;
-    //}
-}
-*/
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
@@ -784,7 +585,7 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 
 	/*
 	if(this->_input->is_nan_grad()) {
-		cout << this->name << " _input gradient nan ... " << endl;
+		cout << SLPROP_BASE(name) << " _input gradient nan ... " << endl;
 		Data<Dtype>::printConfig = 1;
 		this->_input->print_grad("deltaInput:");
 		Data<Dtype>::printConfig = 0;
@@ -799,4 +600,14 @@ template void FullyConnectedLayer<float>::update();
 template void FullyConnectedLayer<float>::feedforward();
 template void FullyConnectedLayer<float>::backpropagation();
 
-#endif
+
+/*
+template void* FullyConnectedLayer<float>::initLayer();
+template void FullyConnectedLayer<float>::destroyLayer(void* instancePtr);
+template void FullyConnectedLayer<float>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index);
+template bool FullyConnectedLayer<float>::allocLayerTensors(void* instancePtr);
+template void FullyConnectedLayer<float>::forwardTensor(void* instancePtr, int miniBatchIdx);
+template void FullyConnectedLayer<float>::backwardTensor(void* instancePtr);
+template void FullyConnectedLayer<float>::learnTensor(void* instancePtr);
+*/

@@ -11,6 +11,7 @@
 
 #include "FrcnnTestOutputLayer.h"
 #include "BboxTransformUtil.h"
+#include "PropMgmt.h"
 
 #define FRCNNTESTOUTPUTLAYER_LOG 0
 
@@ -18,412 +19,17 @@ using namespace std;
 
 
 template <typename Dtype>
-FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer(Builder* builder)
-: Layer<Dtype>(builder) {
-	this->maxPerImage = builder->_maxPerImage;
-	this->thresh = builder->_thresh;
-	this->vis = builder->_vis;
-
-	initialize();
-}
-
-template <typename Dtype>
-FrcnnTestOutputLayer<Dtype>::~FrcnnTestOutputLayer() {
-
-}
-
-
-template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::reshape() {
-	Layer<Dtype>::_adjustInputShape();
-
-	const uint32_t inputSize = this->_inputData.size();
-	for (uint32_t i = 0; i < inputSize; i++) {
-		if (!Layer<Dtype>::_isInputShapeChanged(i))
-			continue;
-
-		const vector<uint32_t>& inputDataShape = this->_inputData[i]->getShape();
-		this->_inputShape[i] = inputDataShape;
-
-		// "rois"
-		if (i == 0) {}
-		// "im_info"
-		else if (i == 1) {}
-		// "cls_prob"
-		else if (i == 2) {}
-		// "bbox_pred"
-		else if (i == 3) {}
-#if FRCNNTESTOUTPUTLAYER_LOG
-		cout << this->_inputs[i] << ": (" <<
-				this->_inputData[i]->getShape()[0] << ", " <<
-				this->_inputData[i]->getShape()[1] << ", " <<
-				this->_inputData[i]->getShape()[2] << ", " <<
-				this->_inputData[i]->getShape()[3] << ")" << endl;
-#endif
-	}
-}
-
-
-
-
-
-/*
-template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::feedforward() {
-	reshape();
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	this->_inputData[0]->print_data({}, false);
-	this->_inputData[1]->print_data({}, false);
-	this->_inputData[2]->print_data({}, false);
-	this->_inputData[3]->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-#endif
-	// rois (1, 1, #rois, 5-[batch index, x1, y1, x2, y2])
-	const uint32_t numRois = this->_inputData[0]->getShape(2);
-	vector<vector<Dtype>> boxes(numRois);
-	const Dtype* rois = this->_inputData[0]->host_data();
-
-	// im_info (1, 1, 1, 3-[height, width, scale])
-	const Dtype* imInfo = this->_inputData[1]->host_data();
-	float imScale = imInfo[2];
-	//float imHeight = roundf(imInfo[0] / imScale);
-	//float imWidth = roundf(imInfo[1] / imScale);
-
-	for (uint32_t i = 0; i < numRois; i++) {
-		boxes[i].resize(4);
-		// unscale back to raw image space
-		//boxes[i][0] = rois[5 * i + 1] / imScale;
-		//boxes[i][1] = rois[5 * i + 2] / imScale;
-		//boxes[i][2] = rois[5 * i + 3] / imScale;
-		//boxes[i][3] = rois[5 * i + 4] / imScale;
-
-		boxes[i][0] = rois[5 * i + 1];
-		boxes[i][1] = rois[5 * i + 2];
-		boxes[i][2] = rois[5 * i + 3];
-		boxes[i][3] = rois[5 * i + 4];
-	}
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-	print2dArray("boxes", boxes);
-	Data<Dtype>::printConfig = true;
-	this->_inputData[3]->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-#endif
-
-	// bbox_pred (#rois, 4 * num classes)
-	vector<vector<Dtype>> predBoxes;
-	BboxTransformUtil::bboxTransformInv(boxes, this->_inputData[3], predBoxes);
-	BboxTransformUtil::clipBoxes(predBoxes, {imInfo[0], imInfo[1]});
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-	print2dArray("predBoxes", predBoxes);
-
-	Data<Dtype>::printConfig = true;
-	this->_inputData[2]->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-#endif
-
-	const uint32_t numClasses = this->_inputData[2]->getShape(3);
-	// cls_prob (#rois, num classes)
-	//const Dtype* scores = this->_inputData[2]->host_data();
-	vector<vector<Dtype>> scores;
-	fill2dVecWithData(this->_inputData[2], scores);
-
-
-
-	vector<vector<float>> all_boxes;
-	vector<float> all_scores;
-	vector<int> all_classes;
-
-
-	// 각 rois에 대해 background가 아니며 최고 score가 기준치 이상인
-	// rois를 최종 대상으로 선택한다.
-	int maxScoreIndex;
-	float maxScore;
-	for (uint32_t i = 0; i < numRois; i++) {
-		maxScoreIndex = -1;
-		maxScore = -1.0f;
-		for (uint32_t j = 0; j < numClasses; j++) {
-			if (scores[i][j] > maxScore) {
-				maxScoreIndex = j;
-				maxScore = scores[i][j];
-			}
-		}
-
-		if (maxScoreIndex > 0) {
-			cout << "for " << i << "th rois, maxScore->" << maxScore <<
-					", maxScoreIndex: " << maxScoreIndex << endl;
-		}
-
-		if (maxScoreIndex > 0 && maxScore >= this->thresh) {
-			vector<float> box(4);
-			box[0] = predBoxes[i][4*maxScoreIndex+0];
-			box[1] = predBoxes[i][4*maxScoreIndex+1];
-			box[2] = predBoxes[i][4*maxScoreIndex+2];
-			box[3] = predBoxes[i][4*maxScoreIndex+3];
-
-			all_boxes.push_back(box);
-			all_scores.push_back(maxScore);
-			all_classes.push_back(maxScoreIndex);
-		}
-	}
-
-
-
-
-
-
-	vector<uint32_t> keep;
-	nms(all_boxes, all_scores, TEST_NMS, keep);
-
-	all_boxes = vec_keep_by_index(all_boxes, keep);
-	all_scores = vec_keep_by_index(all_scores, keep);
-	all_classes = vec_keep_by_index(all_classes, keep);
-
-
-	cout << "object detection result: " << endl;
-
-	for (uint32_t i = 0; i < keep.size(); i++) {
-		cout << "for class " << all_classes[i] << endl;
-
-		cout << "\t" << i << ": (" << all_boxes[i][0] << "," <<
-			all_boxes[i][1] << "," <<
-			all_boxes[i][2] << "," <<
-			all_boxes[i][3] << ") -> (" <<
-			all_boxes[i][0] / imScale << "," <<
-			all_boxes[i][1] / imScale << "," <<
-			all_boxes[i][2] / imScale << "," <<
-			all_boxes[i][3] / imScale << ")" << endl;
-	}
-	cout << "end object detection result ... " << endl;
-
-	vector<vector<float>> restoredBoxes(keep.size());
-	for (uint32_t i = 0; i < keep.size(); i++) {
-		restoredBoxes[i].resize(4);
-		restoredBoxes[i][0] = all_boxes[i][0] / imScale;
-		restoredBoxes[i][1] = all_boxes[i][1] / imScale;
-		restoredBoxes[i][2] = all_boxes[i][2] / imScale;
-		restoredBoxes[i][3] = all_boxes[i][3] / imScale;
-	}
-	displayBoxesOnImage(Util::imagePath, 1, restoredBoxes);
-
-}
-*/
-
-
-template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::feedforward() {
-	reshape();
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	this->_inputData[0]->print_data({}, false);
-	this->_inputData[1]->print_data({}, false);
-	this->_inputData[2]->print_data({}, false);
-	this->_inputData[3]->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-#endif
-	// rois (1, 1, #rois, 5-[batch index, x1, y1, x2, y2])
-	const uint32_t numRois = this->_inputData[0]->getShape(2);
-	vector<vector<Dtype>> boxes(numRois);
-	const Dtype* rois = this->_inputData[0]->host_data();
-
-	// im_info (1, 1, 1, 3-[height, width, scale])
-	const Dtype* imInfo = this->_inputData[1]->host_data();
-	float imScale = imInfo[2];
-	//float imHeight = roundf(imInfo[0] / imScale);
-	//float imWidth = roundf(imInfo[1] / imScale);
-
-	for (uint32_t i = 0; i < numRois; i++) {
-		boxes[i].resize(4);
-		// unscale back to raw image space
-		//boxes[i][0] = rois[5 * i + 1] / imScale;
-		//boxes[i][1] = rois[5 * i + 2] / imScale;
-		//boxes[i][2] = rois[5 * i + 3] / imScale;
-		//boxes[i][3] = rois[5 * i + 4] / imScale;
-
-		boxes[i][0] = rois[5 * i + 1];
-		boxes[i][1] = rois[5 * i + 2];
-		boxes[i][2] = rois[5 * i + 3];
-		boxes[i][3] = rois[5 * i + 4];
-	}
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-	print2dArray("boxes", boxes);
-	Data<Dtype>::printConfig = true;
-	this->_inputData[3]->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-#endif
-
-	// bbox_pred (#rois, 4 * num classes)
-	vector<vector<Dtype>> predBoxes;
-	BboxTransformUtil::bboxTransformInv(boxes, this->_inputData[3], predBoxes);
-	BboxTransformUtil::clipBoxes(predBoxes, {imInfo[0], imInfo[1]});
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-	print2dArray("predBoxes", predBoxes);
-
-	Data<Dtype>::printConfig = true;
-	this->_inputData[2]->print_data({}, false);
-	Data<Dtype>::printConfig = false;
-#endif
-
-	const uint32_t numClasses = this->_inputData[2]->getShape(3);
-	// cls_prob (#rois, num classes)
-	//const Dtype* scores = this->_inputData[2]->host_data();
-	vector<vector<Dtype>> scores;
-	fill2dVecWithData(this->_inputData[2], scores);
-
-	vector<vector<array<float, 5>>> all_boxes(numClasses);
-	vector<float> all_scores;
-
-	vector<Dtype> score;
-	vector<vector<Dtype>> predBox;
-
-	// XXX:
-	// skip j = 0, because it's the background class
-	for (uint32_t i = 1; i < numClasses; i++) {
-		// 현재 class에서 score가 thresh를 넘는 roi index 찾기
-		vector<uint32_t> inds;
-		for (uint32_t j = 0; j < numRois; j++) {
-			if (scores[j][i] > this->thresh)
-				inds.push_back(j);
-		}
-		if (inds.size() < 1)
-			continue;
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-		cout << "for class " << i << endl;
-		printArray("inds", inds);
-#endif
-
-		vector<uint32_t> keep;
-		predBox.resize(inds.size());
-		score.resize(inds.size());
-
-		uint32_t ind;
-		for (uint32_t j = 0; j < inds.size(); j++) {
-			predBox[j].resize(4);
-
-			ind = inds[j];
-			predBox[j][0] = predBoxes[ind][4*i+0];
-			predBox[j][1] = predBoxes[ind][4*i+1];
-			predBox[j][2] = predBoxes[ind][4*i+2];
-			predBox[j][3] = predBoxes[ind][4*i+3];
-
-			score[j] = scores[ind][i];
-		}
-		nms(predBox, score, TEST_NMS, keep);
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-		//printArray("keep", keep);
-		for (uint32_t j = 0; j < keep.size(); j++) {
-			cout << j << " (" << keep[j] << "): " << inds[keep[j]] << endl;
-		}
-#endif
-
-		all_boxes[i].resize(keep.size());
-		for (uint32_t j = 0; j < keep.size(); j++) {
-			all_boxes[i][j][0] = predBox[keep[j]][0];
-			all_boxes[i][j][1] = predBox[keep[j]][1];
-			all_boxes[i][j][2] = predBox[keep[j]][2];
-			all_boxes[i][j][3] = predBox[keep[j]][3];
-			all_boxes[i][j][4] = score[keep[j]];
-
-			all_scores.push_back(score[keep[j]]);
-		}
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-
-		cout << "all boxes for class " << i << endl;
-		for (uint32_t j = 0; j < all_boxes[i].size(); j++) {
-			cout << j << "\t: " <<
-					all_boxes[i][j][0] << "," <<
-					all_boxes[i][j][1] << "," <<
-					all_boxes[i][j][2] << "," <<
-					all_boxes[i][j][3] << "," <<
-					all_boxes[i][j][4] << endl;
-		}
-		cout << "--------------------" << endl;
-
-#endif
-	}
-
-	// Limit to maxPerImage detections *over all classes*
-	if (this->maxPerImage > 0) {
-		cout << "maxPerImage: " << this->maxPerImage << endl;
-
-		if (all_scores.size() > this->maxPerImage) {
-			sort(all_scores.begin(), all_scores.end());
-
-#if FRCNNTESTOUTPUTLAYER_LOG
-			printArray("all_scores", all_scores);
-#endif
-
-			float imageThresh = all_scores[all_scores.size()-this->maxPerImage];
-			for (uint32_t i = 1; i < numClasses; i++) {
-				typename vector<array<float, 5>>::iterator it;
-				for(it = all_boxes[i].begin(); it != all_boxes[i].end();) {
-					if ((*it)[4] < imageThresh) {
-						all_boxes[i].erase(it);
-					} else {
-						it++;
-					}
-				}
-			}
-		}
-	}
-
-	cout << "object detection result: " << endl;
-	vector<vector<float>> restoredBoxes;
-	vector<uint32_t> boxLabels;
-	for (uint32_t i = 1; i < numClasses; i++) {
-		if (all_boxes[i].size() > 0) {
-			cout << "for class " << i << endl;
-			for (uint32_t j = 0; j < all_boxes[i].size(); j++) {
-				cout << "\t" << j << ": (" << all_boxes[i][j][0] << "," <<
-						all_boxes[i][j][1] << "," <<
-						all_boxes[i][j][2] << "," <<
-						all_boxes[i][j][3] << ") -> (" <<
-
-						all_boxes[i][j][0] / imScale << "," <<
-						all_boxes[i][j][1] / imScale << "," <<
-						all_boxes[i][j][2] / imScale << "," <<
-						all_boxes[i][j][3] / imScale << ")" << endl;
-			}
-
-
-			for (uint32_t j = 0; j < all_boxes[i].size(); j++) {
-				//restoredBoxes[j].resize(all_boxes[i].size());
-				//restoredBoxes[j][0] = all_boxes[i][j][0] / imScale;
-				//restoredBoxes[j][1] = all_boxes[i][j][1] / imScale;
-				//restoredBoxes[j][2] = all_boxes[i][j][2] / imScale;
-				//restoredBoxes[j][3] = all_boxes[i][j][3] / imScale;
-
-				vector<float> tempBox(4);
-				tempBox[0] = all_boxes[i][j][0] / imScale;
-				tempBox[1] = all_boxes[i][j][1] / imScale;
-				tempBox[2] = all_boxes[i][j][2] / imScale;
-				tempBox[3] = all_boxes[i][j][3] / imScale;
-				restoredBoxes.push_back(tempBox);
-
-				boxLabels.push_back(i);
-			}
-		}
-	}
-	displayBoxesOnImage("TEST_RESULT", Util::imagePath, 1, restoredBoxes, boxLabels, {},
-			boxColors);
-
-	cout << "end object detection result ... " << endl;
-}
-
-
-template <typename Dtype>
-void FrcnnTestOutputLayer<Dtype>::initialize() {
-
-	//boxColors.resize(20);
+FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer()
+: Layer<Dtype>(),
+  labelMap(SLPROP(FrcnnTestOutput, labelMapPath)) {
+	this->type = Layer<Dtype>::FrcnnTestOutput;
+	/*
+	this->classes = {"__background__", "aeroplane", "bicycle", "bird", "boat", "bottle",
+			"bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
+			"person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
+			*/
+
+	this->labelMap.build();
 
 	this->boxColors.push_back(cv::Scalar(10, 163, 240));
 	this->boxColors.push_back(cv::Scalar(44, 90, 130));
@@ -448,36 +54,329 @@ void FrcnnTestOutputLayer<Dtype>::initialize() {
 	this->boxColors.push_back(cv::Scalar(169, 171, 0));
 	this->boxColors.push_back(cv::Scalar(255, 0, 170));
 	this->boxColors.push_back(cv::Scalar(0, 193, 216));
+}
 
-	/*
-	boxColors.push_back(cv::Scalar(240, 163, 10));
-	boxColors.push_back(cv::Scalar(130, 90, 44));
-	boxColors.push_back(cv::Scalar(0, 80, 239));
-	boxColors.push_back(cv::Scalar(162, 0, 37));
-	boxColors.push_back(cv::Scalar(27, 161, 226));
+template <typename Dtype>
+FrcnnTestOutputLayer<Dtype>::~FrcnnTestOutputLayer() {}
 
-	boxColors.push_back(cv::Scalar(216, 0, 115));
-	boxColors.push_back(cv::Scalar(164, 196, 0));
-	boxColors.push_back(cv::Scalar(106, 0, 255));
-	boxColors.push_back(cv::Scalar(96, 169, 23));
-	boxColors.push_back(cv::Scalar(0, 138, 0));
 
-	boxColors.push_back(cv::Scalar(118, 96, 138));
-	boxColors.push_back(cv::Scalar(109, 135, 100));
-	boxColors.push_back(cv::Scalar(250, 104, 0));
-	boxColors.push_back(cv::Scalar(244, 114, 208));
-	boxColors.push_back(cv::Scalar(229, 20, 0));
+template <typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::reshape() {
+	Layer<Dtype>::_adjustInputShape();
 
-	boxColors.push_back(cv::Scalar(122, 59, 63));
-	boxColors.push_back(cv::Scalar(100, 118, 135));
-	boxColors.push_back(cv::Scalar(0, 171, 169));
-	boxColors.push_back(cv::Scalar(170, 0, 255));
-	boxColors.push_back(cv::Scalar(216, 193, 0));
-	*/
+	const uint32_t inputSize = this->_inputData.size();
+	for (uint32_t i = 0; i < inputSize; i++) {
+		if (!Layer<Dtype>::_isInputShapeChanged(i))
+			continue;
 
+		const vector<uint32_t>& inputDataShape = this->_inputData[i]->getShape();
+		this->_inputShape[i] = inputDataShape;
+	}
 }
 
 
+
+
+
+template <typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::feedforward() {
+	reshape();
+
+	vector<vector<Dtype>> scores;
+	vector<vector<Dtype>> predBoxes;
+
+	imDetect(scores, predBoxes);
+	testNet(scores, predBoxes);
+}
+
+
+template <typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::imDetect(vector<vector<Dtype>>& scores, vector<vector<Dtype>>& predBoxes) {
+
+#if FRCNNTESTOUTPUTLAYER_LOG
+	this->_printOn();
+	this->_inputData[0]->print_data({}, false, -1);		// rois
+	this->_inputData[1]->print_data({}, false, -1);		// im_info
+	this->_inputData[2]->print_data({}, false, -1);		// cls_prob
+	this->_inputData[3]->print_data({}, false, -1);		// bbox_pred
+	this->_printOff();
+#endif
+	// im_info (1, 1, 1, 3-[height, width, scale])
+	const Dtype imHeight = this->_inputData[1]->host_data()[0];
+	const Dtype imWidth = this->_inputData[1]->host_data()[1];
+	const Dtype imScale = this->_inputData[1]->host_data()[2];
+
+
+	// rois (1, 1, #rois, 5-[batch index, x1, y1, x2, y2])
+	const uint32_t numRois = this->_inputData[0]->getShape(2);
+	vector<vector<Dtype>> boxes(numRois);
+	const Dtype* rois = this->_inputData[0]->host_data();
+
+	for (uint32_t i = 0; i < numRois; i++) {
+		boxes[i].resize(4);
+		// unscale back to raw image space
+		boxes[i][0] = rois[5 * i + 1] / imScale;
+		boxes[i][1] = rois[5 * i + 2] / imScale;
+		boxes[i][2] = rois[5 * i + 3] / imScale;
+		boxes[i][3] = rois[5 * i + 4] / imScale;
+
+		/*
+		boxes[i][0] = rois[5 * i + 1];
+		boxes[i][1] = rois[5 * i + 2];
+		boxes[i][2] = rois[5 * i + 3];
+		boxes[i][3] = rois[5 * i + 4];
+		*/
+	}
+
+#if FRCNNTESTOUTPUTLAYER_LOG
+	print2dArray("boxes", boxes);
+	this->_printOn();
+	this->_inputData[3]->print_data({}, false);
+	this->_printOff();
+#endif
+	fill2dVecWithData(this->_inputData[2], scores);
+
+	/*
+	this->_printOn();
+	this->_inputData[2]->print_data({}, false);
+	print2dArray("scores", scores);
+	this->_printOff();
+	*/
+
+	// bbox_pred (#rois, 4 * num classes)
+	BboxTransformUtil::bboxTransformInv(boxes, this->_inputData[3], predBoxes);
+	BboxTransformUtil::clipBoxes(predBoxes,
+			{round(imHeight/imScale), round(imWidth/imScale)});
+	//BboxTransformUtil::clipBoxes(predBoxes,
+	//		{round(imHeight), round(imWidth)});
+
+#if FRCNNTESTOUTPUTLAYER_LOG
+	print2dArray("boxes", boxes);
+	//print2dArray("scores", scores);
+	print2dArray("predBoxes", predBoxes);
+#endif
+}
+
+template <typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
+		vector<vector<Dtype>>& boxes) {
+
+
+	/*
+	cout << "rois shape: " << endl;
+	print2dArray("rois", proposals);
+
+	const string windowName = "rois";
+	uint32_t numBoxes = proposals.size();
+
+	Dtype scale = this->_inputData[2]->host_data()[2];
+	int boxOffset = 1;
+	cout << "scale: " << scale << endl;
+	const int onceSize = 5;
+
+	for (int j = 0; j < (numBoxes / onceSize); j++) {
+		cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
+		cv::resize(im, im, cv::Size(), scale, scale, CV_INTER_LINEAR);
+
+		for (uint32_t i = j*onceSize; i < (j+1)*onceSize; i++) {
+			cv::rectangle(im, cv::Point(proposals[i][boxOffset+0], proposals[i][boxOffset+1]),
+				cv::Point(proposals[i][boxOffset+2], proposals[i][boxOffset+3]),
+				cv::Scalar(0, 0, 255), 2);
+		}
+
+		cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		cv::imshow(windowName, im);
+
+		if (pause) {
+			cv::waitKey(0);
+			cv::destroyAllWindows();
+		}
+	}
+	*/
+
+
+
+
+
+	const Dtype confThresh = Dtype(0.7);
+	const Dtype nmsThresh = Dtype(0.3);
+
+	vector<vector<float>> result;
+
+	vector<uint32_t> keep;
+	vector<Dtype> clsScores;
+	vector<vector<Dtype>> clsBoxes;
+	vector<uint32_t> inds;
+
+	for (int clsInd = 1; clsInd < this->labelMap.getCount(); clsInd++) {
+		const string& cls = this->labelMap.convertIndToLabel(clsInd);
+
+		fillClsScores(scores, clsInd, clsScores);
+		fillClsBoxes(boxes, clsInd, clsBoxes);
+
+		cout << cls << "\t\tboxes before nms: " << scores.size();
+		nms(clsBoxes, clsScores, nmsThresh, keep);
+		cout << " , after nms: " << keep.size() << endl;
+
+		clsBoxes = vec_keep_by_index(clsBoxes, keep);
+		clsScores = vec_keep_by_index(clsScores, keep);
+
+		// score 중 confThresh 이상인 것에 대해
+		np_where_s(clsScores, GE, confThresh, inds);
+
+		if (inds.size() == 0)
+			continue;
+
+
+		cout << "num of " << cls << ": " << inds.size() << endl;
+
+		int offset = result.size();
+
+		for (int i = 0; i < inds.size(); i++) {
+			vector<float> temp(6);
+			temp[0] = float(clsInd);
+			temp[1] = clsBoxes[inds[i]][0];
+			temp[2] = clsBoxes[inds[i]][1];
+			temp[3] = clsBoxes[inds[i]][2];
+			temp[4] = clsBoxes[inds[i]][3];
+			temp[5] = clsScores[inds[i]];
+			cout << "\tscore:" << temp[5] << endl;
+			result.push_back(temp);
+
+			//printf("%f, %f, %f, %f", temp[1], temp[2], temp[3], temp[4]);
+		}
+	}
+
+	if (Util::imagePath.size() == 0)
+		Util::imagePath = "/home/jkim/Dev/git/py-faster-rcnn-v/data/demo/000010.jpg";
+
+
+
+	//const Dtype imScale = this->_inputData[1]->host_data()[2];
+	cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
+	//cv::resize(im, im, cv::Size(), imScale, imScale, CV_INTER_LINEAR);
+	uint32_t numBoxes = result.size();
+
+	for (uint32_t i = 0; i < numBoxes; i++) {
+		int clsInd = round(result[i][0]);
+
+		cv::rectangle(im, cv::Point(result[i][1], result[i][2]),
+			cv::Point(result[i][3], result[i][4]),
+			boxColors[clsInd-1], 2);
+
+		cv::putText(im, this->labelMap.convertIndToLabel(clsInd) , cv::Point(result[i][1],
+				result[i][2]+15.0f), 2, 0.5f, boxColors[clsInd-1]);
+	}
+
+	if (SLPROP(FrcnnTestOutput, savePath) == "") {
+		const string windowName = "result";
+		cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+		cv::imshow(windowName, im);
+
+		if (true) {
+			cv::waitKey(0);
+			cv::destroyAllWindows();
+		}
+	} else {
+		cv::imwrite(SLPROP(FrcnnTestOutput, savePath) + "/" + Util::imagePath.substr(Util::imagePath.length()-10), im);
+	}
+
+	/*
+	displayBoxesOnImage("TEST_RESULT", Util::imagePath, 1, restoredBoxes, boxLabels, {},
+			boxColors);
+
+	cout << "end object detection result ... " << endl;
+	*/
+}
+
+template <typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::fillClsScores(vector<vector<Dtype>>& scores, int clsInd,
+		vector<Dtype>& clsScores) {
+
+	const int size = scores.size();
+	clsScores.resize(size);
+	for (int i = 0; i < size; i++) {
+		clsScores[i] = scores[i][clsInd];
+	}
+}
+
+template <typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::fillClsBoxes(vector<vector<Dtype>>& boxes, int clsInd,
+		vector<vector<Dtype>>& clsBoxes) {
+	const int size = boxes.size();
+	clsBoxes.resize(size);
+
+	for (int i = 0; i < size; i++) {
+		clsBoxes[i].resize(4);
+
+		int base = clsInd * 4;
+		clsBoxes[i][0] = boxes[i][base + 0];
+		clsBoxes[i][1] = boxes[i][base + 1];
+		clsBoxes[i][2] = boxes[i][base + 2];
+		clsBoxes[i][3] = boxes[i][base + 3];
+	}
+}
+
+
+
+/****************************************************************************
+ * layer callback functions
+ ****************************************************************************/
+template<typename Dtype>
+void* FrcnnTestOutputLayer<Dtype>::initLayer() {
+    FrcnnTestOutputLayer* layer = new FrcnnTestOutputLayer<Dtype>();
+    return (void*)layer;
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+    delete layer;
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+    bool isInput, int index) {
+	if (isInput) {
+		SASSERT0(index < 4);
+	} else {
+		SASSERT0(index < 1);
+	}
+
+    FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+
+    if (isInput) {
+        SASSERT0(layer->_inputData.size() == index);
+        layer->_inputData.push_back((Data<Dtype>*)tensorPtr);
+    } else {
+        SASSERT0(layer->_outputData.size() == index);
+        layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
+    }
+}
+
+template<typename Dtype>
+bool FrcnnTestOutputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+    layer->reshape();
+    return true;
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+	layer->feedforward();
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::backwardTensor(void* instancePtr) {
+	FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
+	layer->backpropagation();
+}
+
+template<typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::learnTensor(void* instancePtr) {
+    SASSERT0(false);
+}
 
 
 template class FrcnnTestOutputLayer<float>;

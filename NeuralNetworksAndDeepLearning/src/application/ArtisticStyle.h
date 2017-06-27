@@ -12,11 +12,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include <map>
-
+#include "common.h"
 #include "Network.h"
 
-
+#if 0
 template <typename Dtype>
 class ArtisticStyle {
 public:
@@ -120,5 +119,6 @@ private:
 
 
 };
+#endif
 
 #endif /* ARTISTICSTYLE_H_ */

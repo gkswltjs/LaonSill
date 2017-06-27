@@ -16,6 +16,7 @@
 #include "Data.h"
 
 
+
 const std::string DELIM 		= "*";
 const std::string TYPE_DATA 	= "data";
 const std::string TYPE_DIFF 	= "diff";
@@ -25,7 +26,7 @@ const std::string SIG_PARAMS 	= DELIM + "params" + DELIM;
 const std::string BLOBS_PREFIX	= "anonymous" + DELIM + "blobs" + DELIM;
 const std::string NPZ_PATH 		= "/home/jkim/Dev/data/numpy_array/";
 
-const float COMPARE_ERROR 		= 0.0000001;
+const float COMPARE_ERROR 		= 1.0e-7;
 
 
 // cuda device 설정
@@ -61,7 +62,7 @@ bool compareParam(std::map<std::string, Data<float>*>& nameDataMap,
 
 
 void printNpzFiles(cnpy::npz_t& cnpy_npz);
-void printNameDataMap(std::map<std::string, Data<float>*>& nameDataMap, bool printData);
+void printNameDataMap(const std::string& name, std::map<std::string, Data<float>*>& nameDataMap, bool printData);
 void printData(std::vector<Data<float>*>& dataVec);
 
 void printConfigOn();
@@ -76,7 +77,6 @@ void cleanUpObject(T* obj);
 
 template <typename T, typename S>
 S* retrieveValueFromMap(std::map<T, S*>& dict, const T& key);
-
 
 
 

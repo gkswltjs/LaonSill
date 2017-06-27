@@ -13,18 +13,34 @@
 
 using namespace std;
 
-atomic<int> Job::jobIDGen;
+atomic<int>         Job::jobIDGen;
 
-map<int, Job*> Job::reqPubJobMap;
-mutex Job::reqPubJobMapMutex;
+map<int, Job*>      Job::reqPubJobMap;
+mutex               Job::reqPubJobMapMutex;
+
+vector<JobType>     Job::pubJobTypeMap;
 
 void Job::init() {
     atomic_store(&Job::jobIDGen, 0);
+
+    for (int i = 0; i < JobTypeMax; i++) {
+        Job::pubJobTypeMap.push_back(JobTypeMax);
+    }
+
+    // FIXME: 자동 코드 생성으로 대체하자.
+    Job::pubJobTypeMap[CreateNetworkFromFile]       = CreateNetworkReply;
+    Job::pubJobTypeMap[CreateNetwork]               = CreateNetworkReply;
+    Job::pubJobTypeMap[RunNetwork]                  = RunNetworkReply;
+    Job::pubJobTypeMap[BuildNetwork]                = BuildNetworkReply;
+    Job::pubJobTypeMap[ResetNetwork]                = ResetNetworkReply;
+    Job::pubJobTypeMap[RunNetworkMiniBatch]         = RunNetworkReply;
+    Job::pubJobTypeMap[SaveNetwork]                 = SaveNetworkReply;
+    Job::pubJobTypeMap[LoadNetwork]                 = LoadNetworkReply;
 }
 
-Job::Job(Job::JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
+Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
     char *jobElemValues) {
-    SASSERT0(jobType < Job::JobTypeMax);
+    SASSERT0(jobType < JobTypeMax);
     this->jobType = jobType;
     this->jobElemCnt = jobElemCnt;
  
@@ -59,6 +75,14 @@ Job::Job(Job::JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
                     (void*)&jobElemTypes[offset], sizeof(int));
                 offset += sizeof(float) * this->jobElemDefs[i].arrayCount;
                 break;
+            case Job::StringType:
+                offset += sizeof(int);
+                this->jobElemDefs[i].elemOffset = offset;
+                memcpy((void*)&this->jobElemDefs[i].arrayCount,
+                    (void*)jobElemTypes[offset], sizeof(int));
+                offset += sizeof(char) * this->jobElemDefs[i].arrayCount;
+                break;
+
             default:
                 COLD_LOG(ColdLog::ERROR, true,
                     "invalid job elem type. request elem type=%d", jobElemTypes[i]);
@@ -80,7 +104,7 @@ Job::Job(Job::JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
     atomic_store(&this->taskIDGen, 1);
 }
 
-Job::Job(Job::JobType jobType) {
+Job::Job(JobType jobType) {
     // for incremental building usage
     this->jobType = jobType;
     this->jobElemCnt = 0;
@@ -120,9 +144,12 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     SASSERT0(this->jobElemDefs != NULL);
 
     int elemCnt = 1;
-    if (jobElemType == Job::FloatArrayType) {
+    if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         SASSERT0(arrayCount > 0);
         elemCnt = arrayCount;
+
+        if (jobElemType == Job::StringType)
+            elemCnt += 1;       // for \0
     }
 
     int elemSize;
@@ -134,13 +161,16 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
         case Job::FloatArrayType:
             elemSize = sizeof(float);
             break;
+        case Job::StringType:
+            elemSize = sizeof(char);
+            break;
         default:
             SASSERT(false, "invalid job elem type. job elem type=%d", (int)jobElemType);
     }
 
     int elemValueSize = elemCnt * elemSize;
 
-    if (jobElemType == Job::FloatArrayType) {
+    if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         int arrayAllocSize = tempJobElemValueSize + elemValueSize + sizeof(int);
         // array size만큼을 고려해 줘야 한다.
         this->jobElemValues = (char*)malloc(arrayAllocSize);
@@ -164,15 +194,19 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     this->jobElemDefs[curJobElemIdx].elemType = jobElemType;
     this->jobElemDefs[curJobElemIdx].elemOffset = tempJobElemValueSize;
 
-    if (jobElemType == Job::FloatArrayType)
+    if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType)
         this->jobElemDefs[curJobElemIdx].elemOffset += sizeof(int);
 
     this->jobElemDefs[curJobElemIdx].arrayCount = arrayCount;
 
     // fill job elem value
-    if (jobElemType == Job::FloatArrayType) {
+    if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         memcpy((void*)&this->jobElemValues[tempJobElemValueSize], (void*)&arrayCount,
             sizeof(int));
+
+        if (jobElemType == Job::StringType) {
+            memset((void*)&this->jobElemValues[tempJobElemValueSize + arrayCount], '\0', 1);
+        }
     }
 
     memcpy((void*)&this->jobElemValues[this->jobElemDefs[curJobElemIdx].elemOffset],
@@ -225,6 +259,20 @@ float Job::getFloatArrayValue(int elemIdx, int arrayIdx) {
     return floatArray[arrayIdx];
 }
 
+std::string Job::getStringValue(int elemIdx) {
+    bool isValid = isValidElemValue(Job::StringType, elemIdx);
+    SASSUME0(isValid == true);
+
+    int elemOffset = this->jobElemDefs[elemIdx].elemOffset;
+    char *charArray = (char*)(&this->jobElemValues[elemOffset]);
+    char *temp = (char*)malloc(sizeof(char) * this->jobElemDefs[elemIdx].arrayCount);
+    SASSUME0(temp != NULL);
+    strncpy(temp, charArray, this->jobElemDefs[elemIdx].arrayCount);
+    string resultString(temp);
+    free(temp);
+    return resultString;
+}
+
 Job::JobElemDef Job::getJobElemDef(int elemIdx) {
     SASSUME0(this->isVaildElemIdx(elemIdx));
 
@@ -247,6 +295,11 @@ int Job::getJobElemValueSize() {
             case Job::FloatArrayType:
                 totalSize += sizeof(int);
                 totalSize += sizeof(float) * this->jobElemDefs[i].arrayCount;
+                break;
+
+            case Job::StringType:
+                totalSize += sizeof(int);
+                totalSize += sizeof(char) * this->jobElemDefs[i].arrayCount;
                 break;
 
             default:
@@ -329,19 +382,15 @@ int Job::getJobID() {
 }
 
 bool Job::hasPubJob() {
-    if ((this->jobType == Job::CreateDQNImageLearner) ||
-        (this->jobType == Job::StepDQNImageLearner))
-        return true;
+    SASSUME0(Job::getType() < JobTypeMax);
 
-    return false;
+    if (Job::pubJobTypeMap[Job::getType()] == JobTypeMax)
+        return false;
+
+    return true;
 }
 
-Job::JobType Job::getPubJobType() {
-    if (this->jobType == Job::CreateDQNImageLearner)
-        return Job::CreateDQNImageLearnerResult;
-
-    if (this->jobType == Job::StepDQNImageLearner)
-        return Job::StepDQNImageLearnerResult;
-
-    return Job::JobTypeMax;     // meaningless
+JobType Job::getPubJobType() {
+    SASSUME0(Job::getType() < JobTypeMax);
+    return Job::pubJobTypeMap[Job::getType()];
 }

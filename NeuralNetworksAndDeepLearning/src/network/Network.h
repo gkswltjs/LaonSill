@@ -10,20 +10,15 @@
 #define NETWORK_H_
 
 #include "common.h"
-#include "Cost.h"
-#include "Activation.h"
 #include "NetworkListener.h"
-#include "Layer.h"
+#include "BaseLayer.h"
 #include "InputLayer.h"
-#include "ALEInputLayer.h"
 #include "LayerConfig.h"
-#include "Evaluation.h"
 #include "Worker.h"
-#include "NetworkConfig.h"
-#include "DQNImageLearner.h"
+#include "EnumDef.h"
+#include "LogicalPlan.h"
 
 template <typename Dtype> class DataSet;
-template <typename Dtype> class LayersConfig;
 template <typename Dtype> class DQNImageLearner;
 
 /**
@@ -39,181 +34,139 @@ template <typename Dtype> class DQNImageLearner;
 template <typename Dtype>
 class Network {
 public:
-	//Network(NetworkParam& networkParam);
-	Network(NetworkConfig<Dtype>* networkConfig);
 	/**
 	 * @details Network 생성자
-	 * @param networkListener 네트워크 상태 리스너
 	 */
-	//Network(NetworkListener *networkListener=0);
+	Network();
 
 	/**
 	 * @details Network 소멸자
 	 */
 	virtual ~Network();
 
+	/**
+	 * @details Network 초기화 함수
+	 */
     static void init();
 
 	/**
-	 * @details 네트워크에 설정된 입력 레이어를 조회한다.
-	 * @return 네트워크에 설정된 입력 레이어
+	 * @details run()을 수행하면서 시간을 측정한다.
+	 * @param epochs run()을 수행할 최대 epoch
 	 */
-	InputLayer<Dtype> *getInputLayer();
-
-    void setLayersConfig(LayersConfig<Dtype>* layersConfig);
-	LayersConfig<Dtype>* getLayersConfig();
+	void run_with_timer(bool inference);
 
 	/**
-	 * @details sgd()를 수행한다. 시간을 측정하기 위한 임시 함수.
-	 * @param epochs sgd를 수행할 최대 epoch
+	 * @details 네트워크를 실행한다.
+	 * @param inference     inference 여부를 결정
 	 */
-	void sgd_with_timer(int epochs);
-
-    Dtype sgdMiniBatch(uint32_t batchTotalIndex);
+	void run(bool inference);
 
 	/**
-	 * @details stochastic gradient descent를 수행한다.
-	 * @param epochs sgd를 수행할 최대 epoch
+	 * @details 네트워크를 plantype별로 1번의 mini batch를 실행한다. 이 함수를 호출한 이후에
+     *          다시 reset()함수를 호출할 필요는 없다.
+     * @param planType      planType (forward, backward, update)
+	 * @param inference     inference 여부를 결정
 	 */
-	Dtype sgd(int epochs);
-	/**
-	 * @details 네트워크의 주어진 테스트 데이터셋으로 네트워크 테스트를 수행한다.
-	 */
-	void test();
-
+    void runPlanType(PlanType planType, bool inference);
 
 	/**
-	 * @details 네트워크 쓰기관련 설정을 한다.
-	 * @param savePrefix 네트워크 쓰기 파일의 경로의 prefix
+	 * @details 네트워크를 준비한다.
+	 * @param epochs run()을 수행할 최대 epoch
 	 */
-	void saveConfig(const char *savePrefix);
+    void build(int epochs);
+
+	/**
+	 * @details 네트워크를 초기화 한다. 한번 네트워크를 실행하고, 다시 그 네트워크를
+     *          실행하고자 할때 이 함수를 호출한다.
+	 */
+    void reset();
+
+	/**
+	 * @details minibatch 1회를 수행한다.
+     * @param inference     inference 여부를 결정
+     * @param miniBatchIdx  수행할 mini batch index
+	 */
+    void runMiniBatch(bool inference, int miniBatchIdx);
+
 	/**
 	 * @details 네트워크를 파일에 쓴다.
-	 * @param filename 네트워크를 쓸 파일의 경로
+	 * @param path 네트워크를 쓸 파일의 경로
+	 */
+    void save(std::string path);
+
+	/**
+	 * @details 네트워크를 파일에 쓴다. 네트워크 파일경로는 미리 지정이 되어 있어야 한다.
 	 */
 	void save();
+
 	/**
 	 * @details 네트워크를 파일로부터 읽는다.
 	 * @param filename 네트워크를 읽을 파일의 경로
 	 */
-	void load(const char* filename);
-	void loadPretrainedWeights();
+    void load(std::string path);
+
 	/**
-	 * @details 네트워크의 입력 데이터 구조 정보를 설정한다.
-	 * @param in_dim 네트워크의 입력 데이터 구조 정보 구조체
+	 * @details 네트워크를 파일로부터 읽는다. 네트워크 파일경로는 미리 지정이 되어 있어야
+     *          한다.
 	 */
-	//void shape(io_dim in_dim=io_dim(0,0,0,0));
-	/**
-	 * @details 네트워크가 이미 입력 데이터 구조 정보가 설정된 상태에서 이를 변경한다.
-	 * @param in_dim 네트워크의 변경할 입력 데이터 구조 정보 구조체
-	 */
-	//void reshape(io_dim in_dim=io_dim(0,0,0,0));
+	void load();
+
 	/**
 	 * @details 네트워크 내부의 레이어를 이름으로 찾는다.
 	 * @param name 찾을 레이어의 이름
 	 * @return 찾은 레이어에 대한 포인터
 	 */
-	Layer<Dtype>* findLayer(const std::string name);
+	Layer<Dtype>* findLayer(const std::string layerName);
+
 	/**
-	 * @details 네트워크에 등록된 데이터셋 특정 채널의 평균값을 조회한다.
-	 * @param 데이터셋의 조회할 채널 index
-	 * @return 조회된 특정 채널의 평균값
+	 * @details 네트워크에서 특정 레이어타입을 가지고 있는 모든 레이어를 반환한다.
+	 * @param layerType 찾을 레이어타입
+	 * @return 레이어포인트 어레이
 	 */
-	float getDataSetMean(UINT channel);
+    std::vector<Layer<Dtype>*> findLayersByType(int layerType);
+
 	/**
-	 * @details 네트워크에 등록된 데이터셋에 각 채널의 평균값을 설정한다.
-	 * @param dataSetMean 채널의 평균값을 담고 있는 배열의 포인터
+	 * @details 네트워크에서 특정 텐서를 찾아서 반환한다.
+	 * @param nodeID        노드 아이디
+     * @param devID         디바이스 아이디
+     * @param tensorName    찾을 텐서이름
+	 * @return 텐서포인터를 반환
 	 */
-	void setDataSetMean(float *dataSetMean);
+    Data<Dtype>* findTensor(int nodeID, int devID, std::string tensorName);
+
 
     /**
-     * DQN related functions
+     * @details 네트워크 아이디를 반환한다.
+     * @return  네트워크 아이디
      */
-    void syncNetwork(Network<Dtype>* target);
-    std::vector<Data<Dtype>*>& feedForwardDQNNetwork(int batchCount,
-        DQNImageLearner<Dtype> *learner, bool isNetQ);
-    void backPropagateDQNNetwork(DQNImageLearner<Dtype> *learner);
-
-
-
-    void _backpropagationFromTo(const std::string& start, const std::string& end);
-
-
-
-protected:
-	/**
-	 * @details 배치단위의 학습이 종료된 후 학습된 내용을 적절한 정규화 과정을 거쳐 네트워크에
-     *          반영한다.
-	 * @param nthMiniBatch 한 epoch내에서 종료된 batch의 index
-	 */
-	void trainBatch(uint32_t batchIndex);
-	/**
-	 * @details 배치단위의 학습된 내용을 네트워크에 반영한다.
-	 */
-	void applyUpdate();
-	/**
-	 * @details 배치단위의 학습된 파라미터의 L2 norm을 설정된 값을 기준으로 스케일 다운한다.
-	 *          gradient explode를 예방하는 역할을 한다.
-	 */
-	void clipGradients();
-
-	double computeSumSquareParamsData();
-	double computeSumSquareParamsGrad();
-	void scaleParamsGrad(float scale);
-
-
-	//double totalCost(const std::vector<const DataSample *> &dataSet, double lambda);
-	//double accuracy(const std::vector<const DataSample *> &dataSet);
-	/**
-	 * @details 학습된 네트워크에 대해 전체 테스트셋으로 네트워크를 평가한다.
-	 */
-	double evaluateTestSet();
-
-
-
-	//void checkAbnormalParam();
-	//void checkLearnableParamIsNan();
-
-
-
-	void _feedforward(uint32_t batchIndex);
-	void _backpropagation(uint32_t batchIndex);
-
-
-	void saveProposalTargets(std::ofstream& ofs);
-
-
-
-#ifndef GPU_MODE
-	int testEvaluateResult(const rvec &output, const rvec &y);
-#else
-	/**
-	 * @details 특정 테스트 데이터 하나에 대해 feedforward된 네트워크를 target값으로 평가한다.
-	 * @param num_labels 데이터셋 레이블 크기 (카테고리의 수)
-	 * @param output 데이터에 대한 네트워크의 출력 장치 메모리 포인터
-	 * @param y 데이터의 정답 호스트 메모리 포인터
-	 */
-	//void evaluateTestData(const int num_labels, Data* output, const UINT *y);
-	double evaluateTestData(uint32_t batchIndex, std::vector<double>& costList);
-#endif
-
-
-
-
-
-public:
-	NetworkConfig<Dtype>* config;
-
-
-public:
     int                                     getNetworkID() { return this->networkID; }
+
+    /**
+     * @details 특정 네트워크 아이디를 가지고 있는 네트워크를 반환한다.
+     * @param networkID     네트워크 아이디
+     * @return  네트워크 포인터를 반환
+     */
     static Network<Dtype>*                  getNetworkFromID(int networkID);
+
+    bool                                    isInnerLayer(int layerID);
+
+    /**
+     * @details 네트워크 정의가 로드되었음을 설정한다.
+     */
+    void                                    setLoaded() { this->isLoaded = true; }
+    bool                                    getLoaded() { return this->isLoaded; }
+
+    void                                    setBuilt() { this->isBuilt = true; }
+    void                                    unsetBuilt() { this->isBuilt = false; }
+    bool                                    getBuilt() { return this->isBuilt; }
 
 private:
     int                                     networkID;
     static std::atomic<int>                 networkIDGen;
     static std::map<int, Network<Dtype>*>   networkIDMap;
     static std::mutex                       networkIDMapMutex;
+    bool                                    isLoaded;
+    bool                                    isBuilt;
 };
 
 

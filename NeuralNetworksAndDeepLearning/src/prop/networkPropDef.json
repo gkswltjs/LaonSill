@@ -1,0 +1,33 @@
+{
+
+"VARS" :
+[
+    ["batchSize", "uint32_t", "1"],
+    ["dop", "uint32_t", "1"],
+    ["epochs", "uint32_t", "1"],
+    ["miniBatch", "uint32_t", "0"],
+    ["testInterval", "uint32_t", "0"],
+    ["saveInterval", "uint32_t", "0"],
+    ["iterations", "uint32_t", "0"],
+    ["stepSize", "uint32_t", "1"],
+    ["baseLearningRate", "float", "0.001"],
+    ["power", "float", "1.0"],
+    ["momentum", "float", "0.9"],
+    ["weightDecay", "float", "0.001"],
+    ["clipGradientsLevel", "float", "35.0"],
+    ["gamma", "float", "0.0"],
+    ["epsilon", "float", "0.00000001"],
+    ["beta1", "float", "0.9"],
+    ["beta2", "float", "0.999"],
+    ["decayRate", "float", "0.9"],
+    ["savePathPrefix", "std::string", "\"\""],
+    ["loadPath", "std::string", "\"\""],
+    ["optimizer", "Optimizer", "Optimizer::Momentum"],
+    ["lrPolicy", "LRPolicy", "LRPolicy::Fixed"],
+    ["phase", "NetworkPhase", "NetworkPhase::TrainPhase"],
+    ["lossLayer", "std::vector<std::string>", ""],
+    ["rate", "float", "-1.0"],
+    ["status", "NetworkStatus", "NetworkStatus::Train"]
+]
+
+}
