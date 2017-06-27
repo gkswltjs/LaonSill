@@ -20,7 +20,7 @@
 
 using namespace std;
 
-#define INFERENCE 0
+#define INFERENCE 1
 
 template<typename Dtype>
 void FRCNN<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
@@ -49,7 +49,6 @@ void FRCNN<Dtype>::run() {
 
 #if !INFERENCE
     network->run(false);
-
 #else
     network->run(true);
 #endif

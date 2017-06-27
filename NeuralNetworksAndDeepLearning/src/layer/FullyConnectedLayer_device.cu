@@ -281,15 +281,13 @@ void FullyConnectedLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) 
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::saveParams(ofstream& ofs) {
+	LearnableLayer<Dtype>::saveParams(ofs);
+	/*
 	if (this->_inputData.size() == 1) {
 		cout << SLPROP_BASE(name) << " saves as usual ... " << endl;
 		LearnableLayer<Dtype>::saveParams(ofs);
 	} else {
 		cout << SLPROP_BASE(name) << " saves as special ... " << endl;
-
-
-
-
 		uint32_t numParams = this->_params.size();
 
 		vector<vector<float>> bboxMeans;
@@ -298,13 +296,14 @@ void FullyConnectedLayer<Dtype>::saveParams(ofstream& ofs) {
 		fill2dVecWithData(this->_inputData[2], bboxStds);
 
 
-		/*
+#if 0
 		this->_inputData[1]->print_shape();
 		this->_inputData[2]->print_shape();
 		this->_params[0]->print_shape();
 		this->_params[1]->print_shape();
 		exit(1);
-		*/
+#endif
+
 
 
 		Data<Dtype>* param0 = this->_params[0];
@@ -345,6 +344,7 @@ void FullyConnectedLayer<Dtype>::saveParams(ofstream& ofs) {
 		orig0.save(ofs);
 		orig1.save(ofs);
 	}
+	*/
 }
 
 

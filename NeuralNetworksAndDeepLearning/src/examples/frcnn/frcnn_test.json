@@ -409,7 +409,8 @@
 			"input" : ["rois", "im_info", "cls_prob", "bbox_pred"],
 			"output" : ["loss_bbox"],
 			"labelMapPath" : "/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007/labelmap_voc.prototxt",
-			"thresh" : 0.5,
+			"confThresh" : 0.7,
+			"nmsThresh" : 0.1,
 			"savePath" : "/home/jkim/frcnn/outputs"
 		}
 	],
@@ -419,7 +420,7 @@
 		"batchSize" : 1, 
 		"epochs" : 5, 
 		"phase" : "TestPhase",
-		"loadPath" : "/home/jkim/Dev/SOOOA_HOME/network/SOOOA_FRCNN_600000.param"
+		"loadPath" : "/home/jkim/Dev/SOOOA_HOME/network/frcnn_240000_dn.param"
 	}
 
 }

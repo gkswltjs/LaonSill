@@ -198,8 +198,8 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 
 
 
-	const Dtype confThresh = Dtype(0.7);
-	const Dtype nmsThresh = Dtype(0.3);
+	const Dtype confThresh = Dtype(SLPROP(FrcnnTestOutput, confThresh));
+	const Dtype nmsThresh = Dtype(SLPROP(FrcnnTestOutput, nmsThresh));
 
 	vector<vector<float>> result;
 

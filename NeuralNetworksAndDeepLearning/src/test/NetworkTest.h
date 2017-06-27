@@ -116,7 +116,7 @@ private:
 
 		WorkContext::updateNetwork(this->networkID);
 		//PlanOptimizer::buildPlans(this->networkID);
-		WorkContext::updatePlan(0);
+		WorkContext::updatePlan(0, true);
 	}
 
 	void retrieveLayers() {

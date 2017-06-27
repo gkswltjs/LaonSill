@@ -201,8 +201,8 @@ void FrcnnTestVideoOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 
 
 
-	const Dtype confThresh = Dtype(SLPROP(FrcnnTestVideoOutput, thresh));
-	const Dtype nmsThresh = Dtype(0.3);
+	const Dtype confThresh = Dtype(SLPROP(FrcnnTestVideoOutput, confThresh));
+	const Dtype nmsThresh = Dtype(SLPROP(FrcnnTestVideoOutput, nmsThresh));
 
 	vector<vector<float>> result;
 

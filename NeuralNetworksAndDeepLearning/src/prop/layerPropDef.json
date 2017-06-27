@@ -502,7 +502,8 @@
     "VARS" : 
 	[
 	    ["maxPerImage", "uint32_t", "100"],
-	    ["thresh", "float", "0.05"],
+	    ["confThresh", "float", "0.5"],
+	    ["nmsThresh", "float", "0.1"],
 	    ["vis", "bool", "false"],
 	    ["savePath", "std::string", "\"\""],
 	    ["labelMapPath", "std::string", "\"\""]
@@ -519,7 +520,8 @@
     "VARS" : 
 	[
 	    ["maxPerImage", "uint32_t", "100"],
-	    ["thresh", "float", "0.05"],
+	    ["confThresh", "float", "0.5"],
+	    ["nmsThresh", "float", "0.1"],
 	    ["vis", "bool", "false"],
 	    ["savePath", "std::string", "\"\""],
 	    ["labelMapPath", "std::string", "\"\""]
