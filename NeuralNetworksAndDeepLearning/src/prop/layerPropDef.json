@@ -260,7 +260,7 @@
     "PROPDOWN" : [],
     "VARS" : 
         [   
-            ["epsilon", "double", "0.0000001"],
+            ["epsilon", "double", "0.0001"],
             ["train", "bool", "true"]
         ]
 
@@ -621,6 +621,20 @@
 		["fps", "int", "10"],
 	    ["pixelMeans", "std::vector<float>", ""]
 	]
+},
+
+"CustomInput" :
+{
+    "DESC" : "custom input",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+    [
+        ["inputElemCounts", "std::vector<int>", ""],
+        ["trainDataCount", "int", "1"]
+    ]
 }
 
 }

@@ -38,6 +38,7 @@
 #include "test/PlanOptimizerTest.h"
 #include "test/PlanBuilderTest.h"
 #include "test/NetworkRunByPlanTest.h"
+#include "test/CustomInputTest.h"
 #else
 #include "test/CreateNetworkTest.h"
 #include "test/RunNetworkTest.h"
@@ -49,7 +50,7 @@
  * 변경시켜 줍니다. 테스트 개수에 all이 포함이 되지는 않습니다.
  *************************************************************************/
 #ifndef CLIENT_MODE
-#define TEST_ITEM_DEF_ARRAY_COUNT  6
+#define TEST_ITEM_DEF_ARRAY_COUNT  7
 #else
 #define TEST_ITEM_DEF_ARRAY_COUNT  3
 #endif
@@ -66,7 +67,8 @@ TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
     {"planparser", "plan parser function test", PlanParserTest::runTest},
     {"planopt", "plan optimizer function test", PlanOptimizerTest::runTest},
     {"planbuilder", "plan builder function test", PlanBuilderTest::runTest},
-    {"runbyplan", "running network by plantype function test", NetworkRunByPlanTest::runTest}
+    {"runbyplan", "running network by plantype function test", NetworkRunByPlanTest::runTest},
+    {"custominput", "custom input function test", CustomInputTest::runTest}
 };
 #else
 TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
