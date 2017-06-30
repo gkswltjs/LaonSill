@@ -287,10 +287,48 @@ int main(int argc, char** argv) {
 
 #else
 
+void printUsageAndExit(char* prog) {
+    fprintf(stderr, "Usage: %s [-v] | -t testItemName]\n", prog);
+    exit(EXIT_FAILURE);
+}
+
 const char          SERVER_HOSTNAME[] = {"localhost"};
 int main(int argc, char** argv) {
-    Client::clientMain(SERVER_HOSTNAME, Communicator::LISTENER_PORT);
-	exit(EXIT_SUCCESS);
+    int     opt;
+
+    bool    useTestMode = false;
+
+    char*   testItemName;
+
+    // (1) 옵션을 읽는다.
+    WorkContext::curBootMode = BootMode::ServerClientMode;
+    while ((opt = getopt(argc, argv, "vt:")) != -1) {
+        switch (opt) {
+        case 'v':
+            printf("%s version %d.%d.%d\n", argv[0], SPARAM(VERSION_MAJOR),
+                SPARAM(VERSION_MINOR), SPARAM(VERSION_PATCH));
+            exit(EXIT_SUCCESS);
+
+        case 't':
+            useTestMode = true;
+            testItemName = optarg;
+            checkTestItem(testItemName);
+            break;
+
+        default:    /* ? */
+            printUsageAndExit(argv[0]);
+            break;
+        }
+    }
+
+    if (useTestMode) {
+        runTest(testItemName);
+    } else {
+        Client::clientMain(SERVER_HOSTNAME, Communicator::LISTENER_PORT);
+    }
+
+    exit(EXIT_SUCCESS);
 }
+
 #endif
 #endif
