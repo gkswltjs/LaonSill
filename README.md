@@ -191,3 +191,13 @@ $ ./SoooaServer -v
 ```
 
 # Tutorial
+SoooA supports various boot modes. We have prepared simple tutorials for each boot mode.
+
+## GAN for Developer Mode
+
+Developer mode is a boot mode for experts who can use it directly while modifing the source. We have a tutorial on the GAN(Generative Adverarial Nets) algorithm. GAN is a thesis published by Ian GoodFellow in 2014 and is a very popular algorithm in image generation. We have written tutorial example code with reference to two papers:
+
+* Generative Adversarial Networks [https://arxiv.org/abs/1406.2661]
+* Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks [https://arxiv.org/abs/1511.06434]
+
+Let's begin. First, let's talk about the necessary files. Go the folder that contains the GAN example and check what kind of file it is.
