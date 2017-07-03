@@ -108,6 +108,7 @@ vi buildDef.json
     "ARCH" : "compute_60",
     "CODE" : "sm_60"
 }
+```
 
 #### Run build script
 
