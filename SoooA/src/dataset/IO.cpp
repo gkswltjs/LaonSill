@@ -68,7 +68,6 @@ void CVMatToDatum(const cv::Mat& cv_img, Datum* datum) {
 	int datum_size = datum_channels * datum_height * datum_width;
 	string buffer(datum_size, ' ');
 
-	/*
 	// all B / all G / all R 구조로 channel을 나누어서 저장
 	for (int h = 0; h < datum_height; h++) {
 		const uchar* ptr = cv_img.ptr<uchar>(h);
@@ -80,8 +79,8 @@ void CVMatToDatum(const cv::Mat& cv_img, Datum* datum) {
 			}
 		}
 	}
-	*/
 
+	/*
 	// test로 channel분리하지 않고 opencv가 제공하는 포맷 그대로 저장
 	for (int h = 0; h < datum_height; h++) {
 		const uchar* ptr = cv_img.ptr<uchar>(h);
@@ -99,6 +98,7 @@ void CVMatToDatum(const cv::Mat& cv_img, Datum* datum) {
 		//cout << endl;
 	}
 	//cout << endl;
+	 */
 
 	datum->data = buffer;
 }
