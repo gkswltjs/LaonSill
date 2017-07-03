@@ -243,8 +243,8 @@ void Data<Dtype>::set(Data<Dtype>* data, bool reshape) {
 
 
 template <typename Dtype>
-void Data<Dtype>::set_host_data(const Dtype* data) {
-	_data->set_mem(data, SyncMemCopyType::HostToHost);
+void Data<Dtype>::set_host_data(const Dtype* data, const uint32_t offset) {
+	_data->set_mem(data, SyncMemCopyType::HostToHost, offset);
 }
 
 template <typename Dtype>

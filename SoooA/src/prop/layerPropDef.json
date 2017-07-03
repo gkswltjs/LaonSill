@@ -635,6 +635,34 @@
         ["inputElemCounts", "std::vector<int>", ""],
         ["trainDataCount", "int", "1"]
     ]
+},
+
+"DataInput" : 
+{
+    "DESC" : "data input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+    [
+    ]
+},
+
+"Accuracy" : 
+{
+    "DESC" : "accuracy layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+    [
+        ["topK", "uint32_t", "1"],
+        ["axis", "int", "1"],
+        ["ignoreLabel", "int", "-1"]
+    ]
 }
+
 
 }

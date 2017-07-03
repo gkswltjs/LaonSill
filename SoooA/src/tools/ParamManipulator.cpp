@@ -5,7 +5,7 @@
  *      Author: jkim
  */
 
-#include "tools/ParamManipulator.h"
+#include "ParamManipulator.h"
 #include "Data.h"
 #include "SysLog.h"
 

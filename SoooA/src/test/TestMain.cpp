@@ -35,255 +35,303 @@
 #include "LayerFunc.h"
 #include "gpu_nms.hpp"
 #include "cnpy.h"
+#include "ParamManipulator.h"
+#include "Datum.h"
+#include "SDF.h"
+#include "IO.h"
+#include "DataReader.h"
 
 
 
 using namespace std;
 
-void plainTest();
-void layerTest();
-void networkTest();
+void plainTest(int argc, char** argv);
+void denormalizeTest(int argc, char** argv);
+void convertMnistDataTest(int argc, char** argv);
+void convertImageSetTest(int argc, char** argv);
+void dataReaderTest(int argc, char** argv);
 
-int main(void) {
+void layerTest(int argc, char** argv);
+void networkTest(int argc, char** argv);
+
+int main(int argc, char** argv) {
 	cout << "begin test ... " << endl;
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
-	//plainTest();
-	//layerTest();
-	networkTest();
+	plainTest(argc, argv);
+	//layerTest(argc, argv);
+	//networkTest(argc, argv);
 
 	cout << "end test ... " << endl;
 	return 0;
 }
 
 
-#if 0
-void plainTest() {
+void plainTest(int argc, char** argv) {
+	//denormalizeTest(argc, argv);
+	//convertMnistDataTest(argc, argv);
+	//convertImageSetTest(argc, argv);
+	dataReaderTest(argc, argv);
+}
+
+void denormalizeTest(int argc, char** argv) {
 	cout << "plainTest()" << endl;
+	ParamManipulator<float> pm(
+			"/home/jkim/Dev/SOOOA_HOME/network/frcnn_630000.param",
+			"/home/jkim/Dev/SOOOA_HOME/network/frcnn_630000_dn.param");
 
-#if 1
-	AnnotationDataLayer<float>::Builder* builder =
-			new typename AnnotationDataLayer<float>::Builder();
-	builder->id(0)
-			->name("data")
-			->flip(true)
-			->imageHeight(300)
-			->imageWidth(300)
-			->imageSetPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt")
-			->baseDataPath("/home/jkim/Dev/git/caffe_ssd/data/VOCdevkit/")
-			->labelMapPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt")
-			//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
-			//->pixelMeans({104.f, 117.f, 123.f})	// BGR
-			->pixelMeans({0.f, 0.f, 0.f})	// BGR
-			->outputs({"data", "label"});
 
-	Layer<float>* layer = builder->build();
-	layer->_outputData.push_back(new Data<float>("data"));
-	layer->_outputData.push_back(new Data<float>("label"));
+	//pm.printParamList();
 
-	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
-			->batchSize(1)
-			->build();
-	layer->setNetworkConfig(networkConfig);
-	layer->feedforward();
+	pm.denormalizeParams({"bbox_pred_weight", "bbox_pred_bias"},
+			{0.f, 0.f, 0.f, 0.f},
+			{0.1f, 0.1f, 0.2f, 0.2f});
 
-	Data<float>::printConfig = true;
-	SyncMem<float>::printConfig = true;
+	pm.save();
+}
 
-	layer->_outputData[0]->print_data({}, false);
-	layer->_outputData[1]->print_data({}, false, -1);
 
-	SyncMem<float>::printConfig = false;
-	Data<float>::printConfig = false;
 
-	delete layer;
-#endif
+inline std::string format_int(int n, int numberOfLeadingZeros = 0) {
+	std::ostringstream s;
+	s << std::setw(numberOfLeadingZeros) << std::setfill('0') << n;
+	return s.str();
+}
 
-#if 0
-	NormalizeLayer<float>::Builder* builder =
-			new typename NormalizeLayer<float>::Builder();
-	builder->id(0)
-			->name("conv4_3_norm")
-			->acrossSpatial(false)
-			->scaleFiller(ParamFillerType::Constant, 20.0f)
-			->channelShared(false)
-			->inputs({"conv4_3"})
-			->outputs({"conv4_3_norm"});
 
-	Layer<float>* layer = builder->build();
-	layer->_inputData.push_back(new Data<float>("conv4_3"));
-	layer->_outputData.push_back(new Data<float>("conv4_3_norm"));
-#endif
+uint32_t swap_endian(uint32_t val) {
+    val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
+    return (val << 16) | (val >> 16);
+}
 
-#if 0
-	PermuteLayer<float>::Builder* builder =
-			new typename PermuteLayer<float>::Builder();
-	builder->id(0)
-			->name("conv4_3_norm_mbox_loc_perm")
-			->orders({0, 2, 3, 1})
-			->inputs({"conv4_3_norm_mbox_loc"})
-			->outputs({"conv4_3_norm_mbox_loc_perm"});
+void convertMnistDataTest(int argc, char** argv) {
+    const string image_filename = "/home/jkim/Dev/git/caffe/data/mnist/train-images-idx3-ubyte";
+    const string label_filename = "/home/jkim/Dev/git/caffe/data/mnist/train-labels-idx1-ubyte";
+    const string db_path = "/home/jkim/imageset/lmdb/mnist_train_lmdb/";
 
-	Layer<float>* layer = builder->build();
-	layer->_inputData.push_back(new Data<float>("conv4_3_norm_mbox_loc"));
-	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_perm"));
-#endif
+    // Open files
+    ifstream image_file(image_filename, ios::in | ios::binary);
+    ifstream label_file(label_filename, ios::in | ios::binary);
+    if (!image_file) {
+        cout << "Unable to open file " << image_filename << endl;
+        assert(false);
+    }
+    if (!label_file) {
+        cout << "Unable to open file " << label_filename << endl;
+        assert(false);
+    }
+    // Read the magic and the meta data
+    uint32_t magic;
+    uint32_t num_items;
+    uint32_t num_labels;
+    uint32_t rows;
+    uint32_t cols;
 
-#if 0
-	FlattenLayer<float>::Builder* builder =
-			new typename FlattenLayer<float>::Builder();
-	builder->id(0)
-			->name("conv4_3_norm_mbox_loc_flat")
-			->axis(1)
-			->inputs({"conv4_3_norm_mbox_loc_perm"})
-			->outputs({"conv4_3_norm_mbox_loc_flat"});
+    image_file.read(reinterpret_cast<char*>(&magic), 4);
+    magic = swap_endian(magic);
+    if (magic != 2051) {
+        cout << "Incorrect image file magic." << endl;
+        assert(false);
+    }
+    label_file.read(reinterpret_cast<char*>(&magic), 4);
+    magic = swap_endian(magic);
+    if (magic != 2049) {
+        cout << "Incorrect label file magic." << endl;
+        assert(false);
+    }
+    image_file.read(reinterpret_cast<char*>(&num_items), 4);
+    num_items = swap_endian(num_items);
+    label_file.read(reinterpret_cast<char*>(&num_labels), 4);
+    num_labels = swap_endian(num_labels);
+    assert(num_items == num_labels);
+    image_file.read(reinterpret_cast<char*>(&rows), 4);
+    rows = swap_endian(rows);
+    image_file.read(reinterpret_cast<char*>(&cols), 4);
+    cols = swap_endian(cols);
 
-	Layer<float>* layer = builder->build();
-	layer->_inputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_perm"));
-	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_loc_flat"));
-#endif
+    SDF sdf(db_path, Mode::NEW);
+    sdf.open();
 
-#if 0
-	PriorBoxLayer<float>::Builder* builder =
-			new typename PriorBoxLayer<float>::Builder();
-	builder->id(0)
-			->name("conv4_3_norm_mbox_priorbox")
-			->minSizes({30.0})
-			->maxSizes({60.0})
-			->aspectRatios({2.0})
-			->flip(true)
-			->clip(false)
-			->variances({0.1, 0.1, 0.2, 0.2})
-			->step(8.0)
-			->offset(0.5)
-			->inputs({"conv4_3_norm", "data"})
-			->outputs({"conv4_3_norm_mbox_priorbox"});
+    // Storing to db
+    char label;
+    char* pixels = new char[rows * cols];
+    int count = 0;
+    string value;
 
-	Layer<float>* layer = builder->build();
-	layer->_inputData.push_back(new Data<float>("conv4_3_norm"));
-	layer->_inputData.push_back(new Data<float>("data"));
-	layer->_outputData.push_back(new Data<float>("conv4_3_norm_mbox_priorbox"));
+    Datum datum;
+    datum.channels = 1;
+    datum.height = rows;
+    datum.width = cols;
+    cout << "A total of " << num_items << " items." << endl;
+    cout << "Rows: " << rows << " Cols: " << cols << endl;
 
-	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
-			->batchSize(2)
-			->build();
-	layer->setNetworkConfig(networkConfig);
-	layer->feedforward();
+    sdf.put("num_data", std::to_string(num_items));
+    sdf.commit();
 
-	delete layer;
-#endif
+    //string buffer(rows * cols, ' ');
+    for (int item_id = 0; item_id < num_items; ++item_id) {
+        image_file.read(pixels, rows * cols);
+        label_file.read(&label, 1);
 
-#if 0
-	AnnotationDataLayer<float>::Builder* builder =
-			new typename AnnotationDataLayer<float>::Builder();
-	builder->id(0)
-			->name("data")
-			->flip(true)
-			->imageHeight(300)
-			->imageWidth(300)
-			->imageSetPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt")
-			->baseDataPath("/home/jkim/Dev/git/caffe_ssd/data/VOCdevkit/")
-			->labelMapPath("/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt")
-			//->pixelMeans({102.9801f, 115.9465f, 122.7717f})	// BGR
-			->pixelMeans({104.f, 117.f, 123.f})	// BGR
-			->outputs({"data", "label"});
+        //for (int i = 0; i < rows*cols; i++) {
+        //   buffer[i] = pixels[i];
+        //}
+        //datum.data = buffer;
+        datum.data.assign(reinterpret_cast<const char*>(pixels), rows * cols);
+        datum.label = label;
 
-	AnnotationDataLayer<float>* layer = dynamic_cast<AnnotationDataLayer<float>*>(builder->build());
-	layer->_inputData.push_back(new Data<float>("data"));
-	layer->_inputData.push_back(new Data<float>("label"));
+        string key_str = format_int(item_id, 8);
+        value = Datum::serializeToString(&datum);
 
-	NetworkConfig<float>* networkConfig = (new typename NetworkConfig<float>::Builder())
-			->batchSize(32)
-			->build();
-	layer->setNetworkConfig(networkConfig);
+        sdf.put(key_str, value);
 
-	for (int i = 0; i < 100000; i++) {
-		layer->feedforward();
+        if (++count % 1000 == 0) {
+            sdf.commit();
+        }
+    }
+    // write the last batch
+
+    if (count % 1000 != 0) {
+        sdf.commit();
+    }
+    cout << "Processed " << count << " files." << endl;
+    delete[] pixels;
+    sdf.close();
+
+}
+
+
+
+void convertImageSetTest(int argc, char** argv) {
+	const string argv1 = "/home/jkim/imageset/jpegs/";
+	const string argv2 = "/home/jkim/imageset/labels/train.txt";
+	const string argv3 = "/home/jkim/imageset/lmdb/train_lmdb/";
+	//const string argv1 = "/home/jkim/Backups/ilsvrc12_train/";
+	//const string argv2 = "/home/jkim/Dev/git/caffe/data/ilsvrc12/train_r.txt.example";
+	//const string argv3 = "/home/jkim/imageset/lmdb/ilsvrc_small_lmdb/";
+
+	const bool FLAGS_gray = false;
+	const bool FLAGS_shuffle = false;		// default false
+	const string FLAGS_backend = "lmdb";
+	const int FLAGS_resize_width = 224;		// default 0
+	const int FLAGS_resize_height = 224;	// default 0
+	const bool FLAGS_check_size = false;
+	const bool FLAGS_encoded = false;
+	const string FLAGS_encode_type = "";
+
+	const bool is_color = !FLAGS_gray;
+	const bool check_size = FLAGS_check_size;
+	const bool encoded = FLAGS_encoded;
+	const string encode_type = FLAGS_encode_type;
+
+	ifstream infile(argv2);
+	vector<pair<string, int>> lines;
+	string line;
+	size_t pos;
+	int label;
+	while (std::getline(infile, line)) {
+		pos = line.find_last_of(' ');
+		label = atoi(line.substr(pos + 1).c_str());
+		lines.push_back(std::make_pair(line.substr(0, pos), label));
 	}
 
-
-	map<string, int>& refCount = layer->refCount;
-	for (map<string, int>::iterator it = refCount.begin(); it != refCount.end(); it++) {
-		cout << it->first << "\t\t" << it->second << endl;
-	}
-
-	delete layer;
-#endif
-
-#if 0
-	cv::VideoCapture cap("/home/jkim/Downloads/frcnn_ok.mp4");
-	if (!cap.isOpened()) {
-		return;
-	}
-	cv::VideoCapture cap1("/home/jkim/Downloads/frcnn_ok.mp4");
-	if (!cap1.isOpened()) {
-		return;
-	}
-	cv::Mat im;
-	if (!cap.read(im)) {
-		cout << "error at cap" << endl;
-	}
-	if (cap1.read(im)) {
-		cout << "error at cap1" << endl;
-	}
-	exit(1);
-
-
-	//cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('A', 'V', 'C', '1'));
-	//int codec = int(cap.get(CV_CAP_PROP_FOURCC));
-	//cout << codec << endl;
-	double fps = cap.get(CV_CAP_PROP_FPS);
-	cout << "fps: " << fps << endl;
-	size_t frameCount = size_t(cap.get(CV_CAP_PROP_FRAME_COUNT));
-	cv::namedWindow("Video", 1);
-	while (1) {
-		size_t posFrames = size_t(cap.get(CV_CAP_PROP_POS_FRAMES));
-
-		cv::Mat frame;
-		for (int i = 0; i < 3; i++) {
-			if (!cap.grab()) {
-				cout << "end of video ... " << endl;
-				cap.release();
-				return;
-			}
+	if (lines.size() <= 100) {
+		for (int i = 0; i < lines.size(); i++) {
+			cout << "fn: " << lines[i].first << ", label: " << lines[i].second << endl;
 		}
-		cap.retrieve(frame);
-		imshow("Video", frame);
-		if (cv::waitKey(30) == 'c') break;
 	}
 
-	cap.release();
+	if (FLAGS_shuffle) {
+		// randomly shuffle data
+		random_shuffle(lines.begin(), lines.end());
+	}
+	cout << "A total of " << lines.size() << " images." << endl;
 
-
-#endif
-
-	/*
-	//checkCudaErrors(cudaSetDevice(0));
-	//checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
-
-	cout << "cudnn version: " << CUDNN_VERSION << endl;
-
-
-	int pad = 6;
-	int stride = 1;
-	int dilation = 6;
-
-	cudnnConvolutionDescriptor_t convDesc;
-	checkCUDNN(cudnnCreateConvolutionDescriptor(&convDesc));
-	cudnnStatus_t status = cudnnSetConvolution2dDescriptor(convDesc,
-			pad, pad, stride, stride, dilation, dilation,
-			CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT);
-
-	std::stringstream _error;
-	if (status != CUDNN_STATUS_SUCCESS) {
-	  _error << "CUDNN failure: " << cudnnGetErrorString(status);
-	  FatalError(_error.str());
+	if (encode_type.size() && !encoded) {
+		cout << "encode_type specified, assuming encoded=true.";
 	}
 
-	cout << "dilation test done ... " << endl;
-	//checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
-	 */
+	int resize_height = std::max<int>(0, FLAGS_resize_height);
+	int resize_width = std::max<int>(0, FLAGS_resize_width);
+
+	// Create new DB
+	SDF* sdf = new SDF(argv3, Mode::NEW);
+	sdf->open();
+
+	// Storing to db
+	string root_folder(argv1);
+	Datum datum;
+	int count = 0;
+	int data_size = 0;
+	bool data_size_initialized = false;
+
+
+	// 이 시점에서 data 수를 저장할 경우
+	// 아래 status가 false인 경우 등의 상황에서 수가 정확하지 않을 가능성이 있음.
+	sdf->put("num_data", std::to_string(lines.size()));
+	sdf->commit();
+
+	for (int line_id = 0; line_id < lines.size(); line_id++) {
+		bool status;
+		string enc = encode_type;
+		if (encoded && !enc.size()) {
+			// Guess the encoding type from the file name
+			string fn = lines[line_id].first;
+			size_t p = fn.rfind('.');
+			if (p == fn.npos) {
+				cout << "Failed to guess the encoding of '" << fn << "'";
+			}
+			enc = fn.substr(p);
+			std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
+		}
+		status = ReadImageToDatum(root_folder + lines[line_id].first, lines[line_id].second,
+				resize_height, resize_width, 0, 0, is_color, enc, &datum);
+
+		if (status == false) {
+			continue;
+		}
+		assert(!check_size);
+
+		// sequencial
+		string key_str = format_int(line_id, 8) + "_" + lines[line_id].first;
+
+		// Put in db
+		string out = Datum::serializeToString(&datum);
+		sdf->put(key_str, out);
+
+		if (++count % 1000 == 0) {
+			// Commit db
+			sdf->commit();
+			//
+			cout << "Processed " << count << " files." << endl;
+		}
+	}
+
+	// write the last batch
+	if (count % 1000 != 0) {
+		sdf->commit();
+		cout << "Processed " << count << " files." << endl;
+	}
+
+	sdf->close();
+}
+
+void dataReaderTest(int argc, char** argv) {
+	DataReader<Datum> dr("/home/jkim/imageset/lmdb/mnist_train_lmdb/");
+	int numData = dr.getNumData();
+	cout << "numData: " << numData << endl;
+
+	for (int i = 0; i < numData + 100; i++) {
+		Datum* datum = dr.getNextData();
+		cout << i << " label: " << datum->label << endl;
+
+		/*
+		cv::Mat cv_img = DecodeDatumToCVMat(datum, true);
+		cv::imshow("result", cv_img);
+		cv::waitKey(0);
+		*/
+	}
 }
 
 void layerTest() {
@@ -529,7 +577,7 @@ void layerTest() {
 	layerTestList.push_back(new LayerTest<float>(frcnnTestOutputBuilder));
 #endif
 
-#if 1
+#if 0
 	AnnotationDataLayer<float>::Builder* annotationDataBuilder =
 			new typename AnnotationDataLayer<float>::Builder();
 	annotationDataBuilder->id(0)
@@ -720,8 +768,6 @@ void layerTest() {
 	}
 	LayerTestInterface<float>::globalCleanUp();
 }
-#endif
-
 
 
 
@@ -735,8 +781,8 @@ void layerTest() {
 #define NETWORK_SSD_TEST	5
 #define NETWORK				NETWORK_FRCNN
 
-#define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/examples/LeNet/lenet_train_test.json")
-#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/examples/frcnn/frcnn_train_test.json")
+#define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/LeNet/lenet_train_test.json")
+#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/frcnn/frcnn_train_test.json")
 
 //void saveNetworkParams(LayersConfig<float>* layersConfig);
 

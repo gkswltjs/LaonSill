@@ -147,7 +147,7 @@ public:
 	 * @details 데이터의 호스트 메모리에 _count만큼 값을 복사한다.
 	 * @param data 복사할 로우 데이터의 포인터
 	 */
-	void set_host_data(const Dtype* data);
+	void set_host_data(const Dtype* data, const uint32_t offset = 0);
 	/**
 	 * @details 데이터의 호스트 메모리에 _count만큼 주어진 디바이스 메모리 포인터로부터 값을
      *         복사한다.

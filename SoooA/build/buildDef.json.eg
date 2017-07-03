@@ -3,7 +3,7 @@
         [ 
             "cudart", "opencv_core", "cublas", "cudnn", "boost_system", "boost_filesystem",
             "opencv_highgui", "opencv_imgproc", "opencv_features2d", "z", "boost_iostreams", 
-            "X11", "gpu_nms", "lmdb"
+            "X11", "gpu_nms", "lmdb", "boost_serialization"
         ],
     "LIBDIRS" : 
         [

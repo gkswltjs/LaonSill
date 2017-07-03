@@ -95,6 +95,7 @@ public:
 		Accuracy,
         DropOut,
         DummyInput,
+		DataInput,
         CustomInput,
         LayerTypeMax
 	};

@@ -17,7 +17,7 @@
 template <typename Dtype>
 class ParamManipulator {
 public:
-	ParamManipulator(const std::string& newParamPath, const std::string& oldParamPath);
+	ParamManipulator(const std::string& oldParamPath, const std::string& newParamPath);
 	virtual ~ParamManipulator();
 
 	void printParamList();

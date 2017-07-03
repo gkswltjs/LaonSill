@@ -36,9 +36,9 @@ void FRCNN<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
 
 //#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("../src/examples/frcnn/frcnn_train.json")
 #if !INFERENCE
-#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/examples/frcnn/frcnn_train.json")
+#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/frcnn/frcnn_train.json")
 #else
-#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/neuralnetworksanddeeplearning/NeuralNetworksAndDeepLearning/src/examples/frcnn/frcnn_test.json")
+#define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/frcnn/frcnn_test.json")
 #endif
 
 template<typename Dtype>

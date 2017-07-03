@@ -363,7 +363,7 @@ template <typename Dtype>
 static void np_array_value_by_index_array(const std::vector<std::vector<Dtype>>& array,
 		const uint32_t axis, const std::vector<uint32_t>& inAxisIndex,
 		std::vector<Dtype>& result) {
-	SASSERT0(axis >= 0 && axis < 2);
+	SASSERT0(axis >= uint32_t(0) && axis < uint32_t(2));
 
 	const uint32_t numArrayElem = array.size();
 	SASSERT0(numArrayElem > 0);
@@ -542,7 +542,7 @@ static void np_maximum(const Dtype value, const std::vector<Dtype>& array,
 template <typename Dtype>
 static void np_argmax(const std::vector<std::vector<Dtype>>& array, const uint32_t axis,
 		std::vector<uint32_t>& result) {
-	SASSERT0(axis >= 0 && axis < 2);
+	SASSERT0(axis >= uint32_t(0) && axis < uint32_t(2));
 
 	const uint32_t numArrayElem = array.size();
 	SASSERT0(numArrayElem >= 1);

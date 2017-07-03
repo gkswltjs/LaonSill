@@ -3,12 +3,11 @@
 	[
 		{
 			"name" : "mnist",
-			"layer" : "Input",
+			"layer" : "DataInput",
 			"id" : 0,
 			"output" : ["data", "label"],
-			"source" : "/data/train_pack/mnist",
-			"sourceType" : "ImagePack",
-			"mean" : [0.13066047740]
+			"source" : "/home/jkim/imageset/lmdb/mnist_train_lmdb/",
+			"scale" : 0.00390625
 		},
 
 		{
@@ -134,16 +133,27 @@
 					"softmaxAxis" : 2
 				}
 			]	
-		}
+		},
+		
+		{
+			"name" : "accuracy",
+			"layer" : "Accuracy",
+			"id" : 90,
+			"input" : ["ip2", "label"],
+			"output" : ["accuracy"],
+			"propDown" : [false, false],
+			"topK" : 1,
+			"axis" : 2
+		}		
 	],
 
 	"configs" :
 	{
-		"batchSize" : 64, 
+		"batchSize" : 64,
 		"epochs" : 5, 
 		"lossLayer" : ["loss"],
 		"gamma" : 0.0001,
-		"testInterval" : 500,
+		"testInterval" : 10,
 		"saveInterval" : 1000000,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.01,
