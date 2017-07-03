@@ -201,3 +201,304 @@ Developer mode is a boot mode for experts who can use it directly while modifing
 * Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks [https://arxiv.org/abs/1511.06434]
 
 Let's begin. First, let's talk about the necessary files. Go the folder that contains the GAN example and check what kind of file it is.
+
+```
+$ cd $SOOOA_BUILD_PATH/src/examples/GAN
+$ ls -al
+drwxrwxr-x 2 monhoney monhoney  4096  6월 30 14:44 .
+drwxrwxr-x 5 monhoney monhoney  4096  6월 27 16:13 ..
+-rw-rw-r-- 1 monhoney monhoney  2641  6월 27 16:13 GAN.cpp
+-rw-rw-r-- 1 monhoney monhoney   343  6월 27 16:13 GAN.h
+-rw-rw-r-- 1 monhoney monhoney  5738  6월 27 16:13 networkD.json
+-rw-rw-r-- 1 monhoney monhoney 10958  6월 27 16:13 networkG0.json
+-rw-rw-r-- 1 monhoney monhoney 11536  6월 27 16:13 networkG1.json
+```
+
+`GAN.cpp` and `GAN.h` are source and header files for GAN. `NetworkD.json`, `networkG0.json`, and `networkG1.json` are network definition files that define the GAN network. As you can guess from the name, it is in JSON format. Typical networks consist of one network definition file. There are various ways to implement, but we have prepared three networks(networkD, networkG0, networkG1) that share learning parameters to implement GAN.
+
+Let's look at the contents of the networkD.json file. You can check multiple values for multiple layers and configs for network.
+
+```
+$ vi networkD.json
+[networkD.json]
+{
+    "layers" :
+    [
+        {
+            "name" : "celebAInput",
+            "layer" : "CelebAInput",
+            "id" : 1,
+            "output" : ["data"],
+            "imageDir" : "/data/celebA",
+            "cropLen" : 108,
+            "resizeImage" : true,
+            "resizedImageRow" : 64,
+            "resizedImageCol" : 64
+        },
+
+        {
+            "name" : "conv1",
+            "layer" : "Conv",
+            "id" : 2,
+            "input" : ["data"],
+            "output" : ["conv1"],
+            "weightFiller.type" : "Gaussian",
+            "weightFiller.value" : 0.02,
+            "biasFiller.type" : "Constant",
+            "biasFiller.value" : 0.0,
+            "filterDim.rows" : 4,
+            "filterDim.cols" : 4,
+            "filterDim.channels" : 3,
+            "filterDim.filters" : 64,
+            "filterDim.pad" : 1,
+            "filterDim.stride" : 2,
+            "receive" : true,
+            "donatorID" : 10015
+        },
+
+        {
+            "name" : "lrelu1",
+            "layer" : "Relu",
+
+                :
+                :
+            "biasFiller.value" : 0.0,
+            "receive" : true,
+            "donatorID" : 10027
+        },
+
+        {
+            "name" : "celossDGAN",
+            "layer" : "CrossEntropyWithLoss",
+            "id" : 15,
+            "input" : ["fc1"],
+            "output" : ["prob"],
+            "targetValue" : 1.0,
+            "withSigmoid" : true
+        }
+
+    ],
+
+    "configs" :
+    {
+        "batchSize" : 64,
+        "epochs" : 16,
+        "lossLayer" : ["celossDGAN"],
+        "gamma" : 0.1,
+        "saveInterval" : 1000000,
+        "testInterval" : 100,
+        "savePathPrefix" : "",
+        "baseLearningRate" : 0.0002,
+        "stepSize" : 100000,
+        "weightDecay" : 0.0001,
+        "momentum" : 0.9,
+        "clipGradientsLevel" : 0.0,
+        "gamma" : 0.1,
+        "lrPolicy" : "Fixed",
+        "optimizer" : "Adam",
+        "beta1" : 0.5,
+        "beta2" : 0.999,
+        "miniBatch" : 0
+    }
+}
+```
+
+A network consists of a set of layers. Each layer has its own peroperties. First, let's talk about the CelebAInput layer. CelebAInput layer is a layer that manages an image dataset called CelebA[http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html]. It has an attribute called imageDir, whose value is defined as /data/celebA/. The attribute indicates where the image dataset is. This means that you need to download the celebA dataset to run the GAN.
+
+```
+$ cd /
+$ mkdir -p /data/celebA
+and download celebA dataset into /data/celebA/
+```
+
+Below the CelebAInput layer is the convolution layer. This layer also contains several properties for performing convolution. See the $SOOOA_BUILD_PATH/src/prop/layerPropDef.json file for information on the various layer properties.
+
+The network properties define how many epochs the entwork will learn and how to learn using some optimizing alogorithms. As you can see in the networkD.json file, the GAN is learning using the ADAM optimizer. See the $SOOOA_BUILD_PATH/src/prop/networkPropDef.json file for information on the various layer properties.
+
+Since there is no useful information in the header, we will skip the header and look at the source code. We will step through the important code.
+
+* Parse & build network
+
+Create a network by parsing the network definition file. Perform a build operation to physically place the network(eg GPU memory allocation). Write the number of epochs to be executed in the build function as an argument.
+
+```
+#define EXAMPLE_GAN_NETWORKG0_FILEPATH              ("../src/examples/GAN/networkG0.json")
+                            :
+                            :
+    int networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKG0_FILEPATH));
+    Network<Dtype>* networkG0 = Network<Dtype>::getNetworkFromID(networkID);
+    networkG0->build(1);
+```
+
+* Train network
+
+Learn the network. In a typical network, use the run(bool inference) function. If inference is false, learning is done; if true, inference is performed. GAN uses the runMiniBatch(bool inference, int miniBatchIdx) function because each network must be trained for each iteration.
+
+```
+    for (int i = 0; i < 10000; i++) {
+        cout << "epoch : " << i << endl;
+        for (int j = 0; j < miniBatchCount; j++) {
+
+            networkG0->runMiniBatch(false, 0);
+            networkD->runMiniBatch(false, j);
+            networkG1->runMiniBatch(false, 0);
+            networkG1->runMiniBatch(false, 0);
+
+            if (j % 100 == 0)
+                cout << "minibatch " << j << " is done." << endl;
+        }
+```
+
+* Inference network
+
+Perform an inference process to see how well GAN has been trained.
+
+```
+        networkG1->runMiniBatch(true, 0);
+```
+
+* Save image
+
+The image information stored in the first convolution layer is saved as 20 jpeg images.
+
+```
+        ConvLayer<Dtype>* convLayer = (ConvLayer<Dtype>*)networkG1->findLayer("conv1");
+        const Dtype* host_data = convLayer->_inputData[0]->host_data();
+        ImageUtil<Dtype>::saveImage(host_data, 20, 3, 64, 64, "");
+```
+
+Let's run the GAN example now. Run SoooA with the following options:
+
+```
+$ cd $SOOOA_BUILD_PATH/bin
+$ ./SOOOA_SERVER -d GAN
+[2017/06/30 16:47:54:542476(30884/0)] SOOOA engine starts
+[2017/06/30 16:47:54:630809(30884/0)] enter developerMain()
+[2017/06/30 16:47:55:189182(30884/0)] ***************************************************
+[2017/06/30 16:47:55:189201(30884/0)] * GAN example
+[2017/06/30 16:47:55:189206(30884/0)] *  - description : GAN example
+epoch : 0
+minibatch 0 is done.
+average loss[celossGD1GAN] : 0.754151
+average loss[celossGD0GAN] : 3.480695
+average loss[celossDGAN] : 0.789025
+minibatch 100 is done.
+    :
+    :
+```
+
+After a certain amount of time, you can check the results in `$SOOOA_HOME/output_images`.
+
+```
+$ cd $SOOOA_HOME/output_images
+$ cd 20170630_171753_643146
+```
+
+* Images of GAN result
+![Image of GAN result](GAN_result.jpg)
+
+Sometimes pictures do not come out well. We think that it can be caused by randomness of initial value of learning parameter. If you can not get a good picture again, please contact us.
+
+## Single Job Mode
+
+You can perform learning and inferencing by simply defining a network definition file of your network. We tried to run a network definition file called network.conf.test as follows:
+
+```
+$ ./SoooaServer -f network.conf.test 
+[2017/06/30 17:04:37:143834(31037/0)] SOOOA engine starts
+[2017/06/30 17:04:37:219181(31037/0)] enter single job(network.conf.test)
+for softmax
+lossWeight: 1.0000000
+hasIgnoreLabel: 0
+ignoreLabel: -1
+hasNormalize: 0
+normalize: 0
+hasNormalization: 0
+normalization: 1
+softmaxAxis: 2
+[2017/06/30 17:04:42:790448(31037/0)] exit single job(network.conf.test)
+[2017/06/30 17:04:42:790787(31037/0)] server running time : 5.646955
+
+[2017/06/30 17:04:42:790795(31037/0)] SOOOA engine ends
+```
+
+## Server Client Mode
+
+Server-client models are also supported. Network training/inference can be performed on the remote server using the public client API. We will conduct network training by running a client test program as follows:
+
+* Server side
+
+```
+$ ./SoooaServer 
+[2017/06/30 17:11:49:082883(31132/0)] SOOOA engine starts
+for softmax
+lossWeight: 1.0000000
+hasIgnoreLabel: 0
+ignoreLabel: -1
+hasNormalize: 0
+normalize: 0
+hasNormalization: 0
+normalization: 1
+softmaxAxis: 2
+for softmax
+lossWeight: 1.0000000
+hasIgnoreLabel: 0
+```
+
+* Client side
+
+```
+$ ./SoooaClient -t run
+[2017/06/30 17:28:14:930091(6764/0)] ***************************************************
+[2017/06/30 17:28:14:930122(6764/0)] * run test
+[2017/06/30 17:28:14:930126(6764/0)] *  - description : run network test
+[2017/06/30 17:28:31:318068(6764/0)] *  - simple run network test is success
+[2017/06/30 17:28:45:779477(6764/0)] *  - run network minibatch test is success
+[2017/06/30 17:29:03:222809(6764/0)] *  - run network twice test is success
+[2017/06/30 17:29:03:222832(6764/0)] *  - elapsed time : 48.292703 sec
+[2017/06/30 17:29:03:222850(6764/0)] *  - result : success
+[2017/06/30 17:29:03:222852(6764/0)] ***************************************************
+```
+
+# APIs
+## Client APIs
+No | API | Description
+---|-----|----
+1 | ClientError createHandle(ClientHandle& handle, std::string serverHostName, int serverPortNum) | Create a handle associated with the specified server
+2 | ClientError getSession(ClientHandle& handle) | Connect to server and get a session
+3 | ClientError releaseSession(ClientHandle handle) | Release the session
+4 | ClientError createNetwork(ClientHandle handle, std::string networkDef, NetworkHandle& netHandle) | Create a network by sending a network defined string to the server
+5 | ClientError createNetworkFromFile(ClientHandle handle, std::string filePathInServer, NEtworkHandle& netHandle) | Create a network using the network definition file present in the server
+6 | ClientError destroyNetwork(ClientHandle handle, NetworkHandle& netHandle) | Destroy the network
+7 | ClientError buildNetwork(ClientHandle handle, NetworkHandle netHandle, int epochs) | Build the network with specified epochs
+8 | ClientError resetNetwork(ClientHandle handle, NEtworkHandle netHandle) | Reset the network to rerun
+9 | ClientError runNetwork(ClientHandle handle, NetworkHandle netHandle, bool inference) | Run the network
+10 | ClientError runNetworkMiniBatch(ClientHandle handle, NetworkHandle netHandle, bool inference, int miniBatchIdx) | Run the network for one iteration for specified mini batch index
+11 | ClientError saveNetwork(ClientHandle handle, NetworkHandle netHandle, std::string filePath) | Save the network to specified file path
+12 | ClientError loadNetwork(ClientHandle handle, NetworkHandle netHandle, std::string filePath) | Load the network from specified file path
+
+##Commonly used Developer APIs
+
+No | class | function | Description
+---|-------|----------|-----
+1 | PlanParser | int LoadNetwork(std::string filePath) | Parse the specified network definition file. Then create a new network based on the parsed results.
+2 | PlanParser | int loadNetworkByJSONString(std::string jsonString) | Parse the specified network definition string. Then create a new network based on the parsed results.
+3 | Network | void build(int epochs) | Build the network with specified epochs
+4 | Network | void reset() | Reset the network to rerun
+5 | Network | void run(bool inference) | Run the network
+6 | Network | void runMoniBatch(bool inference, int miniBatchIdx) | Run the network for one iteration for specified mini batch index
+7 | Network | void save(std::string path) | Save the network to specified file path
+8 | Network | void load(std::string path) | Load the network from specified file path
+
+# License
+
+Released under the Apache 2.0 license.
+
+# Contact
+
+![Image of Laonbud](laonbud.png)
+
+* developer@laonbud.com
+* http://www.laonbud.com
+
+
