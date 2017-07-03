@@ -138,10 +138,3 @@ if [ "$buildRelease" -eq 1 ]; then
     cp SoooaClient ../bin/SoooaClient
     cd ..
 fi
-
-echo "[remove build directory]"
-rm -rf DebugGen
-rm -rf DebugClientGen
-rm -rf ReleaseGen
-rm -rf ReleaseClientGen
-

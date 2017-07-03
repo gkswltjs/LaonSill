@@ -11,7 +11,7 @@
 #include <boost/random.hpp>
 #include <boost/math/special_functions/next.hpp>
 
-#include <cblas.h>
+//#include <cblas.h>
 
 #include "common.h"
 #include "NoiseInputLayer.h"

@@ -1,0 +1,20 @@
+{
+    "LIBS" : 
+        [ 
+            "cudart", "opencv_core", "cublas", "cudnn", "boost_system", "boost_filesystem",
+            "opencv_highgui", "opencv_imgproc", "opencv_features2d", "z", "boost_iostreams", 
+            "X11", "gpu_nms", "lmdb"
+        ],
+    "LIBDIRS" : 
+        [
+            "../src/3rd_party/nms"
+        ],
+    "INCDIRS" : 
+        [
+            "/home/monhoney/install/gnuplot-iostream", "/usr/include"
+        ],
+    "ARCH" : "compute_60",
+    "CODE" : "sm_60"
+}
+
+

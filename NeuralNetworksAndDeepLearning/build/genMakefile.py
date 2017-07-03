@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import shutil
+import json
 
 ###########################################################################################
 # Settings
@@ -14,10 +15,6 @@ symbolDic["Debug"]              = ["GPU_MODE", "DEBUG_MODE"]
 symbolDic["DebugClient"]        = ["GPU_MODE", "DEBUG_MODE", "CLIENT_MODE"]
 symbolDic["Release"]            = ["GPU_MODE"]
 symbolDic["ReleaseClient"]      = ["GPU_MODE", "CLIENT_MODE"]
-
-libList = ["cudart", "opencv_core", "cublas", "cudnn", "boost_system", "boost_filesystem",\
-         "opencv_highgui", "opencv_imgproc", "opencv_imgcodecs", "opencv_features2d", "z", \
- 	 "boost_iostreams", "opencv_videoio", "X11", "openblas", "blas", "gpu_nms", "lmdb"]
 
 targetNameDic = dict()  # key : configure name, value : target name
 targetNameDic["Debug"]          = "SoooaServerDebug"
@@ -33,13 +30,9 @@ dirNameDic["ReleaseClient"]     = "ReleaseClientGen"
 
 subDirList = []     # directories under src directory
 
-supportArch             = "compute_60"
-supportCode             = "sm_60"
-
 sourceHomeDirEnvName    = 'SOOOA_BUILD_PATH'
 
-incEnvVarList = ["INC_PATH_GNUPLOT", "INC_PATH_CIMG", "INC_PATH_OPENCV",\
-                "INC_PATH_BLAS"]
+incEnvVarList = []
 
 ###########################################################################################
 # Codes
@@ -156,6 +149,8 @@ def generateObjects(dirPath):
         newFile.write('LIBS :=')
         for lib in libList:
             newFile.write(' -l%s' % lib)
+        for libDir in libDirList:
+            newFile.write(' -L%s' % libDir)
         newFile.write('\n')
         newFile.close() 
     except Exception as e:
@@ -295,6 +290,8 @@ def generateSubMakefile(configName, dirPath, relPath):
             newFile.write("-I/usr/local/cuda/include ")     # cuda include path
             for incEnvVar in incEnvVarList:
                 newFile.write("-I%s " % os.environ[incEnvVar])
+            for incDir in incDirList:
+                newFile.write("-I%s " % incDir)
             
             for incPath in subDirList:
                 newFile.write("-I%s " % os.path.join(srcHomeDir, incPath))
@@ -319,6 +316,8 @@ def generateSubMakefile(configName, dirPath, relPath):
             newFile.write("-I/usr/local/cuda/include ")     # cuda include path
             for incEnvVar in incEnvVarList:
                 newFile.write("-I%s " % os.environ[incEnvVar])
+            for incDir in incDirList:
+                newFile.write("-I%s " % incDir)
             
             for incPath in subDirList:
                 newFile.write("-I%s " % os.path.join(srcHomeDir, incPath))
@@ -349,6 +348,8 @@ def generateSubMakefile(configName, dirPath, relPath):
             newFile.write("-I/usr/local/cuda/include ")     # cuda include path
             for incEnvVar in incEnvVarList:
                 newFile.write("-I%s " % os.environ[incEnvVar])
+            for incDir in incDirList:
+                newFile.write("-I%s " % incDir)
             
             for incPath in subDirList:
                 newFile.write("-I%s " % os.path.join(srcHomeDir, incPath))
@@ -373,6 +374,8 @@ def generateSubMakefile(configName, dirPath, relPath):
             newFile.write("-I/usr/local/cuda/include ")     # cuda include path
             for incEnvVar in incEnvVarList:
                 newFile.write("-I%s " % os.environ[incEnvVar])
+            for incDir in incDirList:
+                newFile.write("-I%s " % incDir)
             
             for incPath in subDirList:
                 newFile.write("-I%s " % os.path.join(srcHomeDir, incPath))
@@ -399,6 +402,22 @@ def generateSubMakefile(configName, dirPath, relPath):
 ###########################################################################################
 # Main Function
 ###########################################################################################
+
+# (0) load build definition form buildDef.json file
+try:
+    jsonFile = open('buildDef.json', 'r')
+    buildDic = json.load(jsonFile)
+except Exception as e:
+    print str(e)
+    exit(-1)
+finally:
+    jsonFile.close()
+
+libList = buildDic["LIBS"]
+libDirList = buildDic["LIBDIRS"]
+incDirList = buildDic["INCDIRS"]
+supportArch = buildDic["ARCH"]
+supportCode = buildDic["CODE"]
 
 # (1) check env varaible of source home dir
 try:
