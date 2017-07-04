@@ -69,19 +69,61 @@ int main(int argc, char** argv) {
 
 
 void plainTest(int argc, char** argv) {
-	//denormalizeTest(argc, argv);
+	denormalizeTest(argc, argv);
 	//convertMnistDataTest(argc, argv);
 	//convertImageSetTest(argc, argv);
-	dataReaderTest(argc, argv);
+	//dataReaderTest(argc, argv);
+}
+
+
+
+void printDenormalizeParamUsage(char* prog) {
+    fprintf(stderr, "Usage: %s -i old_param_path -o new_param_path\n", prog);
+    fprintf(stderr, "\t-i: old param file path\n");
+	fprintf(stderr, "\t-o: new param file path\n");
+    exit(EXIT_FAILURE);
 }
 
 void denormalizeTest(int argc, char** argv) {
-	cout << "plainTest()" << endl;
+	string old_param_path;
+	string new_param_path;
+
+	int opt;
+	while ((opt = getopt(argc, argv, "i:o:")) != -1) {
+		if (!optarg) {
+			printDenormalizeParamUsage(argv[0]);
+		}
+
+		switch (opt) {
+		case 'i':
+			old_param_path = string(optarg);
+			break;
+		case 'o':
+			new_param_path = string(optarg);
+			break;
+		default:
+			printDenormalizeParamUsage(argv[0]);
+			break;
+		}
+	}
+
+	if (!old_param_path.length() || !new_param_path.length()) {
+		printDenormalizeParamUsage(argv[0]);
+	}
+
+	cout << endl;
+	cout << "::: Denormalize Param Configurations :::" << endl;
+	cout << "old_param_path: " << old_param_path << endl;
+	cout << "new_param_path: " << new_param_path << endl;
+	cout << ":::::::::::::::::::::::::::::::::::::::::" << endl;
+	cout << endl;
+
+	/*
 	ParamManipulator<float> pm(
 			"/home/jkim/Dev/SOOOA_HOME/network/frcnn_630000.param",
 			"/home/jkim/Dev/SOOOA_HOME/network/frcnn_630000_dn.param");
-
-
+			*/
+	ParamManipulator<float> pm(old_param_path, new_param_path);
 	//pm.printParamList();
 
 	pm.denormalizeParams({"bbox_pred_weight", "bbox_pred_bias"},
@@ -105,10 +147,60 @@ uint32_t swap_endian(uint32_t val) {
     return (val << 16) | (val >> 16);
 }
 
+
+void printConvertMnistDataUsage(char* prog) {
+    fprintf(stderr, "Usage: %s -i image_file -l label_file -o db_path\n", prog);
+    fprintf(stderr, "\t-i: image file path\n");
+	fprintf(stderr, "\t-l: label file path\n");
+	fprintf(stderr, "\t-o: output db file path\n");
+    exit(EXIT_FAILURE);
+}
+
+
 void convertMnistDataTest(int argc, char** argv) {
-    const string image_filename = "/home/jkim/Dev/git/caffe/data/mnist/train-images-idx3-ubyte";
-    const string label_filename = "/home/jkim/Dev/git/caffe/data/mnist/train-labels-idx1-ubyte";
-    const string db_path = "/home/jkim/imageset/lmdb/mnist_train_lmdb/";
+	string image_filename;
+	string label_filename;
+	string db_path;
+
+	int opt;
+	while ((opt = getopt(argc, argv, "i:l:o:")) != -1) {
+		if (!optarg) {
+			printConvertMnistDataUsage(argv[0]);
+		}
+
+		switch (opt) {
+		case 'i':
+			image_filename = string(optarg);
+			break;
+		case 'l':
+			label_filename = string(optarg);
+			break;
+		case 'o':
+			db_path = string(optarg);
+			break;
+		default:
+			printConvertMnistDataUsage(argv[0]);
+			break;
+		}
+	}
+
+	if (!image_filename.length() ||
+			!label_filename.length() ||
+			!db_path.length()) {
+		printConvertMnistDataUsage(argv[0]);
+	}
+
+	cout << endl;
+	cout << "::: Convert Mnist Data Configurations :::" << endl;
+	cout << "image_filename: " << image_filename << endl;
+	cout << "label_filename: " << label_filename << endl;
+	cout << "db_path: " << db_path << endl;
+	cout << ":::::::::::::::::::::::::::::::::::::::::" << endl;
+	cout << endl;
+
+    //const string image_filename = "/home/jkim/Dev/git/caffe/data/mnist/train-images-idx3-ubyte";
+    //const string label_filename = "/home/jkim/Dev/git/caffe/data/mnist/train-labels-idx1-ubyte";
+    //const string db_path = "/home/jkim/imageset/lmdb/mnist_train_lmdb/";
 
     // Open files
     ifstream image_file(image_filename, ios::in | ios::binary);
@@ -202,23 +294,100 @@ void convertMnistDataTest(int argc, char** argv) {
 }
 
 
+void printConvertImageSetUsage(char* prog) {
+    fprintf(stderr, "Usage: %s [-g | -s | -w resize_width | -h resize_height] -i image_path -l dataset_path -o output_path\n", prog);
+    fprintf(stderr, "\t-g: gray image input\n");
+    fprintf(stderr, "\t-s: shuffle the image set\n");
+    fprintf(stderr, "\t-w: resize image with specified width\n");
+    fprintf(stderr, "\t-h: resize image with specified height\n");
+    fprintf(stderr, "\t-i: image path\n");
+    fprintf(stderr, "\t-d: dataset path\n");
+    fprintf(stderr, "\t-o: output path\n");
+
+    exit(EXIT_FAILURE);
+}
+
 
 void convertImageSetTest(int argc, char** argv) {
-	const string argv1 = "/home/jkim/imageset/jpegs/";
-	const string argv2 = "/home/jkim/imageset/labels/train.txt";
-	const string argv3 = "/home/jkim/imageset/lmdb/train_lmdb/";
+	//const string argv1 = "/home/jkim/imageset/jpegs/";
+	//const string argv2 = "/home/jkim/imageset/labels/train.txt";
+	//const string argv3 = "/home/jkim/imageset/lmdb/train_lmdb/";
 	//const string argv1 = "/home/jkim/Backups/ilsvrc12_train/";
-	//const string argv2 = "/home/jkim/Dev/git/caffe/data/ilsvrc12/train_r.txt.example";
-	//const string argv3 = "/home/jkim/imageset/lmdb/ilsvrc_small_lmdb/";
+	//const string argv2 = "/home/jkim/Dev/git/caffe/data/ilsvrc12/train.txt";
+	//const string argv3 = "/home/jkim/imageset/lmdb/ilsvrc_lmdb/";
 
-	const bool FLAGS_gray = false;
-	const bool FLAGS_shuffle = false;		// default false
-	const string FLAGS_backend = "lmdb";
-	const int FLAGS_resize_width = 224;		// default 0
-	const int FLAGS_resize_height = 224;	// default 0
-	const bool FLAGS_check_size = false;
-	const bool FLAGS_encoded = false;
-	const string FLAGS_encode_type = "";
+	string argv1;
+	string argv2;
+	string argv3;
+
+	bool 	FLAGS_gray = false;
+	bool 	FLAGS_shuffle = false;		// default false
+	int 	FLAGS_resize_width = 0;		// default 0
+	int		FLAGS_resize_height = 0;	// default 0
+	bool	FLAGS_check_size = false;
+	bool	FLAGS_encoded = false;
+	string	FLAGS_encode_type = "";
+
+	//g: gray
+	//s: shuffle
+	//w: resize_width
+	//h: resize_height
+	//i: image_path
+	//d: dataset
+	//o: output
+	int opt;
+	while ((opt = getopt(argc, argv, "gsw:h:i:d:o:")) != -1) {
+		switch (opt) {
+		case 'g':
+			FLAGS_gray = true;
+			break;
+		case 's':
+			FLAGS_shuffle = true;
+			break;
+		case 'w':
+			if (optarg) FLAGS_resize_width = atoi(optarg);
+			else printConvertImageSetUsage(argv[0]);
+			break;
+		case 'h':
+			if (optarg) FLAGS_resize_height = atoi(optarg);
+			else printConvertImageSetUsage(argv[0]);
+			break;
+		case 'i':
+			if (optarg) argv1 = string(optarg);
+			else printConvertImageSetUsage(argv[0]);
+			break;
+		case 'd':
+			if (optarg) argv2 = string(optarg);
+			else printConvertImageSetUsage(argv[0]);
+			break;
+		case 'o':
+			if (optarg) argv3 = string(optarg);
+			else printConvertImageSetUsage(argv[0]);
+			break;
+		default:
+			printConvertImageSetUsage(argv[0]);
+			break;
+		}
+	}
+
+	if (!argv1.length() ||
+			!argv2.length() ||
+			!argv3.length()) {
+		printConvertImageSetUsage(argv[0]);
+	}
+
+	cout << endl;
+	cout << "::: Convert Image Set Configurations :::" << endl;
+	cout << "gray: " << FLAGS_gray << endl;
+	cout << "shuffle: " << FLAGS_shuffle << endl;
+	cout << "resize_width: " << FLAGS_resize_width << endl;
+	cout << "resize_height: " << FLAGS_resize_height << endl;
+	cout << "image_path: " << argv1 << endl;
+	cout << "dataset_path: " << argv2 << endl;
+	cout << "output_path: " << argv3 << endl;
+	cout << "::::::::::::::::::::::::::::::::::::::::" << endl;
+	cout << endl;
+
 
 	const bool is_color = !FLAGS_gray;
 	const bool check_size = FLAGS_check_size;
