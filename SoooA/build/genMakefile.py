@@ -8,25 +8,36 @@ import json
 #  - you can modify below things
 ###########################################################################################
 
-configNameList = ["Debug", "DebugClient", "Release", "ReleaseClient"]
+configNameList = ["Debug", "DebugClient", "Release", "ReleaseClient", "ToolImage",
+               "ToolMnist", "ToolDenorm"]
 
 symbolDic = dict()  # key : configure name, value : symbol list
-symbolDic["Debug"]              = ["GPU_MODE", "DEBUG_MODE"]
+symbolDic["Debug"]              = ["GPU_MODE", "DEBUG_MODE", "SERVER_MODE"]
 symbolDic["DebugClient"]        = ["GPU_MODE", "DEBUG_MODE", "CLIENT_MODE"]
-symbolDic["Release"]            = ["GPU_MODE"]
+symbolDic["Release"]            = ["GPU_MODE", "SERVER_MODE"]
 symbolDic["ReleaseClient"]      = ["GPU_MODE", "CLIENT_MODE"]
+symbolDic["ToolImage"]          = ["GPU_MODE", "TOOL_IMAGE_MODE"]
+symbolDic["ToolMnist"]          = ["GPU_MODE", "TOOL_MNIST_MODE"]
+symbolDic["ToolDenorm"]         = ["GPU_MODE", "TOOL_DENORM_MODE"]
+
 
 targetNameDic = dict()  # key : configure name, value : target name
 targetNameDic["Debug"]          = "SoooaServerDebug"
 targetNameDic["DebugClient"]    = "SoooaClientDebug"
 targetNameDic["Release"]        = "SoooaServer"
 targetNameDic["ReleaseClient"]  = "SoooaClient"
+targetNameDic["ToolImage"]      = "convert_imageset"
+targetNameDic["ToolMnist"]      = "convert_mnist_data"
+targetNameDic["ToolDenorm"]     = "denormalize_param"
 
 dirNameDic = dict() # key : configure name, value : directory name
 dirNameDic["Debug"]             = "DebugGen"
 dirNameDic["DebugClient"]       = "DebugClientGen"
 dirNameDic["Release"]           = "ReleaseGen"
 dirNameDic["ReleaseClient"]     = "ReleaseClientGen"
+dirNameDic["ToolImage"]         = "ToolImageGen"
+dirNameDic["ToolMnist"]         = "ToolMnistGen"
+dirNameDic["ToolDenorm"]        = "ToolDenormGen"
 
 subDirList = []     # directories under src directory
 

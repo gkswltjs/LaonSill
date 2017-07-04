@@ -1,5 +1,3 @@
-#if 0
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -54,6 +52,8 @@ void dataReaderTest(int argc, char** argv);
 void layerTest(int argc, char** argv);
 void networkTest(int argc, char** argv);
 
+
+#if 0
 int main(int argc, char** argv) {
 	cout << "begin test ... " << endl;
 	cout.precision(10);
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 	cout << "end test ... " << endl;
 	return 0;
 }
-
+#endif
 
 void plainTest(int argc, char** argv) {
 	denormalizeTest(argc, argv);
@@ -1116,7 +1116,4 @@ void saveNetworkParams(LayersConfig<float>* layersConfig) {
 	}
 	paramOfs.close();
 }
-#endif
-
-
 #endif

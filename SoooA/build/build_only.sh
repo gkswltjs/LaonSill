@@ -1,24 +1,31 @@
 #!/bin/bash
 if [ "$#" -ge 3 ]; then
-    echo "Usage: build.sh dop [Debug|Release]"
+    echo "Usage: build_only.sh dop [Debug|Release|Tool]"
     exit 0
 elif [ "$#" -eq 0 ]; then
-    echo "Usage: build.sh dop [Debug|Release]"
+    echo "Usage: build_only.sh dop [Debug|Release|Tool]"
     exit 0
 elif [ "$#" -eq 2 ]; then
     if [[ "$2" == "Debug" ]]; then
         buildDebug=1
         buildRelease=0
+        buildTool=0
     elif [[ "$2" == "Release" ]]; then
         buildDebug=0
         buildRelease=1
+        buildTool=0
+    elif [[ "$2" == "Tool" ]]; then
+        buildDebug=0
+        buildRelease=0
+        buildTool=1
     else
-        echo "Usage: build.sh dop [Debug|Release]"
+        echo "Usage: build_only.sh dop [Debug|Release|Tool]"
         exit 0
     fi
 else
     buildDebug=1
     buildRelease=1
+    buildTool=1
 fi
 
 dop=$1
@@ -136,5 +143,37 @@ if [ "$buildRelease" -eq 1 ]; then
         exit -1
     fi
     cp SoooaClient ../bin/SoooaClient
+    cd ..
+fi
+
+if [ "$buildTool" -eq 1 ]; then
+    echo "[build convert imageset tool]"
+    cd ToolImageGen
+    make -j$dop all
+    if [ "$?" -ne 0 ]; then
+        echo "ERROR: build stopped"
+        exit -1
+    fi
+    cp convert_imageset ../bin/.
+    cd ..
+
+    echo "[build convert mnist data tool]"
+    cd ToolMnistGen
+    make -j$dop all
+    if [ "$?" -ne 0 ]; then
+        echo "ERROR: build stopped"
+        exit -1
+    fi
+    cp convert_mnist_data ../bin/.
+    cd ..
+
+    echo "[build denormalize param tool]"
+    cd ToolDenormGen
+    make -j$dop all
+    if [ "$?" -ne 0 ]; then
+        echo "ERROR: build stopped"
+        exit -1
+    fi
+    cp denormalize_param ../bin/.
     cd ..
 fi

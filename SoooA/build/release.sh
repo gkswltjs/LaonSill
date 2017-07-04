@@ -11,6 +11,9 @@ cp ../template/soooa.conf.sample SOOOA_HOME/soooa.conf
 cp ../template/cluster.conf.sample SOOOA_HOME/cluster.conf
 cp ../bin/SoooaServer SOOOA_HOME/bin/.
 cp ../bin/SoooaClient SOOOA_HOME/bin/.
+cp ../bin/convert_imageset SOOOA_HOME/bin/.
+cp ../bin/convert_mnist_data SOOOA_HOME/bin/.
+cp ../bin/denormalize_param SOOOA_HOME/bin/.
 cp ../src/3rd_party/nms/libgpu_nms.so SOOOA_HOME/lib/.
 
 hashVal=`git rev-parse --short HEAD`
