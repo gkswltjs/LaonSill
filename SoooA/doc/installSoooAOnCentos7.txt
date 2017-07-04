@@ -61,6 +61,7 @@ options nouveau modeset=0
  (4-3) bin경로와 library경로를 등록한다.
   $ export PATH=$SOOOA_HOME/bin:$PATH
   $ export LD_LIBRARY_PATH=$SOOOA_HOME/lib:$LD_LIBRARY_PATH
+  $ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
  
  (4-4) SoooA를 실행한다.
   $ SoooaServer -v 
