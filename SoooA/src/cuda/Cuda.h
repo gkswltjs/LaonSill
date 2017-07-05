@@ -67,7 +67,8 @@
 		if (error != cudaSuccess) { 								\
 			std::stringstream _error; 								\
 			_error << "CUDA_CHECK failure: " << cudaGetErrorString(error); \
-			exit(-1); 												\
+            FatalError(_error.str());                                        \
+			assert(0); 												\
 		} 															\
 	} while (0)
 /*
