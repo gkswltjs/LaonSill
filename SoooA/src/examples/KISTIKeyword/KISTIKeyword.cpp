@@ -1,5 +1,5 @@
 /**
- * @file KistiKeywordPredict.cpp
+ * @file KISTIKeyword.cpp
  * @date 2017-04-20
  * @author moonhoen lee
  * @brief 
@@ -10,17 +10,22 @@
 
 #include "common.h"
 #include "Debug.h"
-#include "KistiKeywordPredict.h"
+#include "KISTIKeyword.h"
 #include "StdOutLog.h"
 #include "Network.h"
 #include "NetworkMonitor.h"
 #include "ImageUtil.h"
+#include "PlanParser.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
+#define EXAMPLE_KISTIKEYWORD_NETWORK_FILEPATH   ("../src/examples/KISTIKeyword/network.json")
+
+#if 0
 // XXX: inefficient..
 template<typename Dtype>
-int KistiKeywordPredict<Dtype>::getTop10GuessSuccessCount(const float* data,
+int KISTIKeyword<Dtype>::getTop10GuessSuccessCount(const float* data,
     const float* label, int batchCount, int depth, bool train, int epoch, 
     const float* image, int imageBaseIndex, vector<KistiData> etriData) {
 
@@ -123,7 +128,7 @@ int KistiKeywordPredict<Dtype>::getTop10GuessSuccessCount(const float* data,
 
 
 template <typename Dtype>
-LayersConfig<Dtype>* KistiKeywordPredict<Dtype>::createKistiVGG19NetLayersConfig() {
+LayersConfig<Dtype>* KISTIKeyword<Dtype>::createKistiVGG19NetLayersConfig() {
 #if 0
     const float bias_const = 0.2f;
 
@@ -526,9 +531,15 @@ LayersConfig<Dtype>* KistiKeywordPredict<Dtype>::createKistiVGG19NetLayersConfig
     return NULL;
 #endif
 }
+#endif
 
 template<typename Dtype>
-void KistiKeywordPredict<Dtype>::run() {
+void KISTIKeyword<Dtype>::run() {
+    int networkID = PlanParser::loadNetwork(string(EXAMPLE_KISTIKEYWORD_NETWORK_FILEPATH));
+    Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
+    network->build(100);
+    network->run(false);
+
 #if 0
     // loss layer of Discriminator GAN 
 	const vector<string> lossList = { "celossKisti" };
@@ -681,4 +692,4 @@ void KistiKeywordPredict<Dtype>::run() {
 #endif
 }
 
-template class KistiKeywordPredict<float>;
+template class KISTIKeyword<float>;
