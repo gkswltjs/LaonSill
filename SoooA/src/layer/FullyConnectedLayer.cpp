@@ -17,8 +17,6 @@ template<typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer() : LearnableLayer<Dtype>() {
 	this->type = Layer<Dtype>::FullyConnected;
 
-	this->scale = 1. / (1. - SLPROP(FullyConnected, pDropOut));
-
 	const string& name = SLPROP_BASE(name);
 	this->_params.resize(2);
 	this->_params[ParamType::Weight] = new Data<Dtype>(name + "_weight");

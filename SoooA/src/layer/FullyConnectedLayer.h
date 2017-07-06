@@ -55,8 +55,6 @@ protected:
 	Dtype* d_onevec;    ///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
 	SyncMem<Dtype> _mask;
 
-	Dtype scale;		///< dropout 스케일 팩터
-
 
 public:
     uint32_t batches;
