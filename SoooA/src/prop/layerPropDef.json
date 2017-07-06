@@ -21,7 +21,8 @@
             ["innerLayerIDs", "std::vector<int>", ""],
             ["defaultPropDown", "std::vector<bool>", ""],
             ["updateGrad", "bool", "true"]
-        ]
+        ],
+		"KEYVARS" : ["id", "name", "input", "output"]
 },
 
 "Input":
@@ -39,7 +40,8 @@
             ["sourceType", "std::string", "\"\""],
             ["numTrainPack", "uint32_t", "1"],
             ["numTestPack", "uint32_t", "1"]
-        ]
+        ],
+    "KEYVARS" : ["source", "mean"]
 },
 
 "Loss":
@@ -58,7 +60,8 @@
             ["normalize", "bool", "false"],
             ["hasNormalization", "bool", "false"],
             ["normalization", "NormalizationMode", "NormalizationMode::Valid"]
-        ]
+        ],
+    "KEYVARS" : []        
 },
 
 "Learnable":
@@ -72,7 +75,8 @@
         [
             ["decayedBeta1", "float", "1.0"], 
             ["decayedBeta2", "float", "1.0"]
-        ]
+        ],
+    "KEYVARS" : []        
 },
 
 "Conv" : 
@@ -120,7 +124,8 @@
                     ["value", "double"]
                 ]
             ]
-        ]
+        ],
+    "KEYVARS" : ["filterDim", "weightUpdataParam", "biasUpdateParam", "weightFiller", "biasFiller"]
 },
 
 "FullyConnected" :
@@ -133,7 +138,6 @@
     "VARS" : 
         [   
             ["nOut", "int", "0"],
-            ["pDropOut", "double", "0.0"],
             ["weightUpdateParam", "update_param", "{1.0, 1.0}",
                 [
                     ["lr_mult", "double"],
@@ -159,7 +163,8 @@
                 ]
             ],
             ["axis", "int", "1"]
-        ]
+        ],
+    "KEYVARS" : ["nOut", "weightUpdateParam", "biasUpdateParam", "weightFiller", "biasFiller"]
 },
 
 "ILSVRCInput" :
@@ -281,7 +286,8 @@
     "VARS" :
         [
             ["softmaxAxis", "uint32_t", "2"]
-        ]
+        ],
+    "KEYVARS" : []        
 },
 
 "CrossEntropyWithLoss" :
@@ -321,9 +327,8 @@
     "LEVEL" : 1,
     "LEARN" : 0,
     "PROPDOWN" : [],
-    "VARS" :
-        [
-        ]
+    "VARS" : [],
+    "KEYVARS" : []
 },
 
 "Relu" :
@@ -337,7 +342,8 @@
         [
             ["useLeaky", "bool", "false"],
             ["leaky", "double", "0.0"]
-        ]
+        ],
+    "KEYVARS" : []
 },
 
 "Sigmoid2" :
@@ -383,7 +389,8 @@
     "LEVEL" : 1,
     "LEARN" : 0,
     "PROPDOWN" : [],
-    "VARS" : []
+    "VARS" : [],
+    "KEYVARS" : []    
 },
 
 "DummyInput" : 
@@ -394,12 +401,13 @@
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : 
-	[
-		["shapes", "std::vector<uint32_t>", ""],
-		["numClasses", "uint32_t", "1"],
-		["numTrainData", "uint32_t", "1"],
-		["numTestData", "uint32_t", "1"]
-	]
+				[
+					["shapes", "std::vector<uint32_t>", ""],
+					["numClasses", "uint32_t", "1"],
+					["numTrainData", "uint32_t", "1"],
+					["numTestData", "uint32_t", "1"]
+				],
+    "KEYVARS" : ["shapes", "numClasses", "numTrainData"]				
 },
 
 "LRN" : 
@@ -410,16 +418,17 @@
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : 
-	[
-	    ["lrnDim", "lrn_dim", "{5, 0.0001, 0.75, 2.0}",
-	    	[
-	    		["local_size", "uint32_t"],
-	    		["alpha", "double"],
-	    		["beta", "double"],
-	    		["k", "double"]
-	    	]
-	    ]
-	]
+				[
+				    ["lrnDim", "lrn_dim", "{5, 0.0001, 0.75, 2.0}",
+				    	[
+				    		["local_size", "uint32_t"],
+				    		["alpha", "double"],
+				    		["beta", "double"],
+				    		["k", "double"]
+				    	]
+				    ]
+				],
+    "KEYVARS" : ["lrnDim"]				
 },
 
 "Pooling" : 
@@ -430,17 +439,18 @@
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : 
-	[
-	    ["poolDim", "pool_dim", "{1, 1, 0, 1}",
-	    	[
-	    			["rows", "uint32_t"],
-	    			["cols", "uint32_t"],
-	    			["pad", "uint32_t"],
-	    			["stride", "uint32_t"]
-	    	]
-	    ],
-	    ["poolingType", "PoolingType", "PoolingType::Max"]
-	]
+				[
+				    ["poolDim", "pool_dim", "{1, 1, 0, 1}",
+				    	[
+				    			["rows", "uint32_t"],
+				    			["cols", "uint32_t"],
+				    			["pad", "uint32_t"],
+				    			["stride", "uint32_t"]
+				    	]
+				    ],
+				    ["poolingType", "PoolingType", "PoolingType::Max"]
+				],
+    "KEYVARS" : ["poolDim", "poolingType"]			
 },
 
 "Reshape" : 
@@ -451,11 +461,10 @@
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : 
-	[
-	    ["shape", "std::vector<int>", ""],
-	    ["axis", "int", "0"],
-	    ["numAxis", "int", "-1"]
-	]
+				[
+				    ["shape", "std::vector<int>", ""]
+				],
+    "KEYVARS" : ["shapes"]			
 },
 
 "SmoothL1Loss" : 
@@ -469,7 +478,8 @@
 	[
 	    ["sigma", "float", "1.0"],
 	    ["firstAxis", "uint32_t", "0"]
-	]
+	],
+		"KEYVARS" : ["sigma"]
 },
 
 "Softmax" : 
@@ -482,7 +492,8 @@
     "VARS" : 
 	[
 	    ["softmaxAxis", "uint32_t", "2"]
-	]
+	],
+	  "KEYVARS" : []
 },
 
 "AnchorTarget" : 
@@ -497,7 +508,8 @@
 	    ["featStride", "uint32_t", "16"],
 	    ["allowedBorder", "uint32_t", "0"],
 	    ["scales", "std::vector<uint32_t>", "{8, 16, 32}"]
-	]
+	],
+		"KEYVARS" : ["featStride", "allowedBorder", "scales"]
 },
 
 "FrcnnTestOutput" : 
@@ -515,7 +527,8 @@
 	    ["vis", "bool", "false"],
 	    ["savePath", "std::string", "\"\""],
 	    ["labelMapPath", "std::string", "\"\""]
-	]
+	],
+		"KEYVARS" : ["maxPerImage", "confThresh", "nmsThresh", "savePath", "labelMapPath"]
 },
 
 "FrcnnTestVideoOutput" : 
@@ -533,7 +546,8 @@
 	    ["vis", "bool", "false"],
 	    ["savePath", "std::string", "\"\""],
 	    ["labelMapPath", "std::string", "\"\""]
-	]
+	],
+    "KEYVARS" : ["maxPerImage", "confThresh", "nmsThresh", "savePath", "labelMapPath"]	
 },
 
 "Proposal" : 
@@ -547,7 +561,8 @@
 	[
 	    ["featStride", "uint32_t", "16"],
 	    ["scales", "std::vector<uint32_t>", "{8, 16, 32}"]
-	]
+	],
+		"KEYVARS" : ["featStride", "scales"]
 },
 
 "ProposalTarget" : 
@@ -560,7 +575,8 @@
     "VARS" : 
 	[
 	    ["numClasses", "uint32_t", "0"]
-	]
+	],
+		"KEYVARS" : ["numClasses"]
 },
 
 "RoIInput" : 
@@ -578,7 +594,8 @@
 		["dataPath", "std::string", "\"\""],
 		["labelMapPath", "std::string", "\"\""],
 	    ["pixelMeans", "std::vector<float>", ""]
-	]
+	],
+		"KEYVARS" : ["numClasses", "imageSet", "dataName", "dataPath", "labelMapPath", "pixelMeans"]
 },
 
 "RoIPooling" : 
@@ -593,7 +610,8 @@
 	    ["pooledW", "uint32_t", "6"],
 	    ["pooledH", "uint32_t", "6"],
 	    ["spatialScale", "float", "0.0625"]
-	]
+	],
+		"KEYVARS" : ["pooledW", "pooledH", "spatialScale"]
 },
 
 "RoITestInput" : 
@@ -610,9 +628,9 @@
 		["dataName", "std::string", "\"\""],
 		["dataPath", "std::string", "\"\""],
 		["labelMapPath", "std::string", "\"\""],
-
 	    ["pixelMeans", "std::vector<float>", ""]
-	]
+	],
+		"KEYVARS" : ["numClasses", "imageSet", "dataName", "dataPath", "labelMapPath", "pixelMeans"]
 },
 
 "RoITestVideoInput" : 
@@ -628,7 +646,8 @@
 		["videoPath", "std::string", "\"\""],
 		["fps", "int", "10"],
 	    ["pixelMeans", "std::vector<float>", ""]
-	]
+	],
+		"KEYVARS" : ["numClasses", "videoPath", "pixelMeans"]
 },
 
 "CustomInput" :
@@ -653,9 +672,8 @@
     "LEVEL" : 2,
     "LEARN" : 0,
     "PROPDOWN" : [],
-    "VARS" : 
-    [
-    ]
+    "VARS" : [],
+    "KEYVARS" : []
 },
 
 "Accuracy" : 
@@ -670,7 +688,8 @@
         ["topK", "uint32_t", "1"],
         ["axis", "int", "1"],
         ["ignoreLabel", "int", "-1"]
-    ]
+    ],
+		"KEYVARS" : ["topK"]    
 }
 
 
