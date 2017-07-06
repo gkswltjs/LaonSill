@@ -53,7 +53,7 @@ public:
     std::vector<KistiData> testData;
 protected:
 
-    void registerData(std::string filePath);
+    void registerData(std::string filePath, bool isTrainData);
     void prepareKeywordMap();
     void prepareData();
     void loadPixels(cv::Mat image, int imageIndex);

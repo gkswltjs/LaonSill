@@ -11,6 +11,8 @@
 
 #include <vector>
 
+#include "KistiInputLayer.h"
+
 typedef struct top10Sort_s {
     float value;
     int index;
@@ -30,10 +32,10 @@ public:
 private:
 #if 0
     static LayersConfig<Dtype>* createKistiVGG19NetLayersConfig();
+#endif
     static int getTop10GuessSuccessCount(const float* data, const float* label, int batchCount,
         int depth, bool train, int epoch, const float* image, int imageBaseIndex,
         std::vector<KistiData> etriData);
-#endif
 };
 
 #endif /* KISTIKEYWORD_H */

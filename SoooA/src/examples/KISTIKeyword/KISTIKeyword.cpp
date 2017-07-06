@@ -20,19 +20,21 @@
 
 using namespace std;
 
-#define EXAMPLE_KISTIKEYWORD_NETWORK_FILEPATH   ("../src/examples/KISTIKeyword/network.json")
-
 #if 0
+#define EXAMPLE_KISTIKEYWORD_NETWORK_FILEPATH   ("../src/examples/KISTIKeyword/network.json")
+#else
+#define EXAMPLE_KISTIKEYWORD_NETWORK_FILEPATH   ("../src/examples/KISTIKeyword/networkESP.json")
+#endif
+
 // XXX: inefficient..
 template<typename Dtype>
 int KISTIKeyword<Dtype>::getTop10GuessSuccessCount(const float* data,
     const float* label, int batchCount, int depth, bool train, int epoch, 
     const float* image, int imageBaseIndex, vector<KistiData> etriData) {
 
-#if 0
     int successCnt = 0;
 
-#if 1
+#if 0
     string folderName;
         if (train) {
             folderName = "train_" + to_string(epoch) + "_" + to_string(imageBaseIndex); 
@@ -121,12 +123,10 @@ int KISTIKeyword<Dtype>::getTop10GuessSuccessCount(const float* data,
 #endif
 
     return successCnt;
-#else
-    return -1;
-#endif
 }
 
 
+#if 0
 template <typename Dtype>
 LayersConfig<Dtype>* KISTIKeyword<Dtype>::createKistiVGG19NetLayersConfig() {
 #if 0
@@ -537,90 +537,25 @@ template<typename Dtype>
 void KISTIKeyword<Dtype>::run() {
     int networkID = PlanParser::loadNetwork(string(EXAMPLE_KISTIKEYWORD_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
-    network->build(100);
-    network->run(false);
-
-#if 0
-    // loss layer of Discriminator GAN 
-	const vector<string> lossList = { "celossKisti" };
-    // loss layer of Generatoer-Discriminator 0 GAN
-
-	const NetworkPhase phase = NetworkPhase::TrainPhase;
-
-	const uint32_t batchSize = 16;
-	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
-	const uint32_t saveInterval = 100000;		// 1000000 / batchSize
-	const float baseLearningRate = 0.001f;
-
-	const uint32_t stepSize = 100000;
-	const float weightDecay = 0.0001f;
-	const float momentum = 0.9f;
-	const float clipGradientsLevel = 0.0f;
-	const LRPolicy lrPolicy = LRPolicy::Fixed;
-
-    const Optimizer opt = Optimizer::Adam;
-    //const Optimizer opt = Optimizer::Momentum;
-
-	STDOUT_BLOCK(cout << "batchSize: " << batchSize << endl;);
-	STDOUT_BLOCK(cout << "testInterval: " << testInterval << endl;);
-	STDOUT_BLOCK(cout << "saveInterval: " << saveInterval << endl;);
-	STDOUT_BLOCK(cout << "baseLearningRate: " << baseLearningRate << endl;);
-	STDOUT_BLOCK(cout << "weightDecay: " << weightDecay << endl;);
-	STDOUT_BLOCK(cout << "momentum: " << momentum << endl;);
-	STDOUT_BLOCK(cout << "clipGradientsLevel: " << clipGradientsLevel << endl;);
-
-	NetworkConfig<Dtype>* networkConfig =
-			(new typename NetworkConfig<Dtype>::Builder())
-			->batchSize(batchSize)
-			->baseLearningRate(baseLearningRate)
-			->weightDecay(weightDecay)
-			->momentum(momentum)
-			->testInterval(testInterval)
-			->saveInterval(saveInterval)
-			->stepSize(stepSize)
-			->clipGradientsLevel(clipGradientsLevel)
-			->lrPolicy(lrPolicy)
-			->networkPhase(phase)
-			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
-			->networkListeners({
-				new NetworkMonitor("celossKisti", NetworkMonitor::PLOT_ONLY),
-				})
-			->lossLayers(lossList)
-            ->optimizer(opt)
-			->build();
-
-	Util::printVramInfo();
-
- 	Network<Dtype>* network = new Network<Dtype>(networkConfig);
-
-    // (1) layer config를 만든다. 이 과정중에 layer들의 초기화가 진행된다.
-	LayersConfig<Dtype>* layersConfig = createKistiVGG19NetLayersConfig();
- 	network->setLayersConfig(layersConfig);
-
-	// (2) network config 정보를 layer들에게 전달한다.
-	for (uint32_t i = 0; i < layersConfig->_layers.size(); i++)
-		layersConfig->_layers[i]->setNetworkConfig(networkConfig);
+    network->build(1);
 
     // (3) 학습한다.
     for (int epoch = 0; epoch < 50; epoch++) {
         STDOUT_BLOCK(cout << "epoch #" << epoch << " starts" << endl;); 
 
-        KistiInputLayer<Dtype>* etriInputLayer =
-            dynamic_cast<KistiInputLayer<Dtype>*>(layersConfig->_firstLayers[0]);
-        SASSERT0(etriInputLayer != NULL);
-
-        CrossEntropyWithLossLayer<Dtype>* lossLayer =
-            dynamic_cast<CrossEntropyWithLossLayer<Dtype>*>(layersConfig->_lastLayers[0]);
-        SASSERT0(lossLayer != NULL);
+        KistiInputLayer<Dtype>* etriInputLayer = 
+            (KistiInputLayer<Dtype>*)network->findLayer("data");
+        CrossEntropyWithLossLayer<Dtype>* lossLayer = 
+            (CrossEntropyWithLossLayer<Dtype>*)network->findLayer("loss");
 
         const uint32_t trainDataSize = etriInputLayer->getNumTrainData();
-        const uint32_t numTrainBatches = trainDataSize / networkConfig->_batchSize - 1;
+        const uint32_t numTrainBatches = trainDataSize / SNPROP(batchSize) - 1;
 
         // (3-1) 네트워크를 학습한다.
         for (int i = 0; i < numTrainBatches; i++) {
             STDOUT_BLOCK(cout << "train data(" << i << "/" << numTrainBatches << ")" <<
                 endl;);
-            network->sgdMiniBatch(i);
+            network->runMiniBatch(false, i);
         }
 
         // (3-2) 트레이닝 데이터에 대한 평균 Loss와 정확도를 구한다.
@@ -629,15 +564,15 @@ void KISTIKeyword<Dtype>::run() {
         float trainLoss = 0.0;
         int trainSuccessCnt = 0;
         for (int i = 0; i < numTrainBatches; i++) {
-            network->_feedforward(i);
+            network->runMiniBatch(true, i);
             trainLoss += lossLayer->cost();
 
             const Dtype* inputData = etriInputLayer->_inputData[0]->host_data();
             const Dtype* outputData = lossLayer->_inputData[0]->host_data();
             const Dtype* outputLabel = lossLayer->_inputData[1]->host_data();
             trainSuccessCnt += getTop10GuessSuccessCount(outputData, outputLabel,
-                networkConfig->_batchSize, 1000, true, epoch, inputData,
-                (int)(networkConfig->_batchSize * i), etriInputLayer->trainData);
+                SNPROP(batchSize), 1000, true, epoch, inputData,
+                (int)(SNPROP(batchSize) * i), etriInputLayer->trainData);
         }
         trainLoss = trainLoss / (float)(numTrainBatches);
 
@@ -645,51 +580,37 @@ void KISTIKeyword<Dtype>::run() {
         etriInputLayer->setTrain(false);
 
         const uint32_t testDataSize = etriInputLayer->getNumTestData();
-        const uint32_t numTestBatches = testDataSize / networkConfig->_batchSize - 1;
+        const uint32_t numTestBatches = testDataSize / SNPROP(batchSize) - 1;
 
         STDOUT_BLOCK(cout << "evaluate test data(num test batches =" << numTestBatches <<
             ")" << endl;);
         float testLoss = 0.0;
         int testSuccessCnt = 0;
         for (int i = 0; i < numTestBatches; i++) {
-            network->_feedforward(i);
+            network->runMiniBatch(true, i);
             testLoss += lossLayer->cost();
 
             const Dtype* inputData = etriInputLayer->_inputData[0]->host_data();
             const Dtype* outputData = lossLayer->_inputData[0]->host_data();
             const Dtype* outputLabel = lossLayer->_inputData[1]->host_data();
             testSuccessCnt += getTop10GuessSuccessCount(outputData, outputLabel,
-                networkConfig->_batchSize, 1000, false, epoch, inputData,
-                (int)(networkConfig->_batchSize * i), etriInputLayer->testData);
+                SNPROP(batchSize), 1000, false, epoch, inputData,
+                (int)(SNPROP(batchSize) * i), etriInputLayer->testData);
         }
         testLoss = testLoss / (float)(numTestBatches);
 
         etriInputLayer->setTrain(true);
 
         float trainAcc = (float)trainSuccessCnt / (float)numTrainBatches /
-            (float)networkConfig->_batchSize;
+            (float)SNPROP(batchSize);
         float testAcc = (float)testSuccessCnt / (float)numTestBatches /
-            (float)networkConfig->_batchSize;
+            (float)SNPROP(batchSize);
         STDOUT_BLOCK(cout << "[RESULT #" << epoch << "] train loss : " << trainLoss <<
             ", test losss : " << testLoss << ", train accuracy : " << trainAcc << "(" <<
-            trainSuccessCnt << "/" << numTrainBatches * networkConfig->_batchSize <<
+            trainSuccessCnt << "/" << numTrainBatches * SNPROP(batchSize) <<
             "), test accuracy : " << testAcc << "(" << testSuccessCnt << "/" <<
-            numTestBatches * networkConfig->_batchSize << ")" << endl;);
+            numTestBatches * SNPROP(batchSize) << ")" << endl;);
     }
-
-#if 0
-    network->_feedforward(0);
-    DebugUtil<Dtype>::printNetworkEdges(stdout, "etri", layersConfig, 0);
-    network->_backpropagation(0);
-    DebugUtil<Dtype>::printNetworkEdges(stdout, "etri", layersConfig, 0);
-
-    for (uint32_t i = 0; i < layersConfig->_learnableLayers.size(); i++) {
-        layersConfig->_learnableLayers[i]->update();
-    }
-    DebugUtil<Dtype>::printNetworkEdges(stdout, "etri", layersConfig, 0);
-#endif
-
-#endif
 }
 
 template class KISTIKeyword<float>;

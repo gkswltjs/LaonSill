@@ -3,9 +3,12 @@
 # FIXME: should check error but .... it is a very trivial program & I'm too lazy :)
 #
 import os
+from shutil import copyfile
 
+espDirPath = "/data/ESP-ImageSet"
 espLabelDirPath = "/data/ESP-ImageSet/LABELS"
-espKeywordsFilePath = "/data/ESP-ImageSet/keywords.txt"
+espImageDirPath = "/data/ESP-ImageSet/images"
+espKeywordsFilePath = "/data/ESP-ImageSet/top1000keywords.txt"
 
 def preprocess():
     keywords = []
@@ -28,5 +31,14 @@ def preprocess():
 
     fileKeyword.close()
 
+    folderIdx = 0
+
+    imageNameList = os.listdir(espImageDirPath)
+    for imageName in imageNameList:
+        folderPath = espDirPath + "/%.6d" % folderIdx
+        os.mkdir(folderPath)
+        copyfile(espImageDirPath + "/" + imageName, folderPath + "/" + imageName)
+        copyfile(espLabelDirPath + "/" + imageName + ".desc", folderPath + "/keywords.txt")
+        folderIdx = folderIdx + 1
 
 preprocess()

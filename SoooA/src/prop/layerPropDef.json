@@ -210,9 +210,11 @@
             ["imageDir", "std::string", "\"\""],
             ["resizedImageRow", "int", "KISTIDATA_DEFAULT_RESIZED_ROW_SIZE"],
             ["resizedImageCol", "int", "KISTIDATA_DEFAULT_RESIZED_COL_SIZE"],
+            ["labelCount", "int", "1000"],
+            ["useKistiPolicy", "bool", "true"],
             ["train", "bool", "true"]
         ],
-    "KEYVARS" : ["imageDir"]
+    "KEYVARS" : ["imageDir", "labelCount"]
 },
 
 "NoiseInput" :
