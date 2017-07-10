@@ -1282,7 +1282,6 @@ void YOLO<Dtype>::runPretrain() {
 #if 0
 	const vector<string> lossList = { "loss" };
 
-	const NetworkPhase phase = NetworkPhase::TrainPhase;
 	const uint32_t batchSize = 16;
 	const uint32_t testInterval = 100;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 10000;		// 10000 / batchSize
@@ -1319,7 +1318,6 @@ void YOLO<Dtype>::runPretrain() {
 			->stepSize(stepSize)
 			->clipGradientsLevel(clipGradientsLevel)
 			->lrPolicy(lrPolicy)
-			->networkPhase(phase)
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
 			->networkListeners({
 				new NetworkMonitor("loss", NetworkMonitor::PLOT_ONLY),
@@ -1359,7 +1357,6 @@ void YOLO<Dtype>::run() {
 	const vector<string> lossList = { "loss" };
     // loss layer of Generatoer-Discriminator 0 GAN
 
-	const NetworkPhase phase = NetworkPhase::TrainPhase;
     string loadPath = string(SPARAM(NETWORK_SAVE_DIR)) + "/network80072.param";
 
 	const uint32_t batchSize = 8;
@@ -1395,7 +1392,6 @@ void YOLO<Dtype>::run() {
 			->stepSize(stepSize)
 			->clipGradientsLevel(clipGradientsLevel)
 			->lrPolicy(lrPolicy)
-			->networkPhase(phase)
 			->savePathPrefix(SPARAM(NETWORK_SAVE_DIR))
             ->loadPath(loadPath)
 			->networkListeners({

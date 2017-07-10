@@ -290,11 +290,13 @@ void CrossEntropyWithLossLayer<Dtype>::backpropagation() {
 template <typename Dtype>
 Dtype CrossEntropyWithLossLayer<Dtype>::cost() {
     const Dtype* outputData = this->_outputData[0]->host_data();
+    int batchCount = (int)this->_inputShape[0][0];
+
     Dtype avg = 0.0;
-    for (int i = 0; i < this->depth; i++) {
+    for (int i = 0; i < this->depth * batchCount; i++) {
         avg += outputData[i];
     }
-	return avg / (Dtype)this->depth;
+	return avg / ((Dtype)this->depth * (Dtype)batchCount);
 }
 
 template<typename Dtype>

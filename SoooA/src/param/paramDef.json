@@ -15,7 +15,7 @@
     "DESC" : "specify job consumer thread count.",
     "MANDATORY" : false,
     "MUTABLE" : true,
-    "SCOPE" : "SESSION",
+    "SCOPE" : "SYSTEM",
     "TYPE" : "UINT32",
     "DEFAULT" : 8 
 },
@@ -122,7 +122,7 @@
 
 "SLEEP_WHEN_ASSERTED" : 
 {
-    "DESC" : "A Hot Log Flusher flushes regularly. This parameter indicates its cycle time(ms).",
+    "DESC" : "This parameter determinces whether to sleep when a assertion occurs",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -188,46 +188,6 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 50
-},
-
-"DQN_DEFAULT_EPSILON_VALUE" : 
-{
-    "DESC" : "specify default epsilon value of deep Q network algorithm",
-    "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SYSTEM",
-    "TYPE" : "FLOAT",
-    "DEFAULT" : 0.2
-},
-
-"DQN_DEFAULT_GAMMA_VALUE" : 
-{
-    "DESC" : "specify default gamma value of deep Q network algorithm",
-    "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SYSTEM",
-    "TYPE" : "FLOAT",
-    "DEFAULT" : 0.9
-},
-
-"DQN_DEFAULT_MINI_BATCH_COUNT" : 
-{
-    "DESC" : "specify default mini batch count of deep Q network algorithm",
-    "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SYSTEM",
-    "TYPE" : "INT32",
-    "DEFAULT" : 40
-},
-
-"DQN_DEFAULT_SYNC_NETWORKS_PERIOD" : 
-{
-    "DESC" : "specify default period of sync networks of deep Q network algorithm",
-    "MANDATORY" : false,
-    "MUTABLE" : true,
-    "SCOPE" : "SYSTEM",
-    "TYPE" : "INT32",
-    "DEFAULT" : 10
 },
 
 "BROKER_ADHOC_SESS_STARTS" : 

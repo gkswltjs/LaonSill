@@ -29,7 +29,7 @@
 
     {
         "NAME" : "NetworkPhase",
-        "ENUM" : ["TrainPhase", "TestPhase"]
+        "ENUM" : ["TrainPhase", "ValidationPhase"]
     },
 
     {

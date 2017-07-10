@@ -421,7 +421,6 @@ void KistiGan<Dtype>::run() {
     // loss layer of Generatoer-Discriminator 0 GAN
 	const vector<string> llGD0GAN = { "celossGD0GAN" };
 
-	const NetworkPhase phase = NetworkPhase::TrainPhase;
 	const uint32_t batchSize = 64;
 	const uint32_t testInterval = 1;		// 10000(목표 샘플수) / batchSize
 	const uint32_t saveInterval = 100000;		// 1000000 / batchSize

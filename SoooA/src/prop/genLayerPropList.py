@@ -37,6 +37,7 @@ for prop in propDic:
     checkParamProperty(propDic, prop, "LEARN")
     checkParamProperty(propDic, prop, "PROPDOWN")
     checkParamProperty(propDic, prop, "VARS")
+    checkParamProperty(propDic, prop, "KEYVARS")
 
 # (3) generate header file
 headerTopSentences = [\

@@ -93,12 +93,12 @@ void ProposalLayer<Dtype>::feedforward() {
 	float nmsThresh;
 	uint32_t minSize;
 
-	if (SNPROP(phase) == NetworkPhase::TrainPhase) {
+	if (SNPROP(status) == NetworkStatus::Train) {
 		preNmsTopN 	= TRAIN_RPN_PRE_NMS_TOP_N;
 		postNmsTopN	= TRAIN_RPN_POST_NMS_TOP_N;
 		nmsThresh 	= TRAIN_RPN_NMS_THRESH;
 		minSize 	= TRAIN_RPN_MIN_SIZE;
-	} else if (SNPROP(phase) == NetworkPhase::TestPhase) {
+	} else if (SNPROP(status) == NetworkStatus::Test) {
 		preNmsTopN 	= TEST_RPN_PRE_NMS_TOP_N;
 		postNmsTopN = TEST_RPN_POST_NMS_TOP_N;
 		nmsThresh 	= TEST_RPN_NMS_THRESH;

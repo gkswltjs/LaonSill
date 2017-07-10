@@ -577,22 +577,18 @@
     "configs" :
     {
         "batchSize" : 16,
-        "epochs" : 16,
+        "epochs" : 1000,
         "lossLayer" : ["loss"],
-        "gamma" : 0.1,
         "saveInterval" : 1000000,
         "testInterval" : 100,
         "savePathPrefix" : "",
         "baseLearningRate" : 0.001,
-        "stepSize" : 100000,
-        "weightDecay" : 0.0001,
+        "stepSize" : 50000,
+        "weightDecay" : 0.0005,
         "momentum" : 0.9,
         "clipGradientsLevel" : 0.0,
-        "gamma" : 0.1,
+        "gamma" : 0.0001,
         "lrPolicy" : "Fixed",
-        "optimizer" : "Adam",
-        "beta1" : 0.5,
-        "beta2" : 0.999,
-        "miniBatch" : 0
+        "optimizer" : "Momentum"
     }
 }

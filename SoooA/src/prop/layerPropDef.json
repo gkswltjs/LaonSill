@@ -355,7 +355,8 @@
     "LEVEL" : 1,
     "LEARN" : 0,
     "PROPDOWN" : [],
-    "VARS" : []
+    "VARS" : [],
+    "KEYVARS" : []
 },
 
 "DropOut" : 

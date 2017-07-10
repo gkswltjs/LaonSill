@@ -571,7 +571,7 @@ void KISTIKeyword<Dtype>::run() {
             const Dtype* outputData = lossLayer->_inputData[0]->host_data();
             const Dtype* outputLabel = lossLayer->_inputData[1]->host_data();
             trainSuccessCnt += getTop10GuessSuccessCount(outputData, outputLabel,
-                SNPROP(batchSize), 1000, true, epoch, inputData,
+                SNPROP(batchSize), 22569, true, epoch, inputData,
                 (int)(SNPROP(batchSize) * i), etriInputLayer->trainData);
         }
         trainLoss = trainLoss / (float)(numTrainBatches);
@@ -594,7 +594,7 @@ void KISTIKeyword<Dtype>::run() {
             const Dtype* outputData = lossLayer->_inputData[0]->host_data();
             const Dtype* outputLabel = lossLayer->_inputData[1]->host_data();
             testSuccessCnt += getTop10GuessSuccessCount(outputData, outputLabel,
-                SNPROP(batchSize), 1000, false, epoch, inputData,
+                SNPROP(batchSize), 22569, false, epoch, inputData,
                 (int)(SNPROP(batchSize) * i), etriInputLayer->testData);
         }
         testLoss = testLoss / (float)(numTestBatches);
