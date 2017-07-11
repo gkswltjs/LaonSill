@@ -44,7 +44,7 @@ private:
 	std::vector<std::string> keys;
 	std::vector<std::string> values;
 
-	int dbSize;
+	size_t dbSize;
 
 	std::ifstream ifs;
 	std::ofstream ofs;
