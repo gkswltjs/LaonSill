@@ -79,6 +79,26 @@ int main(int argc, char** argv) {
 #endif
 
 void plainTest(int argc, char** argv) {
+	/*
+	string line = "000001.jpg 1,2,3,4,5";
+
+	size_t pos = line.find_last_of(' ');
+	string first = line.substr(0, pos);
+	string labels = line.substr(pos + 1);
+	cout << "file: " << first << endl;
+	cout << "labels: " << labels << endl;
+
+
+	cout << "tokenized labels: ";
+	pos = labels.find_first_of(',');
+	while (pos != string::npos) {
+		cout << atoi(labels.substr(0, pos).c_str()) << ",";
+		labels = labels.substr(pos + 1);
+		pos = labels.find_first_of(',');
+	}
+	cout << atoi(labels.substr(0, pos).c_str()) << endl;
+	*/
+
 	//denormalizeTest(argc, argv);
 	//convertMnistDataTest(argc, argv);
 	//convertImageSetTest(argc, argv);
@@ -305,9 +325,10 @@ void convertMnistDataTest(int argc, char** argv) {
 
 
 void printConvertImageSetUsage(char* prog) {
-    fprintf(stderr, "Usage: %s [-g | -s | -w resize_width | -h resize_height | -l dataset_path] -i image_path -o output_path\n", prog);
+    fprintf(stderr, "Usage: %s [-g | -s | -m | -w resize_width | -h resize_height | -l dataset_path] -i image_path -o output_path\n", prog);
     fprintf(stderr, "\t-g: gray image input\n");
     fprintf(stderr, "\t-s: shuffle the image set\n");
+    fprintf(stderr, "\t-m: multiple labels\n");
     fprintf(stderr, "\t-w: resize image with specified width\n");
     fprintf(stderr, "\t-h: resize image with specified height\n");
     fprintf(stderr, "\t-i: image path\n");
@@ -332,6 +353,7 @@ void convertImageSetTest(int argc, char** argv) {
 
 	bool 	FLAGS_gray = false;
 	bool 	FLAGS_shuffle = false;		// default false
+	bool	FLAGS_multi_label = false;
 	int 	FLAGS_resize_width = 0;		// default 0
 	int		FLAGS_resize_height = 0;	// default 0
 	bool	FLAGS_check_size = false;
@@ -346,13 +368,16 @@ void convertImageSetTest(int argc, char** argv) {
 	//d: dataset
 	//o: output
 	int opt;
-	while ((opt = getopt(argc, argv, "gsw:h:i:d:o:")) != -1) {
+	while ((opt = getopt(argc, argv, "gsmw:h:i:d:o:")) != -1) {
 		switch (opt) {
 		case 'g':
 			FLAGS_gray = true;
 			break;
 		case 's':
 			FLAGS_shuffle = true;
+			break;
+		case 'm':
+			FLAGS_multi_label = true;
 			break;
 		case 'w':
 			if (optarg) FLAGS_resize_width = atoi(optarg);
@@ -391,6 +416,7 @@ void convertImageSetTest(int argc, char** argv) {
 	cout << "::: Convert Image Set Configurations :::" << endl;
 	cout << "gray: " << FLAGS_gray << endl;
 	cout << "shuffle: " << FLAGS_shuffle << endl;
+	cout << "multi_pabel: " << FLAGS_multi_label << endl;
 	cout << "resize_width: " << FLAGS_resize_width << endl;
 	cout << "resize_height: " << FLAGS_resize_height << endl;
 	cout << "image_path: " << argv1 << endl;
@@ -401,24 +427,52 @@ void convertImageSetTest(int argc, char** argv) {
 
 
 	const bool is_color = !FLAGS_gray;
+	const bool multi_label = FLAGS_multi_label;
 	const bool check_size = FLAGS_check_size;
 	const bool encoded = FLAGS_encoded;
 	const string encode_type = FLAGS_encode_type;
 	const bool image_only_mode = (argv2.length() == 0) ? true : false;
 
-	vector<pair<string, int>> lines;
+	vector<pair<string, vector<int>>> lines;
 	string line;
 	size_t pos;
 	int label;
+	vector<int> labelList;
 
 
 	// image and label pairs are provided
 	if (!image_only_mode) {
 		ifstream infile(argv2);
 		while (std::getline(infile, line)) {
+			labelList.clear();
 			pos = line.find_last_of(' ');
-			label = atoi(line.substr(pos + 1).c_str());
-			lines.push_back(std::make_pair(line.substr(0, pos), label));
+
+			// sinlge label is provided
+			if (!multi_label) {
+				labelList.push_back(atoi(line.substr(pos + 1).c_str()));
+				lines.push_back(std::make_pair(line.substr(0, pos), labelList));
+			}
+			// multiple labels are provided
+			else {
+				string first = line.substr(0, pos);
+				string labels = line.substr(pos + 1);
+				pos = labels.find_first_of(',');
+				while (pos != string::npos) {
+					labelList.push_back(atoi(labels.substr(0, pos).c_str()));
+					labels = labels.substr(pos + 1);
+					pos = labels.find_first_of(',');
+				}
+				labelList.push_back(atoi(labels.substr(0, pos).c_str()));
+				lines.push_back(std::make_pair(first.substr(0, first.length()), labelList));
+				/*
+				cout << "first: " << lines.back().first << endl;
+				cout << "second: ";
+				for (int i = 0; i < lines.back().second.size(); i++) {
+					cout << lines.back().second[i] << ", ";
+				}
+				cout << endl;
+				*/
+			}
 		}
 	}
 	// only images provided
@@ -434,21 +488,31 @@ void convertImageSetTest(int argc, char** argv) {
 		int count = 0;
 		while (it != endit) {
 			if (fs::is_regular_file(*it) && it->path().extension() == ext) {
-				lines.push_back(std::make_pair(it->path().filename().string(), 0));
+				string path = it->path().filename().string();
+				// path를 그대로 전달할 경우 error ...
+				// substr() 호출한 결과를 전달할 경우 문제 x
+				labelList.push_back(0);
+				lines.push_back(std::make_pair(path.substr(0, path.length()), labelList));
+				//lines.push_back(std::make_pair<string, vector<int>>(path, {0}));
 			}
 			it++;
 		}
 	}
 
+	if (FLAGS_shuffle) {
+		// randomly shuffle data
+		std::random_shuffle(lines.begin(), lines.end());
+	} else {
+
+	}
+
+	cout << "A total of " << lines.size() << " images." << endl;
+	/*
 	for (int i = 0; i < std::min<int>(lines.size(), 100); i++) {
 		cout << "fn: " << lines[i].first << ", label: " << lines[i].second << endl;
 	}
+	*/
 
-	if (FLAGS_shuffle) {
-		// randomly shuffle data
-		random_shuffle(lines.begin(), lines.end());
-	}
-	cout << "A total of " << lines.size() << " images." << endl;
 
 	if (encode_type.size() && !encoded) {
 		cout << "encode_type specified, assuming encoded=true.";
@@ -473,6 +537,8 @@ void convertImageSetTest(int argc, char** argv) {
 	// 아래 status가 false인 경우 등의 상황에서 수가 정확하지 않을 가능성이 있음.
 	sdf->put("num_data", std::to_string(lines.size()));
 	sdf->commit();
+
+
 
 	for (int line_id = 0; line_id < lines.size(); line_id++) {
 		bool status;
@@ -560,17 +626,22 @@ void convertImageSetTest(int argc, char** argv) {
 
 
 void dataReaderTest(int argc, char** argv) {
-	DataReader<Datum> dr("/home/jkim/imageset/lmdb/celeba_sdf/");
+	DataReader<Datum> dr("/home/jkim/imageset/lmdb/esp_sdf/");
 	int numData = dr.getNumData();
 	cout << "numData: " << numData << endl;
 
-	for (int i = 0; i < numData + 100; i++) {
+	for (int i = 0; i < std::min(numData, 100); i++) {
 		Datum* datum = dr.getNextData();
-		cout << i << " label: " << datum->label << endl;
-
-		cv::Mat cv_img = DecodeDatumToCVMat(datum, true);
-		cv::imshow("result", cv_img);
-		cv::waitKey(0);
+		cout << i << " label: " << datum->label;
+		if (datum->float_data.size() > 0) {
+			for (int j = 0; j < datum->float_data.size(); j++) {
+				cout << "," << (int)datum->float_data[j];
+			}
+		}
+		cout << endl;
+		//cv::Mat cv_img = DecodeDatumToCVMat(datum, true);
+		//cv::imshow("result", cv_img);
+		//cv::waitKey(0);
 	}
 }
 

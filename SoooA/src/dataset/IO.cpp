@@ -10,15 +10,24 @@
 using namespace std;
 
 
-bool ReadImageToDatum(const string& filename, const int label, const int height,
+bool ReadImageToDatum(const string& filename, const vector<int>& label, const int height,
 		const int width, const int min_dim, const int max_dim, const bool is_color,
 		const string& encoding, Datum* datum) {
+	SASSERT0(label.size() > 0);
 	cv::Mat cv_img = ReadImageToCVMat(filename, height, width, min_dim, max_dim, is_color);
 
 	if (cv_img.data) {
 		SASSERT0(!encoding.size());
 		CVMatToDatum(cv_img, datum);
-		datum->label = label;
+		datum->label = label[0];
+
+		// multiple labels case
+		if (label.size() > 1) {
+			SASSERT0(datum->float_data.size() == 0);
+			for (int i = 1; i < label.size(); i++) {
+				datum->float_data.push_back((float)label[i]);
+			}
+		}
 		return true;
 	} else {
 		return false;

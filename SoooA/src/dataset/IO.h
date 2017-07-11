@@ -13,9 +13,9 @@
 
 #include "Datum.h"
 
-bool ReadImageToDatum(const std::string& filename, const int label, const int height,
-		const int width, const int min_dim, const int max_dim, const bool is_color,
-		const std::string& encoding, Datum* datum);
+bool ReadImageToDatum(const std::string& filename, const std::vector<int>& label,
+		const int height, const int width, const int min_dim, const int max_dim,
+		const bool is_color, const std::string& encoding, Datum* datum);
 
 /*
 bool ReadImageToDatum(const std::string& filename, const int label, const int height,
