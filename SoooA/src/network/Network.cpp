@@ -101,8 +101,12 @@ void Network<Dtype>::reset() {
     planInfo->curMiniBatchIndex = 0;
     planInfo->doneCount = 0;
     SNPROP(iterations) = 0;
-    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
-    pp->reset();
+    
+    for (int i = 0; i < planInfo->dopCount; i++) {
+        WorkContext::updatePlan(i, true);
+        PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+        pp->reset();
+    }
 }
 
 template<typename Dtype>
@@ -133,8 +137,12 @@ void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
     planInfo->miniBatchCount = miniBatchIdx + 1;
     planInfo->epochCount = 1;
     planInfo->doneCount = 0;
-    PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
-    pp->reset();
+
+    for (int i = 0; i < planInfo->dopCount; i++) {
+        WorkContext::updatePlan(i, true);
+        PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+        pp->reset();
+    }
 
     PlanOptimizer::runPlan(this->networkID, inference);
 }
@@ -177,8 +185,8 @@ void Network<Dtype>::save(string path) {
 
 	paramOfs.close();
 
-    if (SPARAM(PRINT_EDGELOG_AFTER_NETWORKSAVE)) {
-        DebugUtil<Dtype>::printNetworkEdges(stderr, "network save result", this->networkID,
+    if (SPARAM(PRINT_PARAMLOG_AFTER_NETWORKSAVE)) {
+        DebugUtil<Dtype>::printNetworkParams(stderr, "network save result", this->networkID,
             0);
     }
 }
@@ -255,8 +263,8 @@ void Network<Dtype>::load(string path) {
 		delete it->second;
 	dataMap.clear();
 
-    if (SPARAM(PRINT_EDGELOG_AFTER_NETWORKLOAD)) {
-        DebugUtil<Dtype>::printNetworkEdges(stderr, "network load result", this->networkID,
+    if (SPARAM(PRINT_PARAMLOG_AFTER_NETWORKLOAD)) {
+        DebugUtil<Dtype>::printNetworkParams(stderr, "network load result", this->networkID,
             0);
     }
 }
@@ -268,7 +276,6 @@ void Network<Dtype>::load() {
 
 template <typename Dtype>
 Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
-    int oldNetworkID = WorkContext::curNetworkID;
     WorkContext::updateNetwork(this->networkID);
     WorkContext::updatePlan(WorkContext::curDOPID, true);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;

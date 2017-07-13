@@ -169,6 +169,31 @@ typedef enum JobType_e {
      * | NetworkID (int) |
      * +-----------------+
      */
+
+    // FIXME: 아래의 2개의 job은 텔코웨어 요청으로 임시적으로 만들었습니다. 
+    //        job의 이름을 포함해서 옳은 방향인지에 대해서 고민이 필요합니다.
+
+    RunNetworkWithInputData,
+    /*
+     *  [Job Elem Schema for RunNetworkWithInputData]
+     * +-----------------+---------------+--------------+-------------+
+     * | NetworkID (int) | channel (int) | height (int) | width (int) |
+     * +-----------------+--------+------+--------------+-------------+
+     * | image data (float array) |
+     * +--------------------------+
+     */
+
+    RunNetworkWithInputDataReply,
+    /*
+     *  [Job Elem Schema for RunNetworkWithInputDataReply]
+     * +--------------------+
+     * | result count (int) | 
+     * +-----------+--------+---+--------------+-------------+--------------------+
+     * | top (int) | left (int) | bottom (int) | right (int) | confidence (flaot) | }
+     * +-----------+------------+--------------+-------------+--------------------+ } result
+     * | .............                                                            | } count
+     * +--------------------------------------------------------------------------+
+     */
     
     JobTypeMax
 

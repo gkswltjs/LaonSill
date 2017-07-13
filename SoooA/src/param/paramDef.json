@@ -310,7 +310,7 @@
     "DEFAULT" : false
 },
 
-"PRINT_EDGELOG_AFTER_NETWORKLOAD" : 
+"PRINT_PARAMLOG_AFTER_NETWORKLOAD" : 
 {
     "DESC" : "specify whether server prints edge log after loading network or not",
     "MANDATORY" : false,
@@ -320,7 +320,7 @@
     "DEFAULT" : false
 },
 
-"PRINT_EDGELOG_AFTER_NETWORKSAVE" : 
+"PRINT_PARAMLOG_AFTER_NETWORKSAVE" : 
 {
     "DESC" : "specify whether server prints edge log after saving network or not",
     "MANDATORY" : false,

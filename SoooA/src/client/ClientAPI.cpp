@@ -295,3 +295,41 @@ ClientError ClientAPI::loadNetwork(ClientHandle handle, NetworkHandle netHandle,
 
     return ClientError::Success;
 }
+
+ClientError ClientAPI::getObjectDetection(ClientHandle handle, NetworkHandle netHandle,
+    int channel, int height, int width, float* imageData, vector<BoundingBox>& boxArray) {
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    Job* runJob = new Job(JobType::RunNetworkWithInputData);
+    runJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    runJob->addJobElem(Job::IntType, 1, (void*)&channel);
+    runJob->addJobElem(Job::IntType, 1, (void*)&height);
+    runJob->addJobElem(Job::IntType, 1, (void*)&width);
+
+    int imageDataElemCount = channel * height * width;
+    runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
+    Client::sendJob(handle.sockFD, handle.buffer, runJob);
+    delete runJob;
+
+    Job* runReplyJob;
+    Client::recvJob(handle.sockFD, handle.buffer, &runReplyJob);
+    SASSERT0(runReplyJob->getType() == JobType::RunNetworkWithInputDataReply);
+    
+    int resultBoxCount = runReplyJob->getIntValue(0);
+    int elemIdx = 1;
+    for (int i = 0; i < resultBoxCount; i++) {
+        BoundingBox bbox;
+        bbox.top        = runReplyJob->getIntValue(elemIdx + 0);
+        bbox.left       = runReplyJob->getIntValue(elemIdx + 1);
+        bbox.bottom     = runReplyJob->getIntValue(elemIdx + 2);
+        bbox.right      = runReplyJob->getIntValue(elemIdx + 3);
+        bbox.confidence = runReplyJob->getFloatValue(elemIdx + 4);
+
+        boxArray.push_back(bbox);
+        elemIdx += 5;
+    }
+    delete runReplyJob;
+
+    return ClientError::Success;
+}

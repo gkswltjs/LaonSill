@@ -314,6 +314,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/test&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/tools&quot;"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 								</option>
@@ -442,6 +443,7 @@
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/sess&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/util&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/test&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/tools&quot;"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_GNUPLOT}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 								</option>
@@ -909,6 +911,7 @@
 		<configuration configurationName="Release">
 			<resource resourceType="PROJECT" workspacePath="/SoooA"/>
 		</configuration>
+		<configuration configurationName="ToolMnist"/>
 		<configuration configurationName="DebugClient">
 			<resource resourceType="PROJECT" workspacePath="/SoooA"/>
 		</configuration>
@@ -916,6 +919,8 @@
 		<configuration configurationName="Debug">
 			<resource resourceType="PROJECT" workspacePath="/SoooA"/>
 		</configuration>
+		<configuration configurationName="ToolImage"/>
+		<configuration configurationName="ToolDenorm"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">

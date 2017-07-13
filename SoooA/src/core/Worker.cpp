@@ -22,6 +22,9 @@
 #include "LayerFunc.h"
 #include "PropMgmt.h"
 
+#include "RoITestLiveInputLayer.h"
+#include "FrcnnTestLiveOutputLayer.h"
+
 using namespace std;
 
 thread_local int        Worker::gpuIdx;
@@ -397,6 +400,63 @@ void Worker::handleLoadNetwork(Job* job) {
     Broker::publish(job->getJobID(), pubJob);
 }
 
+void Worker::handleRunNetworkWithInputData(Job* job) {
+    int networkID = job->getIntValue(0);
+    int channel = job->getIntValue(1);
+    int height = job->getIntValue(2);
+    int width = job->getIntValue(3);
+    float* imageData = job->getFloatArray(4);
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+
+    std::vector<Layer<float>*> inputLayers =
+        network->findLayersByType(Layer<float>::RoITestLiveInput);
+    SASSUME0(inputLayers.size() == 1);
+    RoITestLiveInputLayer<float>* inputLayer = (RoITestLiveInputLayer<float>*)inputLayers[0];
+    
+    std::vector<Layer<float>*> outputLayers =
+        network->findLayersByType(Layer<float>::FrcnnTestLiveOutput);
+    SASSUME0(outputLayers.size() == 1);
+    FrcnnTestLiveOutputLayer<float>* outputLayer =
+        (FrcnnTestLiveOutputLayer<float>*)outputLayers[0];
+
+    inputLayer->feedImage(channel, height, width, imageData); 
+    network->run(true);
+
+    ThreadMgmt::wait(WorkContext::curThreadID, 0);
+
+    Job* pubJob = getPubJob(job);
+
+    int count = outputLayer->_outputData[0]->getCount();
+    int resultCount;
+
+    if ( count == 1) {
+        resultCount = 0;
+    } else {
+        resultCount = count / 5;
+        SASSUME0(count % 5 == 0); 
+    }
+
+    pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
+    const float* result = outputLayer->_outputData[0]->host_data();
+
+    for (int i = 0; i < resultCount; i++) {
+        int left    = int(result[i * 5 + 0]);
+        int top     = int(result[i * 5 + 1]);
+        int right   = int(result[i * 5 + 2]);
+        int bottom  = int(result[i * 5 + 3]);
+        float score = result[i * 5 + 4];
+
+        pubJob->addJobElem(Job::IntType, 1, (void*)&top);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&left);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&bottom);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&right);
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&score);
+    }
+
+    Broker::publish(job->getJobID(), pubJob);
+}
+
 bool Worker::handleJob(Job* job) {
     bool doLoop = true;
 
@@ -440,6 +500,10 @@ bool Worker::handleJob(Job* job) {
 
         case JobType::LoadNetwork:
             handleLoadNetwork(job);
+            break;
+
+        case JobType::RunNetworkWithInputData:
+            handleRunNetworkWithInputData(job);
             break;
 
         default:

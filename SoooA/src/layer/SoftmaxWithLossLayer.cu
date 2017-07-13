@@ -56,6 +56,7 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer()
 	InnerLayerFunc::initLayer(0);
 
 
+#if SOFTMAXWITHLOSSLAYER_LOG
 	cout << "for " << SLPROP_BASE(name) << endl;
 
 	cout << "lossWeight: " << SLPROP(Loss, lossWeight) << endl;
@@ -67,7 +68,7 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer()
 	cout << "normalization: " << SLPROP(Loss, normalization) << endl;
 
 	cout << "softmaxAxis: " << SLPROP(SoftmaxWithLoss, softmaxAxis) << endl;
-
+#endif
 }
 
 

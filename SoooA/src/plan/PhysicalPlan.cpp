@@ -280,8 +280,8 @@ void PhysicalPlan::markDone(int planID) {
 }
 
 void PhysicalPlan::markFinish(int networkID, int dopID, int planID) {
-    int oldNetworkID = WorkContext::curNetworkID;
-    int oldDOPID = WorkContext::curDOPID;
+//    int oldNetworkID = WorkContext::curNetworkID;
+//    int oldDOPID = WorkContext::curDOPID;
 
     WorkContext::updateNetwork(networkID);
     WorkContext::updatePlan(dopID, true);
@@ -295,8 +295,8 @@ void PhysicalPlan::markFinish(int networkID, int dopID, int planID) {
     }
     pp->markDone(planID);
 
-    WorkContext::updateNetwork(oldNetworkID);
-    WorkContext::updatePlan(oldDOPID, true);
+//    WorkContext::updateNetwork(oldNetworkID);
+//    WorkContext::updatePlan(oldDOPID, true);
 }
 
 void PhysicalPlan::saveNetwork(bool checkCond) {

@@ -10,6 +10,7 @@
 #define CLIENTAPI_H 
 
 #include <string>
+#include <vector>
 
 #define MAX_SERVER_HOSTNAME_LEN             (1024)
 
@@ -54,6 +55,14 @@ typedef struct NetworkHandle_s {
     }
 } NetworkHandle;
 
+typedef struct BoundingBox_s {
+    int top;
+    int left;
+    int bottom;
+    int right;
+    float confidence;
+} BoundingBox;
+
 class ClientAPI {
 public: 
                         ClientAPI() {}
@@ -79,8 +88,12 @@ public:
     static ClientError      runNetworkMiniBatch(ClientHandle handle, NetworkHandle netHandle,
                                                 bool inference, int miniBatchIdx);
     static ClientError      saveNetwork(ClientHandle handle, NetworkHandle netHandle,
-                                        std::string filePath); 
+                                        std::string filePath);
     static ClientError      loadNetwork(ClientHandle handle, NetworkHandle netHandle,
-                                        std::string filePath); 
+                                        std::string filePath);
+
+    static ClientError      getObjectDetection(ClientHandle handle, NetworkHandle netHandle,
+                                int channel, int height, int width, float* imageData,
+                                std::vector<BoundingBox>& boxArray);
 };
 #endif /* CLIENTAPI_H */

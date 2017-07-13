@@ -43,6 +43,7 @@
 #include "test/CreateNetworkTest.h"
 #include "test/RunNetworkTest.h"
 #include "test/SaveLoadNetworkTest.h"
+#include "test/RunNetworkWithInputTest.h"
 #endif
 
 /**************************************************************************
@@ -52,7 +53,7 @@
 #ifndef CLIENT_MODE
 #define TEST_ITEM_DEF_ARRAY_COUNT  7
 #else
-#define TEST_ITEM_DEF_ARRAY_COUNT  3
+#define TEST_ITEM_DEF_ARRAY_COUNT  4
 #endif
 
 /**************************************************************************
@@ -74,7 +75,8 @@ TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
 TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
     {"create", "create network test", CreateNetworkTest::runTest},
     {"run", "run network test", RunNetworkTest::runTest},
-    {"saveload", "save & load network test", SaveLoadNetworkTest::runTest}
+    {"saveload", "save & load network test", SaveLoadNetworkTest::runTest},
+    {"telco", "run network iwth input data test", RunNetworkWithInputTest::runTest}
 };
 #endif
 

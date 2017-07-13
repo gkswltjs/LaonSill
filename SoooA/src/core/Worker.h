@@ -87,6 +87,7 @@ private:
     static void                         handleRunNetworkMiniBatch(Job* job);
     static void                         handleSaveNetwork(Job* job);
     static void                         handleLoadNetwork(Job* job);
+    static void                         handleRunNetworkWithInputData(Job* job);
 
 
     /**

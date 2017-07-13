@@ -36,6 +36,7 @@ void Job::init() {
     Job::pubJobTypeMap[RunNetworkMiniBatch]         = RunNetworkReply;
     Job::pubJobTypeMap[SaveNetwork]                 = SaveNetworkReply;
     Job::pubJobTypeMap[LoadNetwork]                 = LoadNetworkReply;
+    Job::pubJobTypeMap[RunNetworkWithInputData]     = RunNetworkWithInputDataReply;
 }
 
 Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
