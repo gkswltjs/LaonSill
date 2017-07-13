@@ -10,22 +10,31 @@ elif [ "$#" -eq 2 ]; then
         buildDebug=1
         buildRelease=0
         buildTool=0
+        buildLib=0
     elif [[ "$2" == "Release" ]]; then
         buildDebug=0
         buildRelease=1
         buildTool=0
+        buildLib=0
     elif [[ "$2" == "Tool" ]]; then
         buildDebug=0
         buildRelease=0
         buildTool=1
+        buildLib=0
+    elif [[ "$2" == "Lib" ]]; then
+        buildDebug=0
+        buildRelease=0
+        buildTool=0
+        buildLib=1
     else
-        echo "Usage: build.sh dop [Debug|Release|Tool]"
+        echo "Usage: build.sh dop [Debug|Release|Tool|Lib]"
         exit 0
     fi
 else
     buildDebug=1
     buildRelease=1
     buildTool=1
+    buildLib=1
 fi
 
 dop=$1
@@ -185,6 +194,28 @@ if [ "$buildTool" -eq 1 ]; then
     cd ..
 fi
 
+if [ "$buildTool" -eq 1 ]; then
+    echo "[build client lib]"
+    cd ClientLib
+    make -j$dop all
+    if [ "$?" -ne 0 ]; then
+        echo "ERROR: build stopped"
+        exit -1
+    fi
+    cp lib* ../lib/.
+    cd ..
+
+    echo "[build server lib]"
+    cd ServerLib
+    make -j$dop all
+    if [ "$?" -ne 0 ]; then
+        echo "ERROR: build stopped"
+        exit -1
+    fi
+    cp lib* ../lib/.
+    cd ..
+fi
+
 echo "[remove build directory]"
 rm -rf DebugGen
 rm -rf DebugClientGen
@@ -193,4 +224,5 @@ rm -rf ReleaseClientGen
 rm -rf ToolImageGen
 rm -rf ToolMnistGen
 rm -rf ToolDenormGen
-
+rm -rf ClientLib
+rm -rf ServerLib

@@ -6,3 +6,5 @@ rm -rf ../ReleaseClientGen
 rm -rf ../ToolDenormGen
 rm -rf ../ToolMnistGen
 rm -rf ../ToolImageGen
+rm -rf ../ClientLib
+rm -rf ../ServerLib

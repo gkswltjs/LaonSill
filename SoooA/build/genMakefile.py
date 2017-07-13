@@ -9,7 +9,8 @@ import json
 ###########################################################################################
 
 configNameList = ["Debug", "DebugClient", "Release", "ReleaseClient", "ToolImage",
-               "ToolMnist", "ToolDenorm"]
+               "ToolMnist", "ToolDenorm", "ClientLib", "ServerLib"]
+libVersion = "1.0.1"
 
 symbolDic = dict()  # key : configure name, value : symbol list
 symbolDic["Debug"]              = ["GPU_MODE", "DEBUG_MODE", "SERVER_MODE"]
@@ -19,7 +20,8 @@ symbolDic["ReleaseClient"]      = ["GPU_MODE", "CLIENT_MODE"]
 symbolDic["ToolImage"]          = ["GPU_MODE", "TOOL_IMAGE_MODE"]
 symbolDic["ToolMnist"]          = ["GPU_MODE", "TOOL_MNIST_MODE"]
 symbolDic["ToolDenorm"]         = ["GPU_MODE", "TOOL_DENORM_MODE"]
-
+symbolDic["ClientLib"]          = ["GPU_MODE", "CLIENT_MODE"]
+symbolDic["ServerLib"]          = ["GPU_MODE", "SERVER_MODE"]
 
 targetNameDic = dict()  # key : configure name, value : target name
 targetNameDic["Debug"]          = "SoooaServerDebug"
@@ -29,6 +31,8 @@ targetNameDic["ReleaseClient"]  = "SoooaClient"
 targetNameDic["ToolImage"]      = "convert_imageset"
 targetNameDic["ToolMnist"]      = "convert_mnist_data"
 targetNameDic["ToolDenorm"]     = "denormalize_param"
+targetNameDic["ClientLib"]      = "libSoooAClient.so." + libVersion
+targetNameDic["ServerLib"]      = "libSoooA.so." + libVersion
 
 dirNameDic = dict() # key : configure name, value : directory name
 dirNameDic["Debug"]             = "DebugGen"
@@ -38,6 +42,8 @@ dirNameDic["ReleaseClient"]     = "ReleaseClientGen"
 dirNameDic["ToolImage"]         = "ToolImageGen"
 dirNameDic["ToolMnist"]         = "ToolMnistGen"
 dirNameDic["ToolDenorm"]        = "ToolDenormGen"
+dirNameDic["ClientLib"]         = "ClientLib"
+dirNameDic["ServerLib"]         = "ServerLib"
 
 subDirList = []     # directories under src directory
 
@@ -68,7 +74,7 @@ def createDirectory(configName):
         print str(e)
         exit(-1)
 
-def generateMakefile(configName, dirPath):
+def generateMakefile(configName, dirPath, genSharedLib):
     try:
         newFile = open(dirPath + '/makefile', 'w+')
         newFile.write('#################################################################\n')
@@ -127,15 +133,27 @@ $(shell uname -s)/$(shell uname -m)))\n')
         newFile.write('%s: $(OBJS) $(USER_OBJS)\n' % targetNameDic[configName])
         newFile.write("\t@echo 'Building target: $@'\n")
         newFile.write("\t@echo 'Invoking: NVCC Linker'\n")
-        newFile.write('\tnvcc --cudart static -Xlinker --export-dynamic\
+
+        if genSharedLib:
+            newFile.write('\tnvcc --cudart static -shared -Xlinker --export-dynamic\
  --relocatable-device-code=false -gencode arch=%s,code=%s -link -o "%s" \
 $(OBJS) $(USER_OBJS) $(LIBS)\n' % (supportArch, supportCode, targetNameDic[configName]))
+        else:
+            newFile.write('\tnvcc --cudart static -Xlinker --export-dynamic\
+ --relocatable-device-code=false -gencode arch=%s,code=%s -link -o "%s" \
+$(OBJS) $(USER_OBJS) $(LIBS)\n' % (supportArch, supportCode, targetNameDic[configName]))
+
         newFile.write("\t@echo 'Finished building target: $@'\n")
         newFile.write("\t@echo ' '\n\n")
 
         # Other Targets
         newFile.write("clean:\n")
-        newFile.write("\t-$(RM) $(CU_DEPS)$(OBJS)$(C++_DEPS)$(C_DEPS)$(CC_DEPS)$(CPP_DEPS)\
+
+        if genSharedLib:
+            newFile.write("\t-$(RM) $(CU_DEPS)$(OBJS)$(C++_DEPS)$(C_DEPS)$(CC_DEPS)$(CPP_DEPS)\
+$(LIBRARIES)$(CXX_DEPS)$(C_UPPER_DEPS) %s\n" % targetNameDic[configName])
+        else:
+            newFile.write("\t-$(RM) $(CU_DEPS)$(OBJS)$(C++_DEPS)$(C_DEPS)$(CC_DEPS)$(CPP_DEPS)\
 $(EXECUTABLES)$(CXX_DEPS)$(C_UPPER_DEPS) %s\n" % targetNameDic[configName])
         newFile.write("\t-@echo ' '\n\n")
 
@@ -194,6 +212,7 @@ def generateSources(dirPath):
         newFile.write('CC_DEPS := \n')
         newFile.write('CPP_DEPS := \n')
         newFile.write('EXECUTABLES := \n')
+        newFile.write('LIBRARIES := \n')
         newFile.write('CXX_DEPS := \n')
         newFile.write('C_UPPER_DEPS := \n')
         newFile.write('\n')
@@ -224,7 +243,7 @@ def addSubDir(dirPath, relPath):
         print str(e)
         exit(-1)
 
-def generateSubMakefile(configName, dirPath, relPath):
+def generateSubMakefile(configName, dirPath, relPath, genSharedLib):
     srcHomeDir = os.environ[sourceHomeDirEnvName]
     buildDirPath = srcHomeDir + '/%s/%s' % (dirNameDic[configName], relPath)
 
@@ -312,6 +331,10 @@ def generateSubMakefile(configName, dirPath, relPath):
                 newFile.write("-O0 ")
             else:
                 newFile.write("-O3 ")
+
+            if genSharedLib:
+                newFile.write("-Xcompiler -fPIC ")
+                
             newFile.write("-Xcompiler -Wno-format-zero-length -std=c++11 ")
             newFile.write("-gencode arch=%s,code=%s " % (supportArch, supportCode))
 
@@ -338,6 +361,9 @@ def generateSubMakefile(configName, dirPath, relPath):
                 newFile.write("-O0 ")
             else:
                 newFile.write("-O3 ")
+
+            if genSharedLib:
+                newFile.write("-Xcompiler -fPIC ")
             newFile.write("-Xcompiler -Wno-format-zero-length -std=c++11 ")
             newFile.write("-gencode arch=%s,code=%s " % (supportArch, supportCode))
 
@@ -370,6 +396,9 @@ def generateSubMakefile(configName, dirPath, relPath):
                 newFile.write("-O0 ")
             else:
                 newFile.write("-O3 ")
+
+            if genSharedLib:
+                newFile.write("-Xcompiler -fPIC ")
             newFile.write("-Xcompiler -Wno-format-zero-length -std=c++11 ")
             newFile.write("-gencode arch=%s,code=%s " % (supportArch, supportCode))
 
@@ -396,6 +425,9 @@ def generateSubMakefile(configName, dirPath, relPath):
                 newFile.write("-O0 ")
             else:
                 newFile.write("-O3 ")
+
+            if genSharedLib:
+                newFile.write("-Xcompiler -fPIC ")
             newFile.write("-Xcompiler -Wno-format-zero-length -std=c++11 ")
             newFile.write("-gencode arch=%s,code=%s " % (supportArch, supportCode))
 
@@ -478,10 +510,14 @@ addSubDir(srcHomeDir + '/src', 'src')
 for configName in configNameList:
     buildDirPath = createDirectory(configName)
 
-    generateMakefile(configName, buildDirPath)
+    genSharedLib = False
+    if "Lib" in configName:
+        genSharedLib = True
+
+    generateMakefile(configName, buildDirPath, genSharedLib)
     generateObjects(buildDirPath)
     generateSources(buildDirPath)
 
     for subDir in subDirList:
-        generateSubMakefile(configName, srcHomeDir + '/%s' % subDir, subDir)
+        generateSubMakefile(configName, srcHomeDir + '/%s' % subDir, subDir, genSharedLib)
 
