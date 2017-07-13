@@ -21,6 +21,7 @@ public:
 
 	T* getNextData();
 	T* peekNextData();
+    void fillNextData(T* data);
 
 	int getNumData();
 
@@ -30,6 +31,13 @@ private:
 
 	std::queue<T*> data_queue;
 
+    /***************************************************************************
+     * callback functions - will be registered by Input Data Provider module
+     * *************************************************************************/
+public:
+    static void allocElem(void** elemPtr);
+    static void deallocElem(void* elemPtr);
+    static void fillElem(void* reader, void* elemPtr);
 };
 
 #endif /* DATAREADER_H_ */

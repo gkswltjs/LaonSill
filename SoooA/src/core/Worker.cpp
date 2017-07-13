@@ -262,6 +262,8 @@ void Worker::jobConsumerThread(int consumerIdx) {
             continue;
 
         doLoop = handleJob(job);
+
+        delete job;
     }
 
     HotLog::markExit();
@@ -344,6 +346,13 @@ void Worker::handleRunNetwork(Job* job) {
     int inference = job->getIntValue(1);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
+
+    if (SPARAM(USE_INPUT_DATA_PROVIDER)) {
+        Job* startIDPJob = new Job(JobType::StartInputDataProvider);   // InputDataProvider
+        startIDPJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+        Worker::pushJob(startIDPJob);
+    }
+
     network->run((bool)inference);
 
     ThreadMgmt::wait(WorkContext::curThreadID, 0);

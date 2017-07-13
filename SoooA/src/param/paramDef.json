@@ -458,6 +458,56 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 100000 
+},
+
+"USE_INPUT_DATA_PROVIDER" : 
+{
+    "DESC" : "specify whether server uses data provider or not",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"INPUT_DATA_PROVIDER_ELEM_COUNT" :
+{
+    "DESC" : "specify elem count of input data provider",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 32
+},
+
+"INPUT_DATA_PROVIDER_BLOCKING" : 
+{
+    "DESC" : "specify whether to wait until data is available",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
+},
+
+"INPUT_DATA_PROVIDER_CALLER_WAIT_TIME_MS" : 
+{
+    "DESC" : "specify wait time of caller for input data provider in miliseconds ",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 200
+},
+
+"INPUT_DATA_PROVIDER_WAIT_TIME_MS" : 
+{
+    "DESC" : "specify wait time of input data provider in miliseconds ",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 500
 }
 
 }

@@ -63,11 +63,13 @@ Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
                 this->jobElemDefs[i].arrayCount = 0;
                 offset += sizeof(int);
                 break;
+
             case Job::FloatType:
                 this->jobElemDefs[i].elemOffset = offset;
                 this->jobElemDefs[i].arrayCount = 0;
                 offset += sizeof(float);
                 break;
+
             case Job::FloatArrayType:
                 offset += sizeof(int);
                 this->jobElemDefs[i].elemOffset = offset;
@@ -75,6 +77,7 @@ Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
                     (void*)&jobElemTypes[offset], sizeof(int));
                 offset += sizeof(float) * this->jobElemDefs[i].arrayCount;
                 break;
+
             case Job::StringType:
                 offset += sizeof(int);
                 this->jobElemDefs[i].elemOffset = offset;

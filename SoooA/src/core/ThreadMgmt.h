@@ -28,7 +28,8 @@ typedef enum ThreadType_s {
 typedef enum ThreadEvent_e : unsigned long {
     Wakeup = 1UL,
     Timeout = 2UL,
-    Halt = 4UL
+    Halt = 4UL,
+    FinishJob = 8UL
 } ThreadEvent;
 
 typedef struct ThreadContext_s {

@@ -161,6 +161,14 @@ typedef enum JobType_e {
      * | None |
      * +------+
      */
+
+    StartInputDataProvider,
+    /*
+     *  [Job Elem Schema for StartInputDataProvider]
+     * +-----------------+
+     * | NetworkID (int) |
+     * +-----------------+
+     */
     
     JobTypeMax
 

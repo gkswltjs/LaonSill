@@ -589,6 +589,6 @@
         "clipGradientsLevel" : 0.0,
         "gamma" : 0.0001,
         "lrPolicy" : "Fixed",
-        "optimizer" : "Momentum"
+        "optimizer" : "Adam"
     }
 }

@@ -548,35 +548,36 @@ void Communicator::sessThread(int sessId) {
             // (2) 메세지를 처리한다.
             bool needReply;
             switch (recvMsgHdr.getMsgType()) {
-            case MessageHeader::Welcome:
-                needReply = Communicator::handleWelcomeMsg(
-                    recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
-                    replyMsgHdr, replyMsg, replyBigMsg);
-                break;
-            case MessageHeader::PushJob:
-                needReply = Communicator::handlePushJobMsg(fd, 
-                    recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
-                    replyMsgHdr, replyMsg, replyBigMsg);
-                break;
+                case MessageHeader::Welcome:
+                    needReply = Communicator::handleWelcomeMsg(
+                        recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
+                        replyMsgHdr, replyMsg, replyBigMsg);
+                    break;
 
-            case MessageHeader::HaltMachine:
-                needReply = Communicator::handleHaltMachineMsg(
-                    recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
-                    replyMsgHdr, replyMsg, replyBigMsg);
-                continueSocketCommLoop = false;
-                continueLoop = false;
-                break;
+                case MessageHeader::PushJob:
+                    needReply = Communicator::handlePushJobMsg(fd, 
+                        recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
+                        replyMsgHdr, replyMsg, replyBigMsg);
+                    break;
 
-            case MessageHeader::GoodBye:
-                needReply = Communicator::handleGoodByeMsg(
-                    recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
-                    replyMsgHdr, replyMsg, replyBigMsg);
-                continueSocketCommLoop = false;
-                break;
+                case MessageHeader::HaltMachine:
+                    needReply = Communicator::handleHaltMachineMsg(
+                        recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
+                        replyMsgHdr, replyMsg, replyBigMsg);
+                    continueSocketCommLoop = false;
+                    continueLoop = false;
+                    break;
 
-            default:
-                SASSERT(!"invalid message header", "");
-                break;
+                case MessageHeader::GoodBye:
+                    needReply = Communicator::handleGoodByeMsg(
+                        recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
+                        replyMsgHdr, replyMsg, replyBigMsg);
+                    continueSocketCommLoop = false;
+                    break;
+
+                default:
+                    SASSERT(!"invalid message header", "");
+                    break;
             }
 
             // (3) send reply if necessary
