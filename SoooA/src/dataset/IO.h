@@ -15,7 +15,8 @@
 
 bool ReadImageToDatum(const std::string& filename, const std::vector<int>& label,
 		const int height, const int width, const int min_dim, const int max_dim,
-		const bool is_color, const std::string& encoding, Datum* datum);
+		const bool channel_separated, const bool is_color, const std::string& encoding,
+		Datum* datum);
 
 /*
 bool ReadImageToDatum(const std::string& filename, const int label, const int height,
@@ -28,7 +29,7 @@ bool ReadImageToDatum(const std::string& filename, const int label, const int he
 cv::Mat ReadImageToCVMat(const std::string& filename, const int height, const int width,
 		const int min_dim, const int max_dim, const bool is_color);
 
-void CVMatToDatum(const cv::Mat& cv_img, Datum* datum);
+void CVMatToDatum(const cv::Mat& cv_img, const bool channel_separated, Datum* datum);
 
 cv::Mat DecodeDatumToCVMat(const Datum* datum, bool is_color);
 

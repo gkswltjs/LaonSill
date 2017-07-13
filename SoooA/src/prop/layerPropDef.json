@@ -534,6 +534,21 @@
 		"KEYVARS" : ["maxPerImage", "confThresh", "nmsThresh", "savePath", "labelMapPath"]
 },
 
+"FrcnnTestLiveOutput" : 
+{
+    "DESC" : "frcnn test live output layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["confThresh", "float", "0.5"],
+	    ["nmsThresh", "float", "0.1"]
+	],
+		"KEYVARS" : ["confThresh", "nmsThresh"]
+},
+
 "FrcnnTestVideoOutput" : 
 {
     "DESC" : "frcnn test video output layer",
@@ -636,6 +651,20 @@
 		"KEYVARS" : ["numClasses", "imageSet", "dataName", "dataPath", "labelMapPath", "pixelMeans"]
 },
 
+"RoITestLiveInput" : 
+{
+    "DESC" : "roi test live input",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["pixelMeans", "std::vector<float>", ""]
+	],
+		"KEYVARS" : ["pixelMeans"]
+},
+
 "RoITestVideoInput" : 
 {
     "DESC" : "roi test video input",
@@ -677,6 +706,20 @@
     "PROPDOWN" : [],
     "VARS" : [],
     "KEYVARS" : []
+},
+
+"MultiLabelDataInput" : 
+{
+    "DESC" : "multiple labels data input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["labelCount", "int", "0"]
+	],
+    "KEYVARS" : ["labelCount"]
 },
 
 "Accuracy" : 

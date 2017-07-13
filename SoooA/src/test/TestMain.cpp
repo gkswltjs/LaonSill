@@ -79,30 +79,10 @@ int main(int argc, char** argv) {
 #endif
 
 void plainTest(int argc, char** argv) {
-	/*
-	string line = "000001.jpg 1,2,3,4,5";
-
-	size_t pos = line.find_last_of(' ');
-	string first = line.substr(0, pos);
-	string labels = line.substr(pos + 1);
-	cout << "file: " << first << endl;
-	cout << "labels: " << labels << endl;
-
-
-	cout << "tokenized labels: ";
-	pos = labels.find_first_of(',');
-	while (pos != string::npos) {
-		cout << atoi(labels.substr(0, pos).c_str()) << ",";
-		labels = labels.substr(pos + 1);
-		pos = labels.find_first_of(',');
-	}
-	cout << atoi(labels.substr(0, pos).c_str()) << endl;
-	*/
-
 	//denormalizeTest(argc, argv);
 	//convertMnistDataTest(argc, argv);
-	//convertImageSetTest(argc, argv);
-	dataReaderTest(argc, argv);
+	convertImageSetTest(argc, argv);
+	//dataReaderTest(argc, argv);
 }
 
 
@@ -325,10 +305,11 @@ void convertMnistDataTest(int argc, char** argv) {
 
 
 void printConvertImageSetUsage(char* prog) {
-    fprintf(stderr, "Usage: %s [-g | -s | -m | -w resize_width | -h resize_height | -l dataset_path] -i image_path -o output_path\n", prog);
+    fprintf(stderr, "Usage: %s [-g | -s | -m | -c | -w resize_width | -h resize_height | -l dataset_path] -i image_path -o output_path\n", prog);
     fprintf(stderr, "\t-g: gray image input\n");
     fprintf(stderr, "\t-s: shuffle the image set\n");
     fprintf(stderr, "\t-m: multiple labels\n");
+    fprintf(stderr, "\t-c: channel not separated\n");
     fprintf(stderr, "\t-w: resize image with specified width\n");
     fprintf(stderr, "\t-h: resize image with specified height\n");
     fprintf(stderr, "\t-i: image path\n");
@@ -354,6 +335,7 @@ void convertImageSetTest(int argc, char** argv) {
 	bool 	FLAGS_gray = false;
 	bool 	FLAGS_shuffle = false;		// default false
 	bool	FLAGS_multi_label = false;
+	bool	FLAGS_channel_separated = true;
 	int 	FLAGS_resize_width = 0;		// default 0
 	int		FLAGS_resize_height = 0;	// default 0
 	bool	FLAGS_check_size = false;
@@ -368,7 +350,7 @@ void convertImageSetTest(int argc, char** argv) {
 	//d: dataset
 	//o: output
 	int opt;
-	while ((opt = getopt(argc, argv, "gsmw:h:i:d:o:")) != -1) {
+	while ((opt = getopt(argc, argv, "gsmcw:h:i:d:o:")) != -1) {
 		switch (opt) {
 		case 'g':
 			FLAGS_gray = true;
@@ -378,6 +360,9 @@ void convertImageSetTest(int argc, char** argv) {
 			break;
 		case 'm':
 			FLAGS_multi_label = true;
+			break;
+		case 'c':
+			FLAGS_channel_separated = false;
 			break;
 		case 'w':
 			if (optarg) FLAGS_resize_width = atoi(optarg);
@@ -417,6 +402,7 @@ void convertImageSetTest(int argc, char** argv) {
 	cout << "gray: " << FLAGS_gray << endl;
 	cout << "shuffle: " << FLAGS_shuffle << endl;
 	cout << "multi_pabel: " << FLAGS_multi_label << endl;
+	cout << "channel_separated: " << FLAGS_channel_separated << endl;
 	cout << "resize_width: " << FLAGS_resize_width << endl;
 	cout << "resize_height: " << FLAGS_resize_height << endl;
 	cout << "image_path: " << argv1 << endl;
@@ -428,6 +414,7 @@ void convertImageSetTest(int argc, char** argv) {
 
 	const bool is_color = !FLAGS_gray;
 	const bool multi_label = FLAGS_multi_label;
+	const bool channel_separated = FLAGS_channel_separated;
 	const bool check_size = FLAGS_check_size;
 	const bool encoded = FLAGS_encoded;
 	const string encode_type = FLAGS_encode_type;
@@ -539,7 +526,6 @@ void convertImageSetTest(int argc, char** argv) {
 	sdf->commit();
 
 
-
 	for (int line_id = 0; line_id < lines.size(); line_id++) {
 		bool status;
 		string enc = encode_type;
@@ -554,7 +540,7 @@ void convertImageSetTest(int argc, char** argv) {
 			std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
 		}
 		status = ReadImageToDatum(root_folder + lines[line_id].first, lines[line_id].second,
-				resize_height, resize_width, 0, 0, is_color, enc, &datum);
+				resize_height, resize_width, 0, 0, channel_separated, is_color, enc, &datum);
 
 		if (status == false) {
 			continue;
@@ -626,7 +612,7 @@ void convertImageSetTest(int argc, char** argv) {
 
 
 void dataReaderTest(int argc, char** argv) {
-	DataReader<Datum> dr("/home/jkim/imageset/lmdb/esp_sdf/");
+	DataReader<Datum> dr("/home/jkim/imageset/lmdb/flatten_sdf/");
 	int numData = dr.getNumData();
 	cout << "numData: " << numData << endl;
 
@@ -1091,11 +1077,14 @@ void layerTest() {
 #define NETWORK_SSD			4
 #define NETWORK_SSD_TEST	5
 #define NETWORK_VGG16		6
-#define NETWORK				NETWORK_VGG16
+#define NETWORK_DUMMY		7
+#define NETWORK				NETWORK_FRCNN
 
 #define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/LeNet/lenet_train_test.json")
 #define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/frcnn/frcnn_train_test.json")
 #define EXAMPLE_VGG16_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/VGG16/vgg16_train_test.json")
+#define EXAMPLE_DUMMY_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/SOOOA_HOME/.json")
+
 
 //void saveNetworkParams(LayersConfig<float>* layersConfig);
 

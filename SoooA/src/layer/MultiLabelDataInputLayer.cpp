@@ -1,13 +1,11 @@
 /*
- * DataInputLayer.cpp
+ * MultiLabelDataInputLayer.cpp
  *
- *  Created on: Jun 30, 2017
+ *  Created on: Jul 12, 2017
  *      Author: jkim
  */
 
-#include <vector>
-
-#include "DataInputLayer.h"
+#include "MultiLabelDataInputLayer.h"
 #include "PropMgmt.h"
 #include "SysLog.h"
 #include "IO.h"
@@ -15,20 +13,20 @@
 using namespace std;
 
 template <typename Dtype>
-DataInputLayer<Dtype>::DataInputLayer()
+MultiLabelDataInputLayer<Dtype>::MultiLabelDataInputLayer()
 : InputLayer<Dtype>(),
   dataReader(SLPROP(Input, source)) {
-	this->type = Layer<Dtype>::DataInput;
-
+	this->type = Layer<Dtype>::MultiLabelDataInput;
 }
 
 template <typename Dtype>
-DataInputLayer<Dtype>::~DataInputLayer() {
-	// TODO Auto-generated destructor stub
+MultiLabelDataInputLayer<Dtype>::~MultiLabelDataInputLayer() {
+
 }
 
+
 template <typename Dtype>
-void DataInputLayer<Dtype>::reshape() {
+void MultiLabelDataInputLayer<Dtype>::reshape() {
 	if (this->_inputData.size() < 1) {
 		for (uint32_t i = 0; i < SLPROP_BASE(output).size(); i++) {
 			SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
@@ -53,7 +51,8 @@ void DataInputLayer<Dtype>::reshape() {
 		}
 		// label
 		else if (i == 1) {
-			vector<uint32_t> labelShape = {SNPROP(batchSize), 1, 1, 1};
+			vector<uint32_t> labelShape = {SNPROP(batchSize),
+					(uint32_t)SLPROP(MultiLabelDataInput, labelCount), 1, 1};
 			this->_inputData[1]->reshape(labelShape);
 			this->_inputShape[1] = labelShape;
 		}
@@ -63,19 +62,19 @@ void DataInputLayer<Dtype>::reshape() {
 
 
 template <typename Dtype>
-void DataInputLayer<Dtype>::feedforward() {
+void MultiLabelDataInputLayer<Dtype>::feedforward() {
 	reshape();
 	load_batch();
 }
 
 template <typename Dtype>
-void DataInputLayer<Dtype>::feedforward(unsigned int baseIndex, const char* end) {
+void MultiLabelDataInputLayer<Dtype>::feedforward(unsigned int baseIndex, const char* end) {
 	reshape();
 	load_batch();
 }
 
 template <typename Dtype>
-void DataInputLayer<Dtype>::load_batch() {
+void MultiLabelDataInputLayer<Dtype>::load_batch() {
 	vector<float> mean = SLPROP(Input, mean);
 	bool hasMean = false;
 	if (mean.size() > 0) {
@@ -100,6 +99,8 @@ void DataInputLayer<Dtype>::load_batch() {
 		int h_off = 0;
 		int w_off = 0;
 
+		// DATA TRANSFORM ////////////////////////////////////////////////////////////////////
+		// expand mean to follow real number of image channels
 		if (hasMean) {
 			SASSERT(mean.size() == 1 || mean.size() == datum_channels,
 					"Specify either 1 mean value or as many as channels: %d", datum_channels);
@@ -111,6 +112,7 @@ void DataInputLayer<Dtype>::load_batch() {
 			}
 		}
 
+		// apply mean and scale
 		const float scale = SLPROP(Input, scale);
 		Dtype datum_element;
 		int top_index, data_index;
@@ -130,35 +132,30 @@ void DataInputLayer<Dtype>::load_batch() {
 				}
 			}
 		}
+		//////////////////////////////////////////////////////////////////////////////////////
 
-		// if label tensor specified ...
-		if (this->_outputData.size() > 1) {
-			Dtype* output_label = this->_inputData[1]->mutable_host_data();
-			output_label[item_id] = datum->label;
+		Dtype* output_label = this->_inputData[1]->mutable_host_data();
+		const int labelCount = SLPROP(MultiLabelDataInput, labelCount);
+		output_label[item_id * labelCount + datum->label] = Dtype(1);
+		for (int labelIdx = 0; labelIdx < datum->float_data.size(); labelIdx) {
+			output_label[item_id * labelCount + (int)datum->float_data[labelIdx]] = Dtype(1);
 		}
-
-		//cout << "label: " << datum->label << endl;
-		/*
-		cv::Mat cv_img(datum->height, datum->width, CV_32F, output_data);
-		cv::imshow("result", cv_img);
-		cv::waitKey(0);
-		*/
 	}
 }
 
 
 template <typename Dtype>
-int DataInputLayer<Dtype>::getNumTrainData() {
+int MultiLabelDataInputLayer<Dtype>::getNumTrainData() {
 	return this->dataReader.getNumData();
 }
 
 template <typename Dtype>
-int DataInputLayer<Dtype>::getNumTestData() {
+int MultiLabelDataInputLayer<Dtype>::getNumTestData() {
 	return 0;
 }
 
 template <typename Dtype>
-void DataInputLayer<Dtype>::shuffleTrainDataSet() {
+void MultiLabelDataInputLayer<Dtype>::shuffleTrainDataSet() {
 
 }
 
@@ -173,19 +170,19 @@ void DataInputLayer<Dtype>::shuffleTrainDataSet() {
  * layer callback functions
  ****************************************************************************/
 template<typename Dtype>
-void* DataInputLayer<Dtype>::initLayer() {
-    DataInputLayer* layer = new DataInputLayer<Dtype>();
+void* MultiLabelDataInputLayer<Dtype>::initLayer() {
+    MultiLabelDataInputLayer* layer = new MultiLabelDataInputLayer<Dtype>();
     return (void*)layer;
 }
 
 template<typename Dtype>
-void DataInputLayer<Dtype>::destroyLayer(void* instancePtr) {
-    DataInputLayer<Dtype>* layer = (DataInputLayer<Dtype>*)instancePtr;
+void MultiLabelDataInputLayer<Dtype>::destroyLayer(void* instancePtr) {
+    MultiLabelDataInputLayer<Dtype>* layer = (MultiLabelDataInputLayer<Dtype>*)instancePtr;
     delete layer;
 }
 
 template<typename Dtype>
-void DataInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
+void MultiLabelDataInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
 	// XXX
 	if (isInput) {
@@ -194,7 +191,7 @@ void DataInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 		SASSERT0(index < 2);
 	}
 
-    DataInputLayer<Dtype>* layer = (DataInputLayer<Dtype>*)instancePtr;
+    MultiLabelDataInputLayer<Dtype>* layer = (MultiLabelDataInputLayer<Dtype>*)instancePtr;
     if (!isInput) {
         SASSERT0(layer->_outputData.size() == index);
         layer->_outputData.push_back((Data<Dtype>*)tensorPtr);
@@ -202,8 +199,8 @@ void DataInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
 }
 
 template<typename Dtype>
-bool DataInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
-    DataInputLayer<Dtype>* layer = (DataInputLayer<Dtype>*)instancePtr;
+bool MultiLabelDataInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
+    MultiLabelDataInputLayer<Dtype>* layer = (MultiLabelDataInputLayer<Dtype>*)instancePtr;
     layer->reshape();
 
     if (SNPROP(miniBatch) == 0) {
@@ -220,19 +217,19 @@ bool DataInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
 }
 
 template<typename Dtype>
-void DataInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
-	DataInputLayer<Dtype>* layer = (DataInputLayer<Dtype>*)instancePtr;
+void MultiLabelDataInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
+	MultiLabelDataInputLayer<Dtype>* layer = (MultiLabelDataInputLayer<Dtype>*)instancePtr;
 	layer->feedforward();
 }
 
 template<typename Dtype>
-void DataInputLayer<Dtype>::backwardTensor(void* instancePtr) {
+void MultiLabelDataInputLayer<Dtype>::backwardTensor(void* instancePtr) {
     // do nothing
 }
 
 template<typename Dtype>
-void DataInputLayer<Dtype>::learnTensor(void* instancePtr) {
+void MultiLabelDataInputLayer<Dtype>::learnTensor(void* instancePtr) {
     SASSERT0(false);
 }
 
-template class DataInputLayer<float>;
+template class MultiLabelDataInputLayer<float>;

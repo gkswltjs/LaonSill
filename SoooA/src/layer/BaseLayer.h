@@ -78,8 +78,10 @@ public:
 		RoIInput,
 		RoITestInput,
 		RoITestVideoInput,
+		RoITestLiveInput,
 		FrcnnTestOutput,
 		FrcnnTestVideoOutput,
+		FrcnnTestLiveOutput,
 
 		AnnotationData,
 		Normalize,
@@ -97,6 +99,7 @@ public:
         DummyInput,
 		DataInput,
         CustomInput,
+        MultiLabelDataInput,
         LayerTypeMax
 	};
 
