@@ -1,33 +1,36 @@
 #!/bin/bash
+clientLibHeaderFiles=(../src/client/ClientAPI.h)
+serverLibHeaderFiles=()
+
 if [ "$#" -ge 3 ]; then
-    echo "Usage: build.sh dop [Debug|Release|Tool]"
+    echo "Usage: build_only.sh dop [debug|release|tool|lib]"
     exit 0
 elif [ "$#" -eq 0 ]; then
-    echo "Usage: build.sh dop [Debug|Release|Tool]"
+    echo "Usage: build_only.sh dop [debug|release|tool|lib]"
     exit 0
 elif [ "$#" -eq 2 ]; then
-    if [[ "$2" == "Debug" ]]; then
+    if [[ "$2" == "debug" ]]; then
         buildDebug=1
         buildRelease=0
         buildTool=0
         buildLib=0
-    elif [[ "$2" == "Release" ]]; then
+    elif [[ "$2" == "release" ]]; then
         buildDebug=0
         buildRelease=1
         buildTool=0
         buildLib=0
-    elif [[ "$2" == "Tool" ]]; then
+    elif [[ "$2" == "tool" ]]; then
         buildDebug=0
         buildRelease=0
         buildTool=1
         buildLib=0
-    elif [[ "$2" == "Lib" ]]; then
+    elif [[ "$2" == "lib" ]]; then
         buildDebug=0
         buildRelease=0
         buildTool=0
         buildLib=1
     else
-        echo "Usage: build.sh dop [Debug|Release|Tool|Lib]"
+        echo "Usage: build_only.sh dop [debug|release|tool|lib]"
         exit 0
     fi
 else
@@ -195,7 +198,13 @@ if [ "$buildLib" -eq 1 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp lib* ../lib/.
+    mkdir -p ../dev/client/lib
+    cp lib* ../dev/client/lib/.
+
+    mkdir -p ../dev/client/inc
+    for i in ${clientLibHeaderFiles[@]}; do
+        cp ${i} ../dev/client/inc/.
+    done
     cd ..
 
     echo "[build server lib]"
@@ -205,6 +214,12 @@ if [ "$buildLib" -eq 1 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp lib* ../lib/.
+    mkdir -p ../dev/server/lib
+    cp lib* ../dev/server/lib/.
+
+    mkdir -p ../dev/server/inc
+    for i in ${serverLibHeaderFiles[@]}; do
+        cp ${i} ../dev/server/inc/.
+    done
     cd ..
 fi

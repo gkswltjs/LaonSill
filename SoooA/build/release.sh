@@ -7,6 +7,8 @@ mkdir -p SOOOA_HOME/stat
 mkdir -p SOOOA_HOME/output_images
 mkdir -p SOOOA_HOME/bin
 mkdir -p SOOOA_HOME/lib
+mkdir -p SOOOA_HOME/dev/server
+mkdir -p SOOOA_HOME/dev/client
 mkdir -p SOOOA_HOME/examples
 cp ../template/soooa.conf.sample SOOOA_HOME/soooa.conf
 cp ../template/cluster.conf.sample SOOOA_HOME/cluster.conf
@@ -16,6 +18,9 @@ cp ../bin/convert_imageset SOOOA_HOME/bin/.
 cp ../bin/convert_mnist_data SOOOA_HOME/bin/.
 cp ../bin/denormalize_param SOOOA_HOME/bin/.
 cp ../src/3rd_party/nms/libgpu_nms.so SOOOA_HOME/lib/.
+cp -r ../dev/client/* SOOOA_HOME/dev/client/.
+cp -r ../dev/server/* SOOOA_HOME/dev/server/.
+
 rsync -avz --exclude '*.cpp' --exclude '*.h' --exclude '*.cu' ../src/examples SOOOA_HOME
 
 hashVal=`git rev-parse --short HEAD`
