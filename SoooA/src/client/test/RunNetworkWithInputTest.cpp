@@ -40,10 +40,17 @@ bool RunNetworkWithInputTest::runSimpleTest() {
     ret = ClientAPI::buildNetwork(handle, netHandle, 2);
     SASSERT0(ret == ClientError::Success);
 
+    const bool showResult = false;
+    const string windowName = "result";
     int imageChannel;
     int height;
     int width;
     float* imageData;
+    char scoreBuf[20];
+
+    if (showResult) {
+    	cv::namedWindow(windowName);
+    }
 
     for (int i = 0; i < 4; i++) {
         // the content of the image should be filled according to the image.
@@ -65,10 +72,31 @@ bool RunNetworkWithInputTest::runSimpleTest() {
             STDOUT_LOG(" rect #%d : (%d, %d, %d, %d), confidence : %f", j, 
                 bboxArray[j].top, bboxArray[j].left, bboxArray[j].bottom, bboxArray[j].right,
                 bboxArray[j].confidence);
+
+            if (showResult) {
+				cv::rectangle(image, cv::Point(bboxArray[j].left, bboxArray[j].top),
+						cv::Point(bboxArray[j].right, bboxArray[j].bottom), cv::Scalar(255, 0, 0), 2);
+
+				sprintf(scoreBuf, "%f", bboxArray[j].confidence);
+				cv::putText(image, string(scoreBuf), cv::Point(bboxArray[j].left,
+						bboxArray[j].top + 15.0f), 2, 0.5f, cv::Scalar(255, 0, 0));
+            }
         }
+
+        if (showResult) {
+			image.convertTo(image, CV_8UC3);
+			cv::imshow(windowName, image);
+			cv::waitKey(0);
+        }
+
         ret = ClientAPI::resetNetwork(handle, netHandle);
         SASSERT0(ret == ClientError::Success);
     }
+
+    if (showResult) {
+    	cv::destroyWindow(windowName);
+    }
+
 
     ret = ClientAPI::destroyNetwork(handle, netHandle);
     SASSERT0(ret == ClientError::Success);
