@@ -34,9 +34,9 @@ void GAN<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
     }
 }
 
-#define EXAMPLE_GAN_NETWORKG0_FILEPATH              ("../src/examples/GAN/networkG0.json")
-#define EXAMPLE_GAN_NETWORKD_FILEPATH               ("../src/examples/GAN/networkD.json")
-#define EXAMPLE_GAN_NETWORKG1_FILEPATH              ("../src/examples/GAN/networkG1.json")
+#define EXAMPLE_GAN_NETWORKG0_FILEPATH              SPATH("examples/GAN/networkG0.json")
+#define EXAMPLE_GAN_NETWORKD_FILEPATH               SPATH("examples/GAN/networkD.json")
+#define EXAMPLE_GAN_NETWORKG1_FILEPATH              SPATH("examples/GAN/networkG1.json")
 
 template<typename Dtype>
 void GAN<Dtype>::run() {

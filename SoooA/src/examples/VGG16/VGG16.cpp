@@ -19,7 +19,7 @@
 
 using namespace std;
 
-#define EXAMPLE_VGG16_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/VGG16/vgg16_train.json")
+#define EXAMPLE_VGG16_TRAIN_NETWORK_FILEPATH	SPATH("examples/VGG16/vgg16_train.json")
 
 template<typename Dtype>
 void VGG16<Dtype>::run() {

@@ -21,9 +21,9 @@
 using namespace std;
 
 #if 0
-#define EXAMPLE_KISTIKEYWORD_NETWORK_FILEPATH   ("../src/examples/KISTIKeyword/network.json")
+#define EXAMPLE_KISTIKEYWORD_NETDEFPATH   SPATH("examples/KISTIKeyword/network.json")
 #else
-#define EXAMPLE_KISTIKEYWORD_NETWORK_FILEPATH   ("../src/examples/KISTIKeyword/networkESP.json")
+#define EXAMPLE_KISTIKEYWORD_NETDEFPATH   SPATH("examples/KISTIKeyword/networkESP.json")
 #endif
 
 // XXX: inefficient..
@@ -535,7 +535,7 @@ LayersConfig<Dtype>* KISTIKeyword<Dtype>::createKistiVGG19NetLayersConfig() {
 
 template<typename Dtype>
 void KISTIKeyword<Dtype>::run() {
-    int networkID = PlanParser::loadNetwork(string(EXAMPLE_KISTIKEYWORD_NETWORK_FILEPATH));
+    int networkID = PlanParser::loadNetwork(EXAMPLE_KISTIKEYWORD_NETDEFPATH);
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(1);
 

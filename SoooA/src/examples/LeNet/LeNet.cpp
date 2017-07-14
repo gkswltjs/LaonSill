@@ -20,7 +20,7 @@
 
 using namespace std;
 
-#define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/LeNet/lenet_train.json")
+#define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	SPATH("examples/LeNet/lenet_train.json")
 
 template<typename Dtype>
 void LeNet<Dtype>::run() {

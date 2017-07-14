@@ -19,7 +19,7 @@
 
 using namespace std;
 
-#define NETWORK_FILEPATH       ("../src/plan/test/network.conf.test")
+#define NETWORK_FILEPATH       SPATH("plan/test/network.conf.test")
 
 bool CreateNetworkTest::runSimpleTest() {
     ifstream ifs(NETWORK_FILEPATH);

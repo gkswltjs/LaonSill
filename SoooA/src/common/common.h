@@ -17,16 +17,24 @@
 #include <time.h>
 
 #include <iostream>
+#include <string>
 
 #define ALIGNUP(x, n)               ((~(n-1))&((x)+(n-1)))
 #define ALIGNDOWN(x, n)             ((~(n-1))&(x))
 
 #define Nop() 						do {} while(0)
 
-
-
+#define SPATH(path)                 (Common::GetSoooARelPath(path))
 
 
 #define TEST_MODE					0
+
+class Common {
+public:
+    static std::string GetSoooARelPath(std::string path);
+
+    Common() {}
+    virtual ~Common() {}
+};
 
 #endif /* COMMON_H_ */

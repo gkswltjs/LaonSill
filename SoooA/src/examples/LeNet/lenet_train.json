@@ -6,7 +6,7 @@
 			"layer" : "DataInput",
 			"id" : 0,
 			"output" : ["data", "label"],
-			"source" : "/home/jkim/imageset/lmdb/mnist_train_lmdb/",
+			"source" : "/data/sdf/mnist/",
 			"scale" : 0.00390625
 		},
 

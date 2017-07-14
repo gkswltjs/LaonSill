@@ -22,9 +22,8 @@
 
 using namespace std;
 
-// network file path는 추후에 적절한 것으로 바꿔야 한다.
-#define NETWORK_FILEPATH            ("../src/examples/frcnn/frcnn_test_live.json")
-#define TESTIMAGE_BASE_FILEPATH     ("../src/client/test/")
+#define NETWORK_FILEPATH            SPATH("examples/frcnn/frcnn_test_live.json")
+#define TESTIMAGE_BASE_FILEPATH     SPATH("client/test/")
 
 bool RunNetworkWithInputTest::runSimpleTest() {
     ClientError ret;

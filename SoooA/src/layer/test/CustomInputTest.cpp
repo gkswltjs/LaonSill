@@ -21,7 +21,7 @@
 
 using namespace std;
 
-#define NETWORK_FILEPATH       ("../src/layer/test/network_custom.conf.test")
+#define NETWORK_FILEPATH       SPATH("layer/test/network_custom.conf.test")
 
 #define FIRST_DATA_ELEM_COUNT_PER_BATCH             5
 #define SECOND_DATA_ELEM_COUNT_PER_BATCH            1
