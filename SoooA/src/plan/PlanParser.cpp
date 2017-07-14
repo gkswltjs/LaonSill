@@ -20,8 +20,53 @@
 #include "SysLog.h"
 #include "LayerPropList.h"
 #include "Network.h"
+#include "ColdLog.h"
 
 using namespace std;
+
+bool PlanParser::findEnvAndReplace(string src, string &target) {
+    size_t envStartPos = src.find("$(");
+    if (envStartPos == std::string::npos) {
+        return true;
+    }
+
+    size_t envEndPos = src.find(')');
+    SASSERT0(envEndPos != std::string::npos);
+
+    int envLen = envEndPos - envStartPos - 2;
+    SASSERT0(envEndPos > envStartPos + 3);
+    string envString = src.substr(envStartPos + 2, envLen);
+
+    char* envPath = getenv(envString.c_str());
+
+    COLD_LOG(ColdLog::ERROR, !envPath,
+        "environment variable $%s is not set.", envString.c_str());
+    SASSERT0(envPath);
+    target = "";
+    if (envStartPos > 0)
+        target += src.substr(0, envStartPos);
+
+    target += string(envPath);
+
+    if (envEndPos < src.size() - 1)
+        target += src.substr(envEndPos + 1);
+
+    return false;
+}
+
+string PlanParser::convertEnv(string value) {
+    string newVal = value;
+    string temp;
+
+    while (true) {
+        if (findEnvAndReplace(newVal, temp))
+            break;
+
+        newVal = temp;
+    }
+
+    return newVal;
+}
 
 void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, string key,
     void* prop) {
@@ -92,7 +137,7 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
         break;
 
     case Json::stringValue:
-        stringValue = val.asCString();
+        stringValue = convertEnv(val.asCString());
         if (isLayer && !isStructType) {
             LayerPropList::setProp(prop, layerType.c_str(), key.c_str(), (void*)&stringValue);
         } else if (isLayer && isStructType) {
@@ -156,7 +201,7 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
             stringArrayValue = {};
             for (int k = 0; k < val.size(); k++) {
                 arrayValue = val[k];
-                stringArrayValue.push_back(arrayValue.asString());
+                stringArrayValue.push_back(convertEnv(arrayValue.asString()));
             }
             
             if (isLayer && !isStructType) {

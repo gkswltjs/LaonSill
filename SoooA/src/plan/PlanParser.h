@@ -28,5 +28,8 @@ private:
         std::string key, void* prop);
     static std::vector<int64_t> handleInnerLayer(int networkID, Json::Value vals,
         std::string parentLayerType, void* parentProp);
+
+    static bool findEnvAndReplace(std::string src, std::string &target);
+    static std::string convertEnv(std::string value);
 };
 #endif /* PLANPARSER_H */
