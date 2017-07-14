@@ -2,8 +2,7 @@
 mkdir -p SOOOA_HOME
 mkdir -p SOOOA_HOME/log
 mkdir -p SOOOA_HOME/data
-mkdir -p SOOOA_HOME/network
-mkdir -p SOOOA_HOME/stat
+mkdir -p SOOOA_HOME/param
 mkdir -p SOOOA_HOME/output_images
 mkdir -p SOOOA_HOME/bin
 mkdir -p SOOOA_HOME/lib

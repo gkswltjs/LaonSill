@@ -1,8 +1,7 @@
 SESS_COUNT=5
 GPU_COUNT=1
 JOB_CONSUMER_COUNT=1
-NETWORK_SAVE_DIR=/home/monhoney/SOOOA_HOME/network
-STATFILE_OUTPUT_DIR=/home/monhoney/SOOOA_HOME/stat
+NETWORK_SAVE_DIR=/home/monhoney/SOOOA_HOME/param
 IMAGEUTIL_SAVE_DIR=/home/monhoney/SOOOA_HOME/output_images
 COLDLOG_DIR=/home/monhoney/SOOOA_HOME/log
 HOTLOG_DIR=/home/monhoney/SOOOA_HOME/log
