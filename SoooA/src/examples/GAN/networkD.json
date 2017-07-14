@@ -6,7 +6,7 @@
             "layer" : "CelebAInput",
             "id" : 1,
             "output" : ["data"],
-            "imageDir" : "/data/celebA",
+            "imageDir" : "$(SOOOA_HOME)/data/celebA",
             "cropLen" : 108,
             "resizeImage" : true,
             "resizedImageRow" : 64,
