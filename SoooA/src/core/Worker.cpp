@@ -351,6 +351,8 @@ void Worker::handleRunNetwork(Job* job) {
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
 
     if (SPARAM(USE_INPUT_DATA_PROVIDER)) {
+        WorkContext::updateNetwork(networkID);
+
         Job* startIDPJob = new Job(JobType::StartInputDataProvider);   // InputDataProvider
         startIDPJob->addJobElem(Job::IntType, 1, (void*)&networkID);
         Worker::pushJob(startIDPJob);

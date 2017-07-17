@@ -19,7 +19,6 @@ DataInputLayer<Dtype>::DataInputLayer()
 : InputLayer<Dtype>(),
   dataReader(SLPROP(Input, source)) {
 	this->type = Layer<Dtype>::DataInput;
-
 }
 
 template <typename Dtype>

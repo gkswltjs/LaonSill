@@ -33,24 +33,30 @@ typedef struct DRCBFuncs_s {
 } DRCBFuncs;
 
 typedef struct InputPool_s {
-    int                     head;
+    volatile int            head;
     int                     tail;
     int                     elemCnt;
-    int                     remainElemCnt;
-    int                     activeElemCnt;
+    volatile int            remainElemCnt;
+    volatile int            activeElemCnt;
     std::mutex              mutex;
-    std::vector<int>        waitingList;
+    volatile int            waiterTID;
     std::vector<void*>      elemArray;
+    void*                   reader;
+    DRType                  drType;
 } InputPool;
-
 
 typedef struct InputPoolKey_s {
     int         networkID;
     int         dopID;
+    std::string layerName;
 
     bool operator < (const struct InputPoolKey_s &x) const {
         if (networkID == x.networkID) {
-            return dopID < x.dopID;
+            if (dopID == x.dopID) {
+                return layerName < x.layerName;
+            } else {
+                return dopID < x.dopID;
+            }
         } else {
             return networkID < x.networkID;
         }
@@ -58,12 +64,10 @@ typedef struct InputPoolKey_s {
 } InputPoolKey;
 
 typedef struct PoolInfo_s {
-    int             networkID;
-    int             dopCount;
-    volatile int    threadID;   // input data provider's thread ID (job consumer thread id)
-    volatile int    cleanupThreadID;
-    DRType          drType;
-    void*           reader;
+    int                         networkID;
+    volatile int                threadID;
+    volatile int                cleanupThreadID;
+    std::vector<InputPoolKey>   inputPoolKeyList;
 } PoolInfo;
 
 class InputDataProvider {
@@ -73,23 +77,25 @@ public:
 
     static void init();
 
-    static void addPool(DRType drType, void* reader);
+    static void addPool(int networkID, int dopID, std::string layerName, DRType drType,
+        void* reader);
     static void removePool(int networkID);
 
     // for input layer
-    static void* getData(int networkID, int dopID);
+    static InputPool* getInputPool(int networkID, int dopID, std::string layerName);
+    static void* getData(InputPool* pool);
 
     // for caller
     static void handleIDP(int networkID);
 
 private:
-    static std::mutex                           poolMutex;
-    static std::map<InputPoolKey, InputPool*>   pools;
+    static std::map<InputPoolKey, InputPool*>   poolMap;
+    static std::mutex                           poolMapMutex;
     static std::map<int, PoolInfo>              poolInfoMap;
+    static std::mutex                           poolInfoMutex;
 
     static std::map<DRType, DRCBFuncs>          drFuncMap;
-
-    static void handler(int networkID);
+    static void handler(std::vector<InputPool*> inputPools);
 };
 
 #endif /* INPUTDATAPROVIDER_H */
