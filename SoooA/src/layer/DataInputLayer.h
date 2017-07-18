@@ -29,16 +29,11 @@ public:
 
 	virtual void reshape();
 
-
 private:
 	void load_batch();
 
-
-
 private:
 	DataReader<Datum> dataReader;
-
-
 
 
 public:
