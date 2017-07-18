@@ -582,13 +582,13 @@
         "saveInterval" : 1000000,
         "testInterval" : 100,
         "savePathPrefix" : "",
-        "baseLearningRate" : 0.001,
+        "baseLearningRate" : 0.0005,
         "stepSize" : 50000,
         "weightDecay" : 0.0005,
         "momentum" : 0.9,
         "clipGradientsLevel" : 0.0,
         "gamma" : 0.0001,
         "lrPolicy" : "Fixed",
-        "optimizer" : "Adam"
+        "optimizer" : "Momentum"
     }
 }

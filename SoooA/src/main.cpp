@@ -49,6 +49,7 @@
 #include "Examples.h"
 
 #include "TestMain.h"
+#include "InputDataProvider.h"
 
 using namespace std;
 
@@ -234,6 +235,8 @@ int main(int argc, char** argv) {
         threadCount = ThreadMgmt::init();
         HotLog::init();
     	HotLog::launchThread(threadCount);
+
+        InputDataProvider::init();
     }
     SYS_LOG("Logging system is initialized...");
 
