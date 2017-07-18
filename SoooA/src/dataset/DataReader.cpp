@@ -33,12 +33,46 @@ DataReader<T>::~DataReader() {
 	}
 }
 
+
+
+
+template <typename T>
+T* DataReader<T>::getNextData() {
+	if (this->data_queue.empty()) {
+		string value = this->db.getNextValue();
+		T* datum = new T();
+		//T::deserializeFromString(value, datum);
+		deserializeFromString(value, datum);
+		return datum;
+	} else {
+		T* datum = this->data_queue.front();
+		this->data_queue.pop();
+		return datum;
+	}
+}
+
+template <typename T>
+T* DataReader<T>::peekNextData() {
+	if (this->data_queue.empty()) {
+		string value = this->db.getNextValue();
+		T* datum = new T();
+		//T::deserializeFromString(value, datum);
+		deserializeFromString(value, datum);
+		this->data_queue.push(datum);
+		return datum;
+	} else {
+		return this->data_queue.front();
+	}
+}
+
+/*
 template <>
 Datum* DataReader<Datum>::getNextData() {
 	if (this->data_queue.empty()) {
 		string value = this->db.getNextValue();
 		Datum* datum = new Datum();
-		Datum::deserializeFromString(value, datum);
+		//Datum::deserializeFromString(value, datum);
+		deserializeFromString(value, datum);
 		return datum;
 	} else {
 		Datum* datum = this->data_queue.front();
@@ -52,19 +86,30 @@ Datum* DataReader<Datum>::peekNextData() {
 	if (this->data_queue.empty()) {
 		string value = this->db.getNextValue();
 		Datum* datum = new Datum();
-		Datum::deserializeFromString(value, datum);
+		//Datum::deserializeFromString(value, datum);
+		deserializeFromString(value, datum);
 		this->data_queue.push(datum);
 		return datum;
 	} else {
 		return this->data_queue.front();
 	}
 }
+*/
 
-template <>
-void DataReader<Datum>::fillNextData(Datum* data) {
+
+
+
+
+
+
+
+
+
+template <typename T>
+void DataReader<T>::fillNextData(T* data) {
     SASSUME0(this->data_queue.size() == 0);
     string value = this->db.getNextValue();
-    Datum::deserializeFromString(value, data);
+    deserializeFromString(value, data);
 }
 
 template <typename T>
@@ -93,4 +138,5 @@ void DataReader<T>::fillElem(void* reader, void* elemPtr) {
 }
 
 template class DataReader<Datum>;
+template class DataReader<AnnotatedDatum>;
 

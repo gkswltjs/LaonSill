@@ -6,7 +6,7 @@
 			"layer" : "DataInput",
 			"id" : 0,
 			"output" : ["data", "label"],
-			"source" : "$(SOOOA_HOME)/data/sdf/ilsvrc/",
+			"source" : "$(SOOOA_HOME)/data/sdf/ilsvrc_train/",
 			"mean" : [104.0, 117.0, 123.0]
 		},
 

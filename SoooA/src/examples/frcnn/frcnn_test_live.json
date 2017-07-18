@@ -412,7 +412,7 @@
 	{
 		"batchSize" : 1, 
 		"epochs" : 1,
-		"loadPath" : "/home/monhoney/soooa/SoooA/src/client/test/frcnn_630000_dn.param"
+		"loadPath" : "$(SOOOA_HOME)/param/frcnn_630000_dn.param"
 	}
 
 }

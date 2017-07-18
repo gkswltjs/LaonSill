@@ -60,8 +60,8 @@ void DataInputLayer<Dtype>::reshape() {
 
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
-		if (!Layer<Dtype>::_isInputShapeChanged(i))
-			continue;
+		//if (!Layer<Dtype>::_isInputShapeChanged(i))
+		//	continue;
 
 		// data
 		if (i == 0) {
@@ -173,11 +173,14 @@ void DataInputLayer<Dtype>::load_batch() {
 			output_label[item_id] = datum->label;
 		}
 
-		//cout << "label: " << datum->label << endl;
 		/*
+		//cout << "label: " << datum->label << endl;
 		cv::Mat cv_img(datum->height, datum->width, CV_32F, output_data);
+		cv_img.convertTo(cv_img, CV_8UC3);
+
 		cv::imshow("result", cv_img);
 		cv::waitKey(0);
+		cv::destroyWindow("result");
 		*/
 	}
 }

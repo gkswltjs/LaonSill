@@ -3,7 +3,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
-
+#include <boost/scoped_ptr.hpp>
+#include <boost/variant.hpp>
 
 
 
@@ -16,6 +17,8 @@
 #include "ReluLayer.h"
 #include "PoolingLayer.h"
 #include "SoftmaxWithLossLayer.h"
+#include "DataInputLayer.h"
+#include "MultiLabelDataInputLayer.h"
 
 #include "NetworkTestInterface.h"
 #include "NetworkTest.h"
@@ -42,6 +45,7 @@
 #include "SDF.h"
 #include "IO.h"
 #include "DataReader.h"
+#include "ssd_common.h"
 
 
 
@@ -57,7 +61,9 @@ void plainTest(int argc, char** argv);
 void denormalizeTest(int argc, char** argv);
 void convertMnistDataTest(int argc, char** argv);
 void convertImageSetTest(int argc, char** argv);
+void convertAnnoSetTest(int argc, char** argv);
 void dataReaderTest(int argc, char** argv);
+void runNetwork();
 
 void layerTest(int argc, char** argv);
 void networkTest(int argc, char** argv);
@@ -66,7 +72,8 @@ void networkTest(int argc, char** argv);
 #if 0
 int main(int argc, char** argv) {
 	cout << "begin test ... " << endl;
-	cout.precision(10);
+	//cout.precision(10);
+	cout.precision(2);
 	cout.setf(ios::fixed);
 
 	plainTest(argc, argv);
@@ -81,8 +88,59 @@ int main(int argc, char** argv) {
 void plainTest(int argc, char** argv) {
 	//denormalizeTest(argc, argv);
 	//convertMnistDataTest(argc, argv);
-	convertImageSetTest(argc, argv);
-	//dataReaderTest(argc, argv);
+	//convertImageSetTest(argc, argv);
+	//convertAnnoSetTest(argc, argv);
+	dataReaderTest(argc, argv);
+	//runNetwork();
+
+	/*
+	AnnotatedDatum ad;
+	ad.channels = 3;
+	ad.height = 224;
+	ad.width = 224;
+	ad.label = 9;
+	ad.encoded = true;
+
+	for (int i = 0; i < 1; i++) {
+		NormalizedBBox nb;
+		nb.xmin = 1.0f;
+		nb.ymin = 1.0f;
+		nb.xmax = 100.0f;
+		nb.ymax = 100.0f;
+		nb.label = 9;
+		nb.difficult = true;
+		nb.score = 100.0f;
+		nb.size = 9.0f;
+
+		ad.bboxes.push_back(nb);
+	}
+
+	string serialized = serializeToString(&ad);
+	cout << "serialized: " << serialized << endl;
+
+	AnnotatedDatum adn;
+	deserializeFromString(serialized, &adn);
+	adn.print();
+	*/
+
+
+	/*
+	std::ostringstream ofs;
+	boost::archive::text_oarchive oa(ofs);
+	oa << ad;
+
+	string serialized = ofs.str();
+	cout << "serialized: " << serialized << endl;
+
+	std::istringstream ifs(serialized);
+	boost::archive::text_iarchive ia(ifs);
+
+	AnnotatedDatum adn;
+	ia >> adn;
+
+	adn.print();
+	*/
+
 }
 
 
@@ -217,11 +275,11 @@ void convertMnistDataTest(int argc, char** argv) {
     ifstream label_file(label_filename, ios::in | ios::binary);
     if (!image_file) {
         cout << "Unable to open file " << image_filename << endl;
-        assert(false);
+        SASSERT0(false);
     }
     if (!label_file) {
         cout << "Unable to open file " << label_filename << endl;
-        assert(false);
+        SASSERT0(false);
     }
     // Read the magic and the meta data
     uint32_t magic;
@@ -234,19 +292,19 @@ void convertMnistDataTest(int argc, char** argv) {
     magic = swap_endian(magic);
     if (magic != 2051) {
         cout << "Incorrect image file magic." << endl;
-        assert(false);
+        SASSERT0(false);
     }
     label_file.read(reinterpret_cast<char*>(&magic), 4);
     magic = swap_endian(magic);
     if (magic != 2049) {
         cout << "Incorrect label file magic." << endl;
-        assert(false);
+        SASSERT0(false);
     }
     image_file.read(reinterpret_cast<char*>(&num_items), 4);
     num_items = swap_endian(num_items);
     label_file.read(reinterpret_cast<char*>(&num_labels), 4);
     num_labels = swap_endian(num_labels);
-    assert(num_items == num_labels);
+    SASSERT0(num_items == num_labels);
     image_file.read(reinterpret_cast<char*>(&rows), 4);
     rows = swap_endian(rows);
     image_file.read(reinterpret_cast<char*>(&cols), 4);
@@ -284,20 +342,22 @@ void convertMnistDataTest(int argc, char** argv) {
         datum.label = label;
 
         string key_str = format_int(item_id, 8);
-        value = Datum::serializeToString(&datum);
+        //value = Datum::serializeToString(&datum);
+        value = serializeToString(&datum);
 
         sdf.put(key_str, value);
 
         if (++count % 1000 == 0) {
             sdf.commit();
+            cout << "Processed " << count << " files." << endl;
         }
     }
     // write the last batch
 
     if (count % 1000 != 0) {
         sdf.commit();
+        cout << "Processed " << count << " files." << endl;
     }
-    cout << "Processed " << count << " files." << endl;
     delete[] pixels;
     sdf.close();
 
@@ -545,13 +605,14 @@ void convertImageSetTest(int argc, char** argv) {
 		if (status == false) {
 			continue;
 		}
-		assert(!check_size);
+		SASSERT0(!check_size);
 
 		// sequencial
 		string key_str = format_int(line_id, 8) + "_" + lines[line_id].first;
 
 		// Put in db
-		string out = Datum::serializeToString(&datum);
+		//string out = Datum::serializeToString(&datum);
+		string out = serializeToString(&datum);
 		sdf->put(key_str, out);
 
 		if (++count % 1000 == 0) {
@@ -586,6 +647,142 @@ void convertImageSetTest(int argc, char** argv) {
 
 
 
+void convertAnnoSetTest(int argc, char** argv) {
+	bool 	FLAGS_gray = false;
+	bool 	FLAGS_shuffle = false;		// default false
+	bool	FLAGS_multi_label = false;
+	bool	FLAGS_channel_separated = true;
+	int 	FLAGS_resize_width = 0;		// default 0
+	int		FLAGS_resize_height = 0;	// default 0
+	bool	FLAGS_check_size = false;	// check that all the datum have the same size
+	bool	FLAGS_encoded = true;		// default true, the encoded image will be save in datum
+	string	FLAGS_encode_type = "jpg";	// default "", what type should we encode the image as ('png', 'jpg', ... )
+	string	FLAGS_anno_type = "detection";		// default "classification"
+	string	FLAGS_label_type = "xml";
+	string	FLAGS_label_map_file = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.prototxt";	// default ""
+	bool	FLAGS_check_label = true;			// default false, check that there is no duplicated name/label
+	int		FLAGS_min_dim = 0;
+	int		FLAGS_max_dim = 0;
+
+	const string argv1 = "/home/jkim/Dev/SOOOA_HOME/data/VOCdevkit2007/"; // base path
+	const string argv2 = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt.s"; // dataset ... (trainval.txt, ...)
+	const string argv3 = "/home/jkim/Dev/SOOOA_HOME/data/sdf/voc2007_train_sdf/";		// sdf path
+
+	const bool is_color = !FLAGS_gray;
+	const bool check_size = FLAGS_check_size;
+	const bool encoded = FLAGS_encoded;
+	const string encode_type = FLAGS_encode_type;
+	const string anno_type = FLAGS_anno_type;
+	//AnnotatedDatum_AnnotationType type;
+	const string label_type = FLAGS_label_type;
+	const string label_map_file = FLAGS_label_map_file;
+	const bool check_label = FLAGS_check_label;
+	//map<string, int> name_to_label;
+
+
+
+	ifstream infile(argv2);
+	vector<pair<string, boost::variant<int, string>>> lines;
+	string filename;
+	int label;
+	string labelname;
+	SASSERT(anno_type == "detection", "only anno_type 'detection' is supported.");
+	LabelMap<float> label_map(label_map_file);
+	label_map.build();
+
+	while (infile >> filename >> labelname) {
+		lines.push_back(make_pair(filename, labelname));
+	}
+
+	if (FLAGS_shuffle) {
+		// randomly shuffle data
+		cout << "Shuffling data" << endl;
+		//shuffle(lines.begin(), lines.end());
+		std::random_shuffle(lines.begin(), lines.end());
+	}
+	cout << "A total of " << lines.size() << " images." << endl;
+
+	if (encode_type.size() && !encoded) {
+		cout << "encode_type specified, assuming encoded=true." << endl;
+	}
+
+	int min_dim = std::max<int>(0, FLAGS_min_dim);
+	int max_dim = std::max<int>(0, FLAGS_max_dim);
+	int resize_height = std::max<int>(0, FLAGS_resize_height);
+	int resize_width = std::max<int>(0, FLAGS_resize_width);
+
+	// Create new DB
+	SDF* sdf = new SDF(argv3, Mode::NEW);
+	sdf->open();
+
+	// Storing to db
+	string root_folder(argv1);
+	AnnotatedDatum anno_datum;
+	int count = 0;
+	int data_size = 0;
+	bool data_size_initialized = false;
+
+	// 이 시점에서 data 수를 저장할 경우
+	// 아래 status가 false인 경우 등의 상황에서 수가 정확하지 않을 가능성이 있음.
+	sdf->put("num_data", std::to_string(lines.size()));
+	sdf->commit();
+
+	for (int line_id = 0; line_id < lines.size(); line_id++) {
+		bool status = true;
+		string enc = encode_type;
+		if (encoded && !enc.size()) {
+			// Guess the encoding type from the file name
+			string fn = lines[line_id].first;
+			size_t p = fn.rfind('.');
+			if (p == fn.npos) {
+				cout << "Failed to guess the encoding of '" << fn << "'";
+			}
+			enc = fn.substr(p);
+			std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
+		}
+		filename = root_folder + lines[line_id].first;
+		labelname = root_folder + boost::get<string>(lines[line_id].second);
+		status = ReadRichImageToAnnotatedDatum(filename, labelname, resize_height,
+				resize_width, min_dim, max_dim, is_color, enc, label_type,
+				label_map.labelToIndMap, &anno_datum);
+
+
+		anno_datum.print();
+
+
+		if (status == false) {
+			cout << "Failed to read " << lines[line_id].first << endl;
+			continue;
+		}
+		SASSERT0(!check_size);
+
+		// sequencial
+		string key_str = format_int(line_id, 8) + "_" + lines[line_id].first;
+
+		// Put in db
+		//string out = Datum::serializeToString(&datum);
+		string out = serializeToString(&anno_datum);
+		sdf->put(key_str, out);
+
+		if (++count % 1000 == 0) {
+			// Commit db
+			sdf->commit();
+			//
+			cout << "Processed " << count << " files." << endl;
+		}
+	}
+
+	// write the last batch
+	if (count % 1000 != 0) {
+		sdf->commit();
+		cout << "Processed " << count << " files." << endl;
+	}
+
+	sdf->close();
+
+}
+
+
 
 
 
@@ -612,7 +809,7 @@ void convertImageSetTest(int argc, char** argv) {
 
 
 void dataReaderTest(int argc, char** argv) {
-	DataReader<Datum> dr("/home/jkim/imageset/lmdb/flatten_sdf/");
+	DataReader<Datum> dr("/home/jkim/Dev/SOOOA_HOME/data/sdf/mnist_train_sdf/");
 	int numData = dr.getNumData();
 	cout << "numData: " << numData << endl;
 
@@ -625,11 +822,203 @@ void dataReaderTest(int argc, char** argv) {
 			}
 		}
 		cout << endl;
-		//cv::Mat cv_img = DecodeDatumToCVMat(datum, true);
-		//cv::imshow("result", cv_img);
-		//cv::waitKey(0);
+		cv::Mat cv_img = DecodeDatumToCVMat(datum, true);
+		cv::imshow("result", cv_img);
+		cv::waitKey(0);
 	}
 }
+
+
+
+
+
+
+bool readKeywords(const string& keywordPath, vector<string>& keywordList) {
+	if (keywordPath.empty()) {
+		return false;
+	}
+
+	ifstream infile(keywordPath);
+	string line;
+	keywordList.clear();
+
+	while (std::getline(infile, line)) {
+		keywordList.push_back(line);
+	}
+
+	if (keywordList.size() < 1) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+void runNetwork() {
+	cout << "runNetwork ... " << endl;
+
+	const int gpuid 				= 0;
+	WorkContext::curBootMode = BootMode::DeveloperMode;
+
+	InitParam::init();
+	Perf::init();
+	SysLog::init();
+	ColdLog::init();
+	Job::init();
+	Task::init();
+	Broker::init();
+	Network<float>::init();
+
+	ResourceManager::init();
+	PlanOptimizer::init();
+	LayerFunc::init();
+	LayerPropList::init();
+
+	Util::setOutstream(&cout);
+	Util::setPrint(false);
+
+
+	NetworkTestInterface<float>::globalSetUp(gpuid);
+
+
+	int networkID = PlanParser::loadNetwork("/home/jkim/Dev/SOOOA_HOME/network_def/data_input_network.json");
+	const string keywordPath = "/home/jkim/Dev/data/image/ESP-ImageSet/keywordList.txt";
+	vector<string> keywordList;
+	bool hasKeyword = readKeywords(keywordPath, keywordList);
+
+
+
+
+
+	Network<float>* network = Network<float>::getNetworkFromID(networkID);
+	network->build(100);
+
+	WorkContext::updateNetwork(networkID);
+	WorkContext::updatePlan(0, true);
+
+	PhysicalPlan* pp = WorkContext::curPhysicalPlan;
+
+
+	Layer<float>* inputLayer = network->findLayer("data");
+	//SASSERT0(dynamic_cast<DataInputLayer<float>*>(inputLayer));
+	SASSERT0(dynamic_cast<MultiLabelDataInputLayer<float>*>(inputLayer));
+
+
+	const string windowName = "result";
+	cv::namedWindow(windowName);
+
+	for (int i = 0; i < 100; i++) {
+		cout << i << "th iteration" << endl;
+		network->runPlanType(PlanType::PLANTYPE_FORWARD, true);
+		network->reset();
+
+
+
+		// has label ...
+		if (inputLayer->_outputData.size() > 1) {
+			Data<float>* label = inputLayer->_outputData[1];
+
+			/*
+			Data<float>::printConfig = true;
+			SyncMem<float>::printConfig = true;
+			label->print_data_flatten();
+			Data<float>::printConfig = false;
+			SyncMem<float>::printConfig = false;
+			*/
+			const int numLabels = label->getShape(1);
+			// single label
+			if (numLabels == 1) {
+				int labelIdx = (int)label->host_data()[i];
+				if (hasKeyword) {
+					cout << "label: " << labelIdx << " (" << keywordList[labelIdx] << ")" << endl;
+				} else {
+					cout << "label: " << labelIdx << endl;
+				}
+			}
+			else if (numLabels > 1) {
+				cout << "---------" << endl;
+				for (int i = 0; i < numLabels; i++) {
+					if ((int)label->host_data()[i] > 0) {
+						if (hasKeyword) {
+							cout << "label: " << i << " (" << keywordList[i] << ")" << endl;
+						} else {
+							cout << "label: " << i << endl;
+						}
+					}
+				}
+				cout << "---------" << endl;
+			}
+		}
+
+
+
+
+
+
+
+
+		Data<float>* data = inputLayer->_outputData[0];
+		data->print_shape();
+
+		int height = data->getShape(2);
+		int width = data->getShape(3);
+		int channels = data->getShape(1);
+
+		if (channels == 1) {
+			cv::Mat cv_img(height, width, CV_32F, data->mutable_host_data());
+			cv_img.convertTo(cv_img, CV_8U);
+			cv::imshow(windowName, cv_img);
+			cv::waitKey(0);
+		} else if (channels = 3) {
+			data->transpose({0, 2, 3, 1});
+			cv::Mat cv_img(height, width, CV_32FC3, data->mutable_host_data());
+			cv_img.convertTo(cv_img, CV_8UC3);
+			cv::imshow(windowName, cv_img);
+			data->transpose({0, 3, 1, 2});
+			cv::waitKey(0);
+		}
+	}
+
+	cv::destroyWindow(windowName);
+	NetworkTestInterface<float>::globalCleanUp();
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void layerTest() {
 	const int gpuid = 0;
@@ -1077,13 +1466,12 @@ void layerTest() {
 #define NETWORK_SSD			4
 #define NETWORK_SSD_TEST	5
 #define NETWORK_VGG16		6
-#define NETWORK_DUMMY		7
 #define NETWORK				NETWORK_FRCNN
 
 #define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/LeNet/lenet_train_test.json")
 #define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/frcnn/frcnn_train_test.json")
 #define EXAMPLE_VGG16_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/VGG16/vgg16_train_test.json")
-#define EXAMPLE_DUMMY_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/SOOOA_HOME/.json")
+#define EXAMPLE_DUMMY_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/SOOOA_HOME/network_def/data_input_network.json")
 
 
 //void saveNetworkParams(LayersConfig<float>* layersConfig);

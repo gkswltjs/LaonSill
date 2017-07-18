@@ -98,6 +98,7 @@ public:
 };
 
 
+/*
 // The normalized bounding box [0, 1] w.r.t. the input image size
 class NormalizedBBox {
 public:
@@ -132,7 +133,7 @@ public:
 		std::cout << "\tsize: "			<< this->size		<< std::endl;
 	}
 };
-
+*/
 
 
 

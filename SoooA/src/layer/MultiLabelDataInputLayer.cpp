@@ -38,8 +38,8 @@ void MultiLabelDataInputLayer<Dtype>::reshape() {
 
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
-		if (!Layer<Dtype>::_isInputShapeChanged(i))
-			continue;
+		//if (!Layer<Dtype>::_isInputShapeChanged(i))
+		//	continue;
 
 		// data
 		if (i == 0) {
@@ -87,6 +87,7 @@ void MultiLabelDataInputLayer<Dtype>::load_batch() {
 		output_data += offset;
 
 		Datum* datum = this->dataReader.getNextData();
+		datum->print();
 
 		const string& data = datum->data;
 		const int datum_channels = datum->channels;
@@ -134,11 +135,18 @@ void MultiLabelDataInputLayer<Dtype>::load_batch() {
 		}
 		//////////////////////////////////////////////////////////////////////////////////////
 
+		this->_inputData[1]->reset_host_data();
 		Dtype* output_label = this->_inputData[1]->mutable_host_data();
 		const int labelCount = SLPROP(MultiLabelDataInput, labelCount);
-		output_label[item_id * labelCount + datum->label] = Dtype(1);
-		for (int labelIdx = 0; labelIdx < datum->float_data.size(); labelIdx) {
-			output_label[item_id * labelCount + (int)datum->float_data[labelIdx]] = Dtype(1);
+		int label = datum->label;
+		if (label < labelCount) {
+			output_label[item_id * labelCount + label] = Dtype(1);
+		}
+		for (int labelIdx = 0; labelIdx < datum->float_data.size(); labelIdx++) {
+			label = (int)datum->float_data[labelIdx];
+			if (label < labelCount) {
+				output_label[item_id * labelCount + label] = Dtype(1);
+			}
 		}
 	}
 }
