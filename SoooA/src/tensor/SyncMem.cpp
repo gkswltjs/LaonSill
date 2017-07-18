@@ -13,6 +13,7 @@
 #include "SyncMem.h"
 #include "Cuda.h"
 #include "MathFunctions.h"
+#include "SysLog.h"
 
 //#define SYNCMEM_LOG
 
@@ -381,6 +382,7 @@ void SyncMem<Dtype>::load(ifstream& ifs) {
 	//reshape(size);
 	// --------------------------------------------
 
+    SASSERT0(ifs.is_open());
 	Dtype* ptr = this->mutable_host_mem();
 	ifs.read((char*)ptr, sizeof(Dtype)*this->_size);
 }

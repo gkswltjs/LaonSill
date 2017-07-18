@@ -33,6 +33,9 @@ ParamManipulator<Dtype>::~ParamManipulator() {
 template <typename Dtype>
 void ParamManipulator<Dtype>::loadParam() {
     ifstream ifs(this->oldParamPath, std::ios::in | std::ios::binary);
+
+    SASSERT0(ifs.is_open());
+
     uint32_t numData;
     ifs.read((char*)&numData, sizeof(uint32_t));
 

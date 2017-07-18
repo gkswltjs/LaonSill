@@ -62,6 +62,7 @@ bool RunNetworkWithInputTest::runSimpleTest() {
         imageData = (float*)image.data;
 
         vector<BoundingBox> bboxArray;
+        STDOUT_LOG("request object detection job");
         ret = ClientAPI::getObjectDetection(handle, netHandle, imageChannel, height, width,
             imageData, bboxArray);
         SASSERT0(ret == ClientError::Success);

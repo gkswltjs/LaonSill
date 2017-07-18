@@ -76,7 +76,7 @@ TestItemDef testItemDefArray[TEST_ITEM_DEF_ARRAY_COUNT] = {
     {"create", "create network test", CreateNetworkTest::runTest},
     {"run", "run network test", RunNetworkTest::runTest},
     {"saveload", "save & load network test", SaveLoadNetworkTest::runTest},
-    {"telco", "run network iwth input data test", RunNetworkWithInputTest::runTest}
+    {"telco", "run network with input data test", RunNetworkWithInputTest::runTest}
 };
 #endif
 

@@ -15,10 +15,12 @@
 #include "ResourceManager.h"
 #include "common.h"
 #include "SysLog.h"
+#include "StdOutLog.h"
 #include "PropMgmt.h"
 #include "WorkContext.h"
 #include "Worker.h"
 #include "Network.h"
+#include "ThreadMgmt.h"
 
 using namespace std;
 
@@ -160,6 +162,9 @@ double PlanOptimizer::runPlan(int networkID, bool inference) {
             int consumerIdx = i;        // XXX: 멀티 노드 환경에서는 더 고려해야 한다.
             WorkContext::updatePlan(i, true);
             Worker::addRunPlanTask(i, networkID, i, inference, WorkContext::curThreadID);
+
+            ThreadMgmt::signal(ThreadMgmt::getThreadID(ThreadType::TaskConsumer, i),
+                    ThreadEvent::Wakeup);
         }
     }
 

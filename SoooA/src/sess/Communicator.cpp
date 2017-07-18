@@ -23,6 +23,7 @@
 #include "SysLog.h"
 #include "ThreadMgmt.h"
 #include "Broker.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
@@ -446,9 +447,6 @@ bool Communicator::handlePushJobMsg(int fd, MessageHeader recvMsgHdr, char* recv
     SASSERT(MessageHeader::MESSAGE_HEADER_SIZE <= MessageHeader::MESSAGE_DEFAULT_SIZE, "");
     MsgSerializer::serializeMsgHdr(replyMsgHdr, replyMsg);
 
-#if 0
-    return true;
-#else
     if (!newJob->hasPubJob()) 
         return true;
 
@@ -464,7 +462,6 @@ bool Communicator::handlePushJobMsg(int fd, MessageHeader recvMsgHdr, char* recv
 
     delete subscribedJob;
     return true;
-#endif
 }
 
 void Communicator::sessThread(int sessId) {

@@ -45,6 +45,8 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 		const string path = "/home/jkim/Dev/SOOOA_HOME/network/proposal_target_layer.ptl";
 		ifstream ifs(path, std::ios::in | std::ios::binary);
 
+        SASSERT0(ifs.is_open());
+
 		uint32_t numData;
 		ifs.read((char*)&numData, sizeof(uint32_t));
 

@@ -10,6 +10,7 @@
 #include <cstring>
 
 #include "Util.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -87,6 +88,8 @@ void Util::saveStringToFstream(ofstream& ofs, const string& str) {
 
 void Util::loadStringFromFstream(ifstream& ifs, string& str) {
 	size_t strLength;
+
+    SASSERT0(ifs.is_open());
 	ifs.read((char*)&strLength, sizeof(size_t));
 
 	char* str_c = new char[strLength+1];

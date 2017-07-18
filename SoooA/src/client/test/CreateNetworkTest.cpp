@@ -23,6 +23,7 @@ using namespace std;
 
 bool CreateNetworkTest::runSimpleTest() {
     ifstream ifs(NETWORK_FILEPATH);
+    SASSERT0(ifs.is_open());
     string content((istreambuf_iterator<char>(ifs)), (istreambuf_iterator<char>()));
 
     ClientError ret;

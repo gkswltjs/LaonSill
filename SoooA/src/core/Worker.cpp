@@ -21,6 +21,7 @@
 #include "PlanParser.h"
 #include "LayerFunc.h"
 #include "PropMgmt.h"
+#include "StdOutLog.h"
 
 #include "InputDataProvider.h"
 #include "RoITestLiveInputLayer.h"
@@ -59,6 +60,7 @@ void Worker::producerThread() {
     while (true) {
         ThreadEvent event =
             ThreadMgmt::wait(threadID, SPARAM(PRODUCER_PERIODIC_CHECK_TIME_MS)); 
+
         int wakeupCount = Worker::getJobCount();
         vector<int> jcIDs = Worker::getReadyJCs(wakeupCount);
 
@@ -127,6 +129,7 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
         if (runFinished) {
             ThreadMgmt::signal(task->requestThreadID, ThreadEvent::Wakeup); 
         }
+        
         return true;
     }
 }
@@ -255,8 +258,8 @@ void Worker::jobConsumerThread(int consumerIdx) {
     }
 
     while (doLoop) {
-        ThreadEvent event =
-            ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
+        //ThreadEvent event = ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
+        ThreadEvent event = ThreadMgmt::wait(threadID, 0UL);
 
         if (event == ThreadEvent::Halt) {
             break;
@@ -269,6 +272,8 @@ void Worker::jobConsumerThread(int consumerIdx) {
         doLoop = handleJob(job);
 
         delete job;
+
+        Worker::insertJCReadyQueue(consumerIdx);
     }
 
     HotLog::markExit();
@@ -431,8 +436,6 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
 
-    cout << "handle run network with input data" << endl;
-
     std::vector<Layer<float>*> inputLayers =
         network->findLayersByType(Layer<float>::RoITestLiveInput);
     SASSUME0(inputLayers.size() == 1);
@@ -445,7 +448,7 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
         (FrcnnTestLiveOutputLayer<float>*)outputLayers[0];
 
     inputLayer->feedImage(channel, height, width, imageData); 
-    network->run(true);
+    network->runMiniBatch(true, 0);
 
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
 

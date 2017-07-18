@@ -372,6 +372,7 @@ void Data<Dtype>::save(ofstream& ofs) {
 template <typename Dtype>
 void Data<Dtype>::load(const string& filename) {
 	ifstream ifs(filename.c_str(), ios::in | ios::binary);
+    SASSERT0(ifs.is_open());
 
 	uint32_t numParams;
 	ifs.read((char*)&numParams, sizeof(uint32_t));
@@ -382,6 +383,8 @@ void Data<Dtype>::load(const string& filename) {
 
 template <typename Dtype>
 void Data<Dtype>::load(ifstream& ifs) {
+
+    SASSERT0(ifs.is_open());
 	// _name
 	Util::loadStringFromFstream(ifs, this->_name);
 	// _shape
