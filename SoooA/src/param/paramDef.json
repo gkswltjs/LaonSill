@@ -450,6 +450,16 @@
     "DEFAULT" : false
 },
 
+"COMMUNICATOR_LISTENER_PORT" :
+{
+    "DESC" : "specify listener port of SoooA server",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 20088
+},
+
 "SPLITLAYER_START_LAYERID" : 
 {
     "DESC" : "specify start layer ID of split layer",

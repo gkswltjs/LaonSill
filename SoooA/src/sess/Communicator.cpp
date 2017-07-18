@@ -26,9 +26,7 @@
 
 using namespace std;
 
-// XXX: 포트 복원해야 함.
-//const int               Communicator::LISTENER_PORT = 20087;
-const int               Communicator::LISTENER_PORT = 20088;
+const int               Communicator::LISTENER_PORT = 20088;    // default listener port 
 const long              SELECT_TIMEVAL_SEC = 0L;
 const long              SELECT_TIMEVAL_USEC = 500000L;
 
@@ -122,7 +120,7 @@ void Communicator::listenerThread() {
     memset(&serverAddr, 0, sizeof(struct sockaddr_in));
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serverAddr.sin_port = htons(LISTENER_PORT);
+    serverAddr.sin_port = htons(SPARAM(COMMUNICATOR_LISTENER_PORT));
 
     if (SPARAM(COMMUNICATOR_REUSE_ADDR)) {
         int reuse = 1;
