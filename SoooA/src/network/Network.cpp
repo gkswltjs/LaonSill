@@ -208,10 +208,11 @@ template <typename Dtype>
 void Network<Dtype>::load(string path) {
     ifstream ifs(path, std::ios::in | std::ios::binary);
 
+    SASSERT0(ifs.is_open());
+
     // TODO : 반드시 구현 필요
 	// load data list from model file
 	map<std::string, Data<float>*> dataMap;
-
 
     uint32_t numData;
     ifs.read((char*)&numData, sizeof(uint32_t));

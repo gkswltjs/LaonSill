@@ -334,10 +334,7 @@ void Worker::handleBuildNetwork(Job* job) {
     int networkID = job->getIntValue(0);
     int epochs = job->getIntValue(1);
 
-    if (SPARAM(USE_INPUT_DATA_PROVIDER)) {
-        WorkContext::updateNetwork(networkID);
-
-    }
+    cout << " build network" << endl;
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->build(epochs);
@@ -433,6 +430,8 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
     float* imageData = job->getFloatArray(4);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
+
+    cout << "handle run network with input data" << endl;
 
     std::vector<Layer<float>*> inputLayers =
         network->findLayersByType(Layer<float>::RoITestLiveInput);
