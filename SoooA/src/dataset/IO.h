@@ -10,6 +10,7 @@
 
 #include <string>
 #include <opencv2/core/core.hpp>
+#include <map>
 
 #include "Datum.h"
 
