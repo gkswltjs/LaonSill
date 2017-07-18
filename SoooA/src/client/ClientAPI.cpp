@@ -175,6 +175,11 @@ ClientError ClientAPI::destroyNetwork(ClientHandle handle, NetworkHandle& netHan
     Client::sendJob(handle.sockFD, handle.buffer, destroyNetworkJob);
     delete destroyNetworkJob;
 
+    Job* destroyNetworkReplyJob;
+    Client::recvJob(handle.sockFD, handle.buffer, &destroyNetworkReplyJob);
+    SASSERT0(destroyNetworkReplyJob->getType() == JobType::DestroyNetworkReply);
+    delete destroyNetworkReplyJob;
+
     netHandle.created = false;
     return ClientError::Success;
 }
@@ -230,9 +235,13 @@ ClientError ClientAPI::runNetwork(ClientHandle handle, NetworkHandle netHandle,
     Job* runNetworkReplyJob;
     Client::recvJob(handle.sockFD, handle.buffer, &runNetworkReplyJob);
     SASSERT0(runNetworkReplyJob->getType() == JobType::RunNetworkReply);
+    int success = runNetworkReplyJob->getIntValue(0);
     delete runNetworkReplyJob;
 
-    return ClientError::Success;
+    if (success == 1)
+        return ClientError::Success;
+    else
+        return ClientError::RunNetworkFailed;
 }
 
 ClientError ClientAPI::runNetworkMiniBatch(ClientHandle handle, NetworkHandle netHandle,
@@ -251,9 +260,13 @@ ClientError ClientAPI::runNetworkMiniBatch(ClientHandle handle, NetworkHandle ne
     Job* runNetworkReplyJob;
     Client::recvJob(handle.sockFD, handle.buffer, &runNetworkReplyJob);
     SASSERT0(runNetworkReplyJob->getType() == JobType::RunNetworkReply);
+    int success = runNetworkReplyJob->getIntValue(0);
     delete runNetworkReplyJob;
 
-    return ClientError::Success;
+    if (success == 1)
+        return ClientError::Success;
+    else
+        return ClientError::RunNetworkFailed;
 }
 
 ClientError ClientAPI::saveNetwork(ClientHandle handle, NetworkHandle netHandle,

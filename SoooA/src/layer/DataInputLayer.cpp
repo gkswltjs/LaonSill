@@ -5,12 +5,16 @@
  *      Author: jkim
  */
 
+#include <unistd.h>
+
 #include <vector>
 
 #include "DataInputLayer.h"
 #include "PropMgmt.h"
 #include "SysLog.h"
 #include "IO.h"
+#include "WorkContext.h"
+#include "Param.h"
 
 using namespace std;
 
@@ -35,7 +39,24 @@ void DataInputLayer<Dtype>::reshape() {
 		}
 	}
 	Layer<Dtype>::_adjustInputShape();
-	Datum* datum = this->dataReader.peekNextData();
+
+    class Datum* datum;
+    if ((WorkContext::curBootMode == BootMode::ServerClientMode) &&
+        SPARAM(USE_INPUT_DATA_PROVIDER)) {
+        void* elem = NULL;
+        while (true) {
+            elem = InputDataProvider::getData(this->inputPool, true);
+
+            if (elem == NULL) {
+                usleep(SPARAM(INPUT_DATA_PROVIDER_CALLER_RETRY_TIME_USEC));
+            } else {
+                break;
+            }
+        }
+        datum = (class Datum*)elem;
+    } else {
+        datum = this->dataReader.peekNextData();
+    }
 
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
@@ -86,7 +107,23 @@ void DataInputLayer<Dtype>::load_batch() {
 		Dtype* output_data = this->_inputData[0]->mutable_host_data();
 		output_data += offset;
 
-		Datum* datum = this->dataReader.getNextData();
+        class Datum* datum;
+        if ((WorkContext::curBootMode == BootMode::ServerClientMode) &&
+            SPARAM(USE_INPUT_DATA_PROVIDER)) {
+            void* elem = NULL;
+            while (true) {
+                elem = InputDataProvider::getData(this->inputPool, false);
+
+                if (elem == NULL) {
+                    usleep(SPARAM(INPUT_DATA_PROVIDER_CALLER_RETRY_TIME_USEC));
+                } else {
+                    break;
+                }
+            }
+            datum = (class Datum*)elem;
+        } else {
+		    datum = this->dataReader.getNextData();
+        }
 
 		const string& data = datum->data;
 		const int datum_channels = datum->channels;
@@ -174,6 +211,15 @@ void DataInputLayer<Dtype>::shuffleTrainDataSet() {
 template<typename Dtype>
 void* DataInputLayer<Dtype>::initLayer() {
     DataInputLayer* layer = new DataInputLayer<Dtype>();
+
+    if ((WorkContext::curBootMode == BootMode::ServerClientMode) &&
+        SPARAM(USE_INPUT_DATA_PROVIDER)) {
+        InputDataProvider::addPool(WorkContext::curNetworkID, WorkContext::curDOPID,
+            SLPROP_BASE(name), DRType::DatumType, (void*)&layer->dataReader);
+        layer->inputPool = InputDataProvider::getInputPool(WorkContext::curNetworkID,
+                                                          WorkContext::curDOPID,
+                                                          SLPROP_BASE(name));
+    }
     return (void*)layer;
 }
 

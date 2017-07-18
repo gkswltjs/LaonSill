@@ -30,6 +30,7 @@ void Job::init() {
     // FIXME: 자동 코드 생성으로 대체하자.
     Job::pubJobTypeMap[CreateNetworkFromFile]       = CreateNetworkReply;
     Job::pubJobTypeMap[CreateNetwork]               = CreateNetworkReply;
+    Job::pubJobTypeMap[DestroyNetwork]              = DestroyNetworkReply;
     Job::pubJobTypeMap[RunNetwork]                  = RunNetworkReply;
     Job::pubJobTypeMap[BuildNetwork]                = BuildNetworkReply;
     Job::pubJobTypeMap[ResetNetwork]                = ResetNetworkReply;

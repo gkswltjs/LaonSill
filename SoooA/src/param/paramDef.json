@@ -477,7 +477,7 @@
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
-    "DEFAULT" : 32
+    "DEFAULT" : 1024
 },
 
 "INPUT_DATA_PROVIDER_BLOCKING" : 
@@ -488,6 +488,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : false
+},
+
+"INPUT_DATA_PROVIDER_CALLER_RETRY_TIME_USEC" : 
+{
+    "DESC" : "specify retry time of caller for input data provider in microseconds",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT64",
+    "DEFAULT" : 200000
 },
 
 "INPUT_DATA_PROVIDER_CALLER_WAIT_TIME_MS" : 

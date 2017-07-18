@@ -32,10 +32,10 @@ map<DRType, DRCBFuncs>          InputDataProvider::drFuncMap;
 void InputDataProvider::init() {
     // (1) add Datum CB funcs
     DRCBFuncs funcDatum;
-    funcDatum.allocFunc         = DataReader<class Datum>::allocElem;
-    funcDatum.deallocFunc       = DataReader<class Datum>::deallocElem;
-    funcDatum.fillFunc          = DataReader<class Datum>::fillElem;
-    drFuncMap[DRType::Datum]    = funcDatum;
+    funcDatum.allocFunc             = DataReader<class Datum>::allocElem;
+    funcDatum.deallocFunc           = DataReader<class Datum>::deallocElem;
+    funcDatum.fillFunc              = DataReader<class Datum>::fillElem;
+    drFuncMap[DRType::DatumType]    = funcDatum;
 }
 
 // input layer에서 이 함수를 호출해서 pool을 등록해야 한다.
@@ -50,13 +50,14 @@ void InputDataProvider::addPool(int networkID, int dopID, string layerName, DRTy
     SASSERT0(drFuncMap.find(drType) != drFuncMap.end());
     DRCBFuncs funcs = drFuncMap[drType];
 
+    // build network 시의 reshape()를 대비하여 1개의 원소는 미리 읽어 둔다.
     InputPool* newInputPool = new InputPool();
     newInputPool->head = 0;
-    newInputPool->tail = 0;
-    newInputPool->remainElemCnt = SPARAM(INPUT_DATA_PROVIDER_ELEM_COUNT);
+    newInputPool->tail = 1;
+    newInputPool->remainElemCnt = SPARAM(INPUT_DATA_PROVIDER_ELEM_COUNT) - 1;
     newInputPool->elemCnt = SPARAM(INPUT_DATA_PROVIDER_ELEM_COUNT);
-    newInputPool->activeElemCnt = 0;
-    for (int j = 0; j < newInputPool->remainElemCnt; j++) {
+    newInputPool->activeElemCnt = 1;
+    for (int j = 0; j < newInputPool->elemCnt; j++) {
         void* elemPtr;
         funcs.allocFunc(&elemPtr);
         newInputPool->elemArray.push_back(elemPtr);
@@ -64,6 +65,7 @@ void InputDataProvider::addPool(int networkID, int dopID, string layerName, DRTy
     newInputPool->reader = reader;
     newInputPool->drType = drType;
     newInputPool->waiterTID = -1;
+    funcs.fillFunc(newInputPool->reader, newInputPool->elemArray[0]);
 
     unique_lock<mutex> poolMapLock(poolMapMutex);
     SASSERT0(poolMap.find(inputPoolKey) == poolMap.end());
@@ -93,8 +95,10 @@ void InputDataProvider::removePool(int networkID) {
     poolInfo = &poolInfoMap[networkID];
     poolInfoLock.unlock();
 
-    ThreadMgmt::signal(poolInfo->threadID, ThreadEvent::FinishJob);
-    ThreadMgmt::wait(WorkContext::curThreadID, 0UL);
+    if (poolInfo->threadID != -1)  {
+        ThreadMgmt::signal(poolInfo->threadID, ThreadEvent::FinishJob);
+        ThreadMgmt::wait(WorkContext::curThreadID, 0UL);
+    }
 
     for (int i = 0; i < poolInfo->inputPoolKeyList.size(); i++) {
         InputPoolKey inputPoolKey = poolInfo->inputPoolKeyList[i];
@@ -142,7 +146,7 @@ InputPool* InputDataProvider::getInputPool(int networkID, int dopID, std::string
     return result;
 }
 
-void* InputDataProvider::getData(InputPool* pool) {
+void* InputDataProvider::getData(InputPool* pool, bool peek) {
     SASSUME0(SPARAM(USE_INPUT_DATA_PROVIDER));
 
     void *data = NULL;
@@ -163,9 +167,12 @@ void* InputDataProvider::getData(InputPool* pool) {
                 SPARAM(INPUT_DATA_PROVIDER_CALLER_WAIT_TIME_MS));
         } else {
             data = pool->elemArray[pool->head];
-            pool->head = (pool->head + 1) % pool->elemCnt;
-            pool->activeElemCnt -= 1;
-            pool->remainElemCnt += 1;
+
+            if (!peek) {
+                pool->head = (pool->head + 1) % pool->elemCnt;
+                pool->activeElemCnt -= 1;
+                pool->remainElemCnt += 1;
+            }
             pool->waiterTID = -1;
             datumLock.unlock();
 
@@ -189,7 +196,12 @@ void InputDataProvider::handleIDP(int networkID) {
             " networkID=%d", networkID);
     }
     PoolInfo *poolInfo = &poolInfoMap[networkID];
-    SASSERT0(poolInfo->threadID == -1);
+
+    if (poolInfo->threadID != -1) {
+        COLD_LOG(ColdLog::WARNING, true, "IDP is already started. networkID=%d", networkID);
+        return;
+    }
+
     poolInfo->threadID = WorkContext::curThreadID;
     poolInfoLock.unlock();
 

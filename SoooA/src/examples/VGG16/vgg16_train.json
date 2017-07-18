@@ -6,7 +6,7 @@
 			"layer" : "DataInput",
 			"id" : 0,
 			"output" : ["data", "label"],
-			"source" : "/home/jkim/imageset/lmdb/ilsvrc_small_lmdb/",
+			"source" : "$(SOOOA_HOME)/data/sdf/ilsvrc/",
 			"mean" : [104.0, 117.0, 123.0]
 		},
 

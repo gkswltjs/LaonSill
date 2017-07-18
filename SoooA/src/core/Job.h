@@ -73,6 +73,14 @@ typedef enum JobType_e {
      * +-----------------+
      */
 
+    DestroyNetworkReply,
+    /*
+     *  [Job Elem Schema for DestroyNetworkReply]
+     * +------+
+     * | None |
+     * +------+
+     */
+
     RunNetwork,
     /*
      *  [Job Elem Schema for RunNetwork]
@@ -92,9 +100,9 @@ typedef enum JobType_e {
     RunNetworkReply,
     /*
      *  [Job Elem Schema for RunNetworkReply]
-     * +------+
-     * | None |
-     * +------+
+     * +---------------+
+     * | success (int) |
+     * +---------------+
      */
 
     BuildNetwork,

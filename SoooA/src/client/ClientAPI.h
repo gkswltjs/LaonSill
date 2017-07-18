@@ -42,6 +42,7 @@ typedef enum ClientError_s {
     HaveSessionAlready,
     NoSession,
     NotCreatedNetwork,
+    RunNetworkFailed,
     SessErrorMax
 } ClientError;
 

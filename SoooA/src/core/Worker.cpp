@@ -22,8 +22,10 @@
 #include "LayerFunc.h"
 #include "PropMgmt.h"
 
+#include "InputDataProvider.h"
 #include "RoITestLiveInputLayer.h"
 #include "FrcnnTestLiveOutputLayer.h"
+
 
 using namespace std;
 
@@ -311,6 +313,10 @@ void Worker::handleDestroyNetwork(Job* job) {
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     SASSERT0(network->getLoaded());
 
+    if (SPARAM(USE_INPUT_DATA_PROVIDER)) {
+        InputDataProvider::removePool(networkID);
+    }
+
     LogicalPlan::cleanup(networkID);
 
     if (network->getBuilt())
@@ -318,13 +324,20 @@ void Worker::handleDestroyNetwork(Job* job) {
 
     PropMgmt::removeNetworkProp(networkID);
     PropMgmt::removeLayerProp(networkID);
-
     delete network;
+
+    Job* pubJob = getPubJob(job);
+    Broker::publish(job->getJobID(), pubJob);
 }
 
 void Worker::handleBuildNetwork(Job* job) {
     int networkID = job->getIntValue(0);
     int epochs = job->getIntValue(1);
+
+    if (SPARAM(USE_INPUT_DATA_PROVIDER)) {
+        WorkContext::updateNetwork(networkID);
+
+    }
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->build(epochs);
@@ -362,7 +375,9 @@ void Worker::handleRunNetwork(Job* job) {
 
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
 
+    int clientError = 1;
     Job* pubJob = getPubJob(job);
+    pubJob->addJobElem(Job::IntType, 1, (void*)&clientError);
     Broker::publish(job->getJobID(), pubJob);
 }
 
@@ -371,12 +386,20 @@ void Worker::handleRunNetworkMiniBatch(Job* job) {
     int inference = job->getIntValue(1);
     int miniBatchIdx = job->getIntValue(2);
 
-    Network<float>* network = Network<float>::getNetworkFromID(networkID);
-    network->runMiniBatch((bool)inference, miniBatchIdx);
+    int clientError = 1;
 
-    ThreadMgmt::wait(WorkContext::curThreadID, 0);
+    if (SPARAM(USE_INPUT_DATA_PROVIDER)) {
+        COLD_LOG(ColdLog::ERROR, true, "run network minibatch is not supported in IDP mode");
+        clientError = 0;
+    } else {
+        Network<float>* network = Network<float>::getNetworkFromID(networkID);
+        network->runMiniBatch((bool)inference, miniBatchIdx);
+
+        ThreadMgmt::wait(WorkContext::curThreadID, 0);
+    }
 
     Job* pubJob = getPubJob(job);
+    pubJob->addJobElem(Job::IntType, 1, (void*)&clientError);
     Broker::publish(job->getJobID(), pubJob);
 }
 
@@ -459,6 +482,11 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
     Broker::publish(job->getJobID(), pubJob);
 }
 
+void Worker::handleStartIDP(Job* job) {
+    int networkID = job->getIntValue(0);
+    InputDataProvider::handleIDP(networkID);
+}
+
 bool Worker::handleJob(Job* job) {
     bool doLoop = true;
 
@@ -506,6 +534,10 @@ bool Worker::handleJob(Job* job) {
 
         case JobType::RunNetworkWithInputData:
             handleRunNetworkWithInputData(job);
+            break;
+
+        case JobType::StartInputDataProvider:
+            handleStartIDP(job);
             break;
 
         default:

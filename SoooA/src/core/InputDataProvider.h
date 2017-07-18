@@ -18,7 +18,7 @@
 
 // Data Reader Type
 typedef enum DRType_e {
-    Datum = 0,
+    DatumType = 0,
     DRTypeMax
 } DRType;
 
@@ -83,7 +83,7 @@ public:
 
     // for input layer
     static InputPool* getInputPool(int networkID, int dopID, std::string layerName);
-    static void* getData(InputPool* pool);
+    static void* getData(InputPool* pool, bool peek);
 
     // for caller
     static void handleIDP(int networkID);
