@@ -11,6 +11,7 @@
 #include "InputLayer.h"
 #include "DataReader.h"
 #include "Datum.h"
+#include "InputDataProvider.h"
 
 template <typename Dtype>
 class MultiLabelDataInputLayer : public InputLayer<Dtype> {
@@ -27,12 +28,10 @@ public:
     void shuffleTrainDataSet();
 
 	virtual void reshape();
-
+	InputPool* inputPool;
 
 private:
 	void load_batch();
-
-
 
 private:
 	DataReader<Datum> dataReader;
