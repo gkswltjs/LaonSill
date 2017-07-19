@@ -418,8 +418,8 @@
 	"configs" :
 	{
 		"batchSize" : 1, 
-		"epochs" : 5, 
-		"phase" : "TestPhase",
+		"epochs" : 1, 
+		"status" : "Test",
 		"loadPath" : "$(SOOOA_HOME)/param/frcnn_630000_dn.param"
 	}
 

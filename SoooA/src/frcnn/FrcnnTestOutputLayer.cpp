@@ -12,6 +12,7 @@
 #include "FrcnnTestOutputLayer.h"
 #include "BboxTransformUtil.h"
 #include "PropMgmt.h"
+#include "StdOutLog.h"
 
 #define FRCNNTESTOUTPUTLAYER_LOG 0
 
@@ -23,6 +24,9 @@ FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer()
 : Layer<Dtype>(),
   labelMap(SLPROP(FrcnnTestOutput, labelMapPath)) {
 	this->type = Layer<Dtype>::FrcnnTestOutput;
+
+	SASSERT(SNPROP(status) == NetworkStatus::Test,
+			"FrcnnTestOutputLayer can be run only in Test Status");
 	/*
 	this->classes = {"__background__", "aeroplane", "bicycle", "bird", "boat", "bottle",
 			"bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
