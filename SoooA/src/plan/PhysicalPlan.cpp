@@ -58,6 +58,7 @@ PhysicalPlan::~PhysicalPlan() {
 
 void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tensorName,
     PlanAlloc planAlloc, bool isInput, int index) {
+
     if (planAlloc.nodeID != SPARAM(NODE_ID)) {
         // allocate GPU memory of other nodes.
         // TODO: 구현!!
@@ -77,7 +78,9 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
         TaskAllocTensor* task =
             Worker::addAllocTensorTask(consumerIdx,
             SPARAM(NODE_ID), planAlloc.devID, WorkContext::curThreadID, tensorName);   
-        
+       
+        ThreadMgmt::signal(ThreadMgmt::getThreadID(ThreadType::TaskConsumer, consumerIdx),
+                ThreadEvent::Wakeup);
         ThreadMgmt::wait(WorkContext::curThreadID, 0);
 
         SASSUME0(task->step == TaskAllocTensorStep::Done);
@@ -201,6 +204,8 @@ void PhysicalPlan::allocateTensorInternal(int networkID, int dopID) {
             Worker::addAllocLayerTask(consumerIdx, networkID, dopID, layerID, SPARAM(NODE_ID),
                     planAlloc.devID, WorkContext::curThreadID, layerType, instancePtr);
             
+            ThreadMgmt::signal(ThreadMgmt::getThreadID(ThreadType::TaskConsumer, consumerIdx),
+                ThreadEvent::Wakeup);
             ThreadMgmt::wait(WorkContext::curThreadID, 0);
         }
 
