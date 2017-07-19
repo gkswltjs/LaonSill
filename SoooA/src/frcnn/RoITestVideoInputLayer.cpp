@@ -30,6 +30,9 @@ RoITestVideoInputLayer<Dtype>::RoITestVideoInputLayer()
   cap(SLPROP(RoITestVideoInput, videoPath)) {
 	this->type = Layer<Dtype>::RoITestVideoInput;
 
+	SASSERT(SNPROP(status) == NetworkStatus::Test,
+			"RoITestVideoInputLayer can be run only in Test Status");
+
 	SASSERT(this->cap.isOpened(), "Could not open video %s", SLPROP(RoITestVideoInput, videoPath).c_str());
 	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, 1, 50, 1);
 

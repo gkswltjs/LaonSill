@@ -16,6 +16,7 @@
 #include "RoIDBUtil.h"
 #include "MockDataSet.h"
 #include "PropMgmt.h"
+#include "StdOutLog.h"
 
 
 #define ROITESTINPUTLAYER_LOG 0
@@ -26,6 +27,9 @@ template <typename Dtype>
 RoITestInputLayer<Dtype>::RoITestInputLayer()
 : InputLayer<Dtype>() {
 	this->type = Layer<Dtype>::RoITestInput;
+
+	SASSERT(SNPROP(status) == NetworkStatus::Test,
+			"RoITestInputLayer can be run only in Test Status");
 
 	this->imdb = getImdb("voc_2007_test");
 	const uint32_t numImages = imdb->imageIndex.size();

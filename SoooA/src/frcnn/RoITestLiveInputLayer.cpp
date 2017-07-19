@@ -13,6 +13,7 @@
 #include "common.h"
 #include "frcnn_common.h"
 #include "PropMgmt.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
@@ -22,6 +23,9 @@ RoITestLiveInputLayer<Dtype>::RoITestLiveInputLayer()
 : InputLayer<Dtype>() {
 	this->type = Layer<Dtype>::RoITestLiveInput;
 	//this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, numImages, 50, 1);
+
+	SASSERT(SNPROP(status) == NetworkStatus::Test,
+			"RoITestLiveInputLayer can be run only in Test Status");
 }
 
 template <typename Dtype>
@@ -110,9 +114,9 @@ float RoITestLiveInputLayer<Dtype>::getImageBlob(cv::Mat& im) {
 
 	int n = imOrig.rows * imOrig.cols * imOrig.channels();
 	for (int i = 0; i < n; i+=3) {
-		imPtr[i+0] -= SLPROP(RoITestInput, pixelMeans)[0];
-		imPtr[i+1] -= SLPROP(RoITestInput, pixelMeans)[1];
-		imPtr[i+2] -= SLPROP(RoITestInput, pixelMeans)[2];
+		imPtr[i+0] -= SLPROP(RoITestLiveInput, pixelMeans)[0];
+		imPtr[i+1] -= SLPROP(RoITestLiveInput, pixelMeans)[1];
+		imPtr[i+2] -= SLPROP(RoITestLiveInput, pixelMeans)[2];
 	}
 
 	const vector<uint32_t> imShape = {(uint32_t)imOrig.cols, (uint32_t)imOrig.rows,

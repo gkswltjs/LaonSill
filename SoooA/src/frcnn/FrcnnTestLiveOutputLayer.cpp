@@ -11,6 +11,7 @@
 #include "FrcnnTestLiveOutputLayer.h"
 #include "BboxTransformUtil.h"
 #include "PropMgmt.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
@@ -19,6 +20,9 @@ template <typename Dtype>
 FrcnnTestLiveOutputLayer<Dtype>::FrcnnTestLiveOutputLayer()
 : Layer<Dtype>() {
 	this->type = Layer<Dtype>::FrcnnTestLiveOutput;
+
+	SASSERT(SNPROP(status) == NetworkStatus::Test,
+				"FrcnnTestLiveOutputLayer can be run only in Test Status");
 }
 
 template <typename Dtype>
@@ -86,8 +90,8 @@ void FrcnnTestLiveOutputLayer<Dtype>::imDetect(vector<vector<Dtype>>& scores,
 template <typename Dtype>
 void FrcnnTestLiveOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 		vector<vector<Dtype>>& boxes) {
-	const Dtype confThresh = Dtype(SLPROP(FrcnnTestOutput, confThresh));
-	const Dtype nmsThresh = Dtype(SLPROP(FrcnnTestOutput, nmsThresh));
+	const Dtype confThresh = Dtype(SLPROP(FrcnnTestLiveOutput, confThresh));
+	const Dtype nmsThresh = Dtype(SLPROP(FrcnnTestLiveOutput, nmsThresh));
 
 	vector<uint32_t> keep;
 	vector<Dtype> clsScores;

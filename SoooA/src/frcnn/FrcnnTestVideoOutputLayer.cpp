@@ -23,6 +23,9 @@ FrcnnTestVideoOutputLayer<Dtype>::FrcnnTestVideoOutputLayer()
 : Layer<Dtype>(),
   labelMap(SLPROP(FrcnnTestVideoOutput, labelMapPath)) {
 	this->type = Layer<Dtype>::FrcnnTestVideoOutput;
+
+	SASSERT(SNPROP(status) == NetworkStatus::Test,
+			"FrcnnTestVideoOutputLayer can be run only in Test Status");
 	/*
 	this->classes = {"__background__", "aeroplane", "bicycle", "bird", "boat", "bottle",
 			"bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
