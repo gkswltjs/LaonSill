@@ -6,7 +6,7 @@
 			"layer" : "DataInput",
 			"id" : 0,
 			"output" : ["data", "label"],
-			"source" : "/data/sdf/mnist/",
+			"source" : "$(SOOOA_HOME)/data/sdf/mnist/",
 			"scale" : 0.00390625
 		},
 

@@ -166,6 +166,8 @@ try:
             headerFile.write(", %s %s" % (newArg[1], newArg[0]))
         headerFile.write(");\n")
 
+        headerFile.write("    static void clear%s();\n" % perf)
+
         headerFile.write('\n')
 
     for line in headerBottomSentences:
@@ -331,7 +333,21 @@ try:
                 sourceFile.write('        PerfList::_%sMaxTime = elapsed;\n' % perf)
 
             for newArg in newArgList:
-                sourceFile.write("    PerfList::_%s_%s = %s;\n" % (perf, newArg[0], newArg[0]));
+                sourceFile.write("    PerfList::_%s_%s += %s;\n" % (perf, newArg[0], newArg[0]));
+
+        sourceFile.write('}\n\n')
+
+        # (4-4) clear function
+        sourceFile.write("void PerfList::clear%s() {\n" % perf)
+        sourceFile.write('    PerfList::_%sCount = 0L;\n' % perf)
+        if useTime == True:
+            sourceFile.write('    PerfList::_%sTime = 0.0;\n' % perf)
+            if useAvgTime == True:
+                sourceFile.write('    PerfList::_%sAvgTime = 0.0;\n' % perf)
+            if useMaxTime == True:
+                sourceFile.write('    PerfList::_%sMaxTime = 0.0;\n' % perf)
+        for newArg in newArgList:
+            sourceFile.write("    PerfList::_%s_%s = 0;\n" % (perf, newArg[0]))
         sourceFile.write('}\n\n')
 
         sourceFile.write('\n')

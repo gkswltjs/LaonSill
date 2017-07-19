@@ -15,6 +15,7 @@
 #include "IO.h"
 #include "WorkContext.h"
 #include "Param.h"
+#include "Perf.h"
 
 using namespace std;
 
@@ -41,6 +42,12 @@ void DataInputLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
 
     class Datum* datum;
+    struct timespec startTime;
+
+    if (SPARAM(INPUT_DATA_PROVIDER_MEASURE_PERFORMANCE)) {
+        SPERF_START(DATAINPUT_ACCESS_TIME, &startTime);
+    }
+
     if ((WorkContext::curBootMode == BootMode::ServerClientMode) &&
         SPARAM(USE_INPUT_DATA_PROVIDER)) {
         void* elem = NULL;
@@ -56,6 +63,9 @@ void DataInputLayer<Dtype>::reshape() {
         datum = (class Datum*)elem;
     } else {
         datum = this->dataReader.peekNextData();
+    }
+    if (SPARAM(INPUT_DATA_PROVIDER_MEASURE_PERFORMANCE)) {
+        SPERF_END(DATAINPUT_ACCESS_TIME, startTime);
     }
 
 	const uint32_t inputSize = this->_inputData.size();
@@ -108,6 +118,10 @@ void DataInputLayer<Dtype>::load_batch() {
 		output_data += offset;
 
         class Datum* datum;
+        struct timespec startTime;
+        if (SPARAM(INPUT_DATA_PROVIDER_MEASURE_PERFORMANCE)) {
+            SPERF_START(DATAINPUT_ACCESS_TIME, &startTime);
+        }
         if ((WorkContext::curBootMode == BootMode::ServerClientMode) &&
             SPARAM(USE_INPUT_DATA_PROVIDER)) {
             void* elem = NULL;
@@ -123,6 +137,9 @@ void DataInputLayer<Dtype>::load_batch() {
             datum = (class Datum*)elem;
         } else {
 		    datum = this->dataReader.getNextData();
+        }
+        if (SPARAM(INPUT_DATA_PROVIDER_MEASURE_PERFORMANCE)) {
+            SPERF_END(DATAINPUT_ACCESS_TIME, startTime);
         }
 
 		const string& data = datum->data;
@@ -271,6 +288,7 @@ template<typename Dtype>
 void DataInputLayer<Dtype>::forwardTensor(void* instancePtr, int miniBatchIdx) {
 	DataInputLayer<Dtype>* layer = (DataInputLayer<Dtype>*)instancePtr;
 	layer->feedforward();
+
 }
 
 template<typename Dtype>

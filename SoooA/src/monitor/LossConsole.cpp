@@ -8,6 +8,8 @@
 
 #include "LossConsole.h"
 #include "SysLog.h"
+#include "StdOutLog.h"
+#include "Perf.h"
 
 using namespace std;
 
@@ -31,8 +33,22 @@ void LossConsole::addValue(int index, float value) {
 
 void LossConsole::printLoss(FILE* fp) {
     for (int i = 0; i < lossMovingAvgs.size(); i++) {
-        fprintf(fp, "average loss[%s] : %f\n", lossMovingAvgs[i].lossName.c_str(),
-            lossMovingAvgs[i].avg);
+        if (fp == stdout) {
+            STDOUT_LOG("average loss[%s] : %f", lossMovingAvgs[i].lossName.c_str(),
+                lossMovingAvgs[i].avg);
+        } else {
+            fprintf(fp, "average loss[%s] : %f\n", lossMovingAvgs[i].lossName.c_str(),
+                lossMovingAvgs[i].avg);
+        }
+
+    }
+
+    if (SPARAM(INPUT_DATA_PROVIDER_MEASURE_PERFORMANCE)) {
+        STDOUT_BLOCK(cout << "total time : " << SPERF_TIME(DATAINPUT_ACCESS_TIME)
+            << ", avg time : " << SPERF_AVGTIME(DATAINPUT_ACCESS_TIME)
+            << ", max time : " << SPERF_MAXTIME(DATAINPUT_ACCESS_TIME)
+            << endl;);
+        SPERF_CLEAR(DATAINPUT_ACCESS_TIME);
     }
 }
 

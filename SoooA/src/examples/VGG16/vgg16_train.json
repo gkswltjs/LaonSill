@@ -6,7 +6,7 @@
 			"layer" : "DataInput",
 			"id" : 0,
 			"output" : ["data", "label"],
-			"source" : "$(SOOOA_HOME)/data/sdf/ilsvrc_10000_sdf/",
+			"source" : "$(SOOOA_HOME)/data/sdf/ilsvrc_sdf/",
 			"mean" : [104.0, 117.0, 123.0]
 		},
 
@@ -564,7 +564,7 @@
 
 	"configs" :
 	{
-		"batchSize" : 16,
+		"batchSize" : 32,
 		"epochs" : 1000, 
 		"lossLayer" : ["loss"],
 		"gamma" : 0.0001,

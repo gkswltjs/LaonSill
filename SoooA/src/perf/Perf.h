@@ -23,6 +23,7 @@
 #define SPERF_AVGTIME(name)                     PerfList::_##name##AvgTime
 #define SPERF_MAXTIME(name)                     PerfList::_##name##MaxTime
 #define SPERF_VALUE(name, aname)                PerfList::_##name##_##aname
+#define SPERF_CLEAR(name)                       PerfList::clear##name()
 
 class Perf {
 public: 

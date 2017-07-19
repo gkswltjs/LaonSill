@@ -528,6 +528,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 500
+},
+
+"INPUT_DATA_PROVIDER_MEASURE_PERFORMANCE" : 
+{
+    "DESC" : "specify whether to measure performance of input data provider module",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
 }
 
 }

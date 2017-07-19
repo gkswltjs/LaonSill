@@ -21,7 +21,16 @@
     [
         ["EpochCount", "UINT32", "specify epoch count"]
     ]
+},
 
+"DATAINPUT_ACCESS_TIME" :
+{
+    "DESC"          : "specify data input access time",
+    "SCOPE"         : "SYSTEM",
+    "USETIME"       : true,
+    "USEAVGTIME"    : true,
+    "USEMAXTIME"    : true,
+    "ARGS"          : []
 },
 
 "BATCHNORM_LAYER_FWTIME" :

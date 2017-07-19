@@ -218,7 +218,8 @@ void InputDataProvider::handleIDP(int networkID) {
     handler(inputPools);
 
     while (true) {
-        ThreadEvent event = ThreadMgmt::wait(WorkContext::curThreadID, timeout); 
+        //ThreadEvent event = ThreadMgmt::wait(WorkContext::curThreadID, timeout); 
+        ThreadEvent event = ThreadMgmt::wait(WorkContext::curThreadID, 0UL);
         if (event & Halt) {
             // 이러한 상황에서.. 메모리는 누가 해제해야 하나? 
             // 어차피 프로세스 종료니까 heap에 올라간 메모리 해제에 대해서 
