@@ -18,11 +18,10 @@
 
 using namespace std;
 
-#if 0
+#if 1
 #define NETWORK_FILEPATH       SPATH("plan/test/network.conf.test")
 #else
 //#define NETWORK_FILEPATH       SPATH("examples/LeNet/lenet_train.json")
-#define NETWORK_FILEPATH       SPATH("examples/VGG16/vgg16_train.json")
 #endif
 
 bool RunNetworkTest::runSimpleTest() {

@@ -208,10 +208,6 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         memcpy((void*)&this->jobElemValues[tempJobElemValueSize], (void*)&arrayCount,
             sizeof(int));
-
-        if (jobElemType == Job::StringType) {
-            memset((void*)&this->jobElemValues[tempJobElemValueSize + arrayCount], '\0', 1);
-        }
     }
 
     memcpy((void*)&this->jobElemValues[this->jobElemDefs[curJobElemIdx].elemOffset],
@@ -270,9 +266,10 @@ std::string Job::getStringValue(int elemIdx) {
 
     int elemOffset = this->jobElemDefs[elemIdx].elemOffset;
     char *charArray = (char*)(&this->jobElemValues[elemOffset]);
-    char *temp = (char*)malloc(sizeof(char) * this->jobElemDefs[elemIdx].arrayCount);
+    char *temp = (char*)malloc(sizeof(char) * (this->jobElemDefs[elemIdx].arrayCount + 1));
     SASSUME0(temp != NULL);
     strncpy(temp, charArray, this->jobElemDefs[elemIdx].arrayCount);
+    temp[this->jobElemDefs[elemIdx].arrayCount] = '\0';
     string resultString(temp);
     free(temp);
     return resultString;
