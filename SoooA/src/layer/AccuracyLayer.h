@@ -86,6 +86,9 @@ private:
 	int outerNum;
 	int innerNum;
 
+	int numCorrect;
+	int numIterations;
+
 
 public:
     /****************************************************************************

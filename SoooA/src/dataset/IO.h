@@ -45,7 +45,7 @@ void EncodeCVMatToDatum(const cv::Mat& cv_img, const std::string& encoding, Datu
 
 
 
-cv::Mat DecodeDatumToCVMat(const Datum* datum, bool is_color);
+cv::Mat DecodeDatumToCVMat(const Datum* datum, bool is_color, bool channel_separated);
 
 
 bool ReadXMLToAnnotatedDatum(const std::string& labelname, const int img_height,
@@ -56,6 +56,33 @@ bool ReadXMLToAnnotatedDatum(const std::string& labelname, const int img_height,
 
 void GetImageSize(const std::string& filename, int* height, int* width);
 
+
+
+
+template <typename Dtype>
+void CheckCVMatDepthWithDtype(const cv::Mat& im);
+
+template <typename Dtype>
+void ConvertHWCToCHW(const int channels, const int height, const int width, const Dtype* src,
+		Dtype* dst);
+template <typename Dtype>
+void ConvertHWCCVToCHW(const cv::Mat& im, Dtype* dst);
+
+template <typename Dtype>
+void ConvertHWCToHWC(const int channels, const int height, const int width, const Dtype* src,
+		Dtype* dst);
+template <typename Dtype>
+void ConvertHWCCVToHWC(const cv::Mat& im, Dtype* dst);
+template <typename Dtype>
+void ConvertCHWToHWC(const int channels, const int height, const int width, const Dtype* src,
+		Dtype* dst);
+void ConvertCHWDatumToHWC(const Datum* datum, uchar* dst);
+
+template <typename Dtype>
+void PrintImageData(const int channels, const int height, const int width, const Dtype* ptr,
+		bool hwc);
+void PrintCVMatData(const cv::Mat& mat);
+void PrintDatumData(const Datum* datum, bool hwc);
 
 
 #endif /* IO_H_ */

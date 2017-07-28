@@ -75,9 +75,8 @@ void DataInputLayer<Dtype>::reshape() {
 
 		// data
 		if (i == 0) {
-			vector<uint32_t> dataShape =
-			{SNPROP(batchSize), uint32_t(datum->channels), uint32_t(datum->height),
-					uint32_t(datum->width)};
+			vector<uint32_t> dataShape = {SNPROP(batchSize), uint32_t(datum->channels),
+					uint32_t(datum->height), uint32_t(datum->width)};
 			this->_inputData[0]->reshape(dataShape);
 			this->_inputShape[0] = dataShape;
 		}
@@ -142,6 +141,7 @@ void DataInputLayer<Dtype>::load_batch() {
             SPERF_END(DATAINPUT_ACCESS_TIME, startTime);
         }
 
+        //datum->print();
 		const string& data = datum->data;
 		const int datum_channels = datum->channels;
 		const int datum_height = datum->height;
@@ -190,15 +190,26 @@ void DataInputLayer<Dtype>::load_batch() {
 			output_label[item_id] = datum->label;
 		}
 
-		/*
-		//cout << "label: " << datum->label << endl;
-		cv::Mat cv_img(datum->height, datum->width, CV_32F, output_data);
-		cv_img.convertTo(cv_img, CV_8UC3);
 
+
+		/*
+		cout << "label: " << datum->label << endl;
+		//this->_printOn();
+		//this->_outputData[0]->print_data({}, false);
+		//this->_printOff();
+		Dtype* temp = (Dtype*)malloc(sizeof(Dtype) * datum->getImgSize());
+		ConvertCHWToHWC(datum->channels, datum->height, datum->width, output_data, temp);
+		//PrintImageData(datum->channels, datum->height, datum->width, temp, true);
+
+		cv::Mat cv_img(datum->height, datum->width, CV_32FC3, temp);
+		cv_img.convertTo(cv_img, CV_8UC3);
 		cv::imshow("result", cv_img);
 		cv::waitKey(0);
 		cv::destroyWindow("result");
-		*/
+		free(temp);
+		//exit(1);
+		 */
+
 	}
 }
 

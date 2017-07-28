@@ -8,6 +8,7 @@
 #include "AccuracyLayer.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
@@ -29,6 +30,9 @@ AccuracyLayer<Dtype>::AccuracyLayer()
 	//if (this->hasIgnoreLabel) {
 	//	this->ignoreLabel = builder->_ignoreLabel;
 	//}
+
+	this->numCorrect = 0;
+	this->numIterations = 0;
 }
 
 template <typename Dtype>
@@ -121,6 +125,25 @@ void AccuracyLayer<Dtype>::feedforward() {
 	*/
 
 	// Accuracy layer should not be used as a loss function.
+
+
+	//cout << "accuracy: " << accuracy << endl;
+    this->numCorrect += accuracy;
+    this->numIterations++;
+
+    /*
+    this->_printOn();
+    this->_outputData[0]->print_data({}, false);
+    this->_printOff();
+    */
+    if (this->numIterations >= SNPROP(testInterval)) {
+    	float acc = numCorrect / ((float)numIterations*SNPROP(batchSize));
+    	STDOUT_LOG("average accuracy[%s] : %f", SLPROP_BASE(name).c_str(), acc);
+        this->numIterations = 0;
+        this->numCorrect = 0;
+    }
+
+
 }
 
 template <typename Dtype>

@@ -151,9 +151,11 @@ void CVMatToDatum(const cv::Mat& cv_img, const bool channel_separated, Datum* da
 	int datum_width = datum->width;
 	int datum_size = datum_channels * datum_height * datum_width;
 	string buffer(datum_size, ' ');
+	uchar* dst = (uchar*)buffer.c_str();
 
 	// all B / all G / all R 구조로 channel을 나누어서 저장
 	if (channel_separated) {
+		/*
 		for (int h = 0; h < datum_height; h++) {
 			const uchar* ptr = cv_img.ptr<uchar>(h);
 			int img_index = 0;
@@ -164,9 +166,12 @@ void CVMatToDatum(const cv::Mat& cv_img, const bool channel_separated, Datum* da
 				}
 			}
 		}
+		*/
+		ConvertHWCCVToCHW(cv_img, dst);
 	}
 	// test로 channel분리하지 않고 opencv가 제공하는 포맷 그대로 저장
 	else {
+		/*
 		for (int h = 0; h < datum_height; h++) {
 			const uchar* ptr = cv_img.ptr<uchar>(h);
 			int img_index = 0;
@@ -180,11 +185,159 @@ void CVMatToDatum(const cv::Mat& cv_img, const bool channel_separated, Datum* da
 				}
 			}
 		}
+		*/
+		ConvertHWCCVToHWC(cv_img, dst);
 	}
 	datum->data = buffer;
 }
 
-cv::Mat DecodeDatumToCVMat(const Datum* datum, bool is_color) {
+
+template <typename Dtype>
+void CheckCVMatDepthWithDtype(const cv::Mat& im) {
+	if (im.depth() == CV_8U) {
+		SASSERT(sizeof(Dtype) == 1, "invalid dst ptr for cv::Mat of depth CV_8U");
+	} else if (im.depth() == CV_32F){
+		SASSERT(sizeof(Dtype) == 4, "invalid dst ptr for cv::Mat of depth CV_32F");
+	} else {
+		SASSERT(false, "unsupported cv::Mat depth");
+	}
+}
+
+template void CheckCVMatDepthWithDtype<uchar>(const cv::Mat& im);
+template void CheckCVMatDepthWithDtype<float>(const cv::Mat& im);
+
+
+
+// e.g. OpenCV To Soooa
+template <typename Dtype>
+void ConvertHWCToCHW(const int channels, const int height, const int width, const Dtype* src,
+		Dtype* dst) {
+	//int channels = im.channels();
+	//int height = im.rows;
+	//int width = im.cols;
+
+	//const uchar* ptr = im.data;
+	int srcIdx = 0;
+	int dstIdx = 0;
+	for (int h = 0; h < height; h++) {
+		//const uchar* ptr = im.ptr<uchar>(h);
+		for (int w = 0; w < width; w++) {
+			for (int c = 0; c < channels; c++) {
+				//int datum_index = (c * height + h) * width + w;
+				dstIdx = (c * height + h) * width + w;
+				//dst[dstIdx] = static_cast<char>(src[srcIdx++]);
+				dst[dstIdx] = src[srcIdx++];
+			}
+		}
+	}
+}
+template void ConvertHWCToCHW<uchar>(const int channels, const int height, const int width,
+		const uchar* src, uchar* dst);
+template void ConvertHWCToCHW<float>(const int channels, const int height, const int width,
+		const float* src, float* dst);
+
+
+template <typename Dtype>
+void ConvertHWCCVToCHW(const cv::Mat& im, Dtype* dst) {
+	CheckCVMatDepthWithDtype<Dtype>(im);
+
+	int channels = im.channels();
+	int height = im.rows;
+	int width = im.cols;
+	const Dtype* src = (Dtype*)im.data;
+
+	ConvertHWCToCHW<Dtype>(channels, height, width, src, dst);
+}
+
+template void ConvertHWCCVToCHW<uchar>(const cv::Mat& im, uchar* dst);
+template void ConvertHWCCVToCHW<float>(const cv::Mat& im, float* dst);
+
+
+// e.g.
+template <typename Dtype>
+void ConvertHWCToHWC(const int channels, const int height, const int width, const Dtype* src,
+		Dtype* dst) {
+	//int channels = im.channels();
+	//int height = im.rows;
+	//int width = im.cols;
+
+	//const uchar* ptr = im.data;
+	int srcIdx = 0;
+	int dstIdx = 0;
+	for (int h = 0; h < height; h++) {
+		//const uchar* ptr = im.ptr<uchar>(h);
+		//int img_index = 0;
+		for (int w = 0; w < width; w++) {
+			for (int c = 0; c < channels; c++) {
+				//int datum_index = h * width * channels + img_index;
+				//dst[datum_index] = static_cast<char>(ptr[img_index++]);
+				//dst[dstIdx] = static_cast<char>(src[srcIdx++]);
+				dst[dstIdx] = src[srcIdx++];
+			}
+		}
+	}
+}
+
+template void ConvertHWCToHWC<uchar>(const int channels, const int height, const int width,
+		const uchar* src, uchar* dst);
+template void ConvertHWCToHWC<float>(const int channels, const int height, const int width,
+		const float* src, float* dst);
+
+
+template <typename Dtype>
+void ConvertHWCCVToHWC(const cv::Mat& im, Dtype* dst) {
+	CheckCVMatDepthWithDtype<Dtype>(im);
+
+	int channels = im.channels();
+	int height = im.rows;
+	int width = im.cols;
+	const Dtype* src = (Dtype*)im.data;
+
+	ConvertHWCToHWC<Dtype>(channels, height, width, src, dst);
+}
+
+template void ConvertHWCCVToHWC<uchar>(const cv::Mat& im, uchar* dst);
+template void ConvertHWCCVToHWC<float>(const cv::Mat& im, float* dst);
+
+
+template <typename Dtype>
+void ConvertCHWToHWC(const int channels, const int height, const int width, const Dtype* src,
+		Dtype* dst) {
+	int srcIdx = 0;
+	int dstIdx = 0;
+	for (int c = 0; c < channels; c++) {
+		for (int h = 0; h < height; h++) {
+			for (int w = 0; w < width; w++) {
+				//srcIdx = (c * height + h) * width + w;
+				dstIdx = (h * width + w) * channels + c;
+				//cout << "srcIdx: " << srcIdx << ", dstIdx: " << dstIdx << endl;
+				//dst[dstIdx] = static_cast<char>(src[srcIdx]);
+				//dst[dstIdx] = static_cast<char>(src[srcIdx++]);
+				dst[dstIdx] = src[srcIdx++];
+			}
+		}
+	}
+}
+
+template void ConvertCHWToHWC<uchar>(const int channels, const int height, const int width,
+		const uchar* src, uchar* dst);
+template void ConvertCHWToHWC<float>(const int channels, const int height, const int width,
+		const float* src, float* dst);
+
+
+
+void ConvertCHWDatumToHWC(const Datum* datum, uchar* dst) {
+	const int channels = datum->channels;
+	const int height = datum->height;
+	const int width = datum->width;
+	const uchar* src = (uchar*)datum->data.c_str();
+
+	ConvertCHWToHWC<uchar>(channels, height, width, src, dst);
+}
+
+
+
+cv::Mat DecodeDatumToCVMat(const Datum* datum, bool is_color, bool channel_separated) {
 	SASSERT0(datum->channels == 1 || datum->channels == 3);
 
 	int cv_type;
@@ -192,9 +345,36 @@ cv::Mat DecodeDatumToCVMat(const Datum* datum, bool is_color) {
 		cv_type = CV_8UC3;
 	} else if (datum->channels == 1) {
 		cv_type = CV_8U;
+	} else {
+		SASSERT0(false);
 	}
 
-	cv::Mat cv_img(datum->height, datum->width, cv_type, (uchar*)datum->data.c_str());
+	uchar* ptr = NULL;
+	// bbb.../ggg.../rrr... to bgr,bgr,bgr...
+	if (channel_separated) {
+		ptr = (uchar*)malloc(datum->getImgSize() * sizeof(uchar));
+		//uchar* data = (uchar*)datum->data.c_str();
+		ConvertCHWDatumToHWC(datum, ptr);
+
+		/*
+		for (int c = 0; c < channels; c++) {
+			for (int h = 0; h < height; h++) {
+				for (int w = 0; w < width; w++) {
+					int ptrIdx = h * width * channels + w * channels + c;
+					int dataIdx = c * height * width + h * width + w;
+					//cout << "ptrIdx: " << ptrIdx << ", dataIdx: " << dataIdx << endl;
+					ptr[ptrIdx] = data[dataIdx];
+				}
+			}
+		}
+		*/
+
+	} else {
+		ptr = (uchar*)datum->data.c_str();
+	}
+
+	//cv::Mat cv_img(datum->height, datum->width, cv_type, (uchar*)datum->data.c_str());
+	cv::Mat cv_img(datum->height, datum->width, cv_type, ptr);
 
 	if (!cv_img.data) {
 		cout << "Could not decode datum." << endl;
@@ -339,9 +519,74 @@ void EncodeCVMatToDatum(const cv::Mat& cv_img, const std::string& encoding, Datu
 }
 
 
+template <typename Dtype>
+void PrintImageData(const int channels, const int height, const int width, const Dtype* ptr,
+		bool hwc) {
+	int idx = 0;
+	if (hwc) {
+		for (int h = 0; h < height; h++) {
+			for (int w = 0; w < width; w++) {
+				cout << "[";
+				for (int c = 0; c < channels; c++) {
+					idx = h * width * channels + w * channels + c;
+					if (sizeof(Dtype) == 1) {
+						cout << (int)ptr[idx] << ",";
+					} else {
+						cout << ptr[idx] << ",";
+					}
+				}
+				cout << "],";
+			}
+			cout << endl;
+		}
+	} else {
+		for (int c = 0; c < channels; c++) {
+			for (int h = 0; h < height; h++) {
+				for (int w = 0; w < width; w++) {
+					idx = c * height * width + h * width + w;
+					if (sizeof(Dtype) == 1) {
+						cout << (int)ptr[idx] << ",";
+					} else {
+						cout << ptr[idx] << ",";
+					}
+				}
+				cout << endl;
+			}
+			cout << endl;
+		}
+	}
+}
+
+template void PrintImageData<uchar>(const int channels, const int height, const int width,
+		const uchar* ptr, bool hwc);
+template void PrintImageData<float>(const int channels, const int height, const int width,
+		const float* ptr, bool hwc);
 
 
 
+void PrintCVMatData(const cv::Mat& mat) {
+	const int height = mat.rows;
+	const int width = mat.cols;
+	const int channels = mat.channels();
+
+	if (mat.depth() == CV_8U) {
+		uchar* ptr = (uchar*)mat.data;
+		PrintImageData<uchar>(channels, height, width, ptr, true);
+	} else if (mat.depth() == CV_32F) {
+		float* ptr = (float*)mat.data;
+		PrintImageData<float>(channels, height, width, ptr, true);
+	} else {
+		SASSERT(false, "unsupported cv::Mat depth");
+	}
+}
+
+void PrintDatumData(const Datum* datum, bool hwc) {
+	const int height = datum->height;
+	const int width = datum->width;
+	const int channels = datum->channels;
+	uchar* ptr = (uchar*)datum->data.c_str();
+	PrintImageData<uchar>(channels, height, width, ptr, hwc);
+}
 
 
 

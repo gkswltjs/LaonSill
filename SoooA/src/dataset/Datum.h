@@ -56,6 +56,9 @@ public:
 	Datum()
 	: channels(0), height(0), width(0), label(0), encoded(false), data("") {}
 
+	size_t getImgSize() const {
+		return this->channels * this->height * this->width;
+	}
 
 	void print() {
 		std::cout << "channels: " << this->channels << std::endl;
