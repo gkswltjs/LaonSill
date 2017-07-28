@@ -195,7 +195,7 @@ template <typename Dtype>
 void Network<Dtype>::save() {
     string path;
 	if (SNPROP(savePathPrefix) == "") {
-        path = string(getenv(SOOOA_HOME_ENVNAME)) + "/network/" +
+        path = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
             to_string(SNPROP(iterations)) + ".param";
     } else {
         path = SNPROP(savePathPrefix) + to_string(SNPROP(iterations)) + ".param";

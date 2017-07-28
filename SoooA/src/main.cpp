@@ -48,7 +48,7 @@
 #include "LayerPropList.h"
 #include "Examples.h"
 
-#include "TestMain.h"
+#include "Tools.h"
 #include "InputDataProvider.h"
 
 using namespace std;
