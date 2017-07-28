@@ -809,9 +809,13 @@ void convertAnnoSetTest(int argc, char** argv) {
 
 
 void dataReaderTest(int argc, char** argv) {
-	DataReader<Datum> dr("/home/jkim/Dev/SOOOA_HOME/data/sdf/mnist_train_sdf/");
+	DataReader<Datum> dr("/home/jkim/Dev/SOOOA_HOME/data/sdf/plantynet_train_0.25/");
+	//DataReader<Datum> dr("/home/jkim/Dev/SOOOA_HOME/data/sdf/test_train/");
 	int numData = dr.getNumData();
 	cout << "numData: " << numData << endl;
+
+	const string windowName = "result";
+	cv::namedWindow(windowName);
 
 	for (int i = 0; i < std::min(numData, 100); i++) {
 		Datum* datum = dr.getNextData();
@@ -822,10 +826,17 @@ void dataReaderTest(int argc, char** argv) {
 			}
 		}
 		cout << endl;
-		cv::Mat cv_img = DecodeDatumToCVMat(datum, true);
-		cv::imshow("result", cv_img);
+		datum->print();
+
+		//PrintDatumData(datum, false);
+
+		cv::Mat cv_img = DecodeDatumToCVMat(datum, true, true);
+		//PrintCVMatData(cv_img);
+
+		cv::imshow(windowName, cv_img);
 		cv::waitKey(0);
 	}
+	cv::destroyWindow(windowName);
 }
 
 
