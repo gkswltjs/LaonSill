@@ -12,6 +12,7 @@
 #include "Worker.h"
 #include "Network.h"
 #include "MathFunctions.h"
+#include "StdOutLog.h"
 
 template<typename Dtype>
 void Update<Dtype>::updateParam(UpdateContext context, Data<Dtype>* dataHistory,
@@ -148,6 +149,9 @@ float Update<Dtype>::calcLearningRate() {
             uint32_t currentStep = SNPROP(iterations) / SNPROP(stepSize);
             rate = SNPROP(baseLearningRate) * pow(SNPROP(gamma), currentStep);
 
+            if (SNPROP(rate) != rate) {
+            	STDOUT_LOG("Learning rate updated: : %f", rate);
+            }
             if (SNPROP(rate) < 0.0f || SNPROP(rate) != rate) {
                 SNPROP(rate) = rate;
             }
