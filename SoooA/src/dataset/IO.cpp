@@ -375,6 +375,9 @@ cv::Mat DecodeDatumToCVMat(const Datum* datum, bool is_color, bool channel_separ
 
 	//cv::Mat cv_img(datum->height, datum->width, cv_type, (uchar*)datum->data.c_str());
 	cv::Mat cv_img(datum->height, datum->width, cv_type, ptr);
+	if (channel_separated) {
+		free(ptr);
+	}
 
 	if (!cv_img.data) {
 		cout << "Could not decode datum." << endl;

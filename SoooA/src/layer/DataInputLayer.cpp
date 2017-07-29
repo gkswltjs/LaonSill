@@ -190,6 +190,7 @@ void DataInputLayer<Dtype>::load_batch() {
 			output_label[item_id] = datum->label;
 		}
 
+		delete datum;
 
 
 		/*

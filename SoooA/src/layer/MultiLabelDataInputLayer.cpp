@@ -199,6 +199,8 @@ void MultiLabelDataInputLayer<Dtype>::load_batch() {
 				output_label[item_id * labelCount + label] = Dtype(1);
 			}
 		}
+
+		delete datum;
 	}
 }
 
