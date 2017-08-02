@@ -109,7 +109,8 @@ void MultiLabelDataInputLayer<Dtype>::load_batch() {
 	if (mean.size() > 0) {
 		hasMean = true;
 	}
-
+	
+    this->_inputData[1]->reset_host_data();
 	for (int item_id = 0; item_id < SNPROP(batchSize); item_id++) {
 		int offset = this->_inputData[0]->offset(item_id);
 		Dtype* output_data = this->_inputData[0]->mutable_host_data();
@@ -186,7 +187,6 @@ void MultiLabelDataInputLayer<Dtype>::load_batch() {
 		}
 		//////////////////////////////////////////////////////////////////////////////////////
 
-		this->_inputData[1]->reset_host_data();
 		Dtype* output_label = this->_inputData[1]->mutable_host_data();
 		const int labelCount = SLPROP(MultiLabelDataInput, labelCount);
 		int label = datum->label;

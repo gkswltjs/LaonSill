@@ -89,8 +89,8 @@ bool RunNetworkWithInputTest::runSimpleTest() {
 			cv::waitKey(0);
         }
 
-        ret = ClientAPI::resetNetwork(handle, netHandle);
-        SASSERT0(ret == ClientError::Success);
+        //ret = ClientAPI::resetNetwork(handle, netHandle);
+        //SASSERT0(ret == ClientError::Success);
     }
 
     if (showResult) {

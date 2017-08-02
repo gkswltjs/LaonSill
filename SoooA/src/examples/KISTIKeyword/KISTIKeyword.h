@@ -36,6 +36,8 @@ private:
     static int getTop10GuessSuccessCount(const float* data, const float* label, int batchCount,
         int depth, bool train, int epoch, const float* image, int imageBaseIndex,
         std::vector<KistiData> etriData);
+    static float getTopKAvgPrecision(int topK, const float* data, const float* label,
+        int batchCount, int depth);
 };
 
 #endif /* KISTIKEYWORD_H */
