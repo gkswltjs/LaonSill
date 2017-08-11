@@ -47,6 +47,7 @@
 #include "DataReader.h"
 #include "ssd_common.h"
 #include "Tools.h"
+#include "StdOutLog.h"
 
 
 
@@ -61,27 +62,53 @@ namespace fs = ::boost::filesystem;
 void plainTest(int argc, char** argv);
 
 void dataReaderTest(int argc, char** argv);
+void dataReaderMemoryLeakTest();
 void runNetwork();
 
 void layerTest(int argc, char** argv);
 void networkTest(int argc, char** argv);
+void saveNetwork();
 
 
 #if 0
 int main(int argc, char** argv) {
 	cout << "begin test ... " << endl;
-	//cout.precision(10);
 	cout.precision(2);
 	cout.setf(ios::fixed);
 
 	plainTest(argc, argv);
 	//layerTest(argc, argv);
 	//networkTest(argc, argv);
+	//saveNetwork();
 
 	cout << "end test ... " << endl;
 	return 0;
 }
 #endif
+
+
+
+void initializeNetwork() {
+	WorkContext::curBootMode = BootMode::DeveloperMode;
+
+	InitParam::init();
+	Perf::init();
+	SysLog::init();
+	ColdLog::init();
+	Job::init();
+	Task::init();
+	Broker::init();
+	Network<float>::init();
+
+	ResourceManager::init();
+	PlanOptimizer::init();
+	LayerFunc::init();
+	LayerPropList::init();
+
+	Util::setOutstream(&cout);
+	Util::setPrint(false);
+}
+
 
 void plainTest(int argc, char** argv) {
 	//denormalizeTest(argc, argv);
@@ -89,84 +116,10 @@ void plainTest(int argc, char** argv) {
 	//convertImageSetTest(argc, argv);
 	//convertAnnoSetTest(argc, argv);
 	//dataReaderTest(argc, argv);
-	computeImageMean(argc, argv);
+	//computeImageMean(argc, argv);
 	//runNetwork();
-
-	/*
-	AnnotatedDatum ad;
-	ad.channels = 3;
-	ad.height = 224;
-	ad.width = 224;
-	ad.label = 9;
-	ad.encoded = true;
-
-	for (int i = 0; i < 1; i++) {
-		NormalizedBBox nb;
-		nb.xmin = 1.0f;
-		nb.ymin = 1.0f;
-		nb.xmax = 100.0f;
-		nb.ymax = 100.0f;
-		nb.label = 9;
-		nb.difficult = true;
-		nb.score = 100.0f;
-		nb.size = 9.0f;
-
-		ad.bboxes.push_back(nb);
-	}
-
-	string serialized = serializeToString(&ad);
-	cout << "serialized: " << serialized << endl;
-
-	AnnotatedDatum adn;
-	deserializeFromString(serialized, &adn);
-	adn.print();
-	*/
-
-
-	/*
-	std::ostringstream ofs;
-	boost::archive::text_oarchive oa(ofs);
-	oa << ad;
-
-	string serialized = ofs.str();
-	cout << "serialized: " << serialized << endl;
-
-	std::istringstream ifs(serialized);
-	boost::archive::text_iarchive ia(ifs);
-
-	AnnotatedDatum adn;
-	ia >> adn;
-
-	adn.print();
-	*/
-
+	//dataReaderMemoryLeakTest();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 void dataReaderTest(int argc, char** argv) {
 	DataReader<Datum> dr("/home/jkim/Dev/SOOOA_HOME/data/sdf/plantynet_train_0.25/");
@@ -187,7 +140,6 @@ void dataReaderTest(int argc, char** argv) {
 		}
 		cout << endl;
 		datum->print();
-
 		//PrintDatumData(datum, false);
 
 		cv::Mat cv_img = DecodeDatumToCVMat(datum, true, true);
@@ -199,10 +151,41 @@ void dataReaderTest(int argc, char** argv) {
 	cv::destroyWindow(windowName);
 }
 
+void dataReaderMemoryLeakTest() {
+	const string source = "/home/jkim/Dev/SOOOA_HOME/data/sdf/plantynet_train_0.25/";
+	int cnt = 0;
 
+	/*
+	DataReader<Datum> dr(source);
+	int numData = dr.getNumData();
+	cout << "numData: " << numData << endl;
 
+	while (true) {
+		Datum* datum = dr.getNextData();
+		delete datum;
+		if (++cnt % 1000 == 0) {
+			STDOUT_LOG("Processed %d images.", cnt);
+		}
+	}
+	*/
 
+	SDF db(source, Mode::READ);
+	db.open();
 
+	string value = db.getNextValue();
+	int numData = atoi(value.c_str());
+
+	while (true) {
+		string value = db.getNextValue();
+		Datum* datum = new Datum();
+		//T::deserializeFromString(value, datum);
+		deserializeFromString(value, datum);
+		delete datum;
+		if (++cnt % 1000 == 0) {
+			STDOUT_LOG("Processed %d images.", cnt);
+		}
+	}
+}
 
 bool readKeywords(const string& keywordPath, vector<string>& keywordList) {
 	if (keywordPath.empty()) {
@@ -227,37 +210,14 @@ bool readKeywords(const string& keywordPath, vector<string>& keywordList) {
 void runNetwork() {
 	cout << "runNetwork ... " << endl;
 
-	const int gpuid 				= 0;
-	WorkContext::curBootMode = BootMode::DeveloperMode;
-
-	InitParam::init();
-	Perf::init();
-	SysLog::init();
-	ColdLog::init();
-	Job::init();
-	Task::init();
-	Broker::init();
-	Network<float>::init();
-
-	ResourceManager::init();
-	PlanOptimizer::init();
-	LayerFunc::init();
-	LayerPropList::init();
-
-	Util::setOutstream(&cout);
-	Util::setPrint(false);
-
-
+	int gpuid = 0;
+	initializeNetwork();
 	NetworkTestInterface<float>::globalSetUp(gpuid);
-
 
 	int networkID = PlanParser::loadNetwork("/home/jkim/Dev/SOOOA_HOME/network_def/data_input_network.json");
 	const string keywordPath = "/home/jkim/Dev/data/image/ESP-ImageSet/keywordList.txt";
 	vector<string> keywordList;
 	bool hasKeyword = readKeywords(keywordPath, keywordList);
-
-
-
 
 
 	Network<float>* network = Network<float>::getNetworkFromID(networkID);
@@ -320,13 +280,6 @@ void runNetwork() {
 			}
 		}
 
-
-
-
-
-
-
-
 		Data<float>* data = inputLayer->_outputData[0];
 		data->print_shape();
 
@@ -353,40 +306,6 @@ void runNetwork() {
 	NetworkTestInterface<float>::globalCleanUp();
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -837,7 +756,7 @@ void layerTest() {
 #define NETWORK_SSD			4
 #define NETWORK_SSD_TEST	5
 #define NETWORK_VGG16		6
-#define NETWORK				NETWORK_FRCNN
+#define NETWORK				NETWORK_VGG16
 
 #define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/LeNet/lenet_train_test.json")
 #define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/frcnn/frcnn_train_test.json")
@@ -848,28 +767,14 @@ void layerTest() {
 //void saveNetworkParams(LayersConfig<float>* layersConfig);
 
 
+
+
+
+
+
 void networkTest() {
-	const int gpuid 				= 0;
-
-
-	WorkContext::curBootMode = BootMode::DeveloperMode;
-
-	InitParam::init();
-	Perf::init();
-	SysLog::init();
-	ColdLog::init();
-	Job::init();
-	Task::init();
-	Broker::init();
-	Network<float>::init();
-
-	ResourceManager::init();
-	PlanOptimizer::init();
-	LayerFunc::init();
-	LayerPropList::init();
-
-	Util::setOutstream(&cout);
-	Util::setPrint(false);
+	const int gpuid = 0;
+	initializeNetwork();
 
 
 #if NETWORK == NETWORK_LENET
@@ -985,9 +890,46 @@ void networkTest() {
 	NetworkTest<float>* networkTest =
 			new NetworkTest<float>(networkFilePath, networkName, numSteps);
 
+
+	//networkTest->setUp();
+	//networkTest->updateTest();
+	//networkTest->cleanUp();
+
+	NetworkTestInterface<float>::globalCleanUp();
+}
+
+
+
+void saveNetwork() {
+	const int gpuid = 0;
+	initializeNetwork();
+
+	const string networkFilePath = string("/home/jkim/Dev/git/soooa/SoooA/src/examples/VGG16/vgg16_train.json");
+	const string networkName = "vgg16";
+	const int numSteps = 0;
+
+#if 0
+	Network<float>* network = new Network<float>(networkConfig);
+	// (2) network config 정보를 layer들에게 전달한다.
+	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
+		layersConfig->_layers[i]->setNetworkConfig(network->config);
+	}
+	network->setLayersConfig(layersConfig);
+	network->loadPretrainedWeights();
+#endif
+
+	NetworkTestInterface<float>::globalSetUp(gpuid);
+
+	NetworkTest<float>* networkTest =
+			new NetworkTest<float>(networkFilePath, networkName, numSteps);
+
 	networkTest->setUp();
-	networkTest->updateTest();
-	networkTest->cleanUp();
+
+	Network<float>* network = networkTest->network;
+	//network->load("/home/jkim/Dev/SOOOA_HOME/VGG16_CAFFE_TRAINED.param");
+	network->save("/home/jkim/Dev/SOOOA_HOME/VGG16_CAFFE_TRAINED.param");
+
+
 
 	NetworkTestInterface<float>::globalCleanUp();
 }
@@ -995,7 +937,7 @@ void networkTest() {
 
 #if 0
 void saveNetworkParams(LayersConfig<float>* layersConfig) {
-	const string savePathPrefix = "/home/jkim/Dev/SOOOA_HOME/network";
+	const string savePathPrefix = "/home/jkim/Dev/SOOOA_HOME/param";
 	ofstream paramOfs(
 			(savePathPrefix+"/SSD_CAFFE_TRAINED.param").c_str(),
 			ios::out | ios::binary);

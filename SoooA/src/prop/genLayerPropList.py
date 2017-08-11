@@ -7,7 +7,7 @@ import json;
 ####################################### Modify here ##########################################
 # if you want to use specific custom type, you should insert header file that the custom type 
 # is defined into headerFileList.
-headerFileList = ["EnumDef.h", "KistiInputLayer.h"]
+headerFileList = ["EnumDef.h", "KistiInputLayer.h", "DataTransformer.h"]
 ##############################################################################################
 
 # XXX: source code refactoring is required

@@ -37,6 +37,9 @@ template <typename Dtype>
 void soooa_gpu_mul(const uint32_t N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype>
+void soooa_gpu_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);
+
+template <typename Dtype>
 void soooa_gpu_dot(const uint32_t n, const Dtype* x, const Dtype* y, Dtype* out);
 
 template <typename Dtype>
@@ -66,6 +69,28 @@ template <typename Dtype>
 void soooa_gpu_gemv(const CBLAS_TRANSPOSE TransA, const int M, const int N,
     const Dtype alpha, const Dtype* A, const Dtype* x, const Dtype beta,
     Dtype* y);
+
+
+template <typename Dtype>
+void soooa_gpu_scale(const int n, const Dtype alpha, const Dtype* x, Dtype* y);
+
+
+
+
+template <typename Dtype, bool packed>
+void soooa_gpu_interp2(const int channels, const Dtype* data1, const int x1, const int y1,
+		const int height1, const int width1, const int Height1, const int Width1,
+		Dtype* data2, const int x2, const int y2, const int height2, const int width2,
+		const int Height2, const int Width2);
+
+template <typename Dtype, bool packed>
+void soooa_gpu_interp2_backward(const int channels, Dtype* data1, const int x1, const int y1,
+		const int height1, const int width1, const int Height1, const int Width1,
+		const Dtype* data2, const int x2, const int y2, const int height2, const int width2,
+		const int Height2, const int Width2);
+
+
+
 
 
 

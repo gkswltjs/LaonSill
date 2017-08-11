@@ -90,14 +90,15 @@
         [   
             ["deconv", "bool", "false"],
             ["deconvExtraCell", "int", "0"],
-            ["filterDim", "filter_dim", "{1, 1, 1, 1, 0, 1}",
+            ["filterDim", "filter_dim", "{1, 1, 1, 1, 0, 1, 1}",
                 [
                     ["rows", "uint32_t"], 
                     ["cols", "uint32_t"],
                     ["channels", "uint32_t"],
                     ["filters", "uint32_t"],
                     ["pad", "uint32_t"],
-                    ["stride", "uint32_t"]
+                    ["stride", "uint32_t"],
+                    ["dilation", "uint32_t"]
                 ]
             ],
             ["weightUpdateParam", "update_param", "{1.0, 1.0}",
@@ -736,7 +737,117 @@
         ["ignoreLabel", "int", "-1"]
     ],
 		"KEYVARS" : ["topK"]    
+},
+
+"ImageSegData" : 
+{
+    "DESC" : "image seg data input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [false, false, false],
+    "VARS" : 
+	[
+		["mirror", "bool", "false"],
+		["cropSize", "int", "0"],
+		["imageSource", "std::string", "\"\""],
+		["listSource", "std::string", "\"\""],
+		["shuffle", "bool", "false"],
+		["ignoreLabel", "int", "255"],
+		["labelType", "LabelType", "LabelType::PIXEL"],
+		["dataTransformParam", "DataTransformParam", "{{}, 1.0, 0, false}",
+			[
+				["mean", "std::vector<float>"],
+				["scale", "float"],
+				["cropSize", "int"],
+				["mirror", "bool"]
+			]
+		]
+	],
+    "KEYVARS" : ["labelCount"]
+},
+
+"ElementWise" : 
+{
+    "DESC" : "element wise layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["operation", "ElementWiseOp", "ElementWiseOp::SUM"],
+		["coeff", "std::vector<float>", "{}"],
+		["stableProdGrad", "bool", "true"]
+	],
+    "KEYVARS" : ["elementWiseOp"]
+},
+
+"Interpolation" : 
+{
+    "DESC" : "interpolation layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["height", "int", "0"],
+		["width", "int", "0"],
+		["zoomFactor", "int", "1"],
+		["shrinkFactor", "int", "1"],
+		["padBeg", "int", "0"],
+		["padEnd", "int", "0"]
+	],
+    "KEYVARS" : []
+},
+
+"SegAccuracy" : 
+{
+    "DESC" : "segmentation accuracy layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["metric", "AccuracyMetric", "AccuracyMetric::PixelAccuracy"],
+		["ignoreLabel", "std::vector<int>", "{}"],
+		["reset", "bool", "true"]
+	],
+    "KEYVARS" : []
+},
+
+
+"Silence" : 
+{
+    "DESC" : "silence layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	],
+    "KEYVARS" : []
+},
+
+
+"Recall" : 
+{
+    "DESC" : "recall layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["numClasses", "int", "2"],
+		["confidence", "float", "0.5"],
+		["targetClass", "int", "1"],
+        ["mean", "std::vector<float>", ""],
+        ["outputPath", "std::string", "\"\""]
+	],
+    "KEYVARS" : []
 }
-
-
 }

@@ -114,7 +114,8 @@ bool ReadRichImageToAnnotatedDatum(const string& filename, const string& labelna
 
 
 cv::Mat ReadImageToCVMat(const string& filename, const int height, const int width,
-		const int min_dim, const int max_dim, const bool is_color) {
+		const int min_dim, const int max_dim, const bool is_color,
+		int* imgHeight, int* imgWidth) {
 	cv::Mat cv_img;
 	int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR : CV_LOAD_IMAGE_GRAYSCALE);
 	cv::Mat cv_img_origin = cv::imread(filename, cv_read_flag);
@@ -129,12 +130,18 @@ cv::Mat ReadImageToCVMat(const string& filename, const int height, const int wid
 		cv_img = cv_img_origin;
 	}
 
-	//for (int i = 0; i < 30; i++) {
-	//	printf("%d,", cv_img.data[i]);
-	//}
-	//cout << endl;
+	if (imgHeight != NULL) {
+		*imgHeight = cv_img.rows;
+	}
+	if (imgWidth != NULL) {
+		*imgWidth = cv_img.cols;
+	}
 
 	return cv_img;
+}
+
+cv::Mat ReadImageToCVMat(const string& filename, const int height, const int width) {
+	return ReadImageToCVMat(filename, height, width, 0, 0, true);
 }
 
 void CVMatToDatum(const cv::Mat& cv_img, const bool channel_separated, Datum* datum) {

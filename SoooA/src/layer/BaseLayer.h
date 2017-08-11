@@ -100,6 +100,16 @@ public:
 		DataInput,
         CustomInput,
         MultiLabelDataInput,
+
+        ImageSegData,
+        ElementWise,
+        Interpolation,
+        SegAccuracy,
+        Silence,
+
+        Recall,
+
+
         LayerTypeMax
 	};
 

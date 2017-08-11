@@ -37,7 +37,7 @@ public:
 	: networkFilePath(networkFilePath), networkName(networkName), numSteps(numSteps) {
 		SASSERT0(this->networkFilePath.empty() != true);
 		SASSERT0(this->networkName.empty() != true);
-		SASSERT0(this->numSteps > 0);
+		SASSERT0(this->numSteps > 0);	// save network시 주석 처리해야 함.
 	}
 
 	virtual ~NetworkTest() {}
@@ -48,7 +48,7 @@ public:
 		printLayerList();
 		printLayerDataConfig();
 		loadParams();
-		loadBlobs();
+		loadBlobs();	// save network시 주석 처리해야 함.
 		fillParams();
 	}
 
@@ -510,6 +510,9 @@ private:
 	}
 
 
+public:
+	Network<Dtype>* network;
+	std::vector<std::pair<int, LearnableLayer<Dtype>*>> learnableLayers;
 
 private:
 	const std::string networkFilePath;
@@ -517,7 +520,7 @@ private:
 	const int numSteps;
 
 	int networkID;
-	Network<Dtype>* network;
+
 
 	vector<map<string, Data<Dtype>*>> nameParamsMapList;
 	vector<map<string, Data<Dtype>*>> nameBlobsMapList;
@@ -528,7 +531,7 @@ private:
 	std::pair<int, InputLayer<Dtype>*> inputLayer;
 	std::vector<std::pair<int, Layer<Dtype>*>> layers;
 	std::vector<std::pair<int, Layer<Dtype>*>> outerLayers;
-	std::vector<std::pair<int, LearnableLayer<Dtype>*>> learnableLayers;
+
 	std::vector<std::pair<int, LossLayer<Dtype>*>> lossLayers;
 };
 

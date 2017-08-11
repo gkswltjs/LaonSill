@@ -2,13 +2,13 @@
 	"layers" :
 	[
 		{
-			"name" : "data",
-			"layer" : "DataInput",
-			"id" : 0,
-			"output" : ["data", "label"],
-			"source" : "$(SOOOA_HOME)/data/sdf/ilsvrc_sdf/",
-			"mean" : [104.0, 117.0, 123.0]
-		},
+	        "name" : "data",
+	        "layer" : "DataInput",
+	        "id" : 0,
+	        "output" : ["data", "label"],
+	        "source" : "$(SOOOA_HOME)/data/sdf/plantynet_train_0.25/",
+	        "mean" : [172.49, 172.94, 179.25]
+	    },
 
 		{
 			"name" : "conv1_1",
@@ -564,19 +564,20 @@
 
 	"configs" :
 	{
-		"batchSize" : 32,
+		"batchSize" : 2,
 		"epochs" : 1000, 
 		"lossLayer" : ["loss"],
-		"gamma" : 0.0001,
+		"gamma" : 0.1,
 		"testInterval" : 10,
-		"saveInterval" : 1000000,
+		"saveInterval" : 1000,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,
 		"stepSize" : 50000,
 		"weightDecay" : 0.0005,
 		"momentum" : 0.9,
 		"lrPolicy" : "Fixed",
-		"optimizer" : "Momentum"
+		"optimizer" : "Momentum",
+		"loadPath" : "$(SOOOA_HOME)/param/VGG16_CAFFE_TRAINED.param"
 	}
 
 }

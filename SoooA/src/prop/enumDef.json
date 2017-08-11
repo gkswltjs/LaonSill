@@ -13,6 +13,21 @@
     },
 
     {
+        "NAME" : "LabelType",
+        "ENUM" : ["NONE", "IMAGE", "PIXEL"]
+    },
+
+    {
+        "NAME" : "ElementWiseOp",
+        "ENUM" : ["PROD", "SUM", "MAX"]
+    },
+
+    {
+        "NAME" : "AccuracyMetric",
+        "ENUM" : ["PixelAccuracy", "ClassAccuracy", "PixelIOU"]
+    },
+
+    {
         "NAME" : "PoolingType",
         "ENUM" : ["NoPooling", "Max", "Avg"]
     },

@@ -123,7 +123,8 @@ ConvLayer<Dtype>::ConvLayer()
 
 	//int pad = (filterDim.rows-1)/2;
 	checkCUDNN(cudnnSetConvolution2dDescriptor(this->convDesc,
-			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride, 1, 1,
+			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride,
+			filterDim.dilation, filterDim.dilation,
 			CUDNN_CROSS_CORRELATION
 #if USE_OLD_CUDNN
             )); 

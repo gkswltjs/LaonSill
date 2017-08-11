@@ -33,7 +33,12 @@ bool ReadImageToDatum(const std::string& filename, const int label, const int he
 */
 
 cv::Mat ReadImageToCVMat(const std::string& filename, const int height, const int width,
-		const int min_dim, const int max_dim, const bool is_color);
+		const int min_dim, const int max_dim, const bool is_color,
+		int* imgHeight = NULL, int* imgWidth = NULL);
+
+cv::Mat ReadImageToCVMat(const std::string& filename, const int height, const int width);
+
+
 
 
 void CVMatToDatum(const cv::Mat& cv_img, const bool channel_separated, Datum* datum);
