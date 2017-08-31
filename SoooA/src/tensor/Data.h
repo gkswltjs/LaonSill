@@ -97,7 +97,7 @@ public:
 	Dtype* mutable_device_grad();
 
 
-	void set(Data<Dtype>* data, bool reshape=true);
+	void set(Data<Dtype>* data, bool reshape=true, int type = 0);
 
 	/**
 	 * @details 데이터의 호스트 메모리에 _count만큼 값을 복사한다.
@@ -390,11 +390,11 @@ public:
 	Data<Dtype>* range(const std::vector<int>& startIndex, const std::vector<int>& endIndex);
 	void transpose(const std::vector<uint32_t>& t);
 
-	bool compareData(Data<Dtype>* data, const Dtype error = Dtype(0.001));
+	bool compareData(Data<Dtype>* data, const Dtype error = Dtype(0.001), const bool print = true);
 	//static bool compareData(Data<Dtype>* data1, Data<Dtype>* data2,
 	//		const Dtype error = Dtype(0.001));
 
-	bool compareGrad(Data<Dtype>* data, const Dtype error = Dtype(0.001));
+	bool compareGrad(Data<Dtype>* data, const Dtype error = Dtype(0.001), const bool print = true);
 	//static bool compareGrad(Data<Dtype>* data1,	Data<Dtype>* data2,
 	//		const Dtype error = Dtype(0.001));
 

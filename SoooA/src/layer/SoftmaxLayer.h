@@ -14,11 +14,13 @@
 #include "BaseLayer.h"
 //#include "Activation.h"
 #include "Cuda.h"
+#include "LayerPropList.h"
 
 template <typename Dtype>
 class SoftmaxLayer : public Layer<Dtype> {
 public:
 	SoftmaxLayer();
+	SoftmaxLayer(_SoftmaxPropLayer* prop);
 	virtual ~SoftmaxLayer();
 
 	virtual void reshape();
@@ -37,6 +39,7 @@ private:
 	cudnnTensorDescriptor_t inputTensorDesc;
 	cudnnTensorDescriptor_t outputTensorDesc;
 
+	_SoftmaxPropLayer* prop;
 
 public:
     /****************************************************************************

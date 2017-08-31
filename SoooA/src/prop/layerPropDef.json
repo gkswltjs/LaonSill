@@ -849,5 +849,243 @@
         ["outputPath", "std::string", "\"\""]
 	],
     "KEYVARS" : []
+},
+
+"AnnotationData" : 
+{
+    "DESC" : "annotation data layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["imageHeight", "uint32_t", "300"],
+		["imageWidth", "uint32_t", "300"],
+		["imageSetPath", "std::string", "\"\""],
+		["baseDataPath", "std::string", "\"\""],
+		["labelMapPath", "std::string", "\"\""],
+		["shuffle", "bool", "false"],
+		["flip", "bool", "false"],
+		["live", "bool", "false"]
+	],
+		"KEYVARS" : []
+},
+
+"Normalize" : 
+{
+    "DESC" : "normalize layer",
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
+    "LEARN" : 2,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["acrossSpatial", "bool", "true"],
+		["scaleFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+			[
+				["type", "ParamFillerType"],
+				["value", "double"]
+			]
+		],
+		["channelShared", "bool", "true"],
+		["eps", "float", "1e-10"]
+	],
+    "KEYVARS" : []
+},
+
+"Permute" : 
+{
+    "DESC" : "permute layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["order", "std::vector<uint32_t>", ""]
+	],
+    "KEYVARS" : []
+},
+
+"Flatten" : 
+{
+    "DESC" : "flatten layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["axis", "int", "1"],
+		["endAxis", "int", "3"]
+	],
+    "KEYVARS" : []
+},
+
+"PriorBox" : 
+{
+    "DESC" : "prior box layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["minSize", "std::vector<float>", ""],
+		["maxSize", "std::vector<float>", ""],
+		["aspectRatio", "std::vector<float>", ""],
+		["flip", "bool", "true"],
+		["clip", "bool", "false"],
+		["variance", "std::vector<float>", ""],
+		["imgSize", "int", "-1"],
+		["imgH", "int", "-1"],
+		["imgW", "int", "-1"],
+		["step", "float", "-1.0"],
+		["stepH", "float", "-1.0"],
+		["stepW", "float", "-1.0"],
+		["offset", "float", "0.5"]
+	],
+    "KEYVARS" : []
+},
+
+"Concat" : 
+{
+    "DESC" : "concat layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["axis", "int", "1"],
+		["concatDim", "uint32_t", "1"]
+	],
+    "KEYVARS" : []
+},
+
+"MultiBoxLoss" :
+{
+    "DESC" : "multi box loss layer",
+    "PARENT" : "Loss",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+	[
+		["locLossType", "LocLossType", "LocLossType::SMOOTH_L1"],
+		["confLossType", "ConfLossType", "ConfLossType::SOFTMAX"],
+		["locWeight", "float", "1.0"],
+		["numClasses", "uint32_t", "0"],
+		["shareLocation", "bool", "true"],
+		["matchType", "MatchType", "MatchType::PER_PREDICTION"],
+		["overlapThreshold", "float", "0.5"],
+		["usePriorForMatching", "bool", "true"],
+		["backgroundLabelId", "uint32_t", "0"],
+		["useDifficultGt", "bool", "true"],
+		["doNegMining", "bool", "false"],
+		["negPosRatio", "float", "3.0"],
+		["negOverlap", "float", "0.5"],
+		["codeType", "CodeType", "CodeType::CORNER"],
+		["encodeVarianceInTarget", "bool", "false"],
+		["mapObjectToAgnostic", "bool", "false"],
+		["ignoreCrossBoundaryBBox", "bool", "false"],
+		["bpInside", "bool", "false"],
+		["miningType", "MiningType", "MiningType::MAX_NEGATIVE"],
+		["nmsParam", "NonMaximumSuppressionParam", "{0.3, 0, 1.0}", 
+			[
+				["nmsThreshold", "float"],
+				["topK", "int"],
+				["eta", "float"]
+			]
+		],
+		["sampleSize", "int", "64"],
+		["usePriorForNMS", "bool", "false"]
+	],
+    "KEYVARS" : []
+},
+
+"DetectionOutput" : 
+{
+    "DESC" : "detection output layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["numClasses", "uint32_t", "0"],
+		["shareLocation", "bool", "true"],
+		["backgroundLabelId", "int", "0"],
+		["nmsParam", "NonMaximumSuppressionParam", "{0.3, 0, 1.0}", 
+			[
+				["nmsThreshold", "float"],
+				["topK", "int"],
+				["eta", "float"]
+			]
+		],
+		["saveOutputParam", "SaveOutputParam", "{\"\", \"\", \"\", \"\", \"\", 0}",
+			[
+				["outputDirectory", "std::string"],
+				["outputNamePrefix", "std::string"],
+				["outputFormat", "std::string"],
+				["labelMapFile", "std::string"],
+				["nameSizeFile", "std::string"],
+				["numTestImage", "int"]
+			]
+		],
+		["resizeParam", "ResizeParam", "{1.0, ResizeMode::WARP, 0, 0, 0, 0, PadMode::CONSTANT, {}, InterpMode::LINEAR}",
+			[
+				["prob", "float"],
+				["resizeMode", "ResizeMode"],
+				["height", "uint32_t"],
+				["width", "uint32_t"],
+				["heightScale", "uint32_t"],
+				["widthScale", "uint32_t"],
+				["padMode", "PadMode"],
+				["padValue", "std::vector<float>"],
+				["interpMode", "InterpMode"]
+			]
+		],
+		["codeType", "CodeType", "CodeType::CORNER"],
+		["varianceEncodedInTarget", "bool", "false"],
+		["keepTopK", "int", "-1"],
+		["confidenceThreshold", "float", "0.0"],
+		["visualize", "bool", "false"],
+		["visualizeThreshold", "float", "0.0"],
+		["saveFile", "std::string", "\"\""]
+	],
+    "KEYVARS" : []
+},
+
+"DetectionEvaluate" : 
+{
+    "DESC" : "detection evaluate layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["numClasses", "uint32_t", "0"],
+		["backgroundLabelId", "int", "0"],
+		["overlapThreshold", "float", "0.5"],
+		["evaluateDifficultGt", "bool", "true"],
+		["nameSizeFile", "std::string", "\"\""],
+		["resizeParam", "ResizeParam", "{1.0, ResizeMode::WARP, 0, 0, 0, 0, PadMode::CONSTANT, {}, InterpMode::LINEAR}",
+			[
+				["prob", "float"],
+				["resizeMode", "ResizeMode"],
+				["height", "uint32_t"],
+				["width", "uint32_t"],
+				["heightScale", "uint32_t"],
+				["widthScale", "uint32_t"],
+				["padMode", "PadMode"],
+				["padValue", "std::vector<float>"],
+				["interpMode", "InterpMode"]
+			]
+		]
+	],
+    "KEYVARS" : []
 }
 }

@@ -82,6 +82,7 @@ ConvLayer<Dtype>::ConvLayer()
 		{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
 	this->_paramsHistory2[Bias]->reshape({filterDim.filters, 1, 1, 1});
 
+
 	this->_paramsInitialized.resize(2);
 	this->_paramsInitialized[Filter] = false;
 	this->_paramsInitialized[Bias] = false;
@@ -120,7 +121,7 @@ ConvLayer<Dtype>::ConvLayer()
 			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
 			filterDim.channels, filterDim.filters, filterDim.rows, filterDim.cols));
 	}
-
+/*
 	//int pad = (filterDim.rows-1)/2;
 	checkCUDNN(cudnnSetConvolution2dDescriptor(this->convDesc,
 			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride,
@@ -131,6 +132,18 @@ ConvLayer<Dtype>::ConvLayer()
 #else
 			,CUDNN_DATA_FLOAT));
 #endif
+*/
+	//int pad = (filterDim.rows-1)/2;
+	cudnnStatus_t status = cudnnSetConvolution2dDescriptor(this->convDesc,
+			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride,
+			filterDim.dilation, filterDim.dilation,
+			CUDNN_CROSS_CORRELATION
+			,CUDNN_DATA_FLOAT);
+	std::stringstream _error;
+	if (status != CUDNN_STATUS_SUCCESS) {
+	  _error << "CUDNN failure: " << cudnnGetErrorString(status);
+	  FatalError(_error.str());                                        \
+	}
 
 	this->d_workspace = 0;
 }
@@ -428,6 +441,11 @@ void ConvLayer<Dtype>::update() {
     SASSUME0(this->updateParams.size() == 2);
     this->updateParams[Filter].context = contextFilter;
     this->updateParams[Bias].context = contextBias;
+
+
+    if (SLPROP_BASE(name) == "conv1_1") {
+    	cout << "break" << endl;
+    }
 
     Updater::updateParams(this->updateParams);
 }

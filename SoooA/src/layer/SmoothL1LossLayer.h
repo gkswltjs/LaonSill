@@ -11,11 +11,13 @@
 
 #include "common.h"
 #include "LossLayer.h"
+#include "LayerPropList.h"
 
 template <typename Dtype>
 class SmoothL1LossLayer : public LossLayer<Dtype> {
 public:
 	SmoothL1LossLayer();
+	SmoothL1LossLayer(_SmoothL1LossPropLayer* prop);
 	virtual ~SmoothL1LossLayer();
 
 	virtual void reshape();
@@ -33,6 +35,7 @@ private:
 	Data<Dtype> ones;
 	bool hasWeights;
 
+	_SmoothL1LossPropLayer* prop;
 public:
     /****************************************************************************
      * layer callback functions

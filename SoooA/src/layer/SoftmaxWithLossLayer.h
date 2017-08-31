@@ -13,11 +13,13 @@
 #include "LossLayer.h"
 #include "SoftmaxLayer.h"
 #include "Cuda.h"
+#include "LayerPropList.h"
 
 template <typename Dtype>
 class SoftmaxWithLossLayer : public LossLayer<Dtype> {
 public:
     SoftmaxWithLossLayer();
+    SoftmaxWithLossLayer(_SoftmaxWithLossPropLayer* prop);
 	virtual ~SoftmaxWithLossLayer();
 
 	virtual void reshape();
@@ -37,6 +39,7 @@ private:
 	cudnnTensorDescriptor_t inputTensorDesc;
 	cudnnTensorDescriptor_t probTensorDesc;
 
+	_SoftmaxWithLossPropLayer* prop;
 public:
     /****************************************************************************
      * layer callback functions 

@@ -21,6 +21,9 @@
 #include "LayerConfig.h"
 #include "SysLog.h"
 
+#define GET_PROP(prop, layer, var)                                                           \
+	(prop ? (prop->_##var##_) : (((_##layer##PropLayer*)(WorkContext::curLayerProp->prop))->_##var##_))
+
 /**
  * @brief 레이어 베이스 추상 클래스, 모든 레이어는 이 클래스를 상속받아 구현한다.
  * @details

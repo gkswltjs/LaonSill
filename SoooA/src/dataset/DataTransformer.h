@@ -69,4 +69,38 @@ private:
 
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * from old DataTransformer.h
+ */
+template <typename Dtype>
+void transformInv(const int num, const int singleImageSize,
+		const int imageHeight, const int imageWidth,
+		const int height, const int width, const std::vector<Dtype>& pixelMeans,
+		const Dtype* dataData, Data<Dtype>& temp);
+
+
+
+
+
+
+
+
+
+
+
+
 #endif /* DATATRANSFORMER_H_ */

@@ -20,10 +20,22 @@
 using namespace std;
 
 
+
 template <typename Dtype>
 SoftmaxLayer<Dtype>::SoftmaxLayer()
+: SoftmaxLayer(NULL) {}
+
+
+template <typename Dtype>
+SoftmaxLayer<Dtype>::SoftmaxLayer(_SoftmaxPropLayer* prop)
 : Layer<Dtype>(), sumMultiplier("sumMultiplier"), scale("scale") {
 	this->type = Layer<Dtype>::Softmax;
+	if (prop) {
+		this->prop = new _SoftmaxPropLayer();
+		*(this->prop) = *(prop);
+	} else {
+		this->prop = NULL;
+	}
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
@@ -52,11 +64,13 @@ void SoftmaxLayer<Dtype>::reshape() {
 
 #if SOFTMAXLAYER_LOG
 	printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-			SLPROP_BASE(name).c_str(), inputDataShape[0], inputDataShape[1],
+			GET_PROP(prop, Softmax, name).c_str(), inputDataShape[0], inputDataShape[1],
 			inputDataShape[2], inputDataShape[3]);
 #endif
 
-	const uint32_t softmaxAxis = SLPROP(Softmax, softmaxAxis);
+
+	//const uint32_t softmaxAxis = SLPROP(Softmax, softmaxAxis);
+	const uint32_t softmaxAxis = GET_PROP(prop, Softmax, softmaxAxis);
 
 	//vector<uint32_t> multDims(1, inputDataShape[softmaxAxis]);
 	this->sumMultiplier.reshape({1, 1, 1, inputDataShape[softmaxAxis]});
@@ -110,7 +124,7 @@ void SoftmaxLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::backpropagation() {
-	const vector<bool>& propDown = SLPROP(Softmax, propDown);
+	const vector<bool>& propDown = GET_PROP(prop, Softmax, propDown);
 	if (propDown[0]) {
 		const Dtype* outputData = this->_outputData[0]->device_data();
 		const Dtype* outputGrad = this->_outputData[0]->device_grad();

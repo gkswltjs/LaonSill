@@ -219,7 +219,7 @@ void Data<Dtype>::reset_device_grad() {
 
 
 template <typename Dtype>
-void Data<Dtype>::set(Data<Dtype>* data, bool reshape) {
+void Data<Dtype>::set(Data<Dtype>* data, bool reshape, int type) {
 	if (reshape)
 		this->reshapeLike(data);
 
@@ -233,11 +233,15 @@ void Data<Dtype>::set(Data<Dtype>* data, bool reshape) {
 	}
 
 	if (this->_hostOnly || data->_hostOnly) {
-		this->set_host_data(data);
-		this->set_host_grad(data);
+		if (type == 0 || type == 1)
+			this->set_host_data(data);
+		if (type == 0 || type == 2)
+			this->set_host_grad(data);
 	} else {
-		this->set_device_data(data);
-		this->set_device_grad(data);
+		if (type == 0 || type == 1)
+			this->set_device_data(data);
+		if (type == 0 || type == 2)
+			this->set_device_grad(data);
 	}
 }
 
@@ -718,7 +722,7 @@ void Data<Dtype>::transpose(const vector<uint32_t>& t) {
 template <typename Dtype>
 bool Data<Dtype>::compareData(
 		Data<Dtype>* data,
-		const Dtype error) {
+		const Dtype error, const bool print) {
 
 	//SASSERT0(this->getShape() == data->getShape());
 	//SASSERT0(this->getCount() == data->getCount());
@@ -760,7 +764,7 @@ bool Data<Dtype>::compareData(
 					*/
 					float diff = fabs(data1Ptr[index]-data2Ptr[index]);
 					if (diff > error) {
-						if (errorCnt < 10) {
+						if (print && errorCnt < 10) {
 							cout << "data is different at (" << i << "," << j << "," <<
 									k << "," << l << ")" << endl;
 							cout << "data1: " << data1Ptr[index] << ", data2: " <<
@@ -831,7 +835,7 @@ bool Data<Dtype>::compareData(
 template <typename Dtype>
 bool Data<Dtype>::compareGrad(
 		Data<Dtype>* data,
-		const Dtype error) {
+		const Dtype error, const bool print) {
 
 	//SASSERT0(this->getShape() == data->getShape());
 	//SASSERT0(this->getCount() == data->getCount());
@@ -865,7 +869,7 @@ bool Data<Dtype>::compareGrad(
 					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
 					float diff = fabs(data1Ptr[index]-data2Ptr[index]);
 					if (diff > error) {
-						if (errorCnt < 10) {
+						if (print && errorCnt < 10) {
 							cout << "grad is different at (" << i << "x" << j << "x" <<
 									k << "x" << l << ")" << endl;
 							cout << "grad1: " << data1Ptr[index] << ", grad2: " <<

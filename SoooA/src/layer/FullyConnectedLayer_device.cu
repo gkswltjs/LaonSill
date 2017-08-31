@@ -167,6 +167,7 @@ void FullyConnectedLayer<Dtype>::reshape() {
 	this->_paramsHistory2[ParamType::Bias]->reshape({1, u_out, 1, 1});
 
 
+
 	if (!this->_paramsInitialized[Weight]) {
         SLPROP(FullyConnected, weightFiller).fill(this->_params[ParamType::Weight]);
 		this->_paramsInitialized[Weight] = true;

@@ -19,13 +19,22 @@ using namespace std;
 
 template <typename Dtype>
 SmoothL1LossLayer<Dtype>::SmoothL1LossLayer()
+: SmoothL1LossLayer(NULL) {}
+
+template <typename Dtype>
+SmoothL1LossLayer<Dtype>::SmoothL1LossLayer(_SmoothL1LossPropLayer* prop)
 : LossLayer<Dtype>(),
   diff("diff"),
   errors("errors"),
   ones("ones") {
 	this->type = Layer<Dtype>::SmoothL1Loss;
+	if (prop) {
+		this->prop = new _SmoothL1LossPropLayer();
+		*(this->prop) = *(prop);
+	} else {
+		this->prop = NULL;
+	}
 }
-
 
 template <typename Dtype>
 SmoothL1LossLayer<Dtype>::~SmoothL1LossLayer() {
@@ -36,14 +45,17 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 	bool adjusted = Layer<Dtype>::_adjustInputShape();
 	if (adjusted) {
 		this->hasWeights = (this->_inputData.size() >= 3);
-		SASSERT(this->hasWeights && this->_inputData.size() == 4,
-				"If weights are used, must specify both inside and outside weights");
+		if (this->hasWeights) {
+			SASSERT(this->_inputData.size() == 4,
+					"If weights are used, must specify both inside and outside weights");
+		}
 
 		this->_outputData[0]->reshape({1, 1, 1, 1});
-		this->_outputData[0]->mutable_host_grad()[0] = SLPROP(Loss, lossWeight);
+		//this->_outputData[0]->mutable_host_grad()[0] = SLPROP(Loss, lossWeight);
+		this->_outputData[0]->mutable_host_grad()[0] = GET_PROP(prop, Loss, lossWeight);
 #if SMOOTHL1LOSSLAYER_LOG
 		printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
-				SLPROP_BASE(name).c_str(), 1, 1, 1, 1);
+				GET_PROP(prop, Loss, name).c_str(), 1, 1, 1, 1);
 #endif
 	}
 
@@ -137,27 +149,21 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 			this->_inputData[1]->device_data(),
 			this->diff.mutable_device_data());		// d := b0 - b1
 
-
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
-	Data<Dtype>::printConfig = false;
-#endif
-
-#if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->_inputData[0]->print_data();
 	this->_inputData[1]->print_data();
 	this->diff.print_data();
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 #endif
 
 	if (this->hasWeights) {
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->_inputData[2]->print_data();
 	this->diff.print_data();
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 #endif
 		// apply "inside" weights
 		soooa_gpu_mul(
@@ -167,33 +173,33 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 				this->diff.mutable_device_data());	// d := w_in * (b0 - b1)
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->diff.print_data();
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 #endif
 
 	}
 
 	// smoothL1Forward
-	const float sigma2 = SLPROP(SmoothL1Loss, sigma) * SLPROP(SmoothL1Loss, sigma);
+	const float sigma2 = GET_PROP(prop, SmoothL1Loss, sigma) * GET_PROP(prop, SmoothL1Loss, sigma);
 	SmoothL1Forward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
 	      count, this->diff.device_data(), this->errors.mutable_device_data(), sigma2);
 	CUDA_POST_KERNEL_CHECK;
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->diff.print_data();
 	this->errors.print_data();
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 #endif
 
 	if (this->hasWeights) {
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->_inputData[3]->print_data();
 	this->errors.print_data();
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 #endif
 
 		// apply "outside" weights
@@ -204,14 +210,14 @@ void SmoothL1LossLayer<Dtype>::feedforward() {
 				this->errors.mutable_device_data());	// d := w_out * SmoothL1(w_in * (b0 - b1))
 
 #if SMOOTHL1LOSSLAYER_LOG
-	Data<Dtype>::printConfig = true;
+	this->_printOn();
 	this->errors.print_data();
-	Data<Dtype>::printConfig = false;
+	this->_printOff();
 #endif
 	}
 
-	const uint32_t firstAxis = SLPROP(SmoothL1Loss, firstAxis);
-	const float lossWeight = SLPROP(Loss, lossWeight);
+	const uint32_t firstAxis = GET_PROP(prop, SmoothL1Loss, firstAxis);
+	const float lossWeight = GET_PROP(prop, Loss, lossWeight);
 	Dtype loss;
 	soooa_gpu_dot(count, this->ones.device_data(), this->errors.device_data(), &loss);
 	this->_outputData[0]->mutable_host_data()[0] = loss * Dtype(lossWeight) /
@@ -241,31 +247,14 @@ __global__ void SmoothL1Backward(const uint32_t n, const Dtype* in, Dtype* out,
 template <typename Dtype>
 void SmoothL1LossLayer<Dtype>::backpropagation() {
 	// after forwards, diff holds w_in * (b0 - b1)
-
-	/*
-	if (SLPROP_BASE(name) == "rpn_loss_bbox") {
-		Data<Dtype>::printConfig = true;
-		this->diff.print_data({}, false);
-		Data<Dtype>::printConfig = false;
-	}
-	*/
-
-	const float sigma2 = SLPROP(SmoothL1Loss, sigma) * SLPROP(SmoothL1Loss, sigma);
+	const float sigma2 = GET_PROP(prop, SmoothL1Loss, sigma) * GET_PROP(prop, SmoothL1Loss, sigma);
 	const uint32_t count = this->diff.getCount();
 	SmoothL1Backward<Dtype><<<SOOOA_GET_BLOCKS(count), SOOOA_CUDA_NUM_THREADS>>>(
 			count, this->diff.device_data(), this->diff.mutable_device_data(), sigma2);
 	CUDA_POST_KERNEL_CHECK;
 
-	/*
-	if (SLPROP_BASE(name) == "rpn_loss_bbox") {
-		Data<Dtype>::printConfig = true;
-		this->diff.print_data({}, false);
-		Data<Dtype>::printConfig = false;
-	}
-	*/
-
-	const vector<bool> propDown = SLPROP_BASE(propDown);
-	const uint32_t firstAxis = SLPROP(SmoothL1Loss, firstAxis);
+	const vector<bool> propDown = GET_PROP(prop, SmoothL1Loss, propDown);
+	const uint32_t firstAxis = GET_PROP(prop, SmoothL1Loss, firstAxis);
 	for (uint32_t i = 0; i < 2; i++) {
 		if (propDown[i]) {
 			const Dtype sign = (i == 0) ? 1 : -1;
@@ -282,6 +271,11 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 					this->diff.device_data(),
 					Dtype(0),
 					this->_inputData[i]->mutable_device_grad());
+
+			//this->_printOn();
+			//this->_inputData[i]->print_grad({}, false, -1);
+			//this->_printOff();
+
 			if (this->hasWeights) {
 				// Scale by "inside" weight
 				soooa_gpu_mul(
@@ -300,10 +294,10 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 	}
 
 	/*
-	if (SLPROP_BASE(name) == "rpn_loss_bbox") {
-		Data<Dtype>::printConfig = true;
+	if (GET_PROP(prop, SmoothL1Loss, name) == "rpn_loss_bbox") {
+		this->_printOn();
 		this->_inputData[i]->print_grad({}, false);
-		Data<Dtype>::printConfig = false;
+		this->_printOff();
 	}
 	*/
 }

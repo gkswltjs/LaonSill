@@ -238,11 +238,36 @@ void soooa_gpu_scale<float>(const int n, const float alpha, const float* x, floa
 
 
 
+template <typename Dtype>
+__global__ void powx_kernel(const int n, const Dtype* a, const Dtype alpha, Dtype* y) {
+	CUDA_KERNEL_LOOP(index, n) {
+		y[index] = pow(a[index], alpha);
+	}
+}
+
+template <>
+void soooa_gpu_powx<float>(const int n, const float* a, const float alpha, float* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  powx_kernel<float><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(n, a, alpha, y);
+}
 
 
 
 
 
+
+template <typename Dtype>
+__global__ void add_kernel(const int n, const Dtype* a, const Dtype* b, Dtype* y) {
+	CUDA_KERNEL_LOOP(index, n) {
+		y[index] = a[index] + b[index];
+	}
+}
+
+template <>
+void soooa_gpu_add<float>(const int n, const float* a, const float* b, float* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  add_kernel<float><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(n, a, b, y);
+}
 
 
 

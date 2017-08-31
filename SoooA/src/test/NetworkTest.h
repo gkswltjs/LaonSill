@@ -33,8 +33,9 @@ template <typename Dtype>
 class NetworkTest : public NetworkTestInterface<Dtype> {
 public:
 	NetworkTest(const std::string& networkFilePath, const std::string& networkName,
-			const int numSteps)
-	: networkFilePath(networkFilePath), networkName(networkName), numSteps(numSteps) {
+			const int numSteps, const NetworkStatus status = NetworkStatus::Train)
+	: networkFilePath(networkFilePath), networkName(networkName), numSteps(numSteps),
+	  status(status) {
 		SASSERT0(this->networkFilePath.empty() != true);
 		SASSERT0(this->networkName.empty() != true);
 		SASSERT0(this->numSteps > 0);	// save network시 주석 처리해야 함.
@@ -43,13 +44,23 @@ public:
 	virtual ~NetworkTest() {}
 
 	virtual void setUp() {
-		prepareContext();
-		retrieveLayers();
-		printLayerList();
-		printLayerDataConfig();
-		loadParams();
-		loadBlobs();	// save network시 주석 처리해야 함.
-		fillParams();
+		this->networkID = PrepareContext<Dtype>(this->networkFilePath, this->numSteps);
+		this->network = Network<Dtype>::getNetworkFromID(this->networkID);
+
+		RetrieveLayers(this->networkID, &this->outerLayers, &this->layers, &this->inputLayer,
+				&this->lossLayers, &this->learnableLayers);
+
+		BuildNameLayerMap(this->networkID, this->layers, this->nameLayerMap);
+
+		PrintLayerList(this->networkID, &this->layers, &this->learnableLayers);
+
+		PrintLayerDataConfig(this->networkID, this->layers);
+
+		LoadParams(this->networkName, this->numSteps, status, this->nameParamsMapList);
+
+		//LoadBlobs(this->networkName, this->numSteps, this->nameBlobsMapList);
+
+		FillParams(this->networkID, this->learnableLayers, this->nameParamsMapList[0]);
 	}
 
 	virtual void cleanUp() {
@@ -71,36 +82,27 @@ public:
 			dataTest(i);
 			logEndTest("FEED FORWARD");
 
+			/**
+			 * MultiBoxLossLayer의 경우 내부의 다른 status들이 있기 때문에
+			 * Input이 정답으로 설정된 상태로 다시 forward하여 내부 status도 일치하도록
+			 * 한다.
+			 */
+			forwardSingleLayerWithGT(i, "mbox_loss");
+
 			// backpropagation
-			//replaceDataWithGroundTruth(i);
+			replaceDataWithGroundTruth(i);
 			logStartTest("BACK PROPAGATION");
 			backward();
 			gradTest(i);
 			logEndTest("BACK PROPAGATION");
 
-#if 0
-			for (int i = 0; i < this->learnableLayers.size(); i++) {
-				int layerID = this->learnableLayers[i].first;
-				LearnableLayer<Dtype>* learnableLayer = this->learnableLayers[i].second;
-				printDataList(learnableLayer->_params, 1);
-
-			}
-#endif
 
 			// update & compare result
+			// 오직 param grad에 대해서만 테스트하므로,
+			// in/out의 grad를 업데이트하는 것은 의미가 없음
 			//replaceGradWithGroundTruth(i);
 			logStartTest("UPDATE");
 			update();
-
-#if 0
-			for (int i = 0; i < this->learnableLayers.size(); i++) {
-				int layerID = this->learnableLayers[i].first;
-				LearnableLayer<Dtype>* learnableLayer = this->learnableLayers[i].second;
-				printDataList(learnableLayer->_params, 1);
-
-			}
-			exit(1);
-#endif
 			paramTest(i);
 			logEndTest("UPDATE");
 			//replaceParamWithGroundTruth(i+1, 0);
@@ -109,42 +111,55 @@ public:
 
 
 private:
+
+#if 0
 	void prepareContext() {
+		// network definition file로부터 network를 생성하고 network id를 반환
 		this->networkID = PlanParser::loadNetwork(this->networkFilePath);
+		// network id로 생성된 network를 조회
 		this->network = Network<Dtype>::getNetworkFromID(this->networkID);
+		// network에 대해 최대 iteration? epoch?을 지정하여 build
 		this->network->build(this->numSteps);
 
+		// 현재의 context를 생성한 network로 설정
 		WorkContext::updateNetwork(this->networkID);
 		//PlanOptimizer::buildPlans(this->networkID);
 		WorkContext::updatePlan(0, true);
 	}
 
 	void retrieveLayers() {
+		// outerLayers: (!splitLayer and innerLayer) 경우 제외 모든 레이어
+		// layers: outerLayers 중, split layer가 아닌 레이어들
+		// inputLayer: layers 중, input layer, 하나라고 가정
+		// lossLayers: layers 중, loss layer
+		// learnableLayers: layers 중, learnable layer
+
 		PhysicalPlan* pp = WorkContext::curPhysicalPlan;
+		// PhysicalPlan의 instanceMap: <layerID, Layer*>의 map
 		for (map<int, void*>::iterator iter = pp->instanceMap.begin();
 			iter != pp->instanceMap.end(); iter++) {
+
 			int layerID = iter->first;
 			void* instancePtr = iter->second;
-
-
 			Layer<Dtype>* layer = (Layer<Dtype>*)instancePtr;
 
-
+			// split layer가 아니고 inner layer인 경우? skip
+			// (무슨 케이스지?)
 			if (!dynamic_cast<SplitLayer<Dtype>*>(layer) && 
-
 				// skip inner layer
 				this->network->isInnerLayer(layerID)) {
 					continue;
 			}
 			
+			// 그 외, 모든 layer를 outerLayers에 추가
 			this->outerLayers.push_back(std::make_pair(layerID, layer));
-
 			if (dynamic_cast<SplitLayer<Dtype>*>(layer)) {
 				continue;
 			}
 
+			// 해당 network에 대해 layerID의 layer context 설정
 			WorkContext::updateLayer(this->networkID, layerID);
-
+			// split layer를 제외, 모든 layer를 layers에 추가
 			this->layers.push_back(std::make_pair(layerID, layer));
 
 			if (dynamic_cast<InputLayer<Dtype>*>(layer)) {
@@ -194,6 +209,8 @@ private:
 	}
 
 	void loadParams() {
+		// step별 param들을 모두 load to nameParamsMap
+
 		// XXX: inference test를 위해 = 제거,
 		// 일반 테스트시 '<' --> '<='로 복구해야 함!!!
 		for (int i = 0; i <= this->numSteps; i++) {
@@ -207,6 +224,8 @@ private:
 	}
 
 	void loadBlobs() {
+		// step별 blob들을 모두 load to nameBlobsMap
+
 		for (int i = 0; i < this->numSteps; i++) {
 			const string strIdx = to_string(i);
 			map<string, Data<Dtype>*> nameBlobsMap;
@@ -244,13 +263,7 @@ private:
 		cout << "-------------------------------------------------------------------" << endl;
 		*/
 	}
-
-
-
-
-
-
-
+#endif
 
 
 	void forward(const int nthStep) {
@@ -267,10 +280,9 @@ private:
 		for (int i = 0; i < inputLayer->_outputData.size(); i++) {
 			const string inputDataName = BLOBS_PREFIX + inputLayer->_outputData[i]->_name;
 			Data<Dtype>* data = retrieveValueFromMap(this->nameBlobsMapList[nthStep], inputDataName);
+			inputLayer->_outputData[i]->set_host_data(data, 0, true);
 
-			// 
-			//inputLayer->_outputData[i]->set_host_data(data, 0, false);
-
+			/*
 			// XXX: for frcnn only ...
 			inputLayer->_outputData[i]->set_host_data(data, 0, true);
 			if (i == 1) {
@@ -282,6 +294,7 @@ private:
 				inputLayer->_outputData[2]->reshape({1, 1, shape[0], shape[1]});
 				inputLayer->_outputData[2]->print_shape();
 			}
+			*/
 
 		}
 		//printDataList(inputLayer->_outputData, 0);
@@ -298,7 +311,8 @@ private:
 			WorkContext::updateLayer(this->networkID, layerID);
 
 			cout << "-----------------------------data test at layer " << layer->getName() << endl;
-			if (!compareData(this->nameBlobsMapList[nthStep], BLOBS_PREFIX, layer->_outputData, 0)) {
+			if (!CompareData(this->networkID, this->nameBlobsMapList[nthStep],
+					this->layers[i], DataEndType::OUTPUT)) {
 				std::cout << "[ERROR] data feedforward failed at layer " << layer->getName() <<
 						std::endl;
 			} else {
@@ -313,16 +327,18 @@ private:
 
 	void gradTest(const int nthStep) {
 		SASSERT0(nthStep < this->numSteps);
-		// caffe의 backward 과정에서 input layer와
+		// 1. caffe의 backward 과정에서 input layer와
 		// input layer의 다음 레이어 input data에 대해 backward 진행하지 않기 때문에
 		// 적용된 diff가 없으므로 해당 data에 대해서는 체크하지 않는다.
+		// 2. npz에 param grad의 gt가 없어서 param에 대해서는 테스트 진행하지 않음
 		for (int i = this->layers.size() - 1; i > 1; i--) {
 			int layerID = this->layers[i].first;
 			Layer<Dtype>* layer = this->layers[i].second;
 			WorkContext::updateLayer(this->networkID, layerID);
 
 			// test blobs except input layer and second layer
-			if (!compareData(this->nameBlobsMapList[nthStep], BLOBS_PREFIX, layer->_inputData, 1)) {
+			if (!CompareData(this->networkID, this->nameBlobsMapList[nthStep],
+					this->layers[i], DataEndType::INPUT)) {
 				std::cout << "[ERROR] data backpropagation failed at layer " << layer->getName()
 						<< std::endl;
 			} else {
@@ -361,10 +377,12 @@ private:
 
 			// test final params
 			bool result = false;
-			result = compareParam(this->nameParamsMapList[nthStep + 1],
-					learnableLayer->getName() + SIG_PARAMS, learnableLayer->_params, 0);
-			result = compareParam(this->nameParamsMapList[nthStep + 1],
-					learnableLayer->getName() + SIG_PARAMS, learnableLayer->_params, 1);
+			result = CompareParam(this->nameParamsMapList[nthStep + 1],
+					learnableLayer->getName() + SIG_PARAMS, learnableLayer->_params,
+					DataType::DATA);
+			result = CompareParam(this->nameParamsMapList[nthStep + 1],
+					learnableLayer->getName() + SIG_PARAMS, learnableLayer->_params,
+					DataType::GRAD);
 
 			if (!result) {
 				std::cout << "[ERROR] update failed at layer " <<
@@ -379,6 +397,7 @@ private:
 
 	void replaceDataWithGroundTruth(int stepIdx) {
 
+		/*
 		for (int i = 0; i < this->layers.size(); i++) {
 			int layerID = this->layers[i].first;
 			Layer<Dtype>* layer = this->layers[i].second;
@@ -406,6 +425,16 @@ private:
 			lossLayer->_outputData[0]->set_host_data(data, 0, false);
 			lossLayer->_outputData[0]->set_host_grad(data, 0, false);
 		}
+		*/
+
+		// split data의 경우 index가 맞지 않아 ... grad 케이스에는 문제가 될 수 있네.
+		FillData(this->networkID, this->layers, this->nameBlobsMapList[stepIdx],
+				DataEndType::INPUT);
+
+		std::pair<int, Layer<Dtype>*> layerPair =
+				std::make_pair(this->lossLayers[0].first, this->lossLayers[0].second);
+		FillDatum(this->networkID, this->nameBlobsMapList[stepIdx],
+				layerPair, DataEndType::OUTPUT);
 	}
 
 
@@ -444,6 +473,7 @@ private:
 	}
 	i*/
 
+	/*
 	void replaceGradWithGroundTruth(int stepIdx) {
 		for (int i = 0; i < this->layers.size(); i++) {
 			Layer<Dtype>* layer = this->layers[i].second;
@@ -455,7 +485,9 @@ private:
 			}
 		}
 	}
+	*/
 
+	/*
 	void replaceParamWithGroundTruth(int stepIdx, int type) {
 		SASSERT0(stepIdx >= 0);
 		SASSERT0(type == 0 || type == 1);
@@ -482,6 +514,7 @@ private:
 			}
 		}
 	}
+	*/
 
 	void logStartTest(const std::string& testName) {
 		cout << "<<< " + testName + " TEST ... -------------------------------" << endl;
@@ -495,6 +528,10 @@ private:
 		Data<Dtype>::printConfig = 1;
 		SyncMem<Dtype>::printConfig = 1;
 
+		for (int j = 0; j < dataList.size(); j++) {
+			printData(dataList[j], type, summary);
+		}
+		/*
 		if (type == 0) {
 			for (int j = 0; j < dataList.size(); j++) {
 				dataList[j]->print_data({}, false, summary);
@@ -504,20 +541,80 @@ private:
 				dataList[j]->print_grad({}, false, summary);
 			}
 		}
+		*/
 
 		Data<Dtype>::printConfig = 0;
 		SyncMem<Dtype>::printConfig = 0;
 	}
 
+	void printData(Data<Dtype>* data, int type = 0, int summary = 6) {
+		Data<Dtype>::printConfig = 1;
+		SyncMem<Dtype>::printConfig = 1;
+		if (type == 0) {
+			data->print_data({}, false, summary);
+
+		} else if (type == 1) {
+			data->print_grad({}, false, summary);
+		}
+		Data<Dtype>::printConfig = 0;
+		SyncMem<Dtype>::printConfig = 0;
+	}
+
+	void printDataByName(const int stepIdx, const vector<string> targetDataNames, DataType dataType) {
+		std::cout << "printDataByName()" << std::endl;
+		for (int i = 0; i < targetDataNames.size(); i++) {
+			const string& targetDataName = BLOBS_PREFIX + targetDataNames[i];
+			std::cout << "targetDataName: " << targetDataName << std::endl;
+
+			auto itr = this->nameBlobsMapList[stepIdx].find(targetDataName);
+			if (itr != this->nameBlobsMapList[stepIdx].end()) {
+				Data<Dtype>* data = itr->second;
+
+				Data<Dtype>::printConfig = 1;
+				SyncMem<Dtype>::printConfig = 1;
+				switch(dataType) {
+				case DATA: data->print_data({}, false); break;
+				case GRAD: data->print_grad({}, false); break;
+				}
+				Data<Dtype>::printConfig = 0;
+				SyncMem<Dtype>::printConfig = 0;
+			}
+		}
+	}
+
+
+	void forwardSingleLayerWithGT(const int stepIdx, const string& targetLayerName) {
+		auto itr = this->nameLayerMap.find(targetLayerName);
+		SASSERT(itr != this->nameLayerMap.end(), "[ERROR] INVALID LAYER: %s",
+				targetLayerName.c_str());
+
+		int layerID = itr->second.first;
+		Layer<Dtype>* layer = itr->second.second;
+
+		FillDatum(this->networkID, this->nameBlobsMapList[stepIdx], itr->second, DataEndType::INPUT);
+
+		LearnableLayer<Dtype>* learnableLayer = dynamic_cast<LearnableLayer<Dtype>*>(layer);
+		if (learnableLayer) {
+			std::pair<int, LearnableLayer<Dtype>*> learnableLayerPair =
+					std::make_pair(layerID, learnableLayer);
+			FillParam(this->networkID, this->nameParamsMapList[stepIdx], learnableLayerPair);
+		}
+		layer->feedforward();
+	}
+
+	void backwardSingleLayerWithGT(const string& targetLayerName) {
+
+	}
+
 
 public:
 	Network<Dtype>* network;
-	std::vector<std::pair<int, LearnableLayer<Dtype>*>> learnableLayers;
 
-private:
+
 	const std::string networkFilePath;
 	const std::string networkName;
 	const int numSteps;
+	const NetworkStatus status;
 
 	int networkID;
 
@@ -525,14 +622,16 @@ private:
 	vector<map<string, Data<Dtype>*>> nameParamsMapList;
 	vector<map<string, Data<Dtype>*>> nameBlobsMapList;
 
-	const std::string params = "_params_";
-	const std::string blobs = "_blobs_";
+	//const std::string params = "_params_";
+	//const std::string blobs = "_blobs_";
 
 	std::pair<int, InputLayer<Dtype>*> inputLayer;
 	std::vector<std::pair<int, Layer<Dtype>*>> layers;
+	std::vector<std::pair<int, LearnableLayer<Dtype>*>> learnableLayers;
 	std::vector<std::pair<int, Layer<Dtype>*>> outerLayers;
-
 	std::vector<std::pair<int, LossLayer<Dtype>*>> lossLayers;
+
+	std::map<std::string, std::pair<int, Layer<Dtype>*>> nameLayerMap;
 };
 
 

@@ -24,9 +24,8 @@
 #include "StdOutLog.h"
 
 #include "InputDataProvider.h"
-#include "RoITestLiveInputLayer.h"
-#include "FrcnnTestLiveOutputLayer.h"
-
+#include "AnnotationDataLayer.h"
+#include "DetectionOutputLayer.h"
 
 using namespace std;
 
@@ -437,17 +436,17 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
 
     std::vector<Layer<float>*> inputLayers =
-        network->findLayersByType(Layer<float>::RoITestLiveInput);
+        network->findLayersByType(Layer<float>::AnnotationData);
     SASSUME0(inputLayers.size() == 1);
-    RoITestLiveInputLayer<float>* inputLayer = (RoITestLiveInputLayer<float>*)inputLayers[0];
-    
-    std::vector<Layer<float>*> outputLayers =
-        network->findLayersByType(Layer<float>::FrcnnTestLiveOutput);
-    SASSUME0(outputLayers.size() == 1);
-    FrcnnTestLiveOutputLayer<float>* outputLayer =
-        (FrcnnTestLiveOutputLayer<float>*)outputLayers[0];
+    AnnotationDataLayer<float>* inputLayer = (AnnotationDataLayer<float>*)inputLayers[0];
 
-    inputLayer->feedImage(channel, height, width, imageData); 
+    std::vector<Layer<float>*> outputLayers =
+        network->findLayersByType(Layer<float>::DetectionOutput);
+    SASSUME0(outputLayers.size() == 1);
+    DetectionOutputLayer<float>* outputLayer =
+        (DetectionOutputLayer<float>*)outputLayers[0];
+
+    inputLayer->feedImage(channel, height, width, imageData);
     network->runMiniBatch(true, 0);
 
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
@@ -455,24 +454,26 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
     Job* pubJob = getPubJob(job);
 
     int count = outputLayer->_outputData[0]->getCount();
-    int resultCount;
-
-    if ( count == 1) {
-        resultCount = 0;
-    } else {
-        resultCount = count / 5;
-        SASSUME0(count % 5 == 0); 
-    }
-
-    pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
     const float* result = outputLayer->_outputData[0]->host_data();
+    int resultCount = 0;
 
-    for (int i = 0; i < resultCount; i++) {
-        int left    = int(result[i * 5 + 0]);
-        int top     = int(result[i * 5 + 1]);
-        int right   = int(result[i * 5 + 2]);
-        int bottom  = int(result[i * 5 + 3]);
-        float score = result[i * 5 + 4];
+    for (int i = 0; i < count; i += 7) {
+    	if (result[i + 1] == 15) {
+    		resultCount++;
+    	}
+    }
+    pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
+
+    for (int i = 0; i < count; i++) {
+    	if (result[i * 7 + 1] != 15) {
+    		continue;
+    	}
+
+        int left    = int(result[i * 7 + 3] * width) ;
+        int top     = int(result[i * 7 + 4] * height);
+        int right   = int(result[i * 7 + 5] * width);
+        int bottom  = int(result[i * 7 + 6] * height);
+        float score = result[i * 7 + 2];
 
         pubJob->addJobElem(Job::IntType, 1, (void*)&top);
         pubJob->addJobElem(Job::IntType, 1, (void*)&left);

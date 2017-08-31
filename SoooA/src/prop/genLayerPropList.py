@@ -7,7 +7,7 @@ import json;
 ####################################### Modify here ##########################################
 # if you want to use specific custom type, you should insert header file that the custom type 
 # is defined into headerFileList.
-headerFileList = ["EnumDef.h", "KistiInputLayer.h", "DataTransformer.h"]
+headerFileList = ["EnumDef.h", "KistiInputLayer.h", "DataTransformer.h", "ssd_common.h"]
 ##############################################################################################
 
 # XXX: source code refactoring is required
@@ -399,7 +399,7 @@ try:
                                 % subVarType)
                             sourceFile.write('        std::string* val = ')
                             sourceFile.write('(std::string*)value;\n')
-                            sourceFile.write('        obj->_%s_ = ' % var[0])
+                            sourceFile.write('        obj->_%s_.%s = ' % (var[0], subVar))
                             sourceFile.write('(%s)EnumDef::convertEnumValue(*val);\n'\
                                 % subVarType)
                     sourceFile.write('    }')

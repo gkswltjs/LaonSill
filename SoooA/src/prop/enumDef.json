@@ -23,6 +23,46 @@
     },
 
     {
+        "NAME" : "LocLossType",
+        "ENUM" : ["L2", "SMOOTH_L1"]
+    },
+
+    {
+        "NAME" : "ConfLossType",
+        "ENUM" : ["SOFTMAX", "LOGISTIC"]
+    },
+
+    {
+        "NAME" : "MatchType",
+        "ENUM" : ["BIPARTITE", "PER_PREDICTION"]
+    },
+
+    {
+        "NAME" : "MiningType",
+        "ENUM" : ["MINING_NONE", "MAX_NEGATIVE", "HARD_EXAMPLE"]
+    },
+
+    {
+        "NAME" : "CodeType",
+        "ENUM" : ["CORNER", "CENTER_SIZE", "CORNER_SIZE"]
+    },
+
+    {
+        "NAME" : "ResizeMode",
+        "ENUM" : ["WARP", "FIT_SMALL_SIZE", "FIT_LARGE_SIZE_AND_PAD"]
+    },
+
+    {
+        "NAME" : "PadMode",
+        "ENUM" : ["CONSTANT", "MIRRORED", "REPEAT_NEAREST"]
+    },
+
+    {
+        "NAME" : "InterpMode",
+        "ENUM" : ["LINEAR", "AREA", "NEAREST", "CUBIC", "LANCZOS4"]
+    },
+
+    {
         "NAME" : "AccuracyMetric",
         "ENUM" : ["PixelAccuracy", "ClassAccuracy", "PixelIOU"]
     },

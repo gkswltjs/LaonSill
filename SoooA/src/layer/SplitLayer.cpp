@@ -10,6 +10,7 @@
 #include "SplitLayer.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MathFunctions.h"
 
 #define SPLITLAYER_LOG 0
 
@@ -83,6 +84,8 @@ void SplitLayer<Dtype>::feedforward() {
 	}
 }
 
+
+/*
 template <typename Dtype>
 void SplitLayer<Dtype>::backpropagation() {
 
@@ -115,6 +118,32 @@ void SplitLayer<Dtype>::backpropagation() {
 	}
 #endif
 }
+*/
+
+
+template <typename Dtype>
+void SplitLayer<Dtype>::backpropagation() {
+	//const vector<bool>& propDown = SLPROP_BASE(propDown);
+	//if (!propDown[0]) {
+	//	return;
+	//}
+	const int count = this->_inputData[0]->getCount();
+	if (this->_outputData.size() == 1) {
+		soooa_copy(count, this->_outputData[0]->device_grad(),
+				this->_inputData[0]->mutable_device_grad());
+		return;
+	}
+	soooa_gpu_add(count, this->_outputData[0]->device_grad(),
+			this->_outputData[1]->device_grad(), this->_inputData[0]->mutable_device_grad());
+
+	// Add remaining top blobs diffs.
+	for (int i = 2; i < this->_outputData.size(); i++) {
+		const Dtype* outputGrad = this->_outputData[i]->device_grad();
+		Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
+		soooa_gpu_axpy(count, Dtype(1.), outputGrad, inputGrad);
+	}
+}
+
 
 /****************************************************************************
  * layer callback functions 

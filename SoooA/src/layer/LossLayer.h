@@ -31,10 +31,10 @@ public:
 		Layer<Dtype>::backpropagation();
 	}
 	virtual Dtype cost() = 0;
-		virtual Dtype getNormalizer(const int outerNum, const int innerNum,
-			const int validCount) {
+		virtual Dtype getNormalizer(const NormalizationMode normalizationMode,
+				const int outerNum, const int innerNum, const int validCount) {
 		Dtype normalizer;
-		switch (SLPROP(Loss, normalization)) {
+		switch (normalizationMode) {
 		case NormalizationMode::Full:
 			normalizer = Dtype(outerNum * innerNum);
 			break;

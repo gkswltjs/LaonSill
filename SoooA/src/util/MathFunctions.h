@@ -77,6 +77,15 @@ void soooa_gpu_scale(const int n, const Dtype alpha, const Dtype* x, Dtype* y);
 
 
 
+
+template <typename Dtype>
+void soooa_gpu_powx(const int n, const Dtype* a, const Dtype b, Dtype* y);
+
+template <typename Dtype>
+void soooa_gpu_add(const int n, const Dtype* a, const Dtype* b, Dtype* y);
+
+
+
 template <typename Dtype, bool packed>
 void soooa_gpu_interp2(const int channels, const Dtype* data1, const int x1, const int y1,
 		const int height1, const int width1, const int Height1, const int Width1,
