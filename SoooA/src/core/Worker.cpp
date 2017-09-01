@@ -431,7 +431,8 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
     int channel = job->getIntValue(1);
     int height = job->getIntValue(2);
     int width = job->getIntValue(3);
-    float* imageData = job->getFloatArray(4);
+    int coordRelative = job->getIntValue(4);
+    float* imageData = job->getFloatArray(5);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
 
@@ -447,8 +448,8 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
         (DetectionOutputLayer<float>*)outputLayers[0];
 
     inputLayer->feedImage(channel, height, width, imageData);
-    network->runMiniBatch(true, 0);
 
+    network->runMiniBatch(true, 0);
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
 
     Job* pubJob = getPubJob(job);
@@ -464,24 +465,31 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
     }
     pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
 
+    float left, top, right, bottom;
     for (int i = 0; i < count; i++) {
     	if (result[i * 7 + 1] != 15) {
     		continue;
     	}
 
-        int left    = int(result[i * 7 + 3] * width) ;
-        int top     = int(result[i * 7 + 4] * height);
-        int right   = int(result[i * 7 + 5] * width);
-        int bottom  = int(result[i * 7 + 6] * height);
+    	left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
+    	top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);
+    	right	= std::min(std::max(result[i * 7 + 5], 0.f), 1.f);
+    	bottom	= std::min(std::max(result[i * 7 + 6], 0.f), 1.f);
+
+    	if (coordRelative == 0) {
+    		left    = int(left * width);
+			top     = int(top * height);
+			right   = int(right * width);
+			bottom  = int(bottom * height);
+    	}
         float score = result[i * 7 + 2];
 
-        pubJob->addJobElem(Job::IntType, 1, (void*)&top);
-        pubJob->addJobElem(Job::IntType, 1, (void*)&left);
-        pubJob->addJobElem(Job::IntType, 1, (void*)&bottom);
-        pubJob->addJobElem(Job::IntType, 1, (void*)&right);
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&top);
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&left);
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&bottom);
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&right);
         pubJob->addJobElem(Job::FloatType, 1, (void*)&score);
     }
-
     Broker::publish(job->getJobID(), pubJob);
 }
 

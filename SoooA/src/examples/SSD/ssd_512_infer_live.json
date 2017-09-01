@@ -1656,7 +1656,7 @@
 
 	"configs" :
 	{
-		"batchSize" : 8,
+		"batchSize" : 1,
 		"epochs" : 1, 
 		"status" : "Test",
 		"loadPath" : "$(SOOOA_HOME)/param/VGG_VOC0712_SSD_512x512_iter_120000.param"

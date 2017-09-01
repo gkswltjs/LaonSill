@@ -57,10 +57,10 @@ typedef struct NetworkHandle_s {
 } NetworkHandle;
 
 typedef struct BoundingBox_s {
-    int top;
-    int left;
-    int bottom;
-    int right;
+    float top;
+    float left;
+    float bottom;
+    float right;
     float confidence;
 } BoundingBox;
 
@@ -95,6 +95,6 @@ public:
 
     static ClientError      getObjectDetection(ClientHandle handle, NetworkHandle netHandle,
                                 int channel, int height, int width, float* imageData,
-                                std::vector<BoundingBox>& boxArray);
+                                std::vector<BoundingBox>& boxArray, int coordRelative=0);
 };
 #endif /* CLIENTAPI_H */
