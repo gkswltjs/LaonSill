@@ -3,17 +3,12 @@
 	[
 		{
 			"name" : "data",
-			"layer" : "AnnotationData",
+			"layer" : "DummyInput",
 			"id" : 0,
 			"output" : ["data", "label"],
-			"imageHeight" : 512,
-			"imageWidth" : 512,
-			"imageSetPath" : "$(SOOOA_HOME)/data/VOC0712/test.txt",
-			"baseDataPath" : "$(SOOOA_HOME)/data/VOCdevkit/",
-			"labelMapPath" : "$(SOOOA_HOME)/data/VOC0712/labelmap_voc.prototxt",
-			"mean" : [104.0, 117.0, 123.0]
+			"shapes" : [2, 3, 300, 300, 1, 1, 3, 8]
 		},
-
+				
 		{
 			"name" : "conv1_1",
 			"layer" : "Conv",
@@ -711,8 +706,8 @@
 			"filterDim.cols" : 3,
 			"filterDim.channels" : 128,
 			"filterDim.filters" : 256,
-			"filterDim.pad" : 1,
-			"filterDim.stride" : 2,
+			"filterDim.pad" : 0,
+			"filterDim.stride" : 1,
 			"weightUpdateParam.lr_mult" : 1.0,
 			"weightUpdateParam.decay_mult" : 1.0,
 			"biasUpdateParam.lr_mult" : 2.0,
@@ -772,8 +767,8 @@
 			"filterDim.cols" : 3,
 			"filterDim.channels" : 128,
 			"filterDim.filters" : 256,
-			"filterDim.pad" : 1,
-			"filterDim.stride" : 2,
+			"filterDim.pad" : 0,
+			"filterDim.stride" : 1,
 			"weightUpdateParam.lr_mult" : 1.0,
 			"weightUpdateParam.decay_mult" : 1.0,
 			"biasUpdateParam.lr_mult" : 2.0,
@@ -789,64 +784,6 @@
 			"id" : 510,
 			"input" : ["conv9_2"],
 			"output" : ["conv9_2"]
-		},
-		
-		{
-			"name" : "conv10_1",
-			"layer" : "Conv",
-			"id" : 511,
-			"input" : ["conv9_2"],
-			"output" : ["conv10_1"],
-			"filterDim.rows" : 1,
-			"filterDim.cols" : 1,
-			"filterDim.channels" : 256,
-			"filterDim.filters" : 128,
-			"filterDim.pad" : 0,
-			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1.0,
-			"weightUpdateParam.decay_mult" : 1.0,
-			"biasUpdateParam.lr_mult" : 2.0,
-			"biasUpdateParam.decay_mult" : 0.0,
-			"weightFiller.type" : "Xavier",
-			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.0
-		},
-
-		{
-			"name" : "conv10_1_relu",
-			"layer" : "Relu",
-			"id" : 512,
-			"input" : ["conv10_1"],
-			"output" : ["conv10_1"]
-		},
-
-		{
-			"name" : "conv10_2",
-			"layer" : "Conv",
-			"id" : 513,
-			"input" : ["conv10_1"],
-			"output" : ["conv10_2"],
-			"filterDim.rows" : 4,
-			"filterDim.cols" : 4,
-			"filterDim.channels" : 128,
-			"filterDim.filters" : 256,
-			"filterDim.pad" : 1,
-			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1.0,
-			"weightUpdateParam.decay_mult" : 1.0,
-			"biasUpdateParam.lr_mult" : 2.0,
-			"biasUpdateParam.decay_mult" : 0.0,
-			"weightFiller.type" : "Xavier",
-			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.0
-		},
-
-		{
-			"name" : "conv10_2_relu",
-			"layer" : "Relu",
-			"id" : 514,
-			"input" : ["conv10_2"],
-			"output" : ["conv10_2"]
 		},
 		
 		{
@@ -947,8 +884,8 @@
 			"id" : 590,
 			"input" : ["conv4_3_norm", "data"],
 			"output" : ["conv4_3_norm_mbox_priorbox"],
-			"minSize" : [35.8400001526],
-			"maxSize" : [76.8000030518],
+			"minSize" : [30.0],
+			"maxSize" : [60.0],
 			"aspectRatio" : [2.0],
 			"flip" : true,
 			"clip" : false,
@@ -1055,8 +992,8 @@
 			"id" : 660,
 			"input" : ["fc7", "data"],
 			"output" : ["fc7_mbox_priorbox"],
-			"minSize" : [76.8000030518],
-			"maxSize" : [153.600006104],
+			"minSize" : [60.0],
+			"maxSize" : [111.0],
 			"aspectRatio" : [2.0, 3.0],
 			"flip" : true,
 			"clip" : false,
@@ -1158,8 +1095,8 @@
 			"id" : 740,
 			"input" : ["conv6_2", "data"],
 			"output" : ["conv6_2_mbox_priorbox"],
-			"minSize" : [153.600006104],
-			"maxSize" : [230.399993896],
+			"minSize" : [111.0],
+			"maxSize" : [162.0],
 			"aspectRatio" : [2.0, 3.0],
 			"flip" : true,
 			"clip" : false,
@@ -1257,8 +1194,8 @@
 			"id" : 810,
 			"input" : ["conv7_2", "data"],
 			"output" : ["conv7_2_mbox_priorbox"],
-			"minSize" : [230.399993896],
-			"maxSize" : [307.200012207],
+			"minSize" : [162.0],
+			"maxSize" : [213.0],
 			"aspectRatio" : [2.0, 3.0],
 			"flip" : true,
 			"clip" : false,
@@ -1288,7 +1225,7 @@
 			"filterDim.rows" : 3,
 			"filterDim.cols" : 3,
 			"filterDim.channels" : 256,
-			"filterDim.filters" : 24,
+			"filterDim.filters" : 16,
 			"filterDim.pad" : 1,
 			"filterDim.stride" : 1,
 			"weightUpdateParam.lr_mult" : 1.0,
@@ -1329,7 +1266,7 @@
 			"filterDim.rows" : 3,
 			"filterDim.cols" : 3,
 			"filterDim.channels" : 256,
-			"filterDim.filters" : 126,
+			"filterDim.filters" : 84,
 			"filterDim.pad" : 1,
 			"filterDim.stride" : 1,
 			"weightUpdateParam.lr_mult" : 1.0,
@@ -1365,13 +1302,13 @@
 			"id" : 880,
 			"input" : ["conv8_2", "data"],
 			"output" : ["conv8_2_mbox_priorbox"],
-			"minSize" : [307.200012207],
-			"maxSize" : [384.0],
-			"aspectRatio" : [2.0, 3.0],
+			"minSize" : [213.0],
+			"maxSize" : [264.0],
+			"aspectRatio" : [2.0],
 			"flip" : true,
 			"clip" : false,
 			"variance" : [0.1, 0.1, 0.2, 0.2],
-			"step" : 128.0,
+			"step" : 100.0,
 			"offset" : 0.5
 		},
 		
@@ -1481,115 +1418,21 @@
 			"id" : 950,
 			"input" : ["conv9_2", "data"],
 			"output" : ["conv9_2_mbox_priorbox"],
-			"minSize" : [384.0],
-			"maxSize" : [460.799987793],
+			"minSize" : [264.0],
+			"maxSize" : [315.0],
 			"aspectRatio" : [2.0],
 			"flip" : true,
 			"clip" : false,
 			"variance" : [0.1, 0.1, 0.2, 0.2],
-			"step" : 256.0,
+			"step" : 300.0,
 			"offset" : 0.5
 		},
 				
-		{
-			"name" : "conv10_2_mbox_loc",
-			"layer" : "Conv",
-			"id" : 951,
-			"input" : ["conv10_2"],
-			"output" : ["conv10_2_mbox_loc"],
-			"filterDim.rows" : 3,
-			"filterDim.cols" : 3,
-			"filterDim.channels" : 256,
-			"filterDim.filters" : 16,
-			"filterDim.pad" : 1,
-			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1.0,
-			"weightUpdateParam.decay_mult" : 1.0,
-			"biasUpdateParam.lr_mult" : 2.0,
-			"biasUpdateParam.decay_mult" : 0.0,
-			"weightFiller.type" : "Xavier",
-			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.0
-		},
-		
-		{
-			"name" : "conv10_2_mbox_loc_perm",
-			"layer" : "Permute",
-			"id" : 952,
-			"input" : ["conv10_2_mbox_loc"],
-			"output" : ["conv10_2_mbox_loc_perm"],
-			"order" : [0, 2, 3, 1]
-		},
-		
-		{
-			"name" : "conv10_2_mbox_loc_flat",
-			"layer" : "Flatten",
-			"id" : 953,
-			"input" : ["conv10_2_mbox_loc_perm"],
-			"output" : ["conv10_2_mbox_loc_flat"],
-			"axis" : 1
-		},
-				
-		{
-			"name" : "conv10_2_mbox_conf",
-			"layer" : "Conv",
-			"id" : 954,
-			"input" : ["conv10_2"],
-			"output" : ["conv10_2_mbox_conf"],
-			"filterDim.rows" : 3,
-			"filterDim.cols" : 3,
-			"filterDim.channels" : 256,
-			"filterDim.filters" : 84,
-			"filterDim.pad" : 1,
-			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1.0,
-			"weightUpdateParam.decay_mult" : 1.0,
-			"biasUpdateParam.lr_mult" : 2.0,
-			"biasUpdateParam.decay_mult" : 0.0,
-			"weightFiller.type" : "Xavier",
-			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.0
-		},
-		
-		{
-			"name" : "conv10_2_mbox_conf_perm",
-			"layer" : "Permute",
-			"id" : 955,
-			"input" : ["conv10_2_mbox_conf"],
-			"output" : ["conv10_2_mbox_conf_perm"],
-			"order" : [0, 2, 3, 1]
-		},
-		
-		{
-			"name" : "conv10_2_mbox_conf_flat",
-			"layer" : "Flatten",
-			"id" : 956,
-			"input" : ["conv10_2_mbox_conf_perm"],
-			"output" : ["conv10_2_mbox_conf_flat"],
-			"axis" : 1
-		},
-				
-		{
-			"name" : "conv10_2_mbox_priorbox",
-			"layer" : "PriorBox",
-			"id" : 957,
-			"input" : ["conv10_2", "data"],
-			"output" : ["conv10_2_mbox_priorbox"],
-			"minSize" : [460.799987793],
-			"maxSize" : [537.599975586],
-			"aspectRatio" : [2.0],
-			"flip" : true,
-			"clip" : false,
-			"variance" : [0.1, 0.1, 0.2, 0.2],
-			"step" : 512.0,
-			"offset" : 0.5
-		},
-
 		{
 			"name" : "mbox_loc",
 			"layer" : "Concat",
 			"id" : 960,
-			"input" : ["conv4_3_norm_mbox_loc_flat", "fc7_mbox_loc_flat", "conv6_2_mbox_loc_flat", "conv7_2_mbox_loc_flat", "conv8_2_mbox_loc_flat", "conv9_2_mbox_loc_flat", "conv10_2_mbox_loc_flat"],
+			"input" : ["conv4_3_norm_mbox_loc_flat", "fc7_mbox_loc_flat", "conv6_2_mbox_loc_flat", "conv7_2_mbox_loc_flat", "conv8_2_mbox_loc_flat", "conv9_2_mbox_loc_flat"],
 			"output" : ["mbox_loc"],
 			"axis" : 1
 		},
@@ -1598,7 +1441,7 @@
 			"name" : "mbox_conf",
 			"layer" : "Concat",
 			"id" : 970,
-			"input" : ["conv4_3_norm_mbox_conf_flat", "fc7_mbox_conf_flat", "conv6_2_mbox_conf_flat", "conv7_2_mbox_conf_flat", "conv8_2_mbox_conf_flat", "conv9_2_mbox_conf_flat", "conv10_2_mbox_conf_flat"],
+			"input" : ["conv4_3_norm_mbox_conf_flat", "fc7_mbox_conf_flat", "conv6_2_mbox_conf_flat", "conv7_2_mbox_conf_flat", "conv8_2_mbox_conf_flat", "conv9_2_mbox_conf_flat"],
 			"output" : ["mbox_conf"],
 			"axis" : 1
 		},
@@ -1607,11 +1450,11 @@
 			"name" : "mbox_priorbox",
 			"layer" : "Concat",
 			"id" : 980,
-			"input" : ["conv4_3_norm_mbox_priorbox", "fc7_mbox_priorbox", "conv6_2_mbox_priorbox", "conv7_2_mbox_priorbox", "conv8_2_mbox_priorbox", "conv9_2_mbox_priorbox", "conv10_2_mbox_priorbox"],
+			"input" : ["conv4_3_norm_mbox_priorbox", "fc7_mbox_priorbox", "conv6_2_mbox_priorbox", "conv7_2_mbox_priorbox", "conv8_2_mbox_priorbox", "conv9_2_mbox_priorbox"],
 			"output" : ["mbox_priorbox"],
 			"axis" : 1
 		},		
-		
+
 		{
 			"name" : "mbox_conf_reshape",
 			"layer" : "Reshape",
@@ -1650,7 +1493,7 @@
 			"backgroundLabelId" : 0,
 			"nmsParam.nmsThreshold" : 0.45,
 			"nmsParam.topK" : 400,
-			"saveOutputParam.outputDirectory" : "$(SOOOA_HOME)/results/ssd/results_512",
+			"saveOutputParam.outputDirectory" : "$(SOOOA_HOME)/results/ssd/results",
 			"saveOutputParam.outputNamePrefix" : "comp4_det_test_",
 			"saveOutputParam.outputFormat" : "VOC",
 			"saveOutputParam.labelMapFile" : "$(SOOOA_HOME)/data/VOC0712/labelmap_voc.prototxt",
@@ -1664,10 +1507,10 @@
 
 	"configs" :
 	{
-		"batchSize" : 8,
+		"batchSize" : 1,
 		"epochs" : 1, 
 		"status" : "Test",
-		"loadPath" : "$(SOOOA_HOME)/param/VGG_VOC0712_SSD_512x512_iter_120000.param"
+		"loadPath" : "$(SOOOA_HOME)/param/.param"
 	}
 
 }

@@ -1,6 +1,10 @@
+#include <boost/math/special_functions/next.hpp>
+#include <boost/random.hpp>
+
 #include "MathFunctions.h"
 #include "SysLog.h"
 #include "Cuda.h"
+#include "RNG.h"
 
 template <typename Dtype>
 void soooa_set(const int N, const Dtype alpha, Dtype* Y) {
@@ -497,6 +501,97 @@ template void soooa_gpu_interp2_backward<float, false>(const int channels, float
 		const int height1, const int width1, const int Height1, const int Width1,
 		const float* data2, const int x2, const int y2, const int height2, const int width2,
 		const int Height2, const int Width2);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+unsigned int soooa_rng_rand() {
+#if 1
+	//int result = (*soooa_rng())();
+	//std::cout << "soooa_rng_rand(): " << result << std::endl;
+	//return result;
+	return (*soooa_rng())();;
+#else
+	return 2;
+#endif
+}
+
+
+template <typename Dtype>
+Dtype soooa_nextafter(const Dtype b) {
+	return boost::math::nextafter<Dtype>(b, std::numeric_limits<Dtype>::max());
+}
+
+template float soooa_nextafter(const float b);
+
+
+template <typename Dtype>
+void soooa_rng_uniform(const int n, const Dtype a, const Dtype b, Dtype* r) {
+	SASSERT0(n >= 0);
+	SASSERT0(r);
+	SASSERT0(a <= b);
+
+#if 1
+	// XXX: work around ...
+	// release mode에서 soooa_nextafter가 제대로 작동하지 않음,
+	// a == 0, b == 0 케이스에서 soooa_nextafter(b) 역시 0이 나옴.
+	if (a == b) {
+		for (int i = 0; i < n; i++) {
+			r[i] = a;
+		}
+	} else {
+		boost::uniform_real<Dtype> random_distribution(a, soooa_nextafter<Dtype>(b));
+		boost::variate_generator<rng_t*, boost::uniform_real<Dtype>> variate_generator(
+				soooa_rng(), random_distribution);
+
+		for (int i = 0; i < n; i++) {
+			r[i] = variate_generator();
+		}
+	}
+	/*
+	std::cout << "soooa_rng_uniform(): a=" << a << ", b=" << b << ": ";
+	for (int i = 0; i < n; i++) {
+		std::cout << r[i] << ",";
+	}
+	std::cout << std::endl;
+	*/
+
+#else
+	for (int i = 0; i < n; i++) {
+		r[i] = a + (b - a) * 1.f / 3.f;
+	}
+#endif
+}
+
+template void soooa_rng_uniform(const int n, const float a, const float b, float* r);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

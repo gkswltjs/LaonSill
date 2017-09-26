@@ -10,7 +10,6 @@
 
 #include "DetectionOutputLayer.h"
 #include "BBoxUtil.h"
-#include "DataTransformer.h"
 #include "MathFunctions.h"
 #include "StdOutLog.h"
 #include "SysLog.h"

@@ -38,7 +38,8 @@ const float COMPARE_ERROR 		= 1.0e-7;
 
 enum DataType {
 	DATA,
-	GRAD
+	GRAD,
+	DATA_GRAD
 };
 
 enum DataEndType {
@@ -70,7 +71,7 @@ void fillLayerDataVec(const std::vector<std::string>& dataNameVec,
 
 
 void printNpzFiles(cnpy::npz_t& cnpy_npz);
-void printData(std::vector<Data<float>*>& dataVec);
+void printData(std::vector<Data<float>*>& dataVec, DataType dataType = DataType::DATA_GRAD);
 
 void printConfigOn();
 void printConfigOff();

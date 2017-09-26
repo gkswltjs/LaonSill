@@ -536,16 +536,18 @@ void convertAnnoSetTest(int argc, char** argv) {
 	int		FLAGS_min_dim = 0;
 	int		FLAGS_max_dim = 0;
 
-	const string argv1 = "/home/jkim/Dev/SOOOA_HOME/data/VOCdevkit2007/"; // base path
-	const string argv2 = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt.s"; // dataset ... (trainval.txt, ...)
+	const string argv1 = "/home/jkim/Dev/git/caffe_ssd/data/VOCdevkit/"; // base path
+	const string argv2 = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/trainval.txt"; // dataset ... (trainval.txt, ...)
 	const string argv3 = "/home/jkim/Dev/SOOOA_HOME/data/sdf/voc2007_train_sdf/";		// sdf path
+	//const string argv2 = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/test.txt"; // dataset ... (trainval.txt, ...)
+	//const string argv3 = "/home/jkim/Dev/SOOOA_HOME/data/sdf/voc2007_test_sdf/";		// sdf path
 
 	const bool is_color = !FLAGS_gray;
 	const bool check_size = FLAGS_check_size;
 	const bool encoded = FLAGS_encoded;
 	const string encode_type = FLAGS_encode_type;
 	const string anno_type = FLAGS_anno_type;
-	//AnnotatedDatum_AnnotationType type;
+	AnnotationType type;
 	const string label_type = FLAGS_label_type;
 	const string label_map_file = FLAGS_label_map_file;
 	const bool check_label = FLAGS_check_label;
@@ -559,6 +561,7 @@ void convertAnnoSetTest(int argc, char** argv) {
 	int label;
 	string labelname;
 	SASSERT(anno_type == "detection", "only anno_type 'detection' is supported.");
+	type = AnnotationType::BBOX;
 	LabelMap<float> label_map(label_map_file);
 	label_map.build();
 
@@ -615,12 +618,10 @@ void convertAnnoSetTest(int argc, char** argv) {
 		filename = root_folder + lines[line_id].first;
 		labelname = root_folder + boost::get<string>(lines[line_id].second);
 		status = ReadRichImageToAnnotatedDatum(filename, labelname, resize_height,
-				resize_width, min_dim, max_dim, is_color, enc, label_type,
+				resize_width, min_dim, max_dim, is_color, enc, type, label_type,
 				label_map.labelToIndMap, &anno_datum);
-
-
-		anno_datum.print();
-
+		anno_datum.type = AnnotationType::BBOX;
+		//anno_datum.print();
 
 		if (status == false) {
 			cout << "Failed to read " << lines[line_id].first << endl;

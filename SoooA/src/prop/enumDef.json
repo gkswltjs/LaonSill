@@ -34,7 +34,7 @@
 
     {
         "NAME" : "MatchType",
-        "ENUM" : ["BIPARTITE", "PER_PREDICTION"]
+        "ENUM" : ["MATCH_NONE", "BIPARTITE", "PER_PREDICTION"]
     },
 
     {
@@ -44,22 +44,22 @@
 
     {
         "NAME" : "CodeType",
-        "ENUM" : ["CORNER", "CENTER_SIZE", "CORNER_SIZE"]
+        "ENUM" : ["CODE_NONE", "CORNER", "CENTER_SIZE", "CORNER_SIZE"]
     },
 
     {
         "NAME" : "ResizeMode",
-        "ENUM" : ["WARP", "FIT_SMALL_SIZE", "FIT_LARGE_SIZE_AND_PAD"]
+        "ENUM" : ["RESIZE_NONE", "WARP", "FIT_SMALL_SIZE", "FIT_LARGE_SIZE_AND_PAD"]
     },
 
     {
         "NAME" : "PadMode",
-        "ENUM" : ["CONSTANT", "MIRRORED", "REPEAT_NEAREST"]
+        "ENUM" : ["PAD_NONE", "CONSTANT", "MIRRORED", "REPEAT_NEAREST"]
     },
 
     {
         "NAME" : "InterpMode",
-        "ENUM" : ["LINEAR", "AREA", "NEAREST", "CUBIC", "LANCZOS4"]
+        "ENUM" : ["INTERP_NONE", "LINEAR", "AREA", "NEAREST", "CUBIC", "LANCZOS4"]
     },
 
     {
@@ -68,8 +68,18 @@
     },
 
     {
+        "NAME" : "EmitType",
+        "ENUM" : ["EMIT_NONE", "CENTER", "MIN_OVERLAP"]
+    },
+
+    {
         "NAME" : "PoolingType",
         "ENUM" : ["NoPooling", "Max", "Avg"]
+    },
+
+    {
+        "NAME" : "AnnotationType",
+        "ENUM" : ["ANNO_NONE", "BBOX"]
     },
 
     {
@@ -91,6 +101,7 @@
         "NAME" : "NetworkStatus",
         "ENUM" : ["Train", "Test"]
     }
+
 ]
 
 }

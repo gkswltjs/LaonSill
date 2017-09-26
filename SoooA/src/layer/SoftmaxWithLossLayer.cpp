@@ -138,9 +138,9 @@ void SoftmaxWithLossLayer<Dtype>::reshape() {
 			this->outerNum = this->_inputData[0]->getCountByAxis(0, softmaxAxis);
 			this->innerNum = this->_inputData[0]->getCountByAxis(softmaxAxis+1);
 
-			this->_inputData[0]->print_shape();
-			this->_inputData[1]->print_shape();
-			cout << "softmaxAxis=" << softmaxAxis << endl;
+			//this->_inputData[0]->print_shape();
+			//this->_inputData[1]->print_shape();
+			//cout << "softmaxAxis=" << softmaxAxis << endl;
 
 			SASSERT(this->outerNum*this->innerNum == this->_inputData[1]->getCount(),
 					"Number of labels must match number of predictions ... : %d - %d",

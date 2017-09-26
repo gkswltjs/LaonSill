@@ -104,4 +104,37 @@ void soooa_gpu_interp2_backward(const int channels, Dtype* data1, const int x1, 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+unsigned int soooa_rng_rand();
+
+template <typename Dtype>
+Dtype soooa_nextafter(const Dtype b);
+
+
+template <typename Dtype>
+void soooa_rng_uniform(const int n, const Dtype a, const Dtype b, Dtype* r);
+
+
+
+
+
+
+
+
 #endif /* SOOOA_MATHFUNCTIONS_H_ */

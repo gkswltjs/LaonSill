@@ -15,6 +15,7 @@
 #include "Data.h"
 #include "Datum.h"
 #include "EnumDef.h"
+#include "LayerPropParam.h"
 
 typedef std::map<int, std::vector<NormalizedBBox>> LabelBBox;
 
@@ -162,6 +163,9 @@ void ApplyNMSFast(const Dtype* bboxes, const Dtype* scores, const int num,
 		const float scoreThreshold, const float nmsThreshold, const float eta,
 		const int topK, std::vector<int>* indices);
 
+void ScaleBBox(const NormalizedBBox& bbox, const int height, const int width,
+		NormalizedBBox* scaleBBox);
+
 void OutputBBox(const NormalizedBBox& bbox, const std::pair<int, int>& imgSize,
 		const bool hasResize, NormalizedBBox* outBBox);
 
@@ -188,6 +192,26 @@ template <typename Dtype>
 void PermuteDataGPU(const int nthreads,
 		const Dtype* data, const int numClasses, const int numData,
 		const int numDim, Dtype* newData);
+
+
+bool MeetEmitConstraint(const NormalizedBBox& srcBBox, const NormalizedBBox& bbox,
+		const EmitConstraint& emitConstraint);
+
+// Compute the coverage of bbox1 by bbox2.
+float BBoxCoverage(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2);
+
+// Project bbox onto the coordinate system defined by srcBBox.
+bool ProjectBBox(const NormalizedBBox& srcBBox, const NormalizedBBox& bbox,
+		NormalizedBBox* projBBox);
+
+// Locate bbox in the coordinate system defined by srcBBox.
+void LocateBBox(const NormalizedBBox& srcBBox, const NormalizedBBox& bbox,
+		NormalizedBBox* locBBox);
+
+// Extrapolate the transformed bbox if heightScale and widthScale is
+// explicitly provided, and it is only effective for FIT_SMALL_SIZE case.
+void ExtrapolateBBox(const ResizeParam& param, const int height, const int width,
+		const NormalizedBBox& cropBBox, NormalizedBBox* bbox);
 
 
 

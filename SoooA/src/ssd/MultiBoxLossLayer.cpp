@@ -169,9 +169,9 @@ void MultiBoxLossLayer<Dtype>::reshape() {
 	this->numPriors = this->_inputData[2]->channels() / 4;
 	this->numGt = this->_inputData[3]->height();
 
-	cout << "num=" << this->num << ", numPriors=" << this->numPriors <<
-			", numGt=" << this->numGt << ", locClasses=" << this->locClasses << endl;
-	cout << "channel0=" << this->_inputData[0]->channels() << ", channel1=" << this->_inputData[1]->channels() << endl;
+	//cout << "num=" << this->num << ", numPriors=" << this->numPriors <<
+	//		", numGt=" << this->numGt << ", locClasses=" << this->locClasses << endl;
+	//cout << "channel0=" << this->_inputData[0]->channels() << ", channel1=" << this->_inputData[1]->channels() << endl;
 
 	SASSERT0(this->_inputData[0]->batches() == this->_inputData[1]->batches());
 	SASSERT(this->numPriors * this->locClasses * 4 == this->_inputData[0]->channels(),
@@ -524,11 +524,6 @@ void MultiBoxLossLayer<Dtype>::backpropagation() {
 			*/
 			this->locLossLayer->backpropagation();
 			//InnerLayerFunc::runBackward(0);
-
-
-			this->_printOn();
-			this->locPred.print_grad({}, false, -1);
-			this->_printOff();
 
 
 			// Scale gradient.

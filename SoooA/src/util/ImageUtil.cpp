@@ -12,11 +12,13 @@
 #include <string>
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include "SysLog.h"
 #include "Param.h"
 #include "ImageUtil.h"
 #include "FileMgmt.h"
+#include "IO.h"
 
 using namespace std;
 
@@ -101,6 +103,19 @@ void ImageUtil<Dtype>::saveImage(const Dtype* data, int imageCount, int channel,
         cv::Mat newImage = makeImage(data, i, channel, row, col);
         cv::imwrite(filePath, newImage);
     }
+}
+
+template <typename Dtype>
+void ImageUtil<Dtype>::dispDatum(const Datum* datum, const string& windowName) {
+	cv::Mat cv_temp = DecodeDatumToCVMat(datum, true, true);
+	dispCVMat(cv_temp, windowName);
+}
+
+template <typename Dtype>
+void ImageUtil<Dtype>::dispCVMat(const cv::Mat& cv_img, const string& windowName) {
+	cv::imshow(windowName, cv_img);
+	cv::waitKey(0);
+	cv::destroyWindow(windowName);
 }
 
 template class ImageUtil<float>;
