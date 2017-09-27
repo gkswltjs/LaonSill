@@ -17,8 +17,6 @@
 #include "Updater.h"
 #include "Donator.h"
 
-//#define USE_OLD_CUDNN       1
-
 #define CONVLAYER_LOG 0
 
 using namespace std;
@@ -121,18 +119,7 @@ ConvLayer<Dtype>::ConvLayer()
 			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
 			filterDim.channels, filterDim.filters, filterDim.rows, filterDim.cols));
 	}
-/*
-	//int pad = (filterDim.rows-1)/2;
-	checkCUDNN(cudnnSetConvolution2dDescriptor(this->convDesc,
-			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride,
-			filterDim.dilation, filterDim.dilation,
-			CUDNN_CROSS_CORRELATION
-#if USE_OLD_CUDNN
-            )); 
-#else
-			,CUDNN_DATA_FLOAT));
-#endif
-*/
+
 	//int pad = (filterDim.rows-1)/2;
 	cudnnStatus_t status = cudnnSetConvolution2dDescriptor(this->convDesc,
 			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride,
