@@ -87,6 +87,7 @@ public:
 		FrcnnTestLiveOutput,
 
 		AnnotationData,
+		AnnotatedData,
 		Normalize,
 		Permute,
 		Flatten,
@@ -111,7 +112,7 @@ public:
         Silence,
 
         Recall,
-
+        DummyLoss,
 
         LayerTypeMax
 	};

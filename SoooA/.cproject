@@ -3,7 +3,9 @@
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085" moduleId="org.eclipse.cdt.core.settings" name="Debug">
-				<externalSettings/>
+				<externalSettings>
+					<externalSetting/>
+				</externalSettings>
 				<extensions>
 					<extension id="com.nvidia.cuda.ide.cubin" point="org.eclipse.cdt.core.BinaryParser"/>
 					<extension id="com.nvidia.cuda.ide.elf" point="org.eclipse.cdt.core.BinaryParser"/>
@@ -66,13 +68,11 @@
 								<option id="nvcc.compiler.pic.955261046" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic" value="false" valueType="boolean"/>
 								<option id="nvcc.compiler.def.symbols.1696293936" name="Defined symbols (-D)" superClass="nvcc.compiler.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="SERVER_MODE"/>
-									<listOptionValue builtIn="false" value="GPU_MODE"/>
 									<listOptionValue builtIn="false" value="DEBUG_MODE"/>
+									<listOptionValue builtIn="false" value="GPU_MODE"/>
 								</option>
 								<option id="nvcc.compiler.cpp11option.1928186217" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.compileroptions.912732271" name="Preprocessor options (-Xcompiler)" superClass="nvcc.compiler.compileroptions" valueType="stringList">
-									<listOptionValue builtIn="false" value=" -Wno-format-zero-length "/>
-								</option>
+								<option id="nvcc.compiler.compileroptions.912732271" name="Preprocessor options (-Xcompiler)" superClass="nvcc.compiler.compileroptions"/>
 								<option id="nvcc.compiler.include.files.937686794" name="Include files (-include)" superClass="nvcc.compiler.include.files"/>
 								<option id="nvcc.compiler.option.lineinfo.1299945390" name="Generate line-number information for device code (-lineinfo)" superClass="nvcc.compiler.option.lineinfo" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.1584389715" superClass="nvcc.compiler.input.cu"/>
@@ -94,6 +94,7 @@
 									<listOptionValue builtIn="false" value="boost_filesystem"/>
 									<listOptionValue builtIn="false" value="boost_iostreams"/>
 									<listOptionValue builtIn="false" value="boost_serialization"/>
+									<listOptionValue builtIn="false" value="boost_thread"/>
 									<listOptionValue builtIn="false" value="X11"/>
 									<listOptionValue builtIn="false" value="rt"/>
 									<listOptionValue builtIn="false" value="blas"/>
@@ -108,6 +109,7 @@
 								</option>
 								<option id="nvcc.linker.option.userobjs.1619692125" name="Other objects" superClass="nvcc.linker.option.userobjs"/>
 								<option id="nvcc.linker.option.shared.1806519933" name="Shared (-shared)" superClass="nvcc.linker.option.shared" value="false" valueType="boolean"/>
+								<option id="nvcc.linker.option.cudart.35658833" name="CUDA Runtime Library:" superClass="nvcc.linker.option.cudart" value="nvcc.linker.option.cudart.static" valueType="enumerated"/>
 								<inputType id="nvcc.linker.input.2124344870" superClass="nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -136,7 +138,9 @@
 		</cconfiguration>
 		<cconfiguration id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251" moduleId="org.eclipse.cdt.core.settings" name="Release">
-				<externalSettings/>
+				<externalSettings>
+					<externalSetting/>
+				</externalSettings>
 				<extensions>
 					<extension id="com.nvidia.cuda.ide.cubin" point="org.eclipse.cdt.core.BinaryParser"/>
 					<extension id="com.nvidia.cuda.ide.elf" point="org.eclipse.cdt.core.BinaryParser"/>
@@ -193,8 +197,8 @@
 									<listOptionValue builtIn="false" value="${INC_PATH_CIMG}"/>
 									<listOptionValue builtIn="false" value="${INC_PATH_BLAS}"/>
 								</option>
-								<option id="nvcc.compiler.deviceDebug.108489364" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.option.level.1039857387" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level" value="true" valueType="boolean"/>
+								<option id="nvcc.compiler.deviceDebug.108489364" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug" value="false" valueType="boolean"/>
+								<option id="nvcc.compiler.option.level.1039857387" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level" value="false" valueType="boolean"/>
 								<option defaultValue="nvcc.compiler.optimization.level.none" id="nvcc.compiler.optimization.level.383940984" name="Optimization Level" superClass="nvcc.compiler.optimization.level" value="nvcc.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="nvcc.compiler.pic.184961637" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic"/>
 								<option id="nvcc.compiler.def.symbols.829168339" name="Defined symbols (-D)" superClass="nvcc.compiler.def.symbols" valueType="definedSymbols">
@@ -202,10 +206,14 @@
 									<listOptionValue builtIn="false" value="GPU_MODE"/>
 								</option>
 								<option id="nvcc.compiler.cpp11option.412480953" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.compileroptions.266105617" name="Preprocessor options (-Xcompiler)" superClass="nvcc.compiler.compileroptions" valueType="stringList">
-									<listOptionValue builtIn="false" value=" -Wno-format-zero-length "/>
-								</option>
-								<option id="nvcc.compiler.option.lineinfo.573382599" name="Generate line-number information for device code (-lineinfo)" superClass="nvcc.compiler.option.lineinfo" value="true" valueType="boolean"/>
+								<option id="nvcc.compiler.compileroptions.266105617" name="Preprocessor options (-Xcompiler)" superClass="nvcc.compiler.compileroptions"/>
+								<option id="nvcc.compiler.option.lineinfo.573382599" name="Generate line-number information for device code (-lineinfo)" superClass="nvcc.compiler.option.lineinfo" value="false" valueType="boolean"/>
+								<option id="nvcc.compiler.ftz.312539463" name="Flush denormal values to zero in single-precision FP operations (-ftz)" superClass="nvcc.compiler.ftz" value="false" valueType="boolean"/>
+								<option id="nvcc.compiler.optionsfile.583814847" name="Command line options file (-optf)" superClass="nvcc.compiler.optionsfile" value="" valueType="string"/>
+								<option id="nvcc.compiler.verbose.1543710995" name="Verbose (-v)" superClass="nvcc.compiler.verbose" value="false" valueType="boolean"/>
+								<option id="nvcc.compiler.precdiv.163373513" name="Use IEEE round-to-nearest mode for precision FP division (-prec-div)" superClass="nvcc.compiler.precdiv" value="true" valueType="boolean"/>
+								<option id="nvcc.compiler.precsqrt.134903105" name="Use IEEE round-to-nearest mode for precision FP sqrt (-prec-sqrt)" superClass="nvcc.compiler.precsqrt" value="true" valueType="boolean"/>
+								<option id="nvcc.compiler.fmad.238776752" name="Contract FP multiplies and adds/subtracts into FP multiply-add operations (-fmad)" superClass="nvcc.compiler.fmad" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.1645151746" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.2072575433" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.1548193653" superClass="nvcc.compiler.input.c"/>
@@ -213,18 +221,20 @@
 							<tool commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX} ${OUTPUT} ${INPUTS}" errorParsers="nvcc.errorParser;org.eclipse.cdt.core.GLDErrorParser" id="nvcc.linker.base.286585357" name="NVCC Linker" superClass="nvcc.linker.base">
 								<option id="nvcc.linker.option.libs.1290622429" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="cudart"/>
-									<listOptionValue builtIn="false" value="gpu_nms"/>
+									<listOptionValue builtIn="false" value="pthread"/>
 									<listOptionValue builtIn="false" value="python2.7"/>
 									<listOptionValue builtIn="false" value="opencv_core"/>
 									<listOptionValue builtIn="false" value="opencv_highgui"/>
 									<listOptionValue builtIn="false" value="opencv_imgproc"/>
 									<listOptionValue builtIn="false" value="z"/>
+									<listOptionValue builtIn="false" value="gpu_nms"/>
 									<listOptionValue builtIn="false" value="cublas"/>
 									<listOptionValue builtIn="false" value="cudnn"/>
 									<listOptionValue builtIn="false" value="boost_system"/>
 									<listOptionValue builtIn="false" value="boost_filesystem"/>
 									<listOptionValue builtIn="false" value="boost_iostreams"/>
 									<listOptionValue builtIn="false" value="boost_serialization"/>
+									<listOptionValue builtIn="false" value="boost_thread"/>
 									<listOptionValue builtIn="false" value="X11"/>
 									<listOptionValue builtIn="false" value="rt"/>
 									<listOptionValue builtIn="false" value="blas"/>
@@ -237,6 +247,7 @@
 									<listOptionValue builtIn="false" value="/home/jkim/Dev/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 								</option>
+								<option id="nvcc.linker.option.cudart.718427409" name="CUDA Runtime Library:" superClass="nvcc.linker.option.cudart" value="nvcc.linker.option.cudart.shared" valueType="enumerated"/>
 								<inputType id="nvcc.linker.input.1133214511" superClass="nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -559,17 +570,11 @@
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.debug.215061865;cdt.managedbuild.tool.gnu.cpp.compiler.input.602092895">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;cdt.managedbuild.tool.gnu.c.compiler.mingw.exe.debug.1479118279;cdt.managedbuild.tool.gnu.c.compiler.input.285345351">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.release.467933896;cdt.managedbuild.config.gnu.mingw.exe.release.467933896.;cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.434521137;cdt.managedbuild.tool.gnu.cpp.compiler.input.1412707538">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.;nvcc.compiler.base.698493937;nvcc.compiler.input.cpp.2072575433">
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278.;nvcc.compiler.base.1035527359;nvcc.compiler.input.cu.2075985056">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.release.467933896;cdt.managedbuild.config.gnu.mingw.exe.release.467933896.;cdt.managedbuild.tool.gnu.c.compiler.mingw.exe.release.1466500324;cdt.managedbuild.tool.gnu.c.compiler.input.305431018">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.;nvcc.compiler.base.698493937;nvcc.compiler.input.cu.1645151746">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
@@ -577,17 +582,32 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278.;nvcc.compiler.base.1035527359;nvcc.compiler.input.cpp.1070225711">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278.;nvcc.compiler.base.1035527359;nvcc.compiler.input.cu.2075985056">
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.;nvcc.compiler.base.698493937;nvcc.compiler.input.cpp.2072575433">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;nvcc.compiler.base.71694175;nvcc.compiler.input.cu.1584389715">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.1343419278.;nvcc.compiler.base.1035527359;nvcc.compiler.input.c.1078164640">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.;nvcc.compiler.base.698493937;nvcc.compiler.input.c.1548193653">
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;cdt.managedbuild.tool.gnu.c.compiler.mingw.exe.debug.1479118279;cdt.managedbuild.tool.gnu.c.compiler.input.285345351">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.debug.215061865;cdt.managedbuild.tool.gnu.cpp.compiler.input.602092895">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;nvcc.compiler.base.71694175;nvcc.compiler.input.c.1923731997">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.release.467933896;cdt.managedbuild.config.gnu.mingw.exe.release.467933896.;cdt.managedbuild.tool.gnu.c.compiler.mingw.exe.release.1466500324;cdt.managedbuild.tool.gnu.c.compiler.input.305431018">
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.release.467933896;cdt.managedbuild.config.gnu.mingw.exe.release.467933896.;cdt.managedbuild.tool.gnu.cpp.compiler.mingw.exe.release.434521137;cdt.managedbuild.tool.gnu.cpp.compiler.input.1412707538">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.;nvcc.compiler.base.71694175;nvcc.compiler.input.cpp.1999772657">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251;cdt.managedbuild.config.gnu.mingw.exe.debug.96749085.2027937251.;nvcc.compiler.base.698493937;nvcc.compiler.input.c.1548193653">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>

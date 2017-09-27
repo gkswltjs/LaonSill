@@ -18,7 +18,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
 
-
+#include "EnumDef.h"
 
 
 
@@ -58,6 +58,10 @@ public:
 
 	size_t getImgSize() const {
 		return this->channels * this->height * this->width;
+	}
+
+	bool hasLabel() {
+		return (this->label > 0);
 	}
 
 	void print() {
@@ -192,7 +196,12 @@ protected:
 
 class AnnotatedDatum : public Datum {
 public:
+	AnnotationType type;
 	std::vector<AnnotationGroup> annotation_groups;
+	AnnotatedDatum() {
+		this->type = AnnotationType::ANNO_NONE;
+		this->annotation_groups.clear();
+	}
 
 	AnnotationGroup* add_annotation_group() {
 		AnnotationGroup annotation_group;
@@ -202,6 +211,7 @@ public:
 
 	void print() {
 		Datum::print();
+		std::cout << "type: " << this->type << std::endl;
 		for (int i = 0; i < annotation_groups.size(); i++) {
 			annotation_groups[i].print();
 		}
@@ -212,6 +222,7 @@ protected:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version) {
 		Datum::serialize(ar, version);
+		ar & type;
 		ar & annotation_groups;
 	}
 };

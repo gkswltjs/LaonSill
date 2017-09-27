@@ -53,7 +53,14 @@ void buildNameDataMapFromNpzFile(const string& npz_path, const string& layer_nam
 	//cout << "layer_name has changed from " << layer_name << " to " << safe_layer_name << endl;
 
 	const string npz_file = npz_path + safe_layer_name + ".npz";
-	npz_t cnpy_npz = npz_load(npz_file);
+	npz_t cnpy_npz;
+	try {
+		cnpy_npz = npz_load(npz_file);
+	} catch (std::runtime_error e) {
+		//std::cout << e << std::endl;
+		cout << "failed to load " << npz_file << endl;
+		return;
+	}
 	//printNpzFiles(cnpy_npz);
 
 	for (npz_t::iterator itr = cnpy_npz.begin(); itr != cnpy_npz.end(); itr++) {
@@ -215,14 +222,22 @@ void printNpzFiles(npz_t& cnpy_npz) {
 }
 
 
-void printData(vector<Data<float>*>& dataVec) {
+void printData(vector<Data<float>*>& dataVec, DataType dataType) {
 	printConfigOn();
-
 	for (uint32_t i = 0; i < dataVec.size(); i++) {
-		dataVec[i]->print_data({}, false);
-		dataVec[i]->print_grad({}, false);
+		switch (dataType) {
+		case DATA:
+			dataVec[i]->print_data({}, false);
+			break;
+		case GRAD:
+			dataVec[i]->print_grad({}, false);
+			break;
+		case DATA_GRAD:
+			dataVec[i]->print_data({}, false);
+			dataVec[i]->print_grad({}, false);
+			break;
+		}
 	}
-
 	printConfigOff();
 }
 

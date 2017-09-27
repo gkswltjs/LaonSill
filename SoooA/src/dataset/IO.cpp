@@ -85,8 +85,9 @@ bool ReadImageToDatum(const string& filename, const vector<int>& label, const in
 
 bool ReadRichImageToAnnotatedDatum(const string& filename, const string& labelname,
 		const int height, const int width, const int min_dim, const int max_dim,
-		const bool is_color, const string& encoding, const string& labeltype,
-		const map<string, int>& name_to_label, AnnotatedDatum* anno_datum) {
+		const bool is_color, const string& encoding, const AnnotationType type,
+		const string& labeltype, const map<string, int>& name_to_label,
+		AnnotatedDatum* anno_datum) {
 	// Read image to datum.
 	bool status = ReadImageToDatum(filename, {-1}, height, width, min_dim, max_dim, true,
 			is_color, encoding, anno_datum);
@@ -98,15 +99,22 @@ bool ReadRichImageToAnnotatedDatum(const string& filename, const string& labelna
 	if (!boost::filesystem::exists(labelname)) {
 		return true;
 	}
-
-	int ori_height;
-	int ori_width;
-	GetImageSize(filename, &ori_height, &ori_width);
-	SASSERT(labeltype == "xml", "only label_type 'xml' is supported.");
-
-	return ReadXMLToAnnotatedDatum(labelname, ori_height, ori_width, name_to_label,
-			anno_datum);
-
+	switch (type) {
+	case BBOX:
+		int ori_height;
+		int ori_width;
+		GetImageSize(filename, &ori_height, &ori_width);
+		if (labeltype == "xml") {
+			return ReadXMLToAnnotatedDatum(labelname, ori_height, ori_width, name_to_label,
+					anno_datum);
+		} else {
+			SASSERT(false, "only label_type 'xml' is supported.");
+		}
+		break;
+	default:
+		SASSERT(false, "Unknown annotation type.");
+		return false;
+	}
 }
 
 
@@ -320,7 +328,9 @@ void ConvertCHWToHWC(const int channels, const int height, const int width, cons
 				//cout << "srcIdx: " << srcIdx << ", dstIdx: " << dstIdx << endl;
 				//dst[dstIdx] = static_cast<char>(src[srcIdx]);
 				//dst[dstIdx] = static_cast<char>(src[srcIdx++]);
-				dst[dstIdx] = src[srcIdx++];
+				Dtype value = src[srcIdx++];
+				dst[dstIdx] = value;
+				//dst[dstIdx] = src[srcIdx++];
 			}
 		}
 	}
@@ -343,53 +353,116 @@ void ConvertCHWDatumToHWC(const Datum* datum, uchar* dst) {
 }
 
 
+template <typename Dtype>
+cv::Mat ConvertCHWDataToHWCCV(Data<Dtype>* data, const int batchIdx) {
+	SASSERT0(batchIdx < data->batches());
+
+	const int channels = data->channels();
+	const int height = data->height();
+	const int width = data->width();
+	const Dtype* dataPtr = data->host_data() + data->offset(batchIdx);
+
+	const int numElems = channels * height * width;
+	uchar* src = (uchar *)malloc(numElems * sizeof(uchar));
+
+	for (int i = 0; i < numElems; i++) {
+		src[i] = (uchar)dataPtr[i];
+	}
+
+	int cv_type = channels == 1 ? CV_8U : CV_8UC3;
+	cv::Mat cv_img(height, width, cv_type);
+	uchar* dst = (uchar*)cv_img.data;
+
+	ConvertCHWToHWC<uchar>(channels, height, width, src, dst);
+	free(src);
+
+	return cv_img;
+}
+
+template cv::Mat ConvertCHWDataToHWCCV(Data<float>* data, const int batchIdx);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 cv::Mat DecodeDatumToCVMat(const Datum* datum, bool is_color, bool channel_separated) {
 	SASSERT0(datum->channels == 1 || datum->channels == 3);
 
-	int cv_type;
-	if (datum->channels == 3) {
-		cv_type = CV_8UC3;
-	} else if (datum->channels == 1) {
-		cv_type = CV_8U;
-	} else {
-		SASSERT0(false);
-	}
+	if (!datum->encoded) {
+		SASSERT(false, "UNTESTED FOR THIS CASE!!! CONSULT WITH JHKIM!!!");
 
-	uchar* ptr = NULL;
-	// bbb.../ggg.../rrr... to bgr,bgr,bgr...
-	if (channel_separated) {
-		ptr = (uchar*)malloc(datum->getImgSize() * sizeof(uchar));
-		//uchar* data = (uchar*)datum->data.c_str();
-		ConvertCHWDatumToHWC(datum, ptr);
+		int cv_type = datum->channels == 1 ? CV_8U : CV_8UC3;
+		cv::Mat cv_img(datum->height, datum->width, cv_type);
+		uchar* dst = (uchar*)cv_img.data;
+
+		//uchar* ptr = NULL;
+		// bbb.../ggg.../rrr... to bgr,bgr,bgr...
+		if (channel_separated) {
+			//ptr = (uchar*)malloc(datum->getImgSize() * sizeof(uchar));
+			//uchar* data = (uchar*)datum->data.c_str();
+			ConvertCHWDatumToHWC(datum, dst);
+		}
+
+		else {
+			uchar* src = (uchar*)datum->data.c_str();
+			for (int i = 0; i < datum->data.length(); i++) {
+				dst[i] = src[i];
+			}
+			//ptr = (uchar*)datum->data.c_str();
+		}
+		//cv::Mat cv_img(datum->height, datum->width, cv_type, ptr);
+
+		//if (channel_separated) free(ptr);
+		//if (!cv_img.data) {
+		//	cout << "Could not decode datum." << endl;
+		//}
+		return cv_img;
+	} else {
+		cv::Mat cv_img;
+		const string& data = datum->data;
+		std::vector<char> vec_data(data.c_str(), data.c_str() + data.size());
+		//int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR : CV_LOAD_IMAGE_GRAYSCALE);
+		//cv_img = cv::imdecode(vec_data, cv_read_flag);
+		// XXX: DecodeDatumToCVMatNative base로 구현해야 함.
+		cv_img = cv::imdecode(vec_data, -1);
+
+		if (!cv_img.data) {
+			cout << "Could not decode datum." << endl;
+		}
+		//cv::imwrite("/home/jkim/from_soooa.jpg", cv_img);
+		//PrintCVMatData(cv_img);
 
 		/*
-		for (int c = 0; c < channels; c++) {
-			for (int h = 0; h < height; h++) {
-				for (int w = 0; w < width; w++) {
-					int ptrIdx = h * width * channels + w * channels + c;
-					int dataIdx = c * height * width + h * width + w;
-					//cout << "ptrIdx: " << ptrIdx << ", dataIdx: " << dataIdx << endl;
-					ptr[ptrIdx] = data[dataIdx];
+		const int height = cv_img.rows;
+		const int width = cv_img.cols;
+		const int channels = cv_img.channels();
+		const uchar* ptr = (uchar*) cv_img.data;
+
+		int idx;
+		for (int h = 0; h < std::min(height, 3); h++) {
+			for (int w = 0; w < std::min(width, 3); w++) {
+				std::cout << "[";
+				for (int c = 0; c < channels; c++) {
+					idx = h * width * channels + w * channels + c;
+					std::cout << (int) ptr[idx] << ",";
 				}
+				std::cout << "],";
 			}
+			std::cout << std::endl;
 		}
 		*/
-
-	} else {
-		ptr = (uchar*)datum->data.c_str();
+		return cv_img;
 	}
-
-	//cv::Mat cv_img(datum->height, datum->width, cv_type, (uchar*)datum->data.c_str());
-	cv::Mat cv_img(datum->height, datum->width, cv_type, ptr);
-	if (channel_separated) {
-		free(ptr);
-	}
-
-	if (!cv_img.data) {
-		cout << "Could not decode datum." << endl;
-	}
-	return cv_img;
 }
 
 

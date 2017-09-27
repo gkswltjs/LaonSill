@@ -442,11 +442,6 @@ void ConvLayer<Dtype>::update() {
     this->updateParams[Filter].context = contextFilter;
     this->updateParams[Bias].context = contextBias;
 
-
-    if (SLPROP_BASE(name) == "conv1_1") {
-    	cout << "break" << endl;
-    }
-
     Updater::updateParams(this->updateParams);
 }
 

@@ -20,7 +20,7 @@
 
 using namespace std;
 
-#define EXAMPLE_SSD_TRAIN_NETWORK_FILEPATH	SPATH("examples/SSD/ssd_train.json")
+#define EXAMPLE_SSD_TRAIN_NETWORK_FILEPATH	SPATH("examples/SSD/ssd_300_train.json")
 
 template<typename Dtype>
 void SSD<Dtype>::run() {
@@ -31,13 +31,7 @@ void SSD<Dtype>::run() {
     for (int i = 0; i < 10000; i++) {
         cout << "epoch : " << i << endl;
         network->run(false);
-        //network->reset();
-        //cout << "rpn_loss_cls: " << network->findLayer("rpn_loss_cls")->_outputData[0]->host_data()[0] << endl;
-        //cout << "rpn_loss_bbox: " << network->findLayer("rpn_loss_bbox")->_outputData[0]->host_data()[0] << endl;
-        //cout << "loss_cls: " << network->findLayer("loss_cls")->_outputData[0]->host_data()[0] << endl;
-        //cout << "loss_bbox: " << network->findLayer("loss_bbox")->_outputData[0]->host_data()[0] << endl;
     }
-
 }
 
 

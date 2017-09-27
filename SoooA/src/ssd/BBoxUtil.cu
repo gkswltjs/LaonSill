@@ -297,10 +297,6 @@ void FindMatches(const std::vector<LabelBBox>& allLocPreds,
 
 
 			// for break point ...
-			if (i == 1) {
-				std::cout << "i == 1" << std::endl;
-			}
-
 			MatchBBox(gtBBoxes, priorBBoxes, label, matchType, overlapThreshold,
 					ignoreCrossBoundaryBBox, &tempMatchIndices, &tempMatchOverlaps);
 			// label == -1 케이스, 별도로 class별 처리를 하지 않음  
@@ -2288,6 +2284,139 @@ void PermuteDataGPU(const int nthreads,
 template void PermuteDataGPU(const int nthreads,
 		const float* data, const int numClasses, const int numData,
 		const int numDim, float* newData);
+
+
+// Project bbox onto the coordinate system defined by src_bbox.
+bool ProjectBBox(const NormalizedBBox& srcBBox, const NormalizedBBox& bbox,
+		NormalizedBBox* projBBox) {
+	if (bbox.xmin >= srcBBox.xmax || bbox.xmax <= srcBBox.xmin ||
+			bbox.ymin >= srcBBox.ymax || bbox.ymax <= srcBBox.ymin) {
+		return false;
+	}
+	float srcWidth = srcBBox.xmax - srcBBox.xmin;
+	float srcHeight = srcBBox.ymax - srcBBox.ymin;
+	projBBox->xmin = (bbox.xmin - srcBBox.xmin) / srcWidth;
+	projBBox->ymin = (bbox.ymin - srcBBox.ymin) / srcHeight;
+	projBBox->xmax = (bbox.xmax - srcBBox.xmin) / srcWidth;
+	projBBox->ymax = (bbox.ymax - srcBBox.ymin) / srcHeight;
+	projBBox->difficult = bbox.difficult;
+	ClipBBox(*projBBox, projBBox);
+	if (BBoxSize(*projBBox) > 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void LocateBBox(const NormalizedBBox& srcBBox, const NormalizedBBox& bbox,
+		NormalizedBBox* locBBox) {
+	float srcWidth = srcBBox.xmax - srcBBox.xmin;
+	float srcHeight = srcBBox.ymax - srcBBox.ymin;
+	locBBox->xmin = srcBBox.xmin + bbox.xmin * srcWidth;
+	locBBox->ymin = srcBBox.ymin + bbox.ymin * srcHeight;
+	locBBox->xmax = srcBBox.xmin + bbox.xmax * srcWidth;
+	locBBox->ymax = srcBBox.ymin + bbox.ymax * srcHeight;
+	locBBox->difficult = bbox.difficult;
+}
+
+float BBoxCoverage(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2) {
+	NormalizedBBox intersectBBox;
+	IntersectBBox(bbox1, bbox2, &intersectBBox);
+	float intersectSize = BBoxSize(intersectBBox);
+	if (intersectSize > 0) {
+		float bbox1Size = BBoxSize(bbox1);
+		return intersectSize / bbox1Size;
+	} else {
+		return 0.f;
+	}
+}
+
+bool MeetEmitConstraint(const NormalizedBBox& srcBBox, const NormalizedBBox& bbox,
+		const EmitConstraint& emitConstraint) {
+	EmitType emitType = emitConstraint.emitType;
+	if (emitType == EmitType::CENTER) {
+		float xcenter = (bbox.xmin + bbox.xmax) / 2;
+		float ycenter = (bbox.ymin + bbox.ymax) / 2;
+		if (xcenter >= srcBBox.xmin && xcenter <= srcBBox.xmax &&
+				ycenter >= srcBBox.ymin && ycenter <= srcBBox.ymax) {
+			return true;
+		} else {
+			return false;
+		}
+	} else if (emitType == EmitType::MIN_OVERLAP) {
+		float bboxCoverage = BBoxCoverage(bbox, srcBBox);
+		return bboxCoverage > emitConstraint.emitOverlap;
+	} else {
+		SASSERT(false, "Unknown emit type.");
+		return false;
+	}
+}
+
+void ExtrapolateBBox(const ResizeParam& param, const int height, const int width,
+		const NormalizedBBox& cropBBox, NormalizedBBox* bbox) {
+	float heightScale = param.heightScale;
+	float widthScale = param.widthScale;
+	if (heightScale > 0 && widthScale > 0 &&
+			param.resizeMode == ResizeMode::FIT_SMALL_SIZE) {
+		float origAspect = static_cast<float>(width) / height;
+		float resizeHeight = param.height;
+		float resizeWidth = param.width;
+		float resizeAspect = resizeWidth / resizeHeight;
+		if (origAspect < resizeAspect) {
+			resizeHeight = resizeWidth / origAspect;
+		} else {
+			resizeWidth = resizeHeight * origAspect;
+		}
+		float cropHeight = resizeHeight * (cropBBox.ymax - cropBBox.ymin);
+		float cropWidth = resizeWidth * (cropBBox.xmax - cropBBox.xmin);
+		SASSERT0(cropWidth >= widthScale);
+		SASSERT0(cropHeight >= heightScale);
+		bbox->xmin = bbox->xmin * cropWidth / widthScale;
+		bbox->xmax = bbox->xmax * cropWidth / widthScale;
+		bbox->ymin = bbox->ymin * cropHeight / heightScale;
+		bbox->ymax = bbox->ymax * cropHeight / heightScale;
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

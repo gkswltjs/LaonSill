@@ -13,6 +13,7 @@
 #include <map>
 
 #include "Datum.h"
+#include "Data.h"
 
 bool ReadImageToDatum(const std::string& filename, const std::vector<int>& label,
 		const int height, const int width, const int min_dim, const int max_dim,
@@ -21,8 +22,9 @@ bool ReadImageToDatum(const std::string& filename, const std::vector<int>& label
 
 bool ReadRichImageToAnnotatedDatum(const std::string& filename, const std::string& labelname,
 		const int height, const int width, const int min_dim, const int max_dim,
-		const bool is_color, const std::string& encoding, const std::string& labeltype,
-		const std::map<std::string, int>& name_to_label, AnnotatedDatum* anno_datum);
+		const bool is_color, const std::string& encoding, const AnnotationType type,
+		const std::string& labeltype, const std::map<std::string, int>& name_to_label,
+		AnnotatedDatum* anno_datum);
 
 /*
 bool ReadImageToDatum(const std::string& filename, const int label, const int height,
@@ -70,24 +72,57 @@ void CheckCVMatDepthWithDtype(const cv::Mat& im);
 template <typename Dtype>
 void ConvertHWCToCHW(const int channels, const int height, const int width, const Dtype* src,
 		Dtype* dst);
+
+
+/**
+ * HWC CVMat의 data를 Datum의 데이터 구조인 CHW로 변환
+ * CVMat으로부터 Datum으로 변환할 수 있다.
+ */
 template <typename Dtype>
 void ConvertHWCCVToCHW(const cv::Mat& im, Dtype* dst);
 
+/**
+ * HWC 구조의 데이터를 CHW 구조의 데이터로 변환
+ */
 template <typename Dtype>
 void ConvertHWCToHWC(const int channels, const int height, const int width, const Dtype* src,
 		Dtype* dst);
+
+/**
+ * HWC CVMat의 data를 HWC로 그대로 복사
+ */
 template <typename Dtype>
 void ConvertHWCCVToHWC(const cv::Mat& im, Dtype* dst);
+
+/**
+ * CHW 구조의 데이터를 HWC 구조의 데이터로 변환
+ */
 template <typename Dtype>
 void ConvertCHWToHWC(const int channels, const int height, const int width, const Dtype* src,
 		Dtype* dst);
+/**
+ * CHW Datum의 data를 CVMat의 데이터 구조인 HWC로 변환
+ * 변환 후, cv::Mat 생성자를 통해 cv::Mat 객체를 생성할 수 있다.
+ */
 void ConvertCHWDatumToHWC(const Datum* datum, uchar* dst);
+
+
+template <typename Dtype>
+cv::Mat ConvertCHWDataToHWCCV(Data<Dtype>* data, const int batchIdx);
+
+
+
+
+
 
 template <typename Dtype>
 void PrintImageData(const int channels, const int height, const int width, const Dtype* ptr,
 		bool hwc);
 void PrintCVMatData(const cv::Mat& mat);
 void PrintDatumData(const Datum* datum, bool hwc);
+
+
+
 
 
 #endif /* IO_H_ */
