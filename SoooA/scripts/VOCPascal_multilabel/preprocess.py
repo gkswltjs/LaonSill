@@ -5,8 +5,8 @@
 import os
 from shutil import copyfile
 
-sourceMetaFilePath="/data/VOCdevkit/VOCdevkit/pascal_voc.txt"
-targetMetaFilePath="/data/VOCdevkit/VOCdevkit/pascal_voc_multilabel_only.txt"
+sourceMetaFilePath="/data/VOCdevkit/pascal_voc.txt"
+targetMetaFilePath="/data/VOCdevkit/pascal_voc_multilabel_only.txt"
 
 def preprocess():
     keywords = []
