@@ -102,6 +102,9 @@ void SysLog::printStackTrace(FILE* fp) {
     // allocate string which will be filled with the demangled function name
     size_t funcnamesize = 256;
     char* funcname = (char*)malloc(funcnamesize);
+    char* syscom = (char*)malloc(funcnamesize);
+    char* buf = (char*)malloc(1024);
+    FILE* ptr;
 
     // iterate over the returned symbol lines. skip the first, it is the
     // address of this function.
@@ -136,9 +139,17 @@ void SysLog::printStackTrace(FILE* fp) {
                 funcname = ret; // use possibly realloc()-ed string
                 fprintf(fp, "  %s : %s+%s\n", symbollist[i], funcname, begin_offset);
             } else {
-                // demangling failed. Output function name as a C function with
+                // demangling failed. Oujtput function name as a C function with
                 // no arguments.
                 fprintf(fp, "  %s : %s()+%s\n", symbollist[i], begin_name, begin_offset);
+            }
+
+            sprintf(syscom, "addr2line %p -e %s", addrlist[i], symbollist[i]);
+            if ((ptr = popen(syscom, "r")) != NULL) {
+            	while (fgets(buf, funcnamesize, ptr) != NULL) {
+            		fprintf(fp, "  \t%s", buf);
+            	}
+            	pclose(ptr);
             }
         }
         else
@@ -148,6 +159,8 @@ void SysLog::printStackTrace(FILE* fp) {
         }
     }
 
+    free(buf);
+    free(syscom);
     free(funcname);
     free(symbollist);
 }

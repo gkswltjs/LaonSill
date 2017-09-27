@@ -54,6 +54,7 @@
 #include "ImTransforms.h"
 #include "AnnotatedDataLayer.h"
 
+#include <execinfo.h>
 
 
 
@@ -76,6 +77,7 @@ void dataTransformerTest();
 void imTransformTest();
 void readAnnoDataSetTest();
 void randTest(int argc, char** argv);
+void signalTest();
 
 void layerTest(int argc, char** argv);
 void layerTest2(int argc, char** argv);
@@ -242,8 +244,39 @@ void plainTest(int argc, char** argv) {
 	//dataTransformerTest();
 	//imTransformTest();
 	//annoDataReaderTest(argc, argv);
-	randTest(argc, argv);
+	//randTest(argc, argv);
+	//signalTest();
 }
+
+
+void signalTest() {
+	void *trace[16];
+	char **messages = (char **) NULL;
+	int i, trace_size = 0;
+
+	trace_size = backtrace(trace, 16);
+	/* overwrite sigaction with caller's address */
+	messages = backtrace_symbols(trace, trace_size);
+	/* skip first stack frame (points here) */
+	printf("[bt] Execution path:\n");
+	for (i = 1; i < trace_size; ++i) {
+		printf("[bt] #%d %s\n", i, messages[i]);
+
+		/* find first occurence of '(' or ' ' in message[i] and assume
+		 * everything before that is the file name. (Don't go beyond 0 though
+		 * (string terminator)*/
+		size_t p = 0;
+		while (messages[i][p] != '(' && messages[i][p] != ' '
+				&& messages[i][p] != 0)
+			++p;
+
+		char syscom[256];
+		sprintf(syscom, "addr2line %p -e %.*s", trace[i], p, messages[i]);
+		//last parameter is the file name of the symbol
+		system(syscom);
+	}
+}
+
 
 
 void randTest(int argc, char** argv) {

@@ -108,8 +108,8 @@ void SampleBBox(const Sampler& sampler, NormalizedBBox* sampledBBox) {
 	// Figure out bbox dimension.
 	// bboxWidth / bboxHeight = aspectRatio
 	// 특정 scale의 aspectRatio를 만족하는 bbox width / height 생성
-	float bboxWidth = scale * sqrt(aspectRatio);
-	float bboxHeight = scale / sqrt(aspectRatio);
+	float bboxWidth = std::min<float>(scale * sqrt(aspectRatio), 1.f);
+	float bboxHeight = std::min<float>(scale / sqrt(aspectRatio), 1.f);
 
 	// (0, 0) 기준으로 woff, hoff만큼 shift
 	// 여전히 0 ~ 1 사이즈의 NormalizedBBox 내부
