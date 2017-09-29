@@ -255,8 +255,9 @@ def generateSubMakefile(configName, dirPath, relPath, genSharedLib):
         newFile.write('# Automatically-generated file. Do not edit!\n')
         newFile.write('#################################################################\n\n')
 
-        # search cpp, cu files
+        # search cpp, c, cu files
         cppFiles    = []
+        cFiles      = []
         objFiles    = []
         cuFiles     = []
 
@@ -271,21 +272,25 @@ def generateSubMakefile(configName, dirPath, relPath, genSharedLib):
                 cppFiles.append(prefix)
                 objFiles.append(prefix)
 
+            if ext == '.c':
+                cFiles.append(prefix)
+                objFiles.append(prefix)
+
             if ext == '.cu':
                 cuFiles.append(prefix)
                 objFiles.append(prefix)
 
-        # declare cpp, cu files
+        # declare cpp, c, cu files
         if len(cppFiles) > 0:
             newFile.write('CPP_SRCS += ')
             for prefix in cppFiles:
                 newFile.write('\\\n../%s/%s.cpp' % (relPath, prefix))
             newFile.write('\n\n')
 
-        if len(cuFiles) > 0:
-            newFile.write('CU_SRCS += ')
+        if len(cFiles) > 0:
+            newFile.write('C_SRCS += ')
             for prefix in cuFiles:
-                newFile.write('\\\n../%s/%s.cu' % (relPath, prefix))
+                newFile.write('\\\n../%s/%s.c' % (relPath, prefix))
             newFile.write('\n\n')
 
         if len(cuFiles) > 0:
@@ -298,6 +303,12 @@ def generateSubMakefile(configName, dirPath, relPath, genSharedLib):
             newFile.write('OBJS += ')
             for prefix in objFiles:
                 newFile.write('\\\n./%s/%s.o' % (relPath, prefix))
+            newFile.write('\n\n')
+
+        if len(cFiles) > 0:
+            newFile.write('C_DEPS += ')
+            for prefix in cFiles:
+                newFile.write('\\\n./%s/%s.d' % (relPath, prefix))
             newFile.write('\n\n')
 
         if len(cppFiles) > 0:
@@ -372,7 +383,74 @@ def generateSubMakefile(configName, dirPath, relPath, genSharedLib):
             newFile.write("\t@echo 'Finished building: $<'\n")
             newFile.write("\t@echo ' '\n\n")
 
+        # build c files
+        if len(cFiles) > 0:
+            # (1) make dep
+            newFile.write(relPath + '/%.o: ../' + relPath + '/%.c\n')
+            newFile.write("\t@echo 'Building file: $<'\n")
+            newFile.write("\t@echo 'Invoking: NVCC compiler'\n")
+            newFile.write("\tnvcc ")
+
+            for symbol in symbolDic[configName]:
+                newFile.write('-D%s ' % symbol)
+
+            newFile.write("-I/usr/local/cuda/include ")     # cuda include path
+            for incEnvVar in incEnvVarList:
+                newFile.write("-I%s " % os.environ[incEnvVar])
+            for incDir in incDirList:
+                newFile.write("-I%s " % incDir)
+            
+            for incPath in subDirList:
+                newFile.write("-I%s " % os.path.join(srcHomeDir, incPath))
+    
+            newFile.write("-G -g ")
+            if "Debug" in configName:
+                newFile.write("-O0 ")
+            else:
+                newFile.write("-O3 ")
+
+            if genSharedLib:
+                newFile.write("-Xcompiler -fPIC ")
+                
+            newFile.write("-Xcompiler -Wno-format-zero-length -std=c++11 ")
+            newFile.write("-gencode arch=%s,code=%s " % (supportArch, supportCode))
+
+            newFile.write('-odir "%s" ' % relPath)
+            newFile.write('-M -o "$(@:%.o=%.d)" "$<"\n')
+
+            # (2) make object
+            newFile.write("\tnvcc ")
+
+            for symbol in symbolDic[configName]:
+                newFile.write('-D%s ' % symbol)
+
+            newFile.write("-I/usr/local/cuda/include ")     # cuda include path
+            for incEnvVar in incEnvVarList:
+                newFile.write("-I%s " % os.environ[incEnvVar])
+            for incDir in incDirList:
+                newFile.write("-I%s " % incDir)
+            
+            for incPath in subDirList:
+                newFile.write("-I%s " % os.path.join(srcHomeDir, incPath))
+
+            newFile.write("-G -g ")
+            if "Debug" in configName:
+                newFile.write("-O0 ")
+            else:
+                newFile.write("-O3 ")
+
+            if genSharedLib:
+                newFile.write("-Xcompiler -fPIC ")
+            newFile.write("-Xcompiler -Wno-format-zero-length -std=c++11 ")
+            newFile.write("-gencode arch=%s,code=%s " % (supportArch, supportCode))
+
+            newFile.write('--compile -x c -o  "$@" "$<"\n')
+
+            newFile.write("\t@echo 'Finished building: $<'\n")
+            newFile.write("\t@echo ' '\n\n")
+
         # build cu files
+        if len(cuFiles) > 0:
             # (1) make dep
             newFile.write(relPath + '/%.o: ../' + relPath + '/%.cu\n')
             newFile.write("\t@echo 'Building file: $<'\n")

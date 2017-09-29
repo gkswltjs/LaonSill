@@ -22,10 +22,13 @@
 
 using namespace std;
 
-#define NETWORK_FILEPATH            SPATH("examples/frcnn/frcnn_test_live.json")
+#define NETWORK_FILEPATH            SPATH("examples/SSD/ssd_512_infer_live.json")
 #define TESTIMAGE_BASE_FILEPATH     SPATH("client/test/")
 
 bool RunNetworkWithInputTest::runSimpleTest() {
+    int res = 512;
+    int coordRelative = 1;
+
     ClientError ret;
     ClientHandle handle;
     NetworkHandle netHandle;
@@ -58,24 +61,39 @@ bool RunNetworkWithInputTest::runSimpleTest() {
         imageChannel = image.channels();
         height = image.rows;
         width = image.cols;
+
+        cv::resize(image, image, cv::Size(res, res), 0, 0, CV_INTER_LINEAR);
         image.convertTo(image, CV_32FC3);
         imageData = (float*)image.data;
 
         vector<BoundingBox> bboxArray;
         STDOUT_LOG("request object detection job");
-        ret = ClientAPI::getObjectDetection(handle, netHandle, imageChannel, height, width,
-            imageData, bboxArray);
+        ret = ClientAPI::getObjectDetection(handle, netHandle, imageChannel, res, res,
+            imageData, bboxArray, coordRelative);
         SASSERT0(ret == ClientError::Success);
 
         STDOUT_LOG(" bounding box count : %d", (int)bboxArray.size());
         for (int j = 0; j < bboxArray.size(); j++) {
+            int left, top, right, bottom;
+            if (coordRelative) {
+                left = bboxArray[j].left * width;
+                top = bboxArray[j].top * height;
+                right = bboxArray[j].right * width;
+                bottom = bboxArray[j].bottom * height;
+            } else {
+                left = bboxArray[j].left;
+                top = bboxArray[j].top;
+                right = bboxArray[j].right;
+                bottom = bboxArray[j].bottom;
+            }
+
             STDOUT_LOG(" rect #%d : (%d, %d, %d, %d), confidence : %f", j, 
-                bboxArray[j].top, bboxArray[j].left, bboxArray[j].bottom, bboxArray[j].right,
-                bboxArray[j].confidence);
+                top, left, bottom, right, bboxArray[j].confidence);
 
             if (showResult) {
 				cv::rectangle(image, cv::Point(bboxArray[j].left, bboxArray[j].top),
-						cv::Point(bboxArray[j].right, bboxArray[j].bottom), cv::Scalar(255, 0, 0), 2);
+						cv::Point(bboxArray[j].right, bboxArray[j].bottom),
+                        cv::Scalar(255, 0, 0), 2);
 
 				sprintf(scoreBuf, "%f", bboxArray[j].confidence);
 				cv::putText(image, string(scoreBuf), cv::Point(bboxArray[j].left,

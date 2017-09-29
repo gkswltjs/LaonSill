@@ -72,6 +72,7 @@ public:
     static ClientError      createHandle(ClientHandle& handle, std::string serverHostName,
                                          int serverPortNum);
 
+
     static ClientError      getSession(ClientHandle& handle);
     static ClientError      releaseSession(ClientHandle handle);
 
@@ -97,4 +98,5 @@ public:
                                 int channel, int height, int width, float* imageData,
                                 std::vector<BoundingBox>& boxArray, int coordRelative=0);
 };
+                            
 #endif /* CLIENTAPI_H */
