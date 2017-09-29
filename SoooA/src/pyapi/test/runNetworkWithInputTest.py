@@ -39,24 +39,25 @@ for i in range(4):
     resized_img = cv2.resize(img, (res, res))
     converted_img = np.array(resized_img).astype('f')
 
-    ret, bboxes = handle.getObjectDetection(3, res, res, resized_img.flatten(), 20,
+    ret, bboxes = handle.getObjectDetection(3, res, res, converted_img.flatten(), 20,
             coordRelative)
 
     for bbox in bboxes:
+        print "bbox : (", bbox[0], ", ",  bbox[1], ", ", bbox[2], ", ", bbox[3], ")"
         if coordRelative == 1:
-            left = int(bbox[0] * width)
-            top = int(bbox[1] * height)
-            right = int(bbox[2] * width)
-            bottom = int(bbox[3] * height)
+            left = int(bbox[1] * width)
+            top = int(bbox[0] * height)
+            right = int(bbox[3] * width)
+            bottom = int(bbox[2] * height)
         else:
-            left = int(bbox[0])
-            top = int(bbox[1])
-            right = int(bbox[2])
-            bottom = int(bbox[3])
+            left = int(bbox[1])
+            top = int(bbox[0])
+            right = int(bbox[3])
+            bottom = int(bbox[2])
 
-        cv2.rectangle(resized_img, (left, top), (right, bottom), (255, 255, 0))
+        cv2.rectangle(img, (left, top), (right, bottom), (255, 255, 0))
         
-    cv2.imshow('image', resized_img)
+    cv2.imshow('image', img)
     cv2.waitKey(0)
     cv2.destroyWindow('image')
 
