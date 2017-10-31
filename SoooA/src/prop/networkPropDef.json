@@ -24,6 +24,7 @@
     ["loadPath", "std::string", "\"\""],
     ["optimizer", "Optimizer", "Optimizer::Momentum"],
     ["lrPolicy", "LRPolicy", "LRPolicy::Fixed"],
+	["stepValue", "std::vector<int>", ""],
     ["phase", "NetworkPhase", "NetworkPhase::TrainPhase"],
     ["lossLayer", "std::vector<std::string>", ""],
     ["rate", "float", "-1.0"],

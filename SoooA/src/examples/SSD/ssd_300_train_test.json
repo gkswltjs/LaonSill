@@ -1494,7 +1494,8 @@
 		"stepSize" : 50000,
 		"weightDecay" : 0.0005,
 		"momentum" : 0.9,
-		"lrPolicy" : "Fixed",
+		"lrPolicy" : "Multistep",
+		"stepValue" : [80000, 100000, 120000],
 		"optimizer" : "Momentum",
 		"loadPath" : "$(SOOOA_HOME)/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_300x300.param"
 	}

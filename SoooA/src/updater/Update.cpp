@@ -14,6 +14,9 @@
 #include "MathFunctions.h"
 #include "StdOutLog.h"
 
+template <typename Dtype>
+int Update<Dtype>::currentStep = 0;
+
 template<typename Dtype>
 void Update<Dtype>::updateParam(UpdateContext context, Data<Dtype>* dataHistory,
     Data<Dtype>* dataHistory2, Data<Dtype>* data) {
@@ -146,7 +149,7 @@ float Update<Dtype>::calcLearningRate() {
         }
             break;
         case Step: {
-            uint32_t currentStep = SNPROP(iterations) / SNPROP(stepSize);
+            currentStep = SNPROP(iterations) / SNPROP(stepSize);
             rate = SNPROP(baseLearningRate) * pow(SNPROP(gamma), currentStep);
 
             if (SNPROP(rate) != rate) {
@@ -163,6 +166,19 @@ float Update<Dtype>::calcLearningRate() {
                            ((float)SNPROP(epochs) * (float)SNPROP(miniBatch)), SNPROP(power));
         }
             break;
+        case Multistep: {
+        	const std::vector<int>& stepValue = SNPROP(stepValue);
+        	const int iterations = SNPROP(iterations);
+        	if (currentStep < stepValue.size() &&
+        			iterations >= stepValue[currentStep]) {
+        		currentStep++;
+        		STDOUT_LOG("MultiStep Status: Iteration %d, step = %d", iterations,
+        				currentStep);
+        	}
+        	rate = SNPROP(baseLearningRate) * pow(SNPROP(gamma), currentStep);
+        }
+        break;
+
         default: {
             exit(1);
         }

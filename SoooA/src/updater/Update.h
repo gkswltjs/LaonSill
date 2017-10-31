@@ -57,6 +57,9 @@ public:
     static float calcLearningRate();
 
     static UpdateContext makeContext(int paramSize, float regScale, float learnScale);
+
+private:
+    static int currentStep;
 };
 
 #endif /* UPDATE_H */
