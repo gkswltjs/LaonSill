@@ -64,6 +64,17 @@
     "KEYVARS" : []        
 },
 
+"Measure":
+{
+    "DESC" : "measure layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : [],
+    "KEYVARS" : []        
+},
+
 "Learnable":
 {
     "DESC" : "learnable layer",
@@ -739,8 +750,8 @@
 "Accuracy" : 
 {
     "DESC" : "accuracy layer",
-    "PARENT" : "Base",
-    "LEVEL" : 1,
+    "PARENT" : "Measure",
+    "LEVEL" : 2,
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : 
@@ -749,7 +760,7 @@
         ["axis", "int", "1"],
         ["ignoreLabel", "int", "-1"]
     ],
-		"KEYVARS" : ["topK"]    
+	"KEYVARS" : ["topK"]    
 },
 
 "ImageSegData" : 
@@ -818,8 +829,8 @@
 "SegAccuracy" : 
 {
     "DESC" : "segmentation accuracy layer",
-    "PARENT" : "Base",
-    "LEVEL" : 1,
+    "PARENT" : "Measure",
+    "LEVEL" : 2,
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : 

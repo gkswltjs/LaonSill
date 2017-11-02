@@ -27,6 +27,7 @@
 	["stepValue", "std::vector<int>", ""],
     ["phase", "NetworkPhase", "NetworkPhase::TrainPhase"],
     ["lossLayer", "std::vector<std::string>", ""],
+    ["measureLayer", "std::vector<std::string>", ""],
     ["rate", "float", "-1.0"],
     ["status", "NetworkStatus", "NetworkStatus::Train"]
 ]

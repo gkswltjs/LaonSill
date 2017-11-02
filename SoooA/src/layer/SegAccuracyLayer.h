@@ -13,12 +13,16 @@
 #include "common.h"
 #include "BaseLayer.h"
 #include "ConfusionMatrix.h"
+#include "MeasureLayer.h"
 
 template <typename Dtype>
-class SegAccuracyLayer : public Layer<Dtype> {
+class SegAccuracyLayer : public MeasureLayer<Dtype> {
 public:
 	SegAccuracyLayer();
 	virtual ~SegAccuracyLayer();
+
+	Dtype getAccuracy();
+    Dtype measure();
 
 	virtual void reshape();
 	virtual void feedforward();

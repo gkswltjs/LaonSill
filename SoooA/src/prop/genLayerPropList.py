@@ -465,7 +465,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -489,7 +489,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -510,7 +510,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -530,7 +530,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -552,7 +552,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -575,7 +575,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -598,7 +598,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -621,7 +621,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -644,7 +644,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -667,7 +667,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -690,7 +690,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             if isFirstCond:
@@ -724,7 +724,7 @@ try:
         propList = levelDic[level]
 
         for prop in propList:
-            if prop in ['Base', 'Loss', 'Learnable']:
+            if prop in ['Base', 'Loss', 'Learnable', 'Measure']:
                 continue
 
             sourceFile.write('    LayerFunc::registerLayerFunc(')

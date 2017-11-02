@@ -10,9 +10,10 @@
 
 #include "common.h"
 #include "BaseLayer.h"
+#include "MeasureLayer.h"
 
 template <typename Dtype>
-class AccuracyLayer : public Layer<Dtype> {
+class AccuracyLayer : public MeasureLayer<Dtype> {
 public:
 	/*
 	class Builder : public Layer<Dtype>::Builder {
@@ -74,6 +75,7 @@ public:
 	virtual void backpropagation();
 
 	Dtype getAccuracy();
+    Dtype measure();
 
 
 private:

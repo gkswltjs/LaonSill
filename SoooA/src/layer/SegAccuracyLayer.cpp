@@ -16,7 +16,7 @@ using namespace std;
 
 template <typename Dtype>
 SegAccuracyLayer<Dtype>::SegAccuracyLayer()
-: Layer<Dtype>() {
+: MeasureLayer<Dtype>() {
 	this->type = Layer<Dtype>::SegAccuracy;
 
 	this->confusionMatrix.clear();
@@ -30,6 +30,17 @@ SegAccuracyLayer<Dtype>::SegAccuracyLayer()
 template <typename Dtype>
 SegAccuracyLayer<Dtype>::~SegAccuracyLayer() {
 
+}
+
+template <typename Dtype>
+Dtype SegAccuracyLayer<Dtype>::getAccuracy() {
+	Dtype accuracy = this->_outputData[0]->host_data()[0];
+	return accuracy;
+}
+
+template<typename Dtype>
+Dtype SegAccuracyLayer<Dtype>::measure() {
+    return getAccuracy();
 }
 
 

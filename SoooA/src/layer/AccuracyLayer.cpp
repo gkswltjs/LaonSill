@@ -14,7 +14,7 @@ using namespace std;
 
 template <typename Dtype>
 AccuracyLayer<Dtype>::AccuracyLayer()
-: Layer<Dtype>() {
+: MeasureLayer<Dtype>() {
 	const vector<string>& inputs = SLPROP_BASE(input);
 	const vector<string>& outputs = SLPROP_BASE(output);
 
@@ -158,6 +158,10 @@ Dtype AccuracyLayer<Dtype>::getAccuracy() {
 	return accuracy;
 }
 
+template<typename Dtype>
+Dtype AccuracyLayer<Dtype>::measure() {
+    return getAccuracy();
+}
 
 
 /****************************************************************************
