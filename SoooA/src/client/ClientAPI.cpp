@@ -348,3 +348,58 @@ ClientError ClientAPI::getObjectDetection(ClientHandle handle, NetworkHandle net
 
     return ClientError::Success;
 }
+
+ClientError ClientAPI::getMeasureItemName(ClientHandle handle, NetworkHandle netHandle,
+    vector<string>& measureItemNames) {
+
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    Job* runJob = new Job(JobType::GetMeasureItemName);
+    runJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    Client::sendJob(handle.sockFD, handle.buffer, runJob);
+    delete runJob;
+
+    Job* runReplyJob;
+    Client::recvJob(handle.sockFD, handle.buffer, &runReplyJob);
+    SASSERT0(runReplyJob->getType() == JobType::GetMeasureItemNameReply);
+
+    int resultItemCount = runReplyJob->getIntValue(0);
+    for (int i = 0; i < resultItemCount; i++) {
+        string itemName = runReplyJob->getStringValue(i + 1);
+        measureItemNames.push_back(itemName);
+    }
+    delete runReplyJob;
+
+    return ClientError::Success;
+}
+
+ClientError ClientAPI::getMeasures(ClientHandle handle, NetworkHandle netHandle,
+    bool forwardSearch, int start, int count, float* data, int* dataCount) {
+
+    if (!netHandle.created) 
+        return ClientError::NotCreatedNetwork;
+
+    int forward = (int)forwardSearch;
+
+    Job* runJob = new Job(JobType::GetMeasures);
+    runJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    runJob->addJobElem(Job::IntType, 1, (void*)&forward);
+    runJob->addJobElem(Job::IntType, 1, (void*)&start);
+    runJob->addJobElem(Job::IntType, 1, (void*)&count);
+    Client::sendJob(handle.sockFD, handle.buffer, runJob);
+    delete runJob;
+
+    Job* runReplyJob;
+    Client::recvJob(handle.sockFD, handle.buffer, &runReplyJob);
+    SASSERT0(runReplyJob->getType() == JobType::GetMeasuresReply);
+
+    int measureCount = runReplyJob->getIntValue(0);
+    (*dataCount) = measureCount;
+    float *measures = runReplyJob->getFloatArray(1);
+    memcpy(data, measures, sizeof(float) * measureCount);
+
+    delete runReplyJob;
+
+    return ClientError::Success;
+}

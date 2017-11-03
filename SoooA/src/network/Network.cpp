@@ -28,6 +28,7 @@
 #include "PropMgmt.h"
 #include "LearnableLayer.h"
 #include "LogicalPlan.h"
+#include "MeasureManager.h"
 
 using namespace std;
 
@@ -47,6 +48,17 @@ Network<Dtype>::Network() {
     Network<Dtype>::networkIDMap[this->networkID] = this;
     this->isLoaded = false;
     this->isBuilt = false;
+    this->isMeasureInserted = false;
+}
+
+template <typename Dtype>
+Network<Dtype>::~Network() {
+    unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
+    Network<Dtype>::networkIDMap.erase(this->networkID);
+
+    if (this->isMeasureInserted) {
+        MeasureManager::removeEntry(this->networkID);
+    }
 }
 
 template<typename Dtype>
@@ -63,11 +75,6 @@ Network<Dtype>* Network<Dtype>::getNetworkFromID(int networkID) {
     return network;
 }
 
-template <typename Dtype>
-Network<Dtype>::~Network() {
-    unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
-    Network<Dtype>::networkIDMap.erase(this->networkID);
-}
 
 template <typename Dtype>
 void Network<Dtype>::run_with_timer( bool inference) {
@@ -86,6 +93,13 @@ void Network<Dtype>::build(int epochs) {
         
     WorkContext::updateNetwork(this->networkID); 
     SNPROP(epochs) = epochs;
+
+    SASSERT0(this->isMeasureInserted == false);
+
+    if (SNPROP(measureLayer).size() > 0) {
+        MeasureManager::insertEntry(this->networkID, SNPROP(measureLayer));
+        this->isMeasureInserted = true;
+    }
 
     PlanOptimizer::buildPlans(networkID);
 }
@@ -349,5 +363,6 @@ bool Network<Dtype>::isInnerLayer(int layerID) {
 
     return LogicalPlan::isInnerLayer(this->networkID, layerID);
 }
+
 
 template class Network<float>;

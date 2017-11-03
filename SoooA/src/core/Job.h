@@ -178,6 +178,48 @@ typedef enum JobType_e {
      * +-----------------+
      */
 
+    GetMeasureItemName,
+    /*
+     *  [Job Elem Schema for GetMeasureItemName]
+     * +-----------------+
+     * | NetworkID (int) |
+     * +-----------------+
+     */
+
+    GetMeasureItemNameReply,
+    /*
+     *  [Job Elem Schema for GetMeasureItemNameReply]
+     * +--------------------------+
+     * | measure item count (int) |  --> N
+     * +----------------------+---+------------------+----+------------------------+
+     * | measure item name #0 | measure item name #1 | ...| measure item name #N-1 | 
+     * |   (string)           |    (string)          |    |    (string)            |
+     * +----------------------+----------------------+----+------------------------+
+     */
+
+    GetMeasures,
+    /*
+     *  [Job Elem Schema for GetMeasures]
+     * +-----------------+-----------------+-------------+-------------+
+     * | NetworkID (int) | isForward (int) | start (int) | count (int) |
+     * +-----------------+-----------------+-------------+-------------+
+     */
+
+    GetMeasuresReply,
+    /*
+     *  [Job Elem Schema for GetMeasuresReply]
+     * +-------------+
+     * | count (int) |  --> N
+     * +-------------+------+--------------------+-----+------------------------+
+     * | measure #0 (float) | measure #1 (float) | ... | measure #N - 1 (float) |
+     * +-------------+------+--------------------+-----+------------------------+
+     *
+     *  예를들어서 아이템 카운트가 3개, 원하는 Measure iteration의 개수가 2라면..
+     *   count(N)은 6을 반환한다. 또한, 
+     *  [첫번째 아이템의 0번, 두번째 아이템의 0번, 세번째 아이템의 0번, 첫번째 아이템의 1번,
+     *   두번째 아이템의 1번, 세번째 아이템의 1번]의 float 배열을 반환하게 된다.
+     */
+
     // FIXME: 아래의 2개의 job은 텔코웨어 요청으로 임시적으로 만들었습니다. 
     //        job의 이름을 포함해서 옳은 방향인지에 대해서 고민이 필요합니다.
 

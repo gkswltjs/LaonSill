@@ -21,6 +21,8 @@
 #include "ThreadMgmt.h"
 #include "SysLog.h"
 #include "LossLayer.h"
+#include "MeasureManager.h"
+#include "MeasureLayer.h"
 
 using namespace std;
 
@@ -374,6 +376,25 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         WorkContext::curPlanInfo->curMiniBatchIndex += 1;
     }
     SNPROP(iterations) += 1;
+
+    // measure를 기록한다.
+    // FIXME: 매우 매우 매우 매우 비효율적인 코드!!! 반드시 다시 잘 구현해야함..
+    //        지금은 귀찮것도 있지만.. 급하게 해야할 일들이 있어서...(먼산..)
+    int networkID = WorkContext::curNetworkID;
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    if (network->getMeasureInserted()) {
+        MeasureEntry* measureEntry = MeasureManager::getMeasureEntry(networkID); 
+
+        for (int i = 0; i < SNPROP(measureLayer).size(); i++) {
+            string measureLayerName = SNPROP(measureLayer)[i];
+            MeasureLayer<float>* measureLayer = 
+                (MeasureLayer<float>*)network->findLayer(measureLayerName);
+            measureEntry->getAddBuffer()[i] = measureLayer->measure();
+        }
+
+        measureEntry->addData(measureEntry->getAddBuffer());
+    }
+   
 
     bool saveNetwork = false;
     if ((SNPROP(saveInterval) != 0) &&

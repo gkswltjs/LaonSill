@@ -161,7 +161,8 @@
 		"weightDecay" : 0.0005,
 		"momentum" : 0.9,
 		"lrPolicy" : "Fixed",
-		"optimizer" : "Momentum"
+		"optimizer" : "Momentum",
+        "measureLayer" : ["accuracy"]
 	}
 
 }

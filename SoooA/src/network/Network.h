@@ -159,6 +159,8 @@ public:
     void                                    setBuilt() { this->isBuilt = true; }
     void                                    unsetBuilt() { this->isBuilt = false; }
     bool                                    getBuilt() { return this->isBuilt; }
+    bool                                    getMeasureInserted() { 
+                                                return this->isMeasureInserted; }
 
 private:
     int                                     networkID;
@@ -167,6 +169,7 @@ private:
     static std::mutex                       networkIDMapMutex;
     bool                                    isLoaded;
     bool                                    isBuilt;
+    bool                                    isMeasureInserted;
 };
 
 
