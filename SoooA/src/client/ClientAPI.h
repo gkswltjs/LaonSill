@@ -98,12 +98,12 @@ public:
                                 int channel, int height, int width, float* imageData,
                                 std::vector<BoundingBox>& boxArray, int coordRelative=0);
 
-    static ClientError      getMeasureItemName(ClientHandle handle, NetworkHandle netHandle,
+    static ClientError      getMeasureItemName(ClientHandle handle, int networkID,
                                 std::vector<std::string>& measureItemNames);  
 
-    static ClientError      getMeasures(ClientHandle handle, NetworkHandle netHandle,
-                                bool forwardSearch, int start, int count, float* data, 
-                                int* dataCount);
+    static ClientError      getMeasures(ClientHandle handle, int networkID,
+                                bool forwardSearch, int start, int count, 
+                                int* startIterNum, int* dataCount, float* data);
 };
                             
 #endif /* CLIENTAPI_H */

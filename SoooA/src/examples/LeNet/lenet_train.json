@@ -144,6 +144,17 @@
 			"propDown" : [false, false],
 			"topK" : 1,
 			"axis" : 2
+		},
+
+		{
+			"name" : "accuracy2",
+			"layer" : "Accuracy",
+			"id" : 91,
+			"input" : ["ip2", "label"],
+			"output" : ["accuracy2"],
+			"propDown" : [false, false],
+			"topK" : 1,
+			"axis" : 2
 		}		
 	],
 
@@ -162,7 +173,7 @@
 		"momentum" : 0.9,
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
-        "measureLayer" : ["accuracy"]
+        "measureLayer" : ["accuracy", "accuracy2"]
 	}
 
 }

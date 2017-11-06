@@ -326,6 +326,7 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
                 newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
                     (void*)tempFloatArray);
                 free(tempFloatArray);
+                tempFloatArray = NULL;
                 break;
 
             case Job::StringType:
@@ -339,6 +340,7 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
                 newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
                     (void*)tempString);
                 free(tempString);
+                tempString = NULL;
                 break;
 
             default:

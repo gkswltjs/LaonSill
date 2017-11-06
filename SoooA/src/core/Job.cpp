@@ -38,6 +38,8 @@ void Job::init() {
     Job::pubJobTypeMap[SaveNetwork]                 = SaveNetworkReply;
     Job::pubJobTypeMap[LoadNetwork]                 = LoadNetworkReply;
     Job::pubJobTypeMap[RunNetworkWithInputData]     = RunNetworkWithInputDataReply;
+    Job::pubJobTypeMap[GetMeasureItemName]          = GetMeasureItemNameReply;
+    Job::pubJobTypeMap[GetMeasures]                 = GetMeasuresReply;
 }
 
 Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,

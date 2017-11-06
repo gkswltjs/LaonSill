@@ -27,6 +27,9 @@
 #include "AnnotationDataLayer.h"
 #include "DetectionOutputLayer.h"
 
+#include "MeasureEntry.h"
+#include "MeasureManager.h"
+
 using namespace std;
 
 thread_local int        Worker::gpuIdx;
@@ -426,6 +429,50 @@ void Worker::handleLoadNetwork(Job* job) {
     Broker::publish(job->getJobID(), pubJob);
 }
 
+void Worker::handleGetMeasureItemName(Job* job) {
+    int networkID = job->getIntValue(0);
+
+    MeasureEntry* entry = MeasureManager::getMeasureEntry(networkID);
+    vector<string> itemNames = entry->getItemNames();
+
+    Job* pubJob = getPubJob(job);
+    int itemCount = itemNames.size();
+    pubJob->addJobElem(Job::IntType, 1, (void*)&itemCount);
+
+    for (int i = 0; i < itemCount; i++) {
+        pubJob->addJobElem(Job::StringType, strlen(itemNames[i].c_str()),
+            (void*)itemNames[i].c_str());
+    }
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleGetMeasures(Job* job) {
+    int networkID = job->getIntValue(0);
+    int isForward = job->getIntValue(1);
+    int start = job->getIntValue(2);
+    int count = job->getIntValue(3);
+
+    int startIterNum;
+    int measureCount;
+
+    MeasureEntry* entry = MeasureManager::getMeasureEntry(networkID);
+    int itemCount = entry->getItemNames().size();
+    float* data = (float*)malloc(sizeof(float) * count * itemCount);
+    SASSUME0(data != NULL);
+    entry->getData(start, count, (bool)isForward, &startIterNum, &measureCount, data); 
+
+    Job* pubJob = getPubJob(job);
+    int N = measureCount * itemCount;
+    pubJob->addJobElem(Job::IntType, 1, (void*)&N);
+    pubJob->addJobElem(Job::IntType, 1, (void*)&startIterNum);
+
+    if (N > 0)
+        pubJob->addJobElem(Job::FloatArrayType, N, data);
+
+    free(data);
+    Broker::publish(job->getJobID(), pubJob);
+}
+
 void Worker::handleRunNetworkWithInputData(Job* job) {
     int networkID = job->getIntValue(0);
     int channel = job->getIntValue(1);
@@ -549,6 +596,14 @@ bool Worker::handleJob(Job* job) {
 
         case JobType::StartInputDataProvider:
             handleStartIDP(job);
+            break;
+
+        case JobType::GetMeasureItemName:
+            handleGetMeasureItemName(job);
+            break;
+
+        case JobType::GetMeasures:
+            handleGetMeasures(job);
             break;
 
         default:

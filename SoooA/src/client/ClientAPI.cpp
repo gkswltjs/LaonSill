@@ -349,14 +349,11 @@ ClientError ClientAPI::getObjectDetection(ClientHandle handle, NetworkHandle net
     return ClientError::Success;
 }
 
-ClientError ClientAPI::getMeasureItemName(ClientHandle handle, NetworkHandle netHandle,
+ClientError ClientAPI::getMeasureItemName(ClientHandle handle, int networkID,
     vector<string>& measureItemNames) {
 
-    if (!netHandle.created) 
-        return ClientError::NotCreatedNetwork;
-
     Job* runJob = new Job(JobType::GetMeasureItemName);
-    runJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    runJob->addJobElem(Job::IntType, 1, (void*)&networkID);
     Client::sendJob(handle.sockFD, handle.buffer, runJob);
     delete runJob;
 
@@ -374,16 +371,14 @@ ClientError ClientAPI::getMeasureItemName(ClientHandle handle, NetworkHandle net
     return ClientError::Success;
 }
 
-ClientError ClientAPI::getMeasures(ClientHandle handle, NetworkHandle netHandle,
-    bool forwardSearch, int start, int count, float* data, int* dataCount) {
-
-    if (!netHandle.created) 
-        return ClientError::NotCreatedNetwork;
+ClientError ClientAPI::getMeasures(ClientHandle handle, int networkID,
+    bool forwardSearch, int start, int count, int* startIterNum, int* dataCount,
+    float* data) {
 
     int forward = (int)forwardSearch;
 
     Job* runJob = new Job(JobType::GetMeasures);
-    runJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    runJob->addJobElem(Job::IntType, 1, (void*)&networkID);
     runJob->addJobElem(Job::IntType, 1, (void*)&forward);
     runJob->addJobElem(Job::IntType, 1, (void*)&start);
     runJob->addJobElem(Job::IntType, 1, (void*)&count);
@@ -396,8 +391,12 @@ ClientError ClientAPI::getMeasures(ClientHandle handle, NetworkHandle netHandle,
 
     int measureCount = runReplyJob->getIntValue(0);
     (*dataCount) = measureCount;
-    float *measures = runReplyJob->getFloatArray(1);
-    memcpy(data, measures, sizeof(float) * measureCount);
+    (*startIterNum) = runReplyJob->getIntValue(1);
+
+    if ((*dataCount) > 0) {
+        float *measures = runReplyJob->getFloatArray(2);
+        memcpy(data, measures, sizeof(float) * measureCount);
+    }
 
     delete runReplyJob;
 

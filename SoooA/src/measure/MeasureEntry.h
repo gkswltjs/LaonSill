@@ -26,7 +26,8 @@ typedef enum MeasureEntryDataStutus_e : int{
 
 // XXX: 현재는 default option만 사용하고 있음.
 const MeasureOption MEASURE_OPTION_DEFAULT = MEASURE_OPTION_MEMORY;
-const int MEASURE_DEFAULT_QUEUE_SIZE = 10000;
+//const int MEASURE_DEFAULT_QUEUE_SIZE = 10000;
+const int MEASURE_DEFAULT_QUEUE_SIZE = 500;
 
 class MeasureEntry {
 
@@ -38,9 +39,11 @@ public:
     void addData(float* data);
 
     void getDataInternal(int start, int count, float* data); 
-    void getData(int start, int count, bool forward, float* data);
+    void getData(int start, int count, bool forward, int* startIterNum, int* measureCount,
+            float* data);
 
     float* getAddBuffer() { return this->addBuffer; }
+    std::vector<std::string> getItemNames() { return this->itemNames; }
     void printStatus();
 
 private:
@@ -62,5 +65,6 @@ private:
     volatile int*                       readRefCount;   // read reference count
 
     float*                      addBuffer;      // for convenience
+    void setAreaLock(int start, int count);
 };
 #endif /* MEASUREENTRY_H */

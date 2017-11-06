@@ -64,6 +64,9 @@ MeasureEntry::~MeasureEntry() {
     free((void*)this->readRefCount);
 }
 
+// XXX: 코딩을 하고 나니 자원보호가 조금 비효율적으로 되어 있어 보인다. 
+//      겨우 메모리카피 하는 부분에 대해서 보호하려고 RWLock과 ref count를 두는 것이
+//      맞는 방식은 아닌 것 같다. 추후에 수정하자.
 void MeasureEntry::addData(float* data) {
     int dataOffset;
 
@@ -109,17 +112,10 @@ void MeasureEntry::addData(float* data) {
     entryLock.unlock();
 }
 
-void MeasureEntry::getDataInternal(int start, int count, float* data) {
-    int dataOffset;
-    dataOffset = start * this->itemCount;
-
+void MeasureEntry::setAreaLock(int start, int count) {
     SASSUME0(count > 0);
     SASSUME0(start < this->queueSize);
     SASSUME0(start + count <= this->queueSize);
-    SASSUME0(data != NULL);
-
-    // FIXME: Mutex로 자원보호를 하는 것보다는 AOP로 하는 것이 성능상 더 좋아보니다.
-    unique_lock<mutex> entryLock(this->entryMutex);
 
     for (int i = 0; i < count; i++) {
         int index = start + i;
@@ -136,7 +132,7 @@ retry:
         } 
         
         else if (curStatus == MEASURE_ENTRY_STATUS_WRITE) {
-            entryLock.unlock();
+            this->entryMutex.unlock();
             retryCount++;
 
             SASSERT(retryCount < MEASURE_ENTRY_ADDDATA_MAX_RETRY_COUNT,
@@ -144,7 +140,7 @@ retry:
                 this->networkID);
 
             usleep(MEASURE_ENTRY_RETRY_MSEC);
-            entryLock.lock();
+            this->entryMutex.lock();
 
             goto retry;
 
@@ -154,14 +150,25 @@ retry:
             this->readRefCount[index] = 1;
         }
     }
-    entryLock.unlock();
+}
 
-    // FIXME: 하다보니 실제 필요한 동작은 메모리 카피 하나밖에 없는데 너무 동기화 관련 코드가 
-    // 많아졌다. 좀 더 나은 코드로 대체하자.
+void MeasureEntry::getDataInternal(int start, int count, float* data) {
+    int dataOffset;
+    dataOffset = start * this->itemCount;
+
+    SASSUME0(count > 0);
+    SASSUME0(start < this->queueSize);
+    SASSUME0(start + count <= this->queueSize);
+    SASSUME0(data != NULL);
+
+    // XXX: 현재 메모리 기반의 Measure 모듈은 실제 필요한 동작이 메모리 카피 하나밖에 
+    // 없는데 비해서 매우 많은 동기화 코드가 존재한다. 매우 잘못된 구현이다.
+    // 하지만, 나중에 디스크로 flush하는 부분까지 생각을 한다면 괜찮을 수 있다.
+    // 추후에 확인하여 더 나은 코드로 대체하자.
     memcpy((void*)data, (void*)&this->data[dataOffset],
         sizeof(float) * this->itemCount * count);
 
-    entryLock.lock();
+    unique_lock<mutex> entryLock(this->entryMutex);
 
     for (int i = 0; i < count; i++) {
         int index = start + i;
@@ -175,28 +182,66 @@ retry:
     entryLock.unlock();
 }
 
-void MeasureEntry::getData(int start, int count, bool forward, float* data) {
+void MeasureEntry::getData(int start, int count, bool forward, int* startIterNum,
+    int* measureCount, float* data) {
     int start1, start2;
     int count1, count2;
 
-    if (forward) {
-        start1 = start;
+    SASSUME0(count < this->queueSize);
 
-        if (this->queueSize - start < count) {
+    // FIXME: Mutex로 자원보호를 하는 것보다는 AOP로 하는 것이 성능상 더 좋아보니다.
+    unique_lock<mutex> entryLock(this->entryMutex);
+
+    if (forward) {
+        int queueIterNumBegin;      // Queue에서 가지고 있는 데이터의 최초 값
+        int queueIterNumEnd;        // Queue에서 가지고 있는 데이터의 종료 값 + 1
+
+        if (this->baseIterNum == 0) {
+            queueIterNumBegin = 0;
+        } else {
+            queueIterNumBegin = (this->head + 1) % this->queueSize + 
+                this->baseIterNum - this->queueSize;
+        }
+        queueIterNumEnd = this->head + this->baseIterNum;
+
+        if ((queueIterNumBegin > queueIterNumEnd) ||
+            (start > queueIterNumEnd) ||
+            (start + count < queueIterNumBegin)) {
+            entryLock.unlock();
+            (*measureCount) = 0;
+            (*startIterNum) = -1;   // dummy
+
+            return;
+        }
+
+        int modifiedStart = max(start, queueIterNumBegin);
+        int modifiedCount = min(start + count, queueIterNumEnd) - modifiedStart;
+
+        start1 = modifiedStart % this->queueSize;
+
+        if (this->queueSize - start < modifiedCount) {
             count1 = this->queueSize - start;
-            count2 = count - count1;
+            count2 = modifiedCount - count1;
             start2 = 0;
         } else {
-            count1 = count;
+            count1 = modifiedCount;
             count2 = 0;
             start2 = -1;    // meaning less
         }
     } else {
         if (this->head < count) {
-            start2 = 0;
-            count2 = this->head;
-            count1 = count2 - count1;
-            start1 = this->queueSize - count1;
+            if (this->baseIterNum > 0) {
+                start2 = 0;
+                count2 = this->head;
+
+                count1 = count - count2;
+                start1 = this->queueSize - count1;
+            } else {
+                start1 = 0;
+                count1 = this->head;
+                start2 = -1;
+                count2 = 0;
+            }
         } else {
             start1 = this->head - count;
             count1 = count;
@@ -205,7 +250,15 @@ void MeasureEntry::getData(int start, int count, bool forward, float* data) {
         }
     }
 
-    getDataInternal(start1, count1, data); 
+    (*startIterNum) = this->baseIterNum + start1;
+    (*measureCount) = count1 + count2;
+
+    setAreaLock(start1, count1);
+    if (count2 > 0)
+        setAreaLock(start2, count2);
+    entryLock.unlock();
+
+    getDataInternal(start1, count1, data);
 
     if (count2 > 0) {
         int offset = count1 * this->itemCount;
