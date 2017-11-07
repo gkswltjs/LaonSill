@@ -327,3 +327,61 @@ extern "C" int getObjectDetection(int sockFD, char* buffer, int isCreated, int n
 
     return ClientError::Success;
 }
+
+extern "C" int getMeasureItemName(int sockFD, char* buffer, int networkID,
+        int maxItemCount, char** measureItemNames, int* measureItemCount) {
+    
+    Job* runJob = new Job(JobType::GetMeasureItemName);
+    runJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    Client::sendJob(sockFD, buffer, runJob);
+    delete runJob;
+
+    Job* runReplyJob;
+    Client::recvJob(sockFD, buffer, &runReplyJob);
+    SASSERT0(runReplyJob->getType() == JobType::GetMeasureItemNameReply);
+
+    int resultItemCount = runReplyJob->getIntValue(0);
+
+    if (resultItemCount > maxItemCount)
+        (*measureItemCount) = maxItemCount;
+    else
+        (*measureItemCount) = resultItemCount;
+
+    for (int i = 0; i < (*measureItemCount); i++) {
+
+        string itemName = runReplyJob->getStringValue(i + 1);
+        strcpy(measureItemNames[i], itemName.c_str());
+    }
+    delete runReplyJob;
+
+    return ClientError::Success;
+}
+
+extern "C" int getMeasures(int sockFD, char* buffer, int networkID, int forwardSearch, 
+        int start, int count, int* startIterNum, int* dataCount, float* data) {
+
+    Job* runJob = new Job(JobType::GetMeasures);
+    runJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    runJob->addJobElem(Job::IntType, 1, (void*)&forwardSearch);
+    runJob->addJobElem(Job::IntType, 1, (void*)&start);
+    runJob->addJobElem(Job::IntType, 1, (void*)&count);
+    Client::sendJob(sockFD, buffer, runJob);
+    delete runJob;
+
+    Job* runReplyJob;
+    Client::recvJob(sockFD, buffer, &runReplyJob);
+    SASSERT0(runReplyJob->getType() == JobType::GetMeasuresReply);
+
+    int measureCount = runReplyJob->getIntValue(0);
+    (*dataCount) = measureCount;
+    (*startIterNum) = runReplyJob->getIntValue(1);
+
+    if ((*dataCount) > 0) {
+        float *measures = runReplyJob->getFloatArray(2);
+        memcpy(data, measures, sizeof(float) * measureCount);
+    }
+
+    delete runReplyJob;
+
+    return ClientError::Success;
+}

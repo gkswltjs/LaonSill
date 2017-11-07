@@ -3,6 +3,9 @@
 from ctypes import *
 libSoooA = CDLL('libSoooAClient.so.1.0.1')
 
+MAX_MESAURE_ITEMCOUNT=20
+MAX_MEASURE_ITEMNAMELEN=64
+
 # libSoooAClient에서 제공하는 함수들을 준비한다.
 funcTestYo = libSoooA.testYo
 funcTestYo.argtypes = [c_int, c_char_p, c_float]
@@ -48,6 +51,14 @@ class BoundingBox(Structure):
 funcGetObjectDetection = libSoooA.getObjectDetection
 funcGetObjectDetection.argtypes = [c_int, c_char_p, c_int, c_int, c_int, c_int,
                                    c_int, POINTER(c_float), c_void_p, c_int, c_int]
+
+funcGetMeasureItemName = libSoooA.getMeasureItemName
+funcGetMeasureItemName.argtypes = [c_int, c_char_p, c_int, c_int,
+    POINTER(POINTER(c_char)), POINTER(c_int)]
+
+funcGetMeasures = libSoooA.getMeasures
+funcGetMeasures.argtypes = [c_int, c_char_p, c_int, c_int, c_int, c_int, POINTER(c_int),
+    POINTER(c_int), POINTER(c_float)]
 
 class ClientHandle:
     def __init__(self):
@@ -131,7 +142,6 @@ class ClientHandle:
         ret = funcGetObjectDetection(self.sockFD, self.buffer, self.isCreated, 
                 self.networkID, c_int(channel), c_int(height), c_int(width),
                 imageDataArray, bboxArray, c_int(maxBoxCount), c_int(coordRelative))
-        print "bboxArray : ", bboxArray
 
         result_box = []
         for bbox in bboxArray:
@@ -140,3 +150,40 @@ class ClientHandle:
                         bbox.confidence])
         return ret, result_box
 
+    def getMeasureItemName(self, networkID):
+        itemCount = c_int(-1)        
+        itemNameArray = (POINTER(c_char) * MAX_MESAURE_ITEMCOUNT)()
+        for i in range(MAX_MESAURE_ITEMCOUNT):
+            itemNameArray[i] = create_string_buffer(MAX_MEASURE_ITEMNAMELEN)
+        
+        ret = funcGetMeasureItemName(self.sockFD, self.buffer, c_int(networkID),
+                c_int(MAX_MESAURE_ITEMCOUNT), itemNameArray, byref(itemCount))
+
+        result = []
+        for i in range(itemCount.value):
+            value = cast(itemNameArray[i], c_char_p).value
+            result.append(value);
+
+        return ret, result
+
+    def getMeasures(self, networkID, itemCount, forwardSearch, start, count):
+        assert itemCount > 0
+
+        startIterNum = c_int(-1)
+        dataCount = c_int(-1)
+        measureArray = (c_float * (itemCount * count))()
+       
+        ret = funcGetMeasures(self.sockFD, self.buffer, c_int(networkID),
+                c_int(int(forwardSearch)), c_int(start), c_int(count), byref(startIterNum),
+                byref(dataCount), measureArray)
+
+        result = []
+
+        for i in range(dataCount.value / itemCount):
+            curr_result = []
+            for j in range(itemCount):
+                index = i * itemCount + j
+                curr_result.append(measureArray[index])
+            result.append(curr_result)
+
+        return ret, startIterNum.value, result
