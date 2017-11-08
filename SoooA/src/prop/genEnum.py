@@ -2,7 +2,7 @@
 
 """genNetworkProp.py: """
 
-import json;
+import json
 
 def checkParamProperty(propDic, prop, propertyName):
     if not propertyName in propDic[prop]:
