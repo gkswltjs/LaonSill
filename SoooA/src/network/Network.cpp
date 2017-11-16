@@ -35,9 +35,9 @@ using namespace std;
 extern const char*  SOOOA_HOME_ENVNAME;
 
 template<typename Dtype>
-atomic<int>         Network<Dtype>::networkIDGen;
+volatile atomic<int>        Network<Dtype>::networkIDGen;
 template<typename Dtype>
-map<int, Network<Dtype>*> Network<Dtype>::networkIDMap;
+map<int, Network<Dtype>*>   Network<Dtype>::networkIDMap;
 template<typename Dtype>
 mutex Network<Dtype>::networkIDMapMutex;
 

@@ -164,7 +164,7 @@ public:
 
 private:
     int                                     networkID;
-    static std::atomic<int>                 networkIDGen;
+    static volatile std::atomic<int>        networkIDGen;
     static std::map<int, Network<Dtype>*>   networkIDMap;
     static std::mutex                       networkIDMapMutex;
     bool                                    isLoaded;
