@@ -63,6 +63,7 @@ RoITestInputLayer<Dtype>::RoITestInputLayer()
 	this->boxColors.push_back(cv::Scalar(255, 0, 170));
 	this->boxColors.push_back(cv::Scalar(0, 193, 216));
 
+	this->isMeasureAP = false;
 }
 
 template <typename Dtype>
@@ -82,7 +83,14 @@ void RoITestInputLayer<Dtype>::reshape() {
 		}
 	}
 
-	Layer<Dtype>::_adjustInputShape();
+	bool adjusted = Layer<Dtype>::_adjustInputShape();
+	if (adjusted) {
+		// AP measure를 위해 gt_boxes outputData를 설정한 경우
+		if (this->_outputData.size() > 2) {
+			this->isMeasureAP = true;
+			this->imdb->loadGtRoidb();
+		}
+	}
 
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
@@ -113,6 +121,12 @@ void RoITestInputLayer<Dtype>::reshape() {
 					SLPROP_BASE(name).c_str(),
 					iminfoShape[0], iminfoShape[1], iminfoShape[2], iminfoShape[3]);
 #endif
+		}
+		// "gt_boxes"
+		else if (i == 2) {
+			const vector<uint32_t> gtboxesShape = {1, 1, 1, 8};
+			this->_inputShape[2] = gtboxesShape;
+			this->_inputData[2]->reshape(gtboxesShape);
 		}
 	}
 }
@@ -173,8 +187,7 @@ void RoITestInputLayer<Dtype>::getNextMiniBatch() {
 	Util::imagePath = imagePath;
 	cv::Mat im = cv::imread(imagePath);
 	//showImageMat(im, false);
-	cout << "test image: " << imagePath <<
-			" (" << im.rows << "x" << im.cols << ")" << endl;
+	//cout << "test image: " << imagePath << " (" << im.rows << "x" << im.cols << ")" << endl;
 
 	/*
 	vector<string> boxLabelsText;
@@ -187,7 +200,39 @@ void RoITestInputLayer<Dtype>::getNextMiniBatch() {
 
 	// Mat으로 input data에 해당하는 'data'와 'im_info' Data 초기화
 	// feedforward 준비 완료
-	getBlobs(im);
+	float imScale = getBlobs(im);
+
+
+
+	if (this->isMeasureAP) {
+		RoIDB& roidb = imdb->roidb[this->cur];
+		//float rows = (float)(im.rows - 1);
+		//float cols = (float)(im.cols - 1);
+
+		// FRCNN의 경우 test_name_size가 따로 만들지 않는 이상 없으므로
+		// Normalized된 bbox보다는 원본 크기를 그대로 저장한다.
+		// roidb.boxes에는 원본 기준 사이즈의 박스가 저장되어 있다.
+		vector<uint32_t> gtInds;
+		np_where_s(roidb.gt_classes, NE, (uint32_t)0, gtInds);
+
+		const uint32_t numGtInds = gtInds.size();
+		vector<vector<float>> gt_boxes(numGtInds);
+		for (uint32_t i = 0; i < numGtInds; i++) {
+			gt_boxes[i].resize(8);
+			gt_boxes[i][0] = 0.f;										// item_id
+			gt_boxes[i][1] = roidb.gt_classes[gtInds[i]];				// label
+			gt_boxes[i][2] = 0.f;
+			gt_boxes[i][3] = roidb.boxes[gtInds[i]][0];					// xmin
+			gt_boxes[i][4] = roidb.boxes[gtInds[i]][1];					// ymin
+			gt_boxes[i][5] = roidb.boxes[gtInds[i]][2];					// xmax
+			gt_boxes[i][6] = roidb.boxes[gtInds[i]][3];					// ymax
+			gt_boxes[i][7] = 0.f;										// difficult
+		}
+
+		fillDataWith2dVec(gt_boxes, this->_inputData[2]);
+		this->_inputShape[2] =
+			{1, 1, (uint32_t)gt_boxes.size(), (uint32_t)gt_boxes[0].size()};
+	}
 
 	this->cur++;
 }
@@ -331,7 +376,7 @@ void RoITestInputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr
 	if (isInput) {
 		SASSERT0(false);
 	} else {
-		SASSERT0(index < 2);
+		SASSERT0(index < 3);
 	}
 
     RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;

@@ -252,17 +252,6 @@
 			"poolingType" : "Max"
 		},
 
-
-
-
-
-
-
-
-
-
-
-
 		{
 			"name" : "conv4_1",
 			"layer" : "Conv",
@@ -362,19 +351,6 @@
 			"poolDim.stride" : 2,
 			"poolingType" : "Max"
 		},
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 		{
 			"name" : "conv5_1",
@@ -579,5 +555,4 @@
 		"optimizer" : "Momentum",
 		"loadPath" : "$(SOOOA_HOME)/param/VGG16_CAFFE_TRAINED.param"
 	}
-
 }

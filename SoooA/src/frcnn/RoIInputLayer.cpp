@@ -18,6 +18,7 @@
 #include "RoIDBUtil.h"
 #include "MockDataSet.h"
 #include "PropMgmt.h"
+#include "SysLog.h"
 
 #define ROIINPUTLAYER_LOG 0
 
@@ -425,7 +426,7 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 	randomScaleInds.resize(numImages);
 	std::fill(randomScaleInds.begin(), randomScaleInds.end(), 0);
 #endif
-	//assert(randomScaleInds.size() == 1);
+	//SASSERT0(randomScaleInds.size() == 1);
 	//cout << "randomScaleInds: " << randomScaleInds[0] << endl;
 
 
@@ -447,7 +448,7 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 	*/
 
 
-	assert(TRAIN_BATCH_SIZE % numImages == 0);
+	SASSERT0(TRAIN_BATCH_SIZE % numImages == 0);
 
 	uint32_t roisPerImage = TRAIN_BATCH_SIZE / numImages;
 	uint32_t fgRoisPerImage = np_round(TRAIN_FG_FRACTION * roisPerImage);
@@ -457,8 +458,8 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 	vector<cv::Mat> processedIms = getImageBlob(roidb, randomScaleInds, imScales);
 
 	// if cfg.TRAIN.HAS_RPN
-	assert(imScales.size() == 1);	// Single batch only
-	assert(roidb.size() == 1);		// Single batch only
+	SASSERT0(imScales.size() == 1);	// Single batch only
+	SASSERT0(roidb.size() == 1);		// Single batch only
 
 	if (TRAIN_HAS_RPN) {
 		// gt boxes: (x1, y1, x2, y2, cls)
@@ -616,8 +617,8 @@ float RoIInputLayer<Dtype>::prepImForBlob(cv::Mat& im, cv::Mat& imResized,
 	// cv::Mat, BGR이 cols만큼 반복, 다시 해당 row가 rows만큼 반복
 	const uint32_t channels = im.channels();
 	// XXX: 3채널 컬러 이미지로 강제
-	assert(channels == 3);
-	assert(channels == pixelMeans.size());
+	SASSERT0(channels == 3);
+	SASSERT0(channels == pixelMeans.size());
 
 
 
@@ -681,7 +682,7 @@ void RoIInputLayer<Dtype>::imListToBlob(vector<cv::Mat>& ims) {
 	// Assumes images are already prepared (means subtracted, BGR order, ...)
 
 	const uint32_t numImages = ims.size();
-	assert(numImages == 1);
+	SASSERT0(numImages == 1);
 
 	vector<uint32_t> maxShape;
 	vector<vector<uint32_t>> imShapes;

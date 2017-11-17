@@ -213,6 +213,11 @@ void LocateBBox(const NormalizedBBox& srcBBox, const NormalizedBBox& bbox,
 void ExtrapolateBBox(const ResizeParam& param, const int height, const int width,
 		const NormalizedBBox& cropBBox, NormalizedBBox* bbox);
 
+void CumSum(const std::vector<std::pair<float, int>>& pairs, std::vector<int>* cumSum);
+
+void ComputeAP(const std::vector<std::pair<float, int>>& tp, const int numPos,
+		const std::vector<std::pair<float, int>>& fp, const std::string apVersion,
+		std::vector<float>* prec, std::vector<float>* rec, float* ap);
 
 
 #endif /* BBOXUTIL_H_ */

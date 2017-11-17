@@ -2380,7 +2380,107 @@ void ExtrapolateBBox(const ResizeParam& param, const int height, const int width
 }
 
 
+void CumSum(const std::vector<std::pair<float, int>>& pairs, std::vector<int>* cumSum) {
+	// Sort the pairs based on first item of the pair.
+	std::vector<std::pair<float, int>> sortPairs = pairs;
+	std::stable_sort(sortPairs.begin(), sortPairs.end(), SortScorePairDescend<int>);
 
+	cumSum->clear();
+	for (int i = 0; i < sortPairs.size(); i++) {
+		if (i == 0) {
+			cumSum->push_back(sortPairs[i].second);
+		} else {
+			cumSum->push_back(cumSum->back() + sortPairs[i].second);
+		}
+	}
+}
+
+void ComputeAP(const std::vector<std::pair<float, int>>& tp, const int numPos,
+		const std::vector<std::pair<float, int>>& fp, const std::string apVersion,
+		std::vector<float>* prec, std::vector<float>* rec, float* ap) {
+	const float eps = 1e-6;
+	SASSERT(tp.size() == fp.size(), "tp must have same size as fp.");
+	const int num = tp.size();
+	// Make sure that tp and fp have complement value.
+	for (int i = 0; i < num; i++) {
+		SASSERT0(std::fabs(tp[i].first - fp[i].first) <= eps);
+		SASSERT0(tp[i].second == 1 - fp[i].second);
+	}
+	prec->clear();
+	rec->clear();
+	*ap = 0;
+	if (tp.size() == 0 || numPos == 0) {
+		return;
+	}
+
+	// Compute cumSum of tp.
+	std::vector<int> tpCumSum;
+	CumSum(tp, &tpCumSum);
+	SASSERT0(tpCumSum.size() == num);
+
+	// Compute cumSum of fp.
+	std::vector<int> fpCumSum;
+	CumSum(fp, &fpCumSum);
+	SASSERT0(fpCumSum.size() == num);
+
+	// Compute precision.
+	for (int i = 0; i < num; i++) {
+		prec->push_back(static_cast<float>(tpCumSum[i]) / (tpCumSum[i] + fpCumSum[i]));
+	}
+
+	// Compute recall.
+	for (int i = 0; i < num; i++) {
+		SASSERT0(tpCumSum[i] <= numPos);
+		rec->push_back(static_cast<float>(tpCumSum[i]) / numPos);
+	}
+
+	if (apVersion == "11point") {
+		// VOC2007 style for computing AP.
+		std::vector<float> maxPrecs(11, 0.f);
+		int startIdx = num - 1;
+		for (int j = 10; j >= 0; j--) {
+			for (int i = startIdx; i >= 0; i--) {
+				if ((*rec)[i] < j / 10.f) {
+					startIdx = i;
+					if (j > 0) {
+						maxPrecs[j - 1] = maxPrecs[j];
+					}
+					break;
+				} else {
+					if (maxPrecs[j] < (*prec)[i]) {
+						maxPrecs[j] = (*prec)[i];
+					}
+				}
+			}
+		}
+		for (int j = 10; j >= 0; j--) {
+			*ap += maxPrecs[j] / 11;
+		}
+	} else if (apVersion == "MaxIntegral") {
+		// VOC2012 or ILSVRC style for computing AP.
+		float curRec = rec->back();
+		float curPrec = prec->back();
+		for (int i = num - 2; i >= 0; i--) {
+			curPrec = std::max<float>((*prec)[i], curPrec);
+			if (fabs(curRec - (*rec)[i]) > eps) {
+				*ap += curPrec * fabs(curRec - (*rec)[i]);
+			}
+			curRec = (*rec)[i];
+		}
+		*ap += curRec * curPrec;
+	} else if (apVersion == "Integral") {
+		// Natural integral.
+		float prevRec = 0.f;
+		for (int i = 0; i < num; i++) {
+			if (fabs((*rec)[i] - prevRec) > eps) {
+				*ap += (*prec)[i] * fabs((*rec)[i] - prevRec);
+			}
+			prevRec = (*rec)[i];
+		}
+	} else {
+		STDOUT_LOG("Unknown apVersion: %s", apVersion.c_str());
+	}
+}
 
 
 

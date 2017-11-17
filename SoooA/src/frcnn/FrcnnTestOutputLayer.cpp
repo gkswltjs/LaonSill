@@ -66,7 +66,10 @@ FrcnnTestOutputLayer<Dtype>::~FrcnnTestOutputLayer() {}
 
 template <typename Dtype>
 void FrcnnTestOutputLayer<Dtype>::reshape() {
-	Layer<Dtype>::_adjustInputShape();
+	bool adjusted = Layer<Dtype>::_adjustInputShape();
+	if (adjusted) {
+		this->_outputData[0]->reshape({1, 1, 1, 7});
+	}
 
 	const uint32_t inputSize = this->_inputData.size();
 	for (uint32_t i = 0; i < inputSize; i++) {
@@ -165,43 +168,6 @@ template <typename Dtype>
 void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 		vector<vector<Dtype>>& boxes) {
 
-
-	/*
-	cout << "rois shape: " << endl;
-	print2dArray("rois", proposals);
-
-	const string windowName = "rois";
-	uint32_t numBoxes = proposals.size();
-
-	Dtype scale = this->_inputData[2]->host_data()[2];
-	int boxOffset = 1;
-	cout << "scale: " << scale << endl;
-	const int onceSize = 5;
-
-	for (int j = 0; j < (numBoxes / onceSize); j++) {
-		cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
-		cv::resize(im, im, cv::Size(), scale, scale, CV_INTER_LINEAR);
-
-		for (uint32_t i = j*onceSize; i < (j+1)*onceSize; i++) {
-			cv::rectangle(im, cv::Point(proposals[i][boxOffset+0], proposals[i][boxOffset+1]),
-				cv::Point(proposals[i][boxOffset+2], proposals[i][boxOffset+3]),
-				cv::Scalar(0, 0, 255), 2);
-		}
-
-		cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
-		cv::imshow(windowName, im);
-
-		if (pause) {
-			cv::waitKey(0);
-			cv::destroyAllWindows();
-		}
-	}
-	*/
-
-
-
-
-
 	const Dtype confThresh = Dtype(SLPROP(FrcnnTestOutput, confThresh));
 	const Dtype nmsThresh = Dtype(SLPROP(FrcnnTestOutput, nmsThresh));
 
@@ -211,6 +177,7 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 	vector<Dtype> clsScores;
 	vector<vector<Dtype>> clsBoxes;
 	vector<uint32_t> inds;
+	vector<vector<Dtype>> detectionOut;
 
 	for (int clsInd = 1; clsInd < this->labelMap.getCount(); clsInd++) {
 		const string& cls = this->labelMap.convertIndToLabel(clsInd);
@@ -218,58 +185,61 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 		fillClsScores(scores, clsInd, clsScores);
 		fillClsBoxes(boxes, clsInd, clsBoxes);
 
-		cout << cls << "\t\tboxes before nms: " << scores.size();
+		//cout << cls << "\t\tboxes before nms: " << scores.size();
 		nms(clsBoxes, clsScores, nmsThresh, keep);
-		cout << " , after nms: " << keep.size() << endl;
+		//cout << " , after nms: " << keep.size() << endl;
 
 		clsBoxes = vec_keep_by_index(clsBoxes, keep);
 		clsScores = vec_keep_by_index(clsScores, keep);
 
 		// score 중 confThresh 이상인 것에 대해
 		np_where_s(clsScores, GE, confThresh, inds);
+		//np_where_s(clsScores, GE, 0.01, inds);
 
 		if (inds.size() == 0)
 			continue;
 
 
-		cout << "num of " << cls << ": " << inds.size() << endl;
+		//cout << "num of " << cls << ": " << inds.size() << endl;
 
 		int offset = result.size();
 
 		for (int i = 0; i < inds.size(); i++) {
-			vector<float> temp(6);
-			temp[0] = float(clsInd);
-			temp[1] = clsBoxes[inds[i]][0];
-			temp[2] = clsBoxes[inds[i]][1];
-			temp[3] = clsBoxes[inds[i]][2];
-			temp[4] = clsBoxes[inds[i]][3];
-			temp[5] = clsScores[inds[i]];
-			cout << "\tscore:" << temp[5] << endl;
-			result.push_back(temp);
+			vector<float> temp(7);
+			temp[0] = 0.f;
+			temp[1] = float(clsInd);
+			temp[2] = clsScores[inds[i]];
+			temp[3] = clsBoxes[inds[i]][0];
+			temp[4] = clsBoxes[inds[i]][1];
+			temp[5] = clsBoxes[inds[i]][2];
+			temp[6] = clsBoxes[inds[i]][3];
 
-			//printf("%f, %f, %f, %f", temp[1], temp[2], temp[3], temp[4]);
+			//cout << "\tscore:" << temp[2] << endl;
+			result.push_back(temp);
 		}
 	}
 
+	//exit(1);
 	if (Util::imagePath.size() == 0)
 		Util::imagePath = "/home/jkim/Dev/git/py-faster-rcnn-v/data/demo/000010.jpg";
-
-
 
 	//const Dtype imScale = this->_inputData[1]->host_data()[2];
 	cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
 	//cv::resize(im, im, cv::Size(), imScale, imScale, CV_INTER_LINEAR);
 	uint32_t numBoxes = result.size();
 
-	for (uint32_t i = 0; i < numBoxes; i++) {
-		int clsInd = round(result[i][0]);
+	//cout << "rows: " << im.rows << ", cols: " << im.cols << endl;
+	//cout << result[0][3] << "," << result[0][4] << "," << result[0][5] << "," << result[0][6] << endl;
 
-		cv::rectangle(im, cv::Point(result[i][1], result[i][2]),
-			cv::Point(result[i][3], result[i][4]),
+	for (uint32_t i = 0; i < numBoxes; i++) {
+		int clsInd = round(result[i][1]);
+
+		cv::rectangle(im, cv::Point(result[i][3], result[i][4]),
+			cv::Point(result[i][5], result[i][6]),
 			boxColors[clsInd-1], 2);
 
-		cv::putText(im, this->labelMap.convertIndToLabel(clsInd) , cv::Point(result[i][1],
-				result[i][2]+15.0f), 2, 0.5f, boxColors[clsInd-1]);
+		cv::putText(im, this->labelMap.convertIndToLabel(clsInd) , cv::Point(result[i][3],
+				result[i][4]+15.0f), 2, 0.5f, boxColors[clsInd-1]);
 	}
 
 	if (SLPROP(FrcnnTestOutput, savePath) == "") {
@@ -283,6 +253,13 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 		}
 	} else {
 		cv::imwrite(SLPROP(FrcnnTestOutput, savePath) + "/" + Util::imagePath.substr(Util::imagePath.length()-10), im);
+	}
+
+	if (result.size() > 0) {
+		fillDataWith2dVec(result, this->_outputData[0]);
+	} else {
+		this->_outputData[0]->reshape({1, 1, 1, 7});
+		this->_outputData[0]->mutable_host_data()[1] = -1;
 	}
 
 	/*

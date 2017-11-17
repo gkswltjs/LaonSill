@@ -1355,6 +1355,7 @@
 		["overlapThreshold", "float", "0.5"],
 		["evaluateDifficultGt", "bool", "true"],
 		["nameSizeFile", "std::string", "\"\""],
+		["apVersion", "std::string", "\"Integral\""],
 		["resizeParam", "ResizeParam", "{}",
 			[
 				["prob", "float"],

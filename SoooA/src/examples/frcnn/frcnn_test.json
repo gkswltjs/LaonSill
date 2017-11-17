@@ -5,7 +5,7 @@
 			"name" : "input-data",
 			"layer" : "RoITestInput",
 			"id" : 0,
-			"output" : ["data", "im_info"],
+			"output" : ["data", "im_info", "label"],
 			"numClasses" : 21,
 			"imageSet" : "test", 
 			"dataName" : "voc_2007",
@@ -407,12 +407,26 @@
 			"layer" : "FrcnnTestOutput",
 			"id" : 350,
 			"input" : ["rois", "im_info", "cls_prob", "bbox_pred"],
-			"output" : ["loss_bbox"],
+			"output" : ["detection_out"],
 			"labelMapPath" : "$(SOOOA_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
 			"confThresh" : 0.5,
 			"nmsThresh" : 0.1,
 			"savePath" : "$(SOOOA_HOME)/output_images/frcnn"
+		},
+
+		{
+			"name" : "detection_eval",
+			"layer" : "DetectionEvaluate",
+			"id" : 360,
+			"input" : ["detection_out", "label"],
+			"output" : ["detection_eval"],
+			"numClasses" : 21,
+			"backgroundLabelId" : 0,
+			"overlapThreshold" : 0.5,
+			"evaluateDifficultGt" : false,
+			"apVersion" : "11point"
 		}
+
 	],
 
 	"configs" :

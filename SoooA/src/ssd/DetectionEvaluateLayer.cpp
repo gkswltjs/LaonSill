@@ -9,6 +9,7 @@
 #include "MathFunctions.h"
 #include "BBoxUtil.h"
 #include "SysLog.h"
+#include "StdOutLog.h"
 #include "PropMgmt.h"
 
 #define DETECTIONEVALUATIONLAYER_LOG 1
@@ -94,6 +95,9 @@ void DetectionEvaluateLayer<Dtype>::reshape() {
 
 template <typename Dtype>
 void DetectionEvaluateLayer<Dtype>::feedforward() {
+	//cout << "nameSizeFile: " << SLPROP(DetectionEvaluate, nameSizeFile).empty() << endl;
+	//cout << "useNorm: " << useNormalizedBBox << endl;
+
 	reshape();
 
 	const Dtype* detData = this->_inputData[0]->host_data();
@@ -298,6 +302,7 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 				}
 			}
 		}
+
 		if (this->sizes.size() > 0) {
 			this->count++;
 			if (this->count == this->sizes.size()) {
@@ -307,11 +312,21 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 		}
 	}
 
-#if DETECTIONEVALUATIONLAYER_LOG && false
-	this->_printOn();
-	this->_outputData[0]->print_data({}, false, -1);
-	this->_printOff();
-#endif
+	collectBatchResult();
+
+	const int iterations = SNPROP(iterations);
+	const int testInterval = SNPROP(testInterval);
+
+	cout << "iterations: " << iterations << ", testInterval: " << testInterval << endl;
+
+	if ((iterations + 1) % testInterval == 0) {
+		float result = testDetection();
+		cout << "mAP = " << result << endl;
+
+		this->numPos.clear();
+		this->truePos.clear();
+		this->falsePos.clear();
+	}
 }
 
 template <typename Dtype>
@@ -319,6 +334,65 @@ void DetectionEvaluateLayer<Dtype>::backpropagation() {
 
 }
 
+
+
+template <typename Dtype>
+void DetectionEvaluateLayer<Dtype>::collectBatchResult() {
+	const Dtype* resultVec = this->_outputData[0]->host_data();
+	int numDet = this->_outputData[0]->height();
+	for (int k = 0; k < numDet; k++) {
+		int itemId = static_cast<int>(resultVec[k * 5]);
+		int label = static_cast<int>(resultVec[k * 5 + 1]);
+		if (itemId == -1) {
+			// Special row of storing number of positive for a label
+			if (this->numPos.find(label) == this->numPos.end()) {
+				this->numPos[label] = static_cast<int>(resultVec[k * 5 + 2]);
+			} else {
+				this->numPos[label] += static_cast<int>(resultVec[k * 5 + 2]);
+			}
+		} else {
+			// Normal row storing detection status
+			float score = resultVec[k * 5 + 2];
+			int tp = static_cast<int>(resultVec[k * 5 + 3]);
+			int fp = static_cast<int>(resultVec[k * 5 + 4]);
+			if (tp == 0 && fp == 0) {
+				// Ignore such case. It happens when a detection bbox is matched to
+				// a difficult gt bbox and we don't evaluate on difficult gt bbox.
+				continue;
+			}
+			this->truePos[label].push_back(std::make_pair(score, tp));
+			this->falsePos[label].push_back(std::make_pair(score, fp));
+		}
+	}
+}
+
+template <typename Dtype>
+float DetectionEvaluateLayer<Dtype>::testDetection() {
+	map<int, float> APs;
+	float mAP = 0.f;
+
+	// Sort truePos and falsePos with descend scores.
+	for (map<int, int>::const_iterator it = this->numPos.begin(); it != this->numPos.end(); it++) {
+		int label = it->first;
+		int labelNumPos = it->second;
+		if (this->truePos.find(label) == this->truePos.end()) {
+			STDOUT_LOG("Missing truePos for label: %d", label);
+			continue;
+		}
+		const vector<pair<float, int>>& labelTruePos = this->truePos.find(label)->second;
+		if (this->falsePos.find(label) == this->falsePos.end()) {
+			STDOUT_LOG("Missing falsePos for label: %d", label);
+			continue;
+		}
+		const vector<pair<float, int>>& labelFalsePos = this->falsePos.find(label)->second;
+		vector<float> prec, rec;
+		ComputeAP(labelTruePos, labelNumPos, labelFalsePos, SLPROP(DetectionEvaluate, apVersion), &prec, &rec, &(APs[label]));
+		mAP += APs[label];
+	}
+	mAP /= this->numPos.size();
+
+	return mAP;
+}
 
 
 

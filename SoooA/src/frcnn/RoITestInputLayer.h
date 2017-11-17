@@ -49,6 +49,8 @@ public:
 
 	std::vector<cv::Scalar> boxColors;
 
+	bool isMeasureAP;
+
 
 public:
     /****************************************************************************

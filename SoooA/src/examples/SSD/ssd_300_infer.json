@@ -1507,6 +1507,20 @@
 			"codeType" : "CENTER_SIZE",
 			"keepTopK" : 200,
 			"confidenceThreshold" : 0.01
+		},
+
+		{
+			"name" : "detection_eval",
+			"layer" : "DetectionEvaluate",
+			"id" : 1030,
+			"input" : ["detection_out", "label"],
+			"output" : ["detection_eval"],
+			"numClasses" : 21,
+			"backgroundLabelId" : 0,
+			"overlapThreshold" : 0.5,
+			"evaluateDifficultGt" : false,
+			"nameSizeFile" : "$(SOOOA_HOME)/data/VOC0712/test_name_size.txt",
+			"apVersion" : "11point"
 		}
 	],
 

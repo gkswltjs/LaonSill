@@ -17,72 +17,33 @@
  * ground truth bounding box labels.
  *
  * Intended for use with MultiBox detection method.
+ *
+ * inputData Structure
+ * intputData[0] (detection_out) (1 x 1 x # of detections x 7)
+ * [0]: item_id (item index in batch)
+ * [1]: label
+ * [2]: score
+ * [3]: xmin (normalized to [0.0 ~ 1.0] or original size (not scaled))
+ * [4]: ymin
+ * [5]: xmax
+ * [6]: ymax
+ *
+ * inputData[1] (label) (1 x 1 x # of gts x 8)
+ * [0]: item_id
+ * [1]: label
+ * [2]: N/A
+ * [3]: xmin
+ * [4]: ymin
+ * [5]: xmax
+ * [6]: ymax
+ * [7]: difficult
+ *
+ * <if box location is normalized, should specify test_name_size file at layer config>
+ *
  */
 template <typename Dtype>
 class DetectionEvaluateLayer : public Layer<Dtype> {
 public:
-	/*
-	class Builder : public Layer<Dtype>::Builder {
-	public:
-		int _numClasses;
-		int _backgroundLabelId;
-		float _overlapThreshold;
-		bool _evaluateDifficultGt;
-		std::string _nameSizeFile;
-
-		Builder() {
-			this->type = Layer<Dtype>::Concat;
-			this->_numClasses = -1;
-			this->_backgroundLabelId = 0;
-			this->_overlapThreshold = 0.5f;
-			this->_evaluateDifficultGt = true;
-		}
-		virtual Builder* name(const std::string name) {
-			Layer<Dtype>::Builder::name(name);
-			return this;
-		}
-		virtual Builder* id(uint32_t id) {
-			Layer<Dtype>::Builder::id(id);
-			return this;
-		}
-		virtual Builder* inputs(const std::vector<std::string>& inputs) {
-			Layer<Dtype>::Builder::inputs(inputs);
-			return this;
-		}
-		virtual Builder* outputs(const std::vector<std::string>& outputs) {
-			Layer<Dtype>::Builder::outputs(outputs);
-			return this;
-		}
-		virtual Builder* propDown(const std::vector<bool>& propDown) {
-			Layer<Dtype>::Builder::propDown(propDown);
-			return this;
-		}
-		virtual Builder* numClasses(const int numClasses) {
-			this->_numClasses = numClasses;
-			return this;
-		}
-		virtual Builder* backgroundLabelId(const int backgroundLabelId) {
-			this->_backgroundLabelId = backgroundLabelId;
-			return this;
-		}
-		virtual Builder* overlapThreshold(const float overlapThreshold) {
-			this->_overlapThreshold = overlapThreshold;
-			return this;
-		}
-		virtual Builder* evaluateDifficultGt(const bool evaluateDifficultGt) {
-			this->_evaluateDifficultGt = evaluateDifficultGt;
-			return this;
-		}
-		virtual Builder* nameSizeFile(const std::string& nameSizeFile) {
-			this->_nameSizeFile = nameSizeFile;
-			return this;
-		}
-		Layer<Dtype>* build() {
-			return new DetectionEvaluateLayer(this);
-		}
-	};
-	*/
-
 	DetectionEvaluateLayer();
 	virtual ~DetectionEvaluateLayer();
 
@@ -91,26 +52,17 @@ public:
 	virtual void backpropagation();
 
 private:
-
+	void collectBatchResult();
+	float testDetection();
 
 private:
-	/*
-	int numClasses;
-	int backgroundLabelId;
-	float overlapThreshold;
-	bool evaluateDifficultGt;
-	std::string nameSizeFile;
-	*/
-
 	std::vector<std::pair<int, int>> sizes;
 	int count;
 	bool useNormalizedBBox;
 
-
-
-
-
-
+	std::map<int, std::vector<std::pair<float, int>>> truePos;
+	std::map<int, std::vector<std::pair<float, int>>> falsePos;
+	std::map<int, int> numPos;
 
 
 public:
