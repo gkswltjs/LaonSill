@@ -17,6 +17,7 @@
 #include <condition_variable>
 #include <list>
 #include <chrono>
+#include <string>
 
 #include "common.h"
 #include "Job.h"
@@ -47,15 +48,16 @@ public:
                                                   int devID,
                                                   int requestThreadID,
                                                   std::string tensorName);
-    static void                 addRunPlanTask(int consumerIdx, int networkID, int dopID,
-                                              bool inference, int requestThreadID);
-    static void                 addUpdateTensorTask(int consumerIdx, int networkID,
+    static void                 addRunPlanTask(int consumerIdx, std::string networkID,
+                                                int dopID, bool inference, 
+                                                int requestThreadID);
+    static void                 addUpdateTensorTask(int consumerIdx, std::string networkID,
                                                    int dopID, int layerID, int planID,
                                                    std::vector<UpdateParam> updateParams);
-    static void                 addAllocLayerTask(int consumerIdx, int networkID, int dopID,
-                                                  int layerID, int nodeID, int devID,
-                                                  int requestThreadID, int layerType,
-                                                  void* instancePtr);
+    static void                 addAllocLayerTask(int consumerIdx, std::string networkID,
+                                                  int dopID, int layerID, int nodeID, 
+                                                  int devID, int requestThreadID,
+                                                  int layerType, void* instancePtr);
 
 private:
     /**

@@ -7,6 +7,7 @@
  */
 
 #include <vector>
+#include <string>
 
 #include "common.h"
 #include "Debug.h"
@@ -24,7 +25,7 @@ using namespace std;
 
 template<typename Dtype>
 void SSD<Dtype>::run() {
-    int networkID = PlanParser::loadNetwork(string(EXAMPLE_SSD_TRAIN_NETWORK_FILEPATH));
+    string networkID = PlanParser::loadNetwork(string(EXAMPLE_SSD_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(10000);
 

@@ -107,7 +107,7 @@ void DebugUtil<Dtype>::printLayerEdges(FILE *fp, const char* title, Layer<Dtype>
 
 template<typename Dtype>
 void DebugUtil<Dtype>::printLayerEdgesByLayerID(FILE *fp, const char* title,
-    int networkID, int layerID, int indent) {
+    string networkID, int layerID, int indent) {
     WorkContext::updateNetwork(networkID);
     WorkContext::updatePlan(WorkContext::curDOPID, true);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
@@ -122,7 +122,7 @@ void DebugUtil<Dtype>::printLayerEdgesByLayerID(FILE *fp, const char* title,
 
 template<typename Dtype>
 void DebugUtil<Dtype>::printLayerEdgesByLayerName(FILE *fp, const char* title,
-    int networkID, string layerName, int indent) {
+    string networkID, string layerName, int indent) {
 
     WorkContext::updateNetwork(networkID);
     WorkContext::updatePlan(WorkContext::curDOPID, true);
@@ -151,7 +151,7 @@ void DebugUtil<Dtype>::printLayerEdgesByLayerName(FILE *fp, const char* title,
 }
 
 template<typename Dtype>
-void DebugUtil<Dtype>::printNetworkEdges(FILE *fp, const char* title, int networkID,
+void DebugUtil<Dtype>::printNetworkEdges(FILE *fp, const char* title, string networkID,
     int indent) {
     printIndent(fp, indent);
     fprintf(fp, "network : %s\n", title);
@@ -173,7 +173,7 @@ void DebugUtil<Dtype>::printNetworkEdges(FILE *fp, const char* title, int networ
 }
 
 template<typename Dtype>
-void DebugUtil<Dtype>::printNetworkParams(FILE *fp, const char* title, int networkID,
+void DebugUtil<Dtype>::printNetworkParams(FILE *fp, const char* title, string networkID,
     int indent) {
     printIndent(fp, indent);
     fprintf(fp, "network : %s\n", title);

@@ -41,21 +41,21 @@ public:
     PlanOptimizer() {}
     virtual ~PlanOptimizer() {}
 
-    static bool buildPlans(int networkID, int option, PlanOptPolicy policy);
-    static bool buildPlans(int networkID);
+    static bool buildPlans(std::string networkID, int option, PlanOptPolicy policy);
+    static bool buildPlans(std::string networkID);
 
     static void init();
-    static double runPlan(int networkID, bool inference);
-    static double runPlanByType(int networkID, PlanType planType, bool inference);
+    static double runPlan(std::string networkID, bool inference);
+    static double runPlanByType(std::string networkID, PlanType planType, bool inference);
 
 private:
-    static void setPlanContext(int networkID, int option, bool isTest);
-    static void setSingleGPUPlanContext(int networkID, bool isTest);
-    static void setMultiGPUPlanContext(int networkID, bool isTest);
-    static void setMultiNodePlanContext(int networkID, bool isTest);
-    static void setVerticalSplitPlanContext(int networkID, bool isTest);
-    static void setHorizontalSplitPlanContext(int networkID, bool isTest);
-    static void unsetPlanContext(int networkID);
+    static void setPlanContext(std::string networkID, int option, bool isTest);
+    static void setSingleGPUPlanContext(std::string networkID, bool isTest);
+    static void setMultiGPUPlanContext(std::string networkID, bool isTest);
+    static void setMultiNodePlanContext(std::string networkID, bool isTest);
+    static void setVerticalSplitPlanContext(std::string networkID, bool isTest);
+    static void setHorizontalSplitPlanContext(std::string networkID, bool isTest);
+    static void unsetPlanContext(std::string networkID);
     static std::vector<int> options;
 };
 

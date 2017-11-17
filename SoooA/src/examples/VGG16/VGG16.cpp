@@ -7,6 +7,7 @@
  */
 
 #include <vector>
+#include <string>
 
 #include "common.h"
 #include "VGG16.h"
@@ -23,16 +24,11 @@ using namespace std;
 
 template<typename Dtype>
 void VGG16<Dtype>::run() {
-    int networkID = PlanParser::loadNetwork(string(EXAMPLE_VGG16_TRAIN_NETWORK_FILEPATH));
+    string networkID = PlanParser::loadNetwork(string(EXAMPLE_VGG16_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(10000);
 
 	network->run(false);
-	//network->reset();
-	//cout << "rpn_loss_cls: " << network->findLayer("rpn_loss_cls")->_outputData[0]->host_data()[0] << endl;
-	//cout << "rpn_loss_bbox: " << network->findLayer("rpn_loss_bbox")->_outputData[0]->host_data()[0] << endl;
-	//cout << "loss_cls: " << network->findLayer("loss_cls")->_outputData[0]->host_data()[0] << endl;
-	//cout << "loss_bbox: " << network->findLayer("loss_bbox")->_outputData[0]->host_data()[0] << endl;
 }
 
 

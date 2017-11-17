@@ -101,10 +101,10 @@ S* retrieveValueFromMap(std::map<T, S*>& dict, const T& key);
 
 
 template <typename Dtype>
-int PrepareContext(const std::string& networkFilePath, const int numSteps = 10);
+std::string PrepareContext(const std::string& networkFilePath, const int numSteps = 10);
 
 template <typename Dtype>
-void RetrieveLayers(const int networkID,
+void RetrieveLayers(const std::string networkID,
 		std::vector<std::pair<int, Layer<Dtype>*>>* outerLayers = NULL,
 		std::vector<std::pair<int, Layer<Dtype>*>>* layers = NULL,
 		std::pair<int, InputLayer<Dtype>*>* inputLayer = NULL,
@@ -112,12 +112,12 @@ void RetrieveLayers(const int networkID,
 		std::vector<std::pair<int, LearnableLayer<Dtype>*>>* learnableLayers = NULL);
 
 template <typename Dtype>
-void PrintLayerList(const int networkID,
+void PrintLayerList(const std::string networkID,
 		const std::vector<std::pair<int, Layer<Dtype>*>>* layers = NULL,
 		const std::vector<std::pair<int, LearnableLayer<Dtype>*>>* learnableLayers = NULL);
 
 template <typename Dtype>
-void PrintLayerDataConfig(const int networkID,
+void PrintLayerDataConfig(const std::string networkID,
 		const std::vector<std::pair<int, Layer<Dtype>*>>& layers);
 
 template <typename Dtype>
@@ -132,32 +132,32 @@ void LoadBlobs(const std::string& networkName, const int numSteps,
 
 // paramVec에 param_prefix에 해당하는 Data를 nameDataMap으로부터 조회하여 복사
 template <typename Dtype>
-void FillParam(const int networkID,
+void FillParam(const std::string networkID,
 		std::map<std::string, Data<Dtype>*>& nameDataMap,
 		std::pair<int, LearnableLayer<Dtype>*>& learnableLayerPair);
 
 template <typename Dtype>
-void FillParams(const int networkID,
+void FillParams(const std::string networkID,
 		std::vector<std::pair<int, LearnableLayer<Dtype>*>>& learnableLayers,
 		std::map<std::string, Data<Dtype>*>& nameParamsMap);
 
 
 // dataVec에 data_prefix에 해당하는 Data를 nameDataMap으로부터 조회하여 복사
 template <typename Dtype>
-void FillDatum(const int networkID,
+void FillDatum(const std::string networkID,
 		std::map<std::string, Data<Dtype>*>& nameDataMap,
 		std::pair<int, Layer<Dtype>*>& layerPair,
 		DataEndType dataEndType);
 
 template <typename Dtype>
-void FillData(const int networkID,
+void FillData(const std::string networkID,
 		std::vector<std::pair<int, Layer<Dtype>*>>& layers,
 		std::map<std::string, Data<Dtype>*>& nameBlobsMap,
 		DataEndType dataEndType);
 
 
 template <typename Dtype>
-void BuildNameLayerMap(const int networkID,
+void BuildNameLayerMap(const std::string networkID,
 		std::vector<std::pair<int, Layer<Dtype>*>>& layers,
 		std::map<std::string, std::pair<int, Layer<Dtype>*>>& nameLayerMap);
 
@@ -179,7 +179,7 @@ void PrintNameDataMap(const std::string& name,
  * OUTPUT인 경우, output data의 data를 비교
  */
 template <typename Dtype>
-bool CompareData(const int networkID,
+bool CompareData(const std::string networkID,
 		std::map<std::string, Data<Dtype>*>& nameDataMap,
 		std::pair<int, Layer<Dtype>*>& layerPair, DataEndType dataEndType);
 

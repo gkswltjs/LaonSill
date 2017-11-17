@@ -10,6 +10,7 @@
 #define WORKCONTEXT_H 
 
 #include <atomic>
+#include <string>
 
 #include "PhysicalPlan.h"
 #include "LayerProp.h"
@@ -36,10 +37,10 @@ public:
 
     static thread_local LayerProp*              curLayerProp;
     static thread_local _NetworkProp*           curNetworkProp;
-    static thread_local int                     curNetworkID;
+    static thread_local std::string             curNetworkID;
 
-    static void updateNetwork(int networkID);
-    static void updateLayer(int networkID, int layerID);
+    static void updateNetwork(std::string networkID);
+    static void updateLayer(std::string networkID, int layerID);
     static void updatePlan(int dopID, bool acquireLock);
     static void printContext(FILE* fp);
 

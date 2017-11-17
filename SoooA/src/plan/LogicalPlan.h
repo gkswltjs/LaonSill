@@ -63,23 +63,23 @@ typedef struct PlanDef_s {
 
 class LogicalPlan {
 public: 
-    LogicalPlan(int networkID) {
+    LogicalPlan(std::string networkID) {
         this->networkID = networkID; 
     }
     virtual ~LogicalPlan() {}
 
-    int networkID;
-    static void cleanup(int networkID);
-    static void build(int networkID, std::map<int, PlanBuildDef> planDefMap);
+    std::string networkID;
+    static void cleanup(std::string networkID);
+    static void build(std::string networkID, std::map<int, PlanBuildDef> planDefMap);
     std::vector<PlanDef>                ppDefs;  // physical plan Definition
-    static void printPlanDef(int networkID);
-    static LogicalPlan* getLogicalPlan(int networkID);
+    static void printPlanDef(std::string networkID);
+    static LogicalPlan* getLogicalPlan(std::string networkID);
 
-    static bool isInnerLayer(int networkID, int layerID);
-    static void setLayerType(int networkID, int layerID, bool isInner);
+    static bool isInnerLayer(std::string networkID, int layerID);
+    static void setLayerType(std::string networkID, int layerID, bool isInner);
 
 private:
-    static std::map<int, LogicalPlan*>  lpMap;  // logical plan map
+    static std::map<std::string, LogicalPlan*>  lpMap;  // logical plan map
                                                 // key : network ID, value : plan def list
     static std::mutex                   lpMapMutex;
     static PlanDef* findPlanDef(LogicalPlan* lp, int planID);

@@ -32,7 +32,7 @@ const int MEASURE_DEFAULT_QUEUE_SIZE = 500;
 class MeasureEntry {
 
 public: 
-    MeasureEntry(int networkID, int queueSize, MeasureOption option,
+    MeasureEntry(std::string networkID, int queueSize, MeasureOption option,
         std::vector<std::string> itemNames);
     virtual ~MeasureEntry();
 
@@ -49,7 +49,7 @@ public:
 private:
     std::vector<std::string>    itemNames;
     int                         itemCount;
-    int                         networkID;
+    std::string                 networkID;
     MeasureOption               option;
     int                         queueSize;
     volatile int                head;           // entry insert position

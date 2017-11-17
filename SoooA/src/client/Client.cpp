@@ -119,7 +119,7 @@ void Client::clientMain(const char* hostname, int portno) {
     Job* createNetworkReplyJob;
     recvJob(sockFd, buf, &createNetworkReplyJob);
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
-    int networkID = createNetworkReplyJob->getIntValue(0);
+    string networkID = createNetworkReplyJob->getStringValue(0);
     cout << "created network ID : " << networkID << endl;
     delete createNetworkReplyJob;
 

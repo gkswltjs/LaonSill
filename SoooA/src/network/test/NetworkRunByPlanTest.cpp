@@ -6,6 +6,8 @@
  * @details
  */
 
+#include <string>
+
 #include "NetworkRunByPlanTest.h"
 #include "common.h"
 #include "StdOutLog.h"
@@ -18,7 +20,7 @@ using namespace std;
 #define PLAN_PARSER_TEST_NETWORK_FILEPATH       SPATH("plan/test/network.conf.test")
 
 bool NetworkRunByPlanTest::runPlanOnceTest() {
-    int networkID = PlanParser::loadNetwork(string(PLAN_PARSER_TEST_NETWORK_FILEPATH));
+    string networkID = PlanParser::loadNetwork(string(PLAN_PARSER_TEST_NETWORK_FILEPATH));
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->build(10);
 

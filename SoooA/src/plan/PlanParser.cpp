@@ -225,7 +225,7 @@ void PlanParser::setPropValue(Json::Value val, bool isLayer, string layerType, s
     }
 }
 
-vector<int64_t> PlanParser::handleInnerLayer(int networkID, Json::Value vals,
+vector<int64_t> PlanParser::handleInnerLayer(std::string networkID, Json::Value vals,
     string parentLayerType, void* parentProp) {
     vector<int64_t> innerIDList;
 
@@ -265,7 +265,7 @@ vector<int64_t> PlanParser::handleInnerLayer(int networkID, Json::Value vals,
     return innerIDList;
 }
 
-void PlanParser::buildNetwork(int networkID, Json::Value rootValue) {
+void PlanParser::buildNetwork(std::string networkID, Json::Value rootValue) {
     // logical plan을 만들기 위한 변수들
     map<int, PlanBuildDef> planDefMap;  // key : layerID
 
@@ -372,7 +372,7 @@ void PlanParser::buildNetwork(int networkID, Json::Value rootValue) {
     }
 }
 
-int PlanParser::loadNetwork(string filePath) {
+string PlanParser::loadNetwork(string filePath) {
     // (1) 우선 network configuration file 파싱부터 진행
     filebuf fb;
     if (fb.open(filePath.c_str(), ios::in) == NULL) {
@@ -392,7 +392,7 @@ int PlanParser::loadNetwork(string filePath) {
    
     // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
     Network<float>* network = new Network<float>();
-    int networkID = network->getNetworkID();
+    string networkID = network->getNetworkID();
 
     // (3) 네트워크 빌드
     buildNetwork(networkID, rootValue);
@@ -404,7 +404,7 @@ int PlanParser::loadNetwork(string filePath) {
     return networkID;
 }
 
-int PlanParser::loadNetworkByJSONString(string jsonString) {
+string PlanParser::loadNetworkByJSONString(string jsonString) {
     Json::Value rootValue;
     Json::Reader reader;
     bool parse = reader.parse(jsonString, rootValue);
@@ -416,7 +416,7 @@ int PlanParser::loadNetworkByJSONString(string jsonString) {
    
     // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
     Network<float>* network = new Network<float>();
-    int networkID = network->getNetworkID();
+    string networkID = network->getNetworkID();
 
     // (3) 네트워크 빌드
     buildNetwork(networkID, rootValue);

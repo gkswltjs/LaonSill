@@ -205,7 +205,7 @@ try:
     headerFile.write(" const char* property, void* value);\n")
     headerFile.write("    static void setPropStruct(void* target, const char* layer,")
     headerFile.write(" const char* property, const char* subProperty, void* value);\n")
-    headerFile.write("    static LayerProp* createLayerProp(int networkID, int layerID,")
+    headerFile.write("    static LayerProp* createLayerProp(std::string networkID, int layerID,")
     headerFile.write(" const char* layerName);\n")
     headerFile.write("    static int getLayerType(const char* layer);\n")
     headerFile.write("    static std::string getLayerName(int layerType);\n")
@@ -457,7 +457,7 @@ try:
     sourceFile.write(', layer);\n    }\n}\n\n')
 
     # create layer prop function
-    sourceFile.write("LayerProp* LayerPropList::createLayerProp(int networkID, int layerID,")
+    sourceFile.write("LayerProp* LayerPropList::createLayerProp(std::string networkID, int layerID,")
     sourceFile.write(" const char* layerName) {\n")
    
     isFirstCond = True

@@ -7,6 +7,7 @@
  */
 
 #include <vector>
+#include <string>
 
 #include "common.h"
 #include "Debug.h"
@@ -24,17 +25,10 @@ using namespace std;
 
 template<typename Dtype>
 void LeNet<Dtype>::run() {
-    int networkID = PlanParser::loadNetwork(string(EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH));
+    string networkID = PlanParser::loadNetwork(string(EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(1000);
     network->run(false);
-#if 0
-    for (int i = 0; i < 100; i++) {
-        cout << "epoch : " << i << endl;
-        network->run(false);
-        network->reset();
-    }
-#endif
 }
 
 

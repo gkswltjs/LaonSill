@@ -7,6 +7,7 @@
  */
 
 #include <vector>
+#include <string>
 
 #include "common.h"
 #include "Debug.h"
@@ -42,7 +43,7 @@ void FRCNN<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
 
 template<typename Dtype>
 void FRCNN<Dtype>::run() {
-    int networkID = PlanParser::loadNetwork(string(EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH));
+    string networkID = PlanParser::loadNetwork(string(EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(100);
 

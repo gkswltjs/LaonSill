@@ -26,9 +26,9 @@
 
 using namespace std;
 
-map<int, vector<PhysicalPlan*>>     PhysicalPlan::planGlobalMap;
-map<int, PlanInfo*>                 PhysicalPlan::planGlobalInfoMap;
-mutex                               PhysicalPlan::planGlobalMutex;
+map<std::string, vector<PhysicalPlan*>> PhysicalPlan::planGlobalMap;
+map<std::string, PlanInfo*>             PhysicalPlan::planGlobalInfoMap;
+mutex                                   PhysicalPlan::planGlobalMutex;
 
 PhysicalPlan::PhysicalPlan(vector<string> lossNames) {
     this->lossConsole = new LossConsole(lossNames);
@@ -94,7 +94,7 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
     return tensorPtr;
 }
 
-vector<int> PhysicalPlan::getOrderedLayerIDs(int networkID) {
+vector<int> PhysicalPlan::getOrderedLayerIDs(string networkID) {
     map<string, int> doneTensorMap; 
     map<int, int> doneLayerIDMap;
 
@@ -139,7 +139,7 @@ vector<int> PhysicalPlan::getOrderedLayerIDs(int networkID) {
     return layerIDs;
 }
 
-void PhysicalPlan::allocateTensorInternal(int networkID, int dopID) {
+void PhysicalPlan::allocateTensorInternal(string networkID, int dopID) {
     vector<int> orderedIDs = getOrderedLayerIDs(networkID);
 
     for (int orderedLayerIdx = 0; orderedLayerIdx < orderedIDs.size(); orderedLayerIdx++) {
@@ -232,7 +232,7 @@ void PhysicalPlan::allocateTensorInternal(int networkID, int dopID) {
     }
 }
 
-void PhysicalPlan::allocateTensor(int networkID) {
+void PhysicalPlan::allocateTensor(string networkID) {
     WorkContext::updateNetwork(networkID);
 
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
@@ -286,7 +286,7 @@ void PhysicalPlan::markDone(int planID) {
     SASSUME0(this->planTypeRCMap[LP_PLANID_TO_PLANTYPE(planID)] >= 0);
 }
 
-void PhysicalPlan::markFinish(int networkID, int dopID, int planID) {
+void PhysicalPlan::markFinish(string networkID, int dopID, int planID) {
 //    int oldNetworkID = WorkContext::curNetworkID;
 //    int oldDOPID = WorkContext::curDOPID;
 
@@ -319,7 +319,7 @@ void PhysicalPlan::saveNetwork(bool checkCond) {
             return;
     }
 
-    int networkID = WorkContext::curNetworkID;
+    string networkID = WorkContext::curNetworkID;
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->save();
 }
@@ -328,7 +328,7 @@ void PhysicalPlan::loadNetwork() {
     if (SNPROP(loadPath) == "")
         return;
     
-    int networkID = WorkContext::curNetworkID;
+    string networkID = WorkContext::curNetworkID;
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->load();
 
@@ -380,7 +380,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     // measure를 기록한다.
     // FIXME: 매우 매우 매우 매우 비효율적인 코드!!! 반드시 다시 잘 구현해야함..
     //        지금은 귀찮것도 있지만.. 급하게 해야할 일들이 있어서...(먼산..)
-    int networkID = WorkContext::curNetworkID;
+    string networkID = WorkContext::curNetworkID;
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     if (network->getMeasureInserted()) {
         MeasureEntry* measureEntry = MeasureManager::getMeasureEntry(networkID); 
@@ -594,7 +594,7 @@ bool PhysicalPlan::runPlan(PlanType planType, bool inference) {
     runLayer(targetPlanID, inference);
 }
 
-void PhysicalPlan::insertPlan(int networkID, vector<PhysicalPlan*> pMap, PlanInfo *pInfoMap) {
+void PhysicalPlan::insertPlan(string networkID, vector<PhysicalPlan*> pMap, PlanInfo *pInfoMap) {
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
     SASSERT0(PhysicalPlan::planGlobalMap.find(networkID) == 
             PhysicalPlan::planGlobalMap.end());
@@ -609,7 +609,7 @@ void PhysicalPlan::insertPlan(int networkID, vector<PhysicalPlan*> pMap, PlanInf
     PhysicalPlan::planGlobalInfoMap[networkID] = pInfoMap;
 }
 
-void PhysicalPlan::removePlan(int networkID) {
+void PhysicalPlan::removePlan(string networkID) {
     WorkContext::updateNetwork(networkID);
 
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
@@ -639,7 +639,7 @@ PhysicalPlan* PhysicalPlan::getCurPhysicalPlan() {
     return WorkContext::curPhysicalPlan;
 }
 
-void PhysicalPlan::setCurPlanInfo(int networkID) {
+void PhysicalPlan::setCurPlanInfo(string networkID) {
     unique_lock<mutex> planLock(PhysicalPlan::planGlobalMutex);
     if (PhysicalPlan::planGlobalInfoMap.find(networkID) != 
         PhysicalPlan::planGlobalInfoMap.end()) {
@@ -647,7 +647,7 @@ void PhysicalPlan::setCurPlanInfo(int networkID) {
     }
 }
 
-void PhysicalPlan::setCurPlan(int networkID, int dopID, bool acquireLock) {
+void PhysicalPlan::setCurPlan(string networkID, int dopID, bool acquireLock) {
 
     if (acquireLock)
         PhysicalPlan::planGlobalMutex.lock();
@@ -662,7 +662,7 @@ void PhysicalPlan::setCurPlan(int networkID, int dopID, bool acquireLock) {
         PhysicalPlan::planGlobalMutex.unlock();
 }
 
-int PhysicalPlan::getDOPCount(int networkID) {
+int PhysicalPlan::getDOPCount(string networkID) {
     unique_lock<mutex> planInfoLock(PhysicalPlan::planGlobalMutex);
     SASSUME0(PhysicalPlan::planGlobalInfoMap.find(networkID) !=
             PhysicalPlan::planGlobalInfoMap.end());

@@ -11,11 +11,12 @@
 
 #include <map>
 #include <mutex>
+#include <string>
 
 #include "Update.h"
 
 typedef struct UpdaterKey_s {
-    int networkID;
+    std::string networkID;
     int layerID;
 
     bool operator < (const struct UpdaterKey_s &x) const {
@@ -44,11 +45,12 @@ public:
     Updater() {}
     virtual ~Updater() {}
 
-    static void addUpdater(int networkID, int layerID, int paramCount, int nodeID, int devID);
+    static void addUpdater(std::string networkID, int layerID, int paramCount, int nodeID,
+            int devID);
 
-    static void unsetReshape(int networkID, int layerId);
+    static void unsetReshape(std::string networkID, int layerId);
 
-    static bool updateParams(int networkID, int layerID, int planID, int dopID, 
+    static bool updateParams(std::string networkID, int layerID, int planID, int dopID, 
                             std::vector<UpdateParam> updateParams, bool needSyncGrad);
 
     static bool updateParams(std::vector<UpdateParam> updateParams);

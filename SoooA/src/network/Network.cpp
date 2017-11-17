@@ -10,6 +10,13 @@
 #include <vector>
 #include <map>
 #include <cfloat>
+#include <string>
+#include <iostream>
+
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "DataSet.h"
 #include "BaseLayer.h"
@@ -31,19 +38,21 @@
 #include "MeasureManager.h"
 
 using namespace std;
+using namespace boost::uuids;
 
 extern const char*  SOOOA_HOME_ENVNAME;
 
 template<typename Dtype>
-volatile atomic<int>        Network<Dtype>::networkIDGen;
-template<typename Dtype>
-map<int, Network<Dtype>*>   Network<Dtype>::networkIDMap;
+map<string, Network<Dtype>*>   Network<Dtype>::networkIDMap;
 template<typename Dtype>
 mutex Network<Dtype>::networkIDMapMutex;
 
 template <typename Dtype>
 Network<Dtype>::Network() {
-    this->networkID = atomic_fetch_add(&Network<Dtype>::networkIDGen, 1);
+    random_generator gen;
+    uuid id = gen();
+    this->networkID = to_string(id);
+
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
     Network<Dtype>::networkIDMap[this->networkID] = this;
     this->isLoaded = false;
@@ -63,11 +72,10 @@ Network<Dtype>::~Network() {
 
 template<typename Dtype>
 void Network<Dtype>::init() {
-    atomic_store(&Network<Dtype>::networkIDGen, 0);
 }
 
 template<typename Dtype>
-Network<Dtype>* Network<Dtype>::getNetworkFromID(int networkID) {
+Network<Dtype>* Network<Dtype>::getNetworkFromID(string networkID) {
     Network<Dtype>* network;
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
     network = Network<Dtype>::networkIDMap[networkID];

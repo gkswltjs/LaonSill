@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <string>
 
 #include "cuda/Cuda.h"
 
@@ -129,7 +130,7 @@ void singleJobMain(const char* jobFilePath) {
 	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
-    int networkID = PlanParser::loadNetwork(jobFilePath);
+    string networkID = PlanParser::loadNetwork(jobFilePath);
     WorkContext::updateNetwork(networkID);
     PlanOptimizer::buildPlans(networkID);
 

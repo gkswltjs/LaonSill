@@ -9,6 +9,8 @@
 #ifndef NETWORK_H_
 #define NETWORK_H_
 
+#include <string>
+
 #include "common.h"
 #include "NetworkListener.h"
 #include "BaseLayer.h"
@@ -19,7 +21,6 @@
 #include "LogicalPlan.h"
 
 template <typename Dtype> class DataSet;
-template <typename Dtype> class DQNImageLearner;
 
 /**
  * @brief 네트워크 기본 클래스
@@ -139,14 +140,14 @@ public:
      * @details 네트워크 아이디를 반환한다.
      * @return  네트워크 아이디
      */
-    int                                     getNetworkID() { return this->networkID; }
+    std::string                             getNetworkID() { return this->networkID; }
 
     /**
      * @details 특정 네트워크 아이디를 가지고 있는 네트워크를 반환한다.
      * @param networkID     네트워크 아이디
      * @return  네트워크 포인터를 반환
      */
-    static Network<Dtype>*                  getNetworkFromID(int networkID);
+    static Network<Dtype>*                  getNetworkFromID(std::string networkID);
 
     bool                                    isInnerLayer(int layerID);
 
@@ -163,13 +164,12 @@ public:
                                                 return this->isMeasureInserted; }
 
 private:
-    int                                     networkID;
-    static volatile std::atomic<int>        networkIDGen;
-    static std::map<int, Network<Dtype>*>   networkIDMap;
-    static std::mutex                       networkIDMapMutex;
-    bool                                    isLoaded;
-    bool                                    isBuilt;
-    bool                                    isMeasureInserted;
+    std::string                                     networkID;
+    static std::map<std::string, Network<Dtype>*>   networkIDMap;
+    static std::mutex                               networkIDMapMutex;
+    bool                                            isLoaded;
+    bool                                            isBuilt;
+    bool                                            isMeasureInserted;
 };
 
 

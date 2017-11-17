@@ -39,7 +39,7 @@ void PlanOptimizer::init() {
         options.push_back(PLAN_OPT_HORIZONTAL_SPLIT);
 }
 
-bool PlanOptimizer::buildPlans(int networkID, int option, PlanOptPolicy policy) {
+bool PlanOptimizer::buildPlans(string networkID, int option, PlanOptPolicy policy) {
     vector<int> availableOptions;
     for (int i = 0; i < PlanOptimizer::options.size(); i++) {
         if (option & PlanOptimizer::options[i])
@@ -86,11 +86,11 @@ bool PlanOptimizer::buildPlans(int networkID, int option, PlanOptPolicy policy) 
     return true;
 }
 
-bool PlanOptimizer::buildPlans(int networkID) {
+bool PlanOptimizer::buildPlans(string networkID) {
     return buildPlans(networkID, PLAN_OPT_DEFAULT, PLAN_OPT_POLICY_DEFAULT);
 }
 
-double PlanOptimizer::runPlanByType(int networkID, PlanType planType, bool inference) {
+double PlanOptimizer::runPlanByType(string networkID, PlanType planType, bool inference) {
     struct timespec startTime, endTime;
     clock_gettime(CLOCK_REALTIME, &startTime);
     double elapsed = 0.0;
@@ -131,7 +131,7 @@ double PlanOptimizer::runPlanByType(int networkID, PlanType planType, bool infer
     return elapsed;
 }
 
-double PlanOptimizer::runPlan(int networkID, bool inference) {
+double PlanOptimizer::runPlan(string networkID, bool inference) {
     struct timespec startTime, endTime;
     double elapsed = 0.0;
 
@@ -171,7 +171,7 @@ double PlanOptimizer::runPlan(int networkID, bool inference) {
     return elapsed;
 }
 
-void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
+void PlanOptimizer::setSingleGPUPlanContext(string networkID, bool isTest) {
     // (1) make physical plan list
     vector<PhysicalPlan*> ppList;
     GPUDevInfo devInfo = ResourceManager::getSingleGPUInfo();
@@ -242,23 +242,23 @@ void PlanOptimizer::setSingleGPUPlanContext(int networkID, bool isTest) {
     WorkContext::updatePlan(0, true);
 }
 
-void PlanOptimizer::setMultiGPUPlanContext(int networkID, bool isTest) { 
+void PlanOptimizer::setMultiGPUPlanContext(string networkID, bool isTest) { 
     SASSERT0(false);
 }
 
-void PlanOptimizer::setMultiNodePlanContext(int networkID, bool isTest) { 
+void PlanOptimizer::setMultiNodePlanContext(string networkID, bool isTest) { 
     SASSERT0(false);
 }
 
-void PlanOptimizer::setVerticalSplitPlanContext(int networkID, bool isTest) { 
+void PlanOptimizer::setVerticalSplitPlanContext(string networkID, bool isTest) { 
     SASSERT0(false);
 }
 
-void PlanOptimizer::setHorizontalSplitPlanContext(int networkID, bool isTest) { 
+void PlanOptimizer::setHorizontalSplitPlanContext(string networkID, bool isTest) { 
     SASSERT0(false);
 }
 
-void PlanOptimizer::setPlanContext(int networkID, int option, bool isTest) {
+void PlanOptimizer::setPlanContext(string networkID, int option, bool isTest) {
     PlanInfo planInfoMap;
     PhysicalPlan* physicalPlan;
 
@@ -295,7 +295,7 @@ void PlanOptimizer::setPlanContext(int networkID, int option, bool isTest) {
     network->setBuilt();
 }
 
-void PlanOptimizer::unsetPlanContext(int networkID) {
+void PlanOptimizer::unsetPlanContext(string networkID) {
     PhysicalPlan::removePlan(networkID);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);

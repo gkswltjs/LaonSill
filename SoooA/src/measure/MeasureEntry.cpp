@@ -18,13 +18,18 @@ using namespace std;
 #define MEASURE_ENTRY_ADDDATA_MAX_RETRY_COUNT   10
 #define MEASURE_ENTRY_RETRY_MSEC                10UL
 
-MeasureEntry::MeasureEntry(int networkID, int queueSize, MeasureOption option,
+MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option,
     vector<string> itemNames) {
     this->networkID = networkID;
     this->queueSize = queueSize;
     this->itemNames = itemNames;
     this->itemCount = this->itemNames.size();
     SASSERT0(this->itemCount > 0);
+
+    // 큐 사이즈가 아이템 개수의 배수가 되도록 설정한다.
+    // (계산을 간단하게 하기 위해서)
+    int remain = this->queueSize % this->itemCount;
+    this->queueSize = this->queueSize - remain;
 
     SASSERT0(option == MEASURE_OPTION_MEMORY);  // XXX: 임시적인 제한
 
@@ -35,7 +40,7 @@ MeasureEntry::MeasureEntry(int networkID, int queueSize, MeasureOption option,
     this->freeCount = this->queueSize;
     this->baseIterNum = 0;
 
-    this->data = (float*)malloc(sizeof(float) * queueSize * this->itemCount); 
+    this->data = (float*)malloc(sizeof(float) * this->queueSize * this->itemCount); 
     SASSERT0(this->data != NULL);
 
     this->status =
@@ -89,7 +94,8 @@ void MeasureEntry::addData(float* data) {
             retryCount++;
 
             SASSERT(retryCount < MEASURE_ENTRY_ADDDATA_MAX_RETRY_COUNT,
-                "can not add data in the measure entry(network ID=%d)", this->networkID);
+                "can not add data in the measure entry(network ID=%s)",
+                this->networkID.c_str());
 
             usleep(MEASURE_ENTRY_RETRY_MSEC);
             entryLock.lock();
@@ -136,8 +142,8 @@ retry:
             retryCount++;
 
             SASSERT(retryCount < MEASURE_ENTRY_ADDDATA_MAX_RETRY_COUNT,
-                "can not get data in the measure entry(network ID=%d)", 
-                this->networkID);
+                "can not get data in the measure entry(network ID=%s)", 
+                this->networkID.c_str());
 
             usleep(MEASURE_ENTRY_RETRY_MSEC);
             this->entryMutex.lock();
@@ -268,7 +274,7 @@ void MeasureEntry::getData(int start, int count, bool forward, int* startIterNum
 
 void MeasureEntry::printStatus() {
     STDOUT_LOG("[Measure Entry Info]");
-    STDOUT_LOG("  - networkID : %d", this->networkID);
+    STDOUT_LOG("  - networkID : %s", this->networkID.c_str());
     STDOUT_LOG("  - option : %d", int(this->option));
     STDOUT_LOG("  - queue size : %d", this->queueSize);
 

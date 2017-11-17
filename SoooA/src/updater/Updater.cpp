@@ -14,10 +14,11 @@
 
 using namespace std;
 
-map<UpdaterKey, UpdaterValue*>    Updater::updaterMap; 
-mutex                           Updater::updaterMutex;
+map<UpdaterKey, UpdaterValue*>      Updater::updaterMap; 
+mutex                               Updater::updaterMutex;
 
-void Updater::addUpdater(int networkID, int layerID, int paramCount, int nodeID, int devID) {
+void Updater::addUpdater(string networkID, int layerID, int paramCount, int nodeID,
+        int devID) {
    
     UpdaterKey key;
     key.networkID = networkID;
@@ -31,19 +32,19 @@ void Updater::addUpdater(int networkID, int layerID, int paramCount, int nodeID,
     for (int i = 0; i < paramCount; i++) {
         int paramType = i;
         value->tensorDataPtrs.push_back(new Data<float>(string("update_Data_") + 
-                                           to_string(networkID) + 
+                                           networkID + 
                                            string("_") + to_string(layerID) +
                                            string("_") + to_string(paramType) +
                                            string("_") + to_string(nodeID) +
                                            string("_") + to_string(devID)));
         value->tensorDataHis1Ptrs.push_back(new Data<float>(string("update_DataHis1_") + 
-                                           to_string(networkID) + 
+                                           networkID + 
                                            string("_") + to_string(layerID) +
                                            string("_") + to_string(paramType) +
                                            string("_") + to_string(nodeID) +
                                            string("_") + to_string(devID)));
         value->tensorDataHis2Ptrs.push_back(new Data<float>(string("update_DataHis2_") + 
-                                           to_string(networkID) + 
+                                           networkID + 
                                            string("_") + to_string(layerID) +
                                            string("_") + to_string(paramType) +
                                            string("_") + to_string(nodeID) +
@@ -58,7 +59,7 @@ void Updater::addUpdater(int networkID, int layerID, int paramCount, int nodeID,
     updaterMap[key] = value;
 }
 
-void Updater::unsetReshape(int networkID, int layerID) {
+void Updater::unsetReshape(string networkID, int layerID) {
     UpdaterKey key;
     key.networkID = networkID;
     key.layerID = layerID;
@@ -74,7 +75,7 @@ void Updater::unsetReshape(int networkID, int layerID) {
 // @return  false : cannot access tensor (locked)
 //          true : can access tensor but it could not be done
 //                 (for cluster or multi-device scenario)
-bool Updater::updateParams(int networkID, int layerID, int planID, int dopID,
+bool Updater::updateParams(string networkID, int layerID, int planID, int dopID,
     vector<UpdateParam> updateParams, bool needSyncGrad) {
 
     Data<float>* tensorSourceParam;
@@ -208,7 +209,7 @@ bool Updater::updateParams(int networkID, int layerID, int planID, int dopID,
 
 // 각 레이어의 업데이트 함수는 이 함수를 호출해야 한다.
 bool Updater::updateParams(vector<UpdateParam> updateParams) {
-    int networkID = WorkContext::curNetworkID;
+    string networkID = WorkContext::curNetworkID;
     int layerID = WorkContext::curLayerProp->layerID;
     int planID = LP_UPDATE_PLANID(layerID);
     int dopID = WorkContext::curDOPID;

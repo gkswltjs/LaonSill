@@ -23,7 +23,7 @@ using namespace std;
 map<InputPoolKey, InputPool*>   InputDataProvider::poolMap;
 mutex                           InputDataProvider::poolMapMutex;
 
-map<int, PoolInfo>              InputDataProvider::poolInfoMap;
+map<std::string, PoolInfo>      InputDataProvider::poolInfoMap;
 mutex                           InputDataProvider::poolInfoMutex;
 
 map<DRType, DRCBFuncs>          InputDataProvider::drFuncMap;
@@ -39,7 +39,7 @@ void InputDataProvider::init() {
 }
 
 // input layer에서 이 함수를 호출해서 pool을 등록해야 한다.
-void InputDataProvider::addPool(int networkID, int dopID, string layerName, DRType drType,
+void InputDataProvider::addPool(string networkID, int dopID, string layerName, DRType drType,
     void* reader) {
     // (1) register inputPool
     InputPoolKey inputPoolKey;
@@ -87,7 +87,7 @@ void InputDataProvider::addPool(int networkID, int dopID, string layerName, DRTy
 }
 
 // 이 함수는 네트워크 destory시에 호출을 해야 한다.
-void InputDataProvider::removePool(int networkID) {
+void InputDataProvider::removePool(string networkID) {
     PoolInfo* poolInfo;
     unique_lock<mutex> poolInfoLock(poolInfoMutex);
     SASSERT0(poolInfoMap.find(networkID) != poolInfoMap.end());
@@ -130,7 +130,7 @@ void InputDataProvider::removePool(int networkID) {
     poolInfoLock.unlock();
 }
 
-InputPool* InputDataProvider::getInputPool(int networkID, int dopID, std::string layerName) {
+InputPool* InputDataProvider::getInputPool(string networkID, int dopID, string layerName) {
     InputPoolKey inputPoolKey;
     inputPoolKey.networkID = networkID;
     inputPoolKey.dopID = dopID;
@@ -184,7 +184,7 @@ void* InputDataProvider::getData(InputPool* pool, bool peek) {
     return data;
 }
 
-void InputDataProvider::handleIDP(int networkID) {
+void InputDataProvider::handleIDP(string networkID) {
     int timeout = SPARAM(INPUT_DATA_PROVIDER_WAIT_TIME_MS);
 
     unique_lock<mutex> poolInfoLock(poolInfoMutex);
@@ -193,12 +193,13 @@ void InputDataProvider::handleIDP(int networkID) {
         // 경우에 발생할 수 있다. 이걸 예외처리해야 할지 아니면 허용해야 할지 고민..
         COLD_LOG(ColdLog::WARNING, true,
             "The specified network has been destroyed or has not yet been registered."
-            " networkID=%d", networkID);
+            " networkID=%s", networkID.c_str());
     }
     PoolInfo *poolInfo = &poolInfoMap[networkID];
 
     if (poolInfo->threadID != -1) {
-        COLD_LOG(ColdLog::WARNING, true, "IDP is already started. networkID=%d", networkID);
+        COLD_LOG(ColdLog::WARNING, true, "IDP is already started. networkID=%s",
+            networkID.c_str());
         return;
     }
 

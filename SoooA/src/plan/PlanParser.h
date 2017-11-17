@@ -20,15 +20,15 @@ public:
     PlanParser() {}
     virtual ~PlanParser() {}
 
-    static int loadNetwork(std::string filePath);
-    static int loadNetworkByJSONString(std::string jsonString);
-    static void buildNetwork(int networkID, Json::Value val);
+    static std::string loadNetwork(std::string filePath);
+    static std::string loadNetworkByJSONString(std::string jsonString);
+    static void buildNetwork(std::string networkID, Json::Value val);
 
 
     static void setPropValue(Json::Value val, bool isLayer, std::string layerType,
         std::string key, void* prop);
 private:
-    static std::vector<int64_t> handleInnerLayer(int networkID, Json::Value vals,
+    static std::vector<int64_t> handleInnerLayer(std::string networkID, Json::Value vals,
         std::string parentLayerType, void* parentProp);
 
     static bool findEnvAndReplace(std::string src, std::string &target);

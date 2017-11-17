@@ -106,7 +106,7 @@ extern "C" int releaseSession(int sockFD, char* buffer, int* hasSession) {
 }
 
 extern "C" int createNetwork(int sockFD, int hasSession, char* buffer, char* networkDef,
-    int* networkID) {
+    char* networkID) {
 
     if (!hasSession)
         return ClientError::NoSession;
@@ -119,14 +119,14 @@ extern "C" int createNetwork(int sockFD, int hasSession, char* buffer, char* net
     Job* createNetworkReplyJob;
     Client::recvJob(sockFD, buffer, &createNetworkReplyJob);
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
-    (*networkID) = createNetworkReplyJob->getIntValue(0);
+    strcpy(networkID, createNetworkReplyJob->getStringValue(0).c_str());
     delete createNetworkReplyJob;
 
     return ClientError::Success;
 }
 
 extern "C" int createNetworkFromFile(int sockFD, int hasSession, char* buffer,
-    char* filePathInServer, int *networkID) {
+    char* filePathInServer, char *networkID) {
 
     if (!hasSession)
         return ClientError::NoSession;
@@ -140,18 +140,18 @@ extern "C" int createNetworkFromFile(int sockFD, int hasSession, char* buffer,
     Job* createNetworkReplyJob;
     Client::recvJob(sockFD, buffer, &createNetworkReplyJob);
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
-    (*networkID) = createNetworkReplyJob->getIntValue(0);
+    strcpy(networkID, createNetworkReplyJob->getStringValue(0).c_str());
     delete createNetworkReplyJob;
 
     return ClientError::Success;
 }
 
-extern "C" int destroyNetwork(int sockFD, char* buffer, int isCreated, int networkID) {
+extern "C" int destroyNetwork(int sockFD, char* buffer, int isCreated, char *networkID) {
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
     Job* destroyNetworkJob = new Job(JobType::DestroyNetwork);
-    destroyNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    destroyNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     Client::sendJob(sockFD, buffer, destroyNetworkJob);
     delete destroyNetworkJob;
 
@@ -163,13 +163,13 @@ extern "C" int destroyNetwork(int sockFD, char* buffer, int isCreated, int netwo
     return ClientError::Success;
 }
 
-extern "C" int buildNetwork(int sockFD, char* buffer, int isCreated, int networkID,
+extern "C" int buildNetwork(int sockFD, char* buffer, int isCreated, char *networkID,
         int epochs) {
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
     Job* buildNetworkJob = new Job(JobType::BuildNetwork);
-    buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    buildNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&epochs);
     Client::sendJob(sockFD, buffer, buildNetworkJob);
     delete buildNetworkJob;
@@ -182,12 +182,12 @@ extern "C" int buildNetwork(int sockFD, char* buffer, int isCreated, int network
     return ClientError::Success;
 }
 
-extern "C" int resetNetwork(int sockFD, char* buffer, int isCreated, int networkID) {
+extern "C" int resetNetwork(int sockFD, char* buffer, int isCreated, char *networkID) {
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
     Job* resetNetworkJob = new Job(JobType::ResetNetwork);
-    resetNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    resetNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     Client::sendJob(sockFD, buffer, resetNetworkJob);
     delete resetNetworkJob;
 
@@ -199,13 +199,13 @@ extern "C" int resetNetwork(int sockFD, char* buffer, int isCreated, int network
     return ClientError::Success;
 }
 
-extern "C" int runNetwork(int sockFD, char* buffer, int isCreated, int networkID,
+extern "C" int runNetwork(int sockFD, char* buffer, int isCreated, char* networkID,
         int inference) {
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
     Job* runNetworkJob = new Job(JobType::RunNetwork);
-    runNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    runNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inference);
     Client::sendJob(sockFD, buffer, runNetworkJob);
     delete runNetworkJob;
@@ -222,14 +222,14 @@ extern "C" int runNetwork(int sockFD, char* buffer, int isCreated, int networkID
         return ClientError::RunNetworkFailed;
 }
 
-extern "C" int runNetworkMiniBatch(int sockFD, char* buffer, int isCreated, int networkID,
+extern "C" int runNetworkMiniBatch(int sockFD, char* buffer, int isCreated, char* networkID,
     int inference, int miniBatchIdx) {
 
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
     Job* runNetworkJob = new Job(JobType::RunNetworkMiniBatch);
-    runNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    runNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inference);
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&miniBatchIdx);
     Client::sendJob(sockFD, buffer, runNetworkJob);
@@ -247,13 +247,13 @@ extern "C" int runNetworkMiniBatch(int sockFD, char* buffer, int isCreated, int 
         return ClientError::RunNetworkFailed;
 }
 
-extern "C" int saveNetwork(int sockFD, char* buffer, int isCreated, int networkID,
+extern "C" int saveNetwork(int sockFD, char* buffer, int isCreated, char* networkID,
         char* filePath) {
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
     Job* saveNetworkJob = new Job(JobType::SaveNetwork);
-    saveNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    saveNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     saveNetworkJob->addJobElem(Job::StringType, strlen(filePath), (void*)filePath);
     Client::sendJob(sockFD, buffer, saveNetworkJob);
     delete saveNetworkJob;
@@ -266,13 +266,13 @@ extern "C" int saveNetwork(int sockFD, char* buffer, int isCreated, int networkI
     return ClientError::Success;
 }
 
-extern "C" int loadNetwork(int sockFD, char* buffer, int isCreated, int networkID,
+extern "C" int loadNetwork(int sockFD, char* buffer, int isCreated, char* networkID,
     char* filePath) {
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
     Job* loadNetworkJob = new Job(JobType::LoadNetwork);
-    loadNetworkJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    loadNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     loadNetworkJob->addJobElem(Job::StringType, strlen(filePath), (void*)filePath);
     Client::sendJob(sockFD, buffer, loadNetworkJob);
     delete loadNetworkJob;
@@ -285,14 +285,14 @@ extern "C" int loadNetwork(int sockFD, char* buffer, int isCreated, int networkI
     return ClientError::Success;
 }
 
-extern "C" int getObjectDetection(int sockFD, char* buffer, int isCreated, int networkID,
+extern "C" int getObjectDetection(int sockFD, char* buffer, int isCreated, char* networkID,
     int channel, int height, int width, float* imageData, BoundingBox* boxArray,
     int maxBoxCount, int coordRelative) {
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
     Job* runJob = new Job(JobType::RunNetworkWithInputData);
-    runJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    runJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     runJob->addJobElem(Job::IntType, 1, (void*)&channel);
     runJob->addJobElem(Job::IntType, 1, (void*)&height);
     runJob->addJobElem(Job::IntType, 1, (void*)&width);
@@ -328,11 +328,11 @@ extern "C" int getObjectDetection(int sockFD, char* buffer, int isCreated, int n
     return ClientError::Success;
 }
 
-extern "C" int getMeasureItemName(int sockFD, char* buffer, int networkID,
+extern "C" int getMeasureItemName(int sockFD, char* buffer, char* networkID,
         int maxItemCount, char** measureItemNames, int* measureItemCount) {
     
     Job* runJob = new Job(JobType::GetMeasureItemName);
-    runJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    runJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     Client::sendJob(sockFD, buffer, runJob);
     delete runJob;
 
@@ -357,11 +357,11 @@ extern "C" int getMeasureItemName(int sockFD, char* buffer, int networkID,
     return ClientError::Success;
 }
 
-extern "C" int getMeasures(int sockFD, char* buffer, int networkID, int forwardSearch, 
+extern "C" int getMeasures(int sockFD, char* buffer, char* networkID, int forwardSearch, 
         int start, int count, int* startIterNum, int* dataCount, float* data) {
 
     Job* runJob = new Job(JobType::GetMeasures);
-    runJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    runJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     runJob->addJobElem(Job::IntType, 1, (void*)&forwardSearch);
     runJob->addJobElem(Job::IntType, 1, (void*)&start);
     runJob->addJobElem(Job::IntType, 1, (void*)&count);

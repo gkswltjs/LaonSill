@@ -6,6 +6,8 @@
  * @details
  */
 
+#include <string>
+
 #include "PlanOptimizerTest.h"
 #include "PlanOptimizer.h"
 #include "PlanParser.h"
@@ -19,7 +21,7 @@ using namespace std;
 #define PLAN_PARSER_TEST_NETWORK_FILEPATH       SPATH("plan/test/network.conf.test")
 
 bool PlanOptimizerTest::runSimpleTest() {
-    int networkID = PlanParser::loadNetwork(string(PLAN_PARSER_TEST_NETWORK_FILEPATH));
+    string networkID = PlanParser::loadNetwork(string(PLAN_PARSER_TEST_NETWORK_FILEPATH));
     WorkContext::updateNetwork(networkID);
     PlanOptimizer::buildPlans(networkID);
     PlanOptimizer::runPlan(networkID, false);

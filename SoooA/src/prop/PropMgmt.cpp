@@ -13,12 +13,12 @@
 
 using namespace std;
 
-map<unsigned long, LayerProp*> PropMgmt::layerPropMap;
-map<int, vector<int>> PropMgmt::net2LayerIDMap;
-map<int, _NetworkProp*> PropMgmt::networkPropMap;
+map<LayerPropKey, LayerProp*> PropMgmt::layerPropMap;
+map<std::string, vector<int>> PropMgmt::net2LayerIDMap;
+map<std::string, _NetworkProp*> PropMgmt::networkPropMap;
 
-LayerProp* PropMgmt::getLayerProp(int networkID, int layerID) {
-    LayerPropKey key = MAKE_LAYER_PROP_KEY(networkID, layerID);
+LayerProp* PropMgmt::getLayerProp(string networkID, int layerID) {
+    LayerPropKey key(networkID, layerID);
 
     map<LayerPropKey, LayerProp*>::iterator iter = layerPropMap.find(key);
     SASSERT0(iter != layerPropMap.end());
@@ -31,8 +31,8 @@ LayerProp* PropMgmt::getLayerProp(int networkID, int layerID) {
     return lp;
 }
 
-_NetworkProp* PropMgmt::getNetworkProp(int networkID) {
-    map<int, _NetworkProp*>::iterator iter = networkPropMap.find(networkID);
+_NetworkProp* PropMgmt::getNetworkProp(string networkID) {
+    map<string, _NetworkProp*>::iterator iter = networkPropMap.find(networkID);
     SASSERT0(iter != networkPropMap.end());
 
     _NetworkProp* np = iter->second;
@@ -41,26 +41,26 @@ _NetworkProp* PropMgmt::getNetworkProp(int networkID) {
 }
 
 void PropMgmt::insertLayerProp(LayerProp* layerProp) {
-    int networkID = layerProp->networkID;
+    string networkID = layerProp->networkID;
     int layerID = layerProp->layerID;
-    map<int, vector<int>>::iterator layerIDIter = net2LayerIDMap.find(networkID);
+    map<string, vector<int>>::iterator layerIDIter = net2LayerIDMap.find(networkID);
     if (layerIDIter == net2LayerIDMap.end())
         net2LayerIDMap[networkID] = {};
     net2LayerIDMap[networkID].push_back(layerID);
 
-    LayerPropKey key = MAKE_LAYER_PROP_KEY(networkID, layerID);
+    LayerPropKey key(networkID, layerID);
     map<LayerPropKey, LayerProp*>::iterator iter = layerPropMap.find(key);
     SASSERT0(iter == layerPropMap.end());
 
     layerPropMap[key] = layerProp;
 }
 
-void PropMgmt::removeLayerProp(int networkID) {
+void PropMgmt::removeLayerProp(string networkID) {
     // XXX: 메모리 잘 해제되는지 확인해야 한다.
-    map<int, vector<int>>::iterator iter = net2LayerIDMap.find(networkID);
+    map<string, vector<int>>::iterator iter = net2LayerIDMap.find(networkID);
     if (iter != net2LayerIDMap.end()) {
         COLD_LOG(ColdLog::WARNING, true,
-            "specific networkID is not registered yet. network ID=%d", networkID);
+            "specific networkID is not registered yet. network ID=%s", networkID.c_str());
     }
 
     vector<int> layerIDList = iter->second;
@@ -68,7 +68,7 @@ void PropMgmt::removeLayerProp(int networkID) {
     for (layerIDIter = layerIDList.begin(); layerIDIter != layerIDList.end(); ) {
         int layerID = (*layerIDIter);
         LayerProp* lpp = getLayerProp(networkID, layerID);
-        LayerPropKey key = MAKE_LAYER_PROP_KEY(networkID, layerID);
+        LayerPropKey key(networkID, layerID);
         layerPropMap.erase(key);
         delete lpp;
 
@@ -78,14 +78,14 @@ void PropMgmt::removeLayerProp(int networkID) {
     net2LayerIDMap.erase(networkID);
 }
 
-void PropMgmt::insertNetworkProp(int networkID, _NetworkProp* networkProp) {
-    map<int, _NetworkProp*>::iterator iter = networkPropMap.find(networkID);
+void PropMgmt::insertNetworkProp(string networkID, _NetworkProp* networkProp) {
+    map<string, _NetworkProp*>::iterator iter = networkPropMap.find(networkID);
     SASSERT0(iter == networkPropMap.end());
 
     networkPropMap[networkID] = networkProp;
 }
 
-void PropMgmt::removeNetworkProp(int networkID) {
+void PropMgmt::removeNetworkProp(string networkID) {
     _NetworkProp* networkProp = getNetworkProp(networkID);
     networkPropMap.erase(networkID);
     delete networkProp;
