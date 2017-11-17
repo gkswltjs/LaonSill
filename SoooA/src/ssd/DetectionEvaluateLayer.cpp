@@ -314,19 +314,15 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 
 	collectBatchResult();
 
-	const int iterations = SNPROP(iterations);
-	const int testInterval = SNPROP(testInterval);
+	//const int iterations = SNPROP(iterations);
+	//const int testInterval = SNPROP(testInterval);
 
-	cout << "iterations: " << iterations << ", testInterval: " << testInterval << endl;
+	//cout << "iterations: " << iterations << ", testInterval: " << testInterval << endl;
 
-	if ((iterations + 1) % testInterval == 0) {
-		float result = testDetection();
-		cout << "mAP = " << result << endl;
-
-		this->numPos.clear();
-		this->truePos.clear();
-		this->falsePos.clear();
-	}
+	//if ((iterations + 1) % testInterval == 0) {
+	//	float result = testDetection();
+	//	cout << "mAP = " << result << endl;
+	//}
 }
 
 template <typename Dtype>
@@ -371,17 +367,21 @@ float DetectionEvaluateLayer<Dtype>::testDetection() {
 	map<int, float> APs;
 	float mAP = 0.f;
 
+	// custom: excludes no item label to compensate mAP
+	int numPosSize = this->numPos.size();
 	// Sort truePos and falsePos with descend scores.
 	for (map<int, int>::const_iterator it = this->numPos.begin(); it != this->numPos.end(); it++) {
 		int label = it->first;
 		int labelNumPos = it->second;
 		if (this->truePos.find(label) == this->truePos.end()) {
 			STDOUT_LOG("Missing truePos for label: %d", label);
+			numPosSize--;
 			continue;
 		}
 		const vector<pair<float, int>>& labelTruePos = this->truePos.find(label)->second;
 		if (this->falsePos.find(label) == this->falsePos.end()) {
 			STDOUT_LOG("Missing falsePos for label: %d", label);
+			numPosSize--;
 			continue;
 		}
 		const vector<pair<float, int>>& labelFalsePos = this->falsePos.find(label)->second;
@@ -389,11 +389,20 @@ float DetectionEvaluateLayer<Dtype>::testDetection() {
 		ComputeAP(labelTruePos, labelNumPos, labelFalsePos, SLPROP(DetectionEvaluate, apVersion), &prec, &rec, &(APs[label]));
 		mAP += APs[label];
 	}
-	mAP /= this->numPos.size();
+	//mAP /= this->numPos.size();
+	mAP /= numPosSize;
+
+	this->numPos.clear();
+	this->truePos.clear();
+	this->falsePos.clear();
 
 	return mAP;
 }
 
+template <typename Dtype>
+Dtype DetectionEvaluateLayer<Dtype>::measure() {
+	return testDetection();
+}
 
 
 

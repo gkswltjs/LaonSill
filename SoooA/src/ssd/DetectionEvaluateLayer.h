@@ -11,6 +11,7 @@
 #include "common.h"
 #include "BaseLayer.h"
 #include "ssd_common.h"
+#include "MeasureLayer.h"
 
 /*
  * @brief Generate the detection evaluation based on DetectionOutputLayer and
@@ -42,7 +43,7 @@
  *
  */
 template <typename Dtype>
-class DetectionEvaluateLayer : public Layer<Dtype> {
+class DetectionEvaluateLayer : public MeasureLayer<Dtype> {
 public:
 	DetectionEvaluateLayer();
 	virtual ~DetectionEvaluateLayer();
@@ -50,6 +51,7 @@ public:
 	virtual void reshape();
 	virtual void feedforward();
 	virtual void backpropagation();
+	Dtype measure();
 
 private:
 	void collectBatchResult();
