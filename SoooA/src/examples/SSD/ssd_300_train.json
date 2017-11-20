@@ -1571,6 +1571,7 @@
 		"batchSize" : 16,
 		"epochs" : 5, 
 		"lossLayer" : ["mbox_loss"],
+        "measureLayer" : ["mbox_loss"],
 		"gamma" : 0.1,
 		"testInterval" : 20,
 		"saveInterval" : 1000000,

@@ -489,6 +489,7 @@
 		"batchSize" : 1, 
 		"epochs" : 100, 
 		"lossLayer" : ["rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"],
+        "measureLayer" : ["loss_cls", "loss_bbox"]
 		"gamma" : 0.1,
 		"testInterval" : 100,
 		"saveInterval" : 1,
