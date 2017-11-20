@@ -18,6 +18,8 @@ using namespace std;
 #define MEASURE_ENTRY_ADDDATA_MAX_RETRY_COUNT   10
 #define MEASURE_ENTRY_RETRY_MSEC                10UL
 
+extern const char* SOOOA_HOME_ENVNAME;
+
 MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option,
     vector<string> itemNames) {
     this->networkID = networkID;
@@ -31,13 +33,9 @@ MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option
     int remain = this->queueSize % this->itemCount;
     this->queueSize = this->queueSize - remain;
 
-    SASSERT0(option == MEASURE_OPTION_MEMORY);  // XXX: 임시적인 제한
-
     this->head = 0;
-    this->tail = 0;
     this->option = option;
 
-    this->freeCount = this->queueSize;
     this->baseIterNum = 0;
 
     this->data = (float*)malloc(sizeof(float) * this->queueSize * this->itemCount); 
@@ -56,6 +54,17 @@ MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option
 
     this->addBuffer = (float*)malloc(sizeof(float) * this->itemCount);
     SASSERT0(this->addBuffer != NULL);
+
+    if (option & MEASURE_OPTION_FILE) {
+        char measureFilePath[PATH_MAX];
+
+        sprintf(measureFilePath, "%s/measure/%s.measure", getenv(SOOOA_HOME_ENVNAME),
+            networkID.c_str());
+        this->fp = fopen(measureFilePath, "w+");
+        SASSERT0(this->fp != NULL);
+    } else {
+        this->fp = NULL;
+    }
 }
 
 MeasureEntry::~MeasureEntry() {
@@ -67,6 +76,11 @@ MeasureEntry::~MeasureEntry() {
 
     SASSERT0(this->readRefCount != NULL);
     free((void*)this->readRefCount);
+
+    if (this->fp != NULL) {
+        fflush(this->fp);
+        fclose(this->fp);
+    }
 }
 
 // XXX: 코딩을 하고 나니 자원보호가 조금 비효율적으로 되어 있어 보인다. 
@@ -107,6 +121,16 @@ void MeasureEntry::addData(float* data) {
     }
 
     memcpy((void*)&this->data[dataOffset], data, sizeof(float) * this->itemCount);
+
+    // 지금은 file write를 sync하게 처리하였다. 큰 부담이 없을 것이라 생각해서 진행하였으나
+    // 추후에 이곳에 부하가 많이 걸린다면 수정이 필요하다.
+    if (this->fp != NULL) {
+        fprintf(this->fp, "%d", (int)(this->head + this->baseIterNum));
+        for (int i = 0; i < this->itemCount; i++) {
+            fprintf(this->fp, ",%f", data[i]);
+        }
+        fprintf(this->fp, "\n");
+    }
 
     entryLock.lock();
     this->status[this->head] = MEASURE_ENTRY_STATUS_NONE;
@@ -284,6 +308,5 @@ void MeasureEntry::printStatus() {
         STDOUT_LOG("      > %s", this->itemNames[i].c_str());
     }
     STDOUT_LOG("  - head : %d", this->head);
-    STDOUT_LOG("  - tail : %d", this->tail);
     STDOUT_LOG("  - base iter num : %d", this->baseIterNum);
 }
