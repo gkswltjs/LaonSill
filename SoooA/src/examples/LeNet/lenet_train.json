@@ -175,7 +175,7 @@
         "beta2" : 0.999,
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
-        "measureLayer" : ["accuracy", "accuracy2"]
+        "measureLayer" : ["accuracy", "accuracy2", "loss"]
 	}
 
 }

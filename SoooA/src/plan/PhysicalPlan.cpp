@@ -387,9 +387,18 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
 
         for (int i = 0; i < SNPROP(measureLayer).size(); i++) {
             string measureLayerName = SNPROP(measureLayer)[i];
+            Layer<float>* layer = network->findLayer(measureLayerName);
+
             MeasureLayer<float>* measureLayer = 
-                (MeasureLayer<float>*)network->findLayer(measureLayerName);
-            measureEntry->getAddBuffer()[i] = measureLayer->measure();
+                dynamic_cast<MeasureLayer<float>*>(layer);
+            
+            if (measureLayer != NULL) {
+                measureEntry->getAddBuffer()[i] = measureLayer->measure();
+            } else {
+                LossLayer<float>* lossLayer = dynamic_cast<LossLayer<float>*>(layer);
+                SASSUME0(lossLayer != NULL);
+                measureEntry->getAddBuffer()[i] = lossLayer->cost();
+            }
         }
 
         measureEntry->addData(measureEntry->getAddBuffer());
