@@ -23,6 +23,7 @@
 #include "LossLayer.h"
 #include "MeasureManager.h"
 #include "MeasureLayer.h"
+#include "ColdLog.h"
 
 using namespace std;
 
@@ -334,6 +335,22 @@ void PhysicalPlan::loadNetwork() {
 
 }
 
+bool PhysicalPlan::checkNaN() {
+    for (int i = 0; i < SNPROP(lossLayer).size(); i++) {
+        string lossLayerName = SNPROP(lossLayer)[i];
+        Network<float>* network = Network<float>::getNetworkFromID(WorkContext::curNetworkID);
+        Layer<float>* layer = network->findLayer(lossLayerName);
+        LossLayer<float>* lossLayer = (LossLayer<float>*)layer;
+        float loss = (float)lossLayer->cost();
+
+        if (loss != loss) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void PhysicalPlan::calcLoss() {
     if (SNPROP(testInterval) == 0)
         return;
@@ -360,6 +377,19 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     if (this->refCount > 0) {
         planLock.unlock();
         return true;
+    }
+
+    // loss에 NaN 값이 있는지 체크한다.
+    if (SPARAM(STOP_TRAIN_WHEN_GOT_NAN_LOSS)) {
+        bool hasNaN = checkNaN();
+        if (hasNaN) {
+            planLock.unlock();
+            COLD_LOG(ColdLog::WARNING, true,
+                "training network(id=%s) is stopped due to NaN loss at epoch=%d",
+                WorkContext::curPlanInfo->networkID.c_str(),
+                WorkContext::curPlanInfo->curEpochIndex);
+            return false;
+        }
     }
 
     // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.

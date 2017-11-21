@@ -129,6 +129,7 @@ private:
 
     LossConsole *lossConsole;       // FIXME: 이름이... 이상하다 ㅠ_ㅠ 좋은걸로 바꿔줘요
     void calcLoss();
+    bool checkNaN();
 
     std::map<TensorAllocKey, void*> tensorAllocMap;
 };
