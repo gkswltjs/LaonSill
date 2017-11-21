@@ -12,6 +12,7 @@
 #include <cfloat>
 #include <string>
 #include <iostream>
+#include <limits>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -36,6 +37,7 @@
 #include "LearnableLayer.h"
 #include "LogicalPlan.h"
 #include "MeasureManager.h"
+#include "FileMgmt.h"
 
 using namespace std;
 using namespace boost::uuids;
@@ -58,6 +60,9 @@ Network<Dtype>::Network() {
     this->isLoaded = false;
     this->isBuilt = false;
     this->isMeasureInserted = false;
+
+    this->bestLoss = numeric_limits<float>::max();
+    this->bestSavedParamPath = "";
 }
 
 template <typename Dtype>
@@ -208,22 +213,61 @@ void Network<Dtype>::save(string path) {
 	paramOfs.close();
 
     if (SPARAM(PRINT_PARAMLOG_AFTER_NETWORKSAVE)) {
-        DebugUtil<Dtype>::printNetworkParams(stderr, "network save result", this->networkID,
-            0);
+        DebugUtil<Dtype>::printNetworkParams(stderr, "network save result",
+            this->networkID, 0);
     }
 }
 
 template <typename Dtype>
-void Network<Dtype>::save() {
+string Network<Dtype>::save() {
     string path;
 	if (SNPROP(savePathPrefix) == "") {
         path = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
+            this->networkID + "_" +
             to_string(SNPROP(iterations)) + ".param";
     } else {
-        path = SNPROP(savePathPrefix) + to_string(SNPROP(iterations)) + ".param";
+        path = SNPROP(savePathPrefix) + + "_" + to_string(SNPROP(iterations)) + ".param";
     }
 
     save(path);
+    return path;
+}
+
+template<typename Dtype>
+void Network<Dtype>::handleIntervalSaveParams() {
+    if (this->intervalSavedParamPathQueue.size() == SNPROP(keepSaveIntervalModelCount)) {
+        string removeParamPath = this->intervalSavedParamPathQueue.front();
+        this->intervalSavedParamPathQueue.pop();
+        FileMgmt::removeFile(removeParamPath.c_str());
+    }
+
+    string newParamPath = this->save();
+    this->intervalSavedParamPathQueue.push(newParamPath);
+}
+
+template<typename Dtype>
+void Network<Dtype>::handleBestLoss(float loss, int iterNum) {
+    if (!SNPROP(keepSaveBestModel))
+        return;
+
+    if (SNPROP(keepSaveBestModelStartIterNum) > iterNum)
+        return;
+
+    if (loss > this->bestLoss)
+        return; 
+
+    this->bestLoss = loss;
+
+    // XXX: remove file 하고 나서 best model을 저장하는 순간에 서버가 죽으면 좀 난감하다.
+    //      이 부분에 대한 고려가 필요하다.
+    string newParamPath = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
+        this->networkID + "_best_" + to_string(iterNum) + ".param";
+
+    this->save(newParamPath);
+
+    if (this->bestSavedParamPath != "")
+        FileMgmt::removeFile(this->bestSavedParamPath.c_str()); 
+    this->bestSavedParamPath = newParamPath;
 }
 
 template <typename Dtype>
@@ -287,8 +331,8 @@ void Network<Dtype>::load(string path) {
 	dataMap.clear();
 
     if (SPARAM(PRINT_PARAMLOG_AFTER_NETWORKLOAD)) {
-        DebugUtil<Dtype>::printNetworkParams(stderr, "network load result", this->networkID,
-            0);
+        DebugUtil<Dtype>::printNetworkParams(stderr, "network load result",
+            this->networkID, 0);
     }
 }
 
@@ -371,6 +415,5 @@ bool Network<Dtype>::isInnerLayer(int layerID) {
 
     return LogicalPlan::isInnerLayer(this->networkID, layerID);
 }
-
 
 template class Network<float>;

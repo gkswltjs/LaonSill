@@ -67,6 +67,15 @@ int FileMgmt::openFile(const char* path, int flag) {
     return fd;
 }
 
+void FileMgmt::removeFile(const char* path) {
+    int ret = remove(path);
+    if (ret == -1) {
+        int err = errno;
+        SYS_LOG("removeFile() is failed. path=%s,errno=%d", path, errno);
+        SASSERT0(0);
+    }
+}
+
 void FileMgmt::makeDir(const char* path) { 
     if (mkdir(path, 0700) == -1) {
         int     err = errno;

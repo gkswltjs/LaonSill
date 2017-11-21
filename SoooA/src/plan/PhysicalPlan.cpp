@@ -322,7 +322,7 @@ void PhysicalPlan::saveNetwork(bool checkCond) {
 
     string networkID = WorkContext::curNetworkID;
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
-    network->save();
+    network->handleIntervalSaveParams();
 }
 
 void PhysicalPlan::loadNetwork() {
@@ -335,23 +335,25 @@ void PhysicalPlan::loadNetwork() {
 
 }
 
-bool PhysicalPlan::checkNaN() {
+float PhysicalPlan::calcLoss() {
+    float avgLoss = 0.0;
+
+    if (SNPROP(lossLayer).size() == 0)
+        return 0.0;
+
     for (int i = 0; i < SNPROP(lossLayer).size(); i++) {
         string lossLayerName = SNPROP(lossLayer)[i];
         Network<float>* network = Network<float>::getNetworkFromID(WorkContext::curNetworkID);
         Layer<float>* layer = network->findLayer(lossLayerName);
         LossLayer<float>* lossLayer = (LossLayer<float>*)layer;
-        float loss = (float)lossLayer->cost();
 
-        if (loss != loss) {
-            return true;
-        }
+        avgLoss += (float)lossLayer->cost();
     }
 
-    return false;
+    return avgLoss / (float)(SNPROP(lossLayer).size());
 }
 
-void PhysicalPlan::calcLoss() {
+void PhysicalPlan::logLoss() {
     if (SNPROP(testInterval) == 0)
         return;
 
@@ -379,10 +381,11 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         return true;
     }
 
+    float currLoss = calcLoss();
+
     // loss에 NaN 값이 있는지 체크한다.
     if (SPARAM(STOP_TRAIN_WHEN_GOT_NAN_LOSS)) {
-        bool hasNaN = checkNaN();
-        if (hasNaN) {
+        if (currLoss != currLoss) {
             planLock.unlock();
             COLD_LOG(ColdLog::WARNING, true,
                 "training network(id=%s) is stopped due to NaN loss at epoch=%d",
@@ -391,6 +394,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
             return false;
         }
     }
+
 
     // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
     // FIXME: planInfoLock 범위가 너무 크다!!!
@@ -433,7 +437,6 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
 
         measureEntry->addData(measureEntry->getAddBuffer());
     }
-   
 
     bool saveNetwork = false;
     if ((SNPROP(saveInterval) != 0) &&
@@ -441,6 +444,8 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         saveNetwork = true;
     }
 
+    // best loss를 가지고 있는 네트워크를 저장한다.
+    network->handleBestLoss(currLoss, SNPROP(iterations));
 
     if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
         WorkContext::curPlanInfo->curEpochIndex -= 1;
@@ -453,7 +458,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         if (saveNetwork)
             PhysicalPlan::saveNetwork(false);
             
-        calcLoss();
+        logLoss();
 
         return false;
     }
@@ -484,7 +489,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
 
     planLock.unlock();
 
-    calcLoss();
+    logLoss();
 
     if (saveNetwork)
         PhysicalPlan::saveNetwork(false);

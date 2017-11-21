@@ -10,6 +10,7 @@
 #define NETWORK_H_
 
 #include <string>
+#include <queue>
 
 #include "common.h"
 #include "NetworkListener.h"
@@ -98,7 +99,7 @@ public:
 	/**
 	 * @details 네트워크를 파일에 쓴다. 네트워크 파일경로는 미리 지정이 되어 있어야 한다.
 	 */
-	void save();
+    std::string save();
 
 	/**
 	 * @details 네트워크를 파일로부터 읽는다.
@@ -163,6 +164,9 @@ public:
     bool                                    getMeasureInserted() { 
                                                 return this->isMeasureInserted; }
 
+    void                                    handleIntervalSaveParams();
+    void                                    handleBestLoss(float loss, int iterNum); 
+
 private:
     std::string                                     networkID;
     static std::map<std::string, Network<Dtype>*>   networkIDMap;
@@ -170,6 +174,14 @@ private:
     bool                                            isLoaded;
     bool                                            isBuilt;
     bool                                            isMeasureInserted;
+
+    /*
+     * 파라미터 관리를 위한 변수들.
+     * FIXME: 추후에 다른 모듈로 분리하자
+     */
+    float                                           bestLoss;
+    std::string                                     bestSavedParamPath;
+    std::queue<std::string>                         intervalSavedParamPathQueue;
 };
 
 

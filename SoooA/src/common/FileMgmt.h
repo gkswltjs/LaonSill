@@ -18,6 +18,7 @@ public:
 
     static void checkDir(const char* path);
     static int  openFile(const char* path, int flag);
+    static void removeFile(const char* path);
 private:
     static void makeDir(const char* path);
 };
