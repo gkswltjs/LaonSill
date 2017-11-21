@@ -492,7 +492,7 @@
         "measureLayer" : ["loss_cls", "loss_bbox"],
 		"gamma" : 0.1,
 		"testInterval" : 100,
-		"saveInterval" : 1,
+		"saveInterval" : 100000,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,
 		"stepSize" : 50000,
