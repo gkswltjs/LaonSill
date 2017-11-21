@@ -164,8 +164,20 @@ public:
     bool                                    getMeasureInserted() { 
                                                 return this->isMeasureInserted; }
 
-    void                                    handleIntervalSaveParams();
+    /*
+     * 파라미터 관리를 위한 함수들.
+     * FIXME: 추후에 다른 모듈로 분리하자
+     */
+    void                                    handleIntervalSaveParams(int iterNum);
     void                                    handleBestLoss(float loss, int iterNum); 
+
+    /*
+     * 트레인 파일 관리를 위한 함수들.
+     * FIXME: 추후에 다른 모듈로 분리하자
+     */
+    void                                    logNetworkDefString(std::string networkDef);
+    void                                    logNetworkDefFile(std::string networkDefFilePath);
+    void                                    logTrainFile(std::string content);
 
 private:
     std::string                                     networkID;
@@ -182,6 +194,12 @@ private:
     float                                           bestLoss;
     std::string                                     bestSavedParamPath;
     std::queue<std::string>                         intervalSavedParamPathQueue;
+
+    /*
+     * 트레인 파일 관리를 위한 변수들.
+     * FIXME: 추후에 다른 모듈로 분리하자
+     */
+    FILE                                           *trainFP;
 };
 
 

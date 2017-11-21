@@ -63,6 +63,13 @@ Network<Dtype>::Network() {
 
     this->bestLoss = numeric_limits<float>::max();
     this->bestSavedParamPath = "";
+
+    // train 정보를 관리하는 파일 포인터를 얻는다.
+    string trainFilePath = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
+            this->networkID + ".train";
+    this->trainFP = fopen(trainFilePath.c_str(), "w+");
+    SASSERT0(this->trainFP != NULL);
+
 }
 
 template <typename Dtype>
@@ -73,6 +80,9 @@ Network<Dtype>::~Network() {
     if (this->isMeasureInserted) {
         MeasureManager::removeEntry(this->networkID);
     }
+
+    if (this->trainFP != NULL)
+        fclose(this->trainFP);
 }
 
 template<typename Dtype>
@@ -234,7 +244,7 @@ string Network<Dtype>::save() {
 }
 
 template<typename Dtype>
-void Network<Dtype>::handleIntervalSaveParams() {
+void Network<Dtype>::handleIntervalSaveParams(int iterNum) {
     if (this->intervalSavedParamPathQueue.size() == SNPROP(keepSaveIntervalModelCount)) {
         string removeParamPath = this->intervalSavedParamPathQueue.front();
         this->intervalSavedParamPathQueue.pop();
@@ -243,6 +253,8 @@ void Network<Dtype>::handleIntervalSaveParams() {
 
     string newParamPath = this->save();
     this->intervalSavedParamPathQueue.push(newParamPath);
+
+    logTrainFile(to_string(iterNum) + "," + newParamPath);
 }
 
 template<typename Dtype>
@@ -268,6 +280,8 @@ void Network<Dtype>::handleBestLoss(float loss, int iterNum) {
     if (this->bestSavedParamPath != "")
         FileMgmt::removeFile(this->bestSavedParamPath.c_str()); 
     this->bestSavedParamPath = newParamPath;
+
+    logTrainFile("best(" + to_string(iterNum) + ")," + newParamPath);
 }
 
 template <typename Dtype>
@@ -414,6 +428,28 @@ bool Network<Dtype>::isInnerLayer(int layerID) {
         return false;
 
     return LogicalPlan::isInnerLayer(this->networkID, layerID);
+}
+
+template<typename Dtype>
+void Network<Dtype>::logNetworkDefString(string networkDef) {
+    SASSERT0(this->trainFP != NULL);
+    fprintf(this->trainFP, "%s\n", networkDef.c_str());
+    fprintf(this->trainFP, "=========================================================\n\n");
+    fflush(this->trainFP);
+}
+
+template<typename Dtype>
+void Network<Dtype>::logNetworkDefFile(string networkDefFilePath) {
+    std::ifstream file(networkDefFilePath);
+    std::string content((std::istreambuf_iterator<char>(file)),
+            std::istreambuf_iterator<char>());
+    logNetworkDefString(content);
+}
+
+template<typename Dtype>
+void Network<Dtype>::logTrainFile(string content) {
+    SASSUME0(this->trainFP != NULL);
+    fprintf(this->trainFP, "%s\n", content.c_str());
 }
 
 template class Network<float>;

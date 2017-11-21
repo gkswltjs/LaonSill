@@ -322,7 +322,7 @@ void PhysicalPlan::saveNetwork(bool checkCond) {
 
     string networkID = WorkContext::curNetworkID;
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
-    network->handleIntervalSaveParams();
+    network->handleIntervalSaveParams(SNPROP(iterations));
 }
 
 void PhysicalPlan::loadNetwork() {

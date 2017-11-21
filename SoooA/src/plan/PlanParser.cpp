@@ -394,6 +394,8 @@ string PlanParser::loadNetwork(string filePath) {
     Network<float>* network = new Network<float>();
     string networkID = network->getNetworkID();
 
+    network->logNetworkDefFile(filePath);
+
     // (3) 네트워크 빌드
     buildNetwork(networkID, rootValue);
 
@@ -417,6 +419,8 @@ string PlanParser::loadNetworkByJSONString(string jsonString) {
     // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
     Network<float>* network = new Network<float>();
     string networkID = network->getNetworkID();
+
+    network->logNetworkDefString(jsonString);
 
     // (3) 네트워크 빌드
     buildNetwork(networkID, rootValue);
