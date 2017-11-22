@@ -100,9 +100,22 @@ int main(int argc, char** argv) {
 
 	//plainTest(argc, argv);
 	//layerTest(argc, argv);
-	networkTest(argc, argv);
+	//networkTest(argc, argv);
 	//saveNetwork();
 	//layerTest2(argc, argv);
+
+
+	SDF sdf("/home/jkim/imageset/lmdb/_test_sdf/", Mode::NEW);
+	sdf.open();
+
+	sdf.put("num_data", "246");
+	sdf.put("key2", "value2");
+	sdf.put("key3", "value3");
+
+	sdf.commit();
+	sdf.close();
+
+
 
 	cout << "end test ... " << endl;
 	return 0;
@@ -670,14 +683,15 @@ void networkTest(int argc, char** argv) {
 	initializeNetwork();
 
 #if NETWORK == NETWORK_SSD
-	const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_300_train_test.json");
+	//const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_300_train_test.json");
 	//const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_300_train.json");
 	//const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_300_infer_test.json");
 	//const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_512_train_test.json");
-	//const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_512_infer_test.json");
+	const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_512_infer_test.json");
 	const string networkName = "ssd";
 	const int numSteps = 1;
-	const NetworkStatus status = NetworkStatus::Train;
+	//const NetworkStatus status = NetworkStatus::Train;
+	const NetworkStatus status = NetworkStatus::Test;
 #elif NETWORK == NETWORK_VGG16
 #else
 	cout << "invalid network ... " << endl;
@@ -689,9 +703,9 @@ void networkTest(int argc, char** argv) {
 			new NetworkTest<float>(networkFilePath, networkName, numSteps, status);
 
 	networkTest->setUp();
-	networkTest->updateTest();
-	//Network<float>* network = networkTest->network;
-	//network->save("/home/jkim/Dev/SOOOA_HOME/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_300x300.param");
+	//networkTest->updateTest();
+	Network<float>* network = networkTest->network;
+	network->save("/home/jkim/Dev/SOOOA_HOME/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_512x512.param");
 	networkTest->cleanUp();
 
 	NetworkTestInterface<float>::globalCleanUp();
