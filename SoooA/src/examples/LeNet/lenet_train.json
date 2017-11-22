@@ -177,8 +177,8 @@
 		"optimizer" : "Momentum",
         "measureLayer" : ["loss"],
         "keepSaveIntervalModelCount" : 4,
-        "keepSaveBestModel" : true,
-        "keepSaveBestModelStartIterNum" : 100
+        "keepSaveBestModel" : false,
+        "keepSaveBestModelStartIterNum" : 10000
 	}
 
 }

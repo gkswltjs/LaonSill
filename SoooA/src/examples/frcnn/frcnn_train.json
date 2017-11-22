@@ -501,7 +501,7 @@
 		"clipGradientsLevel" : 0.0,
 		"lrPolicy" : "Step",
 		"optimizer" : "Momentum",
-		"loadPath" : "$(SOOOA_HOME)/param/frcnn_240000_denorm.param"
+		"loadPath" : "$(SOOOA_HOME)/param/VGG_CNN_M_1024_FRCNN_CAFFE.param"
 	}
 
 }
