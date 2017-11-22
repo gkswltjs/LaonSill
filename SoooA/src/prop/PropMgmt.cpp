@@ -58,7 +58,7 @@ void PropMgmt::insertLayerProp(LayerProp* layerProp) {
 void PropMgmt::removeLayerProp(string networkID) {
     // XXX: 메모리 잘 해제되는지 확인해야 한다.
     map<string, vector<int>>::iterator iter = net2LayerIDMap.find(networkID);
-    if (iter != net2LayerIDMap.end()) {
+    if (iter == net2LayerIDMap.end()) {
         COLD_LOG(ColdLog::WARNING, true,
             "specific networkID is not registered yet. network ID=%s", networkID.c_str());
     }
