@@ -13,12 +13,16 @@ using namespace std;
 
 template <typename T>
 DataReader<T>::DataReader(const string& source)
-: db(source, Mode::READ) {
+: source(source), db(source, Mode::READ) {
 	this->db.open();
 
 	string value = this->db.getNextValue();
 	this->numData = atoi(value.c_str());
 }
+
+template <typename T>
+DataReader<T>::DataReader(const DataReader<T>& dataReader)
+: DataReader(dataReader.source) {}
 
 template <typename T>
 DataReader<T>::~DataReader() {

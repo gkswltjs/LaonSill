@@ -71,10 +71,15 @@ public:
 	}
 
 	virtual void cleanUp() {
-		for (int i = 0; i <= this->numSteps; i++) {
+		const int _numSteps = status == NetworkStatus::Train ? numSteps + 1 : numSteps;
+
+		cout << "_numSteps: " << _numSteps << endl;
+		cout << "nameParamsMapList size: " << this->nameParamsMapList.size() << endl;
+		cout << "nameBlobsMapList size: " << this->nameBlobsMapList.size() << endl;
+		for (int i = 0; i < _numSteps; i++) {
 			cleanUpMap(this->nameParamsMapList[i]);
 		}
-		for (int i = 0; i < this->numSteps; i++) {
+		for (int i = 0; i < _numSteps; i++) {
 			cleanUpMap(this->nameBlobsMapList[i]);
 		}
 	}

@@ -118,6 +118,13 @@ public:
 		this->size = 0.f;
 	}
 
+	bool operator==(const NormalizedBBox& other) {
+		return (this->xmin == other.xmin && this->ymin == other.ymin &&
+				this->xmax == other.xmax && this->ymax == other.ymax &&
+				this->label == other.label && this->difficult == other.difficult &&
+				this->score == other.score && this->size == other.size);
+	}
+
 	void print() {
 		std::cout << "\txmin: " 		<< this->xmin		<< std::endl;
 		std::cout << "\tymin: " 		<< this->ymin		<< std::endl;
@@ -150,6 +157,12 @@ public:
 	int instance_id;
 	NormalizedBBox bbox;
 
+	bool operator==(const Annotation_s& other) {
+		return (this->instance_id == other.instance_id &&
+			this->bbox == other.bbox);
+		//return false;
+	}
+
 	void print() {
 		std::cout << "instance_id: " << this->instance_id << std::endl;
 		std::cout << "bbox: " << std::endl;
@@ -174,6 +187,12 @@ public:
 		Annotation_s annotation;
 		this->annotations.push_back(annotation);
 		return &this->annotations.back();
+	}
+
+	bool operator==(const AnnotationGroup& other) {
+		return (this->group_label == other.group_label &&
+				std::equal(this->annotations.begin(), this->annotations.end(),
+						other.annotations.begin()));
 	}
 
 	void print() {
@@ -253,7 +272,8 @@ protected:
 template <typename T>
 const std::string serializeToString(T* datum) {
 	std::ostringstream ofs;
-	boost::archive::text_oarchive oa(ofs);
+	unsigned int flags = boost::archive::no_header;
+	boost::archive::text_oarchive oa(ofs, flags);
 	oa << (*datum);
 	return ofs.str();
 }
@@ -265,7 +285,8 @@ template const std::string serializeToString<Datum>(Datum* datum);
 template <typename T>
 void deserializeFromString(const std::string& data, T* datum) {
 	std::istringstream ifs(data);
-	boost::archive::text_iarchive ia(ifs);
+	unsigned int flags = boost::archive::no_header;
+	boost::archive::text_iarchive ia(ifs, flags);
 	ia >> (*datum);
 }
 

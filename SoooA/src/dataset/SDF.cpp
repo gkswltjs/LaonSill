@@ -19,6 +19,9 @@ SDF::SDF(const string& source, const Mode mode)
 
 }
 
+SDF::SDF(const SDF& sdf)
+: SDF(sdf.source, sdf.mode) {}
+
 SDF::~SDF() {
 	sdf_close();
 }
@@ -75,7 +78,8 @@ const string SDF::getNextValue() {
 			delete this->ia;
 			this->ia = 0;
 		}
-		this->ia = new boost::archive::text_iarchive(this->ifs);
+		unsigned int flags = boost::archive::no_header;
+		this->ia = new boost::archive::text_iarchive(this->ifs, flags);
 
 		string tKey, tValue;
 		(*this->ia) >> tKey >> tValue;
@@ -103,10 +107,11 @@ void SDF::commit() {
 
 
 void SDF::sdf_open() {
+	unsigned int flags = boost::archive::no_header;
 	if (this->mode == NEW) {
 		SASSERT0(!this->ofs.is_open());
 		this->ofs.open(this->source + this->dataName, ios_base::out);
-		this->oa = new boost::archive::text_oarchive(this->ofs);
+		this->oa = new boost::archive::text_oarchive(this->ofs, flags);
 	} else if (this->mode == READ) {
 		SASSERT0(!this->ifs.is_open());
 		this->ifs.open(this->source + this->dataName, ios_base::in);
@@ -124,7 +129,7 @@ void SDF::sdf_open() {
 
 
 
-		this->ia = new boost::archive::text_iarchive(this->ifs);
+		this->ia = new boost::archive::text_iarchive(this->ifs, flags);
 	} else {
 		SASSERT0(false);
 	}

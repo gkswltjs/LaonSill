@@ -18,7 +18,7 @@ using namespace std;
 
 template <typename Dtype>
 DetectionEvaluateLayer<Dtype>::DetectionEvaluateLayer()
-: Layer<Dtype>() {
+: MeasureLayer<Dtype>() {
 	this->type = Layer<Dtype>::DetectionEvaluate;
 
 	SASSERT(SLPROP(DetectionEvaluate, numClasses) >= 0, "Must provide numClasses.");

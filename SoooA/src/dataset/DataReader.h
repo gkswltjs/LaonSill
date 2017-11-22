@@ -17,6 +17,7 @@ template <typename T>
 class DataReader {
 public:
 	DataReader(const std::string& source);
+	DataReader(const DataReader<T>& dataReader);
 	virtual ~DataReader();
 
 	T* getNextData();
@@ -24,6 +25,8 @@ public:
     void fillNextData(T* data);
 
 	int getNumData();
+
+	std::string source;
 
 private:
 	SDF db;

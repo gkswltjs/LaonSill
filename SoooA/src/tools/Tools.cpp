@@ -12,6 +12,8 @@
 #include "DataReader.h"
 #include "ssd_common.h"
 #include "ParamManipulator.h"
+#include "DataReader.h"
+#include "Datum.h"
 
 using namespace std;
 namespace fs = ::boost::filesystem;
@@ -58,6 +60,10 @@ void denormalizeTest(int argc, char** argv) {
 	cout << ":::::::::::::::::::::::::::::::::::::::::" << endl;
 	cout << endl;
 
+	denormalize(old_param_path, new_param_path);
+}
+
+void denormalize(const string& old_param_path, const string& new_param_path) {
 	/*
 	ParamManipulator<float> pm(
 			"/home/jkim/Dev/SOOOA_HOME/network/frcnn_630000.param",
@@ -97,7 +103,7 @@ void printConvertMnistDataUsage(char* prog) {
 }
 
 
-void convertMnistDataTest(int argc, char** argv) {
+void convertMnistData(int argc, char** argv) {
 	string image_filename;
 	string label_filename;
 	string db_path;
@@ -124,9 +130,9 @@ void convertMnistDataTest(int argc, char** argv) {
 		}
 	}
 
-	if (!image_filename.length() ||
-			!label_filename.length() ||
-			!db_path.length()) {
+	if (image_filename.empty() ||
+			label_filename.empty() ||
+			db_path.empty()) {
 		printConvertMnistDataUsage(argv[0]);
 	}
 
@@ -142,97 +148,109 @@ void convertMnistDataTest(int argc, char** argv) {
     //const string label_filename = "/home/jkim/Dev/git/caffe/data/mnist/train-labels-idx1-ubyte";
     //const string db_path = "/home/jkim/imageset/lmdb/mnist_train_lmdb/";
 
-    // Open files
-    ifstream image_file(image_filename, ios::in | ios::binary);
-    ifstream label_file(label_filename, ios::in | ios::binary);
-    if (!image_file) {
-        cout << "Unable to open file " << image_filename << endl;
-        SASSERT0(false);
-    }
-    if (!label_file) {
-        cout << "Unable to open file " << label_filename << endl;
-        SASSERT0(false);
-    }
-    // Read the magic and the meta data
-    uint32_t magic;
-    uint32_t num_items;
-    uint32_t num_labels;
-    uint32_t rows;
-    uint32_t cols;
+	//convertMnistData(image_filename, label_filename, db_path);
 
-    image_file.read(reinterpret_cast<char*>(&magic), 4);
-    magic = swap_endian(magic);
-    if (magic != 2051) {
-        cout << "Incorrect image file magic." << endl;
-        SASSERT0(false);
-    }
-    label_file.read(reinterpret_cast<char*>(&magic), 4);
-    magic = swap_endian(magic);
-    if (magic != 2049) {
-        cout << "Incorrect label file magic." << endl;
-        SASSERT0(false);
-    }
-    image_file.read(reinterpret_cast<char*>(&num_items), 4);
-    num_items = swap_endian(num_items);
-    label_file.read(reinterpret_cast<char*>(&num_labels), 4);
-    num_labels = swap_endian(num_labels);
-    SASSERT0(num_items == num_labels);
-    image_file.read(reinterpret_cast<char*>(&rows), 4);
-    rows = swap_endian(rows);
-    image_file.read(reinterpret_cast<char*>(&cols), 4);
-    cols = swap_endian(cols);
+}
 
-    SDF sdf(db_path, Mode::NEW);
-    sdf.open();
 
-    // Storing to db
-    char label;
-    char* pixels = new char[rows * cols];
-    int count = 0;
-    string value;
 
-    Datum datum;
-    datum.channels = 1;
-    datum.height = rows;
-    datum.width = cols;
-    cout << "A total of " << num_items << " items." << endl;
-    cout << "Rows: " << rows << " Cols: " << cols << endl;
+//void convertMnistData(const string& imageFilePath, const string& labelFilePath,
+//		const string& outFilePath) {
+void convertMnistData(ConvertMnistDataParam& param) {
+	const string& imageFilePath = param.imageFilePath;
+	const string& labelFilePath = param.labelFilePath;
+	const string& outFilePath = param.outFilePath;
 
-    sdf.put("num_data", std::to_string(num_items));
-    sdf.commit();
+	 // Open files
+	ifstream image_file(imageFilePath, ios::in | ios::binary);
+	ifstream label_file(labelFilePath, ios::in | ios::binary);
+	if (!image_file) {
+		cout << "Unable to open file " << imageFilePath << endl;
+		SASSERT0(false);
+	}
+	if (!label_file) {
+		cout << "Unable to open file " << labelFilePath << endl;
+		SASSERT0(false);
+	}
+	// Read the magic and the meta data
+	uint32_t magic;
+	uint32_t num_items;
+	uint32_t num_labels;
+	uint32_t rows;
+	uint32_t cols;
 
-    //string buffer(rows * cols, ' ');
-    for (int item_id = 0; item_id < num_items; ++item_id) {
-        image_file.read(pixels, rows * cols);
-        label_file.read(&label, 1);
+	image_file.read(reinterpret_cast<char*>(&magic), 4);
+	magic = swap_endian(magic);
+	if (magic != 2051) {
+		cout << "Incorrect image file magic." << endl;
+		SASSERT0(false);
+	}
+	label_file.read(reinterpret_cast<char*>(&magic), 4);
+	magic = swap_endian(magic);
+	if (magic != 2049) {
+		cout << "Incorrect label file magic." << endl;
+		SASSERT0(false);
+	}
+	image_file.read(reinterpret_cast<char*>(&num_items), 4);
+	num_items = swap_endian(num_items);
+	label_file.read(reinterpret_cast<char*>(&num_labels), 4);
+	num_labels = swap_endian(num_labels);
+	SASSERT0(num_items == num_labels);
+	image_file.read(reinterpret_cast<char*>(&rows), 4);
+	rows = swap_endian(rows);
+	image_file.read(reinterpret_cast<char*>(&cols), 4);
+	cols = swap_endian(cols);
 
-        //for (int i = 0; i < rows*cols; i++) {
-        //   buffer[i] = pixels[i];
-        //}
-        //datum.data = buffer;
-        datum.data.assign(reinterpret_cast<const char*>(pixels), rows * cols);
-        datum.label = label;
+	SDF sdf(outFilePath, Mode::NEW);
+	sdf.open();
 
-        string key_str = format_int(item_id, 8);
-        //value = Datum::serializeToString(&datum);
-        value = serializeToString(&datum);
+	// Storing to db
+	char label;
+	char* pixels = new char[rows * cols];
+	int count = 0;
+	string value;
 
-        sdf.put(key_str, value);
+	Datum datum;
+	datum.channels = 1;
+	datum.height = rows;
+	datum.width = cols;
+	cout << "A total of " << num_items << " items." << endl;
+	cout << "Rows: " << rows << " Cols: " << cols << endl;
 
-        if (++count % 1000 == 0) {
-            sdf.commit();
-            cout << "Processed " << count << " files." << endl;
-        }
-    }
-    // write the last batch
+	sdf.put("num_data", std::to_string(num_items));
+	sdf.commit();
 
-    if (count % 1000 != 0) {
-        sdf.commit();
-        cout << "Processed " << count << " files." << endl;
-    }
-    delete[] pixels;
-    sdf.close();
+	//string buffer(rows * cols, ' ');
+	for (int item_id = 0; item_id < num_items; ++item_id) {
+		image_file.read(pixels, rows * cols);
+		label_file.read(&label, 1);
 
+		//for (int i = 0; i < rows*cols; i++) {
+		//   buffer[i] = pixels[i];
+		//}
+		//datum.data = buffer;
+		datum.data.assign(reinterpret_cast<const char*>(pixels), rows * cols);
+		datum.label = label;
+
+		string key_str = format_int(item_id, 8);
+		//value = Datum::serializeToString(&datum);
+		value = serializeToString(&datum);
+
+		sdf.put(key_str, value);
+
+		if (++count % 1000 == 0) {
+			sdf.commit();
+			cout << "Processed " << count << " files." << endl;
+		}
+	}
+	// write the last batch
+
+	if (count % 1000 != 0) {
+		sdf.commit();
+		cout << "Processed " << count << " files." << endl;
+	}
+	delete[] pixels;
+	sdf.close();
 }
 
 
@@ -305,15 +323,15 @@ void convertImageSetTest(int argc, char** argv) {
 			else printConvertImageSetUsage(argv[0]);
 			break;
 		case 'i':
-			if (optarg) argv1 = string(optarg);
+			if (optarg) argv1 = optarg;
 			else printConvertImageSetUsage(argv[0]);
 			break;
 		case 'd':
-			if (optarg) argv2 = string(optarg);
+			if (optarg) argv2 = optarg;
 			else printConvertImageSetUsage(argv[0]);
 			break;
 		case 'o':
-			if (optarg) argv3 = string(optarg);
+			if (optarg) argv3 = optarg;
 			else printConvertImageSetUsage(argv[0]);
 			break;
 		default:
@@ -322,10 +340,10 @@ void convertImageSetTest(int argc, char** argv) {
 		}
 	}
 
-	if (!argv1.length() ||
+	if (argv1.empty() ||
 			// assume image only mode, if dataset is not provided
 			// !argv2.length() ||
-			!argv3.length()) {
+			argv3.empty()) {
 		printConvertImageSetUsage(argv[0]);
 	}
 
@@ -343,14 +361,39 @@ void convertImageSetTest(int argc, char** argv) {
 	cout << "::::::::::::::::::::::::::::::::::::::::" << endl;
 	cout << endl;
 
+	//convertImageSet(FLAGS_gray, FLAGS_shuffle, FLAGS_multi_label, FLAGS_channel_separated,
+	//		FLAGS_resize_width, FLAGS_resize_height, FLAGS_check_size, FLAGS_encoded,
+	//		FLAGS_encode_type, argv1, argv2, argv3);
+
+}
+
+
+/*
+void convertImageSet(bool FLAGS_gray, bool FLAGS_shuffle, bool FLAGS_multi_label,
+		bool FLAGS_channel_separated, int FLAGS_resize_width, int FLAGS_resize_height,
+		bool FLAGS_check_size, bool FLAGS_encoded, const std::string& FLAGS_encode_type,
+		const string& argv1, const string& argv2, const string& argv3) {*/
+void convertImageSet(ConvertImageSetParam& param) {
+	bool FLAGS_gray = param.gray;
+	bool FLAGS_shuffle = param.shuffle;
+	bool FLAGS_multi_label = param.multiLabel;
+	bool FLAGS_channel_separated = param.channelSeparated;
+	int FLAGS_resize_width = param.resizeWidth;
+	int FLAGS_resize_height = param.resizeHeight;
+	bool FLAGS_check_size = param.checkSize;
+	bool FLAGS_encoded = param.encoded;
+	const string& FLAGS_encode_type = param.encodeType;
+	const string& argv1 = param.basePath;
+	const string& argv2 = param.datasetPath;
+	const string& argv3 = param.outPath;
 
 	const bool is_color = !FLAGS_gray;
 	const bool multi_label = FLAGS_multi_label;
 	const bool channel_separated = FLAGS_channel_separated;
 	const bool check_size = FLAGS_check_size;
 	const bool encoded = FLAGS_encoded;
-	const string encode_type = FLAGS_encode_type;
-	const bool image_only_mode = (argv2.length() == 0) ? true : false;
+	const string encode_type = !FLAGS_encode_type.empty() ? FLAGS_encode_type : "";
+	const bool image_only_mode = argv2.empty() ? true : false;
 
 	vector<pair<string, vector<int>>> lines;
 	string line;
@@ -502,9 +545,10 @@ void convertImageSetTest(int argc, char** argv) {
 	}
 
 	sdf->close();
+
+
+
 }
-
-
 
 
 
@@ -542,6 +586,41 @@ void convertAnnoSetTest(int argc, char** argv) {
 	//const string argv2 = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/test.txt"; // dataset ... (trainval.txt, ...)
 	//const string argv3 = "/home/jkim/Dev/SOOOA_HOME/data/sdf/voc2007_test_sdf/";		// sdf path
 
+	//convertAnnoSet(FLAGS_gray, FLAGS_shuffle, FLAGS_multi_label, FLAGS_channel_separated,
+	//		FLAGS_resize_width, FLAGS_resize_height, FLAGS_check_size, FLAGS_encoded,
+	//		FLAGS_encode_type, FLAGS_anno_type, FLAGS_label_type,
+	//		FLAGS_label_map_file,
+	//		FLAGS_check_label, FLAGS_min_dim, FLAGS_max_dim, argv1, argv2, argv3);
+
+}
+
+/*
+void convertAnnoSet(bool FLAGS_gray, bool FLAGS_shuffle, bool FLAGS_multi_label,
+		bool FLAGS_channel_separated, int FLAGS_resize_width, int FLAGS_resize_height,
+		bool FLAGS_check_size, bool FLAGS_encoded, const std::string& FLAGS_encode_type,
+		const std::string& FLAGS_anno_type, const std::string& FLAGS_label_type,
+		const std::string& FLAGS_label_map_file, bool FLAGS_check_label, int FLAGS_min_dim,
+		int FLAGS_max_dim, const std::string& argv1, const std::string& argv2, const std::string& argv3) {*/
+void convertAnnoSet(ConvertAnnoSetParam& param) {
+	bool FLAGS_gray = param.gray;
+	bool FLAGS_shuffle = param.shuffle;
+	bool FLAGS_multi_label = param.multiLabel;
+	bool FLAGS_channel_separated = param.channelSeparated;
+	int FLAGS_resize_width = param.resizeWidth;
+	int FLAGS_resize_height = param.resizeHeight;
+	bool FLAGS_check_size = param.checkSize;
+	bool FLAGS_encoded = param.encoded;
+	const string& FLAGS_encode_type = param.encodeType;
+	const string& FLAGS_anno_type = param.annoType;
+	const string& FLAGS_label_type = param.labelType;
+	const string& FLAGS_label_map_file = param.labelMapFile;
+	bool FLAGS_check_label = param.checkLabel;
+	int FLAGS_min_dim = param.minDim;
+	int FLAGS_max_dim = param.maxDim;
+	const string& argv1 = param.basePath;
+	const string& argv2 = param.datasetPath;
+	const string& argv3 = param.outPath;
+
 	const bool is_color = !FLAGS_gray;
 	const bool check_size = FLAGS_check_size;
 	const bool encoded = FLAGS_encoded;
@@ -552,8 +631,6 @@ void convertAnnoSetTest(int argc, char** argv) {
 	const string label_map_file = FLAGS_label_map_file;
 	const bool check_label = FLAGS_check_label;
 	//map<string, int> name_to_label;
-
-
 
 	ifstream infile(argv2);
 	vector<pair<string, boost::variant<int, string>>> lines;
@@ -652,15 +729,21 @@ void convertAnnoSetTest(int argc, char** argv) {
 	}
 
 	sdf->close();
-
 }
 
 
 
 
+void computeImageMeanTest(int argc, char** argv) {
 
-void computeImageMean(int argc, char** argv) {
-	DataReader<Datum> dr("/home/jkim/Dev/SOOOA_HOME/data/sdf/plantynet_train_0.25/");
+	computeImageMean("/home/jkim/Dev/SOOOA_HOME/data/sdf/plantynet_train_0.25/");
+
+}
+
+
+
+void computeImageMean(const std::string& sdf_path) {
+	DataReader<Datum> dr(sdf_path);
 	int numData = dr.getNumData();
 	cout << "numData: " << numData << endl;
 
@@ -693,7 +776,6 @@ void computeImageMean(int argc, char** argv) {
 		cout << "Processed " << i << " images." << endl;
 	}
 
-
 	for (i = 0; i < 3; i++) {
 		double m = 0.0;
 		if (elemCnt[i] > 0) {
@@ -704,4 +786,7 @@ void computeImageMean(int argc, char** argv) {
 		cout << "\t" << i << "th mean: " << m << endl;
 	}
 }
+
+
+
 

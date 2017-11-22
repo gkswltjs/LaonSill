@@ -21,6 +21,7 @@ enum Mode { READ, NEW };
 class SDF {
 public:
 	SDF(const std::string& source, const Mode mode);
+	SDF(const SDF& sdf);
 	virtual ~SDF();
 
 	void open();
@@ -36,11 +37,11 @@ private:
 	void sdf_open();
 	void sdf_close();
 
-private:
+public:
 	std::string source;
 	Mode mode;
 
-
+private:
 	std::vector<std::string> keys;
 	std::vector<std::string> values;
 
