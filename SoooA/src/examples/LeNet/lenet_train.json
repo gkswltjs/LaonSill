@@ -161,11 +161,11 @@
 	"configs" :
 	{
 		"batchSize" : 64,
-		"epochs" : 5, 
+		"epochs" : 8, 
 		"lossLayer" : ["loss"],
 		"gamma" : 0.0001,
 		"testInterval" : 90,
-		"saveInterval" : 1000000,
+		"saveInterval" : 50,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.01,
 		"stepSize" : 50000,
@@ -175,7 +175,10 @@
         "beta2" : 0.999,
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
-        "measureLayer" : ["accuracy", "accuracy2"]
+        "measureLayer" : ["loss"],
+        "keepSaveIntervalModelCount" : 4,
+        "keepSaveBestModel" : false,
+        "keepSaveBestModelStartIterNum" : 10000
 	}
 
 }

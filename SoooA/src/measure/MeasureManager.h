@@ -22,15 +22,15 @@ public:
     MeasureManager() {}
     virtual ~MeasureManager() {}
     
-    static void insertEntryEx(int networkID, std::vector<std::string> itemNames,
+    static void insertEntryEx(std::string networkID, std::vector<std::string> itemNames,
         MeasureOption option, int queueSize);
-    static void insertEntry(int networkID, std::vector<std::string> itemNames);
-    static void removeEntry(int networkID);
-    static MeasureEntry* getMeasureEntry(int networkID);
+    static void insertEntry(std::string networkID, std::vector<std::string> itemNames);
+    static void removeEntry(std::string networkID);
+    static MeasureEntry* getMeasureEntry(std::string networkID);
 
 private:
-    static std::map<int, MeasureEntry*>     entryMap;
-    static std::mutex                       entryMapMutex;
+    static std::map<std::string, MeasureEntry*> entryMap;
+    static std::mutex                           entryMapMutex;
 
 };
 

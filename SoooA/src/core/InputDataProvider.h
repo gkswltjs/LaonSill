@@ -13,6 +13,7 @@
 #include <mutex>
 #include <vector>
 #include <map>
+#include <string>
 
 #include "Datum.h"
 
@@ -46,7 +47,7 @@ typedef struct InputPool_s {
 } InputPool;
 
 typedef struct InputPoolKey_s {
-    int         networkID;
+    std::string networkID;
     int         dopID;
     std::string layerName;
 
@@ -64,7 +65,7 @@ typedef struct InputPoolKey_s {
 } InputPoolKey;
 
 typedef struct PoolInfo_s {
-    int                         networkID;
+    std::string                 networkID;
     volatile int                threadID;
     volatile int                cleanupThreadID;
     std::vector<InputPoolKey>   inputPoolKeyList;
@@ -77,21 +78,21 @@ public:
 
     static void init();
 
-    static void addPool(int networkID, int dopID, std::string layerName, DRType drType,
-        void* reader);
-    static void removePool(int networkID);
+    static void addPool(std::string networkID, int dopID, std::string layerName,
+            DRType drType, void* reader);
+    static void removePool(std::string networkID);
 
     // for input layer
-    static InputPool* getInputPool(int networkID, int dopID, std::string layerName);
+    static InputPool* getInputPool(std::string networkID, int dopID, std::string layerName);
     static void* getData(InputPool* pool, bool peek);
 
     // for caller
-    static void handleIDP(int networkID);
+    static void handleIDP(std::string networkID);
 
 private:
     static std::map<InputPoolKey, InputPool*>   poolMap;
     static std::mutex                           poolMapMutex;
-    static std::map<int, PoolInfo>              poolInfoMap;
+    static std::map<std::string, PoolInfo>      poolInfoMap;
     static std::mutex                           poolInfoMutex;
 
     static std::map<DRType, DRCBFuncs>          drFuncMap;

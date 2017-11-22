@@ -496,7 +496,7 @@ void runNetwork() {
 	initializeNetwork();
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 
-	int networkID = PlanParser::loadNetwork("/home/jkim/Dev/SOOOA_HOME/network_def/data_input_network.json");
+	string networkID = PlanParser::loadNetwork("/home/jkim/Dev/SOOOA_HOME/network_def/data_input_network.json");
 	const string keywordPath = "/home/jkim/Dev/data/image/ESP-ImageSet/keywordList.txt";
 	vector<string> keywordList;
 	bool hasKeyword = readKeywords(keywordPath, keywordList);

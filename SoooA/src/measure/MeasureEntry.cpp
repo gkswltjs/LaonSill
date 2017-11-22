@@ -18,7 +18,9 @@ using namespace std;
 #define MEASURE_ENTRY_ADDDATA_MAX_RETRY_COUNT   10
 #define MEASURE_ENTRY_RETRY_MSEC                10UL
 
-MeasureEntry::MeasureEntry(int networkID, int queueSize, MeasureOption option,
+extern const char* SOOOA_HOME_ENVNAME;
+
+MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option,
     vector<string> itemNames) {
     this->networkID = networkID;
     this->queueSize = queueSize;
@@ -26,16 +28,17 @@ MeasureEntry::MeasureEntry(int networkID, int queueSize, MeasureOption option,
     this->itemCount = this->itemNames.size();
     SASSERT0(this->itemCount > 0);
 
-    SASSERT0(option == MEASURE_OPTION_MEMORY);  // XXX: 임시적인 제한
+    // 큐 사이즈가 아이템 개수의 배수가 되도록 설정한다.
+    // (계산을 간단하게 하기 위해서)
+    int remain = this->queueSize % this->itemCount;
+    this->queueSize = this->queueSize - remain;
 
     this->head = 0;
-    this->tail = 0;
     this->option = option;
 
-    this->freeCount = this->queueSize;
     this->baseIterNum = 0;
 
-    this->data = (float*)malloc(sizeof(float) * queueSize * this->itemCount); 
+    this->data = (float*)malloc(sizeof(float) * this->queueSize * this->itemCount); 
     SASSERT0(this->data != NULL);
 
     this->status =
@@ -51,6 +54,17 @@ MeasureEntry::MeasureEntry(int networkID, int queueSize, MeasureOption option,
 
     this->addBuffer = (float*)malloc(sizeof(float) * this->itemCount);
     SASSERT0(this->addBuffer != NULL);
+
+    if (option & MEASURE_OPTION_FILE) {
+        char measureFilePath[PATH_MAX];
+
+        sprintf(measureFilePath, "%s/measure/%s.measure", getenv(SOOOA_HOME_ENVNAME),
+            networkID.c_str());
+        this->fp = fopen(measureFilePath, "w+");
+        SASSERT0(this->fp != NULL);
+    } else {
+        this->fp = NULL;
+    }
 }
 
 MeasureEntry::~MeasureEntry() {
@@ -62,6 +76,11 @@ MeasureEntry::~MeasureEntry() {
 
     SASSERT0(this->readRefCount != NULL);
     free((void*)this->readRefCount);
+
+    if (this->fp != NULL) {
+        fflush(this->fp);
+        fclose(this->fp);
+    }
 }
 
 // XXX: 코딩을 하고 나니 자원보호가 조금 비효율적으로 되어 있어 보인다. 
@@ -89,7 +108,8 @@ void MeasureEntry::addData(float* data) {
             retryCount++;
 
             SASSERT(retryCount < MEASURE_ENTRY_ADDDATA_MAX_RETRY_COUNT,
-                "can not add data in the measure entry(network ID=%d)", this->networkID);
+                "can not add data in the measure entry(network ID=%s)",
+                this->networkID.c_str());
 
             usleep(MEASURE_ENTRY_RETRY_MSEC);
             entryLock.lock();
@@ -101,6 +121,16 @@ void MeasureEntry::addData(float* data) {
     }
 
     memcpy((void*)&this->data[dataOffset], data, sizeof(float) * this->itemCount);
+
+    // 지금은 file write를 sync하게 처리하였다. 큰 부담이 없을 것이라 생각해서 진행하였으나
+    // 추후에 이곳에 부하가 많이 걸린다면 수정이 필요하다.
+    if (this->fp != NULL) {
+        fprintf(this->fp, "%d", (int)(this->head + this->baseIterNum));
+        for (int i = 0; i < this->itemCount; i++) {
+            fprintf(this->fp, ",%f", data[i]);
+        }
+        fprintf(this->fp, "\n");
+    }
 
     entryLock.lock();
     this->status[this->head] = MEASURE_ENTRY_STATUS_NONE;
@@ -136,8 +166,8 @@ retry:
             retryCount++;
 
             SASSERT(retryCount < MEASURE_ENTRY_ADDDATA_MAX_RETRY_COUNT,
-                "can not get data in the measure entry(network ID=%d)", 
-                this->networkID);
+                "can not get data in the measure entry(network ID=%s)", 
+                this->networkID.c_str());
 
             usleep(MEASURE_ENTRY_RETRY_MSEC);
             this->entryMutex.lock();
@@ -268,7 +298,7 @@ void MeasureEntry::getData(int start, int count, bool forward, int* startIterNum
 
 void MeasureEntry::printStatus() {
     STDOUT_LOG("[Measure Entry Info]");
-    STDOUT_LOG("  - networkID : %d", this->networkID);
+    STDOUT_LOG("  - networkID : %s", this->networkID.c_str());
     STDOUT_LOG("  - option : %d", int(this->option));
     STDOUT_LOG("  - queue size : %d", this->queueSize);
 
@@ -278,6 +308,5 @@ void MeasureEntry::printStatus() {
         STDOUT_LOG("      > %s", this->itemNames[i].c_str());
     }
     STDOUT_LOG("  - head : %d", this->head);
-    STDOUT_LOG("  - tail : %d", this->tail);
     STDOUT_LOG("  - base iter num : %d", this->baseIterNum);
 }

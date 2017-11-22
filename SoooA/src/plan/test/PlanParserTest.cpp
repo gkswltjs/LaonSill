@@ -16,7 +16,7 @@ using namespace std;
 #define PLAN_PARSER_TEST_NETWORK_FILEPATH       SPATH("plan/test/network.conf.test")
 
 bool PlanParserTest::runParseTest() {
-    int networkID = PlanParser::loadNetwork(string(PLAN_PARSER_TEST_NETWORK_FILEPATH));
+    string networkID = PlanParser::loadNetwork(string(PLAN_PARSER_TEST_NETWORK_FILEPATH));
     LogicalPlan::printPlanDef(networkID);
 
     return true;

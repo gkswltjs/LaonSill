@@ -23,7 +23,7 @@
 #define PHYSICALPLAN_H 
 
 typedef struct PlanInfo_t {
-    int         networkID;
+    std::string networkID;
     int         dopCount;
     int         epochCount;
     int         miniBatchCount;     // per epoch
@@ -56,7 +56,7 @@ public:
     PhysicalPlan(std::vector<std::string> lossNames);
     virtual ~PhysicalPlan();
 
-    int                         networkID;
+    std::string                 networkID;
     std::map<int, PlanAlloc>    allocMap;       // 특정 레이어를 어느곳에 배치할 것인가
                                                 // key : layer ID, value : PlanAlloc
     std::map<int, PlanDef>      planMap;        // plan ID별 PlanDef 맵
@@ -87,31 +87,33 @@ public:
     std::mutex          planMutex;  // refCount, readyQueue, depRefMap을 보호한다.
                                     // XXX: 락을 효율적으로 사용하도록 추후에 수정하자.
 
-    static void insertPlan(int networkID, std::vector<PhysicalPlan*> pMap,
+    static void insertPlan(std::string networkID, std::vector<PhysicalPlan*> pMap,
         PlanInfo *pInfoMap);
-    static void removePlan(int networkID);
+    static void removePlan(std::string networkID);
 
     static PhysicalPlan* getCurPhysicalPlan();
 
-    static void allocateTensor(int networkID);
+    static void allocateTensor(std::string networkID);
 
-    static void setCurPlan(int networkID, int dopID, bool acquireLock);
-    static void setCurPlanInfo(int networkID);
+    static void setCurPlan(std::string networkID, int dopID, bool acquireLock);
+    static void setCurPlanInfo(std::string networkID);
 
     static void saveNetwork(bool checkCond);
     static void loadNetwork();
 
-    static int getDOPCount(int networkID);
-    static void markFinish(int networkID, int dopID, int planID);   
+    static int getDOPCount(std::string networkID);
+    static void markFinish(std::string networkID, int dopID, int planID);   
 
     void* getTensor(int nodeID, int devID, std::string tensorName);
 
     void reset();
 
 private:
-    static std::map<int, std::vector<PhysicalPlan*>>    planGlobalMap;    // key = networkID,
+    static std::map<std::string, std::vector<PhysicalPlan*>>    planGlobalMap;    
+                                                                // key = networkID,
                                                                 // value = Physical Plans
-    static std::map<int, PlanInfo*>  planGlobalInfoMap; // 하나의 네트워크에 대한 plan 정보를 
+    static std::map<std::string, PlanInfo*>  planGlobalInfoMap;
+                                                // 하나의 네트워크에 대한 plan 정보를 
                                                 // 담고 있는 구조체. 
                                                 // key = networkID, value = plan info 
     static std::mutex               planGlobalMutex;    // planMap, planInfoMap을 보호
@@ -120,13 +122,14 @@ private:
     void notifyFinish(int targetPlanID);
     void markDone(int planID);     
 
-    std::vector<int> getOrderedLayerIDs(int networkID);
-    void allocateTensorInternal(int networkID, int dopID);
+    std::vector<int> getOrderedLayerIDs(std::string networkID);
+    void allocateTensorInternal(std::string networkID, int dopID);
     static void* allocTensorMem(int layerType, void* instancePtr, std::string tensorName,
                                 PlanAlloc planAlloc, bool isInput, int index);
 
     LossConsole *lossConsole;       // FIXME: 이름이... 이상하다 ㅠ_ㅠ 좋은걸로 바꿔줘요
-    void calcLoss();
+    float calcLoss();
+    void logLoss();
 
     std::map<TensorAllocKey, void*> tensorAllocMap;
 };

@@ -7,6 +7,7 @@
  */
 
 #include <vector>
+#include <string>
 
 #include "CustomInputTest.h"
 #include "Network.h"
@@ -43,7 +44,7 @@ static void CustomInputCBFunc(int miniBatchIdx, int batchSize, void *args,
 }
 
 bool CustomInputTest::runSimpleTest() {
-    int networkID = PlanParser::loadNetwork(string(NETWORK_FILEPATH));
+    string networkID = PlanParser::loadNetwork(string(NETWORK_FILEPATH));
     WorkContext::updateNetwork(networkID);
     PlanOptimizer::buildPlans(networkID);
 

@@ -21,7 +21,7 @@ using namespace std;
 
 #define NETWORK_FILEPATH       SPATH("examples/LeNet/lenet_train.json")
 
-static void printMeasureThread(int networkID) {
+static void printMeasureThread(string networkID) {
     ClientError ret;
     ClientHandle handle;
 

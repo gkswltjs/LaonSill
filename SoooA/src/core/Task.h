@@ -55,7 +55,7 @@ typedef struct TaskAllocTensor_s {
 typedef struct TaskUpdateTensor_s {
     TaskType                    taskType;
     int                         elemID;
-    int                         networkID;
+    std::string                 networkID;
     int                         dopID;
     int                         layerID;
     int                         planID;
@@ -66,7 +66,7 @@ typedef struct TaskRunPlan_s {
     TaskType    taskType;
     int         elemID;
     int         requestThreadID;
-    int         networkID;
+    std::string networkID;
     int         dopID;
     bool        inference;
 } TaskRunPlan;
@@ -74,7 +74,7 @@ typedef struct TaskRunPlan_s {
 typedef struct TaskAllocLayer_s {
     TaskType    taskType;
     int         elemID;
-    int         networkID;
+    std::string networkID;
     int         dopID;
     int         layerID;
     int         nodeID;

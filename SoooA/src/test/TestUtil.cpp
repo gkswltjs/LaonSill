@@ -331,9 +331,9 @@ void Tokenize(const string& str, vector<string>& tokens, const string& delimiter
 
 
 template <typename Dtype>
-int PrepareContext(const std::string& networkFilePath, const int numSteps) {
+string PrepareContext(const std::string& networkFilePath, const int numSteps) {
 	// network definition file로부터 network를 생성하고 network id를 반환
-	int networkID = PlanParser::loadNetwork(networkFilePath);
+	string networkID = PlanParser::loadNetwork(networkFilePath);
 	// network id로 생성된 network를 조회
 	Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
 	// network에 대해 최대 iteration? epoch?을 지정하여 build
@@ -347,11 +347,11 @@ int PrepareContext(const std::string& networkFilePath, const int numSteps) {
 	return networkID;
 }
 
-template int PrepareContext<float>(const std::string& networkFilePath, const int numSteps);
+template string PrepareContext<float>(const std::string& networkFilePath, const int numSteps);
 
 
 template <typename Dtype>
-void RetrieveLayers(const int networkID,
+void RetrieveLayers(const string networkID,
 		std::vector<std::pair<int, Layer<Dtype>*>>* outerLayers,
 		std::vector<std::pair<int, Layer<Dtype>*>>* layers,
 		std::pair<int, InputLayer<Dtype>*>* inputLayer,
@@ -417,7 +417,7 @@ void RetrieveLayers(const int networkID,
 	}
 }
 
-template void RetrieveLayers<float>(const int networkID,
+template void RetrieveLayers<float>(const string networkID,
 		std::vector<std::pair<int, Layer<float>*>>* outerLayers,
 		std::vector<std::pair<int, Layer<float>*>>* layers,
 		std::pair<int, InputLayer<float>*>* inputLayer,
@@ -426,7 +426,7 @@ template void RetrieveLayers<float>(const int networkID,
 
 
 template <typename Dtype>
-void PrintLayerList(const int networkID,
+void PrintLayerList(const string networkID,
 		const std::vector<std::pair<int, Layer<Dtype>*>>* layers,
 		const std::vector<std::pair<int, LearnableLayer<Dtype>*>>* learnableLayers) {
 
@@ -453,13 +453,13 @@ void PrintLayerList(const int networkID,
 	}
 }
 
-template void PrintLayerList<float>(const int networkID,
+template void PrintLayerList<float>(const string networkID,
 		const std::vector<std::pair<int, Layer<float>*>>* layers,
 		const std::vector<std::pair<int, LearnableLayer<float>*>>* learnableLayers);
 
 
 template <typename Dtype>
-void PrintLayerDataConfig(const int networkID,
+void PrintLayerDataConfig(const string networkID,
 		const std::vector<std::pair<int, Layer<Dtype>*>>& layers) {
 
 	std::cout << "::: LAYER DATA CONFIGURATION :::" << std::endl;
@@ -470,7 +470,7 @@ void PrintLayerDataConfig(const int networkID,
 	}
 }
 
-template void PrintLayerDataConfig<float>(const int networkID,
+template void PrintLayerDataConfig<float>(const string networkID,
 		const std::vector<std::pair<int, Layer<float>*>>& layers);
 
 
@@ -524,7 +524,7 @@ template void LoadBlobs(const string& networkName, const int numSteps,
 
 
 template <typename Dtype>
-void FillParam(const int networkID,
+void FillParam(const string networkID,
 		map<string, Data<Dtype>*>& nameDataMap,
 		std::pair<int, LearnableLayer<Dtype>*>& learnableLayerPair) {
 
@@ -548,13 +548,13 @@ void FillParam(const int networkID,
 	}
 }
 
-template void FillParam(const int networkID,
+template void FillParam(const string networkID,
 		map<string, Data<float>*>& nameDataMap,
 		std::pair<int, LearnableLayer<float>*>& learnableLayerPair);
 
 
 template <typename Dtype>
-void FillParams(const int networkID,
+void FillParams(const string networkID,
 		std::vector<std::pair<int, LearnableLayer<Dtype>*>>& learnableLayers,
 		map<string, Data<Dtype>*>& nameParamsMap) {
 
@@ -589,7 +589,7 @@ void FillParams(const int networkID,
 	*/
 }
 
-template void FillParams(const int networkID,
+template void FillParams(const string networkID,
 		std::vector<std::pair<int, LearnableLayer<float>*>>& learnableLayers,
 		map<string, Data<float>*>& nameParamsMapList);
 
@@ -601,7 +601,7 @@ template void FillParams(const int networkID,
  * 지정된 dataEndType에 따라 해당 end의 data, grad에 모두 값을 채움
  */
 template <typename Dtype>
-void FillDatum(const int networkID,
+void FillDatum(const string networkID,
 		map<string, Data<Dtype>*>& nameDataMap,
 		std::pair<int, Layer<Dtype>*>& layerPair,
 		DataEndType dataEndType) {
@@ -634,13 +634,13 @@ void FillDatum(const int networkID,
 	}
 }
 
-template void FillDatum(const int networkID,
+template void FillDatum(const string networkID,
 		map<string, Data<float>*>& nameDataMap,
 		std::pair<int, Layer<float>*>& layerPair, DataEndType dataEndType);
 
 
 template <typename Dtype>
-void FillData(const int networkID,
+void FillData(const string networkID,
 		std::vector<std::pair<int, Layer<Dtype>*>>& layers,
 		map<string, Data<Dtype>*>& nameBlobsMap, DataEndType dataEndType) {
 
@@ -652,13 +652,13 @@ void FillData(const int networkID,
 	}
 }
 
-template void FillData(const int networkID,
+template void FillData(const string networkID,
 		std::vector<std::pair<int, Layer<float>*>>& layers,
 		map<string, Data<float>*>& nameBlobsMap, DataEndType dataEndType);
 
 
 template <typename Dtype>
-void BuildNameLayerMap(const int networkID,
+void BuildNameLayerMap(const string networkID,
 		std::vector<std::pair<int, Layer<Dtype>*>>& layers,
 		std::map<std::string, std::pair<int, Layer<Dtype>*>>& nameLayerMap) {
 
@@ -669,7 +669,7 @@ void BuildNameLayerMap(const int networkID,
 	}
 }
 
-template void BuildNameLayerMap(const int networkID,
+template void BuildNameLayerMap(const string networkID,
 		std::vector<std::pair<int, Layer<float>*>>& layers,
 		std::map<std::string, std::pair<int, Layer<float>*>>& nameLayerMap);
 
@@ -729,7 +729,7 @@ template void PrintNameDataMap(const string& name, map<string, Data<float>*>& na
  * 나중에 필요할 경우 타입 별로 arg 받아서 처리할 것.
  */
 template <typename Dtype>
-bool CompareData(const int networkID,
+bool CompareData(const string networkID,
 		map<string, Data<Dtype>*>& nameDataMap,
 		std::pair<int, Layer<Dtype>*>& layerPair, DataEndType dataEndType) {
 
@@ -752,7 +752,7 @@ bool CompareData(const int networkID,
 	return final_result;
 }
 
-template bool CompareData(const int networkID,
+template bool CompareData(const string networkID,
 		map<string, Data<float>*>& nameDataMap,
 		std::pair<int, Layer<float>*>& layerPair, DataEndType dataEndType);
 

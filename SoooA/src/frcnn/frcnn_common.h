@@ -27,6 +27,7 @@
 #include "cnpy.h"
 #include "gpu_nms.hpp"
 #include "SysLog.h"
+#include "ColdLog.h"
 #define FRCNN_TRAIN 1
 
 
@@ -1053,7 +1054,12 @@ static std::string cv_type2str(int type) {
 
 static void nms(std::vector<std::vector<float>>& proposals, std::vector<float>& scores,
 		const float thresh, std::vector<uint32_t>& keep) {
-	SASSERT0(proposals.size() > 0 && proposals.size() == scores.size());
+	//SASSERT0(proposals.size() > 0 && proposals.size() == scores.size());
+    if (proposals.size() == 0) {
+        COLD_LOG(ColdLog::WARNING, true, "there is no proposal in proposal layer");
+        keep.clear();
+        return;
+    }
 
 	//const float thresh = 0.7f;
 	const int device_id = 0;

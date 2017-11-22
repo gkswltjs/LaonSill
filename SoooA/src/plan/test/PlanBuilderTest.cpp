@@ -56,7 +56,7 @@ bool PlanBuilderTest::runBuildTest() {
     pb->addNetworkProp("gamma", "0.1");
     pb->addNetworkProp("miniBatch", "50");
 
-    int networkID = pb->load();
+    string networkID = pb->load();
 
     LogicalPlan::printPlanDef(networkID);
 

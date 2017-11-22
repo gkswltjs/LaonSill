@@ -295,25 +295,25 @@ Job* Worker::getPubJob(Job* job) {
 }
 
 void Worker::handleCreateNetworkFromFileJob(Job* job) {
-    int networkID = PlanParser::loadNetwork(job->getStringValue(0));
+    string networkID = PlanParser::loadNetwork(job->getStringValue(0));
     
     Job* pubJob = getPubJob(job);
-    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    pubJob->addJobElem(Job::StringType, strlen(networkID.c_str()), (void*)networkID.c_str());
 
     Broker::publish(job->getJobID(), pubJob);
 }
 
 void Worker::handleCreateNetwork(Job* job) {
-    int networkID = PlanParser::loadNetworkByJSONString(job->getStringValue(0));
+    string networkID = PlanParser::loadNetworkByJSONString(job->getStringValue(0));
 
     Job* pubJob = getPubJob(job);
-    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    pubJob->addJobElem(Job::StringType, strlen(networkID.c_str()), (void*)networkID.c_str());
 
     Broker::publish(job->getJobID(), pubJob);
 }
 
 void Worker::handleDestroyNetwork(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
 
     // XXX: 네트워크가 제거될 수 있는 상황인지에 대한 파악을 해야하고, 그것에 따른 에러처리가
     //      필요하다.
@@ -338,7 +338,7 @@ void Worker::handleDestroyNetwork(Job* job) {
 }
 
 void Worker::handleBuildNetwork(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
     int epochs = job->getIntValue(1);
 
     cout << " build network" << endl;
@@ -347,12 +347,12 @@ void Worker::handleBuildNetwork(Job* job) {
     network->build(epochs);
 
     Job* pubJob = getPubJob(job);
-    pubJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    pubJob->addJobElem(Job::StringType, strlen(networkID.c_str()), (void*)networkID.c_str());
     Broker::publish(job->getJobID(), pubJob);
 }
 
 void Worker::handleResetNetwork(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->reset();
@@ -362,7 +362,7 @@ void Worker::handleResetNetwork(Job* job) {
 }
 
 void Worker::handleRunNetwork(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
     int inference = job->getIntValue(1);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
@@ -371,7 +371,8 @@ void Worker::handleRunNetwork(Job* job) {
         WorkContext::updateNetwork(networkID);
 
         Job* startIDPJob = new Job(JobType::StartInputDataProvider);   // InputDataProvider
-        startIDPJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+        startIDPJob->addJobElem(Job::StringType, strlen(networkID.c_str()),
+            (void*)networkID.c_str());
         Worker::pushJob(startIDPJob);
     }
 
@@ -386,7 +387,7 @@ void Worker::handleRunNetwork(Job* job) {
 }
 
 void Worker::handleRunNetworkMiniBatch(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
     int inference = job->getIntValue(1);
     int miniBatchIdx = job->getIntValue(2);
 
@@ -408,7 +409,7 @@ void Worker::handleRunNetworkMiniBatch(Job* job) {
 }
 
 void Worker::handleSaveNetwork(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
     string filePath = job->getStringValue(1);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
@@ -419,7 +420,7 @@ void Worker::handleSaveNetwork(Job* job) {
 }
 
 void Worker::handleLoadNetwork(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
     string filePath = job->getStringValue(1);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
@@ -430,7 +431,7 @@ void Worker::handleLoadNetwork(Job* job) {
 }
 
 void Worker::handleGetMeasureItemName(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
 
     MeasureEntry* entry = MeasureManager::getMeasureEntry(networkID);
     vector<string> itemNames = entry->getItemNames();
@@ -447,7 +448,7 @@ void Worker::handleGetMeasureItemName(Job* job) {
 }
 
 void Worker::handleGetMeasures(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
     int isForward = job->getIntValue(1);
     int start = job->getIntValue(2);
     int count = job->getIntValue(3);
@@ -474,7 +475,7 @@ void Worker::handleGetMeasures(Job* job) {
 }
 
 void Worker::handleRunNetworkWithInputData(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
     int channel = job->getIntValue(1);
     int height = job->getIntValue(2);
     int width = job->getIntValue(3);
@@ -541,7 +542,7 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
 }
 
 void Worker::handleStartIDP(Job* job) {
-    int networkID = job->getIntValue(0);
+    string networkID = job->getStringValue(0);
     InputDataProvider::handleIDP(networkID);
 }
 
@@ -745,7 +746,7 @@ TaskAllocTensor* Worker::addAllocTensorTask(int consumerIdx, int nodeID, int dev
     return task;
 }
 
-void Worker::addRunPlanTask(int consumerIdx, int networkID, int dopID, bool inference,
+void Worker::addRunPlanTask(int consumerIdx, string networkID, int dopID, bool inference,
     int requestThreadID) {
     TaskRunPlan* task = (TaskRunPlan*)Task::getElem(TaskType::RunPlan);
     SASSUME0(task != NULL);     // pool이 넉넉하지 않을때에 대한 전략이 반드시 필요하다
@@ -762,7 +763,7 @@ void Worker::addRunPlanTask(int consumerIdx, int networkID, int dopID, bool infe
     tq->tasks.push_back((TaskBase*)task);
 }
 
-void Worker::addUpdateTensorTask(int consumerIdx, int networkID, int dopID, int layerID,
+void Worker::addUpdateTensorTask(int consumerIdx, string networkID, int dopID, int layerID,
     int planID, vector<UpdateParam> updateParams) {
 
     TaskUpdateTensor* task = (TaskUpdateTensor*)Task::getElem(TaskType::UpdateTensor);
@@ -783,7 +784,7 @@ void Worker::addUpdateTensorTask(int consumerIdx, int networkID, int dopID, int 
     tq->tasks.push_back((TaskBase*)task);
 }
 
-void Worker::addAllocLayerTask(int consumerIdx, int networkID, int dopID, int layerID,
+void Worker::addAllocLayerTask(int consumerIdx, string networkID, int dopID, int layerID,
     int nodeID, int devID, int requestThreadID, int layerType, void* instancePtr) {
     
     TaskAllocLayer* task = (TaskAllocLayer*)Task::getElem(TaskType::AllocLayer);

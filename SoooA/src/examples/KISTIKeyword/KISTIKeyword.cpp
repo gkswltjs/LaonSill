@@ -183,7 +183,7 @@ int KISTIKeyword<Dtype>::getTop10GuessSuccessCount(const float* data,
 #ifdef USE_VOCPASCAL
 template<typename Dtype>
 void KISTIKeyword<Dtype>::run() {
-    int networkID = PlanParser::loadNetwork(EXAMPLE_KISTIKEYWORD_NETDEFPATH);
+    string networkID = PlanParser::loadNetwork(EXAMPLE_KISTIKEYWORD_NETDEFPATH);
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(1);
 
@@ -229,7 +229,7 @@ void KISTIKeyword<Dtype>::run() {
 #else
 template<typename Dtype>
 void KISTIKeyword<Dtype>::run() {
-    int networkID = PlanParser::loadNetwork(EXAMPLE_KISTIKEYWORD_NETDEFPATH);
+    string networkID = PlanParser::loadNetwork(EXAMPLE_KISTIKEYWORD_NETDEFPATH);
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(1);
 

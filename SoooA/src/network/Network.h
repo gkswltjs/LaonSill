@@ -9,6 +9,9 @@
 #ifndef NETWORK_H_
 #define NETWORK_H_
 
+#include <string>
+#include <queue>
+
 #include "common.h"
 #include "NetworkListener.h"
 #include "BaseLayer.h"
@@ -19,7 +22,6 @@
 #include "LogicalPlan.h"
 
 template <typename Dtype> class DataSet;
-template <typename Dtype> class DQNImageLearner;
 
 /**
  * @brief 네트워크 기본 클래스
@@ -97,7 +99,7 @@ public:
 	/**
 	 * @details 네트워크를 파일에 쓴다. 네트워크 파일경로는 미리 지정이 되어 있어야 한다.
 	 */
-	void save();
+    std::string save();
 
 	/**
 	 * @details 네트워크를 파일로부터 읽는다.
@@ -139,14 +141,14 @@ public:
      * @details 네트워크 아이디를 반환한다.
      * @return  네트워크 아이디
      */
-    int                                     getNetworkID() { return this->networkID; }
+    std::string                             getNetworkID() { return this->networkID; }
 
     /**
      * @details 특정 네트워크 아이디를 가지고 있는 네트워크를 반환한다.
      * @param networkID     네트워크 아이디
      * @return  네트워크 포인터를 반환
      */
-    static Network<Dtype>*                  getNetworkFromID(int networkID);
+    static Network<Dtype>*                  getNetworkFromID(std::string networkID);
 
     bool                                    isInnerLayer(int layerID);
 
@@ -162,14 +164,42 @@ public:
     bool                                    getMeasureInserted() { 
                                                 return this->isMeasureInserted; }
 
+    /*
+     * 파라미터 관리를 위한 함수들.
+     * FIXME: 추후에 다른 모듈로 분리하자
+     */
+    void                                    handleIntervalSaveParams(int iterNum);
+    void                                    handleBestLoss(float loss, int iterNum); 
+
+    /*
+     * 트레인 파일 관리를 위한 함수들.
+     * FIXME: 추후에 다른 모듈로 분리하자
+     */
+    void                                    logNetworkDefString(std::string networkDef);
+    void                                    logNetworkDefFile(std::string networkDefFilePath);
+    void                                    logTrainFile(std::string content);
+
 private:
-    int                                     networkID;
-    static volatile std::atomic<int>        networkIDGen;
-    static std::map<int, Network<Dtype>*>   networkIDMap;
-    static std::mutex                       networkIDMapMutex;
-    bool                                    isLoaded;
-    bool                                    isBuilt;
-    bool                                    isMeasureInserted;
+    std::string                                     networkID;
+    static std::map<std::string, Network<Dtype>*>   networkIDMap;
+    static std::mutex                               networkIDMapMutex;
+    bool                                            isLoaded;
+    bool                                            isBuilt;
+    bool                                            isMeasureInserted;
+
+    /*
+     * 파라미터 관리를 위한 변수들.
+     * FIXME: 추후에 다른 모듈로 분리하자
+     */
+    float                                           bestLoss;
+    std::string                                     bestSavedParamPath;
+    std::queue<std::string>                         intervalSavedParamPathQueue;
+
+    /*
+     * 트레인 파일 관리를 위한 변수들.
+     * FIXME: 추후에 다른 모듈로 분리하자
+     */
+    FILE                                           *trainFP;
 };
 
 

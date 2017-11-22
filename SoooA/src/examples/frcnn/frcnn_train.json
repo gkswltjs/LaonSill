@@ -489,9 +489,10 @@
 		"batchSize" : 1, 
 		"epochs" : 100, 
 		"lossLayer" : ["rpn_loss_cls", "rpn_loss_bbox", "loss_cls", "loss_bbox"],
+        "measureLayer" : ["loss_cls", "loss_bbox"],
 		"gamma" : 0.1,
 		"testInterval" : 100,
-		"saveInterval" : 1,
+		"saveInterval" : 100000,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,
 		"stepSize" : 50000,
@@ -500,7 +501,7 @@
 		"clipGradientsLevel" : 0.0,
 		"lrPolicy" : "Step",
 		"optimizer" : "Momentum",
-		"loadPath" : "$(SOOOA_HOME)/param/frcnn_240000_denorm.param"
+		"loadPath" : "$(SOOOA_HOME)/param/VGG_CNN_M_1024_FRCNN_CAFFE.param"
 	}
 
 }

@@ -133,7 +133,7 @@ ClientError ClientAPI::createNetwork(ClientHandle handle, std::string networkDef
     Job* createNetworkReplyJob;
     Client::recvJob(handle.sockFD, handle.buffer, &createNetworkReplyJob);
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
-    int networkID = createNetworkReplyJob->getIntValue(0);
+    string networkID = createNetworkReplyJob->getStringValue(0);
     delete createNetworkReplyJob;
 
     netHandle.networkID = networkID;
@@ -157,7 +157,7 @@ ClientError ClientAPI::createNetworkFromFile(ClientHandle handle,
     Job* createNetworkReplyJob;
     Client::recvJob(handle.sockFD, handle.buffer, &createNetworkReplyJob);
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
-    int networkID = createNetworkReplyJob->getIntValue(0);
+    string networkID = createNetworkReplyJob->getStringValue(0);
     delete createNetworkReplyJob;
 
     netHandle.networkID = networkID;
@@ -171,7 +171,8 @@ ClientError ClientAPI::destroyNetwork(ClientHandle handle, NetworkHandle& netHan
         return ClientError::NotCreatedNetwork;
 
     Job* destroyNetworkJob = new Job(JobType::DestroyNetwork);
-    destroyNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    destroyNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
+            (void*)netHandle.networkID.c_str());
     Client::sendJob(handle.sockFD, handle.buffer, destroyNetworkJob);
     delete destroyNetworkJob;
 
@@ -190,7 +191,8 @@ ClientError ClientAPI::buildNetwork(ClientHandle handle, NetworkHandle netHandle
         return ClientError::NotCreatedNetwork;
 
     Job* buildNetworkJob = new Job(JobType::BuildNetwork);
-    buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    buildNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
+        (void*)netHandle.networkID.c_str());
     buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&epochs);
     Client::sendJob(handle.sockFD, handle.buffer, buildNetworkJob);
     delete buildNetworkJob;
@@ -208,7 +210,8 @@ ClientError ClientAPI::resetNetwork(ClientHandle handle, NetworkHandle netHandle
         return ClientError::NotCreatedNetwork;
 
     Job* resetNetworkJob = new Job(JobType::ResetNetwork);
-    resetNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    resetNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
+        (void*)netHandle.networkID.c_str());
     Client::sendJob(handle.sockFD, handle.buffer, resetNetworkJob);
     delete resetNetworkJob;
 
@@ -226,7 +229,8 @@ ClientError ClientAPI::runNetwork(ClientHandle handle, NetworkHandle netHandle,
         return ClientError::NotCreatedNetwork;
 
     Job* runNetworkJob = new Job(JobType::RunNetwork);
-    runNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    runNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
+        (void*)netHandle.networkID.c_str());
     int inferenceInt = (int)inference;
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inferenceInt);
     Client::sendJob(handle.sockFD, handle.buffer, runNetworkJob);
@@ -250,7 +254,8 @@ ClientError ClientAPI::runNetworkMiniBatch(ClientHandle handle, NetworkHandle ne
         return ClientError::NotCreatedNetwork;
 
     Job* runNetworkJob = new Job(JobType::RunNetworkMiniBatch);
-    runNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    runNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
+        (void*)netHandle.networkID.c_str());
     int inferenceInt = (int)inference;
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inferenceInt);
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&miniBatchIdx);
@@ -275,7 +280,8 @@ ClientError ClientAPI::saveNetwork(ClientHandle handle, NetworkHandle netHandle,
         return ClientError::NotCreatedNetwork;
 
     Job* saveNetworkJob = new Job(JobType::SaveNetwork);
-    saveNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    saveNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
+        (void*)netHandle.networkID.c_str());
     saveNetworkJob->addJobElem(Job::StringType, strlen(filePath.c_str()),
         (void*)filePath.c_str());
     Client::sendJob(handle.sockFD, handle.buffer, saveNetworkJob);
@@ -295,7 +301,8 @@ ClientError ClientAPI::loadNetwork(ClientHandle handle, NetworkHandle netHandle,
         return ClientError::NotCreatedNetwork;
 
     Job* loadNetworkJob = new Job(JobType::LoadNetwork);
-    loadNetworkJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    loadNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
+        (void*)netHandle.networkID.c_str());
     loadNetworkJob->addJobElem(Job::StringType, strlen(filePath.c_str()),
         (void*)filePath.c_str());
     Client::sendJob(handle.sockFD, handle.buffer, loadNetworkJob);
@@ -316,7 +323,8 @@ ClientError ClientAPI::getObjectDetection(ClientHandle handle, NetworkHandle net
         return ClientError::NotCreatedNetwork;
 
     Job* runJob = new Job(JobType::RunNetworkWithInputData);
-    runJob->addJobElem(Job::IntType, 1, (void*)&netHandle.networkID);
+    runJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
+        (void*)netHandle.networkID.c_str());
     runJob->addJobElem(Job::IntType, 1, (void*)&channel);
     runJob->addJobElem(Job::IntType, 1, (void*)&height);
     runJob->addJobElem(Job::IntType, 1, (void*)&width);
@@ -349,11 +357,11 @@ ClientError ClientAPI::getObjectDetection(ClientHandle handle, NetworkHandle net
     return ClientError::Success;
 }
 
-ClientError ClientAPI::getMeasureItemName(ClientHandle handle, int networkID,
+ClientError ClientAPI::getMeasureItemName(ClientHandle handle, string networkID,
     vector<string>& measureItemNames) {
 
     Job* runJob = new Job(JobType::GetMeasureItemName);
-    runJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    runJob->addJobElem(Job::StringType, strlen(networkID.c_str()), (void*)networkID.c_str());
     Client::sendJob(handle.sockFD, handle.buffer, runJob);
     delete runJob;
 
@@ -371,14 +379,14 @@ ClientError ClientAPI::getMeasureItemName(ClientHandle handle, int networkID,
     return ClientError::Success;
 }
 
-ClientError ClientAPI::getMeasures(ClientHandle handle, int networkID,
+ClientError ClientAPI::getMeasures(ClientHandle handle, string networkID,
     bool forwardSearch, int start, int count, int* startIterNum, int* dataCount,
     float* data) {
 
     int forward = (int)forwardSearch;
 
     Job* runJob = new Job(JobType::GetMeasures);
-    runJob->addJobElem(Job::IntType, 1, (void*)&networkID);
+    runJob->addJobElem(Job::StringType, strlen(networkID.c_str()), (void*)networkID.c_str());
     runJob->addJobElem(Job::IntType, 1, (void*)&forward);
     runJob->addJobElem(Job::IntType, 1, (void*)&start);
     runJob->addJobElem(Job::IntType, 1, (void*)&count);

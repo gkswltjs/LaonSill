@@ -150,7 +150,7 @@ private:
 	const int numSteps;
 	const NetworkStatus status;
 
-	int networkID;
+    std::string networkID;
 	bool withNetwork;
 
 

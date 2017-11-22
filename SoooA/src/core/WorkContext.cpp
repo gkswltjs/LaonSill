@@ -18,11 +18,11 @@ thread_local int            WorkContext::curThreadID;
 
 thread_local LayerProp*     WorkContext::curLayerProp;
 thread_local _NetworkProp*  WorkContext::curNetworkProp;
-thread_local int            WorkContext::curNetworkID = -1;
+thread_local string         WorkContext::curNetworkID = "";
 BootMode                    WorkContext::curBootMode;
 
-void WorkContext::updateNetwork(int networkID) {
-    if (networkID < 0)
+void WorkContext::updateNetwork(string networkID) {
+    if (networkID == "")
         return;
 
     WorkContext::curNetworkID = networkID;
@@ -30,7 +30,7 @@ void WorkContext::updateNetwork(int networkID) {
     PhysicalPlan::setCurPlanInfo(networkID);
 }
 
-void WorkContext::updateLayer(int networkID, int layerID) {
+void WorkContext::updateLayer(string networkID, int layerID) {
     if (networkID != WorkContext::curNetworkID) {
         WorkContext::updateNetwork(networkID);
     }
@@ -40,14 +40,15 @@ void WorkContext::updateLayer(int networkID, int layerID) {
 
 void WorkContext::updatePlan(int dopID, bool acquireLock) {
     WorkContext::curDOPID = dopID;
-    int networkID = WorkContext::curNetworkID;
+    string networkID = WorkContext::curNetworkID;
 
     PhysicalPlan::setCurPlan(networkID, dopID, acquireLock);
 }
 
 void WorkContext::printContext(FILE *fp) {
     fprintf(fp,
-        "networkID = %d, dopID = %d, PhysicalPlan : %p, LayerProp : %p, NetworkProp : %p\n",
-        WorkContext::curNetworkID, WorkContext::curDOPID, WorkContext::curPhysicalPlan,
+        "networkID = %s, dopID = %d, PhysicalPlan : %p, LayerProp : %p, NetworkProp : %p\n",
+        WorkContext::curNetworkID.c_str(), WorkContext::curDOPID,
+        WorkContext::curPhysicalPlan,
         WorkContext::curLayerProp, WorkContext::curNetworkProp);
 }

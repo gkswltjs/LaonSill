@@ -29,7 +29,10 @@
     ["lossLayer", "std::vector<std::string>", ""],
     ["measureLayer", "std::vector<std::string>", ""],
     ["rate", "float", "-1.0"],
-    ["status", "NetworkStatus", "NetworkStatus::Train"]
+    ["status", "NetworkStatus", "NetworkStatus::Train"],
+    ["keepSaveIntervalModelCount", "uint32_t", "3"],
+    ["keepSaveBestModel", "bool", "false"],
+    ["keepSaveBestModelStartIterNum", "uint32_t", "10000"]
 ]
 
 }

@@ -32,11 +32,13 @@ public:
     static void printEdges(FILE *fp, const char* title, Data<Dtype>* data, int flags,
         int indent);
     static void printLayerEdges(FILE *fp, const char* title, Layer<Dtype>* layer, int indent);
-    static void printLayerEdgesByLayerID(FILE *fp, const char* title, int networkID,
+    static void printLayerEdgesByLayerID(FILE *fp, const char* title, std::string networkID,
         int layerID, int indent);
-    static void printLayerEdgesByLayerName(FILE *fp, const char* title, int networkID,
+    static void printLayerEdgesByLayerName(FILE *fp, const char* title, std::string networkID,
         std::string layerName, int indent);
-    static void printNetworkEdges(FILE *fp, const char* title, int networkID, int indent);
-    static void printNetworkParams(FILE *fp, const char* title, int networkID, int indent);
+    static void printNetworkEdges(FILE *fp, const char* title, std::string networkID,
+        int indent);
+    static void printNetworkParams(FILE *fp, const char* title, std::string networkID,
+        int indent);
 };
 #endif /* DEBUGUTIL_H */

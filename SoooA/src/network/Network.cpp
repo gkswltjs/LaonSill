@@ -10,6 +10,14 @@
 #include <vector>
 #include <map>
 #include <cfloat>
+#include <string>
+#include <iostream>
+#include <limits>
+
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "DataSet.h"
 #include "BaseLayer.h"
@@ -29,26 +37,39 @@
 #include "LearnableLayer.h"
 #include "LogicalPlan.h"
 #include "MeasureManager.h"
+#include "FileMgmt.h"
 
 using namespace std;
+using namespace boost::uuids;
 
 extern const char*  SOOOA_HOME_ENVNAME;
 
 template<typename Dtype>
-volatile atomic<int>        Network<Dtype>::networkIDGen;
-template<typename Dtype>
-map<int, Network<Dtype>*>   Network<Dtype>::networkIDMap;
+map<string, Network<Dtype>*>   Network<Dtype>::networkIDMap;
 template<typename Dtype>
 mutex Network<Dtype>::networkIDMapMutex;
 
 template <typename Dtype>
 Network<Dtype>::Network() {
-    this->networkID = atomic_fetch_add(&Network<Dtype>::networkIDGen, 1);
+    random_generator gen;
+    uuid id = gen();
+    this->networkID = to_string(id);
+
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
     Network<Dtype>::networkIDMap[this->networkID] = this;
     this->isLoaded = false;
     this->isBuilt = false;
     this->isMeasureInserted = false;
+
+    this->bestLoss = numeric_limits<float>::max();
+    this->bestSavedParamPath = "";
+
+    // train 정보를 관리하는 파일 포인터를 얻는다.
+    string trainFilePath = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
+            this->networkID + ".train";
+    this->trainFP = fopen(trainFilePath.c_str(), "w+");
+    SASSERT0(this->trainFP != NULL);
+
 }
 
 template <typename Dtype>
@@ -59,15 +80,17 @@ Network<Dtype>::~Network() {
     if (this->isMeasureInserted) {
         MeasureManager::removeEntry(this->networkID);
     }
+
+    if (this->trainFP != NULL)
+        fclose(this->trainFP);
 }
 
 template<typename Dtype>
 void Network<Dtype>::init() {
-    atomic_store(&Network<Dtype>::networkIDGen, 0);
 }
 
 template<typename Dtype>
-Network<Dtype>* Network<Dtype>::getNetworkFromID(int networkID) {
+Network<Dtype>* Network<Dtype>::getNetworkFromID(string networkID) {
     Network<Dtype>* network;
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
     network = Network<Dtype>::networkIDMap[networkID];
@@ -200,22 +223,65 @@ void Network<Dtype>::save(string path) {
 	paramOfs.close();
 
     if (SPARAM(PRINT_PARAMLOG_AFTER_NETWORKSAVE)) {
-        DebugUtil<Dtype>::printNetworkParams(stderr, "network save result", this->networkID,
-            0);
+        DebugUtil<Dtype>::printNetworkParams(stderr, "network save result",
+            this->networkID, 0);
     }
 }
 
 template <typename Dtype>
-void Network<Dtype>::save() {
+string Network<Dtype>::save() {
     string path;
 	if (SNPROP(savePathPrefix) == "") {
         path = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
+            this->networkID + "_" +
             to_string(SNPROP(iterations)) + ".param";
     } else {
-        path = SNPROP(savePathPrefix) + to_string(SNPROP(iterations)) + ".param";
+        path = SNPROP(savePathPrefix) + + "_" + to_string(SNPROP(iterations)) + ".param";
     }
 
     save(path);
+    return path;
+}
+
+template<typename Dtype>
+void Network<Dtype>::handleIntervalSaveParams(int iterNum) {
+    if (this->intervalSavedParamPathQueue.size() == SNPROP(keepSaveIntervalModelCount)) {
+        string removeParamPath = this->intervalSavedParamPathQueue.front();
+        this->intervalSavedParamPathQueue.pop();
+        FileMgmt::removeFile(removeParamPath.c_str());
+    }
+
+    string newParamPath = this->save();
+    this->intervalSavedParamPathQueue.push(newParamPath);
+
+    logTrainFile(to_string(iterNum) + "," + newParamPath);
+}
+
+template<typename Dtype>
+void Network<Dtype>::handleBestLoss(float loss, int iterNum) {
+    if (!SNPROP(keepSaveBestModel))
+        return;
+
+    if (SNPROP(keepSaveBestModelStartIterNum) > iterNum)
+        return;
+
+    if (loss > this->bestLoss)
+        return; 
+
+    this->bestLoss = loss;
+
+    // XXX: remove file 하고 나서 best model을 저장하는 순간에 서버가 죽으면 좀 난감하다.
+    //      이 부분에 대한 고려가 필요하다.
+    string newParamPath = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
+        this->networkID + "_best_" + to_string(iterNum) + ".param";
+
+    this->save(newParamPath);
+
+    if (this->bestSavedParamPath != "")
+        FileMgmt::removeFile(this->bestSavedParamPath.c_str()); 
+    this->bestSavedParamPath = newParamPath;
+
+    logTrainFile("best(" + to_string(iterNum) + ")," + newParamPath);
 }
 
 template <typename Dtype>
@@ -279,8 +345,8 @@ void Network<Dtype>::load(string path) {
 	dataMap.clear();
 
     if (SPARAM(PRINT_PARAMLOG_AFTER_NETWORKLOAD)) {
-        DebugUtil<Dtype>::printNetworkParams(stderr, "network load result", this->networkID,
-            0);
+        DebugUtil<Dtype>::printNetworkParams(stderr, "network load result",
+            this->networkID, 0);
     }
 }
 
@@ -364,5 +430,26 @@ bool Network<Dtype>::isInnerLayer(int layerID) {
     return LogicalPlan::isInnerLayer(this->networkID, layerID);
 }
 
+template<typename Dtype>
+void Network<Dtype>::logNetworkDefString(string networkDef) {
+    SASSERT0(this->trainFP != NULL);
+    fprintf(this->trainFP, "%s\n", networkDef.c_str());
+    fprintf(this->trainFP, "=========================================================\n\n");
+    fflush(this->trainFP);
+}
+
+template<typename Dtype>
+void Network<Dtype>::logNetworkDefFile(string networkDefFilePath) {
+    std::ifstream file(networkDefFilePath);
+    std::string content((std::istreambuf_iterator<char>(file)),
+            std::istreambuf_iterator<char>());
+    logNetworkDefString(content);
+}
+
+template<typename Dtype>
+void Network<Dtype>::logTrainFile(string content) {
+    SASSUME0(this->trainFP != NULL);
+    fprintf(this->trainFP, "%s\n", content.c_str());
+}
 
 template class Network<float>;

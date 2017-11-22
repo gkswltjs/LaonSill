@@ -9,18 +9,20 @@
 #ifndef LAYERPROP_H
 #define LAYERPROP_H 
 
+#include <string>
+
 #include "BaseLayer.h"
 
 class LayerProp {
 public: 
     LayerProp() {
-        this->networkID = -1;
+        this->networkID = "";
         this->layerID = Layer<float>::None;
         this->layerType = -1;
         this->prop = NULL;
     }
 
-    LayerProp(int networkID, int layerID, int layerType, void* prop) {
+    LayerProp(std::string networkID, int layerID, int layerType, void* prop) {
         this->networkID = networkID;
         this->layerID = layerID;
         this->layerType = layerType;
@@ -32,7 +34,7 @@ public:
             free(prop);
     }
 
-    int networkID;
+    std::string networkID;
     int layerID;
     int layerType;
     void *prop;

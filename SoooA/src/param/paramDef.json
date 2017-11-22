@@ -538,6 +538,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : false
+},
+
+"STOP_TRAIN_WHEN_GOT_NAN_LOSS" : 
+{
+    "DESC" : "specify whether to stop training when NaN loss value is happened or not",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
 }
 
 }

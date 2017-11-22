@@ -67,7 +67,7 @@ void PlanBuilder::addNetworkProp(string property, string value) {
     networkConf.push_back(string("\"") + property + "\" : " + value);
 }
 
-int PlanBuilder::load() {
+string PlanBuilder::load() {
     Json::Value value;
     Json::Reader reader;
 

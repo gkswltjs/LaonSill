@@ -6,6 +6,8 @@
  * @details
  */
 
+#include <string>
+
 #include "PropTest.h"
 #include "common.h"
 #include "PropMgmt.h"
@@ -17,7 +19,7 @@ using namespace std;
 
 bool PropTest::runSimpleLayerPropTest() {
     // (1) register layer prop
-    int networkID = 1;
+    string networkID = "9d20ddf9-b90f-4a6b-a455-e6aa3dd28c53";
     int layerID = 3;
 
     _ConvPropLayer *convProp = new _ConvPropLayer();
@@ -47,7 +49,7 @@ bool PropTest::runSimpleLayerPropTest() {
 
 bool PropTest::runSimpleNetworkPropTest() {
     // (1) register network prop
-    int networkID = 2;
+    string networkID = "5e59b0fb-ca99-434f-bfc0-f7b00570745c";
     int layerID = 45;
 
     _ConvPropLayer *convProp = new _ConvPropLayer();

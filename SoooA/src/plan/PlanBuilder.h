@@ -24,10 +24,10 @@ public:
         std::vector<std::string> input, std::vector<std::string> output);
     void addLayerProp(int layerID, std::string property, std::string value);
     void addNetworkProp(std::string property, std::string value);
-    int load();
+    std::string load();
 
 private:
-    int networkID;
+    std::string networkID;
     std::map<int, std::vector<std::string>> layerConf;
     std::vector<std::string> networkConf;
 

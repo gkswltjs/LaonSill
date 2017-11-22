@@ -9,6 +9,7 @@ import time
 
 
 def printMeasureThread(networkID):
+    print "network ID : ", networkID
     print "[Measure Thread] create handle"
     handle = ClientHandle()
     ret = handle.createHandle()

@@ -18,14 +18,14 @@
 
 using namespace std;
 
-map<int, LogicalPlan*> LogicalPlan::lpMap;
+map<string, LogicalPlan*> LogicalPlan::lpMap;
 mutex LogicalPlan::lpMapMutex;
 
-void LogicalPlan::cleanup(int networkID) {
+void LogicalPlan::cleanup(string networkID) {
     unique_lock<mutex> lock(LogicalPlan::lpMapMutex);
     SASSERT(LogicalPlan::lpMap.find(networkID) != LogicalPlan::lpMap.end(),
         "There is no network ID for the logical plan you are trying to delete."
-        " networkID=%d", networkID);
+        " networkID=%s", networkID.c_str());
 
     LogicalPlan* lp = LogicalPlan::lpMap[networkID];
     LogicalPlan::lpMap.erase(networkID);
@@ -53,7 +53,7 @@ PlanDef* LogicalPlan::findPlanDef(LogicalPlan* lp, int planID) {
 //                     A의 output이 B,C의 input이 되는 경우를 의미
 //
 //  planDefMap : key=>layerID, value=>PlanBuildDef
-void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
+void LogicalPlan::build(string networkID, map<int, PlanBuildDef> planDefMap) {
     // (1) fill input2ID & output2ID map
     map<string, vector<int>> input2IDMap;   // tensor name을 기준으로 input ID map
     map<string, vector<int>> output2IDMap;  // tensor name을 기준으로 output ID map
@@ -425,16 +425,16 @@ void LogicalPlan::build(int networkID, map<int, PlanBuildDef> planDefMap) {
     // (3-7) Logical Plan에 등록
     unique_lock<mutex> lock(LogicalPlan::lpMapMutex);
     SASSERT(LogicalPlan::lpMap.find(networkID) == LogicalPlan::lpMap.end(),
-        "network ID has been declared redundant. network ID=%d", networkID);
+        "network ID has been declared redundant. network ID=%s", networkID.c_str());
 
     LogicalPlan::lpMap[networkID] = lp;
 }
 
-void LogicalPlan::printPlanDef(int networkID) {
+void LogicalPlan::printPlanDef(string networkID) {
     unique_lock<mutex> lock(LogicalPlan::lpMapMutex);
     SASSERT(LogicalPlan::lpMap.find(networkID) != LogicalPlan::lpMap.end(),
-        "There is no logical plan for the requested network ID. network ID=%d",
-        networkID);
+        "There is no logical plan for the requested network ID. network ID=%s",
+        networkID.c_str());
 
     LogicalPlan* lp = LogicalPlan::lpMap[networkID];
     lock.unlock();
@@ -460,25 +460,25 @@ void LogicalPlan::printPlanDef(int networkID) {
     }
 }
 
-LogicalPlan* LogicalPlan::getLogicalPlan(int networkID) {
+LogicalPlan* LogicalPlan::getLogicalPlan(string networkID) {
     unique_lock<mutex> lock(LogicalPlan::lpMapMutex);
     SASSERT(LogicalPlan::lpMap.find(networkID) != LogicalPlan::lpMap.end(),
-        "There is no logical plan for the requested network ID. network ID=%d",
-        networkID);
+        "There is no logical plan for the requested network ID. network ID=%s",
+        networkID.c_str());
 
     LogicalPlan* lp = LogicalPlan::lpMap[networkID];
     lock.unlock();
     return lp;
 }
 
-bool LogicalPlan::isInnerLayer(int networkID, int layerID) {
+bool LogicalPlan::isInnerLayer(string networkID, int layerID) {
     LogicalPlan* lp = LogicalPlan::getLogicalPlan(networkID);
     unique_lock<mutex> lock(lp->layerTypeMutex);
     SASSUME0(lp->layerTypeMap.find(layerID) != lp->layerTypeMap.end());
     return lp->layerTypeMap[layerID]; 
 }
 
-void LogicalPlan::setLayerType(int networkID, int layerID, bool isInner) {
+void LogicalPlan::setLayerType(string networkID, int layerID, bool isInner) {
     LogicalPlan* lp = LogicalPlan::getLogicalPlan(networkID);
     unique_lock<mutex> lock(lp->layerTypeMutex);
     SASSUME0(lp->layerTypeMap.find(layerID) == lp->layerTypeMap.end());

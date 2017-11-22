@@ -17,31 +17,31 @@ funcReleaseSession = libSoooA.releaseSession
 funcReleaseSession.argtypes = [c_int, c_char_p, POINTER(c_int)]
 
 funcCreateNetwork = libSoooA.createNetwork
-funcCreateNetwork.argtypes = [c_int, c_int, c_char_p, c_char_p, POINTER(c_int)]
+funcCreateNetwork.argtypes = [c_int, c_int, c_char_p, c_char_p, c_char_p]
 
 funcCreateNetworkFromFile = libSoooA.createNetworkFromFile
-funcCreateNetworkFromFile.argtypes = [c_int, c_int, c_char_p, c_char_p, POINTER(c_int)]
+funcCreateNetworkFromFile.argtypes = [c_int, c_int, c_char_p, c_char_p, c_char_p]
 
 funcDestroyNetwork = libSoooA.destroyNetwork
-funcDestroyNetwork.argtypes = [c_int, c_char_p, c_int, c_int]
+funcDestroyNetwork.argtypes = [c_int, c_char_p, c_int, c_char_p]
 
 funcBuildNetwork = libSoooA.buildNetwork
-funcBuildNetwork.argtypes = [c_int, c_char_p, c_int, c_int, c_int]
+funcBuildNetwork.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int]
 
 funcResetNetwork = libSoooA.resetNetwork
-funcResetNetwork.argtypes = [c_int, c_char_p, c_int, c_int]
+funcResetNetwork.argtypes = [c_int, c_char_p, c_int, c_char_p]
 
 funcRunNetwork = libSoooA.runNetwork
-funcRunNetwork.argtypes = [c_int, c_char_p, c_int, c_int, c_int]
+funcRunNetwork.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int]
 
 funcRunNetworkMiniBatch = libSoooA.runNetworkMiniBatch
-funcRunNetworkMiniBatch.argtypes = [c_int, c_char_p, c_int, c_int, c_int, c_int]
+funcRunNetworkMiniBatch.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int, c_int]
 
 funcSaveNetwork = libSoooA.saveNetwork
-funcSaveNetwork.argtypes = [c_int, c_char_p, c_int, c_int, c_char_p]
+funcSaveNetwork.argtypes = [c_int, c_char_p, c_int, c_char_p, c_char_p]
 
 funcLoadNetwork = libSoooA.loadNetwork
-funcLoadNetwork.argtypes = [c_int, c_char_p, c_int, c_int, c_char_p]
+funcLoadNetwork.argtypes = [c_int, c_char_p, c_int, c_char_p, c_char_p]
 
 
 class BoundingBox(Structure):
@@ -49,15 +49,15 @@ class BoundingBox(Structure):
                 ("confidence", c_float)]
 
 funcGetObjectDetection = libSoooA.getObjectDetection
-funcGetObjectDetection.argtypes = [c_int, c_char_p, c_int, c_int, c_int, c_int,
+funcGetObjectDetection.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int, c_int,
                                    c_int, POINTER(c_float), c_void_p, c_int, c_int]
 
 funcGetMeasureItemName = libSoooA.getMeasureItemName
-funcGetMeasureItemName.argtypes = [c_int, c_char_p, c_int, c_int,
+funcGetMeasureItemName.argtypes = [c_int, c_char_p, c_char_p, c_int,
     POINTER(POINTER(c_char)), POINTER(c_int)]
 
 funcGetMeasures = libSoooA.getMeasures
-funcGetMeasures.argtypes = [c_int, c_char_p, c_int, c_int, c_int, c_int, POINTER(c_int),
+funcGetMeasures.argtypes = [c_int, c_char_p, c_char_p, c_int, c_int, c_int, POINTER(c_int),
     POINTER(c_int), POINTER(c_float)]
 
 class ClientHandle:
@@ -68,7 +68,7 @@ class ClientHandle:
         self.serverHostName = c_char_p("localhost")
         self.serverPortNum = c_int(20088)
 
-        self.networkID = c_int(-1)
+        self.networkID = create_string_buffer(37)   # uuid size : 32 + 4 + 1
         self.isCreated = c_int(0)
 
     def createHandle(self, serverHostName = "localhost", serverPortNum=20088,
@@ -90,13 +90,13 @@ class ClientHandle:
 
     def createNetwork(self, networkDef): 
         ret = funcCreateNetwork(self.sockFD, self.hasSession, self.buffer,
-                c_char_p(networkDef), byref(self.networkID))
+                c_char_p(networkDef), self.networkID)
         self.isCreated = c_int(1)
         return ret
 
     def createNetworkFromFile(self, filePathInServer):
         ret = funcCreateNetworkFromFile(self.sockFD, self.hasSession, self.buffer,
-                c_char_p(filePathInServer), byref(self.networkID))
+                c_char_p(filePathInServer), self.networkID)
         self.isCreated = c_int(1)
         return ret
 
@@ -139,6 +139,8 @@ class ClientHandle:
         imageDataArray = (c_float * len(imageData))(*imageData)
         bboxArray = (BoundingBox * maxBoxCount)()
 
+        print "networkID : ", self.networkID.value
+
         ret = funcGetObjectDetection(self.sockFD, self.buffer, self.isCreated, 
                 self.networkID, c_int(channel), c_int(height), c_int(width),
                 imageDataArray, bboxArray, c_int(maxBoxCount), c_int(coordRelative))
@@ -156,7 +158,7 @@ class ClientHandle:
         for i in range(MAX_MESAURE_ITEMCOUNT):
             itemNameArray[i] = create_string_buffer(MAX_MEASURE_ITEMNAMELEN)
         
-        ret = funcGetMeasureItemName(self.sockFD, self.buffer, c_int(networkID),
+        ret = funcGetMeasureItemName(self.sockFD, self.buffer, c_char_p(networkID),
                 c_int(MAX_MESAURE_ITEMCOUNT), itemNameArray, byref(itemCount))
 
         result = []
@@ -173,7 +175,7 @@ class ClientHandle:
         dataCount = c_int(-1)
         measureArray = (c_float * (itemCount * count))()
        
-        ret = funcGetMeasures(self.sockFD, self.buffer, c_int(networkID),
+        ret = funcGetMeasures(self.sockFD, self.buffer, c_char_p(networkID),
                 c_int(int(forwardSearch)), c_int(start), c_int(count), byref(startIterNum),
                 byref(dataCount), measureArray)
 

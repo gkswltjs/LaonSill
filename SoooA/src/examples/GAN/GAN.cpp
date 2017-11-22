@@ -7,6 +7,7 @@
  */
 
 #include <vector>
+#include <string>
 
 #include "common.h"
 #include "Debug.h"
@@ -40,7 +41,7 @@ void GAN<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
 
 template<typename Dtype>
 void GAN<Dtype>::run() {
-    int networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKG0_FILEPATH));
+    string networkID = PlanParser::loadNetwork(string(EXAMPLE_GAN_NETWORKG0_FILEPATH));
     Network<Dtype>* networkG0 = Network<Dtype>::getNetworkFromID(networkID);
     networkG0->build(1);
 

@@ -23,7 +23,7 @@ void InnerLayerFunc::initLayer(int innerLayerIdx) {
     // set inner layer context
     SASSUME0(innerLayerIdx < SLPROP_BASE(innerLayerIDs).size());
     int oldLayerID = WorkContext::curLayerProp->layerID;
-    int networkID = WorkContext::curLayerProp->networkID;
+    string networkID = WorkContext::curLayerProp->networkID;
     int newLayerID = SLPROP_BASE(innerLayerIDs)[innerLayerIdx];
     WorkContext::updateLayer(networkID, newLayerID);
     int layerType = WorkContext::curLayerProp->layerType;
@@ -42,7 +42,7 @@ void InnerLayerFunc::destroyLayer(int innerLayerIdx) {
     // set inner layer context
     SASSUME0(innerLayerIdx < SLPROP_BASE(innerLayerIDs).size());
     int oldLayerID = WorkContext::curLayerProp->layerID;
-    int networkID = WorkContext::curLayerProp->networkID;
+    string networkID = WorkContext::curLayerProp->networkID;
     int newLayerID = SLPROP_BASE(innerLayerIDs)[innerLayerIdx];
     WorkContext::updateLayer(networkID, newLayerID);
     int layerType = WorkContext::curLayerProp->layerType;
@@ -60,7 +60,7 @@ void InnerLayerFunc::setInOutTensor(int innerLayerIdx, void *tensorPtr, bool isI
     // set inner layer context
     SASSUME0(innerLayerIdx < SLPROP_BASE(innerLayerIDs).size());
     int oldLayerID = WorkContext::curLayerProp->layerID;
-    int networkID = WorkContext::curLayerProp->networkID;
+    string networkID = WorkContext::curLayerProp->networkID;
     int newLayerID = SLPROP_BASE(innerLayerIDs)[innerLayerIdx];
     WorkContext::updateLayer(networkID, newLayerID);
     int layerType = WorkContext::curLayerProp->layerType;
@@ -92,7 +92,7 @@ bool InnerLayerFunc::allocLayerTensors(int innerLayerIdx) {
     // set inner layer context
     SASSUME0(innerLayerIdx < SLPROP_BASE(innerLayerIDs).size());
     int oldLayerID = WorkContext::curLayerProp->layerID;
-    int networkID = WorkContext::curLayerProp->networkID;
+    string networkID = WorkContext::curLayerProp->networkID;
     int newLayerID = SLPROP_BASE(innerLayerIDs)[innerLayerIdx];
     WorkContext::updateLayer(networkID, newLayerID);
     int layerType = WorkContext::curLayerProp->layerType;
@@ -114,7 +114,7 @@ void InnerLayerFunc::runForward(int innerLayerIdx, int miniBatchIdx) {
     // set inner layer context
     SASSUME0(innerLayerIdx < SLPROP_BASE(innerLayerIDs).size());
     int oldLayerID = WorkContext::curLayerProp->layerID;
-    int networkID = WorkContext::curLayerProp->networkID;
+    string networkID = WorkContext::curLayerProp->networkID;
     int newLayerID = SLPROP_BASE(innerLayerIDs)[innerLayerIdx];
     WorkContext::updateLayer(networkID, newLayerID);
     int layerType = WorkContext::curLayerProp->layerType;
@@ -133,7 +133,7 @@ void InnerLayerFunc::runBackward(int innerLayerIdx) {
     // set inner layer context
     SASSUME0(innerLayerIdx < SLPROP_BASE(innerLayerIDs).size());
     int oldLayerID = WorkContext::curLayerProp->layerID;
-    int networkID = WorkContext::curLayerProp->networkID;
+    string networkID = WorkContext::curLayerProp->networkID;
     int newLayerID = SLPROP_BASE(innerLayerIDs)[innerLayerIdx];
     WorkContext::updateLayer(networkID, newLayerID);
     int layerType = WorkContext::curLayerProp->layerType;
@@ -152,7 +152,7 @@ void InnerLayerFunc::learn(int innerLayerIdx) {
     // set inner layer context
     SASSUME0(innerLayerIdx < SLPROP_BASE(innerLayerIDs).size());
     int oldLayerID = WorkContext::curLayerProp->layerID;
-    int networkID = WorkContext::curLayerProp->networkID;
+    string networkID = WorkContext::curLayerProp->networkID;
     int newLayerID = SLPROP_BASE(innerLayerIDs)[innerLayerIdx];
     WorkContext::updateLayer(networkID, newLayerID);
     int layerType = WorkContext::curLayerProp->layerType;

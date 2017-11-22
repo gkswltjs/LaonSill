@@ -11,10 +11,10 @@
 
 using namespace std;
 
-map<int, MeasureEntry*>     MeasureManager::entryMap;
+map<string, MeasureEntry*>     MeasureManager::entryMap;
 mutex                       MeasureManager::entryMapMutex;
 
-void MeasureManager::insertEntryEx(int networkID, vector<string> itemNames,
+void MeasureManager::insertEntryEx(string networkID, vector<string> itemNames,
         MeasureOption option, int queueSize) {
     MeasureEntry* newEntry = new MeasureEntry(networkID, queueSize, option, itemNames);
     SASSERT0(newEntry != NULL);
@@ -24,11 +24,11 @@ void MeasureManager::insertEntryEx(int networkID, vector<string> itemNames,
     MeasureManager::entryMap[networkID] = newEntry;
 }
 
-void MeasureManager::insertEntry(int networkID, vector<string> itemNames) {
+void MeasureManager::insertEntry(string networkID, vector<string> itemNames) {
     insertEntryEx(networkID, itemNames, MEASURE_OPTION_DEFAULT, MEASURE_DEFAULT_QUEUE_SIZE);
 }
 
-void MeasureManager::removeEntry(int networkID) {
+void MeasureManager::removeEntry(string networkID) {
     unique_lock<mutex> entryMapLock(MeasureManager::entryMapMutex);
     SASSERT0(MeasureManager::entryMap.find(networkID) != MeasureManager::entryMap.end());
     MeasureEntry* removeEntry = MeasureManager::entryMap[networkID];
@@ -36,7 +36,7 @@ void MeasureManager::removeEntry(int networkID) {
     delete removeEntry;
 }
 
-MeasureEntry* MeasureManager::getMeasureEntry(int networkID) {
+MeasureEntry* MeasureManager::getMeasureEntry(string networkID) {
     unique_lock<mutex> entryMapLock(MeasureManager::entryMapMutex);
     SASSERT0(MeasureManager::entryMap.find(networkID) != MeasureManager::entryMap.end());
     MeasureEntry* entry = MeasureManager::entryMap[networkID];
