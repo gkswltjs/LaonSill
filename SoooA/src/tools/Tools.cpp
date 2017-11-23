@@ -103,7 +103,7 @@ void printConvertMnistDataUsage(char* prog) {
 }
 
 
-void convertMnistData(int argc, char** argv) {
+void convertMnistDataTest(int argc, char** argv) {
 	string image_filename;
 	string label_filename;
 	string db_path;
