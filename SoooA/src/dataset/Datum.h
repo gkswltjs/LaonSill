@@ -272,7 +272,11 @@ protected:
 template <typename T>
 const std::string serializeToString(T* datum) {
 	std::ostringstream ofs;
+#ifdef BOOST_ARCHIVE_NO_HEADER
 	unsigned int flags = boost::archive::no_header;
+#else
+	unsigned int flags = 0;
+#endif
 	boost::archive::text_oarchive oa(ofs, flags);
 	oa << (*datum);
 	return ofs.str();
@@ -285,7 +289,11 @@ template const std::string serializeToString<Datum>(Datum* datum);
 template <typename T>
 void deserializeFromString(const std::string& data, T* datum) {
 	std::istringstream ifs(data);
+#ifdef BOOST_ARCHIVE_NO_HEADER
 	unsigned int flags = boost::archive::no_header;
+#else
+	unsigned int flags = 0;
+#endif
 	boost::archive::text_iarchive ia(ifs, flags);
 	ia >> (*datum);
 }

@@ -95,7 +95,7 @@ bool isValidShapeSize(const vector<uint32_t>& shape, const uint32_t shapeSize) {
 
 bool isValidShapeValue(const vector<uint32_t>& shape) {
 	for (uint32_t i = 0; i < shape.size(); i++) {
-		if(shape[i] <= 0) {
+		if(shape[i] < 0) {
 			return false;
 		}
 	}
@@ -538,7 +538,12 @@ void Data<Dtype>::fill_host_with_1d_vec(const vector<uint32_t>& array,
 template <typename Dtype>
 void Data<Dtype>::fill_host_with_2d_vec(const vector<vector<float>>& array,
 		const vector<uint32_t>& transpose) {
-	SASSERT0(array.size() > 0);
+	//SASSERT0(array.size() > 0);
+	if (array.size() == 0) {
+		return;
+	}
+
+
 	const uint32_t dim1 = array.size();
 	const uint32_t dim2 = array[0].size();
 
