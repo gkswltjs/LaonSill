@@ -27,12 +27,8 @@ template<typename Dtype>
 void SSD<Dtype>::run() {
     string networkID = PlanParser::loadNetwork(string(EXAMPLE_SSD_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
-    network->build(10000);
-
-    for (int i = 0; i < 10000; i++) {
-        cout << "epoch : " << i << endl;
-        network->run(false);
-    }
+    network->build(200);
+    network->run(false);
 }
 
 
