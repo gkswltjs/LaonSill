@@ -33,3 +33,9 @@
 /cscope.out
 /dev/
 /.gitignore
+/ClientLib/
+/ServerLib/
+/ToolDenormGen/
+/ToolImageGen/
+/ToolMnistGen/
+/src/examples/SSD/*.bak
