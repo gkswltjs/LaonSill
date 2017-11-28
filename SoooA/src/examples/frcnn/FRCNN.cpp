@@ -45,7 +45,7 @@ template<typename Dtype>
 void FRCNN<Dtype>::run() {
     string networkID = PlanParser::loadNetwork(string(EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
-    network->build(100);
+    network->build(1);
 
 #if !INFERENCE
     network->run(false);

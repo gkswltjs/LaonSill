@@ -176,9 +176,9 @@ IMDB* RoITestInputLayer<Dtype>::getImdb(const string& imdb_name) {
 
 template <typename Dtype>
 void RoITestInputLayer<Dtype>::getNextMiniBatch() {
-	//if (this->cur >= this->imdb->imageIndex.size()) {
-		//this->cur = 0;
-	//}
+	if (this->cur >= this->imdb->imageIndex.size()) {
+		this->cur = 0;
+	}
 
 
 	uint32_t index = this->perm[this->cur];
