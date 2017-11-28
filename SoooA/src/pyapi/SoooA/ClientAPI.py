@@ -139,8 +139,6 @@ class ClientHandle:
         imageDataArray = (c_float * len(imageData))(*imageData)
         bboxArray = (BoundingBox * maxBoxCount)()
 
-        print "networkID : ", self.networkID.value
-
         ret = funcGetObjectDetection(self.sockFD, self.buffer, self.isCreated, 
                 self.networkID, c_int(channel), c_int(height), c_int(width),
                 imageDataArray, bboxArray, c_int(maxBoxCount), c_int(coordRelative))
