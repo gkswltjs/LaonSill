@@ -27,8 +27,6 @@ typedef enum MeasureEntryDataStutus_e : int {
 // XXX: 현재는 default option만 사용하고 있음.
 const MeasureOption MEASURE_OPTION_DEFAULT = 
     MeasureOption((MEASURE_OPTION_MEMORY | MEASURE_OPTION_FILE));
-//const int MEASURE_DEFAULT_QUEUE_SIZE = 10000;
-const int MEASURE_DEFAULT_QUEUE_SIZE = 500;
 
 class MeasureEntry {
 

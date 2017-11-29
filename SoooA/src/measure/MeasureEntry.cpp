@@ -283,12 +283,16 @@ void MeasureEntry::getData(int start, int count, bool forward, int* startIterNum
     (*startIterNum) = this->baseIterNum + start1;
     (*measureCount) = count1 + count2;
 
-    setAreaLock(start1, count1);
+    if (count1 > 0)
+        setAreaLock(start1, count1);
+
     if (count2 > 0)
         setAreaLock(start2, count2);
+
     entryLock.unlock();
 
-    getDataInternal(start1, count1, data);
+    if (count1 > 0)
+        getDataInternal(start1, count1, data);
 
     if (count2 > 0) {
         int offset = count1 * this->itemCount;

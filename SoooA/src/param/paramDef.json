@@ -548,6 +548,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : false
+},
+
+"MEASURE_QUEUE_DEFAULT_SIZE" : 
+{
+    "DESC" : "specify default queue size of measure entry module",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 10000 
 }
 
 }

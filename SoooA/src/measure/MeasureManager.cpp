@@ -8,6 +8,7 @@
 
 #include "MeasureManager.h"
 #include "SysLog.h"
+#include "Param.h"
 
 using namespace std;
 
@@ -25,7 +26,8 @@ void MeasureManager::insertEntryEx(string networkID, vector<string> itemNames,
 }
 
 void MeasureManager::insertEntry(string networkID, vector<string> itemNames) {
-    insertEntryEx(networkID, itemNames, MEASURE_OPTION_DEFAULT, MEASURE_DEFAULT_QUEUE_SIZE);
+    insertEntryEx(networkID, itemNames, MEASURE_OPTION_DEFAULT, 
+        SPARAM(MEASURE_QUEUE_DEFAULT_SIZE));
 }
 
 void MeasureManager::removeEntry(string networkID) {
