@@ -130,6 +130,7 @@ void MeasureEntry::addData(float* data) {
             fprintf(this->fp, ",%f", data[i]);
         }
         fprintf(this->fp, "\n");
+        fflush(this->fp);
     }
 
     entryLock.lock();
