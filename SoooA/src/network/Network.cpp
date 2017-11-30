@@ -450,6 +450,7 @@ template<typename Dtype>
 void Network<Dtype>::logTrainFile(string content) {
     SASSUME0(this->trainFP != NULL);
     fprintf(this->trainFP, "%s\n", content.c_str());
+    fflush(this->trainFP);
 }
 
 template class Network<float>;
