@@ -418,6 +418,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     if (network->getMeasureInserted()) {
         MeasureEntry* measureEntry = MeasureManager::getMeasureEntry(networkID); 
+        SASSUME0(measureEntry != NULL);
 
         for (int i = 0; i < SNPROP(measureLayer).size(); i++) {
             string measureLayerName = SNPROP(measureLayer)[i];

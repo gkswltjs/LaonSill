@@ -434,16 +434,24 @@ void Worker::handleGetMeasureItemName(Job* job) {
     string networkID = job->getStringValue(0);
 
     MeasureEntry* entry = MeasureManager::getMeasureEntry(networkID);
-    vector<string> itemNames = entry->getItemNames();
-
+    int itemCount;
     Job* pubJob = getPubJob(job);
-    int itemCount = itemNames.size();
-    pubJob->addJobElem(Job::IntType, 1, (void*)&itemCount);
 
-    for (int i = 0; i < itemCount; i++) {
-        pubJob->addJobElem(Job::StringType, strlen(itemNames[i].c_str()),
-            (void*)itemNames[i].c_str());
+    if (entry == NULL) {
+        itemCount = -1;
+        pubJob->addJobElem(Job::IntType, 1, (void*)&itemCount);
+    } else {
+        vector<string> itemNames = entry->getItemNames();
+
+        itemCount = itemNames.size();
+        pubJob->addJobElem(Job::IntType, 1, (void*)&itemCount);
+
+        for (int i = 0; i < itemCount; i++) {
+            pubJob->addJobElem(Job::StringType, strlen(itemNames[i].c_str()),
+                (void*)itemNames[i].c_str());
+        }
     }
+
     Broker::publish(job->getJobID(), pubJob);
 }
 
@@ -457,20 +465,28 @@ void Worker::handleGetMeasures(Job* job) {
     int measureCount;
 
     MeasureEntry* entry = MeasureManager::getMeasureEntry(networkID);
-    int itemCount = entry->getItemNames().size();
-    float* data = (float*)malloc(sizeof(float) * count * itemCount);
-    SASSUME0(data != NULL);
-    entry->getData(start, count, (bool)isForward, &startIterNum, &measureCount, data); 
-
     Job* pubJob = getPubJob(job);
-    int N = measureCount * itemCount;
-    pubJob->addJobElem(Job::IntType, 1, (void*)&N);
-    pubJob->addJobElem(Job::IntType, 1, (void*)&startIterNum);
 
-    if (N > 0)
-        pubJob->addJobElem(Job::FloatArrayType, N, data);
+    if (entry == NULL) {
+        int N = -1;
+        pubJob->addJobElem(Job::IntType, 1, (void*)&N);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&N);
+    } else {
+        int itemCount = entry->getItemNames().size();
+        float* data = (float*)malloc(sizeof(float) * count * itemCount);
+        SASSUME0(data != NULL);
+        entry->getData(start, count, (bool)isForward, &startIterNum, &measureCount, data); 
 
-    free(data);
+        int N = measureCount * itemCount;
+        pubJob->addJobElem(Job::IntType, 1, (void*)&N);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&startIterNum);
+
+        if (N > 0)
+            pubJob->addJobElem(Job::FloatArrayType, N, data);
+
+        free(data);
+    }
+
     Broker::publish(job->getJobID(), pubJob);
 }
 

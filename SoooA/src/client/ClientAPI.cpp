@@ -376,6 +376,9 @@ ClientError ClientAPI::getMeasureItemName(ClientHandle handle, string networkID,
     }
     delete runReplyJob;
 
+    if (resultItemCount == -1)
+        return ClientError::RequestedNetworkNotExist;
+
     return ClientError::Success;
 }
 
@@ -407,6 +410,9 @@ ClientError ClientAPI::getMeasures(ClientHandle handle, string networkID,
     }
 
     delete runReplyJob;
+
+    if (measureCount == -1)
+        return ClientError::RequestedNetworkNotExist;
 
     return ClientError::Success;
 }

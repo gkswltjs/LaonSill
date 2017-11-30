@@ -159,6 +159,9 @@ class ClientHandle:
         ret = funcGetMeasureItemName(self.sockFD, self.buffer, c_char_p(networkID),
                 c_int(MAX_MESAURE_ITEMCOUNT), itemNameArray, byref(itemCount))
 
+        if ret != 0:
+            return ret, []
+
         result = []
         for i in range(itemCount.value):
             value = cast(itemNameArray[i], c_char_p).value
@@ -176,6 +179,9 @@ class ClientHandle:
         ret = funcGetMeasures(self.sockFD, self.buffer, c_char_p(networkID),
                 c_int(int(forwardSearch)), c_int(start), c_int(count), byref(startIterNum),
                 byref(dataCount), measureArray)
+
+        if ret != 0:
+            ret, -1, []
 
         result = []
 

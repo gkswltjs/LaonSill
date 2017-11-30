@@ -342,7 +342,9 @@ extern "C" int getMeasureItemName(int sockFD, char* buffer, char* networkID,
 
     int resultItemCount = runReplyJob->getIntValue(0);
 
-    if (resultItemCount > maxItemCount)
+    if (resultItemCount == -1)
+        (*measureItemCount) = 0;
+    else if (resultItemCount > maxItemCount)
         (*measureItemCount) = maxItemCount;
     else
         (*measureItemCount) = resultItemCount;
@@ -353,6 +355,9 @@ extern "C" int getMeasureItemName(int sockFD, char* buffer, char* networkID,
         strcpy(measureItemNames[i], itemName.c_str());
     }
     delete runReplyJob;
+
+    if (resultItemCount == -1)
+        return ClientError::RequestedNetworkNotExist;
 
     return ClientError::Success;
 }
@@ -382,6 +387,9 @@ extern "C" int getMeasures(int sockFD, char* buffer, char* networkID, int forwar
     }
 
     delete runReplyJob;
+
+    if (measureCount == -1)
+        return ClientError::RequestedNetworkNotExist;
 
     return ClientError::Success;
 }

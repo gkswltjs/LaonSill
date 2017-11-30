@@ -530,6 +530,10 @@ void Communicator::sessThread(int sessId) {
             // (1) 메세지를 받는다.
             bool useBigRecvMsg = false;
             recvRet = Communicator::recvMessage(fd, recvMsgHdr, recvMsg, false);
+
+//           if (recvRet == Communicator::RecvConnRefused)
+//               break;
+
             SASSERT((recvRet == Communicator::Success) ||
                 (recvRet == Communicator::RecvOnlyHeader), "");
 
@@ -538,6 +542,9 @@ void Communicator::sessThread(int sessId) {
                 SASSERT0(recvBigMsg);
                 useBigRecvMsg = true;
                 recvRet = Communicator::recvMessage(fd, recvMsgHdr, recvBigMsg, true);
+
+ //              if (recvRet == Communicator::RecvConnRefused)
+ //                  break;
             }
 
             SASSERT(recvRet == Communicator::Success, "");

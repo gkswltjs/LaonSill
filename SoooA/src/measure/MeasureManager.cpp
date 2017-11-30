@@ -40,7 +40,10 @@ void MeasureManager::removeEntry(string networkID) {
 
 MeasureEntry* MeasureManager::getMeasureEntry(string networkID) {
     unique_lock<mutex> entryMapLock(MeasureManager::entryMapMutex);
-    SASSERT0(MeasureManager::entryMap.find(networkID) != MeasureManager::entryMap.end());
+
+    if (MeasureManager::entryMap.find(networkID) == MeasureManager::entryMap.end())
+        return NULL;
+
     MeasureEntry* entry = MeasureManager::entryMap[networkID];
     return entry;
 }
