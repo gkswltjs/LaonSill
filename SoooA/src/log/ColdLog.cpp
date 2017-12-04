@@ -28,7 +28,7 @@ using namespace std;
 
 #define gettid()    syscall(SYS_gettid)   // there is no glibc wrapper for this system call;;
 
-extern const char*  SOOOA_HOME_ENVNAME;
+extern const char*  LAONSILL_HOME_ENVNAME;
 const char*         ColdLog::coldLogFileName = {"cold.log"};
 FILE*               ColdLog::fp = NULL;
 int                 ColdLog::logLevel;
@@ -39,8 +39,8 @@ void ColdLog::init() {
     char coldLogDir[PATH_MAX];
 
     if (strcmp(SPARAM(COLDLOG_DIR), "") == 0) {
-        SASSERT0((sprintf(coldLogDir, "%s/log", getenv(SOOOA_HOME_ENVNAME)) != -1));
-        SASSERT0((sprintf(coldLogFilePath, "%s/log/%s", getenv(SOOOA_HOME_ENVNAME),
+        SASSERT0((sprintf(coldLogDir, "%s/log", getenv(LAONSILL_HOME_ENVNAME)) != -1));
+        SASSERT0((sprintf(coldLogFilePath, "%s/log/%s", getenv(LAONSILL_HOME_ENVNAME),
                         ColdLog::coldLogFileName) != -1));
     } else {
         SASSERT0((sprintf(coldLogDir, "%s", SPARAM(COLDLOG_DIR)) != -1));

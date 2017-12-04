@@ -1,10 +1,10 @@
 * 테스트모드 실행 방법
 (1) 모든 테스트 실행하기
-$ ./soooa_server -t all
+$ ./LaonSillServer -t all
 
 (2) 개별 테스트 실행하기
  [ex. broker test 실행하기]
-$ ./soooa_server -t broker
+$ ./LaonSillServer -t broker
 
 * 테스트를 추가 방법
 (1) 테스트 클래스 생성

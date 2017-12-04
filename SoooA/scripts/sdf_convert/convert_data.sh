@@ -6,8 +6,8 @@ then
 	exit 0
 fi
 
-base_image_path=$SOOOA_HOME'/data/'
-base_sdf_path=$SOOOA_HOME'/data/sdf/'
+base_image_path=$LAONSILL_HOME'/data/'
+base_sdf_path=$LAONSILL_HOME'/data/sdf/'
 
 
 if [ "$1" = "celeba" ]

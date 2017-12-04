@@ -4,12 +4,12 @@
 import os
 import cv2
 import numpy as np
-from SoooA.ClientAPI import *
+from LaonSill.ClientAPI import *
 
 res = 512
 coordRelative = 1
 
-# (1) SoooA Client 핸들을 생성한다.
+# (1) LaonSill Client 핸들을 생성한다.
 print "create handle"
 handle = ClientHandle()
 ret = handle.createHandle()
@@ -19,7 +19,7 @@ print "get session"
 ret = handle.getSession()
 
 # (3) 네트워크를 생성한다.
-NETWORK_FILEPATH = os.path.join(os.environ["SOOOA_SOURCE_PATH"], "examples", "SSD",
+NETWORK_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "examples", "SSD",
         "ssd_512_infer_live.json")
 print "create network. network filepath : ", NETWORK_FILEPATH
 handle.createNetworkFromFile(NETWORK_FILEPATH)
@@ -29,7 +29,7 @@ print "build network (epoch=2)"
 handle.buildNetwork(2)
 
 # (5) 오브젝트 디텍션 루프
-TESTIMAGE_BASE_FILEPATH = os.path.join(os.environ["SOOOA_SOURCE_PATH"], "client", "test")
+TESTIMAGE_BASE_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "client", "test")
 for i in range(4):
     imagePath = os.path.join(TESTIMAGE_BASE_FILEPATH, "%d.jpg" % (i + 1))
 

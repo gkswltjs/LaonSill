@@ -1,8 +1,8 @@
 * 필수 준비 사항
 (1) env.sh.eg에 명시된 환경 변수들이 제대로 설정이 되어 있어야 한다.
-(2) $SOOOA_BUILD_PATH가 지정이 되어 있어야 한다.
-$ export SOOOA_BUILD_PATH=/home/monhoney/git/soooa/SoooA
-(3) $SOOOA_BUILD_PATH에 build directory가 지워져 있어야 한다.
+(2) $LAONSILL_BUILD_PATH가 지정이 되어 있어야 한다.
+$ export LAONSILL_BUILD_PATH=/home/monhoney/git/laonsill/LaonSill
+(3) $LAONSILL_BUILD_PATH에 build directory가 지워져 있어야 한다.
 $ ./cleanBuildGen.sh
 
 * build.sh 사용 방법

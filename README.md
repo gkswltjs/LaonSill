@@ -1,6 +1,6 @@
-# Welcome to SoooA framework
+# Welcome to LaonSill framework
 
-SoooA is a C++ based open source software framework. SoooA supports a wide variety of distributed GPUs and offers excellent performance in speed / memory to work well in commercial environments. SoooA is distributed under the Apache 2.0 license and offers paid models such as subscription models with technical support for paid users. Currently, SoooA is developing a framework to run in embedded and mobile environment and will provide functions to analyze / design using GUI.
+LaonSill is a C++ based open source software framework. LaonSill supports a wide variety of distributed GPUs and offers excellent performance in speed / memory to work well in commercial environments. LaonSill is distributed under the Apache 2.0 license and offers paid models such as subscription models with technical support for paid users. Currently, LaonSill is developing a framework to run in embedded and mobile environment and will provide functions to analyze / design using GUI.
 
 # Installation
 ## Required Packages
@@ -25,53 +25,53 @@ In addition to this, there may be various libraries requried.
   * http://www.netlib.org/blas/
 
 ## Setup for Compile
-Download the SoooA framework. Then set the top directory path to `$SOOOA_BUILD_PATH`
+Download the LaonSill framework. Then set the top directory path to `$LAONSILL_BUILD_PATH`
 
 ```
 $ cd $HOME
-$ git clone https://github.com/laonbud/SoooA.git
-$ export SOOOA_BUILD_PATH=$HOME/SoooA
+$ git clone https://github.com/laonbud/LaonSill.git
+$ export LAONSILL_BUILD_PATH=$HOME/laonsill/LaonSill
 ```
 
-Make $SOOOA_HOME in the right place. There are configuration files, log files and so on that are needed for SOOOA framework.
+Make $LAONSILL_HOME in the right place. There are configuration files, log files and so on that are needed for LaonSill framework.
 
 ```
 $ cd $HOME
-$ mkdir SOOOA_HOME
-$ export SOOOA_HOME=`pwd`/src
+$ mkdir LAONSILL_HOME
+$ export LAONSILL_HOME=$HOME/LAONSILL_HOME
 ```
 
-Copy the env.sh.eg file located in $SOOOA_BUILD_PATH to the env.sh file. Then set the env.sh file appropriately for your environment. This env.sh file should always be run. It is recommended that you configure env.sh to run in files such as .bashrc, .bash_profile, and so on.
+Copy the env.sh.eg file located in $LAONSILL_BUILD_PATH to the env.sh file. Then set the env.sh file appropriately for your environment. This env.sh file should always be run. It is recommended that you configure env.sh to run in files such as .bashrc, .bash_profile, and so on.
 
 ```
-$ cd $SOOOA_BUILD_PATH
+$ cd $LAONSILL_BUILD_PATH
 $ cp env.sh.eg env.sh
 $ vi env.sh
 [env.sh example]
-export SOOOA_HOME="/home/monhoney/SOOOA_HOME"
+export LAONSILL_HOME="/home/monhoney/LAONSILL_HOME"
 export INC_PATH_GNUPLOT="/home/monhoney/install/gnuplot-iostream"
 export INC_PATH_CIMG="/usr/include"
-export SOOOA_SOURCE_PATH="/home/monhoney/SoooA/src"
-export SOOOA_BUILD_PATH="/home/monhoney/SoooA"
-export LD_LIBRARY_PATH=$SOOOA_SOURCE_PATH/3rd_party/nms:$LD_LIBRARY_PATH
+export LAONSILL_SOURCE_PATH="/home/monhoney/laonsill/LaonSill/src"
+export LAONSILL_BUILD_PATH="/home/monhoney/laonsill/LaonSill"
+export LD_LIBRARY_PATH=$LAONSILL_SOURCE_PATH/3rd_party/nms:$LD_LIBRARY_PATH
 ```
 
 ## Compile
 ### Using NVIDIA NSIGHT
 #### Auto-code generation
 
-SoooA framework supports a variety of automatic code generation via scripts. You must run the scripts before compiling
+LaonSill framework supports a variety of automatic code generation via scripts. You must run the scripts before compiling
 
 ```
-$ cd $SOOOA_BUILD_PATH/src/param
+$ cd $LAONSILL_BUILD_PATH/src/param
 $ ./genParam.py
-$ cd $SOOOA_BUILD_PATH/src/prop
+$ cd $LAONSILL_BUILD_PATH/src/prop
 $ ./genEnum.py
 $ ./genLayerPropList.py
 $ ./genNetworkProp.py
-$ cd $SOOOA_BUILD_PATH/src/log
+$ cd $LAONSILL_BUILD_PATH/src/log
 $ ./genHotCode.py
-$ cd $SOOOA_BUILD_PATH/src/perf
+$ cd $LAONSILL_BUILD_PATH/src/perf
 $ ./genPerf.py
 ```
 
@@ -90,7 +90,7 @@ We have created out own build scripts that are independent of NSIGHT builds.
 In order to compile, you have to configure it according to your environment. We provide the buildDef.json file to accomplish that goal. Create buildDef.json from the template file(buildDef.json.eg). And then modify the buildDef.json file to suit your environment.
 
 ```
-cd $SOOOA_BUILD_PATH/build
+cd $LAONSILL_BUILD_PATH/build
 cp buildDef.json.eg buildDef.json
 vi buildDef.json
 [buildDef.json]
@@ -115,7 +115,7 @@ vi buildDef.json
 You can run this script to compile. Note that the first argument of this script represents the degree of parallelism. Put the number of CPU core as an argument.
 
 ```
-$ cd $SOOOA_BUILD_PATH\build
+$ cd $LAONSILL_BUILD_PATH\build
 $ ./build_only.sh 4
 ```
 
@@ -125,29 +125,29 @@ If a new file is added or there is a missing configuration in the buildDef.json 
 $ ./cleanBuildGen.sh
 ```
 
-## Setup for running SoooA framework
-### Prepare soooa.conf
+## Setup for running LaonSill framework
+### Prepare laonsill.conf
 
-You need to prepare the `soooa.conf` file under `$SOOOA_HOME`. A `soooa.conf` file defines the settings needed to run SoooA framework. Please refer to `$SOOOA_BUILD_PATH/template/soooa.conf.sample` file for basic format. See the `$SOOOA_BUILD_PATH/src/param/paramDef.json` file for a description of each configuration parameter.
+You need to prepare the `laonsill.conf` file under `$LAONSILL_HOME`. A `laonsill.conf` file defines the settings needed to run LaonSill framework. Please refer to `$LAONSILL_BUILD_PATH/template/laonsill.conf.sample` file for basic format. See the `$LAONSILL_BUILD_PATH/src/param/paramDef.json` file for a description of each configuration parameter.
 
 ```
-[soooa.conf example]
+[laonsill.conf example]
 SESS_COUNT=5
 GPU_COUNT=1
 JOB_CONSUMER_COUNT=6
-NETWORK_SAVE_DIR=/home/monhoney/SOOOA_HOME/network
-STATFILE_OUTPUT_DIR=/home/monhoney/SOOOA_HOME/stat
-IMAGEUTIL_SAVE_DIR=/home/monhoney/SOOOA_HOME/output_images
-COLDLOG_DIR=/home/monhoney/SOOOA_HOME/log
-HOTLOG_DIR=/home/monhoney/SOOOA_HOME/log
-SYSLOG_DIR=/home/monhoney/SOOOA_HOME/log
+NETWORK_SAVE_DIR=/home/monhoney/LAONSILL_HOME/network
+STATFILE_OUTPUT_DIR=/home/monhoney/LAONSILL_HOME/stat
+IMAGEUTIL_SAVE_DIR=/home/monhoney/LAONSILL_HOME/output_images
+COLDLOG_DIR=/home/monhoney/LAONSILL_HOME/log
+HOTLOG_DIR=/home/monhoney/LAONSILL_HOME/log
+SYSLOG_DIR=/home/monhoney/LAONSILL_HOME/log
 COLDLOG_LEVEL=0
 BASE_DATA_DIR=/data
 ```
 
 ### Prepare cluster.conf
 
-You need to prepare the cluster.conf file under `$SOOOA_HOME`. The cluster.conf file defines GPU settings needed to run SoooA framework. Please refer to `$SOOOA_BUILD_PATH/template/cluster.conf.sample` file for basic format. The configuration file has a list value for the keyword node. One list consists of a tuple with five values. A description of each tuple value is given below:
+You need to prepare the cluster.conf file under `$LAONSILL_HOME`. The cluster.conf file defines GPU settings needed to run LaonSill framework. Please refer to `$LAONSILL_BUILD_PATH/template/cluster.conf.sample` file for basic format. The configuration file has a list value for the keyword node. One list consists of a tuple with five values. A description of each tuple value is given below:
 
 * 1st value indicates the node ID
 * 2nd value indicates server address
@@ -164,34 +164,34 @@ You need to prepare the cluster.conf file under `$SOOOA_HOME`. The cluster.conf 
 }
 ```
 
-## Run SoooA
+## Run LaonSill
 
 After compilation, binaries can be found in the following locations:
 
 ### Using NVIDIA NSIGHT
 
-* $SOOOA_BUILD_PATH/Debug/SoooaServer
-* $SOOOA_BUILD_PATH/Release/SoooaServer
-* $SOOOA_BUILD_PATH/DebugClient/SoooaClient
-* $SOOOA_BUILD_PATH/ReleaseClient/SoooaClient
+* $LAONSILL_BUILD_PATH/Debug/LaonSillServer
+* $LAONSILL_BUILD_PATH/Release/LaonSillServer
+* $LAONSILL_BUILD_PATH/DebugClient/LaonSillClient
+* $LAONSILL_BUILD_PATH/ReleaseClient/LaonSillClient
 
 ### Using build script
 
-* $SOOOA_BUILD_PATH/bin/SoooaServerDebug
-* $SOOOA_BUILD_PATH/bin/SoooaServer
-* $SOOOA_BUILD_PATH/bin/SoooaClientDebug
-* $SOOOA_BUILD_PATH/bin/SoooaClient
+* $LAONSILL_BUILD_PATH/bin/LaonSillServerDebug
+* $LAONSILL_BUILD_PATH/bin/LaonSillServer
+* $LAONSILL_BUILD_PATH/bin/LaonSillClientDebug
+* $LAONSILL_BUILD_PATH/bin/LaonSillClient
 
-### show SoooA version information
+### show LaonSill version information
 
-Check SoooA version. If you have been working so far, you are ready to run SoooA.
+Check LaonSill version. If you have been working so far, you are ready to run LaonSill.
 
 ```
-$ ./SoooaServer -v
+$ ./LaonSillServer -v
 ```
 
 # Tutorial
-SoooA supports various boot modes. We have prepared simple tutorials for each boot mode.
+LaonSill supports various boot modes. We have prepared simple tutorials for each boot mode.
 
 ## GAN for Developer Mode
 
@@ -203,7 +203,7 @@ Developer mode is a boot mode for experts who can use it directly while modifing
 Let's begin. First, let's talk about the necessary files. Go the folder that contains the GAN example and check what kind of file it is.
 
 ```
-$ cd $SOOOA_BUILD_PATH/src/examples/GAN
+$ cd $LAONSILL_BUILD_PATH/src/examples/GAN
 $ ls -al
 drwxrwxr-x 2 monhoney monhoney  4096  6월 30 14:44 .
 drwxrwxr-x 5 monhoney monhoney  4096  6월 27 16:13 ..
@@ -311,9 +311,9 @@ $ mkdir -p /data/celebA
 and download celebA dataset into /data/celebA/
 ```
 
-Below the CelebAInput layer is the convolution layer. This layer also contains several properties for performing convolution. See the $SOOOA_BUILD_PATH/src/prop/layerPropDef.json file for information on the various layer properties.
+Below the CelebAInput layer is the convolution layer. This layer also contains several properties for performing convolution. See the $LAONSILL_BUILD_PATH/src/prop/layerPropDef.json file for information on the various layer properties.
 
-The network properties define how many epochs the entwork will learn and how to learn using some optimizing alogorithms. As you can see in the networkD.json file, the GAN is learning using the ADAM optimizer. See the $SOOOA_BUILD_PATH/src/prop/networkPropDef.json file for information on the various layer properties.
+The network properties define how many epochs the entwork will learn and how to learn using some optimizing alogorithms. As you can see in the networkD.json file, the GAN is learning using the ADAM optimizer. See the $LAONSILL_BUILD_PATH/src/prop/networkPropDef.json file for information on the various layer properties.
 
 Since there is no useful information in the header, we will skip the header and look at the source code. We will step through the important code.
 
@@ -367,12 +367,12 @@ The image information stored in the first convolution layer is saved as 20 jpeg 
         ImageUtil<Dtype>::saveImage(host_data, 20, 3, 64, 64, "");
 ```
 
-Let's run the GAN example now. Run SoooA with the following options:
+Let's run the GAN example now. Run LaonSill with the following options:
 
 ```
-$ cd $SOOOA_BUILD_PATH/bin
-$ ./SOOOA_SERVER -d GAN
-[2017/06/30 16:47:54:542476(30884/0)] SOOOA engine starts
+$ cd $LAONSILL_BUILD_PATH/bin
+$ ./LaonSillServer -d GAN
+[2017/06/30 16:47:54:542476(30884/0)] LaonSill engine starts
 [2017/06/30 16:47:54:630809(30884/0)] enter developerMain()
 [2017/06/30 16:47:55:189182(30884/0)] ***************************************************
 [2017/06/30 16:47:55:189201(30884/0)] * GAN example
@@ -387,10 +387,10 @@ minibatch 100 is done.
     :
 ```
 
-After a certain amount of time, you can check the results in `$SOOOA_HOME/output_images`.
+After a certain amount of time, you can check the results in `$LAONSILL_HOME/output_images`.
 
 ```
-$ cd $SOOOA_HOME/output_images
+$ cd $LAONSILL_HOME/output_images
 $ cd 20170630_171753_643146
 ```
 
@@ -404,8 +404,8 @@ Sometimes pictures do not come out well. We think that it can be caused by rando
 You can perform learning and inferencing by simply defining a network definition file of your network. We tried to run a network definition file called network.conf.test as follows:
 
 ```
-$ ./SoooaServer -f network.conf.test 
-[2017/06/30 17:04:37:143834(31037/0)] SOOOA engine starts
+$ ./LaonSillServer -f network.conf.test 
+[2017/06/30 17:04:37:143834(31037/0)] LaonSill engine starts
 [2017/06/30 17:04:37:219181(31037/0)] enter single job(network.conf.test)
 for softmax
 lossWeight: 1.0000000
@@ -419,7 +419,7 @@ softmaxAxis: 2
 [2017/06/30 17:04:42:790448(31037/0)] exit single job(network.conf.test)
 [2017/06/30 17:04:42:790787(31037/0)] server running time : 5.646955
 
-[2017/06/30 17:04:42:790795(31037/0)] SOOOA engine ends
+[2017/06/30 17:04:42:790795(31037/0)] LaonSill engine ends
 ```
 
 ## Server Client Mode
@@ -429,8 +429,8 @@ Server-client models are also supported. Network training/inference can be perfo
 * Server side
 
 ```
-$ ./SoooaServer 
-[2017/06/30 17:11:49:082883(31132/0)] SOOOA engine starts
+$ ./LaonSillServer 
+[2017/06/30 17:11:49:082883(31132/0)] LaonSill engine starts
 for softmax
 lossWeight: 1.0000000
 hasIgnoreLabel: 0
@@ -448,7 +448,7 @@ hasIgnoreLabel: 0
 * Client side
 
 ```
-$ ./SoooaClient -t run
+$ ./LaonSillClient -t run
 [2017/06/30 17:28:14:930091(6764/0)] ***************************************************
 [2017/06/30 17:28:14:930122(6764/0)] * run test
 [2017/06/30 17:28:14:930126(6764/0)] *  - description : run network test

@@ -1583,7 +1583,9 @@
 		"lrPolicy" : "Multistep",
 		"stepValue" : [80000, 100000, 120000],
 		"optimizer" : "Momentum",
-		"loadPath" : "$(SOOOA_HOME)/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_300x300.param"
+		"loadPath" : "$(SOOOA_HOME)/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_300x300.param",
+        "keepSaveBestModel" : true,
+        "keepSaveBestModelStartIterNum" : 1000
 	}
 
 }

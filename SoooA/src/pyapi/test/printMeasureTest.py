@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from SoooA.ClientAPI import *
+from LaonSill.ClientAPI import *
 import os
 import threading
 import time
@@ -39,7 +39,7 @@ def printMeasureThread(networkID):
     print "[Measure Thread] release session"
     handle.releaseSession()
 
-# (1) SoooA Client 핸들을 생성한다.
+# (1) LaonSill Client 핸들을 생성한다.
 print "create handle"
 handle = ClientHandle()
 ret = handle.createHandle()
@@ -49,7 +49,7 @@ print "get session"
 ret = handle.getSession()
 
 # (3) 네트워크를 생성한다.
-NETWORK_FILEPATH = os.path.join(os.environ["SOOOA_SOURCE_PATH"], "examples", "LeNet",
+NETWORK_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "examples", "LeNet",
         "lenet_train.json")
 print "create network. network filepath : ", NETWORK_FILEPATH
 handle.createNetworkFromFile(NETWORK_FILEPATH)

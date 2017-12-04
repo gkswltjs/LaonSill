@@ -13,7 +13,7 @@
   - SYS_LOG가 초기화 되지 않은 시점에는 콘솔에 로그를 출력한다. 
   - fmt, arg1, arg2는 printf의 fmt, arg1, arg2와 동일하다.
   - SPARAM(SYSLOG_DIR)에 지정된 경로에 sys.log 이름으로 로깅파일이 생성된다.
-  - SPARAM(SYSLOG_DIR)을 설정하지 않은 경우에는 $SOOOA_HOME/log 밑에 생성된다.
+  - SPARAM(SYSLOG_DIR)을 설정하지 않은 경우에는 $LAONSILL_HOME/log 밑에 생성된다.
 
 * COLD_LOG
   - COLD_LOG(level, condition, fmt, arg1, arg2, ...);
@@ -22,7 +22,7 @@
   - condition이 true가 되면 출력 한다.
   - fmt, arg1, arg2는 printf의 fmt, arg1, arg2와 동일하다.
   - SPARAM(COLDLOG_DIR)에 지정된 경로에 sys.log 이름으로 로깅파일이 생성된다.
-  - SPARAM(COLDLOG_DIR)을 설정하지 않은 경우에는 $SOOOA_HOME/log 밑에 생성된다.
+  - SPARAM(COLDLOG_DIR)을 설정하지 않은 경우에는 $LAONSILL_HOME/log 밑에 생성된다.
 
 * HOT_LOG
   - HOT_LOG(eventId, arg1, arg2, ...); 

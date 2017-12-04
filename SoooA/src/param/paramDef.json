@@ -42,7 +42,7 @@
 
 "COLDLOG_DIR" : 
 {
-    "DESC" : "specify cold log directory. if it is not set, it will set to $SOOOA_HOME/log.",
+    "DESC" : "specify cold log directory. if it is not set, it will set to $LAONSILL_HOME/log.",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -52,7 +52,7 @@
 
 "HOTLOG_DIR" : 
 {
-    "DESC" : "specify hot log directory. if it is not set, it will set to $SOOOA_HOME/log.",
+    "DESC" : "specify hot log directory. if it is not set, it will set to $LAONSILL_HOME/log.",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -62,7 +62,7 @@
 
 "SYSLOG_DIR" : 
 {
-    "DESC" : "specify system log directory. if it is not set, it will set to $SOOOA_HOME/log.",
+    "DESC" : "specify system log directory. if it is not set, it will set to $LAONSILL_HOME/log.",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",
@@ -452,7 +452,7 @@
 
 "COMMUNICATOR_LISTENER_PORT" :
 {
-    "DESC" : "specify listener port of SoooA server",
+    "DESC" : "specify listener port of LaonSill server",
     "MANDATORY" : false,
     "MUTABLE" : false,
     "SCOPE" : "SYSTEM",

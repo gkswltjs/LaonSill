@@ -1,31 +1,31 @@
 #!/bin/bash
-mkdir -p SOOOA_HOME
-mkdir -p SOOOA_HOME/log
-mkdir -p SOOOA_HOME/data
-mkdir -p SOOOA_HOME/param
-mkdir -p SOOOA_HOME/output_images
-mkdir -p SOOOA_HOME/bin
-mkdir -p SOOOA_HOME/lib
-mkdir -p SOOOA_HOME/dev/server
-mkdir -p SOOOA_HOME/dev/client
-mkdir -p SOOOA_HOME/examples
-cp ../template/soooa.conf.sample SOOOA_HOME/soooa.conf
-cp ../template/cluster.conf.sample SOOOA_HOME/cluster.conf
-cp ../bin/SoooaServer SOOOA_HOME/bin/.
-cp ../bin/SoooaClient SOOOA_HOME/bin/.
-cp ../bin/convert_imageset SOOOA_HOME/bin/.
-cp ../bin/convert_mnist_data SOOOA_HOME/bin/.
-cp ../bin/denormalize_param SOOOA_HOME/bin/.
-cp ../src/3rd_party/nms/libgpu_nms.so SOOOA_HOME/lib/.
-cp -r ../dev/client/* SOOOA_HOME/dev/client/.
-cp -r ../dev/server/* SOOOA_HOME/dev/server/.
+mkdir -p LAONSILL_HOME
+mkdir -p LAONSILL_HOME/log
+mkdir -p LAONSILL_HOME/data
+mkdir -p LAONSILL_HOME/param
+mkdir -p LAONSILL_HOME/output_images
+mkdir -p LAONSILL_HOME/bin
+mkdir -p LAONSILL_HOME/lib
+mkdir -p LAONSILL_HOME/dev/server
+mkdir -p LAONSILL_HOME/dev/client
+mkdir -p LAONSILL_HOME/examples
+cp ../template/laonsill.conf.sample LAONSILL_HOME/laonsill.conf
+cp ../template/cluster.conf.sample LAONSILL_HOME/cluster.conf
+cp ../bin/LaonSillServer LAONSILL_HOME/bin/.
+cp ../bin/LaonSillClient LAONSILL_HOME/bin/.
+cp ../bin/convert_imageset LAONSILL_HOME/bin/.
+cp ../bin/convert_mnist_data LAONSILL_HOME/bin/.
+cp ../bin/denormalize_param LAONSILL_HOME/bin/.
+cp ../src/3rd_party/nms/libgpu_nms.so LAONSILL_HOME/lib/.
+cp -r ../dev/client/* LAONSILL_HOME/dev/client/.
+cp -r ../dev/server/* LAONSILL_HOME/dev/server/.
 
-rsync -avz --exclude '*.cpp' --exclude '*.h' --exclude '*.cu' ../src/examples SOOOA_HOME
+rsync -avz --exclude '*.cpp' --exclude '*.h' --exclude '*.cu' ../src/examples LAONSILL_HOME
 
 hashVal=`git rev-parse --short HEAD`
-echo $hashVal >> SOOOA_HOME/revision.txt
-echo `git rev-parse HEAD` >> SOOOA_HOME/revision.txt
-echo `git log -1 --format=%cd` >> SOOOA_HOME/revision.txt
+echo $hashVal >> LAONSILL_HOME/revision.txt
+echo `git rev-parse HEAD` >> LAONSILL_HOME/revision.txt
+echo `git log -1 --format=%cd` >> LAONSILL_HOME/revision.txt
 
-tar cvfz SoooA_Rev$hashVal.tar.gz SOOOA_HOME
-rm -rf SOOOA_HOME
+tar cvfz LaonSill_Rev$hashVal.tar.gz LAONSILL_HOME
+rm -rf LAONSILL_HOME

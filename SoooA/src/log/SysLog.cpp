@@ -24,7 +24,7 @@ using namespace std;
 
 #define gettid()    syscall(SYS_gettid)   // there is no glibc wrapper for this system call;;
 
-extern const char*  SOOOA_HOME_ENVNAME;
+extern const char*  LAONSILL_HOME_ENVNAME;
 const char*         SysLog::sysLogFileName = {"sys.log"};
 FILE*               SysLog::fp = NULL;
 mutex               SysLog::logMutex;
@@ -34,8 +34,8 @@ void SysLog::init() {
     char sysLogDir[PATH_MAX];
 
     if (strcmp(SPARAM(SYSLOG_DIR), "") == 0) {
-        assert(sprintf(sysLogDir, "%s/log", getenv(SOOOA_HOME_ENVNAME)) != -1);
-        assert(sprintf(sysLogFilePath, "%s/log/%s", getenv(SOOOA_HOME_ENVNAME),
+        assert(sprintf(sysLogDir, "%s/log", getenv(LAONSILL_HOME_ENVNAME)) != -1);
+        assert(sprintf(sysLogFilePath, "%s/log/%s", getenv(LAONSILL_HOME_ENVNAME),
                     SysLog::sysLogFileName) != -1);
     } else {
         assert(sprintf(sysLogDir, "%s", SPARAM(SYSLOG_DIR)) != -1);

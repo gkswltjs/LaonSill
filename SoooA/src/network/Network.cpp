@@ -42,7 +42,7 @@
 using namespace std;
 using namespace boost::uuids;
 
-extern const char*  SOOOA_HOME_ENVNAME;
+extern const char*  LAONSILL_HOME_ENVNAME;
 
 template<typename Dtype>
 map<string, Network<Dtype>*>   Network<Dtype>::networkIDMap;
@@ -65,7 +65,7 @@ Network<Dtype>::Network() {
     this->bestSavedParamPath = "";
 
     // train 정보를 관리하는 파일 포인터를 얻는다.
-    string trainFilePath = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
+    string trainFilePath = string(getenv(LAONSILL_HOME_ENVNAME)) + "/param/" +
             this->networkID + ".train";
     this->trainFP = fopen(trainFilePath.c_str(), "w+");
     SASSERT0(this->trainFP != NULL);
@@ -232,7 +232,7 @@ template <typename Dtype>
 string Network<Dtype>::save() {
     string path;
 	if (SNPROP(savePathPrefix) == "") {
-        path = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
+        path = string(getenv(LAONSILL_HOME_ENVNAME)) + "/param/" +
             this->networkID + "_" +
             to_string(SNPROP(iterations)) + ".param";
     } else {
@@ -272,7 +272,7 @@ void Network<Dtype>::handleBestLoss(float loss, int iterNum) {
 
     // XXX: remove file 하고 나서 best model을 저장하는 순간에 서버가 죽으면 좀 난감하다.
     //      이 부분에 대한 고려가 필요하다.
-    string newParamPath = string(getenv(SOOOA_HOME_ENVNAME)) + "/param/" +
+    string newParamPath = string(getenv(LAONSILL_HOME_ENVNAME)) + "/param/" +
         this->networkID + "_best_" + to_string(iterNum) + ".param";
 
     this->save(newParamPath);

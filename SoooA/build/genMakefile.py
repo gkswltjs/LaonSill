@@ -26,15 +26,15 @@ symbolDic["ClientLib"]          = ["GPU_MODE", "CLIENT_MODE", "BOOST_ARCHIVE_NO_
 symbolDic["ServerLib"]          = ["GPU_MODE", "SERVER_MODE", "BOOST_ARCHIVE_NO_HEADER"]
 
 targetNameDic = dict()  # key : configure name, value : target name
-targetNameDic["Debug"]          = "SoooaServerDebug"
-targetNameDic["DebugClient"]    = "SoooaClientDebug"
-targetNameDic["Release"]        = "SoooaServer"
-targetNameDic["ReleaseClient"]  = "SoooaClient"
+targetNameDic["Debug"]          = "LaonSillServerDebug"
+targetNameDic["DebugClient"]    = "LaonSillClientDebug"
+targetNameDic["Release"]        = "LaonSillServer"
+targetNameDic["ReleaseClient"]  = "LaonSillClient"
 targetNameDic["ToolImage"]      = "convert_imageset"
 targetNameDic["ToolMnist"]      = "convert_mnist_data"
 targetNameDic["ToolDenorm"]     = "denormalize_param"
-targetNameDic["ClientLib"]      = "libSoooAClient.so." + libVersion
-targetNameDic["ServerLib"]      = "libSoooA.so." + libVersion
+targetNameDic["ClientLib"]      = "libLaonSillClient.so." + libVersion
+targetNameDic["ServerLib"]      = "libLaonSill.so." + libVersion
 
 dirNameDic = dict() # key : configure name, value : directory name
 dirNameDic["Debug"]             = "DebugGen"
@@ -49,7 +49,7 @@ dirNameDic["ServerLib"]         = "ServerLib"
 
 subDirList = []     # directories under src directory
 
-sourceHomeDirEnvName    = 'SOOOA_BUILD_PATH'
+sourceHomeDirEnvName    = 'LAONSILL_BUILD_PATH'
 
 incEnvVarList = []
 

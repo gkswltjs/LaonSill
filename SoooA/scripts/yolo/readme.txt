@@ -23,7 +23,7 @@
    $ cd /data
    $ tar xf ilsvrc12_train.tar
  (3) class.txt파일을 ilsvrc 데이터 폴더에 복사
-   $ cp $SOOOA_HOME/scripts/yolo/class.txt /data/ilsvrc12_train/.
+   $ cp $LAONSILL_HOME/scripts/yolo/class.txt /data/ilsvrc12_train/.
  (4) preprocess_ilsvrc.py 파일을 수정
    - ILSVRC_ROOT_PATH를 자신의 환경에 맞게 수정
  (5) preprocess_ilsvrc.py 파일을 실행

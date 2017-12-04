@@ -25,7 +25,7 @@ void InitParam::init() {
     // (1) paramDefMap을 초기화 한다.
     ParamMgmt::initParamDefMap();
 
-    // (2) 초기화 파라미터를 초기화 파일(.soooa.conf)로 부터 읽어 들여서 초기화 한다.
+    // (2) 초기화 파라미터를 초기화 파일(laonsill.conf)로 부터 읽어 들여서 초기화 한다.
     InitParam::load();
 }
 
@@ -225,12 +225,12 @@ void InitParam::loadParam(const char* line, int len) {
     InitParam::setParam(paramName, paramValue);
 }
 
-const char* SOOOA_HOME_ENVNAME = "SOOOA_HOME";
-const char* IPARAM_FILENAME  = {"soooa.conf"};
+const char* LAONSILL_HOME_ENVNAME = "LAONSILL_HOME";
+const char* IPARAM_FILENAME  = {"laonsill.conf"};
 void InitParam::load() {
-    char* initParamPrefixPath = getenv(SOOOA_HOME_ENVNAME);
+    char* initParamPrefixPath = getenv(LAONSILL_HOME_ENVNAME);
     if (initParamPrefixPath == NULL) {
-        cout << "ERROR: You must specify $SOOOA_HOME" << endl;
+        cout << "ERROR: You must specify $LAONSILL_HOME" << endl;
         exit(-1);
     }
 

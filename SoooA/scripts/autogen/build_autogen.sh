@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-cd $SOOOA_BUILD_PATH
+cd $LAONSILL_BUILD_PATH
 
 echo "[generate parameter]"
 cd src/param

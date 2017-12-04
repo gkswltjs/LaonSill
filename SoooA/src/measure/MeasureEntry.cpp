@@ -18,7 +18,7 @@ using namespace std;
 #define MEASURE_ENTRY_ADDDATA_MAX_RETRY_COUNT   10
 #define MEASURE_ENTRY_RETRY_MSEC                10UL
 
-extern const char* SOOOA_HOME_ENVNAME;
+extern const char* LAONSILL_HOME_ENVNAME;
 
 MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option,
     vector<string> itemNames) {
@@ -58,7 +58,7 @@ MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option
     if (option & MEASURE_OPTION_FILE) {
         char measureFilePath[PATH_MAX];
 
-        sprintf(measureFilePath, "%s/measure/%s.measure", getenv(SOOOA_HOME_ENVNAME),
+        sprintf(measureFilePath, "%s/measure/%s.measure", getenv(LAONSILL_HOME_ENVNAME),
             networkID.c_str());
         this->fp = fopen(measureFilePath, "w+");
         SASSERT0(this->fp != NULL);

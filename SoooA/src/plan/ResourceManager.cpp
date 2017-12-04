@@ -23,7 +23,7 @@ using namespace std;
 
 #define CLUSTER_CONF_FILENAME           "cluster.conf"
 
-extern const char*  SOOOA_HOME_ENVNAME;
+extern const char*  LAONSILL_HOME_ENVNAME;
 
 vector<GPUDevInfo> ResourceManager::gpuInfo;
 
@@ -31,7 +31,7 @@ void ResourceManager::init() {
     char clusterConfFilePath[PATH_MAX];
 
     if (strlen(SPARAM(CLUSTER_CONF_PATH)) == 0) {
-        sprintf(clusterConfFilePath, "%s/%s", getenv(SOOOA_HOME_ENVNAME),
+        sprintf(clusterConfFilePath, "%s/%s", getenv(LAONSILL_HOME_ENVNAME),
             CLUSTER_CONF_FILENAME);
     } else {
         strcpy(clusterConfFilePath, SPARAM(CLUSTER_CONF_PATH));

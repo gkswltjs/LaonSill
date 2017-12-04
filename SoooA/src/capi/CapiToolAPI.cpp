@@ -12,7 +12,7 @@
 using namespace std;
 
 
-BOOST_PYTHON_MODULE(libSoooAClient) {
+BOOST_PYTHON_MODULE(libLaonSillClient) {
 	using namespace boost::python;
 
 	// SDF Validation

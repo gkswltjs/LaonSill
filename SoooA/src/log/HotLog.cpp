@@ -42,14 +42,14 @@ volatile int                HotLog::contextGenId = 0;
 
 struct aiocb**              HotLog::flushCBs;
 
-extern const char*          SOOOA_HOME_ENVNAME;
+extern const char*          LAONSILL_HOME_ENVNAME;
 
 void HotLog::init() {
     // (1) 디렉토리를 체크하고 없으면 생성 한다.
     char hotLogDir[PATH_MAX];
 
     if (strcmp(SPARAM(HOTLOG_DIR), "") == 0) {
-        SASSERT0((sprintf(hotLogDir, "%s/log", getenv(SOOOA_HOME_ENVNAME)) != -1));
+        SASSERT0((sprintf(hotLogDir, "%s/log", getenv(LAONSILL_HOME_ENVNAME)) != -1));
     } else {
         SASSERT0((sprintf(hotLogDir, "%s", SPARAM(HOTLOG_DIR)) != -1));
     }
@@ -69,7 +69,7 @@ int HotLog::initForThread() {
     int     tid = (int)gettid() - pid;
 
     if (strcmp(SPARAM(SYSLOG_DIR), "") == 0) {
-        SASSERT(sprintf(hotLogFilePath, "%s/log/hot.%d.%d", getenv(SOOOA_HOME_ENVNAME),
+        SASSERT(sprintf(hotLogFilePath, "%s/log/hot.%d.%d", getenv(LAONSILL_HOME_ENVNAME),
                         pid, tid) != -1, "");
     } else {
         SASSERT(sprintf(hotLogFilePath, "%s/hot.%d.%d",

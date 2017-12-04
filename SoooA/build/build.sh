@@ -42,7 +42,7 @@ fi
 
 dop=$1
 
-cd $SOOOA_BUILD_PATH
+cd $LAONSILL_BUILD_PATH
 
 echo "[update to the latest source]"
 git pull
@@ -129,7 +129,7 @@ if [ "$buildDebug" -eq 1 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp SoooaServerDebug ../bin/SoooaServerDebug
+    cp LaonSillServerDebug ../bin/LaonSillServerDebug
     cd ..
 
     echo "[build Debug (client)]"
@@ -139,7 +139,7 @@ if [ "$buildDebug" -eq 1 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp SoooaClientDebug ../bin/SoooaClientDebug
+    cp LaonSillClientDebug ../bin/LaonSillClientDebug
     cd ..
 fi
 
@@ -151,7 +151,7 @@ if [ "$buildRelease" -eq 1 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp SoooaServer ../bin/SoooaServer
+    cp LaonSillServer ../bin/LaonSillServer
     cd ..
 
     echo "[build Release (client)]"
@@ -161,7 +161,7 @@ if [ "$buildRelease" -eq 1 ]; then
         echo "ERROR: build stopped"
         exit -1
     fi
-    cp SoooaClient ../bin/SoooaClient
+    cp LaonSillClient ../bin/LaonSillClient
     cd ..
 fi
 
