@@ -6,7 +6,7 @@
 	        "layer" : "DataInput",
 	        "id" : 0,
 	        "output" : ["data", "label"],
-	        "source" : "$(SOOOA_HOME)/data/sdf/plantynet_train_0.25/",
+	        "source" : "$(LAONSILL_HOME)/data/sdf/plantynet_train_0.25/",
 	        "mean" : [172.49, 172.94, 179.25]
 	    },
 
@@ -553,6 +553,6 @@
 		"momentum" : 0.9,
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
-		"loadPath" : "$(SOOOA_HOME)/param/VGG16_CAFFE_TRAINED.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/VGG16_CAFFE_TRAINED.param"
 	}
 }

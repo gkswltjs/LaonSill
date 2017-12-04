@@ -9,8 +9,8 @@
 			"numClasses" : 21,
 			"imageSet" : "trainval", 
 			"dataName" : "voc_2007",
-			"dataPath" : "$(SOOOA_HOME)/data/VOCdevkit2007/VOC2007",
-			"labelMapPath" : "$(SOOOA_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
+			"dataPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/VOC2007",
+			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
 			"pixelMeans" : [102.9801, 115.9465, 122.7717]
 		},
 
@@ -501,7 +501,7 @@
 		"clipGradientsLevel" : 0.0,
 		"lrPolicy" : "Step",
 		"optimizer" : "Momentum",
-		"loadPath" : "$(SOOOA_HOME)/param/VGG_CNN_M_1024_FRCNN_CAFFE.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/VGG_CNN_M_1024_FRCNN_CAFFE.param"
 	}
 
 }

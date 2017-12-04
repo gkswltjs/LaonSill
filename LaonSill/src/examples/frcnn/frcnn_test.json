@@ -9,8 +9,8 @@
 			"numClasses" : 21,
 			"imageSet" : "test", 
 			"dataName" : "voc_2007",
-			"dataPath" : "$(SOOOA_HOME)/data/VOCdevkit2007/VOC2007",
-			"labelMapPath" : "$(SOOOA_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
+			"dataPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/VOC2007",
+			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
 			"pixelMeans" : [102.9801, 115.9465, 122.7717]
 		},
 
@@ -408,10 +408,10 @@
 			"id" : 350,
 			"input" : ["rois", "im_info", "cls_prob", "bbox_pred"],
 			"output" : ["detection_out"],
-			"labelMapPath" : "$(SOOOA_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
+			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
 			"confThresh" : 0.5,
 			"nmsThresh" : 0.1,
-			"savePath" : "$(SOOOA_HOME)/output_images/frcnn"
+			"savePath" : "$(LAONSILL_HOME)/output_images/frcnn"
 		},
 
 		{
@@ -434,7 +434,7 @@
 		"batchSize" : 1, 
 		"epochs" : 1, 
 		"status" : "Test",
-		"loadPath" : "$(SOOOA_HOME)/param/frcnn_630000_dn.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/frcnn_630000_dn.param"
 	}
 
 }

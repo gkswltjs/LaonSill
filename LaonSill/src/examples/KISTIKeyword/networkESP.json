@@ -6,7 +6,7 @@
             "layer" : "KistiInput",
             "id" : 0,
             "output" : ["data", "label"],
-            "imageDir" : "$(SOOOA_HOME)/data/ESP-ImageSet/",
+            "imageDir" : "$(LAONSILL_HOME)/data/ESP-ImageSet/",
             "labelCount" : 22569,
             "useKistiPolicy" : false
         },

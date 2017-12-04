@@ -37,7 +37,7 @@
 			"expandParam.prob" : 0.5,
 			"expandParam.maxExpandRatio" : 4.0,
 
-			"source" : "$(SOOOA_HOME)/data/sdf/voc2007_train_sdf/",
+			"source" : "$(LAONSILL_HOME)/data/sdf/voc2007_train_sdf/",
 
 			"batchSampler0.maxSample" : 1,
 			"batchSampler0.maxTrials" : 1,
@@ -90,7 +90,7 @@
 			"batchSampler6.maxSample" : 1,
 			"batchSampler6.maxTrials" : 50,
 
-			"labelMapFile" : "$(SOOOA_HOME)/data/VOC0712/labelmap_voc.prototxt",
+			"labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.prototxt",
 			"annoType" : "BBOX"
 		},
 				
@@ -1583,7 +1583,7 @@
 		"lrPolicy" : "Multistep",
 		"stepValue" : [80000, 100000, 120000],
 		"optimizer" : "Momentum",
-		"loadPath" : "$(SOOOA_HOME)/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_300x300.param",
+		"loadPath" : "$(LAONSILL_HOME)/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_300x300.param",
         "keepSaveBestModel" : true,
         "keepSaveBestModelStartIterNum" : 1000
 	}

@@ -6,7 +6,7 @@
 			"layer" : "DataInput",
 			"id" : 0,
 			"output" : ["data", "label"],
-			"source" : "$(SOOOA_HOME)/data/sdf/mnist_train_sdf/",
+			"source" : "$(LAONSILL_HOME)/data/sdf/mnist_train_sdf/",
 			"scale" : 0.00390625
 		},
 

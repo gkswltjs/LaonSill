@@ -8,9 +8,9 @@
 			"output" : ["data", "label"],
 			"imageHeight" : 512,
 			"imageWidth" : 512,
-			"imageSetPath" : "$(SOOOA_HOME)/data/VOC0712/test.txt",
-			"baseDataPath" : "$(SOOOA_HOME)/data/VOCdevkit/",
-			"labelMapPath" : "$(SOOOA_HOME)/data/VOC0712/labelmap_voc.prototxt",
+			"imageSetPath" : "$(LAONSILL_HOME)/data/VOC0712/test.txt",
+			"baseDataPath" : "$(LAONSILL_HOME)/data/VOCdevkit/",
+			"labelMapPath" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.prototxt",
 			"mean" : [104.0, 117.0, 123.0]
 		},
 
@@ -1650,11 +1650,11 @@
 			"backgroundLabelId" : 0,
 			"nmsParam.nmsThreshold" : 0.45,
 			"nmsParam.topK" : 400,
-			"saveOutputParam.outputDirectory" : "$(SOOOA_HOME)/results/ssd/results_512",
+			"saveOutputParam.outputDirectory" : "$(LAONSILL_HOME)/results/ssd/results_512",
 			"saveOutputParam.outputNamePrefix" : "comp4_det_test_",
 			"saveOutputParam.outputFormat" : "VOC",
-			"saveOutputParam.labelMapFile" : "$(SOOOA_HOME)/data/VOC0712/labelmap_voc.prototxt",
-			"saveOutputParam.nameSizeFile" : "$(SOOOA_HOME)/data/VOC0712/test_name_size.txt",
+			"saveOutputParam.labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.prototxt",
+			"saveOutputParam.nameSizeFile" : "$(LAONSILL_HOME)/data/VOC0712/test_name_size.txt",
 			"saveOutputParam.numTestImage" : 4952,
 			"codeType" : "CENTER_SIZE",
 			"keepTopK" : 200,
@@ -1667,7 +1667,7 @@
 		"batchSize" : 8,
 		"epochs" : 1, 
 		"status" : "Test",
-		"loadPath" : "$(SOOOA_HOME)/param/VGG_VOC0712_SSD_512x512_iter_120000.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/VGG_VOC0712_SSD_512x512_iter_120000.param"
 	}
 
 }

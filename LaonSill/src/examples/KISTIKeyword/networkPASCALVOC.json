@@ -6,7 +6,7 @@
             "layer" : "MultiLabelDataInput",
             "id" : 0,
             "output" : ["data", "label"],
-            "source" : "$(SOOOA_HOME)/data/sdf/pascalvoc_multilabel/",
+            "source" : "$(LAONSILL_HOME)/data/sdf/pascalvoc_multilabel/",
             "labelCount" : 20
         },
 

@@ -1507,7 +1507,7 @@
 		"batchSize" : 1,
 		"epochs" : 1, 
 		"status" : "Test",
-		"loadPath" : "$(SOOOA_HOME)/param/VGG_VOC0712_SSD_300x300_iter_120000.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/VGG_VOC0712_SSD_300x300_iter_120000.param"
 	}
 
 }

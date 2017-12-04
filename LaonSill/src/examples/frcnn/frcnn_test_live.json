@@ -413,7 +413,7 @@
 		"batchSize" : 1, 
 		"epochs" : 1,
 		"status" : "Test",
-		"loadPath" : "$(SOOOA_HOME)/param/frcnn_630000_dn.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/frcnn_630000_dn.param"
 	}
 
 }
