@@ -98,6 +98,14 @@ long SDF::getCurrentPos() {
 	}
 }
 
+void SDF::setCurrentPos(long currentPos) {
+	SASSERT0(this->mode == READ);
+	SASSERT0(this->ifs.is_open());
+
+	this->currentPos[this->curDataSetIdx] = currentPos;
+	this->ifs.seekg(this->currentPos[this->curDataSetIdx], ios::beg);
+}
+
 int SDF::findDataSet(const string& dataSet) {
 	auto itr = this->dataSetIdxMap.find(dataSet);
 	if (itr == this->dataSetIdxMap.end()) {
@@ -116,11 +124,13 @@ void SDF::selectDataSet(const string& dataSet) {
 void SDF::selectDataSet(const int dataSetIdx) {
 	SASSERT0(dataSetIdx >= 0 && dataSetIdx < this->dataSetIdxMap.size());
 
-	SASSERT0(this->mode == READ);
-	SASSERT0(this->ifs.is_open());
+	//SASSERT0(this->mode == READ);
+	//SASSERT0(this->ifs.is_open());
 
 	this->curDataSetIdx = dataSetIdx;
-	this->ifs.seekg(this->currentPos[this->curDataSetIdx], ios::beg);
+	//this->ifs.seekg(this->currentPos[this->curDataSetIdx], ios::beg);
+
+	setCurrentPos(this->currentPos[this->curDataSetIdx]);
 }
 
 const std::string& SDF::curDataSet() {

@@ -288,6 +288,7 @@ public:
 	void updateHeader(SDFHeader& header);
 	SDFHeader getHeader();
 	long getCurrentPos();
+	void setCurrentPos(long currentPos);
 	void selectDataSet(const std::string& dataSet);
 	void selectDataSet(const int dataSetIdx);
 	const std::string& curDataSet();
