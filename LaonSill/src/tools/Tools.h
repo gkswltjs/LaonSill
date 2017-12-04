@@ -10,17 +10,81 @@
 
 
 #include "Datum.h"
+#include "SDF.h"
 
-
-
-class ConvertMnistDataParam {
+class BaseConvertParam {
 public:
-	std::string imageFilePath;
-	std::string labelFilePath;
+	BaseConvertParam() {
+		this->labelMapFilePath = "";
+		this->outFilePath = "";
+	}
+	void print() {
+		std::cout << "labelMapFilePath: " << this->labelMapFilePath << std::endl;
+		std::cout << "outFilePath: " << this->outFilePath << std::endl;
+	}
+	std::string labelMapFilePath;
 	std::string outFilePath;
 };
 
-class ConvertImageSetParam {
+class MnistDataSet {
+public:
+	void print() {
+		std::cout << "name: " << this->name << std::endl;
+		std::cout << "imageFilePath: " << this->imageFilePath << std::endl;
+		std::cout << "labelFilePath: " << this->labelFilePath << std::endl;
+	}
+
+	bool operator==(const MnistDataSet& other) {
+		return (this->name == other.name &&
+				this->imageFilePath == other.imageFilePath &&
+				this->labelFilePath == other.labelFilePath);
+	}
+	std::string name;
+	std::string imageFilePath;
+	std::string labelFilePath;
+};
+
+class ConvertMnistDataParam : public BaseConvertParam {
+public:
+	ConvertMnistDataParam() {}
+	ConvertMnistDataParam(MnistDataSet& dataSet) {
+		addDataSet(dataSet);
+	}
+	ConvertMnistDataParam(const std::vector<MnistDataSet>& dataSetList)
+	: dataSetList(dataSetList) {}
+
+	void addDataSet(MnistDataSet& dataSet) {
+		this->dataSetList.push_back(dataSet);
+	}
+
+	void print() {
+		BaseConvertParam::print();
+		std::cout << "dataSetList size: " << this->dataSetList.size() << std::endl;
+		for (int i = 0; i < this->dataSetList.size(); i++) {
+			this->dataSetList[i].print();
+		}
+	}
+	std::vector<MnistDataSet> dataSetList;
+};
+
+
+class ImageSet {
+public:
+	void print() {
+		std::cout << "name: " << this->name << std::endl;
+		std::cout << "dataSetPath: " << this->dataSetPath << std::endl;
+	}
+
+	bool operator==(const ImageSet& other) {
+		return (this->name == other.name &&
+				this->dataSetPath == other.dataSetPath);
+	}
+
+	std::string name;
+	std::string dataSetPath;
+};
+
+class ConvertImageSetParam : public BaseConvertParam {
 public:
 	ConvertImageSetParam() {
 		this->gray = false;
@@ -33,9 +97,33 @@ public:
 		this->encoded = true;
 		this->encodeType = "jpg";
 		this->basePath = "";
-		this->datasetPath = "";
-		this->outPath = "";
+		//this->datasetPath = "";
 	}
+
+	void addImageSet(ImageSet& imageSet) {
+		this->imageSetList.push_back(imageSet);
+	}
+
+	void print() {
+		BaseConvertParam::print();
+
+		std::cout << "gray: " 				<< this->gray << std::endl;
+		std::cout << "shuffle: " 			<< this->shuffle << std::endl;
+		std::cout << "multiLabel: " 		<< this->multiLabel << std::endl;
+		std::cout << "channelSeparated: " 	<< this->channelSeparated << std::endl;
+		std::cout << "resizeWidth: " 		<< this->resizeWidth << std::endl;
+		std::cout << "resizeHeight: " 		<< this->resizeHeight << std::endl;
+		std::cout << "checkSize: " 			<< this->checkSize << std::endl;
+		std::cout << "encoded: " 			<< this->encoded << std::endl;
+		std::cout << "encodeType: " 		<< this->encodeType << std::endl;
+		std::cout << "basePath: " 			<< this->basePath << std::endl;
+		//std::cout << "datasetPath: " 		<< this->datasetPath << std::endl;
+		std::cout << "imageSetList size: "	<< this->imageSetList.size() << std::endl;
+		for (int i = 0; i < this->imageSetList.size(); i++) {
+			this->imageSetList[i].print();
+		}
+	}
+
 	bool gray;
 	bool shuffle;
 	bool multiLabel;
@@ -46,8 +134,8 @@ public:
 	bool encoded;
 	std::string encodeType;
 	std::string basePath;
-	std::string datasetPath;
-	std::string outPath;
+	//std::string datasetPath;
+	std::vector<ImageSet> imageSetList;
 };
 
 class ConvertAnnoSetParam : public ConvertImageSetParam {
@@ -60,6 +148,17 @@ public:
 		this->minDim = 0;
 		this->maxDim = 0;
 	}
+
+	void print() {
+		ConvertImageSetParam::print();
+
+		std::cout << "annoType: " 		<< this->annoType << std::endl;
+		std::cout << "labelType: "		<< this->labelType << std::endl;
+		std::cout << "labelMapFile: "	<< this->labelMapFile << std::endl;
+		std::cout << "checkLabel: "		<< this->checkLabel << std::endl;
+		std::cout << "minDim: "			<< this->minDim << std::endl;
+		std::cout << "maxDim: " 		<< this->maxDim << std::endl;
+	}
 	std::string annoType;
 	std::string labelType;
 	std::string labelMapFile;
@@ -69,6 +168,10 @@ public:
 };
 
 
+
+
+
+void parse_label_map(const std::string& labelMapPath, std::vector<LabelItem>& labelItemList);
 
 
 void denormalizeTest(int argc, char** argv);

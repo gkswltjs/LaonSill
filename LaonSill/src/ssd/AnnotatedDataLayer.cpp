@@ -32,6 +32,14 @@ AnnotatedDataLayer<Dtype>::AnnotatedDataLayer(_AnnotatedDataPropLayer* prop)
   dataReader(GET_PROP(prop, AnnotatedData, source)),
   dataTransformer(&GET_PROP(prop, AnnotatedData, dataTransformParam)){
 	this->type = Layer<Dtype>::AnnotatedData;
+	const string dataSetName = GET_PROP(prop, AnnotatedData, dataSetName);
+	if (dataSetName.empty()) {
+		this->dataReader.selectDataSetByIndex(0);
+	} else {
+		this->dataReader.selectDataSetByName(dataSetName);
+	}
+
+
 	if (prop) {
 		this->prop = new _AnnotatedDataPropLayer();
 		*(this->prop) = *(prop);

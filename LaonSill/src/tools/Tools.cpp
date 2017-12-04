@@ -5,6 +5,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/variant.hpp>
 
+#include "jsoncpp/json/json.h"
 #include "Tools.h"
 #include "SysLog.h"
 #include "Datum.h"
@@ -17,6 +18,54 @@
 
 using namespace std;
 namespace fs = ::boost::filesystem;
+
+
+
+void parse_label_map(const string& labelMapPath, vector<LabelItem>& labelItemList) {
+	filebuf fb;
+	if (fb.open(labelMapPath.c_str(), ios::in) == NULL) {
+		SASSERT(false, "cannot open cluster configuration file. file path=%s",
+			labelMapPath.c_str());
+	}
+	istream is(&fb);
+
+	Json::Reader reader;
+	Json::Value root;
+	bool parse = reader.parse(is, root);
+
+	if (!parse) {
+		SASSERT(false, "invalid json-format file. file path=%s. error message=%s",
+			labelMapPath.c_str(), reader.getFormattedErrorMessages().c_str());
+	}
+
+	const int numLabelItem = root.size();
+	labelItemList.resize(numLabelItem);
+	for (int i = 0; i < numLabelItem; i++) {
+		Json::Value& item = root[i];
+		SASSERT0(item.isMember("name"));
+		SASSERT0(item.isMember("label"));
+		SASSERT0(item.isMember("display_name"));
+
+		labelItemList[i].name = item["name"].asString();
+		labelItemList[i].label = item["label"].asInt();
+		labelItemList[i].displayName = item["display_name"].asString();
+
+		if (item.isMember("color")) {
+			// color should be 3 value array (r, g, b)
+			SASSERT0(item["color"].size() == 3);
+			labelItemList[i].color.push_back(item["color"][0].asInt());
+			labelItemList[i].color.push_back(item["color"][1].asInt());
+			labelItemList[i].color.push_back(item["color"][2].asInt());
+		}
+	}
+
+	for (int i = 0; i < labelItemList.size(); i++) {
+		labelItemList[i].print();
+	}
+
+}
+
+
 
 
 void printDenormalizeParamUsage(char* prog) {
@@ -157,101 +206,126 @@ void convertMnistDataTest(int argc, char** argv) {
 //void convertMnistData(const string& imageFilePath, const string& labelFilePath,
 //		const string& outFilePath) {
 void convertMnistData(ConvertMnistDataParam& param) {
-	const string& imageFilePath = param.imageFilePath;
-	const string& labelFilePath = param.labelFilePath;
-	const string& outFilePath = param.outFilePath;
+	int numDataSets = param.dataSetList.size();
 
-	 // Open files
-	ifstream image_file(imageFilePath, ios::in | ios::binary);
-	ifstream label_file(labelFilePath, ios::in | ios::binary);
-	if (!image_file) {
-		cout << "Unable to open file " << imageFilePath << endl;
-		SASSERT0(false);
+	SDFHeader header;
+	header.init(numDataSets);
+	if (!param.labelMapFilePath.empty()) {
+		parse_label_map(param.labelMapFilePath, header.labelItemList);
 	}
-	if (!label_file) {
-		cout << "Unable to open file " << labelFilePath << endl;
-		SASSERT0(false);
-	}
-	// Read the magic and the meta data
-	uint32_t magic;
-	uint32_t num_items;
-	uint32_t num_labels;
-	uint32_t rows;
-	uint32_t cols;
 
-	image_file.read(reinterpret_cast<char*>(&magic), 4);
-	magic = swap_endian(magic);
-	if (magic != 2051) {
-		cout << "Incorrect image file magic." << endl;
-		SASSERT0(false);
-	}
-	label_file.read(reinterpret_cast<char*>(&magic), 4);
-	magic = swap_endian(magic);
-	if (magic != 2049) {
-		cout << "Incorrect label file magic." << endl;
-		SASSERT0(false);
-	}
-	image_file.read(reinterpret_cast<char*>(&num_items), 4);
-	num_items = swap_endian(num_items);
-	label_file.read(reinterpret_cast<char*>(&num_labels), 4);
-	num_labels = swap_endian(num_labels);
-	SASSERT0(num_items == num_labels);
-	image_file.read(reinterpret_cast<char*>(&rows), 4);
-	rows = swap_endian(rows);
-	image_file.read(reinterpret_cast<char*>(&cols), 4);
-	cols = swap_endian(cols);
 
-	SDF sdf(outFilePath, Mode::NEW);
+	SDF sdf(param.outFilePath, Mode::NEW);
 	sdf.open();
+	sdf.initHeader(header);
 
-	// Storing to db
-	char label;
-	char* pixels = new char[rows * cols];
-	int count = 0;
-	string value;
+	for (int dataSetIdx = 0; dataSetIdx < param.dataSetList.size(); dataSetIdx++) {
+		const MnistDataSet& dataSet = param.dataSetList[dataSetIdx];
+		header.names[dataSetIdx] = dataSet.name;
+		header.setStartPos[dataSetIdx] = sdf.getCurrentPos();
+		const string& imageFilePath = dataSet.imageFilePath;
+		const string& labelFilePath = dataSet.labelFilePath;
 
-	Datum datum;
-	datum.channels = 1;
-	datum.height = rows;
-	datum.width = cols;
-	cout << "A total of " << num_items << " items." << endl;
-	cout << "Rows: " << rows << " Cols: " << cols << endl;
+		 // Open files
+		ifstream image_file(imageFilePath, ios::in | ios::binary);
+		ifstream label_file(labelFilePath, ios::in | ios::binary);
+		if (!image_file) {
+			cout << "Unable to open file " << imageFilePath << endl;
+			SASSERT0(false);
+		}
+		if (!label_file) {
+			cout << "Unable to open file " << labelFilePath << endl;
+			SASSERT0(false);
+		}
+		// Read the magic and the meta data
+		uint32_t magic;
+		uint32_t num_items;
+		uint32_t num_labels;
+		uint32_t rows;
+		uint32_t cols;
 
-	sdf.put("num_data", std::to_string(num_items));
-	sdf.commit();
+		image_file.read(reinterpret_cast<char*>(&magic), 4);
+		magic = swap_endian(magic);
+		if (magic != 2051) {
+			cout << "Incorrect image file magic." << endl;
+			SASSERT0(false);
+		}
+		label_file.read(reinterpret_cast<char*>(&magic), 4);
+		magic = swap_endian(magic);
+		if (magic != 2049) {
+			cout << "Incorrect label file magic." << endl;
+			SASSERT0(false);
+		}
+		image_file.read(reinterpret_cast<char*>(&num_items), 4);
+		num_items = swap_endian(num_items);
+		label_file.read(reinterpret_cast<char*>(&num_labels), 4);
+		num_labels = swap_endian(num_labels);
+		SASSERT0(num_items == num_labels);
+		image_file.read(reinterpret_cast<char*>(&rows), 4);
+		rows = swap_endian(rows);
+		image_file.read(reinterpret_cast<char*>(&cols), 4);
+		cols = swap_endian(cols);
 
-	//string buffer(rows * cols, ' ');
-	for (int item_id = 0; item_id < num_items; ++item_id) {
-		image_file.read(pixels, rows * cols);
-		label_file.read(&label, 1);
 
-		//for (int i = 0; i < rows*cols; i++) {
-		//   buffer[i] = pixels[i];
-		//}
-		//datum.data = buffer;
-		datum.data.assign(reinterpret_cast<const char*>(pixels), rows * cols);
-		datum.label = label;
 
-		string key_str = format_int(item_id, 8);
-		//value = Datum::serializeToString(&datum);
-		value = serializeToString(&datum);
+		// Storing to db
+		char label;
+		char* pixels = new char[rows * cols];
+		int count = 0;
+		string value;
 
-		sdf.put(key_str, value);
+		Datum datum;
+		datum.channels = 1;
+		datum.height = rows;
+		datum.width = cols;
+		cout << "A total of " << num_items << " items." << endl;
+		cout << "Rows: " << rows << " Cols: " << cols << endl;
 
-		if (++count % 1000 == 0) {
+		//sdf.put("num_data", std::to_string(num_items));
+		//sdf.commit();
+		header.setSizes[dataSetIdx] = num_items;
+
+		//string buffer(rows * cols, ' ');
+		for (int item_id = 0; item_id < num_items; ++item_id) {
+			image_file.read(pixels, rows * cols);
+			label_file.read(&label, 1);
+
+			//for (int i = 0; i < rows*cols; i++) {
+			//   buffer[i] = pixels[i];
+			//}
+			//datum.data = buffer;
+			datum.data.assign(reinterpret_cast<const char*>(pixels), rows * cols);
+			datum.label = label;
+
+			string key_str = format_int(item_id, 8);
+			//value = Datum::serializeToString(&datum);
+			value = serializeToString(&datum);
+
+			sdf.put(key_str, value);
+
+			if (++count % 1000 == 0) {
+				sdf.commit();
+				cout << "Processed " << count << " files." << endl;
+			}
+		}
+		// write the last batch
+
+		if (count % 1000 != 0) {
 			sdf.commit();
 			cout << "Processed " << count << " files." << endl;
 		}
+		delete[] pixels;
 	}
-	// write the last batch
 
-	if (count % 1000 != 0) {
-		sdf.commit();
-		cout << "Processed " << count << " files." << endl;
-	}
-	delete[] pixels;
+	header.print();
+	sdf.updateHeader(header);
 	sdf.close();
 }
+
+
+
+
+
 
 
 void printConvertImageSetUsage(char* prog) {
@@ -368,12 +442,15 @@ void convertImageSetTest(int argc, char** argv) {
 }
 
 
-/*
-void convertImageSet(bool FLAGS_gray, bool FLAGS_shuffle, bool FLAGS_multi_label,
-		bool FLAGS_channel_separated, int FLAGS_resize_width, int FLAGS_resize_height,
-		bool FLAGS_check_size, bool FLAGS_encoded, const std::string& FLAGS_encode_type,
-		const string& argv1, const string& argv2, const string& argv3) {*/
 void convertImageSet(ConvertImageSetParam& param) {
+	int numImageSets = param.imageSetList.size();
+
+	SDFHeader header;
+	header.init(numImageSets);
+	if (!param.labelMapFilePath.empty()) {
+		parse_label_map(param.labelMapFilePath, header.labelItemList);
+	}
+
 	bool FLAGS_gray = param.gray;
 	bool FLAGS_shuffle = param.shuffle;
 	bool FLAGS_multi_label = param.multiLabel;
@@ -384,8 +461,8 @@ void convertImageSet(ConvertImageSetParam& param) {
 	bool FLAGS_encoded = param.encoded;
 	const string& FLAGS_encode_type = param.encodeType;
 	const string& argv1 = param.basePath;
-	const string& argv2 = param.datasetPath;
-	const string& argv3 = param.outPath;
+
+	const string& argv3 = param.outFilePath;
 
 	const bool is_color = !FLAGS_gray;
 	const bool multi_label = FLAGS_multi_label;
@@ -393,160 +470,169 @@ void convertImageSet(ConvertImageSetParam& param) {
 	const bool check_size = FLAGS_check_size;
 	const bool encoded = FLAGS_encoded;
 	const string encode_type = !FLAGS_encode_type.empty() ? FLAGS_encode_type : "";
-	const bool image_only_mode = argv2.empty() ? true : false;
-
-	vector<pair<string, vector<int>>> lines;
-	string line;
-	size_t pos;
-	int label;
-	vector<int> labelList;
-
-
-	// image and label pairs are provided
-	if (!image_only_mode) {
-		ifstream infile(argv2);
-		while (std::getline(infile, line)) {
-			labelList.clear();
-			pos = line.find_last_of(' ');
-
-			// sinlge label is provided
-			if (!multi_label) {
-				labelList.push_back(atoi(line.substr(pos + 1).c_str()));
-				lines.push_back(std::make_pair(line.substr(0, pos), labelList));
-			}
-			// multiple labels are provided
-			else {
-				string first = line.substr(0, pos);
-				string labels = line.substr(pos + 1);
-				pos = labels.find_first_of(',');
-				while (pos != string::npos) {
-					labelList.push_back(atoi(labels.substr(0, pos).c_str()));
-					labels = labels.substr(pos + 1);
-					pos = labels.find_first_of(',');
-				}
-				labelList.push_back(atoi(labels.substr(0, pos).c_str()));
-				lines.push_back(std::make_pair(first.substr(0, first.length()), labelList));
-				/*
-				cout << "first: " << lines.back().first << endl;
-				cout << "second: ";
-				for (int i = 0; i < lines.back().second.size(); i++) {
-					cout << lines.back().second[i] << ", ";
-				}
-				cout << endl;
-				*/
-			}
-		}
-	}
-	// only images provided
-	else {
-		SASSERT(fs::exists(argv1), "image path %s not exists ... ", argv1.c_str());
-		SASSERT(fs::is_directory(argv1), "image path %s is not directory ... ", argv1.c_str());
-
-		const string ext = ".jpg";
-		fs::path image_path(argv1);
-		fs::recursive_directory_iterator it(image_path);
-		fs::recursive_directory_iterator endit;
-
-		int count = 0;
-		while (it != endit) {
-			if (fs::is_regular_file(*it) && it->path().extension() == ext) {
-				string path = it->path().filename().string();
-				// path를 그대로 전달할 경우 error ...
-				// substr() 호출한 결과를 전달할 경우 문제 x
-				labelList.push_back(0);
-				lines.push_back(std::make_pair(path.substr(0, path.length()), labelList));
-				//lines.push_back(std::make_pair<string, vector<int>>(path, {0}));
-			}
-			it++;
-		}
-	}
-
-	if (FLAGS_shuffle) {
-		// randomly shuffle data
-		std::random_shuffle(lines.begin(), lines.end());
-	} else {
-
-	}
-
-	cout << "A total of " << lines.size() << " images." << endl;
-	/*
-	for (int i = 0; i < std::min<int>(lines.size(), 100); i++) {
-		cout << "fn: " << lines[i].first << ", label: " << lines[i].second << endl;
-	}
-	*/
-
-
-	if (encode_type.size() && !encoded) {
-		cout << "encode_type specified, assuming encoded=true.";
-	}
-
-	int resize_height = std::max<int>(0, FLAGS_resize_height);
-	int resize_width = std::max<int>(0, FLAGS_resize_width);
 
 	// Create new DB
-	SDF* sdf = new SDF(argv3, Mode::NEW);
-	sdf->open();
+	SDF sdf(argv3, Mode::NEW);
+	sdf.open();
+	sdf.initHeader(header);
 
-	// Storing to db
-	string root_folder(argv1);
-	Datum datum;
-	int count = 0;
-	int data_size = 0;
-	bool data_size_initialized = false;
+	for (int imageSetIdx = 0; imageSetIdx < numImageSets; imageSetIdx++) {
+		const ImageSet& imageSet = param.imageSetList[imageSetIdx];
+		header.names[imageSetIdx] = imageSet.name;
+		header.setStartPos[imageSetIdx] = sdf.getCurrentPos();
+		const string& argv2 = imageSet.dataSetPath;
+		const bool image_only_mode = argv2.empty() ? true : false;
+
+		vector<pair<string, vector<int>>> lines;
+		string line;
+		size_t pos;
+		int label;
+		vector<int> labelList;
 
 
-	// 이 시점에서 data 수를 저장할 경우
-	// 아래 status가 false인 경우 등의 상황에서 수가 정확하지 않을 가능성이 있음.
-	sdf->put("num_data", std::to_string(lines.size()));
-	sdf->commit();
+		// image and label pairs are provided
+		if (!image_only_mode) {
+			ifstream infile(argv2);
+			while (std::getline(infile, line)) {
+				labelList.clear();
+				pos = line.find_last_of(' ');
 
-
-	for (int line_id = 0; line_id < lines.size(); line_id++) {
-		bool status;
-		string enc = encode_type;
-		if (encoded && !enc.size()) {
-			// Guess the encoding type from the file name
-			string fn = lines[line_id].first;
-			size_t p = fn.rfind('.');
-			if (p == fn.npos) {
-				cout << "Failed to guess the encoding of '" << fn << "'";
+				// sinlge label is provided
+				if (!multi_label) {
+					labelList.push_back(atoi(line.substr(pos + 1).c_str()));
+					lines.push_back(std::make_pair(line.substr(0, pos), labelList));
+				}
+				// multiple labels are provided
+				else {
+					string first = line.substr(0, pos);
+					string labels = line.substr(pos + 1);
+					pos = labels.find_first_of(',');
+					while (pos != string::npos) {
+						labelList.push_back(atoi(labels.substr(0, pos).c_str()));
+						labels = labels.substr(pos + 1);
+						pos = labels.find_first_of(',');
+					}
+					labelList.push_back(atoi(labels.substr(0, pos).c_str()));
+					lines.push_back(std::make_pair(first.substr(0, first.length()), labelList));
+					/*
+					cout << "first: " << lines.back().first << endl;
+					cout << "second: ";
+					for (int i = 0; i < lines.back().second.size(); i++) {
+						cout << lines.back().second[i] << ", ";
+					}
+					cout << endl;
+					*/
+				}
 			}
-			enc = fn.substr(p);
-			std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
 		}
-		status = ReadImageToDatum(root_folder + lines[line_id].first, lines[line_id].second,
-				resize_height, resize_width, 0, 0, channel_separated, is_color, enc, &datum);
+		// only images provided
+		else {
+			SASSERT(fs::exists(argv1), "image path %s not exists ... ", argv1.c_str());
+			SASSERT(fs::is_directory(argv1), "image path %s is not directory ... ", argv1.c_str());
 
-		if (status == false) {
-			continue;
+			const string ext = ".jpg";
+			fs::path image_path(argv1);
+			fs::recursive_directory_iterator it(image_path);
+			fs::recursive_directory_iterator endit;
+
+			int count = 0;
+			while (it != endit) {
+				if (fs::is_regular_file(*it) && it->path().extension() == ext) {
+					string path = it->path().filename().string();
+					// path를 그대로 전달할 경우 error ...
+					// substr() 호출한 결과를 전달할 경우 문제 x
+					labelList.push_back(0);
+					lines.push_back(std::make_pair(path.substr(0, path.length()), labelList));
+					//lines.push_back(std::make_pair<string, vector<int>>(path, {0}));
+				}
+				it++;
+			}
 		}
-		SASSERT0(!check_size);
 
-		// sequencial
-		string key_str = format_int(line_id, 8) + "_" + lines[line_id].first;
+		if (FLAGS_shuffle) {
+			// randomly shuffle data
+			std::random_shuffle(lines.begin(), lines.end());
+		} else {
 
-		// Put in db
-		//string out = Datum::serializeToString(&datum);
-		string out = serializeToString(&datum);
-		sdf->put(key_str, out);
+		}
 
-		if (++count % 1000 == 0) {
-			// Commit db
-			sdf->commit();
-			//
+		cout << "A total of " << lines.size() << " images." << endl;
+		/*
+		for (int i = 0; i < std::min<int>(lines.size(), 100); i++) {
+			cout << "fn: " << lines[i].first << ", label: " << lines[i].second << endl;
+		}
+		*/
+
+
+		if (encode_type.size() && !encoded) {
+			cout << "encode_type specified, assuming encoded=true.";
+		}
+
+		int resize_height = std::max<int>(0, FLAGS_resize_height);
+		int resize_width = std::max<int>(0, FLAGS_resize_width);
+
+
+		// Storing to db
+		string root_folder(argv1);
+		Datum datum;
+		int count = 0;
+		int data_size = 0;
+		bool data_size_initialized = false;
+
+
+		// 이 시점에서 data 수를 저장할 경우
+		// 아래 status가 false인 경우 등의 상황에서 수가 정확하지 않을 가능성이 있음.
+		//sdf.put("num_data", std::to_string(lines.size()));
+		//sdf.commit();
+		header.setSizes[imageSetIdx] = lines.size();
+
+		for (int line_id = 0; line_id < lines.size(); line_id++) {
+			bool status;
+			string enc = encode_type;
+			if (encoded && !enc.size()) {
+				// Guess the encoding type from the file name
+				string fn = lines[line_id].first;
+				size_t p = fn.rfind('.');
+				if (p == fn.npos) {
+					cout << "Failed to guess the encoding of '" << fn << "'";
+				}
+				enc = fn.substr(p);
+				std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
+			}
+			status = ReadImageToDatum(root_folder + lines[line_id].first, lines[line_id].second,
+					resize_height, resize_width, 0, 0, channel_separated, is_color, enc, &datum);
+
+			if (status == false) {
+				cout << lines[line_id].first << " file is corrupted ... skipping ... " << endl;
+				header.setSizes[imageSetIdx]--;
+				continue;
+			}
+			SASSERT0(!check_size);
+
+			// sequencial
+			string key_str = format_int(line_id, 8) + "_" + lines[line_id].first;
+
+			// Put in db
+			//string out = Datum::serializeToString(&datum);
+			string out = serializeToString(&datum);
+			sdf.put(key_str, out);
+
+			if (++count % 1000 == 0) {
+				sdf.commit();
+				cout << "Processed " << count << " files." << endl;
+			}
+		}
+
+		// write the last batch
+		if (count % 1000 != 0) {
+			sdf.commit();
 			cout << "Processed " << count << " files." << endl;
 		}
 	}
 
-	// write the last batch
-	if (count % 1000 != 0) {
-		sdf->commit();
-		cout << "Processed " << count << " files." << endl;
-	}
-
-	sdf->close();
-
-
+	header.print();
+	sdf.updateHeader(header);
+	sdf.close();
 
 }
 
@@ -594,14 +680,16 @@ void convertAnnoSetTest(int argc, char** argv) {
 
 }
 
-/*
-void convertAnnoSet(bool FLAGS_gray, bool FLAGS_shuffle, bool FLAGS_multi_label,
-		bool FLAGS_channel_separated, int FLAGS_resize_width, int FLAGS_resize_height,
-		bool FLAGS_check_size, bool FLAGS_encoded, const std::string& FLAGS_encode_type,
-		const std::string& FLAGS_anno_type, const std::string& FLAGS_label_type,
-		const std::string& FLAGS_label_map_file, bool FLAGS_check_label, int FLAGS_min_dim,
-		int FLAGS_max_dim, const std::string& argv1, const std::string& argv2, const std::string& argv3) {*/
+
 void convertAnnoSet(ConvertAnnoSetParam& param) {
+	int numImageSets = param.imageSetList.size();
+
+	SDFHeader header;
+	header.init(numImageSets);
+	if (!param.labelMapFilePath.empty()) {
+		parse_label_map(param.labelMapFilePath, header.labelItemList);
+	}
+
 	bool FLAGS_gray = param.gray;
 	bool FLAGS_shuffle = param.shuffle;
 	bool FLAGS_multi_label = param.multiLabel;
@@ -618,8 +706,7 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 	int FLAGS_min_dim = param.minDim;
 	int FLAGS_max_dim = param.maxDim;
 	const string& argv1 = param.basePath;
-	const string& argv2 = param.datasetPath;
-	const string& argv3 = param.outPath;
+	const string& argv3 = param.outFilePath;
 
 	const bool is_color = !FLAGS_gray;
 	const bool check_size = FLAGS_check_size;
@@ -632,103 +719,126 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 	const bool check_label = FLAGS_check_label;
 	//map<string, int> name_to_label;
 
-	ifstream infile(argv2);
-	vector<pair<string, boost::variant<int, string>>> lines;
-	string filename;
-	int label;
-	string labelname;
-	SASSERT(anno_type == "detection", "only anno_type 'detection' is supported.");
-	type = AnnotationType::BBOX;
-	LabelMap<float> label_map(label_map_file);
-	label_map.build();
 
-	while (infile >> filename >> labelname) {
-		lines.push_back(make_pair(filename, labelname));
-	}
-
-	if (FLAGS_shuffle) {
-		// randomly shuffle data
-		cout << "Shuffling data" << endl;
-		//shuffle(lines.begin(), lines.end());
-		std::random_shuffle(lines.begin(), lines.end());
-	}
-	cout << "A total of " << lines.size() << " images." << endl;
-
-	if (encode_type.size() && !encoded) {
-		cout << "encode_type specified, assuming encoded=true." << endl;
-	}
-
-	int min_dim = std::max<int>(0, FLAGS_min_dim);
-	int max_dim = std::max<int>(0, FLAGS_max_dim);
-	int resize_height = std::max<int>(0, FLAGS_resize_height);
-	int resize_width = std::max<int>(0, FLAGS_resize_width);
 
 	// Create new DB
-	SDF* sdf = new SDF(argv3, Mode::NEW);
-	sdf->open();
+	SDF sdf(argv3, Mode::NEW);
+	sdf.open();
+	sdf.initHeader(header);
 
-	// Storing to db
-	string root_folder(argv1);
-	AnnotatedDatum anno_datum;
-	int count = 0;
-	int data_size = 0;
-	bool data_size_initialized = false;
 
-	// 이 시점에서 data 수를 저장할 경우
-	// 아래 status가 false인 경우 등의 상황에서 수가 정확하지 않을 가능성이 있음.
-	sdf->put("num_data", std::to_string(lines.size()));
-	sdf->commit();
 
-	for (int line_id = 0; line_id < lines.size(); line_id++) {
-		bool status = true;
-		string enc = encode_type;
-		if (encoded && !enc.size()) {
-			// Guess the encoding type from the file name
-			string fn = lines[line_id].first;
-			size_t p = fn.rfind('.');
-			if (p == fn.npos) {
-				cout << "Failed to guess the encoding of '" << fn << "'";
+	for (int imageSetIdx = 0; imageSetIdx < numImageSets; imageSetIdx++) {
+		const ImageSet& imageSet = param.imageSetList[imageSetIdx];
+		header.names[imageSetIdx] = imageSet.name;
+		header.setStartPos[imageSetIdx] = sdf.getCurrentPos();
+		const string& argv2 = imageSet.dataSetPath;
+
+		ifstream infile(argv2);
+		vector<pair<string, boost::variant<int, string>>> lines;
+		string filename;
+		int label;
+		string labelname;
+		SASSERT(anno_type == "detection", "only anno_type 'detection' is supported.");
+		type = AnnotationType::BBOX;
+		LabelMap<float> label_map(label_map_file);
+		label_map.build();
+
+		while (infile >> filename >> labelname) {
+			lines.push_back(make_pair(filename, labelname));
+		}
+
+		if (FLAGS_shuffle) {
+			// randomly shuffle data
+			cout << "Shuffling data" << endl;
+			//shuffle(lines.begin(), lines.end());
+			std::random_shuffle(lines.begin(), lines.end());
+		}
+		cout << "A total of " << lines.size() << " images." << endl;
+
+		if (encode_type.size() && !encoded) {
+			cout << "encode_type specified, assuming encoded=true." << endl;
+		}
+
+		int min_dim = std::max<int>(0, FLAGS_min_dim);
+		int max_dim = std::max<int>(0, FLAGS_max_dim);
+		int resize_height = std::max<int>(0, FLAGS_resize_height);
+		int resize_width = std::max<int>(0, FLAGS_resize_width);
+
+
+
+
+
+
+
+
+		// Storing to db
+		string root_folder(argv1);
+		AnnotatedDatum anno_datum;
+		int count = 0;
+		int data_size = 0;
+		bool data_size_initialized = false;
+
+		// 이 시점에서 data 수를 저장할 경우
+		// 아래 status가 false인 경우 등의 상황에서 수가 정확하지 않을 가능성이 있음.
+		//sdf.put("num_data", std::to_string(lines.size()));
+		//sdf.commit();
+		header.setSizes[imageSetIdx] = lines.size();
+
+
+
+		for (int line_id = 0; line_id < lines.size(); line_id++) {
+			bool status = true;
+			string enc = encode_type;
+			if (encoded && !enc.size()) {
+				// Guess the encoding type from the file name
+				string fn = lines[line_id].first;
+				size_t p = fn.rfind('.');
+				if (p == fn.npos) {
+					cout << "Failed to guess the encoding of '" << fn << "'";
+				}
+				enc = fn.substr(p);
+				std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
 			}
-			enc = fn.substr(p);
-			std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
+			filename = root_folder + lines[line_id].first;
+			labelname = root_folder + boost::get<string>(lines[line_id].second);
+			status = ReadRichImageToAnnotatedDatum(filename, labelname, resize_height,
+					resize_width, min_dim, max_dim, is_color, enc, type, label_type,
+					label_map.labelToIndMap, &anno_datum);
+			anno_datum.type = AnnotationType::BBOX;
+			//anno_datum.print();
+
+			if (status == false) {
+				cout << "Failed to read " << lines[line_id].first << endl;
+				header.setSizes[imageSetIdx]--;
+				continue;
+			}
+			SASSERT0(!check_size);
+
+			// sequencial
+			string key_str = format_int(line_id, 8) + "_" + lines[line_id].first;
+
+			// Put in db
+			//string out = Datum::serializeToString(&datum);
+			string out = serializeToString(&anno_datum);
+			sdf.put(key_str, out);
+
+			if (++count % 1000 == 0) {
+				sdf.commit();
+				cout << "Processed " << count << " files." << endl;
+			}
 		}
-		filename = root_folder + lines[line_id].first;
-		labelname = root_folder + boost::get<string>(lines[line_id].second);
-		status = ReadRichImageToAnnotatedDatum(filename, labelname, resize_height,
-				resize_width, min_dim, max_dim, is_color, enc, type, label_type,
-				label_map.labelToIndMap, &anno_datum);
-		anno_datum.type = AnnotationType::BBOX;
-		//anno_datum.print();
 
-		if (status == false) {
-			cout << "Failed to read " << lines[line_id].first << endl;
-			continue;
-		}
-		SASSERT0(!check_size);
-
-		// sequencial
-		string key_str = format_int(line_id, 8) + "_" + lines[line_id].first;
-
-		// Put in db
-		//string out = Datum::serializeToString(&datum);
-		string out = serializeToString(&anno_datum);
-		sdf->put(key_str, out);
-
-		if (++count % 1000 == 0) {
-			// Commit db
-			sdf->commit();
-			//
+		// write the last batch
+		if (count % 1000 != 0) {
+			sdf.commit();
 			cout << "Processed " << count << " files." << endl;
 		}
 	}
 
-	// write the last batch
-	if (count % 1000 != 0) {
-		sdf->commit();
-		cout << "Processed " << count << " files." << endl;
-	}
-
-	sdf->close();
+	header.print();
+	sdf.updateHeader(header);
+	sdf.close();
 }
 
 

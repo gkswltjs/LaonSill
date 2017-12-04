@@ -16,8 +16,11 @@ DataReader<T>::DataReader(const string& source)
 : source(source), db(source, Mode::READ) {
 	this->db.open();
 
-	string value = this->db.getNextValue();
-	this->numData = atoi(value.c_str());
+	//string value = this->db.getNextValue();
+	//this->numData = atoi(value.c_str());
+	//SDFHeader header = this->db.getHeader();
+
+
 }
 
 template <typename T>
@@ -101,14 +104,6 @@ Datum* DataReader<Datum>::peekNextData() {
 */
 
 
-
-
-
-
-
-
-
-
 template <typename T>
 void DataReader<T>::fillNextData(T* data) {
     SASSUME0(this->data_queue.size() == 0);
@@ -116,9 +111,33 @@ void DataReader<T>::fillNextData(T* data) {
     deserializeFromString(value, data);
 }
 
+
+template <typename T>
+void DataReader<T>::selectDataSetByName(const string& dataSet) {
+	this->db.selectDataSet(dataSet);
+}
+
+template <typename T>
+void DataReader<T>::selectDataSetByIndex(const int dataSetIdx) {
+	this->db.selectDataSet(dataSetIdx);
+}
+
+
+
+
+
+
+
+
 template <typename T>
 int DataReader<T>::getNumData() {
-	return this->numData;
+	//return this->numData;
+	return this->db.getHeader().setSizes[0];
+}
+
+template <typename T>
+SDFHeader DataReader<T>::getHeader() {
+	return this->db.getHeader();
 }
 
 /**************************************************************************************

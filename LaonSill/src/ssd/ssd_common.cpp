@@ -134,12 +134,14 @@ void LabelMap<Dtype>::printLabelItemList() {
 	}
 }
 
+/*
 template <typename Dtype>
 void LabelMap<Dtype>::LabelItem::print() {
 	cout << "LabelItem: " 		<< this->name 			<< endl;
 	cout << "\tlabel: " 		<< this->label 			<< endl;
 	cout << "\tdisplay_name: " 	<< this->displayName 	<< endl;
 }
+*/
 
 template <typename Dtype>
 void BoundingBox<Dtype>::print() {

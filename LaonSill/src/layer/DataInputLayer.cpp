@@ -24,6 +24,12 @@ DataInputLayer<Dtype>::DataInputLayer()
 : InputLayer<Dtype>(),
   dataReader(SLPROP(Input, source)) {
 	this->type = Layer<Dtype>::DataInput;
+	const string dataSetName = SLPROP(DataInput, dataSetName);
+	if (dataSetName.empty()) {
+		this->dataReader.selectDataSetByIndex(0);
+	} else {
+		this->dataReader.selectDataSetByName(dataSetName);
+	}
 }
 
 template <typename Dtype>

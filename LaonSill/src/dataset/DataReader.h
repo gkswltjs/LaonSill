@@ -23,14 +23,17 @@ public:
 	T* getNextData();
 	T* peekNextData();
     void fillNextData(T* data);
+    void selectDataSetByName(const std::string& dataSet);
+    void selectDataSetByIndex(const int dataSetIdx);
 
 	int getNumData();
+	SDFHeader getHeader();
 
 	std::string source;
 
 private:
 	SDF db;
-	int numData;
+	//int numData;
 
 	std::queue<T*> data_queue;
 

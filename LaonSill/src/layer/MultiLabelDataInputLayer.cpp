@@ -20,6 +20,12 @@ MultiLabelDataInputLayer<Dtype>::MultiLabelDataInputLayer()
 : InputLayer<Dtype>(),
   dataReader(SLPROP(Input, source)) {
 	this->type = Layer<Dtype>::MultiLabelDataInput;
+	const string dataSetName = SLPROP(MultiLabelDataInput, dataSetName);
+	if (dataSetName.empty()) {
+		this->dataReader.selectDataSetByIndex(0);
+	} else {
+		this->dataReader.selectDataSetByName(dataSetName);
+	}
 }
 
 template <typename Dtype>

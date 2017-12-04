@@ -5,6 +5,7 @@
 #include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/variant.hpp>
+#include <boost/serialization/map.hpp>
 
 
 #include "LayerTestInterface.h"
@@ -105,16 +106,250 @@ int main(int argc, char** argv) {
 	//layerTest2(argc, argv);
 
 
-	SDF sdf("/home/jkim/imageset/lmdb/_test_sdf/", Mode::NEW);
-	sdf.open();
+	//const string labelMapPath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.json";
+	//vector<LabelItem> labelItemList;
+	//parse_label_map(labelMapPath, labelItemList);
 
-	sdf.put("num_data", "246");
-	sdf.put("key2", "value2");
-	sdf.put("key3", "value3");
 
-	sdf.commit();
-	sdf.close();
 
+#if 1
+	const string baseImagePath = "/home/jkim/Dev/git/caffe_ssd/data/";
+	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
+
+	const string labelMapFile = baseImagePath + "VOC0712/labelmap_voc.prototxt";
+	const string basePath = baseImagePath + "VOCdevkit/";
+	const string outFilePath = baseSdfPath + "_voc2007_train_sdf/";
+
+	ImageSet trainImageSet;
+	trainImageSet.name = "train";
+	trainImageSet.dataSetPath = baseImagePath + "VOC0712/trainval.txt";
+
+	ImageSet testImageSet;
+	testImageSet.name = "test";
+	testImageSet.dataSetPath = baseImagePath + "VOC0712/test.txt";
+
+	ConvertAnnoSetParam param;
+	param.addImageSet(trainImageSet);
+	param.addImageSet(testImageSet);
+	param.labelMapFile = labelMapFile;
+	param.basePath = basePath;
+	param.outFilePath = outFilePath;
+	param.labelMapFilePath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.json";
+
+	if (boost::filesystem::exists(param.outFilePath)) {
+		boost::filesystem::remove_all((param.outFilePath));
+	}
+
+	convertAnnoSet(param);
+#else
+	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
+	const string sdfPath = baseSdfPath + "_voc2007_train_sdf/";
+
+	DataReader<AnnotatedDatum> dataReader(sdfPath);
+
+	AnnotatedDatum* datum = 0;
+	cout << "selected train dataset ... " << endl;
+	dataReader.selectDataSetByName("train");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		delete datum;
+		datum = 0;
+	}
+
+	cout << "selected test dataset ... " << endl;
+	dataReader.selectDataSetByName("test");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		delete datum;
+		datum = 0;
+	}
+#endif
+
+
+/*
+#if 0
+	const string baseImagePath = "/home/jkim/Dev/data/image/ilsvrc12_train/";
+	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
+
+	const string imagePath = baseImagePath + "images/";
+	const string sdfPath = baseSdfPath + "ilsvrc_train_1000/";
+
+
+	ImageSet trainImageSet;
+	trainImageSet.name = "train";
+	trainImageSet.dataSetPath = baseImagePath + "train.txt";
+
+	ImageSet testImageSet;
+	testImageSet.name = "test";
+	testImageSet.dataSetPath = baseImagePath + "test.txt";
+
+	ConvertImageSetParam param;
+	param.addImageSet(trainImageSet);
+	param.addImageSet(testImageSet);
+	param.shuffle = true;
+	param.resizeWidth = 224;
+	param.resizeHeight = 224;
+	param.basePath = imagePath;
+	param.outFilePath = sdfPath;
+	param.labelMapFilePath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_imagenet.json";
+
+	if (boost::filesystem::exists(param.outFilePath)) {
+		boost::filesystem::remove_all((param.outFilePath));
+	}
+
+	convertImageSet(param);
+
+
+#else
+	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
+	const string sdfPath = baseSdfPath + "ilsvrc_train_1000/";
+
+	DataReader<Datum> dataReader(sdfPath);
+
+	Datum* datum = 0;
+	cout << "selected train dataset ... " << endl;
+	dataReader.selectDataSetByName("train");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		delete datum;
+		datum = 0;
+	}
+
+	cout << "selected test dataset ... " << endl;
+	dataReader.selectDataSetByName("test");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		delete datum;
+		datum = 0;
+	}
+#endif
+*/
+
+
+/*
+#if 0
+
+	MnistDataSet trainDataSet;
+	trainDataSet.name = "train";
+	trainDataSet.imageFilePath = "/home/jkim/Dev/git/caffe/data/mnist/train-images-idx3-ubyte";
+	trainDataSet.labelFilePath = "/home/jkim/Dev/git/caffe/data/mnist/train-labels-idx1-ubyte";
+
+	MnistDataSet testDataSet;
+	testDataSet.name = "test";
+	testDataSet.imageFilePath = "/home/jkim/Dev/git/caffe/data/mnist/t10k-images-idx3-ubyte";
+	testDataSet.labelFilePath = "/home/jkim/Dev/git/caffe/data/mnist/t10k-labels-idx1-ubyte";
+
+	ConvertMnistDataParam param;
+	param.addDataSet(trainDataSet);
+	param.addDataSet(testDataSet);
+	param.outFilePath = "/home/jkim/imageset/lmdb/_mnist_train_sdf/";
+	param.labelMapFilePath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_mnist.json";
+
+	if (boost::filesystem::exists(param.outFilePath)) {
+		boost::filesystem::remove_all((param.outFilePath));
+	}
+
+	convertMnistData(param);
+
+
+#else
+	const string sdfPath = "/home/jkim/imageset/lmdb/_mnist_train_sdf/";
+	DataReader<Datum> dataReader(sdfPath);
+
+	Datum* datum = 0;
+	cout << "selected train dataset ... " << endl;
+	dataReader.selectDataSetByName("train");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		delete datum;
+		datum = 0;
+	}
+
+	cout << "selected test dataset ... " << endl;
+	dataReader.selectDataSetByName("test");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		delete datum;
+		datum = 0;
+	}
+#endif
+*/
+
+/*
+#if 1
+	std::ofstream ofs;
+	ofs.open("/home/jkim/imageset/lmdb/_test_sdf/data.sdf", ios_base::out);
+	boost::archive::text_oarchive oa(ofs, boost::archive::no_header);
+
+	SDFHeader dummyHeader;
+	oa << dummyHeader;
+	LabelItem dummyLabelItem;
+	oa << dummyLabelItem;
+
+	int header_start_pos = ofs.tellp();
+	cout << "header start pos: " << header_start_pos << endl;
+
+	SDFHeader header;
+	header.names = {"train"};
+	header.numSets = 777;
+	header.setSizes = {77777};
+	header.setStartPos = {7777777};
+
+	LabelItem labelItem;
+	labelItem.name = "car";
+	labelItem.label = 14;
+	labelItem.displayName = "car";
+	labelItem.color = {255, 255, 255};
+
+	header.labelItemList.push_back(labelItem);
+
+	oa << header;
+	//oa << header;
+	//oa << header;
+
+	ofs.seekp(header_start_pos, ios::beg);
+	header.names = {"test"};
+	header.numSets = 222;
+	header.setSizes = {22222};
+	header.setStartPos = {2222222};
+
+	labelItem.name = "person";
+	labelItem.label = 15;
+	labelItem.displayName = "person";
+	labelItem.color = {1, 1, 1};
+
+	header.labelItemList.clear();
+	header.labelItemList.push_back(labelItem);
+
+	oa << header;
+
+	if (ofs.is_open()) {
+		ofs.close();
+	}
+
+#else
+	std::ifstream ifs;
+	ifs.open("/home/jkim/imageset/lmdb/_test_sdf/data.sdf", ios_base::in);
+	boost::archive::text_iarchive ia(ifs, boost::archive::no_header);
+
+	SDFHeader dummyHeader;
+	ia >> dummyHeader;
+
+	SDFHeader result;
+	ia >> result;
+	result.print();
+
+	if (ifs.is_open()) {
+		ifs.close();
+	}
+#endif
+*/
 
 
 	cout << "end test ... " << endl;

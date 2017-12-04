@@ -15,6 +15,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "EnumDef.h"
+#include "SDF.h"
 
 
 template <typename Dtype>
@@ -66,14 +67,7 @@ public:
 template <typename Dtype>
 class LabelMap {
 public:
-	class LabelItem {
-	public:
-		void print();
-	public:
-		std::string name;
-		int label;
-		std::string displayName;
-	};
+
 
 
 public:

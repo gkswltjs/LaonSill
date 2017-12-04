@@ -729,7 +729,10 @@
     "LEVEL" : 2,
     "LEARN" : 0,
     "PROPDOWN" : [],
-    "VARS" : [],
+    "VARS" : 
+	[
+		["dataSetName", "std::string", "\"\""]
+	],
     "KEYVARS" : []
 },
 
@@ -742,7 +745,8 @@
     "PROPDOWN" : [],
     "VARS" : 
 	[
-		["labelCount", "int", "0"]
+		["labelCount", "int", "0"],
+		["dataSetName", "std::string", "\"\""]
 	],
     "KEYVARS" : ["labelCount"]
 },
@@ -905,6 +909,7 @@
     "PROPDOWN" : [],
     "VARS" : 
 	[
+		["dataSetName", "std::string", "\"\""],
 		["dataTransformParam", "DataTransformParam", "{}",
 			[
 				["scale", "float"],
