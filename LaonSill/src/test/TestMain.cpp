@@ -112,6 +112,11 @@ int main(int argc, char** argv) {
 
 
 
+
+
+
+
+/*
 #if 1
 	const string baseImagePath = "/home/jkim/Dev/git/caffe_ssd/data/";
 	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
@@ -166,6 +171,7 @@ int main(int argc, char** argv) {
 		datum = 0;
 	}
 #endif
+*/
 
 
 /*
@@ -230,7 +236,6 @@ int main(int argc, char** argv) {
 */
 
 
-/*
 #if 0
 
 	MnistDataSet trainDataSet;
@@ -263,6 +268,30 @@ int main(int argc, char** argv) {
 	Datum* datum = 0;
 	cout << "selected train dataset ... " << endl;
 	dataReader.selectDataSetByName("train");
+
+	datum = dataReader.getNextData();
+	delete datum;
+
+	datum = dataReader.getNextData();
+	delete datum;
+
+	datum = dataReader.peekNextData();
+	delete datum;
+
+	datum = dataReader.peekNextData();
+	delete datum;
+
+
+
+
+
+
+
+
+	/*
+	Datum* datum = 0;
+	cout << "selected train dataset ... " << endl;
+	dataReader.selectDataSetByName("train");
 	for (int i = 0; i < 10; i++) {
 		datum = dataReader.getNextData();
 		datum->print();
@@ -278,8 +307,9 @@ int main(int argc, char** argv) {
 		delete datum;
 		datum = 0;
 	}
+	*/
 #endif
-*/
+
 
 /*
 #if 1

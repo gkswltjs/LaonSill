@@ -35,7 +35,7 @@ private:
 	SDF db;
 	//int numData;
 
-	std::queue<T*> data_queue;
+	//std::queue<T*> data_queue;
 
     /***************************************************************************
      * callback functions - will be registered by Input Data Provider module

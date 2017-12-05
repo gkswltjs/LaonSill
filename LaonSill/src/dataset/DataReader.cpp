@@ -31,6 +31,7 @@ template <typename T>
 DataReader<T>::~DataReader() {
 	this->db.close();
 
+	/*
 	while (!this->data_queue.empty()) {
 		T* t = this->data_queue.front();
 		this->data_queue.pop();
@@ -38,6 +39,7 @@ DataReader<T>::~DataReader() {
 			delete t;
 		}
 	}
+	*/
 }
 
 
@@ -45,6 +47,12 @@ DataReader<T>::~DataReader() {
 
 template <typename T>
 T* DataReader<T>::getNextData() {
+	string value = this->db.getNextValue();
+	T* datum = new T();
+	deserializeFromString(value, datum);
+	return datum;
+
+	/*
 	if (this->data_queue.empty()) {
 		string value = this->db.getNextValue();
 		T* datum = new T();
@@ -56,10 +64,21 @@ T* DataReader<T>::getNextData() {
 		this->data_queue.pop();
 		return datum;
 	}
+	*/
 }
 
 template <typename T>
 T* DataReader<T>::peekNextData() {
+	long currentPos = this->db.getCurrentPos();
+	string value = this->db.getNextValue();
+	this->db.setCurrentPos(currentPos);
+
+	T* datum = new T();
+	deserializeFromString(value, datum);
+
+	return datum;
+
+	/*
 	if (this->data_queue.empty()) {
 		string value = this->db.getNextValue();
 		T* datum = new T();
@@ -70,6 +89,7 @@ T* DataReader<T>::peekNextData() {
 	} else {
 		return this->data_queue.front();
 	}
+	*/
 }
 
 /*
@@ -106,7 +126,7 @@ Datum* DataReader<Datum>::peekNextData() {
 
 template <typename T>
 void DataReader<T>::fillNextData(T* data) {
-    SASSUME0(this->data_queue.size() == 0);
+    //SASSUME0(this->data_queue.size() == 0);
     string value = this->db.getNextValue();
     deserializeFromString(value, data);
 }
