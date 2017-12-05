@@ -21,7 +21,8 @@ class MeasureManager {
 public: 
     MeasureManager() {}
     virtual ~MeasureManager() {}
-    
+
+    static void init();
     static void insertEntryEx(std::string networkID, std::vector<std::string> itemNames,
         MeasureOption option, int queueSize);
     static void insertEntry(std::string networkID, std::vector<std::string> itemNames);

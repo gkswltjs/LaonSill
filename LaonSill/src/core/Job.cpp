@@ -10,6 +10,7 @@
 #include "Job.h"
 #include "SysLog.h"
 #include "ColdLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -50,7 +51,8 @@ Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
  
     if (this->jobElemCnt > 0) {
         int allocSize = sizeof(JobElemDef) * this->jobElemCnt;
-        this->jobElemDefs = (Job::JobElemDef*)malloc(allocSize);
+        //this->jobElemDefs = (Job::JobElemDef*)malloc(allocSize);
+        SMALLOC(this->jobElemDefs, Job::JobElemDef, allocSize);
         SASSERT0(this->jobElemDefs != NULL);
         SASSERT0(jobElemValues != NULL);
     } else {
@@ -100,7 +102,8 @@ Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
     int jobElemValueAllocSize = offset;
 
     if (jobElemValueAllocSize > 0) {
-        this->jobElemValues = (char*)malloc(jobElemValueAllocSize);
+        //this->jobElemValues = (char*)malloc(jobElemValueAllocSize);
+        SMALLOC(this->jobElemValues, char, jobElemValueAllocSize);
         SASSERT0(this->jobElemValues != NULL);
         memcpy((void*)this->jobElemValues, (void*)jobElemValues, jobElemValueAllocSize);
     } else {
@@ -123,10 +126,12 @@ Job::Job(JobType jobType) {
 
 Job::~Job() {
     if (this->jobElemDefs != NULL)
-        free(this->jobElemDefs);
+        SFREE(this->jobElemDefs);
+        //free(this->jobElemDefs);
 
     if (this->jobElemValues != NULL)
-        free(this->jobElemValues);
+        SFREE(this->jobElemValues);
+        //free(this->jobElemValues);
 }
 
 void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr) {
@@ -147,7 +152,9 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
 
     this->jobElemCnt++;
 
-    this->jobElemDefs = (Job::JobElemDef*)malloc(sizeof(Job::JobElemDef) * this->jobElemCnt);
+    //this->jobElemDefs = (Job::JobElemDef*)malloc(sizeof(Job::JobElemDef) * this->jobElemCnt);
+    int allocSize = sizeof(Job::JobElemDef) * this->jobElemCnt;
+    SMALLOC(this->jobElemDefs, Job::JobElemDef, allocSize);
     SASSERT0(this->jobElemDefs != NULL);
 
     int elemCnt = 1;
@@ -180,9 +187,12 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         int arrayAllocSize = tempJobElemValueSize + elemValueSize + sizeof(int);
         // array size만큼을 고려해 줘야 한다.
-        this->jobElemValues = (char*)malloc(arrayAllocSize);
+        //this->jobElemValues = (char*)malloc(arrayAllocSize);
+        SMALLOC(this->jobElemValues, char, arrayAllocSize);
     } else {
-        this->jobElemValues = (char*)malloc(tempJobElemValueSize + elemValueSize);
+        //this->jobElemValues = (char*)malloc(tempJobElemValueSize + elemValueSize);
+        int allocSize = tempJobElemValueSize + elemValueSize;
+        SMALLOC(this->jobElemValues, char, allocSize);
     }
     SASSERT0(this->jobElemValues != NULL);
 
@@ -190,10 +200,12 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     if (this->jobElemCnt > 1) {
         int copySize = sizeof(Job::JobElemDef) * (this->jobElemCnt - 1);
         memcpy((void*)this->jobElemDefs, (void*)tempJobElemDefs, copySize);
-        free(tempJobElemDefs);
+        SFREE(tempJobElemDefs);
+        //free(tempJobElemDefs);
 
         memcpy((void*)this->jobElemValues, (void*)tempJobElemValues, tempJobElemValueSize);
-        free(tempJobElemValues);
+        //free(tempJobElemValues);
+        SFREE(tempJobElemValues);
     }
 
     // fill job elem def
@@ -268,12 +280,22 @@ std::string Job::getStringValue(int elemIdx) {
 
     int elemOffset = this->jobElemDefs[elemIdx].elemOffset;
     char *charArray = (char*)(&this->jobElemValues[elemOffset]);
-    char *temp = (char*)malloc(sizeof(char) * (this->jobElemDefs[elemIdx].arrayCount + 1));
+    //char *temp = (char*)malloc(sizeof(char) * (this->jobElemDefs[elemIdx].arrayCount + 1));
+    char* temp;
+    int allocSize = sizeof(char) * (this->jobElemDefs[elemIdx].arrayCount + 1);
+    SMALLOC(temp, char, allocSize);
     SASSUME0(temp != NULL);
     strncpy(temp, charArray, this->jobElemDefs[elemIdx].arrayCount);
     temp[this->jobElemDefs[elemIdx].arrayCount] = '\0';
     string resultString(temp);
-    free(temp);
+
+    MemoryMgmt::dump();
+
+    //free(temp);
+    SFREE(temp);
+
+    MemoryMgmt::dump();
+
     return resultString;
 }
 

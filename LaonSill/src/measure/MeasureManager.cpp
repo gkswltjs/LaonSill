@@ -9,11 +9,20 @@
 #include "MeasureManager.h"
 #include "SysLog.h"
 #include "Param.h"
+#include "FileMgmt.h"
 
 using namespace std;
 
-map<string, MeasureEntry*>     MeasureManager::entryMap;
+map<string, MeasureEntry*>  MeasureManager::entryMap;
 mutex                       MeasureManager::entryMapMutex;
+
+extern const char*  LAONSILL_HOME_ENVNAME;
+
+void MeasureManager::init() {
+    char measureDir[PATH_MAX];
+    SASSERT0(sprintf(measureDir, "%s/measure", getenv(LAONSILL_HOME_ENVNAME)) != -1);
+    FileMgmt::checkDir(measureDir);
+}
 
 void MeasureManager::insertEntryEx(string networkID, vector<string> itemNames,
         MeasureOption option, int queueSize) {

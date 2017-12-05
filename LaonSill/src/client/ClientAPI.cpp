@@ -20,6 +20,7 @@
 #include "MessageHeader.h"
 #include "SysLog.h"
 #include "Client.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -114,6 +115,9 @@ ClientError ClientAPI::releaseSession(ClientHandle handle) {
 
     close(handle.sockFD);
     handle.hasSession = false;
+
+    if (handle.buffer != NULL)
+        free(handle.buffer);
 
     return retValue;
 }

@@ -43,6 +43,8 @@
 #include "Sender.h"
 #include "Receiver.h"
 #include "Task.h"
+#include "MeasureManager.h"
+#include "MemoryMgmt.h"
 
 #include "YOLO.h"
 #include "LayerFunc.h"
@@ -146,7 +148,6 @@ void singleJobMain(const char* jobFilePath) {
 int main(int argc, char** argv) {
     int     opt;
 
-
     // 처음 생각했던 것보다 실행모드의 개수가 늘었다.
     // 모드가 하나만 더 추가되면 그냥 enum type으로 모드를 정의하도록 하자.
 
@@ -218,6 +219,8 @@ int main(int argc, char** argv) {
     Task::init();
     Broker::init();
     Network<float>::init();
+    MeasureManager::init();
+    MemoryMgmt::init();
 
     ResourceManager::init();
     PlanOptimizer::init();
