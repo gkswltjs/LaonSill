@@ -105,7 +105,7 @@
 									<listOptionValue builtIn="false" value="blas"/>
 								</option>
 								<option id="nvcc.linker.option.paths.516465820" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${LAONSILL_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="/home/jkim/Dev/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 								</option>
@@ -253,7 +253,7 @@
 									<listOptionValue builtIn="false" value="--export-dynamic"/>
 								</option>
 								<option id="nvcc.linker.option.paths.318128445" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${LAONSILL_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="/home/jkim/Dev/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 								</option>
@@ -386,7 +386,7 @@
 									<listOptionValue builtIn="false" value="blas"/>
 								</option>
 								<option id="nvcc.linker.option.paths.21196381" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${LAONSILL_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="/home/jkim/Dev/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 								</option>
@@ -524,7 +524,7 @@
 									<listOptionValue builtIn="false" value="--export-dynamic"/>
 								</option>
 								<option id="nvcc.linker.option.paths.1994696423" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${SOOOA_SOURCE_PATH}/3rd_party/nms&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${LAONSILL_SOURCE_PATH}/3rd_party/nms&quot;"/>
 									<listOptionValue builtIn="false" value="/home/jkim/Dev/lib"/>
 									<listOptionValue builtIn="false" value="/usr/local/lib/boost"/>
 								</option>

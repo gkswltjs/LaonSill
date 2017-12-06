@@ -33,8 +33,10 @@ void Broker::init() {
         Broker::adhocSessArray[i].arrayIdx = i;
         Broker::adhocSessArray[i].sessID = i + SPARAM(BROKER_ADHOC_SESS_STARTS);
         Broker::adhocSessArray[i].found = false;
-        Broker::adhocSessArray[i].sessMutex = new mutex();
-        Broker::adhocSessArray[i].sessCondVar = new condition_variable();
+        SNEW(Broker::adhocSessArray[i].sessMutex, mutex);
+        SASSERT0(Broker::adhocSessArray[i].sessMutex != NULL);
+        SNEW(Broker::adhocSessArray[i].sessCondVar, condition_variable);
+        SASSERT0(Broker::adhocSessArray[i].sessCondVar != NULL);
 
         Broker::freeAdhocSessIDList.push_back(i + SPARAM(BROKER_ADHOC_SESS_STARTS));
     }
@@ -42,8 +44,8 @@ void Broker::init() {
 
 void Broker::destroy() {
     for (int i = 0; i < SPARAM(BROKER_ADHOC_SESS_COUNT); i++) {
-        delete Broker::adhocSessArray[i].sessMutex;
-        delete Broker::adhocSessArray[i].sessCondVar;
+        SDELETE(Broker::adhocSessArray[i].sessMutex);
+        SDELETE(Broker::adhocSessArray[i].sessCondVar);
     }
    
     SFREE(Broker::adhocSessArray);

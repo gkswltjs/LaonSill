@@ -13,6 +13,8 @@
 #include "HotLog.h"
 #include "ThreadMgmt.h"
 #include "Param.h"
+#include "MemoryMgmt.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -48,5 +50,7 @@ void Sender::senderThread() {
 
 void Sender::launchThread() {
 	// (1) receiver 쓰레드를 생성한다.
-    Sender::sender = new thread(senderThread);
+    Sender::sender = NULL;
+    SNEW(Sender::sender, thread, senderThread);
+    SASSUME0(Sender::sender != NULL);
 }

@@ -10,13 +10,15 @@
 #include "Param.h"
 #include "SysLog.h"
 #include "ColdLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
 vector<TaskPool*> Task::taskPools;
 
 void Task::allocTaskPool(TaskType taskType) {
-    TaskPool *tp = new TaskPool();
+    TaskPool *tp = NULL;
+    SNEW(tp, TaskPool);
     SASSERT0(tp != NULL);
     tp->taskType = taskType;
 
@@ -43,22 +45,35 @@ void Task::allocTaskPool(TaskType taskType) {
     }
 
     for (int i = 0; i < elemCount; i++) {
-        void *elem;
+        void               *elem = NULL;
+        TaskAllocTensor    *elemTaskAllocTensor = NULL;
+        TaskUpdateTensor   *elemTaskUpdateTensor = NULL;
+        TaskRunPlan        *elemTaskRunPlan = NULL;
+        TaskAllocLayer     *elemTaskAllocLayer = NULL;
+
         switch (taskType) {
             case TaskType::AllocTensor:
-                elem = (void*)(new TaskAllocTensor());
+                SNEW(elemTaskAllocTensor, TaskAllocTensor);
+                SASSUME0(elemTaskAllocTensor != NULL);
+                elem = (void*)elemTaskAllocTensor;
                 break;
             
             case TaskType::UpdateTensor:
-                elem = (void*)(new TaskUpdateTensor());
+                SNEW(elemTaskUpdateTensor, TaskUpdateTensor);
+                SASSUME0(elemTaskUpdateTensor != NULL);
+                elem = (void*)elemTaskUpdateTensor;
                 break;
 
             case TaskType::RunPlan:
-                elem = (void*)(new TaskRunPlan());
+                SNEW(elemTaskRunPlan, TaskRunPlan);
+                SASSUME0(elemTaskRunPlan != NULL);
+                elem = (void*)elemTaskRunPlan;
                 break;
 
             case TaskType::AllocLayer:
-                elem = (void*)(new TaskAllocLayer());
+                SNEW(elemTaskAllocLayer, TaskAllocLayer);
+                SASSUME0(elemTaskAllocLayer);
+                elem = (void*)elemTaskAllocLayer;
                 break;
 
             default:
@@ -83,23 +98,32 @@ void Task::init() {
 }
 
 void Task::releaseTaskPool(TaskType taskType) {
-    int elemCount; 
+    int                 elemCount; 
+    TaskAllocTensor    *elemTaskAllocTensor;
+    TaskUpdateTensor   *elemTaskUpdateTensor;
+    TaskRunPlan        *elemTaskRunPlan;
+    TaskAllocLayer     *elemTaskAllocLayer;
+
     for (int i = 0; i < taskPools[taskType]->alloc.size(); i++) {
         switch(taskType) {
             case TaskType::AllocTensor:
-                delete (TaskAllocTensor*)taskPools[taskType]->alloc[i];
+                elemTaskAllocTensor = (TaskAllocTensor*)taskPools[taskType]->alloc[i];
+                SDELETE(elemTaskAllocTensor);
                 break;
 
             case TaskType::UpdateTensor:
-                delete (TaskUpdateTensor*)taskPools[taskType]->alloc[i];
+                elemTaskUpdateTensor = (TaskUpdateTensor*)taskPools[taskType]->alloc[i];
+                SDELETE(elemTaskUpdateTensor);
                 break;
 
             case TaskType::RunPlan:
-                delete (TaskRunPlan*)taskPools[taskType]->alloc[i];
+                elemTaskRunPlan = (TaskRunPlan*)taskPools[taskType]->alloc[i];
+                SDELETE(elemTaskRunPlan);
                 break;
 
             case TaskType::AllocLayer:
-                delete (TaskAllocLayer*)taskPools[taskType]->alloc[i];
+                elemTaskAllocLayer = (TaskAllocLayer*)taskPools[taskType]->alloc[i];
+                SDELETE(elemTaskAllocLayer);
                 break;
 
             default:
@@ -107,7 +131,7 @@ void Task::releaseTaskPool(TaskType taskType) {
         }
     }
     taskPools[taskType]->alloc.clear();
-    delete taskPools[taskType];
+    SDELETE(taskPools[taskType]);
 }
 
 void Task::destroy() {

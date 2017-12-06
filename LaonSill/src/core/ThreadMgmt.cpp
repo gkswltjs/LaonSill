@@ -27,7 +27,9 @@ int ThreadMgmt::init() {
         2;  /* network sender & receiver */
 
     for (int i = 0; i < ThreadMgmt::threadCount; i++) {
-        ThreadContext* tc = new ThreadContext();
+        ThreadContext* tc = NULL;
+        SNEW(tc, ThreadContext);
+        SASSERT0(tc != NULL);
         tc->threadID = i;
         atomic_store(&tc->event, 0UL);
         ThreadMgmt::contextArray.push_back(tc);
@@ -72,7 +74,7 @@ int ThreadMgmt::init() {
 void ThreadMgmt::destroy() {
     vector<ThreadContext*>::iterator iter = ThreadMgmt::contextArray.begin();
     for(; iter != ThreadMgmt::contextArray.end(); ++iter) {
-        delete (*iter);
+        SDELETE(*iter);
     }
 
     ThreadMgmt::contextArray.clear();
