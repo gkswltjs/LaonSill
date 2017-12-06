@@ -1066,27 +1066,6 @@ static void nms(std::vector<std::vector<float>>& proposals, std::vector<float>& 
 	const int boxes_num = proposals.size();
 	const int boxes_dim = proposals[0].size() + 1;
 
-	/*
-	float* dets = 0;
-	const std::string det_file = "/home/jkim/Dev/data/numpy_array/dets.npz";
-	cnpy::npz_t cnpy_det = cnpy::npz_load(det_file);
-
-	std::vector<int> shape;
-	for (cnpy::npz_t::iterator itr = cnpy_det.begin(); itr != cnpy_det.end(); itr++) {
-		cnpy::NpyArray npyArray = itr->second;
-
-		boxes_num = itr->second.shape[0];
-		boxes_dim = itr->second.shape[1];
-		int n = boxes_num * boxes_dim;
-		dets = new float[n];
-
-		float* srcPtr = (float*)npyArray.data;
-		for (int i = 0; i < n; i++) {
-			dets[i] = srcPtr[i];
-		}
-	}
-	*/
-
 	int num_out;
 	int _keep[boxes_num];
 	//float scores[boxes_num];

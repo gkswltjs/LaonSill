@@ -19,6 +19,7 @@
 #include "MockDataSet.h"
 #include "PropMgmt.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 #define ROIINPUTLAYER_LOG 0
 
@@ -34,7 +35,9 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 	cout << this->imdb->roidb.size() << " roidb entries ... " << endl;
 	// Train a Fast R-CNN network.
 	filterRoidb(this->imdb->roidb);
-	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, this->imdb->roidb.size(), 50, 1);
+	this->_dataSet = NULL;
+	SNEW(this->_dataSet, MockDataSet<Dtype>, 1, 1, 1, this->imdb->roidb.size(), 50, 1);
+	SASSUME0(this->_dataSet != NULL);
 
 	cout << "Computing bounding-box regression targets ... " << endl;
 	RoIDBUtil::addBboxRegressionTargets(imdb->roidb, this->bboxMeans, this->bboxStds);
@@ -59,7 +62,9 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 		for (uint32_t i = 0; i < numData; i++) {
 			proposalTargetDataList[i].resize(5);
 			for (uint32_t j = 0; j < 5; j++) {
-				Data<float>* data = new Data<float>("", true);
+				Data<float>* data = NULL;
+				SNEW(data, Data<float>, "", true);
+				SASSUME0(data != NULL);
 				data->load(ifs);
 				proposalTargetDataList[i][j] = data;
 			}
@@ -94,7 +99,7 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 
 template <typename Dtype>
 RoIInputLayer<Dtype>::~RoIInputLayer() {
-	delete imdb;
+	SDELETE(imdb);
 }
 
 
@@ -235,10 +240,11 @@ void RoIInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end
 
 template <typename Dtype>
 IMDB* RoIInputLayer<Dtype>::getImdb() {
-	//IMDB* imdb = new PascalVOC("trainval", "2007",
-	//		"/home/jkim/Dev/git/py-faster-rcnn/data/VOCdevkit2007",
-	IMDB* imdb = new PascalVOC(SLPROP(RoIInput, imageSet), SLPROP(RoIInput, dataName), SLPROP(RoIInput, dataPath),
-			SLPROP(RoIInput, labelMapPath), SLPROP(RoIInput, pixelMeans));
+	IMDB* imdb = NULL;
+	SNEW(imdb, PascalVOC, SLPROP(RoIInput, imageSet), SLPROP(RoIInput, dataName),
+			SLPROP(RoIInput, dataPath), SLPROP(RoIInput, labelMapPath),
+			SLPROP(RoIInput, pixelMeans));
+	SASSUME0(imdb != NULL);
 	imdb->loadGtRoidb();
 
 	return imdb;
@@ -428,24 +434,6 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 #endif
 	//SASSERT0(randomScaleInds.size() == 1);
 	//cout << "randomScaleInds: " << randomScaleInds[0] << endl;
-
-
-
-	/*
-	InputStat* ptr;
-	string key = roidb[0].image.substr(roidb[0].image.length()-10);
-	if (inputStatMap.find(key) != inputStatMap.end()) {
-		ptr = inputStatMap[key];
-	} else {
-		ptr = new InputStat();
-		inputStatMap[key] = ptr;
-	}
-	if (roidb[0].flipped) ptr->fcnt++;
-	else ptr->nfcnt++;
-	ptr->scaleCnt[randomScaleInds[0]]++;
-
-	return;
-	*/
 
 
 	SASSERT0(TRAIN_BATCH_SIZE % numImages == 0);
@@ -740,14 +728,16 @@ void RoIInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* RoIInputLayer<Dtype>::initLayer() {
-    RoIInputLayer* layer = new RoIInputLayer<Dtype>();
+	RoIInputLayer* layer = NULL;
+	SNEW(layer, RoIInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void RoIInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     RoIInputLayer<Dtype>* layer = (RoIInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

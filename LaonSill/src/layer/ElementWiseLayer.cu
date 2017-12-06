@@ -11,6 +11,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "Cuda.h"
+#include "MemoryMgmt.h"
 
 
 
@@ -201,14 +202,16 @@ void ElementWiseLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* ElementWiseLayer<Dtype>::initLayer() {
-    ElementWiseLayer* layer = new ElementWiseLayer<Dtype>();
+	ElementWiseLayer* layer = NULL;
+	SNEW(layer, ElementWiseLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void ElementWiseLayer<Dtype>::destroyLayer(void* instancePtr) {
     ElementWiseLayer<Dtype>* layer = (ElementWiseLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

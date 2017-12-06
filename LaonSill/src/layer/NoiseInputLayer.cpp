@@ -176,14 +176,16 @@ void NoiseInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* NoiseInputLayer<Dtype>::initLayer() {
-    NoiseInputLayer* layer = new NoiseInputLayer<Dtype>();
+	NoiseInputLayer* layer = NULL;
+	SNEW(layer, NoiseInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void NoiseInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     NoiseInputLayer<Dtype>* layer = (NoiseInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

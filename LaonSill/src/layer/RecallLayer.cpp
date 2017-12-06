@@ -14,6 +14,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "IO.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -154,7 +155,10 @@ void RecallLayer<Dtype>::save(const float score, const int batchIndex) {
 	cout << "path: " << path << endl;
 
 	const Dtype* src = this->_inputData[2]->host_data();
-	Dtype* dst = new Dtype[channels * height * width];
+	Dtype* dst = NULL;
+	SMALLOC(dst, Dtype, channels * height * width * sizeof(Dtype));
+	SASSUME0(dst != NULL);
+
 	int offset = this->_inputData[2]->offset(batchIndex);
 	ConvertCHWToHWC(channels, height, width, src + offset, dst);
 
@@ -167,7 +171,7 @@ void RecallLayer<Dtype>::save(const float score, const int batchIndex) {
 	cv::putText(cv_img, string(scoreBuf), cv::Point(0, height), 2, 0.5f, cv::Scalar(0, 0, 255));
 	cv::imwrite(path, cv_img);
 
-	delete dst;
+	SDELETE(dst);
 }
 
 
@@ -178,14 +182,16 @@ void RecallLayer<Dtype>::save(const float score, const int batchIndex) {
  ****************************************************************************/
 template<typename Dtype>
 void* RecallLayer<Dtype>::initLayer() {
-    RecallLayer* layer = new RecallLayer<Dtype>();
+	RecallLayer* layer = NULL;
+	SNEW(layer, RecallLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void RecallLayer<Dtype>::destroyLayer(void* instancePtr) {
     RecallLayer<Dtype>* layer = (RecallLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

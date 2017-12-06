@@ -9,6 +9,7 @@
 #include "PropMgmt.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -104,14 +105,16 @@ void ReluLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* ReluLayer<Dtype>::initLayer() {
-    ReluLayer* layer = new ReluLayer<Dtype>();
+	ReluLayer* layer = NULL;
+	SNEW(layer, ReluLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void ReluLayer<Dtype>::destroyLayer(void* instancePtr) {
     ReluLayer<Dtype>* layer = (ReluLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

@@ -94,14 +94,16 @@ void CustomInputLayer<Dtype>::reshape() {
  ****************************************************************************/
 template<typename Dtype>
 void* CustomInputLayer<Dtype>::initLayer() {
-    CustomInputLayer* layer = new CustomInputLayer<Dtype>();
+	CustomInputLayer* layer = NULL;
+	SNEW(layer, CustomInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void CustomInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     CustomInputLayer<Dtype>* layer = (CustomInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

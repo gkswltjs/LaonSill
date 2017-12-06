@@ -12,6 +12,7 @@
 #include "common.h"
 #include "AvgPooling.h"
 #include "MaxPooling.h"
+#include "MemoryMgmt.h"
 
 /**
  * @brief 주어진 풀링 타입에 따라 풀링 객체를 생성하여 반환
@@ -32,10 +33,20 @@ public:
 	 * @return 생성한 풀링 객체.
 	 */
 	static Pooling<Dtype>* create(PoolingType poolingType, pool_dim pool_d) {
+		//Pooling<Dtype>* ptr = NULL;
 		switch(poolingType) {
-		case PoolingType::Max: return new MaxPooling<Dtype>(pool_d);
-		case PoolingType::Avg: return new AvgPooling<Dtype>(pool_d);
-		default: return NULL;
+		case PoolingType::Max:
+			//SNEW(ptr, MaxPooling<Dtype>, pool_d);
+			//SASSUME0(ptr != NULL);
+			//return ptr;
+			return new MaxPooling<Dtype>(pool_d);
+		case PoolingType::Avg:
+			//SNEW(ptr, AvgPooling<Dtype>, pool_d);
+			//SASSUME0(ptr != NULL);
+			//return ptr;
+			return new AvgPooling<Dtype>(pool_d);
+		default:
+			return NULL;
 		}
 	}
 
@@ -45,7 +56,7 @@ public:
 	 */
 	static void destroy(Pooling<Dtype>*& pooling_fn) {
 		if(pooling_fn) {
-			delete pooling_fn;
+			SDELETE(pooling_fn);
 			pooling_fn = NULL;
 		}
 	}

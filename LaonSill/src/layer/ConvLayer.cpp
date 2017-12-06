@@ -11,6 +11,7 @@
 #include "Util.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -19,14 +20,16 @@ using namespace std;
  ****************************************************************************/
 template<typename Dtype>
 void* ConvLayer<Dtype>::initLayer() {
-    ConvLayer* layer = new ConvLayer<Dtype>();
+	ConvLayer* layer = NULL;
+	SNEW(layer, ConvLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void ConvLayer<Dtype>::destroyLayer(void* instancePtr) {
     ConvLayer<Dtype>* layer = (ConvLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

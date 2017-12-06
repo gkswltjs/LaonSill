@@ -12,6 +12,7 @@
 #include "FrcnnTestVideoOutputLayer.h"
 #include "BboxTransformUtil.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #define FRCNNTESTVIDEOOUTPUTLAYER_LOG 0
 
@@ -345,14 +346,16 @@ void FrcnnTestVideoOutputLayer<Dtype>::fillClsBoxes(vector<vector<Dtype>>& boxes
  ****************************************************************************/
 template<typename Dtype>
 void* FrcnnTestVideoOutputLayer<Dtype>::initLayer() {
-    FrcnnTestVideoOutputLayer* layer = new FrcnnTestVideoOutputLayer<Dtype>();
+	FrcnnTestVideoOutputLayer* layer = NULL;
+	SNEW(layer, FrcnnTestVideoOutputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void FrcnnTestVideoOutputLayer<Dtype>::destroyLayer(void* instancePtr) {
     FrcnnTestVideoOutputLayer<Dtype>* layer = (FrcnnTestVideoOutputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

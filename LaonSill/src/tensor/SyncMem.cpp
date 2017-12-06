@@ -59,7 +59,7 @@ SyncMem<Dtype>::SyncMem(SyncMem<Dtype>* syncMem)
 
 template <typename Dtype>
 SyncMem<Dtype>::~SyncMem() {
-	if(_host_mem) delete [] _host_mem;
+	if(_host_mem) SFREE(_host_mem);
 	if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
 
 	if(_d_int) checkCudaErrors(cudaFree(_d_int));
@@ -70,7 +70,7 @@ template <typename Dtype>
 void SyncMem<Dtype>::reshape(size_t size) {
 	// reshape가 현 상태의 할당된 메모리보다 더 큰 메모리를 요구하는 경우에만 재할당한다.
 	if (size > _reserved) {
-		if(_host_mem) delete [] _host_mem;
+		if(_host_mem) SFREE(_host_mem);
 		//if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
 		if (_device_mem) {
 			cudaError_t status = cudaFree(_device_mem);
@@ -83,8 +83,10 @@ void SyncMem<Dtype>::reshape(size_t size) {
 
 		_reserved = (size_t)(size*1.0f);
 		//_reserved = (size_t)(size);
-		_host_mem = new Dtype[_reserved];
-		memset(_host_mem, 0, sizeof(Dtype)*_reserved);
+		this->_host_mem = NULL;
+		SMALLOC(this->_host_mem, Dtype, this->_reserved * sizeof(Dtype));
+		SASSUME0(this->_host_mem != NULL);
+		memset(_host_mem, 0, sizeof(Dtype) * _reserved);
 
 		checkCudaErrors(Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved));
 		/*

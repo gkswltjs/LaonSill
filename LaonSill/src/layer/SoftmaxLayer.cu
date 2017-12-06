@@ -12,6 +12,7 @@
 //#include "ActivationFactory.h"
 #include "MathFunctions.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #if 1
 #define SOFTMAXLAYER_LOG 0
@@ -31,7 +32,9 @@ SoftmaxLayer<Dtype>::SoftmaxLayer(_SoftmaxPropLayer* prop)
 : Layer<Dtype>(), sumMultiplier("sumMultiplier"), scale("scale") {
 	this->type = Layer<Dtype>::Softmax;
 	if (prop) {
-		this->prop = new _SoftmaxPropLayer();
+		this->prop = NULL;
+		SNEW(this->prop, _SoftmaxPropLayer);
+		SASSUME0(this->prop != NULL);
 		*(this->prop) = *(prop);
 	} else {
 		this->prop = NULL;
@@ -372,14 +375,16 @@ void SoftmaxLayer<Dtype>::initialize() {
  ****************************************************************************/
 template<typename Dtype>
 void* SoftmaxLayer<Dtype>::initLayer() {
-    SoftmaxLayer* layer = new SoftmaxLayer<Dtype>();
+	SoftmaxLayer* layer = NULL;
+	SNEW(layer, SoftmaxLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void SoftmaxLayer<Dtype>::destroyLayer(void* instancePtr) {
     SoftmaxLayer<Dtype>* layer = (SoftmaxLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

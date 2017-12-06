@@ -14,6 +14,7 @@
 #include "frcnn_common.h"
 #include "PropMgmt.h"
 #include "StdOutLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -22,7 +23,6 @@ template <typename Dtype>
 RoITestLiveInputLayer<Dtype>::RoITestLiveInputLayer()
 : InputLayer<Dtype>() {
 	this->type = Layer<Dtype>::RoITestLiveInput;
-	//this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, numImages, 50, 1);
 
 	SASSERT(SNPROP(status) == NetworkStatus::Test,
 			"RoITestLiveInputLayer can be run only in Test Status");
@@ -167,14 +167,16 @@ int RoITestLiveInputLayer<Dtype>::getNumTrainData() {
  ****************************************************************************/
 template<typename Dtype>
 void* RoITestLiveInputLayer<Dtype>::initLayer() {
-    RoITestLiveInputLayer* layer = new RoITestLiveInputLayer<Dtype>();
+	RoITestLiveInputLayer* layer = NULL;
+	SNEW(layer, RoITestLiveInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void RoITestLiveInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     RoITestLiveInputLayer<Dtype>* layer = (RoITestLiveInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

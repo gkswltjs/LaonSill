@@ -346,14 +346,16 @@ void VOCPascalInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* VOCPascalInputLayer<Dtype>::initLayer() {
-    VOCPascalInputLayer* layer = new VOCPascalInputLayer<Dtype>();
+	VOCPascalInputLayer* layer = NULL;
+	SNEW(layer, VOCPascalInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void VOCPascalInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     VOCPascalInputLayer<Dtype>* layer = (VOCPascalInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

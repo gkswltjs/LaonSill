@@ -23,6 +23,10 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 	class_<VectorInt>("VectorInt")
 		.def(vector_indexing_suite<VectorInt>());
 
+	typedef vector<long> VectorLong;
+	class_<VectorLong>("VectorLong")
+		.def(vector_indexing_suite<VectorLong>());
+
 	typedef vector<float> VectorFloat;
 	class_<VectorFloat>("VectorFloat")
 		.def(vector_indexing_suite<VectorFloat>());
@@ -41,7 +45,7 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 		.def_readonly("label",		&Datum::label)
 		.def_readonly("encoded",	&Datum::encoded)
 		.def_readonly("float_data",	&Datum::float_data)
-		.def_readonly("data",		&Datum::data)
+		.def_readwrite("data",		&Datum::data)
 	;
 
 	enum_<AnnotationType>("AnnotationType")
@@ -93,7 +97,8 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 				return_value_policy<manage_new_object>())
 		.def("getHeader", 		&DataReaderDatum::getHeader,
 				return_value_policy<return_by_value>())
-		.def("selectDataSet", 	&DataReaderDatum::selectDataSetByName)
+		.def("selectDataSetByName", 	&DataReaderDatum::selectDataSetByName)
+		.def("selectDataSetByIndex", 	&DataReaderDatum::selectDataSetByIndex)
 	;
 
 	typedef DataReader<class AnnotatedDatum> DataReaderAnnoDatum;
@@ -105,7 +110,8 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 				return_value_policy<manage_new_object>())
 		.def("getHeader", 		&DataReaderAnnoDatum::getHeader,
 				return_value_policy<return_by_value>())
-		.def("selectDataSet",	&DataReaderAnnoDatum::selectDataSetByName)
+		.def("selectDataSetByName",	&DataReaderAnnoDatum::selectDataSetByName)
+		.def("selectDataSetByIndex",	&DataReaderAnnoDatum::selectDataSetByIndex)
 	;
 
 
@@ -164,7 +170,6 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 		.def("info", 						&ConvertAnnoSetParam::print)
 		.def_readwrite("annoType",			&ConvertAnnoSetParam::annoType)
 		.def_readwrite("labelType",			&ConvertAnnoSetParam::labelType)
-		.def_readwrite("labelMapFile",		&ConvertAnnoSetParam::labelMapFile)
 		.def_readwrite("checkLabel",		&ConvertAnnoSetParam::checkLabel)
 		.def_readwrite("minDim",			&ConvertAnnoSetParam::minDim)
 		.def_readwrite("maxDim",			&ConvertAnnoSetParam::maxDim)
@@ -181,10 +186,10 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 
 	class_<LabelItem>("LabelItem")
 		.def("info", 					&LabelItem::print)
-		.def_readonly("name", 			&LabelItem::name)
-		.def_readonly("label",			&LabelItem::label)
-		.def_readonly("displayName",	&LabelItem::displayName)
-		.def_readonly("color", 			&LabelItem::color)
+		.def_readwrite("name", 			&LabelItem::name)
+		.def_readwrite("label",			&LabelItem::label)
+		.def_readwrite("displayName",	&LabelItem::displayName)
+		.def_readwrite("color", 			&LabelItem::color)
 	;
 	typedef vector<LabelItem> VectorLabelItem;
 	class_<VectorLabelItem>("VectorLabelItem")
@@ -192,11 +197,11 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 
 	class_<SDFHeader>("SDFHeader")
 		.def("info", 					&SDFHeader::print)
-		.def_readonly("numSets", 		&SDFHeader::numSets)
-		.def_readonly("names",			&SDFHeader::names)
-		.def_readonly("setSizes",		&SDFHeader::setSizes)
-		.def_readonly("setStartPos",	&SDFHeader::setStartPos)
-		.def_readonly("labelItemList",	&SDFHeader::labelItemList)
+		.def_readwrite("numSets", 		&SDFHeader::numSets)
+		.def_readwrite("names",			&SDFHeader::names)
+		.def_readwrite("setSizes",		&SDFHeader::setSizes)
+		.def_readwrite("setStartPos",	&SDFHeader::setStartPos)
+		.def_readwrite("labelItemList",	&SDFHeader::labelItemList)
 	;
 
 

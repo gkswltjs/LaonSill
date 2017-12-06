@@ -13,6 +13,7 @@
 
 #include "common.h"
 #include "Util.h"
+#include "MemoryMgmt.h"
 
 /**
  * @brief 복사할 SRC와 DEST를 지정하는 열거형
@@ -145,8 +146,10 @@ public:
 		SyncMem<Dtype>::outstream = outstream;
 	}
 	static void setOutstream(std::string outfile) {
-		SyncMem<Dtype>::outstream = new std::ofstream(outfile.c_str(),
-            std::ios::out | std::ios::binary);
+		SyncMem<Dtype>::outstream = NULL;
+		SNEW(SyncMem<Dtype>::outstream, std::ofstream, outfile.c_str(),
+	            std::ios::out | std::ios::binary);
+		SASSUME0(SyncMem<Dtype>::outstream != NULL);
 	}
 
 private:

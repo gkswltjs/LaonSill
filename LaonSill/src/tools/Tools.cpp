@@ -15,6 +15,7 @@
 #include "ParamManipulator.h"
 #include "DataReader.h"
 #include "Datum.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 namespace fs = ::boost::filesystem;
@@ -270,7 +271,9 @@ void convertMnistData(ConvertMnistDataParam& param) {
 
 		// Storing to db
 		char label;
-		char* pixels = new char[rows * cols];
+		char* pixels = NULL;
+		SNEW(pixels, char, rows * cols * sizeof(char));
+		SASSUME0(pixels != NULL);
 		int count = 0;
 		string value;
 
@@ -701,7 +704,7 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 	const string& FLAGS_encode_type = param.encodeType;
 	const string& FLAGS_anno_type = param.annoType;
 	const string& FLAGS_label_type = param.labelType;
-	const string& FLAGS_label_map_file = param.labelMapFile;
+	const string& FLAGS_label_map_file = param.labelMapFilePath;
 	bool FLAGS_check_label = param.checkLabel;
 	int FLAGS_min_dim = param.minDim;
 	int FLAGS_max_dim = param.maxDim;

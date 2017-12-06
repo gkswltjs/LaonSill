@@ -11,6 +11,7 @@
 #include "Cuda.h"
 #include "MathFunctions.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #define ROIPOOLINGLAYER_LOG 0
 
@@ -263,14 +264,16 @@ void RoIPoolingLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* RoIPoolingLayer<Dtype>::initLayer() {
-    RoIPoolingLayer* layer = new RoIPoolingLayer<Dtype>();
+	RoIPoolingLayer* layer = NULL;
+	SNEW(layer, RoIPoolingLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void RoIPoolingLayer<Dtype>::destroyLayer(void* instancePtr) {
     RoIPoolingLayer<Dtype>* layer = (RoIPoolingLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

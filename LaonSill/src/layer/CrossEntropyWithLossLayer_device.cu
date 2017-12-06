@@ -13,6 +13,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #define CROSSENTROPYWITHLOSSLAYER_LOG   0
 
@@ -309,14 +310,16 @@ void CrossEntropyWithLossLayer<Dtype>::setTargetValue(Dtype value) {
  ****************************************************************************/
 template<typename Dtype>
 void* CrossEntropyWithLossLayer<Dtype>::initLayer() {
-    CrossEntropyWithLossLayer* layer = new CrossEntropyWithLossLayer<Dtype>();
+	CrossEntropyWithLossLayer* layer = NULL;
+	SNEW(layer, CrossEntropyWithLossLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void CrossEntropyWithLossLayer<Dtype>::destroyLayer(void* instancePtr) {
     CrossEntropyWithLossLayer<Dtype>* layer = (CrossEntropyWithLossLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

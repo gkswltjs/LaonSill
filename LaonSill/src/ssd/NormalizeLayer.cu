@@ -12,6 +12,7 @@
 #include "PropMgmt.h"
 #include "Donator.h"
 #include "Updater.h"
+#include "MemoryMgmt.h"
 
 #define NORMALIZELAYER_LOG	0
 
@@ -72,9 +73,18 @@ NormalizeLayer<Dtype>::NormalizeLayer()
 	this->_params.resize(1);
 	this->_paramsHistory.resize(1);
 	this->_paramsHistory2.resize(1);
-	this->_params[0] = new Data<Dtype>(SLPROP_BASE(name) + "_scale");
-	this->_paramsHistory[0] = new Data<Dtype>(SLPROP_BASE(name) + "_scale_history");
-	this->_paramsHistory2[0] = new Data<Dtype>(SLPROP_BASE(name) + "_scale_history2");
+
+	this->_params[0] = NULL;
+	SNEW(this->_params[0], Data<Dtype>, SLPROP_BASE(name) + "_scale");
+	SASSUME0(this->_params[0] != NULL);
+
+	this->_paramsHistory[0] = NULL;
+	SNEW(this->_paramsHistory[0], Data<Dtype>, SLPROP_BASE(name) + "_scale_history");
+	SASSUME0(this->_paramsHistory[0] != NULL);
+
+	this->_paramsHistory2[0] = NULL;
+	SNEW(this->_paramsHistory2[0], Data<Dtype>, SLPROP_BASE(name) + "_scale_history2");
+	SASSUME0(this->_paramsHistory2[0] != NULL);
 
 	this->_paramsInitialized.resize(1);
 	this->_paramsInitialized[0] = false;
@@ -475,14 +485,16 @@ void NormalizeLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
  ****************************************************************************/
 template<typename Dtype>
 void* NormalizeLayer<Dtype>::initLayer() {
-    NormalizeLayer* layer = new NormalizeLayer<Dtype>();
+	NormalizeLayer* layer = NULL;
+	SNEW(layer, NormalizeLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void NormalizeLayer<Dtype>::destroyLayer(void* instancePtr) {
     NormalizeLayer<Dtype>* layer = (NormalizeLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

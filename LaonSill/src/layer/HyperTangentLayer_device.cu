@@ -15,6 +15,7 @@
 #include "ColdLog.h"
 #include "Perf.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #define HYPERTANGENT_LOG   0
 
@@ -106,14 +107,16 @@ void HyperTangentLayer<Dtype>::reshape() {
  ****************************************************************************/
 template<typename Dtype>
 void* HyperTangentLayer<Dtype>::initLayer() {
-    HyperTangentLayer* layer = new HyperTangentLayer<Dtype>();
+	HyperTangentLayer* layer = NULL;
+	SNEW(layer, HyperTangentLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void HyperTangentLayer<Dtype>::destroyLayer(void* instancePtr) {
     HyperTangentLayer<Dtype>* layer = (HyperTangentLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

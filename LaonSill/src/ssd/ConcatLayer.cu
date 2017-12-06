@@ -8,6 +8,7 @@
 #include "ConcatLayer.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -172,14 +173,16 @@ void ConcatLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* ConcatLayer<Dtype>::initLayer() {
-    ConcatLayer* layer = new ConcatLayer<Dtype>();
+	ConcatLayer* layer = NULL;
+	SNEW(layer, ConcatLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void ConcatLayer<Dtype>::destroyLayer(void* instancePtr) {
     ConcatLayer<Dtype>* layer = (ConcatLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

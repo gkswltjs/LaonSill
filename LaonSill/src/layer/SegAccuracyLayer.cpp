@@ -10,6 +10,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "MathFunctions.h"
+#include "MemoryMgmt.h"
 
 
 using namespace std;
@@ -153,14 +154,16 @@ void SegAccuracyLayer<Dtype>::() {
  ****************************************************************************/
 template<typename Dtype>
 void* SegAccuracyLayer<Dtype>::initLayer() {
-    SegAccuracyLayer* layer = new SegAccuracyLayer<Dtype>();
+	SegAccuracyLayer* layer = NULL;
+	SNEW(layer, SegAccuracyLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void SegAccuracyLayer<Dtype>::destroyLayer(void* instancePtr) {
     SegAccuracyLayer<Dtype>* layer = (SegAccuracyLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

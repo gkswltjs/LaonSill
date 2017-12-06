@@ -14,6 +14,7 @@
 #include "frcnn_common.h"
 #include "Network.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 
 #define PROPOSALLAYER_LOG 0
@@ -119,7 +120,9 @@ void ProposalLayer<Dtype>::feedforward() {
 	this->_printOff();
 #endif
 
-	Data<Dtype>* bboxDeltas = new Data<Dtype>("bboxDeltas");
+	Data<Dtype>* bboxDeltas = NULL;
+	SNEW(bboxDeltas, Data<Dtype>, "bboxDeltas");
+	SASSUME0(bboxDeltas != NULL);
 	bboxDeltas->reshapeLike(this->_inputData[1]);
 	bboxDeltas->set_host_data(this->_inputData[1]);
 	Data<Dtype>* imInfo = this->_inputData[2]->range({0, 0, 0, 0}, {-1, -1, 1, -1});
@@ -213,7 +216,7 @@ void ProposalLayer<Dtype>::feedforward() {
 	scoresData->reshapeInfer({1, 1, 1, -1});
 	vector<float> scores;
 	fill1dVecWithData(scoresData, scores);
-	delete scoresData;
+	SDELETE(scoresData);
 
 #if PROPOSALLAYER_LOG
 	this->_printOn();
@@ -223,7 +226,7 @@ void ProposalLayer<Dtype>::feedforward() {
 	// Convert anchors into proposals via bbox transformations
 	vector<vector<Dtype>> proposals;
 	BboxTransformUtil::bboxTransformInv(anchors, bboxDeltas, proposals);
-	delete bboxDeltas;
+	SDELETE(bboxDeltas);
 
 #if PROPOSALLAYER_LOG
 	printArray("scores", scores);
@@ -326,7 +329,7 @@ void ProposalLayer<Dtype>::feedforward() {
 	if (this->_outputData.size() > 1) {
 		assert(this->_outputData.size() == 1);
 	}
-	delete imInfo;
+	SDELETE(imInfo);
 
 
 	/*
@@ -395,14 +398,16 @@ void ProposalLayer<Dtype>::_filterBoxes(std::vector<std::vector<float>>& boxes,
  ****************************************************************************/
 template<typename Dtype>
 void* ProposalLayer<Dtype>::initLayer() {
-    ProposalLayer* layer = new ProposalLayer<Dtype>();
+	ProposalLayer* layer = NULL;
+	SNEW(layer, ProposalLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void ProposalLayer<Dtype>::destroyLayer(void* instancePtr) {
     ProposalLayer<Dtype>* layer = (ProposalLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

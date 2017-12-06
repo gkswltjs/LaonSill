@@ -8,6 +8,7 @@
 #include "SilenceLayer.h"
 #include "MathFunctions.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 template <typename Dtype>
 SilenceLayer<Dtype>::SilenceLayer()
@@ -45,14 +46,16 @@ void SilenceLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* SilenceLayer<Dtype>::initLayer() {
-    SilenceLayer* layer = new SilenceLayer<Dtype>();
+	SilenceLayer* layer = NULL;
+	SNEW(layer, SilenceLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void SilenceLayer<Dtype>::destroyLayer(void* instancePtr) {
     SilenceLayer<Dtype>* layer = (SilenceLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

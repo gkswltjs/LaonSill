@@ -9,6 +9,7 @@
 #include "SysLog.h"
 #include "PropMgmt.h"
 #include "StdOutLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -169,14 +170,16 @@ Dtype AccuracyLayer<Dtype>::measure() {
  ****************************************************************************/
 template<typename Dtype>
 void* AccuracyLayer<Dtype>::initLayer() {
-    AccuracyLayer* layer = new AccuracyLayer<Dtype>();
+	AccuracyLayer* layer = NULL;
+	SNEW(layer, AccuracyLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void AccuracyLayer<Dtype>::destroyLayer(void* instancePtr) {
     AccuracyLayer<Dtype>* layer = (AccuracyLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

@@ -9,6 +9,7 @@
 #include "DropOutLayer.h"
 #include "PropMgmt.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -16,7 +17,10 @@ template <typename Dtype>
 DropOutLayer<Dtype>::DropOutLayer() : Layer<Dtype>() {
 	this->type = Layer<Dtype>::DropOut;
 
-    shared_ptr<SyncMem<Dtype>> tempMask(new SyncMem<Dtype>());
+	SyncMem<Dtype>* ptr = NULL;
+	SNEW(ptr, SyncMem<Dtype>);
+	SASSUME0(ptr != NULL);
+    shared_ptr<SyncMem<Dtype>> tempMask(ptr);
     this->mask = tempMask;
 }
 
@@ -60,14 +64,16 @@ void DropOutLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* DropOutLayer<Dtype>::initLayer() {
-    DropOutLayer* layer = new DropOutLayer<Dtype>();
+	DropOutLayer* layer = NULL;
+	SNEW(layer, DropOutLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void DropOutLayer<Dtype>::destroyLayer(void* instancePtr) {
     DropOutLayer<Dtype>* layer = (DropOutLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

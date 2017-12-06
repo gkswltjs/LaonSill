@@ -263,14 +263,16 @@ void CelebAInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* CelebAInputLayer<Dtype>::initLayer() {
-    CelebAInputLayer* layer = new CelebAInputLayer<Dtype>();
+	CelebAInputLayer* layer = NULL;
+	SNEW(layer, CelebAInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void CelebAInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     CelebAInputLayer<Dtype>* layer = (CelebAInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

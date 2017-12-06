@@ -11,6 +11,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #define DETECTIONEVALUATIONLAYER_LOG 1
 
@@ -413,14 +414,16 @@ Dtype DetectionEvaluateLayer<Dtype>::measure() {
  ****************************************************************************/
 template<typename Dtype>
 void* DetectionEvaluateLayer<Dtype>::initLayer() {
-    DetectionEvaluateLayer* layer = new DetectionEvaluateLayer<Dtype>();
+	DetectionEvaluateLayer* layer = NULL;
+	SNEW(layer, DetectionEvaluateLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void DetectionEvaluateLayer<Dtype>::destroyLayer(void* instancePtr) {
     DetectionEvaluateLayer<Dtype>* layer = (DetectionEvaluateLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

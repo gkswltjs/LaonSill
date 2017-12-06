@@ -15,6 +15,7 @@
 #include "ColdLog.h"
 #include "Perf.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #define SIGMOID2LAYER_LOG   1
 
@@ -105,14 +106,16 @@ void Sigmoid2Layer<Dtype>::reshape() {
  ****************************************************************************/
 template<typename Dtype>
 void* Sigmoid2Layer<Dtype>::initLayer() {
-    Sigmoid2Layer* layer = new Sigmoid2Layer<Dtype>();
+	Sigmoid2Layer* layer = NULL;
+	SNEW(layer, Sigmoid2Layer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void Sigmoid2Layer<Dtype>::destroyLayer(void* instancePtr) {
     Sigmoid2Layer<Dtype>* layer = (Sigmoid2Layer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>
