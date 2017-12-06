@@ -15,6 +15,8 @@
 
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
+#include "SysLog.h"
+#include "MemoryMgmt.h"
 
 //#include "caffe/common.hpp"
 
@@ -46,7 +48,10 @@ public:
 	// Getters for boost rng
 	inline static RNG& rng_stream() {
 		if (!Get().random_generator_) {
-			Get().random_generator_.reset(new RNG());
+			RNG* rng = NULL;
+			SNEW(rng, RNG);
+			SASSUME0(rng != NULL);
+			Get().random_generator_.reset(rng);
 		}
 		return *(Get().random_generator_);
 	}

@@ -12,6 +12,7 @@
 #include "BboxTransformUtil.h"
 #include "PropMgmt.h"
 #include "StdOutLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -164,14 +165,16 @@ void FrcnnTestLiveOutputLayer<Dtype>::fillClsBoxes(vector<vector<Dtype>>& boxes,
  ****************************************************************************/
 template<typename Dtype>
 void* FrcnnTestLiveOutputLayer<Dtype>::initLayer() {
-    FrcnnTestLiveOutputLayer* layer = new FrcnnTestLiveOutputLayer<Dtype>();
+	FrcnnTestLiveOutputLayer* layer = NULL;
+	SNEW(layer, FrcnnTestLiveOutputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void FrcnnTestLiveOutputLayer<Dtype>::destroyLayer(void* instancePtr) {
     FrcnnTestLiveOutputLayer<Dtype>* layer = (FrcnnTestLiveOutputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

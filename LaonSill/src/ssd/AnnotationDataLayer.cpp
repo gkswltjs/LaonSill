@@ -9,6 +9,7 @@
 #include "tinyxml2/tinyxml2.h"
 #include "StdOutLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -533,14 +534,16 @@ void AnnotationDataLayer<Dtype>::printArray(Dtype* array, int n) {
  ****************************************************************************/
 template<typename Dtype>
 void* AnnotationDataLayer<Dtype>::initLayer() {
-    AnnotationDataLayer<Dtype>* layer = new AnnotationDataLayer<Dtype>();
+	AnnotationDataLayer* layer = NULL;
+	SNEW(layer, AnnotationDataLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void AnnotationDataLayer<Dtype>::destroyLayer(void* instancePtr) {
     AnnotationDataLayer<Dtype>* layer = (AnnotationDataLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

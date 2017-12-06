@@ -16,6 +16,7 @@
 #include "WorkContext.h"
 #include "Param.h"
 #include "Perf.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -196,7 +197,7 @@ void DataInputLayer<Dtype>::load_batch() {
 			output_label[item_id] = datum->label;
 		}
 
-		delete datum;
+		SDELETE(datum);
 
 
 		/*
@@ -248,7 +249,9 @@ void DataInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* DataInputLayer<Dtype>::initLayer() {
-    DataInputLayer* layer = new DataInputLayer<Dtype>();
+	DataInputLayer* layer = NULL;
+	SNEW(layer, DataInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
 
     if ((WorkContext::curBootMode == BootMode::ServerClientMode) &&
         SPARAM(USE_INPUT_DATA_PROVIDER)) {
@@ -264,7 +267,7 @@ void* DataInputLayer<Dtype>::initLayer() {
 template<typename Dtype>
 void DataInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     DataInputLayer<Dtype>* layer = (DataInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

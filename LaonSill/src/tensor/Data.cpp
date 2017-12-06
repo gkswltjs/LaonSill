@@ -12,6 +12,7 @@
 #include "Cuda.h"
 #include "Data.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 //#define DATA_LOG
 using namespace std;
@@ -34,8 +35,15 @@ Data<Dtype>::Data(const string& name, const bool hostOnly) {
 	this->_count = 0;
 	this->_hostOnly = hostOnly;
 
-	shared_ptr<SyncMem<Dtype>> temp_data(new SyncMem<Dtype>());
-	shared_ptr<SyncMem<Dtype>> temp_grad(new SyncMem<Dtype>());
+	SyncMem<Dtype>* ptr1 = NULL;
+	SNEW(ptr1, SyncMem<Dtype>);
+	SASSUME0(ptr1 != NULL);
+	shared_ptr<SyncMem<Dtype>> temp_data(ptr1);
+
+	SyncMem<Dtype>* ptr2 = NULL;
+	SNEW(ptr2, SyncMem<Dtype>);
+	SASSUME0(ptr2 != NULL);
+	shared_ptr<SyncMem<Dtype>> temp_grad(ptr2);
 
 	this->_data = temp_data;
 	this->_grad = temp_grad;
@@ -59,12 +67,18 @@ Data<Dtype>::Data(const string& name, Data<Dtype>* data, uint32_t type, const bo
 	// type 0: data share, grad 별도
 	if (type == 0) {
 		this->_data = data->_data;
-		shared_ptr<SyncMem<Dtype>> temp_grad(new SyncMem<Dtype>());
+		SyncMem<Dtype>* ptr = NULL;
+		SNEW(ptr, SyncMem<Dtype>);
+		SASSUME0(ptr != NULL);
+		shared_ptr<SyncMem<Dtype>> temp_grad(ptr);
 		this->_grad = temp_grad;
 	}
 	// type 1: data 별도, grad share
 	else if(type == 1) {
-		shared_ptr<SyncMem<Dtype>> temp_data(new SyncMem<Dtype>());
+		SyncMem<Dtype>* ptr = NULL;
+		SNEW(ptr, SyncMem<Dtype>);
+		SASSUME0(ptr != NULL);
+		shared_ptr<SyncMem<Dtype>> temp_data(ptr);
 		this->_data = temp_data;
 		this->_grad = data->_grad;
 	}
@@ -613,7 +627,9 @@ Data<Dtype>* Data<Dtype>::range(const vector<int>& startIndex,
 		SASSERT0(fEndIndex[i] > fStartIndex[i]);
 	}
 
-	Data<Dtype>* result = new Data<Dtype>("result");
+	Data<Dtype>* result = NULL;
+	SNEW(result, Data<Dtype>, "result");
+	SASSUME0(result != NULL);
 	result->reshape({fEndIndex[0]-fStartIndex[0], fEndIndex[1]-fStartIndex[1],
 		fEndIndex[2]-fStartIndex[2], fEndIndex[3]-fStartIndex[3]});
 
@@ -643,51 +659,12 @@ Data<Dtype>* Data<Dtype>::range(const vector<int>& startIndex,
 	return result;
 }
 
-/*
-template <typename Dtype>
-void Data<Dtype>::transpose(const vector<uint32_t>& t) {
-
-	Data<Dtype>* temp = new Data<Dtype>("temp");
-	temp->reshape({_shape[t[0]], _shape[t[1]], _shape[t[2]], _shape[t[3]]});
-
-	const uint32_t s0Size = getCountByAxis(1);
-	const uint32_t s1Size = getCountByAxis(2);
-	const uint32_t s2Size = getCountByAxis(3);
-
-	const uint32_t d0Size = temp->getCountByAxis(1);
-	const uint32_t d1Size = temp->getCountByAxis(2);
-	const uint32_t d2Size = temp->getCountByAxis(3);
-
-	uint32_t sIndex[4];
-	uint32_t& d0Index = sIndex[t[0]];
-	uint32_t& d1Index = sIndex[t[1]];
-	uint32_t& d2Index = sIndex[t[2]];
-	uint32_t& d3Index = sIndex[t[3]];
-
-	const Dtype* srcData = mutable_host_data();
-	Dtype* dstData = temp->mutable_host_data();
-
-	for (sIndex[0] = 0; sIndex[0] < _shape[0]; sIndex[0]++) {
-		for (sIndex[1] = 0; sIndex[1] < _shape[1]; sIndex[1]++) {
-			for (sIndex[2] = 0; sIndex[2] < _shape[2]; sIndex[2]++) {
-				for (sIndex[3] = 0; sIndex[3] < _shape[3]; sIndex[3]++) {
-					dstData[d0Index*d0Size + d1Index*d1Size + d2Index*d2Size + d3Index] =
-						srcData[sIndex[0]*s0Size + sIndex[1]*s1Size +
-                                sIndex[2]*s2Size + sIndex[3]];
-				}
-			}
-		}
-	}
-	set_host_data(temp);
-	delete temp;
-
-	this->_shape = {d0Index, d1Index, d2Index, d3Index};
-}
-*/
 
 template <typename Dtype>
 void Data<Dtype>::transpose(const vector<uint32_t>& t) {
-	Data<Dtype>* temp = new Data<Dtype>("temp");
+	Data<Dtype>* temp = NULL;
+	SNEW(temp, Data<Dtype>, "temp");
+	SASSUME0(temp != NULL);
 	temp->reshape({_shape[t[0]], _shape[t[1]], _shape[t[2]], _shape[t[3]]});
 
 	const uint32_t s0Size = this->getCountByAxis(1);
@@ -719,7 +696,7 @@ void Data<Dtype>::transpose(const vector<uint32_t>& t) {
 		}
 	}
 	set_host_data(temp);
-	delete temp;
+	SDELETE(temp);
 
 	this->_shape = {d0Index, d1Index, d2Index, d3Index};
 }

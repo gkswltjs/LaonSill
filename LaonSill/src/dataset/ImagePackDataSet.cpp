@@ -14,6 +14,8 @@
 #include "UByteImage.h"
 #include "Util.h"
 #include "ImagePackDataSet.h"
+#include "SysLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -48,21 +50,23 @@ ImagePackDataSet<Dtype>::ImagePackDataSet(
 	this->threadArg.context = this;
 	this->loading = false;
 
-	this->trainFileIndices = new vector<uint32_t>(numTrainFile);
+	this->trainFileIndices = NULL;
+	SNEW(this->trainFileIndices, vector<uint32_t>, numTrainFile);
+	SASSUME0(this->trainFileIndices != NULL);
 	iota(this->trainFileIndices->begin(), this->trainFileIndices->end(), 0);
 }
 
 template <typename Dtype>
 ImagePackDataSet<Dtype>::~ImagePackDataSet() {
-	if(bufDataSet) delete bufDataSet;
-	if(bufLabelSet) delete bufLabelSet;
-	if(frontTrainDataSet) delete frontTrainDataSet;
-	if(frontTrainLabelSet) delete frontTrainLabelSet;
-	if(backTrainDataSet) delete backTrainDataSet;
-	if(backTrainLabelSet) delete backTrainLabelSet;
-	if(secondTrainDataSet) delete secondTrainDataSet;
-	if(secondTrainLabelSet) delete secondTrainLabelSet;
-	if(trainFileIndices) delete trainFileIndices;
+	if(bufDataSet) SDELETE(bufDataSet);
+	if(bufLabelSet) SDELETE(bufLabelSet);
+	if(frontTrainDataSet) SDELETE(frontTrainDataSet);
+	if(frontTrainLabelSet) SDELETE(frontTrainLabelSet);
+	if(backTrainDataSet) SDELETE(backTrainDataSet);
+	if(backTrainLabelSet) SDELETE(backTrainLabelSet);
+	if(secondTrainDataSet) SDELETE(secondTrainDataSet);
+	if(secondTrainLabelSet) SDELETE(secondTrainLabelSet);
+	if(trainFileIndices) SDELETE(trainFileIndices);
 }
 
 
@@ -331,7 +335,7 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(string resources[2],
 	if(size > 0) stop = min(dataSize, offset+size);
 
 	//int dataArea = dataNumRows*  dataNumCols;
-	if(dataSet) delete dataSet;
+	if(dataSet) SDELETE(dataSet);
 	dataSet = new DataSample[stop-offset];
 
 	for(int i = offset; i < stop; i++) {
@@ -417,13 +421,31 @@ int ImagePackDataSet<Dtype>::loadDataSetFromResource(
 
 	// Read images and labels (if requested)
 	size_t dataSetSize = ((size_t)image_header.length)*this->dataSize;
-	if(!dataSet) dataSet = new vector<Dtype>(dataSetSize);
-	if(!bufDataSet) bufDataSet = new vector<uint8_t>(dataSetSize);
-	if(!labelSet) labelSet = new vector<Dtype>(label_header.length);
-	if(!bufLabelSet) bufLabelSet = new vector<uint32_t>(label_header.length);
+	if(!dataSet) {
+		dataSet = NULL;
+		SNEW(dataSet, vector<Dtype>, dataSetSize);
+		SASSUME0(dataSet != NULL);
+	}
+	if(!bufDataSet) {
+		this->bufDataSet = NULL;
+		SNEW(this->bufDataSet, vector<uint8_t>, dataSetSize);
+		SASSUME0(this->bufDataSet != NULL);
+	}
+	if(!labelSet) {
+		labelSet = NULL;
+		SNEW(labelSet, vector<Dtype>, label_header.length);
+		SASSUME0(labelSet != NULL);
+	}
+	if(!this->bufLabelSet) {
+		this->bufLabelSet = NULL;
+		SNEW(this->bufLabelSet, vector<uint32_t>, label_header.length);
+		SASSUME0(this->bufLabelSet != NULL);
+	}
 
 	if(!setIndices) {
-		setIndices = new vector<uint32_t>(label_header.length);
+		setIndices = NULL;
+		SNEW(setIndices, vector<uint32_t>, label_header.length);
+		SASSUME0(setIndices != NULL);
 		iota(setIndices->begin(), setIndices->end(), 0);
 	}
 

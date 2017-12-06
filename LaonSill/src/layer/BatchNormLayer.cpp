@@ -11,6 +11,7 @@
 #include "SysLog.h"
 #include "ColdLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -27,42 +28,81 @@ BatchNormLayer<Dtype>::BatchNormLayer() : LearnableLayer<Dtype>() {
 	this->_paramsInitialized[ParamType::GlobalCount] = false;
 
 	this->_params.resize(5);
-	this->_params[ParamType::Gamma] = new Data<Dtype>(SLPROP_BASE(name) + "_gamma");
-	this->_params[ParamType::Beta] = new Data<Dtype>(SLPROP_BASE(name) + "_beta");
-	this->_params[ParamType::GlobalMean] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_global_mean");
-	this->_params[ParamType::GlobalVar] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_global_var");
-	this->_params[ParamType::GlobalCount] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_global_count");
+	this->_params[ParamType::Gamma] = NULL;
+	SNEW(this->_params[ParamType::Gamma], Data<Dtype>, SLPROP_BASE(name) + "_gamma");
+	SASSUME0(this->_params[ParamType::Gamma] != NULL);
+
+	this->_params[ParamType::Beta] = NULL;
+	SNEW(this->_params[ParamType::Beta], Data<Dtype>, SLPROP_BASE(name) + "_beta");
+	SASSUME0(this->_params[ParamType::Beta] != NULL);
+
+	this->_params[ParamType::GlobalMean] = NULL;
+	SNEW(this->_params[ParamType::GlobalMean], Data<Dtype>, SLPROP_BASE(name) + "_global_mean");
+	SASSUME0(this->_params[ParamType::GlobalMean] != NULL);
+
+	this->_params[ParamType::GlobalVar] = NULL;
+	SNEW(this->_params[ParamType::GlobalVar], Data<Dtype>, SLPROP_BASE(name) + "_global_var");
+	SASSUME0(this->_params[ParamType::GlobalVar] != NULL);
+
+	this->_params[ParamType::GlobalCount] = NULL;
+	SNEW(this->_params[ParamType::GlobalCount], Data<Dtype>, SLPROP_BASE(name) + "_global_count");
+	SASSUME0(this->_params[ParamType::GlobalCount] != NULL);
+
 
 	this->_paramsHistory.resize(5);
-	this->_paramsHistory[ParamType::Gamma] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_gamma_history");
-	this->_paramsHistory[ParamType::Beta] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_beta_history");
-	this->_paramsHistory[ParamType::GlobalMean] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_global_mean_history");
-	this->_paramsHistory[ParamType::GlobalVar] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_global_var_history");
-	this->_paramsHistory[ParamType::GlobalCount] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_global_count_history");
+	this->_paramsHistory[ParamType::Gamma] = NULL;
+	SNEW(this->_paramsHistory[ParamType::Gamma], Data<Dtype>, SLPROP_BASE(name) + "_gamma_history");
+	SASSUME0(this->_paramsHistory[ParamType::Gamma] != NULL);
+
+	this->_paramsHistory[ParamType::Beta] = NULL;
+	SNEW(this->_paramsHistory[ParamType::Beta], Data<Dtype>, SLPROP_BASE(name) + "_beta_history");
+	SASSUME0(this->_paramsHistory[ParamType::Beta] != NULL);
+
+	this->_paramsHistory[ParamType::GlobalMean] = NULL;
+	SNEW(this->_paramsHistory[ParamType::GlobalMean], Data<Dtype>, SLPROP_BASE(name) + "_global_mean_history");
+	SASSUME0(this->_paramsHistory[ParamType::GlobalMean] != NULL);
+
+	this->_paramsHistory[ParamType::GlobalVar] = NULL;
+	SNEW(this->_paramsHistory[ParamType::GlobalVar], Data<Dtype>, SLPROP_BASE(name) + "_global_var_history");
+	SASSUME0(this->_paramsHistory[ParamType::GlobalVar] != NULL);
+
+	this->_paramsHistory[ParamType::GlobalCount] = NULL;
+	SNEW(this->_paramsHistory[ParamType::GlobalCount], Data<Dtype>, SLPROP_BASE(name) + "_global_count_history");
+	SASSUME0(this->_paramsHistory[ParamType::GlobalCount] != NULL);
+
 
 	this->_paramsHistory2.resize(5);
-	this->_paramsHistory2[ParamType::Gamma] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_gamma_history2");
-	this->_paramsHistory2[ParamType::Beta] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_beta_history2");
-	this->_paramsHistory2[ParamType::GlobalMean] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_global_mean_history2");
-	this->_paramsHistory2[ParamType::GlobalVar] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_global_var_history2");
-	this->_paramsHistory2[ParamType::GlobalCount] =
-        new Data<Dtype>(SLPROP_BASE(name) + "_global_count_history2");
+	this->_paramsHistory2[ParamType::Gamma] = NULL;
+	SNEW(this->_paramsHistory2[ParamType::Gamma], Data<Dtype>, SLPROP_BASE(name) + "_gamma_history2");
+	SASSUME0(this->_paramsHistory2[ParamType::Gamma] != NULL);
 
-    this->meanSet               = new Data<Dtype>(SLPROP_BASE(name) + "_mean");
-    this->varSet                = new Data<Dtype>(SLPROP_BASE(name) + "_variance");
-    this->normInputSet          = new Data<Dtype>(SLPROP_BASE(name) + "_normalizedInput");
+	this->_paramsHistory2[ParamType::Beta] = NULL;
+	SNEW(this->_paramsHistory2[ParamType::Beta], Data<Dtype>, SLPROP_BASE(name) + "_beta_history2");
+	SASSUME0(this->_paramsHistory2[ParamType::Beta] != NULL);
+
+	this->_paramsHistory2[ParamType::GlobalMean] = NULL;
+	SNEW(this->_paramsHistory2[ParamType::GlobalMean], Data<Dtype>, SLPROP_BASE(name) + "_global_mean_history2");
+	SASSUME0(this->_paramsHistory2[ParamType::GlobalMean] != NULL);
+
+	this->_paramsHistory2[ParamType::GlobalVar] = NULL;
+	SNEW(this->_paramsHistory2[ParamType::GlobalVar], Data<Dtype>, SLPROP_BASE(name) + "_global_var_history2");
+	SASSUME0(this->_paramsHistory2[ParamType::GlobalVar] != NULL);
+
+	this->_paramsHistory2[ParamType::GlobalCount] = NULL;
+	SNEW(this->_paramsHistory2[ParamType::GlobalCount], Data<Dtype>, SLPROP_BASE(name) + "_global_count_history2");
+	SASSUME0(this->_paramsHistory2[ParamType::GlobalCount] != NULL);
+
+	this->meanSet = NULL;
+	SNEW(this->meanSet, Data<Dtype>, SLPROP_BASE(name) + "_mean");
+	SASSUME0(this->meanSet != NULL);
+
+	this->varSet = NULL;
+	SNEW(this->varSet, Data<Dtype>, SLPROP_BASE(name) + "_variance");
+	SASSUME0(this->varSet != NULL);
+
+	this->normInputSet = NULL;
+	SNEW(this->normInputSet, Data<Dtype>, SLPROP_BASE(name) + "_normalizedInput");
+	SASSUME0(this->normInputSet != NULL);
 }
 
 template<typename Dtype>
@@ -75,14 +115,16 @@ void BatchNormLayer<Dtype>::setTrain(bool train) {
  ****************************************************************************/
 template<typename Dtype>
 void* BatchNormLayer<Dtype>::initLayer() {
-    BatchNormLayer* layer = new BatchNormLayer<Dtype>();
+	BatchNormLayer* layer = NULL;
+	SNEW(layer, BatchNormLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void BatchNormLayer<Dtype>::destroyLayer(void* instancePtr) {
     BatchNormLayer<Dtype>* layer = (BatchNormLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

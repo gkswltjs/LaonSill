@@ -16,6 +16,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "IO.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -227,14 +228,16 @@ void ImageSegDataLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* ImageSegDataLayer<Dtype>::initLayer() {
-    ImageSegDataLayer* layer = new ImageSegDataLayer<Dtype>();
+	ImageSegDataLayer* layer = NULL;
+	SNEW(layer, ImageSegDataLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void ImageSegDataLayer<Dtype>::destroyLayer(void* instancePtr) {
     ImageSegDataLayer<Dtype>* layer = (ImageSegDataLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

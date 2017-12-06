@@ -16,6 +16,7 @@
 #include "EnumDef.h"
 #include "InnerLayerFunc.h"
 #include "PlanParser.h"
+#include "MemoryMgmt.h"
 
 #define MULTIBOXLOSSLAYER_LOG 0
 
@@ -57,85 +58,7 @@ MultiBoxLossLayer<Dtype>::MultiBoxLossLayer()
 				"Currently only support negative mining if shareLocation is true.");
 	}
 
-#if 0
-	InnerLayerFunc::initLayer(0);
-	InnerLayerFunc::initLayer(1);
 
-	// 일단 constructor에서 test
-	// 현 시점에서 input/output data가 레이어에 설정되지 않았다면 reshape에서 1번만 실행하도록.
-	// -> 일단 input/output data를 ref하지 않긴한데...
-	// inner layer 자체적으로 input/output data가 아직 지정되지 않았을 수 있음.
-	InnerLayerFunc::setInOutTensor(0, (void*)&this->locPred, true, 0);
-	InnerLayerFunc::setInOutTensor(0, (void*)&this->locGt, true, 1);
-	InnerLayerFunc::setInOutTensor(0, (void*)&this->locLoss, false, 0);
-
-	InnerLayerFunc::setInOutTensor(1, (void*)&this->confPred, true, 0);
-	InnerLayerFunc::setInOutTensor(1, (void*)&this->confGt, true, 1);
-	InnerLayerFunc::setInOutTensor(1, (void*)&this->confLoss, false, 0);
-#endif
-
-#if 0
-	vector<uint32_t> lossShape(4, 1);
-	// Set up localization loss layer
-
-	// fake shape
-	vector<uint32_t> locShape(4, 1);
-	locShape[3] = 4;
-	this->locPred.reshape(locShape);
-	this->locGt.reshape(locShape);
-	this->locInputVec.push_back(&this->locPred);
-	this->locInputVec.push_back(&this->locGt);
-
-	this->locLoss.reshape(lossShape);
-	this->locOutputVec.push_back(&this->locLoss);
-
-	if (SLPROP(MultiBoxLoss, locLossType) == LocLossType::SMOOTH_L1) {
-		/*
-		SmoothL1LossLayer<float>::Builder* smoothL1LossLayerBuilder =
-				new typename SmoothL1LossLayer<float>::Builder();
-		smoothL1LossLayerBuilder
-			->id(0)
-			->name(this->name + "_smooth_L1_loc")
-			->lossWeight(SLPROP(MultiBoxLoss, locWeight));
-		this->locLossLayer = smoothL1LossLayerBuilder->build();
-		*/
-	} else {
-		SASSERT(false, "Unknown localization loss type.");
-	}
-
-	setLayerData(this->locLossLayer, "input", this->locInputVec);
-	setLayerData(this->locLossLayer, "output", this->locOutputVec);
-
-	// Set up confidence loss layer.
-	this->confInputVec.push_back(&this->confPred);
-	this->confInputVec.push_back(&this->confGt);
-	this->confLoss.reshape(lossShape);
-	this->confOutputVec.push_back(&this->confLoss);
-
-	if (SLPROP(MultiBoxLoss, confLossType) == ConfLossType::SOFTMAX) {
-
-		/*
-		SASSERT(SLPROP(MultiBoxLoss, backgroundLabelId) >= 0,
-				"backgroundLabelId should be within [0, numClasses) for Softmax.");
-		SASSERT(SLPROP(MultiBoxLoss, backgroundLabelId) < numClasses,
-				"backgroundLabelId should be within [0, numClasses) for Softmax.");
-
-		SoftmaxWithLossLayer<float>::Builder* softmaxWithLossLayerBuilder =
-				new typename SoftmaxWithLossLayer<float>::Builder();
-		softmaxWithLossLayerBuilder
-			->id(0)
-			->name(this->name + "_softmax_conf")
-			->lossWeight(Dtype(1.))
-			->normalization(LossLayer<float>::NormalizationMode::NoNormalization)
-			->softmaxAxis(3);
-		this->confLossLayer = softmaxWithLossLayerBuilder->build();
-		*/
-	} else {
-		SASSERT(false, "Unknown confidence loss type.");
-	}
-	setLayerData(this->confLossLayer, "input", this->confInputVec);
-	setLayerData(this->confLossLayer, "output", this->confOutputVec);
-#endif
 
 	const LocLossType locLossType = SLPROP(MultiBoxLoss, locLossType);
 	this->locLossLayer = buildLocLossLayer(locLossType);
@@ -701,7 +624,9 @@ Layer<Dtype>* MultiBoxLossLayer<Dtype>::buildLocLossLayer(const LocLossType locL
 		cout << smoothl1lossDef.str() << endl;
 
 
-		_SmoothL1LossPropLayer* prop = new _SmoothL1LossPropLayer();
+		_SmoothL1LossPropLayer* prop = NULL;
+		SNEW(prop, _SmoothL1LossPropLayer);
+		SASSUME0(prop != NULL);
 		Json::Reader reader;
 		Json::Value layer;
 		reader.parse(smoothl1lossDef, layer);
@@ -717,8 +642,10 @@ Layer<Dtype>* MultiBoxLossLayer<Dtype>::buildLocLossLayer(const LocLossType locL
 
 			PlanParser::setPropValue(val, true, layerType, key,  (void*)prop);
 		}
-		locLossLayer = new SmoothL1LossLayer<Dtype>(prop);
-		delete prop;
+		locLossLayer = NULL;
+		SNEW(locLossLayer, SmoothL1LossLayer<Dtype>, prop);
+		SASSUME0(locLossLayer != NULL);
+		SDELETE(prop);
 	}
 		break;
 	default:
@@ -774,7 +701,9 @@ Layer<Dtype>* MultiBoxLossLayer<Dtype>::buildConfLossLayer(const ConfLossType co
 
 		cout << softmaxWithLossDef.str() << endl;
 
-		_SoftmaxWithLossPropLayer* prop = new _SoftmaxWithLossPropLayer();
+		_SoftmaxWithLossPropLayer* prop = NULL;
+		SNEW(prop, _SoftmaxWithLossPropLayer);
+		SASSUME0(prop != NULL);
 		Json::Reader reader;
 		Json::Value layer;
 		reader.parse(softmaxWithLossDef, layer);
@@ -796,20 +725,10 @@ Layer<Dtype>* MultiBoxLossLayer<Dtype>::buildConfLossLayer(const ConfLossType co
 			cout << "propDown=" << prop->_propDown_[i] << endl;
 		}
 
-
-		confLossLayer = new SoftmaxWithLossLayer<Dtype>(prop);
-		delete prop;
-		/*
-		SoftmaxWithLossLayer<float>::Builder* softmaxWithLossLayerBuilder =
-				new typename SoftmaxWithLossLayer<float>::Builder();
-		softmaxWithLossLayerBuilder
-			->id(0)
-			->name(this->name + "_softmax_conf")
-			->lossWeight(Dtype(1.))
-			->normalization(LossLayer<float>::NormalizationMode::NoNormalization)
-			->softmaxAxis(3);
-		this->confLossLayer = softmaxWithLossLayerBuilder->build();
-		*/
+		confLossLayer = NULL;
+		SNEW(confLossLayer, SoftmaxWithLossLayer<Dtype>, prop);
+		SASSUME0(confLossLayer != NULL);
+		SDELETE(prop);
 	}
 		break;
 	default:
@@ -837,14 +756,16 @@ Layer<Dtype>* MultiBoxLossLayer<Dtype>::buildConfLossLayer(const ConfLossType co
  ****************************************************************************/
 template<typename Dtype>
 void* MultiBoxLossLayer<Dtype>::initLayer() {
-    MultiBoxLossLayer* layer = new MultiBoxLossLayer<Dtype>();
+	MultiBoxLossLayer* layer = NULL;
+	SNEW(layer, MultiBoxLossLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void MultiBoxLossLayer<Dtype>::destroyLayer(void* instancePtr) {
     MultiBoxLossLayer<Dtype>* layer = (MultiBoxLossLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

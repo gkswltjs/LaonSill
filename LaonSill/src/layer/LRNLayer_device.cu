@@ -8,6 +8,7 @@
 #include "LRNLayer.h"
 #include "PropMgmt.h"
 #include "Util.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -79,14 +80,16 @@ template void LRNLayer<float>::backpropagation();
  ****************************************************************************/
 template<typename Dtype>
 void* LRNLayer<Dtype>::initLayer() {
-    LRNLayer* layer = new LRNLayer<Dtype>();
+	LRNLayer* layer = NULL;
+	SNEW(layer, LRNLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void LRNLayer<Dtype>::destroyLayer(void* instancePtr) {
     LRNLayer<Dtype>* layer = (LRNLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

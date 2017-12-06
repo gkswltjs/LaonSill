@@ -143,7 +143,7 @@ public:
 	ConvertAnnoSetParam() {
 		this->annoType = "detection";
 		this->labelType = "xml";
-		this->labelMapFile = "";
+		//this->labelMapFile = "";
 		this->checkLabel = true;
 		this->minDim = 0;
 		this->maxDim = 0;
@@ -154,14 +154,13 @@ public:
 
 		std::cout << "annoType: " 		<< this->annoType << std::endl;
 		std::cout << "labelType: "		<< this->labelType << std::endl;
-		std::cout << "labelMapFile: "	<< this->labelMapFile << std::endl;
+		//std::cout << "labelMapFile: "	<< this->labelMapFile << std::endl;
 		std::cout << "checkLabel: "		<< this->checkLabel << std::endl;
 		std::cout << "minDim: "			<< this->minDim << std::endl;
 		std::cout << "maxDim: " 		<< this->maxDim << std::endl;
 	}
 	std::string annoType;
 	std::string labelType;
-	std::string labelMapFile;
 	bool checkLabel;
 	int minDim;
 	int maxDim;

@@ -12,6 +12,7 @@
 #include "WorkContext.h"
 #include "Param.h"
 #include "Perf.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -206,7 +207,7 @@ void MultiLabelDataInputLayer<Dtype>::load_batch() {
 			}
 		}
 
-		delete datum;
+		SDELETE(datum);
 	}
 }
 
@@ -238,7 +239,9 @@ void MultiLabelDataInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* MultiLabelDataInputLayer<Dtype>::initLayer() {
-    MultiLabelDataInputLayer* layer = new MultiLabelDataInputLayer<Dtype>();
+	MultiLabelDataInputLayer* layer = NULL;
+	SNEW(layer, MultiLabelDataInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
 
     if ((WorkContext::curBootMode == BootMode::ServerClientMode) &&
 		SPARAM(USE_INPUT_DATA_PROVIDER)) {
@@ -254,7 +257,7 @@ void* MultiLabelDataInputLayer<Dtype>::initLayer() {
 template<typename Dtype>
 void MultiLabelDataInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     MultiLabelDataInputLayer<Dtype>* layer = (MultiLabelDataInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

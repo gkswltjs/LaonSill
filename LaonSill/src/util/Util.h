@@ -17,6 +17,8 @@
 
 #include "Cuda.h"
 #include "common.h"
+#include "SysLog.h"
+#include "MemoryMgmt.h"
 
 #define C_MEM(cb, r, c, s) cb.mem[r + c*cb.n_rows + s*cb.n_elem_slice]
 #define C_MEMPTR(cb, r, c, s) cb.memptr()[r + c*cb.n_rows + s*cb.n_elem_slice]
@@ -45,7 +47,7 @@ public:
 	static void clearVector(std::vector<T*>& vec) {
 		const uint32_t vecSize = vec.size();
 		for(uint32_t i = 0; i < vecSize; i++) {
-			delete vec[i];
+			SDELETE(vec[i]);
 		}
 		vec.clear();
 	}
@@ -149,8 +151,10 @@ public:
 	 * @param outfile 로그를 출력할 파일 경로
 	 */
 	static void setOutstream(std::string outfile) {
-		Util::outstream = new std::ofstream(outfile.c_str(), 
-                                            std::ios::out | std::ios::binary);
+		Util::outstream = NULL;
+		SNEW(Util::outstream, std::ofstream, outfile.c_str(),
+                std::ios::out | std::ios::binary);
+		SASSUME0(Util::outstream != NULL);
 	}
 
 #ifndef GPU_MODE

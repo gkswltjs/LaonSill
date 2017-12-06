@@ -9,6 +9,7 @@
 #include "SysLog.h"
 #include "MathFunctions.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -292,14 +293,16 @@ void PriorBoxLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* PriorBoxLayer<Dtype>::initLayer() {
-    PriorBoxLayer* layer = new PriorBoxLayer<Dtype>();
+	PriorBoxLayer* layer = NULL;
+	SNEW(layer, PriorBoxLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void PriorBoxLayer<Dtype>::destroyLayer(void* instancePtr) {
     PriorBoxLayer<Dtype>* layer = (PriorBoxLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

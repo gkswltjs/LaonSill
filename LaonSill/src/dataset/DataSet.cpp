@@ -6,6 +6,8 @@
  */
 
 #include "DataSet.h"
+#include "MemoryMgmt.h"
+#include "SysLog.h"
 
 using namespace std;
 
@@ -38,34 +40,46 @@ DataSet<Dtype>::DataSet(uint32_t rows, uint32_t cols, uint32_t channels,
 	this->numTrainData = numTrainData;
 	this->numTestData = numTestData;
 
-	trainDataSet = new vector<Dtype>(this->dataSize*numTrainData);
-	trainLabelSet = new vector<Dtype>(numTrainData);
-	trainSetIndices = new vector<uint32_t>(numTrainData);
+	this->trainDataSet = NULL;
+	SNEW(this->trainDataSet, vector<Dtype>, this->dataSize * numTrainData);
+	SASSUME0(this->trainDataSet != NULL);
+
+	this->trainLabelSet = NULL;
+	SNEW(this->trainLabelSet, vector<Dtype>, numTrainData);
+	SASSUME0(this->trainLabelSet != NULL);
+
+	this->trainSetIndices = NULL;
+	SNEW(this->trainSetIndices, vector<uint32_t>, numTrainData);
+	SASSUME0(this->trainSetIndices != NULL);
 	iota(trainSetIndices->begin(), trainSetIndices->end(), 0);
 
-	testDataSet = new vector<Dtype>(this->dataSize*numTestData);
-	testLabelSet = new vector<Dtype>(numTestData);
-	testSetIndices = new vector<uint32_t>(numTestData);
-	iota(testSetIndices->begin(), testSetIndices->end(), 0);
+	this->testDataSet = NULL;
+	SNEW(this->testDataSet, vector<Dtype>, this->dataSize * numTestData);
+	SASSUME0(this->testDataSet != NULL);
 
-	//mean[0] = 0;
-	//mean[1] = 0;
-	//mean[2] = 0;
+	this->testLabelSet = NULL;
+	SNEW(this->testLabelSet, vector<Dtype>, numTestData);
+	SASSUME0(this->testLabelSet != NULL);
+
+	this->testSetIndices = NULL;
+	SNEW(this->testSetIndices, vector<uint32_t>, numTestData);
+	SASSUME0(this->testSetIndices != NULL);
+	iota(testSetIndices->begin(), testSetIndices->end(), 0);
 }
 
 template <typename Dtype>
 DataSet<Dtype>::~DataSet() {
-	if(trainDataSet) delete trainDataSet;
-	if(trainLabelSet) delete trainLabelSet;
-	if(trainSetIndices) delete trainSetIndices;
+	if(trainDataSet) SDELETE(trainDataSet);
+	if(trainLabelSet) SDELETE(trainLabelSet);
+	if(trainSetIndices) SDELETE(trainSetIndices);
 
-	if(validationDataSet) delete validationDataSet;
-	if(validationLabelSet) delete validationLabelSet;
-	if(validationSetIndices) delete validationSetIndices;
+	if(validationDataSet) SDELETE(validationDataSet);
+	if(validationLabelSet) SDELETE(validationLabelSet);
+	if(validationSetIndices) SDELETE(validationSetIndices);
 
-	if(testDataSet) delete testDataSet;
-	if(testLabelSet) delete testLabelSet;
-	if(testSetIndices) delete testSetIndices;
+	if(testDataSet) SDELETE(testDataSet);
+	if(testLabelSet) SDELETE(testLabelSet);
+	if(testSetIndices) SDELETE(testSetIndices);
 }
 
 /*

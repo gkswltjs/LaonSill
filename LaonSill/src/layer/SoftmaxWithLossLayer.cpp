@@ -13,6 +13,7 @@
 #include "SysLog.h"
 #include "PropMgmt.h"
 #include "PlanParser.h"
+#include "MemoryMgmt.h"
 
 #define SOFTMAXWITHLOSSLAYER_LOG 0
 
@@ -29,7 +30,9 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(_SoftmaxWithLossPropLayer* pro
   prob("prob") {
 	this->type = Layer<Dtype>::SoftmaxWithLoss;
 	if (prop) {
-		this->prop = new _SoftmaxWithLossPropLayer();
+		this->prop = NULL;
+		SNEW(this->prop, _SoftmaxWithLossPropLayer);
+		SASSUME0(this->prop != NULL);
 		*(this->prop) = *(prop);
 	} else {
 		this->prop = NULL;
@@ -55,7 +58,9 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(_SoftmaxWithLossPropLayer* pro
 	softmaxDef << "\t\"softmaxAxis\" : " << softmaxAxis << "\n";
 	softmaxDef << "}\n";
 
-	_SoftmaxPropLayer* innerProp = new _SoftmaxPropLayer();
+	_SoftmaxPropLayer* innerProp = NULL;
+	SNEW(innerProp, _SoftmaxPropLayer);
+	SASSUME0(innerProp != NULL);
 
 	Json::Reader reader;
 	Json::Value layer;
@@ -72,9 +77,11 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(_SoftmaxWithLossPropLayer* pro
 
 		PlanParser::setPropValue(val, true, layerType, key,  (void*)innerProp);
 	}
-	this->softmaxLayer = new SoftmaxLayer<Dtype>(innerProp);
+	this->softmaxLayer = NULL;
+	SNEW(this->softmaxLayer, SoftmaxLayer<Dtype>, innerProp);
+	SASSUME0(this->softmaxLayer != NULL);
 
-	delete innerProp;
+	SDELETE(innerProp);
 #if 0
 #endif
 
@@ -173,14 +180,16 @@ Dtype SoftmaxWithLossLayer<Dtype>::cost() {
  ****************************************************************************/
 template<typename Dtype>
 void* SoftmaxWithLossLayer<Dtype>::initLayer() {
-    SoftmaxWithLossLayer* layer = new SoftmaxWithLossLayer<Dtype>();
+	SoftmaxWithLossLayer* layer = NULL;
+	SNEW(layer, SoftmaxWithLossLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::destroyLayer(void* instancePtr) {
     SoftmaxWithLossLayer<Dtype>* layer = (SoftmaxWithLossLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

@@ -17,6 +17,7 @@
 #include "MockDataSet.h"
 #include "PropMgmt.h"
 #include "StdOutLog.h"
+#include "MemoryMgmt.h"
 
 
 #define ROITESTINPUTLAYER_LOG 0
@@ -33,7 +34,9 @@ RoITestInputLayer<Dtype>::RoITestInputLayer()
 
 	this->imdb = getImdb("voc_2007_test");
 	const uint32_t numImages = imdb->imageIndex.size();
-	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, numImages, 50, 1);
+	this->_dataSet = NULL;
+	SNEW(this->_dataSet, MockDataSet<Dtype>, 1, 1, 1, numImages, 50, 1);
+	SASSUME0(this->_dataSet != NULL);
 
 	this->perm.resize(numImages);
 	iota(this->perm.begin(), this->perm.end(), 0);
@@ -68,7 +71,7 @@ RoITestInputLayer<Dtype>::RoITestInputLayer()
 
 template <typename Dtype>
 RoITestInputLayer<Dtype>::~RoITestInputLayer() {
-	delete imdb;
+	SDELETE(imdb);
 }
 
 
@@ -162,14 +165,11 @@ IMDB* RoITestInputLayer<Dtype>::getRoidb(const string& imdb_name) {
 
 template <typename Dtype>
 IMDB* RoITestInputLayer<Dtype>::getImdb(const string& imdb_name) {
-	IMDB* imdb = new PascalVOC(SLPROP(RoITestInput, imageSet), SLPROP(RoITestInput, dataName),
+	IMDB* imdb = NULL;
+	SNEW(imdb, PascalVOC, SLPROP(RoITestInput, imageSet), SLPROP(RoITestInput, dataName),
 			SLPROP(RoITestInput, dataPath), SLPROP(RoITestInput, labelMapPath),
 			SLPROP(RoITestInput, pixelMeans));
-
-	//"pt", "2007",
-	//"/home/jkim/Dev/git/py-faster-rcnn-v/data/VOCdevkit2007",
-	//SLPROP(RoITestInput, pixelMeans));
-	//imdb->loadGtRoidb();
+	SASSUME0(imdb != NULL);
 
 	return imdb;
 }
@@ -360,14 +360,16 @@ void RoITestInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* RoITestInputLayer<Dtype>::initLayer() {
-    RoITestInputLayer* layer = new RoITestInputLayer<Dtype>();
+	RoITestInputLayer* layer = NULL;
+	SNEW(layer, RoITestInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void RoITestInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     RoITestInputLayer<Dtype>* layer = (RoITestInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

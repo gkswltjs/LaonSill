@@ -316,14 +316,16 @@ void ILSVRCInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* ILSVRCInputLayer<Dtype>::initLayer() {
-    ILSVRCInputLayer* layer = new ILSVRCInputLayer<Dtype>();
+	ILSVRCInputLayer* layer = NULL;
+	SNEW(layer, ILSVRCInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     ILSVRCInputLayer<Dtype>* layer = (ILSVRCInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

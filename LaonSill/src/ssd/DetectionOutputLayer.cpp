@@ -14,6 +14,7 @@
 #include "StdOutLog.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 using namespace boost::property_tree;
@@ -381,8 +382,10 @@ void DetectionOutputLayer<Dtype>::feedforward() {
 						boost::filesystem::path file(
 								SLPROP(DetectionOutput, saveOutputParam).outputNamePrefix + labelName + ".txt");
 						boost::filesystem::path outfile = outputDirectory / file;
-						outfiles[labelName] = new std::ofstream(outfile.string().c_str(),
+						outfiles[labelName] = NULL;
+						SNEW(outfiles[labelName], std::ofstream, outfile.string().c_str(),
 								std::ofstream::out);
+						SASSUME0(outfiles[labelName] != NULL);
 					}
 					BOOST_FOREACH(ptree::value_type& det, this->detections.get_child("")) {
 						ptree pt = det.second;
@@ -411,7 +414,7 @@ void DetectionOutputLayer<Dtype>::feedforward() {
 						string labelName = this->labelToName[c];
 						outfiles[labelName]->flush();
 						outfiles[labelName]->close();
-						delete outfiles[labelName];
+						SDELETE(outfiles[labelName]);
 					}
 				} else if (SLPROP(DetectionOutput, saveOutputParam).outputFormat == "COCO") {
 					SASSERT(false, "COCO is not supported");
@@ -443,281 +446,6 @@ void DetectionOutputLayer<Dtype>::feedforward() {
 #endif
 	}
 }
-
-/*
-template <typename Dtype>
-void DetectionOutputLayer<Dtype>::feedforward() {
-	reshape();
-
-	const Dtype* locData = this->_inputData[0]->host_data();
-	const Dtype* confData = this->_inputData[1]->host_data();
-	const Dtype* priorData = this->_inputData[2]->host_data();
-	const int num = this->_inputData[0]->batches();
-
-	// Retrieve all location predictions.
-	vector<LabelBBox> allLocPreds;
-	GetLocPredictions(locData, num, this->numPriors, this->numLocClasses, SLPROP(DetectionOutput, shareLocation),
-			&allLocPreds);
-
-	// Retrieve all confidences.
-	vector<map<int, vector<float>>> allConfScores;
-	GetConfidenceScores(confData, num, this->numPriors, SLPROP(DetectionOutput, numClasses), &allConfScores);
-
-	// Retrieve all prioro bboxes. It is same within a batch since we assume all
-	// images in a batch are of same dimension.
-	vector<NormalizedBBox> priorBBoxes;
-	vector<vector<float>> priorVariances;
-	GetPriorBBoxes(priorData, this->numPriors, &priorBBoxes, &priorVariances);
-
-	// Decode all loc predictions to bboxes.
-	vector<LabelBBox> allDecodeBBoxes;
-	const bool clipBBox = false;
-	DecodeBBoxesAll(allLocPreds, priorBBoxes, priorVariances, num,
-			SLPROP(DetectionOutput, shareLocation), this->numLocClasses, SLPROP(DetectionOutput, backgroundLabelId),
-			SLPROP(DetectionOutput, codeType), SLPROP(DetectionOutput, varianceEncodedInTarget),
-			clipBBox, &allDecodeBBoxes);
-
-	int numKept = 0;
-	vector<map<int, vector<int>>> allIndices;
-	for (int i = 0; i < num; i++) {
-		const LabelBBox& decodeBBoxes = allDecodeBBoxes[i];
-		const map<int, vector<float>>& confScores = allConfScores[i];
-		map<int, vector<int>> indices;
-		int numDet = 0;
-		for (int c = 0; c < SLPROP(DetectionOutput, numClasses); c++) {
-			if (c == SLPROP(DetectionOutput, backgroundLabelId)) {
-				// Ignore background class.
-				continue;
-			}
-			if (confScores.find(c) == confScores.end()) {
-				// Something bad happend if there are no predictions for current label.
-				STDOUT_LOG("Could not find confidence predictions for label %d.", c);
-			}
-			const vector<float>& scores = confScores.find(c)->second;
-			int label = SLPROP(DetectionOutput, shareLocation) ? -1 : c;
-			if (decodeBBoxes.find(label) == decodeBBoxes.end()) {
-				// Something bad happend if there are no predictions for current label.
-				STDOUT_LOG("Could not find location predictions for label %d.", c);
-				continue;
-			}
-			const vector<NormalizedBBox>& bboxes = decodeBBoxes.find(label)->second;
-			ApplyNMSFast(bboxes, scores, SLPROP(DetectionOutput, confidenceThreshold), SLPROP(DetectionOutput, nmsParam).nmsThreshold,
-					SLPROP(DetectionOutput, nmsParam).eta, SLPROP(DetectionOutput, nmsParam).topK, &(indices[c]));
-			numDet += indices[c].size();
-		}
-		if (SLPROP(DetectionOutput, keepTopK) > -1 && numDet > SLPROP(DetectionOutput, keepTopK)) {
-			vector<pair<float, pair<int, int>>> scoreIndexPairs;
-			for (map<int, vector<int>>::iterator it = indices.begin();
-					it != indices.end(); it++) {
-				int label = it->first;
-				const vector<int>& labelIndices = it->second;
-				if (confScores.find(label) == confScores.end()) {
-					// Something bad happend for current label.
-					STDOUT_LOG("Could not find location predictions for %d.", label);
-					continue;
-				}
-				const vector<float>& scores = confScores.find(label)->second;
-				for (int j = 0; j < labelIndices.size(); j++) {
-					int idx = labelIndices[j];
-					SASSERT0(idx < scores.size());
-					scoreIndexPairs.push_back(
-							std::make_pair(scores[idx], std::make_pair(label, idx)));
-				}
-			}
-			// Keep top k results per image.
-			std::sort(scoreIndexPairs.begin(), scoreIndexPairs.end(),
-					SortScorePairDescend<pair<int, int>>);
-			scoreIndexPairs.resize(SLPROP(DetectionOutput, keepTopK));
-			// Store the new indices.
-			map<int, vector<int>> newIndices;
-			for (int j = 0; j < scoreIndexPairs.size(); j++) {
-				int label = scoreIndexPairs[j].second.first;
-				int idx = scoreIndexPairs[j].second.second;
-				newIndices[label].push_back(idx);
-			}
-			allIndices.push_back(newIndices);
-			numKept += keepTopK;
-		} else {
-			allIndices.push_back(indices);
-			numKept += numDet;
-		}
-	}
-
-	vector<uint32_t> outputShape(4, 1);
-	outputShape[2] = numKept;
-	outputShape[3] = 7;
-	Dtype* outputData;
-	if (numKept == 0) {
-		STDOUT_LOG("Couldn't find any detections.");
-		outputShape[2] = num;
-		this->_outputData[0]->reshape(outputShape);
-		outputData = this->_outputData[0]->mutable_host_data();
-		soooa_set<Dtype>(this->_outputData[0]->getCount(), -1, outputData);
-		// Generate fake results per image.
-		for (int i = 0; i < num; i++) {
-			outputData[0] = i;
-			outputData += 7;
-		}
-	} else {
-		this->_outputData[0]->reshape(outputShape);
-		outputData = this->_outputData[0]->mutable_host_data();
-	}
-
-	int count = 0;
-	boost::filesystem::path outputDirectory(SLPROP(DetectionOutput, saveOutputParam).outputDirectory);
-	for (int i = 0; i < num; i++) {
-		const map<int, vector<float>>& confScores = allConfScores[i];
-		const LabelBBox& decodeBBoxes = allDecodeBBoxes[i];
-		for (map<int, vector<int>>::iterator it = allIndices[i].begin();
-				it != allIndices[i].end(); it++) {
-
-			int label = it->first;
-			if (confScores.find(label) == confScores.end()) {
-				// Something bad happend if there are no predictions for current label.
-				STDOUT_LOG("Could not find confidence predictions for %d", label);
-				continue;
-			}
-			const vector<float>& scores = confScores.find(label)->second;
-			int locLabel = SLPROP(DetectionOutput, shareLocation) ? - 1 : label;
-			if (decodeBBoxes.find(locLabel) == decodeBBoxes.end()) {
-				// Something bad happend if there are no predictions for current label.
-				STDOUT_LOG("Could not find location predictions for %d", label);
-				continue;
-			}
-			const vector<NormalizedBBox>& bboxes = decodeBBoxes.find(locLabel)->second;
-			vector<int>& indices = it->second;
-			if (this->needSave) {
-				SASSERT(this->labelToName.find(label) != this->labelToName.end(),
-						"Cannot find label: %d in the label map.", label);
-				SASSERT0(this->nameCount < this->names.size());
-			}
-			for (int j = 0; j < indices.size(); j++) {
-				int idx = indices[j];
-				outputData[count * 7] = i;
-				outputData[count * 7 + 1] = label;
-				outputData[count * 7 + 2] = scores[idx];
-				const NormalizedBBox& bbox = bboxes[idx];
-				outputData[count * 7 + 3] = bbox.xmin;
-				outputData[count * 7 + 4] = bbox.ymin;
-				outputData[count * 7 + 5] = bbox.xmax;
-				outputData[count * 7 + 6] = bbox.ymax;
-
-				if (this->needSave) {
-					NormalizedBBox outBBox;
-					OutputBBox(bbox, this->sizes[this->nameCount], false, &outBBox);
-					float score = outputData[count * 7 + 2];
-					float xmin = outBBox.xmin;
-					float ymin = outBBox.ymin;
-					float xmax = outBBox.xmax;
-					float ymax = outBBox.ymax;
-
-					ptree ptXmin;
-					ptree ptYmin;
-					ptree ptWidth;
-					ptree ptHeight;
-					ptXmin.put<float>("", round(xmin * 100) / 100.);
-					ptYmin.put<float>("", round(ymin * 100) / 100.);
-					ptWidth.put<float>("", round((xmax - xmin) * 100) / 100.);
-					ptHeight.put<float>("", round((ymax - ymin) * 100) / 100.);
-
-					ptree curBBox;
-					curBBox.push_back(std::make_pair("", ptXmin));
-					curBBox.push_back(std::make_pair("", ptYmin));
-					curBBox.push_back(std::make_pair("", ptWidth));
-					curBBox.push_back(std::make_pair("", ptHeight));
-
-					ptree curDet;
-					curDet.put("image_id", this->names[this->nameCount]);
-					if (SLPROP(DetectionOutput, saveOutputParam).outputFormat == "ILSVRC") {
-						curDet.put<int>("category_id", label);
-					} else {
-						curDet.put("category_id", this->labelToName[label].c_str());
-					}
-					curDet.add_child("bbox", curBBox);
-					curDet.put<float>("score", score);
-
-					this->detections.push_back(std::make_pair("", curDet));
-				}
-				count++;
-			}
-		}
-
-		if (this->needSave) {
-			this->nameCount++;
-			if (this->nameCount % SLPROP(DetectionOutput, saveOutputParam).numTestImage == 0) {
-				if (SLPROP(DetectionOutput, saveOutputParam).outputFormat == "VOC") {
-					map<string, std::ofstream*> outfiles;
-					for (int c = 0; c < SLPROP(DetectionOutput, numClasses); c++) {
-						if (c == SLPROP(DetectionOutput, backgroundLabelId)) {
-							continue;
-						}
-						string labelName = this->labelToName[c];
-						boost::filesystem::path file(
-								SLPROP(DetectionOutput, saveOutputParam).outputNamePrefix + labelName + ".txt");
-						boost::filesystem::path outfile = outputDirectory / file;
-						outfiles[labelName] = new std::ofstream(outfile.string().c_str(),
-								std::ofstream::out);
-					}
-					BOOST_FOREACH(ptree::value_type& det, this->detections.get_child("")) {
-						ptree pt = det.second;
-						string labelName = pt.get<string>("category_id");
-						if (outfiles.find(labelName) == outfiles.end()) {
-							std::cout << "Cannot find " << labelName << endl;
-							continue;
-						}
-						string imageName = pt.get<string>("image_id");
-						float score = pt.get<float>("score");
-						vector<int> bbox;
-						BOOST_FOREACH(ptree::value_type& elem, pt.get_child("bbox")) {
-							bbox.push_back(static_cast<int>(elem.second.get_value<float>()));
-						}
-						*(outfiles[labelName]) << imageName;
-						*(outfiles[labelName]) << " " << score;
-						*(outfiles[labelName]) << " " << bbox[0] << " " << bbox[1];
-						*(outfiles[labelName]) << " " << bbox[0] + bbox[2];
-						*(outfiles[labelName]) << " " << bbox[1] + bbox[3];
-						*(outfiles[labelName]) << endl;
-					}
-					for (int c = 0; c < SLPROP(DetectionOutput, numClasses); c++) {
-						if (c == SLPROP(DetectionOutput, backgroundLabelId)) {
-							continue;
-						}
-						string labelName = this->labelToName[c];
-						outfiles[labelName]->flush();
-						outfiles[labelName]->close();
-						delete outfiles[labelName];
-					}
-				} else if (SLPROP(DetectionOutput, saveOutputParam).outputFormat == "COCO") {
-					SASSERT(false, "COCO is not supported");
-				} else if (SLPROP(DetectionOutput, saveOutputParam).outputFormat == "ILSVRC") {
-					SASSERT(false, "ILSVRC is not supported");
-				}
-				this->nameCount = 0;
-				this->detections.clear();
-			}
-		}
-	}
-	if (SLPROP(DetectionOutput, visualize)) {
-#if 0
-		vector<cv::Mat> cvImgs;
-		const int singleImageSize = this->_inputData[3]->getCountByAxis(1);
-		const int imageHeight = 300;
-		const int imageWidth = 300;
-		const int height = 0;
-		const int width = 0;
-		const vector<Dtype> pixelMeans = {};
-		const Dtype* dataData = this->_inputData[3]->host_data();
-		transformInv(num, singleImageSize,
-				imageHeight, imageWidth,
-				height, width, pixelMeans,
-				dataData, this->temp);
-		vector<cv::Scalar> colors = GetColors(this->labelToDisplayName.size());
-		VisualizeBBox(cvImgs, this->_outputData[0], SLPROP(DetectionOutput, visualizeThresh), colors,
-				this->labelToDisplayName, this->saveFile);
-#endif
-	}
-}
-*/
 
 template <typename Dtype>
 void DetectionOutputLayer<Dtype>::backpropagation() {
@@ -736,14 +464,16 @@ void DetectionOutputLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* DetectionOutputLayer<Dtype>::initLayer() {
-    DetectionOutputLayer* layer = new DetectionOutputLayer<Dtype>();
+	DetectionOutputLayer* layer = NULL;
+	SNEW(layer, DetectionOutputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void DetectionOutputLayer<Dtype>::destroyLayer(void* instancePtr) {
     DetectionOutputLayer<Dtype>* layer = (DetectionOutputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

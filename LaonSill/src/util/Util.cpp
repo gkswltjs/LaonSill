@@ -92,13 +92,16 @@ void Util::loadStringFromFstream(ifstream& ifs, string& str) {
     SASSERT0(ifs.is_open());
 	ifs.read((char*)&strLength, sizeof(size_t));
 
-	char* str_c = new char[strLength+1];
+	char* str_c = NULL;
+	SMALLOC(str_c, char, (strLength + 1) * sizeof(char));
+	SASSUME0(str_c != NULL);
+
 	ifs.read(str_c, strLength);
 	str_c[strLength] = '\0';
 
 	str = str_c;
 
-	delete [] str_c;
+	SFREE(str_c);
 }
 
 #ifndef GPU_MODE
@@ -185,7 +188,9 @@ void Util::printData(const DATATYPE *data, UINT rows, UINT cols, UINT channels,
 void Util::printDeviceData(const DATATYPE *d_data, UINT rows, UINT cols, UINT channels,
     UINT batches, string name) {
 	if (Util::print) {
-		DATATYPE *data = new DATATYPE[rows*cols*channels*batches];
+		DATATYPE *data = NULL;
+		SNEW(data, DATATYPE, rows * cols * channels * batches * sizeof(DATATYPE));
+		SASSUME0(data != NULL);
 		checkCudaErrors(cudaMemcpyAsync(data, d_data,
             sizeof(DATATYPE)*rows*cols*channels*batches, cudaMemcpyDeviceToHost));
 		Util::printData(data, rows, cols, channels, batches, name);

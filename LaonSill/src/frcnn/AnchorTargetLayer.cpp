@@ -12,6 +12,7 @@
 #include "RoIDBUtil.h"
 #include "PropMgmt.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 #define ANCHORTARGETLAYER_LOG 0
 
@@ -341,13 +342,6 @@ void AnchorTargetLayer<Dtype>::feedforward() {
 	print2dArray("bboxTargets", bboxTargets);
 #endif
 
-
-
-	//Data<Dtype>* data = new Data<Dtype>("bboxTargets");
-	//data->reshape({1, 1, bboxTargets.size(), bboxTargets[0].size()});
-	//data->fill_host_with_2d_vec(bboxTargets);
-	//data->save("/home/jkim/Documents/bboxTargets.data");
-
 	vector<vector<float>> bboxInsideWeights(labels.size());
 	for (uint32_t i = 0; i < labels.size(); i++) {
 		bboxInsideWeights[i].resize(4);
@@ -510,14 +504,16 @@ void AnchorTargetLayer<Dtype>::_unmap(const vector<vector<float>>& data,
  ****************************************************************************/
 template<typename Dtype>
 void* AnchorTargetLayer<Dtype>::initLayer() {
-    AnchorTargetLayer* layer = new AnchorTargetLayer<Dtype>();
+	AnchorTargetLayer* layer = NULL;
+	SNEW(layer, AnchorTargetLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void AnchorTargetLayer<Dtype>::destroyLayer(void* instancePtr) {
     AnchorTargetLayer<Dtype>* layer = (AnchorTargetLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

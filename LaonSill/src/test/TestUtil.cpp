@@ -6,6 +6,7 @@
 #include "PlanParser.h"
 #include "Network.h"
 #include "SplitLayer.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 using namespace cnpy;
@@ -74,7 +75,9 @@ void buildNameDataMapFromNpzFile(const string& npz_path, const string& layer_nam
 
 		Data<float>* data = retrieveValueFromMap(nameDataMap, data_key);
 		if (!data) {
-			data = new Data<float>(data_key, false);
+			data = NULL;
+			SNEW(data, Data<float>, data_key, false);
+			SASSUME0(data != NULL);
 			const vector<uint32_t> shape = getShape(data_key, npyArray);
 			data->reshape(shape);
 			nameDataMap[data_key] = data;
@@ -194,7 +197,7 @@ void cleanUpMap(map<T, S*>& dict) {
 	typename map<T, S*>::iterator itr;
 	for (itr = dict.begin(); itr != dict.end(); itr++) {
 		if (itr->second)
-			delete itr->second;
+			SDELETE(itr->second);
 	}
 }
 template void cleanUpMap(map<string, Data<float>*>& dict);
@@ -202,7 +205,7 @@ template void cleanUpMap(map<string, Data<float>*>& dict);
 template <typename T>
 void cleanUpObject(T* obj) {
 	if (obj)
-		delete obj;
+		SDELETE(obj);
 }
 template void cleanUpObject(Layer<float>* obj);
 //template void cleanUpObject(Layer<float>::Builder* obj);
@@ -256,7 +259,9 @@ void printConfigOff() {
 void fillLayerDataVec(const vector<string>& dataNameVec, vector<Data<float>*>& dataVec) {
 	dataVec.clear();
 	for (uint32_t i = 0; i < dataNameVec.size(); i++) {
-		Data<float>* data = new Data<float>(dataNameVec[i]);
+		Data<float>* data = NULL;
+		SNEW(data, Data<float>, dataNameVec[i]);
+		SASSUME0(data != NULL);
 		dataVec.push_back(data);
 	}
 }

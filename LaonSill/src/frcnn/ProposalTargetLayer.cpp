@@ -11,6 +11,7 @@
 #include "BboxTransformUtil.h"
 #include "RoIDBUtil.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #define PROPOSALTARGETLAYER_LOG 0
 
@@ -332,36 +333,6 @@ void ProposalTargetLayer<Dtype>::_sampleRois(
 	print2dArray("bboxInsideWeights", bboxInsideWeights);
 #endif
 
-	/*
-	for (uint32_t i = 0; i < fgRoisPerThisImage; i++) {
-		cout << i << "\t: " <<
-		rois[i][1] << "," << rois[i][2] << "," << rois[i][3] << "," << rois[i][4] << "," <<
-		gtRois[i][0] << "," << gtRois[i][1] << "," << gtRois[i][2] << "," << gtRois[i][3] <<
-            "," << endl;
-	}
-
-	vector<vector<float>> tempRois(fgRoisPerThisImage);
-	for (uint32_t i = 0; i < fgRoisPerThisImage; i++) {
-		tempRois[i].resize(4);
-		tempRois[i][0] = rois[i][1];
-		tempRois[i][1] = rois[i][2];
-		tempRois[i][2] = rois[i][3];
-		tempRois[i][3] = rois[i][4];
-	}
-
-	vector<vector<Dtype>> result;
-	Data<Dtype>* delta = new Data<Dtype>("delta");
-	delta->reshape({1, 1, bboxTargets.size(), bboxTargets[0].size()});
-	delta->fill_host_with_2d_vec(bboxTargets, {0, 1, 2, 3});
-
-	BboxTransformUtil::bboxTransformInv(tempRois, delta, result);
-
-	print2dArray("result", result);
-
-	delete delta;
-
-	exit(1);
-	*/
 }
 
 template <typename Dtype>
@@ -460,14 +431,16 @@ void ProposalTargetLayer<Dtype>::_getBboxRegressionLabels(
  ****************************************************************************/
 template<typename Dtype>
 void* ProposalTargetLayer<Dtype>::initLayer() {
-    ProposalTargetLayer* layer = new ProposalTargetLayer<Dtype>();
+	ProposalTargetLayer* layer = NULL;
+	SNEW(layer, ProposalTargetLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void ProposalTargetLayer<Dtype>::destroyLayer(void* instancePtr) {
     ProposalTargetLayer<Dtype>* layer = (ProposalTargetLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

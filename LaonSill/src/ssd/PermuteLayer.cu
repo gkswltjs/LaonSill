@@ -8,6 +8,7 @@
 #include "PermuteLayer.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -190,14 +191,16 @@ void PermuteLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* PermuteLayer<Dtype>::initLayer() {
-    PermuteLayer* layer = new PermuteLayer<Dtype>();
+	PermuteLayer* layer = NULL;
+	SNEW(layer, PermuteLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void PermuteLayer<Dtype>::destroyLayer(void* instancePtr) {
     PermuteLayer<Dtype>* layer = (PermuteLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

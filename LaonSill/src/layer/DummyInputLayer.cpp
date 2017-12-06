@@ -8,6 +8,7 @@
 #include "DummyInputLayer.h"
 #include "PropMgmt.h"
 #include "Data.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -113,14 +114,16 @@ template class DummyInputLayer<float>;
  ****************************************************************************/
 template<typename Dtype>
 void* DummyInputLayer<Dtype>::initLayer() {
-    DummyInputLayer* layer = new DummyInputLayer<Dtype>();
+	DummyInputLayer* layer = NULL;
+	SNEW(layer, DummyInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void DummyInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     DummyInputLayer<Dtype>* layer = (DummyInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

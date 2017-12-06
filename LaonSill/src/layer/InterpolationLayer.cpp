@@ -10,6 +10,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "MathFunctions.h"
+#include "MemoryMgmt.h"
 
 
 using namespace std;
@@ -114,14 +115,16 @@ void InterpolationLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* InterpolationLayer<Dtype>::initLayer() {
-    InterpolationLayer* layer = new InterpolationLayer<Dtype>();
+	InterpolationLayer* layer = NULL;
+	SNEW(layer, InterpolationLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void InterpolationLayer<Dtype>::destroyLayer(void* instancePtr) {
     InterpolationLayer<Dtype>* layer = (InterpolationLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

@@ -444,14 +444,16 @@ void KistiInputLayer<Dtype>::setTrain(bool train) {
  ****************************************************************************/
 template<typename Dtype>
 void* KistiInputLayer<Dtype>::initLayer() {
-    KistiInputLayer* layer = new KistiInputLayer<Dtype>();
+	KistiInputLayer* layer = NULL;
+	SNEW(layer, KistiInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void KistiInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     KistiInputLayer<Dtype>* layer = (KistiInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

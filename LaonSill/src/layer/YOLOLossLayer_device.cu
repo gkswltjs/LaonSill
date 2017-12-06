@@ -13,6 +13,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -301,14 +302,16 @@ Dtype YOLOLossLayer<Dtype>::cost() {
  ****************************************************************************/
 template<typename Dtype>
 void* YOLOLossLayer<Dtype>::initLayer() {
-    YOLOLossLayer* layer = new YOLOLossLayer<Dtype>();
+	YOLOLossLayer* layer = NULL;
+	SNEW(layer, YOLOLossLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void YOLOLossLayer<Dtype>::destroyLayer(void* instancePtr) {
     YOLOLossLayer<Dtype>* layer = (YOLOLossLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

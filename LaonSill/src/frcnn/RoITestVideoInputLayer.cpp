@@ -18,6 +18,7 @@
 #include "SysLog.h"
 #include "Util.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 
 #define ROITESTVIDEOINPUTLAYER_LOG 0
@@ -34,7 +35,9 @@ RoITestVideoInputLayer<Dtype>::RoITestVideoInputLayer()
 			"RoITestVideoInputLayer can be run only in Test Status");
 
 	SASSERT(this->cap.isOpened(), "Could not open video %s", SLPROP(RoITestVideoInput, videoPath).c_str());
-	this->_dataSet = new MockDataSet<Dtype>(1, 1, 1, 1, 50, 1);
+	this->_dataSet = NULL;
+	SNEW(this->_dataSet, MockDataSet<Dtype>, 1, 1, 1, 1, 50, 1);
+	SASSUME0(this->_dataSet != NULL);
 
 	this->boxColors.push_back(cv::Scalar(10, 163, 240));
 	this->boxColors.push_back(cv::Scalar(44, 90, 130));
@@ -237,14 +240,16 @@ void RoITestVideoInputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* RoITestVideoInputLayer<Dtype>::initLayer() {
-    RoITestVideoInputLayer* layer = new RoITestVideoInputLayer<Dtype>();
+	RoITestVideoInputLayer* layer = NULL;
+	SNEW(layer, RoITestVideoInputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void RoITestVideoInputLayer<Dtype>::destroyLayer(void* instancePtr) {
     RoITestVideoInputLayer<Dtype>* layer = (RoITestVideoInputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

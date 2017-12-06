@@ -13,6 +13,7 @@
 #include "BboxTransformUtil.h"
 #include "PropMgmt.h"
 #include "StdOutLog.h"
+#include "MemoryMgmt.h"
 
 #define FRCNNTESTOUTPUTLAYER_LOG 0
 
@@ -305,14 +306,16 @@ void FrcnnTestOutputLayer<Dtype>::fillClsBoxes(vector<vector<Dtype>>& boxes, int
  ****************************************************************************/
 template<typename Dtype>
 void* FrcnnTestOutputLayer<Dtype>::initLayer() {
-    FrcnnTestOutputLayer* layer = new FrcnnTestOutputLayer<Dtype>();
+	FrcnnTestOutputLayer* layer = NULL;
+	SNEW(layer, FrcnnTestOutputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void FrcnnTestOutputLayer<Dtype>::destroyLayer(void* instancePtr) {
     FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

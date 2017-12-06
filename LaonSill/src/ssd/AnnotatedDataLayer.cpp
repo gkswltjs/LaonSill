@@ -16,6 +16,7 @@
 #include "MathFunctions.h"
 #include "Sampler.h"
 #include "ImageUtil.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -41,7 +42,9 @@ AnnotatedDataLayer<Dtype>::AnnotatedDataLayer(_AnnotatedDataPropLayer* prop)
 
 
 	if (prop) {
-		this->prop = new _AnnotatedDataPropLayer();
+		this->prop = NULL;
+		SNEW(this->prop, _AnnotatedDataPropLayer);
+		SASSUME0(this->prop != NULL);
 		*(this->prop) = *(prop);
 	} else {
 		this->prop = NULL;
@@ -238,7 +241,9 @@ void AnnotatedDataLayer<Dtype>::load_batch() {
 
 			if (transformParam.hasExpandParam()) {
 				//cout << "hasExpandParam()" << endl;
-				expandDatum = new AnnotatedDatum();
+				expandDatum = NULL;
+				SNEW(expandDatum, AnnotatedDatum);
+				SASSUME0(expandDatum != NULL);
 				this->dataTransformer.expandImage(&distortDatum, expandDatum);
 
 #if 0
@@ -256,7 +261,9 @@ void AnnotatedDataLayer<Dtype>::load_batch() {
 			//cout << "not hasDistortParam()" << endl;
 			if (transformParam.hasExpandParam()) {
 				//cout << "hasExpandParam()" << endl;
-				expandDatum = new AnnotatedDatum();
+				expandDatum = NULL;
+				SNEW(expandDatum, AnnotatedDatum);
+				SASSUME0(expandDatum != NULL);
 				this->dataTransformer.expandImage(annoDatum, expandDatum);
 			} else {
 				//cout << "not hasExpandParam()" << endl;
@@ -279,7 +286,9 @@ void AnnotatedDataLayer<Dtype>::load_batch() {
 			if (sampledBBoxes.size() > 0) {
 				// Randomly pick a sampled bbox and crop the expandDatum.
 				int randIdx = soooa_rng_rand() % sampledBBoxes.size();
-				sampledDatum = new AnnotatedDatum();
+				sampledDatum = NULL;
+				SNEW(sampledDatum, AnnotatedDatum);
+				SASSUME0(sampledDatum != NULL);
 				this->dataTransformer.cropImage(expandDatum, sampledBBoxes[randIdx],
 						sampledDatum);
 
@@ -334,10 +343,10 @@ void AnnotatedDataLayer<Dtype>::load_batch() {
 		}
 		// clear memory.
 		if (hasSampled) {
-			delete sampledDatum;
+			SDELETE(sampledDatum);
 		}
 		if (transformParam.hasExpandParam()) {
-			delete expandDatum;
+			SDELETE(expandDatum);
 		}
 		// reader_.free().push(...) 		???
 	}
@@ -458,7 +467,9 @@ void AnnotatedDataLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* AnnotatedDataLayer<Dtype>::initLayer() {
-    AnnotatedDataLayer* layer = new AnnotatedDataLayer<Dtype>();
+	AnnotatedDataLayer* layer = NULL;
+	SNEW(layer, AnnotatedDataLayer<Dtype>);
+	SASSUME0(layer != NULL);
 
     if ((WorkContext::curBootMode == BootMode::ServerClientMode) &&
         SPARAM(USE_INPUT_DATA_PROVIDER)) {
@@ -475,7 +486,7 @@ void* AnnotatedDataLayer<Dtype>::initLayer() {
 template<typename Dtype>
 void AnnotatedDataLayer<Dtype>::destroyLayer(void* instancePtr) {
     AnnotatedDataLayer<Dtype>* layer = (AnnotatedDataLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

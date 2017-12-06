@@ -14,6 +14,7 @@
 #include "CudaUtils.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #define INPUTLAYER_LOG 1
 
@@ -25,16 +26,21 @@ InputLayer<Dtype>::InputLayer()
 	this->type = Layer<Dtype>::Input;
 
     this->_dataSet = NULL;
-    this->_dataMean = new Data<Dtype>("dataMean");
+    this->_dataMean = NULL;
+	SNEW(this->_dataMean, Data<Dtype>, "dataMean");
+	SASSUME0(this->_dataMean != NULL);
 
     const string& sourceType = SLPROP(Input, sourceType);
 	if (sourceType == "ImagePack") {
 		const string& source = SLPROP(Input, source);
 		const uint32_t numTrainPack = SLPROP(Input, numTrainPack);
 		const uint32_t numTestPack = SLPROP(Input, numTestPack);
-		this->_dataSet = new ImagePackDataSet<Dtype>(
+
+		this->_dataSet = NULL;
+		SNEW(this->_dataSet, ImagePackDataSet<Dtype>,
 				source + "/train_data", source + "/train_label", numTrainPack,
 				source + "/test_data", source + "/test_label", numTestPack);
+		SASSUME0(this->_dataSet != NULL);
 
 		const vector<float>& mean = SLPROP(Input, mean);
 		unsigned int numChannels = (unsigned int)mean.size();
@@ -44,7 +50,9 @@ InputLayer<Dtype>::InputLayer()
 		}
 		this->_dataSet->load();
 	} else if (sourceType == "Mock") {
-		this->_dataSet = new MockDataSet<Dtype>(4, 4, 3, 10, 10, 10);
+		this->_dataSet = NULL;
+		SNEW(this->_dataSet, MockDataSet<Dtype>, 4, 4, 3, 10, 10, 10);
+		SASSUME0(this->_dataSet != NULL);
 		this->_dataSet->load();
 	}
 }
@@ -53,7 +61,7 @@ InputLayer<Dtype>::InputLayer()
 template <typename Dtype>
 InputLayer<Dtype>::~InputLayer() {
 	if (this->_dataMean) {
-		delete this->_dataMean;
+		SDELETE(this->_dataMean);
 	}
 }
 
@@ -169,14 +177,16 @@ void InputLayer<Dtype>::shuffleTrainDataSet() {
  ****************************************************************************/
 template<typename Dtype>
 void* InputLayer<Dtype>::initLayer() {
-    InputLayer* layer = new InputLayer<Dtype>();
+	InputLayer* layer = NULL;
+	SNEW(layer, InputLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void InputLayer<Dtype>::destroyLayer(void* instancePtr) {
     InputLayer<Dtype>* layer = (InputLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

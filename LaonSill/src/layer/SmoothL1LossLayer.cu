@@ -11,6 +11,7 @@
 #include "MathFunctions.h"
 #include "PropMgmt.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 #define SMOOTHL1LOSSLAYER_LOG 0
 
@@ -29,7 +30,9 @@ SmoothL1LossLayer<Dtype>::SmoothL1LossLayer(_SmoothL1LossPropLayer* prop)
   ones("ones") {
 	this->type = Layer<Dtype>::SmoothL1Loss;
 	if (prop) {
-		this->prop = new _SmoothL1LossPropLayer();
+		this->prop = NULL;
+		SNEW(this->prop, _SmoothL1LossPropLayer);
+		SASSUME0(this->prop != NULL);
 		*(this->prop) = *(prop);
 	} else {
 		this->prop = NULL;
@@ -316,14 +319,16 @@ Dtype SmoothL1LossLayer<Dtype>::cost() {
  ****************************************************************************/
 template<typename Dtype>
 void* SmoothL1LossLayer<Dtype>::initLayer() {
-    SmoothL1LossLayer* layer = new SmoothL1LossLayer<Dtype>();
+	SmoothL1LossLayer* layer = NULL;
+	SNEW(layer, SmoothL1LossLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void SmoothL1LossLayer<Dtype>::destroyLayer(void* instancePtr) {
     SmoothL1LossLayer<Dtype>* layer = (SmoothL1LossLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

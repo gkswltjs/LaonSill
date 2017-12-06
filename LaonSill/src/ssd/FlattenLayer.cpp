@@ -8,6 +8,7 @@
 #include "FlattenLayer.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -93,14 +94,16 @@ void FlattenLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* FlattenLayer<Dtype>::initLayer() {
-    FlattenLayer* layer = new FlattenLayer<Dtype>();
+	FlattenLayer* layer = NULL;
+	SNEW(layer, FlattenLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void FlattenLayer<Dtype>::destroyLayer(void* instancePtr) {
     FlattenLayer<Dtype>* layer = (FlattenLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

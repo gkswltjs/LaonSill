@@ -7,6 +7,7 @@
 
 #include "DepthConcatLayer.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -122,14 +123,16 @@ template class DepthConcatLayer<float>;
  ****************************************************************************/
 template<typename Dtype>
 void* DepthConcatLayer<Dtype>::initLayer() {
-    DepthConcatLayer<Dtype>* layer = new DepthConcatLayer<Dtype>();
+	DepthConcatLayer* layer = NULL;
+	SNEW(layer, DepthConcatLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void DepthConcatLayer<Dtype>::destroyLayer(void* instancePtr) {
     DepthConcatLayer<Dtype>* layer = (DepthConcatLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

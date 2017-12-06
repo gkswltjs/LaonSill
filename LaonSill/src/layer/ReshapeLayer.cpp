@@ -14,6 +14,7 @@
 #include "SysLog.h"
 #include "PropMgmt.h"
 #include "Util.h"
+#include "MemoryMgmt.h"
 
 #define RESHAPELAYER_LOG 0
 
@@ -148,14 +149,16 @@ template class ReshapeLayer<float>;
  ****************************************************************************/
 template<typename Dtype>
 void* ReshapeLayer<Dtype>::initLayer() {
-    ReshapeLayer* layer = new ReshapeLayer<Dtype>();
+	ReshapeLayer* layer = NULL;
+	SNEW(layer, ReshapeLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void ReshapeLayer<Dtype>::destroyLayer(void* instancePtr) {
     ReshapeLayer<Dtype>* layer = (ReshapeLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

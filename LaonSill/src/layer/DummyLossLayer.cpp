@@ -6,6 +6,7 @@
  */
 
 #include "DummyLossLayer.h"
+#include "MemoryMgmt.h"
 
 template <typename Dtype>
 DummyLossLayer<Dtype>::DummyLossLayer()
@@ -37,14 +38,16 @@ Dtype DummyLossLayer<Dtype>::cost() {
  ****************************************************************************/
 template<typename Dtype>
 void* DummyLossLayer<Dtype>::initLayer() {
-    DummyLossLayer* layer = new DummyLossLayer<Dtype>();
+	DummyLossLayer* layer = NULL;
+	SNEW(layer, DummyLossLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void DummyLossLayer<Dtype>::destroyLayer(void* instancePtr) {
     DummyLossLayer<Dtype>* layer = (DummyLossLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

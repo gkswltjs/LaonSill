@@ -9,6 +9,7 @@
 #include "Util.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -19,21 +20,35 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer() : LearnableLayer<Dtype>() {
 
 	const string& name = SLPROP_BASE(name);
 	this->_params.resize(2);
-	this->_params[ParamType::Weight] = new Data<Dtype>(name + "_weight");
-	this->_params[ParamType::Bias] = new Data<Dtype>(name + "_bias");
+	this->_params[ParamType::Weight] = NULL;
+	SNEW(this->_params[ParamType::Weight], Data<Dtype>, name + "_weight");
+	SASSUME0(this->_params[ParamType::Weight] != NULL);
+
+	this->_params[ParamType::Bias] = NULL;
+	SNEW(this->_params[ParamType::Bias], Data<Dtype>, name + "_bias");
+	SASSUME0(this->_params[ParamType::Bias] != NULL);
 
 	this->_paramsInitialized.resize(2);
 	this->_paramsInitialized[ParamType::Weight] = false;
 	this->_paramsInitialized[ParamType::Bias] = false;
 
 	this->_paramsHistory.resize(2);
-	this->_paramsHistory[ParamType::Weight] = new Data<Dtype>(name + "_weight_history");
-	this->_paramsHistory[ParamType::Bias] = new Data<Dtype>(name + "_bias_history");
+	this->_paramsHistory[ParamType::Weight] = NULL;
+	SNEW(this->_paramsHistory[ParamType::Weight], Data<Dtype>, name + "_weight_history");
+	SASSUME0(this->_paramsHistory[ParamType::Weight] != NULL);
+
+	this->_paramsHistory[ParamType::Bias] = NULL;
+	SNEW(this->_paramsHistory[ParamType::Bias], Data<Dtype>, name + "_bias_history");
+	SASSUME0(this->_paramsHistory[ParamType::Bias] != NULL);
 
 	this->_paramsHistory2.resize(2);
-	this->_paramsHistory2[ParamType::Weight] = 
-		new Data<Dtype>(name + "_weight_history2");
-	this->_paramsHistory2[ParamType::Bias] = new Data<Dtype>(name + "_bias_history2");
+	this->_paramsHistory2[ParamType::Weight] = NULL;
+	SNEW(this->_paramsHistory2[ParamType::Weight], Data<Dtype>, name + "_weight_history2");
+	SASSUME0(this->_paramsHistory2[ParamType::Weight] != NULL);
+
+	this->_paramsHistory2[ParamType::Bias] = NULL;
+	SNEW(this->_paramsHistory2[ParamType::Bias], Data<Dtype>, name + "_bias_history2");
+	SASSUME0(this->_paramsHistory2[ParamType::Bias] != NULL);
 }
 
 /****************************************************************************
@@ -41,14 +56,16 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer() : LearnableLayer<Dtype>() {
  ****************************************************************************/
 template<typename Dtype>
 void* FullyConnectedLayer<Dtype>::initLayer() {
-    FullyConnectedLayer* layer = new FullyConnectedLayer<Dtype>();
+	FullyConnectedLayer* layer = NULL;
+	SNEW(layer, FullyConnectedLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void FullyConnectedLayer<Dtype>::destroyLayer(void* instancePtr) {
     FullyConnectedLayer<Dtype>* layer = (FullyConnectedLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

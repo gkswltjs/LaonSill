@@ -10,6 +10,7 @@
 #include "iostream"
 #include "SDF.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -162,33 +163,6 @@ const string SDF::getNextValue() {
 		this->currentPos[this->curDataSetIdx] = this->ifs.tellg();
 	}
 
-#if 0
-	if (this->ifs.tellg() == this->dbSize) {
-		/*
-		this->ifs.clear();
-		this->ifs.seekg(0, ios::beg);
-
-		// text_iarchive를 reset하는 더 좋은 방법이 있을 것 같다.
-		if (this->ia) {
-			delete this->ia;
-			this->ia = 0;
-		}
-#ifdef BOOST_ARCHIVE_NO_HEADER
-		unsigned int flags = boost::archive::no_header;
-#else
-	unsigned int flags = 0;
-#endif
-		this->ia = new boost::archive::text_iarchive(this->ifs, flags);
-
-		string tKey, tValue;
-		(*this->ia) >> tKey >> tValue;
-		//cout << "end of SDF, reset to start point ...'" << tKey << "', '" << tValue << "'" << endl;
-		*/
-
-		this->ifs.seekg(this->bodyStartPos, ios::beg);
-	}
-#endif
-
 	return value;
 }
 
@@ -215,7 +189,9 @@ void SDF::sdf_open() {
 	if (this->mode == NEW) {
 		SASSERT0(!this->ofs.is_open());
 		this->ofs.open(this->source + this->DATA_NAME, ios_base::out);
-		this->oa = new boost::archive::text_oarchive(this->ofs, flags);
+		this->oa = NULL;
+		SNEW(this->oa, boost::archive::text_oarchive, this->ofs, flags);
+		SASSUME0(this->oa != NULL);
 
 		(*this->oa) << SDF_STRING;
 
@@ -237,7 +213,9 @@ void SDF::sdf_open() {
 		this->ifs.seekg(0, ios::beg);
 		cout << "Size of opend sdf is " << this->dbSize << endl;
 
-		this->ia = new boost::archive::text_iarchive(this->ifs, flags);
+		this->ia = NULL;
+		SNEW(this->ia, boost::archive::text_iarchive, this->ifs, flags);
+		SASSUME0(this->ia != NULL);
 
 		string sdf_string;
 		(*this->ia) >> sdf_string;
@@ -262,14 +240,14 @@ void SDF::sdf_close() {
 	if (this->ifs.is_open()) {
 		this->ifs.close();
 		if (this->ia) {
-			delete this->ia;
+			SDELETE(this->ia);
 			this->ia = 0;
 		}
 	}
 	if (this->ofs.is_open()) {
 		this->ofs.close();
 		if (this->oa) {
-			delete this->oa;
+			SDELETE(this->oa);
 			this->oa = 0;
 		}
 	}

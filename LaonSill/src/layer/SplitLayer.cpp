@@ -11,6 +11,7 @@
 #include "SysLog.h"
 #include "PropMgmt.h"
 #include "MathFunctions.h"
+#include "MemoryMgmt.h"
 
 #define SPLITLAYER_LOG 0
 
@@ -150,14 +151,16 @@ void SplitLayer<Dtype>::backpropagation() {
  ****************************************************************************/
 template<typename Dtype>
 void* SplitLayer<Dtype>::initLayer() {
-    SplitLayer* layer = new SplitLayer<Dtype>();
+	SplitLayer* layer = NULL;
+	SNEW(layer, SplitLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void SplitLayer<Dtype>::destroyLayer(void* instancePtr) {
     SplitLayer<Dtype>* layer = (SplitLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

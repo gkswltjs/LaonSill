@@ -7,6 +7,7 @@
 
 #include "PoolingLayer.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 #define POOLINGLAYER_LOG 0
 
@@ -148,14 +149,16 @@ template void PoolingLayer<float>::backpropagation();
  ****************************************************************************/
 template<typename Dtype>
 void* PoolingLayer<Dtype>::initLayer() {
-    PoolingLayer* layer = new PoolingLayer<Dtype>();
+	PoolingLayer* layer = NULL;
+	SNEW(layer, PoolingLayer<Dtype>);
+	SASSUME0(layer != NULL);
     return (void*)layer;
 }
 
 template<typename Dtype>
 void PoolingLayer<Dtype>::destroyLayer(void* instancePtr) {
     PoolingLayer<Dtype>* layer = (PoolingLayer<Dtype>*)instancePtr;
-    delete layer;
+    SDELETE(layer);
 }
 
 template<typename Dtype>

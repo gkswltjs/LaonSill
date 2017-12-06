@@ -54,6 +54,7 @@
 #include "MathFunctions.h"
 #include "ImTransforms.h"
 #include "AnnotatedDataLayer.h"
+#include "MemoryMgmt.h"
 
 #include <execinfo.h>
 
@@ -158,7 +159,7 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < 10; i++) {
 		datum = dataReader.getNextData();
 		datum->print();
-		delete datum;
+		SDELETE(datum);
 		datum = 0;
 	}
 
@@ -167,7 +168,7 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < 10; i++) {
 		datum = dataReader.getNextData();
 		datum->print();
-		delete datum;
+		SDELETE(datum);
 		datum = 0;
 	}
 #endif
@@ -220,7 +221,7 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < 10; i++) {
 		datum = dataReader.getNextData();
 		datum->print();
-		delete datum;
+		SDELETE(datum);
 		datum = 0;
 	}
 
@@ -229,7 +230,7 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < 10; i++) {
 		datum = dataReader.getNextData();
 		datum->print();
-		delete datum;
+		SDELETE(datum);
 		datum = 0;
 	}
 #endif
@@ -270,16 +271,16 @@ int main(int argc, char** argv) {
 	dataReader.selectDataSetByName("train");
 
 	datum = dataReader.getNextData();
-	delete datum;
+	SDELETE(datum);
 
 	datum = dataReader.getNextData();
-	delete datum;
+	SDELETE(datum);
 
 	datum = dataReader.peekNextData();
-	delete datum;
+	SDELETE(datum);
 
 	datum = dataReader.peekNextData();
-	delete datum;
+	SDELETE(datum);
 
 
 
@@ -295,7 +296,7 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < 10; i++) {
 		datum = dataReader.getNextData();
 		datum->print();
-		delete datum;
+		SDELETE(datum);
 		datum = 0;
 	}
 
@@ -304,7 +305,7 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < 10; i++) {
 		datum = dataReader.getNextData();
 		datum->print();
-		delete datum;
+		SDELETE(datum);
 		datum = 0;
 	}
 	*/
@@ -709,7 +710,7 @@ void dataReaderMemoryLeakTest() {
 
 	while (true) {
 		Datum* datum = dr.getNextData();
-		delete datum;
+		SDELETE(datum);
 		if (++cnt % 1000 == 0) {
 			STDOUT_LOG("Processed %d images.", cnt);
 		}
@@ -724,10 +725,11 @@ void dataReaderMemoryLeakTest() {
 
 	while (true) {
 		string value = db.getNextValue();
-		Datum* datum = new Datum();
-		//T::deserializeFromString(value, datum);
+		Datum* datum = NULL;
+		SNEW(datum, Datum);
+		SASSUME0(datum != NULL);
 		deserializeFromString(value, datum);
-		delete datum;
+		SDELETE(datum);
 		if (++cnt % 1000 == 0) {
 			STDOUT_LOG("Processed %d images.", cnt);
 		}
@@ -862,8 +864,10 @@ void layerTest(int argc, char** argv) {
 	const NetworkStatus status = NetworkStatus::Test;
 
 	LayerTestInterface<float>::globalSetUp(gpuid);
-	LayerTestInterface<float>* layerTest = new LayerTest<float>(networkFilePath,
+	LayerTestInterface<float>* layerTest = NULL;
+	SNEW(layerTest, LayerTest<float>, networkFilePath,
 			networkName, targetLayerName, numSteps, numAfterSteps, status);
+	SASSUME0(layerTest != NULL);
 	cout << "LayerTest initialized ... " << endl;
 
 	layerTest->setUp();
@@ -889,7 +893,9 @@ void layerTest2(int argc, char** argv) {
 	layerDefJsonStream.close();
 	cout << annotateddataDef.str() << endl;
 
-	_AnnotatedDataPropLayer* prop = new _AnnotatedDataPropLayer();
+	_AnnotatedDataPropLayer* prop = NULL;
+	SNEW(prop, _AnnotatedDataPropLayer);
+	SASSUME0(prop != NULL);
 
 	Json::Reader reader;
 	Json::Value layer;
@@ -907,7 +913,10 @@ void layerTest2(int argc, char** argv) {
 		PlanParser::setPropValue(val, true, layerType, key,  (void*)prop);
 	}
 
-	AnnotatedDataLayer<float>* l = new AnnotatedDataLayer<float>(prop);
+	AnnotatedDataLayer<float>* l = NULL;
+	SNEW(l, AnnotatedDataLayer<float>, prop);
+	SASSUME0(l != NULL);
+
 	Data<float> data("data");
 	Data<float> label("label");
 	l->_outputData.push_back(&data);
@@ -964,8 +973,9 @@ void networkTest(int argc, char** argv) {
 #endif
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 
-	NetworkTest<float>* networkTest =
-			new NetworkTest<float>(networkFilePath, networkName, numSteps, status);
+	NetworkTest<float>* networkTest = NULL;
+	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps, status);
+	SASSUME0(networkTest != NULL);
 
 	networkTest->setUp();
 	//networkTest->updateTest();
@@ -988,7 +998,9 @@ void saveNetwork() {
 	const int numSteps = 0;
 
 #if 0
-	Network<float>* network = new Network<float>(networkConfig);
+	Network<float>* network = NULL;
+	SNEW(network, Network<float>, networkConfig);
+	SASSUME0(network != NULL);
 	// (2) network config 정보를 layer들에게 전달한다.
 	for(uint32_t i = 0; i < layersConfig->_layers.size(); i++) {
 		layersConfig->_layers[i]->setNetworkConfig(network->config);
@@ -999,8 +1011,9 @@ void saveNetwork() {
 
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 
-	NetworkTest<float>* networkTest =
-			new NetworkTest<float>(networkFilePath, networkName, numSteps);
+	NetworkTest<float>* networkTest = NULL;
+	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps);
+	SASSUME0(networkTest != NULL);
 
 	networkTest->setUp();
 

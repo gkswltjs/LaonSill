@@ -8,6 +8,7 @@
 #include "ParamManipulator.h"
 #include "Data.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -25,7 +26,7 @@ ParamManipulator<Dtype>::~ParamManipulator() {
 
 	for (int i = 0; i < this->dataList.size(); i++) {
 		if (this->dataList[i]) {
-			delete this->dataList[i];
+			SDELETE(this->dataList[i]);
 		}
 	}
 }
@@ -40,7 +41,9 @@ void ParamManipulator<Dtype>::loadParam() {
     ifs.read((char*)&numData, sizeof(uint32_t));
 
     for (uint32_t j = 0; j < numData; j++) {
-        Data<float>* data = new Data<float>("", true);
+    	Data<float>* data = NULL;
+    	SNEW(data, Data<float>, "", true);
+    	SASSUME0(data != NULL);
         data->load(ifs);
 
         string dataName = data->_name;
