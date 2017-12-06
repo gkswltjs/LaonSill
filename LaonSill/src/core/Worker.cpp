@@ -29,6 +29,7 @@
 
 #include "MeasureEntry.h"
 #include "MeasureManager.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 

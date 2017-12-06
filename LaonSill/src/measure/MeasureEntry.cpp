@@ -53,7 +53,7 @@ MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option
 
     this->readRefCount = NULL;
     allocSize = sizeof(int) * this->queueSize;
-    SMALLOC(this->readBufCount, int, allocSize);
+    SMALLOC(this->readRefCount, int, allocSize);
     SASSERT0(this->readRefCount != NULL);
     for (int i = 0; i < this->queueSize; i++)
         this->readRefCount[i] = 0;

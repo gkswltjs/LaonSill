@@ -8,6 +8,7 @@
 
 #include "CustomInputLayer.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 

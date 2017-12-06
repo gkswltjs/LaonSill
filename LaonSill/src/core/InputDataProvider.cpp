@@ -16,6 +16,7 @@
 
 #include "DataReader.h"
 #include "Param.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -50,7 +51,10 @@ void InputDataProvider::addPool(string networkID, int dopID, string layerName, D
     DRCBFuncs funcs = drFuncMap[drType];
 
     // build network 시의 reshape()를 대비하여 1개의 원소는 미리 읽어 둔다.
-    InputPool* newInputPool = new InputPool();
+    InputPool* newInputPool = NULL;
+    SNEW(newInputPool, InputPool);
+    SASSUME0(newInputPool != NULL);
+
     newInputPool->head = 0;
     newInputPool->tail = 1;
     newInputPool->remainElemCnt = SPARAM(INPUT_DATA_PROVIDER_ELEM_COUNT) - 1;
@@ -120,7 +124,7 @@ void InputDataProvider::removePool(string networkID) {
             iter = inputPool->elemArray.erase(iter);
         }
 
-        delete inputPool;
+        SDELETE(inputPool);
     }
 
     poolInfoLock.lock();

@@ -81,7 +81,7 @@ typedef struct MemoryEntry_s {
 #define SDELETE_(obj)                                                                   \
     do {                                                                                \
         delete obj;                                                                     \
-        MemoryMgmt::removeEntry((void*)ptr);                                            \
+        MemoryMgmt::removeEntry((void*)obj);                                            \
     } while (0)
 
 #define SDELETE_NOLOG_(obj)                                                             \
