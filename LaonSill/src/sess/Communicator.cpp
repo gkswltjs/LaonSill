@@ -24,6 +24,7 @@
 #include "ThreadMgmt.h"
 #include "Broker.h"
 #include "StdOutLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -277,6 +278,7 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
     int             jobID;
     int             jobType;
     int             jobElemCnt;
+    int             allocSize;
     int             offset = MessageHeader::MESSAGE_HEADER_SIZE;
 
     offset = MsgSerializer::deserializeInt(jobID, offset, recvMsg);
@@ -287,7 +289,8 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
 
     int *jobElemTypes = NULL;
     if (jobElemCnt > 0) {
-        jobElemTypes = (int*)malloc(sizeof(int) * jobElemCnt);
+        allocSize = sizeof(int) * jobElemCnt;
+        SMALLOC(jobElemTypes, int, allocSize);
         SASSERT0(jobElemTypes != NULL);
     }
 
@@ -316,7 +319,8 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
             case Job::FloatArrayType:
                 offset = MsgSerializer::deserializeInt(tempArrayCount, offset, recvMsg);
                 SASSUME0(tempFloatArray == NULL);
-                tempFloatArray = (float*)malloc(sizeof(float) * tempArrayCount);
+                allocSize = sizeof(float) * tempArrayCount;
+                SMALLOC(tempFloatArray, float, allocSize);
                 SASSUME0(tempFloatArray != NULL);
 
                 for (int j = 0; j < tempArrayCount; j++) {
@@ -325,14 +329,15 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
                 }
                 newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
                     (void*)tempFloatArray);
-                free(tempFloatArray);
+                SFREE(tempFloatArray);
                 tempFloatArray = NULL;
                 break;
 
             case Job::StringType:
                 offset = MsgSerializer::deserializeInt(tempArrayCount, offset, recvMsg);
                 SASSUME0(tempString == NULL);
-                tempString = (char*)malloc(sizeof(char) * tempArrayCount);
+                allocSize = sizeof(char) * tempArrayCount;
+                SMALLOC(tempString, char, allocSize);
                 SASSUME0(tempString != NULL);
 
                 offset = MsgSerializer::deserializeString(tempString, tempArrayCount, offset,
@@ -350,7 +355,7 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
     }
 
     if (jobElemTypes != NULL)
-        free(jobElemTypes);
+        SFREE(jobElemTypes);
 
     *job = newJob;
 }
@@ -471,8 +476,8 @@ void Communicator::sessThread(int sessId) {
 
     MessageHeader   recvMsgHdr;
     MessageHeader   replyMsgHdr;
-    char*           recvMsg;
-    char*           replyMsg;
+    char*           recvMsg = NULL;
+    char*           replyMsg = NULL;
     char*           recvBigMsg  = NULL;     // 동적할당
     char*           replyBigMsg = NULL;
     CommRetType     recvRet;
@@ -480,9 +485,9 @@ void Communicator::sessThread(int sessId) {
 
     SessContext*& sessContext   = Communicator::sessContext[sessId];
 
-    recvMsg = (char*)malloc(MessageHeader::MESSAGE_DEFAULT_SIZE);
+    SMALLOC(recvMsg, char, MessageHeader::MESSAGE_DEFAULT_SIZE);
     SASSERT0(recvMsg);
-    replyMsg = (char*)malloc(MessageHeader::MESSAGE_DEFAULT_SIZE);
+    SMALLOC(replyMsg, char, MessageHeader::MESSAGE_DEFAULT_SIZE);
     SASSERT0(replyMsg);
 
     COLD_LOG(ColdLog::INFO, true, "session thread #%d starts", sessId);
@@ -538,7 +543,8 @@ void Communicator::sessThread(int sessId) {
                 (recvRet == Communicator::RecvOnlyHeader), "");
 
             if (recvRet == Communicator::RecvOnlyHeader) {
-                recvBigMsg = (char*)malloc(recvMsgHdr.getMsgLen());
+                SASSUME0(recvBigMsg == NULL);
+                SMALLOC(recvBigMsg, char, recvMsgHdr.getMsgLen());
                 SASSERT0(recvBigMsg);
                 useBigRecvMsg = true;
                 recvRet = Communicator::recvMessage(fd, recvMsgHdr, recvBigMsg, true);
@@ -592,13 +598,13 @@ void Communicator::sessThread(int sessId) {
             SASSERT(replyRet == Communicator::Success, "");
 
             // (4) cleanup big msg resource
-            if (recvBigMsg != NULL) {
-                free(replyBigMsg);
+            if (replyBigMsg != NULL) {
+                SFREE(replyBigMsg);
                 replyBigMsg = NULL;
             } 
 
             if (recvBigMsg != NULL) {
-                free(recvBigMsg);
+                SFREE(recvBigMsg);
                 recvBigMsg = NULL;
             }
         }
@@ -608,11 +614,11 @@ void Communicator::sessThread(int sessId) {
     }
 
     SASSERT0(recvMsg);
-    free(recvMsg);
+    SFREE(recvMsg);
     recvMsg = NULL;
 
     SASSERT0(replyMsg);
-    free(replyMsg);
+    SFREE(replyMsg);
     replyMsg = NULL;
 
     COLD_LOG(ColdLog::INFO, true, "session thread #%d ends", sessId);

@@ -18,6 +18,16 @@ void CustomInputLayer<Dtype>::registerCBFunc(CBCustomInputForward forwardFunc, v
 }
 
 template<typename Dtype>
+CustomInputLayer<Dtype>::~CustomInputLayer() {
+    float* data;
+
+    for (int i = 0; i < this->dataArray.size(); i++) {
+        data = this->dataArray[i];
+        SFREE(data);
+    }
+}
+
+template<typename Dtype>
 void CustomInputLayer<Dtype>::feedforward() {
 	//Layer<Dtype>::feedforward();
 	cout << "unsupported ... " << endl;
@@ -59,7 +69,9 @@ void CustomInputLayer<Dtype>::reshape() {
 			SLPROP_BASE(input).push_back(SLPROP_BASE(output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
             int elemCnt = SLPROP(CustomInput, inputElemCounts)[i] * batchSize;
-            float* data = (float*)malloc(sizeof(float) * elemCnt);
+            float* data = NULL;
+            int allocSize = sizeof(float) * elemCnt;
+            SMALLOC(data, float, allocSize);
             this->dataArray.push_back(data);
 		}
 	}

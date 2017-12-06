@@ -11,6 +11,7 @@
 #include "ThreadMgmt.h"
 #include "SysLog.h"
 #include "WorkContext.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -32,7 +33,8 @@ int ThreadMgmt::init() {
         ThreadMgmt::contextArray.push_back(tc);
     }
 
-    ThreadMgmt::threadIDBaseArray = (int*)malloc(sizeof(int) * ThreadType::ThreadTypeMax);
+    int allocSize = sizeof(int) * ThreadType::ThreadTypeMax;
+    SMALLOC(ThreadMgmt::threadIDBaseArray, int, allocSize);
     SASSERT0(ThreadMgmt::threadIDBaseArray != NULL);
 
     // threadIDBaseArray와 이름을 채운다.
@@ -76,7 +78,7 @@ void ThreadMgmt::destroy() {
     ThreadMgmt::contextArray.clear();
 
     SASSERT0(ThreadMgmt::threadIDBaseArray != NULL);
-    free(ThreadMgmt::threadIDBaseArray);
+    SFREE(ThreadMgmt::threadIDBaseArray);
 }
 
 void ThreadMgmt::signal(int threadID, ThreadEvent event) {

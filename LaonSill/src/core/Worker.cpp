@@ -473,7 +473,9 @@ void Worker::handleGetMeasures(Job* job) {
         pubJob->addJobElem(Job::IntType, 1, (void*)&N);
     } else {
         int itemCount = entry->getItemNames().size();
-        float* data = (float*)malloc(sizeof(float) * count * itemCount);
+        float* data = NULL;
+        int allocSize = sizeof(float) * count * itemCount;
+        SMALLOC(data, float, allocSize);
         SASSUME0(data != NULL);
         entry->getData(start, count, (bool)isForward, &startIterNum, &measureCount, data); 
 
@@ -484,7 +486,7 @@ void Worker::handleGetMeasures(Job* job) {
         if (N > 0)
             pubJob->addJobElem(Job::FloatArrayType, N, data);
 
-        free(data);
+        SFREE(data);
     }
 
     Broker::publish(job->getJobID(), pubJob);

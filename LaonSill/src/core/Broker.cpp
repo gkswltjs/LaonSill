@@ -10,6 +10,7 @@
 #include "Broker.h"
 #include "SysLog.h"
 #include "Param.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -25,7 +26,7 @@ mutex                   Broker::adhocSessMutex;
 
 void Broker::init() {
     int allocSize = sizeof(Broker::AdhocSess) * SPARAM(BROKER_ADHOC_SESS_COUNT);
-    Broker::adhocSessArray = (Broker::AdhocSess*)malloc(allocSize);
+    SMALLOC(Broker::adhocSessArray, Broker::AdhocSess, allocSize);
     SASSERT0(Broker::adhocSessArray != NULL);
 
     for (int i = 0; i < SPARAM(BROKER_ADHOC_SESS_COUNT); i++) {
@@ -45,7 +46,7 @@ void Broker::destroy() {
         delete Broker::adhocSessArray[i].sessCondVar;
     }
    
-    free(Broker::adhocSessArray);
+    SFREE(Broker::adhocSessArray);
 }
 
 /**

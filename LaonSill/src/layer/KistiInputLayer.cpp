@@ -23,6 +23,7 @@
 #include "SysLog.h"
 #include "ImageUtil.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -48,11 +49,11 @@ KistiInputLayer<Dtype>::KistiInputLayer() : InputLayer<Dtype>() {
 template<typename Dtype>
 KistiInputLayer<Dtype>::~KistiInputLayer() {
     if (this->images != NULL) {
-        free(this->images); 
+        SFREE(this->images); 
     }
 
     if (this->labels != NULL) {
-        free(this->labels);
+        SFREE(this->labels);
     }
 }
 
@@ -323,8 +324,8 @@ void KistiInputLayer<Dtype>::reshape() {
             (unsigned long)this->imageChannel * 
             (unsigned long)batchSize;
 
-        this->images = (Dtype*)malloc(allocSize);
-
+        this->images = NULL;
+        SMALLOC(this->images, Dtype, allocSize);
         SASSERT0(this->images != NULL);
         // prepare keyword map
 
@@ -339,7 +340,7 @@ void KistiInputLayer<Dtype>::reshape() {
             (unsigned long)SLPROP(KistiInput, labelCount) *
             (unsigned long)batchSize;
 
-        this->labels = (Dtype*)malloc(labelAllocSize);
+        SMALLOC(this->labels, Dtype, labelAllocSize);
         SASSERT0(this->labels != NULL);
 	}
 

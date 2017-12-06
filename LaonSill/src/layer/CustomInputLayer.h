@@ -22,7 +22,7 @@ template<typename Dtype>
 class CustomInputLayer : public InputLayer<Dtype> {
 public: 
     CustomInputLayer() {}
-    virtual ~CustomInputLayer() {}
+    virtual ~CustomInputLayer();
 
     void feedforward();
     using Layer<Dtype>::feedforward;

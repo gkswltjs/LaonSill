@@ -12,6 +12,7 @@
 #include "MeasureEntry.h"
 #include "SysLog.h"
 #include "StdOutLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -38,21 +39,27 @@ MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option
 
     this->baseIterNum = 0;
 
-    this->data = (float*)malloc(sizeof(float) * this->queueSize * this->itemCount); 
+    this->data = NULL;
+    int allocSize = sizeof(float) * this->queueSize * this->itemCount;
+    SMALLOC(this->data, float, allocSize);
     SASSERT0(this->data != NULL);
 
-    this->status =
-        (MeasureEntryDataStatus*)malloc(sizeof(MeasureEntryDataStatus) * this->queueSize);
+    this->status = NULL;
+    allocSize = sizeof(MeasureEntryDataStatus) * this->queueSize;
+    SMALLOC(this->status, MeasureEntryDataStatus, allocSize);
     SASSERT0(this->status != NULL);
     for (int i = 0; i < this->queueSize; i++)
         this->status[i] = MEASURE_ENTRY_STATUS_NONE;
 
-    this->readRefCount = (int*)malloc(sizeof(int) * this->queueSize);
+    this->readRefCount = NULL;
+    allocSize = sizeof(int) * this->queueSize;
+    SMALLOC(this->readBufCount, int, allocSize);
     SASSERT0(this->readRefCount != NULL);
     for (int i = 0; i < this->queueSize; i++)
         this->readRefCount[i] = 0;
 
-    this->addBuffer = (float*)malloc(sizeof(float) * this->itemCount);
+    allocSize = sizeof(float) * this->itemCount;
+    SMALLOC(this->addBuffer, float, allocSize);
     SASSERT0(this->addBuffer != NULL);
 
     if (option & MEASURE_OPTION_FILE) {
@@ -69,13 +76,16 @@ MeasureEntry::MeasureEntry(string networkID, int queueSize, MeasureOption option
 
 MeasureEntry::~MeasureEntry() {
     SASSERT0(this->data != NULL);
-    free((void*)this->data);
+    SFREE((void*)this->data);
 
     SASSERT0(this->status != NULL);
-    free((void*)this->status);
+    SFREE((void*)this->status);
 
     SASSERT0(this->readRefCount != NULL);
-    free((void*)this->readRefCount);
+    SFREE((void*)this->readRefCount);
+
+    SASSERT0(this->addBuffer != NULL);
+    SFREE(this->addBuffer);
 
     if (this->fp != NULL) {
         fflush(this->fp);

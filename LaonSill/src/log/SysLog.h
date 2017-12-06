@@ -57,6 +57,7 @@
                 assert(0);                                                          \
         }                                                                           \
     } while (0)
+
 #define SASSERT0(cond)                                                              \
     do {                                                                            \
         if (!(cond)) {                                                              \

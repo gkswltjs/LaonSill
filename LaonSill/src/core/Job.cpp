@@ -51,7 +51,6 @@ Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
  
     if (this->jobElemCnt > 0) {
         int allocSize = sizeof(JobElemDef) * this->jobElemCnt;
-        //this->jobElemDefs = (Job::JobElemDef*)malloc(allocSize);
         SMALLOC(this->jobElemDefs, Job::JobElemDef, allocSize);
         SASSERT0(this->jobElemDefs != NULL);
         SASSERT0(jobElemValues != NULL);
@@ -102,7 +101,6 @@ Job::Job(JobType jobType, int jobElemCnt, Job::JobElemType *jobElemTypes,
     int jobElemValueAllocSize = offset;
 
     if (jobElemValueAllocSize > 0) {
-        //this->jobElemValues = (char*)malloc(jobElemValueAllocSize);
         SMALLOC(this->jobElemValues, char, jobElemValueAllocSize);
         SASSERT0(this->jobElemValues != NULL);
         memcpy((void*)this->jobElemValues, (void*)jobElemValues, jobElemValueAllocSize);
@@ -152,7 +150,6 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
 
     this->jobElemCnt++;
 
-    //this->jobElemDefs = (Job::JobElemDef*)malloc(sizeof(Job::JobElemDef) * this->jobElemCnt);
     int allocSize = sizeof(Job::JobElemDef) * this->jobElemCnt;
     SMALLOC(this->jobElemDefs, Job::JobElemDef, allocSize);
     SASSERT0(this->jobElemDefs != NULL);
@@ -187,10 +184,8 @@ void Job::addJobElem(Job::JobElemType jobElemType, int arrayCount, void* dataPtr
     if (jobElemType == Job::FloatArrayType || jobElemType == Job::StringType) {
         int arrayAllocSize = tempJobElemValueSize + elemValueSize + sizeof(int);
         // array size만큼을 고려해 줘야 한다.
-        //this->jobElemValues = (char*)malloc(arrayAllocSize);
         SMALLOC(this->jobElemValues, char, arrayAllocSize);
     } else {
-        //this->jobElemValues = (char*)malloc(tempJobElemValueSize + elemValueSize);
         int allocSize = tempJobElemValueSize + elemValueSize;
         SMALLOC(this->jobElemValues, char, allocSize);
     }
@@ -280,7 +275,6 @@ std::string Job::getStringValue(int elemIdx) {
 
     int elemOffset = this->jobElemDefs[elemIdx].elemOffset;
     char *charArray = (char*)(&this->jobElemValues[elemOffset]);
-    //char *temp = (char*)malloc(sizeof(char) * (this->jobElemDefs[elemIdx].arrayCount + 1));
     char* temp;
     int allocSize = sizeof(char) * (this->jobElemDefs[elemIdx].arrayCount + 1);
     SMALLOC(temp, char, allocSize);
@@ -289,12 +283,7 @@ std::string Job::getStringValue(int elemIdx) {
     temp[this->jobElemDefs[elemIdx].arrayCount] = '\0';
     string resultString(temp);
 
-    MemoryMgmt::dump();
-
-    //free(temp);
     SFREE(temp);
-
-    MemoryMgmt::dump();
 
     return resultString;
 }

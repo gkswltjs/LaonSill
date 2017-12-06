@@ -11,14 +11,13 @@
 #include <boost/random.hpp>
 #include <boost/math/special_functions/next.hpp>
 
-//#include <cblas.h>
-
 #include "common.h"
 #include "NoiseInputLayer.h"
 #include "InputLayer.h"
 #include "Network.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -40,7 +39,7 @@ void NoiseInputLayer<Dtype>::setRegenerateNoise(bool regenerate) {
 template<typename Dtype>
 NoiseInputLayer<Dtype>::~NoiseInputLayer() {
     if (this->uniformArray != NULL) {
-        free(this->uniformArray);
+        SFREE(this->uniformArray);
     }
 }
 
@@ -55,7 +54,8 @@ bool NoiseInputLayer<Dtype>::prepareUniformArray() {
 
     if (this->uniformArray == NULL) {
         int allocSize = sizeof(Dtype) * SLPROP(NoiseInput, noiseDepth) * batchSize;
-        this->uniformArray = (Dtype*)malloc(allocSize);
+        this->uniformArray = NULL;
+        SMALLOC(this->uniformArray, Dtype, allocSize);
         SASSERT0(this->uniformArray != NULL);
         firstGenerate = true;
     }
@@ -78,50 +78,7 @@ bool NoiseInputLayer<Dtype>::prepareUniformArray() {
 
 template <typename Dtype>
 void NoiseInputLayer<Dtype>::prepareLinearTranMatrix() {
-	/*
-    uint32_t batchSize = SNPROP(batchSize);
-
-	RNGType rng;
-    rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
-    boost::normal_distribution<float> random_distribution(
-        SLPROP(NoiseInput, tranMean), SLPROP(NoiseInput, tranVariance));
-    boost::variate_generator<RNGType, boost::normal_distribution<float> >
-    variate_generator(rng, random_distribution);
-
-    Dtype* tempMatrix;
-    int tempMatrixCount = SLPROP(NoiseInput, noiseDepth) * SLPROP(NoiseInput, tranChannels) *
-        SLPROP(NoiseInput, tranRows) * SLPROP(NoiseInput, tranCols) * batchSize;
-
-    int tempMatrixAllocSize = sizeof(Dtype) * tempMatrixCount;
-    tempMatrix = (Dtype*)malloc(tempMatrixAllocSize);
-    SASSERT0(tempMatrix != NULL);
-
-    for (int i = 0; i < tempMatrixCount; i++) {
-        tempMatrix[i] = (Dtype)variate_generator();
-    }
-
-    int linearTransMatrixAllocSize = sizeof(Dtype) * SLPROP(NoiseInput, tranChannels) *
-        SLPROP(NoiseInput, tranRows) * SLPROP(NoiseInput, tranCols) * batchSize;
-    SASSERT0(this->linearTransMatrix == NULL);
-    this->linearTransMatrix = (Dtype*)malloc(linearTransMatrixAllocSize);
-    SASSERT0(this->linearTransMatrix != NULL);
-
-    int m = 1;
-    int n = SLPROP(NoiseInput, tranChannels) * SLPROP(NoiseInput, tranRows) *
-        SLPROP(NoiseInput, tranCols) * batchSize;
-    int k = SLPROP(NoiseInput, noiseDepth) * batchSize;
-
-    if (sizeof(Dtype) == sizeof(float)) {
-        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1,
-            this->uniformArray, k, tempMatrix, n, 0, this->linearTransMatrix, n);
-    } else {
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1,
-            (const double*)this->uniformArray, k, (const double*)tempMatrix, n, 0,
-            (double*)this->linearTransMatrix, n);
-    }
-
-    free(tempMatrix);
-    */
+    // FIXME: deprecated function. should be deleted!!!
 }
 
 template <typename Dtype>

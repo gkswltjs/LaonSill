@@ -13,6 +13,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "LayerPropList.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -21,13 +22,15 @@ CBLayerFunc* LayerFunc::layerFuncs;
 void LayerFunc::init() {
     int layerTypeSize = Layer<float>::LayerTypeMax;
 
-    LayerFunc::layerFuncs = (CBLayerFunc*)malloc(sizeof(CBLayerFunc) * layerTypeSize);
+    LayerFunc::layerFuncs = NULL;
+    int allocSize = sizeof(CBLayerFunc) * layerTypeSize;
+    SMALLOC(LayerFunc::layerFuncs, CBLayerFunc, allocSize);
     SASSERT0(LayerFunc::layerFuncs != NULL); 
 }
 
 void LayerFunc::destroy() {
     SASSERT0(LayerFunc::layerFuncs != NULL);
-    free(LayerFunc::layerFuncs);
+    SFREE(LayerFunc::layerFuncs);
 }
 
 void LayerFunc::registerLayerFunc(int layerType, CBInitLayer initLayer,

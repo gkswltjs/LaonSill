@@ -211,6 +211,7 @@ int main(int argc, char** argv) {
 	STDOUT_BLOCK(cout << "LAONSILL engine starts" << endl;);
 
     // (3) 파라미터, 로깅, job 모듈을 초기화 한다.
+    MemoryMgmt::init();
     InitParam::init();
     Perf::init();
     SysLog::init();
@@ -220,7 +221,6 @@ int main(int argc, char** argv) {
     Broker::init();
     Network<float>::init();
     MeasureManager::init();
-    MemoryMgmt::init();
 
     ResourceManager::init();
     PlanOptimizer::init();

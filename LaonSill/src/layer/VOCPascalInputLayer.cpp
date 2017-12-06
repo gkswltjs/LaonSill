@@ -21,6 +21,7 @@
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -65,7 +66,11 @@ VOCPascalInputLayer<Dtype>::VOCPascalInputLayer() : InputLayer<Dtype>() {
 template<typename Dtype>
 VOCPascalInputLayer<Dtype>::~VOCPascalInputLayer() {
     if (this->images != NULL) {
-        free(this->images); 
+        SFREE(this->images); 
+    }
+
+    if (this->labels != NULL) {
+        SFREE(this->labels);
     }
 }
 
@@ -84,7 +89,8 @@ void VOCPascalInputLayer<Dtype>::reshape() {
             (unsigned long)this->imageChannel * 
             (unsigned long)batchSize;
 
-        this->images = (Dtype*)malloc(allocImageSize);
+        this->images = NULL;
+        SMALLOC(this->images, Dtype, allocImageSize);
         SASSERT0(this->images != NULL);
 
         unsigned long allocLabelSize = 
@@ -93,7 +99,8 @@ void VOCPascalInputLayer<Dtype>::reshape() {
             (unsigned long)VOCPASCAL_BOX_ELEM_COUNT *
             (unsigned long)batchSize;
 
-        this->labels = (Dtype*)malloc(allocLabelSize);
+        this->labels = NULL;
+        SMALLOC(this->labels, Dtype, allocLabelSize);
         SASSERT0(this->labels != NULL);
 	} else {
         SASSERT0(this->labels != NULL);
@@ -232,7 +239,7 @@ void VOCPascalInputLayer<Dtype>::fillMetas() {
     }
    
     if (line)
-        free(line);
+        free(line);     // do not use SFREE because line is allocated in the getline() func
 
     fclose(fp);
 }

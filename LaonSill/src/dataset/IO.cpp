@@ -11,6 +11,7 @@
 
 #include "IO.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 using namespace boost::property_tree;
@@ -363,7 +364,10 @@ cv::Mat ConvertCHWDataToHWCCV(Data<Dtype>* data, const int batchIdx) {
 	const Dtype* dataPtr = data->host_data() + data->offset(batchIdx);
 
 	const int numElems = channels * height * width;
-	uchar* src = (uchar *)malloc(numElems * sizeof(uchar));
+	uchar* src; 
+    int allocSize = numElems * sizeof(uchar);
+    SMALLOC(src, uchar, allocSize);
+    SASSUME0(src != NULL);
 
 	for (int i = 0; i < numElems; i++) {
 		src[i] = (uchar)dataPtr[i];
@@ -374,7 +378,7 @@ cv::Mat ConvertCHWDataToHWCCV(Data<Dtype>* data, const int batchIdx) {
 	uchar* dst = (uchar*)cv_img.data;
 
 	ConvertCHWToHWC<uchar>(channels, height, width, src, dst);
-	free(src);
+	SFREE(src);
 
 	return cv_img;
 }

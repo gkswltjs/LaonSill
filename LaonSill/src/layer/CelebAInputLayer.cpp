@@ -21,6 +21,7 @@
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -58,7 +59,7 @@ CelebAInputLayer<Dtype>::CelebAInputLayer() : InputLayer<Dtype>() {
 template<typename Dtype>
 CelebAInputLayer<Dtype>::~CelebAInputLayer() {
     if (this->images != NULL) {
-        free(this->images); 
+        SFREE(this->images); 
     }
 }
 
@@ -76,7 +77,7 @@ void CelebAInputLayer<Dtype>::reshape() {
             (unsigned long)this->imageChannel * 
             (unsigned long)batchSize;
 
-        this->images = (Dtype*)malloc(allocSize);
+        SMALLOC(this->images, Dtype, allocSize);
         SASSERT0(this->images != NULL);
 	}
 

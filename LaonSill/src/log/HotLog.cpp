@@ -24,6 +24,7 @@
 #include "HotLog.h"
 #include "SysLog.h"
 #include "ColdLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -207,8 +208,10 @@ void HotLog::flusherThread(int contextCount) {
 
     // (2) AIO control blocks 구조체를 생성한다.
     //     wrap around까지 고려해서 contextCount * 2개 만큼을 할당한다.
-    HotLog::flushCBs = (struct aiocb**)malloc(sizeof(struct aiocb*) * contextCount * 2);
-    SASSERT(HotLog::flushCBs, "");
+    HotLog::flushCBs = NULL;
+    int allocSize = sizeof(struct aiocb*) * contextCount * 2;
+    SMALLOC(HotLog::flushCBs, struct aiocb*, allocSize);
+    SASSERT0(HotLog::flushCBs != NULL);
 
     // (3) main loop
     //     특정 값(SPARAM(HOTLOG_FLUSH_THRESHOLD) * SPARAM(HOTLOG_BUFFERSIZE)) 이상 
@@ -233,6 +236,6 @@ void HotLog::flusherThread(int contextCount) {
         delete (*iter);
     }
 
-    SASSERT(HotLog::flushCBs, "");
-    free(HotLog::flushCBs);
+    SASSERT0(HotLog::flushCBs != NULL);
+    SFREE(HotLog::flushCBs);
 }
