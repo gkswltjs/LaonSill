@@ -60,7 +60,8 @@ void HotLog::init() {
 
 void HotLog::launchThread(int threadCount) {
     // (1) flusher 쓰레드를 생성한다.
-    HotLog::flusher = new thread(HotLog::flusherThread, threadCount);
+    HotLog::flusher = NULL;
+    SNEW(HotLog::flusher, thread, HotLog::flusherThread, threadCount);
 }
 
 int HotLog::initForThread() {
@@ -81,7 +82,8 @@ int HotLog::initForThread() {
     SASSERT(fd != -1, "");
 
     // (2) contextArray에 자신의 fd를 추가한다.
-    HotLogContext* newContext = new HotLogContext(fd);
+    HotLogContext* newContext = NULL;
+    SNEW(newContext, HotLogContext, fd);
     unique_lock<mutex> fdLock(HotLog::contextMutex);
     HotLog::contextArray.push_back(newContext);
     HotLog::contextId = HotLog::contextGenId;
@@ -99,7 +101,7 @@ void HotLog::destroy() {
     HotLog::flusherCondVar.notify_one();
 
     HotLog::flusher->join();
-    delete HotLog::flusher;
+    SDELETE(HotLog::flusher);
     HotLog::flusher = NULL;
 }
 
@@ -233,7 +235,7 @@ void HotLog::flusherThread(int contextCount) {
     typename vector<HotLogContext*>::iterator iter = HotLog::contextArray.begin();
     typename vector<HotLogContext*>::iterator iterTmp;
     for (; iter != HotLog::contextArray.end(); iter++) {
-        delete (*iter);
+        SDELETE(*iter);
     }
 
     SASSERT0(HotLog::flushCBs != NULL);

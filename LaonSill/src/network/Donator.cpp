@@ -13,6 +13,7 @@
 #include "FullyConnectedLayer.h"
 #include "SysLog.h"
 #include "ColdLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -71,7 +72,7 @@ void Donator<Dtype>::releaseDonator(uint32_t donatorID) {
         data.cleanUp = true;
     } else {
         Layer<Dtype>* layer = (Layer<Dtype>*)data.layerPtr;
-        delete layer;
+        SDELETE(layer);
         Donator::donatorMap.erase(donatorID);
     }
 }
@@ -86,7 +87,7 @@ void Donator<Dtype>::releaseReceiver(uint32_t donatorID) {
     data.refCount -= 1;
     if ((data.refCount == 0) && data.cleanUp) {
         Layer<Dtype>* layer = (Layer<Dtype>*)data.layerPtr;
-        delete layer;
+        SDELETE(layer);
         Donator::donatorMap.erase(donatorID);
     }
 }

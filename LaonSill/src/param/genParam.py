@@ -201,6 +201,7 @@ sourceTopSentences = [\
 " */",\
 "",\
 '#include "Param.h"',\
+'#include "MemoryMgmt.h"',\
 "",\
 "using namespace std;",\
 "",\
@@ -281,16 +282,14 @@ try:
     for paramDef in paramDefList:
         if "CHAR" in typeString:
             sourceFile.write(\
-                '    paramDefMap["%s"] =\
-                \n        new ParamDef("%s",\
+                '    SNEW(paramDefMap["%s"], ParamDef, "%s", \
                 \n        "%s", "%s", %s, %s, %s, (void*)Param::_%s, %s);\n'\
                 % (str(paramDef[0]), str(paramDef[1]), str(paramDef[2]), str(paramDef[3]),\
                 str(paramDef[4]).lower(), str(paramDef[5]).lower(), str(paramDef[6]).lower(),\
                 str(paramDef[0]), str(paramDef[7])))
         else:
             sourceFile.write(\
-                '    paramDefMap["%s"] =\
-                \n        new ParamDef("%s",\
+                '    SNEW(paramDefMap["%s"], ParamDef, "%s", \
                 \n        "%s", "%s", %s, %s, %s, (void*)&Param::_%s, %s);\n'\
                 % (str(paramDef[0]), str(paramDef[1]), str(paramDef[2]), str(paramDef[3]),\
                 str(paramDef[4]).lower(), str(paramDef[5]).lower(), str(paramDef[6]).lower(),\

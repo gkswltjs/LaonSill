@@ -10,12 +10,19 @@
 #include "Network.h"
 #include "LayerPropList.h"
 #include "PlanParser.h"
+#include "MemoryMgmt.h"
+#include "SysLog.h"
 
 using namespace std;
 
 PlanBuilder::PlanBuilder() {
-    Network<float> *network = new Network<float>();
+    SNEW(this->network, Network<float>);
+    SASSUME0(this->network != NULL);
     this->networkID = network->getNetworkID();
+}
+
+PlanBuilder::~PlanBuilder() {
+    SDELETE(this->network);
 }
 
 void PlanBuilder::makeLayer(int layerID, string layerName, int layerType,

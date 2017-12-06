@@ -20,6 +20,8 @@
 #include "StatGraphPlotter.h"
 #include "StatFileWriter.h"
 #include "Param.h"
+#include "MemoryMgmt.h"
+#include "SysLog.h"
 
 /**
  * @brief 네트워크 상태 모니터링 클래스
@@ -46,10 +48,27 @@ public:
 
 		if (mode == PLOT_ONLY || mode == PLOT_AND_WRITE) {
             if (SPARAM(PLOTING_OPTION)) {
-                costLogger.push_back(new StatGraphPlotter());
-                accuracyLogger.push_back(new StatGraphPlotter());
-                gradSumsqLogger.push_back(new StatGraphPlotter(250, 10));
-                dataSumsqLogger.push_back(new StatGraphPlotter(250, 10));
+                StatGraphPlotter* costPlotter = NULL;
+                StatGraphPlotter* accuracyPlotter = NULL;
+                StatGraphPlotter* gradSumsqPlotter = NULL;
+                StatGraphPlotter* dataSumsqPlotter = NULL;
+
+                SNEW(costPlotter, StatGraphPlotter);
+                SASSUME0(costPlotter != NULL);
+
+                SNEW(accuracyPlotter, StatGraphPlotter);
+                SASSUME0(accuracyPlotter != NULL);
+
+                SNEW(gradSumsqPlotter, StatGraphPlotter, 250, 10);
+                SASSUME0(gradSumsqPlotter != NULL);
+            
+                SNEW(dataSumsqPlotter, StatGraphPlotter, 250, 10);
+                SASSUME0(dataSumsqPlotter);
+                
+                costLogger.push_back(costPlotter);
+                accuracyLogger.push_back(accuracyPlotter);
+                gradSumsqLogger.push_back(gradSumsqPlotter);
+                dataSumsqLogger.push_back(dataSumsqPlotter);
             } else {
                 loggerSize--;
             }
@@ -57,25 +76,42 @@ public:
 		if (mode == WRITE_ONLY || mode == PLOT_AND_WRITE) {
 			const std::string postfix = now();
 
-			costLogger.push_back(new StatFileWriter(
-                std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_cost_"+postfix+".csv"));
-			accuracyLogger.push_back(new StatFileWriter(
+            StatFileWriter* costWriter = NULL;
+            StatFileWriter* accuracyWriter = NULL;
+            StatFileWriter* gradSumsqWriter = NULL;
+            StatFileWriter* dataSumsqWriter = NULL;
+
+            SNEW(costWriter, StatFileWriter, 
+                std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_cost_"+postfix+".csv");
+            SASSUME0(costWriter != NULL);
+
+            SNEW(accuracyWriter, StatFileWriter,
                 std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_accuracy_"+postfix+
-                ".csv"));
-			gradSumsqLogger.push_back(new StatFileWriter(
+                ".csv");
+            SASSUME0(accuracyWriter != NULL);
+
+            SNEW(gradSumsqWriter, StatFileWriter,
                 std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_gradSumsq_"+postfix+
-                ".csv"));
-			dataSumsqLogger.push_back(new StatFileWriter(
+                ".csv");
+            SASSUME0(gradSumsqWriter != NULL);
+
+            SNEW(dataSumsqWriter, StatFileWriter,
                 std::string(SPARAM(STATFILE_OUTPUT_DIR))+"/"+name+"_dataSumsq_"+postfix+
-                ".csv"));
+                ".csv");
+            SASSUME0(dataSumsqWriter != NULL);
+
+			costLogger.push_back(costWriter);
+			accuracyLogger.push_back(accuracyWriter);
+			gradSumsqLogger.push_back(gradSumsqWriter);
+			dataSumsqLogger.push_back(dataSumsqWriter);
 		}
 	}
 	virtual ~NetworkMonitor() {
 		for(uint32_t i = 0; i < loggerSize; i++) {
-			delete costLogger[i];
-			delete accuracyLogger[i];
-			delete gradSumsqLogger[i];
-			delete dataSumsqLogger[i];
+			SDELETE(costLogger[i]);
+			SDELETE(accuracyLogger[i]);
+			SDELETE(gradSumsqLogger[i]);
+			SDELETE(dataSumsqLogger[i]);
 		}
 		costLogger.clear();
 		accuracyLogger.clear();

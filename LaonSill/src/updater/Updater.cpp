@@ -11,6 +11,7 @@
 #include "Worker.h"
 #include "PhysicalPlan.h"
 #include "WorkContext.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -24,31 +25,46 @@ void Updater::addUpdater(string networkID, int layerID, int paramCount, int node
     key.networkID = networkID;
     key.layerID = layerID;
 
-    UpdaterValue *value = new UpdaterValue();
+    UpdaterValue *value = NULL;
+    SNEW(value, UpdaterValue);
     SASSERT0(value != NULL);
     value->nodeID = nodeID;
     value->devID = devID;
 
     for (int i = 0; i < paramCount; i++) {
         int paramType = i;
-        value->tensorDataPtrs.push_back(new Data<float>(string("update_Data_") + 
+        Data<float>* updateData = NULL;
+        Data<float>* updateDataHis1 = NULL;
+        Data<float>* updateDataHis2 = NULL;
+
+        SNEW(updateData, Data<float>, string("update_Data_") + 
                                            networkID + 
                                            string("_") + to_string(layerID) +
                                            string("_") + to_string(paramType) +
                                            string("_") + to_string(nodeID) +
-                                           string("_") + to_string(devID)));
-        value->tensorDataHis1Ptrs.push_back(new Data<float>(string("update_DataHis1_") + 
+                                           string("_") + to_string(devID));
+        SASSUME0(updateData != NULL);
+
+        SNEW(updateDataHis1, Data<float>, string("update_DataHis1_") + 
                                            networkID + 
                                            string("_") + to_string(layerID) +
                                            string("_") + to_string(paramType) +
                                            string("_") + to_string(nodeID) +
-                                           string("_") + to_string(devID)));
-        value->tensorDataHis2Ptrs.push_back(new Data<float>(string("update_DataHis2_") + 
+                                           string("_") + to_string(devID));
+        SASSUME0(updateDataHis1 != NULL);
+
+        SNEW(updateDataHis2, Data<float>, string("update_DataHis2_") + 
                                            networkID + 
                                            string("_") + to_string(layerID) +
                                            string("_") + to_string(paramType) +
                                            string("_") + to_string(nodeID) +
-                                           string("_") + to_string(devID)));
+                                           string("_") + to_string(devID));
+        SASSUME0(updateDataHis2 != NULL);
+
+
+        value->tensorDataPtrs.push_back(updateData);
+        value->tensorDataHis1Ptrs.push_back(updateDataHis1);
+        value->tensorDataHis2Ptrs.push_back(updateDataHis2);
     }
     value->paramCount = paramCount;
     value->reshape = false;

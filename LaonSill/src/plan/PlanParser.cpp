@@ -1,4 +1,6 @@
 /**
+ * SASSUME0(planInfo != NULL);
+ *
  * @file PlanParser.cpp
  * @date 2017-05-04
  * @author moonhoen lee
@@ -21,6 +23,7 @@
 #include "LayerPropList.h"
 #include "Network.h"
 #include "ColdLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -347,7 +350,9 @@ void PlanParser::buildNetwork(std::string networkID, Json::Value rootValue) {
     }
 
     // (2) get network property
-    _NetworkProp *networkProp = new _NetworkProp();
+    _NetworkProp *networkProp = NULL;
+    SNEW(networkProp, _NetworkProp);
+    SASSUME0(networkProp != NULL);
     Json::Value networkConfDic = rootValue["configs"];
 
     vector<string> keys = networkConfDic.getMemberNames();
@@ -391,7 +396,8 @@ string PlanParser::loadNetwork(string filePath) {
     }
    
     // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
-    Network<float>* network = new Network<float>();
+    Network<float>* network = NULL;
+    SNEW(network, Network<float>);
     string networkID = network->getNetworkID();
 
     network->logNetworkDefFile(filePath);
@@ -417,7 +423,8 @@ string PlanParser::loadNetworkByJSONString(string jsonString) {
     }
    
     // (2) 파싱에 문제가 없어보이니.. 네트워크 ID 생성
-    Network<float>* network = new Network<float>();
+    Network<float>* network = NULL;
+    SNEW(network, Network<float>);
     string networkID = network->getNetworkID();
 
     network->logNetworkDefString(jsonString);

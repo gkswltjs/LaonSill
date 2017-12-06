@@ -91,6 +91,7 @@ sourceTopSentences = [\
 '#include "LayerPropList.h"',\
 '#include "SysLog.h"',\
 '#include "LayerFunc.h"',\
+'#include "MemoryMgmt.h"',\
 "",\
 "",\
 ]
@@ -473,10 +474,12 @@ try:
                 isFirstCond = False
             else:
                 sourceFile.write(' else if (strcmp(layerName, "%s") == 0) {\n' % prop)
-            sourceFile.write('        _%sPropLayer *prop = new _%sPropLayer();\n'\
-                % (prop, prop))
-            sourceFile.write('        return new LayerProp(networkID, layerID,')
+            sourceFile.write('        _%sPropLayer *prop = NULL;\n' % prop)
+            sourceFile.write('        SNEW(prop, _%sPropLayer);\n' % prop)
+            sourceFile.write('        LayerProp *lprop = NULL;\n')
+            sourceFile.write('        SNEW(lprop, LayerProp, networkID, layerID,')
             sourceFile.write(' (int)Layer<float>::%s, (void*)prop);\n' % prop)
+            sourceFile.write('        return lprop;\n')
             sourceFile.write('    }')
     sourceFile.write(' else {\n')
     sourceFile.write('        SASSERT(false, "invalid layer. layer name=%s"')

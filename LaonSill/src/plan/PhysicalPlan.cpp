@@ -24,6 +24,7 @@
 #include "MeasureManager.h"
 #include "MeasureLayer.h"
 #include "ColdLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -32,7 +33,8 @@ map<std::string, PlanInfo*>             PhysicalPlan::planGlobalInfoMap;
 mutex                                   PhysicalPlan::planGlobalMutex;
 
 PhysicalPlan::PhysicalPlan(vector<string> lossNames) {
-    this->lossConsole = new LossConsole(lossNames);
+    this->lossConsole = NULL;
+    SNEW(this->lossConsole, LossConsole, lossNames);
     SASSUME0(this->lossConsole);
 }
 
@@ -41,7 +43,7 @@ PhysicalPlan::~PhysicalPlan() {
         iter != this->tensorAllocMap.end(); iter++) {
         void* value = iter->second;
         Data<float>* dataPtr = (Data<float>*)value;
-        delete dataPtr;
+        SDELETE(dataPtr);
     }
 
     for (map<int, void*>::iterator iter = instanceMap.begin(); iter != instanceMap.end();
@@ -57,6 +59,8 @@ PhysicalPlan::~PhysicalPlan() {
             LayerFunc::destroyLayer(layerType, instancePtr);
         }
     }
+
+    SDELETE(this->lossConsole);
 }
 
 void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tensorName,
@@ -72,7 +76,8 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
     if (WorkContext::curBootMode == DeveloperMode ||
         WorkContext::curBootMode == TestMode ||
         WorkContext::curBootMode == SingleJobMode) {
-        Data<float>* tensor = new Data<float>(tensorName);
+        Data<float>* tensor = NULL;
+        SNEW(tensor, Data<float>, tensorName);
         SASSERT0(tensor != NULL);
 
         tensorPtr = (void*)tensor;
@@ -667,7 +672,7 @@ void PhysicalPlan::removePlan(string networkID) {
             iter != PhysicalPlan::planGlobalMap[networkID].end(); ) {
         PhysicalPlan* pp = (PhysicalPlan*)(*iter);
         WorkContext::updatePlan(pp->dopID, false);
-        delete pp;
+        SDELETE(pp);
 
         iter = PhysicalPlan::planGlobalMap[networkID].erase(iter);
     }
@@ -676,7 +681,7 @@ void PhysicalPlan::removePlan(string networkID) {
             PhysicalPlan::planGlobalInfoMap.end());
 
     PlanInfo* deletePlanInfo = PhysicalPlan::planGlobalInfoMap[networkID];
-    delete deletePlanInfo;
+    SDELETE(deletePlanInfo);
     PhysicalPlan::planGlobalInfoMap.erase(networkID);
 }
 

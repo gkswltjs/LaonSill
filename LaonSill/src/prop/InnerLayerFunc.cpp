@@ -14,6 +14,7 @@
 #include "SysLog.h"
 #include "PropMgmt.h"
 #include "WorkContext.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -78,7 +79,7 @@ void InnerLayerFunc::setInOutTensor(int innerLayerIdx, void *tensorPtr, bool isI
             SASSUME0(index < SLPROP_BASE(output).size());
             tensorName = SLPROP_BASE(output)[index];
         }
-        tensorPtr = (void*)new Data<float>(tensorName);
+        SNEW(tensorPtr, Data<float>, tensorName);
         SASSUME0(tensorPtr != NULL);
     }
 

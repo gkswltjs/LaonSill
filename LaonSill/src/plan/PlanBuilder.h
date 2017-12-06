@@ -15,10 +15,12 @@
 
 #include "jsoncpp/json/json.h"
 
+#include "Network.h"
+
 class PlanBuilder {
 public: 
     PlanBuilder();
-    virtual ~PlanBuilder() {}
+    virtual ~PlanBuilder();
 
     void makeLayer(int layerID, std::string layerName, int layerType,
         std::vector<std::string> input, std::vector<std::string> output);
@@ -28,6 +30,7 @@ public:
 
 private:
     std::string networkID;
+    Network<float>* network;
     std::map<int, std::vector<std::string>> layerConf;
     std::vector<std::string> networkConf;
 

@@ -12,6 +12,7 @@
 #include "ParamMgmt.h"
 #include "Param.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -27,7 +28,7 @@ void ParamMgmt::cleanupParamDefMap() {
         iter != ParamMgmt::paramDefMap.end(); iter++) {
        
         ParamDef* paramDef = (ParamDef*)iter->second;
-        delete paramDef;
+        SDELETE(paramDef);
         iter->second = NULL;
     }
 }

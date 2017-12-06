@@ -10,6 +10,7 @@
 #include "SysLog.h"
 #include "Param.h"
 #include "FileMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -26,7 +27,8 @@ void MeasureManager::init() {
 
 void MeasureManager::insertEntryEx(string networkID, vector<string> itemNames,
         MeasureOption option, int queueSize) {
-    MeasureEntry* newEntry = new MeasureEntry(networkID, queueSize, option, itemNames);
+    MeasureEntry* newEntry = NULL;
+    SNEW(newEntry, MeasureEntry, networkID, queueSize, option, itemNames);
     SASSERT0(newEntry != NULL);
 
     unique_lock<mutex> entryMapLock(MeasureManager::entryMapMutex);
@@ -44,7 +46,7 @@ void MeasureManager::removeEntry(string networkID) {
     SASSERT0(MeasureManager::entryMap.find(networkID) != MeasureManager::entryMap.end());
     MeasureEntry* removeEntry = MeasureManager::entryMap[networkID];
     MeasureManager::entryMap.erase(MeasureManager::entryMap.find(networkID));
-    delete removeEntry;
+    SDELETE(removeEntry);
 }
 
 MeasureEntry* MeasureManager::getMeasureEntry(string networkID) {

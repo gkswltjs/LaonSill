@@ -15,6 +15,7 @@
 #include "LayerPropList.h"
 #include "PropMgmt.h"
 #include "WorkContext.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -31,7 +32,7 @@ void LogicalPlan::cleanup(string networkID) {
     LogicalPlan::lpMap.erase(networkID);
     lock.unlock();
 
-    delete lp;
+    SDELETE(lp);
 }
 
 PlanDef* LogicalPlan::findPlanDef(LogicalPlan* lp, int planID) {
@@ -118,7 +119,9 @@ void LogicalPlan::build(string networkID, map<int, PlanBuildDef> planDefMap) {
     }
 
     // (3) generate plans
-    LogicalPlan* lp = new LogicalPlan(networkID);
+    LogicalPlan* lp = NULL;
+    SNEW(lp, LogicalPlan, networkID);
+    SASSUME0(lp != NULL);
 
     // (3-1) generate forward plans
     for (map<int, PlanBuildDef>::iterator it = planDefMap.begin(); it != planDefMap.end();

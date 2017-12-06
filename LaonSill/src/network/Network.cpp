@@ -38,6 +38,7 @@
 #include "LogicalPlan.h"
 #include "MeasureManager.h"
 #include "FileMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 using namespace boost::uuids;
@@ -300,7 +301,9 @@ void Network<Dtype>::load(string path) {
     Data<float>::printConfig = true;
     cout << "Load Pretrained Weights ... ----------" << endl;
     for (uint32_t j = 0; j < numData; j++) {
-        Data<float>* data = new Data<float>("", true);
+        Data<float>* data = NULL;
+        SNEW(data, Data<float>, "", true);
+        SASSUME0(data != NULL);
         data->load(ifs);
 
         if (data)
@@ -313,7 +316,7 @@ void Network<Dtype>::load(string path) {
         it = dataMap.find(dataName);
         if (it != dataMap.end()) {
             cout << dataName << " overwrites ... " << endl;
-            delete it->second;
+            SDELETE(it->second);
         }
 
         dataMap[dataName] = data;
@@ -341,7 +344,7 @@ void Network<Dtype>::load(string path) {
 
 	map<std::string, Data<float>*>::iterator it;
 	for (it = dataMap.begin(); it != dataMap.end(); it++)
-		delete it->second;
+		SDELETE(it->second);
 	dataMap.clear();
 
     if (SPARAM(PRINT_PARAMLOG_AFTER_NETWORKLOAD)) {

@@ -192,6 +192,7 @@ sourceTopSentences = [\
 " */",\
 "",\
 '#include "PerfList.h"',\
+'#include "MemoryMgmt.h"',\
 "",\
 "using namespace std;",\
 "",\
@@ -362,7 +363,8 @@ try:
             isFirst = False
         else:
             sourceFile.write('\n')
-        sourceFile.write('    PerfDef* perfDef%s = new PerfDef("%s", %s, %s, %s, %s,\
+        sourceFile.write('    PerfDef* perfDef%s = NULL;\n' % str(perfDef[0]))
+        sourceFile.write('    SNEW(perfDef%s, PerfDef, "%s", %s, %s, %s, %s,\
 \n        (void*)&PerfList::_%sCount'\
             % (str(perfDef[0]), str(perfDef[1]), str(perfDef[2]).lower(),\
                 str(perfDef[3]).lower(), str(perfDef[4]).lower(),\
@@ -384,10 +386,12 @@ try:
         sourceFile.write('%d);\n' % len(perfDef[6]))
         
         for newArg in perfDef[6]:
-            sourceFile.write('    perfDef%s->addArgs(new PerfArgDef("%s", "%s", "%s",\
-\n        (void*)&PerfList::_%s_%s, %d));\n'\
-                % (str(perfDef[0]), str(newArg[0]), str(newArg[1]), str(newArg[2]),\
+            sourceFile.write('    { PerfArgDef* newPerfArgDef;\n')
+            sourceFile.write('    SNEW(newPerfArgDef, PerfArgDef, "%s", "%s", "%s",\
+\n        (void*)&PerfList::_%s_%s, %d); \n'\
+                % (str(newArg[0]), str(newArg[1]), str(newArg[2]),\
 str(perfDef[0]), str(newArg[0]), getValueSize(str(newArg[1]))))
+            sourceFile.write('    perfDef%s->addArgs(newPerfArgDef); }\n' % str(perfDef[0]))
         sourceFile.write('    perfDefMap["%s"] = perfDef%s;\n'\
             % (str(perfDef[0]), str(perfDef[0])))
             

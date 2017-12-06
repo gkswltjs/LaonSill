@@ -10,6 +10,7 @@
 #include "ColdLog.h"
 #include "SysLog.h"
 #include "WorkContext.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -70,7 +71,7 @@ void PropMgmt::removeLayerProp(string networkID) {
         LayerProp* lpp = getLayerProp(networkID, layerID);
         LayerPropKey key(networkID, layerID);
         layerPropMap.erase(key);
-        delete lpp;
+        SDELETE(lpp);
 
         layerIDIter = layerIDList.erase(layerIDIter);
     }
@@ -88,5 +89,5 @@ void PropMgmt::insertNetworkProp(string networkID, _NetworkProp* networkProp) {
 void PropMgmt::removeNetworkProp(string networkID) {
     _NetworkProp* networkProp = getNetworkProp(networkID);
     networkPropMap.erase(networkID);
-    delete networkProp;
+    SDELETE(networkProp);
 }

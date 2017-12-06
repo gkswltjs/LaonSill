@@ -285,7 +285,9 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
     offset = MsgSerializer::deserializeInt(jobType, offset, recvMsg);
     offset = MsgSerializer::deserializeInt(jobElemCnt, offset, recvMsg);
 
-    Job* newJob = new Job((JobType)jobType);
+    Job* newJob = NULL;
+    SNEW(newJob, Job, (JobType)jobType);
+    SASSUME0(newJob != NULL);
 
     int *jobElemTypes = NULL;
     if (jobElemCnt > 0) {
@@ -376,7 +378,9 @@ bool Communicator::handleHaltMachineMsg(MessageHeader recvMsgHdr, char* recvMsg,
     MessageHeader& replyMsgHdr, char* replyMsg, char*& replyBigMsg) {
 
     // (1) Worker Thread (Producer& Consumer)를 종료한다.
-    Job* haltJob = new Job(JobType::HaltMachine);
+    Job* haltJob = NULL;
+    SNEW(haltJob, Job, JobType::HaltMachine);
+    SASSUME0(haltJob != NULL);
     Worker::pushJob(haltJob);
 
     // (2) Listener, Session 쓰레드 들을 모두 종료한다.
@@ -467,7 +471,7 @@ bool Communicator::handlePushJobMsg(int fd, MessageHeader recvMsgHdr, char* recv
 
     sendJobToBuffer(replyMsgHdr, subscribedJob, replyMsg);
 
-    delete subscribedJob;
+    SDELETE(subscribedJob);
     return true;
 }
 
@@ -637,11 +641,15 @@ void Communicator::launchThreads(int sessCount) {
     }
 
     // (3) listener thread를 생성한다.
-    Communicator::listener = new thread(listenerThread);
+    Communicator::listener = NULL;
+    SNEW(Communicator::listener, thread, listenerThread);
+    SASSUME0(Communicator::listener != NULL);
 
     // (4) thread pool을 생성한다. 
     for (int i = 0; i < sessCount; i++) {
-        Communicator::sessContext.push_back(new SessContext(i));
+        SessContext *sc = NULL;
+        SNEW(sc, SessContext, i);
+        Communicator::sessContext.push_back(sc);
         Communicator::freeSessIdList.push_back(i);
     }
 
@@ -654,7 +662,7 @@ void Communicator::launchThreads(int sessCount) {
 
 void Communicator::joinThreads() {
     Communicator::listener->join();
-    delete Communicator::listener;
+    SDELETE(Communicator::listener);
     Communicator::listener = NULL;
 
     for (int i = 0; i < Communicator::sessCount; i++) {

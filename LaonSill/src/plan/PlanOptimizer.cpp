@@ -21,6 +21,7 @@
 #include "Worker.h"
 #include "Network.h"
 #include "ThreadMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -177,7 +178,9 @@ void PlanOptimizer::setSingleGPUPlanContext(string networkID, bool isTest) {
     GPUDevInfo devInfo = ResourceManager::getSingleGPUInfo();
 
     LogicalPlan* lp = LogicalPlan::getLogicalPlan(networkID);
-    PhysicalPlan* pp = new PhysicalPlan(SNPROP(lossLayer));
+    PhysicalPlan* pp = NULL;
+    SNEW(pp, PhysicalPlan, SNPROP(lossLayer));
+    SASSUME0(pp != NULL);
 
     pp->networkID = networkID;
     pp->refCount = 0;
@@ -217,7 +220,10 @@ void PlanOptimizer::setSingleGPUPlanContext(string networkID, bool isTest) {
     ppList.push_back(pp);
 
     // (2) make PlanInfo
-    PlanInfo *planInfo = new PlanInfo();
+    PlanInfo *planInfo = NULL;
+    SNEW(planInfo, PlanInfo);
+    SASSUME0(planInfo != NULL);
+
     planInfo->networkID = networkID;
     planInfo->dopCount = 1;
     planInfo->doneCount = 0;
