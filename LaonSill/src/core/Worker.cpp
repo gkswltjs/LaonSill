@@ -89,7 +89,8 @@ bool Worker::handleAllocTensorTask(TaskAllocTensor* task) {
     // XXX: float형 코딩으로 박지 말고, 설정에 따라서 template date type을 설정하도록 수정해야
     //     한다. 
     if (task->step == TaskAllocTensorStep::Alloc) {
-        Data<float>* tensor = new Data<float>(task->tensorName);
+        Data<float>* tensor = NULL;
+        SNEW(tensor, Data<float>, task->tensorName);
         SASSERT0(tensor != NULL);
 
         task->tensorPtr = tensor;
@@ -274,7 +275,7 @@ void Worker::jobConsumerThread(int consumerIdx) {
 
         doLoop = handleJob(job);
 
-        delete job;
+        SDELETE(job);
 
         Worker::insertJCReadyQueue(consumerIdx);
     }
@@ -332,7 +333,7 @@ void Worker::handleDestroyNetwork(Job* job) {
 
     PropMgmt::removeNetworkProp(networkID);
     PropMgmt::removeLayerProp(networkID);
-    delete network;
+    SDELETE(network);
 
     Job* pubJob = getPubJob(job);
     Broker::publish(job->getJobID(), pubJob);
@@ -371,7 +372,9 @@ void Worker::handleRunNetwork(Job* job) {
     if (SPARAM(USE_INPUT_DATA_PROVIDER)) {
         WorkContext::updateNetwork(networkID);
 
-        Job* startIDPJob = new Job(JobType::StartInputDataProvider);   // InputDataProvider
+        Job* startIDPJob = NULL;
+        SNEW(startIDPJob, Job, JobType::StartInputDataProvider);   // InputDataProvider
+        SASSUME0(startIDPJob != NULL);
         startIDPJob->addJobElem(Job::StringType, strlen(networkID.c_str()),
             (void*)networkID.c_str());
         Worker::pushJob(startIDPJob);
@@ -647,12 +650,16 @@ void Worker::launchThreads(int taskConsumerCount, int jobConsumerCount) {
     }
 
 	// (3) producer 쓰레드를 생성한다.
-    Worker::producer = new thread(producerThread);
+    Worker::producer = NULL;
+    SNEW(Worker::producer, thread, producerThread);
+    SASSUME0(producerThread != NULL);
 
 	// (4) consumer 쓰레드들을 생성한다.
 	for (int i = 0; i < SPARAM(GPU_COUNT); i++) {
 		Worker::consumers.push_back(thread(taskConsumerThread, i, Cuda::availableGPU[i]));
-        TaskQueue *tq = new TaskQueue();
+        TaskQueue *tq = NULL;
+        SNEW(tq, TaskQueue);
+        SASSUME0(tq != NULL);
         Worker::taskQueues.push_back(tq);
     }
 
@@ -670,11 +677,11 @@ void Worker::joinThreads() {
     Worker::consumers.clear();
 
 	Worker::producer->join();
-	delete Worker::producer;
+	SDELETE(Worker::producer);
     Worker::producer = NULL;
 
     for (int i = 0; i < Worker::taskQueues.size(); i++) {
-        delete Worker::taskQueues[i];
+        SDELETE(Worker::taskQueues[i]);
     }
 
     Worker::taskQueues.clear();
@@ -685,7 +692,10 @@ int Worker::pushJob(Job* job) {
 
     // (1) pubJob이 있는 경우에 pubJob을 생성하고 pubJob ID를 할당받는다.
     if (job->hasPubJob()) {
-        Job* pubJob = new Job(job->getPubJobType());
+        Job* pubJob = NULL;
+        SNEW(pubJob, Job, job->getPubJobType());
+        SASSUME0(pubJob != NULL);
+
         unique_lock<mutex> reqPubJobMapLock(Job::reqPubJobMapMutex); 
         Job::reqPubJobMap[job->getJobID()] = pubJob; 
         // subscriber will deallocate pubJob
