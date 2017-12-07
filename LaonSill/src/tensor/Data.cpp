@@ -36,12 +36,14 @@ Data<Dtype>::Data(const string& name, const bool hostOnly) {
 	this->_hostOnly = hostOnly;
 
 	SyncMem<Dtype>* ptr1 = NULL;
-	SNEW(ptr1, SyncMem<Dtype>);
+	//SNEW(ptr1, SyncMem<Dtype>);
+	ptr1 = new SyncMem<Dtype>();
 	SASSUME0(ptr1 != NULL);
 	shared_ptr<SyncMem<Dtype>> temp_data(ptr1);
 
 	SyncMem<Dtype>* ptr2 = NULL;
-	SNEW(ptr2, SyncMem<Dtype>);
+	//SNEW(ptr2, SyncMem<Dtype>);
+	ptr2 = new SyncMem<Dtype>();
 	SASSUME0(ptr2 != NULL);
 	shared_ptr<SyncMem<Dtype>> temp_grad(ptr2);
 

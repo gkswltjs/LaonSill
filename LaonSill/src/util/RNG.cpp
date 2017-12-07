@@ -9,7 +9,8 @@ static boost::thread_specific_ptr<RandomGenerator> thread_instance_;
 RandomGenerator& RandomGenerator::Get() {
 	if (!thread_instance_.get()) {
 		RandomGenerator* randomGenerator = NULL;
-		SNEW(randomGenerator, RandomGenerator);
+		//SNEW(randomGenerator, RandomGenerator);
+		randomGenerator = new RandomGenerator();
 		SASSUME0(randomGenerator != NULL);
 		thread_instance_.reset(randomGenerator);
 	}

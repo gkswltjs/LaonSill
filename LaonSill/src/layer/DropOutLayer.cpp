@@ -18,7 +18,8 @@ DropOutLayer<Dtype>::DropOutLayer() : Layer<Dtype>() {
 	this->type = Layer<Dtype>::DropOut;
 
 	SyncMem<Dtype>* ptr = NULL;
-	SNEW(ptr, SyncMem<Dtype>);
+	//SNEW(ptr, SyncMem<Dtype>);
+	ptr = new SyncMem<Dtype>();
 	SASSUME0(ptr != NULL);
     shared_ptr<SyncMem<Dtype>> tempMask(ptr);
     this->mask = tempMask;

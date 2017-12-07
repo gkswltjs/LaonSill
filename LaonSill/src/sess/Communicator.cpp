@@ -346,7 +346,7 @@ void Communicator::recvJobFromBuffer(Job** job, char* recvMsg) {
                         recvMsg);
                 newJob->addJobElem((Job::JobElemType)jobElemTypes[i], tempArrayCount,
                     (void*)tempString);
-                free(tempString);
+                SFREE(tempString);
                 tempString = NULL;
                 break;
 

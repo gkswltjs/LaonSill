@@ -46,8 +46,8 @@ typedef struct MemoryEntry_s {
 
 #define SFREE_(obj)                                                                     \
     do {                                                                                \
-        free(obj);                                                                      \
         MemoryMgmt::removeEntry((void*)obj);                                            \
+        free(obj);                                                                      \
     } while (0)
 
 #define SFREE_NOLOG_(obj)                                                               \
@@ -80,8 +80,8 @@ typedef struct MemoryEntry_s {
 
 #define SDELETE_(obj)                                                                   \
     do {                                                                                \
-        delete obj;                                                                     \
         MemoryMgmt::removeEntry((void*)obj);                                            \
+        delete obj;                                                                     \
     } while (0)
 
 #define SDELETE_NOLOG_(obj)                                                             \

@@ -39,6 +39,17 @@ void MemoryMgmt::insertEntry(const char* filename, const char* funcname, int lin
     entry.size = size;
 
     unique_lock<mutex> entryMutexLock(MemoryMgmt::entryMutex);
+
+    // XXX: LMH debug
+    if (MemoryMgmt::entryMap.find(ptr) != MemoryMgmt::entryMap.end()) {
+        entryMutexLock.unlock();
+        dump();
+
+        printf("filename : %s, funcname : %s, line : %d, size : %lu, pointer : %p\n", 
+                filename, funcname, line, size, ptr);
+        entryMutexLock.lock();
+    }
+
     SASSUME0(MemoryMgmt::entryMap.find(ptr) == MemoryMgmt::entryMap.end());
     MemoryMgmt::entryMap[ptr] = entry;
     MemoryMgmt::usedMemTotalSize += size;
