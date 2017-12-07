@@ -248,7 +248,7 @@ void InitParam::load() {
     }
 
     if (line)
-        free(line);
+        free(line);     // do not need to use SFREE
 
     fclose(fp);
 }

@@ -12,6 +12,7 @@
 #include <string>
 
 #include "BaseLayer.h"
+#include "MemoryMgmt.h"
 
 class LayerProp {
 public: 
@@ -31,7 +32,7 @@ public:
 
     virtual ~LayerProp() {
         if (prop != NULL)
-            free(prop);
+            SFREE(prop);
     }
 
     std::string networkID;
