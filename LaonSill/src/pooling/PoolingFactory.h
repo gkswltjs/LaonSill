@@ -56,7 +56,8 @@ public:
 	 */
 	static void destroy(Pooling<Dtype>*& pooling_fn) {
 		if(pooling_fn) {
-			SDELETE(pooling_fn);
+			//SDELETE(pooling_fn);
+            delete pooling_fn;
 			pooling_fn = NULL;
 		}
 	}
