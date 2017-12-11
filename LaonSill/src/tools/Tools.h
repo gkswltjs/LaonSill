@@ -17,17 +17,29 @@ public:
 	BaseConvertParam() {
 		this->labelMapFilePath = "";
 		this->outFilePath = "";
+		this->resultCode = 0;
+		this->resultMsg = "";
 	}
+	virtual void validityCheck();
 	void print() {
 		std::cout << "labelMapFilePath: " << this->labelMapFilePath << std::endl;
 		std::cout << "outFilePath: " << this->outFilePath << std::endl;
 	}
 	std::string labelMapFilePath;
 	std::string outFilePath;
+
+	int resultCode;
+	std::string resultMsg;
 };
+
+
+
+
+
 
 class MnistDataSet {
 public:
+	void validityCheck(int& resultCode, std::string& resultMsg);
 	void print() {
 		std::cout << "name: " << this->name << std::endl;
 		std::cout << "imageFilePath: " << this->imageFilePath << std::endl;
@@ -53,6 +65,7 @@ public:
 	ConvertMnistDataParam(const std::vector<MnistDataSet>& dataSetList)
 	: dataSetList(dataSetList) {}
 
+	virtual void validityCheck();
 	void addDataSet(MnistDataSet& dataSet) {
 		this->dataSetList.push_back(dataSet);
 	}
@@ -70,11 +83,11 @@ public:
 
 class ImageSet {
 public:
+	void validityCheck(int& resultCode, std::string& resultMsg);
 	void print() {
 		std::cout << "name: " << this->name << std::endl;
 		std::cout << "dataSetPath: " << this->dataSetPath << std::endl;
 	}
-
 	bool operator==(const ImageSet& other) {
 		return (this->name == other.name &&
 				this->dataSetPath == other.dataSetPath);
@@ -99,6 +112,8 @@ public:
 		this->basePath = "";
 		//this->datasetPath = "";
 	}
+
+	virtual void validityCheck();
 
 	void addImageSet(ImageSet& imageSet) {
 		this->imageSetList.push_back(imageSet);
@@ -149,12 +164,13 @@ public:
 		this->maxDim = 0;
 	}
 
+	virtual void validityCheck();
+
 	void print() {
 		ConvertImageSetParam::print();
 
 		std::cout << "annoType: " 		<< this->annoType << std::endl;
 		std::cout << "labelType: "		<< this->labelType << std::endl;
-		//std::cout << "labelMapFile: "	<< this->labelMapFile << std::endl;
 		std::cout << "checkLabel: "		<< this->checkLabel << std::endl;
 		std::cout << "minDim: "			<< this->minDim << std::endl;
 		std::cout << "maxDim: " 		<< this->maxDim << std::endl;

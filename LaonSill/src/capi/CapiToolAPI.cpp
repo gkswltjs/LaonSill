@@ -118,12 +118,16 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 
 	class_<BaseConvertParam>("BaseConvertParam")
 		.def("info",						&BaseConvertParam::print)
+		.def("validityCheck",				&BaseConvertParam::validityCheck)
 		.def_readwrite("labelMapFilePath",	&BaseConvertParam::labelMapFilePath)
 		.def_readwrite("outFilePath",		&BaseConvertParam::outFilePath)
+		.def_readonly("resultCode",			&BaseConvertParam::resultCode)
+		.def_readonly("resultMsg",			&BaseConvertParam::resultMsg)
 	;
 
 	class_<MnistDataSet>("MnistDataSet")
 		.def("info",					&MnistDataSet::print)
+		.def("validityCheck", 			&MnistDataSet::validityCheck)
 		.def_readwrite("name", 			&MnistDataSet::name)
 		.def_readwrite("imageFilePath", &MnistDataSet::imageFilePath)
 		.def_readwrite("labelFilePath", &MnistDataSet::labelFilePath)
@@ -143,6 +147,7 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 
 	class_<ImageSet>("ImageSet")
 		.def("info",					&ImageSet::print)
+		.def("validityCheck", 			&ImageSet::validityCheck)
 		.def_readwrite("name",			&ImageSet::name)
 		.def_readwrite("dataSetPath",	&ImageSet::dataSetPath)
 	;

@@ -100,6 +100,13 @@ int main(int argc, char** argv) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
+	const string sdfPath = "/home/jkim/Dev/LAONSILL_HOME/data/sdf/";
+	fs::path p(sdfPath);
+	p /= "data.sdf";
+
+	cout << p.string() << endl;
+
+
 	//plainTest(argc, argv);
 	//layerTest(argc, argv);
 	//networkTest(argc, argv);
@@ -111,18 +118,12 @@ int main(int argc, char** argv) {
 	//vector<LabelItem> labelItemList;
 	//parse_label_map(labelMapPath, labelItemList);
 
-
-
-
-
-
-
 /*
 #if 1
 	const string baseImagePath = "/home/jkim/Dev/git/caffe_ssd/data/";
-	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
+	const string baseSdfPath = "/home/jkim/Dev/LAONSILL_HOME/data/sdf/";
 
-	const string labelMapFile = baseImagePath + "VOC0712/labelmap_voc.prototxt";
+	const string labelMapFilePath = baseImagePath + "VOC0712/labelmap_voc.json";
 	const string basePath = baseImagePath + "VOCdevkit/";
 	const string outFilePath = baseSdfPath + "_voc2007_train_sdf/";
 
@@ -137,15 +138,16 @@ int main(int argc, char** argv) {
 	ConvertAnnoSetParam param;
 	param.addImageSet(trainImageSet);
 	param.addImageSet(testImageSet);
-	param.labelMapFile = labelMapFile;
+	param.labelMapFilePath = labelMapFilePath;
 	param.basePath = basePath;
 	param.outFilePath = outFilePath;
-	param.labelMapFilePath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.json";
+
 
 	if (boost::filesystem::exists(param.outFilePath)) {
 		boost::filesystem::remove_all((param.outFilePath));
 	}
 
+	param.print();
 	convertAnnoSet(param);
 #else
 	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
@@ -176,7 +178,7 @@ int main(int argc, char** argv) {
 
 
 /*
-#if 0
+#if 1
 	const string baseImagePath = "/home/jkim/Dev/data/image/ilsvrc12_train/";
 	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
 
@@ -237,7 +239,8 @@ int main(int argc, char** argv) {
 */
 
 
-#if 0
+/*
+#if 1
 
 	MnistDataSet trainDataSet;
 	trainDataSet.name = "train";
@@ -283,33 +286,8 @@ int main(int argc, char** argv) {
 	SDELETE(datum);
 
 
-
-
-
-
-
-
-	/*
-	Datum* datum = 0;
-	cout << "selected train dataset ... " << endl;
-	dataReader.selectDataSetByName("train");
-	for (int i = 0; i < 10; i++) {
-		datum = dataReader.getNextData();
-		datum->print();
-		SDELETE(datum);
-		datum = 0;
-	}
-
-	cout << "selected test dataset ... " << endl;
-	dataReader.selectDataSetByName("test");
-	for (int i = 0; i < 10; i++) {
-		datum = dataReader.getNextData();
-		datum->print();
-		SDELETE(datum);
-		datum = 0;
-	}
-	*/
 #endif
+*/
 
 
 /*
