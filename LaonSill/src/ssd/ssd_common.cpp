@@ -1,6 +1,7 @@
 #include <fstream>
 
 #include "ssd_common.h"
+#include "SysLog.h"
 
 
 using namespace std;
@@ -85,8 +86,7 @@ void LabelMap<Dtype>::build() {
 			}
 		}
 		else {
-			cout << "invalid label map format at line: " << line << endl;
-			exit(1);
+			SASSERT(false, "invalid label map format at line: %d", line);
 		}
 		line++;
 	}
@@ -97,6 +97,20 @@ void LabelMap<Dtype>::build() {
 		this->indToLabelMap[labelItem.label] = labelItem.displayName;
 	}
 }
+
+template <typename Dtype>
+void LabelMap<Dtype>::build(std::vector<LabelItem>& labelItemList) {
+	this->labelItemList = labelItemList;
+
+	for (int i = 0; i < this->labelItemList.size(); i++) {
+		LabelItem& labelItem = this->labelItemList[i];
+		this->labelToIndMap[labelItem.displayName] = labelItem.label;
+		this->indToLabelMap[labelItem.label] = labelItem.displayName;
+	}
+}
+
+
+
 
 template <typename Dtype>
 int LabelMap<Dtype>::convertLabelToInd(const string& label) {

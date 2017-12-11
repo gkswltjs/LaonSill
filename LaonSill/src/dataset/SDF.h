@@ -296,7 +296,7 @@ public:
 	// SDF가 특정 이름의 dataSet을 갖고 있는지 확인
 	int findDataSet(const std::string& dataSet);
 
-	void put(const std::string& key, const std::string& value);
+	void put(const std::string& value);
 	void commit();
 
 	const std::string getNextValue();

@@ -1,5 +1,6 @@
 #include <string>
 #include <fstream>
+#include <algorithm>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -20,6 +21,12 @@
 using namespace std;
 namespace fs = ::boost::filesystem;
 
+
+
+uint32_t swap_endian(uint32_t val) {
+    val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
+    return (val << 16) | (val >> 16);
+}
 
 
 void parse_label_map(const string& labelMapPath, vector<LabelItem>& labelItemList) {
@@ -63,8 +70,193 @@ void parse_label_map(const string& labelMapPath, vector<LabelItem>& labelItemLis
 	for (int i = 0; i < labelItemList.size(); i++) {
 		labelItemList[i].print();
 	}
-
 }
+
+// json 파일이 labelmap 포맷인지 확인
+int isLabelMapFileValid(const string& labelMapFilePath) {
+	filebuf fb;
+	if (fb.open(labelMapFilePath.c_str(), ios::in) == NULL) {
+		return -1;
+	}
+	istream is(&fb);
+	Json::Reader reader;
+	Json::Value root;
+	if (!reader.parse(is, root)) return -1;
+	const int numLabelItem = root.size();
+	for (int i = 0; i < numLabelItem; i++) {
+		Json::Value& item = root[i];
+		if (!item.isMember("name") ||
+				!item.isMember("label") ||
+				!item.isMember("display_name")) {
+			return -1;
+		}
+		if (item.isMember("color") &&
+				(!item["color"].size() == 0 && !item["color"].size() == 3)) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int isMnistFileValid(const string& mnistFilePath, const int magicNumber) {
+	 // Open files
+	ifstream mnistFile(mnistFilePath, ios::in | ios::binary);
+	if (!mnistFile) {
+		return -1;
+	}
+	uint32_t magic;
+	mnistFile.read(reinterpret_cast<char*>(&magic), 4);
+	magic = swap_endian(magic);
+	if (magic != magicNumber) {
+		return -1;
+	}
+	return 0;
+}
+
+
+
+
+void BaseConvertParam::validityCheck() {
+	// 1. labelMapFilePath check
+	if (!this->labelMapFilePath.empty()) {
+		// 1. 파일이 존재해야 함
+		if (!fs::exists(this->labelMapFilePath)) {
+			this->resultCode = -1;
+			this->resultMsg = "labelMapFilePath not exists: " + this->labelMapFilePath;
+			return;
+		}
+		// 2. 확장자가 json이어야 함
+		if (fs::extension(this->labelMapFilePath) != ".json") {
+			this->resultCode = -1;
+			this->resultMsg = "labelMapFile should be json file: " + this->labelMapFilePath;
+			return;
+		}
+		// 3. 유효한 labelmap json format이어야 함
+		if (isLabelMapFileValid(this->labelMapFilePath) < 0) {
+			this->resultCode = -1;
+			this->resultMsg = "labelMapFile json format is invalid: " + this->labelMapFilePath;
+			return;
+		}
+	}
+
+	// 2. outFilepath check
+	if (this->outFilePath.empty()) {
+		this->resultCode = -1;
+		this->resultMsg = "outFilePath should be specified ... ";
+		return;
+	}
+}
+
+void MnistDataSet::validityCheck(int& resultCode , string& resultMsg) {
+	if (this->name.empty()) {
+		resultCode = -1;
+		resultMsg = "Mnist Data Set should have name ... ";
+		return;
+	}
+
+	if (isMnistFileValid(this->imageFilePath, 2051)) {
+		resultCode = -1;
+		resultMsg = "Invalid Mnist Image File: " + this->imageFilePath;
+		return;
+	}
+
+	if (isMnistFileValid(this->labelFilePath, 2049)) {
+		resultCode = -1;
+		resultMsg = "Invalid Mnist label File: " + this->labelFilePath;
+		return;
+	}
+}
+
+void ConvertMnistDataParam::validityCheck() {
+	BaseConvertParam::validityCheck();
+	if (this->resultCode < 0) {
+		return;
+	}
+
+	// 1. DataSet이 최소 1개 이상이어야 함.
+	if (this->dataSetList.size() < 1) {
+		this->resultCode = -1;
+		this->resultMsg = "At least 1 Data Set should be specified ... ";
+		return;
+	}
+
+	// 2. 각 DataSet이 유효해야 함.
+	for (int i = 0; i < this->dataSetList.size(); i++) {
+		this->dataSetList[i].validityCheck(this->resultCode, this->resultMsg);
+		if (this->resultCode < 0) {
+			return;
+		}
+	}
+	return;
+}
+
+void ImageSet::validityCheck(int& resultCode, string& resultMsg) {
+	if (this->name.empty()) {
+		resultCode = -1;
+		resultMsg = "Image Set should have name ... ";
+		return;
+	}
+	if (!fs::is_regular_file(this->dataSetPath)) {
+		resultCode = -1;
+		resultMsg = "Invalid Data Set path: " + this->dataSetPath;
+		return;
+	}
+	return;
+}
+
+void ConvertImageSetParam::validityCheck() {
+	BaseConvertParam::validityCheck();
+	if (this->resultCode < 0) {
+		return;
+	}
+
+	std::transform(this->encodeType.begin(), this->encodeType.end(),
+			this->encodeType.begin(), ::tolower);
+
+	if (!(this->encodeType == "jpg") && !(this->encodeType == "png")) {
+		this->resultCode = -1;
+		this->resultMsg = "encodeType should be 'jpg' or 'png': " + this->encodeType;
+		return;
+	}
+
+	if (this->basePath.empty()) {
+		this->resultCode = -1;
+		this->resultMsg = "basePath is empty ... ";
+		return;
+	}
+
+	if (this->imageSetList.size() < 1) {
+		this->resultCode = -1;
+		this->resultMsg = "At least 1 Image Set should be specified ... ";
+		return;
+	}
+
+	for (int i = 0; i < this->imageSetList.size(); i++) {
+		this->imageSetList[i].validityCheck(this->resultCode, this->resultMsg);
+		if (this->resultCode < 0) {
+			return;
+		}
+	}
+	return;
+}
+
+void ConvertAnnoSetParam::validityCheck() {
+	ConvertImageSetParam::validityCheck();
+	if (this->resultCode < 0) {
+		return;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -131,17 +323,13 @@ void denormalize(const string& old_param_path, const string& new_param_path) {
 
 
 
-inline std::string format_int(int n, int numberOfLeadingZeros = 0) {
-	std::ostringstream s;
-	s << std::setw(numberOfLeadingZeros) << std::setfill('0') << n;
-	return s.str();
+std::string format_int(int n, int numberOfLeadingZeros = 0) {
+	//std::ostringstream s;
+	//s << std::setw(numberOfLeadingZeros) << std::setfill('0') << n;
+	//return s.str();
+	return "00000000";
 }
 
-
-uint32_t swap_endian(uint32_t val) {
-    val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
-    return (val << 16) | (val >> 16);
-}
 
 
 void printConvertMnistDataUsage(char* prog) {
@@ -204,9 +392,13 @@ void convertMnistDataTest(int argc, char** argv) {
 
 
 
-//void convertMnistData(const string& imageFilePath, const string& labelFilePath,
-//		const string& outFilePath) {
+
 void convertMnistData(ConvertMnistDataParam& param) {
+	param.validityCheck();
+	if (param.resultCode < 0) {
+		return;
+	}
+
 	int numDataSets = param.dataSetList.size();
 
 	SDFHeader header;
@@ -272,7 +464,7 @@ void convertMnistData(ConvertMnistDataParam& param) {
 		// Storing to db
 		char label;
 		char* pixels = NULL;
-		SNEW(pixels, char, rows * cols * sizeof(char));
+		SMALLOC(pixels, char, rows * cols * sizeof(char));
 		SASSUME0(pixels != NULL);
 		int count = 0;
 		string value;
@@ -299,12 +491,9 @@ void convertMnistData(ConvertMnistDataParam& param) {
 			//datum.data = buffer;
 			datum.data.assign(reinterpret_cast<const char*>(pixels), rows * cols);
 			datum.label = label;
-
-			string key_str = format_int(item_id, 8);
-			//value = Datum::serializeToString(&datum);
 			value = serializeToString(&datum);
 
-			sdf.put(key_str, value);
+			sdf.put(value);
 
 			if (++count % 1000 == 0) {
 				sdf.commit();
@@ -317,7 +506,7 @@ void convertMnistData(ConvertMnistDataParam& param) {
 			sdf.commit();
 			cout << "Processed " << count << " files." << endl;
 		}
-		delete[] pixels;
+		SDELETE(pixels);
 	}
 
 	header.print();
@@ -348,13 +537,6 @@ void printConvertImageSetUsage(char* prog) {
 
 
 void convertImageSetTest(int argc, char** argv) {
-	//const string argv1 = "/home/jkim/imageset/jpegs/";
-	//const string argv2 = "/home/jkim/imageset/labels/train.txt";
-	//const string argv3 = "/home/jkim/imageset/lmdb/train_lmdb/";
-	//const string argv1 = "/home/jkim/Backups/ilsvrc12_train/";
-	//const string argv2 = "/home/jkim/Dev/git/caffe/data/ilsvrc12/train.txt";
-	//const string argv3 = "/home/jkim/imageset/lmdb/ilsvrc_lmdb/";
-
 	string argv1;
 	string argv2;
 	string argv3;
@@ -446,6 +628,11 @@ void convertImageSetTest(int argc, char** argv) {
 
 
 void convertImageSet(ConvertImageSetParam& param) {
+	param.validityCheck();
+	if (param.resultCode < 0) {
+		return;
+	}
+
 	int numImageSets = param.imageSetList.size();
 
 	SDFHeader header;
@@ -618,7 +805,7 @@ void convertImageSet(ConvertImageSetParam& param) {
 			// Put in db
 			//string out = Datum::serializeToString(&datum);
 			string out = serializeToString(&datum);
-			sdf.put(key_str, out);
+			sdf.put(out);
 
 			if (++count % 1000 == 0) {
 				sdf.commit();
@@ -685,6 +872,11 @@ void convertAnnoSetTest(int argc, char** argv) {
 
 
 void convertAnnoSet(ConvertAnnoSetParam& param) {
+	param.validityCheck();
+	if (param.resultCode < 0) {
+		return;
+	}
+
 	int numImageSets = param.imageSetList.size();
 
 	SDFHeader header;
@@ -718,7 +910,6 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 	const string anno_type = FLAGS_anno_type;
 	AnnotationType type;
 	const string label_type = FLAGS_label_type;
-	const string label_map_file = FLAGS_label_map_file;
 	const bool check_label = FLAGS_check_label;
 	//map<string, int> name_to_label;
 
@@ -730,6 +921,8 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 	sdf.initHeader(header);
 
 
+	LabelMap<float> label_map;
+	label_map.build(header.labelItemList);
 
 	for (int imageSetIdx = 0; imageSetIdx < numImageSets; imageSetIdx++) {
 		const ImageSet& imageSet = param.imageSetList[imageSetIdx];
@@ -744,8 +937,7 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 		string labelname;
 		SASSERT(anno_type == "detection", "only anno_type 'detection' is supported.");
 		type = AnnotationType::BBOX;
-		LabelMap<float> label_map(label_map_file);
-		label_map.build();
+
 
 		while (infile >> filename >> labelname) {
 			lines.push_back(make_pair(filename, labelname));
@@ -824,7 +1016,7 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 			// Put in db
 			//string out = Datum::serializeToString(&datum);
 			string out = serializeToString(&anno_datum);
-			sdf.put(key_str, out);
+			sdf.put(out);
 
 			if (++count % 1000 == 0) {
 				sdf.commit();

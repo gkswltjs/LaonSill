@@ -6,6 +6,7 @@
  */
 
 #include <sys/stat.h>
+#include <boost/filesystem.hpp>
 
 #include "iostream"
 #include "SDF.h"
@@ -13,6 +14,7 @@
 #include "MemoryMgmt.h"
 
 using namespace std;
+namespace fs = ::boost::filesystem;
 
 
 SDF::SDF(const string& source, const Mode mode)
@@ -140,7 +142,7 @@ const std::string& SDF::curDataSet() {
 }
 
 
-void SDF::put(const string& key, const string& value) {
+void SDF::put(const string& value) {
 	SASSERT0(this->mode == NEW);
 	this->values.push_back(value);
 }
@@ -188,7 +190,10 @@ void SDF::sdf_open() {
 #endif
 	if (this->mode == NEW) {
 		SASSERT0(!this->ofs.is_open());
-		this->ofs.open(this->source + this->DATA_NAME, ios_base::out);
+
+		fs::path sourcePath(this->source);
+		sourcePath /= this->DATA_NAME;
+		this->ofs.open(sourcePath.string(), ios_base::out);
 		this->oa = NULL;
 		SNEW(this->oa, boost::archive::text_oarchive, this->ofs, flags);
 		SASSUME0(this->oa != NULL);
@@ -204,7 +209,10 @@ void SDF::sdf_open() {
 
 	} else if (this->mode == READ) {
 		SASSERT0(!this->ifs.is_open());
-		this->ifs.open(this->source + this->DATA_NAME, ios_base::in);
+
+		fs::path sourcePath(this->source);
+		sourcePath /= this->DATA_NAME;
+		this->ifs.open(sourcePath.string(), ios_base::in);
 
 		this->ifs.seekg(0, ios::end);
 		this->dbSize = this->ifs.tellg();

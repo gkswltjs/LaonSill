@@ -74,6 +74,7 @@ public:
 	LabelMap();
 	LabelMap(const std::string& labelMapPath);
 	void build();
+	void build(std::vector<LabelItem>& labelItemList);
 
 	void setLabelMapPath(const std::string& labelMapPath);
 
