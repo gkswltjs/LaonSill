@@ -63,6 +63,7 @@ typedef struct BoundingBox_s {
     float bottom;
     float right;
     float confidence;
+    int   labelIndex;
 } BoundingBox;
 
 class ClientAPI {
@@ -98,6 +99,16 @@ public:
     static ClientError      getObjectDetection(ClientHandle handle, NetworkHandle netHandle,
                                 int channel, int height, int width, float* imageData,
                                 std::vector<BoundingBox>& boxArray, int coordRelative=0);
+
+    static ClientError      runObjectDetectionWithInput(ClientHandle handle,
+                                NetworkHandle netHandle, int channel, int height,
+                                int width, float* imageData, 
+                                std::vector<BoundingBox>& boxArray, int baseNetworkType);
+
+    static ClientError      runClassificationWithInput(ClientHandle handle,
+                                NetworkHandle netHandle, int channel, int height,
+                                int width, float* imageData, 
+                                std::vector<int>& labelIndexArray, int baseNetworkType);
 
     static ClientError      getMeasureItemName(ClientHandle handle, std::string networkID,
                                 std::vector<std::string>& measureItemNames);  

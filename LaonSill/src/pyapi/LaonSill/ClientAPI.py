@@ -46,7 +46,7 @@ funcLoadNetwork.argtypes = [c_int, c_char_p, c_int, c_char_p, c_char_p]
 
 class BoundingBox(Structure):
     _fields_ = [("top", c_float), ("left", c_float), ("bottom", c_float), ("right", c_float),
-                ("confidence", c_float)]
+                ("confidence", c_float), ("class_id", c_int)]
 
 funcGetObjectDetection = libLaonSill.getObjectDetection
 funcGetObjectDetection.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int, c_int,
@@ -147,7 +147,7 @@ class ClientHandle:
         for bbox in bboxArray:
             if bbox.confidence > 0.000001:
                 result_box.append([bbox.top, bbox.left, bbox.bottom, bbox.right,
-                        bbox.confidence])
+                        bbox.confidence, bbox.class_id])
         return ret, result_box
 
     def getMeasureItemName(self, networkID):

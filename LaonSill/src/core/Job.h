@@ -228,9 +228,9 @@ typedef enum JobType_e {
     RunNetworkWithInputData,
     /*
      *  [Job Elem Schema for RunNetworkWithInputData]
-     * +-----------------+---------------+--------------+-------------+
-     * | NetworkID (int) | channel (int) | height (int) | width (int) |
-     * +-----------------+--------+------+--------------+-------------+
+     * +-----------------+---------------+--------------+-------------+----------------------+
+     * | NetworkID (int) | channel (int) | height (int) | width (int) | coord relative (int) |
+     * +-----------------+--------+------+--------------+-------------+----------------------+
      * | image data (float array) |
      * +--------------------------+
      */
@@ -241,12 +241,55 @@ typedef enum JobType_e {
      * +--------------------+
      * | result count (int) | 
      * +-----------+--------+---+--------------+-------------+--------------------+
-     * | top (int) | left (int) | bottom (int) | right (int) | confidence (flaot) | }
+     * | top (int) | left (int) | bottom (int) | right (int) | confidence (float) | }
+     * +-----------+--------+---+--------------+-------------+--------------------+ }
+     * | labelIndex (int) |                                                         }
      * +-----------+------------+--------------+-------------+--------------------+ } result
      * | .............                                                            | } count
      * +--------------------------------------------------------------------------+
      */
+
+    RunObjectDetectionNetworkWithInput,
+    /*
+     *  [Job Elem Schema for RunObjectDetectionNetworkWithInput]
+     * +-----------------+---------------+--------------+-------------+-------------------------+
+     * | NetworkID (int) | channel (int) | height (int) | width (int) | base network type (int) |
+     * +-----------------+--------+------+--------------+-------------+-------------------------+
+     * | image data (float array) |
+     * +--------------------------+
+     */
+
+    RunObjectDetectionNetworkWithInputReply,
+    /*
+     *  [Job Elem Schema for RunObjectDetectionNetworkWithInputReply]
+     * +--------------------+
+     * | result count (int) | 
+     * +-----------+--------+---+--------------+-------------+--------------------+
+     * | top (int) | left (int) | bottom (int) | right (int) | confidence (float) | }
+     * +-----------+-------+----+--------------+-------------+--------------------+ }
+     * | label index (int) |                                                         }
+     * +-------------------+----+--------------+-------------+--------------------+ } result
+     * | .............                                                            | } count
+     * +--------------------------------------------------------------------------+
+     */
     
+    RunClassificationNetworkWithInput,
+    /*
+     *  [Job Elem Schema for RunClassificationNetworkWithInput]
+     * +-----------------+---------------+--------------+-------------+-------------------------+
+     * | NetworkID (int) | channel (int) | height (int) | width (int) | base network type (int) |
+     * +-----------------+--------+------+--------------+-------------+-------------------------+
+     * | image data (float array) |
+     * +--------------------------+
+     */
+
+    RunClassificationNetworkWithInputReply,
+    /*
+     *  [Job Elem Schema for RunClassificationNetworkWithInputReply]
+     * +--------------------+----------------------+----------------------+------+
+     * | result count (int) | label index #0 (int) | label index #1 (int) | .... |
+     * +--------------------+----------------------+----------------------+------+
+     */
     JobTypeMax
 
 } JobType;

@@ -44,6 +44,7 @@ for i in range(4):
 
     for bbox in bboxes:
         print "bbox : (", bbox[0], ", ",  bbox[1], ", ", bbox[2], ", ", bbox[3], ")"
+        print "score : ", bbox[4], ", labelIndex : ", bbox[5]
         if coordRelative == 1:
             left = int(bbox[1] * width)
             top = int(bbox[0] * height)

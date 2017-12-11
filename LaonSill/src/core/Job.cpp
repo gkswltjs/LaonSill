@@ -39,6 +39,10 @@ void Job::init() {
     Job::pubJobTypeMap[SaveNetwork]                 = SaveNetworkReply;
     Job::pubJobTypeMap[LoadNetwork]                 = LoadNetworkReply;
     Job::pubJobTypeMap[RunNetworkWithInputData]     = RunNetworkWithInputDataReply;
+    Job::pubJobTypeMap[RunObjectDetectionNetworkWithInput]     
+                                                    = RunObjectDetectionNetworkWithInputReply;
+    Job::pubJobTypeMap[RunClassificationNetworkWithInput]     
+                                                    = RunClassificationNetworkWithInputReply;
     Job::pubJobTypeMap[GetMeasureItemName]          = GetMeasureItemNameReply;
     Job::pubJobTypeMap[GetMeasures]                 = GetMeasuresReply;
 }

@@ -90,6 +90,8 @@ private:
     static void                         handleSaveNetwork(Job* job);
     static void                         handleLoadNetwork(Job* job);
     static void                         handleRunNetworkWithInputData(Job* job);
+    static void                         handleRunObjectDetectionNetworkWithInput(Job* job);
+    static void                         handleRunClassificationNetworkWithInput(Job* job);
     static void                         handleGetMeasureItemName(Job* job);
     static void                         handleGetMeasures(Job* job);
     static void                         handleStartIDP(Job* job);
