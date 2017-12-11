@@ -87,8 +87,8 @@ bool RunNetworkWithInputTest::runSimpleTest() {
                 bottom = bboxArray[j].bottom;
             }
 
-            STDOUT_LOG(" rect #%d : (%d, %d, %d, %d), confidence : %f", j, 
-                top, left, bottom, right, bboxArray[j].confidence);
+            STDOUT_LOG(" rect #%d : (%d, %d, %d, %d), confidence : %f, labelIndex : %d", j, 
+                top, left, bottom, right, bboxArray[j].confidence, bboxArray[j].labelIndex);
 
             if (showResult) {
 				cv::rectangle(image, cv::Point(bboxArray[j].left, bboxArray[j].top),

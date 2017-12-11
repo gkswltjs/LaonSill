@@ -26,6 +26,8 @@
 #include "InputDataProvider.h"
 #include "AnnotationDataLayer.h"
 #include "DetectionOutputLayer.h"
+#include "RoITestLiveInputLayer.h"
+#include "FrcnnTestLiveOutputLayer.h"
 
 #include "MeasureEntry.h"
 #include "MeasureManager.h"
@@ -262,7 +264,8 @@ void Worker::jobConsumerThread(int consumerIdx) {
     }
 
     while (doLoop) {
-        //ThreadEvent event = ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
+        //ThreadEvent event =
+        //  ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
         ThreadEvent event = ThreadMgmt::wait(threadID, 0UL);
 
         if (event == ThreadEvent::Halt) {
@@ -553,13 +556,138 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
 			bottom  = int(bottom * height);
     	}
         float score = result[i * 7 + 2];
+        int labelIndex = (int)(result[i * 7 + 1] + 0.000001);
 
         pubJob->addJobElem(Job::FloatType, 1, (void*)&top);
         pubJob->addJobElem(Job::FloatType, 1, (void*)&left);
         pubJob->addJobElem(Job::FloatType, 1, (void*)&bottom);
         pubJob->addJobElem(Job::FloatType, 1, (void*)&right);
         pubJob->addJobElem(Job::FloatType, 1, (void*)&score);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&labelIndex);
     }
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
+    string networkID = job->getStringValue(0);
+    int channel = job->getIntValue(1);
+    int height = job->getIntValue(2);
+    int width = job->getIntValue(3);
+    int baseNetworkType = job->getIntValue(4);
+    float* imageData = job->getFloatArray(5);
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+
+    
+    std::vector<Layer<float>*> inputLayers;
+    std::vector<Layer<float>*> outputLayers;
+    Layer<float>* commonOutputLayer;
+
+
+    // XXX: 이거 enumeration으로 바꾸자.. 
+    //      YOLO까지 구현이 되면 공통요소를 정리하자
+    switch (baseNetworkType) {
+        case 0:     // SSD
+            {
+                inputLayers = network->findLayersByType(Layer<float>::AnnotationData);
+                SASSUME0(inputLayers.size() == 1);
+                AnnotationDataLayer<float>* inputLayer = 
+                    (AnnotationDataLayer<float>*)inputLayers[0];
+
+                outputLayers = network->findLayersByType(Layer<float>::DetectionOutput);
+                SASSUME0(outputLayers.size() == 1);
+                DetectionOutputLayer<float>* outputLayer =
+                    (DetectionOutputLayer<float>*)outputLayers[0];
+                commonOutputLayer = (Layer<float>*)outputLayer;
+                
+                inputLayer->feedImage(channel, height, width, imageData);
+            }
+            break;
+
+        case 1:     // FRCNN
+            {
+                inputLayers = network->findLayersByType(Layer<float>::RoITestLiveInput);
+                SASSUME0(inputLayers.size() == 1);
+                RoITestLiveInputLayer<float>* inputLayer = 
+                    (RoITestLiveInputLayer<float>*)inputLayers[0];
+                
+                outputLayers = network->findLayersByType(Layer<float>::FrcnnTestLiveOutput);
+                SASSUME0(outputLayers.size() == 1);
+                FrcnnTestLiveOutputLayer<float>* outputLayer =
+                    (FrcnnTestLiveOutputLayer<float>*)outputLayers[0];
+                commonOutputLayer = (Layer<float>*)outputLayer;
+
+                inputLayer->feedImage(channel, height, width, imageData);
+            }
+            break;
+
+        default:
+            SASSERT(false, "invalid base network type(%d)", baseNetworkType);
+    }
+
+    network->runMiniBatch(true, 0);
+    ThreadMgmt::wait(WorkContext::curThreadID, 0);
+
+    Job* pubJob = getPubJob(job);
+
+    int count = commonOutputLayer->_outputData[0]->getCount();
+    const float* result = commonOutputLayer->_outputData[0]->host_data();
+    int resultCount = 0;
+
+    for (int i = 0; i < count; i += 7) {
+    	if (result[i + 1] == 15) {
+    		resultCount++;
+    	}
+    }
+    pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
+
+    float left, top, right, bottom;
+    for (int i = 0; i < count; i++) {
+    	if (result[i * 7 + 1] != 15) {
+    		continue;
+    	}
+
+    	left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
+    	top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);
+    	right	= std::min(std::max(result[i * 7 + 5], 0.f), 1.f);
+    	bottom	= std::min(std::max(result[i * 7 + 6], 0.f), 1.f);
+
+    	if (baseNetworkType == 0) {     // SSD, 여기서는 무조건 절대좌표로 변환한다.
+    		left    = int(left * width);
+			top     = int(top * height);
+			right   = int(right * width);
+			bottom  = int(bottom * height);
+    	}
+
+        float score = result[i * 7 + 2];
+        int labelIndex = (int)(result[i * 7 + 1] + 0.000001);
+
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&top);
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&left);
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&bottom);
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&right);
+        pubJob->addJobElem(Job::FloatType, 1, (void*)&score);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&labelIndex);
+    }
+
+    Broker::publish(job->getJobID(), pubJob);
+}
+
+void Worker::handleRunClassificationNetworkWithInput(Job* job) {
+    string networkID = job->getStringValue(0);
+    int channel = job->getIntValue(1);
+    int height = job->getIntValue(2);
+    int width = job->getIntValue(3);
+    int baseNetworkType = job->getIntValue(4);
+    float* imageData = job->getFloatArray(5);
+
+    Network<float>* network = Network<float>::getNetworkFromID(networkID);
+
+    // TODO: implement code!!!
+    network->runMiniBatch(true, 0);
+    ThreadMgmt::wait(WorkContext::curThreadID, 0);
+
+    Job* pubJob = getPubJob(job);
     Broker::publish(job->getJobID(), pubJob);
 }
 
@@ -615,6 +743,14 @@ bool Worker::handleJob(Job* job) {
 
         case JobType::RunNetworkWithInputData:
             handleRunNetworkWithInputData(job);
+            break;
+
+        case JobType::RunObjectDetectionNetworkWithInput:
+            handleRunObjectDetectionNetworkWithInput(job);
+            break;
+
+        case JobType::RunClassificationNetworkWithInput:
+            handleRunClassificationNetworkWithInput(job);
             break;
 
         case JobType::StartInputDataProvider:

@@ -84,6 +84,8 @@ Network<Dtype>::~Network() {
 
     if (this->trainFP != NULL)
         fclose(this->trainFP);
+
+    MemoryMgmt::dump();
 }
 
 template<typename Dtype>
