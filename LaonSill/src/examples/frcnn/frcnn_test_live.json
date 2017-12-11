@@ -404,7 +404,8 @@
 			"input" : ["rois", "im_info", "cls_prob", "bbox_pred"],
 			"output" : ["bbox_result"],
 			"confThresh" : 0.5,
-			"nmsThresh" : 0.1
+			"nmsThresh" : 0.1,
+			"numClasses" : 21
 		}
 	],
 

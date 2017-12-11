@@ -569,7 +569,8 @@
     "VARS" : 
 	[
 	    ["confThresh", "float", "0.5"],
-	    ["nmsThresh", "float", "0.1"]
+	    ["nmsThresh", "float", "0.1"],
+		["numClasses", "int", "0"]
 	],
 		"KEYVARS" : ["confThresh", "nmsThresh"]
 },
@@ -1155,6 +1156,260 @@
 		"KEYVARS" : []
 },
 
+"AnnotatedLiveData" : 
+{
+    "DESC" : "annotated live data layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["dataSetName", "std::string", "\"\""],
+		["dataTransformParam", "DataTransformParam", "{}",
+			[
+				["scale", "float"],
+				["mirror", "bool"],
+				["mean", "std::vector<float>"],
+				["cropSize", "int"],
+				["cropH", "int"],
+				["cropW", "int"]
+			]
+		],
+		["resizeParam", "ResizeParam", "{}",
+			[
+				["prob", "float"],
+				["resizeMode", "ResizeMode"],
+				["height", "uint32_t"],
+				["width", "uint32_t"],
+				["heightScale", "uint32_t"],
+				["widthScale", "uint32_t"],
+				["padMode", "PadMode"],
+				["padValue", "std::vector<float>"],
+				["interpMode0", "InterpMode"],
+				["interpMode1", "InterpMode"],
+				["interpMode2", "InterpMode"],
+				["interpMode3", "InterpMode"],
+				["interpMode4", "InterpMode"]
+			]
+		],
+		["distortParam", "DistortionParam", "{}",
+			[
+				["brightnessProb", "float"],
+				["brightnessDelta", "float"],
+				["contrastProb", "float"],
+				["contrastLower", "float"],
+				["contrastUpper", "float"],
+				["hueProb", "float"],
+				["hueDelta", "float"],
+				["saturationProb", "float"],
+				["saturationLower", "float"],
+				["saturationUpper", "float"],
+				["randomOrderProb", "float"]
+			]
+		],
+		["expandParam", "ExpansionParam", "{}",
+			[
+				["prob", "float"],
+				["maxExpandRatio", "float"]
+			]
+		],
+		["noiseParam", "NoiseParam", "{}",
+			[
+				["prob", "float"],
+				["histEq", "bool"],
+				["inverse", "bool"],
+				["decolorize", "bool"],
+				["gaussBlur", "bool"],
+				["jpeg", "float"],
+				["posterize", "bool"],
+				["erode", "bool"],
+				["clahe", "bool"],
+				["convertToHSV", "bool"],
+				["convertToLAB", "bool"]
+			]
+		],
+		["emitConstraint", "EmitConstraint", "{}",
+			[
+				["emitType", "EmitType"],
+				["emitOverlap", "float"]
+			]
+		],
+		["batchSampler0", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["batchSampler1", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["batchSampler2", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["batchSampler3", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["batchSampler4", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["batchSampler5", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["batchSampler6", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["batchSampler7", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["batchSampler8", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["batchSampler9", "BatchSampler", "{true, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 100}",
+			[
+				["useOriginalImage", "bool"],
+				["minScale", "float"],
+				["maxScale", "float"],
+				["minAspectRatio", "float"],
+				["maxAspectRatio", "float"],
+				["minJaccardOverlap", "float"],
+				["maxJaccardOverlap", "float"],
+				["minSampleCoverage", "float"],
+				["maxSampleCoverage", "float"],
+				["minObjectCoverage", "float"],
+				["maxObjectCoverage", "float"],
+				["maxSample", "uint32_t"],
+				["maxTrials", "uint32_t"]
+			]
+		],
+		["labelMapFile", "std::string", "\"\""],
+		["annoType", "AnnotationType", "AnnotationType::ANNO_NONE"]
+	],
+		"KEYVARS" : []
+},
 "Normalize" : 
 {
     "DESC" : "normalize layer",
@@ -1291,6 +1546,64 @@
 "DetectionOutput" : 
 {
     "DESC" : "detection output layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["numClasses", "uint32_t", "0"],
+		["shareLocation", "bool", "true"],
+		["backgroundLabelId", "int", "0"],
+		["nmsParam", "NonMaximumSuppressionParam", "{0.3, 0, 1.0}", 
+			[
+				["nmsThreshold", "float"],
+				["topK", "int"],
+				["eta", "float"]
+			]
+		],
+		["saveOutputParam", "SaveOutputParam", "{\"\", \"\", \"\", \"\", \"\", 0}",
+			[
+				["outputDirectory", "std::string"],
+				["outputNamePrefix", "std::string"],
+				["outputFormat", "std::string"],
+				["labelMapFile", "std::string"],
+				["nameSizeFile", "std::string"],
+				["numTestImage", "int"]
+			]
+		],
+
+		["resizeParam", "ResizeParam", "{}",
+			[
+				["prob", "float"],
+				["resizeMode", "ResizeMode"],
+				["height", "uint32_t"],
+				["width", "uint32_t"],
+				["heightScale", "uint32_t"],
+				["widthScale", "uint32_t"],
+				["padMode", "PadMode"],
+				["padValue", "std::vector<float>"],
+				["interpMode0", "InterpMode"],
+				["interpMode1", "InterpMode"],
+				["interpMode2", "InterpMode"],
+				["interpMode3", "InterpMode"],
+				["interpMode4", "InterpMode"]
+			]
+		],
+		["codeType", "CodeType", "CodeType::CORNER"],
+		["varianceEncodedInTarget", "bool", "false"],
+		["keepTopK", "int", "-1"],
+		["confidenceThreshold", "float", "0.0"],
+		["visualize", "bool", "false"],
+		["visualizeThreshold", "float", "0.0"],
+		["saveFile", "std::string", "\"\""]
+	],
+    "KEYVARS" : []
+},
+
+"DetectionOutputLive" : 
+{
+    "DESC" : "detection output live layer",
     "PARENT" : "Base",
     "LEVEL" : 1,
     "LEARN" : 0,

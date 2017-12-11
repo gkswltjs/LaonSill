@@ -94,39 +94,70 @@ void FrcnnTestLiveOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 	const Dtype confThresh = Dtype(SLPROP(FrcnnTestLiveOutput, confThresh));
 	const Dtype nmsThresh = Dtype(SLPROP(FrcnnTestLiveOutput, nmsThresh));
 
+	vector<vector<Dtype>> result;
+
 	vector<uint32_t> keep;
 	vector<Dtype> clsScores;
 	vector<vector<Dtype>> clsBoxes;
 	vector<uint32_t> inds;
 
-	int clsInd = 15;		// Person Only
-	const string& cls = "person";
-	fillClsScores(scores, clsInd, clsScores);
-	fillClsBoxes(boxes, clsInd, clsBoxes);
+	const int numClasses = SLPROP(FrcnnTestLiveOutput, numClasses);
+	for (int clsInd = 1; clsInd < numClasses; clsInd++) {
+		//int clsInd = 15;		// Person Only
+		//const string& cls = "person";
+		fillClsScores(scores, clsInd, clsScores);
+		fillClsBoxes(boxes, clsInd, clsBoxes);
 
-	cout << cls << "\t\tboxes before nms: " << scores.size();
-	nms(clsBoxes, clsScores, nmsThresh, keep);
-	cout << " , after nms: " << keep.size() << endl;
+		//cout << cls << "\t\tboxes before nms: " << scores.size();
+		nms(clsBoxes, clsScores, nmsThresh, keep);
+		//cout << " , after nms: " << keep.size() << endl;
 
-	clsBoxes = vec_keep_by_index(clsBoxes, keep);
-	clsScores = vec_keep_by_index(clsScores, keep);
+		clsBoxes = vec_keep_by_index(clsBoxes, keep);
+		clsScores = vec_keep_by_index(clsScores, keep);
 
-	// score 중 confThresh 이상인 것에 대해
-	np_where_s(clsScores, GE, confThresh, inds);
+		// score 중 confThresh 이상인 것에 대해
+		np_where_s(clsScores, GE, confThresh, inds);
 
-	int numBBoxes = inds.size();
-	if (numBBoxes == 0) {
-		this->_outputData[0]->reshape({1, 1, 1, 1});
-	} else {
-		this->_outputData[0]->reshape({1, 1, (uint32_t)numBBoxes, 5});
-		Dtype* bboxResult = this->_outputData[0]->mutable_host_data();
-		for (int i = 0; i < numBBoxes; i++) {
-			bboxResult[i * 5 + 0] = clsBoxes[inds[i]][0];
-			bboxResult[i * 5 + 1] = clsBoxes[inds[i]][1];
-			bboxResult[i * 5 + 2] = clsBoxes[inds[i]][2];
-			bboxResult[i * 5 + 3] = clsBoxes[inds[i]][3];
-			bboxResult[i * 5 + 4] = clsScores[inds[i]];
+		if (inds.size() == 0)
+			continue;
+
+		int offset = result.size();
+		for (int i = 0; i < inds.size(); i++) {
+			vector<Dtype> temp(7);
+			temp[0] = 0.f;
+			temp[1] = float(clsInd);
+			temp[2] = clsScores[inds[i]];
+			temp[3] = clsBoxes[inds[i]][0];
+			temp[4] = clsBoxes[inds[i]][1];
+			temp[5] = clsBoxes[inds[i]][2];
+			temp[6] = clsBoxes[inds[i]][3];
+
+			result.push_back(temp);
 		}
+
+		/*
+		int numBBoxes = inds.size();
+		if (numBBoxes == 0) {
+			this->_outputData[0]->reshape({1, 1, 1, 1});
+		} else {
+			this->_outputData[0]->reshape({1, 1, (uint32_t)numBBoxes, 5});
+			Dtype* bboxResult = this->_outputData[0]->mutable_host_data();
+			for (int i = 0; i < numBBoxes; i++) {
+				bboxResult[i * 5 + 0] = clsBoxes[inds[i]][0];
+				bboxResult[i * 5 + 1] = clsBoxes[inds[i]][1];
+				bboxResult[i * 5 + 2] = clsBoxes[inds[i]][2];
+				bboxResult[i * 5 + 3] = clsBoxes[inds[i]][3];
+				bboxResult[i * 5 + 4] = clsScores[inds[i]];
+			}
+		}
+		*/
+	}
+
+	if (result.size() > 0) {
+		fillDataWith2dVec(result, this->_outputData[0]);
+	} else {
+		this->_outputData[0]->reshape({1, 1, 1, 7});
+		this->_outputData[0]->mutable_host_data()[1] = -1;
 	}
 }
 

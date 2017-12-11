@@ -100,11 +100,38 @@ int main(int argc, char** argv) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
-	const string sdfPath = "/home/jkim/Dev/LAONSILL_HOME/data/sdf/";
-	fs::path p(sdfPath);
-	p /= "data.sdf";
+	cv::VideoCapture capture(0);
 
-	cout << p.string() << endl;
+	if (!capture.isOpened()) {
+		std::cerr << "Could not open camera" << std::endl;
+		return 0;
+	}
+
+	cv::namedWindow("cam", 1);
+
+	while (true) {
+		bool frameValid = true;
+		cv::Mat frame;
+
+		try {
+			capture >> frame;
+		} catch (cv::Exception& e) {
+			std::cerr << "Exception occurred. Ignoring frame ..." << e.err << std::endl;
+			frameValid = false;
+		}
+
+		if (frameValid) {
+			try {
+				cv::imshow("cam", frame);
+			} catch (cv::Exception& e) {
+				std::cerr << "Exception occ" << std::endl;
+			}
+		}
+
+		if (cv::waitKey(30) >= 0) {
+			break;
+		}
+	}
 
 
 	//plainTest(argc, argv);

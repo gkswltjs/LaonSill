@@ -88,6 +88,7 @@ public:
 
 		AnnotationData,
 		AnnotatedData,
+		AnnotatedLiveData,
 		Normalize,
 		Permute,
 		Flatten,
@@ -95,6 +96,7 @@ public:
 		Concat,
 		MultiBoxLoss,
 		DetectionOutput,
+		DetectionOutputLive,
 		DetectionEvaluate,
 
 		Relu,
