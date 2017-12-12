@@ -75,6 +75,11 @@ void AnnotatedLiveDataLayer<Dtype>::reshape() {
     this->_outputData[0]->reshape(outputShape);
     */
 
+    const uint32_t height = this->dataTransformer.param.resizeParam.height;
+    const uint32_t width = this->dataTransformer.param.resizeParam.width;
+    vector<uint32_t> outputShape = {1, 3, height, width};
+    this->_outputData[0]->reshape(outputShape);
+
 }
 
 template <typename Dtype>
@@ -106,39 +111,39 @@ void AnnotatedLiveDataLayer<Dtype>::load_batch() {
 	}
 
 
+
+
+	// 1. data
 	const ResizeParam& resizeParam = this->dataTransformer.param.resizeParam;
-	cv::resize(frame, frame, cv::Size(resizeParam.width, resizeParam.height),
+	cv::Mat resizedFrame;
+	cv::resize(frame, resizedFrame, cv::Size(resizeParam.width, resizeParam.height),
 			0, 0, cv::INTER_LINEAR);
 
 	// DataTransformer::transform에서 이미지 정보를 CHW 기준으로 조회해서
 	// 아래와 같이 shape 생성
-	vector<uint32_t> dataShape = {1, frame.channels(), frame.rows, frame.cols};
+	vector<uint32_t> dataShape = {1, resizedFrame.channels(), resizedFrame.rows, resizedFrame.cols};
 	//vector<uint32_t> dataShape = {1, frame.rows, frame.cols, frame.channels()};
 	this->_outputData[0]->reshape(dataShape);
 
 	Datum datum;
 	// channel_separated false -> opencv의 (b, g, r), (b, g, r) ... 을 그대로 저장
 	// channel_separated true  -> 실상황 데이터를 전송하기 위해
-	CVMatToDatum(frame, true, &datum);
+	CVMatToDatum(resizedFrame, true, &datum);
 	this->dataTransformer.transform(&datum, this->_outputData[0], 0);
 
-	//this->_printOn();
-	//this->_outputData[0]->print_data({}, false, -1);
-	//this->_printOff();
 
-	/*
-	Dtype* outputData = this->_outputData[0]->mutable_host_data();
 
-	const int batchSize = SNPROP(batchSize);
-	SASSERT0(batchSize == 1);
 
-	for (int itemId = 0; itemId < batchSize; itemId++) {
-		// XXX: 카메라 프레임인 cv::Mat으로부터 AnnoatedDatum으로 변환
-		// 또는 AnnotatedDatum에 대해 cv::Mat에 대응하는 함수 코드 필요
-		AnnotatedDatum* annoDatum;
-		this->dataTransformer.transform(annoDatum, this->_outputData[0], itemId);
-	}
-	*/
+
+	// 2. data_org
+	frame.convertTo(frame, CV_32F);
+	vector<uint32_t> dataOrgShape = {1, frame.channels(), frame.rows, frame.cols};
+	this->_outputData[1]->reshape(dataOrgShape);
+	Dtype* data_org = this->_outputData[1]->mutable_host_data();
+	ConvertHWCCVToHWC(frame, data_org);
+
+
+
 }
 
 
@@ -199,7 +204,7 @@ void AnnotatedLiveDataLayer<Dtype>::setInOutTensor(void* instancePtr, void* tens
     bool isInput, int index) {
 	// XXX
 	SASSERT0(!isInput);
-	SASSERT0(index < 1);
+	SASSERT0(index < 2);
 
     AnnotatedLiveDataLayer<Dtype>* layer = (AnnotatedLiveDataLayer<Dtype>*)instancePtr;
 	SASSERT0(layer->_outputData.size() == index);

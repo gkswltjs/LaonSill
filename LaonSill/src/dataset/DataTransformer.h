@@ -92,7 +92,7 @@ template <typename Dtype>
 void transformInv(const int num, const int singleImageSize,
 		const int imageHeight, const int imageWidth,
 		const int height, const int width, const std::vector<Dtype>& pixelMeans,
-		const Dtype* dataData, Data<Dtype>& temp);
+		const Dtype* dataData, Data<Dtype>& temp, cv::Mat& im);
 
 
 

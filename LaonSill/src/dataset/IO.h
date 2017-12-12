@@ -105,7 +105,7 @@ template <typename Dtype>
 void ConvertHWCCVToHWC(const cv::Mat& im, Dtype* dst);
 
 /**
- * CHW 구조의 데이터를 HWC 구조의 데이터로 변환
+ * @brief CHW 구조의 데이터를 HWC 구조의 데이터로 변환
  */
 template <typename Dtype>
 void ConvertCHWToHWC(const int channels, const int height, const int width, const Dtype* src,
