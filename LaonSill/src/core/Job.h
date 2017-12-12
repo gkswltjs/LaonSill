@@ -286,9 +286,9 @@ typedef enum JobType_e {
     RunClassificationNetworkWithInputReply,
     /*
      *  [Job Elem Schema for RunClassificationNetworkWithInputReply]
-     * +--------------------+----------------------+----------------------+------+
-     * | result count (int) | label index #0 (int) | label index #1 (int) | .... |
-     * +--------------------+----------------------+----------------------+------+
+     * +-------------------+
+     * | label index (int) |
+     * +-------------------+
      */
     JobTypeMax
 

@@ -375,7 +375,8 @@ extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreat
 
 extern "C" int runClassificationWithInput(int sockFD, char* buffer, int isCreated,
     char* networkID, int channel, int height, int width, float* imageData,
-    int* labelIndexArray, int maxLabelCount, int networkType) {
+    int networkType, int* labelIndex) {
+
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
@@ -395,15 +396,8 @@ extern "C" int runClassificationWithInput(int sockFD, char* buffer, int isCreate
     Client::recvJob(sockFD, buffer, &runReplyJob);
     SASSERT0(runReplyJob->getType() == JobType::RunClassificationNetworkWithInputReply);
     
-    int resultLabelCount = runReplyJob->getIntValue(0);
-    int elemIdx = 1;
-    for (int i = 0; i < resultLabelCount; i++) {
-        if (i == maxLabelCount)
-            break;
-
-        int labelIndex = runReplyJob->getFloatValue(elemIdx + i);
-        labelIndexArray[i] = labelIndex;
-    }
+    (*labelIndex) = runReplyJob->getIntValue(0);
+    
     delete runReplyJob;
 
     return ClientError::Success;

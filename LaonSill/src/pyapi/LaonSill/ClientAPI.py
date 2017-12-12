@@ -52,6 +52,16 @@ funcGetObjectDetection = libLaonSill.getObjectDetection
 funcGetObjectDetection.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int, c_int,
                                    c_int, POINTER(c_float), c_void_p, c_int, c_int]
 
+
+funcRunObjectDetectionWithInput = libLaonSill.runObjectDetectionWithInput
+funcRunObjectDetectionWithInput.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int, c_int,
+                                   c_int, POINTER(c_float), c_void_p, c_int, c_int]
+
+
+funcRunClassificationWithInput = libLaonSill.runClassificationWithInput
+funcRunClassificationWithInput.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int, c_int,
+                                   c_int, POINTER(c_float), c_int, POINTER(c_int)]
+
 funcGetMeasureItemName = libLaonSill.getMeasureItemName
 funcGetMeasureItemName.argtypes = [c_int, c_char_p, c_char_p, c_int,
     POINTER(POINTER(c_char)), POINTER(c_int)]
@@ -149,6 +159,33 @@ class ClientHandle:
                 result_box.append([bbox.top, bbox.left, bbox.bottom, bbox.right,
                         bbox.confidence, bbox.class_id])
         return ret, result_box
+
+    def runObjectDetectionWithInput(self, channel, height, width, imageData, maxBoxCount,
+            networkType):
+        imageDataArray = (c_float * len(imageData))(*imageData)
+        bboxArray = (BoundingBox * maxBoxCount)()
+
+        ret = funcRunObjectDetectionWithInput(self.sockFD, self.buffer, self.isCreated, 
+                self.networkID, c_int(channel), c_int(height), c_int(width),
+                imageDataArray, bboxArray, c_int(maxBoxCount), c_int(networkType))
+
+        result_box = []
+        for bbox in bboxArray:
+            if bbox.confidence > 0.000001:
+                result_box.append([bbox.top, bbox.left, bbox.bottom, bbox.right,
+                        bbox.confidence, bbox.class_id])
+        return ret, result_box
+
+    def runClassificationWithInput(self, channel, height, width, imageData, networkType):
+        imageDataArray = (c_float * len(imageData))(*imageData)
+        result = []
+        label_index = c_int(-1)
+
+        ret = funcRunClassificationWithInput(self.sockFD, self.buffer, self.isCreated, 
+                self.networkID, c_int(channel), c_int(height), c_int(width),
+                imageDataArray, c_int(networkType), byref(label_index))
+
+        return ret, label_index.value
 
     def getMeasureItemName(self, networkID):
         itemCount = c_int(-1)        

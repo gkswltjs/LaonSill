@@ -28,6 +28,7 @@
 #include "DetectionOutputLayer.h"
 #include "RoITestLiveInputLayer.h"
 #include "FrcnnTestLiveOutputLayer.h"
+#include "LiveDataInputLayer.h"
 
 #include "MeasureEntry.h"
 #include "MeasureManager.h"
@@ -577,7 +578,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     float* imageData = job->getFloatArray(5);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
-
+    WorkContext::updateNetwork(networkID);
     
     std::vector<Layer<float>*> inputLayers;
     std::vector<Layer<float>*> outputLayers;
@@ -599,7 +600,8 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
                 DetectionOutputLayer<float>* outputLayer =
                     (DetectionOutputLayer<float>*)outputLayers[0];
                 commonOutputLayer = (Layer<float>*)outputLayer;
-                
+               
+                WorkContext::updateLayer(networkID, inputLayer->layerID);
                 inputLayer->feedImage(channel, height, width, imageData);
             }
             break;
@@ -617,6 +619,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
                     (FrcnnTestLiveOutputLayer<float>*)outputLayers[0];
                 commonOutputLayer = (Layer<float>*)outputLayer;
 
+                WorkContext::updateLayer(networkID, inputLayer->layerID);
                 inputLayer->feedImage(channel, height, width, imageData);
             }
             break;
@@ -682,12 +685,52 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
     float* imageData = job->getFloatArray(5);
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
+    WorkContext::updateNetwork(networkID);
+    
+    std::vector<Layer<float>*> inputLayers;
+    Layer<float>* commonOutputLayer;
 
-    // TODO: implement code!!!
+    // XXX: 이거 enumeration으로 바꾸자.. 
+    //      YOLO까지 구현이 되면 공통요소를 정리하자
+    switch (baseNetworkType) {
+        case 0:     // VGG16
+            {
+                inputLayers = network->findLayersByType(Layer<float>::LiveDataInput);
+                SASSUME0(inputLayers.size() == 1);
+                LiveDataInputLayer<float>* inputLayer = 
+                    (LiveDataInputLayer<float>*)inputLayers[0];
+
+                // XXX: 이렇게 직접 레이어 이름을 지정하는 것은 좋지 않다.. (당연히..)
+                //      수정하자!!!
+                commonOutputLayer = network->findLayer("fc8");
+                WorkContext::updateLayer(networkID, inputLayer->layerID);
+                inputLayer->feedImage(channel, height, width, imageData);
+            }
+            break;
+
+        default:
+            SASSERT(false, "invalid base network type(%d)", baseNetworkType);
+    }
+
     network->runMiniBatch(true, 0);
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
 
     Job* pubJob = getPubJob(job);
+
+    const float* result = commonOutputLayer->_outputData[0]->host_data();
+    int count = commonOutputLayer->_outputData[0]->getCount();
+
+    int maxArgIndex = 0;
+    int maxValue = result[0];
+
+    for (int i = 1; i < count; i++) {
+        if (result[i] > maxValue) {
+            maxValue = result[i];
+            maxArgIndex = i;
+        }
+    }
+
+    pubJob->addJobElem(Job::IntType, 1, (void*)&maxArgIndex);
     Broker::publish(job->getJobID(), pubJob);
 }
 

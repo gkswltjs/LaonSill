@@ -380,6 +380,7 @@ Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
         // FIXME: 현재 linear search. 너무 속도가 느리면 개선하자.
         if (SLPROP_BASE(name) == layerName) {
             foundLayer = true;
+            layer->layerID = layerID;
             break;
         }
     }
@@ -405,10 +406,12 @@ vector<Layer<Dtype>*> Network<Dtype>::findLayersByType(int layerType) {
         void* instancePtr = iter->second;
 
         WorkContext::updateLayer(this->networkID, layerID);
+        Layer<Dtype>* layer = (Layer<Dtype>*)instancePtr;
+        layer->layerID = layerID;
 
         // FIXME: 현재 linear search. 너무 속도가 느리면 개선하자.
         if (WorkContext::curLayerProp->layerType == layerType) {
-            result.push_back((Layer<Dtype>*)instancePtr);
+            result.push_back(layer);
         }
     }
 

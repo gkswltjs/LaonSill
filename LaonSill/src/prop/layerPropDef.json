@@ -737,6 +737,22 @@
     "KEYVARS" : []
 },
 
+"LiveDataInput" : 
+{
+    "DESC" : "data live input layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["pixelMeans", "std::vector<float>", ""],
+        ["rows", "int", "224"],
+        ["cols", "int", "224"]
+	],
+    "KEYVARS" : []
+},
+
 "MultiLabelDataInput" : 
 {
     "DESC" : "multiple labels data input layer",
