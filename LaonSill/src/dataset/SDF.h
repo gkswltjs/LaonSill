@@ -201,8 +201,11 @@ public:
 			std::cout << "\t" << this->setStartPos[i] << std::endl;
 		}
 		std::cout << "labelItemList: " << std::endl;
-		for (int i = 0; i < this->labelItemList.size(); i++) {
+		for (int i = 0; i < std::min(10, this->labelItemList.size()); i++) {
 			this->labelItemList[i].print();
+		}
+		if (this->labelItemList.size() > 10) {
+			std::cout << "printed only first 10 label items ... " << std::endl
 		}
 	}
 
