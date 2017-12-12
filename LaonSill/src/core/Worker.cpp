@@ -650,17 +650,22 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     		continue;
     	}
 
-    	left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
-    	top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);
-    	right	= std::min(std::max(result[i * 7 + 5], 0.f), 1.f);
-    	bottom	= std::min(std::max(result[i * 7 + 6], 0.f), 1.f);
-
     	if (baseNetworkType == 0) {     // SSD, 여기서는 무조건 절대좌표로 변환한다.
+            left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
+            top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);
+            right	= std::min(std::max(result[i * 7 + 5], 0.f), 1.f);
+            bottom	= std::min(std::max(result[i * 7 + 6], 0.f), 1.f);
+
     		left    = int(left * width);
 			top     = int(top * height);
 			right   = int(right * width);
 			bottom  = int(bottom * height);
-    	}
+    	} else {        // FRCNN case
+            left	= int(result[i * 7 + 3]);
+            top		= int(result[i * 7 + 4]);
+            right	= int(result[i * 7 + 5]);
+            bottom	= int(result[i * 7 + 6]);
+        }
 
         float score = result[i * 7 + 2];
         int labelIndex = (int)(result[i * 7 + 1] + 0.000001);
