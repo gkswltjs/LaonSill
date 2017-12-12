@@ -509,7 +509,7 @@ void convertMnistData(ConvertMnistDataParam& param) {
 		SDELETE(pixels);
 	}
 
-	header.print();
+	//header.print();
 	sdf.updateHeader(header);
 	sdf.close();
 }
@@ -763,7 +763,8 @@ void convertImageSet(ConvertImageSetParam& param) {
 
 
 		// Storing to db
-		string root_folder(argv1);
+		//string root_folder(argv1);
+		fs::path root_folder(argv1);
 		Datum datum;
 		int count = 0;
 		int data_size = 0;
@@ -789,7 +790,7 @@ void convertImageSet(ConvertImageSetParam& param) {
 				enc = fn.substr(p);
 				std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
 			}
-			status = ReadImageToDatum(root_folder + lines[line_id].first, lines[line_id].second,
+			status = ReadImageToDatum((root_folder / lines[line_id].first).string(), lines[line_id].second,
 					resize_height, resize_width, 0, 0, channel_separated, is_color, enc, &datum);
 
 			if (status == false) {
@@ -820,7 +821,7 @@ void convertImageSet(ConvertImageSetParam& param) {
 		}
 	}
 
-	header.print();
+	//header.print();
 	sdf.updateHeader(header);
 	sdf.close();
 
@@ -968,7 +969,8 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 
 
 		// Storing to db
-		string root_folder(argv1);
+		//string root_folder(argv1);
+		fs::path root_folder(argv1);
 		AnnotatedDatum anno_datum;
 		int count = 0;
 		int data_size = 0;
@@ -995,8 +997,8 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 				enc = fn.substr(p);
 				std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
 			}
-			filename = root_folder + lines[line_id].first;
-			labelname = root_folder + boost::get<string>(lines[line_id].second);
+			filename = (root_folder / lines[line_id].first).string();
+			labelname = (root_folder / boost::get<string>(lines[line_id].second)).string();
 			status = ReadRichImageToAnnotatedDatum(filename, labelname, resize_height,
 					resize_width, min_dim, max_dim, is_color, enc, type, label_type,
 					label_map.labelToIndMap, &anno_datum);
@@ -1031,7 +1033,7 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 		}
 	}
 
-	header.print();
+	//header.print();
 	sdf.updateHeader(header);
 	sdf.close();
 }

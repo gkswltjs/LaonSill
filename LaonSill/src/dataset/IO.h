@@ -42,16 +42,26 @@ cv::Mat ReadImageToCVMat(const std::string& filename, const int height, const in
 
 
 
-
+/**
+ * OpenCV cv::Mat을 Datum 객체에 fill
+ * @param channel_separated
+ * 		true: all B / all G / all R 구조로 channel을 나누어서 저장
+ * 		false: channel분리하지 않고 opencv가 제공하는 포맷 그대로 저장
+ */
 void CVMatToDatum(const cv::Mat& cv_img, const bool channel_separated, Datum* datum);
 
 bool ReadFileToDatum(const std::string& filename, const int label, Datum* datum);
 
+/**
+ * OpenCV cv::Mat의 데이터를 지정된 방법으로 encoding하여 Datum 객체에 저장
+ */
 void EncodeCVMatToDatum(const cv::Mat& cv_img, const std::string& encoding, Datum* datum);
 
 
 
-
+/**
+ * Datum 객체의 이미지 정보를 OpenCV cv::Mat로 변환
+ */
 cv::Mat DecodeDatumToCVMat(const Datum* datum, bool is_color, bool channel_separated);
 
 

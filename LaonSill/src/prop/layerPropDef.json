@@ -1422,7 +1422,8 @@
 			]
 		],
 		["labelMapFile", "std::string", "\"\""],
-		["annoType", "AnnotationType", "AnnotationType::ANNO_NONE"]
+		["annoType", "AnnotationType", "AnnotationType::ANNO_NONE"],
+		["camIndex", "int", "0"]
 	],
 		"KEYVARS" : []
 },

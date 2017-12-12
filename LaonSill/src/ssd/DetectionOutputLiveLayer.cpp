@@ -7,6 +7,8 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/core.hpp>
 
 #include "DetectionOutputLiveLayer.h"
 #include "BBoxUtil.h"
@@ -15,6 +17,7 @@
 #include "SysLog.h"
 #include "PropMgmt.h"
 #include "MemoryMgmt.h"
+#include "IO.h"
 
 using namespace std;
 using namespace boost::property_tree;
@@ -32,6 +35,9 @@ DetectionOutputLiveLayer<Dtype>::DetectionOutputLiveLayer()
 	SASSERT(SLPROP(DetectionOutputLive, nmsParam).nmsThreshold >= 0, "nmsThreshold must be non negative.");
 	SASSERT0(SLPROP(DetectionOutputLive, nmsParam).eta > 0.f && SLPROP(DetectionOutputLive, nmsParam).eta <= 1.f);
 	this->numLocClasses = SLPROP(DetectionOutputLive, shareLocation) ? 1 : SLPROP(DetectionOutputLive, numClasses);
+
+
+	cv::namedWindow("cam");
 }
 
 template <typename Dtype>
@@ -94,6 +100,38 @@ void DetectionOutputLiveLayer<Dtype>::reshape() {
 template <typename Dtype>
 void DetectionOutputLiveLayer<Dtype>::feedforward() {
 	reshape();
+
+
+
+	// opencv pixel format으로 복구
+	// 원본 사이즈로 resize
+
+	vector<cv::Mat> cvImgs;
+	const int singleImageSize = this->_inputData[0]->getCountByAxis(1);
+	const int imageHeight = 480;
+	const int imageWidth = 640;
+
+	const vector<Dtype> pixelMeans = {};
+	const Dtype* dataData = this->_inputData[3]->host_data();
+	transformInv(1, singleImageSize, imageHeight, imageWidth, imageHeight, imageWidth, pixelMeans,
+			dataData, this->temp);
+
+
+	Dtype* data = this->_inputData[0]->mutable_host_data();
+	//cv::Mat im = cv::Mat(this->_inputData[0]->getShape(1), this->_inputData[0]->getShape(2), CV_32FC3, data);
+	cv::Mat im = cv::Mat(this->_inputData[0]->getShape(2), this->_inputData[0]->getShape(3), CV_32FC3, data);
+	im.convertTo(im, CV_8UC3);
+
+
+
+	cv::imshow("cam", im);
+	if (cv::waitKey(30) > 0) {
+		cv::destroyAllWindows();
+		exit(1);
+	}
+
+
+
 
 	/*
 	const Dtype* locData = this->_inputData[0]->device_data();

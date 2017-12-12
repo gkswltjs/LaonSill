@@ -261,7 +261,9 @@ void DataTransformer<Dtype>::transform(const Datum* datum, Data<Dtype>* data, in
 		cv::Mat cv_img = DecodeDatumToCVMat(datum, isColor, true);
 		return transform(cv_img, data, batchIdx, cropBBox, doMirror);
 	} else {
-		SASSERT(false, "Only support encoded datum now");
+		if (this->param.forceColor || this->param.forceGray) {
+			SASSERT(false, "Only support encoded datum now");
+		}
 	}
 
 	const int cropSize = this->param.cropSize;
@@ -657,7 +659,9 @@ void DataTransformer<Dtype>::expandImage(const Datum* datum, const float expandR
 		expandDatum->label = datum->label;
 		return;
 	} else {
-		SASSERT(false, "Only support encoded datum now");
+		if (this->param.forceColor || this->param.forceGray) {
+			SASSERT(false, "Only support encoded datum now");
+		}
 	}
 
 	const int datumChannels = datum->channels;
@@ -818,7 +822,9 @@ void DataTransformer<Dtype>::cropImage(const Datum* datum, const NormalizedBBox&
 		cropDatum->label = datum->label;
 		return;
 	} else {
-		SASSERT(false, "Only support encoded datum now");
+		if (this->param.forceColor || this->param.forceGray) {
+			SASSERT(false, "Only support encoded datum now");
+		}
 	}
 
 	const int datumChannels = datum->channels;

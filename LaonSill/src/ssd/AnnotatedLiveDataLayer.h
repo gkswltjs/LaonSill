@@ -8,6 +8,9 @@
 #ifndef ANNOTATEDLIVEDATALAYER_H_
 #define ANNOTATEDLIVEDATALAYER_H_
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 #include "InputLayer.h"
 #include "Datum.h"
 #include "InputDataProvider.h"
@@ -34,6 +37,8 @@ private:
 
 private:
 	DataTransformer<Dtype> dataTransformer;
+
+	cv::VideoCapture videoCapture;
 
 public:
 	/****************************************************************************
