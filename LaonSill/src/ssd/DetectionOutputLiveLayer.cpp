@@ -279,12 +279,18 @@ void DetectionOutputLiveLayer<Dtype>::feedforward() {
 	cv::Mat cv_img_wo;
 	cv_img_wt.copyTo(cv_img_wo);
 
-
-
 	int xmin, ymin, xmax, ymax;
 	float fxmin, fymin, fxmax, fymax;
 	float xshift, yshift, wmg, hmg;
 	int xdir, ydir;
+
+
+
+
+	const float wtThresh = SLPROP(DetectionOutputLive, wtThresh);
+	const float woThresh = SLPROP(DetectionOutputLive, woThresh);
+	const float woMargin = SLPROP(DetectionOutputLive, woMargin);
+	const int woRand = SLPROP(DetectionOutputLive, woRand);
 
 	// W/T Autotune Loop
 	for (int i = 0; i < numDet; i++) {
@@ -294,7 +300,7 @@ void DetectionOutputLiveLayer<Dtype>::feedforward() {
 
 		const float score = outputData[i * 7 + 2];
 		// 낮은 스코어 필터링
-		if (score < 0.3f) continue;
+		if (score < wtThresh) continue;
 
 		xmin = (int)(outputData[i * 7 + 3] * width);
 		ymin = (int)(outputData[i * 7 + 4] * height);
@@ -307,26 +313,24 @@ void DetectionOutputLiveLayer<Dtype>::feedforward() {
 	}
 
 
-	const float margin = 0.05f;
-
 	// W/O Autotune Loop
 	for (int i = 0; i < numDet; i++) {
 		const int label = (int)outputData[i * 7 + 1];
 		if (label != 15) continue;
 
 		const float score = outputData[i * 7 + 2];
-		if (score < 0.1f) continue;
+		if (score < woThresh) continue;
 
 		// 랜덤 필터링
-		if (soooa_rng_rand() % 2) continue;
+		if (soooa_rng_rand() % woRand == 0) continue;
 
 		fxmin = outputData[i * 7 + 3] ;
 		fymin = outputData[i * 7 + 4] ;
 		fxmax = outputData[i * 7 + 5] ;
 		fymax = outputData[i * 7 + 6] ;
 
-		xshift = (fxmax - fxmin) * margin;
-		yshift = (fymax - fymin) * margin;
+		xshift = (fxmax - fxmin) * woMargin;
+		yshift = (fymax - fymin) * woMargin;
 
 		soooa_rng_uniform(1, -xshift, xshift, &wmg);
 		soooa_rng_uniform(1, -yshift, yshift, &hmg);

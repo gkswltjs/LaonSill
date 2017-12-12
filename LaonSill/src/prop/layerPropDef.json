@@ -1671,7 +1671,11 @@
 		["confidenceThreshold", "float", "0.0"],
 		["visualize", "bool", "false"],
 		["visualizeThreshold", "float", "0.0"],
-		["saveFile", "std::string", "\"\""]
+		["saveFile", "std::string", "\"\""],
+		["wtThresh", "float", "0.3"],
+		["woThresh", "float", "0.1"],
+		["woMargin", "float", "0.05"],
+		["woRand", "int", "50"]	
 	],
     "KEYVARS" : []
 },
