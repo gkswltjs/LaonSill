@@ -104,6 +104,7 @@ public:
         DropOut,
         DummyInput,
 		DataInput,
+		LiveDataInput,
         CustomInput,
         MultiLabelDataInput,
 
@@ -202,6 +203,14 @@ public:
     // 1번 인덱스에 해당하는 원소는 라벨에 대한 메타 값이 들어 있다.
     // 각 원소의 메타 값은 { batch, channel, row, column } 크기가 들어 있다.
 	std::vector<std::vector<uint32_t>> _inputShape;
+
+    // XXX: layer를 내부적으로는 layerID로 관리하고 있으나 외부에서 findLayer()와 같은 함수로
+    //     호출해서 사용하는 경우에는 해당 레이어의 layerID가 없어서 관리하는데 어려움이 있다.
+    //     그것을 위해서 layerID를 제공한다. 예를 들어서 findLayer()와 같은 함수가 호출이
+    //     된다면, 반환되는 layer에는 layerID 값이 설정이 되어 반환이 되는 방식이다.
+    //     그러면 WorkContext::updateLayer() 함수를 통하여 원하는 LayerProp을 얻을 수 있다.
+    //     하지만, 지금 방식은 매우 혼돈 스럽기 때문에 정리가 필요하다. 
+    int layerID = -1;   
 
 protected:
 	//std::vector<bool> _propDown;

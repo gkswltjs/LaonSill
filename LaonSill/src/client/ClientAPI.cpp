@@ -427,12 +427,8 @@ ClientError ClientAPI::runClassificationWithInput(ClientHandle handle,
     Client::recvJob(handle.sockFD, handle.buffer, &runReplyJob);
     SASSERT0(runReplyJob->getType() == JobType::RunClassificationNetworkWithInputReply);
     
-    int resultCount = runReplyJob->getIntValue(0);
-    int elemIdx = 1;
-    for (int i = 0; i < resultCount; i++) {
-        int labelIndex = runReplyJob->getIntValue(elemIdx + i);
-        labelIndexArray.push_back(labelIndex);
-    }
+    int labelIndex = runReplyJob->getIntValue(0);
+    labelIndexArray.push_back(labelIndex);
     delete runReplyJob;
 
     return ClientError::Success;
