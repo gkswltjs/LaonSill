@@ -509,9 +509,16 @@ void convertMnistData(ConvertMnistDataParam& param) {
 		SDELETE(pixels);
 	}
 
-	//header.print();
+	header.print();
 	sdf.updateHeader(header);
 	sdf.close();
+
+	for (int i = 0; i < header.numSets; i++) {
+		if (header.setSizes[i] == 0) {
+			param.resultCode = -1;
+			param.resultMsg = "one of data set size is 0 ... ";
+		}
+	}
 }
 
 
@@ -821,9 +828,19 @@ void convertImageSet(ConvertImageSetParam& param) {
 		}
 	}
 
-	//header.print();
+	header.print();
 	sdf.updateHeader(header);
 	sdf.close();
+
+
+	for (int i = 0; i < header.numSets; i++) {
+		if (header.setSizes[i] == 0) {
+			param.resultCode = -1;
+			param.resultMsg = "one of data set size is 0 ... ";
+		}
+	}
+
+
 
 }
 
@@ -1033,9 +1050,17 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 		}
 	}
 
-	//header.print();
+	header.print();
 	sdf.updateHeader(header);
 	sdf.close();
+
+
+	for (int i = 0; i < header.numSets; i++) {
+		if (header.setSizes[i] == 0) {
+			param.resultCode = -1;
+			param.resultMsg = "one of data set size is 0 ... ";
+		}
+	}
 }
 
 
