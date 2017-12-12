@@ -288,7 +288,7 @@ void ConvertHWCToHWC(const int channels, const int height, const int width, cons
 				//int datum_index = h * width * channels + img_index;
 				//dst[datum_index] = static_cast<char>(ptr[img_index++]);
 				//dst[dstIdx] = static_cast<char>(src[srcIdx++]);
-				dst[dstIdx] = src[srcIdx++];
+				dst[dstIdx++] = src[srcIdx++];
 			}
 		}
 	}

@@ -100,26 +100,23 @@ int main(int argc, char** argv) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
-	cv::VideoCapture capture(0);
 
+	/*
+	cv::VideoCapture capture(1);
 	if (!capture.isOpened()) {
 		std::cerr << "Could not open camera" << std::endl;
 		return 0;
 	}
-
 	cv::namedWindow("cam", 1);
-
 	while (true) {
 		bool frameValid = true;
 		cv::Mat frame;
-
 		try {
 			capture >> frame;
 		} catch (cv::Exception& e) {
 			std::cerr << "Exception occurred. Ignoring frame ..." << e.err << std::endl;
 			frameValid = false;
 		}
-
 		if (frameValid) {
 			try {
 				cv::imshow("cam", frame);
@@ -127,11 +124,11 @@ int main(int argc, char** argv) {
 				std::cerr << "Exception occ" << std::endl;
 			}
 		}
-
 		if (cv::waitKey(30) >= 0) {
 			break;
 		}
 	}
+	*/
 
 
 	//plainTest(argc, argv);
@@ -145,6 +142,9 @@ int main(int argc, char** argv) {
 	//vector<LabelItem> labelItemList;
 	//parse_label_map(labelMapPath, labelItemList);
 
+
+
+	const string LAONSILL_HOME = "/home/jkim/Dev/LAONSILL_HOME/";
 /*
 #if 1
 	const string baseImagePath = "/home/jkim/Dev/git/caffe_ssd/data/";
@@ -204,22 +204,23 @@ int main(int argc, char** argv) {
 */
 
 
-/*
+
 #if 1
-	const string baseImagePath = "/home/jkim/Dev/data/image/ilsvrc12_train/";
-	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
+
+	const string baseImagePath = LAONSILL_HOME + "data/ilsvrc12_train/";
+	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
 
 	const string imagePath = baseImagePath + "images/";
-	const string sdfPath = baseSdfPath + "ilsvrc_train_1000/";
+	const string sdfPath = baseSdfPath + "_ilsvrc12_train_1000/";
 
 
 	ImageSet trainImageSet;
 	trainImageSet.name = "train";
-	trainImageSet.dataSetPath = baseImagePath + "train.txt";
+	trainImageSet.dataSetPath = baseImagePath + "train.txt.1000";
 
 	ImageSet testImageSet;
 	testImageSet.name = "test";
-	testImageSet.dataSetPath = baseImagePath + "test.txt";
+	testImageSet.dataSetPath = baseImagePath + "test.txt.1000";
 
 	ConvertImageSetParam param;
 	param.addImageSet(trainImageSet);
@@ -229,7 +230,7 @@ int main(int argc, char** argv) {
 	param.resizeHeight = 224;
 	param.basePath = imagePath;
 	param.outFilePath = sdfPath;
-	param.labelMapFilePath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_imagenet.json";
+	param.labelMapFilePath = LAONSILL_HOME + "data/ilsvrc12_train/labelmap_imagenet.json";
 
 	if (boost::filesystem::exists(param.outFilePath)) {
 		boost::filesystem::remove_all((param.outFilePath));
@@ -239,8 +240,8 @@ int main(int argc, char** argv) {
 
 
 #else
-	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
-	const string sdfPath = baseSdfPath + "ilsvrc_train_1000/";
+	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
+	const string sdfPath = baseSdfPath + "_ilsvrc12_train_1000/";
 
 	DataReader<Datum> dataReader(sdfPath);
 
@@ -263,7 +264,7 @@ int main(int argc, char** argv) {
 		datum = 0;
 	}
 #endif
-*/
+
 
 
 /*

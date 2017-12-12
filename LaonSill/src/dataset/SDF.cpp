@@ -235,7 +235,7 @@ void SDF::sdf_open() {
 		(*this->ia) >> this->header;
 		this->bodyStartPos = this->ifs.tellg();
 
-		this->header.print();
+		//this->header.print();
 
 		this->currentPos = this->header.setStartPos;
 		update_dataset_idx_map();

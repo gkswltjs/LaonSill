@@ -27,7 +27,8 @@ using namespace std;
 template <typename Dtype>
 AnnotatedLiveDataLayer<Dtype>::AnnotatedLiveDataLayer()
 : InputLayer<Dtype>(),
-  dataTransformer(&SLPROP(AnnotatedLiveData, dataTransformParam)){
+  dataTransformer(&SLPROP(AnnotatedLiveData, dataTransformParam)),
+  videoCapture(SLPROP(AnnotatedLiveData, camIndex)) {
 	this->type = Layer<Dtype>::AnnotatedLiveData;
 
 	DataTransformParam& dataTransformParam = this->dataTransformer.param;
@@ -40,6 +41,8 @@ AnnotatedLiveDataLayer<Dtype>::AnnotatedLiveDataLayer()
 			SASSERT(SNPROP(batchSize) == 1, "Only support batch size of 1 for FIT_SMALL_SIZE.");
 		}
 	}
+
+	SASSERT(this->videoCapture.isOpened(), "video device is not opened ... ");
 }
 
 template <typename Dtype>
@@ -90,7 +93,39 @@ void AnnotatedLiveDataLayer<Dtype>::feedforward(unsigned int baseIndex, const ch
 
 template <typename Dtype>
 void AnnotatedLiveDataLayer<Dtype>::load_batch() {
-	cout << "load_batch()" << endl;
+	cv::Mat frame;
+	bool frameValid = false;
+
+	while (!frameValid) {
+		try {
+			this->videoCapture >> frame;
+			frameValid = true;
+		} catch (cv::Exception& e) {
+			cout << "frame invalid ...  skip current frame ... " << endl;
+		}
+	}
+
+
+	const ResizeParam& resizeParam = this->dataTransformer.param.resizeParam;
+	cv::resize(frame, frame, cv::Size(resizeParam.width, resizeParam.height),
+			0, 0, cv::INTER_LINEAR);
+
+	// DataTransformer::transform에서 이미지 정보를 CHW 기준으로 조회해서
+	// 아래와 같이 shape 생성
+	vector<uint32_t> dataShape = {1, frame.channels(), frame.rows, frame.cols};
+	//vector<uint32_t> dataShape = {1, frame.rows, frame.cols, frame.channels()};
+	this->_outputData[0]->reshape(dataShape);
+
+	Datum datum;
+	// channel_separated false -> opencv의 (b, g, r), (b, g, r) ... 을 그대로 저장
+	// channel_separated true  -> 실상황 데이터를 전송하기 위해
+	CVMatToDatum(frame, true, &datum);
+	this->dataTransformer.transform(&datum, this->_outputData[0], 0);
+
+	//this->_printOn();
+	//this->_outputData[0]->print_data({}, false, -1);
+	//this->_printOff();
+
 	/*
 	Dtype* outputData = this->_outputData[0]->mutable_host_data();
 
