@@ -101,15 +101,87 @@ int main(int argc, char** argv) {
 	cout.setf(ios::fixed);
 
 
+
+
+	const int width = 640;
+	const int height = 480;
+
+	cv::Mat fg = cv::imread("/home/jkim/Pictures/1480152332917.png");
+
+
+	const string wtLabel = "LAONADE AUTOTUNED";
+	cv::Scalar boxColor = cv::Scalar(0, 0, 255);
+	int fontface = cv::FONT_HERSHEY_SIMPLEX;
+	float scale = 1.0f;
+	int thickness = 2;
+	int baseline = 0;
+
+	cv::Size text = cv::getTextSize(wtLabel, fontface, scale, thickness, &baseline);
+	//cout << "text width: " << text.width << ", text height: " << text.height << ", baseline: " << baseline << endl;
+	//cv::rectangle(cv_img_wt, cv::Point(0, baseline), cv::Point(text.width, text.height), boxColor, CV_FILLED);
+	cv::rectangle(fg, cv::Point(0, 0), cv::Point(text.width, text.height * 2), boxColor, CV_FILLED);
+	cv::putText(fg, wtLabel, cv::Point(0, (int)(text.height * 1.5f)), fontface, scale, CV_RGB(255, 255, 255), thickness, 8);
+
+	cv::imshow("disp", fg);
+
+
+
+
+	/*
+	const int width = 640;
+	const int height = 480;
+
+	cv::Mat bg = cv::imread("/home/jkim/Pictures/20170406204312_WjTs5FSG_DSC07746.jpg");
+	cv::Mat fg = cv::imread("/home/jkim/Pictures/1480152332917.png");
+
+	cv::resize(bg, bg, cv::Size(width, height), 0, 0, cv::INTER_LINEAR);
+	cv::resize(fg, fg, cv::Size(width, height), 0, 0, cv::INTER_LINEAR);
+
+	const int x2Width = width * 2;
+	//cv::Mat bg(cv::Size(x2Width, height), cv_img_wt.depth());
+	cv::Mat empty = cv::Mat::zeros(cv::Size(x2Width, height), CV_8UC3);
+	cv::Rect wtRoi = cv::Rect(0, 0, bg.cols, bg.rows);
+	cv::Rect woRoi = cv::Rect(bg.cols, 0, fg.cols, fg.rows);
+	//CV_8U;
+	cv::Mat wtSubView = empty(wtRoi);
+	cv::Mat woSubView = empty(woRoi);
+	//cout << "wtSubView.cols: " << wtSubView.cols << ", wtSubView.rows: " << wtSubView.rows << endl;
+	//cout << "woSubView.cols: " << woSubView.cols << ", woSubView.rows: " << woSubView.rows << endl;
+
+	cout << bg.cols << "," << wtSubView.cols << "," << bg.rows << "," << wtSubView.rows << endl;
+	bg.copyTo(wtSubView);
+	cout << fg.cols << "," << woSubView.cols << "," << fg.rows << "," << woSubView.rows << endl;
+	fg.copyTo(woSubView);
+	cv::imshow("disp", empty);
+	*/
+
+	/*
+	cv::Rect roi = cv::Rect(50, 50, fg.cols, fg.rows);
+	cv::Mat subView = bg(roi);
+	fg.copyTo(subView);
+
+	cv::imshow("pip", bg);
+	*/
+
+	if (cv::waitKey(0) > 0) {
+		return 0;
+	}
+
+	/*
+	int key = 0;
+	do {
+		cout << "key->" << key << endl;
+	} while ((key = cv::waitKey(0)) > 0);
+	*/
+
+	/*
 	cv::VideoCapture capture(1);
 	if (!capture.isOpened()) {
 		std::cerr << "Could not open camera" << std::endl;
 		return 0;
 	}
-
 	capture.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
-
 
 	cv::namedWindow("cam", 1);
 	while (true) {
@@ -132,6 +204,7 @@ int main(int argc, char** argv) {
 			break;
 		}
 	}
+	*/
 
 
 
@@ -148,6 +221,7 @@ int main(int argc, char** argv) {
 
 
 
+	/*
 	const string LAONSILL_HOME = "/home/jkim/Dev/LAONSILL_HOME/";
 
 #if 0
@@ -205,7 +279,7 @@ int main(int argc, char** argv) {
 		datum = 0;
 	}
 #endif
-
+*/
 
 
 /*

@@ -30,18 +30,20 @@ DetectionOutputLiveLayer<Dtype>::DetectionOutputLiveLayer()
   bboxPermute("bboxPermute"),
   confPermute("confPermute"),
   temp("temp"),
-  disp1("LAONADE AUTOTUNED"),
-  disp2("HUMAN TRAINED") {
+  dispName("LAONADE AUTOTUNED"),
+  wtLabel("LAONADE AUTOTUNED"),
+  woLabel("HUMAN TRAINED") {
 	this->type = Layer<Dtype>::DetectionOutputLive;
+	this->dispMode = 0;
 
 	SASSERT(SLPROP(DetectionOutputLive, numClasses) > 0, "Must specify numClasses.");
 	SASSERT(SLPROP(DetectionOutputLive, nmsParam).nmsThreshold >= 0, "nmsThreshold must be non negative.");
 	SASSERT0(SLPROP(DetectionOutputLive, nmsParam).eta > 0.f && SLPROP(DetectionOutputLive, nmsParam).eta <= 1.f);
 	this->numLocClasses = SLPROP(DetectionOutputLive, shareLocation) ? 1 : SLPROP(DetectionOutputLive, numClasses);
 
+	cv::namedWindow(this->dispName, CV_WINDOW_NORMAL);
+	cv::setWindowProperty(this->dispName, CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 
-	cv::namedWindow(this->disp1, CV_WINDOW_NORMAL);
-	cv::namedWindow(this->disp2, CV_WINDOW_NORMAL);
 }
 
 template <typename Dtype>
@@ -98,6 +100,22 @@ void DetectionOutputLiveLayer<Dtype>::reshape() {
 	outputShape[3] = 7;
 	this->_outputData[0]->reshape(outputShape);
 }
+
+
+
+void setLabel(const string& label, cv::Point org, int fontface, float scale, int thickness,
+		cv::Scalar& bgColor, cv::Mat& im) {
+	int baseline = 0;
+	cv::Scalar fgColor = cv::Scalar(255, 255, 255);
+
+	cv::Size text = cv::getTextSize(label, fontface, scale, thickness, &baseline);
+	cv::rectangle(im, org, org + cv::Point(text.width + text.height, text.height * 2), bgColor, CV_FILLED);
+	cv::putText(im, label, org + cv::Point((int)(text.height * 0.5f), (int)(text.height * 1.5f)), fontface, scale,
+			//fgColor, thickness, CV_AA);
+			fgColor, thickness, CV_AA);
+}
+
+
 
 template <typename Dtype>
 void DetectionOutputLiveLayer<Dtype>::feedforward() {
@@ -294,6 +312,20 @@ void DetectionOutputLiveLayer<Dtype>::feedforward() {
 	const float woMargin = SLPROP(DetectionOutputLive, woMargin);
 	const int woRand = SLPROP(DetectionOutputLive, woRand);
 
+	cv::Scalar tColor = cv::Scalar(0, 0, 255);
+	int tFontFace = cv::FONT_HERSHEY_DUPLEX;
+	float tScale = 0.5f;
+	int tThickness = 1;
+
+	cv::Scalar bColor = cv::Scalar(255, 0, 255);
+	int bFontFace = cv::FONT_HERSHEY_DUPLEX;
+	float bScale = 0.5f;
+	int bThickness = 1;
+
+	int baseline = 0;
+
+
+	char scoreBuf[100];
 	// W/T Autotune Loop
 	for (int i = 0; i < numDet; i++) {
 		const int label = (int)outputData[i * 7 + 1];
@@ -309,11 +341,11 @@ void DetectionOutputLiveLayer<Dtype>::feedforward() {
 		xmax = (int)(outputData[i * 7 + 5] * width);
 		ymax = (int)(outputData[i * 7 + 6] * height);
 
-		cv::rectangle(cv_img_wt, cv::Point(xmin, ymin), cv::Point(xmax, ymax), cv::Scalar(0, 0, 255), 2);
-		//sprintf(labelBuf, "%d", (int)outputLabel[j * 8 + 1]);
-		//cv::putText(cv_img, string(labelBuf), cv::Point(xmin, ymin + 15.0f), 2, 0.5f, cv::Scalar(255, 0, 0));
+		cv::rectangle(cv_img_wt, cv::Point(xmin, ymin), cv::Point(xmax, ymax), bColor, 2);
+		sprintf(scoreBuf, "%.2f", score);
+		setLabel(string(scoreBuf), cv::Point(xmin, ymin), bFontFace, bScale, bThickness, bColor, cv_img_wt);
 	}
-
+	setLabel(this->wtLabel, cv::Point(0, 0), tFontFace, tScale, tThickness, tColor, cv_img_wt);
 
 	// W/O Autotune Loop
 	for (int i = 0; i < numDet; i++) {
@@ -349,19 +381,64 @@ void DetectionOutputLiveLayer<Dtype>::feedforward() {
 		const int xmax = (int)(fxmax * width);
 		const int ymax = (int)(fymax * height);
 
-		cv::rectangle(cv_img_wo, cv::Point(xmin, ymin), cv::Point(xmax, ymax), cv::Scalar(0, 0, 255), 2);
-		//sprintf(labelBuf, "%d", (int)outputLabel[j * 8 + 1]);
-		//cv::putText(cv_img, string(labelBuf), cv::Point(xmin, ymin + 15.0f), 2, 0.5f, cv::Scalar(255, 0, 0));
+		cv::rectangle(cv_img_wo, cv::Point(xmin, ymin), cv::Point(xmax, ymax), bColor, 2);
+		sprintf(scoreBuf, "%.2f", score);
+		setLabel(string(scoreBuf), cv::Point(xmin, ymin), bFontFace, bScale, bThickness, bColor, cv_img_wo);
+	}
+	setLabel(this->woLabel, cv::Point(0, 0), tFontFace, tScale, tThickness, tColor, cv_img_wo);
+
+
+	// side-by-side
+	if (this->dispMode == 0) {
+		const int x2Width = width * 2;
+		cv::Mat bg = cv::Mat::zeros(cv::Size(x2Width, height), CV_8UC3);
+		cv::Rect wtRoi = cv::Rect(0, 0, cv_img_wt.cols, cv_img_wt.rows);
+		cv::Rect woRoi = cv::Rect(cv_img_wt.cols, 0, cv_img_wo.cols, cv_img_wo.rows);
+		cv::Mat wtSubView = bg(wtRoi);
+		cv::Mat woSubView = bg(woRoi);
+
+		cv_img_wt.copyTo(wtSubView);
+		cv_img_wo.copyTo(woSubView);
+
+		cv::imshow(this->dispName, bg);
+	}
+	// picture in picture
+	else if (this->dispMode == 1) {
+		// wo image를 pip로 wt 이미지에 넣어야 함
+		//cv::Mat fg = cv::imread("/home/jkim/Pictures/1480152332917.png");
+
+		const int pipWidth = width / 4;
+		const int pipHeight = height / 4;
+
+		cv::resize(cv_img_wo, cv_img_wo, cv::Size(pipWidth, pipHeight), 0, 0, cv::INTER_LINEAR);
+		cv::Rect roi = cv::Rect(cv_img_wt.cols - pipWidth, cv_img_wt.rows - pipHeight,
+				pipWidth, pipHeight);
+		cv::Mat subView = cv_img_wt(roi);
+		cv_img_wo.copyTo(subView);
+
+		cv::imshow(this->dispName, cv_img_wt);
+	}
+	// autotuned
+	else if (this->dispMode == 2) {
+		cv::imshow(this->dispName, cv_img_wt);
+	}
+	// human trained
+	else if (this->dispMode == 3) {
+		cv::imshow(this->dispName, cv_img_wo);
 	}
 
-	cv::imshow(this->disp1, cv_img_wt);
-	cv::imshow(this->disp2, cv_img_wo);
 
-	if (cv::waitKey(5) > 0) {
+
+	int key = cv::waitKey(5);
+	if (key == 1048692) {	// t
+		this->dispMode++;
+		if (this->dispMode > 3) {
+			this->dispMode = 0;
+		}
+	} else if (key > 0){
 		cv::destroyAllWindows();
 		exit(1);
 	}
-
 }
 
 template <typename Dtype>

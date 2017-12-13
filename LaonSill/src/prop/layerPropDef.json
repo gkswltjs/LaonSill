@@ -1679,7 +1679,7 @@
 		["wtThresh", "float", "0.3"],
 		["woThresh", "float", "0.1"],
 		["woMargin", "float", "0.05"],
-		["woRand", "int", "50"]	
+		["woRand", "int", "50"]
 	],
     "KEYVARS" : []
 },
