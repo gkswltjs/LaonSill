@@ -101,12 +101,16 @@ int main(int argc, char** argv) {
 	cout.setf(ios::fixed);
 
 
-	/*
 	cv::VideoCapture capture(1);
 	if (!capture.isOpened()) {
 		std::cerr << "Could not open camera" << std::endl;
 		return 0;
 	}
+
+	capture.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
+	capture.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+
+
 	cv::namedWindow("cam", 1);
 	while (true) {
 		bool frameValid = true;
@@ -128,7 +132,7 @@ int main(int argc, char** argv) {
 			break;
 		}
 	}
-	*/
+
 
 
 	//plainTest(argc, argv);

@@ -29,7 +29,9 @@ DetectionOutputLiveLayer<Dtype>::DetectionOutputLiveLayer()
   bboxPreds("bboxPreds"),
   bboxPermute("bboxPermute"),
   confPermute("confPermute"),
-  temp("temp") {
+  temp("temp"),
+  disp1("LAONADE AUTOTUNED"),
+  disp2("HUMAN TRAINED") {
 	this->type = Layer<Dtype>::DetectionOutputLive;
 
 	SASSERT(SLPROP(DetectionOutputLive, numClasses) > 0, "Must specify numClasses.");
@@ -38,8 +40,8 @@ DetectionOutputLiveLayer<Dtype>::DetectionOutputLiveLayer()
 	this->numLocClasses = SLPROP(DetectionOutputLive, shareLocation) ? 1 : SLPROP(DetectionOutputLive, numClasses);
 
 
-	cv::namedWindow("wt_at");
-	cv::namedWindow("wo_at");
+	cv::namedWindow(this->disp1, CV_WINDOW_NORMAL);
+	cv::namedWindow(this->disp2, CV_WINDOW_NORMAL);
 }
 
 template <typename Dtype>
@@ -352,10 +354,10 @@ void DetectionOutputLiveLayer<Dtype>::feedforward() {
 		//cv::putText(cv_img, string(labelBuf), cv::Point(xmin, ymin + 15.0f), 2, 0.5f, cv::Scalar(255, 0, 0));
 	}
 
-	cv::imshow("wt_at", cv_img_wt);
-	cv::imshow("wo_at", cv_img_wo);
+	cv::imshow(this->disp1, cv_img_wt);
+	cv::imshow(this->disp2, cv_img_wo);
 
-	if (cv::waitKey(30) > 0) {
+	if (cv::waitKey(5) > 0) {
 		cv::destroyAllWindows();
 		exit(1);
 	}
