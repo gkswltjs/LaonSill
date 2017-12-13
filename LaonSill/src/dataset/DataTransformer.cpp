@@ -939,11 +939,12 @@ template <typename Dtype>
 void transformInv(const int num, const int singleImageSize,
 		const int imageHeight, const int imageWidth,
 		const int height, const int width, const vector<Dtype>& pixelMeans,
-		const Dtype* dataData, Data<Dtype>& temp) {
+		const Dtype* dataData, Data<Dtype>& temp, cv::Mat& im) {
 
-	Dtype* tempData = temp.mutable_host_data();
 	for (int i = 0; i < num; i++) {
 		temp.reshape({1, 3, uint32_t(imageHeight), uint32_t(imageWidth)});
+		Dtype* tempData = temp.mutable_host_data();
+
 		std::copy(dataData + i * singleImageSize, dataData + (i + 1) * singleImageSize, tempData);
 
 		// transpose
@@ -956,21 +957,21 @@ void transformInv(const int num, const int singleImageSize,
 			tempData[j + 2] += pixelMeans[2];
 		}
 
-		cv::Mat im = cv::Mat(imageHeight, imageWidth, CV_32FC3, tempData);
+		im = cv::Mat(imageHeight, imageWidth, CV_32FC3, tempData);
 		cv::resize(im, im, cv::Size(width, height), 0, 0, CV_INTER_LINEAR);
 
 		im.convertTo(im, CV_8UC3);
 		//cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
 		cv::imshow("result", im);
-		cv::waitKey(0);
-		cv::destroyAllWindows();
+		cv::waitKey(30);
+		//cv::destroyAllWindows();
 	}
 }
 
 template void transformInv(const int num, const int singleImageSize,
 		const int imageHeight, const int imageWidth,
 		const int height, const int width, const vector<float>& pixelMeans,
-		const float* dataData, Data<float>& data);
+		const float* dataData, Data<float>& data, cv::Mat& im);
 
 
 

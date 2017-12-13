@@ -145,8 +145,8 @@ int main(int argc, char** argv) {
 
 
 	const string LAONSILL_HOME = "/home/jkim/Dev/LAONSILL_HOME/";
-/*
-#if 1
+
+#if 0
 	const string baseImagePath = "/home/jkim/Dev/git/caffe_ssd/data/";
 	const string baseSdfPath = "/home/jkim/Dev/LAONSILL_HOME/data/sdf/";
 
@@ -177,8 +177,8 @@ int main(int argc, char** argv) {
 	param.print();
 	convertAnnoSet(param);
 #else
-	const string baseSdfPath = "/home/jkim/Dev/SOOOA_HOME/data/sdf/";
-	const string sdfPath = baseSdfPath + "_voc2007_train_sdf/";
+	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
+	const string sdfPath = baseSdfPath + "_voc0712_train_sdf/";
 
 	DataReader<AnnotatedDatum> dataReader(sdfPath);
 
@@ -201,10 +201,10 @@ int main(int argc, char** argv) {
 		datum = 0;
 	}
 #endif
-*/
 
 
 
+/*
 #if 1
 
 	const string baseImagePath = LAONSILL_HOME + "data/ilsvrc12_train/";
@@ -264,8 +264,7 @@ int main(int argc, char** argv) {
 		datum = 0;
 	}
 #endif
-
-
+*/
 
 /*
 #if 1
@@ -638,8 +637,9 @@ void dataTransformerTest() {
 	Data<float> temp("temp");
 	temp.reshapeLike(&data);
 	const int singleImageSize = data.getCount();
+	cv::Mat result;
 	transformInv(1, singleImageSize, height, width, height, width, {0.f, 0.f, 0.f},
-			data.host_data(), temp);
+			data.host_data(), temp, result);
 }
 
 

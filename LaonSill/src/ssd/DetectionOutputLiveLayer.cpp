@@ -18,6 +18,7 @@
 #include "PropMgmt.h"
 #include "MemoryMgmt.h"
 #include "IO.h"
+#include "MathFunctions.h"
 
 using namespace std;
 using namespace boost::property_tree;
@@ -37,7 +38,8 @@ DetectionOutputLiveLayer<Dtype>::DetectionOutputLiveLayer()
 	this->numLocClasses = SLPROP(DetectionOutputLive, shareLocation) ? 1 : SLPROP(DetectionOutputLive, numClasses);
 
 
-	cv::namedWindow("cam");
+	cv::namedWindow("wt_at");
+	cv::namedWindow("wo_at");
 }
 
 template <typename Dtype>
@@ -57,7 +59,6 @@ void DetectionOutputLiveLayer<Dtype>::reshape() {
 	}
 	if (!inputShapeChanged) return;
 
-	/*
 	this->bboxPreds.reshapeLike(this->_inputData[0]);
 	if (!SLPROP(DetectionOutputLive, shareLocation)) {
 		this->bboxPermute.reshapeLike(this->_inputData[0]);
@@ -94,46 +95,12 @@ void DetectionOutputLiveLayer<Dtype>::reshape() {
 	// [image_id, label, confidence, xmin, ymin, xmax, ymax]
 	outputShape[3] = 7;
 	this->_outputData[0]->reshape(outputShape);
-	*/
 }
 
 template <typename Dtype>
 void DetectionOutputLiveLayer<Dtype>::feedforward() {
 	reshape();
 
-
-
-	// opencv pixel format으로 복구
-	// 원본 사이즈로 resize
-
-	vector<cv::Mat> cvImgs;
-	const int singleImageSize = this->_inputData[0]->getCountByAxis(1);
-	const int imageHeight = 480;
-	const int imageWidth = 640;
-
-	const vector<Dtype> pixelMeans = {};
-	const Dtype* dataData = this->_inputData[3]->host_data();
-	transformInv(1, singleImageSize, imageHeight, imageWidth, imageHeight, imageWidth, pixelMeans,
-			dataData, this->temp);
-
-
-	Dtype* data = this->_inputData[0]->mutable_host_data();
-	//cv::Mat im = cv::Mat(this->_inputData[0]->getShape(1), this->_inputData[0]->getShape(2), CV_32FC3, data);
-	cv::Mat im = cv::Mat(this->_inputData[0]->getShape(2), this->_inputData[0]->getShape(3), CV_32FC3, data);
-	im.convertTo(im, CV_8UC3);
-
-
-
-	cv::imshow("cam", im);
-	if (cv::waitKey(30) > 0) {
-		cv::destroyAllWindows();
-		exit(1);
-	}
-
-
-
-
-	/*
 	const Dtype* locData = this->_inputData[0]->device_data();
 	const Dtype* priorData = this->_inputData[2]->device_data();
 	const int num = this->_inputData[0]->batches();
@@ -273,7 +240,126 @@ void DetectionOutputLiveLayer<Dtype>::feedforward() {
 			}
 		}
 	}
+
+
+	/*
+	// opencv pixel format으로 복구
+	// 원본 사이즈로 resize
+	vector<cv::Mat> cvImgs;
+	const int singleImageSize = this->_inputData[0]->getCountByAxis(1);
+	const int imageHeight = 300;		// network image size
+	const int imageWidth = 300;
+	const int height = 480;				// final image size
+	const int width = 640;
+
+	const vector<Dtype> pixelMeans = {104.0, 117.0, 123.0};
+	const Dtype* dataData = this->_inputData[0]->host_data();
+	cv::Mat result;
+	transformInv(1, singleImageSize, imageHeight, imageWidth, height, width,
+			pixelMeans, dataData, this->temp, result);
+
+	cv::imshow("cam", result);
+	if (cv::waitKey(30) > 0) {
+		cv::destroyAllWindows();
+		exit(1);
+	}
 	*/
+
+
+
+
+
+
+	const int numDet = this->_outputData[0]->height();
+	const int height = this->_inputData[3]->height();
+	const int width = this->_inputData[3]->width();
+
+	cv::Mat cv_img_wt(height, width, CV_32FC3, this->_inputData[3]->mutable_host_data());
+	cv_img_wt.convertTo(cv_img_wt, CV_8UC3);
+	cv::Mat cv_img_wo;
+	cv_img_wt.copyTo(cv_img_wo);
+
+	int xmin, ymin, xmax, ymax;
+	float fxmin, fymin, fxmax, fymax;
+	float xshift, yshift, wmg, hmg;
+	int xdir, ydir;
+
+
+
+
+	const float wtThresh = SLPROP(DetectionOutputLive, wtThresh);
+	const float woThresh = SLPROP(DetectionOutputLive, woThresh);
+	const float woMargin = SLPROP(DetectionOutputLive, woMargin);
+	const int woRand = SLPROP(DetectionOutputLive, woRand);
+
+	// W/T Autotune Loop
+	for (int i = 0; i < numDet; i++) {
+		const int label = (int)outputData[i * 7 + 1];
+		// 사람 필터링
+		if (label != 15) continue;
+
+		const float score = outputData[i * 7 + 2];
+		// 낮은 스코어 필터링
+		if (score < wtThresh) continue;
+
+		xmin = (int)(outputData[i * 7 + 3] * width);
+		ymin = (int)(outputData[i * 7 + 4] * height);
+		xmax = (int)(outputData[i * 7 + 5] * width);
+		ymax = (int)(outputData[i * 7 + 6] * height);
+
+		cv::rectangle(cv_img_wt, cv::Point(xmin, ymin), cv::Point(xmax, ymax), cv::Scalar(0, 0, 255), 2);
+		//sprintf(labelBuf, "%d", (int)outputLabel[j * 8 + 1]);
+		//cv::putText(cv_img, string(labelBuf), cv::Point(xmin, ymin + 15.0f), 2, 0.5f, cv::Scalar(255, 0, 0));
+	}
+
+
+	// W/O Autotune Loop
+	for (int i = 0; i < numDet; i++) {
+		const int label = (int)outputData[i * 7 + 1];
+		if (label != 15) continue;
+
+		const float score = outputData[i * 7 + 2];
+		if (score < woThresh) continue;
+
+		// 랜덤 필터링
+		if (soooa_rng_rand() % woRand == 0) continue;
+
+		fxmin = outputData[i * 7 + 3] ;
+		fymin = outputData[i * 7 + 4] ;
+		fxmax = outputData[i * 7 + 5] ;
+		fymax = outputData[i * 7 + 6] ;
+
+		xshift = (fxmax - fxmin) * woMargin;
+		yshift = (fymax - fymin) * woMargin;
+
+		soooa_rng_uniform(1, -xshift, xshift, &wmg);
+		soooa_rng_uniform(1, -yshift, yshift, &hmg);
+
+		fxmin = soooa_rng_rand() % 2 ? std::max<float>(0.f, fxmin + wmg) : std::max<float>(0.f, fxmin - wmg);
+		fymin = soooa_rng_rand() % 2 ? std::max<float>(0.f, fymin + hmg) : std::max<float>(0.f, fymin - hmg);
+		fxmax = soooa_rng_rand() % 2 ? std::min<float>(1.f, fxmax + wmg) : std::min<float>(1.f, fxmax - wmg);
+		fymax = soooa_rng_rand() % 2 ? std::min<float>(1.f, fymax + hmg) : std::min<float>(1.f, fymax - hmg);
+
+		if (fxmin >= fxmax || fymin >= fymax) continue;
+
+		const int xmin = (int)(fxmin * width);
+		const int ymin = (int)(fymin * height);
+		const int xmax = (int)(fxmax * width);
+		const int ymax = (int)(fymax * height);
+
+		cv::rectangle(cv_img_wo, cv::Point(xmin, ymin), cv::Point(xmax, ymax), cv::Scalar(0, 0, 255), 2);
+		//sprintf(labelBuf, "%d", (int)outputLabel[j * 8 + 1]);
+		//cv::putText(cv_img, string(labelBuf), cv::Point(xmin, ymin + 15.0f), 2, 0.5f, cv::Scalar(255, 0, 0));
+	}
+
+	cv::imshow("wt_at", cv_img_wt);
+	cv::imshow("wo_at", cv_img_wo);
+
+	if (cv::waitKey(30) > 0) {
+		cv::destroyAllWindows();
+		exit(1);
+	}
+
 }
 
 template <typename Dtype>
