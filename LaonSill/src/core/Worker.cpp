@@ -638,18 +638,12 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     int resultCount = 0;
 
     for (int i = 0; i < count; i += 7) {
-    	if (result[i + 1] == 15) {
-    		resultCount++;
-    	}
+        resultCount++;
     }
     pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
 
     float left, top, right, bottom;
     for (int i = 0; i < count; i++) {
-    	if (result[i * 7 + 1] != 15) {
-    		continue;
-    	}
-
     	if (baseNetworkType == 0) {     // SSD, 여기서는 무조건 절대좌표로 변환한다.
             left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
             top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);
