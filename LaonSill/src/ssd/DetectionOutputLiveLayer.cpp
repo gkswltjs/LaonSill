@@ -429,8 +429,8 @@ void DetectionOutputLiveLayer<Dtype>::feedforward() {
 
 
 
-	int key = cv::waitKey(5);
-	if (key == 1048692) {	// t
+	char key = cv::waitKey(5);
+	if (key == 't') {
 		this->dispMode++;
 		if (this->dispMode > 3) {
 			this->dispMode = 0;

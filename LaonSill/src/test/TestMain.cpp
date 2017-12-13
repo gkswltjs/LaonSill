@@ -103,25 +103,7 @@ int main(int argc, char** argv) {
 
 
 
-	const int width = 640;
-	const int height = 480;
-
 	cv::Mat fg = cv::imread("/home/jkim/Pictures/1480152332917.png");
-
-
-	const string wtLabel = "LAONADE AUTOTUNED";
-	cv::Scalar boxColor = cv::Scalar(0, 0, 255);
-	int fontface = cv::FONT_HERSHEY_SIMPLEX;
-	float scale = 1.0f;
-	int thickness = 2;
-	int baseline = 0;
-
-	cv::Size text = cv::getTextSize(wtLabel, fontface, scale, thickness, &baseline);
-	//cout << "text width: " << text.width << ", text height: " << text.height << ", baseline: " << baseline << endl;
-	//cv::rectangle(cv_img_wt, cv::Point(0, baseline), cv::Point(text.width, text.height), boxColor, CV_FILLED);
-	cv::rectangle(fg, cv::Point(0, 0), cv::Point(text.width, text.height * 2), boxColor, CV_FILLED);
-	cv::putText(fg, wtLabel, cv::Point(0, (int)(text.height * 1.5f)), fontface, scale, CV_RGB(255, 255, 255), thickness, 8);
-
 	cv::imshow("disp", fg);
 
 
@@ -162,6 +144,10 @@ int main(int argc, char** argv) {
 
 	cv::imshow("pip", bg);
 	*/
+
+	char key = (char)cv::waitKey(0);
+	cout << "key->" << key << endl;
+	return 0;
 
 	if (cv::waitKey(0) > 0) {
 		return 0;
