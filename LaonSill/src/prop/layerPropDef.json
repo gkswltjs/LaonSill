@@ -1423,7 +1423,11 @@
 		],
 		["labelMapFile", "std::string", "\"\""],
 		["annoType", "AnnotationType", "AnnotationType::ANNO_NONE"],
-		["camIndex", "int", "0"]
+		["camIndex", "int", "0"],
+		["camResWidth", "int", "1280"],
+		["camResHeight", "int", "720"]
+
+
 	],
 		"KEYVARS" : []
 },

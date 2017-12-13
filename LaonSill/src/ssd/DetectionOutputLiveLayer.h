@@ -49,6 +49,9 @@ private:
 	boost::property_tree::ptree detections;
 	Data<Dtype> temp;
 
+	const std::string disp1;
+	const std::string disp2;
+
 
 public:
     /****************************************************************************

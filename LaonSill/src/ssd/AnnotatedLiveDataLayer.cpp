@@ -43,6 +43,9 @@ AnnotatedLiveDataLayer<Dtype>::AnnotatedLiveDataLayer()
 	}
 
 	SASSERT(this->videoCapture.isOpened(), "video device is not opened ... ");
+
+	this->videoCapture.set(CV_CAP_PROP_FRAME_WIDTH, SLPROP(AnnotatedLiveData, camResWidth));
+	this->videoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, SLPROP(AnnotatedLiveData, camResHeight));
 }
 
 template <typename Dtype>
@@ -121,7 +124,8 @@ void AnnotatedLiveDataLayer<Dtype>::load_batch() {
 
 	// DataTransformer::transform에서 이미지 정보를 CHW 기준으로 조회해서
 	// 아래와 같이 shape 생성
-	vector<uint32_t> dataShape = {1, resizedFrame.channels(), resizedFrame.rows, resizedFrame.cols};
+	vector<uint32_t> dataShape = {1, (uint32_t)resizedFrame.channels(),
+			(uint32_t)resizedFrame.rows, (uint32_t)resizedFrame.cols};
 	//vector<uint32_t> dataShape = {1, frame.rows, frame.cols, frame.channels()};
 	this->_outputData[0]->reshape(dataShape);
 
@@ -137,7 +141,8 @@ void AnnotatedLiveDataLayer<Dtype>::load_batch() {
 
 	// 2. data_org
 	frame.convertTo(frame, CV_32F);
-	vector<uint32_t> dataOrgShape = {1, frame.channels(), frame.rows, frame.cols};
+	vector<uint32_t> dataOrgShape = {1, (uint32_t)frame.channels(),
+			(uint32_t)frame.rows, (uint32_t)frame.cols};
 	this->_outputData[1]->reshape(dataOrgShape);
 	Dtype* data_org = this->_outputData[1]->mutable_host_data();
 	ConvertHWCCVToHWC(frame, data_org);
