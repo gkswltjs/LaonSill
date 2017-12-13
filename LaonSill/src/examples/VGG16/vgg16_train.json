@@ -541,11 +541,12 @@
 	"configs" :
 	{
 		"batchSize" : 2,
-		"epochs" : 1000, 
+		"epochs" : 20, 
 		"lossLayer" : ["loss"],
+        "measureLayer" : ["loss"],
 		"gamma" : 0.1,
-		"testInterval" : 10,
-		"saveInterval" : 1000,
+		"testInterval" : 100,
+		"saveInterval" : 200,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,
 		"stepSize" : 50000,
@@ -553,6 +554,7 @@
 		"momentum" : 0.9,
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
-		"loadPath" : "$(LAONSILL_HOME)/param/VGG16_CAFFE_TRAINED.param"
+        "keepSaveBestModel" : true,
+        "keepSaveBestModelStartIterNum" : 1000
 	}
 }

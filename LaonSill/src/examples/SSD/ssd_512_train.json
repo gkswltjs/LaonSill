@@ -1721,11 +1721,12 @@
 	"configs" :
 	{
 		"batchSize" : 8,
-		"epochs" : 5, 
+		"epochs" : 1, 
 		"lossLayer" : ["mbox_loss"],
+        "measureLayer" : ["mbox_loss"],
 		"gamma" : 0.1,
-		"testInterval" : 10,
-		"saveInterval" : 160000,
+		"testInterval" : 100,
+		"saveInterval" : 200,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,
 		"stepSize" : 50000,
@@ -1733,7 +1734,10 @@
 		"momentum" : 0.9,
 		"lrPolicy" : "Multistep",
 		"stepValue" : [80000, 100000, 120000],
-		"optimizer" : "Momentum"
+		"optimizer" : "Momentum",
+		"loadPath" : "$(LAONSILL_HOME)/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_512x512.param",
+        "keepSaveBestModel" : true,
+        "keepSaveBestModelStartIterNum" : 1000
 	}
 
 }
