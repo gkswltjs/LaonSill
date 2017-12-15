@@ -85,7 +85,10 @@ Network<Dtype>::~Network() {
     if (this->trainFP != NULL)
         fclose(this->trainFP);
 
-    MemoryMgmt::dump();
+#if 1   /* LMH DEBUG */
+    MemoryMgmt::dump(MemoryMgmtSortOptionIndex);
+    MemoryMgmt::dump(MemoryMgmtSortOptionSize);
+#endif
 }
 
 template<typename Dtype>

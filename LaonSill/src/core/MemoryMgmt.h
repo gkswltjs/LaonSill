@@ -20,7 +20,8 @@ typedef struct MemoryEntry_s {
     char            filename[PATH_MAX];
     char            funcname[PATH_MAX];
     int             line;
-    unsigned long   size;
+    unsigned long   size;   
+    uint64_t        index;
 } MemoryEntry;
 
 #define SMALLOC_(obj, type, size, filename, func, line)                                 \
@@ -102,6 +103,12 @@ typedef struct MemoryEntry_s {
 #define SFREE(obj)                  SFREE_NOLOG_(obj)
 #endif
 
+typedef enum MemoryMgmtSortOption_e {
+    MemoryMgmtSortOptionNone = 0,
+    MemoryMgmtSortOptionIndex,
+    MemoryMgmtSortOptionSize
+} MemoryMgmtSortOption;
+
 class MemoryMgmt {
 public: 
     MemoryMgmt() {}
@@ -111,11 +118,12 @@ public:
     static void insertEntry(const char* filename, const char* funcname, int line,
         unsigned long size, void* ptr);
     static void removeEntry(void* ptr);
-    static void dump();
+    static void dump(MemoryMgmtSortOption option);
 
 private:
     static std::map<void*, MemoryEntry>     entryMap;
     static std::mutex                       entryMutex;
     static uint64_t                         usedMemTotalSize;
+    static uint64_t                         currIndex;
 };
 #endif /* MEMORYMGMT_H */

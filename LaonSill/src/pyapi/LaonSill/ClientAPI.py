@@ -94,6 +94,10 @@ class ClientHandle:
             self.serverPortNum, byref(self.sockFD), self.buffer)
         return ret
 
+    def setSession(self, networkID):
+        self.networkID = c_char_p(networkID)
+        self.isCreated = c_int(1)
+
     def releaseSession(self):
         ret = funcReleaseSession(self.sockFD, self.buffer, byref(self.hasSession))
         return ret
