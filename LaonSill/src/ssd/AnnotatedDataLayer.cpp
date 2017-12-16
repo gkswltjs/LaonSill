@@ -163,6 +163,8 @@ void AnnotatedDataLayer<Dtype>::reshape() {
     	}
     	this->_outputData[1]->reshape(labelShape);
     }
+
+    SDELETE(annoDatum);
 }
 
 template <typename Dtype>
@@ -348,6 +350,7 @@ void AnnotatedDataLayer<Dtype>::load_batch() {
 		if (transformParam.hasExpandParam()) {
 			SDELETE(expandDatum);
 		}
+        SDELETE(annoDatum);
 		// reader_.free().push(...) 		???
 	}
 
