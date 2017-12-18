@@ -100,13 +100,8 @@ int main(int argc, char** argv) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
-
-
-
-	cv::Mat fg = cv::imread("/home/jkim/Pictures/1480152332917.png");
-	cv::imshow("disp", fg);
-
-
+	denormalize("/home/jkim/Dev/LAONSILL_HOME/param/9827323c-8c13-4a74-982c-3b0381d49fed_1002000.param",
+			"/home/jkim/Dev/LAONSILL_HOME/param/9827323c-8c13-4a74-982c-3b0381d49fed_1002000_dn.param");
 
 
 	/*
@@ -145,6 +140,7 @@ int main(int argc, char** argv) {
 	cv::imshow("pip", bg);
 	*/
 
+	/*
 	char key = (char)cv::waitKey(0);
 	cout << "key->" << key << endl;
 	return 0;
@@ -152,6 +148,7 @@ int main(int argc, char** argv) {
 	if (cv::waitKey(0) > 0) {
 		return 0;
 	}
+	*/
 
 	/*
 	int key = 0;

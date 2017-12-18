@@ -315,15 +315,13 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 
 	collectBatchResult();
 
-	//const int iterations = SNPROP(iterations);
-	//const int testInterval = SNPROP(testInterval);
-
+	const int iterations = SNPROP(iterations);
+	const int testInterval = SNPROP(testInterval);
 	//cout << "iterations: " << iterations << ", testInterval: " << testInterval << endl;
-
-	//if ((iterations + 1) % testInterval == 0) {
-	//	float result = testDetection();
-	//	cout << "mAP = " << result << endl;
-	//}
+	if ((iterations + 1) % testInterval == 0) {
+		float result = testDetection();
+		cout << "mAP = " << result << endl;
+	}
 }
 
 template <typename Dtype>
@@ -375,13 +373,13 @@ float DetectionEvaluateLayer<Dtype>::testDetection() {
 		int label = it->first;
 		int labelNumPos = it->second;
 		if (this->truePos.find(label) == this->truePos.end()) {
-			STDOUT_LOG("Missing truePos for label: %d", label);
+			//STDOUT_LOG("Missing truePos for label: %d", label);
 			numPosSize--;
 			continue;
 		}
 		const vector<pair<float, int>>& labelTruePos = this->truePos.find(label)->second;
 		if (this->falsePos.find(label) == this->falsePos.end()) {
-			STDOUT_LOG("Missing falsePos for label: %d", label);
+			//STDOUT_LOG("Missing falsePos for label: %d", label);
 			numPosSize--;
 			continue;
 		}
