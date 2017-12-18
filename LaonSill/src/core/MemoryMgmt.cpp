@@ -36,12 +36,13 @@ void MemoryMgmt::init() {
 }
 
 void MemoryMgmt::insertEntry(const char* filename, const char* funcname, int line,
-        unsigned long size, void* ptr) {
+        unsigned long size, bool once, void* ptr) {
     MemoryEntry entry;
     strcpy(entry.filename, filename);
     strcpy(entry.funcname, funcname);
     entry.line = line;
     entry.size = size;
+    entry.once = once;
 
     unique_lock<mutex> entryMutexLock(MemoryMgmt::entryMutex);
     entry.index = MemoryMgmt::currIndex;
@@ -50,7 +51,7 @@ void MemoryMgmt::insertEntry(const char* filename, const char* funcname, int lin
     // XXX: LMH debug
     if (MemoryMgmt::entryMap.find(ptr) != MemoryMgmt::entryMap.end()) {
         entryMutexLock.unlock();
-        dump(MemoryMgmtSortOptionNone);
+        dump(MemoryMgmtSortOptionNone, true);
 
         printf("filename : %s, funcname : %s, line : %d, size : %lu, pointer : %p\n", 
                 filename, funcname, line, size, ptr);
@@ -72,7 +73,7 @@ void MemoryMgmt::removeEntry(void* ptr) {
 }
 
 // WARNING: 본 함수는 매우 무거운 함수이다. 함부로 자주 호출하면 안된다.
-void MemoryMgmt::dump(MemoryMgmtSortOption option) {
+void MemoryMgmt::dump(MemoryMgmtSortOption option, bool skipOnce) {
     FILE*           fp;
     char            dumpFilePath[PATH_MAX];
     struct timeval  val;
@@ -88,6 +89,22 @@ void MemoryMgmt::dump(MemoryMgmtSortOption option) {
     fp = fopen(dumpFilePath, "w+");
     SASSERT0(fp != NULL);
 
+    if (option == MemoryMgmtSortOptionNone) {
+        fprintf(fp, "no option, ");
+    } else if (option == MemoryMgmtSortOptionIndex) {
+        fprintf(fp, "index sort, ");
+    } else {
+        SASSERT0(option == MemoryMgmtSortOptionSize);
+        fprintf(fp, "size sort, ");
+    }
+
+    if (skipOnce) {
+        fprintf(fp, "skip once.\n");
+    } else {
+        fprintf(fp, "print all.\n");
+    }
+    fflush(fp);
+
     map<void*, MemoryEntry>::iterator it;
     unique_lock<mutex> entryMutexLock(MemoryMgmt::entryMutex);    
     map<void*, MemoryEntry> cp = MemoryMgmt::entryMap;
@@ -97,6 +114,9 @@ void MemoryMgmt::dump(MemoryMgmtSortOption option) {
         for (it = cp.begin(); it != cp.end(); it++) {
             void* ptr = it->first;
             MemoryEntry entry = it->second;
+
+            if (skipOnce && entry.once)
+                continue;
 
             SASSUME0(fprintf(fp, "[%p|%llu] : %llu (%s()@%s:%d\n", ptr, entry.index, 
                 entry.size, entry.funcname, entry.filename, entry.line) > 0);
@@ -121,6 +141,10 @@ void MemoryMgmt::dump(MemoryMgmtSortOption option) {
         for (int i = 0; i < vec.size(); i++) {
             void* ptr = vec[i].first;
             MemoryEntry entry = cp[ptr];
+
+            if (skipOnce && entry.once)
+                continue;
+
             SASSUME0(fprintf(fp, "[%p|%llu] : %llu (%s()@%s:%d\n", ptr, entry.index, 
                 entry.size, entry.funcname, entry.filename, entry.line) > 0);
         }
@@ -144,6 +168,10 @@ void MemoryMgmt::dump(MemoryMgmtSortOption option) {
         for (int i = 0; i < vec.size(); i++) {
             void* ptr = vec[i].first;
             MemoryEntry entry = cp[ptr];
+
+            if (skipOnce && entry.once)
+                continue;
+
             SASSUME0(fprintf(fp, "[%p|%llu] : %llu (%s()@%s:%d\n", ptr, entry.index, 
                 entry.size, entry.funcname, entry.filename, entry.line) > 0);
         }

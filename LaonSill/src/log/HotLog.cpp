@@ -61,7 +61,7 @@ void HotLog::init() {
 void HotLog::launchThread(int threadCount) {
     // (1) flusher 쓰레드를 생성한다.
     HotLog::flusher = NULL;
-    SNEW(HotLog::flusher, thread, HotLog::flusherThread, threadCount);
+    SNEW_ONCE(HotLog::flusher, thread, HotLog::flusherThread, threadCount);
 }
 
 int HotLog::initForThread() {
@@ -83,7 +83,7 @@ int HotLog::initForThread() {
 
     // (2) contextArray에 자신의 fd를 추가한다.
     HotLogContext* newContext = NULL;
-    SNEW(newContext, HotLogContext, fd);
+    SNEW_ONCE(newContext, HotLogContext, fd);
     unique_lock<mutex> fdLock(HotLog::contextMutex);
     HotLog::contextArray.push_back(newContext);
     HotLog::contextId = HotLog::contextGenId;
@@ -212,7 +212,7 @@ void HotLog::flusherThread(int contextCount) {
     //     wrap around까지 고려해서 contextCount * 2개 만큼을 할당한다.
     HotLog::flushCBs = NULL;
     int allocSize = sizeof(struct aiocb*) * contextCount * 2;
-    SMALLOC(HotLog::flushCBs, struct aiocb*, allocSize);
+    SMALLOC_ONCE(HotLog::flushCBs, struct aiocb*, allocSize);
     SASSERT0(HotLog::flushCBs != NULL);
 
     // (3) main loop

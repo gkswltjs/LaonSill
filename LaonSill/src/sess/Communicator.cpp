@@ -489,9 +489,9 @@ void Communicator::sessThread(int sessId) {
 
     SessContext*& sessContext   = Communicator::sessContext[sessId];
 
-    SMALLOC(recvMsg, char, MessageHeader::MESSAGE_DEFAULT_SIZE);
+    SMALLOC_ONCE(recvMsg, char, MessageHeader::MESSAGE_DEFAULT_SIZE);
     SASSERT0(recvMsg);
-    SMALLOC(replyMsg, char, MessageHeader::MESSAGE_DEFAULT_SIZE);
+    SMALLOC_ONCE(replyMsg, char, MessageHeader::MESSAGE_DEFAULT_SIZE);
     SASSERT0(replyMsg);
 
     COLD_LOG(ColdLog::INFO, true, "session thread #%d starts", sessId);
@@ -642,13 +642,13 @@ void Communicator::launchThreads(int sessCount) {
 
     // (3) listener thread를 생성한다.
     Communicator::listener = NULL;
-    SNEW(Communicator::listener, thread, listenerThread);
+    SNEW_ONCE(Communicator::listener, thread, listenerThread);
     SASSUME0(Communicator::listener != NULL);
 
     // (4) thread pool을 생성한다. 
     for (int i = 0; i < sessCount; i++) {
         SessContext *sc = NULL;
-        SNEW(sc, SessContext, i);
+        SNEW_ONCE(sc, SessContext, i);
         Communicator::sessContext.push_back(sc);
         Communicator::freeSessIdList.push_back(i);
     }

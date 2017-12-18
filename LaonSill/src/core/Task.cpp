@@ -18,7 +18,7 @@ vector<TaskPool*> Task::taskPools;
 
 void Task::allocTaskPool(TaskType taskType) {
     TaskPool *tp = NULL;
-    SNEW(tp, TaskPool);
+    SNEW_ONCE(tp, TaskPool);
     SASSERT0(tp != NULL);
     tp->taskType = taskType;
 
@@ -53,25 +53,25 @@ void Task::allocTaskPool(TaskType taskType) {
 
         switch (taskType) {
             case TaskType::AllocTensor:
-                SNEW(elemTaskAllocTensor, TaskAllocTensor);
+                SNEW_ONCE(elemTaskAllocTensor, TaskAllocTensor);
                 SASSUME0(elemTaskAllocTensor != NULL);
                 elem = (void*)elemTaskAllocTensor;
                 break;
             
             case TaskType::UpdateTensor:
-                SNEW(elemTaskUpdateTensor, TaskUpdateTensor);
+                SNEW_ONCE(elemTaskUpdateTensor, TaskUpdateTensor);
                 SASSUME0(elemTaskUpdateTensor != NULL);
                 elem = (void*)elemTaskUpdateTensor;
                 break;
 
             case TaskType::RunPlan:
-                SNEW(elemTaskRunPlan, TaskRunPlan);
+                SNEW_ONCE(elemTaskRunPlan, TaskRunPlan);
                 SASSUME0(elemTaskRunPlan != NULL);
                 elem = (void*)elemTaskRunPlan;
                 break;
 
             case TaskType::AllocLayer:
-                SNEW(elemTaskAllocLayer, TaskAllocLayer);
+                SNEW_ONCE(elemTaskAllocLayer, TaskAllocLayer);
                 SASSUME0(elemTaskAllocLayer);
                 elem = (void*)elemTaskAllocLayer;
                 break;

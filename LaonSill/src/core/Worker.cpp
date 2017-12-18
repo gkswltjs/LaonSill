@@ -829,14 +829,14 @@ void Worker::launchThreads(int taskConsumerCount, int jobConsumerCount) {
 
 	// (3) producer 쓰레드를 생성한다.
     Worker::producer = NULL;
-    SNEW(Worker::producer, thread, producerThread);
+    SNEW_ONCE(Worker::producer, thread, producerThread);
     SASSUME0(producerThread != NULL);
 
 	// (4) consumer 쓰레드들을 생성한다.
 	for (int i = 0; i < SPARAM(GPU_COUNT); i++) {
 		Worker::consumers.push_back(thread(taskConsumerThread, i, Cuda::availableGPU[i]));
         TaskQueue *tq = NULL;
-        SNEW(tq, TaskQueue);
+        SNEW_ONCE(tq, TaskQueue);
         SASSUME0(tq != NULL);
         Worker::taskQueues.push_back(tq);
     }

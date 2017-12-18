@@ -22,16 +22,17 @@ typedef struct MemoryEntry_s {
     int             line;
     unsigned long   size;   
     uint64_t        index;
+    bool            once;
 } MemoryEntry;
 
-#define SMALLOC_(obj, type, size, filename, func, line)                                 \
+#define SMALLOC_(obj, type, once, size, filename, func, line)                           \
     do {                                                                                \
         void* ptr = malloc(size);                                                       \
         if (ptr == NULL) {                                                              \
             obj = NULL;                                                                 \
         } else {                                                                        \
             obj = (type*) ptr;                                                          \
-            MemoryMgmt::insertEntry(filename, func, line, size, ptr);                   \
+            MemoryMgmt::insertEntry(filename, func, line, size, once, ptr);             \
         }                                                                               \
     } while (0)
 
@@ -56,7 +57,7 @@ typedef struct MemoryEntry_s {
         free(obj);                                                                      \
     } while (0)
 
-#define SNEW_(obj, type, filename, func, line, ...)                                     \
+#define SNEW_(obj, type, once, filename, func, line, ...)                               \
     do {                                                                                \
         int size = sizeof( type );                                                      \
         void* ptr = malloc(size);                                                       \
@@ -64,7 +65,7 @@ typedef struct MemoryEntry_s {
             obj = NULL;                                                                 \
         } else {                                                                        \
             obj = new ((type*)ptr) type(__VA_ARGS__);                                   \
-            MemoryMgmt::insertEntry(filename, func, line, size, ptr);                   \
+            MemoryMgmt::insertEntry(filename, func, line, size, once, ptr);             \
         }                                                                               \
     } while (0)
 
@@ -92,15 +93,19 @@ typedef struct MemoryEntry_s {
 
 /* NOTE: we can use __func__ macro because we use C++11 */
 #ifdef DEBUG_MODE
-#define SMALLOC(obj, type, size)    SMALLOC_(obj, type, size, __FILE__, __func__, __LINE__) 
-#define SNEW(obj, type, args...)    SNEW_(obj, type, __FILE__, __func__, __LINE__, ##args )
-#define SDELETE(obj)                SDELETE_(obj)
-#define SFREE(obj)                  SFREE_(obj)
+#define SMALLOC(obj, type, size)        SMALLOC_(obj, type, false, size, __FILE__, __func__, __LINE__) 
+#define SNEW(obj, type, args...)        SNEW_(obj, type, false, __FILE__, __func__, __LINE__, ##args )
+#define SMALLOC_ONCE(obj, type, size)   SMALLOC_(obj, type, true, size, __FILE__, __func__, __LINE__) 
+#define SNEW_ONCE(obj, type, args...)   SNEW_(obj, type, true, __FILE__, __func__, __LINE__, ##args )
+#define SDELETE(obj)                    SDELETE_(obj)
+#define SFREE(obj)                      SFREE_(obj)
 #else
-#define SMALLOC(obj, type, size)    SMALLOC_NOLOG_(obj, type, size)
-#define SNEW(obj, type, args...)    SNEW_NOLOG_(obj, type, ##args )
-#define SDELETE(obj)                SDELETE_NOLOG_(obj)
-#define SFREE(obj)                  SFREE_NOLOG_(obj)
+#define SMALLOC(obj, type, size)        SMALLOC_NOLOG_(obj, type, size)
+#define SNEW(obj, type, args...)        SNEW_NOLOG_(obj, type, ##args )
+#define SMALLOC_ONCE(obj, type, size)   SMALLOC_NOLOG_(obj, type, size)
+#define SNEW_ONCE(obj, type, args...)   SNEW_NOLOG_(obj, type, ##args )
+#define SDELETE(obj)                    SDELETE_NOLOG_(obj)
+#define SFREE(obj)                      SFREE_NOLOG_(obj)
 #endif
 
 typedef enum MemoryMgmtSortOption_e {
@@ -116,9 +121,9 @@ public:
 
     static void init();
     static void insertEntry(const char* filename, const char* funcname, int line,
-        unsigned long size, void* ptr);
+        unsigned long size, bool once, void* ptr);
     static void removeEntry(void* ptr);
-    static void dump(MemoryMgmtSortOption option);
+    static void dump(MemoryMgmtSortOption option, bool skipOnce);
 
 private:
     static std::map<void*, MemoryEntry>     entryMap;
@@ -126,4 +131,5 @@ private:
     static uint64_t                         usedMemTotalSize;
     static uint64_t                         currIndex;
 };
+
 #endif /* MEMORYMGMT_H */

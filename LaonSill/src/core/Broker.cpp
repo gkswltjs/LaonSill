@@ -26,16 +26,16 @@ mutex                   Broker::adhocSessMutex;
 
 void Broker::init() {
     int allocSize = sizeof(Broker::AdhocSess) * SPARAM(BROKER_ADHOC_SESS_COUNT);
-    SMALLOC(Broker::adhocSessArray, Broker::AdhocSess, allocSize);
+    SMALLOC_ONCE(Broker::adhocSessArray, Broker::AdhocSess, allocSize);
     SASSERT0(Broker::adhocSessArray != NULL);
 
     for (int i = 0; i < SPARAM(BROKER_ADHOC_SESS_COUNT); i++) {
         Broker::adhocSessArray[i].arrayIdx = i;
         Broker::adhocSessArray[i].sessID = i + SPARAM(BROKER_ADHOC_SESS_STARTS);
         Broker::adhocSessArray[i].found = false;
-        SNEW(Broker::adhocSessArray[i].sessMutex, mutex);
+        SNEW_ONCE(Broker::adhocSessArray[i].sessMutex, mutex);
         SASSERT0(Broker::adhocSessArray[i].sessMutex != NULL);
-        SNEW(Broker::adhocSessArray[i].sessCondVar, condition_variable);
+        SNEW_ONCE(Broker::adhocSessArray[i].sessCondVar, condition_variable);
         SASSERT0(Broker::adhocSessArray[i].sessCondVar != NULL);
 
         Broker::freeAdhocSessIDList.push_back(i + SPARAM(BROKER_ADHOC_SESS_STARTS));
