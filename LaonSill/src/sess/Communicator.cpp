@@ -469,7 +469,14 @@ bool Communicator::handlePushJobMsg(int fd, MessageHeader recvMsgHdr, char* recv
     retType = Broker::subscribe(newJob->getJobID(), &subscribedJob, Broker::Blocking);
     SASSERT0(retType == Broker::Success);
 
-    sendJobToBuffer(replyMsgHdr, subscribedJob, replyMsg);
+    int sendBufSize = MessageHeader::MESSAGE_HEADER_SIZE + subscribedJob->getJobSize();
+    if (sendBufSize <= MessageHeader::MESSAGE_DEFAULT_SIZE) {
+        sendJobToBuffer(replyMsgHdr, subscribedJob, replyMsg);
+    } else {
+        SMALLOC(replyBigMsg, char, sendBufSize);
+        SASSUME0(replyBigMsg != NULL);
+        sendJobToBuffer(replyMsgHdr, subscribedJob, replyBigMsg);
+    }
 
     SDELETE(subscribedJob);
     return true;
@@ -597,7 +604,7 @@ void Communicator::sessThread(int sessId) {
             // (3) send reply if necessary
             if (needReply) {
                 replyRet = Communicator::sendMessage(fd, replyMsgHdr, 
-                    (recvBigMsg == NULL ? replyMsg : replyBigMsg));
+                    (replyBigMsg == NULL ? replyMsg : replyBigMsg));
             }
             SASSERT(replyRet == Communicator::Success, "");
 
