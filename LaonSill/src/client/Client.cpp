@@ -38,28 +38,36 @@ int Client::connectRetry(int sockFd, const struct sockaddr *sockAddr, socklen_t 
     return -1;
 }
 
-void Client::sendJob(int fd, char* buf, Job* job) {
+int Client::sendJob(int fd, char* buf, Job* job) {
     // see handlePushJobMsg()@Communicator.cpp && JobType enumeration @ Job.h
     // (1) send job msg
     MessageHeader msgHdr;
     Communicator::sendJobToBuffer(msgHdr, job, buf);
     Communicator::CommRetType ret = Communicator::sendMessage(fd, msgHdr, buf);
-    SASSERT0(ret == Communicator::Success);
+    if (ret != Communicator::Success)
+        return (int)ret;
 
     // (2) recv msg
     ret = Communicator::recvMessage(fd, msgHdr, buf, false);
-    SASSERT0(ret == Communicator::Success);
+    if (ret != Communicator::Success)
+        return (int)ret;
+
     SASSERT0(msgHdr.getMsgType() == MessageHeader::PushJobReply);
+    return (int)ret;
 }
 
-void Client::recvJob(int fd, char* buf, Job** job) {
+int Client::recvJob(int fd, char* buf, Job** job) {
     // see handlePushJobMsg()@Communicator.cpp && JobType enumeration @ Job.h
     MessageHeader msgHdr;
     Communicator::CommRetType ret = Communicator::recvMessage(fd, msgHdr, buf, false);
-    SASSERT0(ret == Communicator::Success);
-    SASSERT0(msgHdr.getMsgType() == MessageHeader::PushJob);
 
+    if (ret != Communicator::Success)
+        return (int)ret;
+
+    SASSERT0(msgHdr.getMsgType() == MessageHeader::PushJob);
     Communicator::recvJobFromBuffer(job, buf);
+
+    return (int)ret;
 }
 
 void Client::clientMain(const char* hostname, int portno) {
@@ -113,11 +121,13 @@ void Client::clientMain(const char* hostname, int portno) {
     string networkFilePath = "network.conf.test";
     createNetworkJob->addJobElem(Job::StringType, strlen(networkFilePath.c_str()),
         (void*)networkFilePath.c_str());
-    Client::sendJob(sockFd, buf, createNetworkJob);
+    int retval = Client::sendJob(sockFd, buf, createNetworkJob);
     delete createNetworkJob;
+    SASSERT0(retval == Communicator::Success);
 
     Job* createNetworkReplyJob;
-    recvJob(sockFd, buf, &createNetworkReplyJob);
+    retval = recvJob(sockFd, buf, &createNetworkReplyJob);
+    SASSERT0(retval == Communicator::Success);
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     string networkID = createNetworkReplyJob->getStringValue(0);
     cout << "created network ID : " << networkID << endl;

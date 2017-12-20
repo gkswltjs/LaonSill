@@ -462,7 +462,8 @@ bool Communicator::handlePushJobMsg(int fd, MessageHeader recvMsgHdr, char* recv
         return true;
 
     CommRetType replyRet = Communicator::sendMessage(fd, replyMsgHdr, replyMsg);
-    SASSUME0(replyRet == CommRetType::Success);
+    if (replyRet != CommRetType::Success)
+        return false;
 
     Job* subscribedJob = NULL;
     Broker::BrokerRetType retType;
@@ -492,7 +493,7 @@ void Communicator::sessThread(int sessId) {
     char*           recvBigMsg  = NULL;     // 동적할당
     char*           replyBigMsg = NULL;
     CommRetType     recvRet;
-    CommRetType     replyRet;
+    CommRetType     replyRet = Communicator::Success;
 
     SessContext*& sessContext   = Communicator::sessContext[sessId];
 
@@ -547,8 +548,10 @@ void Communicator::sessThread(int sessId) {
             bool useBigRecvMsg = false;
             recvRet = Communicator::recvMessage(fd, recvMsgHdr, recvMsg, false);
 
-//           if (recvRet == Communicator::RecvConnRefused)
-//               break;
+            if (recvRet == Communicator::RecvConnRefused || 
+                recvRet == Communicator::RecvPeerShutdown ||
+                recvRet == Communicator::RecvFailed)
+                break;
 
             SASSERT((recvRet == Communicator::Success) ||
                 (recvRet == Communicator::RecvOnlyHeader), "");
@@ -560,8 +563,10 @@ void Communicator::sessThread(int sessId) {
                 useBigRecvMsg = true;
                 recvRet = Communicator::recvMessage(fd, recvMsgHdr, recvBigMsg, true);
 
- //              if (recvRet == Communicator::RecvConnRefused)
- //                  break;
+                if (recvRet == Communicator::RecvConnRefused || 
+                    recvRet == Communicator::RecvPeerShutdown ||
+                    recvRet == Communicator::RecvFailed)
+                    break;
             }
 
             SASSERT(recvRet == Communicator::Success, "");
@@ -579,6 +584,8 @@ void Communicator::sessThread(int sessId) {
                     needReply = Communicator::handlePushJobMsg(fd, 
                         recvMsgHdr, (useBigRecvMsg ? recvBigMsg : recvMsg),
                         replyMsgHdr, replyMsg, replyBigMsg);
+                    if (!needReply)
+                        replyRet = Communicator::SendFailed;
                     break;
 
                 case MessageHeader::HaltMachine:
@@ -606,7 +613,6 @@ void Communicator::sessThread(int sessId) {
                 replyRet = Communicator::sendMessage(fd, replyMsgHdr, 
                     (replyBigMsg == NULL ? replyMsg : replyBigMsg));
             }
-            SASSERT(replyRet == Communicator::Success, "");
 
             // (4) cleanup big msg resource
             if (replyBigMsg != NULL) {
@@ -617,6 +623,17 @@ void Communicator::sessThread(int sessId) {
             if (recvBigMsg != NULL) {
                 SFREE(recvBigMsg);
                 recvBigMsg = NULL;
+            }
+
+            if (replyRet != Communicator::Success) {
+                if (replyRet == Communicator::SendConnResetByPeer) {
+                    COLD_LOG(ColdLog::WARNING, true,
+                            "cannot send message due to conn reset by peer");
+                } else {
+                    SASSERT0(replyRet == Communicator::SendFailed);
+                    COLD_LOG(ColdLog::WARNING, true, "send failed");
+                }
+                break;
             }
         }
 

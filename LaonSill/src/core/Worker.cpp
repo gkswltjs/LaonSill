@@ -540,15 +540,15 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
     pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
 
     float left, top, right, bottom;
-    for (int i = 0; i < count; i++) {
-    	if (result[i * 7 + 1] != 15) {
+    for (int i = 0; i < count; i += 7) {
+    	if (result[i + 1] != 15) {
     		continue;
     	}
 
-    	left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
-    	top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);
-    	right	= std::min(std::max(result[i * 7 + 5], 0.f), 1.f);
-    	bottom	= std::min(std::max(result[i * 7 + 6], 0.f), 1.f);
+    	left	= std::min(std::max(result[i + 3], 0.f), 1.f);
+    	top		= std::min(std::max(result[i + 4], 0.f), 1.f);
+    	right	= std::min(std::max(result[i + 5], 0.f), 1.f);
+    	bottom	= std::min(std::max(result[i + 6], 0.f), 1.f);
 
     	if (coordRelative == 0) {
     		left    = int(left * width);
@@ -556,8 +556,8 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
 			right   = int(right * width);
 			bottom  = int(bottom * height);
     	}
-        float score = result[i * 7 + 2];
-        int labelIndex = (int)(result[i * 7 + 1] + 0.000001);
+        float score = result[i + 2];
+        int labelIndex = (int)(result[i + 1] + 0.000001);
 
         pubJob->addJobElem(Job::FloatType, 1, (void*)&top);
         pubJob->addJobElem(Job::FloatType, 1, (void*)&left);
@@ -643,7 +643,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
 
     float left, top, right, bottom;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < resultCount; i++) {
     	if (baseNetworkType == 0) {     // SSD, 여기서는 무조건 절대좌표로 변환한다.
             left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
             top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);

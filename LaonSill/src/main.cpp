@@ -46,7 +46,6 @@
 #include "MeasureManager.h"
 #include "MemoryMgmt.h"
 
-#include "YOLO.h"
 #include "LayerFunc.h"
 #include "LayerPropList.h"
 #include "Examples.h"
