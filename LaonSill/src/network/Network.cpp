@@ -121,7 +121,9 @@ void Network<Dtype>::build(int epochs) {
     SASSERT0(this->isLoaded);
         
     WorkContext::updateNetwork(this->networkID); 
-    SNPROP(epochs) = epochs;
+
+    if (epochs > 0)
+        SNPROP(epochs) = epochs;
 
     SASSERT0(this->isMeasureInserted == false);
 
