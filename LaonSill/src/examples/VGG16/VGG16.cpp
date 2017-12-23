@@ -26,7 +26,7 @@ template<typename Dtype>
 void VGG16<Dtype>::run() {
     string networkID = PlanParser::loadNetwork(string(EXAMPLE_VGG16_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
-    network->build(10000);
+    network->build(0);
 
 	network->run(false);
 }

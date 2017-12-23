@@ -47,7 +47,7 @@ void YOLO<Dtype>::run() {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
 
 #if !INFERENCE
-    network->build(4);
+    network->build(0);
     network->run(false);
 #else
     network->build(1);

@@ -27,7 +27,7 @@ template<typename Dtype>
 void SSD<Dtype>::run() {
     string networkID = PlanParser::loadNetwork(string(EXAMPLE_SSD_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
-    network->build(200);
+    network->build(0);
     network->run(false);
 }
 
