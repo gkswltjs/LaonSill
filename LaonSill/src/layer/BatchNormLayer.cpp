@@ -48,49 +48,68 @@ BatchNormLayer<Dtype>::BatchNormLayer() : LearnableLayer<Dtype>() {
 	SNEW(this->_params[ParamType::GlobalCount], Data<Dtype>, SLPROP_BASE(name) + "_global_count");
 	SASSUME0(this->_params[ParamType::GlobalCount] != NULL);
 
+    Optimizer opt = (Optimizer)SNPROP(optimizer);
+    int paramHistoryDataCount = Update<Dtype>::getParamHistoryDataCount(opt);
 
 	this->_paramsHistory.resize(5);
 	this->_paramsHistory[ParamType::Gamma] = NULL;
-	SNEW(this->_paramsHistory[ParamType::Gamma], Data<Dtype>, SLPROP_BASE(name) + "_gamma_history");
-	SASSUME0(this->_paramsHistory[ParamType::Gamma] != NULL);
-
 	this->_paramsHistory[ParamType::Beta] = NULL;
-	SNEW(this->_paramsHistory[ParamType::Beta], Data<Dtype>, SLPROP_BASE(name) + "_beta_history");
-	SASSUME0(this->_paramsHistory[ParamType::Beta] != NULL);
-
 	this->_paramsHistory[ParamType::GlobalMean] = NULL;
-	SNEW(this->_paramsHistory[ParamType::GlobalMean], Data<Dtype>, SLPROP_BASE(name) + "_global_mean_history");
-	SASSUME0(this->_paramsHistory[ParamType::GlobalMean] != NULL);
-
 	this->_paramsHistory[ParamType::GlobalVar] = NULL;
-	SNEW(this->_paramsHistory[ParamType::GlobalVar], Data<Dtype>, SLPROP_BASE(name) + "_global_var_history");
-	SASSUME0(this->_paramsHistory[ParamType::GlobalVar] != NULL);
-
 	this->_paramsHistory[ParamType::GlobalCount] = NULL;
-	SNEW(this->_paramsHistory[ParamType::GlobalCount], Data<Dtype>, SLPROP_BASE(name) + "_global_count_history");
-	SASSUME0(this->_paramsHistory[ParamType::GlobalCount] != NULL);
+
+    if (paramHistoryDataCount >= 1) {
+        SNEW(this->_paramsHistory[ParamType::Gamma], Data<Dtype>, 
+                SLPROP_BASE(name) + "_gamma_history");
+        SASSUME0(this->_paramsHistory[ParamType::Gamma] != NULL);
+
+        SNEW(this->_paramsHistory[ParamType::Beta], Data<Dtype>, 
+                SLPROP_BASE(name) + "_beta_history");
+        SASSUME0(this->_paramsHistory[ParamType::Beta] != NULL);
+
+        SNEW(this->_paramsHistory[ParamType::GlobalMean], Data<Dtype>, 
+                SLPROP_BASE(name) + "_global_mean_history");
+        SASSUME0(this->_paramsHistory[ParamType::GlobalMean] != NULL);
+
+        SNEW(this->_paramsHistory[ParamType::GlobalVar], Data<Dtype>, 
+                SLPROP_BASE(name) + "_global_var_history");
+        SASSUME0(this->_paramsHistory[ParamType::GlobalVar] != NULL);
+
+        SNEW(this->_paramsHistory[ParamType::GlobalCount], Data<Dtype>, 
+                SLPROP_BASE(name) + "_global_count_history");
+        SASSUME0(this->_paramsHistory[ParamType::GlobalCount] != NULL);
+    }
 
 
 	this->_paramsHistory2.resize(5);
 	this->_paramsHistory2[ParamType::Gamma] = NULL;
-	SNEW(this->_paramsHistory2[ParamType::Gamma], Data<Dtype>, SLPROP_BASE(name) + "_gamma_history2");
-	SASSUME0(this->_paramsHistory2[ParamType::Gamma] != NULL);
-
 	this->_paramsHistory2[ParamType::Beta] = NULL;
-	SNEW(this->_paramsHistory2[ParamType::Beta], Data<Dtype>, SLPROP_BASE(name) + "_beta_history2");
-	SASSUME0(this->_paramsHistory2[ParamType::Beta] != NULL);
-
 	this->_paramsHistory2[ParamType::GlobalMean] = NULL;
-	SNEW(this->_paramsHistory2[ParamType::GlobalMean], Data<Dtype>, SLPROP_BASE(name) + "_global_mean_history2");
-	SASSUME0(this->_paramsHistory2[ParamType::GlobalMean] != NULL);
-
 	this->_paramsHistory2[ParamType::GlobalVar] = NULL;
-	SNEW(this->_paramsHistory2[ParamType::GlobalVar], Data<Dtype>, SLPROP_BASE(name) + "_global_var_history2");
-	SASSUME0(this->_paramsHistory2[ParamType::GlobalVar] != NULL);
-
 	this->_paramsHistory2[ParamType::GlobalCount] = NULL;
-	SNEW(this->_paramsHistory2[ParamType::GlobalCount], Data<Dtype>, SLPROP_BASE(name) + "_global_count_history2");
-	SASSUME0(this->_paramsHistory2[ParamType::GlobalCount] != NULL);
+
+
+    if (paramHistoryDataCount >= 2) {
+        SNEW(this->_paramsHistory2[ParamType::Gamma], Data<Dtype>,
+                SLPROP_BASE(name) + "_gamma_history2");
+        SASSUME0(this->_paramsHistory2[ParamType::Gamma] != NULL);
+
+        SNEW(this->_paramsHistory2[ParamType::Beta], Data<Dtype>, 
+                SLPROP_BASE(name) + "_beta_history2");
+        SASSUME0(this->_paramsHistory2[ParamType::Beta] != NULL);
+
+        SNEW(this->_paramsHistory2[ParamType::GlobalMean], Data<Dtype>, 
+                SLPROP_BASE(name) + "_global_mean_history2");
+        SASSUME0(this->_paramsHistory2[ParamType::GlobalMean] != NULL);
+
+        SNEW(this->_paramsHistory2[ParamType::GlobalVar], Data<Dtype>, 
+                SLPROP_BASE(name) + "_global_var_history2");
+        SASSUME0(this->_paramsHistory2[ParamType::GlobalVar] != NULL);
+
+        SNEW(this->_paramsHistory2[ParamType::GlobalCount], Data<Dtype>, 
+                SLPROP_BASE(name) + "_global_count_history2");
+        SASSUME0(this->_paramsHistory2[ParamType::GlobalCount] != NULL);
+    }
 
 	this->meanSet = NULL;
 	SNEW(this->meanSet, Data<Dtype>, SLPROP_BASE(name) + "_mean");

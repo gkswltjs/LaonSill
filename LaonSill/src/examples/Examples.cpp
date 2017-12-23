@@ -18,12 +18,13 @@
 #include "VGG16/VGG16.h"
 #include "KISTIKeyword/KISTIKeyword.h"
 #include "SSD/SSD.h"
+#include "YOLO/YOLO.h"
 
 /**************************************************************************
  * [수정포인트] 추가할 example 개수에 맞게 EXAMPLE_ITEM_DEF_ARRAY_COUNT 값을
  * 변경시켜 줍니다. 
  *************************************************************************/
-#define EXAMPLE_ITEM_DEF_ARRAY_COUNT  6
+#define EXAMPLE_ITEM_DEF_ARRAY_COUNT  7
 
 /**************************************************************************
  * [수정포인트] 추가할 example의 정의를 exampleItemDefArray의 뒷 부분에 기입
@@ -36,7 +37,8 @@ ExampleItemDef exampleItemDefArray[EXAMPLE_ITEM_DEF_ARRAY_COUNT] = {
     {"LeNet", "LeNet example", LeNet<float>::run},
     {"VGG16", "VGG16 example", VGG16<float>::run},
     {"KISTIKeyword", "KISTIKeyword example", KISTIKeyword<float>::run},
-    {"SSD", "SSD example", SSD<float>::run}
+    {"SSD", "SSD example", SSD<float>::run},
+    {"YOLO", "YOLO example", YOLO<float>::run}
 };
 
 

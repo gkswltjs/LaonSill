@@ -18,7 +18,7 @@
 #include "Donator.h"
 #include "MemoryMgmt.h"
 
-#define CONVLAYER_LOG 0
+#define CONVLAYER_LOG 1
 
 using namespace std;
 
@@ -57,14 +57,17 @@ ConvLayer<Dtype>::ConvLayer()
 		this->type = Layer<Dtype>::Deconv;
 	const int filter_size = filterDim.size();
 
+    Optimizer opt = (Optimizer)SNPROP(optimizer);
+    int paramHistoryDataCount = Update<Dtype>::getParamHistoryDataCount(opt);
+
 	this->_params.resize(2);
 	this->_params[Filter] = NULL;
-	SNEW(this->_params[Filter], Data<Dtype>, name + "_filter");
-	SASSUME0(this->_params[Filter] != NULL);
-
 	this->_params[Bias] = NULL;
-	SNEW(this->_params[Bias], Data<Dtype>, name + "_bias");
-	SASSUME0(this->_params[Bias] != NULL);
+
+    SNEW(this->_params[Filter], Data<Dtype>, name + "_filter");
+    SASSUME0(this->_params[Filter] != NULL);
+    SNEW(this->_params[Bias], Data<Dtype>, name + "_bias");
+    SASSUME0(this->_params[Bias] != NULL);
 
 	this->_params[Filter]->reshape(
 		{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
@@ -75,29 +78,34 @@ ConvLayer<Dtype>::ConvLayer()
 
 	this->_paramsHistory.resize(2);
 	this->_paramsHistory[Filter] = NULL;
-	SNEW(this->_paramsHistory[Filter], Data<Dtype>, name + "_filter_history");
-	SASSUME0(this->_paramsHistory[Filter] != NULL);
-
 	this->_paramsHistory[Bias] = NULL;
-	SNEW(this->_paramsHistory[Bias], Data<Dtype>, name + "_bias_history");
-	SASSUME0(this->_paramsHistory[Bias] != NULL);
 
-	this->_paramsHistory[Filter]->reshape(
-		{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
-	this->_paramsHistory[Bias]->reshape({filterDim.filters, 1, 1, 1});
+    if (paramHistoryDataCount >= 1) {
+        SNEW(this->_paramsHistory[Filter], Data<Dtype>, name + "_filter_history");
+        SASSUME0(this->_paramsHistory[Filter] != NULL);
+        SNEW(this->_paramsHistory[Bias], Data<Dtype>, name + "_bias_history");
+        SASSUME0(this->_paramsHistory[Bias] != NULL);
+
+        this->_paramsHistory[Filter]->reshape(
+            {filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
+        this->_paramsHistory[Bias]->reshape({filterDim.filters, 1, 1, 1});
+    }
+
 
 	this->_paramsHistory2.resize(2);
 	this->_paramsHistory2[Filter] = NULL;
-	SNEW(this->_paramsHistory2[Filter], Data<Dtype>, name + "_filter_history2");
-	SASSUME0(this->_paramsHistory2[Filter] != NULL);
-
 	this->_paramsHistory2[Bias] = NULL;
-	SNEW(this->_paramsHistory2[Bias], Data<Dtype>, name + "_bias_history2");
-	SASSUME0(this->_paramsHistory2[Bias] != NULL);
 
-	this->_paramsHistory2[Filter]->reshape(
-		{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
-	this->_paramsHistory2[Bias]->reshape({filterDim.filters, 1, 1, 1});
+    if (paramHistoryDataCount >= 2) {
+        SNEW(this->_paramsHistory2[Filter], Data<Dtype>, name + "_filter_history2");
+        SASSUME0(this->_paramsHistory2[Filter] != NULL);
+        SNEW(this->_paramsHistory2[Bias], Data<Dtype>, name + "_bias_history2");
+        SASSUME0(this->_paramsHistory2[Bias] != NULL);
+
+        this->_paramsHistory2[Filter]->reshape(
+            {filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
+        this->_paramsHistory2[Bias]->reshape({filterDim.filters, 1, 1, 1});
+    }
 
 
 	this->_paramsInitialized.resize(2);
@@ -163,10 +171,14 @@ ConvLayer<Dtype>::~ConvLayer() {
     	SDELETE(this->_params[ParamType::Bias]);
         this->_params.clear();
 
-        SDELETE(this->_paramsHistory[ParamType::Filter]);
-        SDELETE(this->_paramsHistory[ParamType::Bias]);
-        SDELETE(this->_paramsHistory2[ParamType::Filter]);
-        SDELETE(this->_paramsHistory2[ParamType::Bias]);
+        if (this->_paramsHistory[ParamType::Filter] != NULL)
+            SDELETE(this->_paramsHistory[ParamType::Filter]);
+        if (this->_paramsHistory[ParamType::Bias] != NULL)
+            SDELETE(this->_paramsHistory[ParamType::Bias]);
+        if (this->_paramsHistory2[ParamType::Filter] != NULL)
+            SDELETE(this->_paramsHistory2[ParamType::Filter]);
+        if (this->_paramsHistory2[ParamType::Bias] != NULL)
+            SDELETE(this->_paramsHistory2[ParamType::Bias]);
 
         this->_paramsHistory.clear();
         this->_paramsHistory2.clear();

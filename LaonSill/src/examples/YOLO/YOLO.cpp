@@ -21,7 +21,7 @@
 
 using namespace std;
 
-#define YOLO_INFERENCE 1
+//#define YOLO_INFERENCE 1
 
 template<typename Dtype>
 void YOLO<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
@@ -47,7 +47,7 @@ void YOLO<Dtype>::run() {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
 
 #if !INFERENCE
-    network->build(100);
+    network->build(4);
     network->run(false);
 #else
     network->build(1);

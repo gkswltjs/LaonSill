@@ -29,8 +29,8 @@ using namespace std;
 #define ILSVRCINPUTLAYER_LOG        0
 
 const int ILSVRC_IMAGE_CHANNEL   = 3;
-const int ILSVRC_IMAGE_ROW       = 448;
-const int ILSVRC_IMAGE_COL       = 448;
+const int ILSVRC_IMAGE_ROW       = 224;
+const int ILSVRC_IMAGE_COL       = 224;
 
 const int ILSVRC_CLASS_COUNT     = 1000;
 
@@ -286,6 +286,9 @@ void ILSVRCInputLayer<Dtype>::feedforward() {
 
 template<typename Dtype>
 void ILSVRCInputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
+    if (baseIndex == 0)
+        shuffleTrainDataSet();
+
     this->currentBatchIndex = baseIndex;
     reshape();
 }

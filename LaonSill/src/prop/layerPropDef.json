@@ -1718,5 +1718,17 @@
 		]
 	],
     "KEYVARS" : []
+},
+
+"GlobalPooling" : 
+{
+    "DESC" : "global pooling layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : [],
+	"KEYVARS" : []
 }
+
 }
