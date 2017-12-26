@@ -47,11 +47,21 @@ void Update<Dtype>::updateParam(UpdateContext context, Data<Dtype>* dataHistory,
 
 	Dtype* d_paramGrad = data->mutable_device_grad();
 	Dtype* d_paramData = data->mutable_device_data();
-	Dtype* d_paramHistoryData = dataHistory->mutable_device_data();
-	Dtype* d_paramHistoryData2 = dataHistory2->mutable_device_data();
+    Dtype* d_paramHistoryData = NULL;
+    Dtype* d_paramHistoryData2 = NULL;
+
+    Optimizer opt = (Optimizer)SNPROP(optimizer);
+    int paramHistoryDataCount = getParamHistoryDataCount(opt);
+    if (paramHistoryDataCount == 2) {
+	    d_paramHistoryData = dataHistory->mutable_device_data();
+	    d_paramHistoryData2 = dataHistory2->mutable_device_data();
+    } else if (paramHistoryDataCount == 1) {
+	    d_paramHistoryData = dataHistory->mutable_device_data();
+    } else {
+        SASSUME0(paramHistoryDataCount == 0);
+    }
 
     // apply optimizer
-    Optimizer opt = (Optimizer)SNPROP(optimizer);
     if (opt == Optimizer::Momentum) {
         /****
          * Momentum Alogorithm
@@ -208,6 +218,25 @@ UpdateContext Update<Dtype>::makeContext(int paramSize, float regScale, float le
     context.decayedBeta2 = SLPROP_LEARN(decayedBeta2);
 
     return context;
+}
+
+template<typename Dtype>
+int Update<Dtype>::getParamHistoryDataCount(Optimizer opt) {
+
+    if (opt == Optimizer::Vanilla)
+        return 0;
+
+    if (opt == Optimizer::Momentum || 
+        opt == Optimizer::Adagrad || 
+        opt == Optimizer::RMSprop) {
+        return 1;
+    }
+
+    if (opt == Optimizer::Nesterov || opt == Optimizer::Adam) {
+        return 2;
+    }
+
+    SASSUME(false, "wrong optimizer. optimizer=%d", (int)opt);
 }
 
 template class Update<float>;

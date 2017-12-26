@@ -24,6 +24,55 @@
 
 using namespace std;
 
+#define CPPAPI_CHECK_BUFFER(job)                                                        \
+    do {                                                                                \
+        if (handle.buffer == NULL) {                                                    \
+            close(handle.sockFD);                                                       \
+            return ClientError::ClientHandleBufferAllocationFailed;                     \
+        }                                                                               \
+                                                                                        \
+        Job* myJob = (Job*) job ;                                                       \
+        int bufSize = MessageHeader::MESSAGE_HEADER_SIZE + myJob->getJobSize();         \
+        if (bufSize > MessageHeader::MESSAGE_DEFAULT_SIZE) {                            \
+            bigBuffer = (char*)malloc(bufSize);                                         \
+            if (bigBuffer == NULL) {                                                    \
+                close(handle.sockFD);                                                   \
+                return ClientError::ClientHandleBufferAllocationFailed;                 \
+            }                                                                           \
+        }                                                                               \
+    } while (0)
+
+#define CPPAPI_CHECK_SEND()                                                             \
+    do {                                                                                \
+        if (ret != ClientError::Success) {                                              \
+            if (bigBuffer != NULL)                                                      \
+                free(bigBuffer);                                                        \
+            return ClientError::SendJobFailed;                                          \
+        }                                                                               \
+    } while (0)
+
+#define CPPAPI_CHECK_RECV(job)                                                          \
+    do {                                                                                \
+        if (ret == Communicator::RecvOnlyHeader) {                                      \
+            if (bigBuffer)                                                              \
+                free(bigBuffer);                                                        \
+                                                                                        \
+            Job* myJob = (Job*) job ;                                                   \
+            int bufSize = MessageHeader::MESSAGE_HEADER_SIZE + myJob->getJobSize();     \
+            bigBuffer = (char*)malloc(bufSize);                                         \
+                                                                                        \
+            if (bigBuffer == NULL) {                                                    \
+                close(handle.sockFD);                                                   \
+                return ClientError::ClientHandleBufferAllocationFailed;                 \
+            }                                                                           \
+        } else if (ret != Communicator::Success) {                                      \
+            if (bigBuffer != NULL)                                                      \
+                free(bigBuffer);                                                        \
+            close(handle.sockFD);                                                       \
+            return ClientError::RecvJobFailed;                                          \
+        }                                                                               \
+    } while (0)
+
 // FIXME: 중복된 코드는 모아서 함수로 정의해서 사용하자.
 
 ClientError ClientAPI::createHandle(ClientHandle& handle, std::string serverHostName,
@@ -87,7 +136,9 @@ ClientError ClientAPI::getSession(ClientHandle &handle) {
 
     // (3-2) recv welcome reply msg
     ret = Communicator::recvMessage(handle.sockFD, msgHdr, handle.buffer, false);
-    SASSERT0(ret == Communicator::Success);
+    if (ret != Communicator::Success)
+        return ClientError::RecvMessageFailed;
+
     SASSERT0(msgHdr.getMsgType() == MessageHeader::WelcomeReply);
 
     handle.hasSession = true;
@@ -131,17 +182,29 @@ ClientError ClientAPI::createNetwork(ClientHandle handle, std::string networkDef
     Job* createNetworkJob = new Job(JobType::CreateNetwork);
     createNetworkJob->addJobElem(Job::StringType, strlen(networkDef.c_str()),
         (void*)networkDef.c_str());
-    Client::sendJob(handle.sockFD, handle.buffer, createNetworkJob);
+
+    char* bigBuffer = NULL;
+    CPPAPI_CHECK_BUFFER(createNetworkJob);
+
+    int ret = Client::sendJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer,
+            createNetworkJob);
     delete createNetworkJob;
+    CPPAPI_CHECK_SEND();
 
     Job* createNetworkReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &createNetworkReplyJob);
+    ret = Client::recvJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer,
+            &createNetworkReplyJob);
+    CPPAPI_CHECK_RECV(createNetworkReplyJob);
+
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     string networkID = createNetworkReplyJob->getStringValue(0);
     delete createNetworkReplyJob;
 
     netHandle.networkID = networkID;
     netHandle.created = true;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -155,17 +218,29 @@ ClientError ClientAPI::createNetworkFromFile(ClientHandle handle,
     Job* createNetworkFromFileJob = new Job(JobType::CreateNetworkFromFile);
     createNetworkFromFileJob->addJobElem(Job::StringType, strlen(filePathInServer.c_str()),
         (void*)filePathInServer.c_str());
-    Client::sendJob(handle.sockFD, handle.buffer, createNetworkFromFileJob);
+
+    char* bigBuffer = NULL;
+    CPPAPI_CHECK_BUFFER(createNetworkFromFileJob);
+
+    int ret = Client::sendJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer,
+            createNetworkFromFileJob);
     delete createNetworkFromFileJob;
+    CPPAPI_CHECK_SEND();
 
     Job* createNetworkReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &createNetworkReplyJob);
+    ret = Client::recvJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer,
+            &createNetworkReplyJob);
+    CPPAPI_CHECK_RECV(createNetworkReplyJob);
+
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     string networkID = createNetworkReplyJob->getStringValue(0);
     delete createNetworkReplyJob;
 
     netHandle.networkID = networkID;
     netHandle.created = true;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -177,11 +252,15 @@ ClientError ClientAPI::destroyNetwork(ClientHandle handle, NetworkHandle& netHan
     Job* destroyNetworkJob = new Job(JobType::DestroyNetwork);
     destroyNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
             (void*)netHandle.networkID.c_str());
-    Client::sendJob(handle.sockFD, handle.buffer, destroyNetworkJob);
+    int ret = Client::sendJob(handle.sockFD, handle.buffer, destroyNetworkJob);
     delete destroyNetworkJob;
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
 
     Job* destroyNetworkReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &destroyNetworkReplyJob);
+    ret = Client::recvJob(handle.sockFD, handle.buffer, &destroyNetworkReplyJob);
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
     SASSERT0(destroyNetworkReplyJob->getType() == JobType::DestroyNetworkReply);
     delete destroyNetworkReplyJob;
 
@@ -198,11 +277,17 @@ ClientError ClientAPI::buildNetwork(ClientHandle handle, NetworkHandle netHandle
     buildNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
         (void*)netHandle.networkID.c_str());
     buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&epochs);
-    Client::sendJob(handle.sockFD, handle.buffer, buildNetworkJob);
+    int ret = Client::sendJob(handle.sockFD, handle.buffer, buildNetworkJob);
     delete buildNetworkJob;
 
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
+
     Job* buildNetworkReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &buildNetworkReplyJob);
+    ret = Client::recvJob(handle.sockFD, handle.buffer, &buildNetworkReplyJob);
+
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
     SASSERT0(buildNetworkReplyJob->getType() == JobType::BuildNetworkReply);
     delete buildNetworkReplyJob;
 
@@ -216,11 +301,15 @@ ClientError ClientAPI::resetNetwork(ClientHandle handle, NetworkHandle netHandle
     Job* resetNetworkJob = new Job(JobType::ResetNetwork);
     resetNetworkJob->addJobElem(Job::StringType, strlen(netHandle.networkID.c_str()),
         (void*)netHandle.networkID.c_str());
-    Client::sendJob(handle.sockFD, handle.buffer, resetNetworkJob);
+    int ret = Client::sendJob(handle.sockFD, handle.buffer, resetNetworkJob);
     delete resetNetworkJob;
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
 
     Job* resetNetworkReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &resetNetworkReplyJob);
+    ret = Client::recvJob(handle.sockFD, handle.buffer, &resetNetworkReplyJob);
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
     SASSERT0(resetNetworkReplyJob->getType() == JobType::ResetNetworkReply);
     delete resetNetworkReplyJob;
 
@@ -237,11 +326,15 @@ ClientError ClientAPI::runNetwork(ClientHandle handle, NetworkHandle netHandle,
         (void*)netHandle.networkID.c_str());
     int inferenceInt = (int)inference;
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inferenceInt);
-    Client::sendJob(handle.sockFD, handle.buffer, runNetworkJob);
+    int ret = Client::sendJob(handle.sockFD, handle.buffer, runNetworkJob);
     delete runNetworkJob;
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
 
     Job* runNetworkReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &runNetworkReplyJob);
+    ret = Client::recvJob(handle.sockFD, handle.buffer, &runNetworkReplyJob);
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
     SASSERT0(runNetworkReplyJob->getType() == JobType::RunNetworkReply);
     int success = runNetworkReplyJob->getIntValue(0);
     delete runNetworkReplyJob;
@@ -263,11 +356,15 @@ ClientError ClientAPI::runNetworkMiniBatch(ClientHandle handle, NetworkHandle ne
     int inferenceInt = (int)inference;
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inferenceInt);
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&miniBatchIdx);
-    Client::sendJob(handle.sockFD, handle.buffer, runNetworkJob);
+    int ret = Client::sendJob(handle.sockFD, handle.buffer, runNetworkJob);
     delete runNetworkJob;
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
 
     Job* runNetworkReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &runNetworkReplyJob);
+    ret = Client::recvJob(handle.sockFD, handle.buffer, &runNetworkReplyJob);
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
     SASSERT0(runNetworkReplyJob->getType() == JobType::RunNetworkReply);
     int success = runNetworkReplyJob->getIntValue(0);
     delete runNetworkReplyJob;
@@ -288,13 +385,25 @@ ClientError ClientAPI::saveNetwork(ClientHandle handle, NetworkHandle netHandle,
         (void*)netHandle.networkID.c_str());
     saveNetworkJob->addJobElem(Job::StringType, strlen(filePath.c_str()),
         (void*)filePath.c_str());
-    Client::sendJob(handle.sockFD, handle.buffer, saveNetworkJob);
+
+    char* bigBuffer = NULL;
+    CPPAPI_CHECK_BUFFER(saveNetworkJob);
+
+    int ret = Client::sendJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer,
+            saveNetworkJob);
     delete saveNetworkJob;
+    CPPAPI_CHECK_SEND();
 
     Job* saveNetworkReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &saveNetworkReplyJob);
+    ret = Client::recvJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer,
+            &saveNetworkReplyJob);
+    CPPAPI_CHECK_RECV(saveNetworkReplyJob);
+
     SASSERT0(saveNetworkReplyJob->getType() == JobType::SaveNetworkReply);
     delete saveNetworkReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -309,13 +418,25 @@ ClientError ClientAPI::loadNetwork(ClientHandle handle, NetworkHandle netHandle,
         (void*)netHandle.networkID.c_str());
     loadNetworkJob->addJobElem(Job::StringType, strlen(filePath.c_str()),
         (void*)filePath.c_str());
-    Client::sendJob(handle.sockFD, handle.buffer, loadNetworkJob);
+
+    char* bigBuffer = NULL;
+    CPPAPI_CHECK_BUFFER(loadNetworkJob);
+
+    int ret = Client::sendJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer,
+            loadNetworkJob);
     delete loadNetworkJob;
+    CPPAPI_CHECK_SEND();
 
     Job* loadNetworkReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &loadNetworkReplyJob);
+    ret = Client::recvJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer,
+            &loadNetworkReplyJob);
+    CPPAPI_CHECK_RECV(loadNetworkReplyJob);
+
     SASSERT0(loadNetworkReplyJob->getType() == JobType::LoadNetworkReply);
     delete loadNetworkReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -336,11 +457,18 @@ ClientError ClientAPI::getObjectDetection(ClientHandle handle, NetworkHandle net
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
-    Client::sendJob(handle.sockFD, handle.buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CPPAPI_CHECK_BUFFER(runJob);
+
+    int ret = Client::sendJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, runJob);
     delete runJob;
+    CPPAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &runReplyJob);
+    ret = Client::recvJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, &runReplyJob);
+    CPPAPI_CHECK_RECV(runReplyJob);
+
     SASSERT0(runReplyJob->getType() == JobType::RunNetworkWithInputDataReply);
     
     int resultBoxCount = runReplyJob->getIntValue(0);
@@ -358,6 +486,9 @@ ClientError ClientAPI::getObjectDetection(ClientHandle handle, NetworkHandle net
         elemIdx += 6;
     }
     delete runReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -378,11 +509,18 @@ ClientError ClientAPI::runObjectDetectionWithInput(ClientHandle handle,
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
-    Client::sendJob(handle.sockFD, handle.buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CPPAPI_CHECK_BUFFER(runJob);
+
+    int ret = Client::sendJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, runJob);
     delete runJob;
+    CPPAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &runReplyJob);
+    ret = Client::recvJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, &runReplyJob);
+    CPPAPI_CHECK_RECV(runReplyJob);
+
     SASSERT0(runReplyJob->getType() == JobType::RunObjectDetectionNetworkWithInputReply);
     
     int resultBoxCount = runReplyJob->getIntValue(0);
@@ -400,6 +538,9 @@ ClientError ClientAPI::runObjectDetectionWithInput(ClientHandle handle,
         elemIdx += 6;
     }
     delete runReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -420,16 +561,26 @@ ClientError ClientAPI::runClassificationWithInput(ClientHandle handle,
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
-    Client::sendJob(handle.sockFD, handle.buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CPPAPI_CHECK_BUFFER(runJob);
+
+    int ret = Client::sendJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, runJob);
     delete runJob;
+    CPPAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &runReplyJob);
+    ret = Client::recvJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, &runReplyJob);
+    CPPAPI_CHECK_RECV(runReplyJob);
+
     SASSERT0(runReplyJob->getType() == JobType::RunClassificationNetworkWithInputReply);
     
     int labelIndex = runReplyJob->getIntValue(0);
     labelIndexArray.push_back(labelIndex);
     delete runReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -439,11 +590,18 @@ ClientError ClientAPI::getMeasureItemName(ClientHandle handle, string networkID,
 
     Job* runJob = new Job(JobType::GetMeasureItemName);
     runJob->addJobElem(Job::StringType, strlen(networkID.c_str()), (void*)networkID.c_str());
-    Client::sendJob(handle.sockFD, handle.buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CPPAPI_CHECK_BUFFER(runJob);
+
+    int ret = Client::sendJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, runJob);
     delete runJob;
+    CPPAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &runReplyJob);
+    ret = Client::recvJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, &runReplyJob);
+    CPPAPI_CHECK_RECV(runReplyJob);
+
     SASSERT0(runReplyJob->getType() == JobType::GetMeasureItemNameReply);
 
     int resultItemCount = runReplyJob->getIntValue(0);
@@ -452,6 +610,9 @@ ClientError ClientAPI::getMeasureItemName(ClientHandle handle, string networkID,
         measureItemNames.push_back(itemName);
     }
     delete runReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     if (resultItemCount == -1)
         return ClientError::RequestedNetworkNotExist;
@@ -470,11 +631,18 @@ ClientError ClientAPI::getMeasures(ClientHandle handle, string networkID,
     runJob->addJobElem(Job::IntType, 1, (void*)&forward);
     runJob->addJobElem(Job::IntType, 1, (void*)&start);
     runJob->addJobElem(Job::IntType, 1, (void*)&count);
-    Client::sendJob(handle.sockFD, handle.buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CPPAPI_CHECK_BUFFER(runJob);
+
+    int ret = Client::sendJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, runJob);
     delete runJob;
+    CPPAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(handle.sockFD, handle.buffer, &runReplyJob);
+    ret = Client::recvJob(handle.sockFD, bigBuffer ? bigBuffer : handle.buffer, &runReplyJob);
+    CPPAPI_CHECK_RECV(runReplyJob);
+
     SASSERT0(runReplyJob->getType() == JobType::GetMeasuresReply);
 
     int measureCount = runReplyJob->getIntValue(0);
@@ -487,6 +655,9 @@ ClientError ClientAPI::getMeasures(ClientHandle handle, string networkID,
     }
 
     delete runReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     if (measureCount == -1)
         return ClientError::RequestedNetworkNotExist;

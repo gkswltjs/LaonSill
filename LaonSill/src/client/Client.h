@@ -20,8 +20,8 @@ public:
     virtual            ~Client() {}
     static void         clientMain(const char* hostname, int portno);
 
-    static void         sendJob(int fd, char* buf, Job* job);
-    static void         recvJob(int fd, char* buf, Job** job);
+    static int          sendJob(int fd, char* buf, Job* job);
+    static int          recvJob(int fd, char* buf, Job** job);
     static int          connectRetry(int socketFd, const struct sockaddr *sockAddr,
                             socklen_t sockLen);
 };

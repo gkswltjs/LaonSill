@@ -114,6 +114,8 @@ public:
         SegAccuracy,
         Silence,
 
+        GlobalPooling,
+
         Recall,
         DummyLoss,
 

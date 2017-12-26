@@ -8,8 +8,8 @@ from LaonSill.ClientAPI import *
 
 res = 512
 
-base_network = 0   # for SSD
-#base_network = 1   # for FRCNN     
+#base_network = 0   # for SSD
+base_network = 1   # for FRCNN     
 
 # (1) LaonSill Client 핸들을 생성한다.
 print "create handle"

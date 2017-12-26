@@ -364,21 +364,30 @@ void BatchNormLayer<Dtype>::reshape() {
     if (this->depth == 0) {
         this->depth = depth;
 
+        Optimizer opt = (Optimizer)SNPROP(optimizer);
+        int paramHistoryDataCount = Update<Dtype>::getParamHistoryDataCount(opt);
+
         this->_params[ParamType::Gamma]->reshape({1, channels, rows, cols});
         this->_params[ParamType::Beta]->reshape({1, channels, rows, cols});
         this->_params[ParamType::GlobalMean]->reshape({1, channels, rows, cols});
         this->_params[ParamType::GlobalVar]->reshape({1, channels, rows, cols});
         this->_params[ParamType::GlobalCount]->reshape({1, 1, 1, 1});
-        this->_paramsHistory[ParamType::Gamma]->reshape({1, channels, rows, cols});
-        this->_paramsHistory[ParamType::Beta]->reshape({1, channels, rows, cols});
-        this->_paramsHistory[ParamType::GlobalMean]->reshape({1, channels, rows, cols});
-        this->_paramsHistory[ParamType::GlobalVar]->reshape({1, channels, rows, cols});
-        this->_paramsHistory[ParamType::GlobalCount]->reshape({1, 1, 1, 1});
-        this->_paramsHistory2[ParamType::Gamma]->reshape({1, channels, rows, cols});
-        this->_paramsHistory2[ParamType::Beta]->reshape({1, channels, rows, cols});
-        this->_paramsHistory2[ParamType::GlobalMean]->reshape({1, channels, rows, cols});
-        this->_paramsHistory2[ParamType::GlobalVar]->reshape({1, channels, rows, cols});
-        this->_paramsHistory2[ParamType::GlobalCount]->reshape({1, 1, 1, 1});
+
+        if (paramHistoryDataCount >= 1) {
+            this->_paramsHistory[ParamType::Gamma]->reshape({1, channels, rows, cols});
+            this->_paramsHistory[ParamType::Beta]->reshape({1, channels, rows, cols});
+            this->_paramsHistory[ParamType::GlobalMean]->reshape({1, channels, rows, cols});
+            this->_paramsHistory[ParamType::GlobalVar]->reshape({1, channels, rows, cols});
+            this->_paramsHistory[ParamType::GlobalCount]->reshape({1, 1, 1, 1});
+        }
+
+        if (paramHistoryDataCount >= 2) {
+            this->_paramsHistory2[ParamType::Gamma]->reshape({1, channels, rows, cols});
+            this->_paramsHistory2[ParamType::Beta]->reshape({1, channels, rows, cols});
+            this->_paramsHistory2[ParamType::GlobalMean]->reshape({1, channels, rows, cols});
+            this->_paramsHistory2[ParamType::GlobalVar]->reshape({1, channels, rows, cols});
+            this->_paramsHistory2[ParamType::GlobalCount]->reshape({1, 1, 1, 1});
+        }
 
         this->meanSet->reshape({1, channels, rows, cols});
         this->varSet->reshape({1, channels, rows, cols});

@@ -44,6 +44,8 @@ typedef enum ClientError_s {
     NotCreatedNetwork,
     RunNetworkFailed,
     RequestedNetworkNotExist,
+    SendJobFailed,
+    RecvJobFailed,
     SessErrorMax
 } ClientError;
 

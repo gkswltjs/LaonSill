@@ -161,7 +161,7 @@
 	"configs" :
 	{
 		"batchSize" : 64,
-		"epochs" : 8, 
+		"epochs" : 3, 
 		"lossLayer" : ["loss"],
 		"gamma" : 0.0001,
 		"testInterval" : 90,

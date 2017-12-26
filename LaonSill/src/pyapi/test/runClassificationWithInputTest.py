@@ -22,11 +22,11 @@ ret = handle.getSession()
 NETWORK_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "examples", "VGG16",
         "vgg16_test_live.json")
 print "create network. network filepath : ", NETWORK_FILEPATH
-handle.createNetworkFromFile(NETWORK_FILEPATH)
+ret = handle.createNetworkFromFile(NETWORK_FILEPATH)
 
 # (4) 네트워크를 빌드한다.
 print "build network (epoch=1)"
-handle.buildNetwork(1)
+ret = handle.buildNetwork(1)
 
 # (5) 오브젝트 디텍션 루프
 TESTIMAGE_BASE_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "client", "test")

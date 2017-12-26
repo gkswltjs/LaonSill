@@ -558,6 +558,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 10000 
+},
+
+"USE_MEMORY_DUMP_WHEN_NETWORK_DESTROYED" : 
+{
+    "DESC" : "specify whether to use memory dump when the network is destroyed",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false
 }
 
 }

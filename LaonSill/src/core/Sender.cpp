@@ -51,6 +51,6 @@ void Sender::senderThread() {
 void Sender::launchThread() {
 	// (1) receiver 쓰레드를 생성한다.
     Sender::sender = NULL;
-    SNEW(Sender::sender, thread, senderThread);
+    SNEW_ONCE(Sender::sender, thread, senderThread);
     SASSUME0(Sender::sender != NULL);
 }

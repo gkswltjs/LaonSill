@@ -73,7 +73,7 @@ funcGetMeasures.argtypes = [c_int, c_char_p, c_char_p, c_int, c_int, c_int, POIN
 class ClientHandle:
     def __init__(self):
         self.hasSession = c_int(0)
-        self.bufLen = 32 * 1024 * 1024          ## XXX: 32MB. should be fixed
+        self.bufLen = 1452      # see LaonSill MessageHeader.h source
         self.sockFD = c_int(-1)
         self.serverHostName = c_char_p("localhost")
         self.serverPortNum = c_int(20088)
@@ -81,11 +81,9 @@ class ClientHandle:
         self.networkID = create_string_buffer(37)   # uuid size : 32 + 4 + 1
         self.isCreated = c_int(0)
 
-    def createHandle(self, serverHostName = "localhost", serverPortNum=20088,
-            bufLen = 32 * 1024 * 1024):
+    def createHandle(self, serverHostName = "localhost", serverPortNum=20088):
         self.serverHostName = c_char_p(serverHostName)
         self.serverPortNum = c_int(serverPortNum)
-        self.bufLen = bufLen
         self.buffer = create_string_buffer(self.bufLen)
         return 0    # success
 

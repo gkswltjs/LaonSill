@@ -32,23 +32,30 @@ FullyConnectedLayer<Dtype>::FullyConnectedLayer() : LearnableLayer<Dtype>() {
 	this->_paramsInitialized[ParamType::Weight] = false;
 	this->_paramsInitialized[ParamType::Bias] = false;
 
+    Optimizer opt = (Optimizer)SNPROP(optimizer);
+    int paramHistoryDataCount = Update<Dtype>::getParamHistoryDataCount(opt);
+
 	this->_paramsHistory.resize(2);
 	this->_paramsHistory[ParamType::Weight] = NULL;
-	SNEW(this->_paramsHistory[ParamType::Weight], Data<Dtype>, name + "_weight_history");
-	SASSUME0(this->_paramsHistory[ParamType::Weight] != NULL);
-
 	this->_paramsHistory[ParamType::Bias] = NULL;
-	SNEW(this->_paramsHistory[ParamType::Bias], Data<Dtype>, name + "_bias_history");
-	SASSUME0(this->_paramsHistory[ParamType::Bias] != NULL);
+
+    if (paramHistoryDataCount >= 1) {
+        SNEW(this->_paramsHistory[ParamType::Weight], Data<Dtype>, name + "_weight_history");
+        SASSUME0(this->_paramsHistory[ParamType::Weight] != NULL);
+        SNEW(this->_paramsHistory[ParamType::Bias], Data<Dtype>, name + "_bias_history");
+        SASSUME0(this->_paramsHistory[ParamType::Bias] != NULL);
+    }
 
 	this->_paramsHistory2.resize(2);
 	this->_paramsHistory2[ParamType::Weight] = NULL;
-	SNEW(this->_paramsHistory2[ParamType::Weight], Data<Dtype>, name + "_weight_history2");
-	SASSUME0(this->_paramsHistory2[ParamType::Weight] != NULL);
-
 	this->_paramsHistory2[ParamType::Bias] = NULL;
-	SNEW(this->_paramsHistory2[ParamType::Bias], Data<Dtype>, name + "_bias_history2");
-	SASSUME0(this->_paramsHistory2[ParamType::Bias] != NULL);
+
+    if (paramHistoryDataCount >= 2) {
+        SNEW(this->_paramsHistory2[ParamType::Weight], Data<Dtype>, name + "_weight_history2");
+        SASSUME0(this->_paramsHistory2[ParamType::Weight] != NULL);
+        SNEW(this->_paramsHistory2[ParamType::Bias], Data<Dtype>, name + "_bias_history2");
+        SASSUME0(this->_paramsHistory2[ParamType::Bias] != NULL);
+    }
 }
 
 /****************************************************************************

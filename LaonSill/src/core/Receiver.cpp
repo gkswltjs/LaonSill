@@ -48,6 +48,6 @@ void Receiver::receiverThread() {
 void Receiver::launchThread() {
 	// (1) receiver 쓰레드를 생성한다.
     Receiver::receiver = NULL;
-    SNEW(Receiver::receiver, thread, receiverThread);
+    SNEW_ONCE(Receiver::receiver, thread, receiverThread);
     SASSERT0(Receiver::receiver != NULL);
 }

@@ -24,6 +24,55 @@
 
 using namespace std;
 
+#define CAPI_CHECK_BUFFER(job)                                                          \
+    do {                                                                                \
+        if (buffer == NULL) {                                                           \
+            close(sockFD);                                                              \
+            return ClientError::ClientHandleBufferAllocationFailed;                     \
+        }                                                                               \
+                                                                                        \
+        Job* myJob = (Job*) job ;                                                       \
+        int bufSize = MessageHeader::MESSAGE_HEADER_SIZE + myJob->getJobSize();         \
+        if (bufSize > MessageHeader::MESSAGE_DEFAULT_SIZE) {                            \
+            bigBuffer = (char*)malloc(bufSize);                                         \
+            if (bigBuffer == NULL) {                                                    \
+                close(sockFD);                                                          \
+                return ClientError::ClientHandleBufferAllocationFailed;                 \
+            }                                                                           \
+        }                                                                               \
+    } while (0)
+
+#define CAPI_CHECK_SEND()                                                               \
+    do {                                                                                \
+        if (ret != ClientError::Success) {                                              \
+            if (bigBuffer != NULL)                                                      \
+                free(bigBuffer);                                                        \
+            return ClientError::SendJobFailed;                                          \
+        }                                                                               \
+    } while (0)
+
+#define CAPI_CHECK_RECV(job)                                                            \
+    do {                                                                                \
+        if (ret == Communicator::RecvOnlyHeader) {                                      \
+            if (bigBuffer)                                                              \
+                free(bigBuffer);                                                        \
+                                                                                        \
+            Job* myJob = (Job*) job ;                                                   \
+            int bufSize = MessageHeader::MESSAGE_HEADER_SIZE + myJob->getJobSize();     \
+            bigBuffer = (char*)malloc(bufSize);                                         \
+                                                                                        \
+            if (bigBuffer == NULL) {                                                    \
+                close(sockFD);                                                          \
+                return ClientError::ClientHandleBufferAllocationFailed;                 \
+            }                                                                           \
+        } else if (ret != Communicator::Success) {                                      \
+            if (bigBuffer != NULL)                                                      \
+                free(bigBuffer);                                                        \
+            close(sockFD);                                                              \
+            return ClientError::RecvJobFailed;                                          \
+        }                                                                               \
+    } while (0)
+
 extern "C" int testYo(int a, char* name, float b) {
     printf("name : %s\n", name);
     cout << "name yo : " << name << endl;
@@ -74,7 +123,9 @@ extern "C" int getSession(int *hasSession, char* serverHostName, int serverPortN
 
     // (3-2) recv welcome reply msg
     ret = Communicator::recvMessage((*sockFD), msgHdr, buffer, false);
-    SASSERT0(ret == Communicator::Success);
+    if (ret != Communicator::Success)
+        return Communicator::RecvFailed;
+
     SASSERT0(msgHdr.getMsgType() == MessageHeader::WelcomeReply);
 
     (*hasSession) = 1;  //true
@@ -113,14 +164,24 @@ extern "C" int createNetwork(int sockFD, int hasSession, char* buffer, char* net
 
     Job* createNetworkJob = new Job(JobType::CreateNetwork);
     createNetworkJob->addJobElem(Job::StringType, strlen(networkDef), (void*)networkDef);
-    Client::sendJob(sockFD, buffer, createNetworkJob);
+
+    char* bigBuffer = NULL;
+    CAPI_CHECK_BUFFER(createNetworkJob);
+
+    int ret = Client::sendJob(sockFD, bigBuffer ? bigBuffer : buffer, createNetworkJob);
     delete createNetworkJob;
+    CAPI_CHECK_SEND();
 
     Job* createNetworkReplyJob;
-    Client::recvJob(sockFD, buffer, &createNetworkReplyJob);
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &createNetworkReplyJob);
+    CAPI_CHECK_RECV(createNetworkReplyJob);
+
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     strcpy(networkID, createNetworkReplyJob->getStringValue(0).c_str());
     delete createNetworkReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -134,14 +195,29 @@ extern "C" int createNetworkFromFile(int sockFD, int hasSession, char* buffer,
     Job* createNetworkFromFileJob = new Job(JobType::CreateNetworkFromFile);
     createNetworkFromFileJob->addJobElem(Job::StringType, strlen(filePathInServer),
         (void*)filePathInServer);
-    Client::sendJob(sockFD, buffer, createNetworkFromFileJob);
+
+    if (buffer == NULL) {
+        close(sockFD);
+        return ClientError::ClientHandleBufferAllocationFailed;
+    }
+
+    char* bigBuffer = NULL;
+    CAPI_CHECK_BUFFER(createNetworkFromFileJob);
+
+    int ret = Client::sendJob(sockFD, bigBuffer ? bigBuffer : buffer, createNetworkFromFileJob);
     delete createNetworkFromFileJob;
+    CAPI_CHECK_SEND();
 
     Job* createNetworkReplyJob;
-    Client::recvJob(sockFD, buffer, &createNetworkReplyJob);
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &createNetworkReplyJob);
+    CAPI_CHECK_RECV(createNetworkReplyJob);
+
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     strcpy(networkID, createNetworkReplyJob->getStringValue(0).c_str());
     delete createNetworkReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -152,11 +228,16 @@ extern "C" int destroyNetwork(int sockFD, char* buffer, int isCreated, char *net
 
     Job* destroyNetworkJob = new Job(JobType::DestroyNetwork);
     destroyNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
-    Client::sendJob(sockFD, buffer, destroyNetworkJob);
+    int ret = Client::sendJob(sockFD, buffer, destroyNetworkJob);
     delete destroyNetworkJob;
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
 
     Job* destroyNetworkReplyJob;
-    Client::recvJob(sockFD, buffer, &destroyNetworkReplyJob);
+    ret = Client::recvJob(sockFD, buffer, &destroyNetworkReplyJob);
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
+
     SASSERT0(destroyNetworkReplyJob->getType() == JobType::DestroyNetworkReply);
     delete destroyNetworkReplyJob;
 
@@ -171,11 +252,16 @@ extern "C" int buildNetwork(int sockFD, char* buffer, int isCreated, char *netwo
     Job* buildNetworkJob = new Job(JobType::BuildNetwork);
     buildNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     buildNetworkJob->addJobElem(Job::IntType, 1, (void*)&epochs);
-    Client::sendJob(sockFD, buffer, buildNetworkJob);
+    int ret = Client::sendJob(sockFD, buffer, buildNetworkJob);
     delete buildNetworkJob;
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
 
     Job* buildNetworkReplyJob;
-    Client::recvJob(sockFD, buffer, &buildNetworkReplyJob);
+    ret = Client::recvJob(sockFD, buffer, &buildNetworkReplyJob);
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
+
     SASSERT0(buildNetworkReplyJob->getType() == JobType::BuildNetworkReply);
     delete buildNetworkReplyJob;
 
@@ -188,11 +274,17 @@ extern "C" int resetNetwork(int sockFD, char* buffer, int isCreated, char *netwo
 
     Job* resetNetworkJob = new Job(JobType::ResetNetwork);
     resetNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
-    Client::sendJob(sockFD, buffer, resetNetworkJob);
+    int ret = Client::sendJob(sockFD, buffer, resetNetworkJob);
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
+
     delete resetNetworkJob;
 
     Job* resetNetworkReplyJob;
-    Client::recvJob(sockFD, buffer, &resetNetworkReplyJob);
+    ret = Client::recvJob(sockFD, buffer, &resetNetworkReplyJob);
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
+
     SASSERT0(resetNetworkReplyJob->getType() == JobType::ResetNetworkReply);
     delete resetNetworkReplyJob;
 
@@ -207,11 +299,16 @@ extern "C" int runNetwork(int sockFD, char* buffer, int isCreated, char* network
     Job* runNetworkJob = new Job(JobType::RunNetwork);
     runNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inference);
-    Client::sendJob(sockFD, buffer, runNetworkJob);
+    int ret = Client::sendJob(sockFD, buffer, runNetworkJob);
     delete runNetworkJob;
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
 
     Job* runNetworkReplyJob;
-    Client::recvJob(sockFD, buffer, &runNetworkReplyJob);
+    ret = Client::recvJob(sockFD, buffer, &runNetworkReplyJob);
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
+
     SASSERT0(runNetworkReplyJob->getType() == JobType::RunNetworkReply);
     int success = runNetworkReplyJob->getIntValue(0);
     delete runNetworkReplyJob;
@@ -232,11 +329,15 @@ extern "C" int runNetworkMiniBatch(int sockFD, char* buffer, int isCreated, char
     runNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&inference);
     runNetworkJob->addJobElem(Job::IntType, 1, (void*)&miniBatchIdx);
-    Client::sendJob(sockFD, buffer, runNetworkJob);
+    int ret = Client::sendJob(sockFD, buffer, runNetworkJob);
     delete runNetworkJob;
+    if (ret != ClientError::Success)
+        return ClientError::SendJobFailed;
 
     Job* runNetworkReplyJob;
-    Client::recvJob(sockFD, buffer, &runNetworkReplyJob);
+    ret = Client::recvJob(sockFD, buffer, &runNetworkReplyJob);
+    if (ret != ClientError::Success)
+        return ClientError::RecvJobFailed;
     SASSERT0(runNetworkReplyJob->getType() == JobType::RunNetworkReply);
     int success = runNetworkReplyJob->getIntValue(0);
     delete runNetworkReplyJob;
@@ -255,13 +356,23 @@ extern "C" int saveNetwork(int sockFD, char* buffer, int isCreated, char* networ
     Job* saveNetworkJob = new Job(JobType::SaveNetwork);
     saveNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     saveNetworkJob->addJobElem(Job::StringType, strlen(filePath), (void*)filePath);
-    Client::sendJob(sockFD, buffer, saveNetworkJob);
+
+    char* bigBuffer = NULL;
+    CAPI_CHECK_BUFFER(saveNetworkJob);
+
+    int ret = Client::sendJob(sockFD, bigBuffer ? bigBuffer : buffer, saveNetworkJob);
     delete saveNetworkJob;
+    CAPI_CHECK_SEND();
 
     Job* saveNetworkReplyJob;
-    Client::recvJob(sockFD, buffer, &saveNetworkReplyJob);
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &saveNetworkReplyJob);
+    CAPI_CHECK_RECV(saveNetworkReplyJob);
+
     SASSERT0(saveNetworkReplyJob->getType() == JobType::SaveNetworkReply);
     delete saveNetworkReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -274,13 +385,23 @@ extern "C" int loadNetwork(int sockFD, char* buffer, int isCreated, char* networ
     Job* loadNetworkJob = new Job(JobType::LoadNetwork);
     loadNetworkJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
     loadNetworkJob->addJobElem(Job::StringType, strlen(filePath), (void*)filePath);
-    Client::sendJob(sockFD, buffer, loadNetworkJob);
+
+    char* bigBuffer = NULL;
+    CAPI_CHECK_BUFFER(loadNetworkJob);
+
+    int ret = Client::sendJob(sockFD, bigBuffer ? bigBuffer : buffer, loadNetworkJob);
     delete loadNetworkJob;
+    CAPI_CHECK_SEND();
 
     Job* loadNetworkReplyJob;
-    Client::recvJob(sockFD, buffer, &loadNetworkReplyJob);
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &loadNetworkReplyJob);
+    CAPI_CHECK_RECV(loadNetworkReplyJob);
+
     SASSERT0(loadNetworkReplyJob->getType() == JobType::LoadNetworkReply);
     delete loadNetworkReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -300,11 +421,18 @@ extern "C" int getObjectDetection(int sockFD, char* buffer, int isCreated, char*
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
-    Client::sendJob(sockFD, buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CAPI_CHECK_BUFFER(runJob);
+
+    int ret = Client::sendJob(sockFD, bigBuffer ? bigBuffer : buffer, runJob);
     delete runJob;
+    CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(sockFD, buffer, &runReplyJob);
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
+    CAPI_CHECK_RECV(runReplyJob);
+
     SASSERT0(runReplyJob->getType() == JobType::RunNetworkWithInputDataReply);
     
     int resultBoxCount = runReplyJob->getIntValue(0);
@@ -326,6 +454,9 @@ extern "C" int getObjectDetection(int sockFD, char* buffer, int isCreated, char*
     }
     delete runReplyJob;
 
+    if (bigBuffer != NULL)
+        free(bigBuffer);
+
     return ClientError::Success;
 }
 
@@ -344,11 +475,17 @@ extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreat
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
-    Client::sendJob(sockFD, buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CAPI_CHECK_BUFFER(runJob);
+    int ret = Client::sendJob(sockFD, bigBuffer ? bigBuffer : buffer, runJob);
     delete runJob;
+    CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(sockFD, buffer, &runReplyJob);
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
+    CAPI_CHECK_RECV(runReplyJob);
+
     SASSERT0(runReplyJob->getType() == JobType::RunObjectDetectionNetworkWithInputReply);
     
     int resultBoxCount = runReplyJob->getIntValue(0);
@@ -370,6 +507,9 @@ extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreat
     }
     delete runReplyJob;
 
+    if (bigBuffer != NULL)
+        free(bigBuffer);
+
     return ClientError::Success;
 }
 
@@ -389,16 +529,28 @@ extern "C" int runClassificationWithInput(int sockFD, char* buffer, int isCreate
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
-    Client::sendJob(sockFD, buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CAPI_CHECK_BUFFER(runJob);
+
+    int ret = Client::sendJob(sockFD, bigBuffer ? bigBuffer : buffer, runJob);
     delete runJob;
+    
+    CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(sockFD, buffer, &runReplyJob);
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
+    
+    CAPI_CHECK_RECV(runReplyJob);
+
     SASSERT0(runReplyJob->getType() == JobType::RunClassificationNetworkWithInputReply);
     
     (*labelIndex) = runReplyJob->getIntValue(0);
     
     delete runReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     return ClientError::Success;
 }
@@ -408,11 +560,16 @@ extern "C" int getMeasureItemName(int sockFD, char* buffer, char* networkID,
     
     Job* runJob = new Job(JobType::GetMeasureItemName);
     runJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
-    Client::sendJob(sockFD, buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CAPI_CHECK_BUFFER(runJob);
+    int ret = Client::sendJob(sockFD, bigBuffer ? bigBuffer : buffer, runJob);
     delete runJob;
+    CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(sockFD, buffer, &runReplyJob);
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
+    CAPI_CHECK_RECV(runReplyJob);
     SASSERT0(runReplyJob->getType() == JobType::GetMeasureItemNameReply);
 
     int resultItemCount = runReplyJob->getIntValue(0);
@@ -431,6 +588,9 @@ extern "C" int getMeasureItemName(int sockFD, char* buffer, char* networkID,
     }
     delete runReplyJob;
 
+    if (bigBuffer != NULL)
+        free(bigBuffer);
+
     if (resultItemCount == -1)
         return ClientError::RequestedNetworkNotExist;
 
@@ -445,11 +605,16 @@ extern "C" int getMeasures(int sockFD, char* buffer, char* networkID, int forwar
     runJob->addJobElem(Job::IntType, 1, (void*)&forwardSearch);
     runJob->addJobElem(Job::IntType, 1, (void*)&start);
     runJob->addJobElem(Job::IntType, 1, (void*)&count);
-    Client::sendJob(sockFD, buffer, runJob);
+
+    char* bigBuffer = NULL;
+    CAPI_CHECK_BUFFER(runJob);
+    int ret = Client::sendJob(sockFD, bigBuffer ? bigBuffer : buffer, runJob);
     delete runJob;
+    CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    Client::recvJob(sockFD, buffer, &runReplyJob);
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
+    CAPI_CHECK_RECV(runReplyJob);
     SASSERT0(runReplyJob->getType() == JobType::GetMeasuresReply);
 
     int measureCount = runReplyJob->getIntValue(0);
@@ -462,6 +627,9 @@ extern "C" int getMeasures(int sockFD, char* buffer, char* networkID, int forwar
     }
 
     delete runReplyJob;
+
+    if (bigBuffer != NULL)
+        free(bigBuffer);
 
     if (measureCount == -1)
         return ClientError::RequestedNetworkNotExist;

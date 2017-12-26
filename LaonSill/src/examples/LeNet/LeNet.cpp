@@ -27,7 +27,7 @@ template<typename Dtype>
 void LeNet<Dtype>::run() {
     string networkID = PlanParser::loadNetwork(string(EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
-    network->build(1000);
+    network->build(0);
     network->run(false);
 }
 

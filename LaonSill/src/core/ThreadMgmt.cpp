@@ -28,7 +28,7 @@ int ThreadMgmt::init() {
 
     for (int i = 0; i < ThreadMgmt::threadCount; i++) {
         ThreadContext* tc = NULL;
-        SNEW(tc, ThreadContext);
+        SNEW_ONCE(tc, ThreadContext);
         SASSERT0(tc != NULL);
         tc->threadID = i;
         atomic_store(&tc->event, 0UL);
@@ -36,7 +36,7 @@ int ThreadMgmt::init() {
     }
 
     int allocSize = sizeof(int) * ThreadType::ThreadTypeMax;
-    SMALLOC(ThreadMgmt::threadIDBaseArray, int, allocSize);
+    SMALLOC_ONCE(ThreadMgmt::threadIDBaseArray, int, allocSize);
     SASSERT0(ThreadMgmt::threadIDBaseArray != NULL);
 
     // threadIDBaseArray와 이름을 채운다.

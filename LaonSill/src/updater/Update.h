@@ -11,6 +11,7 @@
 
 #include "common.h"
 #include "Data.h"
+#include "EnumDef.h"
 
 typedef struct UpdateContext_s {
     int     paramSize;
@@ -57,6 +58,8 @@ public:
     static float calcLearningRate();
 
     static UpdateContext makeContext(int paramSize, float regScale, float learnScale);
+
+    static int getParamHistoryDataCount(Optimizer opt);
 
 private:
     static int currentStep;

@@ -21,15 +21,10 @@
 class MessageHeader {
 public:
     static const int                    MESSAGE_HEADER_SIZE = 8;
-#if 0
     static const int                    MESSAGE_DEFAULT_SIZE = 1452;
     // usual MTU size(1500) - IP header(20) - TCP header(20) - vpn header(8)
     // 물론 MTU 크기를 변경하면 더 큰값을 설정해도 된다..
     // 하지만.. 다른 네트워크의 MTU 크기가 작다면 성능상 문제가 발생할 수 밖에 없다.
-#else
-    // 이러면 안되지만.. 지금은 귀찮아서 크게 값을 주었다. 
-    static const int                    MESSAGE_DEFAULT_SIZE = (64 * 1024 * 1024);
-#endif
 
     enum MsgType : int {
         Welcome = 0,

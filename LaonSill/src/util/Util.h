@@ -47,7 +47,8 @@ public:
 	static void clearVector(std::vector<T*>& vec) {
 		const uint32_t vecSize = vec.size();
 		for(uint32_t i = 0; i < vecSize; i++) {
-			SDELETE(vec[i]);
+            if (vec[i] != NULL)
+			    SDELETE(vec[i]);
 		}
 		vec.clear();
 	}

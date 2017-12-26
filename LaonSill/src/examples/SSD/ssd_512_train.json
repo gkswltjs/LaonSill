@@ -1721,7 +1721,7 @@
 	"configs" :
 	{
 		"batchSize" : 8,
-		"epochs" : 1, 
+		"epochs" : 20, 
 		"lossLayer" : ["mbox_loss"],
         "measureLayer" : ["mbox_loss"],
 		"gamma" : 0.1,

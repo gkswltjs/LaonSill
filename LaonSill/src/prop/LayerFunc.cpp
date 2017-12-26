@@ -24,7 +24,7 @@ void LayerFunc::init() {
 
     LayerFunc::layerFuncs = NULL;
     int allocSize = sizeof(CBLayerFunc) * layerTypeSize;
-    SMALLOC(LayerFunc::layerFuncs, CBLayerFunc, allocSize);
+    SMALLOC_ONCE(LayerFunc::layerFuncs, CBLayerFunc, allocSize);
     SASSERT0(LayerFunc::layerFuncs != NULL); 
 }
 

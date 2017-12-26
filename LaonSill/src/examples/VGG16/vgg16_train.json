@@ -6,7 +6,7 @@
 	        "layer" : "DataInput",
 	        "id" : 0,
 	        "output" : ["data", "label"],
-	        "source" : "$(LAONSILL_HOME)/data/sdf/plantynet_train_0.25/",
+	        "source" : "$(LAONSILL_HOME)/data/sdf/ilsvrc12_train_1000/",
 	        "mean" : [172.49, 172.94, 179.25]
 	    },
 
