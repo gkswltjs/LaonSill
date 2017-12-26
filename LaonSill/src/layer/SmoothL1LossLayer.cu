@@ -54,7 +54,6 @@ void SmoothL1LossLayer<Dtype>::reshape() {
 		}
 
 		this->_outputData[0]->reshape({1, 1, 1, 1});
-		//this->_outputData[0]->mutable_host_grad()[0] = SLPROP(Loss, lossWeight);
 		this->_outputData[0]->mutable_host_grad()[0] = GET_PROP(prop, Loss, lossWeight);
 #if SMOOTHL1LOSSLAYER_LOG
 		printf("<%s> layer' output-0 has reshaped as: %dx%dx%dx%d\n",
@@ -266,7 +265,7 @@ void SmoothL1LossLayer<Dtype>::backpropagation() {
 			//const Dtype alpha = sign * this->_outputData[0]->host_grad()[0] /
 			//		this->_inputData[i]->batches();
 
-			const Dtype alpha = sign * Dtype(1) /
+			const Dtype alpha = sign * GET_PROP(prop, Loss, lossWeight) /
 					this->_inputData[i]->getShape(firstAxis);
 			soooa_gpu_axpby(
 					count,

@@ -23,7 +23,8 @@ using namespace std;
 template <typename Dtype>
 DataInputLayer<Dtype>::DataInputLayer()
 : InputLayer<Dtype>(),
-  dataReader(SLPROP(Input, source)) {
+  dataReader(SLPROP(Input, source)),
+  dataTransformer(&SLPROP(DataInput, dataTransformParam)) {
 	this->type = Layer<Dtype>::DataInput;
 	const string dataSetName = SLPROP(DataInput, dataSetName);
 	if (dataSetName.empty()) {
@@ -82,8 +83,10 @@ void DataInputLayer<Dtype>::reshape() {
 
 		// data
 		if (i == 0) {
-			vector<uint32_t> dataShape = {SNPROP(batchSize), uint32_t(datum->channels),
-					uint32_t(datum->height), uint32_t(datum->width)};
+			vector<uint32_t> dataShape = this->dataTransformer.inferDataShape(datum);
+			dataShape[0] = SNPROP(batchSize);
+			//vector<uint32_t> dataShape = {SNPROP(batchSize), uint32_t(datum->channels),
+			//		uint32_t(datum->height), uint32_t(datum->width)};
 			this->_inputData[0]->reshape(dataShape);
 			this->_inputShape[0] = dataShape;
 		}
@@ -112,11 +115,13 @@ void DataInputLayer<Dtype>::feedforward(unsigned int baseIndex, const char* end)
 
 template <typename Dtype>
 void DataInputLayer<Dtype>::load_batch() {
+	/*
 	vector<float> mean = SLPROP(Input, mean);
 	bool hasMean = false;
 	if (mean.size() > 0) {
 		hasMean = true;
 	}
+	*/
 
 	for (int item_id = 0; item_id < SNPROP(batchSize); item_id++) {
 		int offset = this->_inputData[0]->offset(item_id);
@@ -148,6 +153,9 @@ void DataInputLayer<Dtype>::load_batch() {
             SPERF_END(DATAINPUT_ACCESS_TIME, startTime);
         }
 
+        this->dataTransformer.transform(datum, this->_outputData[0], item_id);
+
+        /*
         //datum->print();
 		const string& data = datum->data;
 		const int datum_channels = datum->channels;
@@ -190,14 +198,13 @@ void DataInputLayer<Dtype>::load_batch() {
 				}
 			}
 		}
+		*/
 
 		// if label tensor specified ...
 		if (this->_outputData.size() > 1) {
 			Dtype* output_label = this->_inputData[1]->mutable_host_data();
 			output_label[item_id] = datum->label;
 		}
-
-		SDELETE(datum);
 
 
 		/*
@@ -217,6 +224,27 @@ void DataInputLayer<Dtype>::load_batch() {
 		free(temp);
 		//exit(1);
 		 */
+
+
+		/*
+		const int singleImageSize = this->_outputData[0]->getCountByAxis(1);
+		const int imageHeight = this->_outputData[0]->getShape(2);		// network image size
+		const int imageWidth = this->_outputData[0]->getShape(3);
+		const int height = datum->height;				// final image size
+		const int width = datum->width;
+
+		const vector<Dtype> pixelMeans = {104.0, 117.0, 123.0};
+		//const vector<Dtype> pixelMeans = {0, 0, 0};
+		const Dtype* dataData = this->_inputData[0]->host_data();
+		cv::Mat result;
+		Data<Dtype> temp("temp");
+		transformInv(1, singleImageSize, imageHeight, imageWidth, height, width,
+				pixelMeans, dataData, temp, result);
+				*/
+
+
+
+		SDELETE(datum);
 
 	}
 }

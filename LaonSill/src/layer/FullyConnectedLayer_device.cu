@@ -220,6 +220,12 @@ void FullyConnectedLayer<Dtype>::update() {
     UpdateContext contextWeight = 
         Update<Dtype>::makeContext(weightSize, regScale, learnScale);
 
+
+
+
+
+
+
 	const uint32_t biasSize = out_rows;
 	const Dtype regScale_b = 
         SNPROP(weightDecay) * SLPROP(FullyConnected, biasUpdateParam).decay_mult;

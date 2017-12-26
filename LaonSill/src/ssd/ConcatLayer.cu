@@ -68,17 +68,16 @@ void ConcatLayer<Dtype>::reshape() {
 	this->numConcat = this->_inputData[0]->getCountByAxis(0, SLPROP(Concat, axis));
 	this->concatInputSize = this->_inputData[0]->getCountByAxis(SLPROP(Concat, axis) + 1);
 
-
-
 	int inputCountSum = this->_inputData[0]->getCount();
 	for (int i = 1; i < this->_inputData.size(); i++) {
 		SASSERT(numAxes == this->_inputData[i]->numAxes(),
-				"All inputs must have the same #axes.");
+				"[%s] All inputs must have the same #axes.", this->getName().c_str());
 		for (int j = 0; j < numAxes; j++) {
 			if (j == SLPROP(Concat, axis))
 				continue;
 			SASSERT(outputShape[j] == this->_inputData[i]->getShape(j),
-					"All inputs must have the same shape, except at concatAxis.");
+					"[%s] All inputs must have the same shape, except at concatAxis.",
+					this->getName().c_str());
 		}
 		inputCountSum += this->_inputData[i]->getCount();
 		outputShape[SLPROP(Concat, axis)] += this->_inputData[i]->getShape(SLPROP(Concat, axis));

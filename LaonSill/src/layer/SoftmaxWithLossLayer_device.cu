@@ -101,9 +101,10 @@ void SoftmaxWithLossLayer<Dtype>::feedforward() {
 		soooa_gpu_asum(nthreads, counts, &validCount);
 
 	// xxx normalizer test -> restored
-	const float lossWeight = GET_PROP(prop, Loss, lossWeight);
-	this->_outputData[0]->mutable_host_data()[0] = loss *
-			Dtype(lossWeight) / LossLayer<Dtype>::getNormalizer(normalizationMode,
+	//const float lossWeight = GET_PROP(prop, Loss, lossWeight);
+	this->_outputData[0]->mutable_host_data()[0] = loss
+			//* type(lossWeight) /
+			/ LossLayer<Dtype>::getNormalizer(normalizationMode,
 					this->outerNum, this->innerNum, validCount);
 
 }
@@ -175,8 +176,9 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 				GET_PROP(prop, Loss, hasIgnoreLabel))
 			soooa_gpu_asum(nthreads, counts, &validCount);
 
-		const Dtype lossWeight = Dtype(1) / LossLayer<Dtype>::getNormalizer(normalizationMode,
-				this->outerNum, this->innerNum, validCount);
+		const Dtype lossWeight = GET_PROP(prop, Loss, lossWeight) /
+				LossLayer<Dtype>::getNormalizer(normalizationMode, this->outerNum,
+						this->innerNum, validCount);
 		soooa_gpu_scal(this->prob.getCount(), lossWeight, inputGrad);
 	}
 }

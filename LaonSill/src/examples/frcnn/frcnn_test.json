@@ -433,6 +433,7 @@
 	{
 		"batchSize" : 1, 
 		"epochs" : 1, 
+		"testInterval" : 4952,
 		"status" : "Test",
 		"loadPath" : "$(LAONSILL_HOME)/param/frcnn_630000_dn.param"
 	}

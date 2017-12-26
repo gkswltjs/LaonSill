@@ -213,10 +213,12 @@ void ConvertImageSetParam::validityCheck() {
 	std::transform(this->encodeType.begin(), this->encodeType.end(),
 			this->encodeType.begin(), ::tolower);
 
-	if (!(this->encodeType == "jpg") && !(this->encodeType == "png")) {
-		this->resultCode = -1;
-		this->resultMsg = "encodeType should be 'jpg' or 'png': " + this->encodeType;
-		return;
+	if (this->encoded) {
+		if (!(this->encodeType == "jpg") && !(this->encodeType == "png")) {
+			this->resultCode = -1;
+			this->resultMsg = "encodeType should be 'jpg' or 'png': " + this->encodeType;
+			return;
+		}
 	}
 
 	if (this->basePath.empty()) {

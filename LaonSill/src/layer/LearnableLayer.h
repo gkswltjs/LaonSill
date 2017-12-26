@@ -65,6 +65,8 @@ protected:
 	virtual void _updateParam(const uint32_t paramSize, const Dtype regScale,
                               const Dtype learnScale, Data<Dtype>* dataHistory,
                               Data<Dtype>* data) {};
+	void initParam(const int paramIdx, const std::string& name);
+	void reshapeParam(const int paramIdx, const std::vector<uint32_t>& shape);
 
 public:
 	std::vector<Data<Dtype>*> _params;

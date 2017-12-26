@@ -67,6 +67,7 @@ protected:
 public:
     bool deconv;
     int deconvExtraCell;
+    bool biasTerm;
 
 public:
     /****************************************************************************

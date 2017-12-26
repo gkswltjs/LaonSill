@@ -286,7 +286,9 @@ void LogicalPlan::build(string networkID, map<int, PlanBuildDef> planDefMap) {
         if (inputIDs.size() == outputIDs.size())
             continue;
 
-        SASSERT0(inputIDs.size() < outputIDs.size());
+        SASSERT(inputIDs.size() < outputIDs.size(), "input ID size is not less than "
+        		"output ID size of Split layer for %s: %d vs %d",
+        		key.c_str(), inputIDs.size(), outputIDs.size());
 
         // (3-4-0) prepare names for split layer
         int splitOutputCount = outputIDs.size() - inputIDs.size() + 1;

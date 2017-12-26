@@ -15,6 +15,16 @@
 #include "EnumDef.h"
 #include "PropMgmt.h"
 
+
+/**
+ * @brief
+ * lossWeight 관련하여 ...
+ * _outputData[0]->host_data()[0]에 lossWeight값 설정
+ * feedforward() 단계에서는 lossWeight 적용하지 않음
+ * backpropagation() 단계에서 _outputData[0]->host_data()[0]을 이용하여
+ * softmax의 output값을 전체 scaling한다.
+ *
+ */
 template <typename Dtype>
 class LossLayer : public Layer<Dtype> {
 public:

@@ -32,9 +32,11 @@ template <typename Dtype>
 class NetworkTest : public NetworkTestInterface<Dtype> {
 public:
 	NetworkTest(const std::string& networkFilePath, const std::string& networkName,
-			const int numSteps, const NetworkStatus status = NetworkStatus::Train)
+			const int numSteps, const NetworkStatus status,
+			const std::vector<std::string>& forwardGTLayers)
+
 	: networkFilePath(networkFilePath), networkName(networkName), numSteps(numSteps),
-	  status(status) {
+	  status(status), forwardGTLayers(forwardGTLayers) {
 		SASSERT0(this->networkFilePath.empty() != true);
 		SASSERT0(this->networkName.empty() != true);
 		SASSERT0(this->numSteps > 0);	// save network시 주석 처리해야 함.
@@ -79,7 +81,7 @@ public:
 		for (int i = 0; i < _numSteps; i++) {
 			cleanUpMap(this->nameParamsMapList[i]);
 		}
-		for (int i = 0; i < _numSteps; i++) {
+		for (int i = 0; i < _numSteps - 1; i++) {
 			cleanUpMap(this->nameBlobsMapList[i]);
 		}
 	}
@@ -94,12 +96,10 @@ public:
 			dataTest(i);
 			logEndTest("FEED FORWARD");
 
-			/**
-			 * MultiBoxLossLayer의 경우 내부의 다른 status들이 있기 때문에
-			 * Input이 정답으로 설정된 상태로 다시 forward하여 내부 status도 일치하도록
-			 * 한다.
-			 */
-			forwardSingleLayerWithGT(i, "mbox_loss");
+			// forwardGTLayers 주석 참고
+			for (int j = 0; j < this->forwardGTLayers.size(); j++) {
+				forwardSingleLayerWithGT(i, this->forwardGTLayers[j]);
+			}
 
 			// backpropagation
 			replaceDataWithGroundTruth(i);
@@ -107,7 +107,6 @@ public:
 			backward();
 			gradTest(i);
 			logEndTest("BACK PROPAGATION");
-
 
 			// update & compare result
 			// 오직 param grad에 대해서만 테스트하므로,
@@ -237,9 +236,9 @@ private:
 			result = CompareParam(this->nameParamsMapList[nthStep + 1],
 					learnableLayer->getName() + SIG_PARAMS, learnableLayer->_params,
 					DataType::DATA);
-			result = CompareParam(this->nameParamsMapList[nthStep + 1],
-					learnableLayer->getName() + SIG_PARAMS, learnableLayer->_params,
-					DataType::GRAD);
+			//result = CompareParam(this->nameParamsMapList[nthStep + 1],
+			//		learnableLayer->getName() + SIG_PARAMS, learnableLayer->_params,
+			//		DataType::GRAD);
 
 			if (!result) {
 				std::cout << "[ERROR] update failed at layer " <<
@@ -393,6 +392,11 @@ public:
 	const std::string networkName;
 	const int numSteps;
 	const NetworkStatus status;
+
+	// forward때 업데이트되는 내부 상태가 있는 레이어의 경우
+	// forwardGTLayers에 등록하여 input/output data뿐 아니라
+	// 내부 상태까지 정답 input을 통해 업데이트 하여야 한다.
+	const std::vector<std::string> forwardGTLayers;
 
     std::string networkID;
 	bool hasNormalInputLayer;

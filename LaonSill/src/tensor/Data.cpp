@@ -751,7 +751,7 @@ bool Data<Dtype>::compareData(
 						if (print && errorCnt < 10) {
 							cout << "data is different at (" << i << "," << j << "," <<
 									k << "," << l << ")" << endl;
-							cout << "data1: " << data1Ptr[index] << ", data2: " <<
+							cout << "SoooAComputed: " << data1Ptr[index] << ", CaffeComputed: " <<
 									data2Ptr[index] << ", diff: " << diff << endl;
 						}
 						errorCnt++;
@@ -856,7 +856,7 @@ bool Data<Dtype>::compareGrad(
 						if (print && errorCnt < 10) {
 							cout << "grad is different at (" << i << "x" << j << "x" <<
 									k << "x" << l << ")" << endl;
-							cout << "grad1: " << data1Ptr[index] << ", grad2: " <<
+							cout << "SoooAComputed: " << data1Ptr[index] << ", CaffeComputed: " <<
 									data2Ptr[index] << ", diff: " << diff << endl;
 						}
 						errorCnt++;

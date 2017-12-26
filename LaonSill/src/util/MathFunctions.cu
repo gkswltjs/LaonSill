@@ -242,6 +242,32 @@ void soooa_gpu_scale<float>(const int n, const float alpha, const float* x, floa
 
 
 
+
+template <typename Dtype>
+__global__ void add_scalar_kernel(const int n, const Dtype alpha, Dtype* y) {
+	CUDA_KERNEL_LOOP(index, n) {
+		y[index] += alpha;
+	}
+}
+
+template <>
+void soooa_gpu_add_scalar(const int N, const float alpha, float* Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  add_scalar_kernel<float><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
+      N, alpha, Y);
+}
+
+template <>
+void soooa_gpu_add_scalar(const int N, const double alpha, double* Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  add_scalar_kernel<double><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(
+      N, alpha, Y);
+}
+
+
+
+
+
 template <typename Dtype>
 __global__ void powx_kernel(const int n, const Dtype* a, const Dtype alpha, Dtype* y) {
 	CUDA_KERNEL_LOOP(index, n) {
@@ -273,6 +299,26 @@ void soooa_gpu_add<float>(const int n, const float* a, const float* b, float* y)
   add_kernel<float><<<SOOOA_GET_BLOCKS(n), SOOOA_CUDA_NUM_THREADS>>>(n, a, b, y);
 }
 
+
+template<typename Dtype>
+__global__ void square_kernel(const int n, const Dtype* a, Dtype* y) {
+	CUDA_KERNEL_LOOP(index, n) {
+		y[index] = a[index] * a[index];
+	}
+}
+
+template<>
+void soooa_gpu_square<float>(const int N, const float* a, float* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  square_kernel<float><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(N, a, y);
+
+}
+
+template<>
+void soooa_gpu_square<double>(const int N, const double* a, double* y) {
+	// NOLINT_NEXT_LINE(whitespace/operators)
+	square_kernel<double><<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(N, a, y);
+}
 
 
 
