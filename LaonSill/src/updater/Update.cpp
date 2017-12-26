@@ -194,10 +194,19 @@ float Update<Dtype>::calcLearningRate() {
         	}
         	rate = SNPROP(baseLearningRate) * pow(SNPROP(gamma), currentStep);
         }
-        break;
+        	break;
+
+        case Inv: {
+        	float baseLearningRate = SNPROP(baseLearningRate);
+        	float gamma = SNPROP(gamma);
+        	int iterations = SNPROP(iterations);
+        	float power = SNPROP(power);
+        	rate = baseLearningRate * pow(Dtype(1) + gamma * iterations, - power);
+        }
+        	break;
 
         default: {
-            exit(1);
+            SASSERT(false, "Unsupported LRPolicy");
         }
 	}
 
