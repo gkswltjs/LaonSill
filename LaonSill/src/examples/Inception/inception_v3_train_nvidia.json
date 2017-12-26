@@ -4263,15 +4263,19 @@
 		"lossLayer" : ["loss1/loss", "loss2/loss", "loss"],
 		"testInterval" : 100,
 		"saveInterval" : 10000,
-		"maxIterations" : 2400000,
 		"savePathPrefix" : "", 
+		
 		"baseLearningRate" : 0.05,
-		"weightDecay" : 0.0002,
-		"momentum" : 0.9,
+
 		"lrPolicy" : "Poly",
+		"maxIterations" : 2400000,
 		"power" : 2.0,
+		"momentum" : 0.9,
+		"weightDecay" : 0.0002,
+
 		"optimizer" : "Momentum",
         "measureLayer" : ["loss"],
+
         "keepSaveIntervalModelCount" : 4,
         "keepSaveBestModel" : false,
         "keepSaveBestModelStartIterNum" : 10000

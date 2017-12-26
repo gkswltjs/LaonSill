@@ -153,8 +153,10 @@ void SoftmaxWithLossLayer<Dtype>::backpropagation() {
 	if (GET_PROP(prop, SoftmaxWithLoss, propDown)[0]) {
 		Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
 		const Dtype* probData = this->prob.device_data();
+		//soooa_gpu_memcpy(this->prob.getCount() * sizeof(Dtype), probData, inputGrad);
+		soooa_copy(this->prob.getCount(), probData, inputGrad);
+
 		const Dtype* outputData = this->_outputData[0]->device_data();
-		soooa_gpu_memcpy(this->prob.getCount() * sizeof(Dtype), probData, inputGrad);
 		const Dtype* label = this->_inputData[1]->device_data();
 		const int dim = this->prob.getCount() / this->outerNum;
 		const int nthreads = this->outerNum * this->innerNum;

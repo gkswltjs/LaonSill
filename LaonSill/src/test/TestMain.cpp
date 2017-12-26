@@ -80,6 +80,9 @@ void imTransformTest();
 void readAnnoDataSetTest();
 void randTest(int argc, char** argv);
 void signalTest();
+void convertAnnoSetTest();
+void convertImageSetTest();
+void convertMnistDataTest();
 
 void layerTest(int argc, char** argv);
 void layerTest2(int argc, char** argv);
@@ -94,105 +97,17 @@ void testJsonType(Json::Value& value) {
 }
 
 
+
+
+
 #if 0
 int main(int argc, char** argv) {
 	cout << "begin test ... " << endl;
-	cout.precision(10);
-	cout.setf(ios::fixed);
+	cout.precision(8);
+	//cout.setf(ios::fixed);
+	cout.setf(ios::scientific);
 
 	const string LAONSILL_HOME = "/home/jkim/Dev/LAONSILL_HOME/";
-
-	/*
-	denormalize("/home/jkim/Dev/LAONSILL_HOME/param/9827323c-8c13-4a74-982c-3b0381d49fed_1002000.param",
-			"/home/jkim/Dev/LAONSILL_HOME/param/9827323c-8c13-4a74-982c-3b0381d49fed_1002000_dn.param");
-			*/
-
-
-	/*
-	const int width = 640;
-	const int height = 480;
-
-	cv::Mat bg = cv::imread("/home/jkim/Pictures/20170406204312_WjTs5FSG_DSC07746.jpg");
-	cv::Mat fg = cv::imread("/home/jkim/Pictures/1480152332917.png");
-
-	cv::resize(bg, bg, cv::Size(width, height), 0, 0, cv::INTER_LINEAR);
-	cv::resize(fg, fg, cv::Size(width, height), 0, 0, cv::INTER_LINEAR);
-
-	const int x2Width = width * 2;
-	//cv::Mat bg(cv::Size(x2Width, height), cv_img_wt.depth());
-	cv::Mat empty = cv::Mat::zeros(cv::Size(x2Width, height), CV_8UC3);
-	cv::Rect wtRoi = cv::Rect(0, 0, bg.cols, bg.rows);
-	cv::Rect woRoi = cv::Rect(bg.cols, 0, fg.cols, fg.rows);
-	//CV_8U;
-	cv::Mat wtSubView = empty(wtRoi);
-	cv::Mat woSubView = empty(woRoi);
-	//cout << "wtSubView.cols: " << wtSubView.cols << ", wtSubView.rows: " << wtSubView.rows << endl;
-	//cout << "woSubView.cols: " << woSubView.cols << ", woSubView.rows: " << woSubView.rows << endl;
-
-	cout << bg.cols << "," << wtSubView.cols << "," << bg.rows << "," << wtSubView.rows << endl;
-	bg.copyTo(wtSubView);
-	cout << fg.cols << "," << woSubView.cols << "," << fg.rows << "," << woSubView.rows << endl;
-	fg.copyTo(woSubView);
-	cv::imshow("disp", empty);
-	*/
-
-	/*
-	cv::Rect roi = cv::Rect(50, 50, fg.cols, fg.rows);
-	cv::Mat subView = bg(roi);
-	fg.copyTo(subView);
-
-	cv::imshow("pip", bg);
-	*/
-
-	/*
-	char key = (char)cv::waitKey(0);
-	cout << "key->" << key << endl;
-	return 0;
-
-	if (cv::waitKey(0) > 0) {
-		return 0;
-	}
-	*/
-
-	/*
-	int key = 0;
-	do {
-		cout << "key->" << key << endl;
-	} while ((key = cv::waitKey(0)) > 0);
-	*/
-
-	/*
-	cv::VideoCapture capture(1);
-	if (!capture.isOpened()) {
-		std::cerr << "Could not open camera" << std::endl;
-		return 0;
-	}
-	capture.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-	capture.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
-
-	cv::namedWindow("cam", 1);
-	while (true) {
-		bool frameValid = true;
-		cv::Mat frame;
-		try {
-			capture >> frame;
-		} catch (cv::Exception& e) {
-			std::cerr << "Exception occurred. Ignoring frame ..." << e.err << std::endl;
-			frameValid = false;
-		}
-		if (frameValid) {
-			try {
-				cv::imshow("cam", frame);
-			} catch (cv::Exception& e) {
-				std::cerr << "Exception occ" << std::endl;
-			}
-		}
-		if (cv::waitKey(30) >= 0) {
-			break;
-		}
-	}
-	*/
-
 
 
 	//plainTest(argc, argv);
@@ -200,261 +115,6 @@ int main(int argc, char** argv) {
 	networkTest(argc, argv);
 	//saveNetwork();
 	//layerTest2(argc, argv);
-
-
-	//const string labelMapPath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_voc.json";
-	//vector<LabelItem> labelItemList;
-	//parse_label_map(labelMapPath, labelItemList);
-
-
-
-	/*
-
-
-#if 0
-	const string baseImagePath = "/home/jkim/Dev/git/caffe_ssd/data/";
-	const string baseSdfPath = "/home/jkim/Dev/LAONSILL_HOME/data/sdf/";
-
-	const string labelMapFilePath = baseImagePath + "VOC0712/labelmap_voc.json";
-	const string basePath = baseImagePath + "VOCdevkit/";
-	const string outFilePath = baseSdfPath + "_voc2007_train_sdf/";
-
-	ImageSet trainImageSet;
-	trainImageSet.name = "train";
-	trainImageSet.dataSetPath = baseImagePath + "VOC0712/trainval.txt";
-
-	ImageSet testImageSet;
-	testImageSet.name = "test";
-	testImageSet.dataSetPath = baseImagePath + "VOC0712/test.txt";
-
-	ConvertAnnoSetParam param;
-	param.addImageSet(trainImageSet);
-	param.addImageSet(testImageSet);
-	param.labelMapFilePath = labelMapFilePath;
-	param.basePath = basePath;
-	param.outFilePath = outFilePath;
-
-
-	if (boost::filesystem::exists(param.outFilePath)) {
-		boost::filesystem::remove_all((param.outFilePath));
-	}
-
-	param.print();
-	convertAnnoSet(param);
-#else
-	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
-	const string sdfPath = baseSdfPath + "_voc0712_train_sdf/";
-
-	DataReader<AnnotatedDatum> dataReader(sdfPath);
-
-	AnnotatedDatum* datum = 0;
-	cout << "selected train dataset ... " << endl;
-	dataReader.selectDataSetByName("train");
-	for (int i = 0; i < 10; i++) {
-		datum = dataReader.getNextData();
-		datum->print();
-		SDELETE(datum);
-		datum = 0;
-	}
-
-	cout << "selected test dataset ... " << endl;
-	dataReader.selectDataSetByName("test");
-	for (int i = 0; i < 10; i++) {
-		datum = dataReader.getNextData();
-		datum->print();
-		SDELETE(datum);
-		datum = 0;
-	}
-#endif
-*/
-
-
-	/*
-#if 1
-
-	const string baseImagePath = LAONSILL_HOME + "data/ilsvrc12_train/";
-	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
-
-	const string imagePath = baseImagePath + "images/";
-	const string sdfPath = baseSdfPath + "ilsvrc12_train_1000/";
-
-
-	ImageSet trainImageSet;
-	trainImageSet.name = "train";
-	trainImageSet.dataSetPath = baseImagePath + "train.txt.1000";
-
-	ImageSet testImageSet;
-	testImageSet.name = "test";
-	testImageSet.dataSetPath = baseImagePath + "test.txt.1000";
-
-	ConvertImageSetParam param;
-	param.addImageSet(trainImageSet);
-	param.addImageSet(testImageSet);
-	param.shuffle = true;
-	param.resizeWidth = 224;
-	param.resizeHeight = 224;
-	param.basePath = imagePath;
-	param.outFilePath = sdfPath;
-	param.labelMapFilePath = LAONSILL_HOME + "data/ilsvrc12_train/labelmap_imagenet.json";
-	param.encoded = false;
-	param.encodeType = "";
-
-	if (boost::filesystem::exists(param.outFilePath)) {
-		boost::filesystem::remove_all((param.outFilePath));
-	}
-
-	convertImageSet(param);
-
-
-#else
-	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
-	const string sdfPath = baseSdfPath + "_ilsvrc12_train_1000/";
-
-	DataReader<Datum> dataReader(sdfPath);
-
-	Datum* datum = 0;
-	cout << "selected train dataset ... " << endl;
-	dataReader.selectDataSetByName("train");
-	for (int i = 0; i < 10; i++) {
-		datum = dataReader.getNextData();
-		datum->print();
-		SDELETE(datum);
-		datum = 0;
-	}
-
-	cout << "selected test dataset ... " << endl;
-	dataReader.selectDataSetByName("test");
-	for (int i = 0; i < 10; i++) {
-		datum = dataReader.getNextData();
-		datum->print();
-		SDELETE(datum);
-		datum = 0;
-	}
-#endif
-*/
-
-
-/*
-#if 1
-
-	MnistDataSet trainDataSet;
-	trainDataSet.name = "train";
-	trainDataSet.imageFilePath = "/home/jkim/Dev/git/caffe/data/mnist/train-images-idx3-ubyte";
-	trainDataSet.labelFilePath = "/home/jkim/Dev/git/caffe/data/mnist/train-labels-idx1-ubyte";
-
-	MnistDataSet testDataSet;
-	testDataSet.name = "test";
-	testDataSet.imageFilePath = "/home/jkim/Dev/git/caffe/data/mnist/t10k-images-idx3-ubyte";
-	testDataSet.labelFilePath = "/home/jkim/Dev/git/caffe/data/mnist/t10k-labels-idx1-ubyte";
-
-	ConvertMnistDataParam param;
-	param.addDataSet(trainDataSet);
-	param.addDataSet(testDataSet);
-	param.outFilePath = "/home/jkim/imageset/lmdb/_mnist_train_sdf/";
-	param.labelMapFilePath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_mnist.json";
-
-	if (boost::filesystem::exists(param.outFilePath)) {
-		boost::filesystem::remove_all((param.outFilePath));
-	}
-
-	convertMnistData(param);
-
-
-#else
-	const string sdfPath = "/home/jkim/imageset/lmdb/_mnist_train_sdf/";
-	DataReader<Datum> dataReader(sdfPath);
-
-	Datum* datum = 0;
-	cout << "selected train dataset ... " << endl;
-	dataReader.selectDataSetByName("train");
-
-	datum = dataReader.getNextData();
-	SDELETE(datum);
-
-	datum = dataReader.getNextData();
-	SDELETE(datum);
-
-	datum = dataReader.peekNextData();
-	SDELETE(datum);
-
-	datum = dataReader.peekNextData();
-	SDELETE(datum);
-
-
-#endif
-*/
-
-
-/*
-#if 1
-	std::ofstream ofs;
-	ofs.open("/home/jkim/imageset/lmdb/_test_sdf/data.sdf", ios_base::out);
-	boost::archive::text_oarchive oa(ofs, boost::archive::no_header);
-
-	SDFHeader dummyHeader;
-	oa << dummyHeader;
-	LabelItem dummyLabelItem;
-	oa << dummyLabelItem;
-
-	int header_start_pos = ofs.tellp();
-	cout << "header start pos: " << header_start_pos << endl;
-
-	SDFHeader header;
-	header.names = {"train"};
-	header.numSets = 777;
-	header.setSizes = {77777};
-	header.setStartPos = {7777777};
-
-	LabelItem labelItem;
-	labelItem.name = "car";
-	labelItem.label = 14;
-	labelItem.displayName = "car";
-	labelItem.color = {255, 255, 255};
-
-	header.labelItemList.push_back(labelItem);
-
-	oa << header;
-	//oa << header;
-	//oa << header;
-
-	ofs.seekp(header_start_pos, ios::beg);
-	header.names = {"test"};
-	header.numSets = 222;
-	header.setSizes = {22222};
-	header.setStartPos = {2222222};
-
-	labelItem.name = "person";
-	labelItem.label = 15;
-	labelItem.displayName = "person";
-	labelItem.color = {1, 1, 1};
-
-	header.labelItemList.clear();
-	header.labelItemList.push_back(labelItem);
-
-	oa << header;
-
-	if (ofs.is_open()) {
-		ofs.close();
-	}
-
-#else
-	std::ifstream ifs;
-	ifs.open("/home/jkim/imageset/lmdb/_test_sdf/data.sdf", ios_base::in);
-	boost::archive::text_iarchive ia(ifs, boost::archive::no_header);
-
-	SDFHeader dummyHeader;
-	ia >> dummyHeader;
-
-	SDFHeader result;
-	ia >> result;
-	result.print();
-
-	if (ifs.is_open()) {
-		ifs.close();
-	}
-#endif
-*/
-
 
 	cout << "end test ... " << endl;
 	return 0;
@@ -502,63 +162,6 @@ void jsonTest() {
 	cout << tempValue["output"] << endl;
 	testJsonType(tempValue);
 
-
-	/*
-	string stmt1 = "";
-	stmt1 += "{";
-	stmt1 += "    'name' : 'data'";
-	stmt1 += "}";
-
-	Json::Value v1(stmt1);
-	cout << v1 << endl;
-	testJsonType(v1);
-
-	string stmt2 = "";
-	stmt2 += "'data'";
-
-	Json::Value v2(stmt2);
-	cout << v2 << endl;
-	testJsonType(v2);
-
-
-	string stmt3 = "";
-	stmt3 += "    'name' : 'data'";
-
-	Json::Value v3(stmt3);
-	cout << v3 << endl;
-	testJsonType(v3);
-
-	Json::Value v4(4);
-	testJsonType(v4);
-
-
-
-
-	Json::Value tempValue;
-	istringstream iss(stmt1);
-	reader.parse(iss, tempValue);
-	testJsonType(tempValue);
-	*/
-
-
-
-	/*
-	Json::Value layerList = rootValue["layers"];
-	for (int i = 0; i < layerList.size(); i++) {
-		Json::Value layer = layerList[i];
-		vector<string> keys = layer.getMemberNames();
-
-		for (int j = 0; j < keys.size(); j++) {
-			string key = keys[j];
-			Json::Value val = layer[key.c_str()];
-
-			cout << "val=" << val << endl;
-
-		}
-		cout << "--------------------------------------------" << endl;
-	}
-	*/
-
 }
 
 
@@ -586,9 +189,6 @@ void initializeNetwork() {
 
 void plainTest(int argc, char** argv) {
 	//denormalizeTest(argc, argv);
-	//convertMnistDataTest(argc, argv);
-	//convertImageSetTest(argc, argv);
-	//convertAnnoSetTest(argc, argv);
 	//dataReaderTest(argc, argv);
 	//computeImageMean(argc, argv);
 	//runNetwork();
@@ -598,6 +198,9 @@ void plainTest(int argc, char** argv) {
 	//annoDataReaderTest(argc, argv);
 	//randTest(argc, argv);
 	//signalTest();
+	//convertMnistDataTest(argc, argv);
+	//convertImageSetTest(argc, argv);
+	//convertAnnoSetTest(argc, argv);
 }
 
 
@@ -1042,13 +645,15 @@ void networkTest(int argc, char** argv) {
 	const vector<string> forwardGTLayers = {"mbox_loss"};
 	//const NetworkStatus status = NetworkStatus::Train;
 	const NetworkStatus status = NetworkStatus::Test;
+
 #elif NETWORK == NETWORK_VGG16
+
 #elif NETWORK == NETWORK_INCEPTION_V3
 	const string networkFilePath = laonsillHome + string("/src/examples/Inception/"
 			"inception_v3_train_nvidia_test_t3.json");
 			//"batchnorm.test.json");
 	const string networkName = "inception_v3";
-	const int numSteps = 3;
+	const int numSteps = 1;
 	const vector<string> forwardGTLayers = {};
 	const NetworkStatus status = NetworkStatus::Train;
 	//const NetworkStatus status = NetworkStatus::Test;
@@ -1136,3 +741,192 @@ void saveNetworkParams(LayersConfig<float>* layersConfig) {
 	paramOfs.close();
 }
 #endif
+
+
+
+
+
+
+
+
+
+void convertAnnoSetTest() {
+#if 1
+	const string baseImagePath = "/home/jkim/Dev/git/caffe_ssd/data/";
+	const string baseSdfPath = "/home/jkim/Dev/LAONSILL_HOME/data/sdf/";
+
+	const string labelMapFilePath = baseImagePath + "VOC0712/labelmap_voc.json";
+	const string basePath = baseImagePath + "VOCdevkit/";
+	const string outFilePath = baseSdfPath + "_voc2007_train_sdf/";
+
+	ImageSet trainImageSet;
+	trainImageSet.name = "train";
+	trainImageSet.dataSetPath = baseImagePath + "VOC0712/trainval.txt";
+
+	ImageSet testImageSet;
+	testImageSet.name = "test";
+	testImageSet.dataSetPath = baseImagePath + "VOC0712/test.txt";
+
+	ConvertAnnoSetParam param;
+	param.addImageSet(trainImageSet);
+	param.addImageSet(testImageSet);
+	param.labelMapFilePath = labelMapFilePath;
+	param.basePath = basePath;
+	param.outFilePath = outFilePath;
+
+
+	if (boost::filesystem::exists(param.outFilePath)) {
+		boost::filesystem::remove_all((param.outFilePath));
+	}
+
+	param.print();
+	convertAnnoSet(param);
+#else
+	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
+	const string sdfPath = baseSdfPath + "_voc0712_train_sdf/";
+
+	DataReader<AnnotatedDatum> dataReader(sdfPath);
+
+	AnnotatedDatum* datum = 0;
+	cout << "selected train dataset ... " << endl;
+	dataReader.selectDataSetByName("train");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		SDELETE(datum);
+		datum = 0;
+	}
+
+	cout << "selected test dataset ... " << endl;
+	dataReader.selectDataSetByName("test");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		SDELETE(datum);
+		datum = 0;
+	}
+#endif
+}
+
+void convertImageSetTest() {
+	const string LAONSILL_HOME = string(std::getenv("LAONSILL_HOME"));
+
+#if 1
+
+	const string baseImagePath = LAONSILL_HOME + "data/ilsvrc12_train/";
+	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
+
+	const string imagePath = baseImagePath + "images/";
+	const string sdfPath = baseSdfPath + "ilsvrc12_train_1000/";
+
+
+	ImageSet trainImageSet;
+	trainImageSet.name = "train";
+	trainImageSet.dataSetPath = baseImagePath + "train.txt.1000";
+
+	ImageSet testImageSet;
+	testImageSet.name = "test";
+	testImageSet.dataSetPath = baseImagePath + "test.txt.1000";
+
+	ConvertImageSetParam param;
+	param.addImageSet(trainImageSet);
+	param.addImageSet(testImageSet);
+	param.shuffle = true;
+	param.resizeWidth = 224;
+	param.resizeHeight = 224;
+	param.basePath = imagePath;
+	param.outFilePath = sdfPath;
+	param.labelMapFilePath = LAONSILL_HOME + "data/ilsvrc12_train/labelmap_imagenet.json";
+	param.encoded = false;
+	param.encodeType = "";
+
+	if (boost::filesystem::exists(param.outFilePath)) {
+		boost::filesystem::remove_all((param.outFilePath));
+	}
+
+	convertImageSet(param);
+
+
+#else
+	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
+	const string sdfPath = baseSdfPath + "_ilsvrc12_train_1000/";
+
+	DataReader<Datum> dataReader(sdfPath);
+
+	Datum* datum = 0;
+	cout << "selected train dataset ... " << endl;
+	dataReader.selectDataSetByName("train");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		SDELETE(datum);
+		datum = 0;
+	}
+
+	cout << "selected test dataset ... " << endl;
+	dataReader.selectDataSetByName("test");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		SDELETE(datum);
+		datum = 0;
+	}
+#endif
+}
+
+void convertMnistDataTest() {
+#if 1
+
+	MnistDataSet trainDataSet;
+	trainDataSet.name = "train";
+	trainDataSet.imageFilePath = "/home/jkim/Dev/git/caffe/data/mnist/train-images-idx3-ubyte";
+	trainDataSet.labelFilePath = "/home/jkim/Dev/git/caffe/data/mnist/train-labels-idx1-ubyte";
+
+	MnistDataSet testDataSet;
+	testDataSet.name = "test";
+	testDataSet.imageFilePath = "/home/jkim/Dev/git/caffe/data/mnist/t10k-images-idx3-ubyte";
+	testDataSet.labelFilePath = "/home/jkim/Dev/git/caffe/data/mnist/t10k-labels-idx1-ubyte";
+
+	ConvertMnistDataParam param;
+	param.addDataSet(trainDataSet);
+	param.addDataSet(testDataSet);
+	param.outFilePath = "/home/jkim/imageset/lmdb/_mnist_train_sdf/";
+	param.labelMapFilePath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_mnist.json";
+
+	if (boost::filesystem::exists(param.outFilePath)) {
+		boost::filesystem::remove_all((param.outFilePath));
+	}
+
+	convertMnistData(param);
+
+
+#else
+	const string sdfPath = "/home/jkim/imageset/lmdb/_mnist_train_sdf/";
+	DataReader<Datum> dataReader(sdfPath);
+
+	Datum* datum = 0;
+	cout << "selected train dataset ... " << endl;
+	dataReader.selectDataSetByName("train");
+
+	datum = dataReader.getNextData();
+	SDELETE(datum);
+
+	datum = dataReader.getNextData();
+	SDELETE(datum);
+
+	datum = dataReader.peekNextData();
+	SDELETE(datum);
+
+	datum = dataReader.peekNextData();
+	SDELETE(datum);
+
+
+#endif
+}
+
+
+
+
+
+
+

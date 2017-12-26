@@ -17,7 +17,6 @@ using namespace std;
 template<typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer() : LearnableLayer<Dtype>() {
 	this->type = Layer<Dtype>::FullyConnected;
-
 	const string& name = SLPROP_BASE(name);
 	this->_params.resize(2);
 	this->_params[ParamType::Weight] = NULL;
