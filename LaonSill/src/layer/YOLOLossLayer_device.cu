@@ -19,11 +19,13 @@ using namespace std;
 
 #define YOLOLOSSLAYER_LOG         1
 
-#define YOLO_GRID_COUNT             49
-#define YOLO_GRID_ONE_AXIS_COUNT    7
-#define YOLO_GRID_ELEM_COUNT        30
+#define YOLO_GRID_COUNT                 169
+#define YOLO_GRID_ONE_AXIS_COUNT        13
+#define YOLO_ANCHOR_BOX_COUNT           5
+#define YOLO_CLASS_COUNT                20
+#define YOLO_ELEM_COUNT_PER_ANCHORBOX   (YOLO_CLASS_COUNT + 5)
+#define YOLO_GRID_ELEM_COUNT        (YOLO_ANCHOR_BOX_COUNT * YOLO_ELEM_COUNT_PER_ANCHORBOX)
 
-#define YOLO_CLASS_COUNT            20
 #define YOLO_GROUND_TRUTH_ELEM_COUNT    (YOLO_CLASS_COUNT + 6)
 
 
@@ -49,34 +51,30 @@ __global__ void YoloBackward(const Dtype* input, const Dtype* input2, const Dtyp
             grad[idx * YOLO_GRID_ELEM_COUNT + 0] = 0.0;
         }
 
-        grad[idx * YOLO_GRID_ELEM_COUNT + 4] = 2.0 * output[idx + YOLO_GRID_ELEM_COUNT + 4];
-        grad[idx * YOLO_GRID_ELEM_COUNT + 9] = 2.0 * output[idx + YOLO_GRID_ELEM_COUNT + 9];
+        for (int j = 0; j < YOLO_ANCHOR_BOX_COUNT; j++) {
+            int confidenceIndex = 
+                idx * YOLO_GRID_ELEM_COUNT + j * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
+            grad[confidenceIndex] = 2.0 * output[confidenceIndex];
+        }
 
         return;
     }
 
-    // backward 1st box
-    grad[idx * YOLO_GRID_ELEM_COUNT + 0] = 2.0 * output[idx + YOLO_GRID_ELEM_COUNT + 0];
-    grad[idx * YOLO_GRID_ELEM_COUNT + 1] = 2.0 * output[idx + YOLO_GRID_ELEM_COUNT + 1];
-    grad[idx * YOLO_GRID_ELEM_COUNT + 2] = output[idx + YOLO_GRID_ELEM_COUNT + 2] /
-        sqrtf(input[idx + YOLO_GRID_ELEM_COUNT + 2] + EPSILON);
-    grad[idx * YOLO_GRID_ELEM_COUNT + 3] = output[idx + YOLO_GRID_ELEM_COUNT + 3] /
-        sqrtf(input[idx + YOLO_GRID_ELEM_COUNT + 3] + EPSILON);
-    grad[idx * YOLO_GRID_ELEM_COUNT + 4] = 2.0 * output[idx + YOLO_GRID_ELEM_COUNT + 4];
+    // backward boxes & classes
+    for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
+        int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
 
-    // backward 2nd box
-    grad[idx * YOLO_GRID_ELEM_COUNT + 5] = 2.0 * output[idx + YOLO_GRID_ELEM_COUNT + 5];
-    grad[idx * YOLO_GRID_ELEM_COUNT + 6] = 2.0 * output[idx + YOLO_GRID_ELEM_COUNT + 6];
-    grad[idx * YOLO_GRID_ELEM_COUNT + 7] = output[idx + YOLO_GRID_ELEM_COUNT + 7] /
-        sqrtf(input[idx + YOLO_GRID_ELEM_COUNT + 7] + EPSILON);
-    grad[idx * YOLO_GRID_ELEM_COUNT + 8] = output[idx + YOLO_GRID_ELEM_COUNT + 8] /
-        sqrtf(input[idx + YOLO_GRID_ELEM_COUNT + 8] + EPSILON);
-    grad[idx * YOLO_GRID_ELEM_COUNT + 9] = 2.0 * output[idx + YOLO_GRID_ELEM_COUNT + 9];
+        grad[boxBaseIndex + 0] = 2.0 * output[boxBaseIndex + 0];
+        grad[boxBaseIndex + 1] = 2.0 * output[boxBaseIndex + 1];
+        grad[boxBaseIndex + 2] = 
+            output[boxBaseIndex + 2] / sqrtf(input[boxBaseIndex + 2] + EPSILON);
+        grad[boxBaseIndex + 3] = 
+            output[boxBaseIndex + 3] / sqrtf(input[boxBaseIndex + 3] + EPSILON);
+        grad[boxBaseIndex + 4] = 2.0 * output[boxBaseIndex + 4];
 
-    // backward class
-    for (int i = 0; i < YOLO_CLASS_COUNT; i++) {
-        grad[idx * YOLO_GRID_ELEM_COUNT + 10 + i] = 
-            2.0 * output[idx + YOLO_GRID_ELEM_COUNT + 10 + i];
+        for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+            grad[boxBaseIndex + 5 + j] = 2.0 * output[boxBaseIndex + 5 + j];
+        }
     }
 }
 
@@ -90,6 +88,8 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
 	if (idx >= size)
 		return;
 
+    Dtype iou[YOLO_ANCHOR_BOX_COUNT];
+
     Dtype gridX = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 0];
     Dtype gridY = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 1];
 
@@ -102,112 +102,99 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
             output[idx * YOLO_GRID_ELEM_COUNT + 0] = 0.0;
         }
 
-        Dtype c1 = input[idx * YOLO_GRID_ELEM_COUNT + 4];
-        Dtype c2 = input[idx * YOLO_GRID_ELEM_COUNT + 9];
-        output[idx * YOLO_GRID_ELEM_COUNT + 4] = noobj * (c1 - 1.0) * (c1 - 1.0);
-        output[idx * YOLO_GRID_ELEM_COUNT + 9] = noobj * (c2 - 1.0) * (c2 - 1.0);
+        for (int j = 0; j < YOLO_ANCHOR_BOX_COUNT; j++) {
+            int confidenceIndex = 
+                idx * YOLO_GRID_ELEM_COUNT + j * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
+            Dtype c1 = input[confidenceIndex];
+            output[confidenceIndex] = noobj * (c1 - 1.0) * (c1 - 1.0);
+        }
+
         return;
     }
-
-    // 1st Box
-    Dtype x1 = input[idx * YOLO_GRID_ELEM_COUNT + 0];
-    Dtype y1 = input[idx * YOLO_GRID_ELEM_COUNT + 1];
-    Dtype w1 = input[idx * YOLO_GRID_ELEM_COUNT + 2];
-    Dtype h1 = input[idx * YOLO_GRID_ELEM_COUNT + 3];
-    Dtype c1 = input[idx * YOLO_GRID_ELEM_COUNT + 4];
-
-    // 2nd Box
-    Dtype x2 = input[idx * YOLO_GRID_ELEM_COUNT + 5];
-    Dtype y2 = input[idx * YOLO_GRID_ELEM_COUNT + 6];
-    Dtype w2 = input[idx * YOLO_GRID_ELEM_COUNT + 7];
-    Dtype h2 = input[idx * YOLO_GRID_ELEM_COUNT + 8];
-    Dtype c2 = input[idx * YOLO_GRID_ELEM_COUNT + 9];
 
     // ground truth Box
     Dtype x = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 2];
     Dtype y = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 3];
     Dtype w = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 4];
     Dtype h = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 5];
-    
-    // calc 1st box iou
-    Dtype left = max(x1 - w1 / 2.0, x - w / 2.0);
-    Dtype right = min(x1 + w1 / 2.0, x + w / 2.0);
-    Dtype top = max(y1 - h1 / 2.0, y - h / 2.0);
-    Dtype bottom = min(y1 + h1 / 2.0, y + h / 2.0);
-    Dtype ov_w = right - left;
-    Dtype ov_h = bottom - top;
 
-    Dtype b_inter;
-    if (ov_w <= 0 || ov_h <= 0)
-        b_inter = 0.0;
-    else
-        b_inter = ov_w * ov_h;
+    // anchor boxes
+    int bestBoxIndex = 0;
+    Dtype bestBoxIOU = 0.0; 
+
+    for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
+        int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
+
+        Dtype x1 = input[boxBaseIndex + 0];
+        Dtype y1 = input[boxBaseIndex + 1];
+        Dtype w1 = input[boxBaseIndex + 2];
+        Dtype h1 = input[boxBaseIndex + 3];
+
+        // calc box iou
+        Dtype left = max(x1 - w1 / 2.0, x - w / 2.0);
+        Dtype right = min(x1 + w1 / 2.0, x + w / 2.0);
+        Dtype top = max(y1 - h1 / 2.0, y - h / 2.0);
+        Dtype bottom = min(y1 + h1 / 2.0, y + h / 2.0);
+        Dtype ov_w = right - left;
+        Dtype ov_h = bottom - top;
+
+        Dtype b_inter;
+        if (ov_w <= 0 || ov_h <= 0)
+            b_inter = 0.0;
+        else
+            b_inter = ov_w * ov_h;
    
-    Dtype b_union;
-    b_union = w1 * h1 + w * h - b_inter;
-    Dtype box1_iou = b_inter / b_union;
+        Dtype b_union;
+        b_union = w1 * h1 + w * h - b_inter;
+        Dtype box_iou = b_inter / b_union;
 
-    // calc 2nd box iou
-    left = max(x2 - w2 / 2.0, x - w / 2.0);
-    right = min(x2 + w2 / 2.0, x + w / 2.0);
-    top = max(y2 - h2 / 2.0, y - h / 2.0);
-    bottom = min(y2 + h2 / 2.0, y + h / 2.0);
-    ov_w = right - left;
-    ov_h = bottom - top;
+        iou[i] = box_iou;
 
-    if (ov_w <= 0 || ov_h <= 0)
-        b_inter = 0.0;
-    else
-        b_inter = ov_w * ov_h;
-   
-    b_union = w2 * h2 + w * h - b_inter;
-    Dtype box2_iou = b_inter / b_union;
-
-    // forward 1st box
-    if (box1_iou > 0 && box1_iou > box2_iou) {
-        output[idx * YOLO_GRID_ELEM_COUNT + 0] = coord * (x1 - x) * (x1 - x);
-        output[idx * YOLO_GRID_ELEM_COUNT + 1] = coord * (y1 - y) * (y1 - y);
-        output[idx * YOLO_GRID_ELEM_COUNT + 2] = coord *
-            (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON)) *
-            (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON));
-        output[idx * YOLO_GRID_ELEM_COUNT + 3] = coord *
-            (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON)) *
-            (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON));
-        output[idx * YOLO_GRID_ELEM_COUNT + 4] = (c1 - 1.0) * (c1 - 1.0);
-    } else {
-        output[idx * YOLO_GRID_ELEM_COUNT + 0] = 0.0;
-        output[idx * YOLO_GRID_ELEM_COUNT + 1] = 0.0;
-        output[idx * YOLO_GRID_ELEM_COUNT + 2] = 0.0;
-        output[idx * YOLO_GRID_ELEM_COUNT + 3] = 0.0;
-        output[idx * YOLO_GRID_ELEM_COUNT + 4] = noobj * (c1 - 1.0) * (c1 - 1.0);
+        if (i == 0) {
+            bestBoxIndex = 0;
+            bestBoxIOU = box_iou;
+        } else {
+            if (bestBoxIOU < box_iou) {
+                bestBoxIndex = i;
+                bestBoxIOU = box_iou;
+            }
+        }
     }
 
-    // forward 2nd box
-    if (box2_iou > 0 && box2_iou > box1_iou) {
-        output[idx * YOLO_GRID_ELEM_COUNT + 5] = coord * (x2 - x) * (x2 - x);
-        output[idx * YOLO_GRID_ELEM_COUNT + 6] = coord * (y2 - y) * (y2 - y);
-        output[idx * YOLO_GRID_ELEM_COUNT + 7] = coord *
-            (sqrtf(w2 + EPSILON) - sqrtf(w + EPSILON)) *
-            (sqrtf(w2 + EPSILON) - sqrtf(w + EPSILON));
-        output[idx * YOLO_GRID_ELEM_COUNT + 8] = coord *
-            (sqrtf(h2 + EPSILON) - sqrtf(h + EPSILON)) *
-            (sqrtf(h2 + EPSILON) - sqrtf(h + EPSILON));
-        output[idx * YOLO_GRID_ELEM_COUNT + 9] = (c2 - 1.0) * (c2 - 1.0);
-    } else {
-        output[idx * YOLO_GRID_ELEM_COUNT + 5] = 0.0;
-        output[idx * YOLO_GRID_ELEM_COUNT + 6] = 0.0;
-        output[idx * YOLO_GRID_ELEM_COUNT + 7] = 0.0;
-        output[idx * YOLO_GRID_ELEM_COUNT + 8] = 0.0;
-        output[idx * YOLO_GRID_ELEM_COUNT + 9] = noobj * (c2 - 1.0) * (c2 - 1.0);
-    }
+    // forward boxes & classes
+    for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
+        int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
+        Dtype x1 = input[boxBaseIndex + 0];
+        Dtype y1 = input[boxBaseIndex + 1];
+        Dtype w1 = input[boxBaseIndex + 2];
+        Dtype h1 = input[boxBaseIndex + 3];
+        Dtype c1 = input[boxBaseIndex + 4];
 
-    // forward class
-    for (int i = 0; i < 20; i++) {
-        output[idx * YOLO_GRID_ELEM_COUNT + 10 + i] =
-            (input[idx * YOLO_GRID_ELEM_COUNT + 10 + i] - 
-            input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 6 + i]) * 
-            (input[idx * YOLO_GRID_ELEM_COUNT + 10 + i] - 
-            input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 6 + i]);
+        if (iou[i] > 0 && bestBoxIndex == i) {
+            output[boxBaseIndex + 0] = coord * (x1 - x) * (x1 - x);
+            output[boxBaseIndex + 1] = coord * (y1 - y) * (y1 - y);
+            output[boxBaseIndex + 2] = coord *
+                (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON)) *
+                (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON));
+            output[boxBaseIndex + 3] = coord *
+                (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON)) *
+                (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON));
+            output[boxBaseIndex + 4] = (c1 - 1.0) * (c1 - 1.0);
+        } else {
+            output[idx * YOLO_GRID_ELEM_COUNT + 0] = 0.0;
+            output[idx * YOLO_GRID_ELEM_COUNT + 1] = 0.0;
+            output[idx * YOLO_GRID_ELEM_COUNT + 2] = 0.0;
+            output[idx * YOLO_GRID_ELEM_COUNT + 3] = 0.0;
+            output[idx * YOLO_GRID_ELEM_COUNT + 4] = noobj * (c1 - 1.0) * (c1 - 1.0);
+        }
+
+        for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+            output[boxBaseIndex + 5 + j] =
+                (input[boxBaseIndex + 5 + j] - 
+                input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 6 + j]) * 
+                (input[boxBaseIndex + 5 + j] - 
+                input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 6 + j]);
+        }
     }
 }
 
