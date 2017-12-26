@@ -25,6 +25,7 @@ map<void*, MemoryEntry>     MemoryMgmt::entryMap;
 mutex                       MemoryMgmt::entryMutex;
 uint64_t                    MemoryMgmt::usedMemTotalSize;
 uint64_t                    MemoryMgmt::currIndex;
+uint64_t                    MemoryMgmt::usedGPUMemTotalSize;
 
 void MemoryMgmt::init() {
     char dumpDir[PATH_MAX];
@@ -33,16 +34,19 @@ void MemoryMgmt::init() {
 
     MemoryMgmt::usedMemTotalSize = 0ULL;
     MemoryMgmt::currIndex = 0ULL;
+
+    MemoryMgmt::usedGPUMemTotalSize = 0ULL;
 }
 
 void MemoryMgmt::insertEntry(const char* filename, const char* funcname, int line,
-        unsigned long size, bool once, void* ptr) {
+        unsigned long size, bool once, void* ptr, bool cpu) {
     MemoryEntry entry;
     strcpy(entry.filename, filename);
     strcpy(entry.funcname, funcname);
     entry.line = line;
     entry.size = size;
     entry.once = once;
+    entry.cpu = cpu;
 
     unique_lock<mutex> entryMutexLock(MemoryMgmt::entryMutex);
     entry.index = MemoryMgmt::currIndex;
@@ -53,14 +57,27 @@ void MemoryMgmt::insertEntry(const char* filename, const char* funcname, int lin
         entryMutexLock.unlock();
         dump(MemoryMgmtSortOptionNone, true);
 
-        printf("filename : %s, funcname : %s, line : %d, size : %lu, pointer : %p\n", 
-                filename, funcname, line, size, ptr);
+        if (cpu) {
+            printf("[cpu] filename : %s, funcname : %s, line : %d, size : %lu, pointer : %p\n", 
+                    filename, funcname, line, size, ptr);
+        } else {
+            printf("[gpu] filename : %s, funcname : %s, line : %d, size : %lu, pointer : %p\n", 
+                    filename, funcname, line, size, ptr);
+        }
         entryMutexLock.lock();
     }
 
     SASSUME0(MemoryMgmt::entryMap.find(ptr) == MemoryMgmt::entryMap.end());
     MemoryMgmt::entryMap[ptr] = entry;
-    MemoryMgmt::usedMemTotalSize += size;
+
+    if (cpu) {
+        // XXX: CPU 메모리도 page size별로 관리하는것이 더 맞긴 하지만 GPU에 비해서 중요하지
+        //      않기도 하고, page size도 작기 때문에 그냥 사용한 size만큼만 더해주기로 한다.
+        //      추후에 문제가 되면 수정을 하도록 하자 :)
+        MemoryMgmt::usedMemTotalSize += size;
+    } else {
+        MemoryMgmt::usedGPUMemTotalSize += ALIGNUP(size, SPARAM(CUDA_MEMPAGE_SIZE));
+    }
 }
 
 void MemoryMgmt::removeEntry(void* ptr) {
@@ -68,7 +85,13 @@ void MemoryMgmt::removeEntry(void* ptr) {
     unique_lock<mutex> entryMutexLock(MemoryMgmt::entryMutex);    
     it = MemoryMgmt::entryMap.find(ptr);
     SASSUME0(it != MemoryMgmt::entryMap.end());
-    MemoryMgmt::usedMemTotalSize -= MemoryMgmt::entryMap[ptr].size;
+
+    if (MemoryMgmt::entryMap[ptr].cpu) {
+        MemoryMgmt::usedMemTotalSize -= MemoryMgmt::entryMap[ptr].size;
+    } else {
+        MemoryMgmt::usedGPUMemTotalSize -= 
+            ALIGNUP(MemoryMgmt::entryMap[ptr].size, SPARAM(CUDA_MEMPAGE_SIZE));
+    }
     MemoryMgmt::entryMap.erase(it);
 }
 
@@ -105,10 +128,20 @@ void MemoryMgmt::dump(MemoryMgmtSortOption option, bool skipOnce) {
     }
     fflush(fp);
 
+    uint64_t cpuUsedMemSize = 0ULL;
+    uint64_t gpuUsedMemSize = 0ULL;
+
     map<void*, MemoryEntry>::iterator it;
     unique_lock<mutex> entryMutexLock(MemoryMgmt::entryMutex);    
     map<void*, MemoryEntry> cp = MemoryMgmt::entryMap;
+    cpuUsedMemSize = MemoryMgmt::usedMemTotalSize; 
+    gpuUsedMemSize = MemoryMgmt::usedGPUMemTotalSize;
     entryMutexLock.unlock();
+
+    fprintf(fp, "Used CPU Memory size : %f GB(%llu byte)\n",
+            (float)cpuUsedMemSize / (1024.0 * 1024.0 * 1024.0), cpuUsedMemSize);
+    fprintf(fp, "Used GPU Memory size : %f GB(%llu byte)\n",
+            (float)gpuUsedMemSize / (1024.0 * 1024.0 * 1024.0), gpuUsedMemSize);
 
     if (option == MemoryMgmtSortOptionNone) {
         for (it = cp.begin(); it != cp.end(); it++) {
@@ -118,8 +151,13 @@ void MemoryMgmt::dump(MemoryMgmtSortOption option, bool skipOnce) {
             if (skipOnce && entry.once)
                 continue;
 
-            SASSUME0(fprintf(fp, "[%p|%llu] : %llu (%s()@%s:%d\n", ptr, entry.index, 
-                entry.size, entry.funcname, entry.filename, entry.line) > 0);
+            if (entry.cpu) {
+                SASSUME0(fprintf(fp, "[%p|%llu] : %llu cpu (%s()@%s:%d\n", ptr, entry.index, 
+                    entry.size, entry.funcname, entry.filename, entry.line) > 0);
+            } else {
+                SASSUME0(fprintf(fp, "[%p|%llu] : %llu gpu (%s()@%s:%d\n", ptr, entry.index, 
+                    entry.size, entry.funcname, entry.filename, entry.line) > 0);
+            }
         }
     } else if (option == MemoryMgmtSortOptionIndex) {
         vector<pair<void*, uint64_t>> vec;
@@ -145,8 +183,13 @@ void MemoryMgmt::dump(MemoryMgmtSortOption option, bool skipOnce) {
             if (skipOnce && entry.once)
                 continue;
 
-            SASSUME0(fprintf(fp, "[%p|%llu] : %llu (%s()@%s:%d\n", ptr, entry.index, 
-                entry.size, entry.funcname, entry.filename, entry.line) > 0);
+            if (entry.cpu) {
+                SASSUME0(fprintf(fp, "[%p|%llu] : %llu cpu (%s()@%s:%d\n", ptr, entry.index, 
+                    entry.size, entry.funcname, entry.filename, entry.line) > 0);
+            } else {
+                SASSUME0(fprintf(fp, "[%p|%llu] : %llu gpu (%s()@%s:%d\n", ptr, entry.index, 
+                    entry.size, entry.funcname, entry.filename, entry.line) > 0);
+            }
         }
 
     } else { 
@@ -172,11 +215,15 @@ void MemoryMgmt::dump(MemoryMgmtSortOption option, bool skipOnce) {
             if (skipOnce && entry.once)
                 continue;
 
-            SASSUME0(fprintf(fp, "[%p|%llu] : %llu (%s()@%s:%d\n", ptr, entry.index, 
-                entry.size, entry.funcname, entry.filename, entry.line) > 0);
+            if (entry.cpu) {
+                SASSUME0(fprintf(fp, "[%p|%llu] : %llu cpu (%s()@%s:%d\n", ptr, entry.index, 
+                    entry.size, entry.funcname, entry.filename, entry.line) > 0);
+            } else {
+                SASSUME0(fprintf(fp, "[%p|%llu] : %llu gpu (%s()@%s:%d\n", ptr, entry.index, 
+                    entry.size, entry.funcname, entry.filename, entry.line) > 0);
+            }
         }
     }
-
 
     fflush(fp);
     fclose(fp);

@@ -3,12 +3,12 @@
 	[
 		{
 	        "name" : "data",
-	        "layer" : "VOCPascalInput",
+	        "layer" : "ILSVRCInput",
 	        "id" : 0,
 	        "output" : ["data", "label"],
-	        "imageDir" : "$(LAONSILL_HOME)/data/VOCdevkit/",
-            "resizedImageRow" : 416,
-            "resizedImageCol" : 416,
+	        "imageDir" : "$(LAONSILL_HOME)/data/ilsvrc12_train/images/",
+            "resizedImageRow" : 448,
+            "resizedImageCol" : 448,
             "resizeImage" : true
 	    },
 
@@ -780,132 +780,15 @@
 		},
 
 		{
-			"name" : "conv19d",
+			"name" : "conv19",
 			"layer" : "Conv",
 			"id" : 240,
 			"input" : ["bn/conv18"],
-			"output" : ["conv19d"],
-			"filterDim.rows" : 3,
-			"filterDim.cols" : 3,
-			"filterDim.channels" : 1024,
-			"filterDim.filters" : 1024,
-			"filterDim.pad" : 1,
-			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1.0,
-			"weightUpdateParam.decay_mult" : 1.0,
-			"biasUpdateParam.lr_mult" : 2.0,
-			"biasUpdateParam.decay_mult" : 0.0,
-			"weightFiller.type" : "Xavier",
-			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
-		},
-
-        {
-            "name" : "bn/conv19d",
-            "layer" : "BatchNorm",
-            "id" : 241,
-            "input" : ["conv19d"],
-            "output" : ["bn/conv19d"]
-        },
-
-        {
-            "name" : "lrelu19d",
-            "layer" : "Relu",
-            "id" : 242,
-            "useLeaky" : true,
-            "leaky" : 0.1,
-            "input" : ["bn/conv19d"],
-            "output" : ["bn/conv19d"]
-		},
-
-		{
-			"name" : "conv20d",
-			"layer" : "Conv",
-			"id" : 250,
-			"input" : ["bn/conv19d"],
-			"output" : ["conv20d"],
-			"filterDim.rows" : 3,
-			"filterDim.cols" : 3,
-			"filterDim.channels" : 1024,
-			"filterDim.filters" : 1024,
-			"filterDim.pad" : 1,
-			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1.0,
-			"weightUpdateParam.decay_mult" : 1.0,
-			"biasUpdateParam.lr_mult" : 2.0,
-			"biasUpdateParam.decay_mult" : 0.0,
-			"weightFiller.type" : "Xavier",
-			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
-		},
-
-        {
-            "name" : "bn/conv20d",
-            "layer" : "BatchNorm",
-            "id" : 251,
-            "input" : ["conv20d"],
-            "output" : ["bn/conv20d"]
-        },
-
-        {
-            "name" : "lrelu20d",
-            "layer" : "Relu",
-            "id" : 252,
-            "useLeaky" : true,
-            "leaky" : 0.1,
-            "input" : ["bn/conv20d"],
-            "output" : ["bn/conv20d"]
-		},
-
-		{
-			"name" : "conv21d",
-			"layer" : "Conv",
-			"id" : 260,
-			"input" : ["bn/conv20d"],
-			"output" : ["conv21d"],
-			"filterDim.rows" : 3,
-			"filterDim.cols" : 3,
-			"filterDim.channels" : 1024,
-			"filterDim.filters" : 1024,
-			"filterDim.pad" : 1,
-			"filterDim.stride" : 1,
-			"weightUpdateParam.lr_mult" : 1.0,
-			"weightUpdateParam.decay_mult" : 1.0,
-			"biasUpdateParam.lr_mult" : 2.0,
-			"biasUpdateParam.decay_mult" : 0.0,
-			"weightFiller.type" : "Xavier",
-			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
-		},
-
-        {
-            "name" : "bn/conv21d",
-            "layer" : "BatchNorm",
-            "id" : 261,
-            "input" : ["conv21d"],
-            "output" : ["bn/conv21d"]
-        },
-
-        {
-            "name" : "lrelu21d",
-            "layer" : "Relu",
-            "id" : 262,
-            "useLeaky" : true,
-            "leaky" : 0.1,
-            "input" : ["bn/conv21d"],
-            "output" : ["bn/conv21d"]
-		},
-
-		{
-			"name" : "conv22d",
-			"layer" : "Conv",
-			"id" : 270,
-			"input" : ["bn/conv21d"],
-			"output" : ["conv22d"],
+			"output" : ["conv19"],
 			"filterDim.rows" : 1,
 			"filterDim.cols" : 1,
 			"filterDim.channels" : 1024,
-			"filterDim.filters" : 125,
+			"filterDim.filters" : 1000,
 			"filterDim.pad" : 0,
 			"filterDim.stride" : 1,
 			"weightUpdateParam.lr_mult" : 1.0,
@@ -917,32 +800,67 @@
 			"biasFiller.value" : 0.2
 		},
 
-        {
-            "name" : "loss",
-            "layer" : "YOLOLoss",
-            "id" : 280,
-            "input" : ["conv22d", "label"],
-            "output" : ["loss"]
-        }
+		{
+			"name" : "pool6",
+			"layer" : "Pooling",
+			"id" : 250,
+			"input" : ["conv19"],
+			"output" : ["pool6"],
+			"poolDim.rows" : 14,
+			"poolDim.cols" : 14,
+			"poolDim.pad" : 0,
+			"poolDim.stride" : 14,
+			"poolingType" : "Avg"
+		},
+		
+		{
+			"name" : "loss",
+			"layer" : "SoftmaxWithLoss",
+			"id" : 260, "input" : ["pool6", "label"],
+			"output" : ["loss"],
+			"propDown" : [true, false],
+			"softmaxAxis" : 1,
+			"innerLayer" :
+			[
+				{
+					"name" : "inner_softmax",
+					"id" : 7001,
+					"layer" : "Softmax",
+					"input" : ["inner_softmax_7001_input"],
+					"output" : ["inner_softmax_7001_input"],
+					"softmaxAxis" : 1
+				}
+			]	
+		},
+
+		{
+			"name" : "accuracy",
+			"layer" : "Accuracy",
+			"id" : 270,
+			"input" : ["pool6", "label"],
+			"output" : ["accuracy"],
+			"propDown" : [false, false],
+			"topK" : 1,
+			"axis" : 1
+		}
 	],
 
 	"configs" :
 	{
 		"batchSize" : 8,
-		"epochs" : 160, 
+		"epochs" : 10, 
 		"lossLayer" : ["loss"],
         "measureLayer" : ["loss"],
 		"gamma" : 0.1,
 		"testInterval" : 10,
 		"saveInterval" : 10000,
-		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,
 		"stepSize" : 50000,
-        "stepValue" : [960000, 1440000],
 		"weightDecay" : 0.0005,
 		"momentum" : 0.9,
-		"lrPolicy" : "Multistep",
+		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
-        "keepSaveBestModel" : false
+        "keepSaveBestModel" : false,
+        "loadPath" : "$(LAONSILL_HOME)/param/yolo_test_pretrain.param"
 	}
 }

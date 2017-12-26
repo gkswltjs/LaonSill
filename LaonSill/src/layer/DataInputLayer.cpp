@@ -97,6 +97,8 @@ void DataInputLayer<Dtype>::reshape() {
 			this->_inputShape[1] = labelShape;
 		}
 	}
+
+    SDELETE(datum);
 }
 
 

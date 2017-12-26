@@ -210,7 +210,8 @@ ConvLayer<Dtype>::~ConvLayer() {
         this->_paramsHistory2.clear();
     }
 
-	if (this->d_workspace) checkCudaErrors(cudaFree(this->d_workspace));
+	if(this->d_workspace) 
+        CUDAFREE(this->d_workspace);
 
 	checkCUDNN(cudnnDestroyTensorDescriptor(this->inputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(this->outputTensorDesc));
@@ -452,10 +453,10 @@ void ConvLayer<Dtype>::reshape() {
 		cout << name << "'s workspace: " << this->workspaceSize << endl;
 #endif
 		if (this->d_workspace) {
-			checkCudaErrors(cudaFree(this->d_workspace));
+            CUDAFREE(this->d_workspace);
 			this->d_workspace = 0;
 		}
-		checkCudaErrors(Util::ucudaMalloc(&this->d_workspace, this->workspaceSize));
+        CUDAMALLOC(&this->d_workspace, this->workspaceSize);
 	}
 }
 

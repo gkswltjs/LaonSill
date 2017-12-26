@@ -19,6 +19,7 @@
 #include "Updater.h"
 #include "Donator.h"
 #include "frcnn_common.h"
+#include "MemoryMgmt.h"
 
 #define FULLYCONNECTEDLAYER_LOG 0
 
@@ -89,8 +90,6 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
         Util::clearVector(this->_paramsHistory);
         Util::clearVector(this->_paramsHistory2);
     }
-	//checkCudaErrors(cudaFree(this->d_onevec));
-
     this->updateParams.clear();
 }
 

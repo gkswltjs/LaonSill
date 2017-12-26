@@ -14,6 +14,7 @@
 #include "Cuda.h"
 #include "MathFunctions.h"
 #include "SysLog.h"
+#include "MemoryMgmt.h"
 
 //#define SYNCMEM_LOG
 
@@ -35,8 +36,8 @@ SyncMem<Dtype>::SyncMem() {
 	_host_mem = NULL;
 	_device_mem = NULL;
 
-	checkCudaErrors(Util::ucudaMalloc(&_d_int, sizeof(uint32_t)));
-	checkCudaErrors(Util::ucudaMalloc(&_d_bool, sizeof(bool)));
+    CUDAMALLOC(&_d_int, sizeof(uint32_t));
+	CUDAMALLOC(&_d_bool, sizeof(bool));
 
 	//_host_mem_updated = false;
 	//_device_mem_updated = false;
@@ -59,27 +60,27 @@ SyncMem<Dtype>::SyncMem(SyncMem<Dtype>* syncMem)
 
 template <typename Dtype>
 SyncMem<Dtype>::~SyncMem() {
-	if(_host_mem) SFREE(_host_mem);
-	if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
+	if(_host_mem)
+        SFREE(_host_mem);
 
-	if(_d_int) checkCudaErrors(cudaFree(_d_int));
-	if(_d_bool) checkCudaErrors(cudaFree(_d_bool));
+	if(_device_mem) 
+        CUDAFREE(_device_mem);
+
+	if(_d_int) 
+        CUDAFREE(_d_int);
+
+	if(_d_bool)
+        CUDAFREE(_d_bool);
 }
 
 template <typename Dtype>
 void SyncMem<Dtype>::reshape(size_t size) {
 	// reshape가 현 상태의 할당된 메모리보다 더 큰 메모리를 요구하는 경우에만 재할당한다.
 	if (size > _reserved) {
-		if(_host_mem) SFREE(_host_mem);
-		//if(_device_mem) checkCudaErrors(cudaFree(_device_mem));
-		if (_device_mem) {
-			cudaError_t status = cudaFree(_device_mem);
-			std::stringstream _error;
-			if (status != 0) {
-			  _error << "Cuda failure: " << status;
-			  FatalError(_error.str());
-			}
-		}
+		if(_host_mem)
+            SFREE(_host_mem);
+		if (_device_mem)
+            CUDAFREE(_device_mem);
 
 		_reserved = (size_t)(size*1.0f);
 		//_reserved = (size_t)(size);
@@ -88,7 +89,7 @@ void SyncMem<Dtype>::reshape(size_t size) {
 		SASSUME0(this->_host_mem != NULL);
 		memset(_host_mem, 0, sizeof(Dtype) * _reserved);
 
-		checkCudaErrors(Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved));
+		CUDAMALLOC(&_device_mem, sizeof(Dtype)*_reserved);
 		/*
 		std::stringstream _error;
 		cudaError_t status = Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved);
