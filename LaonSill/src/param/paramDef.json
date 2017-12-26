@@ -568,6 +568,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : false
+},
+
+"CUDA_MEMPAGE_SIZE" : 
+{
+    "DESC" : "specify default memory page size of CUDA",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "INT32",
+    "DEFAULT" : 2097152
 }
 
 }

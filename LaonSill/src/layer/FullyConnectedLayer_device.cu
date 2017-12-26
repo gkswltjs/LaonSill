@@ -19,6 +19,7 @@
 #include "Updater.h"
 #include "Donator.h"
 #include "frcnn_common.h"
+#include "MemoryMgmt.h"
 
 #define FULLYCONNECTEDLAYER_LOG 0
 
@@ -89,7 +90,7 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
         Util::clearVector(this->_paramsHistory);
         Util::clearVector(this->_paramsHistory2);
     }
-	checkCudaErrors(cudaFree(this->d_onevec));
+	CUDAFREE(this->d_onevec);
 
     this->updateParams.clear();
 }
@@ -196,7 +197,7 @@ void FullyConnectedLayer<Dtype>::reshape() {
         this->updateParams.push_back(upBias);
     }
 
-	checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*batches));
+    CUDAMALLOC(&this->d_onevec, sizeof(Dtype)*batches);
 	FillValues<<<SOOOA_GET_BLOCKS(batches), SOOOA_CUDA_NUM_THREADS>>>(
 			this->d_onevec, batches, 1.0f);
 

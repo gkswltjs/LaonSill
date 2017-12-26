@@ -29,6 +29,12 @@ void LeNet<Dtype>::run() {
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(0);
     network->run(false);
+
+    LogicalPlan::cleanup(networkID);
+    PhysicalPlan::removePlan(networkID);
+    PropMgmt::removeNetworkProp(networkID);
+    PropMgmt::removeLayerProp(networkID);
+    SDELETE(network);
 }
 
 

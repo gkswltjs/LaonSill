@@ -848,8 +848,8 @@
 
 	"configs" :
 	{
-		"batchSize" : 64,
-		"epochs" : 4, 
+		"batchSize" : 80,
+		"epochs" : 135, 
 		"lossLayer" : ["loss"],
         "measureLayer" : ["loss"],
 		"gamma" : 0.1,
@@ -858,9 +858,10 @@
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.1,
 		"stepSize" : 50000,
+        "stepValue" : [975000, 1365000, 1755000],
 		"weightDecay" : 0.0005,
 		"momentum" : 0.9,
-		"lrPolicy" : "Poly",
+		"lrPolicy" : "Multistep",
 		"optimizer" : "Momentum",
         "keepSaveBestModel" : false,
         "loadPath" : "$(LAONSILL_HOME)/param/11569fc0-8fd2-4b83-974f-e4fff65b38de_40000.param"
