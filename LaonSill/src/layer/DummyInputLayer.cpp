@@ -143,6 +143,17 @@ template<typename Dtype>
 bool DummyInputLayer<Dtype>::allocLayerTensors(void* instancePtr) {
     DummyInputLayer<Dtype>* layer = (DummyInputLayer<Dtype>*)instancePtr;
     layer->reshape();
+
+    if (SNPROP(miniBatch) == 0) {
+		int trainDataNum = layer->getNumTrainData();
+		if (trainDataNum % SNPROP(batchSize) == 0) {
+			SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize);
+		} else {
+			SNPROP(miniBatch) = trainDataNum / SNPROP(batchSize) + 1;
+		}
+		WorkContext::curPlanInfo->miniBatchCount = SNPROP(miniBatch);
+	}
+
     return true;
 }
 

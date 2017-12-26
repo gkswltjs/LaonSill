@@ -99,6 +99,7 @@ NormalizeLayer<Dtype>::~NormalizeLayer() {
 		Util::clearVector(this->_paramsHistory);
 		Util::clearVector(this->_paramsHistory2);
 	}
+	this->updateParams.clear();
 }
 
 template <typename Dtype>
@@ -452,18 +453,24 @@ void NormalizeLayer<Dtype>::_updateParam(const uint32_t paramSize, const Dtype r
 
 template <typename Dtype>
 void NormalizeLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
+	/*
 	cout << "!!!!!!!!!! applyChanges " << endl;
     const uint32_t paramSize = this->_params[0]->getCount();
     targetLayer->_params[0]->add_device_grad(this->_params[0]);
+    */
+	SASSERT(false, "Not implemented yet.");
 }
 
 template <typename Dtype>
 void NormalizeLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
+	/*
 	cout << "!!!!!!!!!! syncParams " << endl;
     const uint32_t paramSize = this->_params[0]->getCount();
     NormalizeLayer<Dtype>* _targetLayer = (NormalizeLayer<Dtype>*)targetLayer;
 
     this->_params[0]->set_device_grad(_targetLayer->_params[0]);
+    */
+	SASSERT(false, "Not implemented yet.");
 }
 
 

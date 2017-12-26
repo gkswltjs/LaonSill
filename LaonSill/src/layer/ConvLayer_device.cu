@@ -46,10 +46,16 @@ ConvLayer<Dtype>::ConvLayer()
 	this->type = Layer<Dtype>::Conv;
 
 	const string& name = SLPROP_BASE(name);
-	const filter_dim& filterDim = SLPROP(Conv, filterDim);
-	param_filler<Dtype>& weightFiller = SLPROP(Conv, weightFiller);
-	param_filler<Dtype>& biasFiller = SLPROP(Conv, biasFiller);
+	filter_dim& filterDim = SLPROP(Conv, filterDim);
 	const bool deconv = SLPROP(Conv, deconv);
+	this->biasTerm = SLPROP(Conv, biasTerm);
+
+	if (filterDim.pad > 0) {
+		SASSERT0(filterDim.pad_h == 0 && filterDim.pad_w == 0);
+		filterDim.pad_h = filterDim.pad;
+		filterDim.pad_w = filterDim.pad;
+	}
+
 
 	if (!deconv)
 		this->type = Layer<Dtype>::Conv;
@@ -57,60 +63,45 @@ ConvLayer<Dtype>::ConvLayer()
 		this->type = Layer<Dtype>::Deconv;
 	const int filter_size = filterDim.size();
 
-    Optimizer opt = (Optimizer)SNPROP(optimizer);
-    int paramHistoryDataCount = Update<Dtype>::getParamHistoryDataCount(opt);
+	Optimizer opt = (Optimizer)SNPROP(optimizer);
+	int paramHistoryDataCount = Update<Dtype>::getParamHistoryDataCount(opt);
 
-	this->_params.resize(2);
+	this->_params.resize(1);
 	this->_params[Filter] = NULL;
-	this->_params[Bias] = NULL;
-
-    SNEW(this->_params[Filter], Data<Dtype>, name + "_filter");
-    SASSUME0(this->_params[Filter] != NULL);
-    SNEW(this->_params[Bias], Data<Dtype>, name + "_bias");
-    SASSUME0(this->_params[Bias] != NULL);
+	SNEW(this->_params[Filter], Data<Dtype>, name + "_filter");
+	SASSUME0(this->_params[Filter] != NULL);
 
 	this->_params[Filter]->reshape(
-		{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
-	this->_params[Bias]->reshape({filterDim.filters, 1, 1, 1});
+			{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
 
+	param_filler<Dtype>& weightFiller = SLPROP(Conv, weightFiller);
 	weightFiller.fill(this->_params[Filter]);
-	biasFiller.fill(this->_params[Bias]);
 
-	this->_paramsHistory.resize(2);
+	this->_paramsHistory.resize(1);
 	this->_paramsHistory[Filter] = NULL;
-	this->_paramsHistory[Bias] = NULL;
 
-    if (paramHistoryDataCount >= 1) {
-        SNEW(this->_paramsHistory[Filter], Data<Dtype>, name + "_filter_history");
-        SASSUME0(this->_paramsHistory[Filter] != NULL);
-        SNEW(this->_paramsHistory[Bias], Data<Dtype>, name + "_bias_history");
-        SASSUME0(this->_paramsHistory[Bias] != NULL);
+	if (paramHistoryDataCount >= 1) {
+		SNEW(this->_paramsHistory[Filter], Data<Dtype>, name + "_filter_history");
+		SASSUME0(this->_paramsHistory[Filter] != NULL);
 
-        this->_paramsHistory[Filter]->reshape(
-            {filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
-        this->_paramsHistory[Bias]->reshape({filterDim.filters, 1, 1, 1});
-    }
+		this->_paramsHistory[Filter]->reshape(
+				{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
+	}
 
-
-	this->_paramsHistory2.resize(2);
+	this->_paramsHistory2.resize(1);
 	this->_paramsHistory2[Filter] = NULL;
-	this->_paramsHistory2[Bias] = NULL;
 
-    if (paramHistoryDataCount >= 2) {
-        SNEW(this->_paramsHistory2[Filter], Data<Dtype>, name + "_filter_history2");
-        SASSUME0(this->_paramsHistory2[Filter] != NULL);
-        SNEW(this->_paramsHistory2[Bias], Data<Dtype>, name + "_bias_history2");
-        SASSUME0(this->_paramsHistory2[Bias] != NULL);
+	if (paramHistoryDataCount >= 2) {
+		SNEW(this->_paramsHistory2[Filter], Data<Dtype>, name + "_filter_history2");
+		SASSUME0(this->_paramsHistory2[Filter] != NULL);
 
-        this->_paramsHistory2[Filter]->reshape(
-            {filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
-        this->_paramsHistory2[Bias]->reshape({filterDim.filters, 1, 1, 1});
-    }
+		this->_paramsHistory2[Filter]->reshape(
+				{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
+	}
 
-
-	this->_paramsInitialized.resize(2);
+	this->_paramsInitialized.resize(1);
 	this->_paramsInitialized[Filter] = false;
-	this->_paramsInitialized[Bias] = false;
+
 
     if (this->updateParams.size() == 0) {
         UpdateParam upFilter;
@@ -119,23 +110,12 @@ ConvLayer<Dtype>::ConvLayer()
         upFilter.paramHis1Ptr = (void*)this->_paramsHistory[Filter];
         upFilter.paramHis2Ptr = (void*)this->_paramsHistory2[Filter];
         this->updateParams.push_back(upFilter);
-
-        UpdateParam upBias;
-        upBias.paramType = Bias;
-        upBias.paramDataPtr = (void*)this->_params[Bias];
-        upBias.paramHis1Ptr = (void*)this->_paramsHistory[Bias];
-        upBias.paramHis2Ptr = (void*)this->_paramsHistory2[Bias];
-        this->updateParams.push_back(upBias);
     }
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));
-	checkCUDNN(cudnnCreateTensorDescriptor(&this->biasTensorDesc));
 	checkCUDNN(cudnnCreateFilterDescriptor(&this->filterDesc));
 	checkCUDNN(cudnnCreateConvolutionDescriptor(&this->convDesc));
-
-	checkCUDNN(cudnnSetTensor4dDescriptor(this->biasTensorDesc,
-			CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, filterDim.filters, 1, 1));
 
 	if (!deconv) {
 		checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
@@ -149,7 +129,7 @@ ConvLayer<Dtype>::ConvLayer()
 
 	//int pad = (filterDim.rows-1)/2;
 	cudnnStatus_t status = cudnnSetConvolution2dDescriptor(this->convDesc,
-			filterDim.pad, filterDim.pad, filterDim.stride, filterDim.stride,
+			filterDim.pad_h, filterDim.pad_w, filterDim.stride, filterDim.stride,
 			filterDim.dilation, filterDim.dilation,
 			CUDNN_CROSS_CORRELATION
 			,CUDNN_DATA_FLOAT);
@@ -160,6 +140,51 @@ ConvLayer<Dtype>::ConvLayer()
 	}
 
 	this->d_workspace = 0;
+
+
+	if (this->biasTerm) {
+		this->_params.resize(2);
+		this->_params[Bias] = NULL;
+		SNEW(this->_params[Bias], Data<Dtype>, name + "_bias");
+		SASSUME0(this->_params[Bias] != NULL);
+		this->_params[Bias]->reshape({filterDim.filters, 1, 1, 1});
+		param_filler<Dtype>& biasFiller = SLPROP(Conv, biasFiller);
+		biasFiller.fill(this->_params[Bias]);
+
+		this->_paramsHistory.resize(2);
+		this->_paramsHistory[Bias] = NULL;
+
+		if (paramHistoryDataCount >= 1) {
+			SNEW(this->_paramsHistory[Bias], Data<Dtype>, name + "_bias_history");
+			SASSUME0(this->_paramsHistory[Bias] != NULL);
+			this->_paramsHistory[Bias]->reshape({filterDim.filters, 1, 1, 1});
+		}
+
+		this->_paramsHistory2.resize(2);
+		this->_paramsHistory2[Bias] = NULL;
+
+		if (paramHistoryDataCount >= 2) {
+			SNEW(this->_paramsHistory2[Bias], Data<Dtype>, name + "_bias_history2");
+			SASSUME0(this->_paramsHistory2[Bias] != NULL);
+			this->_paramsHistory2[Bias]->reshape({filterDim.filters, 1, 1, 1});
+		}
+
+		this->_paramsInitialized.resize(2);
+		this->_paramsInitialized[Bias] = false;
+
+		if (this->updateParams.size() == 1) {
+			UpdateParam upBias;
+			upBias.paramType = Bias;
+			upBias.paramDataPtr = (void*)this->_params[Bias];
+			upBias.paramHis1Ptr = (void*)this->_paramsHistory[Bias];
+			upBias.paramHis2Ptr = (void*)this->_paramsHistory2[Bias];
+			this->updateParams.push_back(upBias);
+		}
+
+		checkCUDNN(cudnnCreateTensorDescriptor(&this->biasTensorDesc));
+		checkCUDNN(cudnnSetTensor4dDescriptor(this->biasTensorDesc,
+				CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 1, filterDim.filters, 1, 1));
+	}
 }
 
 template <typename Dtype>
@@ -168,18 +193,19 @@ ConvLayer<Dtype>::~ConvLayer() {
         Donator<Dtype>::releaseReceiver(SLPROP_BASE(donatorID));
     } else {
     	SDELETE(this->_params[ParamType::Filter]);
-    	SDELETE(this->_params[ParamType::Bias]);
-        this->_params.clear();
-
-        if (this->_paramsHistory[ParamType::Filter] != NULL)
+		if (this->_paramsHistory[ParamType::Filter] != NULL)
             SDELETE(this->_paramsHistory[ParamType::Filter]);
-        if (this->_paramsHistory[ParamType::Bias] != NULL)
-            SDELETE(this->_paramsHistory[ParamType::Bias]);
-        if (this->_paramsHistory2[ParamType::Filter] != NULL)
-            SDELETE(this->_paramsHistory2[ParamType::Filter]);
-        if (this->_paramsHistory2[ParamType::Bias] != NULL)
-            SDELETE(this->_paramsHistory2[ParamType::Bias]);
+		if (this->_paramsHistory2[ParamType::Filter] != NULL)
+			SDELETE(this->_paramsHistory2[ParamType::Filter]);
 
+        if (biasTerm) {
+			SDELETE(this->_params[ParamType::Bias]);
+	        if (this->_paramsHistory[ParamType::Bias] != NULL)
+	            SDELETE(this->_paramsHistory[ParamType::Bias]);
+	        if (this->_paramsHistory2[ParamType::Bias] != NULL)
+	            SDELETE(this->_paramsHistory2[ParamType::Bias]);
+        }
+        this->_params.clear();
         this->_paramsHistory.clear();
         this->_paramsHistory2.clear();
     }
@@ -189,9 +215,12 @@ ConvLayer<Dtype>::~ConvLayer() {
 
 	checkCUDNN(cudnnDestroyTensorDescriptor(this->inputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(this->outputTensorDesc));
-	checkCUDNN(cudnnDestroyTensorDescriptor(this->biasTensorDesc));
 	checkCUDNN(cudnnDestroyFilterDescriptor(this->filterDesc));
 	checkCUDNN(cudnnDestroyConvolutionDescriptor(this->convDesc));
+
+	if (this->biasTerm) {
+		checkCUDNN(cudnnDestroyTensorDescriptor(this->biasTensorDesc));
+	}
 
     this->updateParams.clear();
 }
@@ -231,6 +260,9 @@ void ConvLayer<Dtype>::reshape() {
         SASSERT0(rows == cols);
         SASSERT0(filterDim.rows == filterDim.cols);
         SASSERT0(deconvExtraCell < filterDim.stride);
+
+
+
 
         // See ConvLayer.h
         n = batches;
@@ -432,7 +464,6 @@ template <typename Dtype>
 void ConvLayer<Dtype>::update() {
 	const filter_dim& filterDim = SLPROP(Conv, filterDim);
 	const update_param& weightUpdateParam = SLPROP(Conv, weightUpdateParam);
-	const update_param& biasUpdateParam = SLPROP(Conv, biasUpdateParam);
 	const float weightDecay = SNPROP(weightDecay);
 	const float beta1 = SNPROP(beta1);
 	const float beta2 = SNPROP(beta2);
@@ -448,18 +479,23 @@ void ConvLayer<Dtype>::update() {
     UpdateContext contextFilter = 
         Update<Dtype>::makeContext(weightSize, regScale, learnScale);
 
-	// update biases ...
-	const uint32_t biasSize = filterDim.filters;
-	const Dtype regScale_b = weightDecay * biasUpdateParam.decay_mult;
-	const Dtype learnScale_b = 
-			Update<Dtype>::calcLearningRate() * biasUpdateParam.lr_mult;
-
-    UpdateContext contextBias = 
-        Update<Dtype>::makeContext(biasSize, regScale_b, learnScale_b);
-
-    SASSUME0(this->updateParams.size() == 2);
+    SASSUME0(this->updateParams.size() > 0);
     this->updateParams[Filter].context = contextFilter;
-    this->updateParams[Bias].context = contextBias;
+
+    if (this->biasTerm) {
+		// update biases ...
+		const update_param& biasUpdateParam = SLPROP(Conv, biasUpdateParam);
+		const uint32_t biasSize = filterDim.filters;
+		const Dtype regScale_b = weightDecay * biasUpdateParam.decay_mult;
+		const Dtype learnScale_b =
+				Update<Dtype>::calcLearningRate() * biasUpdateParam.lr_mult;
+
+		UpdateContext contextBias =
+			Update<Dtype>::makeContext(biasSize, regScale_b, learnScale_b);
+
+		SASSUME0(this->updateParams.size() == 2);
+		this->updateParams[Bias].context = contextBias;
+    }
 
     Updater::updateParams(this->updateParams);
 }
@@ -479,24 +515,28 @@ void ConvLayer<Dtype>::applyChanges(LearnableLayer<Dtype> *targetLayer) {
         _targetLayer->_params[Filter]->mutable_device_grad(),
         this->_params[Filter]->device_grad(), weightSize);
 
-    gridSize = (biasSize + blockSize -1) / blockSize;
-
-    AddArrayOfConvLayer<<<gridSize, blockSize>>>(
-        _targetLayer->_params[Bias]->mutable_device_grad(),
-        this->_params[Bias]->device_grad(), biasSize);
+    if (this->biasTerm) {
+		gridSize = (biasSize + blockSize -1) / blockSize;
+		AddArrayOfConvLayer<<<gridSize, blockSize>>>(
+			_targetLayer->_params[Bias]->mutable_device_grad(),
+			this->_params[Bias]->device_grad(), biasSize);
+    }
 }
 
 template <typename Dtype>
 void ConvLayer<Dtype>::syncParams(LearnableLayer<Dtype> *targetLayer) {
 	const filter_dim& filterDim = SLPROP(Conv, filterDim);
 	const uint32_t weightSize = filterDim.size();
-	const uint32_t biasSize = filterDim.filters;
     ConvLayer<Dtype>* _targetLayer = (ConvLayer<Dtype>*)targetLayer;
 
     memcpy(this->_params[Filter]->mutable_host_grad(), _targetLayer->_params[Filter]->host_grad(),
         weightSize);
-    memcpy(this->_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
-        biasSize);
+
+    if (this->biasTerm) {
+		const uint32_t biasSize = filterDim.filters;
+		memcpy(this->_params[Bias]->mutable_host_grad(), _targetLayer->_params[Bias]->host_grad(),
+			biasSize);
+    }
 }
 
 template <typename Dtype>
@@ -532,10 +572,12 @@ void ConvLayer<Dtype>::_computeFiltersConvolutionData() {
 			&Cuda::beta, this->outputTensorDesc, d_outputData));
     }
 
-	const Dtype* d_biasesData = this->_params[Bias]->device_data();
-	checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
-			&Cuda::alpha, this->biasTensorDesc, d_biasesData,
-			&Cuda::alpha, this->outputTensorDesc, d_outputData));
+    if (this->biasTerm) {
+		const Dtype* d_biasesData = this->_params[Bias]->device_data();
+		checkCUDNN(cudnnAddTensor(Cuda::cudnnHandle,
+				&Cuda::alpha, this->biasTensorDesc, d_biasesData,
+				&Cuda::alpha, this->outputTensorDesc, d_outputData));
+    }
 }
 
 
@@ -544,7 +586,9 @@ void ConvLayer<Dtype>::backpropagation() {
 	if (SLPROP_BASE(propDown)[0]) {
 		//_computePreActivationGrad();
 		_computeFiltersGrad();
-		_computeBiasesGrad();
+		if (this->biasTerm) {
+			_computeBiasesGrad();
+		}
 		_computeInputGrad();
 	}
 }

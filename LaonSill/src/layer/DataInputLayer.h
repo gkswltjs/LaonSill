@@ -12,6 +12,7 @@
 #include "DataReader.h"
 #include "Datum.h"
 #include "InputDataProvider.h"
+#include "DataTransformer.h"
 
 template <typename Dtype>
 class DataInputLayer : public InputLayer<Dtype> {
@@ -35,6 +36,7 @@ private:
 
 private:
 	DataReader<class Datum>   dataReader;
+	DataTransformer<Dtype> dataTransformer;
 
 public:
 	/****************************************************************************

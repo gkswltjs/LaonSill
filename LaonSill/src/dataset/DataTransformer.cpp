@@ -963,7 +963,13 @@ void transformInv(const int num, const int singleImageSize,
 		im.convertTo(im, CV_8UC3);
 		//cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
 		cv::imshow("result", im);
-		cv::waitKey(30);
+
+    	char key = cv::waitKey(0);
+    	if (key != 'n') {
+			cv::destroyAllWindows();
+			exit(1);
+		}
+
 		//cv::destroyAllWindows();
 	}
 }

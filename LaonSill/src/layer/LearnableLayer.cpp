@@ -7,6 +7,8 @@
 
 #include "LearnableLayer.h"
 #include "SysLog.h"
+#include "PropMgmt.h"
+#include "MemoryMgmt.h"
 
 using namespace std;
 
@@ -125,4 +127,54 @@ void LearnableLayer<Dtype>::donateParam(LearnableLayer<Dtype>* receiver) {
     }
 }
 
+template <typename Dtype>
+void LearnableLayer<Dtype>::initParam(const int paramIdx, const std::string& paramName) {
+	SASSERT0(paramIdx < this->_params.size());
+	SASSERT0(paramIdx < this->_paramsHistory.size());
+	SASSERT0(paramIdx < this->_paramsHistory2.size());
+
+	const string& layerName = SLPROP_BASE(name);
+	SNEW(this->_params[paramIdx], Data<Dtype>, layerName + "_" + paramName);
+	SASSUME0(this->_params[paramIdx] != NULL);
+
+	SNEW(this->_paramsHistory[paramIdx], Data<Dtype>, layerName + "_" + paramName + "_history");
+	SASSUME0(this->_paramsHistory[paramIdx] != NULL);
+
+	SNEW(this->_paramsHistory2[paramIdx], Data<Dtype>, layerName + "_" + paramName + "_history2");
+	SASSUME0(this->_paramsHistory2[paramIdx] != NULL);
+
+	this->_paramsInitialized[paramIdx] = false;
+
+	UpdateParam updateParam;
+	updateParam.paramType = paramIdx;
+	updateParam.paramDataPtr = (void*)this->_params[paramIdx];
+	updateParam.paramHis1Ptr = (void*)this->_paramsHistory[paramIdx];
+	updateParam.paramHis2Ptr = (void*)this->_paramsHistory2[paramIdx];
+	this->updateParams.push_back(updateParam);
+}
+
+template <typename Dtype>
+void LearnableLayer<Dtype>::reshapeParam(const int paramIdx, const vector<uint32_t>& shape) {
+	SASSERT0(paramIdx < this->_params.size());
+	SASSERT0(paramIdx < this->_paramsHistory.size());
+	SASSERT0(paramIdx < this->_paramsHistory2.size());
+
+	this->_params[paramIdx]->reshape(shape);
+	this->_paramsHistory[paramIdx]->reshape(shape);
+	this->_paramsHistory2[paramIdx]->reshape(shape);
+}
+
 template class LearnableLayer<float>;
+
+
+
+
+
+
+
+
+
+
+
+
+

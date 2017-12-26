@@ -126,8 +126,10 @@ vector<int> PhysicalPlan::getOrderedLayerIDs(string networkID) {
                 }
             }
 
-            if (needTensor)
+            if (needTensor) {
+            	//cout << "layerID " << layerID << " needs tensor ... " << endl;
                 continue;
+            }
 
             for (int i = 0; i < outputs.size(); i++) {
                 if (doneTensorMap.find(outputs[i]) == doneTensorMap.end())
@@ -350,6 +352,7 @@ float PhysicalPlan::calcLoss() {
         string lossLayerName = SNPROP(lossLayer)[i];
         Network<float>* network = Network<float>::getNetworkFromID(WorkContext::curNetworkID);
         Layer<float>* layer = network->findLayer(lossLayerName);
+        SASSERT(layer != NULL, "Could not find loss layer: %s", lossLayerName.c_str());
         LossLayer<float>* lossLayer = (LossLayer<float>*)layer;
 
         avgLoss += (float)lossLayer->cost();

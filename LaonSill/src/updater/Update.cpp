@@ -171,9 +171,16 @@ float Update<Dtype>::calcLearningRate() {
         }
             break;
         case Poly: {
-            rate = SNPROP(baseLearningRate) * 
-                pow(1.0 - (float)SNPROP(iterations) / 
-                           ((float)SNPROP(epochs) * (float)SNPROP(miniBatch)), SNPROP(power));
+        	if (SNPROP(miniBatch) > 0) {
+        		rate = SNPROP(baseLearningRate) *
+        				pow(1.0 - (float)SNPROP(iterations) /
+        						((float)SNPROP(epochs) * (float)SNPROP(miniBatch)), SNPROP(power));
+        	} else if (SNPROP(maxIterations) > 0){
+				rate = SNPROP(baseLearningRate) *
+					pow(1.0 - ((float)(SNPROP(iterations)-1) / (float)SNPROP(maxIterations)), SNPROP(power));
+        	} else {
+        		SASSERT(false, "one of miniBatch and maxIterations should be larger than 0");
+        	}
         }
             break;
         case Multistep: {
@@ -187,10 +194,19 @@ float Update<Dtype>::calcLearningRate() {
         	}
         	rate = SNPROP(baseLearningRate) * pow(SNPROP(gamma), currentStep);
         }
-        break;
+        	break;
+
+        case Inv: {
+        	float baseLearningRate = SNPROP(baseLearningRate);
+        	float gamma = SNPROP(gamma);
+        	int iterations = SNPROP(iterations);
+        	float power = SNPROP(power);
+        	rate = baseLearningRate * pow(Dtype(1) + gamma * iterations, - power);
+        }
+        	break;
 
         default: {
-            exit(1);
+            SASSERT(false, "Unsupported LRPolicy");
         }
 	}
 

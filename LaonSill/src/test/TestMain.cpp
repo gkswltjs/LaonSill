@@ -100,8 +100,12 @@ int main(int argc, char** argv) {
 	cout.precision(10);
 	cout.setf(ios::fixed);
 
+	const string LAONSILL_HOME = "/home/jkim/Dev/LAONSILL_HOME/";
+
+	/*
 	denormalize("/home/jkim/Dev/LAONSILL_HOME/param/9827323c-8c13-4a74-982c-3b0381d49fed_1002000.param",
 			"/home/jkim/Dev/LAONSILL_HOME/param/9827323c-8c13-4a74-982c-3b0381d49fed_1002000_dn.param");
+			*/
 
 
 	/*
@@ -193,7 +197,7 @@ int main(int argc, char** argv) {
 
 	//plainTest(argc, argv);
 	//layerTest(argc, argv);
-	//networkTest(argc, argv);
+	networkTest(argc, argv);
 	//saveNetwork();
 	//layerTest2(argc, argv);
 
@@ -205,7 +209,7 @@ int main(int argc, char** argv) {
 
 
 	/*
-	const string LAONSILL_HOME = "/home/jkim/Dev/LAONSILL_HOME/";
+
 
 #if 0
 	const string baseImagePath = "/home/jkim/Dev/git/caffe_ssd/data/";
@@ -265,14 +269,14 @@ int main(int argc, char** argv) {
 */
 
 
-/*
+	/*
 #if 1
 
 	const string baseImagePath = LAONSILL_HOME + "data/ilsvrc12_train/";
 	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
 
 	const string imagePath = baseImagePath + "images/";
-	const string sdfPath = baseSdfPath + "_ilsvrc12_train_1000/";
+	const string sdfPath = baseSdfPath + "ilsvrc12_train_1000/";
 
 
 	ImageSet trainImageSet;
@@ -292,6 +296,8 @@ int main(int argc, char** argv) {
 	param.basePath = imagePath;
 	param.outFilePath = sdfPath;
 	param.labelMapFilePath = LAONSILL_HOME + "data/ilsvrc12_train/labelmap_imagenet.json";
+	param.encoded = false;
+	param.encodeType = "";
 
 	if (boost::filesystem::exists(param.outFilePath)) {
 		boost::filesystem::remove_all((param.outFilePath));
@@ -326,6 +332,7 @@ int main(int argc, char** argv) {
 	}
 #endif
 */
+
 
 /*
 #if 1
@@ -918,17 +925,17 @@ void runNetwork() {
 void layerTest(int argc, char** argv) {
 	initializeNetwork();
 
-	const char* soooaHome = std::getenv("SOOOA_DEV_HOME");
+	const string laonsillHome = string(std::getenv("LAONSILL_DEV_HOME"));
 
 	const int gpuid = 0;
-	const string networkName = "ssd";
-	const string networkFilePath = string(soooaHome) +
-			string("/src/examples/SSD/ssd_annotateddata_test.json");
-	const string targetLayerName = "data";
+	const string networkName = "inception_v3";
+	const string networkFilePath = laonsillHome +
+			string("/src/examples/Inception/batchnorm_test.json");
+	const string targetLayerName = "conv1/bn";
 
-	const int numAfterSteps = 10;
-	const int numSteps = 10;
-	const NetworkStatus status = NetworkStatus::Test;
+	const int numAfterSteps = 0;
+	const int numSteps = 1;
+	const NetworkStatus status = NetworkStatus::Train;
 
 	LayerTestInterface<float>::globalSetUp(gpuid);
 	LayerTestInterface<float>* layerTest = NULL;
@@ -952,8 +959,8 @@ void layerTest(int argc, char** argv) {
 }
 
 void layerTest2(int argc, char** argv) {
-	const char* soooaHome = std::getenv("SOOOA_DEV_HOME");
-	std::ifstream layerDefJsonStream(string(soooaHome) + string("/src/test/annotated_data.json"));
+	string laonsillHome = string(std::getenv("LAONSILL_DEV_HOME"));
+	std::ifstream layerDefJsonStream(laonsillHome + string("/src/test/annotated_data.json"));
 	SASSERT0(layerDefJsonStream);
 	std::stringstream annotateddataDef;
 	annotateddataDef << layerDefJsonStream.rdbuf();
@@ -1002,7 +1009,8 @@ void layerTest2(int argc, char** argv) {
 #define NETWORK_SSD			4
 #define NETWORK_SSD_TEST	5
 #define NETWORK_VGG16		6
-#define NETWORK				NETWORK_SSD
+#define NETWORK_INCEPTION_V3	7
+#define NETWORK				NETWORK_INCEPTION_V3
 
 #define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/LeNet/lenet_train_test.json")
 #define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/frcnn/frcnn_train_test.json")
@@ -1019,21 +1027,32 @@ void layerTest2(int argc, char** argv) {
 
 
 void networkTest(int argc, char** argv) {
-	const char* soooaHome = std::getenv("SOOOA_DEV_HOME");
+	const string laonsillHome = std::getenv("LAONSILL_DEV_HOME");
 	const int gpuid = 0;
 	initializeNetwork();
 
 #if NETWORK == NETWORK_SSD
-	//const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_300_train_test.json");
-	//const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_300_train.json");
-	//const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_300_infer_test.json");
-	//const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_512_train_test.json");
-	const string networkFilePath = string(soooaHome) + string("/src/examples/SSD/ssd_512_infer_test.json");
+	//const string networkFilePath = laonsillHome + string("/src/examples/SSD/ssd_300_train_test.json");
+	//const string networkFilePath = laonsillHome + string("/src/examples/SSD/ssd_300_train.json");
+	//const string networkFilePath = laonsillHome + string("/src/examples/SSD/ssd_300_infer_test.json");
+	//const string networkFilePath = laonsillHome + string("/src/examples/SSD/ssd_512_train_test.json");
+	const string networkFilePath = laonsillHome + string("/src/examples/SSD/ssd_512_infer_test.json");
 	const string networkName = "ssd";
 	const int numSteps = 1;
+	const vector<string> forwardGTLayers = {"mbox_loss"};
 	//const NetworkStatus status = NetworkStatus::Train;
 	const NetworkStatus status = NetworkStatus::Test;
 #elif NETWORK == NETWORK_VGG16
+#elif NETWORK == NETWORK_INCEPTION_V3
+	const string networkFilePath = laonsillHome + string("/src/examples/Inception/"
+			"inception_v3_train_nvidia_test_t3.json");
+			//"batchnorm.test.json");
+	const string networkName = "inception_v3";
+	const int numSteps = 3;
+	const vector<string> forwardGTLayers = {};
+	const NetworkStatus status = NetworkStatus::Train;
+	//const NetworkStatus status = NetworkStatus::Test;
+
 #else
 	cout << "invalid network ... " << endl;
 	exit(1);
@@ -1041,13 +1060,13 @@ void networkTest(int argc, char** argv) {
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 
 	NetworkTest<float>* networkTest = NULL;
-	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps, status);
+	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps, status, forwardGTLayers);
 	SASSUME0(networkTest != NULL);
 
 	networkTest->setUp();
-	//networkTest->updateTest();
-	Network<float>* network = networkTest->network;
-	network->save("/home/jkim/Dev/SOOOA_HOME/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_512x512.param");
+	networkTest->updateTest();
+	//Network<float>* network = networkTest->network;
+	//network->save("/home/jkim/Dev/SOOOA_HOME/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_512x512.param");
 	networkTest->cleanUp();
 
 	NetworkTestInterface<float>::globalCleanUp();
@@ -1060,9 +1079,12 @@ void saveNetwork() {
 	const int gpuid = 0;
 	initializeNetwork();
 
-	const string networkFilePath = string("/home/jkim/Dev/git/soooa/SoooA/src/examples/VGG16/vgg16_train.json");
+	const string networkFilePath = string("/home/jkim/Dev/git/soooa/SoooA/src/examples/VGG16/"
+			"vgg16_train.json");
 	const string networkName = "vgg16";
 	const int numSteps = 0;
+	const vector<string> forwardGTLayers = {};
+	const NetworkStatus status = NetworkStatus::Train;
 
 #if 0
 	Network<float>* network = NULL;
@@ -1079,7 +1101,7 @@ void saveNetwork() {
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 
 	NetworkTest<float>* networkTest = NULL;
-	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps);
+	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps, status, forwardGTLayers);
 	SASSUME0(networkTest != NULL);
 
 	networkTest->setUp();

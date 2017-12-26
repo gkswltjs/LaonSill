@@ -77,14 +77,19 @@ struct io_dim {
 struct filter_dim : public io_dim {
 	uint32_t filters;			///< 컨볼루션 결과 출력 채널(필터)의 수
 	uint32_t pad;
+	uint32_t pad_h;
+	uint32_t pad_w;
 	uint32_t stride;			///< 컨볼루션을 적용할 stride 크기
 	uint32_t dilation;
 
 	filter_dim() {}
 	filter_dim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
-			uint32_t pad, uint32_t stride, uint32_t dilation) : io_dim(rows, cols, channels, 1) {
+			uint32_t pad, uint32_t pad_h, uint32_t pad_w, uint32_t stride, uint32_t dilation)
+	: io_dim(rows, cols, channels, 1) {
 		this->filters = filters;
 		this->pad = pad;
+		this->pad_h = pad_h;
+		this->pad_w = pad_w;
 		this->stride = stride;
 		this->dilation = dilation;
 	}

@@ -51,7 +51,8 @@ void PropMgmt::insertLayerProp(LayerProp* layerProp) {
 
     LayerPropKey key(networkID, layerID);
     map<LayerPropKey, LayerProp*>::iterator iter = layerPropMap.find(key);
-    SASSERT0(iter == layerPropMap.end());
+    SASSERT(iter == layerPropMap.end(), "Layer prop for network %s and layer ID %d"
+    		" already inserted.", networkID.c_str(), layerID);
 
     layerPropMap[key] = layerProp;
 }

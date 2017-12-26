@@ -33,7 +33,7 @@ const std::string NPZ_PATH 		= "/home/jkim/Dev/data/numpy_array/";
 const std::string PARAMS		= "_params_";
 const std::string BLOBS			= "_blobs_";
 
-const float COMPARE_ERROR 		= 1.0e-7;
+const float COMPARE_ERROR 		= 1.0e-5;
 
 
 enum DataType {

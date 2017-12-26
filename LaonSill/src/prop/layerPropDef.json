@@ -101,13 +101,15 @@
         [   
             ["deconv", "bool", "false"],
             ["deconvExtraCell", "int", "0"],
-            ["filterDim", "filter_dim", "{1, 1, 1, 1, 0, 1, 1}",
+            ["filterDim", "filter_dim", "{1, 1, 1, 1, 0, 0, 0, 1, 1}",
                 [
                     ["rows", "uint32_t"], 
                     ["cols", "uint32_t"],
                     ["channels", "uint32_t"],
                     ["filters", "uint32_t"],
                     ["pad", "uint32_t"],
+					["pad_h", "uint32_t"],
+					["pad_w", "uint32_t"],
                     ["stride", "uint32_t"],
                     ["dilation", "uint32_t"]
                 ]
@@ -135,7 +137,8 @@
                     ["type", "ParamFillerType"],
                     ["value", "double"]
                 ]
-            ]
+            ],
+			["biasTerm", "bool", "true"]
         ],
     "KEYVARS" : ["filterDim", "weightUpdataParam", "biasUpdateParam", "weightFiller", "biasFiller"]
 },
@@ -285,6 +288,54 @@
         [   
             ["epsilon", "double", "0.0001"],
             ["train", "bool", "true"]
+        ],
+    "KEYVARS" : ["train"]
+
+},
+
+"BatchNorm2" :
+{
+    "DESC" : "batch normalization layer",
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
+    "LEARN" : 2,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [   
+            ["useGlobalStats", "bool", "false"],
+            ["movingAverageFraction", "float", "0.999"],
+            ["eps", "float", "1e-5"],
+            ["scaleFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ],
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"]
+                ]
+            ],
+            ["scaleBias", "bool", "true"],
+            ["updateParam0", "update_param", "{1.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["updateParam1", "update_param", "{1.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ],
+            ["updateParam2", "update_param", "{1.0, 1.0}",
+                [
+                    ["lr_mult", "double"],
+                    ["decay_mult", "double"]
+                ]
+            ]
         ],
     "KEYVARS" : ["train"]
 
@@ -732,7 +783,15 @@
     "PROPDOWN" : [],
     "VARS" : 
 	[
-		["dataSetName", "std::string", "\"\""]
+		["dataSetName", "std::string", "\"\""],
+		["dataTransformParam", "DataTransformParam", "{}",
+			[
+				["mean", "std::vector<float>"],
+				["scale", "float"],
+				["cropSize", "int"],
+				["mirror", "bool"]
+			]
+		]
 	],
     "KEYVARS" : []
 },
