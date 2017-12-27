@@ -3,13 +3,25 @@
 	[
 		{
 	        "name" : "data",
-	        "layer" : "VOCPascalInput",
+	        "layer" : "YOLOInput",
 	        "id" : 0,
 	        "output" : ["data", "label"],
-	        "imageDir" : "$(LAONSILL_HOME)/data/VOCdevkit/",
-            "resizedImageRow" : 416,
-            "resizedImageCol" : 416,
-            "resizeImage" : true
+			"dataTransformParam.mean" : [104.0, 117.0, 123.0],
+
+			"resizeParam.prob" : 1.0,
+			"resizeParam.resizeMode" : "WARP",
+			"resizeParam.height" : 416, 
+			"resizeParam.width" : 416,
+			"resizeParam.interpMode0" : "LINEAR",
+			"resizeParam.interpMode1" : "AREA",
+			"resizeParam.interpMode2" : "NEAREST",
+			"resizeParam.interpMode3" : "CUBIC",
+			"resizeParam.interpMode4" : "LANCZOS4",
+
+			"source" : "$(LAONSILL_HOME)/data/sdf/voc2007_train_sdf/",
+
+			"labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.prototxt",
+			"annoType" : "BBOX"
 	    },
 
 		{
@@ -916,6 +928,14 @@
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.2
 		},
+
+        {
+            "name" : "sigmoid2",
+            "layer" : "Sigmoid2",
+            "id" : 275,
+            "input" : ["conv22d"],
+            "output" : ["conv22d"]
+        },
 
         {
             "name" : "loss",

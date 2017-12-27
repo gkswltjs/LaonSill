@@ -103,7 +103,8 @@ template <typename Dtype>
 void AnnotatedDataLayer<Dtype>::reshape() {
 	if (this->_inputData.size() < 1) {
 		for (uint32_t i = 0; i < GET_PROP(prop, AnnotatedData, output).size(); i++) {
-			GET_PROP(prop, AnnotatedData, input).push_back(GET_PROP(prop, AnnotatedData, output)[i]);
+			GET_PROP(prop, AnnotatedData, input).push_back(
+                GET_PROP(prop, AnnotatedData, output)[i]);
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
