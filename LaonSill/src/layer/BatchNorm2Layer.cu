@@ -11,9 +11,11 @@
 #include "MemoryMgmt.h"
 #include "MathFunctions.h"
 #include "Updater.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
+#if 1
 template <typename Dtype>
 BatchNorm2Layer<Dtype>::BatchNorm2Layer()
 : LearnableLayer<Dtype>() {
@@ -377,6 +379,8 @@ void BatchNorm2Layer<Dtype>::backpropagation() {
 	this->tempNCHW->mutable_device_data());
 	soooa_gpu_mul<Dtype>(outputSize, inputGrad, this->tempNCHW->device_data(), inputGrad);
 }
+
+#endif
 
 template <typename Dtype>
 void BatchNorm2Layer<Dtype>::update() {

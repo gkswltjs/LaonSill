@@ -71,11 +71,13 @@ ConvLayer<Dtype>::ConvLayer()
 	SNEW(this->_params[Filter], Data<Dtype>, name + "_filter");
 	SASSUME0(this->_params[Filter] != NULL);
 
+#if 0
 	this->_params[Filter]->reshape(
 			{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
 
 	param_filler<Dtype>& weightFiller = SLPROP(Conv, weightFiller);
 	weightFiller.fill(this->_params[Filter]);
+#endif
 
 	this->_paramsHistory.resize(1);
 	this->_paramsHistory[Filter] = NULL;
@@ -84,8 +86,10 @@ ConvLayer<Dtype>::ConvLayer()
 		SNEW(this->_paramsHistory[Filter], Data<Dtype>, name + "_filter_history");
 		SASSUME0(this->_paramsHistory[Filter] != NULL);
 
+#if 0
 		this->_paramsHistory[Filter]->reshape(
 				{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
+#endif
 	}
 
 	this->_paramsHistory2.resize(1);
@@ -95,8 +99,10 @@ ConvLayer<Dtype>::ConvLayer()
 		SNEW(this->_paramsHistory2[Filter], Data<Dtype>, name + "_filter_history2");
 		SASSUME0(this->_paramsHistory2[Filter] != NULL);
 
+#if 0
 		this->_paramsHistory2[Filter]->reshape(
 				{filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols});
+#endif
 	}
 
 	this->_paramsInitialized.resize(1);
@@ -117,6 +123,7 @@ ConvLayer<Dtype>::ConvLayer()
 	checkCUDNN(cudnnCreateFilterDescriptor(&this->filterDesc));
 	checkCUDNN(cudnnCreateConvolutionDescriptor(&this->convDesc));
 
+#if 0
 	if (!deconv) {
 		checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
 			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
@@ -126,6 +133,7 @@ ConvLayer<Dtype>::ConvLayer()
 			CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
 			filterDim.channels, filterDim.filters, filterDim.rows, filterDim.cols));
 	}
+#endif
 
 	//int pad = (filterDim.rows-1)/2;
 	cudnnStatus_t status = cudnnSetConvolution2dDescriptor(this->convDesc,
@@ -228,7 +236,46 @@ ConvLayer<Dtype>::~ConvLayer() {
 
 template <typename Dtype>
 void ConvLayer<Dtype>::reshape() {
-	Layer<Dtype>::_adjustInputShape();
+	bool adjusted = Layer<Dtype>::_adjustInputShape();
+
+	//
+	if (adjusted) {
+		Optimizer opt = (Optimizer)SNPROP(optimizer);
+		int paramHistoryDataCount = Update<Dtype>::getParamHistoryDataCount(opt);
+
+		filter_dim& filterDim = SLPROP(Conv, filterDim);
+		const uint32_t channels = this->_inputData[0]->getShape(1);
+
+		const vector<uint32_t> filterShape =
+			{filterDim.filters, channels, filterDim.rows, filterDim.cols};
+
+		this->_params[Filter]->reshape(filterShape);
+
+		param_filler<Dtype>& weightFiller = SLPROP(Conv, weightFiller);
+		weightFiller.fill(this->_params[Filter]);
+
+		if (paramHistoryDataCount >= 1) {
+			this->_paramsHistory[Filter]->reshape(filterShape);
+		}
+
+		if (paramHistoryDataCount >= 2) {
+			this->_paramsHistory2[Filter]->reshape(filterShape);
+		}
+
+		const bool deconv = SLPROP(Conv, deconv);
+		if (!deconv) {
+			checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
+				CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
+				filterDim.filters, channels, filterDim.rows, filterDim.cols));
+		} else {
+			checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
+				CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
+				channels, filterDim.filters, filterDim.rows, filterDim.cols));
+		}
+
+	}
+
+
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
 

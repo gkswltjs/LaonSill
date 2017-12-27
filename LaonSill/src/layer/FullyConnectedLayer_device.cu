@@ -90,8 +90,6 @@ FullyConnectedLayer<Dtype>::~FullyConnectedLayer() {
         Util::clearVector(this->_paramsHistory);
         Util::clearVector(this->_paramsHistory2);
     }
-	CUDAFREE(this->d_onevec);
-
     this->updateParams.clear();
 }
 
@@ -197,18 +195,17 @@ void FullyConnectedLayer<Dtype>::reshape() {
         this->updateParams.push_back(upBias);
     }
 
-    CUDAMALLOC(&this->d_onevec, sizeof(Dtype)*batches);
-	FillValues<<<SOOOA_GET_BLOCKS(batches), SOOOA_CUDA_NUM_THREADS>>>(
-			this->d_onevec, batches, 1.0f);
+    this->_onevec.reshape(this->batches);
+    this->_onevec.reset_host_mem(false, 1.0);
+	//checkCudaErrors(Util::ucudaMalloc(&this->d_onevec, sizeof(Dtype)*batches));
+	//FillValues<<<SOOOA_GET_BLOCKS(batches), SOOOA_CUDA_NUM_THREADS>>>(
+	//		this->d_onevec, batches, 1.0f);
 
 	this->_mask.reshape(b_out);
 }
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::update() {
-	//const uint32_t in_rows = this->_inputShape[0][2];
-	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
-
 	const uint32_t weightSize = this->in_rows * this->out_rows;
 	const Dtype regScale =
         SNPROP(weightDecay) * SLPROP(FullyConnected, weightUpdateParam).decay_mult;
@@ -223,10 +220,6 @@ void FullyConnectedLayer<Dtype>::update() {
 
     UpdateContext contextWeight = 
         Update<Dtype>::makeContext(weightSize, regScale, learnScale);
-
-
-
-
 
 
 
@@ -454,7 +447,7 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 	} else {
 		soooa_gpu_gemm(CblasNoTrans, CblasNoTrans,
 				this->batches, this->out_rows,	1,
-				Cuda::alpha, this->d_onevec, d_biasData,
+				Cuda::alpha, this->_onevec.device_mem(), d_biasData,
 				Cuda::alpha, d_outputData);
 	}
 
@@ -517,6 +510,7 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
      *   dL/dAi * dAi/dXi가 된다. dL/dAi는 _preAcitvation의 grad에 저장이 되어 있고, dAi/dXi는
      *  Wi의 transpose 이기 때문에 계산가능하다.
      */
+
 	_computeWeightGrad();
 	_computeBiasGrad();
 	_computeInputGrad();
@@ -524,6 +518,8 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
+	this->_params[Weight]->reset_device_grad();
+
 	// d(Cost)/d(Weight)
 	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
@@ -533,20 +529,15 @@ void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
 			this->out_rows, this->in_rows, this->batches,
 			Cuda::alpha, d_outputGrad, d_inputData,
 			Cuda::alpha, d_weightGrad);
-
-	/*
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_T,
-			this->out_rows, this->in_rows, this->batches,
-			&Cuda::alpha, d_outputGrad, this->out_rows, d_inputData, this->in_rows,
-			&Cuda::beta, d_weightGrad, this->out_rows));
-			*/
 }
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeBiasGrad() {
-	//const uint32_t batches = this->_inputShape[0][0];
-	//const uint32_t in_rows = this->_inputShape[0][2];
-	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
+	// XXX: Inception 기준, Reset해주어야 함...
+	// 상식적으로 reset되어야 할 것 같은데 왜 다른 Network에서 문제되지 않았던 것인지 ...
+	// Beta를 0로 주는 것과 동일할 것으로 보임 ...
+	this->_params[Bias]->reset_device_grad();
+
 
 	// d(Cost)/d(Bias) (same as d_preActivationGrad)
 	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
@@ -555,18 +546,8 @@ void FullyConnectedLayer<Dtype>::_computeBiasGrad() {
 
 	soooa_gpu_gemv<Dtype>(CblasTrans,
 			this->batches, this->out_rows,
-			Cuda::alpha, d_outputGrad, this->d_onevec,
+			Cuda::alpha, d_outputGrad, this->_onevec.device_mem(),
 			Cuda::alpha, d_biasGrad);
-
-	/*
-	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, CUBLAS_OP_N,
-			this->out_rows, this->batches,
-			&Cuda::alpha, d_outputGrad, this->out_rows, this->d_onevec, 1,
-			&Cuda::beta, d_biasGrad, 1));
-			*/
-	this->_params[Bias]->print_grad("biasGrad:");
-	this->_params[Weight]->print_data("weightData:");
-	//_preActivation->print_grad("preActivationGrad");
 }
 
 template <typename Dtype>

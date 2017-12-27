@@ -365,27 +365,9 @@
                     ["value", "double"]
                 ]
             ],
-            ["scaleBias", "bool", "true"],
-            ["updateParam0", "update_param", "{1.0, 1.0}",
-                [
-                    ["lr_mult", "double"],
-                    ["decay_mult", "double"]
-                ]
-            ],
-            ["updateParam1", "update_param", "{1.0, 1.0}",
-                [
-                    ["lr_mult", "double"],
-                    ["decay_mult", "double"]
-                ]
-            ],
-            ["updateParam2", "update_param", "{1.0, 1.0}",
-                [
-                    ["lr_mult", "double"],
-                    ["decay_mult", "double"]
-                ]
-            ]
+            ["scaleBias", "bool", "false"]
         ],
-    "KEYVARS" : ["train"]
+    "KEYVARS" : []
 
 },
 

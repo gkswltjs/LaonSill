@@ -52,7 +52,8 @@ protected:
 	};
 
 protected:
-	Dtype* d_onevec;    ///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
+	//Dtype* d_onevec;    ///< batch 사이즈의 1 벡터, bias를 weighted sum에 더해 줄 때 사용
+	SyncMem<Dtype> _onevec;
 	SyncMem<Dtype> _mask;
 
 
