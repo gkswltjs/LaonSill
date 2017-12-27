@@ -104,8 +104,8 @@ void testJsonType(Json::Value& value) {
 int main(int argc, char** argv) {
 	cout << "begin test ... " << endl;
 	cout.precision(8);
-	//cout.setf(ios::fixed);
-	cout.setf(ios::scientific);
+	cout.setf(ios::fixed);
+	//cout.setf(ios::scientific);
 
 	const string LAONSILL_HOME = "/home/jkim/Dev/LAONSILL_HOME/";
 
@@ -650,8 +650,9 @@ void networkTest(int argc, char** argv) {
 
 #elif NETWORK == NETWORK_INCEPTION_V3
 	const string networkFilePath = laonsillHome + string("/src/examples/Inception/"
-			"inception_v3_train_nvidia_test_t3.json");
+			//"inception_v3_train_nvidia_test_t3.json");
 			//"batchnorm.test.json");
+			"inception_v3_train_nvidia.json");
 	const string networkName = "inception_v3";
 	const int numSteps = 1;
 	const vector<string> forwardGTLayers = {};
@@ -669,9 +670,9 @@ void networkTest(int argc, char** argv) {
 	SASSUME0(networkTest != NULL);
 
 	networkTest->setUp();
-	networkTest->updateTest();
-	//Network<float>* network = networkTest->network;
-	//network->save("/home/jkim/Dev/SOOOA_HOME/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_512x512.param");
+	//networkTest->updateTest();
+	Network<float>* network = networkTest->network;
+	network->save("/home/jkim/Dev/LAONSILL_HOME/param/inception_v3_init.param");
 	networkTest->cleanUp();
 
 	NetworkTestInterface<float>::globalCleanUp();
