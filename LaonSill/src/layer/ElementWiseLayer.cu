@@ -29,9 +29,10 @@ ElementWiseLayer<Dtype>::ElementWiseLayer()
 			"ElementWise Layer only takes coefficients for summation.");
 	this->op = SLPROP(ElementWise, operation);
 	// Data-wise coefficients for the elementwise operation.
-	this->coeffs = vector<Dtype>(SLPROP_BASE(input).size(), 1);
+	const int inputSize = SLPROP_BASE(input).size();
+	this->coeffs = vector<Dtype>(inputSize, 1);
 	if (SLPROP(ElementWise, coeff).size()) {
-		for (int i = 0; i < SLPROP_BASE(input).size(); i++) {
+		for (int i = 0; i < inputSize; i++) {
 			this->coeffs[i] = SLPROP(ElementWise, coeff)[i];
 		}
 	}

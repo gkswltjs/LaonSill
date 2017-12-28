@@ -141,6 +141,9 @@ Dtype soooa_nextafter(const Dtype b);
 template <typename Dtype>
 void soooa_rng_uniform(const int n, const Dtype a, const Dtype b, Dtype* r);
 
+template <typename Dtype>
+void soooa_rng_gaussian(const int n, float a, float sigma, Dtype* r);
+
 
 
 

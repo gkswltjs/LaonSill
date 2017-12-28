@@ -20,6 +20,7 @@
 #include "Util.h"
 #include "Data.h"
 #include "EnumDef.h"
+#include "MathFunctions.h"
 
 
 
@@ -160,70 +161,20 @@ struct update_param {
 template <typename Dtype>
 struct param_filler {
 	ParamFillerType type;	///< 파라미터 초기화 타입
-	Dtype value;			///< 파라미터 초기화 관련 값
+	float value;			///< 파라미터 초기화 관련 값
+	float mean;
+	float std;
 	RNGType rng;
 
 	param_filler() {}
-	param_filler(ParamFillerType type, Dtype value=0) {
+	param_filler(ParamFillerType type, float value = 0.f, float mean = 0.f, float std = 1.f) {
 		this->type = type;
 		this->value = value;
+		this->mean = mean;
+		this->std = std;
 		this->rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
 	}
 
-#ifndef GPU_MODE
-	void fill(rvec &param, int n_in) {
-		switch(type) {
-		case ParamFillerType::Constant: param.fill(value); break;
-		case ParamFillerType::Xavier:
-			param.randn();
-			param *= sqrt(3.0/n_in);
-			break;
-		case ParamFillerType::Gaussian:
-			param.randn();
-			break;
-		case ParamFillerType::None:
-		default:
-			break;
-		}
-	}
-
-	void fill(rmat &param, int n_in) {
-		switch(type) {
-		case ParamFillerType::Constant:
-			param.fill(value);
-			break;
-		case ParamFillerType::Xavier:
-			param.randn();
-			param *= sqrt(3.0/n_in);				// initial point scaling
-			break;
-		case ParamFillerType::Gaussian:
-			param.randn();
-			break;
-		case ParamFillerType::None:
-		default:
-			break;
-		}
-	}
-
-	void fill(rcube &param, int n_in) {
-		switch(type) {
-		case ParamFillerType::Constant:
-			param.fill(value);
-			break;
-		case ParamFillerType::Xavier:
-			param.randn();
-			param *= sqrt(3.0/n_in);				// initial point scaling
-			break;
-		case ParamFillerType::Gaussian:
-			param.randn();
-			break;
-		case ParamFillerType::None:
-		default:
-			break;
-		}
-	}
-
-#else
 	/**
 	 * @details 학습 파라미터를 초기화한다.
 	 * @param param 파라미터 장치 메모리 포인터
@@ -237,87 +188,75 @@ struct param_filler {
 		switch(type) {
 		case ParamFillerType::Constant: {
 			size_t size = data->getCount();
-			for(uint32_t i = 0; i < size; i++) mem[i] = value;
+			for(uint32_t i = 0; i < size; i++) mem[i] = this->value;
 			break;
 		}
 		case ParamFillerType::Xavier: {
+			/*
 			size_t size = data->getCount();
 			int fan_in = size / data->batches();
 			int fan_out = size / data->channels();
 			Dtype n = fan_in;
-			//Dtype n = (fan_in + fan_out)/Dtype(2);
-			//Dtype n = fan_out;
 			Dtype scale = sqrt(Dtype(3)/n);
-            //std::cout << "fan_in: " << fan_in << ", fan_out: " << fan_out << ", scale: " <<
-            //   scale << std::endl;
-
-
-			/*
-			//std::cout << "sd_xavier: " << sd_xavier << std::endl;
-			random_device rd_xavier;
-			mt19937 gen_xavier(rd_xavier());
-			//uni _distribution<DATATYPE> normal_dist(0.0, 1.0);
-			uniform_real_distribution<Dtype> unifrom_dist(-scale, scale);
-			for(uint32_t i = 0; i < size; i++) mem[i] = unifrom_dist(gen_xavier);
-			*/
-
-
-			//RNGType rng;
-			//rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
 
 			// BOOST
 			boost::uniform_real<float> random_distribution(-scale,
                 boost::math::nextafter<float>(scale, std::numeric_limits<float>::max()));
 			boost::variate_generator<RNGType, boost::uniform_real<float> > 
                 variate_generator(rng, random_distribution);
-			//variate_generator.engine().seed();
-			//variate_generator.distribution().reset();
 
 			for(uint32_t i = 0; i < size; ++i) {
 				mem[i] = variate_generator();
 			}
-
-
-			/*
-			random_device rd_xavier;
-			mt19937 gen_xavier(rd_xavier());
-			normal_distribution<DATATYPE> normal_dist(0.0, 1.0);
-			for(uint32_t i = 0; i < size; i++) mem[i] = normal_dist(gen_xavier)*scale;
 			*/
 
+			SASSERT0(data->getCount());
+			int fan_in = data->getCount() / data->batches();
+			int fan_out = data->getCount() / data->channels();
+			Dtype n = fan_in;		// default to fan_in
+
+			// XXX: FAN_OUT, AVERAGE Option 적용되지 않음
+			const float scale = std::sqrt(3.f / n);
+			soooa_rng_uniform<Dtype>(data->getCount(), -scale, scale,
+					data->mutable_host_data());
 			break;
 		}
 		case ParamFillerType::Gaussian: {
+			/*
 			size_t size = data->getCount();
-
-			//typedef boost::mt19937 RNGType;
-			//RNGType rng;
-			//rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
-
 			boost::normal_distribution<float> random_distribution(0, value);
 			boost::variate_generator<RNGType, boost::normal_distribution<float> >
 			variate_generator(rng, random_distribution);
 			for (uint32_t i = 0; i < size; ++i) {
 				mem[i] = variate_generator();
 			}
-
-			/*
-			int fan_in = size / data->batches();
-			int fan_out = size / data->channels();
-			Dtype scale = sqrt(1.0f/fan_out);
-            std::cout << "sd_gaussian: " << scale << std::endl;
-			random_device rd_gaussian;
-			mt19937 gen_gaussian(rd_gaussian());
-			normal_distribution<Dtype> normal_dist(0.0, scale);
-			for(uint32_t i = 0; i < size; i++) mem[i] = normal_dist(gen_gaussian)*scale;
 			*/
+			SASSERT0(data->getCount());
+			soooa_rng_gaussian<Dtype>(data->getCount(), this->mean, this->std,
+					data->mutable_host_data());
+
+			//XXX: sparse 무시
+			break;
+		}
+		case ParamFillerType::MSRA: {
+			SASSERT0(data->getCount());
+			int fan_in = data->getCount() / data->batches();
+			int fan_out = data->getCount() / data->channels();
+			Dtype n = fan_in;		// default to fan_in
+
+			// XXX: FAN_OUT, AVERAGE Option 적용되지 않음
+			const float std = std::sqrt(2.f / n);
+			soooa_rng_gaussian<Dtype>(data->getCount(), 0.0f, this->std,
+					data->mutable_host_data());
 			break;
 		}
 		default:
 			break;
 		}
 	}
-#endif
+
+private:
+
 
 };
 

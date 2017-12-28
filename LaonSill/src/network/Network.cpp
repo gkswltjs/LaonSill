@@ -296,7 +296,7 @@ template <typename Dtype>
 void Network<Dtype>::load(string path) {
     ifstream ifs(path, std::ios::in | std::ios::binary);
 
-    SASSERT0(ifs.is_open());
+    SASSERT(ifs.is_open(), "Could not open file: %s", path.c_str());
 
     // TODO : 반드시 구현 필요
 	// load data list from model file

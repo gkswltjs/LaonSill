@@ -126,16 +126,20 @@
                     ["decay_mult", "double"]
                 ]
             ],
-            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
                 [
                     ["type", "ParamFillerType"],
-                    ["value", "double"]
+                    ["value", "double"],
+					["mean", "double"],
+					["std", "double"]
                 ]
             ],
-            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
                 [
                     ["type", "ParamFillerType"],
-                    ["value", "double"]
+                    ["value", "double"],
+					["mean", "double"],
+					["std", "double"]
                 ]
             ],
 			["biasTerm", "bool", "true"]
@@ -165,16 +169,20 @@
                     ["decay_mult", "double"]
                 ]
             ],
-            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+            ["weightFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
                 [
                     ["type", "ParamFillerType"],
-                    ["value", "double"]
+                    ["value", "double"],
+					["mean", "double"],
+					["std", "double"]
                 ]
             ],
-            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
                 [
                     ["type", "ParamFillerType"],
-                    ["value", "double"]
+                    ["value", "double"],
+					["mean", "double"],
+					["std", "double"]
                 ]
             ],
             ["axis", "int", "1"]
@@ -305,16 +313,20 @@
             ["useGlobalStats", "bool", "false"],
             ["movingAverageFraction", "float", "0.999"],
             ["eps", "float", "1e-5"],
-            ["scaleFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+            ["scaleFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
                 [
                     ["type", "ParamFillerType"],
-                    ["value", "double"]
+                    ["value", "double"],
+					["mean", "double"],
+					["std", "double"]
                 ]
             ],
-            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
                 [
                     ["type", "ParamFillerType"],
-                    ["value", "double"]
+                    ["value", "double"],
+					["mean", "double"],
+					["std", "double"]
                 ]
             ],
             ["scaleBias", "bool", "false"]
@@ -863,7 +875,7 @@
     "VARS" : 
 	[
 		["operation", "ElementWiseOp", "ElementWiseOp::SUM"],
-		["coeff", "std::vector<float>", "{}"],
+		["coeff", "std::vector<float>", ""],
 		["stableProdGrad", "bool", "true"]
 	],
     "KEYVARS" : ["elementWiseOp"]
@@ -898,7 +910,7 @@
     "VARS" : 
 	[
 		["metric", "AccuracyMetric", "AccuracyMetric::PixelAccuracy"],
-		["ignoreLabel", "std::vector<int>", "{}"],
+		["ignoreLabel", "std::vector<int>", ""],
 		["reset", "bool", "true"]
 	],
     "KEYVARS" : []
@@ -1482,10 +1494,12 @@
     "VARS" : 
 	[
 		["acrossSpatial", "bool", "true"],
-		["scaleFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0}",
+		["scaleFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
 			[
 				["type", "ParamFillerType"],
-				["value", "double"]
+				["value", "double"],
+				["mean", "double"],
+				["std", "double"]
 			]
 		],
 		["channelShared", "bool", "true"],
