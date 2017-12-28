@@ -45,6 +45,7 @@ public:
         CelebAInput,            // CelebA 입력 레이어
         KistiInput,             // Kisti project input layer. (FIXME: name;;;)
         VOCPascalInput,         // VOC PASCAL data
+        YOLOInput,              // YOLO Input
         ILSVRCInput,
 
 		FullyConnected, 		// Fully Connected 레이어

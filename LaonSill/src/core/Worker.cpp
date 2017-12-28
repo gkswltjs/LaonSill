@@ -624,6 +624,19 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
             }
             break;
 
+        case 2:     // YOLO
+            {
+                inputLayers = network->findLayersByType(Layer<float>::AnnotationData);
+                SASSUME0(inputLayers.size() == 1);
+                AnnotationDataLayer<float>* inputLayer = 
+                    (AnnotationDataLayer<float>*)inputLayers[0];
+                
+                commonOutputLayer = network->findLayer("conv22d");
+                WorkContext::updateLayer(networkID, inputLayer->layerID);
+                inputLayer->feedImage(channel, height, width, imageData);
+            }
+            break;
+
         default:
             SASSERT(false, "invalid base network type(%d)", baseNetworkType);
     }
@@ -633,43 +646,137 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
 
     Job* pubJob = getPubJob(job);
 
-    int count = commonOutputLayer->_outputData[0]->getCount();
-    const float* result = commonOutputLayer->_outputData[0]->host_data();
-    int resultCount = 0;
+    if (baseNetworkType < 2) {
+        // for SSD, frcnn
 
-    for (int i = 0; i < count; i += 7) {
-        resultCount++;
-    }
-    pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
+        int count = commonOutputLayer->_outputData[0]->getCount();
+        const float* result = commonOutputLayer->_outputData[0]->host_data();
+        int resultCount = 0;
 
-    float left, top, right, bottom;
-    for (int i = 0; i < resultCount; i++) {
-    	if (baseNetworkType == 0) {     // SSD, 여기서는 무조건 절대좌표로 변환한다.
-            left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
-            top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);
-            right	= std::min(std::max(result[i * 7 + 5], 0.f), 1.f);
-            bottom	= std::min(std::max(result[i * 7 + 6], 0.f), 1.f);
+        for (int i = 0; i < count; i += 7) {
+            resultCount++;
+        }
+        pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
 
-    		left    = int(left * width);
-			top     = int(top * height);
-			right   = int(right * width);
-			bottom  = int(bottom * height);
-    	} else {        // FRCNN case
-            left	= int(result[i * 7 + 3]);
-            top		= int(result[i * 7 + 4]);
-            right	= int(result[i * 7 + 5]);
-            bottom	= int(result[i * 7 + 6]);
+        float left, top, right, bottom;
+        for (int i = 0; i < resultCount; i++) {
+            if (baseNetworkType == 0) {     // SSD, 여기서는 무조건 절대좌표로 변환한다.
+                left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
+                top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);
+                right	= std::min(std::max(result[i * 7 + 5], 0.f), 1.f);
+                bottom	= std::min(std::max(result[i * 7 + 6], 0.f), 1.f);
+
+                left    = int(left * width);
+                top     = int(top * height);
+                right   = int(right * width);
+                bottom  = int(bottom * height);
+            } else {        // FRCNN case
+                left	= int(result[i * 7 + 3]);
+                top		= int(result[i * 7 + 4]);
+                right	= int(result[i * 7 + 5]);
+                bottom	= int(result[i * 7 + 6]);
+            }
+
+            float score = result[i * 7 + 2];
+            int labelIndex = (int)(result[i * 7 + 1] + 0.000001);
+
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&top);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&left);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&bottom);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&right);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&score);
+            pubJob->addJobElem(Job::IntType, 1, (void*)&labelIndex);
+        }
+    } else {
+        SASSERT0(baseNetworkType == 2);     // YOLO case
+        const float* result = commonOutputLayer->_outputData[0]->host_data();
+
+        // XXX: 나중에 코드 정리해야 함.
+        int gridCount = 169;
+        int gridAxisCount = 13;
+        int elemCountPerGrid = 125;
+        int anchorBoxCount = 5;
+        int classCount = 20;
+        int coordCount = 5;
+        int imageWidth = 416;
+        int imageHeight = 416;
+        float confThres = 0.48;
+
+        int resultCount = 0;
+        float left, top, right, bottom;
+
+        // XXX: 일단 루프한번 돌고, 결과 개수를 얻는다. 
+        //      매우 비효율적이다.. T_T 지선 연구원님 고쳐줘요~
+        for (int i = 0; i < gridCount; i++) {
+            for (int j = 0; j < anchorBoxCount; j++) {
+                int resultBaseIndex = i * elemCountPerGrid + j * (classCount + coordCount);
+                float c = result[resultBaseIndex + 4];
+
+                float maxClassConfidence = result[resultBaseIndex + 5];
+
+                for (int classIdx = 1; classIdx < classCount; classIdx++) {
+                    if (maxClassConfidence < result[resultBaseIndex + 5 + classIdx]) {
+                        maxClassConfidence = result[resultBaseIndex + 5 + classIdx];
+                    }
+                }
+
+                float score = c * maxClassConfidence;
+                if (score > confThres) {
+                    resultCount++;
+                }
+            }
         }
 
-        float score = result[i * 7 + 2];
-        int labelIndex = (int)(result[i * 7 + 1] + 0.000001);
+        cout << "result count : " << resultCount << endl;
 
-        pubJob->addJobElem(Job::FloatType, 1, (void*)&top);
-        pubJob->addJobElem(Job::FloatType, 1, (void*)&left);
-        pubJob->addJobElem(Job::FloatType, 1, (void*)&bottom);
-        pubJob->addJobElem(Job::FloatType, 1, (void*)&right);
-        pubJob->addJobElem(Job::FloatType, 1, (void*)&score);
-        pubJob->addJobElem(Job::IntType, 1, (void*)&labelIndex);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
+
+        for (int i = 0; i < gridCount; i++) {
+            int gridX = i % gridAxisCount;
+            int gridY = i / gridAxisCount;
+
+            for (int j = 0; j < anchorBoxCount; j++) {
+                int resultBaseIndex = i * elemCountPerGrid + j * (classCount + coordCount);
+                float x = result[resultBaseIndex + 0];
+                float y = result[resultBaseIndex + 1];
+                float w = result[resultBaseIndex + 2];
+                float h = result[resultBaseIndex + 3];
+                float c = result[resultBaseIndex + 4];
+
+                float maxClassConfidence = result[resultBaseIndex + 5];
+                int maxClassIdx = 0;
+
+                for (int classIdx = 1; classIdx < classCount; classIdx++) {
+                    if (maxClassConfidence < result[resultBaseIndex + 5 + classIdx]) {
+                        maxClassIdx = classIdx;
+                        maxClassConfidence = result[resultBaseIndex + 5 + classIdx];
+                    }
+                }
+
+                float score = c * maxClassConfidence;
+                if (score <= confThres) {
+                    continue; 
+                }
+
+                top = (float)((((float)gridY + y) / (float)gridAxisCount - 0.5 * h) * 
+                    (float)imageHeight);
+                bottom = (float)((((float)gridY + y) / (float)gridAxisCount + 0.5 * h) * 
+                    (float)imageHeight);
+                left = (float)((((float)gridX + x) / (float)gridAxisCount - 0.5 * w) * 
+                    (float)imageWidth);
+                right = (float)((((float)gridX + x) / (float)gridAxisCount + 0.5 * w) * 
+                    (float)imageWidth);
+
+                pubJob->addJobElem(Job::FloatType, 1, (void*)&top);
+                pubJob->addJobElem(Job::FloatType, 1, (void*)&left);
+                pubJob->addJobElem(Job::FloatType, 1, (void*)&bottom);
+                pubJob->addJobElem(Job::FloatType, 1, (void*)&right);
+                pubJob->addJobElem(Job::FloatType, 1, (void*)&score);
+                pubJob->addJobElem(Job::IntType, 1, (void*)&maxClassIdx);
+
+                cout << "detected.. " << endl;
+            }
+        }
     }
 
     Broker::publish(job->getJobID(), pubJob);

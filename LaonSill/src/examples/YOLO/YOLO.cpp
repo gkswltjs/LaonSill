@@ -23,8 +23,8 @@ using namespace std;
 
 //#define YOLO_PRETRAIN     1
 //#define YOLO_PRETRAIN2    1
-#define YOLO_TRAIN        1
-//#define YOLO_INFERENCE    1
+//#define YOLO_TRAIN        1
+#define YOLO_INFERENCE    1
 
 template<typename Dtype>
 void YOLO<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
@@ -45,7 +45,7 @@ void YOLO<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
 #elif YOLO_TRAIN
 #define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_train.json")
 #else
-#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_pretrain.json")
+#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_test_live.json")
 #endif
 
 template<typename Dtype>

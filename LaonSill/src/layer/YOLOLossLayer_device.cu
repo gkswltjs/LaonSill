@@ -28,52 +28,62 @@ using namespace std;
 
 #define YOLO_GROUND_TRUTH_ELEM_COUNT    (YOLO_CLASS_COUNT + 6)
 
+#define YOLOINPUT_ELEMCOUNT_PER_GRID            7
+
 
 #define EPSILON                 0.000001
 
 template <typename Dtype>
-__global__ void YoloBackward(const Dtype* input, const Dtype* input2, const Dtype* output,
+__global__ void YoloBackward(const Dtype* input, const Dtype* input2,
     int size, Dtype noobj, Dtype coord, Dtype* grad) {
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
 		return;
 
-    Dtype gridX = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 0];
-    Dtype gridY = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 1];
+    Dtype labelClass = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 6];
 
-    int gridXInt = (int)(gridX + EPSILON);
-    int gridYInt = (int)(gridY + EPSILON);
+    int labelClassInt = (int)(labelClass + EPSILON);
 
-    int gridIdx = gridXInt * YOLO_GRID_ONE_AXIS_COUNT + gridYInt;
-    if (gridIdx != (idx % YOLO_GRID_COUNT)) {
+    if (labelClassInt == 0) {
         for (int i = 0; i < YOLO_GRID_ELEM_COUNT; i++) {
-            grad[idx * YOLO_GRID_ELEM_COUNT + 0] = 0.0;
+            grad[idx * YOLO_GRID_ELEM_COUNT + i] = 0.0;
         }
 
         for (int j = 0; j < YOLO_ANCHOR_BOX_COUNT; j++) {
             int confidenceIndex = 
                 idx * YOLO_GRID_ELEM_COUNT + j * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
-            grad[confidenceIndex] = 2.0 * output[confidenceIndex];
+            grad[confidenceIndex] = noobj * (2.0) * input[confidenceIndex];
         }
 
         return;
     }
 
+    Dtype x = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 2];
+    Dtype y = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 3];
+    Dtype w = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 4];
+    Dtype h = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 5];
+
     // backward boxes & classes
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
         int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
 
-        grad[boxBaseIndex + 0] = 2.0 * output[boxBaseIndex + 0];
-        grad[boxBaseIndex + 1] = 2.0 * output[boxBaseIndex + 1];
+        grad[boxBaseIndex + 0] = coord * (2.0) * (input[boxBaseIndex + 0] - x);
+        grad[boxBaseIndex + 1] = coord * (2.0) * (input[boxBaseIndex + 1] - y);
         grad[boxBaseIndex + 2] = 
-            output[boxBaseIndex + 2] / sqrtf(input[boxBaseIndex + 2] + EPSILON);
+            coord * (sqrtf(input[boxBaseIndex + 2] + EPSILON) - sqrtf(w + EPSILON))
+                    / sqrtf(input[boxBaseIndex + 2] + EPSILON);
         grad[boxBaseIndex + 3] = 
-            output[boxBaseIndex + 3] / sqrtf(input[boxBaseIndex + 3] + EPSILON);
-        grad[boxBaseIndex + 4] = 2.0 * output[boxBaseIndex + 4];
+            coord * (sqrtf(input[boxBaseIndex + 3] + EPSILON) - sqrtf(h + EPSILON))
+                    / sqrtf(input[boxBaseIndex + 3] + EPSILON);
+        grad[boxBaseIndex + 4] = (2.0) * (input[boxBaseIndex + 4] - 1.0);
 
         for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
-            grad[boxBaseIndex + 5 + j] = 2.0 * output[boxBaseIndex + 5 + j];
+            if (j == labelClassInt - 1) {
+                grad[boxBaseIndex + 5 + j] = (2.0) * (input[boxBaseIndex + 5 + j] - 1.0);
+            } else {
+                grad[boxBaseIndex + 5 + j] = (2.0) * (input[boxBaseIndex + 5 + j]);
+            }
         }
     }
 }
@@ -88,35 +98,27 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
 	if (idx >= size)
 		return;
 
-    Dtype iou[YOLO_ANCHOR_BOX_COUNT];
+    Dtype labelClass = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 6];
 
-    Dtype gridX = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 0];
-    Dtype gridY = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 1];
+    int labelClassInt = (int)(labelClass + EPSILON);
 
-    int gridXInt = (int)(gridX + EPSILON);
-    int gridYInt = (int)(gridY + EPSILON);
-
-    int gridIdx = gridXInt * YOLO_GRID_ONE_AXIS_COUNT + gridYInt;
-    if (gridIdx != (idx % YOLO_GRID_COUNT)) {
-        for (int i = 0; i < YOLO_GRID_ELEM_COUNT; i++) {
-            output[idx * YOLO_GRID_ELEM_COUNT + 0] = 0.0;
-        }
-
+    if (labelClassInt == 0) {
+        output[idx] = 0.0;
         for (int j = 0; j < YOLO_ANCHOR_BOX_COUNT; j++) {
             int confidenceIndex = 
                 idx * YOLO_GRID_ELEM_COUNT + j * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
             Dtype c1 = input[confidenceIndex];
-            output[confidenceIndex] = noobj * (c1 - 1.0) * (c1 - 1.0);
+            output[idx] = output[idx] + noobj * (c1 - 0.0) * (c1 - 0.0);
         }
 
         return;
     }
 
     // ground truth Box
-    Dtype x = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 2];
-    Dtype y = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 3];
-    Dtype w = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 4];
-    Dtype h = input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 5];
+    Dtype x = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 2];
+    Dtype y = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 3];
+    Dtype w = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 4];
+    Dtype h = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 5];
 
     // anchor boxes
     int bestBoxIndex = 0;
@@ -148,8 +150,6 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
         b_union = w1 * h1 + w * h - b_inter;
         Dtype box_iou = b_inter / b_union;
 
-        iou[i] = box_iou;
-
         if (i == 0) {
             bestBoxIndex = 0;
             bestBoxIOU = box_iou;
@@ -162,6 +162,7 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
     }
 
     // forward boxes & classes
+    output[idx] = 0.0;
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
         int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
         Dtype x1 = input[boxBaseIndex + 0];
@@ -170,30 +171,29 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
         Dtype h1 = input[boxBaseIndex + 3];
         Dtype c1 = input[boxBaseIndex + 4];
 
-        if (iou[i] > 0 && bestBoxIndex == i) {
-            output[boxBaseIndex + 0] = coord * (x1 - x) * (x1 - x);
-            output[boxBaseIndex + 1] = coord * (y1 - y) * (y1 - y);
-            output[boxBaseIndex + 2] = coord *
-                (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON)) *
-                (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON));
-            output[boxBaseIndex + 3] = coord *
-                (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON)) *
-                (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON));
-            output[boxBaseIndex + 4] = (c1 - 1.0) * (c1 - 1.0);
-        } else {
-            output[idx * YOLO_GRID_ELEM_COUNT + 0] = 0.0;
-            output[idx * YOLO_GRID_ELEM_COUNT + 1] = 0.0;
-            output[idx * YOLO_GRID_ELEM_COUNT + 2] = 0.0;
-            output[idx * YOLO_GRID_ELEM_COUNT + 3] = 0.0;
-            output[idx * YOLO_GRID_ELEM_COUNT + 4] = noobj * (c1 - 1.0) * (c1 - 1.0);
-        }
+        if (bestBoxIndex != i)
+            continue;
+
+        output[idx] = output[idx] + coord * (x1 - x) * (x1 - x);
+        output[idx] = output[idx] + coord * (y1 - y) * (y1 - y);
+        output[idx] = output[idx] + coord *
+            (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON)) *
+            (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON));
+        output[idx] = output[idx] + coord *
+            (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON)) *
+            (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON));
+        output[idx] = output[idx] + (c1 - 1.0) * (c1 - 1.0);
 
         for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
-            output[boxBaseIndex + 5 + j] =
-                (input[boxBaseIndex + 5 + j] - 
-                input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 6 + j]) * 
-                (input[boxBaseIndex + 5 + j] - 
-                input2[idx * YOLO_GROUND_TRUTH_ELEM_COUNT + 6 + j]);
+            if (j == labelClassInt - 1) {
+                output[idx] = output[idx] + 
+                    (input[boxBaseIndex + 5 + j] - 1.0) * 
+                    (input[boxBaseIndex + 5 + j] - 1.0);
+            } else {
+                output[idx] = output[idx] + 
+                    (input[boxBaseIndex + 5 + j] - 0.0) * 
+                    (input[boxBaseIndex + 5 + j] - 0.0);
+            }
         }
     }
 }
@@ -261,11 +261,10 @@ void YOLOLossLayer<Dtype>::backpropagation() {
 
     const Dtype *inputData = this->_inputData[0]->device_data();
     const Dtype *inputData2 = this->_inputData[1]->device_data();
-    const Dtype *outputData = this->_outputData[0]->device_data();
     Dtype *outputGrad = this->_outputData[0]->mutable_device_grad();
 
     YoloBackward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, inputData2, outputData, size, (Dtype)SLPROP(YOLOLoss, noobj),
+        inputData, inputData2, size, (Dtype)SLPROP(YOLOLoss, noobj),
         (Dtype)SLPROP(YOLOLoss, coord), outputGrad);
 }
 
@@ -276,7 +275,7 @@ Dtype YOLOLossLayer<Dtype>::cost() {
 
     const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
     int batchCount = inputShape[0];
-    int count = this->_outputData[0]->getCount();
+    int count = YOLO_GRID_COUNT * batchCount;
 
     for (int i = 0; i < count; i++) {
         avg += outputData[i];

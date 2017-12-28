@@ -2,27 +2,15 @@
 	"layers" :
 	[
 		{
-	        "name" : "data",
-	        "layer" : "YOLOInput",
-	        "id" : 0,
-	        "output" : ["data", "label"],
-			"dataTransformParam.mean" : [104.0, 117.0, 123.0],
-
-			"resizeParam.prob" : 1.0,
-			"resizeParam.resizeMode" : "WARP",
-			"resizeParam.height" : 416, 
-			"resizeParam.width" : 416,
-			"resizeParam.interpMode0" : "LINEAR",
-			"resizeParam.interpMode1" : "AREA",
-			"resizeParam.interpMode2" : "NEAREST",
-			"resizeParam.interpMode3" : "CUBIC",
-			"resizeParam.interpMode4" : "LANCZOS4",
-
-			"source" : "$(LAONSILL_HOME)/data/sdf/voc2007_train_sdf/",
-
-			"labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.prototxt",
-			"annoType" : "BBOX"
-	    },
+			"name" : "data",
+			"layer" : "AnnotationData",
+			"id" : 0,
+			"output" : ["data"],
+			"imageHeight" : 416,
+			"imageWidth" : 416,
+			"mean" : [104.0, 117.0, 123.0],
+			"live" : true
+		},
 
 		{
 			"name" : "conv1",
@@ -927,42 +915,13 @@
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.2
-		},
-
-        {
-            "name" : "sigmoid2",
-            "layer" : "Sigmoid2",
-            "id" : 275,
-            "input" : ["conv22d"],
-            "output" : ["conv22d"]
-        },
-
-        {
-            "name" : "loss",
-            "layer" : "YOLOLoss",
-            "id" : 280,
-            "input" : ["conv22d", "label"],
-            "output" : ["loss"]
-        }
+		}
 	],
 
 	"configs" :
 	{
-		"batchSize" : 8,
-		"epochs" : 160, 
-		"lossLayer" : ["loss"],
-        "measureLayer" : ["loss"],
-		"gamma" : 0.1,
-		"testInterval" : 10,
-		"saveInterval" : 10,
-		"savePathPrefix" : "", 
-		"baseLearningRate" : 0.001,
-		"stepSize" : 50000,
-        "stepValue" : [960000, 1440000],
-		"weightDecay" : 0.0005,
-		"momentum" : 0.9,
-		"lrPolicy" : "Multistep",
-		"optimizer" : "Momentum",
-        "keepSaveBestModel" : false
+		"batchSize" : 1,
+		"epochs" : 1, 
+        "status" : "Test"
 	}
 }

@@ -205,13 +205,11 @@ void Communicator::listenerThread() {
                 // FIXME: should handle error.
                 //      session full 오류메세지를 클라이언트에게 전달해야 한다.
                 COLD_LOG(ColdLog::WARNING, true, "not enough free session ID");
-                SASSERT(false, "not enough free session ID."
-                    "This should be handled in the future");
+                close(newFd);
+            } else {
+                COLD_LOG(ColdLog::INFO, true, "get session. session ID=%d", sessId);
+                Communicator::wakeup(sessId);
             }
-
-            COLD_LOG(ColdLog::INFO, true, "get session. session ID=%d", sessId);
-
-            Communicator::wakeup(sessId);
 
             selectRet--;
         }
