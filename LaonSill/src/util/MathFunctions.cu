@@ -624,7 +624,24 @@ void soooa_rng_uniform(const int n, const Dtype a, const Dtype b, Dtype* r) {
 #endif
 }
 
-template void soooa_rng_uniform(const int n, const float a, const float b, float* r);
+template void soooa_rng_uniform<float>(const int n, const float a, const float b, float* r);
+
+
+template <typename Dtype>
+void soooa_rng_gaussian(const int n, float a, float sigma, Dtype* r) {
+	SASSERT0(n >= 0);
+	SASSERT0(r);
+	SASSERT0(sigma > 0);
+
+	boost::normal_distribution<float> random_distribution(a, sigma);
+	boost::variate_generator<rng_t*, boost::normal_distribution<float> >
+		variate_generator(soooa_rng(), random_distribution);
+	for (int i = 0; i < n; i++) {
+		r[i] = variate_generator();
+	}
+}
+
+template void soooa_rng_gaussian<float>(const int n, float mu, float sigma, float* r);
 
 
 
