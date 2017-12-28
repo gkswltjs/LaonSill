@@ -1737,7 +1737,8 @@
 		"optimizer" : "Momentum",
 		"loadPath" : "$(LAONSILL_HOME)/param/VGG_ILSVRC_16_layers_fc_reduced_SSD_512x512.param",
         "keepSaveBestModel" : true,
-        "keepSaveBestModelStartIterNum" : 1000
+        "keepSaveBestModelStartIterNum" : 1000,
+        "keepSaveIntervalModelCount" : 4
 	}
 
 }

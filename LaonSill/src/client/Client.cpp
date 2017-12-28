@@ -56,16 +56,28 @@ int Client::sendJob(int fd, char* buf, Job* job) {
     return (int)ret;
 }
 
-int Client::recvJob(int fd, char* buf, Job** job) {
+int Client::recvJob(int fd, char* buf, Job** job, int* bufLen) {
     // see handlePushJobMsg()@Communicator.cpp && JobType enumeration @ Job.h
     MessageHeader msgHdr;
-    Communicator::CommRetType ret = Communicator::recvMessage(fd, msgHdr, buf, false);
 
-    if (ret != Communicator::Success)
+    Communicator::CommRetType ret;
+    if ((*bufLen) > MessageHeader::MESSAGE_DEFAULT_SIZE)
+        ret = Communicator::recvMessage(fd, msgHdr, buf, true);
+    else
+        ret = Communicator::recvMessage(fd, msgHdr, buf, false);
+
+    if (ret != Communicator::Success) {
+        if (ret == Communicator::RecvOnlyHeader) {
+            (*bufLen) = msgHdr.getMsgLen();
+        } else {
+            (*bufLen) = -1;
+        }
         return (int)ret;
+    }
 
     SASSERT0(msgHdr.getMsgType() == MessageHeader::PushJob);
     Communicator::recvJobFromBuffer(job, buf);
+    (*bufLen) = msgHdr.getMsgLen();
 
     return (int)ret;
 }
@@ -126,7 +138,8 @@ void Client::clientMain(const char* hostname, int portno) {
     SASSERT0(retval == Communicator::Success);
 
     Job* createNetworkReplyJob;
-    retval = recvJob(sockFd, buf, &createNetworkReplyJob);
+    int bufSize = 0;
+    retval = recvJob(sockFd, buf, &createNetworkReplyJob, &bufSize);
     SASSERT0(retval == Communicator::Success);
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     string networkID = createNetworkReplyJob->getStringValue(0);

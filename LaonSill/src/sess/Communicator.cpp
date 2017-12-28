@@ -714,8 +714,11 @@ Communicator::CommRetType Communicator::recvMessage(
             if (err == ECONNREFUSED)
                 return Communicator::RecvConnRefused;
 
+            if (err == ECONNRESET)
+                return Communicator::RecvPeerShutdown;
+
             COLD_LOG(ColdLog::ERROR, true, "recv(peek message) failed. errno=%d", err);
-            SASSERT(0, "");
+            SASSERT0(false);
         }
 
         if (recvRet == MessageHeader::MESSAGE_HEADER_SIZE)
@@ -730,7 +733,12 @@ Communicator::CommRetType Communicator::recvMessage(
     }
 
     // (2) recv message
-    int remain = msgHdr.getMsgLen();
+    int remain;
+    if (skipMsgPeek)
+        remain = MessageHeader::MESSAGE_HEADER_SIZE;
+    else
+        remain = msgHdr.getMsgLen();
+
     int offset = 0;
     while (remain != 0) {
         SASSERT(remain >= 0, "");
@@ -748,6 +756,9 @@ Communicator::CommRetType Communicator::recvMessage(
             if (err == ECONNREFUSED)
                 return Communicator::RecvConnRefused;
 
+            if (err == ECONNRESET)
+                return Communicator::RecvPeerShutdown;
+
             COLD_LOG(ColdLog::ERROR, true, "recv() failed. errno=%d", err);
             SASSERT(0, "");
             //return Communicator::RecvFailed;
@@ -755,7 +766,13 @@ Communicator::CommRetType Communicator::recvMessage(
 
         remain -= recvRet;
         offset += recvRet;
+
+        if (skipMsgPeek && (remain == 0) && (offset == MessageHeader::MESSAGE_HEADER_SIZE)) {
+            MsgSerializer::deserializeMsgHdr(msgHdr, buf);
+            remain += msgHdr.getMsgLen() - MessageHeader::MESSAGE_HEADER_SIZE;
+        }
     }
+
 
     return Communicator::Success; 
 }

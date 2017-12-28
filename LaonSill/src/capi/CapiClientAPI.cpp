@@ -51,20 +51,19 @@ using namespace std;
         }                                                                               \
     } while (0)
 
-#define CAPI_CHECK_RECV(job)                                                            \
+#define CAPI_CHECK_RECV(job, bufSize)                                                   \
     do {                                                                                \
         if (ret == Communicator::RecvOnlyHeader) {                                      \
             if (bigBuffer)                                                              \
                 free(bigBuffer);                                                        \
                                                                                         \
-            Job* myJob = (Job*) job ;                                                   \
-            int bufSize = MessageHeader::MESSAGE_HEADER_SIZE + myJob->getJobSize();     \
             bigBuffer = (char*)malloc(bufSize);                                         \
                                                                                         \
             if (bigBuffer == NULL) {                                                    \
                 close(sockFD);                                                          \
                 return ClientError::ClientHandleBufferAllocationFailed;                 \
             }                                                                           \
+            ret = Client::recvJob(sockFD, bigBuffer, & job, & bufSize);                 \
         } else if (ret != Communicator::Success) {                                      \
             if (bigBuffer != NULL)                                                      \
                 free(bigBuffer);                                                        \
@@ -173,8 +172,10 @@ extern "C" int createNetwork(int sockFD, int hasSession, char* buffer, char* net
     CAPI_CHECK_SEND();
 
     Job* createNetworkReplyJob;
-    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &createNetworkReplyJob);
-    CAPI_CHECK_RECV(createNetworkReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &createNetworkReplyJob,
+            &bufSize);
+    CAPI_CHECK_RECV(createNetworkReplyJob, bufSize);
 
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     strcpy(networkID, createNetworkReplyJob->getStringValue(0).c_str());
@@ -209,8 +210,10 @@ extern "C" int createNetworkFromFile(int sockFD, int hasSession, char* buffer,
     CAPI_CHECK_SEND();
 
     Job* createNetworkReplyJob;
-    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &createNetworkReplyJob);
-    CAPI_CHECK_RECV(createNetworkReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &createNetworkReplyJob,
+            &bufSize);
+    CAPI_CHECK_RECV(createNetworkReplyJob, bufSize);
 
     SASSERT0(createNetworkReplyJob->getType() == JobType::CreateNetworkReply);
     strcpy(networkID, createNetworkReplyJob->getStringValue(0).c_str());
@@ -234,7 +237,8 @@ extern "C" int destroyNetwork(int sockFD, char* buffer, int isCreated, char *net
         return ClientError::SendJobFailed;
 
     Job* destroyNetworkReplyJob;
-    ret = Client::recvJob(sockFD, buffer, &destroyNetworkReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, buffer, &destroyNetworkReplyJob, &bufSize);
     if (ret != ClientError::Success)
         return ClientError::RecvJobFailed;
 
@@ -258,7 +262,8 @@ extern "C" int buildNetwork(int sockFD, char* buffer, int isCreated, char *netwo
         return ClientError::SendJobFailed;
 
     Job* buildNetworkReplyJob;
-    ret = Client::recvJob(sockFD, buffer, &buildNetworkReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, buffer, &buildNetworkReplyJob, &bufSize);
     if (ret != ClientError::Success)
         return ClientError::RecvJobFailed;
 
@@ -281,7 +286,8 @@ extern "C" int resetNetwork(int sockFD, char* buffer, int isCreated, char *netwo
     delete resetNetworkJob;
 
     Job* resetNetworkReplyJob;
-    ret = Client::recvJob(sockFD, buffer, &resetNetworkReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, buffer, &resetNetworkReplyJob, &bufSize);
     if (ret != ClientError::Success)
         return ClientError::RecvJobFailed;
 
@@ -305,7 +311,8 @@ extern "C" int runNetwork(int sockFD, char* buffer, int isCreated, char* network
         return ClientError::SendJobFailed;
 
     Job* runNetworkReplyJob;
-    ret = Client::recvJob(sockFD, buffer, &runNetworkReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, buffer, &runNetworkReplyJob, &bufSize);
     if (ret != ClientError::Success)
         return ClientError::RecvJobFailed;
 
@@ -335,7 +342,8 @@ extern "C" int runNetworkMiniBatch(int sockFD, char* buffer, int isCreated, char
         return ClientError::SendJobFailed;
 
     Job* runNetworkReplyJob;
-    ret = Client::recvJob(sockFD, buffer, &runNetworkReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, buffer, &runNetworkReplyJob, &bufSize);
     if (ret != ClientError::Success)
         return ClientError::RecvJobFailed;
     SASSERT0(runNetworkReplyJob->getType() == JobType::RunNetworkReply);
@@ -365,8 +373,10 @@ extern "C" int saveNetwork(int sockFD, char* buffer, int isCreated, char* networ
     CAPI_CHECK_SEND();
 
     Job* saveNetworkReplyJob;
-    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &saveNetworkReplyJob);
-    CAPI_CHECK_RECV(saveNetworkReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &saveNetworkReplyJob,
+            &bufSize);
+    CAPI_CHECK_RECV(saveNetworkReplyJob, bufSize);
 
     SASSERT0(saveNetworkReplyJob->getType() == JobType::SaveNetworkReply);
     delete saveNetworkReplyJob;
@@ -394,8 +404,10 @@ extern "C" int loadNetwork(int sockFD, char* buffer, int isCreated, char* networ
     CAPI_CHECK_SEND();
 
     Job* loadNetworkReplyJob;
-    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &loadNetworkReplyJob);
-    CAPI_CHECK_RECV(loadNetworkReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &loadNetworkReplyJob,
+            &bufSize);
+    CAPI_CHECK_RECV(loadNetworkReplyJob, bufSize);
 
     SASSERT0(loadNetworkReplyJob->getType() == JobType::LoadNetworkReply);
     delete loadNetworkReplyJob;
@@ -430,8 +442,9 @@ extern "C" int getObjectDetection(int sockFD, char* buffer, int isCreated, char*
     CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
-    CAPI_CHECK_RECV(runReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob, &bufSize);
+    CAPI_CHECK_RECV(runReplyJob, bufSize);
 
     SASSERT0(runReplyJob->getType() == JobType::RunNetworkWithInputDataReply);
     
@@ -483,11 +496,12 @@ extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreat
     CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
-    CAPI_CHECK_RECV(runReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob, &bufSize);
+    CAPI_CHECK_RECV(runReplyJob, bufSize);
 
     SASSERT0(runReplyJob->getType() == JobType::RunObjectDetectionNetworkWithInputReply);
-    
+
     int resultBoxCount = runReplyJob->getIntValue(0);
     int elemIdx = 1;
     for (int i = 0; i < resultBoxCount; i++) {
@@ -504,6 +518,8 @@ extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreat
 
         boxArray[i] = bbox;
         elemIdx += 6;
+
+        printf("get boxes. i=%d\n", i);
     }
     delete runReplyJob;
 
@@ -539,9 +555,10 @@ extern "C" int runClassificationWithInput(int sockFD, char* buffer, int isCreate
     CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob, &bufSize);
     
-    CAPI_CHECK_RECV(runReplyJob);
+    CAPI_CHECK_RECV(runReplyJob, bufSize);
 
     SASSERT0(runReplyJob->getType() == JobType::RunClassificationNetworkWithInputReply);
     
@@ -568,8 +585,9 @@ extern "C" int getMeasureItemName(int sockFD, char* buffer, char* networkID,
     CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
-    CAPI_CHECK_RECV(runReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob, &bufSize);
+    CAPI_CHECK_RECV(runReplyJob, bufSize);
     SASSERT0(runReplyJob->getType() == JobType::GetMeasureItemNameReply);
 
     int resultItemCount = runReplyJob->getIntValue(0);
@@ -613,8 +631,9 @@ extern "C" int getMeasures(int sockFD, char* buffer, char* networkID, int forwar
     CAPI_CHECK_SEND();
 
     Job* runReplyJob;
-    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob);
-    CAPI_CHECK_RECV(runReplyJob);
+    int bufSize = 0;
+    ret = Client::recvJob(sockFD, bigBuffer ? bigBuffer : buffer, &runReplyJob, &bufSize);
+    CAPI_CHECK_RECV(runReplyJob, bufSize);
     SASSERT0(runReplyJob->getType() == JobType::GetMeasuresReply);
 
     int measureCount = runReplyJob->getIntValue(0);

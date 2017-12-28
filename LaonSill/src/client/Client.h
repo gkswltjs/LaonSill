@@ -21,7 +21,7 @@ public:
     static void         clientMain(const char* hostname, int portno);
 
     static int          sendJob(int fd, char* buf, Job* job);
-    static int          recvJob(int fd, char* buf, Job** job);
+    static int          recvJob(int fd, char* buf, Job** job, int* bufLen);
     static int          connectRetry(int socketFd, const struct sockaddr *sockAddr,
                             socklen_t sockLen);
 };

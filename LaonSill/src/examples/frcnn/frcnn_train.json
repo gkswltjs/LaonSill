@@ -503,7 +503,8 @@
 		"optimizer" : "Momentum",
 		"loadPath" : "$(LAONSILL_HOME)/param/VGG_CNN_M_1024.param",
         "keepSaveBestModel" : true,
-        "keepSaveBestModelStartIterNum" : 1000
+        "keepSaveBestModelStartIterNum" : 1000,
+        "keepSaveIntervalModelCount" : 4
 	}
 
 }

@@ -569,6 +569,7 @@ void Worker::handleRunNetworkWithInputData(Job* job) {
     Broker::publish(job->getJobID(), pubJob);
 }
 
+
 void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     string networkID = job->getStringValue(0);
     int channel = job->getIntValue(1);
@@ -688,6 +689,16 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
             pubJob->addJobElem(Job::IntType, 1, (void*)&labelIndex);
         }
     } else {
+        // XXX: 이거 나중에 예쁘게 코드 정리하자
+        typedef struct yoloJobPack_s {
+            float top;
+            float left;
+            float bottom;
+            float right;
+            float score;
+            int labelIndex;
+        } yoloJobPack;
+
         SASSERT0(baseNetworkType == 2);     // YOLO case
         const float* result = commonOutputLayer->_outputData[0]->host_data();
 
@@ -700,36 +711,12 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
         int coordCount = 5;
         int imageWidth = 416;
         int imageHeight = 416;
-        float confThres = 0.48;
+        float confThres = 0.0;
 
         int resultCount = 0;
         float left, top, right, bottom;
 
-        // XXX: 일단 루프한번 돌고, 결과 개수를 얻는다. 
-        //      매우 비효율적이다.. T_T 지선 연구원님 고쳐줘요~
-        for (int i = 0; i < gridCount; i++) {
-            for (int j = 0; j < anchorBoxCount; j++) {
-                int resultBaseIndex = i * elemCountPerGrid + j * (classCount + coordCount);
-                float c = result[resultBaseIndex + 4];
-
-                float maxClassConfidence = result[resultBaseIndex + 5];
-
-                for (int classIdx = 1; classIdx < classCount; classIdx++) {
-                    if (maxClassConfidence < result[resultBaseIndex + 5 + classIdx]) {
-                        maxClassConfidence = result[resultBaseIndex + 5 + classIdx];
-                    }
-                }
-
-                float score = c * maxClassConfidence;
-                if (score > confThres) {
-                    resultCount++;
-                }
-            }
-        }
-
-        cout << "result count : " << resultCount << endl;
-
-        pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
+        vector<yoloJobPack> yoloPacks;
 
         for (int i = 0; i < gridCount; i++) {
             int gridX = i % gridAxisCount;
@@ -757,6 +744,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
                 if (score <= confThres) {
                     continue; 
                 }
+                resultCount++;
 
                 top = (float)((((float)gridY + y) / (float)gridAxisCount - 0.5 * h) * 
                     (float)imageHeight);
@@ -767,15 +755,28 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
                 right = (float)((((float)gridX + x) / (float)gridAxisCount + 0.5 * w) * 
                     (float)imageWidth);
 
-                pubJob->addJobElem(Job::FloatType, 1, (void*)&top);
-                pubJob->addJobElem(Job::FloatType, 1, (void*)&left);
-                pubJob->addJobElem(Job::FloatType, 1, (void*)&bottom);
-                pubJob->addJobElem(Job::FloatType, 1, (void*)&right);
-                pubJob->addJobElem(Job::FloatType, 1, (void*)&score);
-                pubJob->addJobElem(Job::IntType, 1, (void*)&maxClassIdx);
+                yoloJobPack yoloPack;
+                yoloPack.top = top;
+                yoloPack.left = left;
+                yoloPack.bottom = bottom;
+                yoloPack.right = right;
+                yoloPack.score = score;
+                yoloPack.labelIndex = maxClassIdx;
 
-                cout << "detected.. " << endl;
+                yoloPacks.push_back(yoloPack);
             }
+        }
+
+        pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
+
+        SASSUME0(resultCount == yoloPacks.size());
+        for (int i = 0; i < resultCount; i++) {
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].top);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].left);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].bottom);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].right);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].score);
+            pubJob->addJobElem(Job::IntType, 1, (void*)&yoloPacks[i].labelIndex);
         }
     }
 

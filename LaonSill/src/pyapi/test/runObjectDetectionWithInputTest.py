@@ -6,8 +6,8 @@ import cv2
 import numpy as np
 from LaonSill.ClientAPI import *
 
-res = 512
-#res = 416
+#res = 512
+res = 416
 
 #base_network = 0   # for SSD
 base_network = 1   # for FRCNN     

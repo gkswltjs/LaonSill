@@ -555,6 +555,7 @@
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
         "keepSaveBestModel" : true,
-        "keepSaveBestModelStartIterNum" : 1000
+        "keepSaveBestModelStartIterNum" : 1000,
+        "keepSaveIntervalModelCount" : 4
 	}
 }
