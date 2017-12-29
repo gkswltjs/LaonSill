@@ -936,7 +936,15 @@
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.2
-		}
+		},
+
+        {
+            "name" : "sigmoid2",
+            "layer" : "Sigmoid2",
+            "id" : 275,
+            "input" : ["conv22d"],
+            "output" : ["sigmoid2"]
+        }
 	],
 
 	"configs" :
