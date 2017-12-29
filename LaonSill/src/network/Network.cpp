@@ -231,7 +231,9 @@ void Network<Dtype>::save(string path) {
 	paramOfs.close();
 
     if (SPARAM(PRINT_PARAMLOG_AFTER_NETWORKSAVE)) {
-        DebugUtil<Dtype>::printNetworkParams(stderr, "network save result",
+        //DebugUtil<Dtype>::printNetworkParams(stderr, "network save result",
+        //    this->networkID, 0);
+        DebugUtil<Dtype>::printNetworkEdges(stderr, "network save result",
             this->networkID, 0);
     }
 }

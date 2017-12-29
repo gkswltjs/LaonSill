@@ -18,12 +18,13 @@
 #include "ImageUtil.h"
 #include "PlanParser.h"
 #include "PropMgmt.h"
+#include "DebugUtil.h"
 
 using namespace std;
 
 //#define YOLO_PRETRAIN     1
-#define YOLO_PRETRAIN2    1
-//#define YOLO_TRAIN        1
+//#define YOLO_PRETRAIN2    1
+#define YOLO_TRAIN        1
 //#define YOLO_INFERENCE    1
 
 #if YOLO_PRETRAIN

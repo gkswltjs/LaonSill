@@ -646,6 +646,8 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     network->runMiniBatch(true, 0);
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
 
+    DebugUtil<float>::printNetworkEdges(stdout, "YOLO gogo", networkID, 0);
+
     Job* pubJob = getPubJob(job);
 
     if (baseNetworkType < 2) {

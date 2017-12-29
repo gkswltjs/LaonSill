@@ -860,7 +860,6 @@
 		"momentum" : 0.9,
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
-        "keepSaveBestModel" : false,
-        "loadPath" : "/home/monhoney/study/numpy/npz_use/darknet_pretrain.param"
+        "keepSaveBestModel" : false
 	}
 }

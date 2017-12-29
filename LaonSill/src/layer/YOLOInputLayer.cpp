@@ -267,7 +267,7 @@ void YOLOInputLayer<Dtype>::load_batch() {
                 SASSUME0((normedCenterY <= 1.0) && (normedCenterY >= 0.0));
 
                 if (filledGridIndexes[gridIndex] == true) {
-                    cout << "Oh NO!!!!!" << endl;
+                    //cout << "Oh NO!!!!!" << endl;
                 }
 
                 filledGridIndexes[gridIndex] = true;

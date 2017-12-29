@@ -37,7 +37,7 @@
             "name" : "bn/conv1",
             "layer" : "BatchNorm2",
             "id" : 11,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv1"],
             "output" : ["bn/conv1"]
         },
@@ -90,7 +90,7 @@
             "name" : "bn/conv2",
             "layer" : "BatchNorm2",
             "id" : 31,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv2"],
             "output" : ["bn/conv2"]
         },
@@ -143,7 +143,7 @@
             "name" : "bn/conv3",
             "layer" : "BatchNorm2",
             "id" : 51,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv3"],
             "output" : ["bn/conv3"]
         },
@@ -183,7 +183,7 @@
             "name" : "bn/conv4",
             "layer" : "BatchNorm2",
             "id" : 61,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv4"],
             "output" : ["bn/conv4"]
         },
@@ -223,7 +223,7 @@
             "name" : "bn/conv5",
             "layer" : "BatchNorm2",
             "id" : 71,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv5"],
             "output" : ["bn/conv5"]
         },
@@ -276,7 +276,7 @@
             "name" : "bn/conv6",
             "layer" : "BatchNorm2",
             "id" : 91,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv6"],
             "output" : ["bn/conv6"]
         },
@@ -316,7 +316,7 @@
             "name" : "bn/conv7",
             "layer" : "BatchNorm2",
             "id" : 101,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv7"],
             "output" : ["bn/conv7"]
         },
@@ -356,7 +356,7 @@
             "name" : "bn/conv8",
             "layer" : "BatchNorm2",
             "id" : 111,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv8"],
             "output" : ["bn/conv8"]
         },
@@ -409,7 +409,7 @@
             "name" : "bn/conv9",
             "layer" : "BatchNorm2",
             "id" : 131,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv9"],
             "output" : ["bn/conv9"]
         },
@@ -449,7 +449,7 @@
             "name" : "bn/conv10",
             "layer" : "BatchNorm2",
             "id" : 141,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv10"],
             "output" : ["bn/conv10"]
         },
@@ -489,7 +489,7 @@
             "name" : "bn/conv11",
             "layer" : "BatchNorm2",
             "id" : 151,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv11"],
             "output" : ["bn/conv11"]
         },
@@ -529,7 +529,7 @@
             "name" : "bn/conv12",
             "layer" : "BatchNorm2",
             "id" : 161,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv12"],
             "output" : ["bn/conv12"]
         },
@@ -569,7 +569,7 @@
             "name" : "bn/conv13",
             "layer" : "BatchNorm2",
             "id" : 171,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv13"],
             "output" : ["bn/conv13"]
         },
@@ -622,7 +622,7 @@
             "name" : "bn/conv14",
             "layer" : "BatchNorm2",
             "id" : 191,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv14"],
             "output" : ["bn/conv14"]
         },
@@ -662,7 +662,7 @@
             "name" : "bn/conv15",
             "layer" : "BatchNorm2",
             "id" : 201,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv15"],
             "output" : ["bn/conv15"]
         },
@@ -702,7 +702,7 @@
             "name" : "bn/conv16",
             "layer" : "BatchNorm2",
             "id" : 211,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv16"],
             "output" : ["bn/conv16"]
         },
@@ -742,7 +742,7 @@
             "name" : "bn/conv17",
             "layer" : "BatchNorm2",
             "id" : 221,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv17"],
             "output" : ["bn/conv17"]
         },
@@ -782,7 +782,7 @@
             "name" : "bn/conv18",
             "layer" : "BatchNorm2",
             "id" : 231,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv18"],
             "output" : ["bn/conv18"]
         },
@@ -822,7 +822,7 @@
             "name" : "bn/conv19d",
             "layer" : "BatchNorm2",
             "id" : 241,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv19d"],
             "output" : ["bn/conv19d"]
         },
@@ -862,7 +862,7 @@
             "name" : "bn/conv20d",
             "layer" : "BatchNorm2",
             "id" : 251,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv20d"],
             "output" : ["bn/conv20d"]
         },
@@ -902,7 +902,7 @@
             "name" : "bn/conv21d",
             "layer" : "BatchNorm2",
             "id" : 261,
-            "train" : false,
+            "useGlobalStats" : true,
             "input" : ["conv21d"],
             "output" : ["bn/conv21d"]
         },

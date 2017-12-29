@@ -24,7 +24,7 @@ public:
 	virtual void update();
 	void applyChanges(LearnableLayer<Dtype> *targetLayer);
 	void syncParams(LearnableLayer<Dtype> *targetLayer);
-
+    bool hasScaleBias() { return this->scaleBias; }
 
 private:
 	void multicast_gpu(int N, int C, int S, const Dtype *x, Dtype *y );

@@ -261,11 +261,11 @@ void YOLOLossLayer<Dtype>::backpropagation() {
 
     const Dtype *inputData = this->_inputData[0]->device_data();
     const Dtype *inputData2 = this->_inputData[1]->device_data();
-    Dtype *outputGrad = this->_outputData[0]->mutable_device_grad();
+    Dtype *inputGrad = this->_inputData[0]->mutable_device_grad();
 
     YoloBackward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         inputData, inputData2, size, (Dtype)SLPROP(YOLOLoss, noobj),
-        (Dtype)SLPROP(YOLOLoss, coord), outputGrad);
+        (Dtype)SLPROP(YOLOLoss, coord), inputGrad);
 }
 
 template <typename Dtype>

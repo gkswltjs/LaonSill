@@ -11,6 +11,7 @@
 
 #include "FullyConnectedLayer.h"
 #include "ConvLayer.h"
+#include "BatchNorm2Layer.h"
 #include "WorkContext.h"
 #include "PropMgmt.h"
 
@@ -89,6 +90,18 @@ void DebugUtil<Dtype>::printLayerEdges(FILE *fp, const char* title, Layer<Dtype>
     if (convLayer) {
         printEdges(fp, "filter", convLayer->_params[0], flags, indent + 2);
         printEdges(fp, "bias", convLayer->_params[1], flags, indent + 2);
+    }
+
+    BatchNorm2Layer<Dtype>* bnLayer = dynamic_cast<BatchNorm2Layer<Dtype>*>(layer);
+    if (bnLayer) {
+        printEdges(fp, "mean", bnLayer->_params[0], flags, indent + 2);
+        printEdges(fp, "variance", bnLayer->_params[1], flags, indent + 2);
+        printEdges(fp, "variance_correlation", bnLayer->_params[2], flags, indent + 2);
+
+        if (bnLayer->hasScaleBias()) {
+            printEdges(fp, "scale", bnLayer->_params[3], flags, indent + 2);
+            printEdges(fp, "bias", bnLayer->_params[4], flags, indent + 2);
+        }
     }
 
     Data<Dtype>* inputData = layer->_inputData[0];
