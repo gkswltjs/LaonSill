@@ -343,7 +343,8 @@
     "VARS" : 
         [   
             ["epsilon", "double", "0.0001"],
-            ["train", "bool", "true"]
+            ["train", "bool", "true"],
+            ["useChannelOnly", "bool", "false"]
         ],
     "KEYVARS" : ["train"]
 
@@ -377,7 +378,7 @@
 					["std", "double"]
                 ]
             ],
-            ["scaleBias", "bool", "false"]
+            ["scaleBias", "bool", "true"]
         ],
     "KEYVARS" : []
 

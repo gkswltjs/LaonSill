@@ -246,13 +246,26 @@ void ConvLayer<Dtype>::reshape() {
 		filter_dim& filterDim = SLPROP(Conv, filterDim);
 		const uint32_t channels = this->_inputData[0]->getShape(1);
 
-		const vector<uint32_t> filterShape =
-			{filterDim.filters, channels, filterDim.rows, filterDim.cols};
+		vector<uint32_t> filterShape;
+		const bool deconv = SLPROP(Conv, deconv);
+
+        if (!deconv) {
+            filterShape.push_back(filterDim.filters);
+            filterShape.push_back(channels);
+            filterShape.push_back(filterDim.rows);
+            filterShape.push_back(filterDim.cols);
+        } else {
+            filterShape.push_back(channels);
+            filterShape.push_back(filterDim.filters);
+            filterShape.push_back(filterDim.rows);
+            filterShape.push_back(filterDim.cols);
+        }
 
 		this->_params[Filter]->reshape(filterShape);
 
 		param_filler<Dtype>& weightFiller = SLPROP(Conv, weightFiller);
 		weightFiller.fill(this->_params[Filter]);
+
 
 		if (paramHistoryDataCount >= 1) {
 			this->_paramsHistory[Filter]->reshape(filterShape);
@@ -262,7 +275,6 @@ void ConvLayer<Dtype>::reshape() {
 			this->_paramsHistory2[Filter]->reshape(filterShape);
 		}
 
-		const bool deconv = SLPROP(Conv, deconv);
 		if (!deconv) {
 			checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
 				CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,

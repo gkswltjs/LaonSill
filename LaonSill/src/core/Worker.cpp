@@ -33,6 +33,7 @@
 #include "MeasureEntry.h"
 #include "MeasureManager.h"
 #include "MemoryMgmt.h"
+#include "DebugUtil.h"
 
 using namespace std;
 

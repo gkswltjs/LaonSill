@@ -22,21 +22,9 @@
 using namespace std;
 
 //#define YOLO_PRETRAIN     1
-//#define YOLO_PRETRAIN2    1
+#define YOLO_PRETRAIN2    1
 //#define YOLO_TRAIN        1
-#define YOLO_INFERENCE    1
-
-template<typename Dtype>
-void YOLO<Dtype>::setLayerTrain(Network<Dtype>* network, bool train) {
-    vector<Layer<Dtype>*> layers = network->findLayersByType((int)Layer<Dtype>::BatchNorm);
-
-    for (int i = 0; i < layers.size(); i++) {
-        BatchNormLayer<Dtype>* bnLayer = dynamic_cast<BatchNormLayer<Dtype>*>(layers[i]);
-        SASSUME0(bnLayer != NULL);
-
-        bnLayer->setTrain(train);
-    }
-}
+//#define YOLO_INFERENCE    1
 
 #if YOLO_PRETRAIN
 #define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_pretrain.json")

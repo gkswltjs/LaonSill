@@ -35,7 +35,7 @@
 
         {
             "name" : "bn/conv1",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 11,
             "input" : ["conv1"],
             "output" : ["bn/conv1"]
@@ -87,7 +87,7 @@
 
         {
             "name" : "bn/conv2",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 31,
             "input" : ["conv2"],
             "output" : ["bn/conv2"]
@@ -139,7 +139,7 @@
 
         {
             "name" : "bn/conv3",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 51,
             "input" : ["conv3"],
             "output" : ["bn/conv3"]
@@ -178,7 +178,7 @@
 
         {
             "name" : "bn/conv4",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 61,
             "input" : ["conv4"],
             "output" : ["bn/conv4"]
@@ -217,7 +217,7 @@
 
         {
             "name" : "bn/conv5",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 71,
             "input" : ["conv5"],
             "output" : ["bn/conv5"]
@@ -269,7 +269,7 @@
 
         {
             "name" : "bn/conv6",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 91,
             "input" : ["conv6"],
             "output" : ["bn/conv6"]
@@ -308,7 +308,7 @@
 
         {
             "name" : "bn/conv7",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 101,
             "input" : ["conv7"],
             "output" : ["bn/conv7"]
@@ -347,7 +347,7 @@
 
         {
             "name" : "bn/conv8",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 111,
             "input" : ["conv8"],
             "output" : ["bn/conv8"]
@@ -399,7 +399,7 @@
 
         {
             "name" : "bn/conv9",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 131,
             "input" : ["conv9"],
             "output" : ["bn/conv9"]
@@ -438,7 +438,7 @@
 
         {
             "name" : "bn/conv10",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 141,
             "input" : ["conv10"],
             "output" : ["bn/conv10"]
@@ -477,7 +477,7 @@
 
         {
             "name" : "bn/conv11",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 151,
             "input" : ["conv11"],
             "output" : ["bn/conv11"]
@@ -516,7 +516,7 @@
 
         {
             "name" : "bn/conv12",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 161,
             "input" : ["conv12"],
             "output" : ["bn/conv12"]
@@ -555,7 +555,7 @@
 
         {
             "name" : "bn/conv13",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 171,
             "input" : ["conv13"],
             "output" : ["bn/conv13"]
@@ -607,7 +607,7 @@
 
         {
             "name" : "bn/conv14",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 191,
             "input" : ["conv14"],
             "output" : ["bn/conv14"]
@@ -646,7 +646,7 @@
 
         {
             "name" : "bn/conv15",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 201,
             "input" : ["conv15"],
             "output" : ["bn/conv15"]
@@ -685,7 +685,7 @@
 
         {
             "name" : "bn/conv16",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 211,
             "input" : ["conv16"],
             "output" : ["bn/conv16"]
@@ -724,7 +724,7 @@
 
         {
             "name" : "bn/conv17",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 221,
             "input" : ["conv17"],
             "output" : ["bn/conv17"]
@@ -763,7 +763,7 @@
 
         {
             "name" : "bn/conv18",
-            "layer" : "BatchNorm",
+            "layer" : "BatchNorm2",
             "id" : 231,
             "input" : ["conv18"],
             "output" : ["bn/conv18"]
@@ -852,7 +852,7 @@
 		"lossLayer" : ["loss"],
         "measureLayer" : ["loss"],
 		"gamma" : 0.1,
-		"testInterval" : 10,
+		"testInterval" : 1,
 		"saveInterval" : 10000,
 		"baseLearningRate" : 0.001,
 		"stepSize" : 50000,
@@ -861,6 +861,6 @@
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
         "keepSaveBestModel" : false,
-        "loadPath" : "$(LAONSILL_HOME)/param/yolo_test_pretrain.param"
+        "loadPath" : "/home/monhoney/study/numpy/npz_use/darknet_pretrain.param"
 	}
 }

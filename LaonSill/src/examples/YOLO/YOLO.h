@@ -17,8 +17,6 @@ public:
     YOLO() {}
     virtual ~YOLO() {}
     static void run();
-private:
-    static void setLayerTrain(Network<Dtype>* lc, bool train);
 };
 
 #endif /* YOLO_H */
