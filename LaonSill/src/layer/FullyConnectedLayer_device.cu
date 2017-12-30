@@ -374,10 +374,6 @@ void FullyConnectedLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightedData() {
-	//const uint32_t batches = this->_inputShape[0][0];
-	//const uint32_t in_rows = this->_inputShape[0][2];
-	//const uint32_t out_rows = this->_outputData[0]->getShape(2);
-
 	// Apply weight to input data
 	const Dtype* d_weightData = this->_params[Weight]->device_data();
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
@@ -437,10 +433,7 @@ template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 	// Add bias to weighted input data
 	const Dtype* d_biasData = this->_params[Bias]->device_data();
-	//Dtype* d_preActivationData = _preActivation->mutable_device_data();
 	Dtype* d_outputData = this->_outputData[0]->mutable_device_data();
-
-	this->_params[Bias]->print_data();
 
 	if (this->batches == 1) {
 		soooa_gpu_axpy(this->out_rows, 1.0f,  d_biasData, d_outputData);
@@ -450,18 +443,6 @@ void FullyConnectedLayer<Dtype>::_computeWeightBiasedData() {
 				Cuda::alpha, this->_onevec.device_mem(), d_biasData,
 				Cuda::alpha, d_outputData);
 	}
-
-	/*
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
-			this->out_rows, this->batches, 1,
-			&Cuda::alpha,
-			d_biasData, this->out_rows,
-			this->d_onevec, 1,
-			&Cuda::alpha,
-			d_outputData, this->out_rows));
-			*/
-
-	this->_params[Bias]->print_data();
 }
 
 
@@ -518,13 +499,15 @@ void FullyConnectedLayer<Dtype>::backpropagation() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
-	this->_params[Weight]->reset_device_grad();
-
 	// d(Cost)/d(Weight)
 	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	const Dtype* d_inputData = this->_inputData[0]->device_data();
 	Dtype* d_weightGrad = this->_params[Weight]->mutable_device_grad();
 
+	// d_weightGrad에 Cuda::alpha를 적용하는 것은 아마도 snapshot diff 기능 때문인듯 보임.
+	// SoooA에서는 일부러 reset하고 아래 Cuda::alpha를 적용하는 것보다는
+	// reset없이 Cuda::beta를 적용하는 것이 나아 보임 ...
+	// _computeBiasGrad에도 동일.
 	soooa_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
 			this->out_rows, this->in_rows, this->batches,
 			Cuda::alpha, d_outputGrad, d_inputData,
@@ -533,14 +516,7 @@ void FullyConnectedLayer<Dtype>::_computeWeightGrad() {
 
 template <typename Dtype>
 void FullyConnectedLayer<Dtype>::_computeBiasGrad() {
-	// XXX: Inception 기준, Reset해주어야 함...
-	// 상식적으로 reset되어야 할 것 같은데 왜 다른 Network에서 문제되지 않았던 것인지 ...
-	// Beta를 0로 주는 것과 동일할 것으로 보임 ...
-	this->_params[Bias]->reset_device_grad();
-
-
 	// d(Cost)/d(Bias) (same as d_preActivationGrad)
-	//const Dtype* d_preActivationGrad = this->_preActivation->device_grad();
 	const Dtype* d_outputGrad = this->_outputData[0]->device_grad();
 	Dtype* d_biasGrad = this->_params[Bias]->mutable_device_grad();
 
