@@ -18,6 +18,7 @@
 #include "ImageUtil.h"
 #include "PlanParser.h"
 #include "PropMgmt.h"
+#include "DebugUtil.h"
 
 using namespace std;
 

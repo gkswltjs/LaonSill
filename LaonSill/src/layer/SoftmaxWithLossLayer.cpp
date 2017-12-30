@@ -105,6 +105,9 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(_SoftmaxWithLossPropLayer* pro
 template <typename Dtype>
 SoftmaxWithLossLayer<Dtype>::~SoftmaxWithLossLayer() {
 	//InnerLayerFunc::destroyLayer(0);
+
+    if (this->softmaxLayer != NULL)
+        SDELETE(this->softmaxLayer);
 }
 
 

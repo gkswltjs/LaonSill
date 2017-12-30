@@ -49,6 +49,9 @@ template <typename Dtype>
 SoftmaxLayer<Dtype>::~SoftmaxLayer() {
 	checkCUDNN(cudnnDestroyTensorDescriptor(this->inputTensorDesc));
 	checkCUDNN(cudnnDestroyTensorDescriptor(this->outputTensorDesc));
+
+    if (this->prop != NULL)
+        SFREE(this->prop);
 }
 
 
