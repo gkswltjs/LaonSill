@@ -785,10 +785,10 @@
 
 	"configs" :
 	{
-		"batchSize" : 2,
+		"batchSize" : 64,
 		"epochs" : 60, 
 		"lossLayer" : ["loss"],
-		"testInterval" : 100,
+		"testInterval" : 10,
 		"saveInterval" : 60000,
 		"savePathPrefix" : "", 
 		
@@ -798,10 +798,12 @@
 		"maxIterations" : 600000,
 		"power" : 2.0,
 		"momentum" : 0.9,
-		"weightDecay" : 0.0001,
+		"weightDecay" : 1e-4,
 
 		"optimizer" : "Momentum",
         "measureLayer" : ["loss"],
+
+		"loadPath" : "$(LAONSILL_HOME)/param/resnet18_init.param",
 
         "keepSaveIntervalModelCount" : 4,
         "keepSaveBestModel" : false,
