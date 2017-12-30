@@ -48,8 +48,7 @@ public:
 	// Getters for boost rng
 	inline static RNG& rng_stream() {
 		if (!Get().random_generator_) {
-			RNG* rng = NULL;
-			SNEW(rng, RNG);
+			RNG* rng = new RNG();
 			SASSUME0(rng != NULL);
 			Get().random_generator_.reset(rng);
 		}
