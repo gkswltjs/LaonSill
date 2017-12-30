@@ -613,7 +613,8 @@ void layerTest2(int argc, char** argv) {
 #define NETWORK_SSD_TEST	5
 #define NETWORK_VGG16		6
 #define NETWORK_INCEPTION_V3	7
-#define NETWORK				NETWORK_INCEPTION_V3
+#define NETWORK_RESNET		8
+#define NETWORK				NETWORK_RESNET
 
 #define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/LeNet/lenet_train_test.json")
 #define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/frcnn/frcnn_train_test.json")
@@ -659,6 +660,20 @@ void networkTest(int argc, char** argv) {
 	const NetworkStatus status = NetworkStatus::Train;
 	//const NetworkStatus status = NetworkStatus::Test;
 
+
+#elif NETWORK == NETWORK_RESNET
+	const string networkFilePath = laonsillHome + string("/src/examples/ResNet/"
+			//"inception_v3_train_nvidia_test_t3.json");
+			//"batchnorm.test.json");
+			"resnet18.test.json");
+	const string networkName = "resnet";
+	const int numSteps = 3;
+	const vector<string> forwardGTLayers = {};
+	// backward 과정에서 데이터값을 확인할 레이어 목록
+	const vector<string> backwardPeekLayers = {};
+	const NetworkStatus status = NetworkStatus::Train;
+	//const NetworkStatus status = NetworkStatus::Test;
+
 #else
 	cout << "invalid network ... " << endl;
 	exit(1);
@@ -666,13 +681,14 @@ void networkTest(int argc, char** argv) {
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 
 	NetworkTest<float>* networkTest = NULL;
-	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps, status, forwardGTLayers);
+	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps, status,
+			NULL, NULL);
 	SASSUME0(networkTest != NULL);
 
 	networkTest->setUp();
-	//networkTest->updateTest();
-	Network<float>* network = networkTest->network;
-	network->save("/home/jkim/Dev/LAONSILL_HOME/param/inception_v3_init.param");
+	networkTest->updateTest();
+	//Network<float>* network = networkTest->network;
+	//network->save("/home/jkim/Dev/LAONSILL_HOME/param/inception_v3_init.param");
 	networkTest->cleanUp();
 
 	NetworkTestInterface<float>::globalCleanUp();
@@ -707,7 +723,7 @@ void saveNetwork() {
 	NetworkTestInterface<float>::globalSetUp(gpuid);
 
 	NetworkTest<float>* networkTest = NULL;
-	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps, status, forwardGTLayers);
+	SNEW(networkTest, NetworkTest<float>, networkFilePath, networkName, numSteps, status);
 	SASSUME0(networkTest != NULL);
 
 	networkTest->setUp();

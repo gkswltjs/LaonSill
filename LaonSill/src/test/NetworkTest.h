@@ -33,7 +33,8 @@ class NetworkTest : public NetworkTestInterface<Dtype> {
 public:
 	NetworkTest(const std::string& networkFilePath, const std::string& networkName,
 			const int numSteps, const NetworkStatus status,
-			const std::vector<std::string>& forwardGTLayers)
+			const std::vector<std::string>* forwardGTLayers = NULL,
+			const std::vector<std::string>* backwardPeekLayers = NULL)
 
 	: networkFilePath(networkFilePath), networkName(networkName), numSteps(numSteps),
 	  status(status), forwardGTLayers(forwardGTLayers) {
@@ -97,8 +98,10 @@ public:
 			logEndTest("FEED FORWARD");
 
 			// forwardGTLayers 주석 참고
-			for (int j = 0; j < this->forwardGTLayers.size(); j++) {
-				forwardSingleLayerWithGT(i, this->forwardGTLayers[j]);
+			if (this->forwardGTLayers) {
+				for (int j = 0; j < this->forwardGTLayers->size(); j++) {
+					forwardSingleLayerWithGT(i, this->forwardGTLayers->at(j));
+				}
 			}
 
 			// backpropagation
@@ -396,7 +399,9 @@ public:
 	// forward때 업데이트되는 내부 상태가 있는 레이어의 경우
 	// forwardGTLayers에 등록하여 input/output data뿐 아니라
 	// 내부 상태까지 정답 input을 통해 업데이트 하여야 한다.
-	const std::vector<std::string> forwardGTLayers;
+	const std::vector<std::string>* forwardGTLayers;
+
+	const std::vector<std::string>* backwardPeekLayers;
 
     std::string networkID;
 	bool hasNormalInputLayer;

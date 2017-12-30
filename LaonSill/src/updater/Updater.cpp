@@ -117,11 +117,17 @@ bool Updater::updateParams(string networkID, int layerID, int planID, int dopID,
 
             Update<float>::updateParam(updateParams[i].context, tensorDataHis1,
                 tensorDataHis2, tensorSourceParam);
+
+            tensorSourceParam->reset_device_grad();
         }
 
         PhysicalPlan::markFinish(networkID, dopID, planID);
         return true;
     }
+
+    // param을 reset 해줘야 하는데 dopCount > 1 인 상황 대처가 안돼서 일단 막아둠
+    // 보고 해결하실 수 있으신 분 처리 바람
+    SASSERT(false, "");
 
 
     UpdaterKey key;

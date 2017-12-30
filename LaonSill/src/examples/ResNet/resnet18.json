@@ -786,7 +786,7 @@
 	"configs" :
 	{
 		"batchSize" : 2,
-		"epochs" : 8, 
+		"epochs" : 60, 
 		"lossLayer" : ["loss"],
 		"testInterval" : 100,
 		"saveInterval" : 60000,
