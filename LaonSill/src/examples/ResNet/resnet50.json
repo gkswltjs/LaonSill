@@ -10,7 +10,8 @@
 			"dataSetName" : "train",
 			"dataTransformParam.cropSize" : 224,
 			"dataTransformParam.mean" : [104.0, 117.0, 123.0],
-			"dataTransformParam.mirror" : true
+			"dataTransformParam.mirror" : true,
+			"dataTransformParam.scale" : 0.00390625
 		},
 
 		{
@@ -1905,8 +1906,8 @@
 
 	"configs" :
 	{
-		"batchSize" : 2,
-		"epochs" : 8, 
+		"batchSize" : 32,
+		"epochs" : 100, 
 		"lossLayer" : ["loss"],
 		"testInterval" : 100,
 		"saveInterval" : 60000,
@@ -1915,7 +1916,7 @@
 		"baseLearningRate" : 0.1,
 
 		"lrPolicy" : "Poly",
-		"maxIterations" : 600000,
+		"maxIterations" : 4000000,
 		"power" : 2.0,
 		"momentum" : 0.9,
 		"weightDecay" : 0.0001,
