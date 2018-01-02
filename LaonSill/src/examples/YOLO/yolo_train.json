@@ -956,14 +956,14 @@
 		"testInterval" : 50,
 		"saveInterval" : 100,
 		"savePathPrefix" : "", 
-		"baseLearningRate" : 0.001,
+		"baseLearningRate" : 0.00001,
 		"stepSize" : 50000,
         "stepValue" : [960000, 1440000],
 		"weightDecay" : 0.0005,
 		"momentum" : 0.9,
-		"lrPolicy" : "Multistep",
+		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
         "keepSaveBestModel" : false,
-        "loadPath" : "$(LAONSILL_HOME)/param/darknet_pretrain.param"
+        "loadPath" : "$(LAONSILL_HOME)/param/02ffd4a1-4289-49db-98fb-d11ead5b7e3a_49000.param"
 	}
 }

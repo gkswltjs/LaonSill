@@ -952,6 +952,6 @@
 		"batchSize" : 1,
 		"epochs" : 1, 
         "status" : "Test",
-        "loadPath" : "$(LAONSILL_HOME)/param/YOLO_VOCPASCAL_infer.param"
+        "loadPath" : "$(LAONSILL_HOME)/param/02ffd4a1-4289-49db-98fb-d11ead5b7e3a_49000.param"
 	}
 }

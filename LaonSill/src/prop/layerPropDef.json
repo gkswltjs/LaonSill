@@ -422,8 +422,10 @@
     "PROPDOWN" : [],
     "VARS" :
         [
-            ["noobj", "float", "0.5"],
-            ["coord", "float", "5.0"]
+            ["noobj", "float", "1.0"],
+            ["coord", "float", "1.0"],
+            ["obj", "float", "5.0"],
+            ["class", "float", "1.0"]
         ],
     "KEYVARS" : []
 },

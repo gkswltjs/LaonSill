@@ -714,7 +714,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
         int coordCount = 5;
         int imageWidth = 416;
         int imageHeight = 416;
-        float confThres = 0.1;
+        float confThres = 0.5;
 
         int resultCount = 0;
         float left, top, right, bottom;
