@@ -6,7 +6,7 @@
 	        "layer" : "YOLOInput",
 	        "id" : 0,
 	        "output" : ["data", "label"],
-			"dataTransformParam.mean" : [104.0, 117.0, 123.0],
+			"dataTransformParam.mean" : [0.0, 0.0, 0.0],
 
 			"resizeParam.prob" : 1.0,
 			"resizeParam.resizeMode" : "WARP",
@@ -929,31 +929,32 @@
 			"biasFiller.value" : 0.2
 		},
 
-        {
-            "name" : "sigmoid2",
-            "layer" : "Sigmoid2",
+        {                     
+            "name" : "YOLOregion",
+            "layer" : "YOLORegion",
             "id" : 275,
             "input" : ["conv22d"],
-            "output" : ["conv22d"]
-        },
+            "output" : ["region"],
+            "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52]
+        },   
 
         {
             "name" : "loss",
             "layer" : "YOLOLoss",
             "id" : 280,
-            "input" : ["conv22d", "label"],
+            "input" : ["region", "label"],
             "output" : ["loss"]
         }
 	],
 
 	"configs" :
 	{
-		"batchSize" : 8,
+		"batchSize" : 4,
 		"epochs" : 160, 
 		"lossLayer" : ["loss"],
         "measureLayer" : ["loss"],
 		"gamma" : 0.1,
-		"testInterval" : 100,
+		"testInterval" : 10,
 		"saveInterval" : 1000,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.00002,
@@ -964,6 +965,6 @@
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
         "keepSaveBestModel" : false,
-        "loadPath" : "$(LAONSILL_HOME)/param/02ffd4a1-4289-49db-98fb-d11ead5b7e3a_49000.param"
+        "loadPath" : "$(LAONSILL_HOME)/param/darknet_pretrain.param"
 	}
 }

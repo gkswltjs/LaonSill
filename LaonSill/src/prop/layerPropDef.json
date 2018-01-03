@@ -430,6 +430,20 @@
     "KEYVARS" : []
 },
 
+"YOLORegion" :
+{
+    "DESC" : "YOLO region layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+            ["anchors", "std::vector<float>", ""]
+        ],
+    "KEYVARS" : []
+},
+
 "Split" :
 {
     "DESC" : "split layer",

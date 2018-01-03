@@ -69,6 +69,7 @@ public:
 		SmoothL1Loss,
 		SoftmaxWithLoss,
         CrossEntropyWithLoss,
+        YOLORegion,
         YOLOLoss,
 
         Sigmoid2,               // 새로운 sigmoid layer. 구현 완료되면 기존 sigmoid layer를
