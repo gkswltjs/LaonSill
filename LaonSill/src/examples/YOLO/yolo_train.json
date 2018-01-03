@@ -869,15 +869,31 @@
             "output" : ["bn/conv20d"]
 		},
 
+        {
+            "name" : "passthru",
+            "layer" : "YOLOPassThru",
+            "id" : 255,
+            "input" : ["bn/conv13"],
+            "output" : ["passthru"]
+        },
+
+        {
+            "name" : "concat",
+            "layer" : "Concat",
+            "id" : 257,
+            "input" : ["passthru", "bn/conv20d"],
+            "output" : ["concat"]
+        },
+
 		{
 			"name" : "conv21d",
 			"layer" : "Conv",
 			"id" : 260,
-			"input" : ["bn/conv20d"],
+			"input" : ["concat"],
 			"output" : ["conv21d"],
 			"filterDim.rows" : 3,
 			"filterDim.cols" : 3,
-			"filterDim.channels" : 1024,
+			"filterDim.channels" : 3072,
 			"filterDim.filters" : 1024,
 			"filterDim.pad" : 1,
 			"filterDim.stride" : 1,

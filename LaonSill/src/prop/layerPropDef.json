@@ -444,6 +444,17 @@
     "KEYVARS" : []
 },
 
+"YOLOPassThru" :
+{
+    "DESC" : "YOLO pass thru layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : [],
+    "KEYVARS" : []
+},
+
 "Split" :
 {
     "DESC" : "split layer",
