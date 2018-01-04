@@ -127,7 +127,6 @@ void InputLayer<Dtype>::feedforward() {
 
 template <typename Dtype>
 void InputLayer<Dtype>::feedforward(const uint32_t baseIndex, const char* end) {
-	SASSERT(false, "Not supported any longer.");
 	reshape();
 
 	const vector<uint32_t>& inputShape = this->_inputShape[0];

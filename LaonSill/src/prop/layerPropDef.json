@@ -362,7 +362,7 @@
             ["useGlobalStats", "bool", "false"],
             ["movingAverageFraction", "float", "0.999"],
             ["eps", "float", "1e-5"],
-            ["scaleFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
+            ["scaleFiller", "param_filler<float>", "{ParamFillerType::Constant, 1.0, 0.0, 1.0}",
                 [
                     ["type", "ParamFillerType"],
                     ["value", "double"],

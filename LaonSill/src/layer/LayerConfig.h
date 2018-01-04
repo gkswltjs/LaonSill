@@ -94,8 +94,6 @@ struct filter_dim : public io_dim {
 	filter_dim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
 			uint32_t pad, uint32_t pad_h, uint32_t pad_w, uint32_t stride, uint32_t dilation)
 	: io_dim(rows, cols, channels, 1) {
-		io_dim::print();
-
 		this->filters = filters;
 		this->pad = pad;
 		this->pad_h = pad_h;
@@ -105,6 +103,8 @@ struct filter_dim : public io_dim {
 	}
 
 	void print() {
+		io_dim::print();
+
 		std::cout << "filters: " << this->filters << std::endl;
 		std::cout << "pad: " << this->pad << std::endl;
 		std::cout << "pad_h: " << this->pad_h << std::endl;
@@ -256,6 +256,11 @@ struct param_filler {
 
 			// XXX: FAN_OUT, AVERAGE Option 적용되지 않음
 			const float scale = std::sqrt(3.f / n);
+			//std::cout << "fan_in: " << fan_in << std::endl;
+			//std::cout << "fan_out: " << fan_out << std::endl;
+			//std::cout << "scale: " << scale << std::endl;
+
+
 			soooa_rng_uniform<Dtype>(data->getCount(), -scale, scale,
 					data->mutable_host_data());
 			break;
@@ -285,13 +290,25 @@ struct param_filler {
 
 			// XXX: FAN_OUT, AVERAGE Option 적용되지 않음
 			const float std = std::sqrt(2.f / n);
-			soooa_rng_gaussian<Dtype>(data->getCount(), 0.0f, this->std,
+
+			//std::cout << "fan_in: " << fan_in << std::endl;
+			//std::cout << "fan_out: " << fan_out << std::endl;
+			//std::cout << "std: " << std << std::endl;
+
+			soooa_rng_gaussian<Dtype>(data->getCount(), 0.0f, std,
 					data->mutable_host_data());
 			break;
 		}
 		default:
 			break;
 		}
+
+		//print();
+		//Data<Dtype>::printConfig = 1;
+		//SyncMem<Dtype>::printConfig = 1;
+		//data->print_data({}, false);
+		//Data<Dtype>::printConfig = 0;
+		//SyncMem<Dtype>::printConfig = 0;
 	}
 
 private:
