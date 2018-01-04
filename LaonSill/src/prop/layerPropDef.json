@@ -35,7 +35,11 @@
     "VARS" :
         [
             ["mean", "std::vector<float>", ""],
-            ["source", "std::string", "\"\""]
+			["scale", "float", "1.0"],
+            ["source", "std::string", "\"\""],
+            ["sourceType", "std::string", "\"\""],
+			["numTrainPack", "uint32_t", "1"],
+			["numTestPack", "uint32_t", "1"]
         ],
     "KEYVARS" : ["source", "mean"]
 },
