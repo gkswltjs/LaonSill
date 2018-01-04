@@ -439,6 +439,7 @@
     "PROPDOWN" : [],
     "VARS" :
         [
+            ["softmax", "bool", "false"],
             ["anchors", "std::vector<float>", ""]
         ],
     "KEYVARS" : []

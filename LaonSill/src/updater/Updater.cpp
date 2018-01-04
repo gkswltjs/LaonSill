@@ -12,6 +12,7 @@
 #include "PhysicalPlan.h"
 #include "WorkContext.h"
 #include "MemoryMgmt.h"
+#include "Param.h"
 
 using namespace std;
 
@@ -118,7 +119,8 @@ bool Updater::updateParams(string networkID, int layerID, int planID, int dopID,
             Update<float>::updateParam(updateParams[i].context, tensorDataHis1,
                 tensorDataHis2, tensorSourceParam);
 
-            tensorSourceParam->reset_device_grad();
+            if (SPARAM(UPDATER_RESET_GRADIENT))
+                tensorSourceParam->reset_device_grad();
         }
 
         PhysicalPlan::markFinish(networkID, dopID, planID);

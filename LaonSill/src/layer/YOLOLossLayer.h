@@ -22,7 +22,9 @@
 
 #define YOLO_GROUND_TRUTH_ELEM_COUNT    (YOLO_CLASS_COUNT + 6)
 
-#define YOLOINPUT_ELEMCOUNT_PER_GRID            7
+#define YOLOINPUT_ELEMCOUNT_PER_GT              7
+#define YOLOINPUT_GTCOUNT_PER_GRID              30
+#define YOLOINPUT_ELEMCOUNT_PER_GRID            (YOLOINPUT_ELEMCOUNT_PER_GT * YOLOINPUT_GTCOUNT_PER_GRID)
 
 template<typename Dtype>
 class YOLOLossLayer : public LossLayer<Dtype> {

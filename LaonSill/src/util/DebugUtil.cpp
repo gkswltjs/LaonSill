@@ -17,7 +17,7 @@
 
 using namespace std;
 
-#define PRINT_EDGE_DATACOUNT 3
+#define PRINT_EDGE_DATACOUNT 5
 
 template<typename Dtype>
 void DebugUtil<Dtype>::printIndent(FILE *fp, int indent) {

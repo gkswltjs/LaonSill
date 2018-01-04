@@ -192,7 +192,11 @@ float Update<Dtype>::calcLearningRate() {
         		STDOUT_LOG("MultiStep Status: Iteration %d, step = %d", iterations,
         				currentStep);
         	}
-        	rate = SNPROP(baseLearningRate) * pow(SNPROP(gamma), currentStep);
+
+            if (SNPROP(stepScale).size() == 0)
+        	    rate = SNPROP(baseLearningRate) * pow(SNPROP(gamma), currentStep);
+            else
+                rate = SNPROP(baseLearningRate) * SNPROP(stepScale)[currentStep];
         }
         	break;
 

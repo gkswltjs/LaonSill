@@ -18,10 +18,9 @@
 #include "Sampler.h"
 #include "ImageUtil.h"
 #include "MemoryMgmt.h"
+#include "YOLOLossLayer.h"
 
 using namespace std;
-
-#define YOLOINPUT_ELEMCOUNT_PER_GRID            7
 
 template <typename Dtype>
 YOLOInputLayer<Dtype>::YOLOInputLayer()
@@ -139,8 +138,14 @@ void YOLOInputLayer<Dtype>::reshape() {
      * 
      * 각 grid는 다음과 같이 구성됩니다.
      * +-------+-------+----------+----------+---+---+----------+
-     * | gridX | gridY | center_x | center_y | w | h | class_id |  => 7 element
-     * +-------+-------+----------+----------+---+---+----------+
+     * | gridX | gridY | center_x | center_y | w | h | class_id |  => 7 element for
+     * +-------+-------+----------+----------+---+---+----------+     ground truth image#0
+     * | gridX | gridY | center_x | center_y | w | h | class_id |  => 7 element for
+     * +-------+-------+----------+----------+---+---+----------+     ground truth image#1
+     *                      ...
+     * +-------+-------+----------+----------+---+---+----------+     
+     * | gridX | gridY | center_x | center_y | w | h | class_id |  => 7 element for
+     * +-------+-------+----------+----------+---+---+----------+     ground truth image#4
      **/
     labelShape[0] = batchSize;
     labelShape[1] = 1;
@@ -179,8 +184,8 @@ void YOLOInputLayer<Dtype>::load_batch() {
     int gridCount = GET_PROP(prop, YOLOInput, gridCount);
     int gridCellCount = gridCount * gridCount;
     int labelElemCountPerBatch = gridCellCount * YOLOINPUT_ELEMCOUNT_PER_GRID;
-    bool *filledGridIndexes = NULL;
-    SMALLOC(filledGridIndexes, bool, gridCellCount);
+    int *filledGridIndexes = NULL;
+    SMALLOC(filledGridIndexes, int, sizeof(int) * gridCellCount);
     SASSUME0(filledGridIndexes != NULL);
 
 	for (int itemId = 0; itemId < batchSize; itemId++) {
@@ -230,8 +235,12 @@ void YOLOInputLayer<Dtype>::load_batch() {
 
         int outputLabelBaseIndex = itemId * labelElemCountPerBatch;
         for (int i = 0; i < gridCellCount; i++) {
-            filledGridIndexes[i] = false;
-            outputLabel[outputLabelBaseIndex + i * YOLOINPUT_ELEMCOUNT_PER_GRID + 6] = 0.0;
+            filledGridIndexes[i] = 0;
+
+            for (int j = 0; j < YOLOINPUT_GTCOUNT_PER_GRID; j++) {
+                outputLabel[outputLabelBaseIndex + i * YOLOINPUT_ELEMCOUNT_PER_GRID + 6 +
+                    j * YOLOINPUT_ELEMCOUNT_PER_GT] = 0.0;
+            }
         }
 
         for (int g = 0; g < transformedAnnoVec.size(); g++) {
@@ -264,14 +273,9 @@ void YOLOInputLayer<Dtype>::load_batch() {
                 SASSUME0((normedCenterX <= 1.0) && (normedCenterX >= 0.0));
                 SASSUME0((normedCenterY <= 1.0) && (normedCenterY >= 0.0));
 
-                if (filledGridIndexes[gridIndex] == true) {
-                    //cout << "Oh NO!!!!!" << endl;
-                }
-
-                filledGridIndexes[gridIndex] = true;
-
                 int outputLabelCurGridBaseIndex = 
-                    outputLabelBaseIndex + gridIndex * YOLOINPUT_ELEMCOUNT_PER_GRID;
+                    outputLabelBaseIndex + gridIndex * YOLOINPUT_ELEMCOUNT_PER_GRID +
+                    YOLOINPUT_ELEMCOUNT_PER_GT * filledGridIndexes[gridIndex];
                 outputLabel[outputLabelCurGridBaseIndex + 0] = (float)gridX;
                 outputLabel[outputLabelCurGridBaseIndex + 1] = (float)gridY;
                 outputLabel[outputLabelCurGridBaseIndex + 2] = (float)normedCenterX;
@@ -279,14 +283,18 @@ void YOLOInputLayer<Dtype>::load_batch() {
                 outputLabel[outputLabelCurGridBaseIndex + 4] = (float)normedWidth;
                 outputLabel[outputLabelCurGridBaseIndex + 5] = (float)normedHeight;
                 outputLabel[outputLabelCurGridBaseIndex + 6] = (float)classLabel;
+
+                if (filledGridIndexes[gridIndex] == YOLOINPUT_GTCOUNT_PER_GRID - 1) {
+                    cout << "Oh NO!!!!!" << endl;
+                } else {
+                    filledGridIndexes[gridIndex] += 1;
+                }
             }
         }
-
-		// clear memory.
+        // clear memory.
         SDELETE(annoDatum);
 	}
-
-    SDELETE(filledGridIndexes);
+    SFREE(filledGridIndexes);
 }
 
 template <typename Dtype>
