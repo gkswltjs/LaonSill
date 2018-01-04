@@ -8,6 +8,7 @@
 #include "PoolingLayer.h"
 #include "PropMgmt.h"
 #include "MemoryMgmt.h"
+#include "StdOutLog.h"
 
 #define POOLINGLAYER_LOG 0
 

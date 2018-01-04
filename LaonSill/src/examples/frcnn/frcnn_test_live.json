@@ -206,7 +206,7 @@
 			"biasUpdateParam.lr_mult" : 2.0,
 			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
-			"weightFiller.value" : 0.01,
+			"weightFiller.std" : 0.01,
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.0
 		},
@@ -236,7 +236,7 @@
 			"biasUpdateParam.lr_mult" : 2.0,
 			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
-			"weightFiller.value" : 0.01,
+			"weightFiller.std" : 0.01,
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.0
 		},
@@ -258,7 +258,7 @@
 			"biasUpdateParam.lr_mult" : 2.0,
 			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
-			"weightFiller.value" : 0.01,
+			"weightFiller.std" : 0.01,
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0 
 		},
@@ -367,7 +367,7 @@
 			"biasUpdateParam.lr_mult" : 2.0,
 			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
-			"weightFiller.value" : 0.01,
+			"weightFiller.std" : 0.01,
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.0
 		},
@@ -384,7 +384,7 @@
 			"biasUpdateParam.lr_mult" : 2.0,
 			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Gaussian",
-			"weightFiller.value" : 0.001,
+			"weightFiller.std" : 0.001,
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.0
 		},

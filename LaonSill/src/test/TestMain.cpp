@@ -83,6 +83,7 @@ void signalTest();
 void convertAnnoSetTest();
 void convertImageSetTest();
 void convertMnistDataTest();
+void convertVOC07SetTest();
 
 void layerTest(int argc, char** argv);
 void layerTest2(int argc, char** argv);
@@ -90,6 +91,8 @@ void networkTest(int argc, char** argv);
 void saveNetwork();
 
 
+
+const string LAONSILL_HOME = string(std::getenv("LAONSILL_HOME"));
 
 
 void testJsonType(Json::Value& value) {
@@ -107,12 +110,9 @@ int main(int argc, char** argv) {
 	cout.setf(ios::fixed);
 	//cout.setf(ios::scientific);
 
-	const string LAONSILL_HOME = "/home/jkim/Dev/LAONSILL_HOME/";
-
-
-	//plainTest(argc, argv);
+	plainTest(argc, argv);
 	//layerTest(argc, argv);
-	networkTest(argc, argv);
+	//networkTest(argc, argv);
 	//saveNetwork();
 	//layerTest2(argc, argv);
 
@@ -201,6 +201,7 @@ void plainTest(int argc, char** argv) {
 	//convertMnistDataTest(argc, argv);
 	//convertImageSetTest(argc, argv);
 	//convertAnnoSetTest(argc, argv);
+	convertVOC07SetTest();
 }
 
 
@@ -665,9 +666,10 @@ void networkTest(int argc, char** argv) {
 	const string networkFilePath = laonsillHome + string("/src/examples/ResNet/"
 			//"inception_v3_train_nvidia_test_t3.json");
 			//"batchnorm.test.json");
-			"resnet18.test.json");
+			//"resnet18.test.json");
+			"resnet50.test.json");
 	const string networkName = "resnet";
-	const int numSteps = 3;
+	const int numSteps = 1;
 	const vector<string> forwardGTLayers = {};
 	// backward 과정에서 데이터값을 확인할 레이어 목록
 	const vector<string> backwardPeekLayers = {};
@@ -686,9 +688,9 @@ void networkTest(int argc, char** argv) {
 	SASSUME0(networkTest != NULL);
 
 	networkTest->setUp();
-	networkTest->updateTest();
-	//Network<float>* network = networkTest->network;
-	//network->save("/home/jkim/Dev/LAONSILL_HOME/param/inception_v3_init.param");
+	//networkTest->updateTest();
+	Network<float>* network = networkTest->network;
+	network->save("/home/jkim/Dev/LAONSILL_HOME/param/resnet50_init.param");
 	networkTest->cleanUp();
 
 	NetworkTestInterface<float>::globalCleanUp();
@@ -825,8 +827,59 @@ void convertAnnoSetTest() {
 #endif
 }
 
+
+void convertVOC07SetTest() {
+#if 1
+	ImageSet trainImageSet;
+	trainImageSet.name = "train";
+	trainImageSet.dataSetPath = LAONSILL_HOME + "/data/VOC0712/trainval.txt.5.07only";
+
+	ConvertAnnoSetParam param;
+	param.addImageSet(trainImageSet);
+	param.labelMapFilePath = LAONSILL_HOME + "/data/VOC0712/labelmap_voc.json";
+	param.basePath = LAONSILL_HOME + "/data/VOCdevkit";
+	param.outFilePath = LAONSILL_HOME + "/data/sdf/_voc2007_train_sdf_5";
+
+	if (boost::filesystem::exists(param.outFilePath)) {
+		boost::filesystem::remove_all((param.outFilePath));
+	}
+
+	param.print();
+	convertAnnoSet(param);
+
+	cout << "resultCode: " << param.resultCode << endl;
+	cout << "resultMsg: " << param.resultMsg << endl;
+
+#else
+	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
+	const string sdfPath = baseSdfPath + "_voc0712_train_sdf/";
+
+	DataReader<AnnotatedDatum> dataReader(sdfPath);
+
+	AnnotatedDatum* datum = 0;
+	cout << "selected train dataset ... " << endl;
+	dataReader.selectDataSetByName("train");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		SDELETE(datum);
+		datum = 0;
+	}
+
+	cout << "selected test dataset ... " << endl;
+	dataReader.selectDataSetByName("test");
+	for (int i = 0; i < 10; i++) {
+		datum = dataReader.getNextData();
+		datum->print();
+		SDELETE(datum);
+		datum = 0;
+	}
+#endif
+}
+
+
+
 void convertImageSetTest() {
-	const string LAONSILL_HOME = string(std::getenv("LAONSILL_HOME"));
 
 #if 1
 

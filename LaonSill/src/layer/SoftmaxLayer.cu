@@ -15,7 +15,7 @@
 #include "MemoryMgmt.h"
 
 #if 1
-#define SOFTMAXLAYER_LOG 1
+#define SOFTMAXLAYER_LOG 0
 
 
 using namespace std;

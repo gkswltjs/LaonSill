@@ -15,6 +15,21 @@
 #include "DataTransformer.h"
 #include "LayerPropList.h"
 
+
+/**
+ * @brief
+ *
+ * outputLabel (shape: (1, 1, total # of boxes, 8))
+ * [0]: item id
+ * [1]: group label
+ * [2]: instance id
+ * [3]: xmin
+ * [4]: ymin
+ * [5]: xmax
+ * [6]: ymax
+ * [7]: difficult
+ * cf.) for [3] ~ [6], 0.0 ~ 1.0 normalized values
+ */
 template <typename Dtype>
 class AnnotatedDataLayer : public InputLayer<Dtype> {
 public:

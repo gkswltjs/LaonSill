@@ -17,8 +17,9 @@
 #include "Updater.h"
 #include "Donator.h"
 #include "MemoryMgmt.h"
+#include "StdOutLog.h"
 
-#define CONVLAYER_LOG 1
+#define CONVLAYER_LOG 0
 
 using namespace std;
 
@@ -44,6 +45,15 @@ template<typename Dtype>
 ConvLayer<Dtype>::ConvLayer()
 : LearnableLayer<Dtype>() {
 	this->type = Layer<Dtype>::Conv;
+
+#if CONVLAYER_LOG
+	STDOUT_LOG("Layer: %s", SLPROP_BASE(name).c_str());
+	SLPROP(Conv, filterDim).print();
+	SLPROP(Conv, weightUpdateParam).print();
+	SLPROP(Conv, biasUpdateParam).print();
+	SLPROP(Conv, weightFiller).print();
+	SLPROP(Conv, biasFiller).print();
+#endif
 
 	const string& name = SLPROP_BASE(name);
 	filter_dim& filterDim = SLPROP(Conv, filterDim);

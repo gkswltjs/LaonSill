@@ -8,15 +8,17 @@
 #ifndef ROIDBUTIL_H_
 #define ROIDBUTIL_H_
 
-#include "frcnn_common.h"
-#include "BboxTransformUtil.h"
-#include "RoIDB.h"
 #include <algorithm>
 #include <iostream>
 #include <ostream>
-#include <cassert>
 #include <cstdint>
 #include <vector>
+
+#include "frcnn_common.h"
+#include "BboxTransformUtil.h"
+#include "RoIDB.h"
+#include "SysLog.h"
+#include "Perf.h"
 
 #define ROIDBUTIL_LOG 0
 
@@ -26,7 +28,7 @@ public:
 	static void addBboxRegressionTargets(std::vector<RoIDB>& roidb,
 			std::vector<std::vector<float>>& means, std::vector<std::vector<float>>& stds) {
 		// Add information needed to train bounding-box regressors.
-		assert(roidb.size() > 0);
+		SASSERT0(roidb.size() > 0);
 
 		const uint32_t numImages = roidb.size();
 		// Infer numfer of classes from the number of columns in gt_overlaps
@@ -36,8 +38,7 @@ public:
 			RoIDBUtil::computeTargets(roidb[i]);
 		}
 
-
-		assert(TRAIN_BBOX_NORMALIZE_TARGETS_PRECOMPUTED);
+		SASSERT0(TRAIN_BBOX_NORMALIZE_TARGETS_PRECOMPUTED);
 		np_tile(TRAIN_BBOX_NORMALIZE_MEANS, numClasses, means);
 #if ROIDBUTIL_LOG
 		print2dArray("bbox target means", means);
