@@ -578,6 +578,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "INT32",
     "DEFAULT" : 2097152
+},
+
+"UPDATER_RESET_GRADIENT" : 
+{
+    "DESC" : "specify whether to reset gradient or not",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : true 
 }
 
 }

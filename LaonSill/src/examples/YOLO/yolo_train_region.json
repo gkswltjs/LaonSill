@@ -809,7 +809,7 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.01
+			"biasFiller.value" : 0.2
 		},
 
         {
@@ -848,7 +848,7 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.01
+			"biasFiller.value" : 0.2
 		},
 
         {
@@ -887,7 +887,7 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.01
+			"biasFiller.value" : 0.2
 		},
 
         {
@@ -926,15 +926,16 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.01
+			"biasFiller.value" : 0.2
 		},
 
         {                     
-            "name" : "Sigmoid",
-            "layer" : "Sigmoid2",
-            "id" : 274,
+            "name" : "YOLOregion",
+            "layer" : "YOLORegion",
+            "id" : 275,
             "input" : ["conv22d"],
-            "output" : ["region"]
+            "output" : ["region"],
+            "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52]
         },   
 
         {
