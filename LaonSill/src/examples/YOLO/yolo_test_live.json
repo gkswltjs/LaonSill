@@ -938,13 +938,14 @@
 			"biasFiller.value" : 0.2
 		},
 
-        {
-            "name" : "sigmoid2",
-            "layer" : "Sigmoid2",
+        {                     
+            "name" : "region",
+            "layer" : "YOLORegion",
             "id" : 275,
             "input" : ["conv22d"],
-            "output" : ["sigmoid2"]
-        }
+            "output" : ["region"],
+            "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52]
+        }   
 	],
 
 	"configs" :
@@ -952,6 +953,6 @@
 		"batchSize" : 1,
 		"epochs" : 1, 
         "status" : "Test",
-        "loadPath" : "$(LAONSILL_HOME)/param/b7d3e4e9-4333-40a0-b7bb-766b18c029b5_102400.param"
+        "loadPath" : "$(LAONSILL_HOME)/param/082b0e85-4f05-46af-9788-29a8a9188880_78000.param"
 	}
 }
