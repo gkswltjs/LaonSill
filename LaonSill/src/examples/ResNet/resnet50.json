@@ -1924,6 +1924,8 @@
 		"optimizer" : "Momentum",
         "measureLayer" : ["loss"],
 
+		"loadPath" : "$(LAONSILL_HOME)/param/resnet50_init.param",
+
         "keepSaveIntervalModelCount" : 4,
         "keepSaveBestModel" : false,
         "keepSaveBestModelStartIterNum" : 10000

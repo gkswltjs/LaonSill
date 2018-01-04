@@ -1,20 +1,23 @@
 /*
- * RoIInputLayer.h
+ * RoIDataLayer.h
  *
  *  Created on: Nov 11, 2016
  *      Author: jkim
  */
 
-#ifndef ROIINPUTLAYER_H_
-#define ROIINPUTLAYER_H_
+#ifndef ROIDATALAYER_H_
+#define ROIDATALAYER_H_
 
 #include <opencv2/highgui/highgui.hpp>
 
 #include "frcnn_common.h"
-#include "DataSet.h"
 #include "InputLayer.h"
-#include "IMDB.h"
-#include "SysLog.h"
+#include "Datum.h"
+#include "InputDataProvider.h"
+#include "DataTransformer.h"
+#include "DataReader.h"
+
+
 
 
 
@@ -22,12 +25,15 @@
 /**
  * @brief
  *
+ * XXX: RoIInputLayer 대비, gt_boxes의 값이 1 ~ 2 pixel 정도 shift되는 효과 있음
+ *
+ *
  * im_info (shape: (1, 1, 1, 3)
  * [0]: height, 원본 픽셀수에서 scale이 곱해진 수 (org: 375, scale: 1.333.., -> 500)
  * [1]: width, 원본 픽셀수에서 scale이 곱해진 수 (org: 500, scale: 1.333.., -> 667)
  * [2]: scale, 원본에 곱해지는 수 (ex. 1.3333)
  *
- * im_info (shape: (1, 1, # of boxes, 5))
+ * gt_boxes (shape: (1, 1, # of boxes, 5))
  * [0]: x1, xmin, 픽셀수, scale 적용됨, 234.66..
  * [1]: y1, ymin, 280.00
  * [2]: x2, xmax, 316.00
@@ -36,10 +42,10 @@
  *
  */
 template <typename Dtype>
-class RoIInputLayer : public InputLayer<Dtype> {
+class RoIDataLayer : public InputLayer<Dtype> {
 public:
-	RoIInputLayer();
-	virtual ~RoIInputLayer();
+	RoIDataLayer();
+	virtual ~RoIDataLayer();
 
 	virtual void feedforward();
 	using InputLayer<Dtype>::feedforward;
@@ -52,35 +58,20 @@ public:
 	void reshape();
 
 private:
-	IMDB* getImdb();
-	void getTrainingRoidb(IMDB* imdb);
-	IMDB* getRoidb();
-	IMDB* combinedRoidb();
-	bool isValidRoidb(RoIDB& roidb);
-	void filterRoidb(std::vector<RoIDB>& roidb);
-
 	void shuffleRoidbInds();
-	void getNextMiniBatch();
-	void getNextMiniBatchInds(std::vector<uint32_t>& inds);
-	void getMiniBatch(const std::vector<RoIDB>& roidb, const std::vector<uint32_t>& inds);
-	std::vector<cv::Mat> getImageBlob(const std::vector<RoIDB>& roidb,
-			const std::vector<uint32_t>& scaleInds, std::vector<float>& imScales);
-	float prepImForBlob(cv::Mat& im, cv::Mat& imResized, const std::vector<float>& pixelMeans,
-			const uint32_t targetSize, const uint32_t maxSize);
-	void imListToBlob(std::vector<cv::Mat>& ims);
+	void load_batch();
 
 
 public:
+	InputPool* inputPool;
 	std::vector<std::vector<float>> bboxMeans;
 	std::vector<std::vector<float>> bboxStds;
-	IMDB* imdb;
-
-	std::vector<uint32_t> perm;
-	uint32_t cur;
 
 	std::vector<std::vector<Data<Dtype>*>> proposalTargetDataList;
 
-	std::vector<cv::Scalar> boxColors;
+private:
+	DataReader<class AnnotatedDatum> dataReader;
+	DataTransformer<Dtype> dataTransformer;
 
 
 public:
@@ -96,4 +87,4 @@ public:
     static void learnTensor(void* instancePtr);
 };
 
-#endif /* ROIINPUTLAYER_H_ */
+#endif /* ROIDATALAYER_H_ */

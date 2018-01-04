@@ -56,6 +56,13 @@ struct io_dim {
     }
     //int size() const { return rows*cols*channels*batches; }
 
+    void print() {
+    	std::cout << "rows: " << this->rows << std::endl;
+    	std::cout << "cols: " << this->cols << std::endl;
+    	std::cout << "channels: " << this->channels << std::endl;
+    	std::cout << "batches: " << this->batches << std::endl;
+    }
+
     /**
      * @details 데이터 하나의 엘리먼트 크기를 조회한다.
      * @return 데이터 하나의 엘리먼트 크기
@@ -87,6 +94,8 @@ struct filter_dim : public io_dim {
 	filter_dim(uint32_t rows, uint32_t cols, uint32_t channels, uint32_t filters,
 			uint32_t pad, uint32_t pad_h, uint32_t pad_w, uint32_t stride, uint32_t dilation)
 	: io_dim(rows, cols, channels, 1) {
+		io_dim::print();
+
 		this->filters = filters;
 		this->pad = pad;
 		this->pad_h = pad_h;
@@ -94,6 +103,16 @@ struct filter_dim : public io_dim {
 		this->stride = stride;
 		this->dilation = dilation;
 	}
+
+	void print() {
+		std::cout << "filters: " << this->filters << std::endl;
+		std::cout << "pad: " << this->pad << std::endl;
+		std::cout << "pad_h: " << this->pad_h << std::endl;
+		std::cout << "pad_w: " << this->pad_w << std::endl;
+		std::cout << "stride: " << this->stride << std::endl;
+		std::cout << "dilation: " << this->dilation << std::endl;
+	}
+
 	/**
 	 * @details 전체 필터의 엘리먼트 크기를 조회한다.
 	 * @return 전체 필터의 엘리먼트 크기
@@ -119,7 +138,15 @@ struct pool_dim {
 		this->pad = pad;
 		this->stride = stride;
 	}
+
+	void print() {
+		std::cout << "rows: " << this->rows << std::endl;
+		std::cout << "cols: " << this->cols << std::endl;
+		std::cout << "pad: " << this->pad << std::endl;
+		std::cout << "stride: " << this->stride << std::endl;
+	}
 };
+
 
 
 /**
@@ -153,6 +180,11 @@ struct update_param {
 		this->lr_mult = lr_mult;
 		this->decay_mult = decay_mult;
 	}
+
+	void print() {
+		std::cout << "lr_mult: " << this->lr_mult << std::endl;
+		std::cout << "decay_mult: " << this->decay_mult << std::endl;
+	}
 };
 
 /**
@@ -173,6 +205,13 @@ struct param_filler {
 		this->mean = mean;
 		this->std = std;
 		this->rng.seed(static_cast<unsigned int>(time(NULL)+getpid()));
+	}
+
+	void print() {
+		std::cout << "type: " << this->type << std::endl;
+		std::cout << "value: " << this->value << std::endl;
+		std::cout << "mean: " << this->mean << std::endl;
+		std::cout << "std: " << this->std << std::endl;
 	}
 
 	/**

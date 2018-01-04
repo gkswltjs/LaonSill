@@ -22,8 +22,10 @@
 #include "MemoryMgmt.h"
 
 #define ROIINPUTLAYER_LOG 0
+#define ROIDATA_COMPARE_TEST 0
 
 using namespace std;
+
 
 
 template <typename Dtype>
@@ -32,7 +34,9 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 	this->type = Layer<Dtype>::RoIInput;
 
 	this->imdb = combinedRoidb();
+	// roidb 벡터속의 하나의 roidb는 하나의 이미지 정보에 해당
 	cout << this->imdb->roidb.size() << " roidb entries ... " << endl;
+
 	// Train a Fast R-CNN network.
 	filterRoidb(this->imdb->roidb);
 	this->_dataSet = NULL;
@@ -40,10 +44,10 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 	SASSUME0(this->_dataSet != NULL);
 
 	cout << "Computing bounding-box regression targets ... " << endl;
+	// XXX: 현재 내부에서 강제로 BBOX_NORMALIZED_TARGETS_PRECOMPUTED를 사용하도록 강제함
 	RoIDBUtil::addBboxRegressionTargets(imdb->roidb, this->bboxMeans, this->bboxStds);
 
 	shuffleRoidbInds();
-
 
 	if (!TRAIN_HAS_RPN) {
 		const string path = "/home/jkim/Dev/SOOOA_HOME/network/proposal_target_layer.ptl";
@@ -116,7 +120,6 @@ void RoIInputLayer<Dtype>::reshape() {
 	Layer<Dtype>::_adjustInputShape();
 	/*
 	if (adjusted) {
-
 		if (this->_inputData.size() > 3) {
 			fillDataWith2dVec(this->bboxMeans, this->_inputData[3]);
 		}
@@ -132,7 +135,6 @@ void RoIInputLayer<Dtype>::reshape() {
 			continue;
 
 		if (TRAIN_HAS_RPN) {
-
 			// "data"
 			if (i == 0) {
 				const vector<uint32_t> dataShape =
@@ -226,6 +228,18 @@ template <typename Dtype>
 void RoIInputLayer<Dtype>::feedforward() {
 	reshape();
 	getNextMiniBatch();
+
+#if ROIDATA_COMPARE_TEST
+	this->_printOn();
+	for (int i = 0; i < this->_outputData.size(); i++) {
+		if (i < 1) {
+			this->_outputData[i]->print_data({}, false);
+		} else {
+			this->_outputData[i]->print_data({}, false, -1);
+		}
+	}
+	this->_printOff();
+#endif
 }
 
 template <typename Dtype>
@@ -253,7 +267,9 @@ IMDB* RoIInputLayer<Dtype>::getImdb() {
 template <typename Dtype>
 void RoIInputLayer<Dtype>::getTrainingRoidb(IMDB* imdb) {
 	cout << "Appending horizontally-flipped training examples ... " << endl;
+#if !ROIDATA_COMPARE_TEST
 	imdb->appendFlippedImages();
+#endif
 	cout << "done" << endl;
 
 	cout << "Preparing training data ... " << endl;
@@ -317,6 +333,8 @@ template <typename Dtype>
 void RoIInputLayer<Dtype>::shuffleRoidbInds() {
 	// Randomly permute the training roidb
 #if !SOOOA_DEBUG
+
+#if !ROIDATA_COMPARE_TEST
 	vector<uint32_t> horzInds;
 	vector<uint32_t> vertInds;
 	const vector<RoIDB>& roidb = imdb->roidb;
@@ -349,6 +367,14 @@ void RoIInputLayer<Dtype>::shuffleRoidbInds() {
 		perm[i*2+1] = inds[i][1];
 	}
 #else
+	const vector<RoIDB>& roidb = imdb->roidb;
+	const uint32_t numRoidbs = roidb.size();
+	this->perm.resize(numRoidbs);
+	for (int i = 0; i < numRoidbs; i++) {
+		this->perm[i] = i;
+	}
+#endif
+#else
 	np_arange(0, this->imdb->roidb.size(), this->perm);
 #endif
 	this->cur = 0;
@@ -373,26 +399,6 @@ void RoIInputLayer<Dtype>::getNextMiniBatch() {
 #endif
 	}
 
-
-
-	/*
-	cout << "image: " << imdb->roidb[inds[0]].image << endl;
-	uint32_t index = inds[0];
-	cout << "flipped: " << imdb->roidb[index].flipped << endl;
-	vector<string> boxLabelsText;
-	for (uint32_t i = 0; i < imdb->roidb[index].boxes.size(); i++) {
-		boxLabelsText.push_back(imdb->convertIndToClass(imdb->roidb[index].gt_classes[i]));
-	}
-	RoIDB& roidb = imdb->roidb[index];
-	cv::Mat im = cv::imread(roidb.image, CV_LOAD_IMAGE_COLOR);
-	if (roidb.flipped) {
-		cv::flip(im, im, 1);
-	}
-	displayBoxesOnImage("INPUT DATA", im, 1, roidb.boxes,
-					roidb.gt_classes, boxLabelsText, this->boxColors, 0, -1, true);
-					*/
-
-
 	getMiniBatch(minibatchDb, inds);
 }
 
@@ -409,12 +415,6 @@ void RoIInputLayer<Dtype>::getNextMiniBatchInds(vector<uint32_t>& inds) {
 	inds.insert(inds.end(), this->perm.begin() + this->cur,
 			this->perm.begin() + this->cur + TRAIN_IMS_PER_BATCH);
 
-	//for (int i = 0; i < inds.size(); i++) {
-	//	cout << inds[i] << ", ";
-	//}
-	//cout << endl;
-
-	//cout << this->cur << ": ";
 	this->cur += TRAIN_IMS_PER_BATCH;
 }
 
@@ -479,7 +479,6 @@ void RoIInputLayer<Dtype>::getMiniBatch(const vector<RoIDB>& roidb,
 		fillDataWith2dVec(gt_boxes, this->_inputData[2]);
 		this->_inputShape[2] =
             {1, 1, (uint32_t)gt_boxes.size(), (uint32_t)gt_boxes[0].size()};
-
 
 		/*
 		// 최종 scale된 input image, bounding box를 display

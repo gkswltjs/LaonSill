@@ -35,11 +35,7 @@
     "VARS" :
         [
             ["mean", "std::vector<float>", ""],
-            ["scale", "float", "1.0"],
-            ["source", "std::string", "\"\""],
-            ["sourceType", "std::string", "\"\""],
-            ["numTrainPack", "uint32_t", "1"],
-            ["numTestPack", "uint32_t", "1"]
+            ["source", "std::string", "\"\""]
         ],
     "KEYVARS" : ["source", "mean"]
 },
@@ -734,6 +730,48 @@
 	    ["pixelMeans", "std::vector<float>", ""]
 	],
 		"KEYVARS" : ["numClasses", "imageSet", "dataName", "dataPath", "labelMapPath", "pixelMeans"]
+},
+
+"RoIData" : 
+{
+    "DESC" : "roi data layer",
+    "PARENT" : "Input",
+    "LEVEL" : 2,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+	    ["numClasses", "uint32_t", "0"],
+		["dataSetName", "std::string", "\"\""],
+		["dataTransformParam", "DataTransformParam", "{}",
+			[
+				["scale", "float"],
+				["mirror", "bool"],
+				["mean", "std::vector<float>"],
+				["cropSize", "int"],
+				["cropH", "int"],
+				["cropW", "int"]
+			]
+		],
+		["resizeParam", "ResizeParam", "{}",
+			[
+				["prob", "float"],
+				["resizeMode", "ResizeMode"],
+				["height", "uint32_t"],
+				["width", "uint32_t"],
+				["heightScale", "uint32_t"],
+				["widthScale", "uint32_t"],
+				["padMode", "PadMode"],
+				["padValue", "std::vector<float>"],
+				["interpMode0", "InterpMode"],
+				["interpMode1", "InterpMode"],
+				["interpMode2", "InterpMode"],
+				["interpMode3", "InterpMode"],
+				["interpMode4", "InterpMode"]
+			]
+		]
+	],
+	"KEYVARS" : []
 },
 
 "RoIPooling" : 

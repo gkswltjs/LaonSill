@@ -512,7 +512,7 @@
 			"biasUpdateParam.lr_mult" : 2.0,
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Gaussian",
-			"weightFiller.value" : 0.1,
+			"weightFiller.std" : 0.1,
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.2
 		}

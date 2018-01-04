@@ -7,7 +7,7 @@
 	        "id" : 0,
 	        "output" : ["data", "label"],
 	        "source" : "$(LAONSILL_HOME)/data/sdf/ilsvrc12_train_1000/",
-	        "mean" : [172.49, 172.94, 179.25]
+	        "dataTransformParam.mean" : [172.49, 172.94, 179.25]
 	    },
 
 		{
@@ -511,7 +511,7 @@
 			"biasUpdateParam.lr_mult" : 2.0,
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Gaussian",
-			"weightFiller.value" : 0.1,
+			"weightFiller.std" : 0.1,
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.2
 		},

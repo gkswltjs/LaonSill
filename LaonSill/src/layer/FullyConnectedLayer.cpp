@@ -10,13 +10,25 @@
 #include "SysLog.h"
 #include "PropMgmt.h"
 #include "MemoryMgmt.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
+#define FULLYCONNECTEDLAYER_LOG 0
 
 template<typename Dtype>
 FullyConnectedLayer<Dtype>::FullyConnectedLayer() : LearnableLayer<Dtype>() {
 	this->type = Layer<Dtype>::FullyConnected;
+
+#if FULLYCONNECTEDLAYER_LOG
+	STDOUT_LOG("Layer: %s", SLPROP_BASE(name).c_str());
+	SLPROP(FullyConnected, weightUpdateParam).print();
+	SLPROP(FullyConnected, biasUpdateParam).print();
+	SLPROP(FullyConnected, weightFiller).print();
+	SLPROP(FullyConnected, biasFiller).print();
+#endif
+
+
 	const string& name = SLPROP_BASE(name);
 	this->_params.resize(2);
 	this->_params[ParamType::Weight] = NULL;

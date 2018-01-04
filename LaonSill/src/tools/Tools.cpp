@@ -247,6 +247,13 @@ void ConvertAnnoSetParam::validityCheck() {
 	if (this->resultCode < 0) {
 		return;
 	}
+
+	if (this->labelMapFilePath.empty()) {
+		this->resultCode = -1;;
+		this->resultMsg = "labelMapFilePath should be specified.";
+		return;
+	}
+	return;
 }
 
 
@@ -646,6 +653,7 @@ void convertImageSet(ConvertImageSetParam& param) {
 
 	SDFHeader header;
 	header.init(numImageSets);
+
 	if (!param.labelMapFilePath.empty()) {
 		parse_label_map(param.labelMapFilePath, header.labelItemList);
 	}

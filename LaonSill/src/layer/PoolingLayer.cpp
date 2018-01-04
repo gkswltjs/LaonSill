@@ -7,14 +7,22 @@
 
 #include "PoolingLayer.h"
 #include "PropMgmt.h"
+#include "StdOutLog.h"
 
 using namespace std;
 
+#define POOLINGLAYER_LOG 0
 
 template <typename Dtype>
 PoolingLayer<Dtype>::PoolingLayer()
 : Layer<Dtype>() {
 	this->type = Layer<Dtype>::Pooling;
+
+#if POOLINGLAYER_LOG
+	STDOUT_LOG("Layer: %s", SLPROP_BASE(name).c_str());
+	SLPROP(Pooling, poolDim).print();
+#endif
+
 
 	const pool_dim& poolDim = SLPROP(Pooling, poolDim);
 	const PoolingType poolingType = SLPROP(Pooling, poolingType);

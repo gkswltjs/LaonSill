@@ -80,6 +80,7 @@ public:
 		ProposalTarget,			//
 		RoIPooling,				//
 		RoIInput,
+		RoIData,
 		RoITestInput,
 		RoITestVideoInput,
 		RoITestLiveInput,
