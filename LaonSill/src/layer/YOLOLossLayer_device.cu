@@ -97,10 +97,9 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
 
     int labelClassInt = (int)(labelClass + EPSILON);
 
+    output[idx] = 0.0;
+
     if (labelClassInt == 0) {
-
-        output[idx] = 0.0;
-
         for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
             int confidenceIndex = 
                 idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
@@ -178,7 +177,6 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
         }
 
         // forward boxes & classes
-        output[idx] = 0.0;
         for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
             if (bestBoxIndex != i)
                 continue;
