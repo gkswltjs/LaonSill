@@ -239,7 +239,7 @@ BatchNormLayer<Dtype>::~BatchNormLayer() {
     }
 
     SASSERT0(this->normInputSet != NULL);
-    free(this->normInputSet);
+    SFREE(this->normInputSet);
 
     this->updateParams.clear();
 }

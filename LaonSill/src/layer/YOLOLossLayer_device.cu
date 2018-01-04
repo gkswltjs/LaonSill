@@ -19,28 +19,19 @@ using namespace std;
 
 #define YOLOLOSSLAYER_LOG         1
 
-#define YOLO_GRID_COUNT                 169
-#define YOLO_GRID_ONE_AXIS_COUNT        13
-#define YOLO_ANCHOR_BOX_COUNT           5
-#define YOLO_CLASS_COUNT                20
-#define YOLO_ELEM_COUNT_PER_ANCHORBOX   (YOLO_CLASS_COUNT + 5)
-#define YOLO_GRID_ELEM_COUNT        (YOLO_ANCHOR_BOX_COUNT * YOLO_ELEM_COUNT_PER_ANCHORBOX)
-
-#define YOLO_GROUND_TRUTH_ELEM_COUNT    (YOLO_CLASS_COUNT + 6)
-
-#define YOLOINPUT_ELEMCOUNT_PER_GRID            7
-
-
 #define EPSILON                 0.000001
 
 template <typename Dtype>
 __global__ void YoloBackward(const Dtype* input, const Dtype* input2,
-    int size, Dtype noobj, Dtype coord, Dtype* grad) {
+    int size, Dtype noobjVal, Dtype coordVal, Dtype objVal, Dtype classVal, Dtype* grad) {
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
 	if (idx >= size)
 		return;
 
+    // NOTE: 아래 코드는 필요 없습니다. forward에서 backward까지 진행하기 때문입니다.
+#if 0
     Dtype labelClass = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 6];
 
     int labelClassInt = (int)(labelClass + EPSILON);
@@ -53,7 +44,7 @@ __global__ void YoloBackward(const Dtype* input, const Dtype* input2,
         for (int j = 0; j < YOLO_ANCHOR_BOX_COUNT; j++) {
             int confidenceIndex = 
                 idx * YOLO_GRID_ELEM_COUNT + j * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
-            grad[confidenceIndex] = noobj * (2.0) * input[confidenceIndex];
+            grad[confidenceIndex] = noobjVal * (2.0) * input[confidenceIndex];
         }
 
         return;
@@ -68,31 +59,35 @@ __global__ void YoloBackward(const Dtype* input, const Dtype* input2,
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
         int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
 
-        grad[boxBaseIndex + 0] = coord * (2.0) * (input[boxBaseIndex + 0] - x);
-        grad[boxBaseIndex + 1] = coord * (2.0) * (input[boxBaseIndex + 1] - y);
+        grad[boxBaseIndex + 0] = coordVal * (2.0) * (input[boxBaseIndex + 0] - x);
+        grad[boxBaseIndex + 1] = coordVal * (2.0) * (input[boxBaseIndex + 1] - y);
         grad[boxBaseIndex + 2] = 
-            coord * (sqrtf(input[boxBaseIndex + 2] + EPSILON) - sqrtf(w + EPSILON))
+            coordVal * (sqrtf(input[boxBaseIndex + 2] + EPSILON) - sqrtf(w + EPSILON))
                     / sqrtf(input[boxBaseIndex + 2] + EPSILON);
         grad[boxBaseIndex + 3] = 
-            coord * (sqrtf(input[boxBaseIndex + 3] + EPSILON) - sqrtf(h + EPSILON))
+            coordVal * (sqrtf(input[boxBaseIndex + 3] + EPSILON) - sqrtf(h + EPSILON))
                     / sqrtf(input[boxBaseIndex + 3] + EPSILON);
-        grad[boxBaseIndex + 4] = (2.0) * (input[boxBaseIndex + 4] - 1.0);
+        grad[boxBaseIndex + 4] = objVal * (2.0) * (input[boxBaseIndex + 4] - 1.0);
 
         for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
             if (j == labelClassInt - 1) {
-                grad[boxBaseIndex + 5 + j] = (2.0) * (input[boxBaseIndex + 5 + j] - 1.0);
+                grad[boxBaseIndex + 5 + j] =
+                    classVal * (2.0) * (input[boxBaseIndex + 5 + j] - 1.0);
             } else {
-                grad[boxBaseIndex + 5 + j] = (2.0) * (input[boxBaseIndex + 5 + j]);
+                grad[boxBaseIndex + 5 + j] = 
+                    classVal * (2.0) * (input[boxBaseIndex + 5 + j]);
             }
         }
     }
+#endif
 }
 
 // YOLO forward
 // 소스가 너무 길다.. 정리해야 할꺼 같다.. 그런데 지금하기는 귀찮다.. ㅜㅜ
 template <typename Dtype>
 __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size, 
-    Dtype noobj, Dtype coord, Dtype* output) {
+    Dtype noobjVal, Dtype coordVal, Dtype objVal, Dtype classVal, Dtype* output, 
+    Dtype* inputGrad) {
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
@@ -103,12 +98,22 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
     int labelClassInt = (int)(labelClass + EPSILON);
 
     if (labelClassInt == 0) {
+
         output[idx] = 0.0;
-        for (int j = 0; j < YOLO_ANCHOR_BOX_COUNT; j++) {
+
+        for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
             int confidenceIndex = 
-                idx * YOLO_GRID_ELEM_COUNT + j * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
+                idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
+            int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * 
+                YOLO_ELEM_COUNT_PER_ANCHORBOX;
             Dtype c1 = input[confidenceIndex];
-            output[idx] = output[idx] + noobj * (c1 - 0.0) * (c1 - 0.0);
+            output[idx] = output[idx] + noobjVal * (c1 - 0.0) * (c1 - 0.0);
+
+            for (int j = 0 ; j < YOLO_ELEM_COUNT_PER_ANCHORBOX; j++) {
+                inputGrad[boxBaseIndex + j] = 0.0;
+            }
+
+            inputGrad[confidenceIndex] = 2 * noobjVal * (c1 - 0.0);
         }
 
         return;
@@ -123,6 +128,8 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
     // anchor boxes
     int bestBoxIndex = 0;
     Dtype bestBoxIOU = 0.0; 
+
+    Dtype box_iou[5];
 
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
         int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
@@ -148,15 +155,15 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
    
         Dtype b_union;
         b_union = w1 * h1 + w * h - b_inter;
-        Dtype box_iou = b_inter / b_union;
+        box_iou[i] = b_inter / b_union;
 
         if (i == 0) {
             bestBoxIndex = 0;
-            bestBoxIOU = box_iou;
+            bestBoxIOU = box_iou[i];
         } else {
-            if (bestBoxIOU < box_iou) {
+            if (bestBoxIOU < box_iou[i]) {
                 bestBoxIndex = i;
-                bestBoxIOU = box_iou;
+                bestBoxIOU = box_iou[i];
             }
         }
     }
@@ -171,26 +178,47 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
         Dtype h1 = input[boxBaseIndex + 3];
         Dtype c1 = input[boxBaseIndex + 4];
 
-        if (bestBoxIndex != i)
-            continue;
-
-        output[idx] = output[idx] + coord * (x1 - x) * (x1 - x);
-        output[idx] = output[idx] + coord * (y1 - y) * (y1 - y);
-        output[idx] = output[idx] + coord *
-            (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON)) *
-            (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON));
-        output[idx] = output[idx] + coord *
-            (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON)) *
-            (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON));
-        output[idx] = output[idx] + (c1 - 1.0) * (c1 - 1.0);
+        inputGrad[boxBaseIndex + 0] = coordVal * (x1 - x) * 2.0;
+        inputGrad[boxBaseIndex + 1] = coordVal * (y1 - y) * 2.0;
+        inputGrad[boxBaseIndex + 2] = coordVal * 
+            (sqrtf(w1 + EPSILON) - sqrt(w + EPSILON)) / sqrtf(w1 + EPSILON);
+        inputGrad[boxBaseIndex + 3] = coordVal * 
+            (sqrtf(h1 + EPSILON) - sqrt(h + EPSILON)) / sqrtf(h1 + EPSILON);
+        inputGrad[boxBaseIndex + 4] = coordVal * (c1 - box_iou[i]) * 2.0;
 
         for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
             if (j == labelClassInt - 1) {
-                output[idx] = output[idx] + 
+                inputGrad[boxBaseIndex + 5 + j] = 
+                    classVal * (input[boxBaseIndex + 5 + j] - 1.0) * 2.0;
+            } else {
+                inputGrad[boxBaseIndex + 5 + j] = 
+                    classVal * (input[boxBaseIndex + 5 + j] - 0.0) * 2.0;
+            }
+        }
+
+        if (bestBoxIndex != i)
+            continue;
+
+        output[idx] = output[idx] + coordVal * (x1 - x) * (x1 - x);
+        output[idx] = output[idx] + coordVal * (y1 - y) * (y1 - y);
+
+        output[idx] = output[idx] + coordVal *
+            (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON)) *
+            (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON));
+
+        output[idx] = output[idx] + coordVal *
+            (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON)) *
+            (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON));
+
+        output[idx] = output[idx] + objVal * (c1 - box_iou[i]) * (c1 - box_iou[i]);
+
+        for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+            if (j == labelClassInt - 1) {
+                output[idx] = output[idx] + classVal * 
                     (input[boxBaseIndex + 5 + j] - 1.0) * 
                     (input[boxBaseIndex + 5 + j] - 1.0);
             } else {
-                output[idx] = output[idx] + 
+                output[idx] = output[idx] + classVal *
                     (input[boxBaseIndex + 5 + j] - 0.0) * 
                     (input[boxBaseIndex + 5 + j] - 0.0);
             }
@@ -247,10 +275,12 @@ void YOLOLossLayer<Dtype>::feedforward() {
     const Dtype *inputData = this->_inputData[0]->device_data();
     const Dtype *inputData2 = this->_inputData[1]->device_data();
     Dtype *outputData = this->_outputData[0]->mutable_device_data();
+    Dtype *inputGrad = this->_inputData[0]->mutable_device_grad();
 
     YoloForward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         inputData, inputData2, size, (Dtype)SLPROP(YOLOLoss, noobj),
-        (Dtype)SLPROP(YOLOLoss, coord), outputData);
+        (Dtype)SLPROP(YOLOLoss, coord), (Dtype)SLPROP(YOLOLoss, obj), 
+        (Dtype)SLPROP(YOLOLoss, class), outputData, inputGrad);
 }
 
 template <typename Dtype>
@@ -265,7 +295,8 @@ void YOLOLossLayer<Dtype>::backpropagation() {
 
     YoloBackward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         inputData, inputData2, size, (Dtype)SLPROP(YOLOLoss, noobj),
-        (Dtype)SLPROP(YOLOLoss, coord), inputGrad);
+        (Dtype)SLPROP(YOLOLoss, coord), (Dtype)SLPROP(YOLOLoss, obj), 
+        (Dtype)SLPROP(YOLOLoss, class), inputGrad);
 }
 
 template <typename Dtype>
@@ -276,6 +307,7 @@ Dtype YOLOLossLayer<Dtype>::cost() {
     const vector<uint32_t>& inputShape = this->_inputData[0]->getShape();
     int batchCount = inputShape[0];
     int count = YOLO_GRID_COUNT * batchCount;
+
 
     for (int i = 0; i < count; i++) {
         avg += outputData[i];

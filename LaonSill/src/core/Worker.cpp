@@ -633,7 +633,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
                 AnnotationDataLayer<float>* inputLayer = 
                     (AnnotationDataLayer<float>*)inputLayers[0];
                 
-                commonOutputLayer = network->findLayer("sigmoid2");
+                commonOutputLayer = network->findLayer("region");
                 WorkContext::updateLayer(networkID, inputLayer->layerID);
                 inputLayer->feedImage(channel, height, width, imageData);
             }
@@ -714,7 +714,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
         int coordCount = 5;
         int imageWidth = 416;
         int imageHeight = 416;
-        float confThres = 0.1;
+        float confThres = 0.5;
 
         int resultCount = 0;
         float left, top, right, bottom;
@@ -744,6 +744,9 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
                 }
 
                 float score = c * maxClassConfidence;
+
+                cout << "score : " << score << endl;
+
                 if (score <= confThres) {
                     continue; 
                 }

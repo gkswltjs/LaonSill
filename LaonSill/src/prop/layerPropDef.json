@@ -418,9 +418,36 @@
     "PROPDOWN" : [],
     "VARS" :
         [
-            ["noobj", "float", "0.5"],
-            ["coord", "float", "5.0"]
+            ["noobj", "float", "1.0"],
+            ["coord", "float", "1.0"],
+            ["obj", "float", "5.0"],
+            ["class", "float", "1.0"]
         ],
+    "KEYVARS" : []
+},
+
+"YOLORegion" :
+{
+    "DESC" : "YOLO region layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" :
+        [
+            ["anchors", "std::vector<float>", ""]
+        ],
+    "KEYVARS" : []
+},
+
+"YOLOPassThru" :
+{
+    "DESC" : "YOLO pass thru layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : [],
     "KEYVARS" : []
 },
 

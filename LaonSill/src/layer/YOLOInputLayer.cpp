@@ -250,10 +250,8 @@ void YOLOInputLayer<Dtype>::load_batch() {
                 int gridX = (int)(centerX * (float)gridCount);
                 int gridY = (int)(centerY * (float)gridCount);
 
-                float normedCenterX =
-                    (centerX - (float)gridX / (float)gridCount) * (float)gridCount;
-                float normedCenterY =
-                    (centerY - (float)gridY / (float)gridCount) * (float)gridCount;
+                float normedCenterX = centerX * (float)gridCount - (float)gridX;
+                float normedCenterY = centerY * (float)gridCount - (float)gridY;
 
                 int classLabel = transformedAnnoVec[g].group_label;
                 int gridIndex = gridX + gridY * gridCount;
