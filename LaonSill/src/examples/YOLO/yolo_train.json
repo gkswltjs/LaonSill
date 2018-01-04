@@ -948,7 +948,7 @@
 
 	"configs" :
 	{
-		"batchSize" : 8,
+		"batchSize" : 12,
 		"epochs" : 160, 
 		"lossLayer" : ["loss"],
         "measureLayer" : ["loss"],
@@ -958,7 +958,7 @@
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,
 		"stepSize" : 50000,
-        "stepValue" : [100, 960000, 1440000],
+        "stepValue" : [100, 80000, 120000],
         "stepScale" : [0.1, 1.0, 0.1, 0.01],
 		"weightDecay" : 0.0005,
 		"momentum" : 0.9,
