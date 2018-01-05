@@ -46,7 +46,7 @@ handle.buildNetwork(1)
 
 # (5) 오브젝트 디텍션 루프
 TESTIMAGE_BASE_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "client", "test")
-for i in range(4):
+for i in range(19):
     imagePath = os.path.join(TESTIMAGE_BASE_FILEPATH, "%d.jpg" % (i + 1))
 
     img = cv2.imread(imagePath)
@@ -59,15 +59,15 @@ for i in range(4):
             20, base_network)
 
     for bbox in bboxes:
-        print "bbox : (", bbox[0], ", ",  bbox[1], ", ", bbox[2], ", ", bbox[3], ")"
+        print "bbox : (", bbox[1], ", ",  bbox[0], ", ", bbox[3], ", ", bbox[2], ")"
         print "score : ", bbox[4], ", labelIndex : ", bbox[5]
 
-        left = int(bbox[1] * width / res)
-        top = int(bbox[0] * height / res)
-        right = int(bbox[3] * width / res)
-        bottom = int(bbox[2] * height / res)
+        left = max(int(bbox[1] * width / res), 0)
+        top = max(int(bbox[0] * height / res), 0)
+        right = min(int(bbox[3] * width / res), width -1)
+        bottom = min(int(bbox[2] * height / res), width - 1)
 
-        cv2.rectangle(img, (left, top), (right, bottom), (255, 255, 0))
+        cv2.rectangle(img, (left, top), (right, bottom), (255, 255, 0), 2)
         
     cv2.imshow('image', img)
     cv2.waitKey(0)

@@ -646,7 +646,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     network->runMiniBatch(true, 0);
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
 
-    DebugUtil<float>::printNetworkEdges(stdout, "YOLO gogo", networkID, 0);
+    //DebugUtil<float>::printNetworkEdges(stdout, "YOLO gogo", networkID, 0);
 
     Job* pubJob = getPubJob(job);
 
@@ -714,7 +714,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
         int coordCount = 5;
         int imageWidth = 416;
         int imageHeight = 416;
-        float confThres = 0.5;
+        float confThres = 0.3;
 
         int resultCount = 0;
         float left, top, right, bottom;
@@ -744,8 +744,6 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
                 }
 
                 float score = c * maxClassConfidence;
-
-                cout << "score : " << score << endl;
 
                 if (score <= confThres) {
                     continue; 

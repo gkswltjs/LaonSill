@@ -809,7 +809,7 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.01
+			"biasFiller.value" : 0.2
 		},
 
         {
@@ -848,7 +848,7 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.01
+			"biasFiller.value" : 0.2
 		},
 
         {
@@ -887,7 +887,7 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.01
+			"biasFiller.value" : 0.2
 		},
 
         {
@@ -926,7 +926,7 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.01
+			"biasFiller.value" : 0.2
 		},
 
         {                     
@@ -948,12 +948,12 @@
 
 	"configs" :
 	{
-		"batchSize" : 12,
+		"batchSize" : 1,
 		"epochs" : 160, 
 		"lossLayer" : ["loss"],
         "measureLayer" : ["loss"],
 		"gamma" : 0.1,
-		"testInterval" : 100,
+		"testInterval" : 1,
 		"saveInterval" : 1000,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,

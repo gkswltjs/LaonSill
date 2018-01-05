@@ -588,6 +588,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : true 
+},
+
+"DATAREADER_USE_PEEK_INSTEADOF_GET" : 
+{
+    "DESC" : "specify whether to use peek func instead of get func in the data reader module",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "BOOL",
+    "DEFAULT" : false 
 }
 
 }

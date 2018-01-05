@@ -9,6 +9,7 @@
 #include "Datum.h"
 #include "SysLog.h"
 #include "MemoryMgmt.h"
+#include "Param.h"
 
 using namespace std;
 
@@ -38,6 +39,9 @@ DataReader<T>::~DataReader() {
 
 template <typename T>
 T* DataReader<T>::getNextData() {
+    if (SPARAM(DATAREADER_USE_PEEK_INSTEADOF_GET))
+        return peekNextData();
+
 	string value = this->db.getNextValue();
 	T* datum = NULL;
 	SNEW(datum, T);

@@ -61,12 +61,10 @@ __global__ void YoloBackward(const Dtype* input, const Dtype* input2,
 
         grad[boxBaseIndex + 0] = coordVal * (2.0) * (input[boxBaseIndex + 0] - x);
         grad[boxBaseIndex + 1] = coordVal * (2.0) * (input[boxBaseIndex + 1] - y);
-        grad[boxBaseIndex + 2] = 
-            coordVal * (sqrtf(input[boxBaseIndex + 2] + EPSILON) - sqrtf(w + EPSILON))
-                    / sqrtf(input[boxBaseIndex + 2] + EPSILON);
-        grad[boxBaseIndex + 3] = 
-            coordVal * (sqrtf(input[boxBaseIndex + 3] + EPSILON) - sqrtf(h + EPSILON))
-                    / sqrtf(input[boxBaseIndex + 3] + EPSILON);
+        grad[boxBaseIndex + 2] = coordVal * (sqrtf(input[boxBaseIndex + 2]) - sqrtf(w))
+                    / sqrtf(input[boxBaseIndex + 2]);
+        grad[boxBaseIndex + 3] = coordVal * (sqrtf(input[boxBaseIndex + 3]) - sqrtf(h))
+                    / sqrtf(input[boxBaseIndex + 3]);
         grad[boxBaseIndex + 4] = objVal * (2.0) * (input[boxBaseIndex + 4] - 1.0);
 
         for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
@@ -137,7 +135,8 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
         int bestBoxIndex = 0;
         Dtype bestBoxIOU = 0.0; 
 
-        Dtype box_iou[5];
+        Dtype box_iou[YOLO_ANCHOR_BOX_COUNT];
+        Dtype box_dist[YOLO_ANCHOR_BOX_COUNT];
 
         for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
             int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
@@ -163,7 +162,11 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
        
             Dtype b_union;
             b_union = w1 * h1 + w * h - b_inter;
+
             box_iou[i] = b_inter / b_union;
+
+            box_dist[i] = (x - x1) * (x - x1) + (y - y1) * (y - y1) + (w - w1) * (w - w1) +
+                (h - h1) * (h - h1);
 
             if (i == 0) {
                 bestBoxIndex = 0;
@@ -175,6 +178,22 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
                 }
             }
         }
+
+        if (bestBoxIOU == 0.0) {
+            bestBoxIndex = 0;
+            Dtype bestDist = box_dist[0];
+            for (int i = 1; i < YOLO_ANCHOR_BOX_COUNT; i++) {
+                if (bestDist > box_dist[i])  {
+                    bestBoxIndex = i;
+                    bestDist = box_dist[i];
+                }
+            }
+        }
+
+        Dtype reward = 0.3;
+
+        if (bestBoxIOU > reward)
+            reward = bestBoxIOU;
 
         // forward boxes & classes
         for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
@@ -190,11 +209,9 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
 
             inputGrad[boxBaseIndex + 0] = coordVal * (x1 - x) * 2.0;
             inputGrad[boxBaseIndex + 1] = coordVal * (y1 - y) * 2.0;
-            inputGrad[boxBaseIndex + 2] = coordVal * 
-                (sqrtf(w1 + EPSILON) - sqrt(w + EPSILON)) / sqrtf(w1 + EPSILON);
-            inputGrad[boxBaseIndex + 3] = coordVal * 
-                (sqrtf(h1 + EPSILON) - sqrt(h + EPSILON)) / sqrtf(h1 + EPSILON);
-            inputGrad[boxBaseIndex + 4] = objVal * (c1 - 1.0) * 2.0;
+            inputGrad[boxBaseIndex + 2] = coordVal * (sqrtf(w1) - sqrt(w)) / sqrtf(w1);
+            inputGrad[boxBaseIndex + 3] = coordVal * (sqrtf(h1) - sqrt(h)) / sqrtf(h1);
+            inputGrad[boxBaseIndex + 4] = objVal * (c1 - reward) * 2.0;
 
             for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
                 if (j == labelClassInt - 1) {
@@ -210,14 +227,12 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
             output[idx] = output[idx] + coordVal * (y1 - y) * (y1 - y);
 
             output[idx] = output[idx] + coordVal *
-                (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON)) *
-                (sqrtf(w1 + EPSILON) - sqrtf(w + EPSILON));
+                (sqrtf(w1) - sqrtf(w)) * (sqrtf(w1) - sqrtf(w));
 
             output[idx] = output[idx] + coordVal *
-                (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON)) *
-                (sqrtf(h1 + EPSILON) - sqrtf(h + EPSILON));
+                (sqrtf(h1) - sqrtf(h)) * (sqrtf(h1) - sqrtf(h));
 
-            output[idx] = output[idx] + objVal * (c1 - 1.0) * (c1 - 1.0);
+            output[idx] = output[idx] + objVal * (c1 - reward) * (c1 - reward);
 
             for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
                 if (j == labelClassInt - 1) {

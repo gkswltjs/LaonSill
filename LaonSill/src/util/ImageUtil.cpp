@@ -50,12 +50,21 @@ cv::Mat makeImage(const Dtype* data, int nthImage, int channel, int row,
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             int index = i * col + j;
+#if 0
             testImage.at<cv::Vec3b>(i, j)[0] =
                 (int)((data[baseIndex + index + channelElemCount * 2] + 1.0) * 127.5);
             testImage.at<cv::Vec3b>(i, j)[1] =
                 (int)((data[baseIndex + index + channelElemCount * 1] + 1.0) * 127.5);
             testImage.at<cv::Vec3b>(i, j)[2] =
                 (int)((data[baseIndex + index + channelElemCount * 0] + 1.0) * 127.5);
+#else
+            testImage.at<cv::Vec3b>(i, j)[0] =
+                (int)(data[baseIndex + index + channelElemCount * 2] + 123.0);
+            testImage.at<cv::Vec3b>(i, j)[1] =
+                (int)(data[baseIndex + index + channelElemCount * 1] + 117.0);
+            testImage.at<cv::Vec3b>(i, j)[2] =
+                (int)(data[baseIndex + index + channelElemCount * 0] + 104.0);
+#endif
         }
     }
 
@@ -68,6 +77,7 @@ void ImageUtil<Dtype>::showImage(const Dtype* data, int nthImage, int channel, i
     cv::Mat testImage = makeImage(data, nthImage, channel, row, col);
 
     cv::imshow("test image", testImage);
+    //cv::imwrite("/home/monhoney/yoyo.jpg", testImage);
     cv::waitKey(0);
 }
 

@@ -265,6 +265,15 @@ void YOLOInputLayer<Dtype>::load_batch() {
                 int classLabel = transformedAnnoVec[g].group_label;
                 int gridIndex = gridX + gridY * gridCount;
 
+#if 0
+                cout << "class label : " << classLabel << endl;
+                cout << "box x : " << bbox.xmin << " ~ " << bbox.xmax <<
+                    ", y : " << bbox.ymin << " ~ " << bbox.ymax << endl;
+                cout << "grid (X, Y) : " << gridX << "," << gridY <<
+                    ", cX : " << normedCenterX << ", cY : " << normedCenterY <<
+                    ", w : " << normedWidth << ", h : " << normedHeight << endl;
+#endif
+
                 SASSUME0(gridIndex < gridCellCount);
                 SASSUME0(gridX < gridCount);
                 SASSUME0(gridY < gridCount);

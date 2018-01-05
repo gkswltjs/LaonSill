@@ -940,12 +940,11 @@
 
         {                     
             "name" : "region",
-            "layer" : "YOLORegion",
+            "layer" : "Sigmoid2",
             "id" : 275,
             "input" : ["conv22d"],
-            "output" : ["region"],
-            "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52]
-        }   
+            "output" : ["region"]
+        }
 	],
 
 	"configs" :
@@ -953,6 +952,6 @@
 		"batchSize" : 1,
 		"epochs" : 1, 
         "status" : "Test",
-        "loadPath" : "$(LAONSILL_HOME)/param/83574147-b44a-4c8e-b60b-b2e5045565dd_10000.param"
+        "loadPath" : "$(LAONSILL_HOME)/param/fb05ad52-0577-483e-8c85-31ed9cd2ae43_88000.param"
 	}
 }
