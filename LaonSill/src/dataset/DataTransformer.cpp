@@ -264,6 +264,8 @@ void DataTransformer<Dtype>::transform(const Datum* datum, Data<Dtype>* data, in
 		if (this->param.forceColor || this->param.forceGray) {
 			SASSERT(false, "Only support encoded datum now");
 		}
+		SASSERT(!this->param.hasResizeParam(),
+				"Only Encoded Datum is supported for Resize Function.");
 	}
 
 	const int cropSize = this->param.cropSize;

@@ -3,13 +3,12 @@
 	[
 		{
 			"name" : "data",
-			"layer" : "LiveDataInput",
+			"layer" : "DataInput",
 			"id" : 0,
-			"output" : ["data"],
+			"output" : ["data", "label"],
+	        "source" : "$(LAONSILL_HOME)/data/sdf/ilsvrc12_train_320px",
 			"dataTransformParam.mean" : [104.0, 117.0, 123.0],
-			"resizeParam.prob" : 1.0,
-			"resizeParam.height" : 299,
-			"resizeParam.width" : 299
+			"dataTransformParam.cropSize" : 299
 		},
 
 		{
@@ -3897,14 +3896,26 @@
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "accuracy",
+			"layer" : "Accuracy",
+			"id" : 3630,
+			"input" : ["loss/fc", "label"],
+			"output" : ["accuracy"],
+			"propDown" : [false, false],
+			"topK" : 5,
+			"axis" : 2
 		}
 
 	],
 
 	"configs" :
 	{
-		"batchSize" : 1,
+		"batchSize" : 10,
 		"epochs" : 1, 
+		"testInterval" : 100,
 		"status" : "Test",
 		"loadPath" : "$(LAONSILL_HOME)/param/INCEPTION_V3_TRAINED_320000.param"
 	}
