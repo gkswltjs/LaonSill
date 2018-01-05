@@ -6,9 +6,9 @@
 	        "layer" : "LiveDataInput",
 	        "id" : 0,
 	        "output" : ["data"],
-	        "pixelMeans" : [172.49, 172.94, 179.25],
-            "rows" : 224,
-            "cols" : 224
+			"dataTransformParam.mean" : [172.49, 172.94, 179.25],
+			"resizeParam.height" : 224,
+			"resizeParam.width" : 224
 	    },
 
 		{

@@ -10,7 +10,9 @@
 #define DATALIVEINPUTLAYER_H 
 
 #include "InputLayer.h"
-#include "Datum.h"
+#include "DataTransformer.h"
+
+#define LIVEDATAINPUTLAYER_TEST 0
 
 template <typename Dtype>
 class LiveDataInputLayer : public InputLayer<Dtype> {
@@ -29,6 +31,15 @@ public:
 	virtual void reshape();
 
     void feedImage(const int channels, const int height, const int width, float* image);
+
+private:
+    DataTransformer<Dtype> dataTransformer;
+    uint32_t height;
+    uint32_t width;
+#if LIVEDATAINPUTLAYER_TEST
+    std::vector<std::string> testList;
+    int cur;
+#endif
 
 public:
 	/****************************************************************************

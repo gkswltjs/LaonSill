@@ -9,6 +9,11 @@ from LaonSill.ClientAPI import *
 rows = 224
 cols = 224
 
+#base_network = 0   # for VGG16
+#base_network = 1    # for INCEPTION_V3
+base_network = 2   # for RESNET50
+
+
 # (1) LaonSill Client 핸들을 생성한다.
 print "create handle"
 handle = ClientHandle()
@@ -19,8 +24,22 @@ print "get session"
 ret = handle.getSession()
 
 # (3) 네트워크를 생성한다.
-NETWORK_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "examples", "VGG16",
+if base_network == 0:
+    NETWORK_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "examples", "VGG16",
         "vgg16_test_live.json")
+elif base_network == 1:
+    NETWORK_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "examples", "Inception",
+        "inception_v3_test_live.json")
+    rows = 299
+    cols = 299
+elif base_network == 2:
+    NETWORK_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "examples", "ResNet",
+        "resnet50_test_live.json")
+else:
+    print 'wrong base network'
+    handle.releaseSession()
+    os.exit(0)
+
 print "create network. network filepath : ", NETWORK_FILEPATH
 ret = handle.createNetworkFromFile(NETWORK_FILEPATH)
 
@@ -28,9 +47,9 @@ ret = handle.createNetworkFromFile(NETWORK_FILEPATH)
 print "build network (epoch=1)"
 ret = handle.buildNetwork(1)
 
-# (5) 오브젝트 디텍션 루프
+# (5) 이미지 분류 루프
 TESTIMAGE_BASE_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "client", "test")
-for i in range(4):
+for i in range(7):
     imagePath = os.path.join(TESTIMAGE_BASE_FILEPATH, "%d.jpg" % (i + 1))
 
     img = cv2.imread(imagePath)
@@ -39,7 +58,7 @@ for i in range(4):
     resized_img = cv2.resize(img, (rows, cols))
     converted_img = np.array(resized_img).astype('f')
 
-    baseNetworkType = 0     # 0 for VGG16
+    baseNetworkType = base_network     # 0 for VGG16, 1 for Inception, 2 for ResNet
     ret, label_index = handle.runClassificationWithInput(3, rows, cols,
             converted_img.flatten(), baseNetworkType)
 

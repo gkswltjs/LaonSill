@@ -820,6 +820,36 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
                 inputLayer->feedImage(channel, height, width, imageData);
             }
             break;
+        case 1:		// Inception
+        	{
+				inputLayers = network->findLayersByType(Layer<float>::LiveDataInput);
+				SASSUME0(inputLayers.size() == 1);
+				LiveDataInputLayer<float>* inputLayer =
+					(LiveDataInputLayer<float>*)inputLayers[0];
+
+				// XXX: 이렇게 직접 레이어 이름을 지정하는 것은 좋지 않다.. (당연히..)
+				//      수정하자!!!
+				//commonOutputLayer = network->findLayer("prob");
+				commonOutputLayer = network->findLayer("loss/fc");
+				WorkContext::updateLayer(networkID, inputLayer->layerID);
+				inputLayer->feedImage(channel, height, width, imageData);
+			}
+			break;
+        case 2:		// ResNet
+        	{
+				inputLayers = network->findLayersByType(Layer<float>::LiveDataInput);
+				SASSUME0(inputLayers.size() == 1);
+				LiveDataInputLayer<float>* inputLayer =
+					(LiveDataInputLayer<float>*)inputLayers[0];
+
+				// XXX: 이렇게 직접 레이어 이름을 지정하는 것은 좋지 않다.. (당연히..)
+				//      수정하자!!!
+				//commonOutputLayer = network->findLayer("prob");
+				commonOutputLayer = network->findLayer("fc");
+				WorkContext::updateLayer(networkID, inputLayer->layerID);
+				inputLayer->feedImage(channel, height, width, imageData);
+			}
+			break;
 
         default:
             SASSERT(false, "invalid base network type(%d)", baseNetworkType);
