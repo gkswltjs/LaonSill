@@ -7,7 +7,6 @@
  */
 
 #include <unistd.h>
-
 #include <vector>
 
 #include "LiveDataInputLayer.h"
@@ -18,13 +17,45 @@
 #include "Perf.h"
 #include "MemoryMgmt.h"
 
+#if LIVEDATAINPUTLAYER_TEST
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#endif
+
 using namespace std;
 
 
 template <typename Dtype>
 LiveDataInputLayer<Dtype>::LiveDataInputLayer()
-: InputLayer<Dtype>() {
+: InputLayer<Dtype>(),
+  dataTransformer(&SLPROP(LiveDataInput, dataTransformParam)) {
 	this->type = Layer<Dtype>::LiveDataInput;
+
+	SASSERT(SLPROP(LiveDataInput, rows) != 0 || SLPROP(LiveDataInput, resizeParam).height != 0,
+			"one of rows or resizeParam.height should be larger than 0.");
+	SASSERT(SLPROP(LiveDataInput, cols) != 0 || SLPROP(LiveDataInput, resizeParam).width != 0,
+			"one of cols or resizeParam.width should be larger than 0.");
+
+	this->height = SLPROP(LiveDataInput, resizeParam).height > 0 ?
+			SLPROP(LiveDataInput, resizeParam).height :
+			SLPROP(LiveDataInput, rows);
+
+	this->width = SLPROP(LiveDataInput, resizeParam).width > 0 ?
+			SLPROP(LiveDataInput, resizeParam).width :
+			SLPROP(LiveDataInput, cols);
+
+	DataTransformParam& dataTransformParam = this->dataTransformer.param;
+	dataTransformParam.resizeParam = SLPROP(LiveDataInput, resizeParam);
+	dataTransformParam.resizeParam.updateInterpMode();
+
+#if LIVEDATAINPUTLAYER_TEST
+	testList.push_back("/home/jkim/Dev/data/image/ilsvrc12_train/images/n15075141/n15075141_158.JPEG");
+	testList.push_back("/home/jkim/Dev/data/image/ilsvrc12_train/images/n09193705/n09193705_9517.JPEG");
+	testList.push_back("/home/jkim/Dev/data/image/ilsvrc12_train/images/n07753113/n07753113_9411.JPEG");
+	cur = 0;
+	cv::namedWindow("input");
+#endif
 }
 
 template <typename Dtype>
@@ -42,11 +73,15 @@ void LiveDataInputLayer<Dtype>::reshape() {
 	}
 	Layer<Dtype>::_adjustInputShape();
 
+
     this->_inputShape[0][0] = 1;
     this->_inputShape[0][1] = 3;
-    this->_inputShape[0][2] = SLPROP(LiveDataInput, rows);
-    this->_inputShape[0][3] = SLPROP(LiveDataInput, cols);
-	this->_inputData[0]->reshape(this->_inputShape[0]);
+    //this->_inputShape[0][2] = SLPROP(LiveDataInput, rows);
+    //this->_inputShape[0][3] = SLPROP(LiveDataInput, cols);
+    this->_inputShape[0][2] = this->height;
+    this->_inputShape[0][3] = this->width;
+    this->_inputData[0]->reshape(this->_inputShape[0]);
+
 
 //  int inputImageSize = 3 * SLPROP(LiveDataInput, rows) * SLPROP(LiveDataInput, cols);
 //  this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageSize);
@@ -56,40 +91,33 @@ template <typename Dtype>
 void LiveDataInputLayer<Dtype>::feedImage(const int channels, const int height,
 		const int width, float* image) {
 	SASSERT0(channels == 3);
-
-    SASSERT0(height == SLPROP(LiveDataInput, rows));
-    SASSERT0(width == SLPROP(LiveDataInput, cols));
+    //SASSERT0(height == SLPROP(LiveDataInput, rows));
+    //SASSERT0(width == SLPROP(LiveDataInput, cols));
 	SASSERT0(image != NULL);
 
+	// XXX: 이문헌 연구원님과 협의 후, image 자체를 CV_8U로 받도록 수정
+	// 데이터 전송량도 많아지고 다시 CV_8U로 변환해야 하는 오버헤드 발생
 	cv::Mat img(height, width, CV_32FC3, image);
-	float* imPtr = (float*)img.data;
+	img.convertTo(img, CV_8UC3);
 
-    SASSERT0(img.rows == height);
-    SASSERT0(img.cols == width);
-    SASSERT0(img.channels() == 3);
-
-	int n = img.rows * img.cols * img.channels();
-	for (int i = 0; i < n; i+=3) {
-		imPtr[i+0] -= SLPROP(LiveDataInput, pixelMeans)[0];
-		imPtr[i+1] -= SLPROP(LiveDataInput, pixelMeans)[1];
-		imPtr[i+2] -= SLPROP(LiveDataInput, pixelMeans)[2];
-	}
-
-	// 'data'
-	const vector<uint32_t> inputShape = {1, (uint32_t)img.rows, (uint32_t)img.cols, 3};
-	this->_inputData[0]->reshape(inputShape);
-	this->_inputData[0]->set_host_data((Dtype*)img.data);
-
-	// Move channels (axis 3) to axis 1
-	// Axis order will become: (batch elem, channel, height, width)
-	const vector<uint32_t> channelSwap = {0, 3, 1, 2};
-	this->_inputData[0]->transpose(channelSwap);
-	this->_inputShape[0] = this->_inputData[0]->getShape();
+	this->_inputShape[0] = this->dataTransformer.inferDataShape(img);
+	this->_inputData[0]->reshape(this->_inputShape[0]);
+	this->dataTransformer.transform(img, this->_inputData[0], 0);
 }
 
 template <typename Dtype>
 void LiveDataInputLayer<Dtype>::feedforward() {
 	reshape();
+#if LIVEDATAINPUTLAYER_TEST
+	string test = testList[cur];
+	cur++;
+	if (cur >= testList.size()) {
+		cur = 0;
+	}
+	cv::Mat img = cv::imread(test);
+	img.convertTo(img, CV_32FC3);
+	feedImage(img.channels(), img.rows, img.cols, (float*)img.data);
+#endif
 }
 
 template <typename Dtype>
