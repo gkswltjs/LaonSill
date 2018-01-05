@@ -128,4 +128,68 @@ void ImageUtil<Dtype>::dispCVMat(const cv::Mat& cv_img, const string& windowName
 	cv::destroyWindow(windowName);
 }
 
+template <typename Dtype>
+void ImageUtil<Dtype>::nms(std::vector<std::vector<float>>& proposals, 
+        std::vector<float>& scores, const float thresh, std::vector<uint32_t>& keep) {
+
+    vector<pair<int, float>> vec;
+
+    for (int i = 0; i < scores.size(); i++) {
+        vec.push_back(make_pair(i, scores[i]));
+    }
+
+    struct scoreCompareStruct {
+        bool operator()(const pair<int, float> &left, const pair<int, float> &right) {
+            return left.second > right.second;
+        }
+    };
+
+    sort(vec.begin(), vec.end(), scoreCompareStruct());
+
+    int maxScoreIndex = vec[0].first;
+
+    bool live[vec.size()];
+    for (int i = 0; i < vec.size(); i++)
+        live[i] = true;
+
+    for (int i = 0; i < vec.size() - 1; i++) {
+        if (live[i] == false)
+            continue;
+
+        float x1 = proposals[vec[i].first][0];
+        float y1 = proposals[vec[i].first][1];
+        float x2 = proposals[vec[i].first][2];
+        float y2 = proposals[vec[i].first][3];
+        float area = (x2 - x1) * (y2 - y1);
+
+        for (int j = i + 1; j < vec.size(); j++) {
+            float tx1 = proposals[vec[j].first][0];
+            float ty1 = proposals[vec[j].first][1];
+            float tx2 = proposals[vec[j].first][2];
+            float ty2 = proposals[vec[j].first][3];
+            float tarea = (tx2 - tx1) * (ty2 - ty1);
+            
+            float xx1 = max(x1, tx1);
+            float yy1 = max(y1, ty1);
+            float xx2 = min(x2, tx2);
+            float yy2 = min(y2, ty2);
+
+            float w = max(xx2 - xx1, 0.0f);
+            float h = max(yy2 - yy1, 0.0f);
+            float inter = w * h;
+            SASSUME0(area != 0.0f);
+            SASSUME0(tarea != 0.0f);
+            float iou = inter / (area + tarea - inter);
+
+            if (iou > thresh)
+                live[j] = false;
+        }
+    }
+
+    for (int i = 0; i < vec.size(); i++) {
+        if (live[i])
+            keep.push_back(vec[i].first);
+    }
+}
+
 template class ImageUtil<float>;

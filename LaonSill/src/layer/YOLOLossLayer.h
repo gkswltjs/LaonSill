@@ -13,6 +13,11 @@
 #include "LossLayer.h"
 #include "LayerConfig.h"
 
+#define YOLO_IMAGE_DEFAULT_WIDTH        416
+#define YOLO_IMAGE_DEFAULT_HEIGHT       416
+#define YOLO_DEFAULT_CONFIDENCE_THRES   0.3
+#define YOLO_DEFAULT_NMS_THRES          0.1
+
 #define YOLO_GRID_COUNT                 169
 #define YOLO_GRID_ONE_AXIS_COUNT        13
 #define YOLO_ANCHOR_BOX_COUNT           5
@@ -25,6 +30,16 @@
 #define YOLOINPUT_ELEMCOUNT_PER_GT              7
 #define YOLOINPUT_GTCOUNT_PER_GRID              30
 #define YOLOINPUT_ELEMCOUNT_PER_GRID            (YOLOINPUT_ELEMCOUNT_PER_GT * YOLOINPUT_GTCOUNT_PER_GRID)
+
+// for Worker
+typedef struct yoloJobPack_s {
+    float top;
+    float left;
+    float bottom;
+    float right;
+    float score;
+    int labelIndex;
+} yoloJobPack;
 
 template<typename Dtype>
 class YOLOLossLayer : public LossLayer<Dtype> {

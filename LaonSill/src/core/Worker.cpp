@@ -34,6 +34,9 @@
 #include "MeasureManager.h"
 #include "MemoryMgmt.h"
 #include "DebugUtil.h"
+#include "ImageUtil.h"
+
+#include "frcnn_common.h"   // for use nsm() func
 
 using namespace std;
 
@@ -692,29 +695,18 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
             pubJob->addJobElem(Job::IntType, 1, (void*)&labelIndex);
         }
     } else {
-        // XXX: 이거 나중에 예쁘게 코드 정리하자
-        typedef struct yoloJobPack_s {
-            float top;
-            float left;
-            float bottom;
-            float right;
-            float score;
-            int labelIndex;
-        } yoloJobPack;
-
         SASSERT0(baseNetworkType == 2);     // YOLO case
         const float* result = commonOutputLayer->_outputData[0]->host_data();
 
         // XXX: 나중에 코드 정리해야 함.
-        int gridCount = 169;
-        int gridAxisCount = 13;
-        int elemCountPerGrid = 125;
-        int anchorBoxCount = 5;
-        int classCount = 20;
-        int coordCount = 5;
-        int imageWidth = 416;
-        int imageHeight = 416;
-        float confThres = 0.3;
+        int gridCount = YOLO_GRID_COUNT;
+        int gridAxisCount = YOLO_GRID_ONE_AXIS_COUNT;
+        int elemCountPerGrid = YOLO_GRID_ELEM_COUNT;
+        int anchorBoxCount = YOLO_ANCHOR_BOX_COUNT;
+        int classCount = YOLO_CLASS_COUNT;
+        int imageWidth = YOLO_IMAGE_DEFAULT_WIDTH;
+        int imageHeight = YOLO_IMAGE_DEFAULT_HEIGHT;
+        float confThres = YOLO_DEFAULT_CONFIDENCE_THRES;
 
         int resultCount = 0;
         float left, top, right, bottom;
@@ -726,7 +718,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
             int gridY = i / gridAxisCount;
 
             for (int j = 0; j < anchorBoxCount; j++) {
-                int resultBaseIndex = i * elemCountPerGrid + j * (classCount + coordCount);
+                int resultBaseIndex = i * elemCountPerGrid + j * (classCount + 5);
                 float x = result[resultBaseIndex + 0];
                 float y = result[resultBaseIndex + 1];
                 float w = result[resultBaseIndex + 2];
@@ -771,16 +763,53 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
             }
         }
 
+        // NMS 적용
+        int nmsThres = YOLO_DEFAULT_NMS_THRES;
+        vector<yoloJobPack> nmsYoloPacks;
+
+        for (int labelIdx = 0; labelIdx < classCount; labelIdx++) {
+            vector<uint32_t> keep;
+            vector<vector<float>> proposals;
+            vector<float> scores;
+
+            for (int i = 0; i < resultCount; i++) {
+                if (labelIdx != yoloPacks[i].labelIndex)
+                    continue;
+
+                vector<float> newProposal = {yoloPacks[i].left, yoloPacks[i].top, 
+                    yoloPacks[i].right, yoloPacks[i].bottom};
+                proposals.push_back(newProposal);
+                scores.push_back(yoloPacks[i].score);
+            }
+
+            if (proposals.size() == 0)
+                continue;
+
+            ImageUtil<float>::nms(proposals, scores, nmsThres, keep);
+
+            for (int i = 0; i < keep.size(); i++) {
+                yoloJobPack nmsYoloPack;
+                nmsYoloPack.top = proposals[keep[i]][1];
+                nmsYoloPack.left = proposals[keep[i]][0];
+                nmsYoloPack.bottom = proposals[keep[i]][3];
+                nmsYoloPack.right = proposals[keep[i]][2];
+                nmsYoloPack.score = scores[keep[i]];
+                nmsYoloPack.labelIndex = labelIdx;
+
+                nmsYoloPacks.push_back(nmsYoloPack);
+            }
+        }
+
+        resultCount = nmsYoloPacks.size();
         pubJob->addJobElem(Job::IntType, 1, (void*)&resultCount);
 
-        SASSUME0(resultCount == yoloPacks.size());
         for (int i = 0; i < resultCount; i++) {
-            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].top);
-            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].left);
-            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].bottom);
-            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].right);
-            pubJob->addJobElem(Job::FloatType, 1, (void*)&yoloPacks[i].score);
-            pubJob->addJobElem(Job::IntType, 1, (void*)&yoloPacks[i].labelIndex);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&nmsYoloPacks[i].top);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&nmsYoloPacks[i].left);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&nmsYoloPacks[i].bottom);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&nmsYoloPacks[i].right);
+            pubJob->addJobElem(Job::FloatType, 1, (void*)&nmsYoloPacks[i].score);
+            pubJob->addJobElem(Job::IntType, 1, (void*)&nmsYoloPacks[i].labelIndex);
         }
     }
 

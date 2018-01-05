@@ -952,6 +952,6 @@
 		"batchSize" : 1,
 		"epochs" : 1, 
         "status" : "Test",
-        "loadPath" : "$(LAONSILL_HOME)/param/fb05ad52-0577-483e-8c85-31ed9cd2ae43_88000.param"
+        "loadPath" : "$(LAONSILL_HOME)/param/yolo_train.param"
 	}
 }

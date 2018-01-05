@@ -10,6 +10,7 @@
 #define IMAGEUTIL_H 
 
 #include <string>
+#include <vector>
 #include <opencv2/core/core.hpp>
 
 #include "common.h"
@@ -29,6 +30,9 @@ public:
 
     static void dispDatum(const Datum* datum, const std::string& windowName);
     static void dispCVMat(const cv::Mat& cv_img, const std::string& windowName);
+
+    static void nms(std::vector<std::vector<float>>& proposals, std::vector<float>& scores,
+		const float thresh, std::vector<uint32_t>& keep);
 };
 
 #endif /* IMAGEUTIL_H */
