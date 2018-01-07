@@ -351,8 +351,6 @@ void Worker::handleBuildNetwork(Job* job) {
     string networkID = job->getStringValue(0);
     int epochs = job->getIntValue(1);
 
-    cout << " build network" << endl;
-
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->build(epochs);
 
@@ -856,7 +854,6 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
 
 				// XXX: 이렇게 직접 레이어 이름을 지정하는 것은 좋지 않다.. (당연히..)
 				//      수정하자!!!
-				//commonOutputLayer = network->findLayer("prob");
 				commonOutputLayer = network->findLayer("loss/fc");
 				WorkContext::updateLayer(networkID, inputLayer->layerID);
 				inputLayer->feedImage(channel, height, width, imageData);
@@ -871,7 +868,6 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
 
 				// XXX: 이렇게 직접 레이어 이름을 지정하는 것은 좋지 않다.. (당연히..)
 				//      수정하자!!!
-				//commonOutputLayer = network->findLayer("prob");
 				commonOutputLayer = network->findLayer("fc");
 				WorkContext::updateLayer(networkID, inputLayer->layerID);
 				inputLayer->feedImage(channel, height, width, imageData);

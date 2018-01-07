@@ -518,8 +518,6 @@ extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreat
 
         boxArray[i] = bbox;
         elemIdx += 6;
-
-        printf("get boxes. i=%d\n", i);
     }
     delete runReplyJob;
 
