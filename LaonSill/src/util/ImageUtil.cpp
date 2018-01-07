@@ -161,6 +161,10 @@ void ImageUtil<Dtype>::nms(std::vector<std::vector<float>>& proposals,
         float x2 = proposals[vec[i].first][2];
         float y2 = proposals[vec[i].first][3];
         float area = (x2 - x1) * (y2 - y1);
+        if (area != 0.0f) {
+            live[i] = false;
+            continue;
+        }
 
         for (int j = i + 1; j < vec.size(); j++) {
             float tx1 = proposals[vec[j].first][0];
@@ -168,6 +172,10 @@ void ImageUtil<Dtype>::nms(std::vector<std::vector<float>>& proposals,
             float tx2 = proposals[vec[j].first][2];
             float ty2 = proposals[vec[j].first][3];
             float tarea = (tx2 - tx1) * (ty2 - ty1);
+            if (tarea != 0.0f) {
+                live[j] = false;
+                continue;
+            }
             
             float xx1 = max(x1, tx1);
             float yy1 = max(y1, ty1);
@@ -177,8 +185,6 @@ void ImageUtil<Dtype>::nms(std::vector<std::vector<float>>& proposals,
             float w = max(xx2 - xx1, 0.0f);
             float h = max(yy2 - yy1, 0.0f);
             float inter = w * h;
-            SASSUME0(area != 0.0f);
-            SASSUME0(tarea != 0.0f);
             float iou = inter / (area + tarea - inter);
 
             if (iou > thresh)
