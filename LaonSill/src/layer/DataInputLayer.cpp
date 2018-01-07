@@ -32,6 +32,10 @@ DataInputLayer<Dtype>::DataInputLayer()
 	} else {
 		this->dataReader.selectDataSetByName(dataSetName);
 	}
+
+	DataTransformParam& dataTransformParam = this->dataTransformer.param;
+	dataTransformParam.resizeParam = SLPROP(DataInput, resizeParam);
+	dataTransformParam.resizeParam.updateInterpMode();
 }
 
 template <typename Dtype>
