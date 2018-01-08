@@ -9,6 +9,7 @@ mkdir -p LAONSILL_HOME/lib
 mkdir -p LAONSILL_HOME/dev/server
 mkdir -p LAONSILL_HOME/dev/client
 mkdir -p LAONSILL_HOME/examples
+mkdir -p LAONSILL_HOME/pyapi
 cp ../template/laonsill.conf.sample LAONSILL_HOME/laonsill.conf
 cp ../template/cluster.conf.sample LAONSILL_HOME/cluster.conf
 cp ../bin/LaonSillServer LAONSILL_HOME/bin/.
@@ -19,6 +20,7 @@ cp ../bin/denormalize_param LAONSILL_HOME/bin/.
 cp ../src/3rd_party/nms/libgpu_nms.so LAONSILL_HOME/lib/.
 cp -r ../dev/client/* LAONSILL_HOME/dev/client/.
 cp -r ../dev/server/* LAONSILL_HOME/dev/server/.
+cp -r ../src/pyapi/LaonSill LAONSILL_HOME/pyapi/.
 
 rsync -avz --exclude '*.cpp' --exclude '*.h' --exclude '*.cu' ../src/examples LAONSILL_HOME
 
