@@ -25,6 +25,7 @@ PoolingLayer<Dtype>::PoolingLayer()
 	this->globalPooling = SLPROP(Pooling, globalPooling);
 	this->poolDim = SLPROP(Pooling, poolDim);
 	this->poolingType = SLPROP(Pooling, poolingType);
+	this->pooling_fn = NULL;
 
 	if (this->globalPooling) {
 		SASSERT(this->poolDim.pad == 0 && this->poolDim.stride == 1,
