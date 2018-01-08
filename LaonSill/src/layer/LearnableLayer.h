@@ -67,6 +67,7 @@ protected:
                               Data<Dtype>* data) {};
 	void initParam(const int paramIdx, const std::string& name);
 	void reshapeParam(const int paramIdx, const std::vector<uint32_t>& shape);
+	void releaseParam(const int paramIdx);
 
 public:
 	std::vector<Data<Dtype>*> _params;

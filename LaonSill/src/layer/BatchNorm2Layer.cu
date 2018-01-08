@@ -102,9 +102,7 @@ BatchNorm2Layer<Dtype>::BatchNorm2Layer()
 template <typename Dtype>
 BatchNorm2Layer<Dtype>::~BatchNorm2Layer() {
 	for (int i = 0; i < this->_params.size(); i++) {
-		SDELETE(this->_params[i]);
-		SDELETE(this->_paramsHistory[i]);
-		SDELETE(this->_paramsHistory2[i]);
+		LearnableLayer<Dtype>::releaseParam(i);
 	}
 
 	SDELETE(this->mean);

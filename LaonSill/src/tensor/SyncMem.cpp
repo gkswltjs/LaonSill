@@ -479,7 +479,7 @@ void SyncMem<Dtype>::print(const string& head, const vector<uint32_t>& shape,
 							(*outstream) << "[" << i << "x" << j << "]" << endl;
 							for(k = 0; k < rows; k++) {
 								if (summary <= 0 || (rows <= summary || (k < first || k >= rows - last))) {
-									(*outstream) << k << "\t";
+									(*outstream) << k << ",\t";
 									for(l = 0; l < cols; l++) {
 										if (summary <= 0 || (cols <= summary || (l < first || l >= cols - last))) {
 											(*outstream) << data[i*batchElem +

@@ -769,55 +769,6 @@ bool Data<Dtype>::compareData(
 }
 
 
-/*
-template <typename Dtype>
-bool Data<Dtype>::compareData(
-		Data<Dtype>* data1,
-		Data<Dtype>* data2,
-		const Dtype error) {
-
-	SASSERT0(data1->getShape() == data2->getShape());
-
-	const uint32_t count = data1->getCount();
-	const Dtype* data1Ptr = data1->host_data();
-	const Dtype* data2Ptr = data2->host_data();
-
-	bool result = true;
-	const uint32_t batches = data1->batches();
-	const uint32_t channels = data1->channels();
-	const uint32_t height = data1->height();
-	const uint32_t width = data1->width();
-
-	const uint32_t channelSize = data1->getCountByAxis(1);
-	const uint32_t heightSize = data1->getCountByAxis(2);
-	const uint32_t widthSize = data1->getCountByAxis(3);
-
-	size_t errorCnt = 0;
-	for (uint32_t i = 0; i < batches; i++) {
-		for (uint32_t j = 0; j < channels; j++) {
-			for (uint32_t k = 0; k < height; k++) {
-				for (uint32_t l = 0; l < width; l++) {
-					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
-					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
-						if (errorCnt < 10) {
-							cout << "data is different at (" << i << "," << j << "," <<
-									k << "," << l << ")" << endl;
-							cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
-									data2Ptr[index] << endl;
-						}
-						errorCnt++;
-						result = false;
-					}
-				}
-			}
-		}
-	}
-	cout << "compared data <" << data1->_name << ", " <<
-			data2->_name << ">: " << result << "(" << errorCnt << ")" << endl;
-	return result;
-}
-*/
-
 template <typename Dtype>
 bool Data<Dtype>::compareGrad(
 		Data<Dtype>* data,
@@ -873,54 +824,7 @@ bool Data<Dtype>::compareGrad(
 	return result;
 }
 
-/*
-template <typename Dtype>
-bool Data<Dtype>::compareGrad(
-		Data<Dtype>* data1,
-		Data<Dtype>* data2,
-		const Dtype error) {
 
-	SASSERT0(data1->getShape() == data2->getShape());
-
-	const uint32_t count = data1->getCount();
-	const Dtype* data1Ptr = data1->host_grad();
-	const Dtype* data2Ptr = data2->host_grad();
-
-	bool result = true;
-	const uint32_t batches = data1->batches();
-	const uint32_t channels = data1->channels();
-	const uint32_t height = data1->height();
-	const uint32_t width = data1->width();
-
-	const uint32_t channelSize = data1->getCountByAxis(1);
-	const uint32_t heightSize = data1->getCountByAxis(2);
-	const uint32_t widthSize = data1->getCountByAxis(3);
-
-	size_t errorCnt = 0;
-	for (uint32_t i = 0; i < batches; i++) {
-		for (uint32_t j = 0; j < channels; j++) {
-			for (uint32_t k = 0; k < height; k++) {
-				for (uint32_t l = 0; l < width; l++) {
-					const uint32_t index = i*channelSize + j*heightSize + k*widthSize + l;
-					if (fabs(data1Ptr[index]-data2Ptr[index]) > error) {
-						if (errorCnt < 10) {
-							cout << "grad is different at (" << i << "x" << j << "x" <<
-									k << "x" << l << ")" << endl;
-							cout << "data1 is " << data1Ptr[index] << " and data2 is " <<
-									data2Ptr[index] << endl;
-						}
-						errorCnt++;
-						result = false;
-					}
-				}
-			}
-		}
-	}
-	cout << "compared grad <" << data1->_name << ", " <<
-			data2->_name << ">: " << result << "(" << errorCnt << ")" << endl;
-	return result;
-}
-*/
 
 template class Data<float>;
 template class Data<int>;

@@ -36,6 +36,9 @@ protected:
 	cudnnTensorDescriptor_t inputTensorDesc;	///< cudnn 입력 데이터(n-D 데이터셋) 구조 정보
 	cudnnTensorDescriptor_t outputTensorDesc;	///< cudnn 출력 데이터(n-D 데이터셋) 구조 정보
     Pooling<Dtype>* pooling_fn;
+    bool globalPooling;
+    pool_dim poolDim;
+    PoolingType poolingType;
 
 public:
     /****************************************************************************

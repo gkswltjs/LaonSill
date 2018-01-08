@@ -88,6 +88,22 @@ public:
 	}
 
 	virtual void updateTest() {
+		/*
+		Data<Dtype>::printConfig = 1;
+		SyncMem<Dtype>::printConfig = 1;
+		vector<map<string, Data<Dtype>*>> maps = {this->nameParamsMapList[0], this->nameBlobsMapList[0]};
+		for (int i = 0; i < maps.size(); i++) {
+			map<string, Data<Dtype>*> temp_map = maps[i];
+			for (auto itr = temp_map.begin(); itr != temp_map.end(); itr++) {
+				Data<Dtype>* value = itr->second;
+				value->print_data({}, false);
+			}
+		}
+		Data<Dtype>::printConfig = 0;
+		SyncMem<Dtype>::printConfig = 0;
+		exit(1);
+		*/
+
 		for (int i = 0; i < this->numSteps; i++) {
 			cout << "::::::::::STEP " << i << "::::::::::" << endl;
 

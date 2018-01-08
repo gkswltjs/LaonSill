@@ -114,6 +114,8 @@ void soooa_gpu_interp2_backward(const int channels, Dtype* data1, const int x1, 
 
 
 
+template <typename Dtype>
+void soooa_gpu_sqrt(const int N, const Dtype* a, Dtype* y);
 
 
 

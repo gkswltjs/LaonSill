@@ -19,6 +19,9 @@
 
 using namespace std;
 
+template <typename Dtype>
+int SoftmaxWithLossLayer<Dtype>::INNER_ID = 12010;
+
 
 template <typename Dtype>
 SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer()
@@ -48,13 +51,16 @@ SoftmaxWithLossLayer<Dtype>::SoftmaxWithLossLayer(_SoftmaxWithLossPropLayer* pro
 
 	//InnerLayerFunc::initLayer(0);
 	int softmaxAxis = GET_PROP(prop, SoftmaxWithLoss, softmaxAxis);
+	int innerSoftmaxId = SoftmaxLayer<Dtype>::INNER_ID;
+	SoftmaxLayer<Dtype>::INNER_ID += 10;
+
 	stringstream softmaxDef;
 	softmaxDef << "{\n";
 	softmaxDef << "\t\"name\" : \"inner_softmax\",\n";
-	softmaxDef << "\t\"id\" : 0,\n";
+	softmaxDef << "\t\"id\" : " << innerSoftmaxId << ",\n";
 	softmaxDef << "\t\"layer\" : \"Softmax\",\n";
-	softmaxDef << "\t\"input\" : [\"inner_softmax_7001_input\"],\n";
-	softmaxDef << "\t\"output\" : [\"inner_softmax_7001_output\"],\n";
+	softmaxDef << "\t\"input\" : [\"inner_softmax_" << innerSoftmaxId << "_input\"],\n";
+	softmaxDef << "\t\"output\" : [\"inner_softmax_" << innerSoftmaxId << "_output\"],\n";
 	softmaxDef << "\t\"softmaxAxis\" : " << softmaxAxis << "\n";
 	softmaxDef << "}\n";
 

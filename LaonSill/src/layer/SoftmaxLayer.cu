@@ -20,6 +20,8 @@
 
 using namespace std;
 
+template <typename Dtype>
+int SoftmaxLayer<Dtype>::INNER_ID = 10010;
 
 
 template <typename Dtype>

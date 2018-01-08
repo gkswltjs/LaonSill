@@ -27,6 +27,18 @@ void PoolingLayer<Dtype>::reshape() {
 	uint32_t rows 		= inputShape[2];
 	uint32_t cols 		= inputShape[3];
 
+
+	if (this->globalPooling) {
+		this->poolDim.rows = rows;
+		this->poolDim.cols = cols;
+	}
+
+	if (this->pooling_fn) {
+		PoolingFactory<Dtype>::destroy(this->pooling_fn);
+	}
+	this->pooling_fn = PoolingFactory<Dtype>::create(this->poolingType, this->poolDim);
+
+
 	checkCUDNN(cudnnSetTensor4dDescriptor(
 			this->inputTensorDesc,
 			CUDNN_TENSOR_NCHW,
@@ -41,22 +53,21 @@ void PoolingLayer<Dtype>::reshape() {
 			&n, &c, &h, &w));
 			*/
 
-	pool_dim pool_d = SLPROP(Pooling, poolDim);
 
 	int pooledHeight = static_cast<int>(ceil(static_cast<float>(
-			rows + 2 * pool_d.pad - pool_d.rows) / pool_d.stride)) + 1;
+			rows + 2 * this->poolDim.pad - this->poolDim.rows) / this->poolDim.stride)) + 1;
 	int pooledWidth = static_cast<int>(ceil(static_cast<float>(
-			cols + 2 * pool_d.pad - pool_d.cols) / pool_d.stride)) + 1;
+			cols + 2 * this->poolDim.pad - this->poolDim.cols) / this->poolDim.stride)) + 1;
 
-	if (pool_d.pad) {
-		if ((pooledHeight - 1) * pool_d.stride >= rows + pool_d.pad) {
+	if (this->poolDim.pad) {
+		if ((pooledHeight - 1) * this->poolDim.stride >= rows + this->poolDim.pad) {
 			pooledHeight--;
 		}
-		if ((pooledWidth - 1) * pool_d.stride >= cols + pool_d.pad) {
+		if ((pooledWidth - 1) * this->poolDim.stride >= cols + this->poolDim.pad) {
 			pooledWidth--;
 		}
-		assert((pooledHeight - 1) * pool_d.stride < rows + pool_d.pad);
-		assert((pooledWidth - 1) * pool_d.stride < cols + pool_d.pad);
+		assert((pooledHeight - 1) * this->poolDim.stride < rows + this->poolDim.pad);
+		assert((pooledWidth - 1) * this->poolDim.stride < cols + this->poolDim.pad);
 	}
 
 	checkCUDNN(cudnnSetTensor4dDescriptor(

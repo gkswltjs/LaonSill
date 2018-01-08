@@ -51,6 +51,10 @@ public:
     static void forwardTensor(void* instancePtr, int miniBatchIndex);
     static void backwardTensor(void* instancePtr);
     static void learnTensor(void* instancePtr);
+
+public:
+    static int INNER_ID;
+
 };
 #endif
 

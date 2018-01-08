@@ -70,12 +70,34 @@ void Update<Dtype>::updateParam(UpdateContext context, Data<Dtype>* dataHistory,
          * x += v
          *
          */
+
+#if 0
+    	std::cout << "paramSize: " << paramSize << ", regScale: " << regScale << std::endl;
+    	std::cout << "learnScale: " << learnScale << ", momentum: " << momentum << std::endl;
+    	Data<Dtype>::printConfig = 1;
+    	SyncMem<Dtype>::printConfig = 1;
+    	data->print_data({}, false);
+    	data->print_grad({}, false);
+#endif
     	soooa_gpu_axpy(paramSize, regScale, d_paramData, d_paramGrad);
+    	//data->print_grad({}, false);
+
+    	//dataHistory->print_data({}, false);
 		soooa_gpu_axpby(paramSize, learnScale, d_paramGrad, momentum,
 				d_paramHistoryData);
+		//dataHistory->print_data({}, false);
+
 		soooa_copy(paramSize, d_paramHistoryData, d_paramGrad);
+		//data->print_grad({}, false);
+
 		// update
 		soooa_gpu_axpy(paramSize, negativeOne, d_paramGrad, d_paramData);
+		//data->print_data({}, false);
+
+
+		//Data<Dtype>::printConfig = 0;
+		//SyncMem<Dtype>::printConfig = 0;
+
     } else if (opt == Optimizer::Vanilla) {
         /****
          * Vanilla Alogorithm

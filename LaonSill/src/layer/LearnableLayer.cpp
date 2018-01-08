@@ -164,6 +164,27 @@ void LearnableLayer<Dtype>::reshapeParam(const int paramIdx, const vector<uint32
 	this->_paramsHistory2[paramIdx]->reshape(shape);
 }
 
+template <typename Dtype>
+void LearnableLayer<Dtype>::releaseParam(const int paramIdx) {
+	SASSERT0(paramIdx < this->_params.size());
+	SASSERT0(paramIdx < this->_paramsHistory.size());
+	SASSERT0(paramIdx < this->_paramsHistory2.size());
+
+	if (this->_params[paramIdx] != NULL) {
+		SDELETE(this->_params[paramIdx]);
+		this->_params[paramIdx] = NULL;
+	}
+	if (this->_paramsHistory[paramIdx] != NULL) {
+		SDELETE(this->_paramsHistory[paramIdx]);
+		this->_paramsHistory[paramIdx] = NULL;
+	}
+	if (this->_paramsHistory2[paramIdx] != NULL) {
+		SDELETE(this->_paramsHistory2[paramIdx]);
+		this->_paramsHistory2[paramIdx] = NULL;
+	}
+}
+
+
 template class LearnableLayer<float>;
 
 

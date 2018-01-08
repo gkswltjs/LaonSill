@@ -1295,7 +1295,7 @@
 					"id" : 7001,
 					"layer" : "Softmax",
 					"input" : ["inner_softmax_7001_input"],
-					"output" : ["inner_softmax_7001_input"],
+					"output" : ["inner_softmax_7001_output"],
 					"softmaxAxis" : 2
 				}
 			]	
@@ -3406,7 +3406,7 @@
 					"id" : 7002,
 					"layer" : "Softmax",
 					"input" : ["inner_softmax_7002_input"],
-					"output" : ["inner_softmax_7002_input"],
+					"output" : ["inner_softmax_7002_output"],
 					"softmaxAxis" : 2
 				}
 			]	
@@ -4142,7 +4142,7 @@
 					"id" : 7003,
 					"layer" : "Softmax",
 					"input" : ["inner_softmax_7003_input"],
-					"output" : ["inner_softmax_7003_input"],
+					"output" : ["inner_softmax_7003_output"],
 					"softmaxAxis" : 2
 				}
 			]	

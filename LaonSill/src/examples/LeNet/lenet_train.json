@@ -122,18 +122,7 @@
 			"input" : ["ip2", "label"],
 			"output" : ["loss"],
 			"propDown" : [true, false],
-			"softmaxAxis" : 2,
-			"innerLayer" :
-			[
-				{
-					"name" : "inner_softmax",
-					"id" : 7001,
-					"layer" : "Softmax",
-					"input" : ["inner_softmax_7001_input"],
-					"output" : ["inner_softmax_7001_input"],
-					"softmaxAxis" : 2
-				}
-			]	
+			"softmaxAxis" : 2
 		},
 		
 		{

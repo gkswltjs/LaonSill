@@ -1,45 +1,43 @@
 /*
- * SoftmaxLayer.h
+ * BiasLayer.h
  *
- *  Created on: Nov 29, 2016
+ *  Created on: Jan 6, 2018
  *      Author: jkim
  */
 
-#ifndef SOFTMAXLAYER_H_
-#define SOFTMAXLAYER_H_
-
-#if 1
+#ifndef BIASLAYER_H_
+#define BIASLAYER_H_
 
 #include "common.h"
-#include "BaseLayer.h"
-//#include "Activation.h"
-#include "Cuda.h"
+#include "LearnableLayer.h"
 #include "LayerPropList.h"
 
 template <typename Dtype>
-class SoftmaxLayer : public Layer<Dtype> {
+class BiasLayer : public LearnableLayer<Dtype> {
 public:
-	SoftmaxLayer();
-	SoftmaxLayer(_SoftmaxPropLayer* prop);
-	virtual ~SoftmaxLayer();
+	BiasLayer();
+	BiasLayer(_BiasPropLayer* prop);
+	virtual ~BiasLayer();
 
+	virtual void backpropagation();
 	virtual void reshape();
 	virtual void feedforward();
-	virtual void backpropagation();
+
+	virtual void update();
+	void applyChanges(LearnableLayer<Dtype> *targetLayer);
+	void syncParams(LearnableLayer<Dtype> *targetLayer);
 
 private:
-	uint32_t outerNum;
-	uint32_t innerNum;
+	Data<Dtype> biasMultiplier;
+	int outerDim;
+	int biasDim;
+	int innerDim;
+	int dim;
 
-	// used to carry out sum using BLAS
-	Data<Dtype> sumMultiplier;
-	// intermediate data to hold temporary results.
-	Data<Dtype> scale;
+	std::vector<update_param> updatePolicies;
 
-	cudnnTensorDescriptor_t inputTensorDesc;
-	cudnnTensorDescriptor_t outputTensorDesc;
+	_BiasPropLayer* prop;
 
-	_SoftmaxPropLayer* prop;
 
 public:
     /****************************************************************************
@@ -53,11 +51,9 @@ public:
     static void backwardTensor(void* instancePtr);
     static void learnTensor(void* instancePtr);
 
+
 public:
     static int INNER_ID;
-
 };
 
-#endif
-
-#endif /* SOFTMAXLAYER_H_ */
+#endif /* BIASLAYER_H_ */

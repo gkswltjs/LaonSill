@@ -1,45 +1,48 @@
 /*
- * SoftmaxLayer.h
+ * BatchNorm3Layer.h
  *
- *  Created on: Nov 29, 2016
+ *  Created on: Dec 18, 2017
  *      Author: jkim
  */
 
-#ifndef SOFTMAXLAYER_H_
-#define SOFTMAXLAYER_H_
-
-#if 1
+#ifndef BATCHNORM3LAYER_H_
+#define BATCHNORM3LAYER_H_
 
 #include "common.h"
-#include "BaseLayer.h"
-//#include "Activation.h"
-#include "Cuda.h"
-#include "LayerPropList.h"
+#include "LearnableLayer.h"
 
 template <typename Dtype>
-class SoftmaxLayer : public Layer<Dtype> {
+class BatchNorm3Layer : public LearnableLayer<Dtype> {
 public:
-	SoftmaxLayer();
-	SoftmaxLayer(_SoftmaxPropLayer* prop);
-	virtual ~SoftmaxLayer();
+	BatchNorm3Layer();
+	virtual ~BatchNorm3Layer();
 
+	virtual void backpropagation();
 	virtual void reshape();
 	virtual void feedforward();
-	virtual void backpropagation();
+
+	virtual void update();
+	void applyChanges(LearnableLayer<Dtype> *targetLayer);
+	void syncParams(LearnableLayer<Dtype> *targetLayer);
+
 
 private:
-	uint32_t outerNum;
-	uint32_t innerNum;
+	bool useGlobalStats;
+	Dtype movingAverageFraction;
+	int channels;
+	Dtype eps;
 
-	// used to carry out sum using BLAS
-	Data<Dtype> sumMultiplier;
-	// intermediate data to hold temporary results.
-	Data<Dtype> scale;
+	Data<Dtype> mean;
+	Data<Dtype> variance;
+	Data<Dtype> temp;
+	Data<Dtype> xNorm;
 
-	cudnnTensorDescriptor_t inputTensorDesc;
-	cudnnTensorDescriptor_t outputTensorDesc;
+	Data<Dtype> batchSumMultiplier;
+	Data<Dtype> numByChans;
+	Data<Dtype> spatialSumMultiplier;
 
-	_SoftmaxPropLayer* prop;
+	std::vector<update_param> updatePolicies;
+
 
 public:
     /****************************************************************************
@@ -53,11 +56,7 @@ public:
     static void backwardTensor(void* instancePtr);
     static void learnTensor(void* instancePtr);
 
-public:
-    static int INNER_ID;
-
 };
 
-#endif
 
-#endif /* SOFTMAXLAYER_H_ */
+#endif /* BATCHNORM3LAYER_H_ */

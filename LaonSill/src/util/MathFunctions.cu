@@ -560,6 +560,26 @@ template void soooa_gpu_interp2_backward<float, false>(const int channels, float
 
 
 
+template<typename Dtype>
+__global__ void sqrt_kernel(const int n, const Dtype* a, Dtype* y) {
+	CUDA_KERNEL_LOOP(index, n) {
+		y[index] = sqrt(a[index]);
+	}
+}
+
+template<>
+void soooa_gpu_sqrt<float>(const int N, const float* a, float* y) {
+	sqrt_kernel<float> <<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(N, a, y);
+}
+
+template<>
+void soooa_gpu_sqrt<double>(const int N, const double* a, double* y) {
+	sqrt_kernel<double> <<<SOOOA_GET_BLOCKS(N), SOOOA_CUDA_NUM_THREADS>>>(N, a, y);
+}
+
+
+
+
 
 
 

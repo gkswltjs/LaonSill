@@ -17,6 +17,9 @@
 
 using namespace std;
 
+template <typename Dtype>
+int SmoothL1LossLayer<Dtype>::INNER_ID = 11010;
+
 
 template <typename Dtype>
 SmoothL1LossLayer<Dtype>::SmoothL1LossLayer()

@@ -6,7 +6,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/variant.hpp>
 #include <boost/serialization/map.hpp>
-
+#include <string>
 
 #include "LayerTestInterface.h"
 #include "LayerTest.h"
@@ -55,6 +55,7 @@
 #include "ImTransforms.h"
 #include "AnnotatedDataLayer.h"
 #include "MemoryMgmt.h"
+#include "MeasureManager.h"
 
 #include <execinfo.h>
 
@@ -110,9 +111,14 @@ int main(int argc, char** argv) {
 	cout.setf(ios::fixed);
 	//cout.setf(ios::scientific);
 
-	plainTest(argc, argv);
+	//string name = "conv1_3x3_s2_bn";
+	//cout << name.replace(name.end()-3, name.end(), "_scale") << endl;
+
+
+
+	//plainTest(argc, argv);
 	//layerTest(argc, argv);
-	//networkTest(argc, argv);
+	networkTest(argc, argv);
 	//saveNetwork();
 	//layerTest2(argc, argv);
 
@@ -168,6 +174,7 @@ void jsonTest() {
 void initializeNetwork() {
 	WorkContext::curBootMode = BootMode::DeveloperMode;
 
+	MemoryMgmt::init();
 	InitParam::init();
 	Perf::init();
 	SysLog::init();
@@ -176,11 +183,14 @@ void initializeNetwork() {
 	Task::init();
 	Broker::init();
 	Network<float>::init();
+	MeasureManager::init();
 
 	ResourceManager::init();
 	PlanOptimizer::init();
 	LayerFunc::init();
 	LayerPropList::init();
+
+
 
 	Util::setOutstream(&cout);
 	Util::setPrint(false);
@@ -615,7 +625,7 @@ void layerTest2(int argc, char** argv) {
 #define NETWORK_VGG16		6
 #define NETWORK_INCEPTION_V3	7
 #define NETWORK_RESNET		8
-#define NETWORK				NETWORK_RESNET
+#define NETWORK				NETWORK_INCEPTION_V3
 
 #define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/LeNet/lenet_train_test.json")
 #define EXAMPLE_FRCNN_TRAIN_NETWORK_FILEPATH	("/home/jkim/Dev/git/soooa/SoooA/src/examples/frcnn/frcnn_train_test.json")
@@ -654,7 +664,9 @@ void networkTest(int argc, char** argv) {
 	const string networkFilePath = laonsillHome + string("/src/examples/Inception/"
 			//"inception_v3_train_nvidia_test_t3.json");
 			//"batchnorm.test.json");
-			"inception_v3_train_nvidia.json");
+			//"inception_v3_train_nvidia.json");
+			//"deploy_inception_v3.json");
+			"scale_test.json");
 	const string networkName = "inception_v3";
 	const int numSteps = 1;
 	const vector<string> forwardGTLayers = {};
@@ -688,9 +700,9 @@ void networkTest(int argc, char** argv) {
 	SASSUME0(networkTest != NULL);
 
 	networkTest->setUp();
-	//networkTest->updateTest();
-	Network<float>* network = networkTest->network;
-	network->save("/home/jkim/Dev/LAONSILL_HOME/param/resnet50_init.param");
+	networkTest->updateTest();
+	//Network<float>* network = networkTest->network;
+	//network->save("/home/jkim/Dev/LAONSILL_HOME/param/INCEPTION_V3_CAFFE_TRAINED.param");
 	networkTest->cleanUp();
 
 	NetworkTestInterface<float>::globalCleanUp();

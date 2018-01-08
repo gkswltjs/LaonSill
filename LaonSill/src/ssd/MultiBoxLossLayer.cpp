@@ -609,10 +609,13 @@ Layer<Dtype>* MultiBoxLossLayer<Dtype>::buildLocLossLayer(const LocLossType locL
 
 	switch(locLossType) {
 	case SMOOTH_L1: {
+		int innerSmoothl1lossId = SmoothL1LossLayer<Dtype>::INNER_ID;
+		SmoothL1LossLayer<Dtype>::INNER_ID += 10;
+
 		stringstream smoothl1lossDef;
 		smoothl1lossDef << "{\n";
 		smoothl1lossDef << "\t\"name\" : \"inner_smooth_l1_loss\",\n";
-		smoothl1lossDef << "\t\"id\" : 0,\n";
+		smoothl1lossDef << "\t\"id\" : " << innerSmoothl1lossId << ",\n";
 		smoothl1lossDef << "\t\"layer\" : \"SmoothL1Loss\",\n";
 		smoothl1lossDef << "\t\"input\" : [\"locPred\", \"locGt\"],\n";
 		smoothl1lossDef << "\t\"output\" : [\"locLoss\"],\n";
@@ -684,10 +687,13 @@ Layer<Dtype>* MultiBoxLossLayer<Dtype>::buildConfLossLayer(const ConfLossType co
 		SASSERT(SLPROP(MultiBoxLoss, backgroundLabelId) < numClasses,
 				"backgroundLabelId should be within [0, numClasses) for Softmax.");
 
+		int innerSoftmaxWithLossId = SoftmaxWithLossLayer<Dtype>::INNER_ID;
+		SoftmaxWithLossLayer<Dtype>::INNER_ID += 10;
+
 		stringstream softmaxWithLossDef;
 		softmaxWithLossDef << "{\n";
 		softmaxWithLossDef << "\t\"name\" : \"inner_softmax_with_loss\",\n";
-		softmaxWithLossDef << "\t\"id\" : 0,\n";
+		softmaxWithLossDef << "\t\"id\" : " << innerSoftmaxWithLossId << ",\n";
 		softmaxWithLossDef << "\t\"layer\" : \"SoftmaxWithLoss\",\n";
 		softmaxWithLossDef << "\t\"input\" : [\"confPred\", \"confGt\"],\n";
 		softmaxWithLossDef << "\t\"output\" : [\"confLoss\"],\n";

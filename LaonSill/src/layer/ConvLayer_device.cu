@@ -71,7 +71,6 @@ ConvLayer<Dtype>::ConvLayer()
 		this->type = Layer<Dtype>::Conv;
 	else
 		this->type = Layer<Dtype>::Deconv;
-	const int filter_size = filterDim.size();
 
 	Optimizer opt = (Optimizer)SNPROP(optimizer);
 	int paramHistoryDataCount = Update<Dtype>::getParamHistoryDataCount(opt);
@@ -254,18 +253,18 @@ void ConvLayer<Dtype>::reshape() {
 		int paramHistoryDataCount = Update<Dtype>::getParamHistoryDataCount(opt);
 
 		filter_dim& filterDim = SLPROP(Conv, filterDim);
-		const uint32_t channels = this->_inputData[0]->getShape(1);
+		filterDim.channels = this->_inputData[0]->getShape(1);
 
 		vector<uint32_t> filterShape;
 		const bool deconv = SLPROP(Conv, deconv);
 
         if (!deconv) {
             filterShape.push_back(filterDim.filters);
-            filterShape.push_back(channels);
+            filterShape.push_back(filterDim.channels);
             filterShape.push_back(filterDim.rows);
             filterShape.push_back(filterDim.cols);
         } else {
-            filterShape.push_back(channels);
+            filterShape.push_back(filterDim.channels);
             filterShape.push_back(filterDim.filters);
             filterShape.push_back(filterDim.rows);
             filterShape.push_back(filterDim.cols);
@@ -288,11 +287,11 @@ void ConvLayer<Dtype>::reshape() {
 		if (!deconv) {
 			checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
 				CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
-				filterDim.filters, channels, filterDim.rows, filterDim.cols));
+				filterDim.filters, filterDim.channels, filterDim.rows, filterDim.cols));
 		} else {
 			checkCUDNN(cudnnSetFilter4dDescriptor(this->filterDesc,
 				CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
-				channels, filterDim.filters, filterDim.rows, filterDim.cols));
+				filterDim.channels, filterDim.filters, filterDim.rows, filterDim.cols));
 		}
 
 	}

@@ -117,7 +117,9 @@ struct filter_dim : public io_dim {
 	 * @details 전체 필터의 엘리먼트 크기를 조회한다.
 	 * @return 전체 필터의 엘리먼트 크기
 	 */
-	int size() const { return rows*cols*channels*filters; }
+	int size() const {
+		return rows*cols*channels*filters;
+	}
 };
 
 /**
@@ -175,7 +177,7 @@ struct update_param {
 	double lr_mult;			///< learning rate
 	double decay_mult;		///< weight decay
 
-	update_param() {}
+	update_param() : update_param(1.0, 1.0) {}
 	update_param(double lr_mult, double decay_mult) {
 		this->lr_mult = lr_mult;
 		this->decay_mult = decay_mult;

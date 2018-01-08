@@ -131,7 +131,7 @@
 					"id" : 7001,
 					"layer" : "Softmax",
 					"input" : ["inner_softmax_7001_input"],
-					"output" : ["inner_softmax_7001_input"],
+					"output" : ["inner_softmax_7001_output"],
 					"softmaxAxis" : 2
 				}
 			]	

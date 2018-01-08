@@ -384,6 +384,80 @@
 
 },
 
+"BatchNorm3" :
+{
+    "DESC" : "batch normalization layer",
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
+    "LEARN" : 2,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [   
+            ["useGlobalStats", "bool", "false"],
+            ["movingAverageFraction", "float", "0.999"],
+            ["eps", "float", "1e-5"]
+        ],
+    "KEYVARS" : []
+
+},
+
+"Scale" :
+{
+    "DESC" : "scale layer",
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
+    "LEARN" : 2,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [   
+            ["axis", "int", "1"],
+            ["numAxes", "int", "1"],
+            ["biasTerm", "bool", "false"],
+            ["filler", "param_filler<float>", "{ParamFillerType::Constant, 1.0, 0.0, 1.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"],
+					["mean", "double"],
+					["std", "double"]
+                ]
+            ],
+            ["biasFiller", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"],
+					["mean", "double"],
+					["std", "double"]
+                ]
+            ]
+        ],
+    "KEYVARS" : []
+
+},
+
+"Bias" :
+{
+    "DESC" : "bias layer",
+    "PARENT" : "Learnable",
+    "LEVEL" : 2,
+    "LEARN" : 2,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [   
+            ["axis", "int", "1"],
+            ["numAxes", "int", "1"],
+            ["filler", "param_filler<float>", "{ParamFillerType::Constant, 0.0, 0.0, 1.0}",
+                [
+                    ["type", "ParamFillerType"],
+                    ["value", "double"],
+					["mean", "double"],
+					["std", "double"]
+                ]
+            ]
+        ],
+    "KEYVARS" : []
+
+},
+
 "SoftmaxWithLoss" :
 {
     "DESC" : "softmax with loss layer",
@@ -576,17 +650,18 @@
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : 
+		[
+			["poolDim", "pool_dim", "{1, 1, 0, 1}",
 				[
-				    ["poolDim", "pool_dim", "{1, 1, 0, 1}",
-				    	[
-				    			["rows", "uint32_t"],
-				    			["cols", "uint32_t"],
-				    			["pad", "uint32_t"],
-				    			["stride", "uint32_t"]
-				    	]
-				    ],
-				    ["poolingType", "PoolingType", "PoolingType::Max"]
-				],
+						["rows", "uint32_t"],
+						["cols", "uint32_t"],
+						["pad", "uint32_t"],
+						["stride", "uint32_t"]
+				]
+			],
+			["poolingType", "PoolingType", "PoolingType::Max"],
+			["globalPooling", "bool", "false"]
+		],
     "KEYVARS" : ["poolDim", "poolingType"]			
 },
 

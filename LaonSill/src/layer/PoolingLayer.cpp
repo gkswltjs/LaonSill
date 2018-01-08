@@ -22,11 +22,17 @@ PoolingLayer<Dtype>::PoolingLayer()
 	STDOUT_LOG("Layer: %s", SLPROP_BASE(name).c_str());
 	SLPROP(Pooling, poolDim).print();
 #endif
+	this->globalPooling = SLPROP(Pooling, globalPooling);
+	this->poolDim = SLPROP(Pooling, poolDim);
+	this->poolingType = SLPROP(Pooling, poolingType);
+
+	if (this->globalPooling) {
+		SASSERT(this->poolDim.pad == 0 && this->poolDim.stride == 1,
+				"With globalPooling true, only pad = 0 and stride = 1 is supported.");
+	}
 
 
-	const pool_dim& poolDim = SLPROP(Pooling, poolDim);
-	const PoolingType poolingType = SLPROP(Pooling, poolingType);
-	this->pooling_fn = PoolingFactory<Dtype>::create(poolingType, poolDim);
+	//this->pooling_fn = PoolingFactory<Dtype>::create(poolingType, poolDim);
 
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->inputTensorDesc));
 	checkCUDNN(cudnnCreateTensorDescriptor(&this->outputTensorDesc));

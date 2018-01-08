@@ -63,7 +63,12 @@ public:
                                 // fractionally strided convolution layer 입니다
 
         BatchNorm,              // Batch normalization 레이어
-        BatchNorm2,             // CUDNN으로 만든 Batch normalization 레이어
+        BatchNorm2,             // nvCaffe Batch Normalization Layer
+        BatchNorm3,				// Caffe Batch Normalization Layer
+
+        Scale,
+        Bias,
+
 
 		Reshape,				//
 		SmoothL1Loss,

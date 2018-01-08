@@ -7,6 +7,8 @@
 #include "Network.h"
 #include "SplitLayer.h"
 #include "MemoryMgmt.h"
+#include "PlanOptimizer.h"
+#include "MeasureManager.h"
 
 using namespace std;
 using namespace cnpy;
@@ -339,15 +341,24 @@ template <typename Dtype>
 string PrepareContext(const std::string& networkFilePath, const int numSteps) {
 	// network definition file로부터 network를 생성하고 network id를 반환
 	string networkID = PlanParser::loadNetwork(networkFilePath);
-	// network id로 생성된 network를 조회
-	Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
-	// network에 대해 최대 iteration? epoch?을 지정하여 build
-	network->build(numSteps);
-
 	// 현재의 context를 생성한 network로 설정
 	WorkContext::updateNetwork(networkID);
-	//PlanOptimizer::buildPlans(this->networkID);
+	PlanOptimizer::buildPlans(networkID);
+
+
+
+	WorkContext::updateNetwork(networkID);
 	WorkContext::updatePlan(0, true);
+
+
+	//WorkContext::updatePlan(0, true);
+
+	// network id로 생성된 network를 조회
+	//Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
+	// network에 대해 최대 iteration? epoch?을 지정하여 build
+	//network->build(numSteps);
+
+
 
 	return networkID;
 }
@@ -535,13 +546,28 @@ void FillParam(const string networkID,
 
 	WorkContext::updateLayer(networkID, learnableLayerPair.first);
 	LearnableLayer<Dtype>* learnableLayer = learnableLayerPair.second;
+	auto layerType = learnableLayer->getType();
 	const string param_prefix = learnableLayer->getName() + SIG_PARAMS;
 
 	for (uint32_t i = 0; i < learnableLayer->_params.size(); i++) {
-		const string key = param_prefix + to_string(i);
+		string key = param_prefix + to_string(i);
 
-		//cout << "fill param key: " << key << endl;
+		// Caffe 방식의 BatchNormLayer의 경우
 		Data<Dtype>* param = retrieveValueFromMap(nameDataMap, key);
+		/*
+		if (param == NULL && layerType == Layer<Dtype>::LayerType::BatchNorm2 && i >= 3) {
+
+			// BatchNorm 레이어의 이름이 _bn으로 끝나고
+			// Scale 레이어의 이름이 _scale로 끝난다고 전제, 강제 변환
+			string layerName = learnableLayer->getName();
+			//cout << "key converted from " << key << endl;
+			key = layerName.replace(layerName.end() - 3, layerName.end(), "_scale") +
+					SIG_PARAMS + to_string(i - 3);
+			//cout << "to " << key << endl;
+
+			param = retrieveValueFromMap(nameDataMap, key);
+		}
+		*/
 		SASSERT0(param != 0);
 
 		Data<Dtype>* targetParam = learnableLayer->_params[i];
@@ -862,6 +888,10 @@ bool CompareParam(map<string, Data<Dtype>*>& nameDataMap, const string& param_pr
 		SASSERT0(data != 0);
 
 		Data<Dtype>* targetData = paramVec[i];
+
+		targetData->print_shape();
+		data->print_shape();
+
 		bool result = false;
 		switch(dataType) {
 		case DATA:
