@@ -389,36 +389,6 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         return true;
     }
 
-    float currLoss = calcLoss();
-
-    // loss에 NaN 값이 있는지 체크한다.
-    if (SPARAM(STOP_TRAIN_WHEN_GOT_NAN_LOSS)) {
-        if (currLoss != currLoss) {
-            planLock.unlock();
-            COLD_LOG(ColdLog::WARNING, true,
-                "training network(id=%s) is stopped due to NaN loss at epoch=%d",
-                WorkContext::curPlanInfo->networkID.c_str(),
-                WorkContext::curPlanInfo->curEpochIndex);
-            return false;
-        }
-    }
-
-
-    // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
-    // FIXME: planInfoLock 범위가 너무 크다!!!
-    unique_lock<mutex> planInfoLock(WorkContext::curPlanInfo->planMutex);
-    this->epochIdx = WorkContext::curPlanInfo->curEpochIndex;
-    this->miniBatchIdx = WorkContext::curPlanInfo->curMiniBatchIndex;
-
-    if (WorkContext::curPlanInfo->curMiniBatchIndex == 
-            WorkContext::curPlanInfo->miniBatchCount - 1) {
-        WorkContext::curPlanInfo->curMiniBatchIndex = 0;
-        WorkContext::curPlanInfo->curEpochIndex += 1;
-    } else {
-        WorkContext::curPlanInfo->curMiniBatchIndex += 1;
-    }
-    SNPROP(iterations) += 1;
-
     // measure를 기록한다.
     // FIXME: 매우 매우 매우 매우 비효율적인 코드!!! 반드시 다시 잘 구현해야함..
     //        지금은 귀찮것도 있지만.. 급하게 해야할 일들이 있어서...(먼산..)
@@ -446,6 +416,34 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
 
         measureEntry->addData(measureEntry->getAddBuffer());
     }
+
+    float currLoss = calcLoss();
+    // loss에 NaN 값이 있는지 체크한다.
+    if (SPARAM(STOP_TRAIN_WHEN_GOT_NAN_LOSS)) {
+        if (currLoss != currLoss) {
+            planLock.unlock();
+            COLD_LOG(ColdLog::WARNING, true,
+                "training network(id=%s) is stopped due to NaN loss at epoch=%d",
+                WorkContext::curPlanInfo->networkID.c_str(),
+                WorkContext::curPlanInfo->curEpochIndex);
+            return false;
+        }
+    }
+
+    // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
+    // FIXME: planInfoLock 범위가 너무 크다!!!
+    unique_lock<mutex> planInfoLock(WorkContext::curPlanInfo->planMutex);
+    this->epochIdx = WorkContext::curPlanInfo->curEpochIndex;
+    this->miniBatchIdx = WorkContext::curPlanInfo->curMiniBatchIndex;
+
+    if (WorkContext::curPlanInfo->curMiniBatchIndex == 
+            WorkContext::curPlanInfo->miniBatchCount - 1) {
+        WorkContext::curPlanInfo->curMiniBatchIndex = 0;
+        WorkContext::curPlanInfo->curEpochIndex += 1;
+    } else {
+        WorkContext::curPlanInfo->curMiniBatchIndex += 1;
+    }
+    SNPROP(iterations) += 1;
 
     bool saveNetwork = false;
     if ((SNPROP(saveInterval) != 0) &&
