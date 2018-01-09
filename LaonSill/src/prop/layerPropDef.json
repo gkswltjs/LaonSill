@@ -1984,8 +1984,8 @@
 "DetectionEvaluate" : 
 {
     "DESC" : "detection evaluate layer",
-    "PARENT" : "Base",
-    "LEVEL" : 1,
+    "PARENT" : "Measure",
+    "LEVEL" : 2,
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : 
