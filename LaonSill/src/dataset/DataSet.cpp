@@ -65,6 +65,10 @@ DataSet<Dtype>::DataSet(uint32_t rows, uint32_t cols, uint32_t channels,
 	SNEW(this->testSetIndices, vector<uint32_t>, numTestData);
 	SASSUME0(this->testSetIndices != NULL);
 	iota(testSetIndices->begin(), testSetIndices->end(), 0);
+
+	validationDataSet = NULL;
+	validationLabelSet = NULL;
+	validationSetIndices = NULL;
 }
 
 template <typename Dtype>

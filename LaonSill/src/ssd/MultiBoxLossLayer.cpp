@@ -59,10 +59,11 @@ MultiBoxLossLayer<Dtype>::MultiBoxLossLayer()
 	}
 
 
-
+    this->locLossLayer = NULL;
 	const LocLossType locLossType = SLPROP(MultiBoxLoss, locLossType);
 	this->locLossLayer = buildLocLossLayer(locLossType);
 
+    this->confLossLayer = NULL;
 	const ConfLossType confLossType = SLPROP(MultiBoxLoss, confLossType);
 	this->confLossLayer = buildConfLossLayer(confLossType);
 }
@@ -71,7 +72,11 @@ MultiBoxLossLayer<Dtype>::MultiBoxLossLayer()
 
 template <typename Dtype>
 MultiBoxLossLayer<Dtype>::~MultiBoxLossLayer() {
+    if (this->locLossLayer != NULL)
+        SDELETE(this->locLossLayer);
 
+    if (this->confLossLayer != NULL)
+        SDELETE(this->confLossLayer);
 }
 
 template <typename Dtype>

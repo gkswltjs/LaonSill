@@ -104,6 +104,9 @@ RoIInputLayer<Dtype>::RoIInputLayer()
 template <typename Dtype>
 RoIInputLayer<Dtype>::~RoIInputLayer() {
 	SDELETE(imdb);
+
+    if (this->_dataSet != NULL)
+        SDELETE(this->_dataSet);
 }
 
 
