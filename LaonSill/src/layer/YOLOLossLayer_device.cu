@@ -21,6 +21,28 @@ using namespace std;
 
 #define EPSILON                 0.000001
 
+/**
+ * tensor는 다음과 같이 구성이 됩니다.
+ *
+ * input[0]
+ *
+ * +---+---+---+---+------------+---------+---------+-----+----------+
+ * | x | y | w | h | confidence | class#0 | class#1 | ... | class#19 | -> batch=0, grid=0,0
+ * +---+---+---+---+------------+---------+---------+-----+----------+    anchorbox=0
+ * | x | y | w | h | confidence | class#0 | class#1 | ... | class#19 | -> batch=0, grid=0,0
+ * +---+---+---+---+------------+---------+---------+-----+----------+    anchorbox=1
+ * |                       ...                                       |
+ * +---+---+---+---+------------+---------+---------+-----+----------+
+ * | x | y | w | h | confidence | class#0 | class#1 | ... | class#19 | -> batch=7, grid=12,12
+ * +---+---+---+---+------------+---------+---------+-----+----------+    anchorbox=4'
+ *
+ * output[0]
+ *
+ * +------------------------+------------------------+------+---------------------------+
+ * | batch#0 grid(0,0) loss | batch#0 grid(1,0) loss | ...  | batch#7 grid(12, 12) loss |
+ * +------------------------+------------------------+------+---------------------------+
+ */
+
 template <typename Dtype>
 __global__ void YoloBackward(const Dtype* input, const Dtype* input2,
     int size, Dtype noobjVal, Dtype coordVal, Dtype objVal, Dtype classVal, Dtype* grad) {
