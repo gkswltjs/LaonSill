@@ -172,6 +172,12 @@ void InputLayer<Dtype>::shuffleTrainDataSet() {
     return this->_dataSet->shuffleTrainDataSet();
 }
 
+template<typename Dtype>
+void InputLayer<Dtype>::feedImage(const int channels, const int height, const int width,
+        float* image) {
+    return;
+};
+
 /****************************************************************************
  * layer callback functions 
  ****************************************************************************/

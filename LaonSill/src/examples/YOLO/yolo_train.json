@@ -943,7 +943,30 @@
             "id" : 280,
             "input" : ["region", "label"],
             "output" : ["loss"]
-        }
+        },
+
+        {
+            "name" : "yolo_det_out",
+            "layer" : "YOLODetectionOutput",
+            "id" : 290,
+            "input" : ["region", "label"],
+            "output" : ["yolo_det", "yolo_gt"],
+            "propDown" : [false, false],
+            "scoreThres" : 0.05
+        },
+
+		{
+			"name" : "mAP",
+			"layer" : "DetectionEvaluate",
+			"id" : 300,
+			"input" : ["yolo_det", "yolo_gt"],
+			"output" : ["mAP"],
+			"numClasses" : 21,
+			"backgroundLabelId" : 0,
+			"overlapThreshold" : 0.5,
+			"evaluateDifficultGt" : true,
+			"apVersion" : "11point"
+		}
 	],
 
 	"configs" :

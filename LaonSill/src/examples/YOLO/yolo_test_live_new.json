@@ -877,17 +877,17 @@
             "output" : ["bn/conv20d"]
 		},
 
-		{
+	{
 			"name" : "conv21d",
 			"layer" : "Conv",
 			"id" : 260,
-			"input" : ["bn/conv20d"],
+			"input" : ["bn/conv13"],
 			"output" : ["conv21d"],
-			"filterDim.rows" : 3,
-			"filterDim.cols" : 3,
-			"filterDim.channels" : 1024,
-			"filterDim.filters" : 1024,
-			"filterDim.pad" : 1,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"filterDim.channels" : 512,
+			"filterDim.filters" : 64,
+			"filterDim.pad" : 0,
 			"filterDim.stride" : 1,
 			"weightUpdateParam.lr_mult" : 1.0,
 			"weightUpdateParam.decay_mult" : 1.0,
@@ -896,7 +896,7 @@
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
 			"biasFiller.value" : 0.2
-		},
+	},
 
         {
             "name" : "bn/conv21d",
@@ -915,14 +915,70 @@
             "leaky" : 0.1,
             "input" : ["bn/conv21d"],
             "output" : ["bn/conv21d"]
-		},
+	},
+
+        {
+            "name" : "passthru",
+            "layer" : "YOLOPassThru",
+            "id" : 265,
+            "input" : ["bn/conv21d"],
+            "output" : ["passthru"],
+            "propDown" : [false]
+        },
+
+        {
+            "name" : "concat",
+            "layer" : "Concat",
+            "id" : 266,
+            "input" : ["passthru", "bn/conv20d"],
+            "output" : ["concat"]
+        },
 
 		{
 			"name" : "conv22d",
 			"layer" : "Conv",
 			"id" : 270,
-			"input" : ["bn/conv21d"],
+			"input" : ["concat"],
 			"output" : ["conv22d"],
+			"filterDim.rows" : 3,
+			"filterDim.cols" : 3,
+			"filterDim.channels" : 1280,
+			"filterDim.filters" : 1024,
+			"filterDim.pad" : 1,
+			"filterDim.stride" : 1,
+			"weightUpdateParam.lr_mult" : 1.0,
+			"weightUpdateParam.decay_mult" : 1.0,
+			"biasUpdateParam.lr_mult" : 2.0,
+			"biasUpdateParam.decay_mult" : 0.0,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.2
+		},
+
+        {
+            "name" : "bn/conv22d",
+            "layer" : "BatchNorm2",
+            "id" : 271,
+            "input" : ["conv22d"],
+            "output" : ["bn/conv22d"]
+        },
+
+        {
+            "name" : "lrelu22d",
+            "layer" : "Relu",
+            "id" : 272,
+            "useLeaky" : true,
+            "leaky" : 0.1,
+            "input" : ["bn/conv22d"],
+            "output" : ["bn/conv22d"]
+		},
+
+		{
+			"name" : "conv23d",
+			"layer" : "Conv",
+			"id" : 280,
+			"input" : ["bn/conv22d"],
+			"output" : ["conv23d"],
 			"filterDim.rows" : 1,
 			"filterDim.cols" : 1,
 			"filterDim.channels" : 1024,
@@ -939,11 +995,12 @@
 		},
 
         {                     
-            "name" : "region",
-            "layer" : "Sigmoid2",
-            "id" : 275,
-            "input" : ["conv22d"],
-            "output" : ["region"]
+            "name" : "YOLOregion",
+            "layer" : "YOLORegion",
+            "id" : 285,
+            "input" : ["conv23d"],
+            "output" : ["region"],
+            "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52]
         }
 	],
 
@@ -952,8 +1009,6 @@
 		"batchSize" : 1,
 		"epochs" : 1, 
         "status" : "Test",
-        "loadPath" : "$(LAONSILL_HOME)/param/yolo_train.param",
-        "inputLayer" : "data",
-        "outputLayer" : "region"
+        "loadPath" : "$(LAONSILL_HOME)/param/yolo_voc.param"
 	}
 }

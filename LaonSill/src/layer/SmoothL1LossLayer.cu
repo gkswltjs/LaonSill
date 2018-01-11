@@ -44,6 +44,8 @@ SmoothL1LossLayer<Dtype>::SmoothL1LossLayer(_SmoothL1LossPropLayer* prop)
 
 template <typename Dtype>
 SmoothL1LossLayer<Dtype>::~SmoothL1LossLayer() {
+    if (this->prop != NULL)
+        SFREE(this->prop);
 }
 
 template <typename Dtype>

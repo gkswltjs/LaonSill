@@ -125,7 +125,7 @@ void GetGroundTruth(const Dtype* gtData, const int numGt, const int backgroundLa
 		int startIdx = i * 8;
 		int itemId = gtData[startIdx];
 		if (itemId == -1) {
-			break;
+            continue;
 		}
 		NormalizedBBox bbox;
 		int label = gtData[startIdx + 1];

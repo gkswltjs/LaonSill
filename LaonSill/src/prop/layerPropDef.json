@@ -519,6 +519,20 @@
     "KEYVARS" : []
 },
 
+"YOLODetectionOutput" :
+{
+    "DESC" : "YOLO detection output layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [
+            ["scoreThres", "float", "0.3"] 
+        ],
+    "KEYVARS" : []
+},
+
 "YOLOPassThru" :
 {
     "DESC" : "YOLO pass thru layer",
@@ -1919,7 +1933,7 @@
     "KEYVARS" : []
 },
 
-"DetectionOutputLive" : 
+"DetectionOutputLive" :
 {
     "DESC" : "detection output live layer",
     "PARENT" : "Base",
@@ -1984,8 +1998,8 @@
 "DetectionEvaluate" : 
 {
     "DESC" : "detection evaluate layer",
-    "PARENT" : "Base",
-    "LEVEL" : 1,
+    "PARENT" : "Measure",
+    "LEVEL" : 2,
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : 

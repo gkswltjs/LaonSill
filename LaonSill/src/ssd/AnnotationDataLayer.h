@@ -32,7 +32,8 @@ public:
 	virtual int getNumTrainData();
 	virtual void shuffleTrainDataSet();
 
-	void feedImage(const int channels, const int height, const int width, float* image);
+	virtual void feedImage(const int channels, const int height, const int width,
+            float* image);
 
 private:
 	void initialize();

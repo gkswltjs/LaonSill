@@ -406,7 +406,10 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
                 dynamic_cast<MeasureLayer<float>*>(layer);
             
             if (measureLayer != NULL) {
-                measureEntry->getAddBuffer()[i] = measureLayer->measure();
+                float measureVal = measureLayer->measure();
+                if (measureVal != measureVal) // NaN case
+                    measureVal = 0.0;
+                measureEntry->getAddBuffer()[i] = measureVal;
             } else {
                 LossLayer<float>* lossLayer = dynamic_cast<LossLayer<float>*>(layer);
                 SASSUME0(lossLayer != NULL);

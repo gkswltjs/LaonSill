@@ -269,8 +269,6 @@ void Worker::jobConsumerThread(int consumerIdx) {
     }
 
     while (doLoop) {
-        //ThreadEvent event =
-        //  ThreadMgmt::wait(threadID, SPARAM(JOB_CONSUMER_PERIODIC_CHECK_TIME_MS)); 
         ThreadEvent event = ThreadMgmt::wait(threadID, 0UL);
 
         if (event == ThreadEvent::Halt) {
@@ -583,66 +581,16 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     WorkContext::updateNetwork(networkID);
     
-    std::vector<Layer<float>*> inputLayers;
-    std::vector<Layer<float>*> outputLayers;
+    InputLayer<float>* commonInputLayer;
     Layer<float>* commonOutputLayer;
+    commonInputLayer = (InputLayer<float>*)network->findLayer(SNPROP(inputLayer));
+    SASSUME0(commonInputLayer != NULL);
+    commonOutputLayer = network->findLayer(SNPROP(outputLayer));
+    SASSUME0(commonOutputLayer != NULL);
 
-
-    // XXX: 이거 enumeration으로 바꾸자.. 
-    //      YOLO까지 구현이 되면 공통요소를 정리하자
-    switch (baseNetworkType) {
-        case 0:     // SSD
-            {
-                inputLayers = network->findLayersByType(Layer<float>::AnnotationData);
-                SASSUME0(inputLayers.size() == 1);
-                AnnotationDataLayer<float>* inputLayer = 
-                    (AnnotationDataLayer<float>*)inputLayers[0];
-
-                outputLayers = network->findLayersByType(Layer<float>::DetectionOutput);
-                SASSUME0(outputLayers.size() == 1);
-                DetectionOutputLayer<float>* outputLayer =
-                    (DetectionOutputLayer<float>*)outputLayers[0];
-                commonOutputLayer = (Layer<float>*)outputLayer;
-               
-                WorkContext::updateLayer(networkID, inputLayer->layerID);
-                inputLayer->feedImage(channel, height, width, imageData);
-            }
-            break;
-
-        case 1:     // FRCNN
-            {
-                inputLayers = network->findLayersByType(Layer<float>::RoITestLiveInput);
-                SASSUME0(inputLayers.size() == 1);
-                RoITestLiveInputLayer<float>* inputLayer = 
-                    (RoITestLiveInputLayer<float>*)inputLayers[0];
-                
-                outputLayers = network->findLayersByType(Layer<float>::FrcnnTestLiveOutput);
-                SASSUME0(outputLayers.size() == 1);
-                FrcnnTestLiveOutputLayer<float>* outputLayer =
-                    (FrcnnTestLiveOutputLayer<float>*)outputLayers[0];
-                commonOutputLayer = (Layer<float>*)outputLayer;
-
-                WorkContext::updateLayer(networkID, inputLayer->layerID);
-                inputLayer->feedImage(channel, height, width, imageData);
-            }
-            break;
-
-        case 2:     // YOLO
-            {
-                inputLayers = network->findLayersByType(Layer<float>::AnnotationData);
-                SASSUME0(inputLayers.size() == 1);
-                AnnotationDataLayer<float>* inputLayer = 
-                    (AnnotationDataLayer<float>*)inputLayers[0];
-                
-                commonOutputLayer = network->findLayer("region");
-                WorkContext::updateLayer(networkID, inputLayer->layerID);
-                inputLayer->feedImage(channel, height, width, imageData);
-            }
-            break;
-
-        default:
-            SASSERT(false, "invalid base network type(%d)", baseNetworkType);
-    }
+    WorkContext::updateLayer(networkID, commonInputLayer->layerID);
+    commonInputLayer->feedImage(channel, height, width, imageData);
+    SASSUME0(baseNetworkType < (int)WORKER_OD_eMAX);
 
     network->runMiniBatch(true, 0);
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
@@ -651,7 +599,8 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
 
     Job* pubJob = getPubJob(job);
 
-    if (baseNetworkType < 2) {
+    if ((baseNetworkType == (int)WORKER_OD_eSSD) || 
+        (baseNetworkType == (int)WORKER_OD_eFRCNN)) {
         // for SSD, frcnn
 
         int count = commonOutputLayer->_outputData[0]->getCount();
@@ -693,10 +642,9 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
             pubJob->addJobElem(Job::IntType, 1, (void*)&labelIndex);
         }
     } else {
-        SASSERT0(baseNetworkType == 2);     // YOLO case
+        SASSERT0(baseNetworkType == (int)WORKER_OD_eYOLO);     // YOLO case
         const float* result = commonOutputLayer->_outputData[0]->host_data();
 
-        // XXX: 나중에 코드 정리해야 함.
         int gridCount = YOLO_GRID_COUNT;
         int gridAxisCount = YOLO_GRID_ONE_AXIS_COUNT;
         int elemCountPerGrid = YOLO_GRID_ELEM_COUNT;
@@ -824,59 +772,18 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     WorkContext::updateNetwork(networkID);
-    
-    std::vector<Layer<float>*> inputLayers;
+   
+    InputLayer<float>* commonInputLayer;
     Layer<float>* commonOutputLayer;
 
-    // XXX: 이거 enumeration으로 바꾸자.. 
-    //      YOLO까지 구현이 되면 공통요소를 정리하자
-    switch (baseNetworkType) {
-        case 0:     // VGG16
-            {
-                inputLayers = network->findLayersByType(Layer<float>::LiveDataInput);
-                SASSUME0(inputLayers.size() == 1);
-                LiveDataInputLayer<float>* inputLayer = 
-                    (LiveDataInputLayer<float>*)inputLayers[0];
+    SASSUME0(baseNetworkType < (int)WORKER_IC_eMAX);
 
-                // XXX: 이렇게 직접 레이어 이름을 지정하는 것은 좋지 않다.. (당연히..)
-                //      수정하자!!!
-                commonOutputLayer = network->findLayer("fc8");
-                WorkContext::updateLayer(networkID, inputLayer->layerID);
-                inputLayer->feedImage(channel, height, width, imageData);
-            }
-            break;
-        case 1:		// Inception
-        	{
-				inputLayers = network->findLayersByType(Layer<float>::LiveDataInput);
-				SASSUME0(inputLayers.size() == 1);
-				LiveDataInputLayer<float>* inputLayer =
-					(LiveDataInputLayer<float>*)inputLayers[0];
-
-				// XXX: 이렇게 직접 레이어 이름을 지정하는 것은 좋지 않다.. (당연히..)
-				//      수정하자!!!
-				commonOutputLayer = network->findLayer("loss/fc");
-				WorkContext::updateLayer(networkID, inputLayer->layerID);
-				inputLayer->feedImage(channel, height, width, imageData);
-			}
-			break;
-        case 2:		// ResNet
-        	{
-				inputLayers = network->findLayersByType(Layer<float>::LiveDataInput);
-				SASSUME0(inputLayers.size() == 1);
-				LiveDataInputLayer<float>* inputLayer =
-					(LiveDataInputLayer<float>*)inputLayers[0];
-
-				// XXX: 이렇게 직접 레이어 이름을 지정하는 것은 좋지 않다.. (당연히..)
-				//      수정하자!!!
-				commonOutputLayer = network->findLayer("fc");
-				WorkContext::updateLayer(networkID, inputLayer->layerID);
-				inputLayer->feedImage(channel, height, width, imageData);
-			}
-			break;
-
-        default:
-            SASSERT(false, "invalid base network type(%d)", baseNetworkType);
-    }
+    commonInputLayer = (InputLayer<float>*)network->findLayer(SNPROP(inputLayer));
+    SASSUME0(commonInputLayer != NULL); 
+    commonOutputLayer = network->findLayer(SNPROP(outputLayer));
+    SASSUME0(commonOutputLayer != NULL); 
+    WorkContext::updateLayer(networkID, commonInputLayer->layerID);
+    commonInputLayer->feedImage(channel, height, width, imageData);
 
     network->runMiniBatch(true, 0);
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
@@ -886,6 +793,7 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
     const float* result = commonOutputLayer->_outputData[0]->host_data();
     int count = commonOutputLayer->_outputData[0]->getCount();
 
+    // find argument index that has maximum value and return it
     int maxArgIndex = 0;
     int maxValue = result[0];
 

@@ -24,7 +24,8 @@ DetectionEvaluateLayer<Dtype>::DetectionEvaluateLayer()
 
 	SASSERT(SLPROP(DetectionEvaluate, numClasses) >= 0, "Must provide numClasses.");
 	SASSERT(SLPROP(DetectionEvaluate, overlapThreshold) > 0.f,
-			"overlapThreshold must be non negative: %lf", SLPROP(DetectionEvaluate, overlapThreshold));
+			"overlapThreshold must be non negative: %lf", SLPROP(DetectionEvaluate,
+                overlapThreshold));
 	if (!SLPROP(DetectionEvaluate, nameSizeFile).empty()) {
 		string nameSizeFile = SLPROP(DetectionEvaluate, nameSizeFile);
 		std::ifstream infile(nameSizeFile.c_str());
@@ -106,8 +107,8 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 
 	// Retrieve all detection results.
 	map<int, LabelBBox> allDetections;
-	GetDetectionResults(detData, this->_inputData[0]->height(), SLPROP(DetectionEvaluate, backgroundLabelId),
-			&allDetections);
+	GetDetectionResults(detData, this->_inputData[0]->height(), SLPROP(DetectionEvaluate,
+                backgroundLabelId), &allDetections);
 
 #if DETECTIONEVALUATIONLAYER_LOG && false
 	for (map<int, LabelBBox>::iterator it = allDetections.begin();
@@ -127,8 +128,8 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 
 	// Retrieve all ground truth (including difficult ones).
 	map<int, LabelBBox> allGtBBoxes;
-	GetGroundTruth(gtData, this->_inputData[1]->height(), SLPROP(DetectionEvaluate, backgroundLabelId), true,
-			&allGtBBoxes);
+	GetGroundTruth(gtData, this->_inputData[1]->height(), SLPROP(DetectionEvaluate, 
+                backgroundLabelId), true, &allGtBBoxes);
 
 #if DETECTIONEVALUATIONLAYER_LOG && false
 	for (map<int, LabelBBox>::iterator it = allGtBBoxes.begin();
@@ -281,7 +282,8 @@ void DetectionEvaluateLayer<Dtype>::feedforward() {
 						}
 						if (overlapMax >= SLPROP(DetectionEvaluate, overlapThreshold)) {
 							if (SLPROP(DetectionEvaluate, evaluateDifficultGt) ||
-									(!SLPROP(DetectionEvaluate, evaluateDifficultGt) && !gtBBoxes[jmax].difficult)) {
+									(!SLPROP(DetectionEvaluate, evaluateDifficultGt) && 
+                                     !gtBBoxes[jmax].difficult)) {
 								if (!visited[jmax]) {
 									// true positive.
 									outputData[numDet * 5 + 3] = 1;
