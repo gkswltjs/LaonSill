@@ -20,7 +20,8 @@ public:
 	virtual ~RoITestLiveInputLayer();
 
     int getNumTrainData();
-    void feedImage(const int channels, const int height, const int width, float* image);
+    virtual void feedImage(const int channels, const int height, const int width,
+            float* image);
 
 	virtual void reshape();
 	virtual void feedforward();

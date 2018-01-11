@@ -30,6 +30,8 @@
     ["phase", "NetworkPhase", "NetworkPhase::TrainPhase"],
     ["lossLayer", "std::vector<std::string>", ""],
     ["measureLayer", "std::vector<std::string>", ""],
+    ["inputLayer", "std::string", "\"\""],
+    ["outputLayer", "std::string", "\"\""],
     ["rate", "float", "-1.0"],
     ["status", "NetworkStatus", "NetworkStatus::Train"],
     ["keepSaveIntervalModelCount", "uint32_t", "3"],

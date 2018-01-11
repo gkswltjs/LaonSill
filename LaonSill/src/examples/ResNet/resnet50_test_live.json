@@ -1885,6 +1885,8 @@
 		"batchSize" : 1,
 		"epochs" : 1, 
 		"status" : "Test",
-		"loadPath" : "$(LAONSILL_HOME)/param/RESNET50_TRAINED_590000.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/RESNET50_TRAINED_590000.param",
+        "inputLayer" : "data",
+        "outputLayer" : "fc"
 	}
 }

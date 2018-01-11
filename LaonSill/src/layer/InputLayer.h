@@ -49,6 +49,8 @@ public:
 public:
 	DataSet<Dtype>* _dataSet;
 	Data<Dtype>* _dataMean;
+    virtual void feedImage(const int channels, const int height, const int width,
+        float* image);
 
 public:
     /****************************************************************************

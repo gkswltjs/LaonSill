@@ -1933,7 +1933,7 @@
     "KEYVARS" : []
 },
 
-"DetectionOutputLive" : 
+"DetectionOutputLive" :
 {
     "DESC" : "detection output live layer",
     "PARENT" : "Base",

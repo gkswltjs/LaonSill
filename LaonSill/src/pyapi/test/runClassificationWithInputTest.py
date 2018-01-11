@@ -9,9 +9,9 @@ from LaonSill.ClientAPI import *
 rows = 224
 cols = 224
 
-#base_network = 0   # for VGG16
+base_network = 0   # for VGG16
 #base_network = 1    # for INCEPTION_V3
-base_network = 2   # for RESNET50
+#base_network = 2   # for RESNET50
 
 
 # (1) LaonSill Client 핸들을 생성한다.

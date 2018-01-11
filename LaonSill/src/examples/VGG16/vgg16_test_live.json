@@ -532,6 +532,8 @@
 		"momentum" : 0.9,
 		"lrPolicy" : "Fixed",
 		"optimizer" : "Momentum",
-		"loadPath" : "$(LAONSILL_HOME)/param/VGG16_CAFFE_TRAINED.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/VGG16_CAFFE_TRAINED.param",
+        "inputLayer" : "data",
+        "outputLayer" : "fc8"
 	}
 }

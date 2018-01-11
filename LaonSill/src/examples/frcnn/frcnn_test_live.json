@@ -414,7 +414,9 @@
 		"batchSize" : 1, 
 		"epochs" : 1,
 		"status" : "Test",
-		"loadPath" : "$(LAONSILL_HOME)/param/frcnn_630000_dn.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/frcnn_630000_dn.param",
+        "inputLayer" : "input-data",
+        "outputLayer" : "test_output"
 	}
 
 }

@@ -29,6 +29,22 @@ typedef struct TaskQueue_s {
     std::list<TaskBase*>        tasks;
 } TaskQueue;
 
+/* object detection base network type */
+typedef enum WorkerODBaseNetworkType_e : int {
+    WORKER_OD_eSSD = 0,
+    WORKER_OD_eFRCNN,
+    WORKER_OD_eYOLO,
+    WORKER_OD_eMAX
+} WorkerODBaseNetworkType;
+
+/* image classification basek network type */
+typedef enum WorkerICBaseNetworkType_e : int {
+    WORKER_IC_eVGG16 = 0,
+    WORKER_IC_eInception,
+    WORKER_IC_eResNet,
+    WORKER_IC_eMAX
+} WorkerICBaseNetworkType;
+
 class Worker {
 public:
 	                           Worker() {}
