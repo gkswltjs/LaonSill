@@ -8,16 +8,12 @@
 #include <string>
 
 #include "cuda/Cuda.h"
-
-#include "gnuplot-iostream.h"
-
 #include "jsoncpp/json/json.h"
 
 #include "common.h"
 #include "DataSet.h"
 #include "MockDataSet.h"
 #include "Debug.h"
-#include "NetworkMonitor.h"
 #include "Network.h"
 #include "Util.h"
 #include "Worker.h"

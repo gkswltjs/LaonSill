@@ -13,7 +13,6 @@
 #include <queue>
 
 #include "common.h"
-#include "NetworkListener.h"
 #include "BaseLayer.h"
 #include "InputLayer.h"
 #include "LayerConfig.h"

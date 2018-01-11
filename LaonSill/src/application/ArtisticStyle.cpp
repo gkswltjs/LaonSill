@@ -13,7 +13,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cblas.h>
 
-#include "NetworkMonitor.h"
 #include "Debug.h"
 #include "Param.h"
 #include "MathFunctions.h"

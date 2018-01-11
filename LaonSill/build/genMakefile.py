@@ -553,10 +553,6 @@ try:
             print 'ERROR: you mush specify $%s' % incEnvVar
             exit(-1)
         
-    if not "INC_PATH_CIMG" in os.environ:
-        print 'ERROR: you mush specify $INC_PATH_GNUPLOT\n'
-        exit(-1)
-    
     srcHomeDir = os.environ[sourceHomeDirEnvName]
     if not os.path.exists(srcHomeDir):
         print 'ERROR: %s does not exist. check $%s'\
