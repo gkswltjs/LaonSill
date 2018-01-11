@@ -183,11 +183,7 @@ void SDF::commit() {
 
 
 void SDF::sdf_open() {
-#ifdef BOOST_ARCHIVE_NO_HEADER
 	unsigned int flags = boost::archive::no_header;
-#else
-	unsigned int flags = 0;
-#endif
 	if (this->mode == NEW) {
 		SASSERT0(!this->ofs.is_open());
 
