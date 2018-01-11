@@ -30,7 +30,7 @@ def get_arguments():
                         help="Path to the directory containing the PASCAL VOC dataset.")
     parser.add_argument("--sdf-type", choices={SDF_TYPE_DATUM, SDF_TYPE_ANNO_DATUM}, required=True,
                         help="Whether to updates the running means and variances during the training.")
-    parser.add_argument("--dataset-name", type=str,
+    parser.add_argument("--dataset-name", type=str, required=False,
                         help="Base learning rate for training with polynomial decay.")
 
     return parser.parse_args()
@@ -51,7 +51,7 @@ def decodeDatum(sdfPath, sdfType, dataSet):
         labelItemDict[labelItem.label] = labelItem
 
 
-    if len(dataSet) == 0:
+    if dataSet == None:
         dataReader.selectDataSetByIndex(0)
     else:
         dataReader.selectDataSetByName(dataSet)

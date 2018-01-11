@@ -61,7 +61,6 @@ BiasLayer<Dtype>::~BiasLayer() {
 
 template <typename Dtype>
 void BiasLayer<Dtype>::reshape() {
-	cout << "BiasLayer::reshape()" << endl;
 	const int axis = GET_PROP(prop, Bias, axis);
 	const int numAxes = GET_PROP(prop, Bias, numAxes);
 
@@ -137,6 +136,22 @@ void BiasLayer<Dtype>::backpropagation() {
 		Dtype* inputGrad = this->_inputData[0]->mutable_device_grad();
 		soooa_copy(this->_inputData[0]->getCount(), outputGrad, inputGrad);
 	}
+
+	// in-place, we don't need to do anything with the data diff
+	const bool biasParam = (this->_inputData.size() == 1);
+	//if ((!biasParam && propagate_down[1])
+	//		|| (biasParam && this->param_propagate_down_[0])) {
+	const Dtype* outputGrad = this->_outputData[0]->device_grad();
+	Dtype* biasGrad = this->_params[0]->mutable_device_grad();
+	bool accum = biasParam;
+	for (int n = 0; n < this->outerDim; ++n) {
+		soooa_gpu_gemv(CblasNoTrans, this->biasDim, this->innerDim, Dtype(1),
+				outputGrad, this->biasMultiplier.device_data(), Dtype(accum),
+				biasGrad);
+		outputGrad += this->dim;
+		accum = true;
+	}
+	//}
 }
 
 

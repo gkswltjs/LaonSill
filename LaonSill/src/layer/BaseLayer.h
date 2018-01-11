@@ -127,6 +127,7 @@ public:
 
         Recall,
         DummyLoss,
+        ClsOutfile,
 
         LayerTypeMax
 	};

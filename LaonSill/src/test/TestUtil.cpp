@@ -551,6 +551,7 @@ void FillParam(const string networkID,
 
 	for (uint32_t i = 0; i < learnableLayer->_params.size(); i++) {
 		string key = param_prefix + to_string(i);
+		cout << "FillParam: setting param for key->" << key << endl;
 
 		// Caffe 방식의 BatchNormLayer의 경우
 		Data<Dtype>* param = retrieveValueFromMap(nameDataMap, key);

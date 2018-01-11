@@ -2026,6 +2026,22 @@
     "PROPDOWN" : [],
     "VARS" : [],
 	"KEYVARS" : []
+},
+
+"ClsOutfile" : 
+{
+    "DESC" : "classification output file layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+	[
+		["numClasses", "uint32_t", "0"],
+		["dataSetFile", "std::string", "\"\""],
+		["outFilePath", "std::string", "\"\""]
+	],
+    "KEYVARS" : []
 }
 
 }

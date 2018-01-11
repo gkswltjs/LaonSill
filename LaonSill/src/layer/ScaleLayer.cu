@@ -35,8 +35,11 @@ ScaleLayer<Dtype>::ScaleLayer()
 	this->_paramsInitialized.resize(1);
 
 	LearnableLayer<Dtype>::initParam(0, "scale");
-	//this->updatePolicies.resize(this->biasTerm ? 2 : 1);
-	this->updatePolicies.resize(1);
+	this->updatePolicies.resize(this->biasTerm ? 2 : 1);
+
+	// XXX: updateParams.size()가 1로 시작,
+	// clear해준다.
+	this->updateParams.clear();
 }
 
 template <typename Dtype>
@@ -75,11 +78,18 @@ void ScaleLayer<Dtype>::reshape() {
 		param_filler<Dtype>& filler =  SLPROP(Scale, filler);
 		filler.fill(this->_params[0]);
 
+		UpdateParam upScale;
+		upScale.paramType = 0;
+		upScale.paramDataPtr = (void*)this->_params[0];
+		upScale.paramHis1Ptr = (void*)this->_paramsHistory[0];
+		upScale.paramHis2Ptr = (void*)this->_paramsHistory2[0];
+		this->updateParams.push_back(upScale);
+
 		if (this->biasTerm) {
 			this->biasLayer = buildBiasLayer();
 			// case: params.size == 1 && inputData.size == 1
 			// or params.size == 0 && inputData.size == 2
-			SASSERT(this->_inputData.size() == 1 && this->_params.size() == 1, 
+			SASSERT(this->_inputData.size() == 1 && this->_params.size() == 1,
 					"support only 1 input and 1 param case.");
 
 			this->biasParamId = 1;
@@ -101,6 +111,14 @@ void ScaleLayer<Dtype>::reshape() {
 			this->_paramsHistory2[this->biasParamId] = learnableLayer->_paramsHistory2[0];
 			this->_paramsInitialized[this->biasParamId] = learnableLayer->_paramsInitialized[0];
 
+	        UpdateParam upBias;
+	        upBias.paramType = this->biasParamId;
+	        upBias.paramDataPtr = (void*)this->_params[this->biasParamId];
+	        upBias.paramHis1Ptr = (void*)this->_paramsHistory[this->biasParamId];
+	        upBias.paramHis2Ptr = (void*)this->_paramsHistory2[this->biasParamId];
+	        this->updateParams.push_back(upBias);
+
+
 			//this->_params[1]->print_shape();
 			//this->_paramsHistory[1]->print_shape();
 			//this->_paramsHistory2[1]->print_shape();
@@ -108,6 +126,7 @@ void ScaleLayer<Dtype>::reshape() {
 			//exit(1);
 		}
 	}
+
 	if (!Layer<Dtype>::_isInputShapeChanged(0))
 		return;
 
@@ -193,6 +212,7 @@ void ScaleLayer<Dtype>::backpropagation() {
 	if (this->biasLayer) {
 		this->biasLayer->backpropagation();
 	}
+
 	const bool scaleParam = (this->_inputData.size() == 1);
 	Data<Dtype>* scale = this->_params[0];
 
@@ -279,14 +299,13 @@ void ScaleLayer<Dtype>::update() {
 	SLPROP(Bias, decayedBeta1) *= beta1;
 	SLPROP(Bias, decayedBeta2) *= beta2;
 
-	for (int i = 0; i < this->updatePolicies.size(); i++) {
+	for (int i = 0; i < this->_params.size(); i++) {
 		int paramSize = this->_params[i]->getCount();
 		Dtype regScale = weightDecay * this->updatePolicies[i].decay_mult;
 		Dtype learnScale = learningRate * this->updatePolicies[i].lr_mult;
 		UpdateContext context = Update<Dtype>::makeContext(paramSize, regScale, learnScale);
 		this->updateParams[i].context = context;
 	}
-
 	Updater::updateParams(this->updateParams);
 }
 
@@ -342,7 +361,7 @@ BiasLayer<Dtype>* ScaleLayer<Dtype>::buildBiasLayer() {
 	biasDef << "\t\"filler.mean\" : " << biasFiller.mean << ",\n";
 	biasDef << "\t\"filler.std\" : " << biasFiller.std << "\n";
 	biasDef << "}\n";
-	cout << biasDef.str() << endl;
+	//cout << biasDef.str() << endl;
 
 	_BiasPropLayer* innerProp = NULL;
 	SNEW(innerProp, _BiasPropLayer);

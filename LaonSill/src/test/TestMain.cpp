@@ -666,7 +666,8 @@ void networkTest(int argc, char** argv) {
 			//"batchnorm.test.json");
 			//"inception_v3_train_nvidia.json");
 			//"deploy_inception_v3.json");
-			"scale_test.json");
+			//"scale_test.json");
+			"deploy_inception_v3_caffe_test.json");
 	const string networkName = "inception_v3";
 	const int numSteps = 1;
 	const vector<string> forwardGTLayers = {};
