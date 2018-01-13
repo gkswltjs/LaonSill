@@ -145,16 +145,11 @@ ConvLayer<Dtype>::ConvLayer()
 #endif
 
 	//int pad = (filterDim.rows-1)/2;
-	cudnnStatus_t status = cudnnSetConvolution2dDescriptor(this->convDesc,
+	checkCUDNN(cudnnSetConvolution2dDescriptor(this->convDesc,
 			filterDim.pad_h, filterDim.pad_w, filterDim.stride, filterDim.stride,
 			filterDim.dilation, filterDim.dilation,
 			CUDNN_CROSS_CORRELATION
-			,CUDNN_DATA_FLOAT);
-	std::stringstream _error;
-	if (status != CUDNN_STATUS_SUCCESS) {
-	  _error << "CUDNN failure: " << cudnnGetErrorString(status);
-	  FatalError(_error.str());                                        \
-	}
+			,CUDNN_DATA_FLOAT));
 
 	this->d_workspace = 0;
 

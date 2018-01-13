@@ -178,7 +178,7 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
 
 	// 리소스 초기화
 	checkCudaErrors(cudaSetDevice(gpuIdx));
-	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+	checkCUBLAS(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
     vector<TaskBase*> remainTasks;
@@ -246,7 +246,7 @@ void Worker::taskConsumerThread(int consumerIdx, int gpuIdx) {
     }
 
 	// 리소스 정리
-	checkCudaErrors(cublasDestroy(Cuda::cublasHandle));
+	checkCUBLAS(cublasDestroy(Cuda::cublasHandle));
 	checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
 
     HotLog::markExit();

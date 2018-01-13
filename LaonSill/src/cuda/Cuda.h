@@ -15,82 +15,59 @@
 #include <vector>
 
 #include "common.h"
+#include "SysLog.h"
+#include "StdOutLog.h"
 
 //////////////////////////////////////////////////////////////////////////////
 // Error handling
 // Adapted from the CUDNN classification code
 // sample: https://developer.nvidia.com/cuDNN
 
-#if 0
-#define FatalError(s) do {                                             \
-    std::stringstream _where, _message;                                \
-    _where << __FILE__ << ':' << __LINE__;                             \
-    _message << std::string(s) + "\n" << __FILE__ << ':' << __LINE__;  \
-    std::cerr << _message.str() << "\nAborting...\n";                  \
-    cudaDeviceReset();                                                 \
-    exit(1);                                                           \
-} while(0)
-#else
-#define FatalError(s) do {                                             \
-    std::stringstream _where, _message;                                \
-    _where << __FILE__ << ':' << __LINE__;                             \
-    _message << std::string(s) + "\n" << __FILE__ << ':' << __LINE__;  \
-    std::cerr << _message.str() << "\nAborting...\n";                  \
-    cudaDeviceReset();                                                 \
-    assert(0);                                                           \
-} while(0)
-#endif
 
 #define checkCUDNN(status) do {                                        \
     std::stringstream _error;                                          \
     if (status != CUDNN_STATUS_SUCCESS) {                              \
       _error << "CUDNN failure: " << cudnnGetErrorString(status);      \
-      FatalError(_error.str());                                        \
+      	cudaDeviceReset();											   \
+      	STDOUT_LOG("[ERROR] %s", _error.str().c_str());                                      \
+      	SASSERT(false, _error.str().c_str());	  	  	  			   \
     }                                                                  \
+} while(0)
+
+#define checkCUBLAS(status) do {                                   							 \
+    std::stringstream _error;                                                                \
+    if (status != 0) {                                                                       \
+    	_error << "CUBLAS failure: ";                                                        \
+    	switch(status) {                                                                     \
+    		case CUBLAS_STATUS_SUCCESS: _error << "CUBLAS_STATUS_SUCCESS";                   \
+    		case CUBLAS_STATUS_NOT_INITIALIZED: _error << "CUBLAS_STATUS_NOT_INITIALIZED";   \
+    		case CUBLAS_STATUS_ALLOC_FAILED: _error << "CUBLAS_STATUS_ALLOC_FAILED";         \
+    		case CUBLAS_STATUS_INVALID_VALUE: _error << "CUBLAS_STATUS_INVALID_VALUE";       \
+    		case CUBLAS_STATUS_ARCH_MISMATCH: _error << "CUBLAS_STATUS_ARCH_MISMATCH";       \
+    		case CUBLAS_STATUS_MAPPING_ERROR: _error << "CUBLAS_STATUS_MAPPING_ERROR";       \
+    		case CUBLAS_STATUS_EXECUTION_FAILED: _error << "CUBLAS_STATUS_EXECUTION_FAILED"; \
+    		case CUBLAS_STATUS_INTERNAL_ERROR: _error << "CUBLAS_STATUS_INTERNAL_ERROR";     \
+    		case CUBLAS_STATUS_NOT_SUPPORTED: _error << "CUBLAS_STATUS_NOT_SUPPORTED";       \
+    		case CUBLAS_STATUS_LICENSE_ERROR: _error << "CUBLAS_STATUS_LICENSE_ERROR";       \
+    		default: _error << "UNKNOWN_CUBLAS_STATUS";                                      \
+    	}                                                                                    \
+		cudaDeviceReset();                                                 					 \
+		STDOUT_LOG("[ERROR] %s", _error.str().c_str());                                      \
+        SASSERT(false, _error.str().c_str());                                                \
+    }                                                                                        \
 } while(0)
 
 #define checkCudaErrors(status) do {                                   \
     std::stringstream _error;                                          \
     if (status != 0) {                                                 \
-      _error << "Cuda failure: " << status;                            \
-      FatalError(_error.str());                                        \
-    }                                                                  \
+      _error << "Cuda failure: " << cudaGetErrorString(status);		   \
+      cudaDeviceReset();                                                 					 \
+      STDOUT_LOG("[ERROR] %s", _error.str().c_str());                                        \
+      SASSERT(false, _error.str().c_str());                                                  \
+    }                                                                                        \
 } while(0)
 
 
-
-// CUDA: various checks for different function calls.
-#define CUDA_CHECK(condition)										\
-	/* Code block avoids redefinition of cudaError_t error */		\
-	do { 															\
-		cudaError_t error = condition; 								\
-		if (error != cudaSuccess) { 								\
-			std::stringstream _error; 								\
-			_error << "CUDA_CHECK failure: " << cudaGetErrorString(error); \
-            FatalError(_error.str());                                        \
-			assert(0); 												\
-		} 															\
-	} while (0)
-/*
-#define CUBLAS_CHECK(condition)										\
-	do {															\
-		cublasStatus_t status = condition;							\
-		if (status != CUBLAS_STATUS_SUCCESS) {						\
-			std::stringstream _error;								\
-			_error << "CUBALS_CHECK failure: " <<					\
-			caffe::cublasGetErrorString(status);					\
-			exit(-1);												\
-		}															\
-	} while (0)
-
-
-#define CURAND_CHECK(condition)										\
-	do { 															\
-		curandStatus_t status = condition; 							\
-		CHECK_EQ(status, CURAND_STATUS_SUCCESS) << " " 				\
-		<< caffe::curandGetErrorString(status); 					\
-	} while (0)
-	*/
 
 
 // CUDA: grid stride looping
@@ -115,7 +92,7 @@ inline int SOOOA_GET_BLOCKS(const int N) {
 
 
 // CUDA: check for error after kernel execution and exit loudly if there is one.
-#define CUDA_POST_KERNEL_CHECK CUDA_CHECK(cudaPeekAtLastError())
+#define CUDA_POST_KERNEL_CHECK checkCudaErrors(cudaPeekAtLastError())
 
 // Block width for CUDA kernels
 #define BW 128

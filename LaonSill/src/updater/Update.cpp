@@ -105,9 +105,9 @@ void Update<Dtype>::updateParam(UpdateContext context, Data<Dtype>* dataHistory,
          * x += -learning_rate * dx
          *
          */
-    	checkCudaErrors(cublasSscal(Cuda::cublasHandle, paramSize,
+    	checkCUBLAS(cublasSscal(Cuda::cublasHandle, paramSize,
             &learnScale, d_paramGrad, 1));				//
-    	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, paramSize,
+    	checkCUBLAS(cublasSaxpy(Cuda::cublasHandle, paramSize,
             &negativeOne, d_paramGrad, 1, d_paramData, 1));		// update
     } else if (opt == Optimizer::Nesterov) {
         /****

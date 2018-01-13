@@ -32,7 +32,7 @@ __global__ void set_kernel(const int n, const Dtype alpha, Dtype* y) {
 template <typename Dtype>
 void soooa_gpu_set(const int N, const Dtype alpha, Dtype* Y) {
   if (alpha == 0) {
-    CUDA_CHECK(cudaMemset(Y, 0, sizeof(Dtype) * N));  // NOLINT(caffe/alt_fn)
+    checkCudaErrors(cudaMemset(Y, 0, sizeof(Dtype) * N));  // NOLINT(caffe/alt_fn)
     return;
   }
   // NOLINT_NEXT_LINE(whitespace/operators)
@@ -55,7 +55,7 @@ void soooa_copy(const int N, const Dtype* X, Dtype* Y) {
     //if (Caffe::mode() == Caffe::GPU) {
 //#ifndef CPU_ONLY
       // NOLINT_NEXT_LINE(caffe/alt_fn)
-      CUDA_CHECK(cudaMemcpy(Y, X, sizeof(Dtype) * N, cudaMemcpyDefault));
+      checkCudaErrors(cudaMemcpy(Y, X, sizeof(Dtype) * N, cudaMemcpyDefault));
 //#else
 //      NO_GPU;
 //#endif
@@ -142,36 +142,35 @@ void soooa_gpu_div<float>(const int N, const float* a, const float* b, float* y)
 template <>
 void soooa_gpu_dot<float>(const uint32_t n, const float* x, const float* y,
     float* out) {
-  //CUBLAS_CHECK(cublasSdot(Cuda::cublasHandle, n, x, 1, y, 1, out));
-	checkCudaErrors(cublasSdot(Cuda::cublasHandle, n, x, 1, y, 1, out));
+	checkCUBLAS(cublasSdot(Cuda::cublasHandle, n, x, 1, y, 1, out));
 }
 
 template <>
 void soooa_gpu_dot<double>(const uint32_t n, const double* x, const double* y,
     double * out) {
-	checkCudaErrors(cublasDdot(Cuda::cublasHandle, n, x, 1, y, 1, out));
+	checkCUBLAS(cublasDdot(Cuda::cublasHandle, n, x, 1, y, 1, out));
 }
 
 template <>
 void soooa_gpu_scal<float>(const uint32_t N, const float alpha, float *X) {
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, N, &alpha, X, 1));
+	checkCUBLAS(cublasSscal(Cuda::cublasHandle, N, &alpha, X, 1));
 }
 
 template <>
 void soooa_gpu_scal<double>(const uint32_t N, const double alpha, double *X) {
-	checkCudaErrors(cublasDscal(Cuda::cublasHandle, N, &alpha, X, 1));
+	checkCUBLAS(cublasDscal(Cuda::cublasHandle, N, &alpha, X, 1));
 }
 
 template <>
 void soooa_gpu_axpy<float>(const uint32_t N, const float alpha, const float* X,
     float* Y) {
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, N, &alpha, X, 1, Y, 1));
+	checkCUBLAS(cublasSaxpy(Cuda::cublasHandle, N, &alpha, X, 1, Y, 1));
 }
 
 template <>
 void soooa_gpu_axpy<double>(const uint32_t N, const double alpha, const double* X,
     double* Y) {
-	checkCudaErrors(cublasDaxpy(Cuda::cublasHandle, N, &alpha, X, 1, Y, 1));
+	checkCUBLAS(cublasDaxpy(Cuda::cublasHandle, N, &alpha, X, 1, Y, 1));
 }
 
 
@@ -192,12 +191,12 @@ void soooa_gpu_axpby<double>(const uint32_t N, const double alpha, const double*
 
 template <>
 void soooa_gpu_asum<float>(const int n, const float* x, float* y) {
-	checkCudaErrors(cublasSasum(Cuda::cublasHandle, n, x, 1, y));
+	checkCUBLAS(cublasSasum(Cuda::cublasHandle, n, x, 1, y));
 }
 
 template <>
 void soooa_gpu_asum<double>(const int n, const double* x, double* y) {
-	checkCudaErrors(cublasDasum(Cuda::cublasHandle, n, x, 1, y));
+	checkCUBLAS(cublasDasum(Cuda::cublasHandle, n, x, 1, y));
 }
 
 void soooa_gpu_memcpy(const size_t N, const void* X, void* Y) {
@@ -219,7 +218,7 @@ void soooa_gpu_gemm<float>(const CBLAS_TRANSPOSE TransA,
 	cublasOperation_t cuTransB =
 	(TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
 
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, cuTransB, cuTransA, N, M, K,
+	checkCUBLAS(cublasSgemm(Cuda::cublasHandle, cuTransB, cuTransA, N, M, K,
 			&alpha, B, ldb, A, lda, &beta, C, N));
 }
 
@@ -228,15 +227,15 @@ void soooa_gpu_gemv<float>(const CBLAS_TRANSPOSE TransA, const int M, const int 
 		const float alpha, const float* A, const float* x, const float beta, float* y) {
 	cublasOperation_t cuTransA =
 			(TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
-	checkCudaErrors(cublasSgemv(Cuda::cublasHandle, cuTransA, N, M, &alpha, A, N, x,
+	checkCUBLAS(cublasSgemv(Cuda::cublasHandle, cuTransA, N, M, &alpha, A, N, x,
 			1, &beta, y, 1));
 }
 
 
 template <>
 void soooa_gpu_scale<float>(const int n, const float alpha, const float* x, float* y) {
-	checkCudaErrors(cublasScopy(Cuda::cublasHandle, n, x, 1, y, 1));
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, n, &alpha, y, 1));
+	checkCUBLAS(cublasScopy(Cuda::cublasHandle, n, x, 1, y, 1));
+	checkCUBLAS(cublasSscal(Cuda::cublasHandle, n, &alpha, y, 1));
 }
 
 

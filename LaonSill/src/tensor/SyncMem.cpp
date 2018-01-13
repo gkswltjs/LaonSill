@@ -90,14 +90,6 @@ void SyncMem<Dtype>::reshape(size_t size) {
 		memset(_host_mem, 0, sizeof(Dtype) * _reserved);
 
 		CUDAMALLOC(&_device_mem, sizeof(Dtype)*_reserved);
-		/*
-		std::stringstream _error;
-		cudaError_t status = Util::ucudaMalloc(&_device_mem, sizeof(Dtype)*_reserved);
-		if (status != 0) {
-		  _error << "Cuda failure: " << status;
-		  FatalError(_error.str());
-		}
-		*/
 		checkCudaErrors(cudaMemset(_device_mem, 0, sizeof(Dtype)*_reserved));
 	}
 	_size = size;
@@ -204,8 +196,8 @@ void SyncMem<Dtype>::add_host_mem(const Dtype* mem) {
 template <>
 void SyncMem<float>::add_device_mem(const float* mem) {
 	float* _mem = mutable_device_mem();
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(_size), &Cuda::alpha,
-                                mem, 1, _mem, 1));
+	checkCUBLAS(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(_size), &Cuda::alpha,
+	                               mem, 1, _mem, 1));
 }
 
 template <>
@@ -222,7 +214,7 @@ void SyncMem<Dtype>::sub_host_mem(const Dtype* mem) {
 template<>
 void SyncMem<float>::sub_device_mem(const float* mem) {
 	float* _mem = mutable_device_mem();
-	checkCudaErrors(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(_size),
+	checkCUBLAS(cublasSaxpy(Cuda::cublasHandle, static_cast<int>(_size),
                                 &Cuda::negativeOne, mem, 1, _mem, 1));
 }
 
@@ -240,7 +232,7 @@ void SyncMem<Dtype>::scale_host_mem(const float scale) {
 template <>
 void SyncMem<float>::scale_device_mem(const float scale) {
 	float* _mem = mutable_device_mem();
-	checkCudaErrors(cublasSscal(Cuda::cublasHandle, static_cast<int>(_size), &scale, 
+	checkCUBLAS(cublasSscal(Cuda::cublasHandle, static_cast<int>(_size), &scale,
                                 _mem, 1));
 }
 
@@ -253,7 +245,7 @@ template <>
 double SyncMem<float>::sumsq_device_mem() {
 	float sumsq;
 	const float* _mem = device_mem();
-	checkCudaErrors(cublasSdot(Cuda::cublasHandle, _size, _mem, 1, _mem, 1, &sumsq));
+	checkCUBLAS(cublasSdot(Cuda::cublasHandle, _size, _mem, 1, _mem, 1, &sumsq));
 	return (double)sumsq;
 }
 
@@ -266,7 +258,7 @@ template <>
 double SyncMem<float>::asum_device_mem() {
 	float asum;
 	const float* _mem = device_mem();
-	checkCudaErrors(cublasSasum(Cuda::cublasHandle, _size, _mem, 1, &asum));
+	checkCUBLAS(cublasSasum(Cuda::cublasHandle, _size, _mem, 1, &asum));
 	return (double)asum;
 }
 
@@ -283,16 +275,8 @@ void SyncMem<Dtype>::checkDeviceMemAndUpdateHostMem(bool reset) {
 		cout << "device mem is updated, updating host mem ... " << endl;
 #endif
 
-
-
-		std::stringstream _error;
-		int status = cudaMemcpyAsync(_host_mem, _device_mem, sizeof(Dtype)*_size,
-                cudaMemcpyDeviceToHost);
-		if (status != 0) {
-		  _error << "Cuda failure: " << status;
-		  FatalError(_error.str());
-		}
-
+		checkCudaErrors(cudaMemcpyAsync(_host_mem, _device_mem, sizeof(Dtype)*_size,
+                cudaMemcpyDeviceToHost));
 
 		//checkCudaErrors(cudaMemcpyAsync(_host_mem, _device_mem, sizeof(Dtype)*_size,
         //                                cudaMemcpyDeviceToHost));

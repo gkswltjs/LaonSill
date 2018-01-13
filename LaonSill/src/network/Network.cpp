@@ -298,6 +298,8 @@ template <typename Dtype>
 void Network<Dtype>::load(string path) {
     ifstream ifs(path, std::ios::in | std::ios::binary);
 
+    if (!ifs.is_open())
+    	STDOUT_LOG("[ERROR] Could not open file: %s", path.c_str());
     SASSERT(ifs.is_open(), "Could not open file: %s", path.c_str());
 
     // TODO : 반드시 구현 필요

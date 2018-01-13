@@ -421,12 +421,6 @@ void FullyConnectedLayer<Dtype>::_computeWeightedData() {
 				Cuda::alpha, d_inputData, d_weightData,
 				Cuda::beta, d_outputData);
 	}
-	/*
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N,
-			this->out_rows, this->batches, this->in_rows,
-			&Cuda::alpha, d_weightData, this->out_rows, d_inputData, this->in_rows,
-			&Cuda::beta, d_outputData, this->out_rows));
-			*/
 }
 
 template <typename Dtype>
@@ -543,23 +537,7 @@ void FullyConnectedLayer<Dtype>::_computeInputGrad() {
 			Cuda::alpha, d_outputGrad, d_weightData,
 			Cuda::beta, d_inputGrad);
 
-	/*
-	checkCudaErrors(cublasSgemm(Cuda::cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N,
-			this->in_rows, this->batches, this->out_rows,
-			&Cuda::alpha, d_weightData, this->out_rows, d_outputGrad, this->out_rows,
-			&Cuda::beta, d_inputGrad, this->in_rows));
-			*/
 	this->_inputData[0]->print_grad("inputGrad:");
-
-	/*
-	if(this->_input->is_nan_grad()) {
-		cout << SLPROP_BASE(name) << " _input gradient nan ... " << endl;
-		Data<Dtype>::printConfig = 1;
-		this->_input->print_grad("deltaInput:");
-		Data<Dtype>::printConfig = 0;
-		exit(1);
-	}
-	*/
 }
 
 template FullyConnectedLayer<float>::~FullyConnectedLayer();

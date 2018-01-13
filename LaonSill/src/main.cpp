@@ -109,7 +109,7 @@ void developerMain(const char* itemName) {
     STDOUT_LOG("enter developerMain()");
 
     checkCudaErrors(cudaSetDevice(0));
-	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+	checkCUBLAS(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
     Examples::run(itemName);
@@ -124,7 +124,7 @@ void singleJobMain(const char* jobFilePath) {
         "cannot access single job filepath. filepath=%s", jobFilePath);
 
     checkCudaErrors(cudaSetDevice(0));
-	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+	checkCUBLAS(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
     string networkID = PlanParser::loadNetwork(jobFilePath);
@@ -279,7 +279,7 @@ int main(int argc, char** argv) {
 
         // (5-D-3) developer mode 처럼 테스트하는 케이스도 있어서...
         checkCudaErrors(cudaSetDevice(0));
-        checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+        checkCUBLAS(cublasCreate(&Cuda::cublasHandle));
         checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 
         while (!ThreadMgmt::isReady()) {

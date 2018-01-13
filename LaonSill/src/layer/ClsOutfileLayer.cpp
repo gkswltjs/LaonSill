@@ -9,6 +9,7 @@
 
 #include "ClsOutfileLayer.h"
 #include "SysLog.h"
+#include "StdOutLog.h"
 #include "MemoryMgmt.h"
 #include "PropMgmt.h"
 
@@ -24,9 +25,14 @@ ClsOutfileLayer<Dtype>::ClsOutfileLayer()
 			"ClsOutfileLayer can be run only in Test Status");
 
 	this->dataSetFile = SLPROP(ClsOutfile, dataSetFile);
-	if (!boost::filesystem::exists(this->dataSetFile)) {
+
+	if (this->dataSetFile.length() == 0) {
 		this->hasDataSetFile = false;
 	} else {
+		if (!boost::filesystem::exists(this->dataSetFile)) {
+			STDOUT_LOG("[ERROR] File not exists: %s", this->dataSetFile.c_str());
+			SASSERT(false, "File not exists: %s", this->dataSetFile.c_str());
+		}
 		this->hasDataSetFile = true;
 	}
 
@@ -37,7 +43,6 @@ ClsOutfileLayer<Dtype>::ClsOutfileLayer()
 
 template <typename Dtype>
 ClsOutfileLayer<Dtype>::~ClsOutfileLayer() {
-
 }
 
 template <typename Dtype>
@@ -66,6 +71,8 @@ void ClsOutfileLayer<Dtype>::feedforward() {
 		vector<string> dataSets;
 		if (this->hasDataSetFile) {
 			ifstream infile(this->dataSetFile, ios_base::in);
+			if (!infile.is_open())
+				STDOUT_LOG("[ERROR] failed to open dataSetFile: %s", this->dataSetFile.c_str());
 			SASSERT(infile.is_open(), "failed to open dataSetFile: %s",
 					this->dataSetFile.c_str());
 			string filename;
@@ -81,6 +88,8 @@ void ClsOutfileLayer<Dtype>::feedforward() {
 		outfile.setf(ios::fixed);
 
 		//int correct = 0;
+		if (!outfile.is_open())
+			STDOUT_LOG("[ERROR] failed to open outFilePath: %s", this->outFilePath.c_str());
 		SASSERT(outfile.is_open(), "failed to open outFilePath: %s",
 				this->dataSetFile.c_str());
 

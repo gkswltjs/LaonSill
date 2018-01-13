@@ -32,12 +32,12 @@ void setUpCuda(int gpuid) {
 	SASSERT0(gpuid >= 0);
 
 	checkCudaErrors(cudaSetDevice(gpuid));
-	checkCudaErrors(cublasCreate(&Cuda::cublasHandle));
+	checkCUBLAS(cublasCreate(&Cuda::cublasHandle));
 	checkCUDNN(cudnnCreate(&Cuda::cudnnHandle));
 }
 
 void cleanUpCuda() {
-	checkCudaErrors(cublasDestroy(Cuda::cublasHandle));
+	checkCUBLAS(cublasDestroy(Cuda::cublasHandle));
 	checkCUDNN(cudnnDestroy(Cuda::cudnnHandle));
 }
 

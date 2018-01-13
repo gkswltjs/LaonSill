@@ -11,6 +11,7 @@
 #include "iostream"
 #include "SDF.h"
 #include "SysLog.h"
+#include "StdOutLog.h"
 #include "MemoryMgmt.h"
 
 using namespace std;
@@ -32,6 +33,8 @@ SDF::~SDF() {
 void SDF::open() {
 	if (this->mode == NEW) {
 		int mkdir_result = mkdir(this->source.c_str(), 0744);
+		if (mkdir_result != 0)
+			STDOUT_LOG("[ERROR] mkdir %s failed.", this->source.c_str());
 		SASSERT(mkdir_result == 0, "mkdir %s failed.", this->source.c_str());
 	}
 	sdf_open();
@@ -193,7 +196,6 @@ void SDF::sdf_open() {
 		this->oa = NULL;
 		SNEW(this->oa, boost::archive::text_oarchive, this->ofs, flags);
 		SASSUME0(this->oa != NULL);
-
 		(*this->oa) << SDF_STRING;
 
 		SDFHeader dummyHeader;
@@ -208,6 +210,12 @@ void SDF::sdf_open() {
 
 		fs::path sourcePath(this->source);
 		sourcePath /= this->DATA_NAME;
+
+		if (!boost::filesystem::exists(sourcePath)) {
+			STDOUT_LOG("[ERROR] File not exists: %s", sourcePath.string().c_str());
+			SASSERT(false, "File not exists: %s", sourcePath.string().c_str());
+		}
+
 		this->ifs.open(sourcePath.string(), ios_base::in);
 
 		this->ifs.seekg(0, ios::end);
