@@ -2,13 +2,15 @@
 	"layers" :
 	[
 		{
-			"name" : "data",
-			"layer" : "DataInput",
 			"id" : 0,
-			"output" : ["data", "label"],
-			"source" : "$(LAONSILL_HOME)/data/sdf/mnist_train_sdf",
-			"dataSetName" : "train",
-			"dataTransformParam.scale" : 0.00390625
+			"name" : "data",
+			"layer" : "LiveDataInput",
+			"output" : ["data"],
+			"dataTransformParam.scale" : 0.00390625,
+            "resizeParam.height" : 28,
+            "resizeParam.width" : 28,
+            "resizeParam.prob" : 1.0,
+            "channels" : 1
 		},
 
 		{
@@ -113,59 +115,16 @@
 			"biasUpdateParam.decay_mult" : 1.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant"			
-		},
-		
-		{
-			"name" : "loss",
-			"layer" : "SoftmaxWithLoss",
-			"id" : 80,
-			"input" : ["ip2", "label"],
-			"output" : ["loss"],
-			"propDown" : [true, false],
-			"softmaxAxis" : 2
-		},
-		
-		{
-			"name" : "accuracy",
-			"layer" : "Accuracy",
-			"id" : 90,
-			"input" : ["ip2", "label"],
-			"output" : ["accuracy"],
-			"propDown" : [false, false],
-			"topK" : 1,
-			"axis" : 2
-		},
-
-		{
-			"name" : "accuracy2",
-			"layer" : "Accuracy",
-			"id" : 91,
-			"input" : ["ip2", "label"],
-			"output" : ["accuracy2"],
-			"propDown" : [false, false],
-			"topK" : 1,
-			"axis" : 2
-		}		
+		}
 	],
 
 	"configs" :
 	{
-		"batchSize" : 64,
-		"epochs" : 100, 
-		"lossLayer" : ["loss"],
-		"testInterval" : 1000,
-		"saveInterval" : 1000,
-		"savePathPrefix" : "", 
-		"baseLearningRate" : 0.01,
-		"weightDecay" : 0.0005,
-		"momentum" : 0.9,
-		"lrPolicy" : "Inv",
-		"gamma" : 0.0001,
-		"power" : 0.75,
-		"optimizer" : "Momentum",
-        "measureLayer" : ["loss"],
-        "keepSaveIntervalModelCount" : 4,
-        "keepSaveBestModel" : false,
-        "keepSaveBestModelStartIterNum" : 10000
+		"batchSize" : 1,
+		"epochs" : 1,
+        "status" : "Test",
+        "inputLayer" : "data",
+        "outputLayer" : "ip2",
+        "loadPath" : "$(LAONSILL_HOME)/param/lenet_train.param"
 	}
 }

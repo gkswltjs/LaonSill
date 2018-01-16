@@ -1029,6 +1029,7 @@
 	    ["pixelMeans", "std::vector<float>", ""],
         ["rows", "int", "224"],
         ["cols", "int", "224"],
+        ["channels", "int", "3"],
 
 		["dataTransformParam", "DataTransformParam", "{}",
 			[

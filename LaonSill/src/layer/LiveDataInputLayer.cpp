@@ -71,17 +71,13 @@ void LiveDataInputLayer<Dtype>::reshape() {
 			this->_inputData.push_back(this->_outputData[i]);
 		}
 	}
-	Layer<Dtype>::_adjustInputShape();
-
+    Layer<Dtype>::_adjustInputShape();
 
     this->_inputShape[0][0] = 1;
-    this->_inputShape[0][1] = 3;
-    //this->_inputShape[0][2] = SLPROP(LiveDataInput, rows);
-    //this->_inputShape[0][3] = SLPROP(LiveDataInput, cols);
+    this->_inputShape[0][1] = SLPROP(LiveDataInput, channels);
     this->_inputShape[0][2] = this->height;
     this->_inputShape[0][3] = this->width;
     this->_inputData[0]->reshape(this->_inputShape[0]);
-
 
 //  int inputImageSize = 3 * SLPROP(LiveDataInput, rows) * SLPROP(LiveDataInput, cols);
 //  this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageSize);
@@ -90,19 +86,26 @@ void LiveDataInputLayer<Dtype>::reshape() {
 template <typename Dtype>
 void LiveDataInputLayer<Dtype>::feedImage(const int channels, const int height,
 		const int width, float* image) {
-	SASSERT0(channels == 3);
     //SASSERT0(height == SLPROP(LiveDataInput, rows));
     //SASSERT0(width == SLPROP(LiveDataInput, cols));
 	SASSERT0(image != NULL);
 
 	// XXX: 이문헌 연구원님과 협의 후, image 자체를 CV_8U로 받도록 수정
 	// 데이터 전송량도 많아지고 다시 CV_8U로 변환해야 하는 오버헤드 발생
-	cv::Mat img(height, width, CV_32FC3, image);
-	img.convertTo(img, CV_8UC3);
-
-	this->_inputShape[0] = this->dataTransformer.inferDataShape(img);
-	this->_inputData[0]->reshape(this->_inputShape[0]);
-	this->dataTransformer.transform(img, this->_inputData[0], 0);
+    if (channels == 1) {
+        cv::Mat img(height, width, CV_32FC1, image);
+        img.convertTo(img, CV_8UC1);
+        this->_inputShape[0] = this->dataTransformer.inferDataShape(img);
+        this->_inputData[0]->reshape(this->_inputShape[0]);
+        this->dataTransformer.transform(img, this->_inputData[0], 0);
+    } else {
+        SASSUME0(channels == 3);
+        cv::Mat img(height, width, CV_32FC3, image);
+        img.convertTo(img, CV_8UC3);
+        this->_inputShape[0] = this->dataTransformer.inferDataShape(img);
+        this->_inputData[0]->reshape(this->_inputShape[0]);
+        this->dataTransformer.transform(img, this->_inputData[0], 0);
+    }
 }
 
 template <typename Dtype>

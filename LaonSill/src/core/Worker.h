@@ -42,6 +42,7 @@ typedef enum WorkerICBaseNetworkType_e : int {
     WORKER_IC_eVGG16 = 0,
     WORKER_IC_eInception,
     WORKER_IC_eResNet,
+    WORKER_IC_eLeNEt,
     WORKER_IC_eMAX
 } WorkerICBaseNetworkType;
 
