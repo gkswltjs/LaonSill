@@ -6,7 +6,7 @@
 			"layer" : "DataInput",
 			"id" : 0,
 			"output" : ["data", "label"],
-	        "source" : "$(LAONSILL_HOME)/data/sdf/ilsvrc12_train_224px",
+	        "source" : "$(LAONSILL_HOME)/data/sdf/ilsvrc12_val_224px",
 			"dataSetName" : "train",
 			"dataTransformParam.mean" : [104.0, 117.0, 123.0],
 			"dataTransformParam.scale" : 0.00390625
@@ -1898,6 +1898,6 @@
 		"epochs" : 1, 
 		"testInterval" : 100,
 		"status" : "Test",
-		"loadPath" : "$(LAONSILL_HOME)/param/RESNET50_TRAINED_590000.param"
+		"loadPath" : "$(LAONSILL_HOME)/param/RESNET50_TRAINED.param"
 	}
 }
