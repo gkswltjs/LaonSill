@@ -76,7 +76,8 @@ __global__ void YoloRegionForward(const Dtype* input, int size, const Dtype* anc
 }
 
 template <typename Dtype>
-__global__ void YoloRegionBackward(const Dtype* output, int size, Dtype* inputGrad) {
+__global__ void YoloRegionBackward(const Dtype* outputGrad, const Dtype* output, int size,
+        Dtype* inputGrad) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
 		return;
@@ -90,15 +91,16 @@ __global__ void YoloRegionBackward(const Dtype* output, int size, Dtype* inputGr
         Dtype h1 = output[boxBaseIndex + 3];
         Dtype c1 = output[boxBaseIndex + 4];
 
-        inputGrad[boxBaseIndex + 0] = x1 * (1.0 - x1);
-        inputGrad[boxBaseIndex + 1] = y1 * (1.0 - y1);
-        inputGrad[boxBaseIndex + 2] = w1;
-        inputGrad[boxBaseIndex + 3] = h1;
-        inputGrad[boxBaseIndex + 4] = c1 * (1.0 - c1);
+        inputGrad[boxBaseIndex + 0] = x1 * (1.0 - x1) * outputGrad[boxBaseIndex + 0];
+        inputGrad[boxBaseIndex + 1] = y1 * (1.0 - y1) * outputGrad[boxBaseIndex + 1];
+        inputGrad[boxBaseIndex + 2] = w1 * outputGrad[boxBaseIndex + 2];
+        inputGrad[boxBaseIndex + 3] = h1 * outputGrad[boxBaseIndex + 3];
+        inputGrad[boxBaseIndex + 4] = c1 * (1.0 - c1) * outputGrad[boxBaseIndex + 4];
 
         for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
             inputGrad[boxBaseIndex + 5 + j] = 
-                output[boxBaseIndex + 5 + j] * (1.0 - output[boxBaseIndex + 5 + j]);
+                output[boxBaseIndex + 5 + j] * (1.0 - output[boxBaseIndex + 5 + j]) *
+                outputGrad[boxBaseIndex + 5 + j];
         }
     }
 }
@@ -153,11 +155,12 @@ void YOLORegionLayer<Dtype>::backpropagation() {
     int batchCount = inputShape[0];
     int size = batchCount * YOLO_GRID_COUNT;
 
+    const Dtype *outputGrad = this->_outputData[0]->device_grad();
     const Dtype *outputData = this->_outputData[0]->device_data();
     Dtype *inputGrad = this->_inputData[0]->mutable_device_grad();
 
     YoloRegionBackward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        outputData, size, inputGrad);
+        outputGrad, outputData, size, inputGrad);
 }
 
 template void YOLORegionLayer<float>::reshape();
