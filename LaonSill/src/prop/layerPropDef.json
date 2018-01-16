@@ -765,7 +765,9 @@
 	    ["nmsThresh", "float", "0.1"],
 	    ["vis", "bool", "false"],
 	    ["savePath", "std::string", "\"\""],
-	    ["labelMapPath", "std::string", "\"\""]
+	    ["labelMapPath", "std::string", "\"\""],
+		["outputResult", "bool", "true"],
+		["needNorm", "bool", "false"]
 	],
 		"KEYVARS" : ["maxPerImage", "confThresh", "nmsThresh", "savePath", "labelMapPath"]
 },

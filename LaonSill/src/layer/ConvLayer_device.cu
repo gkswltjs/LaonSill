@@ -19,7 +19,7 @@
 #include "MemoryMgmt.h"
 #include "StdOutLog.h"
 
-#define CONVLAYER_LOG 1
+#define CONVLAYER_LOG 0
 
 using namespace std;
 

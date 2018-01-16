@@ -21,6 +21,7 @@ public:
 
 	virtual void reshape();
 	virtual void feedforward();
+	virtual void backpropagation();
 
 private:
 	void imDetect(std::vector<std::vector<Dtype>>& scores,

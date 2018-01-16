@@ -26,8 +26,8 @@ FrcnnTestOutputLayer<Dtype>::FrcnnTestOutputLayer()
   labelMap(SLPROP(FrcnnTestOutput, labelMapPath)) {
 	this->type = Layer<Dtype>::FrcnnTestOutput;
 
-	SASSERT(SNPROP(status) == NetworkStatus::Test,
-			"FrcnnTestOutputLayer can be run only in Test Status");
+	//SASSERT(SNPROP(status) == NetworkStatus::Test,
+	//		"FrcnnTestOutputLayer can be run only in Test Status");
 	/*
 	this->classes = {"__background__", "aeroplane", "bicycle", "bird", "boat", "bottle",
 			"bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
@@ -70,6 +70,11 @@ void FrcnnTestOutputLayer<Dtype>::reshape() {
 	bool adjusted = Layer<Dtype>::_adjustInputShape();
 	if (adjusted) {
 		this->_outputData[0]->reshape({1, 1, 1, 7});
+
+		// mAP를 측정하기 위해 label을 만드는 경우에 해당
+		if (this->_outputData.size() > 1) {
+			this->_outputData[1]->reshape({1, 1, 1, 8});
+		}
 	}
 
 	const uint32_t inputSize = this->_inputData.size();
@@ -127,13 +132,6 @@ void FrcnnTestOutputLayer<Dtype>::imDetect(vector<vector<Dtype>>& scores, vector
 		boxes[i][1] = rois[5 * i + 2] / imScale;
 		boxes[i][2] = rois[5 * i + 3] / imScale;
 		boxes[i][3] = rois[5 * i + 4] / imScale;
-
-		/*
-		boxes[i][0] = rois[5 * i + 1];
-		boxes[i][1] = rois[5 * i + 2];
-		boxes[i][2] = rois[5 * i + 3];
-		boxes[i][3] = rois[5 * i + 4];
-		*/
 	}
 
 #if FRCNNTESTOUTPUTLAYER_LOG
@@ -144,12 +142,28 @@ void FrcnnTestOutputLayer<Dtype>::imDetect(vector<vector<Dtype>>& scores, vector
 #endif
 	fill2dVecWithData(this->_inputData[2], scores);
 
-	/*
-	this->_printOn();
-	this->_inputData[2]->print_data({}, false);
-	print2dArray("scores", scores);
-	this->_printOff();
-	*/
+
+	if (SLPROP(FrcnnTestOutput, needNorm)) {
+		//this->_inputData[3]->print_shape();
+		const int numBoxes = this->_inputData[3]->getShape(0);
+		const int numClasses = this->_inputData[3]->getShape(2) / 4;
+		Dtype* bboxPred = this->_inputData[3]->mutable_host_data();
+
+		int offset = 0;
+		for (int i = 0; i < numBoxes; i++) {
+			for (int j = 0; j < numClasses; j++) {
+				offset = i * numClasses * 4 + j * 4;
+				bboxPred[offset + 0] = bboxPred[offset + 0] * TRAIN_BBOX_NORMALIZE_STDS[0] +
+						TRAIN_BBOX_NORMALIZE_MEANS[0];
+				bboxPred[offset + 1] = bboxPred[offset + 1] * TRAIN_BBOX_NORMALIZE_STDS[1] +
+						TRAIN_BBOX_NORMALIZE_MEANS[1];
+				bboxPred[offset + 2] = bboxPred[offset + 2] * TRAIN_BBOX_NORMALIZE_STDS[2] +
+						TRAIN_BBOX_NORMALIZE_MEANS[2];
+				bboxPred[offset + 3] = bboxPred[offset + 3] * TRAIN_BBOX_NORMALIZE_STDS[3] +
+						TRAIN_BBOX_NORMALIZE_MEANS[3];
+			}
+		}
+	}
 
 	// bbox_pred (#rois, 4 * num classes)
 	BboxTransformUtil::bboxTransformInv(boxes, this->_inputData[3], predBoxes);
@@ -185,10 +199,7 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 
 		fillClsScores(scores, clsInd, clsScores);
 		fillClsBoxes(boxes, clsInd, clsBoxes);
-
-		//cout << cls << "\t\tboxes before nms: " << scores.size();
 		nms(clsBoxes, clsScores, nmsThresh, keep);
-		//cout << " , after nms: " << keep.size() << endl;
 
 		clsBoxes = vec_keep_by_index(clsBoxes, keep);
 		clsScores = vec_keep_by_index(clsScores, keep);
@@ -200,11 +211,7 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 		if (inds.size() == 0)
 			continue;
 
-
-		//cout << "num of " << cls << ": " << inds.size() << endl;
-
 		int offset = result.size();
-
 		for (int i = 0; i < inds.size(); i++) {
 			vector<float> temp(7);
 			temp[0] = 0.f;
@@ -214,46 +221,36 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 			temp[4] = clsBoxes[inds[i]][1];
 			temp[5] = clsBoxes[inds[i]][2];
 			temp[6] = clsBoxes[inds[i]][3];
-
-			//cout << "\tscore:" << temp[2] << endl;
 			result.push_back(temp);
 		}
 	}
 
-	//exit(1);
-	if (Util::imagePath.size() == 0)
-		Util::imagePath = "/home/jkim/Dev/git/py-faster-rcnn-v/data/demo/000010.jpg";
+	if (SLPROP(FrcnnTestOutput, outputResult)) {
+		cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
+		uint32_t numBoxes = result.size();
 
-	//const Dtype imScale = this->_inputData[1]->host_data()[2];
-	cv::Mat im = cv::imread(Util::imagePath, CV_LOAD_IMAGE_COLOR);
-	//cv::resize(im, im, cv::Size(), imScale, imScale, CV_INTER_LINEAR);
-	uint32_t numBoxes = result.size();
+		for (uint32_t i = 0; i < numBoxes; i++) {
+			int clsInd = round(result[i][1]);
+			cv::rectangle(im, cv::Point(result[i][3], result[i][4]),
+				cv::Point(result[i][5], result[i][6]),
+				boxColors[clsInd-1], 2);
 
-	//cout << "rows: " << im.rows << ", cols: " << im.cols << endl;
-	//cout << result[0][3] << "," << result[0][4] << "," << result[0][5] << "," << result[0][6] << endl;
-
-	for (uint32_t i = 0; i < numBoxes; i++) {
-		int clsInd = round(result[i][1]);
-
-		cv::rectangle(im, cv::Point(result[i][3], result[i][4]),
-			cv::Point(result[i][5], result[i][6]),
-			boxColors[clsInd-1], 2);
-
-		cv::putText(im, this->labelMap.convertIndToLabel(clsInd) , cv::Point(result[i][3],
-				result[i][4]+15.0f), 2, 0.5f, boxColors[clsInd-1]);
-	}
-
-	if (SLPROP(FrcnnTestOutput, savePath) == "") {
-		const string windowName = "result";
-		cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
-		cv::imshow(windowName, im);
-
-		if (true) {
-			cv::waitKey(0);
-			cv::destroyAllWindows();
+			cv::putText(im, this->labelMap.convertIndToLabel(clsInd) , cv::Point(result[i][3],
+					result[i][4]+15.0f), 2, 0.5f, boxColors[clsInd-1]);
 		}
-	} else {
-		cv::imwrite(SLPROP(FrcnnTestOutput, savePath) + "/" + Util::imagePath.substr(Util::imagePath.length()-10), im);
+
+		if (SLPROP(FrcnnTestOutput, savePath) == "") {
+			const string windowName = "result";
+			cv::namedWindow(windowName, CV_WINDOW_AUTOSIZE);
+			cv::imshow(windowName, im);
+
+			if (true) {
+				cv::waitKey(0);
+				cv::destroyAllWindows();
+			}
+		} else {
+			cv::imwrite(SLPROP(FrcnnTestOutput, savePath) + "/" + Util::imagePath.substr(Util::imagePath.length()-10), im);
+		}
 	}
 
 	if (result.size() > 0) {
@@ -263,12 +260,32 @@ void FrcnnTestOutputLayer<Dtype>::testNet(vector<vector<Dtype>>& scores,
 		this->_outputData[0]->mutable_host_data()[1] = -1;
 	}
 
-	/*
-	displayBoxesOnImage("TEST_RESULT", Util::imagePath, 1, restoredBoxes, boxLabels, {},
-			boxColors);
+	// mAP 측정을 위해 gt_boxes Data를 받아 label로 변환하는 경우
+	if (this->_inputData.size() > 4 && this->_outputData.size() > 1) {
+		uint32_t numGtBoxes = this->_inputData[4]->getShape(2);
+		this->_outputData[1]->reshape({1, 1, numGtBoxes, 8});
+		const Dtype*gtBoxes = this->_inputData[4]->host_data();
 
-	cout << "end object detection result ... " << endl;
-	*/
+		int offset = 0;
+		vector<vector<Dtype>> labels(numGtBoxes);
+		for (int i = 0; i < numGtBoxes; i++) {
+			offset = i * this->_inputData[4]->getShape(3);
+
+			labels[i].resize(8);
+			labels[i][0] = 0.f;
+			labels[i][1] = gtBoxes[offset + 4];;
+			labels[i][2] = 0.f;
+			labels[i][3] = gtBoxes[offset + 0];
+			labels[i][4] = gtBoxes[offset + 1];
+			labels[i][5] = gtBoxes[offset + 2];
+			labels[i][6] = gtBoxes[offset + 3];
+			labels[i][7] = 0.f;
+		}
+		fillDataWith2dVec(labels, this->_outputData[1]);
+	}
+	//displayBoxesOnImage("TEST_RESULT", Util::imagePath, 1, restoredBoxes, boxLabels, {},
+	//		boxColors);
+	//cout << "end object detection result ... " << endl;
 }
 
 template <typename Dtype>
@@ -301,6 +318,13 @@ void FrcnnTestOutputLayer<Dtype>::fillClsBoxes(vector<vector<Dtype>>& boxes, int
 
 
 
+template <typename Dtype>
+void FrcnnTestOutputLayer<Dtype>::backpropagation() {
+
+}
+
+
+
 /****************************************************************************
  * layer callback functions
  ****************************************************************************/
@@ -322,9 +346,9 @@ template<typename Dtype>
 void FrcnnTestOutputLayer<Dtype>::setInOutTensor(void* instancePtr, void* tensorPtr,
     bool isInput, int index) {
 	if (isInput) {
-		SASSERT0(index < 4);
+		SASSERT0(index < 5);
 	} else {
-		SASSERT0(index < 1);
+		SASSERT0(index < 2);
 	}
 
     FrcnnTestOutputLayer<Dtype>* layer = (FrcnnTestOutputLayer<Dtype>*)instancePtr;
