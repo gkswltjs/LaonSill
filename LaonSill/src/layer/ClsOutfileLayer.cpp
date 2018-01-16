@@ -95,7 +95,7 @@ void ClsOutfileLayer<Dtype>::feedforward() {
 
 		for (int i = 0; i < this->scores.size(); i++) {
 			if (this->hasDataSetFile) {
-				outfile << dataSets[i] << " ";
+				outfile << dataSets[i % dataSets.size()] << " ";
 			}
 			outfile << scores[i] << endl;
 			//cout << dataSets[i] << " " << this->scores[i] << " " << (int)this->labels[i] << endl;

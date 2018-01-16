@@ -35,7 +35,7 @@ TESTIMAGE_BASE_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "clie
 for i in range(9):
     imagePath = os.path.join(TESTIMAGE_BASE_FILEPATH, "img_%d.jpg" % (i + 1))
 
-    img = cv2.imread(imagePath)
+    img = cv2.imread(imagePath, cv2.IMREAD_GRAYSCALE)
     height, width = img.shape[:2]
 
     resized_img = cv2.resize(img, (rows, cols))

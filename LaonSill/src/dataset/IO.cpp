@@ -613,7 +613,9 @@ void PrintImageData(const int channels, const int height, const int width, const
 	if (hwc) {
 		for (int h = 0; h < height; h++) {
 			for (int w = 0; w < width; w++) {
-				cout << "[";
+				if (channels > 1) {
+					cout << "[";
+				}
 				for (int c = 0; c < channels; c++) {
 					idx = h * width * channels + w * channels + c;
 					if (sizeof(Dtype) == 1) {
@@ -622,7 +624,9 @@ void PrintImageData(const int channels, const int height, const int width, const
 						cout << ptr[idx] << ",";
 					}
 				}
-				cout << "],";
+				if (channels > 1) {
+					cout << "],";
+				}
 			}
 			cout << endl;
 		}

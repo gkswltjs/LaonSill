@@ -116,9 +116,9 @@ int main(int argc, char** argv) {
 
 
 
-	//plainTest(argc, argv);
+	plainTest(argc, argv);
 	//layerTest(argc, argv);
-	networkTest(argc, argv);
+	//networkTest(argc, argv);
 	//saveNetwork();
 	//layerTest2(argc, argv);
 
@@ -209,9 +209,9 @@ void plainTest(int argc, char** argv) {
 	//randTest(argc, argv);
 	//signalTest();
 	//convertMnistDataTest(argc, argv);
-	//convertImageSetTest(argc, argv);
+	convertImageSetTest();
 	//convertAnnoSetTest(argc, argv);
-	convertVOC07SetTest();
+	//convertVOC07SetTest();
 }
 
 
@@ -900,26 +900,27 @@ void convertImageSetTest() {
 	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
 
 	const string imagePath = baseImagePath + "images/";
-	const string sdfPath = baseSdfPath + "ilsvrc12_train_1000/";
+	const string sdfPath = baseSdfPath + "ilsvrc12_train_10000";
 
 
 	ImageSet trainImageSet;
 	trainImageSet.name = "train";
-	trainImageSet.dataSetPath = baseImagePath + "train.txt.1000";
+	//trainImageSet.dataSetPath = baseImagePath + "train.txt.1000";
+	trainImageSet.dataSetPath = baseImagePath + "train_10000.txt";
 
-	ImageSet testImageSet;
-	testImageSet.name = "test";
-	testImageSet.dataSetPath = baseImagePath + "test.txt.1000";
+	//ImageSet testImageSet;
+	//testImageSet.name = "test";
+	//testImageSet.dataSetPath = baseImagePath + "test.txt.1000";
 
 	ConvertImageSetParam param;
 	param.addImageSet(trainImageSet);
-	param.addImageSet(testImageSet);
+	//param.addImageSet(testImageSet);
 	param.shuffle = true;
 	param.resizeWidth = 224;
 	param.resizeHeight = 224;
 	param.basePath = imagePath;
 	param.outFilePath = sdfPath;
-	param.labelMapFilePath = LAONSILL_HOME + "data/ilsvrc12_train/labelmap_imagenet.json";
+	param.labelMapFilePath = LAONSILL_HOME + "data/ilsvrc12_train/labelmap_imagenet_.json";
 	param.encoded = false;
 	param.encodeType = "";
 
