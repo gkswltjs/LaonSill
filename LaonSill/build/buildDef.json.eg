@@ -11,7 +11,7 @@
         ],
     "INCDIRS" : 
         [
-            "/usr/include", "/usr/include/python2.7", "/usr/include/openblas"
+            "/usr/include", "/usr/include/python2.7"
         ],
     "ARCH" : "compute_60",
     "CODE" : "sm_60"

@@ -9,7 +9,7 @@
 #define SOOOA_MATHFUNCTIONS_H_
 
 #include "common.h"
-#include <cblas.h>
+#include "Blas.h"
 
 template <typename Dtype>
 void soooa_copy(const int N, const Dtype *X, Dtype *Y);
