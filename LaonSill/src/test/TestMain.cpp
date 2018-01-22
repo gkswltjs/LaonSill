@@ -94,6 +94,7 @@ void saveNetwork();
 
 
 const string LAONSILL_HOME = string(std::getenv("LAONSILL_HOME"));
+const string HOME = string(std::getenv("HOME"));
 
 
 void testJsonType(Json::Value& value) {
@@ -111,12 +112,10 @@ int main(int argc, char** argv) {
 	cout.setf(ios::fixed);
 	//cout.setf(ios::scientific);
 
-	//string name = "conv1_3x3_s2_bn";
-	//cout << name.replace(name.end()-3, name.end(), "_scale") << endl;
+	SDFHeader header = SDF::retrieveSDFHeader(LAONSILL_HOME + "/data/sdf/version_test_imageset");
+	header.print();
 
-
-
-	plainTest(argc, argv);
+	//plainTest(argc, argv);
 	//layerTest(argc, argv);
 	//networkTest(argc, argv);
 	//saveNetwork();
@@ -896,31 +895,25 @@ void convertImageSetTest() {
 
 #if 1
 
-	const string baseImagePath = LAONSILL_HOME + "data/ilsvrc12_train/";
-	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
+	//const string baseImagePath = LAONSILL_HOME + "/data/ilsvrc12_train";
+	//const string baseSdfPath = LAONSILL_HOME + "/data/sdf";
 
-	const string imagePath = baseImagePath + "images/";
-	const string sdfPath = baseSdfPath + "ilsvrc12_train_10000";
+	//const string imagePath = baseImagePath + "/images";
+	//const string sdfPath = baseSdfPath + "/ilsvrc12_train_10000";
 
 
 	ImageSet trainImageSet;
-	trainImageSet.name = "train";
-	//trainImageSet.dataSetPath = baseImagePath + "train.txt.1000";
-	trainImageSet.dataSetPath = baseImagePath + "train_10000.txt";
-
-	//ImageSet testImageSet;
-	//testImageSet.name = "test";
-	//testImageSet.dataSetPath = baseImagePath + "test.txt.1000";
+	trainImageSet.name = "noname";
+	trainImageSet.dataSetPath = HOME + "/Dev/data/image/plantynet.1000/train.txt";
 
 	ConvertImageSetParam param;
 	param.addImageSet(trainImageSet);
-	//param.addImageSet(testImageSet);
 	param.shuffle = true;
-	param.resizeWidth = 224;
-	param.resizeHeight = 224;
-	param.basePath = imagePath;
-	param.outFilePath = sdfPath;
-	param.labelMapFilePath = LAONSILL_HOME + "data/ilsvrc12_train/labelmap_imagenet_.json";
+	param.resizeWidth = 250;
+	param.resizeHeight = 375;
+	param.basePath = HOME + "/Dev/data/image/plantynet.1000/";
+	param.outFilePath = HOME + "/Dev/LAONSILL_HOME/data/sdf/version_test_imageset";
+	param.labelMapFilePath = HOME + "/Dev/LAONSILL_HOME/labelmap/labelmap_plantynet.json";
 	param.encoded = false;
 	param.encodeType = "";
 
@@ -930,10 +923,13 @@ void convertImageSetTest() {
 
 	convertImageSet(param);
 
+	cout << "resultCode: " << param.resultCode << endl;
+	cout << "resultMsg: " << param.resultMsg << endl;
+
 
 #else
-	const string baseSdfPath = LAONSILL_HOME + "data/sdf/";
-	const string sdfPath = baseSdfPath + "_ilsvrc12_train_1000/";
+	const string baseSdfPath = LAONSILL_HOME + "/data/sdf";
+	const string sdfPath = baseSdfPath + "/_ilsvrc12_train_1000";
 
 	DataReader<Datum> dataReader(sdfPath);
 

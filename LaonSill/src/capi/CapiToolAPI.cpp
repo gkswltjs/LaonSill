@@ -194,7 +194,7 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 		.def_readwrite("name", 			&LabelItem::name)
 		.def_readwrite("label",			&LabelItem::label)
 		.def_readwrite("displayName",	&LabelItem::displayName)
-		.def_readwrite("color", 			&LabelItem::color)
+		.def_readwrite("color", 		&LabelItem::color)
 	;
 	typedef vector<LabelItem> VectorLabelItem;
 	class_<VectorLabelItem>("VectorLabelItem")
@@ -207,7 +207,19 @@ BOOST_PYTHON_MODULE(libLaonSillClient) {
 		.def_readwrite("setSizes",		&SDFHeader::setSizes)
 		.def_readwrite("setStartPos",	&SDFHeader::setStartPos)
 		.def_readwrite("labelItemList",	&SDFHeader::labelItemList)
+		.def_readonly("type", 			&SDFHeader::type)
+		.def_readonly("uniform",		&SDFHeader::uniform)
+		.def_readonly("channels",		&SDFHeader::channels)
+		.def_readonly("minHeight",		&SDFHeader::minHeight)
+		.def_readonly("minWidth",		&SDFHeader::minWidth)
+		.def_readonly("maxHeight",		&SDFHeader::maxHeight)
+		.def_readonly("maxWidth",		&SDFHeader::maxWidth)
+		.def_readonly("numClasses",		&SDFHeader::numClasses)
+		.def_readonly("size",			&SDFHeader::size)
+		.def_readonly("version",		&SDFHeader::version)
 	;
+
+	def("RetrieveSDFHeader", SDF::retrieveSDFHeader);
 
 
 	enum_<Mode>("Mode")

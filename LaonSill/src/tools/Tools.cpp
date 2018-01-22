@@ -239,6 +239,13 @@ void ConvertImageSetParam::validityCheck() {
 			return;
 		}
 	}
+
+	if (this->labelMapFilePath.empty() && this->numClasses == 0) {
+		this->resultCode = -1;
+		this->resultMsg = "One of labelMapFilePath and numClasses should be specified ... ";
+		return;
+	}
+
 	return;
 }
 
@@ -412,6 +419,10 @@ void convertMnistData(ConvertMnistDataParam& param) {
 
 	SDFHeader header;
 	header.init(numDataSets);
+	header.type = "DATUM";
+	header.uniform = 1;
+	header.numClasses = 10;
+
 	if (!param.labelMapFilePath.empty()) {
 		parse_label_map(param.labelMapFilePath, header.labelItemList);
 	}
@@ -482,6 +493,12 @@ void convertMnistData(ConvertMnistDataParam& param) {
 		datum.channels = 1;
 		datum.height = rows;
 		datum.width = cols;
+		header.channels = 1;
+		header.minHeight = rows;
+		header.minWidth = cols;
+		header.maxHeight = rows;
+		header.maxWidth = cols;
+
 		cout << "A total of " << num_items << " items." << endl;
 		cout << "Rows: " << rows << " Cols: " << cols << endl;
 
@@ -518,7 +535,6 @@ void convertMnistData(ConvertMnistDataParam& param) {
 		SDELETE(pixels);
 	}
 
-	header.print();
 	sdf.updateHeader(header);
 	sdf.close();
 
@@ -643,6 +659,41 @@ void convertImageSetTest(int argc, char** argv) {
 }
 
 
+void updateHeaderInfo(ConvertImageSetParam* param, const string& type, bool is_color,
+		int minHeight, int minWidth, int maxHeight, int maxWidth, SDFHeader& header) {
+
+	header.type = type;
+	header.channels = is_color ? 3 : 1;
+
+	header.minHeight = minHeight;
+	header.minWidth = minWidth;
+	header.maxHeight = maxHeight;
+	header.maxWidth = maxWidth;
+	if (minHeight == maxHeight && minWidth == maxWidth) {
+		header.uniform = 1;
+	} else {
+		header.uniform = 0;
+	}
+
+	if (header.labelItemList.size() == 0 && param->numClasses == 0) {
+		param->resultCode = -1;
+		param->resultMsg = "One of labelMapFilePath and numClasses should be specified ... ";
+		return;
+	}
+
+	if (header.labelItemList.size() > 0 && param->numClasses > 0 &&
+			header.labelItemList.size() != param->numClasses) {
+		param->resultCode = -1;
+		param->resultMsg = "labelMapFilePath info and numClasses are inconsistent ... ";
+		return;
+	}
+
+	header.numClasses = param->numClasses > 0 ? param->numClasses : header.labelItemList.size();
+}
+
+
+
+
 void convertImageSet(ConvertImageSetParam& param) {
 	param.validityCheck();
 	if (param.resultCode < 0) {
@@ -653,6 +704,7 @@ void convertImageSet(ConvertImageSetParam& param) {
 
 	SDFHeader header;
 	header.init(numImageSets);
+	header.print();
 
 	if (!param.labelMapFilePath.empty()) {
 		parse_label_map(param.labelMapFilePath, header.labelItemList);
@@ -682,6 +734,11 @@ void convertImageSet(ConvertImageSetParam& param) {
 	SDF sdf(argv3, Mode::NEW);
 	sdf.open();
 	sdf.initHeader(header);
+
+	int minHeight = INT_MAX;
+	int minWidth = INT_MAX;
+	int maxHeight = 0;
+	int maxWidth = 0;
 
 	for (int imageSetIdx = 0; imageSetIdx < numImageSets; imageSetIdx++) {
 		const ImageSet& imageSet = param.imageSetList[imageSetIdx];
@@ -721,14 +778,6 @@ void convertImageSet(ConvertImageSetParam& param) {
 					}
 					labelList.push_back(atoi(labels.substr(0, pos).c_str()));
 					lines.push_back(std::make_pair(first.substr(0, first.length()), labelList));
-					/*
-					cout << "first: " << lines.back().first << endl;
-					cout << "second: ";
-					for (int i = 0; i < lines.back().second.size(); i++) {
-						cout << lines.back().second[i] << ", ";
-					}
-					cout << endl;
-					*/
 				}
 			}
 		}
@@ -817,8 +866,11 @@ void convertImageSet(ConvertImageSetParam& param) {
 			}
 			SASSERT0(!check_size);
 
-			// sequencial
-			string key_str = format_int(line_id, 8) + "_" + lines[line_id].first;
+			if (minHeight > datum.height) minHeight = datum.height;
+			if (minWidth > datum.width) minWidth = datum.width;
+			if (maxHeight < datum.height) maxHeight = datum.height;
+			if (maxWidth < datum.width) maxWidth = datum.width;
+
 
 			// Put in db
 			//string out = Datum::serializeToString(&datum);
@@ -838,7 +890,11 @@ void convertImageSet(ConvertImageSetParam& param) {
 		}
 	}
 
+
+	updateHeaderInfo(&param, "DATUM", is_color, minHeight, minWidth,
+			maxHeight, maxWidth, header);
 	header.print();
+
 	sdf.updateHeader(header);
 	sdf.close();
 
@@ -909,6 +965,7 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 
 	SDFHeader header;
 	header.init(numImageSets);
+
 	if (!param.labelMapFilePath.empty()) {
 		parse_label_map(param.labelMapFilePath, header.labelItemList);
 	}
@@ -942,12 +999,15 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 	//map<string, int> name_to_label;
 
 
-
 	// Create new DB
 	SDF sdf(argv3, Mode::NEW);
 	sdf.open();
 	sdf.initHeader(header);
 
+	int minHeight = INT_MAX;
+	int minWidth = INT_MAX;
+	int maxHeight = 0;
+	int maxWidth = 0;
 
 	LabelMap<float> label_map;
 	label_map.build(header.labelItemList);
@@ -1039,8 +1099,11 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 			}
 			SASSERT0(!check_size);
 
-			// sequencial
-			string key_str = format_int(line_id, 8) + "_" + lines[line_id].first;
+			if (minHeight > anno_datum.height) minHeight = anno_datum.height;
+			if (minWidth > anno_datum.width) minWidth = anno_datum.width;
+			if (maxHeight < anno_datum.height) maxHeight = anno_datum.height;
+			if (maxWidth < anno_datum.width) maxWidth = anno_datum.width;
+
 
 			// Put in db
 			//string out = Datum::serializeToString(&datum);
@@ -1060,7 +1123,10 @@ void convertAnnoSet(ConvertAnnoSetParam& param) {
 		}
 	}
 
-	header.print();
+
+	updateHeaderInfo(&param, "ANNO_DATUM", is_color, minHeight, minWidth,
+			maxHeight, maxWidth, header);
+
 	sdf.updateHeader(header);
 	sdf.close();
 

@@ -17,6 +17,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/version.hpp>
 
 #include "EnumDef.h"
 
@@ -28,22 +29,11 @@
 
 
 
-class DatumHeader {
-	int numData;
-	std::vector<std::string> classes;
-
-private:
-	friend class boost::serialization::access;
-	template<class Archive>
-	void serialize(Archive& ar, const unsigned int version) {
-		ar & numData;
-		ar & classes;
-	}
-};
 
 
 class Datum {
 public:
+	// version 0
 	int channels;
 	int height;
 	int width;
@@ -51,7 +41,6 @@ public:
 	bool encoded;
 	std::vector<float> float_data;
 	std::string data;
-
 
 	Datum()
 	: channels(0), height(0), width(0), label(0), encoded(false), data("") {}
@@ -92,6 +81,9 @@ protected:
 		ar & data;
 	}
 };
+BOOST_CLASS_VERSION(Datum, 0);
+
+
 
 
 
@@ -150,6 +142,7 @@ protected:
 		ar & size;
 	}
 };
+BOOST_CLASS_VERSION(NormalizedBBox, 0);
 
 
 class Annotation_s {
@@ -177,6 +170,8 @@ protected:
 		ar & bbox;
 	}
 };
+BOOST_CLASS_VERSION(Annotation_s, 0);
+
 
 class AnnotationGroup {
 public:
@@ -210,6 +205,7 @@ protected:
 		ar & annotations;
 	}
 };
+BOOST_CLASS_VERSION(AnnotationGroup, 0);
 
 
 
@@ -245,6 +241,7 @@ protected:
 		ar & annotation_groups;
 	}
 };
+BOOST_CLASS_VERSION(AnnotatedDatum, 0);
 
 
 

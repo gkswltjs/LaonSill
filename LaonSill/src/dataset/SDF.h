@@ -13,11 +13,17 @@
 #include <vector>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/version.hpp>
 
 #include "Datum.h"
 #include "SysLog.h"
 
 enum Mode { READ, NEW };
+
+
+#define FORMAT_LEN_STR	32
+#define FORMAT_LEN_INT	10
+#define FORMAT_LEN_LONG	20
 
 
 
@@ -148,9 +154,9 @@ protected:
 		}
 		// write (output)
 		else if (dynamic_cast<boost::archive::text_oarchive*>(&ar)) {
-			std::string name = format_str(this->name, 32);
-			std::string label = format_int(this->label, 10);
-			std::string displayName = format_str(this->displayName, 32);
+			std::string name = format_str(this->name, FORMAT_LEN_STR);
+			std::string label = format_int(this->label, FORMAT_LEN_INT);
+			std::string displayName = format_str(this->displayName, FORMAT_LEN_STR);
 			std::vector<std::string> color;
 			for (int i = 0; i < this->color.size(); i++) {
 				color.push_back(format_int(this->color[i], 3));
@@ -165,19 +171,37 @@ protected:
 		}
 	}
 };
+BOOST_CLASS_VERSION(LabelItem, 0);
 
 
 
 
 class SDFHeader {
 public:
-	SDFHeader() : numSets(0) {}
+	SDFHeader() : numSets(0), uniform(0), channels(0), minHeight(0), minWidth(0),
+	maxHeight(0), maxWidth(0), numClasses(0), size(0), version(0) {}
 
+	// Version 확장하며 새로운 field 추가시 특히 int 변수는 반드시 초기화해줘야 함 !!!
+
+	// version 0
 	int numSets;
 	std::vector<std::string> names;
 	std::vector<int> setSizes;
 	std::vector<long> setStartPos;
 	std::vector<LabelItem> labelItemList;
+
+	// version 1
+	std::string type;
+	int uniform;
+	int channels;
+	int minHeight;
+	int minWidth;
+	int maxHeight;
+	int maxWidth;
+	int numClasses;
+	long size;				// no need to store
+	uint32_t version;		// no need to store
+
 
 	void init(int numSets) {
 		this->numSets = numSets;
@@ -207,6 +231,16 @@ public:
 		if (this->labelItemList.size() > 10) {
 			std::cout << "printed only first 10 label items ... " << std::endl;
 		}
+		std::cout << "type: " 		<< this->type 		<< std::endl;
+		std::cout << "uniform: " 	<< this->uniform 	<< std::endl;
+		std::cout << "channels: " 	<< this->channels 	<< std::endl;
+		std::cout << "minHeight: " 	<< this->minHeight 	<< std::endl;
+		std::cout << "minWidth: " 	<< this->minWidth	<< std::endl;
+		std::cout << "maxHeight: " 	<< this->maxHeight 	<< std::endl;
+		std::cout << "maxWidth: " 	<< this->maxWidth 	<< std::endl;
+		std::cout << "numClasses: "	<< this->numClasses	<< std::endl;
+		std::cout << "size: "		<< this->size		<< std::endl;
+		std::cout << "version: "	<< this->version	<< std::endl;
 	}
 
 
@@ -214,6 +248,7 @@ protected:
 	friend class boost::serialization::access;
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version) {
+		this->version = version;
 
 		// read (input)
 		if (dynamic_cast<boost::archive::text_iarchive*>(&ar)) {
@@ -240,22 +275,51 @@ protected:
 			for (int i = 0; i < setStartPos.size(); i++) {
 				this->setStartPos.push_back(unformat_int(setStartPos[i]));
 			}
+
+			if (version >= 1) {
+				std::string type;
+				std::string uniform;
+				std::string channels;
+				std::string minHeight;
+				std::string minWidth;
+				std::string maxHeight;
+				std::string maxWidth;
+				std::string numClasses;
+
+				ar & type;
+				ar & uniform;
+				ar & channels;
+				ar & minHeight;
+				ar & minWidth;
+				ar & maxHeight;
+				ar & maxWidth;
+				ar & numClasses;
+
+				this->type = unformat_str(type);
+				this->uniform = (int)unformat_int(uniform);
+				this->channels = (int)unformat_int(channels);
+				this->minHeight = (int)unformat_int(minHeight);
+				this->minWidth = (int)unformat_int(minWidth);
+				this->maxHeight = (int)unformat_int(maxHeight);
+				this->maxWidth = (int)unformat_int(maxWidth);
+				this->numClasses = (int)unformat_int(numClasses);
+			}
 		}
 		// write (output)
 		else if (dynamic_cast<boost::archive::text_oarchive*>(&ar)) {
-			std::string numSets = format_int(this->numSets, 10);
+			std::string numSets = format_int(this->numSets, FORMAT_LEN_INT);
 			std::vector<std::string> names;
 			for (int i = 0; i < this->names.size(); i++) {
-				SASSERT0(this->names[i].length() <= 32);
-				names.push_back(format_str(this->names[i], 32));
+				SASSERT0(this->names[i].length() <= FORMAT_LEN_STR);
+				names.push_back(format_str(this->names[i], FORMAT_LEN_STR));
 			}
 			std::vector<std::string> setSizes;
 			for (int i = 0; i < this->setSizes.size(); i++) {
-				setSizes.push_back(format_int(this->setSizes[i], 10));
+				setSizes.push_back(format_int(this->setSizes[i], FORMAT_LEN_INT));
 			}
 			std::vector<std::string> setStartPos;
 			for (int i = 0; i < this->setStartPos.size(); i++) {
-				setStartPos.push_back(format_int(this->setStartPos[i], 20));
+				setStartPos.push_back(format_int(this->setStartPos[i], FORMAT_LEN_LONG));
 			}
 
 			ar & numSets;
@@ -263,14 +327,33 @@ protected:
 			ar & setSizes;
 			ar & setStartPos;
 			ar & this->labelItemList;
+
+			if (version >= 1) {
+				std::string type = format_str(this->type, FORMAT_LEN_STR);
+				std::string uniform = format_int(this->uniform, FORMAT_LEN_INT);
+				std::string channels = format_int(this->channels, FORMAT_LEN_INT);
+				std::string minHeight = format_int(this->minHeight, FORMAT_LEN_INT);
+				std::string minWidth = format_int(this->minWidth, FORMAT_LEN_INT);
+				std::string maxHeight = format_int(this->maxHeight, FORMAT_LEN_INT);
+				std::string maxWidth = format_int(this->maxWidth, FORMAT_LEN_INT);
+				std::string numClasses = format_int(this->numClasses, FORMAT_LEN_INT);
+
+				ar & type;
+				ar & uniform;
+				ar & channels;
+				ar & minHeight;
+				ar & minWidth;
+				ar & maxHeight;
+				ar & maxWidth;
+				ar & numClasses;
+			}
 		} else {
 
 		}
 	}
-
 };
+BOOST_CLASS_VERSION(SDFHeader, 1);
 
-//BOOST_CLASS_VERSION(SDFHeader, 0);
 
 
 /***************
@@ -305,6 +388,11 @@ public:
 	const std::string getNextValue();
 
 
+
+
+	static SDFHeader retrieveSDFHeader(const std::string& source);
+
+
 private:
 	void update_dataset_idx_map();
 	void sdf_open();
@@ -319,7 +407,6 @@ private:
 	int headerStartPos;
 	int bodyStartPos;
 
-	//std::vector<std::string> keys;
 	std::vector<std::string> values;
 
 	size_t dbSize;
@@ -334,9 +421,9 @@ private:
 	int curDataSetIdx;
 
 
-	const std::string DATA_NAME = "data.sdf";
-	const std::string LOCK_NAME = "lock.sdf";
-	const std::string SDF_STRING = "SOOOA_DATA_FORMAT";
+	static const std::string DATA_NAME;
+	static const std::string LOCK_NAME;
+	static const std::string SDF_STRING;
 
 };
 

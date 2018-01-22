@@ -17,6 +17,10 @@
 using namespace std;
 namespace fs = ::boost::filesystem;
 
+const std::string SDF::DATA_NAME = "data.sdf";
+const std::string SDF::LOCK_NAME = "lock.sdf";
+const std::string SDF::SDF_STRING = "SOOOA_DATA_FORMAT";
+
 
 SDF::SDF(const string& source, const Mode mode)
 : source(source), mode(mode), ia(0), oa(0) {
@@ -38,18 +42,6 @@ void SDF::open() {
 		SASSERT(mkdir_result == 0, "mkdir %s failed.", this->source.c_str());
 	}
 	sdf_open();
-	cout << "Opened sdf " << this->source << endl;
-
-
-	/*
-	if (this->mode == READ) {
-		//this->ifs.seekg(0, ios::end);
-		//this->dbSize = this->ifs.tellg();
-		this->ifs.clear();
-		this->ifs.seekg(0, ios::beg);
-		cout << "Size of opend sdf is " << this->dbSize << endl;
-	}
-	*/
 }
 
 void SDF::close() {
@@ -77,6 +69,8 @@ void SDF::updateHeader(SDFHeader& header) {
 	SASSERT0(this->ofs.is_open());
 	SASSERT0(header.numSets > 0);
 	SASSERT0(this->header.numSets > 0);
+
+	header.size = this->dbSize;
 
 	this->ofs.seekp(this->headerStartPos);
 	this->header = header;
@@ -184,6 +178,45 @@ void SDF::commit() {
 
 
 
+SDFHeader SDF::retrieveSDFHeader(const std::string& source) {
+	std::ifstream ifs;
+
+	fs::path sourcePath(source);
+	sourcePath /= SDF::DATA_NAME;
+
+	if (!boost::filesystem::exists(sourcePath)) {
+		STDOUT_LOG("[ERROR] File not exists: %s", sourcePath.string().c_str());
+		SASSERT(false, "File not exists: %s", sourcePath.string().c_str());
+	}
+
+	ifs.open(sourcePath.string(), ios_base::in);
+	ifs.seekg(0, ios::end);
+	long size = ifs.tellg();
+	ifs.clear();
+	ifs.seekg(0, ios::beg);
+
+	boost::archive::text_iarchive ia(ifs, boost::archive::no_header);
+
+	string sdf_string;
+	ia >> sdf_string;
+	SASSERT0(sdf_string == SDF::SDF_STRING);
+
+	SDFHeader header;
+	LabelItem dummyLabelItem;
+
+	ia >> header;	// dummyHeader
+	ia >> dummyLabelItem;
+	ia >> header;
+
+	header.size = size;
+
+	if (ifs.is_open()) {
+		ifs.close();
+	}
+
+	return header;
+}
+
 
 void SDF::sdf_open() {
 	unsigned int flags = boost::archive::no_header;
@@ -191,12 +224,12 @@ void SDF::sdf_open() {
 		SASSERT0(!this->ofs.is_open());
 
 		fs::path sourcePath(this->source);
-		sourcePath /= this->DATA_NAME;
+		sourcePath /= SDF::DATA_NAME;
 		this->ofs.open(sourcePath.string(), ios_base::out);
 		this->oa = NULL;
 		SNEW(this->oa, boost::archive::text_oarchive, this->ofs, flags);
 		SASSUME0(this->oa != NULL);
-		(*this->oa) << SDF_STRING;
+		(*this->oa) << SDF::SDF_STRING;
 
 		SDFHeader dummyHeader;
 		(*this->oa) << dummyHeader;
@@ -209,7 +242,7 @@ void SDF::sdf_open() {
 		SASSERT0(!this->ifs.is_open());
 
 		fs::path sourcePath(this->source);
-		sourcePath /= this->DATA_NAME;
+		sourcePath /= SDF::DATA_NAME;
 
 		if (!boost::filesystem::exists(sourcePath)) {
 			STDOUT_LOG("[ERROR] File not exists: %s", sourcePath.string().c_str());
@@ -223,7 +256,7 @@ void SDF::sdf_open() {
 
 		this->ifs.clear();
 		this->ifs.seekg(0, ios::beg);
-		cout << "Size of opend sdf is " << this->dbSize << endl;
+		//cout << "Size of opend sdf is " << this->dbSize << endl;
 
 		this->ia = NULL;
 		SNEW(this->ia, boost::archive::text_iarchive, this->ifs, flags);
@@ -231,7 +264,7 @@ void SDF::sdf_open() {
 
 		string sdf_string;
 		(*this->ia) >> sdf_string;
-		SASSERT0(sdf_string == SDF_STRING);
+		SASSERT0(sdf_string == SDF::SDF_STRING);
 		(*this->ia) >> this->header;	// dummyHeader
 		LabelItem dummyLabelItem;
 		(*this->ia) >> dummyLabelItem;
@@ -239,7 +272,7 @@ void SDF::sdf_open() {
 		(*this->ia) >> this->header;
 		this->bodyStartPos = this->ifs.tellg();
 
-		this->header.print();
+		this->header.size = dbSize;
 
 		this->currentPos = this->header.setStartPos;
 		update_dataset_idx_map();

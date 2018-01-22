@@ -111,6 +111,7 @@ public:
 		this->encodeType = "jpg";
 		this->basePath = "";
 		//this->datasetPath = "";
+		this->numClasses = 0;
 	}
 
 	virtual void validityCheck();
@@ -133,6 +134,7 @@ public:
 		std::cout << "encodeType: " 		<< this->encodeType << std::endl;
 		std::cout << "basePath: " 			<< this->basePath << std::endl;
 		//std::cout << "datasetPath: " 		<< this->datasetPath << std::endl;
+		std::cout << "numClasses: "			<< this->numClasses << std::endl;
 		std::cout << "imageSetList size: "	<< this->imageSetList.size() << std::endl;
 		for (int i = 0; i < this->imageSetList.size(); i++) {
 			this->imageSetList[i].print();
@@ -151,6 +153,7 @@ public:
 	std::string basePath;
 	//std::string datasetPath;
 	std::vector<ImageSet> imageSetList;
+	int numClasses;
 };
 
 class ConvertAnnoSetParam : public ConvertImageSetParam {

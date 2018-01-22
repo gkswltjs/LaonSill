@@ -28,18 +28,20 @@ def get_arguments():
                         help="directory path containing image list.")
     parser.add_argument("--outdir", type=str, required=True, 
                         help="directory path where sdf file is created.")
-    parser.add_argument("--shuffle", type=bool, required=True, 
+    parser.add_argument("--labelmap", type=str, required=True, 
+                        help="whether shuffle the list in dataset or not.")
+    parser.add_argument("--shuffle", type=bool, required=False, default=False,
                         help="whether shuffle the list in dataset or not.")
 
     return parser.parse_args()
 
 
 
-def convert_image_set(dataset, basedir, outdir, shuffle):
+def convert_image_set(dataset, basedir, outdir, labelmap, shuffle):
     param = ConvertImageSetParam()
 
     imageSet = ImageSet()
-    imageSet.name = 'plantynet'
+    imageSet.name = 'noname'
     imageSet.dataSetPath = dataset 
 
     param.addImageSet(imageSet)
@@ -48,11 +50,17 @@ def convert_image_set(dataset, basedir, outdir, shuffle):
     param.resizeHeight = 375
     param.basePath = basedir
     param.outFilePath = outdir
+    param.labelMapFilePath = labelmap
 
     if os.path.exists(param.outFilePath):
         shutil.rmtree(param.outFilePath)
 
+    param.info()
+
     ConvertImageSet(param)
+
+    print("resultCode: {}".format(param.resultCode))
+    print("resultMsg: {}".format(param.resultMsg))
 
 
 
@@ -60,12 +68,13 @@ def main():
     """Create the model and start the training."""
     args = get_arguments()
     
-    dataset = args.dataset
-    basedir = args.basedir
-    outdir = args.outdir
+    dataset = os.path.expanduser(args.dataset)
+    basedir = os.path.expanduser(args.basedir)
+    outdir = os.path.expanduser(args.outdir)
+    labelmap = os.path.expanduser(args.labelmap)
     shuffle = args.shuffle
 
-    convert_image_set(dataset, basedir, outdir, shuffle)
+    convert_image_set(dataset, basedir, outdir, labelmap, shuffle)
     
 
 if __name__ == '__main__':
