@@ -614,7 +614,8 @@ extern "C" int getMeasureItemName(int sockFD, char* buffer, char* networkID,
 }
 
 extern "C" int getMeasures(int sockFD, char* buffer, char* networkID, int forwardSearch, 
-        int start, int count, int* startIterNum, int* dataCount, float* data) {
+        int start, int count, int* startIterNum, int* dataCount, int* curIterNum, 
+        int* totalIterNum, float* data) {
 
     Job* runJob = new Job(JobType::GetMeasures);
     runJob->addJobElem(Job::StringType, strlen(networkID), (void*)networkID);
@@ -637,9 +638,11 @@ extern "C" int getMeasures(int sockFD, char* buffer, char* networkID, int forwar
     int measureCount = runReplyJob->getIntValue(0);
     (*dataCount) = measureCount;
     (*startIterNum) = runReplyJob->getIntValue(1);
+    (*curIterNum) = runReplyJob->getIntValue(2);
+    (*totalIterNum) = runReplyJob->getIntValue(3);
 
     if ((*dataCount) > 0) {
-        float *measures = runReplyJob->getFloatArray(2);
+        float *measures = runReplyJob->getFloatArray(4);
         memcpy(data, measures, sizeof(float) * measureCount);
     }
 

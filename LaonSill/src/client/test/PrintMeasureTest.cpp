@@ -50,9 +50,11 @@ static void printMeasureThread(string networkID) {
     for (int i = 0; i < 5; i++) {
         int startIterNum;
         int dataCount;
+        int curIterNum;
+        int totalIterNum;
 
         ret = ClientAPI::getMeasures(handle, networkID, true, i * 10, 10, &startIterNum,
-                &dataCount, floatData); 
+                &dataCount, &curIterNum, &totalIterNum, floatData); 
 
         for (int j = 0; j < dataCount / measureItemCount; j++) {
             cout << "Measure Data[" << startIterNum + j << "] : (";
@@ -74,9 +76,11 @@ static void printMeasureThread(string networkID) {
     for (int i = 0; i < 5; i++) {
         int startIterNum;
         int dataCount;
+        int curIterNum;
+        int totalIterNum;
 
         ret = ClientAPI::getMeasures(handle, networkID, false, i * 10, 10, &startIterNum,
-                &dataCount, floatData); 
+                &dataCount, &curIterNum, &totalIterNum, floatData); 
 
         for (int j = 0; j < dataCount / measureItemCount; j++) {
             cout << "Measure Data[" << startIterNum + j << "] : (";

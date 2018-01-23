@@ -52,6 +52,8 @@ typedef struct TensorAllocKey_t {
 } TensorAllocKey;
 
 class PhysicalPlan {
+    friend class WorkContext;
+
 public: 
     PhysicalPlan(std::vector<std::string> lossNames);
     virtual ~PhysicalPlan();
@@ -108,7 +110,7 @@ public:
 
     void reset();
 
-private:
+protected:
     static std::map<std::string, std::vector<PhysicalPlan*>>    planGlobalMap;    
                                                                 // key = networkID,
                                                                 // value = Physical Plans
@@ -118,6 +120,7 @@ private:
                                                 // key = networkID, value = plan info 
     static std::mutex               planGlobalMutex;    // planMap, planInfoMap을 보호
 
+private:
     void runLayer(int planID, bool inference);
     void notifyFinish(int targetPlanID);
     void markDone(int planID);     

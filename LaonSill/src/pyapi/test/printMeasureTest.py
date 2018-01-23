@@ -22,18 +22,20 @@ def printMeasureThread(networkID):
 
     print "[Measure Thread] (1) forward search "
     for i in range(5):
-        ret, startIterNum, measures = handle.getMeasures(networkID, len(itemNames), True, 
-                                                         i * 10, 10)
+        ret, startIterNum, curIterNum, totalIterNum, measures = \
+            handle.getMeasures(networkID, len(itemNames), True, i * 10, 10)
         for j in range(len(measures)):
             print "[", (startIterNum + j), "] : ", measures[j]
+        print "progress : %d/%d" % (curIterNum, totalIterNum)
         print ""
 
     print "[Measure Thread] (2) backward search "
     for i in range(5):
-        ret, startIterNum, measures = handle.getMeasures(networkID, len(itemNames), False,
-                                                         -1, 10)
+        ret, startIterNum, curIterNum, totalIterNum, measures = \
+            handle.getMeasures(networkID, len(itemNames), False, -1, 10)
         for j in range(len(measures)):
             print "[", (startIterNum + j), "] : ", measures[j]
+        print "progress : %d/%d" % (curIterNum, totalIterNum)
         print ""
 
     print "[Measure Thread] release session"

@@ -638,7 +638,7 @@ ClientError ClientAPI::getMeasureItemName(ClientHandle handle, string networkID,
 
 ClientError ClientAPI::getMeasures(ClientHandle handle, string networkID,
     bool forwardSearch, int start, int count, int* startIterNum, int* dataCount,
-    float* data) {
+    int* curIterNum, int* totalIterNum, float* data) {
 
     int forward = (int)forwardSearch;
 
@@ -666,9 +666,11 @@ ClientError ClientAPI::getMeasures(ClientHandle handle, string networkID,
     int measureCount = runReplyJob->getIntValue(0);
     (*dataCount) = measureCount;
     (*startIterNum) = runReplyJob->getIntValue(1);
+    (*curIterNum) = runReplyJob->getIntValue(2);
+    (*totalIterNum) = runReplyJob->getIntValue(3);
 
     if ((*dataCount) > 0) {
-        float *measures = runReplyJob->getFloatArray(2);
+        float *measures = runReplyJob->getFloatArray(4);
         memcpy(data, measures, sizeof(float) * measureCount);
     }
 

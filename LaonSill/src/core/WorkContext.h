@@ -39,6 +39,8 @@ public:
     static thread_local _NetworkProp*           curNetworkProp;
     static thread_local std::string             curNetworkID;
 
+    static void getNetworkProgress(std::string networkID, int& curIterCount,
+            int &totalIterCount);
     static void updateNetwork(std::string networkID);
     static void updateLayer(std::string networkID, int layerID);
     static void updatePlan(int dopID, bool acquireLock);

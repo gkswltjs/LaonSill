@@ -479,6 +479,8 @@ void Worker::handleGetMeasures(Job* job) {
         int N = -1;
         pubJob->addJobElem(Job::IntType, 1, (void*)&N);
         pubJob->addJobElem(Job::IntType, 1, (void*)&N);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&N);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&N);
     } else {
         int itemCount = entry->getItemNames().size();
         float* data = NULL;
@@ -490,6 +492,13 @@ void Worker::handleGetMeasures(Job* job) {
         int N = measureCount * itemCount;
         pubJob->addJobElem(Job::IntType, 1, (void*)&N);
         pubJob->addJobElem(Job::IntType, 1, (void*)&startIterNum);
+
+        int totalIterCount;
+        int curIterCount;
+
+        WorkContext::getNetworkProgress(networkID, curIterCount, totalIterCount);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&curIterCount);
+        pubJob->addJobElem(Job::IntType, 1, (void*)&totalIterCount);
 
         if (N > 0)
             pubJob->addJobElem(Job::FloatArrayType, N, data);

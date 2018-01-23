@@ -117,7 +117,8 @@ public:
 
     static ClientError      getMeasures(ClientHandle handle, std::string networkID,
                                 bool forwardSearch, int start, int count, 
-                                int* startIterNum, int* dataCount, float* data);
+                                int* startIterNum, int* dataCount, int* curIterNum,
+                                int* totalIterNum, float* data);
 };
                             
 #endif /* CLIENTAPI_H */

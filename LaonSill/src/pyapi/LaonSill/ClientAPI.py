@@ -68,7 +68,7 @@ funcGetMeasureItemName.argtypes = [c_int, c_char_p, c_char_p, c_int,
 
 funcGetMeasures = libLaonSill.getMeasures
 funcGetMeasures.argtypes = [c_int, c_char_p, c_char_p, c_int, c_int, c_int, POINTER(c_int),
-    POINTER(c_int), POINTER(c_float)]
+    POINTER(c_int), POINTER(c_int), POINTER(c_int), POINTER(c_float)]
 
 class ClientHandle:
     def __init__(self):
@@ -213,11 +213,13 @@ class ClientHandle:
 
         startIterNum = c_int(-1)
         dataCount = c_int(-1)
+        curIterCount = c_int(-1)
+        totalIterCount = c_int(-1)
         measureArray = (c_float * (itemCount * count))()
        
         ret = funcGetMeasures(self.sockFD, self.buffer, c_char_p(networkID),
                 c_int(int(forwardSearch)), c_int(start), c_int(count), byref(startIterNum),
-                byref(dataCount), measureArray)
+                byref(dataCount), byref(curIterCount), byref(totalIterCount), measureArray)
 
         if ret != 0:
             ret, -1, []
@@ -231,4 +233,4 @@ class ClientHandle:
                 curr_result.append(measureArray[index])
             result.append(curr_result)
 
-        return ret, startIterNum.value, result
+        return ret, startIterNum.value, curIterCount.value, totalIterCount.value, result

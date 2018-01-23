@@ -21,6 +21,22 @@ thread_local _NetworkProp*  WorkContext::curNetworkProp;
 thread_local string         WorkContext::curNetworkID = "";
 BootMode                    WorkContext::curBootMode;
 
+void WorkContext::getNetworkProgress(string networkID, int& curIterCount, 
+        int &totalIterCount) {
+    unique_lock<mutex> lock(PhysicalPlan::planGlobalMutex);
+
+    if (PhysicalPlan::planGlobalInfoMap.find(networkID) ==
+            PhysicalPlan::planGlobalInfoMap.end()) {
+        curIterCount = -1;
+        totalIterCount = -1;
+    }
+
+    PlanInfo_t *planInfo = PhysicalPlan::planGlobalInfoMap[networkID];
+    totalIterCount = planInfo->miniBatchCount * planInfo->epochCount;
+    curIterCount = planInfo->curMiniBatchIndex +
+        planInfo->curEpochIndex * planInfo->miniBatchCount;
+}
+
 void WorkContext::updateNetwork(string networkID) {
     if (networkID == "")
         return;
