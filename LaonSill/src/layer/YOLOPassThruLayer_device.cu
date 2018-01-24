@@ -24,61 +24,21 @@ __global__ void YoloPassThruForward(const Dtype* input, int size, int channels, 
     int curBatch = idx / channels;
     int curChannel = idx % channels;
 
-    int halfRows = rows / 2;
-    int halfCols = cols / 2;
+    int stride = 2;
 
-    // 1st quarter 
-    int targetBaseIndex = curBatch * channels * rows * cols + 
-        (curChannel + 0 * channels) * halfRows * halfCols;
-    int sourceBaseIndex = idx * rows * cols;
+    int topChannels = channels / (stride * stride);
+    int topRows = rows * stride;
+    int topCols = cols * stride;
 
-    int curIndex = 0;
-    for (int i = 0; i < halfRows; i++) {
-        for (int j = 0; j < halfCols; j++) {
-            output[targetBaseIndex + curIndex] = input[sourceBaseIndex + i * cols + j];
-            curIndex = curIndex + 1;
-        }
-    }
-
-    // 2nd quarter
-    targetBaseIndex = curBatch * channels * rows * cols + 
-        (curChannel + 1 * channels) * halfRows * halfCols;
-    sourceBaseIndex = idx * rows * cols;
-
-    curIndex = 0;
-    for (int i = 0; i < halfRows; i++) {
-        for (int j = 0; j < halfCols; j++) {
-            output[targetBaseIndex + curIndex] = 
-                input[sourceBaseIndex + i * cols + halfCols + j];
-            curIndex = curIndex + 1;
-        }
-    }
-
-    // 3rd quarter
-    targetBaseIndex = curBatch * channels * rows * cols + 
-        (curChannel + 2 * channels) * halfRows * halfCols;
-    sourceBaseIndex = idx * rows * cols;
-
-    curIndex = 0;
-    for (int i = 0; i < halfRows; i++) {
-        for (int j = 0; j < halfCols; j++) {
-            output[targetBaseIndex + curIndex] = 
-                input[sourceBaseIndex + i * cols + j + cols * halfRows];
-            curIndex = curIndex + 1;
-        }
-    }
-
-    // 4th quarter
-    targetBaseIndex = curBatch * channels * rows * cols + 
-        (curChannel + 3 * channels) * halfRows * halfCols;
-    sourceBaseIndex = idx * rows * cols;
-
-    curIndex = 0;
-    for (int i = 0; i < halfRows; i++) {
-        for (int j = 0; j < halfCols; j++) {
-            output[targetBaseIndex + curIndex] = 
-                input[sourceBaseIndex + i * cols + j + cols * halfRows + halfCols];
-            curIndex = curIndex + 1;
+    for (int h = 0; h < cols; h++) {
+        for (int w = 0; w < rows; w++) {
+            int bottomIndex = w + rows * (h + cols * (curChannel + channels * curBatch));
+            int c2 = curChannel % topChannels;
+            int offset = curChannel / topChannels;
+            int w2 = w * stride + offset % stride;
+            int h2 = h * stride + offset / stride;
+            int topIndex = w2 + topRows * (h2 + topCols * (c2 + topChannels * curBatch));
+            output[bottomIndex] = input[topIndex];
         }
     }
 }
@@ -93,61 +53,21 @@ __global__ void YoloPassThruBackward(const Dtype* outputGrad, int size, int chan
     int curBatch = idx / channels;
     int curChannel = idx % channels;
 
-    int halfRows = rows / 2;
-    int halfCols = cols / 2;
+    int stride = 2;
 
-    // 1st quarter 
-    int targetBaseIndex = curBatch * channels * rows * cols + 
-        (curChannel + 0 * channels) * halfRows * halfCols;
-    int sourceBaseIndex = idx * rows * cols;
+    int topChannels = channels / (stride * stride);
+    int topRows = rows * stride;
+    int topCols = cols * stride;
 
-    int curIndex = 0;
-    for (int i = 0; i < halfRows; i++) {
-        for (int j = 0; j < halfCols; j++) {
-            inputGrad[sourceBaseIndex + i * cols + j] = outputGrad[targetBaseIndex + curIndex];
-            curIndex = curIndex + 1;
-        }
-    }
-
-    // 2nd quarter
-    targetBaseIndex = curBatch * channels * rows * cols + 
-        (curChannel + 1 * channels) * halfRows * halfCols;
-    sourceBaseIndex = idx * rows * cols;
-
-    curIndex = 0;
-    for (int i = 0; i < halfRows; i++) {
-        for (int j = 0; j < halfCols; j++) {
-            inputGrad[sourceBaseIndex + i * cols + halfCols + j] = 
-                outputGrad[targetBaseIndex + curIndex];
-            curIndex = curIndex + 1;
-        }
-    }
-
-    // 3rd quarter
-    targetBaseIndex = curBatch * channels * rows * cols + 
-        (curChannel + 2 * channels) * halfRows * halfCols;
-    sourceBaseIndex = idx * rows * cols;
-
-    curIndex = 0;
-    for (int i = 0; i < halfRows; i++) {
-        for (int j = 0; j < halfCols; j++) {
-            inputGrad[sourceBaseIndex + i * cols + j + cols * halfRows] =
-                outputGrad[targetBaseIndex + curIndex];
-            curIndex = curIndex + 1;
-        }
-    }
-
-    // 4th quarter
-    targetBaseIndex = curBatch * channels * rows * cols + 
-        (curChannel + 3 * channels) * halfRows * halfCols;
-    sourceBaseIndex = idx * rows * cols;
-
-    curIndex = 0;
-    for (int i = 0; i < halfRows; i++) {
-        for (int j = 0; j < halfCols; j++) {
-            inputGrad[sourceBaseIndex + i * cols + j + cols * halfRows + halfCols] =
-                outputGrad[targetBaseIndex + curIndex];
-            curIndex = curIndex + 1;
+    for (int h = 0; h < cols; h++) {
+        for (int w = 0; w < rows; w++) {
+            int bottomIndex = w + rows * (h + cols * (curChannel + channels * curBatch));
+            int c2 = curChannel % topChannels;
+            int offset = curChannel / topChannels;
+            int w2 = w * stride + offset % stride;
+            int h2 = h * stride + offset / stride;
+            int topIndex = w2 + topRows * (h2 + topCols * (c2 + topChannels * curBatch));
+            inputGrad[topIndex] = outputGrad[bottomIndex];
         }
     }
 }

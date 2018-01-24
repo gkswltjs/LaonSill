@@ -161,7 +161,7 @@ void ImageUtil<Dtype>::nms(std::vector<std::vector<float>>& proposals,
         float x2 = proposals[vec[i].first][2];
         float y2 = proposals[vec[i].first][3];
         float area = (x2 - x1) * (y2 - y1);
-        if (area != 0.0f) {
+        if (area == 0.0f) {
             live[i] = false;
             continue;
         }
@@ -172,7 +172,7 @@ void ImageUtil<Dtype>::nms(std::vector<std::vector<float>>& proposals,
             float tx2 = proposals[vec[j].first][2];
             float ty2 = proposals[vec[j].first][3];
             float tarea = (tx2 - tx1) * (ty2 - ty1);
-            if (tarea != 0.0f) {
+            if (tarea == 0.0f) {
                 live[j] = false;
                 continue;
             }

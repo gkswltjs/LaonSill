@@ -16,7 +16,7 @@
 #define YOLO_IMAGE_DEFAULT_WIDTH        416
 #define YOLO_IMAGE_DEFAULT_HEIGHT       416
 #define YOLO_DEFAULT_CONFIDENCE_THRES   0.3
-#define YOLO_DEFAULT_NMS_THRES          0.1
+#define YOLO_DEFAULT_NMS_THRES          0.3
 
 #define YOLO_GRID_COUNT                 169
 #define YOLO_GRID_ONE_AXIS_COUNT        13

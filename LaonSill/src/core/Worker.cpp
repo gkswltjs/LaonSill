@@ -719,7 +719,7 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
         }
 
         // NMS 적용
-        int nmsThres = YOLO_DEFAULT_NMS_THRES;
+        float nmsThres = YOLO_DEFAULT_NMS_THRES;
         vector<yoloJobPack> nmsYoloPacks;
 
         for (int labelIdx = 0; labelIdx < classCount; labelIdx++) {
