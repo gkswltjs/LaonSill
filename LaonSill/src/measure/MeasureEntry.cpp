@@ -260,8 +260,8 @@ void MeasureEntry::getData(int start, int count, bool forward, int* startIterNum
 
         start1 = modifiedStart % this->queueSize;
 
-        if (this->queueSize - start < modifiedCount) {
-            count1 = this->queueSize - start;
+        if (this->queueSize - start1 < modifiedCount) {
+            count1 = this->queueSize - start1;
             count2 = modifiedCount - count1;
             start2 = 0;
         } else {
@@ -269,6 +269,7 @@ void MeasureEntry::getData(int start, int count, bool forward, int* startIterNum
             count2 = 0;
             start2 = -1;    // meaning less
         }
+        (*startIterNum) = modifiedStart;
     } else {
         if (this->head < count) {
             if (this->baseIterNum > 0) {
@@ -289,9 +290,9 @@ void MeasureEntry::getData(int start, int count, bool forward, int* startIterNum
             start2 = -1;    //meaningless
             count2 = 0;
         }
+        (*startIterNum) = this->baseIterNum + start1;
     }
 
-    (*startIterNum) = this->baseIterNum + start1;
     (*measureCount) = count1 + count2;
 
     if (count1 > 0)
@@ -302,11 +303,12 @@ void MeasureEntry::getData(int start, int count, bool forward, int* startIterNum
 
     entryLock.unlock();
 
-    if (count1 > 0)
+    if (count1 > 0) {
         getDataInternal(start1, count1, data);
+    }
 
     if (count2 > 0) {
-        int offset = count1 * this->itemCount;
+        int offset = max(0, count1 * this->itemCount);
         getDataInternal(start2, count2, (float*)&data[offset]);
     }
 }

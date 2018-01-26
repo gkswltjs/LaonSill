@@ -487,6 +487,7 @@ void Worker::handleGetMeasures(Job* job) {
         int allocSize = sizeof(float) * count * itemCount;
         SMALLOC(data, float, allocSize);
         SASSUME0(data != NULL);
+
         entry->getData(start, count, (bool)isForward, &startIterNum, &measureCount, data); 
 
         int N = measureCount * itemCount;
