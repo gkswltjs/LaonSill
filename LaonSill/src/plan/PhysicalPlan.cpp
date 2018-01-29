@@ -318,8 +318,9 @@ void PhysicalPlan::saveNetwork(bool checkCond) {
     if (checkCond) {
         bool saveNetwork = false;
 
+        // XXX: measure는 0-base 인데 iterations는 1-base이다 보니 그것을 보정해 주어야 함.
         if ((SNPROP(saveInterval) != 0) &&
-            ((SNPROP(iterations) % SNPROP(saveInterval)) == 0)) {
+            ((SNPROP(iterations) % SNPROP(saveInterval)) == 1)) {
             saveNetwork = true;
         } 
 
@@ -329,7 +330,7 @@ void PhysicalPlan::saveNetwork(bool checkCond) {
 
     string networkID = WorkContext::curNetworkID;
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
-    network->handleIntervalSaveParams(SNPROP(iterations));
+    network->handleIntervalSaveParams(SNPROP(iterations) - 1);
 }
 
 void PhysicalPlan::loadNetwork() {
@@ -446,7 +447,6 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     } else {
         WorkContext::curPlanInfo->curMiniBatchIndex += 1;
     }
-    SNPROP(iterations) += 1;
 
     bool saveNetwork = false;
     if ((SNPROP(saveInterval) != 0) &&
@@ -455,7 +455,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     }
 
     // best loss를 가지고 있는 네트워크를 저장한다.
-    network->handleBestLoss(currLoss, SNPROP(iterations));
+    network->handleBestLoss(currLoss, SNPROP(iterations) - 1);
 
     if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
         WorkContext::curPlanInfo->curEpochIndex -= 1;
@@ -470,6 +470,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
             
         logLoss();
 
+        SNPROP(iterations) += 1;
         return false;
     }
     planInfoLock.unlock();
@@ -504,6 +505,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     if (saveNetwork)
         PhysicalPlan::saveNetwork(false);
 
+    SNPROP(iterations) += 1;
     return true;
 }
 

@@ -13,6 +13,7 @@
 #include "SysLog.h"
 #include "StdOutLog.h"
 #include "MemoryMgmt.h"
+#include "PropMgmt.h"
 
 using namespace std;
 
@@ -142,6 +143,7 @@ void MeasureEntry::addData(float* data) {
         fprintf(this->fp, "\n");
         fflush(this->fp);
     }
+    
 
     entryLock.lock();
     this->status[this->head] = MEASURE_ENTRY_STATUS_NONE;
