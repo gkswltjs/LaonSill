@@ -1,0 +1,5199 @@
+{
+	"layers" : 
+	[
+		{
+			"name" : "data",
+			"layer" : "DataInput",
+			"id" : 0,
+			"output" : ["data", "label"],
+	        "source" : "$(LAONSILL_HOME)/data/sdf/ilsvrc12_train_224px_1000",
+			"dataSetName" : "train",
+			"dataTransformParam.mean" : [104.0, 117.0, 123.0],
+			"dataTransformParam.mirror" : true
+			
+		},
+
+		{
+			"name" : "conv0",
+			"layer" : "Conv",
+			"id" : 10,
+			"input" : ["data"],
+			"output" : ["conv0"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 7,
+			"filterDim.cols" : 7,
+			"filterDim.pad" : 3,
+			"filterDim.stride" : 2,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "pool0",
+			"layer" : "Pooling",
+			"id" : 20,
+			"input" : ["conv0"],
+			"output" : ["pool0"],
+			"poolingType" : "Max",
+			"poolDim.rows" : 3,
+			"poolDim.cols" : 3,
+			"poolDim.stride" : 2
+		},
+		
+		{
+			"name" : "block1/layer1/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 30,
+			"input" : ["pool0"],
+			"output" : ["block1/layer1/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer1/relu1",
+			"layer" : "Relu",
+			"id" : 40,
+			"input" : ["block1/layer1/bn1"],
+			"output" : ["block1/layer1/bn1"]
+		},
+		
+		{
+			"name" : "block1/layer1/conv1x1",
+			"layer" : "Conv",
+			"id" : 50,
+			"input" : ["block1/layer1/bn1"],
+			"output" : ["block1/layer1/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer1/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 60,
+			"input" : ["block1/layer1/conv1x1"],
+			"output" : ["block1/layer1/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer1/relu2",
+			"layer" : "Relu",
+			"id" : 70,
+			"input" : ["block1/layer1/bn2"],
+			"output" : ["block1/layer1/bn2"]
+		},
+		
+		{
+			"name" : "block1/layer1/conv3x3",
+			"layer" : "Conv",
+			"id" : 80,
+			"input" : ["block1/layer1/bn2"],
+			"output" : ["block1/layer1/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer1/concat",
+			"layer" : "Concat",
+			"id" : 90,
+			"input" : [
+					"pool0",
+					"block1/layer1/conv3x3"
+			],
+			"output" : ["block1/layer1/concat"]
+		},
+		
+
+
+
+		{
+			"name" : "block1/layer2/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 100,
+			"input" : ["block1/layer1/concat"],
+			"output" : ["block1/layer2/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer2/relu1",
+			"layer" : "Relu",
+			"id" : 110,
+			"input" : ["block1/layer2/bn1"],
+			"output" : ["block1/layer2/bn1"]
+		},
+		
+		{
+			"name" : "block1/layer2/conv1x1",
+			"layer" : "Conv",
+			"id" : 120,
+			"input" : ["block1/layer2/bn1"],
+			"output" : ["block1/layer2/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer2/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 130,
+			"input" : ["block1/layer2/conv1x1"],
+			"output" : ["block1/layer2/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer2/relu2",
+			"layer" : "Relu",
+			"id" : 140,
+			"input" : ["block1/layer2/bn2"],
+			"output" : ["block1/layer2/bn2"]
+		},
+		
+		{
+			"name" : "block1/layer2/conv3x3",
+			"layer" : "Conv",
+			"id" : 150,
+			"input" : ["block1/layer2/bn2"],
+			"output" : ["block1/layer2/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer2/concat",
+			"layer" : "Concat",
+			"id" : 160,
+			"input" : [
+					"block1/layer1/concat",
+					"block1/layer2/conv3x3"
+			],
+			"output" : ["block1/layer2/concat"]
+		},		
+		
+		
+		{
+			"name" : "block1/layer3/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 170,
+			"input" : ["block1/layer2/concat"],
+			"output" : ["block1/layer3/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer3/relu1",
+			"layer" : "Relu",
+			"id" : 180,
+			"input" : ["block1/layer3/bn1"],
+			"output" : ["block1/layer3/bn1"]
+		},
+		
+		{
+			"name" : "block1/layer3/conv1x1",
+			"layer" : "Conv",
+			"id" : 190,
+			"input" : ["block1/layer3/bn1"],
+			"output" : ["block1/layer3/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer3/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 200,
+			"input" : ["block1/layer3/conv1x1"],
+			"output" : ["block1/layer3/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer3/relu2",
+			"layer" : "Relu",
+			"id" : 210,
+			"input" : ["block1/layer3/bn2"],
+			"output" : ["block1/layer3/bn2"]
+		},
+		
+		{
+			"name" : "block1/layer3/conv3x3",
+			"layer" : "Conv",
+			"id" : 220,
+			"input" : ["block1/layer3/bn2"],
+			"output" : ["block1/layer3/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer3/concat",
+			"layer" : "Concat",
+			"id" : 230,
+			"input" : [
+					"block1/layer2/concat",
+					"block1/layer3/conv3x3"
+			],
+			"output" : ["block1/layer3/concat"]
+		},								
+		
+
+		{
+			"name" : "block1/layer4/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 240,
+			"input" : ["block1/layer3/concat"],
+			"output" : ["block1/layer4/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer4/relu1",
+			"layer" : "Relu",
+			"id" : 250,
+			"input" : ["block1/layer4/bn1"],
+			"output" : ["block1/layer4/bn1"]
+		},
+		
+		{
+			"name" : "block1/layer4/conv1x1",
+			"layer" : "Conv",
+			"id" : 260,
+			"input" : ["block1/layer4/bn1"],
+			"output" : ["block1/layer4/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer4/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 270,
+			"input" : ["block1/layer4/conv1x1"],
+			"output" : ["block1/layer4/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer4/relu2",
+			"layer" : "Relu",
+			"id" : 280,
+			"input" : ["block1/layer4/bn2"],
+			"output" : ["block1/layer4/bn2"]
+		},
+		
+		{
+			"name" : "block1/layer4/conv3x3",
+			"layer" : "Conv",
+			"id" : 290,
+			"input" : ["block1/layer4/bn2"],
+			"output" : ["block1/layer4/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer4/concat",
+			"layer" : "Concat",
+			"id" : 300,
+			"input" : [
+					"block1/layer3/concat",
+					"block1/layer4/conv3x3"
+			],
+			"output" : ["block1/layer4/concat"]
+		},				
+		
+		
+		{
+			"name" : "block1/layer5/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 310,
+			"input" : ["block1/layer4/concat"],
+			"output" : ["block1/layer5/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer5/relu1",
+			"layer" : "Relu",
+			"id" : 320,
+			"input" : ["block1/layer5/bn1"],
+			"output" : ["block1/layer5/bn1"]
+		},
+		
+		{
+			"name" : "block1/layer5/conv1x1",
+			"layer" : "Conv",
+			"id" : 330,
+			"input" : ["block1/layer5/bn1"],
+			"output" : ["block1/layer5/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer5/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 340,
+			"input" : ["block1/layer5/conv1x1"],
+			"output" : ["block1/layer5/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer5/relu2",
+			"layer" : "Relu",
+			"id" : 350,
+			"input" : ["block1/layer5/bn2"],
+			"output" : ["block1/layer5/bn2"]
+		},
+		
+		{
+			"name" : "block1/layer5/conv3x3",
+			"layer" : "Conv",
+			"id" : 360,
+			"input" : ["block1/layer5/bn2"],
+			"output" : ["block1/layer5/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer5/concat",
+			"layer" : "Concat",
+			"id" : 370,
+			"input" : [
+					"block1/layer4/concat",
+					"block1/layer5/conv3x3"
+			],
+			"output" : ["block1/layer5/concat"]
+		},				
+		
+		{
+			"name" : "block1/layer6/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 380,
+			"input" : ["block1/layer5/concat"],
+			"output" : ["block1/layer6/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer6/relu1",
+			"layer" : "Relu",
+			"id" : 390,
+			"input" : ["block1/layer6/bn1"],
+			"output" : ["block1/layer6/bn1"]
+		},
+		
+		{
+			"name" : "block1/layer6/conv1x1",
+			"layer" : "Conv",
+			"id" : 400,
+			"input" : ["block1/layer6/bn1"],
+			"output" : ["block1/layer6/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer6/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 410,
+			"input" : ["block1/layer6/conv1x1"],
+			"output" : ["block1/layer6/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block1/layer6/relu2",
+			"layer" : "Relu",
+			"id" : 420,
+			"input" : ["block1/layer6/bn2"],
+			"output" : ["block1/layer6/bn2"]
+		},
+		
+		{
+			"name" : "block1/layer6/conv3x3",
+			"layer" : "Conv",
+			"id" : 430,
+			"input" : ["block1/layer6/bn2"],
+			"output" : ["block1/layer6/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block1/layer6/concat",
+			"layer" : "Concat",
+			"id" : 440,
+			"input" : [
+					"block1/layer5/concat",
+					"block1/layer6/conv3x3"
+			],
+			"output" : ["block1/layer6/concat"]
+		},			
+				
+				
+				
+		{
+			"name" : "trans1/bn",
+			"layer" : "BatchNorm2",
+			"id" : 450,
+			"input" : ["block1/layer6/concat"],
+			"output" : ["trans1/bn"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "trans1/relu",
+			"layer" : "Relu",
+			"id" : 460,
+			"input" : ["trans1/bn"],
+			"output" : ["trans1/bn"]
+		},
+		
+		{
+			"name" : "trans1/conv1x1",
+			"layer" : "Conv",
+			"id" : 470,
+			"input" : ["trans1/bn"],
+			"output" : ["trans1/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+	
+		{
+			"name" : "trans1/pool",
+			"layer" : "Pooling",
+			"id" : 480,
+			"input" : ["trans1/conv1x1"],
+			"output" : ["trans1/pool"],
+			"poolingType" : "Avg",
+			"poolDim.rows" : 2,
+			"poolDim.cols" : 2,
+			"poolDim.stride" : 2
+		},	
+	
+	
+	
+		{
+			"name" : "block2/layer1/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 490,
+			"input" : ["trans1/pool"],
+			"output" : ["block2/layer1/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer1/relu1",
+			"layer" : "Relu",
+			"id" : 500,
+			"input" : ["block2/layer1/bn1"],
+			"output" : ["block2/layer1/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer1/conv1x1",
+			"layer" : "Conv",
+			"id" : 510,
+			"input" : ["block2/layer1/bn1"],
+			"output" : ["block2/layer1/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer1/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 520,
+			"input" : ["block2/layer1/conv1x1"],
+			"output" : ["block2/layer1/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer1/relu2",
+			"layer" : "Relu",
+			"id" : 530,
+			"input" : ["block2/layer1/bn2"],
+			"output" : ["block2/layer1/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer1/conv3x3",
+			"layer" : "Conv",
+			"id" : 540,
+			"input" : ["block2/layer1/bn2"],
+			"output" : ["block2/layer1/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer1/concat",
+			"layer" : "Concat",
+			"id" : 550,
+			"input" : [
+					"trans1/pool",
+					"block2/layer1/conv3x3"
+			],
+			"output" : ["block2/layer1/concat"]
+		},
+		
+	
+	
+	
+	
+		{
+			"name" : "block2/layer2/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 560,
+			"input" : ["block2/layer1/concat"],
+			"output" : ["block2/layer2/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer2/relu1",
+			"layer" : "Relu",
+			"id" : 570,
+			"input" : ["block2/layer2/bn1"],
+			"output" : ["block2/layer2/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer2/conv1x1",
+			"layer" : "Conv",
+			"id" : 580,
+			"input" : ["block2/layer2/bn1"],
+			"output" : ["block2/layer2/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer2/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 590,
+			"input" : ["block2/layer2/conv1x1"],
+			"output" : ["block2/layer2/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer2/relu2",
+			"layer" : "Relu",
+			"id" : 600,
+			"input" : ["block2/layer2/bn2"],
+			"output" : ["block2/layer2/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer2/conv3x3",
+			"layer" : "Conv",
+			"id" : 610,
+			"input" : ["block2/layer2/bn2"],
+			"output" : ["block2/layer2/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer2/concat",
+			"layer" : "Concat",
+			"id" : 620,
+			"input" : [
+					"block2/layer1/concat",
+					"block2/layer2/conv3x3"
+			],
+			"output" : ["block2/layer2/concat"]
+		},
+		
+		
+		
+	
+		{
+			"name" : "block2/layer3/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 630,
+			"input" : ["block2/layer2/concat"],
+			"output" : ["block2/layer3/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer3/relu1",
+			"layer" : "Relu",
+			"id" : 640,
+			"input" : ["block2/layer3/bn1"],
+			"output" : ["block2/layer3/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer3/conv1x1",
+			"layer" : "Conv",
+			"id" : 650,
+			"input" : ["block2/layer3/bn1"],
+			"output" : ["block2/layer3/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer3/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 660,
+			"input" : ["block2/layer3/conv1x1"],
+			"output" : ["block2/layer3/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer3/relu2",
+			"layer" : "Relu",
+			"id" : 670,
+			"input" : ["block2/layer3/bn2"],
+			"output" : ["block2/layer3/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer3/conv3x3",
+			"layer" : "Conv",
+			"id" : 680,
+			"input" : ["block2/layer3/bn2"],
+			"output" : ["block2/layer3/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer3/concat",
+			"layer" : "Concat",
+			"id" : 690,
+			"input" : [
+					"block2/layer2/concat",
+					"block2/layer3/conv3x3"
+			],
+			"output" : ["block2/layer3/concat"]
+		},
+		
+		
+		
+		
+	
+		{
+			"name" : "block2/layer4/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 700,
+			"input" : ["block2/layer3/concat"],
+			"output" : ["block2/layer4/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer4/relu1",
+			"layer" : "Relu",
+			"id" : 710,
+			"input" : ["block2/layer4/bn1"],
+			"output" : ["block2/layer4/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer4/conv1x1",
+			"layer" : "Conv",
+			"id" : 720,
+			"input" : ["block2/layer4/bn1"],
+			"output" : ["block2/layer4/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer4/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 730,
+			"input" : ["block2/layer4/conv1x1"],
+			"output" : ["block2/layer4/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer4/relu2",
+			"layer" : "Relu",
+			"id" : 740,
+			"input" : ["block2/layer4/bn2"],
+			"output" : ["block2/layer4/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer4/conv3x3",
+			"layer" : "Conv",
+			"id" : 750,
+			"input" : ["block2/layer4/bn2"],
+			"output" : ["block2/layer4/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer4/concat",
+			"layer" : "Concat",
+			"id" : 760,
+			"input" : [
+					"block2/layer3/concat",
+					"block2/layer4/conv3x3"
+			],
+			"output" : ["block2/layer4/concat"]
+		},
+		
+		
+		
+		
+		{
+			"name" : "block2/layer5/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 770,
+			"input" : ["block2/layer4/concat"],
+			"output" : ["block2/layer5/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer5/relu1",
+			"layer" : "Relu",
+			"id" : 780,
+			"input" : ["block2/layer5/bn1"],
+			"output" : ["block2/layer5/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer5/conv1x1",
+			"layer" : "Conv",
+			"id" : 790,
+			"input" : ["block2/layer5/bn1"],
+			"output" : ["block2/layer5/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer5/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 800,
+			"input" : ["block2/layer5/conv1x1"],
+			"output" : ["block2/layer5/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer5/relu2",
+			"layer" : "Relu",
+			"id" : 810,
+			"input" : ["block2/layer5/bn2"],
+			"output" : ["block2/layer5/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer5/conv3x3",
+			"layer" : "Conv",
+			"id" : 820,
+			"input" : ["block2/layer5/bn2"],
+			"output" : ["block2/layer5/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer5/concat",
+			"layer" : "Concat",
+			"id" : 830,
+			"input" : [
+					"block2/layer4/concat",
+					"block2/layer5/conv3x3"
+			],
+			"output" : ["block2/layer5/concat"]
+		},
+		
+
+		
+	
+		{
+			"name" : "block2/layer6/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 840,
+			"input" : ["block2/layer5/concat"],
+			"output" : ["block2/layer6/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer6/relu1",
+			"layer" : "Relu",
+			"id" : 850,
+			"input" : ["block2/layer6/bn1"],
+			"output" : ["block2/layer6/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer6/conv1x1",
+			"layer" : "Conv",
+			"id" : 860,
+			"input" : ["block2/layer6/bn1"],
+			"output" : ["block2/layer6/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer6/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 870,
+			"input" : ["block2/layer6/conv1x1"],
+			"output" : ["block2/layer6/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer6/relu2",
+			"layer" : "Relu",
+			"id" : 880,
+			"input" : ["block2/layer6/bn2"],
+			"output" : ["block2/layer6/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer6/conv3x3",
+			"layer" : "Conv",
+			"id" : 890,
+			"input" : ["block2/layer6/bn2"],
+			"output" : ["block2/layer6/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer6/concat",
+			"layer" : "Concat",
+			"id" : 900,
+			"input" : [
+					"block2/layer5/concat",
+					"block2/layer6/conv3x3"
+			],
+			"output" : ["block2/layer6/concat"]
+		},
+		
+		
+		
+
+
+		{
+			"name" : "block2/layer7/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 910,
+			"input" : ["block2/layer6/concat"],
+			"output" : ["block2/layer7/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer7/relu1",
+			"layer" : "Relu",
+			"id" : 920,
+			"input" : ["block2/layer7/bn1"],
+			"output" : ["block2/layer7/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer7/conv1x1",
+			"layer" : "Conv",
+			"id" : 930,
+			"input" : ["block2/layer7/bn1"],
+			"output" : ["block2/layer7/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer7/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 940,
+			"input" : ["block2/layer7/conv1x1"],
+			"output" : ["block2/layer7/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer7/relu2",
+			"layer" : "Relu",
+			"id" : 950,
+			"input" : ["block2/layer7/bn2"],
+			"output" : ["block2/layer7/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer7/conv3x3",
+			"layer" : "Conv",
+			"id" : 960,
+			"input" : ["block2/layer7/bn2"],
+			"output" : ["block2/layer7/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer7/concat",
+			"layer" : "Concat",
+			"id" : 970,
+			"input" : [
+					"block2/layer6/concat",
+					"block2/layer7/conv3x3"
+			],
+			"output" : ["block2/layer7/concat"]
+		},
+
+
+		
+		
+
+
+		{
+			"name" : "block2/layer8/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 980,
+			"input" : ["block2/layer7/concat"],
+			"output" : ["block2/layer8/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer8/relu1",
+			"layer" : "Relu",
+			"id" : 990,
+			"input" : ["block2/layer8/bn1"],
+			"output" : ["block2/layer8/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer8/conv1x1",
+			"layer" : "Conv",
+			"id" : 1000,
+			"input" : ["block2/layer8/bn1"],
+			"output" : ["block2/layer8/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer8/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1010,
+			"input" : ["block2/layer8/conv1x1"],
+			"output" : ["block2/layer8/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer8/relu2",
+			"layer" : "Relu",
+			"id" : 1020,
+			"input" : ["block2/layer8/bn2"],
+			"output" : ["block2/layer8/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer8/conv3x3",
+			"layer" : "Conv",
+			"id" : 1030,
+			"input" : ["block2/layer8/bn2"],
+			"output" : ["block2/layer8/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer8/concat",
+			"layer" : "Concat",
+			"id" : 1040,
+			"input" : [
+					"block2/layer7/concat",
+					"block2/layer8/conv3x3"
+			],
+			"output" : ["block2/layer8/concat"]
+		},
+		
+		
+		
+		
+		
+		
+		{
+			"name" : "block2/layer9/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1050,
+			"input" : ["block2/layer8/concat"],
+			"output" : ["block2/layer9/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer9/relu1",
+			"layer" : "Relu",
+			"id" : 1060,
+			"input" : ["block2/layer9/bn1"],
+			"output" : ["block2/layer9/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer9/conv1x1",
+			"layer" : "Conv",
+			"id" : 1070,
+			"input" : ["block2/layer9/bn1"],
+			"output" : ["block2/layer9/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer9/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1080,
+			"input" : ["block2/layer9/conv1x1"],
+			"output" : ["block2/layer9/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer9/relu2",
+			"layer" : "Relu",
+			"id" : 1090,
+			"input" : ["block2/layer9/bn2"],
+			"output" : ["block2/layer9/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer9/conv3x3",
+			"layer" : "Conv",
+			"id" : 1100,
+			"input" : ["block2/layer9/bn2"],
+			"output" : ["block2/layer9/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer9/concat",
+			"layer" : "Concat",
+			"id" : 1110,
+			"input" : [
+					"block2/layer8/concat",
+					"block2/layer9/conv3x3"
+			],
+			"output" : ["block2/layer9/concat"]
+		},
+		
+		
+		
+				
+	
+	
+	
+		{
+			"name" : "block2/layer10/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1120,
+			"input" : ["block2/layer9/concat"],
+			"output" : ["block2/layer10/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer10/relu1",
+			"layer" : "Relu",
+			"id" : 1130,
+			"input" : ["block2/layer10/bn1"],
+			"output" : ["block2/layer10/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer10/conv1x1",
+			"layer" : "Conv",
+			"id" : 1140,
+			"input" : ["block2/layer10/bn1"],
+			"output" : ["block2/layer10/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer10/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1150,
+			"input" : ["block2/layer10/conv1x1"],
+			"output" : ["block2/layer10/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer10/relu2",
+			"layer" : "Relu",
+			"id" : 1160,
+			"input" : ["block2/layer10/bn2"],
+			"output" : ["block2/layer10/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer10/conv3x3",
+			"layer" : "Conv",
+			"id" : 1170,
+			"input" : ["block2/layer10/bn2"],
+			"output" : ["block2/layer10/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer10/concat",
+			"layer" : "Concat",
+			"id" : 1180,
+			"input" : [
+					"block2/layer9/concat",
+					"block2/layer10/conv3x3"
+			],
+			"output" : ["block2/layer10/concat"]
+		},
+		
+		
+		
+		
+		
+		
+		{
+			"name" : "block2/layer11/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1190,
+			"input" : ["block2/layer10/concat"],
+			"output" : ["block2/layer11/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer11/relu1",
+			"layer" : "Relu",
+			"id" : 1200,
+			"input" : ["block2/layer11/bn1"],
+			"output" : ["block2/layer11/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer11/conv1x1",
+			"layer" : "Conv",
+			"id" : 1210,
+			"input" : ["block2/layer11/bn1"],
+			"output" : ["block2/layer11/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer11/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1220,
+			"input" : ["block2/layer11/conv1x1"],
+			"output" : ["block2/layer11/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer11/relu2",
+			"layer" : "Relu",
+			"id" : 1230,
+			"input" : ["block2/layer11/bn2"],
+			"output" : ["block2/layer11/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer11/conv3x3",
+			"layer" : "Conv",
+			"id" : 1240,
+			"input" : ["block2/layer11/bn2"],
+			"output" : ["block2/layer11/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer11/concat",
+			"layer" : "Concat",
+			"id" : 1250,
+			"input" : [
+					"block2/layer10/concat",
+					"block2/layer11/conv3x3"
+			],
+			"output" : ["block2/layer11/concat"]
+		},
+		
+		
+		
+
+
+
+		
+		{
+			"name" : "block2/layer12/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1260,
+			"input" : ["block2/layer11/concat"],
+			"output" : ["block2/layer12/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer12/relu1",
+			"layer" : "Relu",
+			"id" : 1270,
+			"input" : ["block2/layer12/bn1"],
+			"output" : ["block2/layer12/bn1"]
+		},
+		
+		{
+			"name" : "block2/layer12/conv1x1",
+			"layer" : "Conv",
+			"id" : 1280,
+			"input" : ["block2/layer12/bn1"],
+			"output" : ["block2/layer12/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer12/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1290,
+			"input" : ["block2/layer12/conv1x1"],
+			"output" : ["block2/layer12/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block2/layer12/relu2",
+			"layer" : "Relu",
+			"id" : 1300,
+			"input" : ["block2/layer12/bn2"],
+			"output" : ["block2/layer12/bn2"]
+		},
+		
+		{
+			"name" : "block2/layer12/conv3x3",
+			"layer" : "Conv",
+			"id" : 1310,
+			"input" : ["block2/layer12/bn2"],
+			"output" : ["block2/layer12/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,
+			"filterDim.pad" : 1,
+			"filterDim.cols" : 3,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block2/layer12/concat",
+			"layer" : "Concat",
+			"id" : 1320,
+			"input" : [
+					"block2/layer11/concat",
+					"block2/layer12/conv3x3"
+			],
+			"output" : ["block2/layer12/concat"]
+		},
+		
+		
+		
+		
+	
+	
+	
+			
+		{
+			"name" : "trans2/bn",
+			"layer" : "BatchNorm2",
+			"id" : 1330,
+			"input" : ["block2/layer12/concat"],
+			"output" : ["trans2/bn"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "trans2/relu",
+			"layer" : "Relu",
+			"id" : 1340,
+			"input" : ["trans2/bn"],
+			"output" : ["trans2/bn"]
+		},
+		
+		{
+			"name" : "trans2/conv1x1",
+			"layer" : "Conv",
+			"id" : 1350,
+			"input" : ["trans2/bn"],
+			"output" : ["trans2/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+	
+		{
+			"name" : "trans2/pool",
+			"layer" : "Pooling",
+			"id" : 1360,
+			"input" : ["trans2/conv1x1"],
+			"output" : ["trans2/pool"],
+			"poolingType" : "Avg",
+			"poolDim.rows" : 2,
+			"poolDim.cols" : 2,
+			"poolDim.stride" : 2
+		},	
+	
+	
+		
+	
+	
+		{
+			"name" : "block3/layer1/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1370,
+			"input" : ["trans2/pool"],
+			"output" : ["block3/layer1/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer1/relu1",
+			"layer" : "Relu",
+			"id" : 1380,
+			"input" : ["block3/layer1/bn1"],
+			"output" : ["block3/layer1/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer1/conv1x1",
+			"layer" : "Conv",
+			"id" : 1390,
+			"input" : ["block3/layer1/bn1"],
+			"output" : ["block3/layer1/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer1/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1400,
+			"input" : ["block3/layer1/conv1x1"],
+			"output" : ["block3/layer1/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer1/relu2",
+			"layer" : "Relu",
+			"id" : 1410,
+			"input" : ["block3/layer1/bn2"],
+			"output" : ["block3/layer1/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer1/conv3x3",
+			"layer" : "Conv",
+			"id" : 1420,
+			"input" : ["block3/layer1/bn2"],
+			"output" : ["block3/layer1/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer1/concat",
+			"layer" : "Concat",
+			"id" : 1430,
+			"input" : [
+					"trans2/pool",
+					"block3/layer1/conv3x3"
+			],
+			"output" : ["block3/layer1/concat"]
+		},
+	
+	
+
+	
+	
+		{
+			"name" : "block3/layer2/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1440,
+			"input" : ["block3/layer1/concat"],
+			"output" : ["block3/layer2/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer2/relu1",
+			"layer" : "Relu",
+			"id" : 1450,
+			"input" : ["block3/layer2/bn1"],
+			"output" : ["block3/layer2/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer2/conv1x1",
+			"layer" : "Conv",
+			"id" : 1460,
+			"input" : ["block3/layer2/bn1"],
+			"output" : ["block3/layer2/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer2/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1470,
+			"input" : ["block3/layer2/conv1x1"],
+			"output" : ["block3/layer2/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer2/relu2",
+			"layer" : "Relu",
+			"id" : 1480,
+			"input" : ["block3/layer2/bn2"],
+			"output" : ["block3/layer2/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer2/conv3x3",
+			"layer" : "Conv",
+			"id" : 1490,
+			"input" : ["block3/layer2/bn2"],
+			"output" : ["block3/layer2/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer2/concat",
+			"layer" : "Concat",
+			"id" : 1500,
+			"input" : [
+					"block3/layer1/concat",
+					"block3/layer2/conv3x3"
+			],
+			"output" : ["block3/layer2/concat"]
+		},
+		
+		
+		
+		
+	
+	
+		
+		{
+			"name" : "block3/layer3/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1510,
+			"input" : ["block3/layer2/concat"],
+			"output" : ["block3/layer3/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer3/relu1",
+			"layer" : "Relu",
+			"id" : 1520,
+			"input" : ["block3/layer3/bn1"],
+			"output" : ["block3/layer3/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer3/conv1x1",
+			"layer" : "Conv",
+			"id" : 1530,
+			"input" : ["block3/layer3/bn1"],
+			"output" : ["block3/layer3/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer3/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1540,
+			"input" : ["block3/layer3/conv1x1"],
+			"output" : ["block3/layer3/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer3/relu2",
+			"layer" : "Relu",
+			"id" : 1550,
+			"input" : ["block3/layer3/bn2"],
+			"output" : ["block3/layer3/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer3/conv3x3",
+			"layer" : "Conv",
+			"id" : 1560,
+			"input" : ["block3/layer3/bn2"],
+			"output" : ["block3/layer3/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer3/concat",
+			"layer" : "Concat",
+			"id" : 1570,
+			"input" : [
+					"block3/layer2/concat",
+					"block3/layer3/conv3x3"
+			],
+			"output" : ["block3/layer3/concat"]
+		},
+		
+		
+		
+		
+		
+		
+		
+			
+		{
+			"name" : "block3/layer4/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1580,
+			"input" : ["block3/layer3/concat"],
+			"output" : ["block3/layer4/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer4/relu1",
+			"layer" : "Relu",
+			"id" : 1590,
+			"input" : ["block3/layer4/bn1"],
+			"output" : ["block3/layer4/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer4/conv1x1",
+			"layer" : "Conv",
+			"id" : 1600,
+			"input" : ["block3/layer4/bn1"],
+			"output" : ["block3/layer4/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer4/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1610,
+			"input" : ["block3/layer4/conv1x1"],
+			"output" : ["block3/layer4/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer4/relu2",
+			"layer" : "Relu",
+			"id" : 1620,
+			"input" : ["block3/layer4/bn2"],
+			"output" : ["block3/layer4/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer4/conv3x3",
+			"layer" : "Conv",
+			"id" : 1630,
+			"input" : ["block3/layer4/bn2"],
+			"output" : ["block3/layer4/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer4/concat",
+			"layer" : "Concat",
+			"id" : 1640,
+			"input" : [
+					"block3/layer3/concat",
+					"block3/layer4/conv3x3"
+			],
+			"output" : ["block3/layer4/concat"]
+		},
+		
+		
+		
+		
+		
+		
+	
+				
+		{
+			"name" : "block3/layer5/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1650,
+			"input" : ["block3/layer4/concat"],
+			"output" : ["block3/layer5/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer5/relu1",
+			"layer" : "Relu",
+			"id" : 1660,
+			"input" : ["block3/layer5/bn1"],
+			"output" : ["block3/layer5/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer5/conv1x1",
+			"layer" : "Conv",
+			"id" : 1670,
+			"input" : ["block3/layer5/bn1"],
+			"output" : ["block3/layer5/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer5/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1680,
+			"input" : ["block3/layer5/conv1x1"],
+			"output" : ["block3/layer5/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer5/relu2",
+			"layer" : "Relu",
+			"id" : 1690,
+			"input" : ["block3/layer5/bn2"],
+			"output" : ["block3/layer5/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer5/conv3x3",
+			"layer" : "Conv",
+			"id" : 1700,
+			"input" : ["block3/layer5/bn2"],
+			"output" : ["block3/layer5/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer5/concat",
+			"layer" : "Concat",
+			"id" : 1710,
+			"input" : [
+					"block3/layer4/concat",
+					"block3/layer5/conv3x3"
+			],
+			"output" : ["block3/layer5/concat"]
+		},
+		
+		
+		
+		
+		
+		
+	
+	
+					
+		{
+			"name" : "block3/layer6/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1720,
+			"input" : ["block3/layer5/concat"],
+			"output" : ["block3/layer6/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer6/relu1",
+			"layer" : "Relu",
+			"id" : 1730,
+			"input" : ["block3/layer6/bn1"],
+			"output" : ["block3/layer6/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer6/conv1x1",
+			"layer" : "Conv",
+			"id" : 1740,
+			"input" : ["block3/layer6/bn1"],
+			"output" : ["block3/layer6/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer6/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1750,
+			"input" : ["block3/layer6/conv1x1"],
+			"output" : ["block3/layer6/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer6/relu2",
+			"layer" : "Relu",
+			"id" : 1760,
+			"input" : ["block3/layer6/bn2"],
+			"output" : ["block3/layer6/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer6/conv3x3",
+			"layer" : "Conv",
+			"id" : 1770,
+			"input" : ["block3/layer6/bn2"],
+			"output" : ["block3/layer6/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer6/concat",
+			"layer" : "Concat",
+			"id" : 1780,
+			"input" : [
+					"block3/layer5/concat",
+					"block3/layer6/conv3x3"
+			],
+			"output" : ["block3/layer6/concat"]
+		},
+		
+		
+		
+		
+		
+			
+		
+	
+	
+					
+		{
+			"name" : "block3/layer7/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1790,
+			"input" : ["block3/layer6/concat"],
+			"output" : ["block3/layer7/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer7/relu1",
+			"layer" : "Relu",
+			"id" : 1800,
+			"input" : ["block3/layer7/bn1"],
+			"output" : ["block3/layer7/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer7/conv1x1",
+			"layer" : "Conv",
+			"id" : 1810,
+			"input" : ["block3/layer7/bn1"],
+			"output" : ["block3/layer7/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer7/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1820,
+			"input" : ["block3/layer7/conv1x1"],
+			"output" : ["block3/layer7/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer7/relu2",
+			"layer" : "Relu",
+			"id" : 1830,
+			"input" : ["block3/layer7/bn2"],
+			"output" : ["block3/layer7/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer7/conv3x3",
+			"layer" : "Conv",
+			"id" : 1840,
+			"input" : ["block3/layer7/bn2"],
+			"output" : ["block3/layer7/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer7/concat",
+			"layer" : "Concat",
+			"id" : 1850,
+			"input" : [
+					"block3/layer6/concat",
+					"block3/layer7/conv3x3"
+			],
+			"output" : ["block3/layer7/concat"]
+		},
+		
+		
+		
+		
+			
+			
+			
+		
+	
+	
+					
+		{
+			"name" : "block3/layer8/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1860,
+			"input" : ["block3/layer7/concat"],
+			"output" : ["block3/layer8/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer8/relu1",
+			"layer" : "Relu",
+			"id" : 1870,
+			"input" : ["block3/layer8/bn1"],
+			"output" : ["block3/layer8/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer8/conv1x1",
+			"layer" : "Conv",
+			"id" : 1880,
+			"input" : ["block3/layer8/bn1"],
+			"output" : ["block3/layer8/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer8/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1890,
+			"input" : ["block3/layer8/conv1x1"],
+			"output" : ["block3/layer8/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer8/relu2",
+			"layer" : "Relu",
+			"id" : 1900,
+			"input" : ["block3/layer8/bn2"],
+			"output" : ["block3/layer8/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer8/conv3x3",
+			"layer" : "Conv",
+			"id" : 1910,
+			"input" : ["block3/layer8/bn2"],
+			"output" : ["block3/layer8/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer8/concat",
+			"layer" : "Concat",
+			"id" : 1920,
+			"input" : [
+					"block3/layer7/concat",
+					"block3/layer8/conv3x3"
+			],
+			"output" : ["block3/layer8/concat"]
+		},
+		
+		
+		
+				
+			
+			
+		
+	
+	
+					
+		{
+			"name" : "block3/layer9/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 1930,
+			"input" : ["block3/layer8/concat"],
+			"output" : ["block3/layer9/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer9/relu1",
+			"layer" : "Relu",
+			"id" : 1940,
+			"input" : ["block3/layer9/bn1"],
+			"output" : ["block3/layer9/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer9/conv1x1",
+			"layer" : "Conv",
+			"id" : 1950,
+			"input" : ["block3/layer9/bn1"],
+			"output" : ["block3/layer9/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer9/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 1960,
+			"input" : ["block3/layer9/conv1x1"],
+			"output" : ["block3/layer9/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer9/relu2",
+			"layer" : "Relu",
+			"id" : 1970,
+			"input" : ["block3/layer9/bn2"],
+			"output" : ["block3/layer9/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer9/conv3x3",
+			"layer" : "Conv",
+			"id" : 1980,
+			"input" : ["block3/layer9/bn2"],
+			"output" : ["block3/layer9/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer9/concat",
+			"layer" : "Concat",
+			"id" : 1990,
+			"input" : [
+					"block3/layer8/concat",
+					"block3/layer9/conv3x3"
+			],
+			"output" : ["block3/layer9/concat"]
+		},
+		
+		
+		
+		
+		
+				
+			
+		
+	
+	
+					
+		{
+			"name" : "block3/layer10/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2000,
+			"input" : ["block3/layer9/concat"],
+			"output" : ["block3/layer10/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer10/relu1",
+			"layer" : "Relu",
+			"id" : 2010,
+			"input" : ["block3/layer10/bn1"],
+			"output" : ["block3/layer10/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer10/conv1x1",
+			"layer" : "Conv",
+			"id" : 2020,
+			"input" : ["block3/layer10/bn1"],
+			"output" : ["block3/layer10/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer10/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2030,
+			"input" : ["block3/layer10/conv1x1"],
+			"output" : ["block3/layer10/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer10/relu2",
+			"layer" : "Relu",
+			"id" : 2040,
+			"input" : ["block3/layer10/bn2"],
+			"output" : ["block3/layer10/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer10/conv3x3",
+			"layer" : "Conv",
+			"id" : 2050,
+			"input" : ["block3/layer10/bn2"],
+			"output" : ["block3/layer10/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer10/concat",
+			"layer" : "Concat",
+			"id" : 2060,
+			"input" : [
+					"block3/layer9/concat",
+					"block3/layer10/conv3x3"
+			],
+			"output" : ["block3/layer10/concat"]
+		},
+		
+		
+		
+		
+				
+				
+		
+	
+	
+					
+		{
+			"name" : "block3/layer11/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2070,
+			"input" : ["block3/layer10/concat"],
+			"output" : ["block3/layer11/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer11/relu1",
+			"layer" : "Relu",
+			"id" : 2080,
+			"input" : ["block3/layer11/bn1"],
+			"output" : ["block3/layer11/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer11/conv1x1",
+			"layer" : "Conv",
+			"id" : 2090,
+			"input" : ["block3/layer11/bn1"],
+			"output" : ["block3/layer11/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer11/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2100,
+			"input" : ["block3/layer11/conv1x1"],
+			"output" : ["block3/layer11/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer11/relu2",
+			"layer" : "Relu",
+			"id" : 2110,
+			"input" : ["block3/layer11/bn2"],
+			"output" : ["block3/layer11/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer11/conv3x3",
+			"layer" : "Conv",
+			"id" : 2120,
+			"input" : ["block3/layer11/bn2"],
+			"output" : ["block3/layer11/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer11/concat",
+			"layer" : "Concat",
+			"id" : 2130,
+			"input" : [
+					"block3/layer10/concat",
+					"block3/layer11/conv3x3"
+			],
+			"output" : ["block3/layer11/concat"]
+		},
+		
+		
+		
+			
+				
+		
+	
+	
+					
+		{
+			"name" : "block3/layer12/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2140,
+			"input" : ["block3/layer11/concat"],
+			"output" : ["block3/layer12/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer12/relu1",
+			"layer" : "Relu",
+			"id" : 2150,
+			"input" : ["block3/layer12/bn1"],
+			"output" : ["block3/layer12/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer12/conv1x1",
+			"layer" : "Conv",
+			"id" : 2160,
+			"input" : ["block3/layer12/bn1"],
+			"output" : ["block3/layer12/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer12/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2170,
+			"input" : ["block3/layer12/conv1x1"],
+			"output" : ["block3/layer12/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer12/relu2",
+			"layer" : "Relu",
+			"id" : 2180,
+			"input" : ["block3/layer12/bn2"],
+			"output" : ["block3/layer12/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer12/conv3x3",
+			"layer" : "Conv",
+			"id" : 2190,
+			"input" : ["block3/layer12/bn2"],
+			"output" : ["block3/layer12/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer12/concat",
+			"layer" : "Concat",
+			"id" : 2200,
+			"input" : [
+					"block3/layer11/concat",
+					"block3/layer12/conv3x3"
+			],
+			"output" : ["block3/layer12/concat"]
+		},
+		
+		
+		
+		
+	
+	
+			
+	
+	
+					
+		{
+			"name" : "block3/layer13/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2210,
+			"input" : ["block3/layer12/concat"],
+			"output" : ["block3/layer13/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer13/relu1",
+			"layer" : "Relu",
+			"id" : 2220,
+			"input" : ["block3/layer13/bn1"],
+			"output" : ["block3/layer13/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer13/conv1x1",
+			"layer" : "Conv",
+			"id" : 2230,
+			"input" : ["block3/layer13/bn1"],
+			"output" : ["block3/layer13/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer13/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2240,
+			"input" : ["block3/layer13/conv1x1"],
+			"output" : ["block3/layer13/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer13/relu2",
+			"layer" : "Relu",
+			"id" : 2250,
+			"input" : ["block3/layer13/bn2"],
+			"output" : ["block3/layer13/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer13/conv3x3",
+			"layer" : "Conv",
+			"id" : 2260,
+			"input" : ["block3/layer13/bn2"],
+			"output" : ["block3/layer13/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer13/concat",
+			"layer" : "Concat",
+			"id" : 2270,
+			"input" : [
+					"block3/layer12/concat",
+					"block3/layer13/conv3x3"
+			],
+			"output" : ["block3/layer13/concat"]
+		},
+		
+		
+		
+		
+	
+			
+	
+	
+					
+		{
+			"name" : "block3/layer14/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2280,
+			"input" : ["block3/layer13/concat"],
+			"output" : ["block3/layer14/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer14/relu1",
+			"layer" : "Relu",
+			"id" : 2290,
+			"input" : ["block3/layer14/bn1"],
+			"output" : ["block3/layer14/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer14/conv1x1",
+			"layer" : "Conv",
+			"id" : 2300,
+			"input" : ["block3/layer14/bn1"],
+			"output" : ["block3/layer14/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer14/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2310,
+			"input" : ["block3/layer14/conv1x1"],
+			"output" : ["block3/layer14/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer14/relu2",
+			"layer" : "Relu",
+			"id" : 2320,
+			"input" : ["block3/layer14/bn2"],
+			"output" : ["block3/layer14/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer14/conv3x3",
+			"layer" : "Conv",
+			"id" : 2330,
+			"input" : ["block3/layer14/bn2"],
+			"output" : ["block3/layer14/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer14/concat",
+			"layer" : "Concat",
+			"id" : 2340,
+			"input" : [
+					"block3/layer13/concat",
+					"block3/layer14/conv3x3"
+			],
+			"output" : ["block3/layer14/concat"]
+		},
+		
+		
+		
+									
+			
+	
+	
+					
+		{
+			"name" : "block3/layer15/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2350,
+			"input" : ["block3/layer14/concat"],
+			"output" : ["block3/layer15/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer15/relu1",
+			"layer" : "Relu",
+			"id" : 2360,
+			"input" : ["block3/layer15/bn1"],
+			"output" : ["block3/layer15/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer15/conv1x1",
+			"layer" : "Conv",
+			"id" : 2370,
+			"input" : ["block3/layer15/bn1"],
+			"output" : ["block3/layer15/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer15/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2380,
+			"input" : ["block3/layer15/conv1x1"],
+			"output" : ["block3/layer15/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer15/relu2",
+			"layer" : "Relu",
+			"id" : 2390,
+			"input" : ["block3/layer15/bn2"],
+			"output" : ["block3/layer15/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer15/conv3x3",
+			"layer" : "Conv",
+			"id" : 2400,
+			"input" : ["block3/layer15/bn2"],
+			"output" : ["block3/layer15/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer15/concat",
+			"layer" : "Concat",
+			"id" : 2410,
+			"input" : [
+					"block3/layer14/concat",
+					"block3/layer15/conv3x3"
+			],
+			"output" : ["block3/layer15/concat"]
+		},
+		
+		
+		
+		
+		
+									
+			
+	
+	
+					
+		{
+			"name" : "block3/layer16/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2420,
+			"input" : ["block3/layer15/concat"],
+			"output" : ["block3/layer16/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer16/relu1",
+			"layer" : "Relu",
+			"id" : 2430,
+			"input" : ["block3/layer16/bn1"],
+			"output" : ["block3/layer16/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer16/conv1x1",
+			"layer" : "Conv",
+			"id" : 2440,
+			"input" : ["block3/layer16/bn1"],
+			"output" : ["block3/layer16/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer16/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2450,
+			"input" : ["block3/layer16/conv1x1"],
+			"output" : ["block3/layer16/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer16/relu2",
+			"layer" : "Relu",
+			"id" : 2460,
+			"input" : ["block3/layer16/bn2"],
+			"output" : ["block3/layer16/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer16/conv3x3",
+			"layer" : "Conv",
+			"id" : 2470,
+			"input" : ["block3/layer16/bn2"],
+			"output" : ["block3/layer16/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer16/concat",
+			"layer" : "Concat",
+			"id" : 2480,
+			"input" : [
+					"block3/layer15/concat",
+					"block3/layer16/conv3x3"
+			],
+			"output" : ["block3/layer16/concat"]
+		},
+		
+		
+		
+		
+		
+				
+									
+			
+	
+	
+					
+		{
+			"name" : "block3/layer17/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2490,
+			"input" : ["block3/layer16/concat"],
+			"output" : ["block3/layer17/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer17/relu1",
+			"layer" : "Relu",
+			"id" : 2500,
+			"input" : ["block3/layer17/bn1"],
+			"output" : ["block3/layer17/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer17/conv1x1",
+			"layer" : "Conv",
+			"id" : 2510,
+			"input" : ["block3/layer17/bn1"],
+			"output" : ["block3/layer17/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer17/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2520,
+			"input" : ["block3/layer17/conv1x1"],
+			"output" : ["block3/layer17/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer17/relu2",
+			"layer" : "Relu",
+			"id" : 2530,
+			"input" : ["block3/layer17/bn2"],
+			"output" : ["block3/layer17/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer17/conv3x3",
+			"layer" : "Conv",
+			"id" : 2540,
+			"input" : ["block3/layer17/bn2"],
+			"output" : ["block3/layer17/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer17/concat",
+			"layer" : "Concat",
+			"id" : 2550,
+			"input" : [
+					"block3/layer16/concat",
+					"block3/layer17/conv3x3"
+			],
+			"output" : ["block3/layer17/concat"]
+		},
+		
+		
+		
+				
+	
+					
+		{
+			"name" : "block3/layer18/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2560,
+			"input" : ["block3/layer17/concat"],
+			"output" : ["block3/layer18/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer18/relu1",
+			"layer" : "Relu",
+			"id" : 2570,
+			"input" : ["block3/layer18/bn1"],
+			"output" : ["block3/layer18/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer18/conv1x1",
+			"layer" : "Conv",
+			"id" : 2580,
+			"input" : ["block3/layer18/bn1"],
+			"output" : ["block3/layer18/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer18/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2590,
+			"input" : ["block3/layer18/conv1x1"],
+			"output" : ["block3/layer18/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer18/relu2",
+			"layer" : "Relu",
+			"id" : 2600,
+			"input" : ["block3/layer18/bn2"],
+			"output" : ["block3/layer18/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer18/conv3x3",
+			"layer" : "Conv",
+			"id" : 2610,
+			"input" : ["block3/layer18/bn2"],
+			"output" : ["block3/layer18/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer18/concat",
+			"layer" : "Concat",
+			"id" : 2620,
+			"input" : [
+					"block3/layer17/concat",
+					"block3/layer18/conv3x3"
+			],
+			"output" : ["block3/layer18/concat"]
+		},
+		
+		
+		
+		
+		
+
+		
+				
+	
+					
+		{
+			"name" : "block3/layer19/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2630,
+			"input" : ["block3/layer18/concat"],
+			"output" : ["block3/layer19/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer19/relu1",
+			"layer" : "Relu",
+			"id" : 2640,
+			"input" : ["block3/layer19/bn1"],
+			"output" : ["block3/layer19/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer19/conv1x1",
+			"layer" : "Conv",
+			"id" : 2650,
+			"input" : ["block3/layer19/bn1"],
+			"output" : ["block3/layer19/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer19/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2660,
+			"input" : ["block3/layer19/conv1x1"],
+			"output" : ["block3/layer19/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer19/relu2",
+			"layer" : "Relu",
+			"id" : 2670,
+			"input" : ["block3/layer19/bn2"],
+			"output" : ["block3/layer19/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer19/conv3x3",
+			"layer" : "Conv",
+			"id" : 2680,
+			"input" : ["block3/layer19/bn2"],
+			"output" : ["block3/layer19/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer19/concat",
+			"layer" : "Concat",
+			"id" : 2690,
+			"input" : [
+					"block3/layer18/concat",
+					"block3/layer19/conv3x3"
+			],
+			"output" : ["block3/layer19/concat"]
+		},
+		
+		
+		
+		
+		
+		
+				
+				
+	
+					
+		{
+			"name" : "block3/layer20/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2700,
+			"input" : ["block3/layer19/concat"],
+			"output" : ["block3/layer20/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer20/relu1",
+			"layer" : "Relu",
+			"id" : 2710,
+			"input" : ["block3/layer20/bn1"],
+			"output" : ["block3/layer20/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer20/conv1x1",
+			"layer" : "Conv",
+			"id" : 2720,
+			"input" : ["block3/layer20/bn1"],
+			"output" : ["block3/layer20/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer20/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2730,
+			"input" : ["block3/layer20/conv1x1"],
+			"output" : ["block3/layer20/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer20/relu2",
+			"layer" : "Relu",
+			"id" : 2740,
+			"input" : ["block3/layer20/bn2"],
+			"output" : ["block3/layer20/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer20/conv3x3",
+			"layer" : "Conv",
+			"id" : 2750,
+			"input" : ["block3/layer20/bn2"],
+			"output" : ["block3/layer20/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer20/concat",
+			"layer" : "Concat",
+			"id" : 2760,
+			"input" : [
+					"block3/layer19/concat",
+					"block3/layer20/conv3x3"
+			],
+			"output" : ["block3/layer20/concat"]
+		},
+		
+		
+		
+								
+								
+								
+		
+				
+				
+	
+					
+		{
+			"name" : "block3/layer21/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2770,
+			"input" : ["block3/layer20/concat"],
+			"output" : ["block3/layer21/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer21/relu1",
+			"layer" : "Relu",
+			"id" : 2780,
+			"input" : ["block3/layer21/bn1"],
+			"output" : ["block3/layer21/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer21/conv1x1",
+			"layer" : "Conv",
+			"id" : 2790,
+			"input" : ["block3/layer21/bn1"],
+			"output" : ["block3/layer21/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer21/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2800,
+			"input" : ["block3/layer21/conv1x1"],
+			"output" : ["block3/layer21/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer21/relu2",
+			"layer" : "Relu",
+			"id" : 2810,
+			"input" : ["block3/layer21/bn2"],
+			"output" : ["block3/layer21/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer21/conv3x3",
+			"layer" : "Conv",
+			"id" : 2820,
+			"input" : ["block3/layer21/bn2"],
+			"output" : ["block3/layer21/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer21/concat",
+			"layer" : "Concat",
+			"id" : 2830,
+			"input" : [
+					"block3/layer20/concat",
+					"block3/layer21/conv3x3"
+			],
+			"output" : ["block3/layer21/concat"]
+		},
+		
+		
+		
+		
+		
+								
+		
+				
+				
+	
+					
+		{
+			"name" : "block3/layer22/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2840,
+			"input" : ["block3/layer21/concat"],
+			"output" : ["block3/layer22/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer22/relu1",
+			"layer" : "Relu",
+			"id" : 2850,
+			"input" : ["block3/layer22/bn1"],
+			"output" : ["block3/layer22/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer22/conv1x1",
+			"layer" : "Conv",
+			"id" : 2860,
+			"input" : ["block3/layer22/bn1"],
+			"output" : ["block3/layer22/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer22/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2870,
+			"input" : ["block3/layer22/conv1x1"],
+			"output" : ["block3/layer22/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer22/relu2",
+			"layer" : "Relu",
+			"id" : 2880,
+			"input" : ["block3/layer22/bn2"],
+			"output" : ["block3/layer22/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer22/conv3x3",
+			"layer" : "Conv",
+			"id" : 2890,
+			"input" : ["block3/layer22/bn2"],
+			"output" : ["block3/layer22/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer22/concat",
+			"layer" : "Concat",
+			"id" : 2900,
+			"input" : [
+					"block3/layer21/concat",
+					"block3/layer22/conv3x3"
+			],
+			"output" : ["block3/layer22/concat"]
+		},
+		
+		
+		
+		
+								
+		
+				
+				
+	
+					
+		{
+			"name" : "block3/layer23/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2910,
+			"input" : ["block3/layer22/concat"],
+			"output" : ["block3/layer23/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer23/relu1",
+			"layer" : "Relu",
+			"id" : 2920,
+			"input" : ["block3/layer23/bn1"],
+			"output" : ["block3/layer23/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer23/conv1x1",
+			"layer" : "Conv",
+			"id" : 2930,
+			"input" : ["block3/layer23/bn1"],
+			"output" : ["block3/layer23/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer23/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 2940,
+			"input" : ["block3/layer23/conv1x1"],
+			"output" : ["block3/layer23/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer23/relu2",
+			"layer" : "Relu",
+			"id" : 2950,
+			"input" : ["block3/layer23/bn2"],
+			"output" : ["block3/layer23/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer23/conv3x3",
+			"layer" : "Conv",
+			"id" : 2960,
+			"input" : ["block3/layer23/bn2"],
+			"output" : ["block3/layer23/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer23/concat",
+			"layer" : "Concat",
+			"id" : 2970,
+			"input" : [
+					"block3/layer22/concat",
+					"block3/layer23/conv3x3"
+			],
+			"output" : ["block3/layer23/concat"]
+		},
+		
+		
+		
+
+
+				
+				
+	
+					
+		{
+			"name" : "block3/layer24/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 2980,
+			"input" : ["block3/layer23/concat"],
+			"output" : ["block3/layer24/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer24/relu1",
+			"layer" : "Relu",
+			"id" : 2990,
+			"input" : ["block3/layer24/bn1"],
+			"output" : ["block3/layer24/bn1"]
+		},
+		
+		{
+			"name" : "block3/layer24/conv1x1",
+			"layer" : "Conv",
+			"id" : 3000,
+			"input" : ["block3/layer24/bn1"],
+			"output" : ["block3/layer24/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer234/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 3010,
+			"input" : ["block3/layer24/conv1x1"],
+			"output" : ["block3/layer24/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block3/layer24/relu2",
+			"layer" : "Relu",
+			"id" : 3020,
+			"input" : ["block3/layer24/bn2"],
+			"output" : ["block3/layer24/bn2"]
+		},
+		
+		{
+			"name" : "block3/layer24/conv3x3",
+			"layer" : "Conv",
+			"id" : 3030,
+			"input" : ["block3/layer24/bn2"],
+			"output" : ["block3/layer24/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block3/layer24/concat",
+			"layer" : "Concat",
+			"id" : 3040,
+			"input" : [
+					"block3/layer23/concat",
+					"block3/layer24/conv3x3"
+			],
+			"output" : ["block3/layer24/concat"]
+		},
+		
+		
+	
+	
+		
+		
+		
+		{
+			"name" : "trans3/bn",
+			"layer" : "BatchNorm2",
+			"id" : 3050,
+			"input" : ["block3/layer24/concat"],
+			"output" : ["trans3/bn"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "trans3/relu",
+			"layer" : "Relu",
+			"id" : 3060,
+			"input" : ["trans3/bn"],
+			"output" : ["trans3/bn"]
+		},
+		
+		{
+			"name" : "trans3/conv1x1",
+			"layer" : "Conv",
+			"id" : 3070,
+			"input" : ["trans3/bn"],
+			"output" : ["trans3/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+	
+		{
+			"name" : "trans3/pool",
+			"layer" : "Pooling",
+			"id" : 3080,
+			"input" : ["trans3/conv1x1"],
+			"output" : ["trans3/pool"],
+			"poolingType" : "Avg",
+			"poolDim.rows" : 2,
+			"poolDim.cols" : 2,
+			"poolDim.stride" : 2
+		},	
+	
+	
+		
+		
+		
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer1/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10000,
+			"input" : ["trans3/pool"],
+			"output" : ["block4/layer1/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer1/relu1",
+			"layer" : "Relu",
+			"id" : 10010,
+			"input" : ["block4/layer1/bn1"],
+			"output" : ["block4/layer1/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer1/conv1x1",
+			"layer" : "Conv",
+			"id" : 10020,
+			"input" : ["block4/layer1/bn1"],
+			"output" : ["block4/layer1/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer1/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10030,
+			"input" : ["block4/layer1/conv1x1"],
+			"output" : ["block4/layer1/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer1/relu2",
+			"layer" : "Relu",
+			"id" : 10040,
+			"input" : ["block4/layer1/bn2"],
+			"output" : ["block4/layer1/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer1/conv3x3",
+			"layer" : "Conv",
+			"id" : 10050,
+			"input" : ["block4/layer1/bn2"],
+			"output" : ["block4/layer1/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer1/concat",
+			"layer" : "Concat",
+			"id" : 10060,
+			"input" : [
+					"trans3/pool",
+					"block4/layer1/conv3x3"
+			],
+			"output" : ["block4/layer1/concat"]
+		},
+	
+	
+
+	
+	
+	
+		
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer2/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10070,
+			"input" : ["block4/layer1/concat"],
+			"output" : ["block4/layer2/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer2/relu1",
+			"layer" : "Relu",
+			"id" : 10080,
+			"input" : ["block4/layer2/bn1"],
+			"output" : ["block4/layer2/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer2/conv1x1",
+			"layer" : "Conv",
+			"id" : 10090,
+			"input" : ["block4/layer2/bn1"],
+			"output" : ["block4/layer2/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer2/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10100,
+			"input" : ["block4/layer2/conv1x1"],
+			"output" : ["block4/layer2/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer2/relu2",
+			"layer" : "Relu",
+			"id" : 10110,
+			"input" : ["block4/layer2/bn2"],
+			"output" : ["block4/layer2/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer2/conv3x3",
+			"layer" : "Conv",
+			"id" : 10120,
+			"input" : ["block4/layer2/bn2"],
+			"output" : ["block4/layer2/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer2/concat",
+			"layer" : "Concat",
+			"id" : 10130,
+			"input" : [
+					"block4/layer1/concat",
+					"block4/layer2/conv3x3"
+			],
+			"output" : ["block4/layer2/concat"]
+		},
+	
+	
+
+	
+	
+	
+		
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer3/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10140,
+			"input" : ["block4/layer2/concat"],
+			"output" : ["block4/layer3/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer3/relu1",
+			"layer" : "Relu",
+			"id" : 10150,
+			"input" : ["block4/layer3/bn1"],
+			"output" : ["block4/layer3/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer3/conv1x1",
+			"layer" : "Conv",
+			"id" : 10160,
+			"input" : ["block4/layer3/bn1"],
+			"output" : ["block4/layer3/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer3/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10170,
+			"input" : ["block4/layer3/conv1x1"],
+			"output" : ["block4/layer3/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer3/relu2",
+			"layer" : "Relu",
+			"id" : 10180,
+			"input" : ["block4/layer3/bn2"],
+			"output" : ["block4/layer3/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer3/conv3x3",
+			"layer" : "Conv",
+			"id" : 10190,
+			"input" : ["block4/layer3/bn2"],
+			"output" : ["block4/layer3/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer3/concat",
+			"layer" : "Concat",
+			"id" : 10200,
+			"input" : [
+					"block4/layer2/concat",
+					"block4/layer3/conv3x3"
+			],
+			"output" : ["block4/layer3/concat"]
+		},
+		
+		
+		
+		
+		
+		
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer4/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10210,
+			"input" : ["block4/layer3/concat"],
+			"output" : ["block4/layer4/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer4/relu1",
+			"layer" : "Relu",
+			"id" : 10220,
+			"input" : ["block4/layer4/bn1"],
+			"output" : ["block4/layer4/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer4/conv1x1",
+			"layer" : "Conv",
+			"id" : 10230,
+			"input" : ["block4/layer4/bn1"],
+			"output" : ["block4/layer4/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer4/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10240,
+			"input" : ["block4/layer4/conv1x1"],
+			"output" : ["block4/layer4/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer4/relu2",
+			"layer" : "Relu",
+			"id" : 10250,
+			"input" : ["block4/layer4/bn2"],
+			"output" : ["block4/layer4/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer4/conv3x3",
+			"layer" : "Conv",
+			"id" : 10260,
+			"input" : ["block4/layer4/bn2"],
+			"output" : ["block4/layer4/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer4/concat",
+			"layer" : "Concat",
+			"id" : 10270,
+			"input" : [
+					"block4/layer3/concat",
+					"block4/layer4/conv3x3"
+			],
+			"output" : ["block4/layer4/concat"]
+		},
+		
+		
+		
+		
+		
+		
+		
+		
+				
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer5/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10280,
+			"input" : ["block4/layer4/concat"],
+			"output" : ["block4/layer5/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer5/relu1",
+			"layer" : "Relu",
+			"id" : 10290,
+			"input" : ["block4/layer5/bn1"],
+			"output" : ["block4/layer5/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer5/conv1x1",
+			"layer" : "Conv",
+			"id" : 10300,
+			"input" : ["block4/layer5/bn1"],
+			"output" : ["block4/layer5/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer5/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10310,
+			"input" : ["block4/layer5/conv1x1"],
+			"output" : ["block4/layer5/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer5/relu2",
+			"layer" : "Relu",
+			"id" : 10320,
+			"input" : ["block4/layer5/bn2"],
+			"output" : ["block4/layer5/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer5/conv3x3",
+			"layer" : "Conv",
+			"id" : 10330,
+			"input" : ["block4/layer5/bn2"],
+			"output" : ["block4/layer5/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer5/concat",
+			"layer" : "Concat",
+			"id" : 10340,
+			"input" : [
+					"block4/layer4/concat",
+					"block4/layer5/conv3x3"
+			],
+			"output" : ["block4/layer5/concat"]
+		},
+		
+		
+		
+		
+				
+		
+	
+				
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer6/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10350,
+			"input" : ["block4/layer5/concat"],
+			"output" : ["block4/layer6/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer6/relu1",
+			"layer" : "Relu",
+			"id" : 10360,
+			"input" : ["block4/layer6/bn1"],
+			"output" : ["block4/layer6/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer6/conv1x1",
+			"layer" : "Conv",
+			"id" : 10370,
+			"input" : ["block4/layer6/bn1"],
+			"output" : ["block4/layer6/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer6/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10380,
+			"input" : ["block4/layer6/conv1x1"],
+			"output" : ["block4/layer6/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer6/relu2",
+			"layer" : "Relu",
+			"id" : 10390,
+			"input" : ["block4/layer6/bn2"],
+			"output" : ["block4/layer6/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer6/conv3x3",
+			"layer" : "Conv",
+			"id" : 10400,
+			"input" : ["block4/layer6/bn2"],
+			"output" : ["block4/layer6/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer6/concat",
+			"layer" : "Concat",
+			"id" : 10410,
+			"input" : [
+					"block4/layer5/concat",
+					"block4/layer6/conv3x3"
+			],
+			"output" : ["block4/layer6/concat"]
+		},
+		
+		
+		
+		
+				
+		
+		
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer7/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10420,
+			"input" : ["block4/layer6/concat"],
+			"output" : ["block4/layer7/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer7/relu1",
+			"layer" : "Relu",
+			"id" : 10430,
+			"input" : ["block4/layer7/bn1"],
+			"output" : ["block4/layer7/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer7/conv1x1",
+			"layer" : "Conv",
+			"id" : 10440,
+			"input" : ["block4/layer7/bn1"],
+			"output" : ["block4/layer7/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer7/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10450,
+			"input" : ["block4/layer7/conv1x1"],
+			"output" : ["block4/layer7/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer7/relu2",
+			"layer" : "Relu",
+			"id" : 10460,
+			"input" : ["block4/layer7/bn2"],
+			"output" : ["block4/layer7/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer7/conv3x3",
+			"layer" : "Conv",
+			"id" : 10470,
+			"input" : ["block4/layer7/bn2"],
+			"output" : ["block4/layer7/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer7/concat",
+			"layer" : "Concat",
+			"id" : 10480,
+			"input" : [
+					"block4/layer6/concat",
+					"block4/layer7/conv3x3"
+			],
+			"output" : ["block4/layer7/concat"]
+		},
+		
+		
+				
+		
+
+
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer8/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10490,
+			"input" : ["block4/layer7/concat"],
+			"output" : ["block4/layer8/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer8/relu1",
+			"layer" : "Relu",
+			"id" : 10500,
+			"input" : ["block4/layer8/bn1"],
+			"output" : ["block4/layer8/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer8/conv1x1",
+			"layer" : "Conv",
+			"id" : 10510,
+			"input" : ["block4/layer8/bn1"],
+			"output" : ["block4/layer8/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer8/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10520,
+			"input" : ["block4/layer8/conv1x1"],
+			"output" : ["block4/layer8/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer8/relu2",
+			"layer" : "Relu",
+			"id" : 10530,
+			"input" : ["block4/layer8/bn2"],
+			"output" : ["block4/layer8/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer8/conv3x3",
+			"layer" : "Conv",
+			"id" : 10540,
+			"input" : ["block4/layer8/bn2"],
+			"output" : ["block4/layer8/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer8/concat",
+			"layer" : "Concat",
+			"id" : 10550,
+			"input" : [
+					"block4/layer7/concat",
+					"block4/layer8/conv3x3"
+			],
+			"output" : ["block4/layer8/concat"]
+		},
+		
+		
+		
+		
+				
+
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer9/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10560,
+			"input" : ["block4/layer8/concat"],
+			"output" : ["block4/layer9/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer9/relu1",
+			"layer" : "Relu",
+			"id" : 10570,
+			"input" : ["block4/layer9/bn1"],
+			"output" : ["block4/layer9/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer9/conv1x1",
+			"layer" : "Conv",
+			"id" : 10580,
+			"input" : ["block4/layer9/bn1"],
+			"output" : ["block4/layer9/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer9/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10590,
+			"input" : ["block4/layer9/conv1x1"],
+			"output" : ["block4/layer9/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer9/relu2",
+			"layer" : "Relu",
+			"id" : 10600,
+			"input" : ["block4/layer9/bn2"],
+			"output" : ["block4/layer9/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer9/conv3x3",
+			"layer" : "Conv",
+			"id" : 10610,
+			"input" : ["block4/layer9/bn2"],
+			"output" : ["block4/layer9/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer9/concat",
+			"layer" : "Concat",
+			"id" : 10620,
+			"input" : [
+					"block4/layer8/concat",
+					"block4/layer9/conv3x3"
+			],
+			"output" : ["block4/layer9/concat"]
+		},
+		
+		
+		
+				
+
+
+
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer10/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10630,
+			"input" : ["block4/layer9/concat"],
+			"output" : ["block4/layer10/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer10/relu1",
+			"layer" : "Relu",
+			"id" : 10640,
+			"input" : ["block4/layer10/bn1"],
+			"output" : ["block4/layer10/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer10/conv1x1",
+			"layer" : "Conv",
+			"id" : 10650,
+			"input" : ["block4/layer10/bn1"],
+			"output" : ["block4/layer10/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer10/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10660,
+			"input" : ["block4/layer10/conv1x1"],
+			"output" : ["block4/layer10/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer10/relu2",
+			"layer" : "Relu",
+			"id" : 10670,
+			"input" : ["block4/layer10/bn2"],
+			"output" : ["block4/layer10/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer10/conv3x3",
+			"layer" : "Conv",
+			"id" : 10680,
+			"input" : ["block4/layer10/bn2"],
+			"output" : ["block4/layer10/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer10/concat",
+			"layer" : "Concat",
+			"id" : 10690,
+			"input" : [
+					"block4/layer9/concat",
+					"block4/layer10/conv3x3"
+			],
+			"output" : ["block4/layer10/concat"]
+		},
+		
+		
+		
+
+
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer11/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10700,
+			"input" : ["block4/layer10/concat"],
+			"output" : ["block4/layer11/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer11/relu1",
+			"layer" : "Relu",
+			"id" : 10710,
+			"input" : ["block4/layer11/bn1"],
+			"output" : ["block4/layer11/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer11/conv1x1",
+			"layer" : "Conv",
+			"id" : 10720,
+			"input" : ["block4/layer11/bn1"],
+			"output" : ["block4/layer11/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer11/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10730,
+			"input" : ["block4/layer11/conv1x1"],
+			"output" : ["block4/layer11/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer11/relu2",
+			"layer" : "Relu",
+			"id" : 10740,
+			"input" : ["block4/layer11/bn2"],
+			"output" : ["block4/layer11/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer11/conv3x3",
+			"layer" : "Conv",
+			"id" : 10750,
+			"input" : ["block4/layer11/bn2"],
+			"output" : ["block4/layer11/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer11/concat",
+			"layer" : "Concat",
+			"id" : 10760,
+			"input" : [
+					"block4/layer10/concat",
+					"block4/layer11/conv3x3"
+			],
+			"output" : ["block4/layer11/concat"]
+		},
+		
+		
+		
+		
+		
+
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer12/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10770,
+			"input" : ["block4/layer11/concat"],
+			"output" : ["block4/layer12/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer12/relu1",
+			"layer" : "Relu",
+			"id" : 10780,
+			"input" : ["block4/layer12/bn1"],
+			"output" : ["block4/layer12/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer12/conv1x1",
+			"layer" : "Conv",
+			"id" : 10790,
+			"input" : ["block4/layer12/bn1"],
+			"output" : ["block4/layer12/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer12/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10800,
+			"input" : ["block4/layer12/conv1x1"],
+			"output" : ["block4/layer12/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer12/relu2",
+			"layer" : "Relu",
+			"id" : 10810,
+			"input" : ["block4/layer12/bn2"],
+			"output" : ["block4/layer12/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer12/conv3x3",
+			"layer" : "Conv",
+			"id" : 10820,
+			"input" : ["block4/layer12/bn2"],
+			"output" : ["block4/layer12/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer12/concat",
+			"layer" : "Concat",
+			"id" : 10830,
+			"input" : [
+					"block4/layer11/concat",
+					"block4/layer12/conv3x3"
+			],
+			"output" : ["block4/layer12/concat"]
+		},
+		
+		
+		
+		
+	
+	
+	
+		{
+			"name" : "block4/layer13/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10840,
+			"input" : ["block4/layer12/concat"],
+			"output" : ["block4/layer13/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer13/relu1",
+			"layer" : "Relu",
+			"id" : 10850,
+			"input" : ["block4/layer13/bn1"],
+			"output" : ["block4/layer13/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer13/conv1x1",
+			"layer" : "Conv",
+			"id" : 10860,
+			"input" : ["block4/layer13/bn1"],
+			"output" : ["block4/layer13/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer13/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10870,
+			"input" : ["block4/layer13/conv1x1"],
+			"output" : ["block4/layer13/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer13/relu2",
+			"layer" : "Relu",
+			"id" : 10880,
+			"input" : ["block4/layer13/bn2"],
+			"output" : ["block4/layer13/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer13/conv3x3",
+			"layer" : "Conv",
+			"id" : 10890,
+			"input" : ["block4/layer13/bn2"],
+			"output" : ["block4/layer13/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer13/concat",
+			"layer" : "Concat",
+			"id" : 10900,
+			"input" : [
+					"block4/layer12/concat",
+					"block4/layer13/conv3x3"
+			],
+			"output" : ["block4/layer13/concat"]
+		},
+		
+		
+		
+		
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer14/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10910,
+			"input" : ["block4/layer13/concat"],
+			"output" : ["block4/layer14/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer14/relu1",
+			"layer" : "Relu",
+			"id" : 10920,
+			"input" : ["block4/layer14/bn1"],
+			"output" : ["block4/layer14/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer14/conv1x1",
+			"layer" : "Conv",
+			"id" : 10930,
+			"input" : ["block4/layer14/bn1"],
+			"output" : ["block4/layer14/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer14/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 10940,
+			"input" : ["block4/layer14/conv1x1"],
+			"output" : ["block4/layer14/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer14/relu2",
+			"layer" : "Relu",
+			"id" : 10950,
+			"input" : ["block4/layer14/bn2"],
+			"output" : ["block4/layer14/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer14/conv3x3",
+			"layer" : "Conv",
+			"id" : 10960,
+			"input" : ["block4/layer14/bn2"],
+			"output" : ["block4/layer14/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer14/concat",
+			"layer" : "Concat",
+			"id" : 10970,
+			"input" : [
+					"block4/layer13/concat",
+					"block4/layer14/conv3x3"
+			],
+			"output" : ["block4/layer14/concat"]
+		},
+		
+		
+		
+		
+
+
+
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer15/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 10980,
+			"input" : ["block4/layer14/concat"],
+			"output" : ["block4/layer15/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer15/relu1",
+			"layer" : "Relu",
+			"id" : 10990,
+			"input" : ["block4/layer15/bn1"],
+			"output" : ["block4/layer15/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer15/conv1x1",
+			"layer" : "Conv",
+			"id" : 11000,
+			"input" : ["block4/layer15/bn1"],
+			"output" : ["block4/layer15/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer15/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 11010,
+			"input" : ["block4/layer15/conv1x1"],
+			"output" : ["block4/layer15/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer15/relu2",
+			"layer" : "Relu",
+			"id" : 11020,
+			"input" : ["block4/layer15/bn2"],
+			"output" : ["block4/layer15/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer15/conv3x3",
+			"layer" : "Conv",
+			"id" : 11030,
+			"input" : ["block4/layer15/bn2"],
+			"output" : ["block4/layer15/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer15/concat",
+			"layer" : "Concat",
+			"id" : 11040,
+			"input" : [
+					"block4/layer14/concat",
+					"block4/layer15/conv3x3"
+			],
+			"output" : ["block4/layer15/concat"]
+		},
+		
+		
+		
+		
+		
+		
+		
+
+
+
+	
+	
+	
+		{
+			"name" : "block4/layer16/bn1",
+			"layer" : "BatchNorm2",
+			"id" : 11050,
+			"input" : ["block4/layer15/concat"],
+			"output" : ["block4/layer16/bn1"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer16/relu1",
+			"layer" : "Relu",
+			"id" : 11060,
+			"input" : ["block4/layer16/bn1"],
+			"output" : ["block4/layer16/bn1"]
+		},
+		
+		{
+			"name" : "block4/layer16/conv1x1",
+			"layer" : "Conv",
+			"id" : 11070,
+			"input" : ["block4/layer16/bn1"],
+			"output" : ["block4/layer16/conv1x1"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 1,
+			"filterDim.cols" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer16/bn2",
+			"layer" : "BatchNorm2",
+			"id" : 11080,
+			"input" : ["block4/layer16/conv1x1"],
+			"output" : ["block4/layer16/bn2"],
+			"movingAverageFraction" : 0.9,
+			"eps" : 0.0001,
+			"scaleBias" : true
+		},
+
+		{
+			"name" : "block4/layer16/relu2",
+			"layer" : "Relu",
+			"id" : 11090,
+			"input" : ["block4/layer16/bn2"],
+			"output" : ["block4/layer16/bn2"]
+		},
+		
+		{
+			"name" : "block4/layer16/conv3x3",
+			"layer" : "Conv",
+			"id" : 11100,
+			"input" : ["block4/layer16/bn2"],
+			"output" : ["block4/layer16/conv3x3"],
+			"filterDim.filters" : 32,
+			"filterDim.rows" : 3,			
+			"filterDim.cols" : 3,
+			"filterDim.pad" : 1,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "block4/layer16/concat",
+			"layer" : "Concat",
+			"id" : 11110,
+			"input" : [
+					"block4/layer15/concat",
+					"block4/layer16/conv3x3"
+			],
+			"output" : ["block4/layer16/concat"]
+		},
+		
+		
+		
+		
+		
+		
+						
+				
+		{
+			"name" : "globalPooling",
+			"layer" : "Pooling",
+			"id" : 70000,
+			"input" : ["block4/layer16/concat"],
+			"output" : ["globalPooling"],
+			"poolingType" : "Avg",
+			"globalPooling" : true
+		},				
+	
+														
+		{
+			"name" : "fc",
+			"layer" : "FullyConnected",
+			"id" : 80000,
+			"input" : ["globalPooling"],
+			"output" : ["fc"],
+			"nOut" : 1000,
+			"weightFiller.type" : "Xavier",
+			"biasFiller.type" : "Constant",
+			"biasFiller.value" : 0.0
+		},
+		
+		{
+			"name" : "loss",
+			"layer" : "SoftmaxWithLoss",
+			"id" : 90000,
+			"input" : ["fc", "label"],
+			"output" : ["loss"],
+			"propDown" : [true, false],
+			"softmaxAxis" : 2
+		
+		}
+
+	],
+
+	"configs" :
+	{
+		"batchSize" : 16,
+		"epochs" : 100, 
+		"lossLayer" : ["loss"],
+		"testInterval" : 100,
+		"saveInterval" : 60000,
+		"savePathPrefix" : "", 
+		
+		"baseLearningRate" : 0.01,
+
+		"lrPolicy" : "Poly",
+		"maxIterations" : 4000000,
+		"power" : 2.0,
+		"momentum" : 0.9,
+		"weightDecay" : 0.0001,
+
+		"optimizer" : "Momentum",
+        "measureLayer" : ["loss"],
+
+        "keepSaveIntervalModelCount" : 4,
+        "keepSaveBestModel" : false,
+        "keepSaveBestModelStartIterNum" : 10000
+	}
+}
