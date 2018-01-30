@@ -299,6 +299,8 @@ void PlanOptimizer::setPlanContext(string networkID, int option, bool isTest) {
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     network->setBuilt();
+
+    SNPROP(iterations) = 0;
 }
 
 void PlanOptimizer::unsetPlanContext(string networkID) {
