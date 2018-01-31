@@ -36,10 +36,20 @@ SDF::~SDF() {
 
 void SDF::open() {
 	if (this->mode == NEW) {
-		int mkdir_result = mkdir(this->source.c_str(), 0744);
-		if (mkdir_result != 0)
+		bool mkdir_result = false;
+		try {
+			mkdir_result = fs::create_directories(this->source);
+		} catch (const fs::filesystem_error& e) {
+			//std::cout << "create_directories() failed with " << e.code().message() << '\n';
+			STDOUT_LOG("[ERROR] mkdir %s failed: %s", this->source.c_str(),
+					e.code().message().c_str());
+			SASSERT(false, "mkdir %s failed: %s", this->source.c_str(),
+					e.code().message().c_str());
+		}
+		//int mkdir_result = mkdir(this->source.c_str(), 0744);
+		if (!mkdir_result)
 			STDOUT_LOG("[ERROR] mkdir %s failed.", this->source.c_str());
-		SASSERT(mkdir_result == 0, "mkdir %s failed.", this->source.c_str());
+		SASSERT(mkdir_result, "mkdir %s failed.", this->source.c_str());
 	}
 	sdf_open();
 }
@@ -199,7 +209,7 @@ SDFHeader SDF::retrieveSDFHeader(const std::string& source) {
 
 	string sdf_string;
 	ia >> sdf_string;
-	SASSERT0(sdf_string == SDF::SDF_STRING);
+	SASSERT(sdf_string == SDF::SDF_STRING, "Header does not start with SDF STRING.");
 
 	SDFHeader header;
 	LabelItem dummyLabelItem;

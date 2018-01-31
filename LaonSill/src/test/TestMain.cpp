@@ -112,8 +112,8 @@ int main(int argc, char** argv) {
 	cout.setf(ios::fixed);
 	//cout.setf(ios::scientific);
 
-	SDFHeader header = SDF::retrieveSDFHeader(LAONSILL_HOME + "/data/sdf/version_test_imageset");
-	header.print();
+	//SDFHeader header = SDF::retrieveSDFHeader(LAONSILL_HOME + "/data/sdf/version_test_imageset");
+	//header.print();
 
 	//plainTest(argc, argv);
 	//layerTest(argc, argv);
