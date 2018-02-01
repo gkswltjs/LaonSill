@@ -24,14 +24,6 @@ def get_arguments():
     parser = argparse.ArgumentParser(description="SDF File Creation Tool")
     parser.add_argument("--dataset", type=str, required=True,
                         help="text file path containing target image list.")
-    parser.add_argument("--dataset-name", type=str, required=False,
-                        help="")
-    parser.add_argument("--resize", type=int, required=False, default=0,
-                        help="")
-    parser.add_argument("--resize-width", type=int, required=False, default=0,
-                        help="")
-    parser.add_argument("--resize-height", type=int, required=False, default=0,
-                        help="")
     parser.add_argument("--basedir", type=str, required=True, 
                         help="directory path containing image list.")
     parser.add_argument("--outdir", type=str, required=True, 
@@ -44,36 +36,24 @@ def get_arguments():
     return parser.parse_args()
 
 
+def convert_anno_set(dataset, basedir, outdir, labelmap, shuffle):
+    param = ConvertAnnoSetParam()
 
-def convert_image_set(dataset, dataset_name, resize_width, resize_height, \
-        basedir, outdir, labelmap, shuffle):
-    param = ConvertImageSetParam()
+    trainImageSet = ImageSet()
+    trainImageSet.name = 'noname'
+    trainImageSet.dataSetPath = dataset 
 
-    imageSet = ImageSet()
-
-    if dataset_name == None:
-        imageSet.name = 'noname'
-    else:
-        imageSet.name = dataset_name
-
-    imageSet.dataSetPath = dataset 
-
-    param.addImageSet(imageSet)
-
-    param.shuffle = shuffle
-    param.resizeWidth = resize_width
-    param.resizeHeight = resize_height
-
+    param.addImageSet(trainImageSet)
+    param.labelMapFilePath = labelmap 
     param.basePath = basedir
     param.outFilePath = outdir
-    param.labelMapFilePath = labelmap
 
     if os.path.exists(param.outFilePath):
         shutil.rmtree(param.outFilePath)
 
     param.info()
 
-    ConvertImageSet(param)
+    ConvertAnnoSet(param)
 
     print("resultCode: {}".format(param.resultCode))
     print("resultMsg: {}".format(param.resultMsg))
@@ -85,25 +65,12 @@ def main():
     args = get_arguments()
     
     dataset = os.path.expanduser(args.dataset)
-    dataset_name = args.dataset_name
-
-    resize = args.resize
-    resize_width = args.resize_width
-    resize_height = args.resize_height
-
     basedir = os.path.expanduser(args.basedir)
     outdir = os.path.expanduser(args.outdir)
     labelmap = os.path.expanduser(args.labelmap)
     shuffle = args.shuffle
 
-    if resize > 0:
-        assert resize_width == 0 and resize_height == 0, \
-                "resize width and height should be 0 when resize is larger than 0."
-        resize_width = resize
-        resize_height = resize
-
-    convert_image_set(dataset, dataset_name, resize_width, resize_height, \
-            basedir, outdir, labelmap, shuffle)
+    convert_anno_set(dataset, basedir, outdir, labelmap, shuffle)
     
 
 if __name__ == '__main__':
