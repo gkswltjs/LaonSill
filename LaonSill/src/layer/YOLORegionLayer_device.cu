@@ -28,7 +28,11 @@ __global__ void YoloRegionForward(const Dtype* input, int size, const Dtype* anc
 	if (idx >= size)
 		return;
 
+<<<<<<< HEAD
     int elemPerAnchorBox = classNum + 20;
+=======
+    int elemPerAnchorBox = classNum + 4;
+>>>>>>> b471c886d0dbdae8a1441db8b0b354c903fc370b
     int gridElemCount = YOLO_ANCHOR_BOX_COUNT + classNum;
 
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
@@ -86,7 +90,11 @@ __global__ void YoloRegionBackward(const Dtype* outputGrad, const Dtype* output,
 	if (idx >= size)
 		return;
 
+<<<<<<< HEAD
     int elemPerAnchorBox = classNum + 20;
+=======
+    int elemPerAnchorBox = classNum + 4;
+>>>>>>> b471c886d0dbdae8a1441db8b0b354c903fc370b
     int gridElemCount = YOLO_ANCHOR_BOX_COUNT + classNum;
 
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
