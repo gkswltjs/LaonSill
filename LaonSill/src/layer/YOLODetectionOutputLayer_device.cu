@@ -49,13 +49,15 @@ using namespace std;
 
 template <typename Dtype>
 __global__ void YOLODetectionForwardDetectionTensor(const Dtype* input, int size, 
-        Dtype scoreThres, Dtype* output) {
+        Dtype scoreThres, int classNum, Dtype* output) {
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
 		return;
 
-    Dtype c = input[idx * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4];
+    int elemPerAnchorBox = classNum + 5;
+
+    Dtype c = input[idx * elemPerAnchorBox + 4];
 
     if (c < scoreThres) {
         output[idx * YOLODETOUT_DET_ELEM_COUNT + 0] = -1.0 - EPSILON;
@@ -63,12 +65,12 @@ __global__ void YOLODetectionForwardDetectionTensor(const Dtype* input, int size
         return;
     }
 
-    Dtype maxValue = input[idx * YOLO_ELEM_COUNT_PER_ANCHORBOX + 5 + 0];
+    Dtype maxValue = input[idx * elemPerAnchorBox + 5 + 0];
     int maxValueIdx = 0;
 
-    for (int i = 1; i < YOLO_CLASS_COUNT; i++) {
-        if (maxValue < input[idx * YOLO_ELEM_COUNT_PER_ANCHORBOX + 5 + i]) {
-            maxValue = input[idx * YOLO_ELEM_COUNT_PER_ANCHORBOX + 5 + i];
+    for (int i = 1; i < classNum; i++) {
+        if (maxValue < input[idx * elemPerAnchorBox + 5 + i]) {
+            maxValue = input[idx * elemPerAnchorBox + 5 + i];
             maxValueIdx = i;
         }
     }
@@ -87,10 +89,10 @@ __global__ void YOLODetectionForwardDetectionTensor(const Dtype* input, int size
     int gridX = gridIdx % YOLO_GRID_ONE_AXIS_COUNT;
     int gridY = gridIdx / YOLO_GRID_ONE_AXIS_COUNT;
 
-    Dtype x = input[idx * YOLO_ELEM_COUNT_PER_ANCHORBOX + 0];
-    Dtype y = input[idx * YOLO_ELEM_COUNT_PER_ANCHORBOX + 1];
-    Dtype w = input[idx * YOLO_ELEM_COUNT_PER_ANCHORBOX + 2];
-    Dtype h = input[idx * YOLO_ELEM_COUNT_PER_ANCHORBOX + 3];
+    Dtype x = input[idx * elemPerAnchorBox + 0];
+    Dtype y = input[idx * elemPerAnchorBox + 1];
+    Dtype w = input[idx * elemPerAnchorBox + 2];
+    Dtype h = input[idx * elemPerAnchorBox + 3];
 
     Dtype minX = (x + (Dtype)gridX) / (Dtype)YOLO_GRID_ONE_AXIS_COUNT - w / 2.0;
     Dtype maxX = (x + (Dtype)gridX) / (Dtype)YOLO_GRID_ONE_AXIS_COUNT + w / 2.0;
@@ -165,7 +167,8 @@ void YOLODetectionOutputLayer<Dtype>::reshape() {
     this->_outputData[0]->reshape({1U, 1U, detectionCount, 
             (uint32_t)YOLODETOUT_DET_ELEM_COUNT});
     int totalElemCount = this->_inputData[0]->getCount();
-    SASSUME0(totalElemCount == detectionCount * YOLO_ELEM_COUNT_PER_ANCHORBOX);
+    int elemPerAnchorBox = (int)(SLPROP(YOLODetectionOutput, numClasses) + 5);
+    SASSUME0(totalElemCount == detectionCount * elemPerAnchorBox);
 
 	const vector<uint32_t>& inputShape2 = this->_inputData[1]->getShape();
 	uint32_t batches2 	= inputShape2[0];
@@ -194,7 +197,8 @@ void YOLODetectionOutputLayer<Dtype>::feedforward() {
 
     YOLODetectionForwardDetectionTensor<Dtype><<<SOOOA_GET_BLOCKS(detectionCount), 
         SOOOA_CUDA_NUM_THREADS>>>(inputData, detectionCount,
-                (Dtype)SLPROP(YOLODetectionOutput, scoreThres), outputData);
+                (Dtype)SLPROP(YOLODetectionOutput, scoreThres),
+                (int)SLPROP(YOLODetectionOutput, numClasses), outputData);
 
     // (2) fill ground truth tensor
     const Dtype *inputData2 = this->_inputData[1]->device_data();
