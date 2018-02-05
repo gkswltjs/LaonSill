@@ -116,7 +116,7 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
     Dtype labelClass = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 6];  // 첫번째 label
 
     int labelClassInt = (int)(labelClass + EPSILON);
-    int elemPerAnchorBox = classNum + 20;
+    int elemPerAnchorBox = classNum + 4;
     int gridElemCount = YOLO_ANCHOR_BOX_COUNT * elemPerAnchorBox;
 
     output[idx] = 0.0;
