@@ -55,15 +55,7 @@ __global__ void YOLODetectionForwardDetectionTensor(const Dtype* input, int size
 	if (idx >= size)
 		return;
 
-<<<<<<< HEAD
     int elemPerAnchorBox = classNum + 4;
-=======
-<<<<<<< HEAD
-    int elemPerAnchorBox = classNum + 5;
-=======
-    int elemPerAnchorBox = classNum + 4;
->>>>>>> b471c886d0dbdae8a1441db8b0b354c903fc370b
->>>>>>> cb266c20f6f631b856b0d44f4c87fb6e4ee71017
 
     Dtype c = input[idx * elemPerAnchorBox + 4];
 
@@ -76,7 +68,7 @@ __global__ void YOLODetectionForwardDetectionTensor(const Dtype* input, int size
     Dtype maxValue = input[idx * elemPerAnchorBox + 5 + 0];
     int maxValueIdx = 0;
 
-    for (int i = 1; i < classNum; i++) {
+    for (int i = 1; i < classNum - 1; i++) {
         if (maxValue < input[idx * elemPerAnchorBox + 5 + i]) {
             maxValue = input[idx * elemPerAnchorBox + 5 + i];
             maxValueIdx = i;
@@ -175,15 +167,7 @@ void YOLODetectionOutputLayer<Dtype>::reshape() {
     this->_outputData[0]->reshape({1U, 1U, detectionCount, 
             (uint32_t)YOLODETOUT_DET_ELEM_COUNT});
     int totalElemCount = this->_inputData[0]->getCount();
-<<<<<<< HEAD
     int elemPerAnchorBox = (int)(SLPROP(YOLODetectionOutput, numClasses) + 4);
-=======
-<<<<<<< HEAD
-    int elemPerAnchorBox = (int)(SLPROP(YOLODetectionOutput, numClasses) + 5);
-=======
-    int elemPerAnchorBox = (int)(SLPROP(YOLODetectionOutput, numClasses) + 4);
->>>>>>> b471c886d0dbdae8a1441db8b0b354c903fc370b
->>>>>>> cb266c20f6f631b856b0d44f4c87fb6e4ee71017
     SASSUME0(totalElemCount == detectionCount * elemPerAnchorBox);
 
 	const vector<uint32_t>& inputShape2 = this->_inputData[1]->getShape();

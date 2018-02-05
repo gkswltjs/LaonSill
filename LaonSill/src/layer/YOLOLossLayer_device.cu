@@ -146,7 +146,6 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
             t * YOLOINPUT_ELEMCOUNT_PER_GT;
         labelClass = input2[labelBaseIndex + 6];
         labelClassInt = (int)(labelClass + EPSILON);
-        int classNum = (int)(classNum);
 
         if (labelClassInt == 0)
             break;
@@ -238,7 +237,7 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
             inputGrad[boxBaseIndex + 3] = coordVal * (sqrtf(h1) - sqrt(h)) / sqrtf(h1);
             inputGrad[boxBaseIndex + 4] = objVal * (c1 - reward) * 2.0;
 
-            for (int j = 0; j < classNum; j++) {
+            for (int j = 0; j < classNum - 1; j++) {
                 if (j == labelClassInt - 1) {
                     inputGrad[boxBaseIndex + 5 + j] = 
                         classVal * (input[boxBaseIndex + 5 + j] - 1.0) * 2.0;
@@ -259,7 +258,7 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
 
             output[idx] = output[idx] + objVal * (c1 - reward) * (c1 - reward);
 
-            for (int j = 0; j < classNum; j++) {
+            for (int j = 0; j < classNum - 1; j++) {
                 if (j == labelClassInt - 1) {
                     output[idx] = output[idx] + classVal * 
                         (input[boxBaseIndex + 5 + j] - 1.0) * 

@@ -28,17 +28,8 @@ __global__ void YoloRegionForward(const Dtype* input, int size, const Dtype* anc
 	if (idx >= size)
 		return;
 
-<<<<<<< HEAD
     int elemPerAnchorBox = classNum + 4;
     int gridElemCount = YOLO_ANCHOR_BOX_COUNT * elemPerAnchorBox;
-=======
-<<<<<<< HEAD
-    int elemPerAnchorBox = classNum + 20;
-=======
-    int elemPerAnchorBox = classNum + 4;
->>>>>>> b471c886d0dbdae8a1441db8b0b354c903fc370b
-    int gridElemCount = YOLO_ANCHOR_BOX_COUNT + classNum;
->>>>>>> cb266c20f6f631b856b0d44f4c87fb6e4ee71017
 
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
         int outBoxIndex = idx * gridElemCount + i * elemPerAnchorBox;
@@ -64,23 +55,23 @@ __global__ void YoloRegionForward(const Dtype* input, int size, const Dtype* anc
             // exponential 함수에서 매우 큰값이 나오는 것을 막기 위해서..
             Dtype sum = 0.0;
             Dtype maxVal = input[outBoxIndex + 5 + 0];
-            for (int j = 1; j < classNum; j++) {
+            for (int j = 1; j < classNum - 1; j++) {
                 if (input[inBoxIndex + (5 + j) * YOLO_GRID_COUNT] > maxVal)
                     maxVal = input[inBoxIndex + 5 + j];
             }
 
-            for (int j = 0; j < classNum; j++) {
+            for (int j = 0; j < classNum - 1; j++) {
                 Dtype class1 = input[inBoxIndex + (5 + j) * YOLO_GRID_COUNT] - maxVal;
 
                 output[outBoxIndex + 5 + j] = expf(class1);
                 sum += output[outBoxIndex + 5 + j];
             }
 
-            for (int j = 0; j < classNum; j++) {
+            for (int j = 0; j < classNum - 1; j++) {
                 output[outBoxIndex + 5 + j] = output[outBoxIndex + 5 + j] / (sum + EPSILON);
             }
         } else {
-            for (int j = 0; j < classNum; j++) {
+            for (int j = 0; j < classNum - 1; j++) {
                 output[outBoxIndex + 5 + j] = 1.0 / 
                     (1.0 + expf((-1.0) * input[inBoxIndex + (5 + j) * YOLO_GRID_COUNT]));
             }
@@ -95,17 +86,8 @@ __global__ void YoloRegionBackward(const Dtype* outputGrad, const Dtype* output,
 	if (idx >= size)
 		return;
 
-<<<<<<< HEAD
     int elemPerAnchorBox = classNum + 4;
     int gridElemCount = YOLO_ANCHOR_BOX_COUNT * elemPerAnchorBox;
-=======
-<<<<<<< HEAD
-    int elemPerAnchorBox = classNum + 20;
-=======
-    int elemPerAnchorBox = classNum + 4;
->>>>>>> b471c886d0dbdae8a1441db8b0b354c903fc370b
-    int gridElemCount = YOLO_ANCHOR_BOX_COUNT + classNum;
->>>>>>> cb266c20f6f631b856b0d44f4c87fb6e4ee71017
 
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
         int outBoxIndex = idx * gridElemCount + i * elemPerAnchorBox;
@@ -125,7 +107,7 @@ __global__ void YoloRegionBackward(const Dtype* outputGrad, const Dtype* output,
         inputGrad[inBoxIndex + 3 * YOLO_GRID_COUNT] = h1 * outputGrad[outBoxIndex + 3];
         inputGrad[inBoxIndex + 4 * YOLO_GRID_COUNT] = c1 * (1.0 - c1) * outputGrad[outBoxIndex + 4];
 
-        for (int j = 0; j < classNum; j++) {
+        for (int j = 0; j < classNum - 1; j++) {
             inputGrad[inBoxIndex + (5 + j) * YOLO_GRID_COUNT] = 
                 output[outBoxIndex + 5 + j] * (1.0 - output[outBoxIndex + 5 + j]) *
                 outputGrad[outBoxIndex + 5 + j];
