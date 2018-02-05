@@ -87,7 +87,7 @@ __global__ void YoloRegionBackward(const Dtype* outputGrad, const Dtype* output,
 		return;
 
     int elemPerAnchorBox = classNum + 4;
-    int gridElemCount = YOLO_ANCHOR_BOX_COUNT + elemPerAnchorBox;
+    int gridElemCount = YOLO_ANCHOR_BOX_COUNT * elemPerAnchorBox;
 
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
         int outBoxIndex = idx * gridElemCount + i * elemPerAnchorBox;
