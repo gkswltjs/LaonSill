@@ -656,8 +656,16 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
         const float* result = commonOutputLayer->_outputData[0]->host_data();
 
         int gridCount = YOLO_GRID_COUNT;
+
+        if (SNPROP(labelCount) > 0)
+            gridCount = SNPROP(labelCount); 
+
         int gridAxisCount = YOLO_GRID_ONE_AXIS_COUNT;
         int elemCountPerGrid = YOLO_GRID_ELEM_COUNT;
+
+        if (SNPROP(labelCount) > 0)
+            elemCountPerGrid = ((SNPROP(labelCount) + 5) * YOLO_ANCHOR_BOX_COUNT);
+
         int anchorBoxCount = YOLO_ANCHOR_BOX_COUNT;
         int classCount = YOLO_CLASS_COUNT;
         int imageWidth = YOLO_IMAGE_DEFAULT_WIDTH;
