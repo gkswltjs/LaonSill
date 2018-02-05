@@ -21,16 +21,19 @@ using namespace std;
 
 template <typename Dtype>
 __global__ void YoloRegionForward(const Dtype* input, int size, const Dtype* anchorVals,
-        Dtype* output, bool softmax) {
+        Dtype* output, bool softmax, int classNum) {
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if (idx >= size)
 		return;
 
+    int elemPerAnchorBox = classNum + 4;
+    int gridElemCount = YOLO_ANCHOR_BOX_COUNT + classNum;
+
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
-        int outBoxIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
-        int inBoxIndex = idx + i * YOLO_GRID_COUNT * YOLO_ELEM_COUNT_PER_ANCHORBOX;
+        int outBoxIndex = idx * gridElemCount + i * elemPerAnchorBox;
+        int inBoxIndex = idx + i * YOLO_GRID_COUNT * elemPerAnchorBox;
 
         Dtype x1 = input[inBoxIndex + 0 * YOLO_GRID_COUNT];
         Dtype y1 = input[inBoxIndex + 1 * YOLO_GRID_COUNT];
@@ -52,23 +55,23 @@ __global__ void YoloRegionForward(const Dtype* input, int size, const Dtype* anc
             // exponential 함수에서 매우 큰값이 나오는 것을 막기 위해서..
             Dtype sum = 0.0;
             Dtype maxVal = input[outBoxIndex + 5 + 0];
-            for (int j = 1; j < YOLO_CLASS_COUNT; j++) {
+            for (int j = 1; j < classNum; j++) {
                 if (input[inBoxIndex + (5 + j) * YOLO_GRID_COUNT] > maxVal)
                     maxVal = input[inBoxIndex + 5 + j];
             }
 
-            for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+            for (int j = 0; j < classNum; j++) {
                 Dtype class1 = input[inBoxIndex + (5 + j) * YOLO_GRID_COUNT] - maxVal;
 
                 output[outBoxIndex + 5 + j] = expf(class1);
                 sum += output[outBoxIndex + 5 + j];
             }
 
-            for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+            for (int j = 0; j < classNum; j++) {
                 output[outBoxIndex + 5 + j] = output[outBoxIndex + 5 + j] / (sum + EPSILON);
             }
         } else {
-            for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+            for (int j = 0; j < classNum; j++) {
                 output[outBoxIndex + 5 + j] = 1.0 / 
                     (1.0 + expf((-1.0) * input[inBoxIndex + (5 + j) * YOLO_GRID_COUNT]));
             }
@@ -78,14 +81,17 @@ __global__ void YoloRegionForward(const Dtype* input, int size, const Dtype* anc
 
 template <typename Dtype>
 __global__ void YoloRegionBackward(const Dtype* outputGrad, const Dtype* output, int size,
-        Dtype* inputGrad) {
+        Dtype* inputGrad, int classNum) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= size)
 		return;
 
+    int elemPerAnchorBox = classNum + 4;
+    int gridElemCount = YOLO_ANCHOR_BOX_COUNT + classNum;
+
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
-        int outBoxIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
-        int inBoxIndex = idx + i * YOLO_GRID_COUNT * YOLO_ELEM_COUNT_PER_ANCHORBOX;
+        int outBoxIndex = idx * gridElemCount + i * elemPerAnchorBox;
+        int inBoxIndex = idx + i * YOLO_GRID_COUNT * elemPerAnchorBox;
 
         Dtype x1 = output[outBoxIndex + 0];
         Dtype y1 = output[outBoxIndex + 1];
@@ -101,7 +107,7 @@ __global__ void YoloRegionBackward(const Dtype* outputGrad, const Dtype* output,
         inputGrad[inBoxIndex + 3 * YOLO_GRID_COUNT] = h1 * outputGrad[outBoxIndex + 3];
         inputGrad[inBoxIndex + 4 * YOLO_GRID_COUNT] = c1 * (1.0 - c1) * outputGrad[outBoxIndex + 4];
 
-        for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+        for (int j = 0; j < classNum; j++) {
             inputGrad[inBoxIndex + (5 + j) * YOLO_GRID_COUNT] = 
                 output[outBoxIndex + 5 + j] * (1.0 - output[outBoxIndex + 5 + j]) *
                 outputGrad[outBoxIndex + 5 + j];
@@ -150,7 +156,8 @@ void YOLORegionLayer<Dtype>::feedforward() {
     Dtype *outputData = this->_outputData[0]->mutable_device_data();
 
     YoloRegionForward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        inputData, size, anchorVals, outputData, SLPROP(YOLORegion, softmax));
+        inputData, size, anchorVals, outputData, SLPROP(YOLORegion, softmax),
+        SLPROP(YOLORegion, numClasses));
 }
 
 template <typename Dtype>
@@ -164,7 +171,7 @@ void YOLORegionLayer<Dtype>::backpropagation() {
     Dtype *inputGrad = this->_inputData[0]->mutable_device_grad();
 
     YoloRegionBackward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
-        outputGrad, outputData, size, inputGrad);
+        outputGrad, outputData, size, inputGrad, SLPROP(YOLORegion, numClasses));
 }
 
 template void YOLORegionLayer<float>::reshape();
