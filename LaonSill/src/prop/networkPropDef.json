@@ -36,8 +36,7 @@
     ["status", "NetworkStatus", "NetworkStatus::Train"],
     ["keepSaveIntervalModelCount", "uint32_t", "3"],
     ["keepSaveBestModel", "bool", "false"],
-    ["keepSaveBestModelStartIterNum", "uint32_t", "10000"],
-    ["labelCount", "int", "0"]
+    ["keepSaveBestModelStartIterNum", "uint32_t", "10000"]
 ]
 
 }
