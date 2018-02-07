@@ -991,15 +991,18 @@
             "id" : 285,
             "input" : ["conv23d"],
             "output" : ["region"],
-            "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52]
+            "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52],
+            "numClasses" : 21
         },
 
         {
             "name" : "loss",
             "layer" : "YOLOLoss",
             "id" : 290,
+            "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52],
             "input" : ["region", "label"],
-            "output" : ["loss"]
+            "output" : ["loss"],
+            "numClasses" : 21
         },
 
         {
@@ -1009,7 +1012,8 @@
             "input" : ["region", "label"],
             "output" : ["yolo_det", "yolo_gt"],
             "propDown" : [false, false],
-            "scoreThres" : 0.05
+            "scoreThres" : 0.05,
+            "numClasses" : 21
         },
 
 		{
@@ -1018,11 +1022,11 @@
 			"id" : 300,
 			"input" : ["yolo_det", "yolo_gt"],
 			"output" : ["mAP"],
-			"numClasses" : 21,
 			"backgroundLabelId" : 0,
 			"overlapThreshold" : 0.5,
 			"evaluateDifficultGt" : true,
-			"apVersion" : "11point"
+			"apVersion" : "11point",
+			"numClasses" : 21
 		}
 	],
 
@@ -1033,7 +1037,7 @@
 		"lossLayer" : ["loss"],
         "measureLayer" : ["loss"],
 		"gamma" : 0.1,
-		"testInterval" : 100,
+		"testInterval" : 10,
 		"saveInterval" : 1000,
 		"savePathPrefix" : "", 
 		"baseLearningRate" : 0.001,
