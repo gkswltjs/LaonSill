@@ -20,7 +20,7 @@
 
 			"source" : "$(LAONSILL_HOME)/data/sdf/voc2007_train_sdf/",
 
-			"labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.prototxt",
+			"labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.json",
 			"annoType" : "BBOX"
 	    },
 

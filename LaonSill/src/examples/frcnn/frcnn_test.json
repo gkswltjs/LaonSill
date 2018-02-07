@@ -10,7 +10,7 @@
 			"imageSet" : "test", 
 			"dataName" : "voc_2007",
 			"dataPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/VOC2007",
-			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
+			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.json",
 			"pixelMeans" : [102.9801, 115.9465, 122.7717]
 		},
 
@@ -408,7 +408,7 @@
 			"id" : 350,
 			"input" : ["rois", "im_info", "cls_prob", "bbox_pred"],
 			"output" : ["detection_out"],
-			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
+			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.json",
 			"confThresh" : 0.5,
 			"nmsThresh" : 0.1,
 			"savePath" : "$(LAONSILL_HOME)/output_images/frcnn"

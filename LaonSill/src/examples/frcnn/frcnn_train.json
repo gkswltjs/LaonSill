@@ -10,7 +10,7 @@
 			"imageSet" : "trainval", 
 			"dataName" : "voc_2007",
 			"dataPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/VOC2007",
-			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
+			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.json",
 			"pixelMeans" : [102.9801, 115.9465, 122.7717]
 		},
 

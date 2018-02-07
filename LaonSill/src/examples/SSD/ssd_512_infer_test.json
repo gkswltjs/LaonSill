@@ -1648,7 +1648,7 @@
 			"saveOutputParam.outputDirectory" : "$(LAONSILL_HOME)/results/ssd/results_512",
 			"saveOutputParam.outputNamePrefix" : "comp4_det_test_",
 			"saveOutputParam.outputFormat" : "VOC",
-			"saveOutputParam.labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.prototxt",
+			"saveOutputParam.labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.json",
 			"saveOutputParam.nameSizeFile" : "$(LAONSILL_HOME)/data/VOC0712/test_name_size.txt",
 			"saveOutputParam.numTestImage" : 4952,
 			"codeType" : "CENTER_SIZE",

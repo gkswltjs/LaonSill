@@ -505,7 +505,7 @@
 			"id" : 370,
 			"input" : ["rois", "im_info", "cls_prob", "bbox_pred", "gt_boxes"],
 			"output" : ["detection_out", "label"],
-			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.prototxt",
+			"labelMapPath" : "$(LAONSILL_HOME)/data/VOCdevkit2007/labelmap_voc.json",
 			"confThresh" : 0.5,
 			"nmsThresh" : 0.1,
 			"savePath" : "$(LAONSILL_HOME)/output_images/frcnn",

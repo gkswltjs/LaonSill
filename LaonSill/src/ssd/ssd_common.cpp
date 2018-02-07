@@ -1,4 +1,5 @@
 #include <fstream>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include "ssd_common.h"
 #include "SysLog.h"
@@ -11,7 +12,7 @@ using namespace std;
 template <typename Dtype>
 LabelMap<Dtype>::LabelMap(const string& labelMapPath)
 : LabelMap() {
-	this->labelMapPath = labelMapPath;
+    setLabelMapPath(labelMapPath);
 }
 
 template <typename Dtype>
@@ -49,6 +50,8 @@ LabelMap<Dtype>::LabelMap() {
 template <typename Dtype>
 void LabelMap<Dtype>::setLabelMapPath(const string& labelMapPath) {
 	this->labelMapPath = labelMapPath;
+	SASSERT(boost::algorithm::ends_with(labelMapPath, ".json"),
+			"labelMapPath should be end with \".json\".");
 }
 
 template <typename Dtype>
