@@ -2,15 +2,27 @@
 	"layers" :
 	[
 		{
-			"name" : "data",
-			"layer" : "AnnotationData",
-			"id" : 0,
-			"output" : ["data"],
-			"imageHeight" : 416,
-			"imageWidth" : 416,
-			"mean" : [104.0, 117.0, 123.0],
-			"live" : true
-		},
+	        "name" : "data",
+	        "layer" : "YOLOInput",
+	        "id" : 0,
+	        "output" : ["data", "label"],
+			"dataTransformParam.mean" : [104.0, 117.0, 123.0],
+
+			"resizeParam.prob" : 1.0,
+			"resizeParam.resizeMode" : "WARP",
+			"resizeParam.height" : 416, 
+			"resizeParam.width" : 416,
+			"resizeParam.interpMode0" : "LINEAR",
+			"resizeParam.interpMode1" : "AREA",
+			"resizeParam.interpMode2" : "NEAREST",
+			"resizeParam.interpMode3" : "CUBIC",
+			"resizeParam.interpMode4" : "LANCZOS4",
+
+			"source" : "$(LAONSILL_HOME)/data/sdf/lotte_multi/",
+
+			"labelMapFile" : "$(LAONSILL_HOME)/data/sdf/lotte_multi/labelmap_snack_obj.json",
+			"annoType" : "BBOX"
+	    },
 
 		{
 			"name" : "conv1",
@@ -30,14 +42,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv1",
             "layer" : "BatchNorm2",
             "id" : 11,
-            "useGlobalStats" : true,
             "input" : ["conv1"],
             "output" : ["bn/conv1"]
         },
@@ -83,14 +94,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv2",
             "layer" : "BatchNorm2",
             "id" : 31,
-            "useGlobalStats" : true,
             "input" : ["conv2"],
             "output" : ["bn/conv2"]
         },
@@ -136,14 +146,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv3",
             "layer" : "BatchNorm2",
             "id" : 51,
-            "useGlobalStats" : true,
             "input" : ["conv3"],
             "output" : ["bn/conv3"]
         },
@@ -176,14 +185,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv4",
             "layer" : "BatchNorm2",
             "id" : 61,
-            "useGlobalStats" : true,
             "input" : ["conv4"],
             "output" : ["bn/conv4"]
         },
@@ -216,14 +224,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv5",
             "layer" : "BatchNorm2",
             "id" : 71,
-            "useGlobalStats" : true,
             "input" : ["conv5"],
             "output" : ["bn/conv5"]
         },
@@ -269,14 +276,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv6",
             "layer" : "BatchNorm2",
             "id" : 91,
-            "useGlobalStats" : true,
             "input" : ["conv6"],
             "output" : ["bn/conv6"]
         },
@@ -309,14 +315,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv7",
             "layer" : "BatchNorm2",
             "id" : 101,
-            "useGlobalStats" : true,
             "input" : ["conv7"],
             "output" : ["bn/conv7"]
         },
@@ -349,14 +354,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv8",
             "layer" : "BatchNorm2",
             "id" : 111,
-            "useGlobalStats" : true,
             "input" : ["conv8"],
             "output" : ["bn/conv8"]
         },
@@ -402,14 +406,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv9",
             "layer" : "BatchNorm2",
             "id" : 131,
-            "useGlobalStats" : true,
             "input" : ["conv9"],
             "output" : ["bn/conv9"]
         },
@@ -442,14 +445,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv10",
             "layer" : "BatchNorm2",
             "id" : 141,
-            "useGlobalStats" : true,
             "input" : ["conv10"],
             "output" : ["bn/conv10"]
         },
@@ -482,14 +484,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv11",
             "layer" : "BatchNorm2",
             "id" : 151,
-            "useGlobalStats" : true,
             "input" : ["conv11"],
             "output" : ["bn/conv11"]
         },
@@ -522,14 +523,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv12",
             "layer" : "BatchNorm2",
             "id" : 161,
-            "useGlobalStats" : true,
             "input" : ["conv12"],
             "output" : ["bn/conv12"]
         },
@@ -562,14 +562,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv13",
             "layer" : "BatchNorm2",
             "id" : 171,
-            "useGlobalStats" : true,
             "input" : ["conv13"],
             "output" : ["bn/conv13"]
         },
@@ -615,14 +614,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv14",
             "layer" : "BatchNorm2",
             "id" : 191,
-            "useGlobalStats" : true,
             "input" : ["conv14"],
             "output" : ["bn/conv14"]
         },
@@ -655,14 +653,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv15",
             "layer" : "BatchNorm2",
             "id" : 201,
-            "useGlobalStats" : true,
             "input" : ["conv15"],
             "output" : ["bn/conv15"]
         },
@@ -695,14 +692,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv16",
             "layer" : "BatchNorm2",
             "id" : 211,
-            "useGlobalStats" : true,
             "input" : ["conv16"],
             "output" : ["bn/conv16"]
         },
@@ -735,14 +731,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv17",
             "layer" : "BatchNorm2",
             "id" : 221,
-            "useGlobalStats" : true,
             "input" : ["conv17"],
             "output" : ["bn/conv17"]
         },
@@ -775,14 +770,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv18",
             "layer" : "BatchNorm2",
             "id" : 231,
-            "useGlobalStats" : true,
             "input" : ["conv18"],
             "output" : ["bn/conv18"]
         },
@@ -815,14 +809,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv19d",
             "layer" : "BatchNorm2",
             "id" : 241,
-            "useGlobalStats" : true,
             "input" : ["conv19d"],
             "output" : ["bn/conv19d"]
         },
@@ -855,14 +848,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
             "name" : "bn/conv20d",
             "layer" : "BatchNorm2",
             "id" : 251,
-            "useGlobalStats" : true,
             "input" : ["conv20d"],
             "output" : ["bn/conv20d"]
         },
@@ -895,14 +887,13 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 	},
 
         {
             "name" : "bn/conv21d",
             "layer" : "BatchNorm2",
             "id" : 261,
-            "useGlobalStats" : true,
             "input" : ["conv21d"],
             "output" : ["bn/conv21d"]
         },
@@ -952,7 +943,7 @@
 			"biasUpdateParam.decay_mult" : 0.0,
 			"weightFiller.type" : "Xavier",
 			"biasFiller.type" : "Constant",
-			"biasFiller.value" : 0.2
+			"biasFiller.value" : 0.0
 		},
 
         {
@@ -982,7 +973,7 @@
 			"filterDim.rows" : 1,
 			"filterDim.cols" : 1,
 			"filterDim.channels" : 1024,
-			"filterDim.filters" : 125,
+			"filterDim.filters" : 105,
 			"filterDim.pad" : 0,
 			"filterDim.stride" : 1,
 			"weightUpdateParam.lr_mult" : 1.0,
@@ -1001,26 +992,63 @@
             "input" : ["conv23d"],
             "output" : ["region"],
             "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52],
-            "numClasses" : 21
+            "numClasses" : 17
         },
 
         {
-            "name" : "result",
-            "layer" : "YOLOOutput",
+            "name" : "loss",
+            "layer" : "YOLOLoss",
             "id" : 290,
-            "input" : ["region"],
-            "output" : ["result"],
-            "numClasses" : 21
-        }
+            "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52],
+            "input" : ["region", "label"],
+            "output" : ["loss"],
+            "numClasses" : 17
+        },
+
+        {
+            "name" : "yolo_det_out",
+            "layer" : "YOLODetectionOutput",
+            "id" : 295,
+            "input" : ["region", "label"],
+            "output" : ["yolo_det", "yolo_gt"],
+            "propDown" : [false, false],
+            "scoreThres" : 0.05,
+            "numClasses" : 17
+        },
+
+		{
+			"name" : "mAP",
+			"layer" : "DetectionEvaluate",
+			"id" : 300,
+			"input" : ["yolo_det", "yolo_gt"],
+			"output" : ["mAP"],
+			"backgroundLabelId" : 0,
+			"overlapThreshold" : 0.5,
+			"evaluateDifficultGt" : true,
+			"apVersion" : "11point",
+			"numClasses" : 17
+		}
 	],
 
 	"configs" :
 	{
-		"batchSize" : 1,
-		"epochs" : 1, 
-        "status" : "Test",
-        "loadPath" : "$(LAONSILL_HOME)/param/YOLO_iter_180000.param",
-		"inputLayer" : "data",
-		"outputLayer" : "result"
+		"batchSize" : 8,
+		"epochs" : 160, 
+		"lossLayer" : ["loss"],
+        "measureLayer" : ["loss"],
+		"gamma" : 0.1,
+		"testInterval" : 100,
+		"saveInterval" : 1000,
+		"savePathPrefix" : "", 
+		"baseLearningRate" : 0.001,
+		"stepSize" : 50000,
+        "stepValue" : [1200, 300000, 1500000],
+        "stepScale" : [0.1, 1.0, 0.1, 0.01],
+		"weightDecay" : 0.0005,
+		"momentum" : 0.9,
+		"lrPolicy" : "Multistep",
+		"optimizer" : "Momentum",
+        "keepSaveBestModel" : false,
+        "loadPath" : "$(LAONSILL_HOME)/param/darknet_pretrain.param"
 	}
 }

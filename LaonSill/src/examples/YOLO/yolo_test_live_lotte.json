@@ -982,7 +982,7 @@
 			"filterDim.rows" : 1,
 			"filterDim.cols" : 1,
 			"filterDim.channels" : 1024,
-			"filterDim.filters" : 125,
+			"filterDim.filters" : 105,
 			"filterDim.pad" : 0,
 			"filterDim.stride" : 1,
 			"weightUpdateParam.lr_mult" : 1.0,
@@ -1001,7 +1001,7 @@
             "input" : ["conv23d"],
             "output" : ["region"],
             "anchors" : [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52],
-            "numClasses" : 21
+            "numClasses" : 17
         },
 
         {
@@ -1010,7 +1010,7 @@
             "id" : 290,
             "input" : ["region"],
             "output" : ["result"],
-            "numClasses" : 21
+            "numClasses" : 17
         }
 	],
 
@@ -1019,7 +1019,7 @@
 		"batchSize" : 1,
 		"epochs" : 1, 
         "status" : "Test",
-        "loadPath" : "$(LAONSILL_HOME)/param/YOLO_iter_180000.param",
+        "loadPath" : "$(LAONSILL_HOME)/param/lotte_test.param",
 		"inputLayer" : "data",
 		"outputLayer" : "result"
 	}

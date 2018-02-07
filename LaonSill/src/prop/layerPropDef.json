@@ -496,6 +496,8 @@
     "PROPDOWN" : [],
     "VARS" :
         [
+            ["anchors", "std::vector<float>", ""],
+            ["numClasses", "int", "21"],
             ["noobj", "float", "1.0"],
             ["coord", "float", "1.0"],
             ["obj", "float", "5.0"],
@@ -513,7 +515,8 @@
     "PROPDOWN" : [],
     "VARS" :
         [
-            ["softmax", "bool", "false"],
+            ["numClasses", "int", "21"],
+            ["softmax", "bool", "true"],
             ["anchors", "std::vector<float>", ""]
         ],
     "KEYVARS" : []
@@ -528,6 +531,7 @@
     "PROPDOWN" : [],
     "VARS" : 
         [
+            ["numClasses", "int", "21"],
             ["scoreThres", "float", "0.3"] 
         ],
     "KEYVARS" : []
@@ -541,6 +545,20 @@
     "LEARN" : 0,
     "PROPDOWN" : [],
     "VARS" : [],
+    "KEYVARS" : []
+},
+
+"YOLOOutput" :
+{
+    "DESC" : "YOLO output layer",
+    "PARENT" : "Base",
+    "LEVEL" : 1,
+    "LEARN" : 0,
+    "PROPDOWN" : [],
+    "VARS" : 
+        [
+            ["numClasses", "int", "21"]
+        ],
     "KEYVARS" : []
 },
 
