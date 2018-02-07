@@ -59,13 +59,13 @@ __global__ void YoloBackward(const Dtype* input, const Dtype* input2,
     int labelClassInt = (int)(labelClass + EPSILON);
 
     if (labelClassInt == 0) {
-        for (int i = 0; i < YOLO_GRID_ELEM_COUNT; i++) {
-            grad[idx * YOLO_GRID_ELEM_COUNT + i] = 0.0;
+        for (int i = 0; i < gridElemCount; i++) {
+            grad[idx * gridElemCount + i] = 0.0;
         }
 
         for (int j = 0; j < YOLO_ANCHOR_BOX_COUNT; j++) {
             int confidenceIndex = 
-                idx * YOLO_GRID_ELEM_COUNT + j * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
+                idx * gridElemCount + j * elemPerAnchorBox + 4;
             grad[confidenceIndex] = noobjVal * (2.0) * input[confidenceIndex];
         }
 
@@ -79,7 +79,7 @@ __global__ void YoloBackward(const Dtype* input, const Dtype* input2,
 
     // backward boxes & classes
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
-        int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
+        int boxBaseIndex = idx * gridElemCount + i * elemPerAnchorBox;
 
         grad[boxBaseIndex + 0] = coordVal * (2.0) * (input[boxBaseIndex + 0] - x);
         grad[boxBaseIndex + 1] = coordVal * (2.0) * (input[boxBaseIndex + 1] - y);
@@ -89,7 +89,7 @@ __global__ void YoloBackward(const Dtype* input, const Dtype* input2,
                     / sqrtf(input[boxBaseIndex + 3]);
         grad[boxBaseIndex + 4] = objVal * (2.0) * (input[boxBaseIndex + 4] - 1.0);
 
-        for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+        for (int j = 0; j < classNum; j++) {
             if (j == labelClassInt - 1) {
                 grad[boxBaseIndex + 5 + j] =
                     classVal * (2.0) * (input[boxBaseIndex + 5 + j] - 1.0);
@@ -106,7 +106,7 @@ __global__ void YoloBackward(const Dtype* input, const Dtype* input2,
 // 소스가 너무 길다.. 정리해야 할꺼 같다.. 그런데 지금하기는 귀찮다.. ㅜㅜ
 template <typename Dtype>
 __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size, 
-    Dtype noobjVal, Dtype coordVal, Dtype objVal, Dtype classVal, Dtype* output, 
+    Dtype noobjVal, Dtype coordVal, Dtype objVal, Dtype classVal, int classNum, Dtype* output, 
     Dtype* inputGrad) {
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -116,19 +116,21 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
     Dtype labelClass = input2[idx * YOLOINPUT_ELEMCOUNT_PER_GRID + 6];  // 첫번째 label
 
     int labelClassInt = (int)(labelClass + EPSILON);
+    int elemPerAnchorBox = classNum + 4;
+    int gridElemCount = YOLO_ANCHOR_BOX_COUNT * elemPerAnchorBox;
 
     output[idx] = 0.0;
 
     if (labelClassInt == 0) {
         for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
             int confidenceIndex = 
-                idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX + 4;
-            int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * 
-                YOLO_ELEM_COUNT_PER_ANCHORBOX;
+                idx * gridElemCount + i * elemPerAnchorBox + 4;
+            int boxBaseIndex = idx * gridElemCount + i * 
+                elemPerAnchorBox;
             Dtype c1 = input[confidenceIndex];
             output[idx] = output[idx] + noobjVal * (c1 - 0.0) * (c1 - 0.0);
 
-            for (int j = 0 ; j < YOLO_ELEM_COUNT_PER_ANCHORBOX; j++) {
+            for (int j = 0 ; j < elemPerAnchorBox; j++) {
                 inputGrad[boxBaseIndex + j] = 0.0;
             }
 
@@ -161,7 +163,7 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
         Dtype box_dist[YOLO_ANCHOR_BOX_COUNT];
 
         for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
-            int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
+            int boxBaseIndex = idx * gridElemCount + i * elemPerAnchorBox;
 
             Dtype x1 = input[boxBaseIndex + 0];
             Dtype y1 = input[boxBaseIndex + 1];
@@ -222,7 +224,7 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
             if (bestBoxIndex != i)
                 continue;
 
-            int boxBaseIndex = idx * YOLO_GRID_ELEM_COUNT + i * YOLO_ELEM_COUNT_PER_ANCHORBOX;
+            int boxBaseIndex = idx * gridElemCount + i * elemPerAnchorBox;
             Dtype x1 = input[boxBaseIndex + 0];
             Dtype y1 = input[boxBaseIndex + 1];
             Dtype w1 = input[boxBaseIndex + 2];
@@ -235,7 +237,7 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
             inputGrad[boxBaseIndex + 3] = coordVal * (sqrtf(h1) - sqrt(h)) / sqrtf(h1);
             inputGrad[boxBaseIndex + 4] = objVal * (c1 - reward) * 2.0;
 
-            for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+            for (int j = 0; j < classNum - 1; j++) {
                 if (j == labelClassInt - 1) {
                     inputGrad[boxBaseIndex + 5 + j] = 
                         classVal * (input[boxBaseIndex + 5 + j] - 1.0) * 2.0;
@@ -256,7 +258,7 @@ __global__ void YoloForward(const Dtype* input, const Dtype* input2, int size,
 
             output[idx] = output[idx] + objVal * (c1 - reward) * (c1 - reward);
 
-            for (int j = 0; j < YOLO_CLASS_COUNT; j++) {
+            for (int j = 0; j < classNum - 1; j++) {
                 if (j == labelClassInt - 1) {
                     output[idx] = output[idx] + classVal * 
                         (input[boxBaseIndex + 5 + j] - 1.0) * 
@@ -325,7 +327,8 @@ void YOLOLossLayer<Dtype>::feedforward() {
     YoloForward<Dtype><<<SOOOA_GET_BLOCKS(size), SOOOA_CUDA_NUM_THREADS>>>(
         inputData, inputData2, size, (Dtype)SLPROP(YOLOLoss, noobj),
         (Dtype)SLPROP(YOLOLoss, coord), (Dtype)SLPROP(YOLOLoss, obj), 
-        (Dtype)SLPROP(YOLOLoss, class), outputData, inputGrad);
+        (Dtype)SLPROP(YOLOLoss, class), (int)SLPROP(YOLOLoss, numClasses),
+        outputData, inputGrad);
 }
 
 template <typename Dtype>

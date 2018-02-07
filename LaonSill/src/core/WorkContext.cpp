@@ -29,6 +29,7 @@ void WorkContext::getNetworkProgress(string networkID, int& curIterCount,
             PhysicalPlan::planGlobalInfoMap.end()) {
         curIterCount = -1;
         totalIterCount = -1;
+        return;
     }
 
     PlanInfo_t *planInfo = PhysicalPlan::planGlobalInfoMap[networkID];
