@@ -464,7 +464,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         planInfoLock.unlock();
         planLock.unlock();
 
-        if (SNPROP(saveInterval != 0))
+        if (SNPROP(saveInterval) != 0)
             PhysicalPlan::saveNetwork(false);
             
         logLoss();
