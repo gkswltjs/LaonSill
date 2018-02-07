@@ -196,6 +196,7 @@ void denormalizeTest(int argc, char** argv);
 void denormalize(const std::string& oldParamPath, const std::string& newParamPath);
 
 void convertMnistDataTest(int argc, char** argv);
+void convertMnistDataTemp(ConvertMnistDataParam& param);
 void convertMnistData(ConvertMnistDataParam& param);
 //void convertMnistData(const std::string& imageFilePath, const std::string& labelFilePath,
 //		const std::string& outFilePath);

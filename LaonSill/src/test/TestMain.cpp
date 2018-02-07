@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
 	//SDFHeader header = SDF::retrieveSDFHeader(LAONSILL_HOME + "/data/sdf/version_test_imageset");
 	//header.print();
 
-	//plainTest(argc, argv);
+	plainTest(argc, argv);
 	//layerTest(argc, argv);
 	//networkTest(argc, argv);
 	//saveNetwork();
@@ -207,8 +207,8 @@ void plainTest(int argc, char** argv) {
 	//annoDataReaderTest(argc, argv);
 	//randTest(argc, argv);
 	//signalTest();
-	//convertMnistDataTest(argc, argv);
-	convertImageSetTest();
+	convertMnistDataTest();
+	//convertImageSetTest();
 	//convertAnnoSetTest(argc, argv);
 	//convertVOC07SetTest();
 }
@@ -956,7 +956,6 @@ void convertImageSetTest() {
 
 void convertMnistDataTest() {
 #if 1
-
 	MnistDataSet trainDataSet;
 	trainDataSet.name = "train";
 	trainDataSet.imageFilePath = "/home/jkim/Dev/git/caffe/data/mnist/train-images-idx3-ubyte";
@@ -972,12 +971,15 @@ void convertMnistDataTest() {
 	param.addDataSet(testDataSet);
 	param.outFilePath = "/home/jkim/imageset/lmdb/_mnist_train_sdf/";
 	param.labelMapFilePath = "/home/jkim/Dev/git/caffe_ssd/data/VOC0712/labelmap_mnist.json";
+	//param.outFilePath = "/home/jkim/Dev/LAONSILL_HOME/data/custum_sdf/mnist_test_sdf_8/";
+	//param.labelMapFilePath = "/home/jkim/Dev/LAONSILL_HOME/labelmap/labelmap_mnist_8.json";
 
 	if (boost::filesystem::exists(param.outFilePath)) {
 		boost::filesystem::remove_all((param.outFilePath));
 	}
 
 	convertMnistData(param);
+	//convertMnistDataTemp(param);
 
 
 #else

@@ -2,6 +2,7 @@
 
 #include "ssd_common.h"
 #include "SysLog.h"
+#include "jsoncpp/json/json.h"
 
 
 using namespace std;
@@ -52,12 +53,47 @@ void LabelMap<Dtype>::setLabelMapPath(const string& labelMapPath) {
 
 template <typename Dtype>
 void LabelMap<Dtype>::build() {
-	ifstream ifs(this->labelMapPath.c_str(), ios::in);
-	if (!ifs.is_open()) {
-		cout << "no such file: " << this->labelMapPath << endl;
-		exit(1);
+	//ifstream ifs(this->labelMapPath.c_str(), ios::in);
+	//SASSERT(ifs.is_open(), "No such file: %s", this->labelMapPath.c_str());
+
+	filebuf fb;
+	if (fb.open(this->labelMapPath.c_str(), ios::in) == NULL) {
+		SASSERT(false, "cannot open label map file. file path=%s",
+			this->labelMapPath.c_str());
+	}
+	istream is(&fb);
+
+	Json::Reader reader;
+	Json::Value root;
+	bool parse = reader.parse(is, root);
+
+	if (!parse) {
+		SASSERT(false, "invalid json-format file. file path=%s. error message=%s",
+			this->labelMapPath.c_str(), reader.getFormattedErrorMessages().c_str());
 	}
 
+	const int numLabelItem = root.size();
+	this->labelItemList.resize(numLabelItem);
+	for (int i = 0; i < numLabelItem; i++) {
+		Json::Value& item = root[i];
+		SASSERT0(item.isMember("name"));
+		SASSERT0(item.isMember("label"));
+		SASSERT0(item.isMember("display_name"));
+
+		this->labelItemList[i].name = item["name"].asString();
+		this->labelItemList[i].label = item["label"].asInt();
+		this->labelItemList[i].displayName = item["display_name"].asString();
+
+		if (item.isMember("color")) {
+			// color should be 3 value array (r, g, b)
+			SASSERT0(item["color"].size() == 3);
+			this->labelItemList[i].color.push_back(item["color"][0].asInt());
+			this->labelItemList[i].color.push_back(item["color"][1].asInt());
+			this->labelItemList[i].color.push_back(item["color"][2].asInt());
+		}
+	}
+
+	/*
 	string part1;
 	string part2;
 	LabelItem labelItem;
@@ -90,6 +126,7 @@ void LabelMap<Dtype>::build() {
 		}
 		line++;
 	}
+	*/
 
 	for (int i = 0; i < this->labelItemList.size(); i++) {
 		LabelItem& labelItem = this->labelItemList[i];

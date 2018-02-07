@@ -407,6 +407,160 @@ void convertMnistDataTest(int argc, char** argv) {
 }
 
 
+// VERY TEMPORAL
+void convertMnistDataTemp(ConvertMnistDataParam& param) {
+	param.validityCheck();
+	if (param.resultCode < 0) {
+		return;
+	}
+
+	int numDataSets = param.dataSetList.size();
+
+	SDFHeader header;
+	header.init(numDataSets);
+	header.type = "DATUM";
+	header.uniform = 1;
+	header.numClasses = 8;
+
+	if (!param.labelMapFilePath.empty()) {
+		parse_label_map(param.labelMapFilePath, header.labelItemList);
+	}
+
+
+	SDF sdf(param.outFilePath, Mode::NEW);
+	sdf.open();
+	sdf.initHeader(header);
+	int imgCount[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+	for (int dataSetIdx = 0; dataSetIdx < param.dataSetList.size(); dataSetIdx++) {
+		const MnistDataSet& dataSet = param.dataSetList[dataSetIdx];
+		header.names[dataSetIdx] = dataSet.name;
+		header.setStartPos[dataSetIdx] = sdf.getCurrentPos();
+		const string& imageFilePath = dataSet.imageFilePath;
+		const string& labelFilePath = dataSet.labelFilePath;
+
+		 // Open files
+		ifstream image_file(imageFilePath, ios::in | ios::binary);
+		ifstream label_file(labelFilePath, ios::in | ios::binary);
+		if (!image_file) {
+			cout << "Unable to open file " << imageFilePath << endl;
+			SASSERT0(false);
+		}
+		if (!label_file) {
+			cout << "Unable to open file " << labelFilePath << endl;
+			SASSERT0(false);
+		}
+		// Read the magic and the meta data
+		uint32_t magic;
+		uint32_t num_items;
+		uint32_t num_labels;
+		uint32_t rows;
+		uint32_t cols;
+
+		image_file.read(reinterpret_cast<char*>(&magic), 4);
+		magic = swap_endian(magic);
+		if (magic != 2051) {
+			cout << "Incorrect image file magic." << endl;
+			SASSERT0(false);
+		}
+		label_file.read(reinterpret_cast<char*>(&magic), 4);
+		magic = swap_endian(magic);
+		if (magic != 2049) {
+			cout << "Incorrect label file magic." << endl;
+			SASSERT0(false);
+		}
+		image_file.read(reinterpret_cast<char*>(&num_items), 4);
+		num_items = swap_endian(num_items);
+		label_file.read(reinterpret_cast<char*>(&num_labels), 4);
+		num_labels = swap_endian(num_labels);
+		SASSERT0(num_items == num_labels);
+		image_file.read(reinterpret_cast<char*>(&rows), 4);
+		rows = swap_endian(rows);
+		image_file.read(reinterpret_cast<char*>(&cols), 4);
+		cols = swap_endian(cols);
+
+
+
+		// Storing to db
+		char label;
+		char* pixels = NULL;
+		SMALLOC(pixels, char, rows * cols * sizeof(char));
+		SASSUME0(pixels != NULL);
+		int count = 0;
+		string value;
+
+		Datum datum;
+		datum.channels = 1;
+		datum.height = rows;
+		datum.width = cols;
+		header.channels = 1;
+		header.minHeight = rows;
+		header.minWidth = cols;
+		header.maxHeight = rows;
+		header.maxWidth = cols;
+
+		cout << "A total of " << num_items << " items." << endl;
+		cout << "Rows: " << rows << " Cols: " << cols << endl;
+
+		//sdf.put("num_data", std::to_string(num_items));
+		//sdf.commit();
+		//header.setSizes[dataSetIdx] = num_items;
+
+		//string buffer(rows * cols, ' ');
+		for (int item_id = 0; item_id < num_items; ++item_id) {
+			image_file.read(pixels, rows * cols);
+			label_file.read(&label, 1);
+
+			imgCount[label]++;
+			if (label >= header.numClasses) {
+				continue;
+			}
+
+			//for (int i = 0; i < rows*cols; i++) {
+			//   buffer[i] = pixels[i];
+			//}
+			//datum.data = buffer;
+			datum.data.assign(reinterpret_cast<const char*>(pixels), rows * cols);
+			datum.label = label;
+			value = serializeToString(&datum);
+
+			sdf.put(value);
+
+			if (++count % 1000 == 0) {
+				sdf.commit();
+				cout << "Processed " << count << " files." << endl;
+			}
+		}
+		// write the last batch
+
+		if (count % 1000 != 0) {
+			sdf.commit();
+			cout << "Processed " << count << " files." << endl;
+		}
+
+		header.setSizes[dataSetIdx] = count;
+		SDELETE(pixels);
+	}
+
+	sdf.updateHeader(header);
+	sdf.close();
+
+	cout << "number of images for each number" << endl;
+	int total = 0;
+	for (int i = 0; i < 10; i++) {
+		total += imgCount[i];
+		cout << i << ": " << imgCount[i] << ", " << total << endl;
+
+	}
+
+	for (int i = 0; i < header.numSets; i++) {
+		if (header.setSizes[i] == 0) {
+			param.resultCode = -1;
+			param.resultMsg = "one of data set size is 0 ... ";
+		}
+	}
+}
+
 
 
 void convertMnistData(ConvertMnistDataParam& param) {
