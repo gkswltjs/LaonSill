@@ -20,7 +20,8 @@
             ["learnable", "bool", "false"],
             ["innerLayerIDs", "std::vector<int>", ""],
             ["defaultPropDown", "std::vector<bool>", ""],
-            ["updateGrad", "bool", "true"]
+            ["updateGrad", "bool", "true"],
+            ["activation", "LayerActivation", "LayerActivation::AllActivation"]
         ],
 		"KEYVARS" : ["id", "name", "input", "output"]
 },

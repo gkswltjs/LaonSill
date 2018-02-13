@@ -100,8 +100,12 @@
     {
         "NAME" : "NetworkStatus",
         "ENUM" : ["Train", "Test"]
-    }
+    },
 
+    {
+        "NAME" : "LayerActivation",
+        "ENUM" : ["AllActivation", "TrainActivation", "TestActivation"]
+    }
 ]
 
 }

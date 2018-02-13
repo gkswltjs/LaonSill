@@ -539,17 +539,28 @@ void PhysicalPlan::runLayer(int planID, bool inference) {
     SASSUME0(this->planMap.find(planID) != this->planMap.end());
     int layerType = this->planMap[planID].layerType;
 
+    // (1.5) activation 속성을 바탕으로 runLayer 여부를 결정한다.
+    bool runLayer = true;
+    if (SLPROP_BASE(activation) != LayerActivation::AllActivation) {
+        if (inference && SLPROP_BASE(activation) == LayerActivation::TrainActivation)
+            runLayer = false;
+
+        if (!inference && SLPROP_BASE(activation) == LayerActivation::TestActivation)
+            runLayer = false;
+    }
+
     // (2) run layer
     bool doMarkFinish = true;
-    if (!inference || (planType == PLANTYPE_FORWARD)) {
+    if (runLayer && (!inference || (planType == PLANTYPE_FORWARD))) {
         PlanInfo* planInfo = WorkContext::curPlanInfo;
+
         STDOUT_COND_BLOCK(SPARAM(PRINT_RUNLAYER_LOG), 
         cout << "Epoch : " << planInfo->curEpochIndex << ", minibatch : " << 
             planInfo->curMiniBatchIndex << " run layer (planID=" << planID << ")" << endl);
 
-
         SASSUME0(this->instanceMap.find(layerID) != this->instanceMap.end());
         void* instancePtr = this->instanceMap[layerID];
+
 
         SASSUME0(planType < PLANTYPE_MAX);
         if (planType == PLANTYPE_FORWARD) {
