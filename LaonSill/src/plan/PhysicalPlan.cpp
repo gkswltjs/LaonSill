@@ -100,11 +100,37 @@ void* PhysicalPlan::allocTensorMem(int layerType, void* instancePtr, string tens
     return tensorPtr;
 }
 
-vector<int> PhysicalPlan::getOrderedLayerIDs(string networkID) {
+vector<int> PhysicalPlan::getOrderedLayerIDs(string networkID, bool buildTrainActivation) {
     map<string, int> doneTensorMap; 
     map<int, int> doneLayerIDMap;
 
     vector<int> layerIDs;
+
+    int targetLayerCount = 0;
+    for (map<int, PlanAlloc>::iterator iter = this->allocMap.begin();
+            iter !=this->allocMap.end(); iter++) {
+        
+        int layerID = iter->first;
+        WorkContext::updateLayer(networkID, layerID);
+
+        if (buildTrainActivation && 
+            (SLPROP_BASE(activation) == LayerActivation::TestActivation))
+            continue;
+
+        if (!buildTrainActivation && 
+            (SLPROP_BASE(activation) == LayerActivation::TrainActivation))
+            continue;
+
+        // split layer는 체크하지 않는다. split layer 자체에는 activation 정보를 담기 어렵다.
+        // 그래서 특정 split layer가 train용인지 test용인지 구분하기 어렵다. 
+        // 게다가 normal layer(split layer가 아닌 레이어)는 그것에 연결된 split layer에 대한
+        // 정보가 채워져야 doneLayerIDMap으로 등록이 될 수 있기 때문에 split layer를 체크하지
+        // 않아도 동작에는 문제가 없다. 
+        if (SLPROP_BASE(id) >= SPARAM(SPLITLAYER_START_LAYERID))
+            continue;
+
+        targetLayerCount++;
+    }
 
     while (true) {
         for (map<int, PlanAlloc>::iterator iter = this->allocMap.begin();
@@ -115,15 +141,40 @@ vector<int> PhysicalPlan::getOrderedLayerIDs(string networkID) {
                 continue;
 
             WorkContext::updateLayer(networkID, layerID);
+
+            if (buildTrainActivation && 
+                (SLPROP_BASE(activation) == LayerActivation::TestActivation))
+                continue;
+
+            if (!buildTrainActivation && 
+                (SLPROP_BASE(activation) == LayerActivation::TrainActivation))
+                continue;
+
             vector<string> inputs = SLPROP_BASE(input);
             vector<string> outputs = SLPROP_BASE(output);
 
             bool needTensor = false;
+
             for (int i = 0; i < inputs.size(); i++) {
                 if (doneTensorMap.find(inputs[i]) == doneTensorMap.end()) {
                     needTensor = true;
                     break;
                 }
+            }
+
+            // input Layer의 경우에 useCompositeModel이 true인 경우에 input layer를 초기화
+            // 하면서 input layer의 inputs 텐서 개수가 0에서 늘어날 수 있다. 본 알고리즘은
+            // input layer의 inputs 텐서 개수가 0으로 가정하고 만들어졌다. 그것을 위해서 이미
+            // 초기화 된 input layer의 경우에는 강제적으로 needTensor를 false로 설정해 준다.
+            if (needTensor && 
+                (this->instanceMap.find(layerID) != this->instanceMap.end())) {
+                // XXX: 현재는 float 데이터 타입만 지원하고 있다... 하지만.. 추후에 generic
+                // type을 지원할 수 있도록 변경해야 한다.
+                Layer<float>* instancePtr = (Layer<float>*)this->instanceMap[layerID];
+
+                InputLayer<float>* inputLayer = dynamic_cast<InputLayer<float>*>(instancePtr);
+                if (inputLayer != NULL)
+                    needTensor = false;
             }
 
             if (needTensor) {
@@ -140,15 +191,23 @@ vector<int> PhysicalPlan::getOrderedLayerIDs(string networkID) {
             layerIDs.push_back(layerID);
         }
 
-        if (layerIDs.size() == this->allocMap.size())
+        // 종료 조건을 체크한다.
+        int doneTargetCount = 0;
+        for (int i = 0; i < layerIDs.size(); i++) {
+            if (layerIDs[i] < SPARAM(SPLITLAYER_START_LAYERID))
+                doneTargetCount++;
+        }
+
+        if (doneTargetCount == targetLayerCount)
             break;
     }
 
     return layerIDs;
 }
 
-void PhysicalPlan::allocateTensorInternal(string networkID, int dopID) {
-    vector<int> orderedIDs = getOrderedLayerIDs(networkID);
+void PhysicalPlan::allocateTensorInternal(string networkID, int dopID,
+        bool buildTrainActivation) {
+    vector<int> orderedIDs = getOrderedLayerIDs(networkID, buildTrainActivation);
 
     for (int orderedLayerIdx = 0; orderedLayerIdx < orderedIDs.size(); orderedLayerIdx++) {
         int layerID = orderedIDs[orderedLayerIdx];
@@ -156,6 +215,15 @@ void PhysicalPlan::allocateTensorInternal(string networkID, int dopID) {
         PlanAlloc planAlloc = this->allocMap[layerID];
 
         WorkContext::updateLayer(networkID, layerID);
+
+        if (buildTrainActivation && 
+                (SLPROP_BASE(activation) == LayerActivation::TestActivation))
+            continue;
+
+        if (!buildTrainActivation &&
+            (SLPROP_BASE(activation) == LayerActivation::TrainActivation))
+            continue;
+
         vector<string> inputs = SLPROP_BASE(input);
         vector<string> outputs = SLPROP_BASE(output);
 
@@ -165,42 +233,48 @@ void PhysicalPlan::allocateTensorInternal(string networkID, int dopID) {
         // ID
 
         // (0) initialize layer instance
-        SASSUME0(this->instanceMap.find(layerID) == this->instanceMap.end());
-        void* instancePtr = LayerFunc::initLayer(layerType);
-        SASSUME0(instancePtr != NULL);
-        this->instanceMap[layerID] = instancePtr;
+        void* instancePtr;
 
-        // (1) allocate input/output tensor
-        for (int i = 0; i < inputs.size(); i++) {
-            TensorAllocKey key;
-            key.tensorAlloc = planAlloc;
-            key.tensorName = inputs[i];
+        if (this->instanceMap.find(layerID) == this->instanceMap.end()) {
+            instancePtr = LayerFunc::initLayer(layerType);
+            SASSUME0(instancePtr != NULL);
+            this->instanceMap[layerID] = instancePtr;
 
-            if (tensorAllocMap.find(key) == tensorAllocMap.end()) {
-                void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
-                    key.tensorName, key.tensorAlloc, true, i);
-                SASSERT0(allocPtr != NULL);
-                tensorAllocMap[key] = allocPtr;
-            } else {
-                void* tensor = tensorAllocMap[key];
-                LayerFunc::setInOutTensor(layerType, instancePtr, tensor, true, i);
+            // (1) allocate input/output tensor
+            for (int i = 0; i < inputs.size(); i++) {
+                TensorAllocKey key;
+                key.tensorAlloc = planAlloc;
+                key.tensorName = inputs[i];
+
+                if (tensorAllocMap.find(key) == tensorAllocMap.end()) {
+                    void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
+                        key.tensorName, key.tensorAlloc, true, i);
+                    SASSERT0(allocPtr != NULL);
+                    tensorAllocMap[key] = allocPtr;
+                } else {
+                    void* tensor = tensorAllocMap[key];
+                    LayerFunc::setInOutTensor(layerType, instancePtr, tensor, true, i);
+                }
             }
-        }
 
-        for (int i = 0; i < outputs.size(); i++) {
-            TensorAllocKey key;
-            key.tensorAlloc = planAlloc;
-            key.tensorName = outputs[i];
+            for (int i = 0; i < outputs.size(); i++) {
+                TensorAllocKey key;
+                key.tensorAlloc = planAlloc;
+                key.tensorName = outputs[i];
 
-            if (tensorAllocMap.find(key) == tensorAllocMap.end()) {
-                void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
-                    key.tensorName, key.tensorAlloc, false, i);
-                SASSERT0(allocPtr != NULL);
-                tensorAllocMap[key] = allocPtr;
-            } else {
-                void* tensor = tensorAllocMap[key];
-                LayerFunc::setInOutTensor(layerType, instancePtr, tensor, false, i);
+                if (tensorAllocMap.find(key) == tensorAllocMap.end()) {
+                    void* allocPtr = PhysicalPlan::allocTensorMem(layerType, instancePtr,
+                        key.tensorName, key.tensorAlloc, false, i);
+                    SASSERT0(allocPtr != NULL);
+                    tensorAllocMap[key] = allocPtr;
+                } else {
+                    void* tensor = tensorAllocMap[key];
+                    LayerFunc::setInOutTensor(layerType, instancePtr, tensor, false, i);
+                }
             }
+
+        } else {
+            instancePtr = this->instanceMap[layerID];
         }
 
         if (WorkContext::curBootMode == DeveloperMode ||
@@ -261,7 +335,15 @@ void PhysicalPlan::allocateTensor(string networkID) {
 
     for (int i = 0; i < curPPs.size(); i++) {
         WorkContext::updatePlan(i, true);
-        curPPs[i]->allocateTensorInternal(networkID, i);
+
+        if (SNPROP(useCompositeModel)) {
+            curPPs[i]->allocateTensorInternal(networkID, i, true);
+            curPPs[i]->allocateTensorInternal(networkID, i, false);
+        } else if (SNPROP(status) == NetworkStatus::Train) {
+            curPPs[i]->allocateTensorInternal(networkID, i, true);
+        } else {
+            curPPs[i]->allocateTensorInternal(networkID, i, false);
+        }
     }
 }
 
@@ -333,8 +415,11 @@ void PhysicalPlan::saveNetwork(bool checkCond) {
 }
 
 void PhysicalPlan::loadNetwork() {
-    if (SNPROP(loadPath) == "")
-        return;
+    if (SNPROP(loadPath) == "") {
+        if ((SNPROP(loadPathForTest) == "") ||
+            (SNPROP(status) == NetworkStatus::Train))
+            return;
+    }
     
     string networkID = WorkContext::curNetworkID;
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
@@ -345,6 +430,9 @@ void PhysicalPlan::loadNetwork() {
 float PhysicalPlan::calcLoss() {
     float avgLoss = 0.0;
 
+    if (SNPROP(status) == NetworkStatus::Test)
+        return 0.0;
+
     if (SNPROP(lossLayer).size() == 0)
         return 0.0;
 
@@ -354,7 +442,6 @@ float PhysicalPlan::calcLoss() {
         Layer<float>* layer = network->findLayer(lossLayerName);
         SASSERT(layer != NULL, "Could not find loss layer: %s", lossLayerName.c_str());
         LossLayer<float>* lossLayer = (LossLayer<float>*)layer;
-
         avgLoss += (float)lossLayer->cost();
     }
 
@@ -363,6 +450,9 @@ float PhysicalPlan::calcLoss() {
 
 void PhysicalPlan::logLoss() {
     if (SNPROP(testInterval) == 0)
+        return;
+
+    if (SNPROP(status) == NetworkStatus::Test)
         return;
 
     for (int i = 0; i < SNPROP(lossLayer).size(); i++) {
@@ -394,7 +484,7 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     //        지금은 귀찮것도 있지만.. 급하게 해야할 일들이 있어서...(먼산..)
     string networkID = WorkContext::curNetworkID;
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
-    if (network->getMeasureInserted()) {
+    if (network->getMeasureInserted() && SNPROP(status) == NetworkStatus::Train) {
         MeasureEntry* measureEntry = MeasureManager::getMeasureEntry(networkID); 
         SASSUME0(measureEntry != NULL);
 
@@ -564,8 +654,8 @@ void PhysicalPlan::runLayer(int planID, bool inference) {
 
         SASSUME0(planType < PLANTYPE_MAX);
         if (planType == PLANTYPE_FORWARD) {
-            LayerFunc::runForward(layerType, instancePtr, 
-                                                 planInfo->curMiniBatchIndex);
+            LayerFunc::runForward(layerType, instancePtr,
+                planInfo->curMiniBatchIndex);
         } else if (planType == PLANTYPE_BACKWARD) {
             LayerFunc::runBackward(layerType, instancePtr);
         } else {

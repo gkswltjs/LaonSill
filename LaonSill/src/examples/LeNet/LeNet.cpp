@@ -21,14 +21,16 @@
 
 using namespace std;
 
-#define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	SPATH("examples/LeNet/lenet_train.json")
+//#define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	SPATH("examples/LeNet/lenet_train.json")
+#define EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH	SPATH("examples/LeNet/lenet_union.json")
 
 template<typename Dtype>
 void LeNet<Dtype>::run() {
     string networkID = PlanParser::loadNetwork(string(EXAMPLE_LENET_TRAIN_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
     network->build(0);
-    network->run(false);
+    //network->run(false);
+    network->run(true);
 
     LogicalPlan::cleanup(networkID);
     PhysicalPlan::removePlan(networkID);

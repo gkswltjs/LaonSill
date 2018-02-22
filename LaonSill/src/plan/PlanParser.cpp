@@ -269,13 +269,30 @@ vector<int64_t> PlanParser::handleInnerLayer(std::string networkID, Json::Value 
 }
 
 void PlanParser::buildNetwork(std::string networkID, Json::Value rootValue) {
+    // (1) get network property
+    _NetworkProp *networkProp = NULL;
+    SNEW(networkProp, _NetworkProp);
+    SASSUME0(networkProp != NULL);
+    Json::Value networkConfDic = rootValue["configs"];
+
+    vector<string> keys = networkConfDic.getMemberNames();
+    for (int i = 0; i < keys.size(); i++) {
+        string key = keys[i];
+        Json::Value val = networkConfDic[key.c_str()];
+
+        setPropValue(val, false, "", key,  (void*)networkProp);
+    }
+    PropMgmt::insertNetworkProp(networkID, networkProp);
+
+    WorkContext::updateNetwork(networkID);
+
+    // (2) fill layer property
     // logical plan을 만들기 위한 변수들
     map<int, PlanBuildDef> planDefMap;  // key : layerID
 
     vector<int> innerLayerIDList;
     vector<int> layerIDList;
 
-    // (1) fill layer property
     Json::Value layerList = rootValue["layers"];
     for (int i = 0; i < layerList.size(); i++) {
         Json::Value layer = layerList[i];
@@ -316,7 +333,28 @@ void PlanParser::buildNetwork(std::string networkID, Json::Value rootValue) {
 
         // new prop를 설정.
         PropMgmt::insertLayerProp(newProp);
-       
+
+        // useCompositeModel이 아닌 경우에 필요한 layer만 build할 수 있도록 한다.
+        if (!SNPROP(useCompositeModel)) {
+            bool doFilter = false;
+
+            _BasePropLayer* basePropLayer = (_BasePropLayer*)(newProp->prop);
+            LayerActivation activation = basePropLayer->_activation_;
+
+            if ((SNPROP(status) == NetworkStatus::Train) &&
+                (activation == LayerActivation::TestActivation)) {
+                doFilter = true;
+            }
+
+            if ((SNPROP(status) == NetworkStatus::Test) &&
+                (activation == LayerActivation::TrainActivation)) {
+                doFilter = true;
+            }
+
+            if (doFilter)
+                continue;
+        }
+
         // plandef 맵에 추가
         SASSERT(planDefMap.find(layerID) == planDefMap.end(),
             "layer ID has been declared redundant. layer ID=%d", layerID);
@@ -349,23 +387,7 @@ void PlanParser::buildNetwork(std::string networkID, Json::Value rootValue) {
         planDefMap[layerID] = newPlanDef;
     }
 
-    // (2) get network property
-    _NetworkProp *networkProp = NULL;
-    SNEW(networkProp, _NetworkProp);
-    SASSUME0(networkProp != NULL);
-    Json::Value networkConfDic = rootValue["configs"];
-
-    vector<string> keys = networkConfDic.getMemberNames();
-    for (int i = 0; i < keys.size(); i++) {
-        string key = keys[i];
-        Json::Value val = networkConfDic[key.c_str()];
-
-        setPropValue(val, false, "", key,  (void*)networkProp);
-    }
-    PropMgmt::insertNetworkProp(networkID, networkProp);
-
-    WorkContext::updateNetwork(networkID);
-
+    // (3) Logical Plan을 build 한다.
     LogicalPlan::build(networkID, planDefMap);
 
     for (int i = 0; i < layerIDList.size(); i++) {

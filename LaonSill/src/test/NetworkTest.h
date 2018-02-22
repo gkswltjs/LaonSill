@@ -55,6 +55,11 @@ public:
 		this->hasNormalInputLayer =
 				(dynamic_cast<DummyInputLayer<Dtype>*>(this->inputLayer.second) != 0);
 		this->hasWeight = !SNPROP(loadPath).empty();
+
+        if ((SNPROP(status) == NetworkStatus::Test) && !SNPROP(loadPathForTest).empty()) {
+            this->hasWeight = true;
+        }
+
 		cout << "hasNormalInputLayer=" << this->hasNormalInputLayer <<
 				", hasWeight=" << this->hasWeight << endl;
 

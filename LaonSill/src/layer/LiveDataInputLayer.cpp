@@ -78,9 +78,6 @@ void LiveDataInputLayer<Dtype>::reshape() {
     this->_inputShape[0][2] = this->height;
     this->_inputShape[0][3] = this->width;
     this->_inputData[0]->reshape(this->_inputShape[0]);
-
-//  int inputImageSize = 3 * SLPROP(LiveDataInput, rows) * SLPROP(LiveDataInput, cols);
-//  this->_inputData[0]->set_device_with_host_data(this->images, 0, inputImageSize);
 }
 
 template <typename Dtype>

@@ -366,11 +366,16 @@ void Network<Dtype>::load(string path) {
 
 template <typename Dtype>
 void Network<Dtype>::load() {
-    load(SNPROP(loadPath));
+    if ((SNPROP(status) == NetworkStatus::Test) &&
+        (SNPROP(loadPathForTest).c_str() != "")) {
+        load(SNPROP(loadPathForTest));
+    } else {
+        load(SNPROP(loadPath));
+    }
 }
 
 template <typename Dtype>
-Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
+Layer<Dtype>* Network<Dtype>::findLayer(const string layerName, LayerActivation activation) {
     WorkContext::updateNetwork(this->networkID);
     WorkContext::updatePlan(WorkContext::curDOPID, true);
     PhysicalPlan* pp = WorkContext::curPhysicalPlan;
@@ -383,6 +388,14 @@ Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
         void* instancePtr = iter->second;
 
         WorkContext::updateLayer(this->networkID, layerID);
+
+        if ((activation == LayerActivation::TrainActivation) && 
+            (SLPROP_BASE(activation) == LayerActivation::TestActivation))
+            continue;
+
+        if ((activation == LayerActivation::TestActivation) && 
+            (SLPROP_BASE(activation) == LayerActivation::TrainActivation))
+            continue;
 
         layer = (Layer<Dtype>*)instancePtr;
 
@@ -398,6 +411,11 @@ Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
         return layer;
     else
         return NULL;
+}
+
+template <typename Dtype>
+Layer<Dtype>* Network<Dtype>::findLayer(const string layerName) {
+    return findLayer(layerName, LayerActivation::AllActivation);
 }
 
 template <typename Dtype>

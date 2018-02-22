@@ -283,7 +283,7 @@ void LogicalPlan::build(string networkID, map<int, PlanBuildDef> planDefMap) {
         if (inputIDs.size() == 0 || outputIDs.size() == 0)
             continue;
 
-        if (inputIDs.size() == outputIDs.size())
+        if (inputIDs.size() >= outputIDs.size())
             continue;
 
         SASSERT(inputIDs.size() < outputIDs.size(), "input ID size is not less than "

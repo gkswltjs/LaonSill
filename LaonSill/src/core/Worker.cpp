@@ -594,9 +594,10 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     
     InputLayer<float>* commonInputLayer;
     Layer<float>* commonOutputLayer;
-    commonInputLayer = (InputLayer<float>*)network->findLayer(SNPROP(inputLayer));
+    commonInputLayer = (InputLayer<float>*)network->findLayer(SNPROP(inputLayer), 
+            LayerActivation::TestActivation);
     SASSUME0(commonInputLayer != NULL);
-    commonOutputLayer = network->findLayer(SNPROP(outputLayer));
+    commonOutputLayer = network->findLayer(SNPROP(outputLayer), LayerActivation::TestActivation);
     SASSUME0(commonOutputLayer != NULL);
 
     WorkContext::updateLayer(networkID, commonInputLayer->layerID);
@@ -673,9 +674,10 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
 
     SASSUME0(baseNetworkType < (int)WORKER_IC_eMAX);
 
-    commonInputLayer = (InputLayer<float>*)network->findLayer(SNPROP(inputLayer));
+    commonInputLayer = (InputLayer<float>*)network->findLayer(SNPROP(inputLayer),
+            LayerActivation::TestActivation);
     SASSUME0(commonInputLayer != NULL); 
-    commonOutputLayer = network->findLayer(SNPROP(outputLayer));
+    commonOutputLayer = network->findLayer(SNPROP(outputLayer), LayerActivation::TestActivation);
     SASSUME0(commonOutputLayer != NULL); 
     WorkContext::updateLayer(networkID, commonInputLayer->layerID);
     commonInputLayer->feedImage(channel, height, width, imageData);
@@ -690,7 +692,7 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
 
     // find argument index that has maximum value and return it
     int maxArgIndex = 0;
-    int maxValue = result[0];
+    float maxValue = result[0];
 
     for (int i = 1; i < count; i++) {
         if (result[i] > maxValue) {

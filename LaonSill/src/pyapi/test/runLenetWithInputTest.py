@@ -20,7 +20,8 @@ ret = handle.getSession()
 
 # (3) 네트워크를 생성한다.
 NETWORK_FILEPATH = os.path.join(os.environ["LAONSILL_SOURCE_PATH"], "examples", "LeNet",
-        "lenet_test_live.json")
+        #"lenet_test_live.json")
+        "lenet_union.json")
 
 print "create network. network filepath : ", NETWORK_FILEPATH
 ret = handle.createNetworkFromFile(NETWORK_FILEPATH)

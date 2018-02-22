@@ -120,6 +120,13 @@ public:
 	Layer<Dtype>* findLayer(const std::string layerName);
 
 	/**
+	 * @details 네트워크 내부의 레이어를 이름으로 찾는다.
+	 * @param name 찾을 레이어의 이름
+	 * @return 찾은 레이어에 대한 포인터
+	 */
+	Layer<Dtype>* findLayer(const std::string layerName, LayerActivation activation);
+
+	/**
 	 * @details 네트워크에서 특정 레이어타입을 가지고 있는 모든 레이어를 반환한다.
 	 * @param layerType 찾을 레이어타입
 	 * @return 레이어포인트 어레이

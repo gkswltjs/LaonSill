@@ -6,7 +6,7 @@
 	        "layer" : "DataInput",
 	        "id" : 0,
 	        "output" : ["data", "label"],
-	        "source" : "$(LAONSILL_HOME)/data/sdf/ilsvrc12_train_1000/",
+	        "source" : "$(LAONSILL_HOME)/data/sdf/ilsvrc12_train_224px/",
 	        "dataTransformParam.mean" : [172.49, 172.94, 179.25]
 	    },
 
@@ -556,6 +556,8 @@
 		"optimizer" : "Momentum",
         "keepSaveBestModel" : true,
         "keepSaveBestModelStartIterNum" : 1000,
-        "keepSaveIntervalModelCount" : 4
+        "keepSaveIntervalModelCount" : 4,
+        "status" : "Train",
+        "useCompositeModel" : true
 	}
 }
