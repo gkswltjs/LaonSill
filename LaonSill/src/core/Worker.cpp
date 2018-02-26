@@ -121,12 +121,53 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
     WorkContext::updatePlan(task->dopID, true);
 
     PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
+    PlanInfo* planInfo = WorkContext::curPlanInfo;
+
+    // (1) 복원해야 할 정보들을 기입하고, needRecovery가 True이면 임시 inference 정보를
+    //    기입한다. 
+    int recoverEpochIdx;
+    int recoverMiniBatchIdx;
+    int recoverEpochCount;
+    int recoverMiniBatchCount;
+    int recoverIterationCount;
+    NetworkStatus recoverNetworkStatus;
+
+    if (task->needRecovery) {
+        SASSUME0(task->inference);
+        recoverEpochIdx = planInfo->curEpochIndex;
+        recoverMiniBatchIdx = planInfo->curMiniBatchIndex;
+        recoverEpochCount = planInfo->epochCount;
+        recoverMiniBatchCount = planInfo->miniBatchCount;
+        recoverIterationCount = SNPROP(iterations);
+        recoverNetworkStatus = SNPROP(status);
+
+        planInfo->curEpochIndex = 0;
+        planInfo->curMiniBatchIndex = 0;
+        planInfo->epochCount = 1;
+        planInfo->miniBatchCount = 1;   // FIXME: 한번 이상의 inference를 하는 경우에는 해당 
+                                        //        값이 벼경이 되어야 할 것으로 보인다. 추후에
+                                        //        수정 필요.
+        SNPROP(iterations) = 0;
+        SNPROP(status) = NetworkStatus::Test;
+    }
+
+    // (2) plan을 실행한다.
     bool canRunPlan = true;
     while (canRunPlan) {
         canRunPlan = pp->runPlan(task->inference);
     }
 
-    bool jobRemain = pp->generatePlan(true);
+    // (3) 복원해야 할 정보가 있으면 복원한다.
+    if (task->needRecovery) {
+        planInfo->curEpochIndex = recoverEpochIdx;
+        planInfo->curMiniBatchIndex = recoverMiniBatchIdx;
+        planInfo->epochCount = recoverEpochCount;
+        planInfo->miniBatchCount = recoverMiniBatchCount;
+        SNPROP(iterations) = recoverIterationCount;
+        SNPROP(status) = recoverNetworkStatus;
+    }
+
+    bool jobRemain = pp->generatePlan(true, task->needRecovery);
 
     if (jobRemain) {
         return false;
@@ -926,7 +967,7 @@ TaskAllocTensor* Worker::addAllocTensorTask(int consumerIdx, int nodeID, int dev
 }
 
 void Worker::addRunPlanTask(int consumerIdx, string networkID, int dopID, bool inference,
-    int requestThreadID) {
+    int requestThreadID, bool needRecovery) {
     TaskRunPlan* task = (TaskRunPlan*)Task::getElem(TaskType::RunPlan);
     SASSUME0(task != NULL);     // pool이 넉넉하지 않을때에 대한 전략이 반드시 필요하다
 
@@ -934,6 +975,7 @@ void Worker::addRunPlanTask(int consumerIdx, string networkID, int dopID, bool i
     task->dopID = dopID;
     task->inference = inference;
     task->requestThreadID = requestThreadID;
+    task->needRecovery = needRecovery;
 
     SASSUME0(consumerIdx < Worker::taskQueues.size());
     TaskQueue* tq = Worker::taskQueues[consumerIdx];

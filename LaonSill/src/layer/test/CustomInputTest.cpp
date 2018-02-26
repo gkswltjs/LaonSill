@@ -54,7 +54,7 @@ bool CustomInputTest::runSimpleTest() {
         (CustomInputLayer<float>*)network->findLayer("input");
     customInputLayer->registerCBFunc(CustomInputCBFunc, NULL);
 
-    PlanOptimizer::runPlan(networkID, false);
+    PlanOptimizer::runPlan(networkID, false, false);
 
     DebugUtil<float>::printNetworkEdges(stdout, "custom input layer test", networkID, 0);  
 

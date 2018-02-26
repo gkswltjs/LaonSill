@@ -73,10 +73,7 @@ public:
     int                         refCount;   // 이 값이 0이 되면 해당 mini batch에 대한 plan은
                                             // 다 수행한 것으로 판단하면 된다.
 
-    int epochIdx;
-    int miniBatchIdx;       // current mini-batch (per epoch) index
-
-    bool generatePlan(bool genNextMiniBatch);    
+    bool generatePlan(bool genNextMiniBatch, bool genPlanOnly);    
     // 현 minibatch에 해당하는 작업이 완료되면 그다음 mini batch에 대한 플랜을 생성한다.
     // 만약 모든 batch를 다 돌았을 경우에는 false를 반환한다.
 

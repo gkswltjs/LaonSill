@@ -598,6 +598,16 @@
     "SCOPE" : "SYSTEM",
     "TYPE" : "BOOL",
     "DEFAULT" : false 
+},
+
+"NETWORK_ADHOC_REFCOUNT_CHECKTIME_USEC" : 
+{
+    "DESC" : "specify the time(micro sec) to check adhoc reference count at network shutdown",
+    "MANDATORY" : false,
+    "MUTABLE" : false,
+    "SCOPE" : "SYSTEM",
+    "TYPE" : "UINT32",
+    "DEFAULT" : 1000 
 }
 
 }

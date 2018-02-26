@@ -62,6 +62,8 @@ public:
 	 */
 	void run(bool inference);
 
+    bool runAdhoc();
+
 	/**
 	 * @details 네트워크를 plantype별로 1번의 mini batch를 실행한다. 이 함수를 호출한 이후에
      *          다시 reset()함수를 호출할 필요는 없다.
@@ -170,6 +172,9 @@ public:
     bool                                    getMeasureInserted() { 
                                                 return this->isMeasureInserted; }
 
+    static bool                             addAdhocRun(std::string networkID);
+    static void                             removeAdhocRun(std::string networkID);
+
     /*
      * 파라미터 관리를 위한 함수들.
      * FIXME: 추후에 다른 모듈로 분리하자
@@ -192,6 +197,9 @@ private:
     bool                                            isLoaded;
     bool                                            isBuilt;
     bool                                            isMeasureInserted;
+
+    volatile int                                    adhocRunRefCount;
+    std::mutex                                      adhocRunMutex;
 
     /*
      * 파라미터 관리를 위한 변수들.

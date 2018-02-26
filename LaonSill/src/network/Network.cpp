@@ -55,6 +55,7 @@ Network<Dtype>::Network() {
     random_generator gen;
     uuid id = gen();
     this->networkID = to_string(id);
+    this->adhocRunRefCount = 0;
 
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
     Network<Dtype>::networkIDMap[this->networkID] = this;
@@ -70,12 +71,29 @@ Network<Dtype>::Network() {
             this->networkID + ".train";
     this->trainFP = fopen(trainFilePath.c_str(), "w+");
     SASSERT0(this->trainFP != NULL);
-
 }
 
 template <typename Dtype>
 Network<Dtype>::~Network() {
     unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
+    unique_lock<mutex> adhocRunLock(this->adhocRunMutex);
+
+    // FIXME: 이 과정 자체에서 큰 부하가 있을것으로 보이진 않아서 나이브하게 구현하였다.
+    // 추후에 이 부분에 부하가 커진다면 (즉, 빨리 리소스를 정리하지 않으면 안되는 상황인 경우)
+    // 정리쓰레드를 따로 만들어서 refcount가 0이 된 순간에 빨리 자원을 해지하도록 수정하자.
+    while (true) {
+        if (this->adhocRunRefCount == 0) {
+            adhocRunLock.unlock();
+            break;
+        } else {
+            adhocRunLock.unlock();
+            lock.unlock();
+            usleep(SPARAM(NETWORK_ADHOC_REFCOUNT_CHECKTIME_USEC));
+            lock.lock();
+            adhocRunLock.lock();
+        }
+    }
+
     Network<Dtype>::networkIDMap.erase(this->networkID);
 
     if (this->isMeasureInserted) {
@@ -89,6 +107,30 @@ Network<Dtype>::~Network() {
         MemoryMgmt::dump(MemoryMgmtSortOptionIndex, true);
         MemoryMgmt::dump(MemoryMgmtSortOptionSize, true);
     }
+}
+
+template<typename Dtype>
+bool Network<Dtype>::addAdhocRun(std::string networkID) {
+    unique_lock<mutex> lock(Network<Dtype>::networkIDMapMutex);
+    if (Network<Dtype>::networkIDMap.find(networkID) == Network<Dtype>::networkIDMap.end()) {
+        return false;
+    }
+    Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
+
+    unique_lock<mutex> adhocRunLock(network->adhocRunMutex);
+    network->adhocRunRefCount++;
+    adhocRunLock.unlock(); 
+    return true;
+}
+
+template<typename Dtype>
+void Network<Dtype>::removeAdhocRun(std::string networkID) {
+    Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
+
+    unique_lock<mutex> adhocRunLock(network->adhocRunMutex);
+    SASSUME0(network->adhocRunRefCount > 0);
+    network->adhocRunRefCount--;
+    adhocRunLock.unlock();
 }
 
 template<typename Dtype>
@@ -157,7 +199,12 @@ void Network<Dtype>::reset() {
 template<typename Dtype>
 void Network<Dtype>::run(bool inference) {
     SASSERT0(this->isLoaded);
-    PlanOptimizer::runPlan(this->networkID, inference);
+    PlanOptimizer::runPlan(this->networkID, inference, false);
+}
+
+template<typename Dtype>
+bool Network<Dtype>::runAdhoc() {
+    // TODO: 여기 구현해야 함.  
 }
 
 template<typename Dtype>
@@ -189,7 +236,7 @@ void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
         pp->reset();
     }
 
-    PlanOptimizer::runPlan(this->networkID, inference);
+    PlanOptimizer::runPlan(this->networkID, inference, false);
 }
 
 template<typename Dtype>

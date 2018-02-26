@@ -45,7 +45,7 @@ public:
     static bool buildPlans(std::string networkID);
 
     static void init();
-    static double runPlan(std::string networkID, bool inference);
+    static double runPlan(std::string networkID, bool inference, bool needRecovery);
     static double runPlanByType(std::string networkID, PlanType planType, bool inference);
 
 private:

@@ -48,26 +48,26 @@ typedef enum WorkerICBaseNetworkType_e : int {
 
 class Worker {
 public:
-	                           Worker() {}
-	virtual                   ~Worker() {}
+	                            Worker() {}
+	virtual                    ~Worker() {}
 
-	static void                launchThreads(int taskConsumerCount, 
+	static void                 launchThreads(int taskConsumerCount, 
                                              int jobConsumerCount);
-    static void                joinThreads();
-    static int                 pushJob(Job* job);
-                               /* called by Sess Thread, Receiver Thread */
-	static thread_local int    gpuIdx;
+    static void                 joinThreads();
+    static int                  pushJob(Job* job);
+                                /* called by Sess Thread, Receiver Thread */
+	static thread_local int     gpuIdx;
 
-    static int                 getConsumerIdx(int devIdx);
+    static int                  getConsumerIdx(int devIdx);
 
     
-    static TaskAllocTensor*    addAllocTensorTask(int consumerIdx, int nodeID, 
+    static TaskAllocTensor*     addAllocTensorTask(int consumerIdx, int nodeID, 
                                                   int devID,
                                                   int requestThreadID,
                                                   std::string tensorName);
     static void                 addRunPlanTask(int consumerIdx, std::string networkID,
                                                 int dopID, bool inference, 
-                                                int requestThreadID);
+                                                int requestThreadID, bool needRecovery);
     static void                 addUpdateTensorTask(int consumerIdx, std::string networkID,
                                                    int dopID, int layerID, int planID,
                                                    std::vector<UpdateParam> updateParams);

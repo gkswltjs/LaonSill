@@ -470,7 +470,7 @@ void PhysicalPlan::logLoss() {
     }
 }
 
-bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
+bool PhysicalPlan::generatePlan(bool genNextMiniBatch, bool genPlanOnly) {
     // (1) mini batch를 다 돌았는지 확인한다.
     // FIXME: plan lock의 범위가 좀 넓다.. 최적화 고민해보자.
     unique_lock<mutex> planLock(this->planMutex);
@@ -484,7 +484,9 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
     //        지금은 귀찮것도 있지만.. 급하게 해야할 일들이 있어서...(먼산..)
     string networkID = WorkContext::curNetworkID;
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
-    if (network->getMeasureInserted() && SNPROP(status) == NetworkStatus::Train) {
+
+    if (!genPlanOnly && network->getMeasureInserted() && 
+        SNPROP(status) == NetworkStatus::Train) {
         MeasureEntry* measureEntry = MeasureManager::getMeasureEntry(networkID); 
         SASSUME0(measureEntry != NULL);
 
@@ -510,59 +512,59 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
         measureEntry->addData(measureEntry->getAddBuffer());
     }
 
-    float currLoss = calcLoss();
-    // loss에 NaN 값이 있는지 체크한다.
-    if (SPARAM(STOP_TRAIN_WHEN_GOT_NAN_LOSS)) {
-        if (currLoss != currLoss) {
+    if (!genPlanOnly) {
+        float currLoss = calcLoss();
+        // loss에 NaN 값이 있는지 체크한다.
+        if (SPARAM(STOP_TRAIN_WHEN_GOT_NAN_LOSS)) {
+            if (currLoss != currLoss) {
+                planLock.unlock();
+                COLD_LOG(ColdLog::WARNING, true,
+                    "training network(id=%s) is stopped due to NaN loss at epoch=%d",
+                    WorkContext::curPlanInfo->networkID.c_str(),
+                    WorkContext::curPlanInfo->curEpochIndex);
+                return false;
+            }
+        }
+
+        // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
+        // FIXME: planInfoLock 범위가 너무 크다!!!
+        unique_lock<mutex> planInfoLock(WorkContext::curPlanInfo->planMutex);
+
+        if (WorkContext::curPlanInfo->curMiniBatchIndex == 
+                WorkContext::curPlanInfo->miniBatchCount - 1) {
+            WorkContext::curPlanInfo->curMiniBatchIndex = 0;
+            WorkContext::curPlanInfo->curEpochIndex += 1;
+        } else {
+            WorkContext::curPlanInfo->curMiniBatchIndex += 1;
+        }
+
+        bool saveNetwork = false;
+        if ((SNPROP(saveInterval) != 0) && (SNPROP(iterations) > 0) &&
+            ((SNPROP(iterations) % SNPROP(saveInterval)) == 0)) {
+            saveNetwork = true;
+        }
+
+        // best loss를 가지고 있는 네트워크를 저장한다.
+        network->handleBestLoss(currLoss, SNPROP(iterations));
+
+        if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
+            WorkContext::curPlanInfo->curEpochIndex -= 1;
+            WorkContext::curPlanInfo->curMiniBatchIndex =
+                WorkContext::curPlanInfo->miniBatchCount - 1;
+
+            planInfoLock.unlock();
             planLock.unlock();
-            COLD_LOG(ColdLog::WARNING, true,
-                "training network(id=%s) is stopped due to NaN loss at epoch=%d",
-                WorkContext::curPlanInfo->networkID.c_str(),
-                WorkContext::curPlanInfo->curEpochIndex);
+
+            if (SNPROP(saveInterval) != 0)
+                PhysicalPlan::saveNetwork(false);
+                
+            logLoss();
+
+            SNPROP(iterations) += 1;
             return false;
         }
-    }
-
-    // (2) plan info의 curMiniBatchIndex, curEpochIndex를 갱신한다.
-    // FIXME: planInfoLock 범위가 너무 크다!!!
-    unique_lock<mutex> planInfoLock(WorkContext::curPlanInfo->planMutex);
-    this->epochIdx = WorkContext::curPlanInfo->curEpochIndex;
-    this->miniBatchIdx = WorkContext::curPlanInfo->curMiniBatchIndex;
-
-    if (WorkContext::curPlanInfo->curMiniBatchIndex == 
-            WorkContext::curPlanInfo->miniBatchCount - 1) {
-        WorkContext::curPlanInfo->curMiniBatchIndex = 0;
-        WorkContext::curPlanInfo->curEpochIndex += 1;
-    } else {
-        WorkContext::curPlanInfo->curMiniBatchIndex += 1;
-    }
-
-    bool saveNetwork = false;
-    if ((SNPROP(saveInterval) != 0) && (SNPROP(iterations) > 0) &&
-        ((SNPROP(iterations) % SNPROP(saveInterval)) == 0)) {
-        saveNetwork = true;
-    }
-
-    // best loss를 가지고 있는 네트워크를 저장한다.
-    network->handleBestLoss(currLoss, SNPROP(iterations));
-
-    if (WorkContext::curPlanInfo->curEpochIndex >= WorkContext::curPlanInfo->epochCount) {
-        WorkContext::curPlanInfo->curEpochIndex -= 1;
-        WorkContext::curPlanInfo->curMiniBatchIndex =
-            WorkContext::curPlanInfo->miniBatchCount - 1;
-
         planInfoLock.unlock();
-        planLock.unlock();
-
-        if (SNPROP(saveInterval) != 0)
-            PhysicalPlan::saveNetwork(false);
-            
-        logLoss();
-
-        SNPROP(iterations) += 1;
-        return false;
     }
-    planInfoLock.unlock();
 
     // (3) 초기화를 수행한다.
     if (genNextMiniBatch) {
@@ -589,12 +591,14 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch) {
 
     planLock.unlock();
 
-    logLoss();
+    if (!genPlanOnly) {
+        logLoss();
 
-    if (saveNetwork)
-        PhysicalPlan::saveNetwork(false);
+        if (saveNetwork)
+            PhysicalPlan::saveNetwork(false);
 
-    SNPROP(iterations) += 1;
+        SNPROP(iterations) += 1;
+    }
     return true;
 }
 
@@ -654,8 +658,7 @@ void PhysicalPlan::runLayer(int planID, bool inference) {
 
         SASSUME0(planType < PLANTYPE_MAX);
         if (planType == PLANTYPE_FORWARD) {
-            LayerFunc::runForward(layerType, instancePtr,
-                planInfo->curMiniBatchIndex);
+            LayerFunc::runForward(layerType, instancePtr, planInfo->curMiniBatchIndex);
         } else if (planType == PLANTYPE_BACKWARD) {
             LayerFunc::runBackward(layerType, instancePtr);
         } else {

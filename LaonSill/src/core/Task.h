@@ -69,6 +69,7 @@ typedef struct TaskRunPlan_s {
     std::string networkID;
     int         dopID;
     bool        inference;
+    bool        needRecovery;
 } TaskRunPlan;
 
 typedef struct TaskAllocLayer_s {

@@ -71,7 +71,7 @@ bool PlanOptimizer::buildPlans(string networkID, int option, PlanOptPolicy polic
 
     for (int i = 0; i < availableOptions.size(); i++) {
         setPlanContext(networkID, availableOptions[i], true);
-        double curElapsedTime = runPlan(networkID, true);
+        double curElapsedTime = runPlan(networkID, true, false);
 
         if (isFirst) {
             bestOption = availableOptions[i];
@@ -96,6 +96,11 @@ double PlanOptimizer::runPlanByType(string networkID, PlanType planType, bool in
     clock_gettime(CLOCK_REALTIME, &startTime);
     double elapsed = 0.0;
    
+    if (inference)
+        SNPROP(status) = NetworkStatus::Test;
+    else
+        SNPROP(status) = NetworkStatus::Train;
+
     if ((WorkContext::curBootMode == DeveloperMode) ||
         (WorkContext::curBootMode == TestMode) ||
         (WorkContext::curBootMode == SingleJobMode)) {
@@ -120,7 +125,7 @@ double PlanOptimizer::runPlanByType(string networkID, PlanType planType, bool in
             if (exitLoop)
                 break;
         }
-        jobRemain = pp->generatePlan(true);
+        jobRemain = pp->generatePlan(true, false);
 
         clock_gettime(CLOCK_REALTIME, &endTime);
         elapsed = (endTime.tv_sec - startTime.tv_sec) +
@@ -132,9 +137,15 @@ double PlanOptimizer::runPlanByType(string networkID, PlanType planType, bool in
     return elapsed;
 }
 
-double PlanOptimizer::runPlan(string networkID, bool inference) {
+double PlanOptimizer::runPlan(string networkID, bool inference, bool needRecovery) {
     struct timespec startTime, endTime;
     double elapsed = 0.0;
+
+    if (inference)
+        SNPROP(status) = NetworkStatus::Test;
+    else
+        SNPROP(status) = NetworkStatus::Train;
+
 
     if ((WorkContext::curBootMode == DeveloperMode) ||
         (WorkContext::curBootMode == TestMode) ||
@@ -151,7 +162,7 @@ double PlanOptimizer::runPlan(string networkID, bool inference) {
             while (canRunPlan) {
                 canRunPlan = pp->runPlan(inference);
             }
-            jobRemain = pp->generatePlan(true);
+            jobRemain = pp->generatePlan(true, false);
         }
 
         clock_gettime(CLOCK_REALTIME, &endTime);
@@ -162,7 +173,8 @@ double PlanOptimizer::runPlan(string networkID, bool inference) {
         for (int i = 0; i < WorkContext::curPlanInfo->dopCount; i++) {
             int consumerIdx = i;        // XXX: 멀티 노드 환경에서는 더 고려해야 한다.
             WorkContext::updatePlan(i, true);
-            Worker::addRunPlanTask(i, networkID, i, inference, WorkContext::curThreadID);
+            Worker::addRunPlanTask(i, networkID, i, inference, WorkContext::curThreadID,
+                    needRecovery);
 
             ThreadMgmt::signal(ThreadMgmt::getThreadID(ThreadType::TaskConsumer, i),
                     ThreadEvent::Wakeup);
@@ -214,8 +226,6 @@ void PlanOptimizer::setSingleGPUPlanContext(string networkID, bool isTest) {
     }
 
     pp->dopID = 0;
-    pp->epochIdx = 0;
-    pp->miniBatchIdx = 0;
 
     ppList.push_back(pp);
 
