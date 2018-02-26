@@ -661,7 +661,8 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
 
     float left, top, right, bottom;
     for (int i = 0; i < resultCount; i++) {
-        if (baseNetworkType == WORKER_OD_eSSD) {    // SSD, 여기서는 무조건 절대좌표로 변환
+        if (baseNetworkType == WORKER_OD_eSSD || baseNetworkType == WORKER_OD_eYOLO) {
+            // SSD , YOLO case : 여기서는 무조건 절대좌표로 변환
             left	= std::min(std::max(result[i * 7 + 3], 0.f), 1.f);
             top		= std::min(std::max(result[i * 7 + 4], 0.f), 1.f);
             right	= std::min(std::max(result[i * 7 + 5], 0.f), 1.f);
@@ -671,13 +672,8 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
             top     = int(top * height);
             right   = int(right * width);
             bottom  = int(bottom * height);
-        } else if (baseNetworkType == WORKER_OD_eYOLO) {        // FRCNN , YOLO case
-
-            left	= int(result[i * 7 + 3] / (float)YOLO_IMAGE_DEFAULT_WIDTH * width);
-            top		= int(result[i * 7 + 4] / (float)YOLO_IMAGE_DEFAULT_HEIGHT * height);
-            right	= int(result[i * 7 + 5] / (float)YOLO_IMAGE_DEFAULT_WIDTH * width);
-            bottom	= int(result[i * 7 + 6] / (float)YOLO_IMAGE_DEFAULT_HEIGHT * height);
         } else {
+            // frcnn case
 		    SASSUME0(baseNetworkType == WORKER_OD_eFRCNN);
             left	= int(result[i * 7 + 3]);
             top		= int(result[i * 7 + 4]);

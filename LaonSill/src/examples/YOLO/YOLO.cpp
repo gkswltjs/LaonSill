@@ -23,31 +23,34 @@ using namespace std;
 
 //#define YOLO_PRETRAIN     1
 //#define YOLO_PRETRAIN2    1
-#define YOLO_TRAIN        1
+//#define YOLO_TRAIN        1
 //#define YOLO_INFERENCE    1
 
-#if YOLO_PRETRAIN
-#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_pretrain.json")
-#elif YOLO_PRETRAIN2
-#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_pretrain2.json")
-#elif YOLO_TRAIN
-#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_train.json")
-#else
-#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_test_live.json")
-#endif
+//#if YOLO_PRETRAIN
+//#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_pretrain.json")
+//#elif YOLO_PRETRAIN2
+//#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_pretrain2.json")
+//#elif YOLO_TRAIN
+//#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_train.json")
+//#else
+//#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_test_live.json")
+//#endif
+#define EXAMPLE_YOLO_NETWORK_FILEPATH	    SPATH("examples/YOLO/yolo_union.json")
 
 template<typename Dtype>
 void YOLO<Dtype>::run() {
     string networkID = PlanParser::loadNetwork(string(EXAMPLE_YOLO_NETWORK_FILEPATH));
     Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
 
-#if !YOLO_INFERENCE
     network->build(0);
-    network->run(false);
-#else
-    network->build(1);
+    //network->run(false);
     network->run(true);
-#endif
+
+    LogicalPlan::cleanup(networkID);
+    PhysicalPlan::removePlan(networkID);
+    PropMgmt::removeNetworkProp(networkID);
+    PropMgmt::removeLayerProp(networkID);
+    SDELETE(network);
 }
 
 template class YOLO<float>;

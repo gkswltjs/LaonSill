@@ -23,7 +23,13 @@ BatchNorm2Layer<Dtype>::BatchNorm2Layer()
 
 	this->movingAverageFraction = SLPROP(BatchNorm2, movingAverageFraction);
 	this->clipVariance = false;
-	this->useGlobalStats = SLPROP(BatchNorm2, useGlobalStats);
+
+	if (SLPROP(BatchNorm2, useGlobalStats) == BatchNormUseGlobal::DependOnNetStat) {
+        this->useGlobalStats = SNPROP(status) == NetworkStatus::Test;
+    } else {
+        this->useGlobalStats = SLPROP(BatchNorm2, useGlobalStats) == BatchNormUseGlobal::Use;
+    }
+
 	this->eps = std::max<float>(SLPROP(BatchNorm2, eps), 0.00001f);
 	this->scaleBias = SLPROP(BatchNorm2, scaleBias);
 	//if (param.has_scale_filler() ... )
@@ -246,7 +252,7 @@ void BatchNorm2Layer<Dtype>::feedforward() {
 	const Dtype* globalMean = this->_params[0]->device_data();
 	const Dtype* globalVar = this->_params[1]->device_data();
 
-	if (SNPROP(status) == NetworkStatus::Test) {
+	if (this->useGlobalStats) {
 		//  Y = X- EX
 		multicast_gpu(N, C, S, globalMean, this->tempNCHW->mutable_device_data());
 		soooa_gpu_sub(outputSize, inputData, this->tempNCHW->device_data(), outputData);

@@ -2,8 +2,8 @@
  | @ file      YOLOOutputLayer.cpp
  * @ date      2018-02-06
  | @ author    SUN
- * @ brief     
- | @ details   
+ * @ brief
+ | @ details
  *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
 #include <vector>
@@ -13,7 +13,6 @@
 #include "PropMgmt.h"
 #include "MemoryMgmt.h"
 #include "ImageUtil.h"
-#include "YOLOLossLayer.h"
 
 #include "frcnn_common.h"
 
@@ -48,19 +47,16 @@ YOLOOutputLayer<Dtype>::~YOLOOutputLayer() {
 template class YOLOOutputLayer<float>;
 
 template <typename Dtype>
-void YOLOOutputLayer<Dtype>::YOLOOutputForward(const Dtype* inputData,
-        const int classNum) {
+void YOLOOutputLayer<Dtype>::YOLOOutputForward(const Dtype* inputData) {
 
-    int side = YOLO_GRID_ONE_AXIS_COUNT;
-    int gridCell = YOLO_GRID_COUNT;
+    int side = (int)(SLPROP(YOLOOutput, side));
+    int gridCell = side * side;
 
-    int anchorBox = YOLO_ANCHOR_BOX_COUNT;
+    int anchorBox = (int)(SLPROP(YOLOOutput, numBoxes));
+    int classNum = (int)(SLPROP(YOLOOutput, numClasses));
     int elemPerAnchorBox = classNum + 4;
     int gridElemCount = anchorBox * elemPerAnchorBox;
-    float confThresh = YOLO_DEFAULT_CONFIDENCE_THRES;
-
-    int imageWidth = YOLO_IMAGE_DEFAULT_WIDTH;
-    int imageHeight = YOLO_IMAGE_DEFAULT_HEIGHT;
+    float confThresh = (float)(SLPROP(YOLOOutput, scoreThres));
 
     int resultCount = 0;
     float left, top, right, bottom;
@@ -97,14 +93,10 @@ void YOLOOutputLayer<Dtype>::YOLOOutputForward(const Dtype* inputData,
 
             resultCount++;
 
-            top = (float)((((float)gridY + y) / (float)side - 0.5 * h) *
-                (float)imageHeight);
-            bottom = (float)((((float)gridY + y) / (float)side + 0.5 * h) *
-                (float)imageHeight);
-            left = (float)((((float)gridX + x) / (float)side - 0.5 * w) *
-                (float)imageWidth);
-            right = (float)((((float)gridX + x) / (float)side + 0.5 * w) *
-                (float)imageWidth);
+            top = (float)(((float)gridY + y) / (float)side - 0.5 * h) * 100.0;
+            bottom = (float)(((float)gridY + y) / (float)side + 0.5 * h) * 100.0;
+            left = (float)(((float)gridX + x) / (float)side - 0.5 * w) * 100.0;
+            right = (float)(((float)gridX + x) / (float)side + 0.5 * w) * 100.0;
 
             vector<Dtype> bbox(6);
             bbox[0] = score;
@@ -118,7 +110,7 @@ void YOLOOutputLayer<Dtype>::YOLOOutputForward(const Dtype* inputData,
         }
 
         // NMS ***
-        float nmsThresh = YOLO_DEFAULT_NMS_THRES;
+        float nmsThresh = (float)(SLPROP(YOLOOutput, nmsThres));
         vector<vector<Dtype>> result;
 
         for (int i = 0; i < classNum - 1; i++) {
@@ -144,12 +136,12 @@ void YOLOOutputLayer<Dtype>::YOLOOutputForward(const Dtype* inputData,
             for (int k = 0; k < keep.size(); k++) {
                 vector<Dtype> pred(7);
                 pred[0] = 0.f; // frcnn output과 동일하게 맞추기 위함.
-                pred[1] = float(i);
+                pred[1] = float(i) + 1.0;
                 pred[2] = scores[keep[k]];
-                pred[3] = bboxes[keep[k]][0];
-                pred[4] = bboxes[keep[k]][1];
-                pred[5] = bboxes[keep[k]][2];
-                pred[6] = bboxes[keep[k]][3];
+                pred[3] = bboxes[keep[k]][0] / 100.0;
+                pred[4] = bboxes[keep[k]][1] / 100.0;
+                pred[5] = bboxes[keep[k]][2] / 100.0;
+                pred[6] = bboxes[keep[k]][3] / 100.0;
 
                 result.push_back(pred);
             }
@@ -180,7 +172,7 @@ void YOLOOutputLayer<Dtype>::feedforward(){
 
     const Dtype* inputData = this->_inputData[0]->host_data();
 
-    YOLOOutputForward(inputData, (int)SLPROP(YOLOOutput, numClasses));
+    YOLOOutputForward(inputData);
 
 }
 

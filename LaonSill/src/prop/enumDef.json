@@ -105,6 +105,11 @@
     {
         "NAME" : "LayerActivation",
         "ENUM" : ["AllActivation", "TrainActivation", "TestActivation"]
+    },
+
+    {
+        "NAME" : "BatchNormUseGlobal",
+        "ENUM" : ["Use", "NotUse", "DependOnNetStat"]
     }
 ]
 
