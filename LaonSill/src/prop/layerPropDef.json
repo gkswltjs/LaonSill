@@ -360,7 +360,7 @@
     "PROPDOWN" : [],
     "VARS" : 
         [   
-            ["useGlobalStats", "bool", "false"],
+            ["useGlobalStats", "BatchNormUseGlobal", "DependOnNetStat"],
             ["movingAverageFraction", "float", "0.999"],
             ["eps", "float", "1e-5"],
             ["scaleFiller", "param_filler<float>", "{ParamFillerType::Constant, 1.0, 0.0, 1.0}",
@@ -497,12 +497,12 @@
     "PROPDOWN" : [],
     "VARS" :
         [
-            ["anchors", "std::vector<float>", ""],
             ["numClasses", "int", "21"],
             ["noobj", "float", "1.0"],
             ["coord", "float", "1.0"],
             ["obj", "float", "5.0"],
-            ["class", "float", "1.0"]
+            ["class", "float", "1.0"],
+            ["iouThres", "float", "0.7"]
         ],
     "KEYVARS" : []
 },
@@ -558,7 +558,11 @@
     "PROPDOWN" : [],
     "VARS" : 
         [
-            ["numClasses", "int", "21"]
+            ["side", "int", "13"],
+            ["numBoxes", "int", "5"],
+            ["numClasses", "int", "21"],
+            ["scoreThres", "float", "0.3"],
+            ["nmsThres", "float", "0.3"]
         ],
     "KEYVARS" : []
 },

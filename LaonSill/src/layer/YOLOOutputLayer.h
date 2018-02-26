@@ -2,8 +2,8 @@
  | @ file      YOLOOutputLayer.h
  * @ date      2018-02-06
  | @ author    SUN
- * @ brief     
- | @ details   
+ * @ brief
+ | @ details
  *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/
 
 #include "common.h"
@@ -22,7 +22,7 @@ public:
 	virtual void feedforward();
 
 private:
-    void YOLOOutputForward(const Dtype* inputData, const int classNum);
+    void YOLOOutputForward(const Dtype* inputData);
 
 public:
     /****************************************************************************

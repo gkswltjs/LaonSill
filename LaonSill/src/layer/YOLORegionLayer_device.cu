@@ -30,10 +30,14 @@ __global__ void YoloRegionForward(const Dtype* input, int size, const Dtype* anc
 
     int elemPerAnchorBox = classNum + 4;
     int gridElemCount = YOLO_ANCHOR_BOX_COUNT * elemPerAnchorBox;
+    int girdAnchorBoxCount = YOLO_GRID_COUNT * elemPerAnchorBox;
+
+    int curBatch = idx / YOLO_GRID_COUNT;
+    int curGrid = idx % YOLO_GRID_COUNT;
 
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
         int outBoxIndex = idx * gridElemCount + i * elemPerAnchorBox;
-        int inBoxIndex = idx + i * YOLO_GRID_COUNT * elemPerAnchorBox;
+        int inBoxIndex = girdAnchorBoxCount * (curBatch * 5 + i) + curGrid;
 
         Dtype x1 = input[inBoxIndex + 0 * YOLO_GRID_COUNT];
         Dtype y1 = input[inBoxIndex + 1 * YOLO_GRID_COUNT];
@@ -50,14 +54,20 @@ __global__ void YoloRegionForward(const Dtype* input, int size, const Dtype* anc
             anchorVals[i * 2 + 1] * expf(h1) / (Dtype)(YOLO_GRID_ONE_AXIS_COUNT);
 
         output[outBoxIndex + 4] = 1.0 / (1.0 + expf((-1.0) * c1));
-    
+
+        Dtype x2 = output[outBoxIndex + 0];
+        Dtype y2 = output[outBoxIndex + 1];
+        Dtype w2 = output[outBoxIndex + 2];
+        Dtype h2 = output[outBoxIndex + 3];
+        Dtype c2 = output[outBoxIndex + 4];
+
         if (softmax) {
             // exponential 함수에서 매우 큰값이 나오는 것을 막기 위해서..
             Dtype sum = 0.0;
-            Dtype maxVal = input[outBoxIndex + 5 + 0];
+            Dtype maxVal = input[inBoxIndex + (5 + 0) * YOLO_GRID_COUNT];
             for (int j = 1; j < classNum - 1; j++) {
                 if (input[inBoxIndex + (5 + j) * YOLO_GRID_COUNT] > maxVal)
-                    maxVal = input[inBoxIndex + 5 + j];
+                    maxVal = input[inBoxIndex + (5 + j) * YOLO_GRID_COUNT];
             }
 
             for (int j = 0; j < classNum - 1; j++) {
@@ -88,10 +98,14 @@ __global__ void YoloRegionBackward(const Dtype* outputGrad, const Dtype* output,
 
     int elemPerAnchorBox = classNum + 4;
     int gridElemCount = YOLO_ANCHOR_BOX_COUNT * elemPerAnchorBox;
+    int girdAnchorBoxCount = YOLO_GRID_COUNT * elemPerAnchorBox;
+
+    int curBatch = idx / YOLO_GRID_COUNT;
+    int curGrid = idx % YOLO_GRID_COUNT;
 
     for (int i = 0; i < YOLO_ANCHOR_BOX_COUNT; i++) {
         int outBoxIndex = idx * gridElemCount + i * elemPerAnchorBox;
-        int inBoxIndex = idx + i * YOLO_GRID_COUNT * elemPerAnchorBox;
+        int inBoxIndex = girdAnchorBoxCount * (curBatch * 5 + i) + curGrid;
 
         Dtype x1 = output[outBoxIndex + 0];
         Dtype y1 = output[outBoxIndex + 1];
