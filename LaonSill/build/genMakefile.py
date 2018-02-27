@@ -13,10 +13,8 @@ configNameList = ["Debug", "DebugClient", "Release", "ReleaseClient", "ToolImage
 libVersion = "1.0.1"
 
 symbolDic = dict()  # key : configure name, value : symbol list
-symbolDic["Debug"]              = ["GPU_MODE", "DEBUG_MODE", "SERVER_MODE",
-                                    "BOOST_ARCHIVE_NO_HEADER"]
-symbolDic["DebugClient"]        = ["GPU_MODE", "DEBUG_MODE", "CLIENT_MODE",
-                                    "BOOST_ARCHIVE_NO_HEADER"]
+symbolDic["Debug"]              = ["GPU_MODE", "DEBUG_MODE", "SERVER_MODE"]
+symbolDic["DebugClient"]        = ["GPU_MODE", "DEBUG_MODE", "CLIENT_MODE"]
 symbolDic["Release"]            = ["GPU_MODE", "SERVER_MODE"]
 symbolDic["ReleaseClient"]      = ["GPU_MODE", "CLIENT_MODE"]
 symbolDic["ToolImage"]          = ["GPU_MODE", "TOOL_IMAGE_MODE"]
