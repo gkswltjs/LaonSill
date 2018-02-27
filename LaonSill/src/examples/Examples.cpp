@@ -19,12 +19,14 @@
 #include "KISTIKeyword/KISTIKeyword.h"
 #include "SSD/SSD.h"
 #include "YOLO/YOLO.h"
+#include "Inception/Inception.h"
+#include "ResNet/ResNet.h"
 
 /**************************************************************************
  * [수정포인트] 추가할 example 개수에 맞게 EXAMPLE_ITEM_DEF_ARRAY_COUNT 값을
  * 변경시켜 줍니다. 
  *************************************************************************/
-#define EXAMPLE_ITEM_DEF_ARRAY_COUNT  7
+#define EXAMPLE_ITEM_DEF_ARRAY_COUNT  9
 
 /**************************************************************************
  * [수정포인트] 추가할 example의 정의를 exampleItemDefArray의 뒷 부분에 기입
@@ -38,7 +40,9 @@ ExampleItemDef exampleItemDefArray[EXAMPLE_ITEM_DEF_ARRAY_COUNT] = {
     {"VGG16", "VGG16 example", VGG16<float>::run},
     {"KISTIKeyword", "KISTIKeyword example", KISTIKeyword<float>::run},
     {"SSD", "SSD example", SSD<float>::run},
-    {"YOLO", "YOLO example", YOLO<float>::run}
+    {"YOLO", "YOLO example", YOLO<float>::run},
+    {"Inception", "Inception example", Inception<float>::run},
+    {"ResNet", "ResNet example", ResNet<float>::run}
 };
 
 
