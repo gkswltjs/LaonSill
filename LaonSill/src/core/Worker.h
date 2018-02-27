@@ -67,7 +67,9 @@ public:
                                                   std::string tensorName);
     static void                 addRunPlanTask(int consumerIdx, std::string networkID,
                                                 int dopID, bool inference, 
-                                                int requestThreadID, bool needRecovery);
+                                                int requestThreadID, bool useAdhocRun,
+                                                std::string inputLayerName, int channel, 
+                                                int height, int width, float* imageData);
     static void                 addUpdateTensorTask(int consumerIdx, std::string networkID,
                                                    int dopID, int layerID, int planID,
                                                    std::vector<UpdateParam> updateParams);

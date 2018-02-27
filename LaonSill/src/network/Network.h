@@ -62,7 +62,8 @@ public:
 	 */
 	void run(bool inference);
 
-    bool runAdhoc();
+    void runAdhoc(std::string inputLayerName, int channel, int height, int width,
+            float* imageData);
 
 	/**
 	 * @details 네트워크를 plantype별로 1번의 mini batch를 실행한다. 이 함수를 호출한 이후에

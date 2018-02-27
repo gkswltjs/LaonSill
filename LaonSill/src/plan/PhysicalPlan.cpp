@@ -598,8 +598,10 @@ bool PhysicalPlan::generatePlan(bool genNextMiniBatch, bool genPlanOnly) {
             PhysicalPlan::saveNetwork(false);
 
         SNPROP(iterations) += 1;
+        return true;
+    } else {
+        return false;
     }
-    return true;
 }
 
 void PhysicalPlan::reset() {

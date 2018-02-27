@@ -69,7 +69,12 @@ typedef struct TaskRunPlan_s {
     std::string networkID;
     int         dopID;
     bool        inference;
-    bool        needRecovery;
+    bool        useAdhocRun;
+    std::string inputLayerName;
+    int         channel;
+    int         height;
+    int         width;
+    float*      imageData;
 } TaskRunPlan;
 
 typedef struct TaskAllocLayer_s {

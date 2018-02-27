@@ -55,12 +55,12 @@ funcGetObjectDetection.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int, c_in
 
 funcRunObjectDetectionWithInput = libLaonSill.runObjectDetectionWithInput
 funcRunObjectDetectionWithInput.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int, c_int,
-                                   c_int, POINTER(c_float), c_void_p, c_int, c_int]
+                                   c_int, POINTER(c_float), c_void_p, c_int, c_int, c_int]
 
 
 funcRunClassificationWithInput = libLaonSill.runClassificationWithInput
 funcRunClassificationWithInput.argtypes = [c_int, c_char_p, c_int, c_char_p, c_int, c_int,
-                                   c_int, POINTER(c_float), c_int, POINTER(c_int)]
+                                   c_int, POINTER(c_float), c_int, c_int, POINTER(c_int)]
 
 funcGetMeasureItemName = libLaonSill.getMeasureItemName
 funcGetMeasureItemName.argtypes = [c_int, c_char_p, c_char_p, c_int,
@@ -91,6 +91,10 @@ class ClientHandle:
         ret = funcGetSession(byref(self.hasSession), self.serverHostName,
             self.serverPortNum, byref(self.sockFD), self.buffer)
         return ret
+
+    def setNetworkID(self, networkIDVal):
+        self.networkID = c_char_p(networkIDVal)
+        self.isCreated = c_int(1)
 
     def setSession(self, networkID):
         self.networkID = c_char_p(networkID)
@@ -163,13 +167,19 @@ class ClientHandle:
         return ret, result_box
 
     def runObjectDetectionWithInput(self, channel, height, width, imageData, maxBoxCount,
-            networkType):
+            networkType, useAdhocRun=False):
         imageDataArray = (c_float * len(imageData))(*imageData)
         bboxArray = (BoundingBox * maxBoxCount)()
 
+        if useAdhocRun == True:
+            useAdhocVal = 1
+        else:
+            useAdhocVal = 0
+
         ret = funcRunObjectDetectionWithInput(self.sockFD, self.buffer, self.isCreated, 
                 self.networkID, c_int(channel), c_int(height), c_int(width),
-                imageDataArray, bboxArray, c_int(maxBoxCount), c_int(networkType))
+                imageDataArray, bboxArray, c_int(maxBoxCount), c_int(networkType),
+                c_int(useAdhocVal))
 
         result_box = []
         for bbox in bboxArray:
@@ -178,14 +188,20 @@ class ClientHandle:
                         bbox.confidence, bbox.class_id])
         return ret, result_box
 
-    def runClassificationWithInput(self, channel, height, width, imageData, networkType):
+    def runClassificationWithInput(self, channel, height, width, imageData, networkType,
+            useAdhocRun=False):
         imageDataArray = (c_float * len(imageData))(*imageData)
         result = []
         label_index = c_int(-1)
 
+        if useAdhocRun == True:
+            useAdhocVal = 1
+        else:
+            useAdhocVal = 0
+
         ret = funcRunClassificationWithInput(self.sockFD, self.buffer, self.isCreated, 
                 self.networkID, c_int(channel), c_int(height), c_int(width),
-                imageDataArray, c_int(networkType), byref(label_index))
+                imageDataArray, c_int(networkType), c_int(useAdhocVal), byref(label_index))
 
         return ret, label_index.value
 

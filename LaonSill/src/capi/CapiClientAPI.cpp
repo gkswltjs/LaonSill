@@ -475,7 +475,7 @@ extern "C" int getObjectDetection(int sockFD, char* buffer, int isCreated, char*
 
 extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreated,
     char* networkID, int channel, int height, int width, float* imageData,
-    BoundingBox* boxArray, int maxBoxCount, int networkType) {
+    BoundingBox* boxArray, int maxBoxCount, int networkType, int needRecovery) {
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
 
@@ -485,6 +485,7 @@ extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreat
     runJob->addJobElem(Job::IntType, 1, (void*)&height);
     runJob->addJobElem(Job::IntType, 1, (void*)&width);
     runJob->addJobElem(Job::IntType, 1, (void*)&networkType);
+    runJob->addJobElem(Job::IntType, 1, (void*)&needRecovery);
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
@@ -503,6 +504,17 @@ extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreat
     SASSERT0(runReplyJob->getType() == JobType::RunObjectDetectionNetworkWithInputReply);
 
     int resultBoxCount = runReplyJob->getIntValue(0);
+
+    if ((resultBoxCount == -1) && needRecovery) {
+        delete runReplyJob;
+
+        if (bigBuffer != NULL)
+            free(bigBuffer);
+
+        return ClientError::RunAdhocNetworkFailed;
+    }
+
+
     int elemIdx = 1;
     for (int i = 0; i < resultBoxCount; i++) {
         if (i == maxBoxCount)
@@ -529,7 +541,7 @@ extern "C" int runObjectDetectionWithInput(int sockFD, char* buffer, int isCreat
 
 extern "C" int runClassificationWithInput(int sockFD, char* buffer, int isCreated,
     char* networkID, int channel, int height, int width, float* imageData,
-    int networkType, int* labelIndex) {
+    int networkType, int needRecovery, int* labelIndex) {
 
     if (!isCreated) 
         return ClientError::NotCreatedNetwork;
@@ -540,6 +552,7 @@ extern "C" int runClassificationWithInput(int sockFD, char* buffer, int isCreate
     runJob->addJobElem(Job::IntType, 1, (void*)&height);
     runJob->addJobElem(Job::IntType, 1, (void*)&width);
     runJob->addJobElem(Job::IntType, 1, (void*)&networkType);
+    runJob->addJobElem(Job::IntType, 1, (void*)&needRecovery);
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
@@ -566,6 +579,9 @@ extern "C" int runClassificationWithInput(int sockFD, char* buffer, int isCreate
 
     if (bigBuffer != NULL)
         free(bigBuffer);
+
+    if (needRecovery && (*labelIndex) == -1)
+        return ClientError::RunAdhocNetworkFailed;
 
     return ClientError::Success;
 }

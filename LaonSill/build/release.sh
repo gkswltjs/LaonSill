@@ -10,19 +10,18 @@ mkdir -p LAONSILL_HOME/dev/server
 mkdir -p LAONSILL_HOME/dev/client
 mkdir -p LAONSILL_HOME/examples
 mkdir -p LAONSILL_HOME/pyapi
+mkdir -p LAONSILL_HOME/resource/labelmap
 cp ../template/laonsill.conf.sample LAONSILL_HOME/laonsill.conf
 cp ../template/cluster.conf.sample LAONSILL_HOME/cluster.conf
 cp ../bin/LaonSillServer LAONSILL_HOME/bin/.
 cp ../bin/LaonSillClient LAONSILL_HOME/bin/.
-cp ../bin/convert_imageset LAONSILL_HOME/bin/.
-cp ../bin/convert_mnist_data LAONSILL_HOME/bin/.
-cp ../bin/denormalize_param LAONSILL_HOME/bin/.
 cp ../src/3rd_party/nms/libgpu_nms.so LAONSILL_HOME/lib/.
 cp -r ../dev/client/* LAONSILL_HOME/dev/client/.
 cp -r ../dev/server/* LAONSILL_HOME/dev/server/.
 cp -r ../src/pyapi/LaonSill LAONSILL_HOME/pyapi/.
+cp -r ../resource/labelmap/* LAONSILL_HOME/resource/labelmap/.
 
-rsync -avz --exclude '*.cpp' --exclude '*.h' --exclude '*.cu' ../src/examples LAONSILL_HOME
+rsync -avz --exclude '*.cpp' --exclude '*.h' --exclude '*.cu' --exclude 'core.*' ../src/examples LAONSILL_HOME
 
 hashVal=`git rev-parse --short HEAD`
 echo $hashVal >> LAONSILL_HOME/revision.txt

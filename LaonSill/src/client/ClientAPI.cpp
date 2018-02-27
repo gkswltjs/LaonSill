@@ -505,7 +505,7 @@ ClientError ClientAPI::getObjectDetection(ClientHandle handle, NetworkHandle net
 
 ClientError ClientAPI::runObjectDetectionWithInput(ClientHandle handle,
     NetworkHandle netHandle, int channel, int height, int width, float* imageData,
-    vector<BoundingBox>& boxArray, int baseNetworkType) {
+    vector<BoundingBox>& boxArray, int baseNetworkType, int needRecovery) {
     if (!netHandle.created) 
         return ClientError::NotCreatedNetwork;
 
@@ -516,6 +516,7 @@ ClientError ClientAPI::runObjectDetectionWithInput(ClientHandle handle,
     runJob->addJobElem(Job::IntType, 1, (void*)&height);
     runJob->addJobElem(Job::IntType, 1, (void*)&width);
     runJob->addJobElem(Job::IntType, 1, (void*)&baseNetworkType);
+    runJob->addJobElem(Job::IntType, 1, (void*)&needRecovery);
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
@@ -536,6 +537,16 @@ ClientError ClientAPI::runObjectDetectionWithInput(ClientHandle handle,
     SASSERT0(runReplyJob->getType() == JobType::RunObjectDetectionNetworkWithInputReply);
     
     int resultBoxCount = runReplyJob->getIntValue(0);
+
+    if (needRecovery && (resultBoxCount == -1)) {
+        delete runReplyJob;
+
+        if (bigBuffer != NULL)
+            free(bigBuffer);
+
+        return ClientError::RunAdhocNetworkFailed;
+    }
+
     int elemIdx = 1;
     for (int i = 0; i < resultBoxCount; i++) {
         BoundingBox bbox;
@@ -559,7 +570,7 @@ ClientError ClientAPI::runObjectDetectionWithInput(ClientHandle handle,
 
 ClientError ClientAPI::runClassificationWithInput(ClientHandle handle,
     NetworkHandle netHandle, int channel, int height, int width, float* imageData,
-    vector<int>& labelIndexArray, int baseNetworkType) {
+    vector<int>& labelIndexArray, int baseNetworkType, int needRecovery) {
     if (!netHandle.created) 
         return ClientError::NotCreatedNetwork;
 
@@ -570,6 +581,7 @@ ClientError ClientAPI::runClassificationWithInput(ClientHandle handle,
     runJob->addJobElem(Job::IntType, 1, (void*)&height);
     runJob->addJobElem(Job::IntType, 1, (void*)&width);
     runJob->addJobElem(Job::IntType, 1, (void*)&baseNetworkType);
+    runJob->addJobElem(Job::IntType, 1, (void*)&needRecovery);
 
     int imageDataElemCount = channel * height * width;
     runJob->addJobElem(Job::FloatArrayType, imageDataElemCount, imageData);
@@ -595,6 +607,9 @@ ClientError ClientAPI::runClassificationWithInput(ClientHandle handle,
 
     if (bigBuffer != NULL)
         free(bigBuffer);
+
+    if (needRecovery && (labelIndex == -1))
+        ClientError::RunAdhocNetworkFailed;
 
     return ClientError::Success;
 }

@@ -24,7 +24,7 @@ bool PlanOptimizerTest::runSimpleTest() {
     string networkID = PlanParser::loadNetwork(string(PLAN_PARSER_TEST_NETWORK_FILEPATH));
     WorkContext::updateNetwork(networkID);
     PlanOptimizer::buildPlans(networkID);
-    PlanOptimizer::runPlan(networkID, false, false);
+    PlanOptimizer::runPlan(networkID, false);
 
     return true;
 }

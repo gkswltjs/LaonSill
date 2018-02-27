@@ -256,9 +256,9 @@ typedef enum JobType_e {
      *  [Job Elem Schema for RunObjectDetectionNetworkWithInput]
      * +-----------------+---------------+--------------+-------------+-------------------------+
      * | NetworkID (int) | channel (int) | height (int) | width (int) | base network type (int) |
-     * +-----------------+--------+------+--------------+-------------+-------------------------+
-     * | image data (float array) |
-     * +--------------------------+
+     * +-----------------+--+------------+-------------++-------------+-------------------------+
+     * | needRecovery (int) | image data (float array) |
+     * +--------------------+--------------------------+
      */
 
     RunObjectDetectionNetworkWithInputReply,
@@ -280,9 +280,9 @@ typedef enum JobType_e {
      *  [Job Elem Schema for RunClassificationNetworkWithInput]
      * +-----------------+---------------+--------------+-------------+-------------------------+
      * | NetworkID (int) | channel (int) | height (int) | width (int) | base network type (int) |
-     * +-----------------+--------+------+--------------+-------------+-------------------------+
-     * | image data (float array) |
-     * +--------------------------+
+     * +-----------------+--+------------+-------------++-------------+-------------------------+
+     * | needRecovery (int) | image data (float array) |
+     * +--------------------+--------------------------+
      */
 
     RunClassificationNetworkWithInputReply,

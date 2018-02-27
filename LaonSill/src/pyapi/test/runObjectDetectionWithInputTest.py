@@ -9,8 +9,8 @@ from LaonSill.ClientAPI import *
 res = 512
 #res = 416
 
-base_network = 0   # for SSD
-#base_network = 1   # for FRCNN     
+#base_network = 0   # for SSD
+base_network = 1   # for FRCNN     
 #base_network = 2   # for YOLO
 
 # (1) LaonSill Client 핸들을 생성한다.

@@ -71,7 +71,7 @@ bool PlanOptimizer::buildPlans(string networkID, int option, PlanOptPolicy polic
 
     for (int i = 0; i < availableOptions.size(); i++) {
         setPlanContext(networkID, availableOptions[i], true);
-        double curElapsedTime = runPlan(networkID, true, false);
+        double curElapsedTime = runPlan(networkID, true);
 
         if (isFirst) {
             bestOption = availableOptions[i];
@@ -96,6 +96,7 @@ double PlanOptimizer::runPlanByType(string networkID, PlanType planType, bool in
     clock_gettime(CLOCK_REALTIME, &startTime);
     double elapsed = 0.0;
    
+    WorkContext::updateNetwork(networkID);
     if (inference)
         SNPROP(status) = NetworkStatus::Test;
     else
@@ -105,7 +106,6 @@ double PlanOptimizer::runPlanByType(string networkID, PlanType planType, bool in
         (WorkContext::curBootMode == TestMode) ||
         (WorkContext::curBootMode == SingleJobMode)) {
 
-        WorkContext::updateNetwork(networkID);
         WorkContext::updatePlan(0, true);
 
         PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
@@ -137,10 +137,26 @@ double PlanOptimizer::runPlanByType(string networkID, PlanType planType, bool in
     return elapsed;
 }
 
-double PlanOptimizer::runPlan(string networkID, bool inference, bool needRecovery) {
+void PlanOptimizer::runAdhocPlan(string networkID, string inputLayerName, int channel, 
+        int height, int width, float* imageData) {
+    WorkContext::updateNetwork(networkID);
+
+    for (int i = 0; i < WorkContext::curPlanInfo->dopCount; i++) {
+        int consumerIdx = i;        // XXX: 멀티 노드 환경에서는 더 고려해야 한다.
+        WorkContext::updatePlan(i, true);
+        Worker::addRunPlanTask(i, networkID, i, true, WorkContext::curThreadID,
+                true, inputLayerName, channel, height, width, imageData);
+
+        ThreadMgmt::signal(ThreadMgmt::getThreadID(ThreadType::TaskConsumer, i),
+                ThreadEvent::Wakeup);
+    }
+}
+
+double PlanOptimizer::runPlan(string networkID, bool inference) {
     struct timespec startTime, endTime;
     double elapsed = 0.0;
 
+    WorkContext::updateNetwork(networkID);
     if (inference)
         SNPROP(status) = NetworkStatus::Test;
     else
@@ -151,7 +167,6 @@ double PlanOptimizer::runPlan(string networkID, bool inference, bool needRecover
         (WorkContext::curBootMode == TestMode) ||
         (WorkContext::curBootMode == SingleJobMode)) {
 
-        WorkContext::updateNetwork(networkID);
         WorkContext::updatePlan(0, true);
 
         PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
@@ -169,12 +184,11 @@ double PlanOptimizer::runPlan(string networkID, bool inference, bool needRecover
         elapsed = (endTime.tv_sec - startTime.tv_sec) +
             + (endTime.tv_nsec - startTime.tv_nsec) / 1000000000.0;
     } else {
-        WorkContext::updateNetwork(networkID);
         for (int i = 0; i < WorkContext::curPlanInfo->dopCount; i++) {
             int consumerIdx = i;        // XXX: 멀티 노드 환경에서는 더 고려해야 한다.
             WorkContext::updatePlan(i, true);
             Worker::addRunPlanTask(i, networkID, i, inference, WorkContext::curThreadID,
-                    needRecovery);
+                    false, "", -1, -1, -1, NULL);
 
             ThreadMgmt::signal(ThreadMgmt::getThreadID(ThreadType::TaskConsumer, i),
                     ThreadEvent::Wakeup);

@@ -45,7 +45,9 @@ public:
     static bool buildPlans(std::string networkID);
 
     static void init();
-    static double runPlan(std::string networkID, bool inference, bool needRecovery);
+    static double runPlan(std::string networkID, bool inference);
+    static void runAdhocPlan(std::string networkID, std::string inputLayerName, int channel,
+            int height, int width, float* imageData);
     static double runPlanByType(std::string networkID, PlanType planType, bool inference);
 
 private:

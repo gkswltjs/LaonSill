@@ -132,9 +132,9 @@ void singleJobMain(const char* jobFilePath) {
     PlanOptimizer::buildPlans(networkID);
 
     if ((NetworkStatus)SNPROP(status) == NetworkStatus::Train) {
-        PlanOptimizer::runPlan(networkID, false, false);
+        PlanOptimizer::runPlan(networkID, false);
     } else {
-        PlanOptimizer::runPlan(networkID, true, false);
+        PlanOptimizer::runPlan(networkID, true);
     }
 
     STDOUT_LOG("exit single job(%s)", jobFilePath);

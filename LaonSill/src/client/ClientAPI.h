@@ -46,6 +46,7 @@ typedef enum ClientError_s {
     RequestedNetworkNotExist,
     SendJobFailed,
     RecvJobFailed,
+    RunAdhocNetworkFailed,
     SessErrorMax
 } ClientError;
 
@@ -105,12 +106,14 @@ public:
     static ClientError      runObjectDetectionWithInput(ClientHandle handle,
                                 NetworkHandle netHandle, int channel, int height,
                                 int width, float* imageData, 
-                                std::vector<BoundingBox>& boxArray, int baseNetworkType);
+                                std::vector<BoundingBox>& boxArray, int baseNetworkType, 
+                                int needRecovery);
 
     static ClientError      runClassificationWithInput(ClientHandle handle,
                                 NetworkHandle netHandle, int channel, int height,
                                 int width, float* imageData, 
-                                std::vector<int>& labelIndexArray, int baseNetworkType);
+                                std::vector<int>& labelIndexArray, int baseNetworkType,
+                                int needRecovery);
 
     static ClientError      getMeasureItemName(ClientHandle handle, std::string networkID,
                                 std::vector<std::string>& measureItemNames);  

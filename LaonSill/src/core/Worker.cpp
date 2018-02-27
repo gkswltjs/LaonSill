@@ -123,21 +123,23 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
     PhysicalPlan* pp = PhysicalPlan::getCurPhysicalPlan();
     PlanInfo* planInfo = WorkContext::curPlanInfo;
 
-    // (1) 복원해야 할 정보들을 기입하고, needRecovery가 True이면 임시 inference 정보를
+    // (1) 복원해야 할 정보들을 기입하고, useAdhocRun가 True이면 임시 inference 정보를
     //    기입한다. 
     int recoverEpochIdx;
     int recoverMiniBatchIdx;
     int recoverEpochCount;
     int recoverMiniBatchCount;
     int recoverIterationCount;
+    int recoverDoneCount;
     NetworkStatus recoverNetworkStatus;
 
-    if (task->needRecovery) {
+    if (task->useAdhocRun) {
         SASSUME0(task->inference);
         recoverEpochIdx = planInfo->curEpochIndex;
         recoverMiniBatchIdx = planInfo->curMiniBatchIndex;
         recoverEpochCount = planInfo->epochCount;
         recoverMiniBatchCount = planInfo->miniBatchCount;
+        recoverDoneCount = planInfo->doneCount;
         recoverIterationCount = SNPROP(iterations);
         recoverNetworkStatus = SNPROP(status);
 
@@ -147,8 +149,19 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
         planInfo->miniBatchCount = 1;   // FIXME: 한번 이상의 inference를 하는 경우에는 해당 
                                         //        값이 벼경이 되어야 할 것으로 보인다. 추후에
                                         //        수정 필요.
+        planInfo->doneCount = 0;
         SNPROP(iterations) = 0;
         SNPROP(status) = NetworkStatus::Test;
+
+        InputLayer<float>* commonInputLayer;
+        Network<float>* network;
+        network = Network<float>::getNetworkFromID(task->networkID);
+        commonInputLayer = (InputLayer<float>*)network->findLayer(task->inputLayerName,
+            LayerActivation::TestActivation);
+        SASSUME0(commonInputLayer != NULL); 
+        WorkContext::updateLayer(task->networkID, commonInputLayer->layerID);
+        commonInputLayer->feedImage(task->channel, task->height, task->width,
+                task->imageData);
     }
 
     // (2) plan을 실행한다.
@@ -158,7 +171,7 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
     }
 
     // (3) 복원해야 할 정보가 있으면 복원한다.
-    if (task->needRecovery) {
+    if (task->useAdhocRun) {
         planInfo->curEpochIndex = recoverEpochIdx;
         planInfo->curMiniBatchIndex = recoverMiniBatchIdx;
         planInfo->epochCount = recoverEpochCount;
@@ -167,7 +180,7 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
         SNPROP(status) = recoverNetworkStatus;
     }
 
-    bool jobRemain = pp->generatePlan(true, task->needRecovery);
+    bool jobRemain = pp->generatePlan(true, task->useAdhocRun);
 
     if (jobRemain) {
         return false;
@@ -175,8 +188,14 @@ bool Worker::handleRunPlanTask(TaskRunPlan* task) {
         bool runFinished = false;
         unique_lock<mutex> lock(WorkContext::curPlanInfo->planMutex);
         WorkContext::curPlanInfo->doneCount += 1;
-        if (WorkContext::curPlanInfo->doneCount == WorkContext::curPlanInfo->dopCount)
+        if (WorkContext::curPlanInfo->doneCount == WorkContext::curPlanInfo->dopCount) {
             runFinished = true;
+            // XXX: multi GPU 상황에서(즉, dopCount > 1인 상황에서) 제대로 동작하는지
+            //     검증필요. 그전에 multi GPU를 제대로 구현해야 함.
+            if (task->useAdhocRun) {
+                planInfo->doneCount = recoverDoneCount;
+            }
+        }
         lock.unlock();
 
         if (runFinished) {
@@ -628,7 +647,20 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     int height = job->getIntValue(2);
     int width = job->getIntValue(3);
     int baseNetworkType = job->getIntValue(4);
-    float* imageData = job->getFloatArray(5);
+    int useAdhocRun = job->getIntValue(5);
+    float* imageData = job->getFloatArray(6);
+
+    bool runNetwork = true;
+    if (useAdhocRun)
+        runNetwork = Network<float>::addAdhocRun(networkID);
+
+    if (!runNetwork) {
+        Job* pubJob = getPubJob(job);
+        int error = -1;
+        pubJob->addJobElem(Job::IntType, 1, (void*)&error);
+        Broker::publish(job->getJobID(), pubJob);
+        return;
+    }
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     WorkContext::updateNetwork(networkID);
@@ -642,11 +674,19 @@ void Worker::handleRunObjectDetectionNetworkWithInput(Job* job) {
     SASSUME0(commonOutputLayer != NULL);
 
     WorkContext::updateLayer(networkID, commonInputLayer->layerID);
-    commonInputLayer->feedImage(channel, height, width, imageData);
     SASSUME0(baseNetworkType < (int)WORKER_OD_eMAX);
 
-    network->runMiniBatch(true, 0);
+    if (!useAdhocRun) {
+        commonInputLayer->feedImage(channel, height, width, imageData);
+        network->runMiniBatch(true, 0);
+    } else {
+        network->runAdhoc(SNPROP(inputLayer), channel, height, width, imageData);
+    }
+
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
+
+    if (useAdhocRun)
+        Network<float>::removeAdhocRun(networkID);
 
     Job* pubJob = getPubJob(job);
 
@@ -701,7 +741,20 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
     int height = job->getIntValue(2);
     int width = job->getIntValue(3);
     int baseNetworkType = job->getIntValue(4);
-    float* imageData = job->getFloatArray(5);
+    int useAdhocRun = job->getIntValue(5);
+    float* imageData = job->getFloatArray(6);
+
+    bool runNetwork = true;
+    if (useAdhocRun)
+        runNetwork = Network<float>::addAdhocRun(networkID);
+
+    if (!runNetwork) {
+        Job* pubJob = getPubJob(job);
+        int error = -1;
+        pubJob->addJobElem(Job::IntType, 1, (void*)&error);
+        Broker::publish(job->getJobID(), pubJob);
+        return;
+    }
 
     Network<float>* network = Network<float>::getNetworkFromID(networkID);
     WorkContext::updateNetwork(networkID);
@@ -717,10 +770,18 @@ void Worker::handleRunClassificationNetworkWithInput(Job* job) {
     commonOutputLayer = network->findLayer(SNPROP(outputLayer), LayerActivation::TestActivation);
     SASSUME0(commonOutputLayer != NULL); 
     WorkContext::updateLayer(networkID, commonInputLayer->layerID);
-    commonInputLayer->feedImage(channel, height, width, imageData);
 
-    network->runMiniBatch(true, 0);
+    if (!useAdhocRun) {
+        commonInputLayer->feedImage(channel, height, width, imageData);
+        network->runMiniBatch(true, 0);
+    } else {
+        network->runAdhoc(SNPROP(inputLayer), channel, height, width, imageData);
+    }
+
     ThreadMgmt::wait(WorkContext::curThreadID, 0);
+
+    if (useAdhocRun)
+        Network<float>::removeAdhocRun(networkID);
 
     Job* pubJob = getPubJob(job);
 
@@ -963,7 +1024,9 @@ TaskAllocTensor* Worker::addAllocTensorTask(int consumerIdx, int nodeID, int dev
 }
 
 void Worker::addRunPlanTask(int consumerIdx, string networkID, int dopID, bool inference,
-    int requestThreadID, bool needRecovery) {
+    int requestThreadID, bool useAdhocRun, string inputLayerName, int channel, int height, 
+    int width, float* imageData) {
+
     TaskRunPlan* task = (TaskRunPlan*)Task::getElem(TaskType::RunPlan);
     SASSUME0(task != NULL);     // pool이 넉넉하지 않을때에 대한 전략이 반드시 필요하다
 
@@ -971,7 +1034,12 @@ void Worker::addRunPlanTask(int consumerIdx, string networkID, int dopID, bool i
     task->dopID = dopID;
     task->inference = inference;
     task->requestThreadID = requestThreadID;
-    task->needRecovery = needRecovery;
+    task->inputLayerName = inputLayerName;
+    task->useAdhocRun = useAdhocRun;
+    task->channel = channel;
+    task->height = height;
+    task->width = width;
+    task->imageData = imageData;
 
     SASSUME0(consumerIdx < Worker::taskQueues.size());
     TaskQueue* tq = Worker::taskQueues[consumerIdx];

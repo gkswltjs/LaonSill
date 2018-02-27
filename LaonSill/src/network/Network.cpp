@@ -115,7 +115,8 @@ bool Network<Dtype>::addAdhocRun(std::string networkID) {
     if (Network<Dtype>::networkIDMap.find(networkID) == Network<Dtype>::networkIDMap.end()) {
         return false;
     }
-    Network<Dtype>* network = Network<Dtype>::getNetworkFromID(networkID);
+
+    Network<Dtype>* network = Network<Dtype>::networkIDMap[networkID];
 
     unique_lock<mutex> adhocRunLock(network->adhocRunMutex);
     network->adhocRunRefCount++;
@@ -199,12 +200,15 @@ void Network<Dtype>::reset() {
 template<typename Dtype>
 void Network<Dtype>::run(bool inference) {
     SASSERT0(this->isLoaded);
-    PlanOptimizer::runPlan(this->networkID, inference, false);
+    PlanOptimizer::runPlan(this->networkID, inference);
 }
 
 template<typename Dtype>
-bool Network<Dtype>::runAdhoc() {
-    // TODO: 여기 구현해야 함.  
+void Network<Dtype>::runAdhoc(string inputLayerName, int channel, int height, int width,
+        float* imageData) {
+    SASSERT0(this->isLoaded);
+    PlanOptimizer::runAdhocPlan(this->networkID, inputLayerName, channel, height, width,
+            imageData);
 }
 
 template<typename Dtype>
@@ -236,7 +240,7 @@ void Network<Dtype>::runMiniBatch(bool inference, int miniBatchIdx) {
         pp->reset();
     }
 
-    PlanOptimizer::runPlan(this->networkID, inference, false);
+    PlanOptimizer::runPlan(this->networkID, inference);
 }
 
 template<typename Dtype>
