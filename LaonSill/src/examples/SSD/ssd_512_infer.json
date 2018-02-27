@@ -10,7 +10,7 @@
 			"imageWidth" : 512,
 			"imageSetPath" : "$(LAONSILL_HOME)/data/VOC0712/test.txt",
 			"baseDataPath" : "$(LAONSILL_HOME)/data/VOCdevkit/",
-			"labelMapPath" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.json",
+			"labelMapPath" : "$(LAONSILL_HOME)/resource/labelmap/labelmap_voc.json",
 			"mean" : [104.0, 117.0, 123.0]
 		},
 
@@ -1653,7 +1653,7 @@
 			"saveOutputParam.outputDirectory" : "$(LAONSILL_HOME)/results/ssd/results_512",
 			"saveOutputParam.outputNamePrefix" : "comp4_det_test_",
 			"saveOutputParam.outputFormat" : "VOC",
-			"saveOutputParam.labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.json",
+			"saveOutputParam.labelMapFile" : "$(LAONSILL_HOME)/resource/labelmap/labelmap_voc.json",
 			"saveOutputParam.nameSizeFile" : "$(LAONSILL_HOME)/data/VOC0712/test_name_size.txt",
 			"saveOutputParam.numTestImage" : 4952,
 			"codeType" : "CENTER_SIZE",
