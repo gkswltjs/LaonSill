@@ -90,7 +90,7 @@
 			"batchSampler6.maxSample" : 1,
 			"batchSampler6.maxTrials" : 50,
 
-			"labelMapFile" : "$(LAONSILL_HOME)/data/VOC0712/labelmap_voc.json",
+			"labelMapFile" : "$(LAONSILL_HOME)/resource/labelmap/labelmap_voc.json",
 			"annoType" : "BBOX"
 		},
 				

@@ -8,6 +8,7 @@
 			"output" : ["data", "label"],
 			"imageHeight" : 512,
 			"imageWidth" : 512,
+			"labelMapPath" : "$(LAONSILL_HOME)/resource/labelmap/labelmap_voc.json",
 			"mean" : [104.0, 117.0, 123.0],
 			"live" : true
 		},
