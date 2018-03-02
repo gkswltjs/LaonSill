@@ -1801,7 +1801,7 @@
         "keepSaveBestModel" : true,
         "keepSaveBestModelStartIterNum" : 1000,
         "keepSaveIntervalModelCount" : 4,
-		"status" : "Train",
+		"status" : "Test",
 		"loadPathForTest" : "$(LAONSILL_HOME)/param/VGG_VOC0712_SSD_512x512_iter_120000.param",
         "useCompositeModel" : true
 	}

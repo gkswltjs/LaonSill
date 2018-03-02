@@ -22,7 +22,7 @@ FrcnnTestLiveOutputLayer<Dtype>::FrcnnTestLiveOutputLayer()
 : Layer<Dtype>() {
 	this->type = Layer<Dtype>::FrcnnTestLiveOutput;
 
-	SASSERT(SNPROP(status) == NetworkStatus::Test,
+	SASSERT(SNPROP(useCompositeModel) == true || SNPROP(status) == NetworkStatus::Test,
 				"FrcnnTestLiveOutputLayer can be run only in Test Status");
 }
 

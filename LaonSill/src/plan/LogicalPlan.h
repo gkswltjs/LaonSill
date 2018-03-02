@@ -79,6 +79,7 @@ public:
     static void setLayerType(std::string networkID, int layerID, bool isInner);
 
 private:
+    static int getSplitOutputCount(std::vector<int> inputIDs, std::vector<int> outputIDs);
     static std::map<std::string, LogicalPlan*>  lpMap;  // logical plan map
                                                 // key : network ID, value : plan def list
     static std::mutex                   lpMapMutex;

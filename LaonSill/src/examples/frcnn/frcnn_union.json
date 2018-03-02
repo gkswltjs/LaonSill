@@ -6,7 +6,7 @@
 			"layer" : "RoIData",
 			"id" : 0,
 			"output" : ["data", "im_info", "gt_boxes"],
-			"source" : "$(LAONSILL_HOME)/data/sdf/voc2007_sdf",
+			"source" : "$(LAONSILL_HOME)/data/sdf/voc2007_train_sdf",
 
 			"dataSetName" : "train",
 			"dataTransformParam.mean" : [102.9801, 115.9465, 122.7717],
@@ -565,7 +565,6 @@
 			"backgroundLabelId" : 0,
 			"overlapThreshold" : 0.5,
 			"evaluateDifficultGt" : false,
-			"nameSizeFile" : "$(LAONSILL_HOME)/data/VOC0712/test_name_size.txt",
 			"apVersion" : "11point",
 			"propDown" : [false, false],
             "activation" : "TrainActivation"

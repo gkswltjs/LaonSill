@@ -24,7 +24,7 @@ RoITestLiveInputLayer<Dtype>::RoITestLiveInputLayer()
 : InputLayer<Dtype>() {
 	this->type = Layer<Dtype>::RoITestLiveInput;
 
-	SASSERT(SNPROP(status) == NetworkStatus::Test,
+	SASSERT((SNPROP(useCompositeModel) == true) || (SNPROP(status) == NetworkStatus::Test),
 			"RoITestLiveInputLayer can be run only in Test Status");
 }
 

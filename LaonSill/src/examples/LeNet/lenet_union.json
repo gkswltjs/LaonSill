@@ -176,6 +176,6 @@
         "outputLayer" : "ip2",
         "loadPathForTest" : "$(LAONSILL_HOME)/param/lenet_train.param",
         "status" : "Test",
-        "useCompositeModel" : true
+        "useCompositeModel" : false
 	}
 }

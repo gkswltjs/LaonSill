@@ -44,6 +44,26 @@ PlanDef* LogicalPlan::findPlanDef(LogicalPlan* lp, int planID) {
     SASSERT(false, "cannot find plandef for requesting plan ID. planID=%d", planID);
 }
 
+int LogicalPlan::getSplitOutputCount(vector<int> inputIDs, vector<int> outputIDs) {
+    int count = 0;
+
+    for (int i = 0; i < outputIDs.size(); i++) {
+        bool skipCount = false;
+
+        for (int j = 0; j < inputIDs.size(); j++) {
+            if (outputIDs[i] == inputIDs[j]) {
+                skipCount = true;
+                break;
+            }
+        }
+
+        if (!skipCount)
+            count++;
+    }
+
+    return count;
+}
+
 // XXX: the number of codes for this function is too long!!!!!!! split it
 //     build()함수는 아래와 같은 일들을 수행한다.
 //  (1) 각 레이어의 정의(PlanDef)를 토대로 해야할 세부 plan들을 생성
@@ -291,7 +311,11 @@ void LogicalPlan::build(string networkID, map<int, PlanBuildDef> planDefMap) {
         		key.c_str(), inputIDs.size(), outputIDs.size());
 
         // (3-4-0) prepare names for split layer
+#if 0
         int splitOutputCount = outputIDs.size() - inputIDs.size() + 1;
+#else
+        int splitOutputCount = getSplitOutputCount(inputIDs, outputIDs);
+#endif
         vector<string> splitLayerOutputDataNames;
         vector<string> splitLayerInputDataNames;
 
@@ -343,7 +367,6 @@ void LogicalPlan::build(string networkID, map<int, PlanBuildDef> planDefMap) {
         newPlanDefBackward.planType = PLANTYPE_BACKWARD;
         newPlanDefBackward.layerType = (int)Layer<float>::Split;
 
-        splitOutputCount = outputIDs.size() - inputIDs.size() + 1;
         newPlanDefBackward.depCount = 0;
 
         for (int i = 0; i < splitOutputCount; i++) {

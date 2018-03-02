@@ -48,7 +48,7 @@ AnnotationDataLayer<Dtype>::AnnotationDataLayer()
 		std::iota(this->perm.begin(), this->perm.end(), 0);
 		shuffle();
 	} else {
-		SASSERT(SNPROP(status) == NetworkStatus::Test,
+		SASSERT(SNPROP(useCompositeModel) || SNPROP(status) == NetworkStatus::Test,
 				"AnnotationDataLayer in live mode can be run only in Test Status");
 	}
 }
